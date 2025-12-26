@@ -208,12 +208,18 @@ Each app: Same Flutter codebase, same Gemini API, different prompts/UI skin.
 
 ### Our Pricing Strategy
 
-| Tier | Daily Limit | Monthly Limit | Price | Trial | vs Competition |
-|------|-------------|---------------|-------|-------|----------------|
-| **Free** | 3/day | ~90/mo | $0 | - | More generous than most |
-| **Pro Weekly** | 50/day | 500/mo | $2.99/wk | 3-day | Impulse buyers, high LTV |
-| **Pro Monthly** | 50/day | 500/mo | $4.99/mo | 7-day | 29% cheaper than American Greetings |
-| **Pro Yearly** | 50/day | 500/mo | $29.99/yr | 7-day | 17% cheaper than American Greetings |
+| Tier | Limit | Price | Trial | vs Competition |
+|------|-------|-------|-------|----------------|
+| **Free** | 3 total (lifetime) | $0 | - | Try before you buy |
+| **Pro Weekly** | 500/mo | $2.99/wk | 3-day | Impulse buyers, high LTV |
+| **Pro Monthly** | 500/mo | $4.99/mo | 7-day | 29% cheaper than American Greetings |
+| **Pro Yearly** | 500/mo | $29.99/yr | 7-day | 17% cheaper than American Greetings |
+
+**Why 3 total (not 3/day)?**
+- Limits YOUR cost exposure: max $0.00012 per free user ever
+- 10K free users = $1.20 total cost (not $36/month recurring)
+- 3 generations = 9 message options = enough to prove value
+- Creates real conversion pressure after trial
 
 **Why this pricing:**
 - Under $5/mo = "coffee money" psychology
@@ -262,18 +268,22 @@ com.prosepal.pro.yearly    // $29.99/year, 7-day trial
 
 ### Usage Monitoring & Fair Use
 
-**Why limits even for Pro?**
+**Free Tier (3 Lifetime):**
+- Total count stored in SharedPreferences
+- Never resets - once used, gone forever
+- Max cost per free user: $0.00012
+
+**Pro Tier (500/month):**
+- Monthly count resets on 1st of month
 - Prevents bot abuse / scraping
-- Controls API costs (Gemini charges per token)
-- 500/month is 16+ messages/day - far exceeds real usage
-- Real users write maybe 5-10 cards/month
+- 500/month far exceeds real usage (5-10 cards typical)
 
 **Usage Tracking Implementation:**
 
 | Data | Storage | Reset |
 |------|---------|-------|
-| Daily count | Local (SharedPreferences) | Midnight local time |
-| Monthly count | Local (SharedPreferences) | 1st of month |
+| Total count (free) | Local (SharedPreferences) | Never |
+| Monthly count (Pro) | Local (SharedPreferences) | 1st of month |
 | Subscription status | RevenueCat (server) | Real-time |
 
 **Flow:**
@@ -283,36 +293,28 @@ User taps "Generate"
 Check subscription status (RevenueCat)
     ↓
 If Free:
-    - Check daily count < 3
+    - Check total count < 3
     - If exceeded → Show paywall
     ↓
 If Pro:
-    - Check daily count < 50
     - Check monthly count < 500
     - If exceeded → Show "Fair use limit reached" message
     ↓
 Generate message
     ↓
-Increment daily + monthly counters
+Increment counters
 ```
-
-**Edge Cases:**
-- User cancels mid-month → Reverts to free tier limits immediately
-- User upgrades mid-month → Resets to Pro limits
-- Offline usage → Queue generation, sync counts when online
-- Clock manipulation → Server timestamp validation (V1.1 with Supabase)
 
 **Cost Protection Math:**
 ```
+Free user max cost:
+- 3 generations × $0.00004 = $0.00012 per user EVER
+- 10,000 free users = $1.20 total
+
 Pro user at max usage:
 - 500 generations/month × $0.00004 = $0.02/month API cost
 - Revenue: $4.99/month
 - Margin: $4.97 (99.6% gross margin)
-
-Even worst-case abuse (if someone hits limit daily):
-- 50 × 30 = 1,500 generations
-- 1,500 × $0.00004 = $0.06/month
-- Still 98.8% gross margin
 ```
 
 ### Key Insights from Competition

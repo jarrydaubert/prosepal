@@ -176,8 +176,8 @@ class _UsageIndicator extends StatelessWidget {
                 children: [
                   Text(
                     remaining > 0
-                        ? 'Free messages left today'
-                        : 'No free messages left',
+                        ? 'Free messages remaining'
+                        : 'Free trial ended',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           fontWeight: FontWeight.w600,
                         ),

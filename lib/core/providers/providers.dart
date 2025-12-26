@@ -29,9 +29,9 @@ final aiServiceProvider = Provider<AiService>((ref) {
 final isProProvider = StateProvider<bool>((ref) => false);
 
 // Usage state
-final dailyUsageProvider = Provider<int>((ref) {
+final totalUsageProvider = Provider<int>((ref) {
   final usageService = ref.watch(usageServiceProvider);
-  return usageService.getDailyCount();
+  return usageService.getTotalCount();
 });
 
 final remainingGenerationsProvider = Provider<int>((ref) {
@@ -39,9 +39,9 @@ final remainingGenerationsProvider = Provider<int>((ref) {
   final isPro = ref.watch(isProProvider);
 
   if (isPro) {
-    return usageService.getRemainingProDaily();
+    return usageService.getRemainingProMonthly();
   }
-  return usageService.getRemainingFree();
+  return usageService.getRemainingFree(); // Lifetime limit for free users
 });
 
 // Generation state
