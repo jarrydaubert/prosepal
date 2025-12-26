@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "530026851718",
+    "project_id": "prosepal-1a24b",
+    "storage_bucket": "prosepal-1a24b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:530026851718:android:71029bf2c74548436bd007",
+        "android_client_info": {
+          "package_name": "com.prosepal.prosepal"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAg-0XbJo0qE6cCc7V1nfnTLlez_zqjzZE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
