@@ -94,9 +94,11 @@ Prosepal: Card Message Writer - AI Birthday & Thank You Notes
 | Channel | Action | Timing |
 |---------|--------|--------|
 | **Product Hunt** | Launch post | Week 1 |
-| **Reddit** | r/greetingcards, r/wedding, r/SideProject | Week 1-2 |
 | **Twitter/X** | Build in public thread | Ongoing |
 | **TikTok** | "POV: You need to write a card" slideshows | If traction |
+| **Apple Search Ads** | On winners only | If >50 trials/week |
+
+> **Note:** Avoid Reddit self-promotion - high ban risk.
 
 ### Countering Free Web Tools
 
@@ -226,6 +228,37 @@ com.prosepal.pro.weekly    // $2.99/week, 3-day trial
 com.prosepal.pro.monthly   // $4.99/month, 7-day trial
 com.prosepal.pro.yearly    // $29.99/year, 7-day trial
 ```
+
+### Pricing Validation
+
+**Competitive Positioning:**
+- American Greetings: $1.99-$6.99/mo → We're in the sweet spot
+- Most AI writing tools: $5-$20/mo → We're at the low end
+- Free web tools exist but lack mobile convenience
+
+**Industry Benchmarks (Utility Apps):**
+- Successful subs: $3-$10/mo range
+- Weekly plans: $3-$6 typical
+- Trial-to-paid conversion: 2-5% (higher with trials)
+- Higher-priced apps = better Day 35 retention
+
+**Why Our Pricing Works:**
+
+| Tier | Psychology | Target User |
+|------|------------|-------------|
+| Weekly $2.99 | "Need it NOW" impulse | Card aisle panic buyer |
+| Monthly $4.99 | "Coffee money" threshold | Regular card sender |
+| Yearly $29.99 | 50% savings commitment | Gift-giving enthusiast |
+
+**Weekly Sub Economics:**
+- Higher initial uptake, steeper churn
+- But: Captures high-LTV impulse users
+- Pairs with yearly discount to encourage commitment
+
+**A/B Test if Resistance:**
+- Try $3.99/week (still under $4 psychology)
+- Extend trials (5-day weekly, 14-day monthly)
+- But start with current pricing - it's validated
 
 ### Usage Monitoring & Fair Use
 
