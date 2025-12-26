@@ -61,6 +61,88 @@
 | **Vondy Card Writer** | Freemium | Generic AI tool, not specialized |
 | **Copy.ai** | Freemium | General writing, not occasion-focused |
 
+### Competitor Pricing Comparison
+
+| App | Platform | Free Tier | Subscription | Annual | Notes |
+|-----|----------|-----------|--------------|--------|-------|
+| **American Greetings** | iOS/Android | 7-day trial | $6.99/mo | $35.99/yr | 1.2 Trustpilot, billing complaints |
+| **JibJab** | iOS/Android | Limited | $6.99/mo | $35.99/yr | Entertainment focus, not messages |
+| **AI Greeting Card Generator** | iOS | None | $19.99/mo | - | Overpriced, image-focused |
+| **Cardory** | iOS | Limited | ~$4.99/mo | ~$29.99/yr | Card design, weak messages |
+| **greetingcardwriter.com** | Web | Unlimited | FREE | FREE | No app, basic UX |
+| **Greetings Island** | Web | Unlimited | FREE | FREE | Part of card platform |
+| **Vondy Card Writer** | Web | Limited | $19/mo | - | Generic AI tool |
+| **TextAI** | iOS | Limited | $6.99/mo | $49.99/yr | General writing, not occasion-specific |
+
+### Our Pricing Strategy
+
+| Tier | Daily Limit | Monthly Limit | Price | vs Competition |
+|------|-------------|---------------|-------|----------------|
+| **Free** | 3/day | ~90/mo | $0 | More generous than most |
+| **Pro Monthly** | 50/day | 500/mo | $4.99/mo | 29% cheaper than American Greetings |
+| **Pro Yearly** | 50/day | 500/mo | $29.99/yr | 17% cheaper than American Greetings |
+
+**Why this pricing:**
+- Under $5/mo = "coffee money" psychology
+- Yearly saves 50% = encourages commitment
+- Free tier generous enough to hook users
+- Cheaper than American Greetings (the biggest player)
+
+### Usage Monitoring & Fair Use
+
+**Why limits even for Pro?**
+- Prevents bot abuse / scraping
+- Controls API costs (Gemini charges per token)
+- 500/month is 16+ messages/day - far exceeds real usage
+- Real users write maybe 5-10 cards/month
+
+**Usage Tracking Implementation:**
+
+| Data | Storage | Reset |
+|------|---------|-------|
+| Daily count | Local (SharedPreferences) | Midnight local time |
+| Monthly count | Local (SharedPreferences) | 1st of month |
+| Subscription status | RevenueCat (server) | Real-time |
+
+**Flow:**
+```
+User taps "Generate"
+    ↓
+Check subscription status (RevenueCat)
+    ↓
+If Free:
+    - Check daily count < 3
+    - If exceeded → Show paywall
+    ↓
+If Pro:
+    - Check daily count < 50
+    - Check monthly count < 500
+    - If exceeded → Show "Fair use limit reached" message
+    ↓
+Generate message
+    ↓
+Increment daily + monthly counters
+```
+
+**Edge Cases:**
+- User cancels mid-month → Reverts to free tier limits immediately
+- User upgrades mid-month → Resets to Pro limits
+- Offline usage → Queue generation, sync counts when online
+- Clock manipulation → Server timestamp validation (V1.1 with Supabase)
+
+**Cost Protection Math:**
+```
+Pro user at max usage:
+- 500 generations/month × $0.00004 = $0.02/month API cost
+- Revenue: $4.99/month
+- Margin: $4.97 (99.6% gross margin)
+
+Even worst-case abuse (if someone hits limit daily):
+- 50 × 30 = 1,500 generations
+- 1,500 × $0.00004 = $0.06/month
+- Still 98.8% gross margin
+```
+
 ### Key Insights from Competition
 
 1. **Most focus on CARD DESIGN, not MESSAGE QUALITY**
@@ -68,9 +150,8 @@
    - Our USP: Message-first, not design-first
 
 2. **Pricing is all over the place**
-   - American Greetings: $6.99/mo (but poor reviews)
-   - AI Greeting Card Generator: $19.99/mo (way overpriced)
-   - Many free web tools exist
+   - Free web tools exist but lack mobile experience
+   - $19.99/mo apps are clearly overpriced
    - Sweet spot: $4.99-6.99/mo with generous free tier
 
 3. **American Greetings has terrible trust**
@@ -242,18 +323,21 @@
 
 ---
 
-## Tech Stack
+## Tech Stack (Cutting-Edge 2025)
 
-| Layer | Technology | Purpose |
-|-------|------------|---------|
-| **Frontend** | Flutter 3.38+ | Cross-platform (iOS, Android, Web) |
-| **State Management** | Riverpod | Reactive state, dependency injection |
-| **Auth + DB** | Supabase | Auth (V1.1+), Postgres, Edge Functions |
-| **AI** | Gemini 2.5 Flash | Text generation via Supabase Edge Function |
-| **Payments** | RevenueCat | Subscriptions (iOS + Android + Web) |
-| **Analytics** | Firebase Analytics | User events, funnels, retention |
-| **Crashes** | Firebase Crashlytics | Error tracking, diagnostics |
-| **Local Storage** | SharedPreferences | Usage tracking, settings |
+| Layer | Technology | Version | Purpose |
+|-------|------------|---------|---------|
+| **Frontend** | Flutter | 3.38+ | Cross-platform (iOS, Android, Web) |
+| **Language** | Dart | 3.6+ | Null safety, records, patterns |
+| **State Management** | Riverpod | 3.0+ | Compile-time safety, no BuildContext dependency |
+| **Navigation** | go_router | 17.0+ | Declarative routing, deep links |
+| **AI** | google_generative_ai | 0.4.7+ | Direct Gemini 2.0 Flash API |
+| **Payments** | RevenueCat | 6.0+ | Cross-platform subscriptions |
+| **Analytics** | Firebase Analytics | 10.7+ | Events, funnels, retention |
+| **Crashes** | Firebase Crashlytics | 3.4+ | Error tracking, diagnostics |
+| **Local Storage** | shared_preferences | 2.2+ | Usage tracking, settings |
+| **HTTP** | dio | 5.4+ | API calls with interceptors |
+| **Animations** | flutter_animate | 4.3+ | Declarative animations |
 
 ### Platform Distribution
 
@@ -263,37 +347,251 @@
 | Android | Google Play Store | Primary launch |
 | Web | prosepal.app (future) | Post-launch |
 
-### Key Flutter Packages
+### Key Flutter Packages (pubspec.yaml)
 
 ```yaml
 dependencies:
-  flutter_riverpod: ^2.4.0      # State management
-  purchases_flutter: ^6.0.0      # RevenueCat
-  supabase_flutter: ^2.0.0       # Supabase (V1.1+)
-  firebase_core: ^2.24.0         # Firebase
-  firebase_analytics: ^10.7.0    # Analytics
-  firebase_crashlytics: ^3.4.0   # Crash reporting
-  google_fonts: ^6.1.0           # Typography
-  flutter_animate: ^4.3.0        # Animations
-  shared_preferences: ^2.2.0     # Local storage
-  flutter_dotenv: ^5.1.0         # Environment variables
+  flutter:
+    sdk: flutter
+
+  # State Management (Riverpod 3.0 - cutting edge)
+  flutter_riverpod: ^3.0.0
+  riverpod_annotation: ^3.0.0
+
+  # Navigation
+  go_router: ^17.0.0
+
+  # AI - Direct Gemini API (no backend needed!)
+  google_generative_ai: ^0.4.7
+
+  # Payments
+  purchases_flutter: ^6.0.0
+
+  # Firebase
+  firebase_core: ^2.24.0
+  firebase_analytics: ^10.7.0
+  firebase_crashlytics: ^3.4.0
+
+  # UI
+  google_fonts: ^6.1.0
+  flutter_animate: ^4.3.0
+  gap: ^3.0.0                    # Spacing widget
+
+  # Utils
+  shared_preferences: ^2.2.0
+  flutter_dotenv: ^5.1.0
+  dio: ^5.4.0
+  envied: ^0.5.0                 # Compile-time env vars (secure)
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  riverpod_generator: ^3.0.0     # Code generation for Riverpod
+  build_runner: ^2.4.0
+  envied_generator: ^0.5.0
 ```
 
 ### API Cost Estimate
-- ~500 tokens per message generation
-- Gemini 2.5 Flash: ~$0.0001 per generation
-- 3 options = $0.0003 per use
-- **Very low marginal cost** - sustainable at scale
+- ~500 tokens per message generation (3 options)
+- **Gemini 2.0 Flash: $0.08 per 1M tokens**
+- Cost per generation: ~$0.00004
+- **10,000 generations = $0.40**
+- Extremely sustainable at scale
 
 ### Why This Stack?
 
 | Choice | Rationale |
 |--------|-----------|
-| **Flutter** | Single codebase for iOS + Android + Web, fast iteration |
-| **Supabase** | Generous free tier (50K MAU), Postgres, Edge Functions hide API keys |
-| **Gemini Flash** | Cheapest quality AI, fast responses, Google reliability |
-| **RevenueCat** | Handles both stores, webhooks, analytics, no backend needed |
-| **Firebase** | Free analytics/crashlytics, already have account from PawNova |
+| **Flutter 3.38+** | Latest stable, dot shorthands, performance improvements |
+| **Riverpod 3.0** | Cutting-edge state management, compile-time safety, code generation |
+| **go_router** | Official Flutter team router, deep linking, type-safe |
+| **Direct Gemini API** | No backend needed for MVP, $0.08/1M tokens, official Google package |
+| **RevenueCat** | Handles iOS + Android + Web, no server needed |
+| **Firebase** | Free analytics/crashlytics, reuse PawNova account |
+| **envied** | Compile-time env vars (more secure than flutter_dotenv) |
+
+### Why NOT Supabase for MVP?
+
+- MVP doesn't need auth or cloud database
+- Direct Gemini API works fine for text generation
+- Local storage (SharedPreferences) sufficient for usage tracking
+- **Add Supabase in V1.1** when we add user accounts + history
+
+---
+
+## V1.1: Authentication & Account Linking (Post-MVP)
+
+### Sign-In Methods (Same as PawNova)
+
+| Method | Provider | Package |
+|--------|----------|---------|
+| **Apple Sign In** | Supabase Auth | supabase_flutter |
+| **Google Sign In** | Supabase Auth | supabase_flutter + google_sign_in |
+| **Email/Password** | Supabase Auth | supabase_flutter |
+
+### Account Linking Flow
+
+```
+User starts as anonymous (MVP)
+    ↓
+User wants to save history / sync devices
+    ↓
+Prompt: "Sign in to save your messages"
+    ↓
+User signs in with Apple/Google/Email
+    ↓
+If email already linked to different provider:
+    - "This email is linked to [Google]. Sign in with Google to continue."
+    ↓
+If new account:
+    - Create account, migrate local data to cloud
+    ↓
+If existing account:
+    - Merge local data with cloud data
+```
+
+### Account Linking Rules
+
+| Scenario | Behavior |
+|----------|----------|
+| New user signs in with Apple | Create account with Apple ID |
+| Same user signs in with Google (same email) | Link Google to existing account |
+| User tries Email with existing Apple email | Prompt to sign in with Apple first, then link |
+| User on new device signs in | Pull history from cloud |
+
+### Supabase Auth Config (V1.1)
+
+```sql
+-- Enable providers in Supabase Dashboard:
+-- 1. Apple (requires Apple Developer account)
+-- 2. Google (requires GCP OAuth credentials)
+-- 3. Email (built-in, no external config)
+
+-- User profiles table
+CREATE TABLE profiles (
+  id UUID REFERENCES auth.users PRIMARY KEY,
+  email TEXT,
+  display_name TEXT,
+  avatar_url TEXT,
+  subscription_tier TEXT DEFAULT 'free',
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Message history table
+CREATE TABLE messages (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES profiles(id),
+  occasion TEXT NOT NULL,
+  relationship TEXT NOT NULL,
+  tone TEXT NOT NULL,
+  details TEXT,
+  generated_messages JSONB NOT NULL,
+  selected_message TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- RLS policies
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can read own profile"
+  ON profiles FOR SELECT USING (auth.uid() = id);
+
+CREATE POLICY "Users can read own messages"
+  ON messages FOR SELECT USING (auth.uid() = user_id);
+```
+
+### Why Same as PawNova?
+
+- Proven pattern that works
+- Users expect Apple/Google sign-in on mobile
+- Email fallback for users without Apple/Google
+- Account linking prevents duplicate accounts
+- Supabase handles all the complexity
+
+---
+
+## Architecture: Atomic Design + Feature-First
+
+```
+lib/
+├── main.dart
+├── app/
+│   ├── app.dart                    # MaterialApp + ProviderScope
+│   └── router.dart                 # go_router configuration
+│
+├── features/                       # Feature-first organization
+│   ├── home/
+│   │   ├── home_screen.dart
+│   │   └── widgets/
+│   │       └── occasion_grid.dart
+│   ├── generate/
+│   │   ├── generate_screen.dart
+│   │   ├── generate_provider.dart  # Riverpod provider
+│   │   └── widgets/
+│   │       ├── relationship_picker.dart
+│   │       ├── tone_selector.dart
+│   │       └── details_input.dart
+│   ├── results/
+│   │   ├── results_screen.dart
+│   │   └── widgets/
+│   │       └── message_card.dart
+│   ├── paywall/
+│   │   └── paywall_screen.dart
+│   └── settings/
+│       └── settings_screen.dart
+│
+├── core/
+│   ├── services/
+│   │   ├── ai_service.dart         # Gemini API wrapper
+│   │   ├── subscription_service.dart
+│   │   └── analytics_service.dart
+│   ├── models/
+│   │   ├── occasion.dart
+│   │   ├── relationship.dart
+│   │   ├── tone.dart
+│   │   └── generated_message.dart
+│   └── providers/
+│       └── usage_provider.dart     # Daily limit tracking
+│
+└── shared/
+    ├── atoms/                      # Atomic Design: smallest units
+    │   ├── app_button.dart
+    │   ├── app_text.dart
+    │   ├── app_icon.dart
+    │   └── app_card.dart
+    ├── molecules/                  # Atomic Design: combinations
+    │   ├── icon_label.dart
+    │   ├── selection_chip.dart
+    │   └── loading_indicator.dart
+    ├── organisms/                  # Atomic Design: complex components
+    │   ├── occasion_tile.dart
+    │   ├── message_option.dart
+    │   └── paywall_card.dart
+    ├── templates/                  # Atomic Design: page layouts
+    │   ├── base_screen.dart
+    │   └── scrollable_screen.dart
+    ├── theme/
+    │   ├── app_colors.dart
+    │   ├── app_typography.dart
+    │   ├── app_spacing.dart
+    │   └── app_theme.dart
+    └── extensions/
+        ├── context_extensions.dart
+        └── string_extensions.dart
+```
+
+### Atomic Design Hierarchy
+
+| Level | Description | Examples |
+|-------|-------------|----------|
+| **Atoms** | Basic UI building blocks, single purpose | `AppButton`, `AppText`, `AppIcon`, `AppCard` |
+| **Molecules** | Simple combinations of atoms | `IconLabel`, `SelectionChip`, `LoadingIndicator` |
+| **Organisms** | Complex, reusable components | `OccasionTile`, `MessageOption`, `PaywallCard` |
+| **Templates** | Page layouts, no business logic | `BaseScreen`, `ScrollableScreen` |
+| **Pages/Screens** | Full screens with business logic | `HomeScreen`, `ResultsScreen` |
 
 ---
 
