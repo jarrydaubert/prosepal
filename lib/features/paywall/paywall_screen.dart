@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
 import 'package:go_router/go_router.dart';
+import 'package:purchases_flutter/purchases_flutter.dart';
 
 import '../../core/providers/providers.dart';
 import '../../shared/atoms/app_button.dart';
@@ -18,6 +19,32 @@ class PaywallScreen extends ConsumerStatefulWidget {
 
 class _PaywallScreenState extends ConsumerState<PaywallScreen> {
   int _selectedPlanIndex = 2; // Default to yearly
+  List<Package> _packages = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadOfferings();
+  }
+
+  Future<void> _loadOfferings() async {
+    try {
+      final subscriptionService = ref.read(subscriptionServiceProvider);
+      final offerings = await subscriptionService.getOfferings();
+      
+      if (offerings?.current != null) {
+        setState(() {
+          _packages = offerings!.current!.availablePackages;
+          _isLoading = false;
+        });
+      } else {
+        setState(() => _isLoading = false);
+      }
+    } catch (e) {
+      setState(() => _isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -84,18 +111,34 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
 
                     Gap(AppSpacing.xxl),
 
-                    // Plans
-                    ...List.generate(3, (index) {
-                      final plan = _plans[index];
-                      return Padding(
-                        padding: EdgeInsets.only(bottom: AppSpacing.md),
-                        child: _PlanCard(
-                          plan: plan,
-                          isSelected: _selectedPlanIndex == index,
-                          onTap: () => setState(() => _selectedPlanIndex = index),
-                        ),
-                      );
-                    }),
+                    // Plans - from RevenueCat or fallback
+                    if (_isLoading)
+                      CircularProgressIndicator()
+                    else if (_packages.isNotEmpty)
+                      ..._packages.asMap().entries.map((entry) {
+                        final package = entry.value;
+                        return Padding(
+                          padding: EdgeInsets.only(bottom: AppSpacing.md),
+                          child: _PackageCard(
+                            package: package,
+                            isSelected: _selectedPlanIndex == entry.key,
+                            onTap: () => setState(() => _selectedPlanIndex = entry.key),
+                          ),
+                        );
+                      })
+                    else
+                      // Fallback to static plans if RevenueCat not configured
+                      ...List.generate(3, (index) {
+                        final plan = _plans[index];
+                        return Padding(
+                          padding: EdgeInsets.only(bottom: AppSpacing.md),
+                          child: _PlanCard(
+                            plan: plan,
+                            isSelected: _selectedPlanIndex == index,
+                            onTap: () => setState(() => _selectedPlanIndex = index),
+                          ),
+                        );
+                      }),
 
                     Gap(AppSpacing.lg),
 
@@ -110,7 +153,9 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
 
                     // Terms
                     Text(
-                      'Cancel anytime. ${_plans[_selectedPlanIndex].trialText}',
+                      _packages.isNotEmpty
+                          ? 'Cancel anytime. Payment charged after trial.'
+                          : 'Cancel anytime. ${_plans[_selectedPlanIndex].trialText}',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: AppColors.textSecondary,
                           ),
@@ -135,9 +180,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                         ),
                         Text('•', style: TextStyle(color: AppColors.textHint)),
                         TextButton(
-                          onPressed: () {
-                            // TODO: Restore purchases
-                          },
+                          onPressed: _restorePurchases,
                           child: Text('Restore'),
                         ),
                       ],
@@ -152,18 +195,64 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
     );
   }
 
-  void _subscribe() {
-    // TODO: Implement RevenueCat purchase
-    // For now, just set pro status for testing
-    ref.read(isProProvider.notifier).state = true;
-    context.pop();
+  Future<void> _subscribe() async {
+    if (_packages.isNotEmpty && _selectedPlanIndex < _packages.length) {
+      // Use RevenueCat purchase
+      final subscriptionService = ref.read(subscriptionServiceProvider);
+      final success = await subscriptionService.purchasePackage(
+        _packages[_selectedPlanIndex],
+      );
+      
+      if (success) {
+        ref.read(isProProvider.notifier).state = true;
+        if (mounted) {
+          context.pop();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Welcome to Pro! 🎉'),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      }
+    } else {
+      // Demo mode fallback
+      ref.read(isProProvider.notifier).state = true;
+      context.pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Pro activated! (Demo mode)'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Pro activated! (Demo mode)'),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+  Future<void> _restorePurchases() async {
+    final subscriptionService = ref.read(subscriptionServiceProvider);
+    final restored = await subscriptionService.restorePurchases();
+    
+    if (restored) {
+      ref.read(isProProvider.notifier).state = true;
+      if (mounted) {
+        context.pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Purchases restored! 🎉'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('No purchases to restore'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
   }
 }
 
@@ -388,6 +477,133 @@ class _PlanCard extends StatelessWidget {
               ),
               child: Text(
                 plan.badge!,
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+/// Card for RevenueCat packages
+class _PackageCard extends StatelessWidget {
+  const _PackageCard({
+    required this.package,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  final Package package;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final product = package.storeProduct;
+    final isYearly = package.packageType == PackageType.annual;
+    
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
+            child: AnimatedContainer(
+              duration: Duration(milliseconds: 200),
+              padding: EdgeInsets.all(AppSpacing.lg),
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? AppColors.primary.withValues(alpha: 0.1)
+                    : AppColors.surface,
+                borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
+                border: Border.all(
+                  color: isSelected ? AppColors.primary : AppColors.surfaceVariant,
+                  width: isSelected ? 2 : 1,
+                ),
+              ),
+              child: Row(
+                children: [
+                  // Radio indicator
+                  Container(
+                    width: 24,
+                    height: 24,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: isSelected
+                            ? AppColors.primary
+                            : AppColors.textSecondary,
+                        width: 2,
+                      ),
+                      color: isSelected ? AppColors.primary : Colors.transparent,
+                    ),
+                    child: isSelected
+                        ? Icon(
+                            Icons.check,
+                            size: 16,
+                            color: AppColors.textOnPrimary,
+                          )
+                        : null,
+                  ),
+                  Gap(AppSpacing.lg),
+
+                  // Package details
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          product.title.replaceAll(' (Prosepal)', ''),
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                        ),
+                        if (isYearly)
+                          Text(
+                            'Save 50%',
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  color: AppColors.success,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                          ),
+                      ],
+                    ),
+                  ),
+
+                  // Price
+                  Text(
+                    product.priceString,
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+
+        // Best Value badge for yearly
+        if (isYearly)
+          Positioned(
+            top: -10,
+            right: 16,
+            child: Container(
+              padding: EdgeInsets.symmetric(
+                horizontal: AppSpacing.sm,
+                vertical: AppSpacing.xs,
+              ),
+              decoration: BoxDecoration(
+                gradient: AppColors.premiumGradient,
+                borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
+              ),
+              child: Text(
+                'BEST VALUE',
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),

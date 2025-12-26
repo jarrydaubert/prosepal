@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/models.dart';
 import '../services/services.dart';
+import '../services/subscription_service.dart';
 
 // SharedPreferences provider
 final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
@@ -17,7 +18,6 @@ final usageServiceProvider = Provider<UsageService>((ref) {
 
 // AI service provider
 final aiServiceProvider = Provider<AiService>((ref) {
-  // TODO: Replace with actual API key from environment
   const apiKey = String.fromEnvironment('GEMINI_API_KEY', defaultValue: '');
   if (apiKey.isEmpty) {
     throw Exception('GEMINI_API_KEY not set');
@@ -25,8 +25,19 @@ final aiServiceProvider = Provider<AiService>((ref) {
   return AiService(apiKey: apiKey);
 });
 
-// Subscription state (simple for MVP - will use RevenueCat later)
+// Subscription service provider
+final subscriptionServiceProvider = Provider<SubscriptionService>((ref) {
+  return SubscriptionService();
+});
+
+// Pro status - updated by RevenueCat listener
 final isProProvider = StateProvider<bool>((ref) => false);
+
+// Check pro status from RevenueCat
+final checkProStatusProvider = FutureProvider<bool>((ref) async {
+  final subscriptionService = ref.watch(subscriptionServiceProvider);
+  return await subscriptionService.isPro();
+});
 
 // Usage state
 final totalUsageProvider = Provider<int>((ref) {

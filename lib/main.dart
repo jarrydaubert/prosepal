@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app/app.dart';
 import 'core/providers/providers.dart';
+import 'core/services/subscription_service.dart';
 import 'firebase_options.dart';
 
 void main() async {
@@ -26,6 +27,10 @@ void main() async {
     };
   }
 
+  // Initialize RevenueCat
+  final subscriptionService = SubscriptionService();
+  await subscriptionService.initialize();
+
   // Initialize SharedPreferences
   final prefs = await SharedPreferences.getInstance();
 
@@ -33,6 +38,7 @@ void main() async {
     ProviderScope(
       overrides: [
         sharedPreferencesProvider.overrideWithValue(prefs),
+        subscriptionServiceProvider.overrideWithValue(subscriptionService),
       ],
       child: const ProsepalApp(),
     ),
