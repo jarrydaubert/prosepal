@@ -13,8 +13,9 @@ class OccasionGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SliverGrid(
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
+      // Responsive grid: adapts columns based on screen width
+      gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+        maxCrossAxisExtent: 200, // Each tile max 200px wide
         mainAxisSpacing: AppSpacing.md,
         crossAxisSpacing: AppSpacing.md,
         childAspectRatio: 1.4,
@@ -50,12 +51,16 @@ class OccasionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
-        child: Container(
+    return Semantics(
+      label: '${occasion.label} occasion',
+      button: true,
+      hint: 'Double tap to create a ${occasion.label.toLowerCase()} message',
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
+          child: Container(
           decoration: BoxDecoration(
             color: occasion.color.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
@@ -76,6 +81,7 @@ class OccasionTile extends StatelessWidget {
               ),
             ],
           ),
+        ),
         ),
       ),
     );

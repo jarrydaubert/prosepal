@@ -46,9 +46,14 @@ class HomeScreen extends ConsumerWidget {
                             ),
                           ],
                         ),
-                        IconButton(
-                          onPressed: () => context.pushNamed('settings'),
-                          icon: Icon(Icons.settings_outlined),
+                        Semantics(
+                          label: 'Settings',
+                          button: true,
+                          child: IconButton(
+                            onPressed: () => context.pushNamed('settings'),
+                            icon: Icon(Icons.settings_outlined),
+                            tooltip: 'Settings',
+                          ),
                         ),
                       ],
                     ),
