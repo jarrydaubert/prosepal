@@ -152,7 +152,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                   'https://www.google.com/favicon.ico',
                   width: 20,
                   height: 20,
-                  errorBuilder: (_, __, ___) => Icon(Icons.g_mobiledata, size: 24),
+                  errorBuilder: (context, error, stackTrace) => Icon(Icons.g_mobiledata, size: 24),
                 ),
                 label: 'Continue with Google',
                 backgroundColor: Colors.white,
