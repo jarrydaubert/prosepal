@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'app/app.dart';
 import 'core/providers/providers.dart';
@@ -26,6 +27,12 @@ void main() async {
       return true;
     };
   }
+
+  // Initialize Supabase
+  await Supabase.initialize(
+    url: 'https://mwoxtqxzunsjmbdqezif.supabase.co',
+    anonKey: 'sb_publishable_DJB3MvvHJRl-vuqrkn1-6w_hwTLnOaS',
+  );
 
   // Initialize RevenueCat
   final subscriptionService = SubscriptionService();
