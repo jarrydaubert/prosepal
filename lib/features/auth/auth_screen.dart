@@ -25,12 +25,16 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
 
   void _showError(String message) {
     setState(() => _error = message);
-    // Auto-dismiss after 4 seconds
-    Future.delayed(Duration(seconds: 4), () {
+    // Auto-dismiss after 6 seconds (longer for readability)
+    Future.delayed(Duration(seconds: 6), () {
       if (mounted && _error == message) {
         setState(() => _error = null);
       }
     });
+  }
+
+  void _dismissError() {
+    setState(() => _error = null);
   }
 
   Future<void> _signInWithApple() async {
@@ -63,6 +67,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     });
 
     try {
+      // Google OAuth opens browser - auth state listener handles navigation
       await AuthService.instance.signInWithGoogle();
     } catch (e) {
       if (!AuthErrorHandler.isCancellation(e)) {
@@ -140,7 +145,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                   .fadeIn(delay: 400.ms, duration: 500.ms)
                   .slideY(begin: 0.3, duration: 500.ms),
               const Spacer(flex: 2),
-              // Error message
+              // Error message with dismiss button
               if (_error != null) ...[
                 Container(
                   padding: EdgeInsets.all(AppSpacing.md),
@@ -167,6 +172,14 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                           style: TextStyle(color: AppColors.error),
                         ),
                       ),
+                      GestureDetector(
+                        onTap: _dismissError,
+                        child: Icon(
+                          Icons.close,
+                          color: AppColors.error,
+                          size: 18,
+                        ),
+                      ),
                     ],
                   ),
                 ).animate().fadeIn().shake(),
@@ -177,12 +190,19 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                     children: [
                       // Apple Sign In (iOS/macOS only, first per Apple guidelines)
                       if (Platform.isIOS || Platform.isMacOS) ...[
-                        _AuthButton(
-                          onPressed: _isLoading ? null : _signInWithApple,
-                          icon: Icons.apple,
-                          label: 'Continue with Apple',
-                          backgroundColor: Colors.black,
-                          foregroundColor: Colors.white,
+                        SizedBox(
+                          width: double.infinity,
+                          height: AppSpacing.buttonHeight,
+                          child: SignInButton(
+                            Buttons.apple,
+                            onPressed: _isLoading ? () {} : _signInWithApple,
+                            text: 'Continue with Apple',
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(
+                                AppSpacing.radiusMedium,
+                              ),
+                            ),
+                          ),
                         ),
                         SizedBox(height: AppSpacing.md),
                       ],
