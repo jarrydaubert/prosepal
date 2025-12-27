@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:sign_in_button/sign_in_button.dart';
 
 import '../../core/errors/auth_errors.dart';
 import '../../core/providers/providers.dart';
@@ -185,21 +186,20 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                         ),
                         SizedBox(height: AppSpacing.md),
                       ],
-                      // Google Sign In
-                      _AuthButton(
-                        onPressed: _isLoading ? null : _signInWithGoogle,
-                        customIcon: Text(
-                          'G',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF4285F4),
+                      // Google Sign In (official branding)
+                      SizedBox(
+                        width: double.infinity,
+                        height: AppSpacing.buttonHeight,
+                        child: SignInButton(
+                          Buttons.google,
+                          onPressed: _isLoading ? () {} : _signInWithGoogle,
+                          text: 'Continue with Google',
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(
+                              AppSpacing.radiusMedium,
+                            ),
                           ),
                         ),
-                        label: 'Continue with Google',
-                        backgroundColor: Colors.white,
-                        foregroundColor: Colors.black87,
-                        borderColor: AppColors.textHint,
                       ),
                       SizedBox(height: AppSpacing.md),
                       // Email Sign In
@@ -273,17 +273,13 @@ class _AuthButton extends StatelessWidget {
     required this.backgroundColor,
     required this.foregroundColor,
     this.icon,
-    this.customIcon,
-    this.borderColor,
   });
 
   final VoidCallback? onPressed;
   final IconData? icon;
-  final Widget? customIcon;
   final String label;
   final Color backgroundColor;
   final Color foregroundColor;
-  final Color? borderColor;
 
   @override
   Widget build(BuildContext context) {
@@ -295,22 +291,16 @@ class _AuthButton extends StatelessWidget {
         style: ElevatedButton.styleFrom(
           backgroundColor: backgroundColor,
           foregroundColor: foregroundColor,
-          elevation: borderColor != null ? 0 : 2,
+          elevation: 2,
           shadowColor: backgroundColor.withValues(alpha: 0.5),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
-            side: borderColor != null
-                ? BorderSide(color: borderColor!)
-                : BorderSide.none,
           ),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            if (customIcon != null)
-              customIcon!
-            else if (icon != null)
-              Icon(icon, size: 24),
+            if (icon != null) Icon(icon, size: 24),
             SizedBox(width: AppSpacing.md),
             Text(
               label,
