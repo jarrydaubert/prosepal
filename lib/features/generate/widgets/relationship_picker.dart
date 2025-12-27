@@ -81,12 +81,16 @@ class _RelationshipTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
-        child: AnimatedContainer(
+    return Semantics(
+      label: '${relationship.label}, ${isSelected ? 'selected' : 'not selected'}',
+      button: true,
+      selected: isSelected,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
+          child: AnimatedContainer(
           duration: Duration(milliseconds: 200),
           padding: EdgeInsets.all(AppSpacing.lg),
           decoration: BoxDecoration(
@@ -116,6 +120,7 @@ class _RelationshipTile extends StatelessWidget {
                 Icon(Icons.check_circle, color: AppColors.primary),
             ],
           ),
+        ),
         ),
       ),
     );

@@ -87,12 +87,16 @@ class _ToneTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
-        child: AnimatedContainer(
+    return Semantics(
+      label: '${tone.label} tone: ${tone.description}, ${isSelected ? 'selected' : 'not selected'}',
+      button: true,
+      selected: isSelected,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
+          child: AnimatedContainer(
           duration: Duration(milliseconds: 200),
           padding: EdgeInsets.all(AppSpacing.lg),
           decoration: BoxDecoration(
@@ -128,6 +132,7 @@ class _ToneTile extends StatelessWidget {
               ),
             ],
           ),
+        ),
         ),
       ),
     );
