@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';  // Required for StateProvider in Riverpod 3.x
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/models.dart';
