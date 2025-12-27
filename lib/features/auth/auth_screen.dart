@@ -29,7 +29,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       final response = await AuthService.instance.signInWithApple();
       // Link RevenueCat to user for purchase restoration across devices
       if (response.user != null) {
-        await ref.read(subscriptionServiceProvider).identifyUser(response.user!.id);
+        await ref
+            .read(subscriptionServiceProvider)
+            .identifyUser(response.user!.id);
       }
       if (mounted) context.go('/home');
     } catch (e) {
@@ -73,34 +75,29 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
           child: Column(
             children: [
               const Spacer(),
-              // Logo/Icon
-              Container(
-                width: 100,
-                height: 100,
-                decoration: BoxDecoration(
-                  gradient: AppColors.primaryGradient,
-                  borderRadius: BorderRadius.circular(24),
-                ),
-                child: Icon(
-                  Icons.edit_note_rounded,
-                  size: 50,
-                  color: Colors.white,
+              // App Logo
+              ClipRRect(
+                borderRadius: BorderRadius.circular(24),
+                child: Image.asset(
+                  'assets/images/logo.png',
+                  width: 120,
+                  height: 120,
                 ),
               ),
               SizedBox(height: AppSpacing.xl),
               Text(
                 'Welcome to Prosepal',
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                  fontWeight: FontWeight.bold,
+                ),
                 textAlign: TextAlign.center,
               ),
               SizedBox(height: AppSpacing.sm),
               Text(
                 'The right words, right now',
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyLarge?.copyWith(color: AppColors.textSecondary),
                 textAlign: TextAlign.center,
               ),
               const Spacer(),
@@ -109,11 +106,17 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                   padding: EdgeInsets.all(AppSpacing.md),
                   decoration: BoxDecoration(
                     color: AppColors.error.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
+                    borderRadius: BorderRadius.circular(
+                      AppSpacing.radiusMedium,
+                    ),
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.error_outline, color: AppColors.error, size: 20),
+                      Icon(
+                        Icons.error_outline,
+                        color: AppColors.error,
+                        size: 20,
+                      ),
                       SizedBox(width: AppSpacing.sm),
                       Expanded(
                         child: Text(
@@ -152,7 +155,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                   'https://www.google.com/favicon.ico',
                   width: 20,
                   height: 20,
-                  errorBuilder: (context, error, stackTrace) => Icon(Icons.g_mobiledata, size: 24),
+                  errorBuilder: (context, error, stackTrace) =>
+                      Icon(Icons.g_mobiledata, size: 24),
                 ),
                 label: 'Continue with Google',
                 backgroundColor: Colors.white,
@@ -166,8 +170,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                 Text(
                   'By continuing, you agree to our Terms of Service\nand Privacy Policy',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
+                    color: AppColors.textSecondary,
+                  ),
                   textAlign: TextAlign.center,
                 ),
               SizedBox(height: AppSpacing.lg),
@@ -226,10 +230,7 @@ class _AuthButton extends StatelessWidget {
             SizedBox(width: AppSpacing.md),
             Text(
               label,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
             ),
           ],
         ),

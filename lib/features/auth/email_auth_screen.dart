@@ -17,9 +17,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Continue with Email'),
-      ),
+      appBar: AppBar(title: Text('Continue with Email')),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: EdgeInsets.all(AppSpacing.screenPadding),
@@ -37,15 +35,15 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
                 Text(
                   'Check your email',
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 SizedBox(height: AppSpacing.sm),
                 Text(
                   'We sent you a magic link.\nTap it to sign in instantly.',
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
+                    color: AppColors.textSecondary,
+                  ),
                   textAlign: TextAlign.center,
                 ),
                 SizedBox(height: AppSpacing.xl),
@@ -58,8 +56,8 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
                 Text(
                   'No password needed',
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
+                    color: AppColors.textSecondary,
+                  ),
                 ),
                 SizedBox(height: AppSpacing.lg),
                 SupaMagicAuth(
@@ -68,8 +66,8 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
                     setState(() => _emailSent = true);
                   },
                   onError: (error) {
-                    final message = error is AuthException 
-                        ? error.message 
+                    final message = error is AuthException
+                        ? error.message
                         : 'Something went wrong';
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(

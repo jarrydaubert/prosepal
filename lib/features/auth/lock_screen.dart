@@ -73,15 +73,15 @@ class _LockScreenState extends State<LockScreen> {
               Text(
                 'Prosepal',
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               SizedBox(height: AppSpacing.sm),
               Text(
                 'Tap to unlock',
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyLarge?.copyWith(color: AppColors.textSecondary),
               ),
               const Spacer(),
               // Unlock button
@@ -91,10 +91,14 @@ class _LockScreenState extends State<LockScreen> {
                 child: ElevatedButton.icon(
                   onPressed: _isAuthenticating ? null : _authenticate,
                   icon: Icon(
-                    _biometricType == 'Face ID' ? Icons.face : Icons.fingerprint,
+                    _biometricType == 'Face ID'
+                        ? Icons.face
+                        : Icons.fingerprint,
                   ),
                   label: Text(
-                    _isAuthenticating ? 'Authenticating...' : 'Unlock with $_biometricType',
+                    _isAuthenticating
+                        ? 'Authenticating...'
+                        : 'Unlock with $_biometricType',
                   ),
                 ),
               ),

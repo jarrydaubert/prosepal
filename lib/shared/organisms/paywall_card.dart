@@ -35,9 +35,7 @@ class PaywallCard extends StatelessWidget {
       children: [
         AppCard(
           onTap: onTap,
-          borderColor: isPopular || isBestValue
-              ? AppColors.primary
-              : null,
+          borderColor: isPopular || isBestValue ? AppColors.primary : null,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -49,16 +47,14 @@ class PaywallCard extends StatelessWidget {
                       children: [
                         Text(
                           title,
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.bold),
                         ),
                         if (trialDays != null)
                           Text(
                             '$trialDays-day free trial',
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: AppColors.success,
-                                ),
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(color: AppColors.success),
                           ),
                       ],
                     ),
@@ -69,14 +65,14 @@ class PaywallCard extends StatelessWidget {
                       Text(
                         price,
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       Text(
                         period,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: AppColors.textSecondary,
-                            ),
+                          color: AppColors.textSecondary,
+                        ),
                       ),
                     ],
                   ),
@@ -96,9 +92,9 @@ class PaywallCard extends StatelessWidget {
                   child: Text(
                     savings!,
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: AppColors.success,
-                          fontWeight: FontWeight.w600,
-                        ),
+                      color: AppColors.success,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ],
@@ -121,9 +117,9 @@ class PaywallCard extends StatelessWidget {
               child: Text(
                 isBestValue ? 'BEST VALUE' : 'POPULAR',
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ),

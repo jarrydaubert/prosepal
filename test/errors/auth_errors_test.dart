@@ -14,12 +14,18 @@ void main() {
     });
 
     test('should allow custom isCancellation', () {
-      const result = AuthErrorResult(message: 'Cancelled', isCancellation: true);
+      const result = AuthErrorResult(
+        message: 'Cancelled',
+        isCancellation: true,
+      );
       expect(result.isCancellation, isTrue);
     });
 
     test('should allow custom shouldRetry', () {
-      const result = AuthErrorResult(message: 'Rate limited', shouldRetry: false);
+      const result = AuthErrorResult(
+        message: 'Rate limited',
+        shouldRetry: false,
+      );
       expect(result.shouldRetry, isFalse);
     });
   });
@@ -35,25 +41,39 @@ void main() {
       test('should return friendly message for email not confirmed', () {
         final error = AuthException('Email not confirmed');
         final message = AuthErrorHandler.getMessage(error);
-        expect(message, equals('Please check your email and confirm your account.'));
+        expect(
+          message,
+          equals('Please check your email and confirm your account.'),
+        );
       });
 
       test('should return friendly message for user already exists', () {
         final error = AuthException('User already registered');
         final message = AuthErrorHandler.getMessage(error);
-        expect(message, equals('An account with this email already exists. Try signing in instead.'));
+        expect(
+          message,
+          equals(
+            'An account with this email already exists. Try signing in instead.',
+          ),
+        );
       });
 
       test('should return friendly message for rate limit', () {
         final error = AuthException('Rate limit exceeded');
         final message = AuthErrorHandler.getMessage(error);
-        expect(message, equals('Too many attempts. Please wait a moment and try again.'));
+        expect(
+          message,
+          equals('Too many attempts. Please wait a moment and try again.'),
+        );
       });
 
       test('should return friendly message for too many requests', () {
         final error = AuthException('Too many requests');
         final message = AuthErrorHandler.getMessage(error);
-        expect(message, equals('Too many attempts. Please wait a moment and try again.'));
+        expect(
+          message,
+          equals('Too many attempts. Please wait a moment and try again.'),
+        );
       });
 
       test('should return generic message for unknown error', () {
@@ -65,19 +85,28 @@ void main() {
       test('should return network message for network errors', () {
         final error = Exception('network error');
         final message = AuthErrorHandler.getMessage(error);
-        expect(message, equals('Please check your internet connection and try again.'));
+        expect(
+          message,
+          equals('Please check your internet connection and try again.'),
+        );
       });
 
       test('should return network message for connection errors', () {
         final error = Exception('connection failed');
         final message = AuthErrorHandler.getMessage(error);
-        expect(message, equals('Please check your internet connection and try again.'));
+        expect(
+          message,
+          equals('Please check your internet connection and try again.'),
+        );
       });
 
       test('should return network message for socket errors', () {
         final error = Exception('socket exception');
         final message = AuthErrorHandler.getMessage(error);
-        expect(message, equals('Please check your internet connection and try again.'));
+        expect(
+          message,
+          equals('Please check your internet connection and try again.'),
+        );
       });
 
       test('should return timeout message for TimeoutException', () {
@@ -89,7 +118,10 @@ void main() {
       test('should return friendly message for weak password', () {
         final error = AuthException('Password is too weak');
         final message = AuthErrorHandler.getMessage(error);
-        expect(message, equals('Password is too weak. Use at least 6 characters.'));
+        expect(
+          message,
+          equals('Password is too weak. Use at least 6 characters.'),
+        );
       });
 
       test('should return friendly message for invalid email', () {
@@ -101,7 +133,10 @@ void main() {
       test('should return friendly message for expired session', () {
         final error = AuthException('Session expired');
         final message = AuthErrorHandler.getMessage(error);
-        expect(message, equals('Your session has expired. Please sign in again.'));
+        expect(
+          message,
+          equals('Your session has expired. Please sign in again.'),
+        );
       });
 
       test('should return friendly message for oauth errors', () {
@@ -121,7 +156,10 @@ void main() {
       test('should return structured result for invalid credentials', () {
         final error = AuthException('Invalid login credentials');
         final result = AuthErrorHandler.getResult(error);
-        expect(result.message, equals('Invalid email or password. Please try again.'));
+        expect(
+          result.message,
+          equals('Invalid email or password. Please try again.'),
+        );
         expect(result.isCancellation, isFalse);
         expect(result.shouldRetry, isTrue);
       });

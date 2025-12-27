@@ -77,7 +77,9 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
           // Error message
           if (error != null)
             Padding(
-              padding: EdgeInsets.symmetric(horizontal: AppSpacing.screenPadding),
+              padding: EdgeInsets.symmetric(
+                horizontal: AppSpacing.screenPadding,
+              ),
               child: Container(
                 padding: EdgeInsets.all(AppSpacing.md),
                 decoration: BoxDecoration(
@@ -122,30 +124,30 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
   Widget _buildStep(BuildContext context) {
     return switch (_currentStep) {
       0 => RelationshipPicker(
-          key: ValueKey('relationship'),
-          selectedRelationship: ref.watch(selectedRelationshipProvider),
-          onSelected: (r) {
-            ref.read(selectedRelationshipProvider.notifier).state = r;
-          },
-        ),
+        key: ValueKey('relationship'),
+        selectedRelationship: ref.watch(selectedRelationshipProvider),
+        onSelected: (r) {
+          ref.read(selectedRelationshipProvider.notifier).state = r;
+        },
+      ),
       1 => ToneSelector(
-          key: ValueKey('tone'),
-          selectedTone: ref.watch(selectedToneProvider),
-          onSelected: (t) {
-            ref.read(selectedToneProvider.notifier).state = t;
-          },
-        ),
+        key: ValueKey('tone'),
+        selectedTone: ref.watch(selectedToneProvider),
+        onSelected: (t) {
+          ref.read(selectedToneProvider.notifier).state = t;
+        },
+      ),
       2 => DetailsInput(
-          key: ValueKey('details'),
-          recipientName: ref.watch(recipientNameProvider),
-          personalDetails: ref.watch(personalDetailsProvider),
-          onRecipientNameChanged: (name) {
-            ref.read(recipientNameProvider.notifier).state = name;
-          },
-          onPersonalDetailsChanged: (details) {
-            ref.read(personalDetailsProvider.notifier).state = details;
-          },
-        ),
+        key: ValueKey('details'),
+        recipientName: ref.watch(recipientNameProvider),
+        personalDetails: ref.watch(personalDetailsProvider),
+        onRecipientNameChanged: (name) {
+          ref.read(recipientNameProvider.notifier).state = name;
+        },
+        onPersonalDetailsChanged: (details) {
+          ref.read(personalDetailsProvider.notifier).state = details;
+        },
+      ),
       _ => SizedBox.shrink(),
     };
   }

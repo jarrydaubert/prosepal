@@ -30,19 +30,25 @@ void main() {
       expect(usageService.getTotalCount(), equals(1));
     });
 
-    test('should return false for canGenerateFree when free limit reached', () async {
-      await usageService.recordGeneration();
-      await usageService.recordGeneration();
-      await usageService.recordGeneration();
-      expect(usageService.canGenerateFree(), equals(false));
-    });
+    test(
+      'should return false for canGenerateFree when free limit reached',
+      () async {
+        await usageService.recordGeneration();
+        await usageService.recordGeneration();
+        await usageService.recordGeneration();
+        expect(usageService.canGenerateFree(), equals(false));
+      },
+    );
 
-    test('should return true for canGeneratePro when under monthly limit', () async {
-      await usageService.recordGeneration();
-      await usageService.recordGeneration();
-      await usageService.recordGeneration();
-      expect(usageService.canGeneratePro(), equals(true));
-    });
+    test(
+      'should return true for canGeneratePro when under monthly limit',
+      () async {
+        await usageService.recordGeneration();
+        await usageService.recordGeneration();
+        await usageService.recordGeneration();
+        expect(usageService.canGeneratePro(), equals(true));
+      },
+    );
 
     test('should not go below 0 remaining', () async {
       for (int i = 0; i < 10; i++) {

@@ -32,9 +32,9 @@ class DetailsInput extends StatelessWidget {
           Gap(AppSpacing.sm),
           Text(
             'Optional details to make your message more personal',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppColors.textSecondary,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
           ),
           Gap(AppSpacing.xl),
 
@@ -52,7 +52,9 @@ class DetailsInput extends StatelessWidget {
             textCapitalization: TextCapitalization.words,
             onChanged: onRecipientNameChanged,
             controller: TextEditingController(text: recipientName)
-              ..selection = TextSelection.collapsed(offset: recipientName.length),
+              ..selection = TextSelection.collapsed(
+                offset: recipientName.length,
+              ),
           ),
           Gap(AppSpacing.xl),
 
@@ -73,7 +75,9 @@ class DetailsInput extends StatelessWidget {
             textCapitalization: TextCapitalization.sentences,
             onChanged: onPersonalDetailsChanged,
             controller: TextEditingController(text: personalDetails)
-              ..selection = TextSelection.collapsed(offset: personalDetails.length),
+              ..selection = TextSelection.collapsed(
+                offset: personalDetails.length,
+              ),
           ),
           Gap(AppSpacing.lg),
 
@@ -83,25 +87,19 @@ class DetailsInput extends StatelessWidget {
             decoration: BoxDecoration(
               color: AppColors.info.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
-              border: Border.all(
-                color: AppColors.info.withValues(alpha: 0.3),
-              ),
+              border: Border.all(color: AppColors.info.withValues(alpha: 0.3)),
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(
-                  Icons.lightbulb_outline,
-                  color: AppColors.info,
-                  size: 20,
-                ),
+                Icon(Icons.lightbulb_outline, color: AppColors.info, size: 20),
                 Gap(AppSpacing.sm),
                 Expanded(
                   child: Text(
                     'The more details you provide, the more personalized your message will be!',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppColors.info,
-                        ),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodySmall?.copyWith(color: AppColors.info),
                   ),
                 ),
               ],

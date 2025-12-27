@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod/legacy.dart';  // Required for StateProvider in Riverpod 3.x
+import 'package:flutter_riverpod/legacy.dart'; // Required for StateProvider in Riverpod 3.x
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/models.dart';
@@ -58,14 +58,17 @@ final remainingGenerationsProvider = Provider<int>((ref) {
 
 // Generation state
 final selectedOccasionProvider = StateProvider<Occasion?>((ref) => null);
-final selectedRelationshipProvider = StateProvider<Relationship?>((ref) => null);
+final selectedRelationshipProvider = StateProvider<Relationship?>(
+  (ref) => null,
+);
 final selectedToneProvider = StateProvider<Tone?>((ref) => null);
 final recipientNameProvider = StateProvider<String>((ref) => '');
 final personalDetailsProvider = StateProvider<String>((ref) => '');
 
 // Generation results
-final generationResultProvider =
-    StateProvider<GenerationResult?>((ref) => null);
+final generationResultProvider = StateProvider<GenerationResult?>(
+  (ref) => null,
+);
 final isGeneratingProvider = StateProvider<bool>((ref) => false);
 final generationErrorProvider = StateProvider<String?>((ref) => null);
 

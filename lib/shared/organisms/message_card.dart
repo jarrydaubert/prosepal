@@ -45,9 +45,9 @@ class MessageCard extends StatelessWidget {
                 child: Text(
                   'Option ${index + 1}',
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.w600,
-                      ),
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
               Spacer(),
@@ -68,10 +68,7 @@ class MessageCard extends StatelessWidget {
             ],
           ),
           Gap(AppSpacing.md),
-          Text(
-            message,
-            style: Theme.of(context).textTheme.bodyLarge,
-          ),
+          Text(message, style: Theme.of(context).textTheme.bodyLarge),
         ],
       ),
     );

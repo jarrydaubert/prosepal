@@ -61,10 +61,10 @@ class SubscriptionService {
   /// Purchase a package
   Future<bool> purchasePackage(Package package) async {
     try {
-      final result = await Purchases.purchase(
-        PurchaseParams.package(package),
+      final result = await Purchases.purchase(PurchaseParams.package(package));
+      return result.customerInfo.entitlements.active.containsKey(
+        _entitlementId,
       );
-      return result.customerInfo.entitlements.active.containsKey(_entitlementId);
     } on PurchasesErrorCode catch (e) {
       if (e == PurchasesErrorCode.purchaseCancelledError) {
         debugPrint('User cancelled purchase');
@@ -93,8 +93,8 @@ class SubscriptionService {
   Future<bool> showPaywall() async {
     try {
       final result = await RevenueCatUI.presentPaywallIfNeeded(_entitlementId);
-      return result == PaywallResult.purchased || 
-             result == PaywallResult.restored;
+      return result == PaywallResult.purchased ||
+          result == PaywallResult.restored;
     } catch (e) {
       debugPrint('Error showing paywall: $e');
       return false;
