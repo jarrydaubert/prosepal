@@ -46,13 +46,14 @@ dependencies:
   sign_in_with_apple: ^7.0.1
   crypto: ^3.0.7
   local_auth: ^3.0.0
+  supabase_auth_ui: ^0.4.1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
 
   flutter_lints: ^6.0.0
-  riverpod_generator: ^3.0.3  # Compatible with riverpod_annotation 3.0.3
+  riverpod_generator: ^4.0.0  # Compatible with riverpod_annotation 3.0.3
   build_runner: ^2.10.4
   custom_lint: ^0.8.1
   # riverpod_lint removed temporarily due to lack of 3.x release; re-add when available

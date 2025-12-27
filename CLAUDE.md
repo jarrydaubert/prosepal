@@ -2,45 +2,34 @@
 
 ## Project Overview
 
-Prosepal is an AI-powered message helper app that generates personalized messages for greeting cards and special occasions. Built with Flutter for iOS, Android, and Web.
+Prosepal is an AI-powered message helper app that generates personalized messages for greeting cards and special occasions. Built with Flutter for iOS and Android.
 
 **Tagline:** "The right words, right now"
 
-**Platforms:** iOS (App Store), Android (Google Play), Web (future)
+**Bundle ID:** com.prosepal.prosepal
 
-## Tech Stack (Cutting-Edge 2025)
+## Tech Stack
 
 | Layer | Technology | Version |
 |-------|------------|---------|
 | Frontend | Flutter | 3.38+ |
 | Language | Dart | 3.6+ |
-| State Management | Riverpod | 3.0+ |
-| Navigation | go_router | 17.0+ |
-| AI | google_generative_ai | 0.4.7+ (Direct Gemini 2.0 Flash) |
-| Payments | RevenueCat | 6.0+ |
-| Analytics | Firebase Analytics | 10.7+ |
-| Crashes | Firebase Crashlytics | 3.4+ |
-| Local Storage | SharedPreferences | 2.2+ |
-
-**Note:** No backend for MVP! Direct Gemini API + local storage. Add Supabase in V1.1 for auth/history.
+| State Management | Riverpod | 3.0.3 |
+| Navigation | go_router | 17.0.1 |
+| AI | google_generative_ai | 0.4.7 (Gemini 2.5 Flash) |
+| Payments | RevenueCat | 9.10.2 |
+| Analytics | Firebase Analytics | 12.1.0 |
+| Crashes | Firebase Crashlytics | 5.0.6 |
+| Auth | Supabase | 2.12.0 |
+| Auth UI | supabase_auth_ui | 0.4.1 (Magic Link) |
+| Biometrics | local_auth | 2.3.0 |
+| Local Storage | SharedPreferences | 2.5.3 |
 
 ## Commands
 
 ```bash
-# Run app
-flutter run
-
-# Run on iOS simulator
-flutter run -d "iPhone 16 Pro"
-
-# Run on Chrome
-flutter run -d chrome
-
-# Build iOS
-flutter build ios
-
-# Build Android
-flutter build appbundle
+# Run app with Gemini API key
+flutter run --dart-define=GEMINI_API_KEY=your_key_here
 
 # Run tests
 flutter test
@@ -50,212 +39,178 @@ flutter analyze
 
 # Format code
 dart format .
-
-# Generate Riverpod code
-dart run build_runner build --delete-conflicting-outputs
 ```
 
-## Project Structure (Atomic Design + Feature-First)
+## Project Structure
 
 ```
 lib/
-├── main.dart
+├── main.dart                    # App entry, Firebase + Supabase init
 ├── app/
-│   ├── app.dart                    # MaterialApp + ProviderScope
-│   └── router.dart                 # go_router configuration
+│   ├── app.dart                 # MaterialApp + auth listener
+│   └── router.dart              # go_router (splash → onboarding → auth → home)
 │
-├── features/                       # Feature-first organization
+├── features/
+│   ├── auth/
+│   │   ├── auth_screen.dart     # Apple, Google, Email buttons
+│   │   ├── email_auth_screen.dart # Magic Link (passwordless)
+│   │   └── lock_screen.dart     # Biometric lock
+│   ├── onboarding/
+│   │   └── onboarding_screen.dart # 3-slide intro
 │   ├── home/
-│   │   ├── home_screen.dart
-│   │   └── widgets/
-│   │       └── occasion_grid.dart
+│   │   └── home_screen.dart     # Main screen
 │   ├── generate/
-│   │   ├── generate_screen.dart
-│   │   ├── generate_provider.dart  # Riverpod provider
-│   │   └── widgets/
+│   │   └── generate_screen.dart # Occasion → Relationship → Tone flow
 │   ├── results/
-│   │   ├── results_screen.dart
-│   │   └── widgets/
+│   │   └── results_screen.dart  # 3 message options
 │   ├── paywall/
-│   │   └── paywall_screen.dart
+│   │   └── paywall_screen.dart  # Subscription options
 │   └── settings/
-│       └── settings_screen.dart
+│       └── settings_screen.dart # Account, security, restore purchases
 │
 ├── core/
+│   ├── errors/
+│   │   └── auth_errors.dart     # User-friendly error messages
 │   ├── services/
-│   │   ├── ai_service.dart         # Gemini API wrapper
-│   │   ├── subscription_service.dart
-│   │   ├── usage_service.dart      # Daily/monthly limits
-│   │   └── analytics_service.dart
+│   │   ├── ai_service.dart      # Gemini 2.5 Flash
+│   │   ├── auth_service.dart    # Supabase (Apple, Google, Email)
+│   │   ├── biometric_service.dart # Face ID / Touch ID
+│   │   ├── subscription_service.dart # RevenueCat
+│   │   └── usage_service.dart   # Free tier limits
 │   ├── models/
-│   │   ├── occasion.dart
-│   │   ├── relationship.dart
-│   │   ├── tone.dart
+│   │   ├── occasion.dart        # 10 occasions
+│   │   ├── relationship.dart    # 5 relationships
+│   │   ├── tone.dart            # 4 tones
 │   │   └── generated_message.dart
 │   └── providers/
-│       ├── usage_provider.dart
-│       └── subscription_provider.dart
+│       └── providers.dart       # Riverpod providers
 │
 └── shared/
-    ├── atoms/                      # Basic UI building blocks
-    │   ├── app_button.dart
-    │   ├── app_text.dart
-    │   ├── app_icon.dart
-    │   └── app_card.dart
-    ├── molecules/                  # Combinations of atoms
-    │   ├── icon_label.dart
-    │   ├── selection_chip.dart
-    │   └── loading_indicator.dart
-    ├── organisms/                  # Complex components
-    │   ├── occasion_tile.dart
-    │   ├── message_option.dart
-    │   └── paywall_card.dart
-    ├── templates/                  # Page layouts
-    │   ├── base_screen.dart
-    │   └── scrollable_screen.dart
-    ├── theme/
-    │   ├── app_colors.dart
-    │   ├── app_typography.dart
-    │   ├── app_spacing.dart
-    │   └── app_theme.dart
-    └── extensions/
-        ├── context_extensions.dart
-        └── string_extensions.dart
+    ├── atoms/                   # Basic UI elements
+    ├── molecules/               # Composite components
+    ├── organisms/               # Complex components
+    ├── templates/               # Page layouts
+    └── theme/
+        ├── app_colors.dart
+        ├── app_spacing.dart
+        └── app_theme.dart
 ```
 
-## Atomic Design Hierarchy
+## Authentication
 
-| Level | Description | Examples |
-|-------|-------------|----------|
-| **Atoms** | Smallest UI units | `AppButton`, `AppText`, `AppIcon` |
-| **Molecules** | Atom combinations | `IconLabel`, `SelectionChip` |
-| **Organisms** | Complex components | `OccasionTile`, `MessageOption` |
-| **Templates** | Page layouts | `BaseScreen`, `ScrollableScreen` |
-| **Pages** | Full screens | `HomeScreen`, `ResultsScreen` |
+**Providers:**
+- Apple Sign In (native)
+- Google Sign In (OAuth)
+- Email Magic Link (passwordless via supabase_auth_ui)
 
-## Core Concepts
+**Supabase Project:**
+- URL: `https://mwoxtqxzunsjmbdqezif.supabase.co`
 
-### Occasions (10 types)
-1. Birthday
-2. Thank You
-3. Sympathy
-4. Wedding/Engagement
-5. Graduation
-6. Baby/New Parent
-7. Get Well
-8. Anniversary
-9. Congratulations
-10. Apology
+**Flow:**
+1. User enters email → Magic link sent
+2. User taps link in email → Auto-signed in
+3. RevenueCat linked to Supabase user ID (for purchase restoration)
 
-### Relationships
-- Close friend
-- Family member
-- Colleague/Boss
-- Acquaintance
-- Romantic partner
+## Monetization
 
-### Tones (MVP: 4)
-- Heartfelt
-- Casual
-- Funny
-- Formal
+| Tier | Limit | Price | Trial |
+|------|-------|-------|-------|
+| **Free** | 3 total (lifetime) | $0 | - |
+| **Pro Weekly** | 500/mo | $2.99/wk | 3-day |
+| **Pro Monthly** | 500/mo | $4.99/mo | 7-day |
+| **Pro Yearly** | 500/mo | $29.99/yr | 7-day |
 
-## Monetization & Usage Limits
-
-| Tier | Limit | Price |
-|------|-------|-------|
-| Free | 3 total (lifetime) | $0 |
-| Pro Weekly | 500/mo | $2.99/wk |
-| Pro Monthly | 500/mo | $4.99/mo |
-| Pro Yearly | 500/mo | $29.99/yr |
-
-**Free tier = 3 generations EVER (not daily). Limits your cost to $0.00012 per free user.**
-
-**Usage tracked locally (SharedPreferences), subscription via RevenueCat.**
-
-## Generation Flow
-
+**RevenueCat Product IDs:**
 ```
-Home (Occasion Grid)
-    ↓
-Select Occasion
-    ↓
-Select Relationship
-    ↓
-Select Tone
-    ↓
-Add Personal Details (optional)
-    ↓
-Check usage limits
-    ↓
-Generate (Gemini API)
-    ↓
-Results (3 options)
-    ↓
-Copy to clipboard
+com.prosepal.pro.weekly
+com.prosepal.pro.monthly
+com.prosepal.pro.yearly
 ```
 
-## Key Files
+## Key Features
 
-| File | Purpose |
-|------|---------|
-| `docs/PRODUCT_SPEC.md` | Full product specification |
-| `lib/core/services/ai_service.dart` | Gemini API integration |
-| `lib/core/services/usage_service.dart` | Daily/monthly limit tracking |
-| `lib/features/home/home_screen.dart` | Main occasion grid |
+| Feature | Status |
+|---------|--------|
+| 10 Occasions (Birthday, Thank You, etc.) | ✅ |
+| 5 Relationships | ✅ |
+| 4 Tones (Heartfelt, Casual, Funny, Formal) | ✅ |
+| Gemini 2.5 Flash AI | ✅ |
+| 3-slide onboarding | ✅ |
+| Apple/Google/Magic Link auth | ✅ |
+| Face ID / Touch ID lock | ✅ |
+| RevenueCat subscriptions | ✅ |
+| Restore purchases | ✅ |
+| Delete account (Apple requirement) | ✅ |
+| Firebase Analytics + Crashlytics | ✅ |
+| User-friendly error handling | ✅ |
 
-## Coding Conventions
+## Settings Screen (Apple HIG Compliant)
 
-- **Riverpod 3.0** with code generation (`@riverpod` annotations)
-- **go_router** for navigation (type-safe, declarative)
-- **Atomic Design** for UI components
-- Use `const` constructors where possible
-- Keep widgets small and focused (<200 lines)
-- Extract business logic to services/providers
-- Use `Gap` widget for spacing (not `SizedBox`)
+**Sections (top to bottom):**
+1. Account (user info)
+2. Subscription (status, manage, restore)
+3. Security (biometrics toggle)
+4. Stats (messages generated)
+5. Support (Help, Contact, Rate)
+6. Legal (Terms, Privacy)
+7. Account Actions (Sign Out, Delete Account)
 
-## Environment Variables
+**Key patterns:**
+- Destructive actions at bottom
+- Two-step confirmation for delete
+- Restore purchases prominently displayed
+- Manage subscription links to Apple
 
-Use `envied` for compile-time security. Create `lib/env/env.dart`:
+## Error Handling
+
+`lib/core/errors/auth_errors.dart` provides user-friendly messages:
 
 ```dart
-import 'package:envied/envied.dart';
-part 'env.g.dart';
-
-@Envied(path: '.env')
-abstract class Env {
-  @EnviedField(varName: 'GEMINI_API_KEY', obfuscate: true)
-  static String geminiApiKey = _Env.geminiApiKey;
-  
-  @EnviedField(varName: 'REVENUECAT_IOS_KEY', obfuscate: true)
-  static String revenueCatIosKey = _Env.revenueCatIosKey;
-  
-  @EnviedField(varName: 'REVENUECAT_ANDROID_KEY', obfuscate: true)
-  static String revenueCatAndroidKey = _Env.revenueCatAndroidKey;
-}
+AuthErrorHandler.getMessage(error) // Returns friendly string
+AuthErrorHandler.isCancellation(error) // Detects user cancel
 ```
-
-Then create `.env` file (DO NOT COMMIT):
-```
-GEMINI_API_KEY=xxx
-REVENUECAT_IOS_KEY=xxx
-REVENUECAT_ANDROID_KEY=xxx
-```
-
-Run `dart run build_runner build` to generate.
 
 ## Testing
 
+**32 tests passing:**
+- UsageService: 7 tests
+- BiometricService: 4 tests
+- AuthErrorHandler: 8 tests
+- Models: 12 tests
+- Widget: 1 test
+
 ```bash
-# Run all tests
 flutter test
-
-# Run with coverage
-flutter test --coverage
-
-# Run specific test
-flutter test test/features/home/home_screen_test.dart
-
-# Generate mocks (if using mockito)
-dart run build_runner build
 ```
+
+## API Keys (Development)
+
+Passed via `--dart-define`:
+```bash
+flutter run --dart-define=GEMINI_API_KEY=xxx
+```
+
+**RevenueCat:** Test key in code (replace for production)
+
+## Git Workflow
+
+```bash
+# Check status
+git status
+
+# Commit
+git add .
+git commit -m "feat: description"
+
+# Push
+git push origin main
+```
+
+## Next Steps (Pre-Launch)
+
+- [ ] App Store screenshots (6 screens)
+- [ ] App Store description + keywords
+- [ ] Privacy policy page (prosepal.app/privacy)
+- [ ] Terms of service page (prosepal.app/terms)
+- [ ] TestFlight build
+- [ ] App Store submission

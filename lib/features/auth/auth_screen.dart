@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/errors/auth_errors.dart';
+import '../../core/providers/providers.dart';
 import '../../core/services/auth_service.dart';
 import '../../shared/theme/app_colors.dart';
 import '../../shared/theme/app_spacing.dart';
@@ -24,10 +26,18 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     });
 
     try {
-      await AuthService.instance.signInWithApple();
+      final response = await AuthService.instance.signInWithApple();
+      // Link RevenueCat to user for purchase restoration across devices
+      if (response.user != null) {
+        await ref.read(subscriptionServiceProvider).identifyUser(response.user!.id);
+      }
       if (mounted) context.go('/home');
     } catch (e) {
-      setState(() => _error = 'Apple sign in failed. Please try again.');
+      if (AuthErrorHandler.isCancellation(e)) {
+        // User cancelled, don't show error
+      } else {
+        setState(() => _error = AuthErrorHandler.getMessage(e));
+      }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -43,7 +53,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       await AuthService.instance.signInWithGoogle();
       // OAuth redirects, so we don't navigate here
     } catch (e) {
-      setState(() => _error = 'Google sign in failed. Please try again.');
+      if (!AuthErrorHandler.isCancellation(e)) {
+        setState(() => _error = AuthErrorHandler.getMessage(e));
+      }
       if (mounted) setState(() => _isLoading = false);
     }
   }
