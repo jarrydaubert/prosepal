@@ -5,17 +5,88 @@ import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/providers/providers.dart';
+import '../../core/services/auth_service.dart';
+import '../../core/services/biometric_service.dart';
 import '../../shared/theme/app_colors.dart';
 import '../../shared/theme/app_spacing.dart';
 
-class SettingsScreen extends ConsumerWidget {
+class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends ConsumerState<SettingsScreen> {
+  bool _biometricsSupported = false;
+  bool _biometricsEnabled = false;
+  String _biometricType = 'Biometrics';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadBiometricSettings();
+  }
+
+  Future<void> _loadBiometricSettings() async {
+    final supported = await BiometricService.instance.isSupported;
+    final enabled = await BiometricService.instance.isEnabled;
+    final type = await BiometricService.instance.biometricTypeName;
+    
+    if (mounted) {
+      setState(() {
+        _biometricsSupported = supported;
+        _biometricsEnabled = enabled;
+        _biometricType = type;
+      });
+    }
+  }
+
+  Future<void> _toggleBiometrics(bool value) async {
+    if (value) {
+      // Authenticate before enabling
+      final authenticated = await BiometricService.instance.authenticate(
+        reason: 'Authenticate to enable $_biometricType',
+      );
+      if (!authenticated) return;
+    }
+    
+    await BiometricService.instance.setEnabled(value);
+    setState(() => _biometricsEnabled = value);
+  }
+
+  Future<void> _signOut() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Sign Out'),
+        content: Text('Are you sure you want to sign out?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text('Sign Out', style: TextStyle(color: AppColors.error)),
+          ),
+        ],
+      ),
+    );
+    
+    if (confirm == true) {
+      await AuthService.instance.signOut();
+      if (mounted) context.go('/auth');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final isPro = ref.watch(isProProvider);
     final usageService = ref.watch(usageServiceProvider);
     final totalGenerated = usageService.getTotalCount();
+    final userEmail = AuthService.instance.email;
+    final userName = AuthService.instance.displayName;
 
     return Scaffold(
       appBar: AppBar(
@@ -73,6 +144,120 @@ class SettingsScreen extends ConsumerWidget {
           ),
 
           Gap(AppSpacing.lg),
+
+          // Account section
+          Text(
+            'Account',
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+          ),
+          Gap(AppSpacing.sm),
+          _SettingsCard(
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 24,
+                      backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                      child: Text(
+                        (userName ?? userEmail ?? 'U')[0].toUpperCase(),
+                        style: TextStyle(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                        ),
+                      ),
+                    ),
+                    Gap(AppSpacing.md),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            userName ?? 'User',
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                          ),
+                          if (userEmail != null)
+                            Text(
+                              userEmail,
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: AppColors.textSecondary,
+                                  ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                Gap(AppSpacing.md),
+                Divider(height: 1),
+                Gap(AppSpacing.sm),
+                SizedBox(
+                  width: double.infinity,
+                  child: TextButton.icon(
+                    onPressed: _signOut,
+                    icon: Icon(Icons.logout, size: 20),
+                    label: Text('Sign Out'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppColors.error,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          Gap(AppSpacing.lg),
+
+          // Security section
+          if (_biometricsSupported) ...[
+            Text(
+              'Security',
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+            ),
+            Gap(AppSpacing.sm),
+            _SettingsCard(
+              child: Row(
+                children: [
+                  Icon(
+                    _biometricType == 'Face ID' ? Icons.face : Icons.fingerprint,
+                    color: AppColors.textSecondary,
+                  ),
+                  Gap(AppSpacing.md),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _biometricType,
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                        Text(
+                          'Require $_biometricType to open app',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: AppColors.textSecondary,
+                              ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Switch.adaptive(
+                    value: _biometricsEnabled,
+                    onChanged: _toggleBiometrics,
+                    activeTrackColor: AppColors.primary.withValues(alpha: 0.5),
+                    activeThumbColor: AppColors.primary,
+                  ),
+                ],
+              ),
+            ),
+            Gap(AppSpacing.lg),
+          ],
 
           // Stats
           _SettingsCard(

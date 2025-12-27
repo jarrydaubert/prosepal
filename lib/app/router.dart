@@ -3,8 +3,10 @@ import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../core/services/biometric_service.dart';
 import '../features/auth/auth_screen.dart';
 import '../features/auth/email_auth_screen.dart';
+import '../features/auth/lock_screen.dart';
 import '../features/generate/generate_screen.dart';
 import '../features/home/home_screen.dart';
 import '../features/onboarding/onboarding_screen.dart';
@@ -33,6 +35,11 @@ final appRouter = GoRouter(
       path: '/auth/email',
       name: 'emailAuth',
       builder: (context, state) => const EmailAuthScreen(),
+    ),
+    GoRoute(
+      path: '/lock',
+      name: 'lock',
+      builder: (context, state) => const LockScreen(),
     ),
     GoRoute(
       path: '/home',
@@ -84,11 +91,14 @@ class _SplashScreenState extends State<_SplashScreen> {
     final prefs = await SharedPreferences.getInstance();
     final hasCompletedOnboarding = prefs.getBool('hasCompletedOnboarding') ?? false;
     final isLoggedIn = Supabase.instance.client.auth.currentUser != null;
+    final biometricsEnabled = await BiometricService.instance.isEnabled;
 
     if (!hasCompletedOnboarding) {
       context.go('/onboarding');
     } else if (!isLoggedIn) {
       context.go('/auth');
+    } else if (biometricsEnabled) {
+      context.go('/lock');
     } else {
       context.go('/home');
     }
