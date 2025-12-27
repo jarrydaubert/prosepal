@@ -78,7 +78,7 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
                 ),
               ),
 
-              // Error message
+              // Error message with dismiss
               if (error != null)
                 Padding(
                   padding: EdgeInsets.symmetric(
@@ -91,6 +91,9 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
                       borderRadius: BorderRadius.circular(
                         AppSpacing.radiusMedium,
                       ),
+                      border: Border.all(
+                        color: AppColors.error.withValues(alpha: 0.3),
+                      ),
                     ),
                     child: Row(
                       children: [
@@ -100,6 +103,17 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
                           child: Text(
                             error,
                             style: TextStyle(color: AppColors.error),
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: () {
+                            ref.read(generationErrorProvider.notifier).state =
+                                null;
+                          },
+                          child: Icon(
+                            Icons.close,
+                            color: AppColors.error,
+                            size: 18,
                           ),
                         ),
                       ],
@@ -271,28 +285,36 @@ class _StepIndicator extends StatelessWidget {
 
   final int currentStep;
 
+  static const _stepLabels = ['Relationship', 'Tone', 'Details'];
+
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.all(AppSpacing.screenPadding),
-      child: Row(
-        children: List.generate(3, (index) {
-          final isActive = index == currentStep;
-          final isCompleted = index < currentStep;
+    return Semantics(
+      label: 'Step ${currentStep + 1} of 3: ${_stepLabels[currentStep]}',
+      child: Padding(
+        padding: EdgeInsets.all(AppSpacing.screenPadding),
+        child: Row(
+          children: List.generate(3, (index) {
+            final isActive = index == currentStep;
+            final isCompleted = index < currentStep;
 
-          return Expanded(
-            child: Container(
-              margin: EdgeInsets.symmetric(horizontal: 2),
-              height: 4,
-              decoration: BoxDecoration(
-                color: isActive || isCompleted
-                    ? AppColors.primary
-                    : AppColors.surfaceVariant,
-                borderRadius: BorderRadius.circular(2),
+            return Expanded(
+              child: Semantics(
+                label: '${_stepLabels[index]}: ${isCompleted ? 'completed' : isActive ? 'current' : 'pending'}',
+                child: Container(
+                  margin: EdgeInsets.symmetric(horizontal: 2),
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: isActive || isCompleted
+                        ? AppColors.primary
+                        : AppColors.surfaceVariant,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
               ),
-            ),
-          );
-        }),
+            );
+          }),
+        ),
       ),
     );
   }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/services/biometric_service.dart';
@@ -15,6 +16,8 @@ class LockScreen extends StatefulWidget {
 class _LockScreenState extends State<LockScreen> {
   String _biometricType = 'Biometrics';
   bool _isAuthenticating = false;
+  String? _errorMessage;
+  int _failedAttempts = 0;
 
   @override
   void initState() {
@@ -31,23 +34,68 @@ class _LockScreenState extends State<LockScreen> {
 
   Future<void> _authenticate() async {
     if (_isAuthenticating) return;
-    setState(() => _isAuthenticating = true);
 
-    final success = await BiometricService.instance.authenticate(
+    setState(() {
+      _isAuthenticating = true;
+      _errorMessage = null;
+    });
+
+    final result = await BiometricService.instance.authenticate(
       reason: 'Unlock Prosepal',
     );
 
-    if (mounted) {
-      setState(() => _isAuthenticating = false);
-      if (success) {
-        context.go('/home');
+    if (!mounted) return;
+
+    setState(() => _isAuthenticating = false);
+
+    if (result.success) {
+      context.go('/home');
+    } else {
+      _failedAttempts++;
+
+      // Show error message if there's one
+      if (result.message != null) {
+        setState(() => _errorMessage = result.message);
+
+        // Auto-dismiss error after 4 seconds
+        Future.delayed(Duration(seconds: 4), () {
+          if (mounted && _errorMessage == result.message) {
+            setState(() => _errorMessage = null);
+          }
+        });
+      }
+
+      // Handle specific error cases
+      if (result.error == BiometricError.permanentlyLockedOut) {
+        _showLockedOutDialog();
       }
     }
+  }
+
+  void _showLockedOutDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: Text('Biometrics Locked'),
+        content: Text(
+          'Too many failed attempts. Please unlock your device with your '
+          'passcode first, then try again.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('OK'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: Padding(
           padding: EdgeInsets.all(AppSpacing.screenPadding),
@@ -55,48 +103,133 @@ class _LockScreenState extends State<LockScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Spacer(),
-              // App logo
-              ClipRRect(
-                borderRadius: BorderRadius.circular(24),
-                child: Image.asset(
-                  'assets/images/logo.png',
-                  width: 100,
-                  height: 100,
+
+              // App logo with shadow
+              Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primary.withValues(alpha: 0.2),
+                      blurRadius: 20,
+                      offset: Offset(0, 8),
+                    ),
+                  ],
                 ),
-              ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(24),
+                  child: Image.asset(
+                    'assets/images/logo.png',
+                    width: 100,
+                    height: 100,
+                  ),
+                ),
+              ).animate().fadeIn().scale(begin: Offset(0.9, 0.9)),
+
               SizedBox(height: AppSpacing.xl),
+
               Text(
                 'Prosepal',
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+                      fontWeight: FontWeight.bold,
+                    ),
+              ).animate().fadeIn(delay: 100.ms),
+
               SizedBox(height: AppSpacing.sm),
+
               Text(
                 'Tap to unlock',
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyLarge?.copyWith(color: AppColors.textSecondary),
-              ),
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+              ).animate().fadeIn(delay: 200.ms),
+
               const Spacer(),
+
+              // Error message
+              if (_errorMessage != null) ...[
+                Container(
+                  padding: EdgeInsets.all(AppSpacing.md),
+                  decoration: BoxDecoration(
+                    color: AppColors.error.withValues(alpha: 0.1),
+                    borderRadius:
+                        BorderRadius.circular(AppSpacing.radiusMedium),
+                    border: Border.all(
+                      color: AppColors.error.withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.error_outline,
+                        color: AppColors.error,
+                        size: 20,
+                      ),
+                      SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: Text(
+                          _errorMessage!,
+                          style: TextStyle(color: AppColors.error),
+                        ),
+                      ),
+                    ],
+                  ),
+                ).animate().fadeIn().shake(),
+                SizedBox(height: AppSpacing.lg),
+              ],
+
               // Unlock button
               SizedBox(
                 width: double.infinity,
                 height: AppSpacing.buttonHeight,
                 child: ElevatedButton.icon(
                   onPressed: _isAuthenticating ? null : _authenticate,
-                  icon: Icon(
-                    _biometricType == 'Face ID'
-                        ? Icons.face
-                        : Icons.fingerprint,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius:
+                          BorderRadius.circular(AppSpacing.radiusMedium),
+                    ),
                   ),
+                  icon: _isAuthenticating
+                      ? SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : Icon(
+                          _biometricType == 'Face ID'
+                              ? Icons.face
+                              : Icons.fingerprint,
+                        ),
                   label: Text(
                     _isAuthenticating
                         ? 'Authenticating...'
                         : 'Unlock with $_biometricType',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
-              ),
+              ).animate().fadeIn(delay: 300.ms),
+
+              // Retry hint after failed attempts
+              if (_failedAttempts >= 2 && !_isAuthenticating) ...[
+                SizedBox(height: AppSpacing.lg),
+                Text(
+                  'Having trouble? Make sure $_biometricType is set up in your device settings.',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppColors.textHint,
+                      ),
+                  textAlign: TextAlign.center,
+                ).animate().fadeIn(),
+              ],
+
               SizedBox(height: AppSpacing.xxl),
             ],
           ),
