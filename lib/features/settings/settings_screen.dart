@@ -7,6 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/providers/providers.dart';
 import '../../core/services/auth_service.dart';
 import '../../core/services/biometric_service.dart';
+import '../../shared/molecules/molecules.dart';
 import '../../shared/theme/app_colors.dart';
 import '../../shared/theme/app_spacing.dart';
 
@@ -189,8 +190,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       body: ListView(
         children: [
           // Account section (most important - at top per Apple HIG)
-          _SectionHeader('Account'),
-          _SettingsTile(
+          SectionHeader('Account'),
+          SettingsTile(
             leading: CircleAvatar(
               radius: 20,
               backgroundColor: AppColors.primary.withValues(alpha: 0.1),
@@ -207,8 +208,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
 
           // Subscription section
-          _SectionHeader('Subscription'),
-          _SettingsTile(
+          SectionHeader('Subscription'),
+          SettingsTile(
             leading: Icon(
               isPro ? Icons.star_rounded : Icons.star_outline_rounded,
               color: isPro ? Colors.amber : AppColors.textSecondary,
@@ -223,12 +224,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
           ),
           if (isPro)
-            _SettingsTile(
+            SettingsTile(
               leading: Icon(Icons.credit_card_outlined, color: AppColors.textSecondary),
               title: 'Manage Subscription',
               onTap: _manageSubscription,
             ),
-          _SettingsTile(
+          SettingsTile(
             leading: _isRestoringPurchases 
                 ? SizedBox(
                     width: 24, 
@@ -243,8 +244,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
           // Security section
           if (_biometricsSupported) ...[
-            _SectionHeader('Security'),
-            _SettingsTile(
+            SectionHeader('Security'),
+            SettingsTile(
               leading: Icon(
                 _biometricType == 'Face ID' ? Icons.face : Icons.fingerprint,
                 color: AppColors.textSecondary,
@@ -259,23 +260,23 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ],
 
           // Stats section
-          _SectionHeader('Your Stats'),
-          _SettingsTile(
+          SectionHeader('Your Stats'),
+          SettingsTile(
             leading: Icon(Icons.auto_awesome_rounded, color: AppColors.primary),
             title: '$totalGenerated messages generated',
             subtitle: 'All time',
           ),
 
           // Support section
-          _SectionHeader('Support'),
-          _SettingsTile(
+          SectionHeader('Support'),
+          SettingsTile(
             leading: Icon(Icons.help_outline_rounded, color: AppColors.textSecondary),
             title: 'Help & FAQ',
             onTap: () {
               // TODO: Open help
             },
           ),
-          _SettingsTile(
+          SettingsTile(
             leading: Icon(Icons.mail_outline_rounded, color: AppColors.textSecondary),
             title: 'Contact Us',
             subtitle: 'support@prosepal.app',
@@ -286,7 +287,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               }
             },
           ),
-          _SettingsTile(
+          SettingsTile(
             leading: Icon(Icons.star_outline_rounded, color: AppColors.textSecondary),
             title: 'Rate Prosepal',
             subtitle: 'Love the app? Leave a review!',
@@ -296,8 +297,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
 
           // Legal section
-          _SectionHeader('Legal'),
-          _SettingsTile(
+          SectionHeader('Legal'),
+          SettingsTile(
             leading: Icon(Icons.description_outlined, color: AppColors.textSecondary),
             title: 'Terms of Service',
             onTap: () async {
@@ -307,7 +308,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               }
             },
           ),
-          _SettingsTile(
+          SettingsTile(
             leading: Icon(Icons.privacy_tip_outlined, color: AppColors.textSecondary),
             title: 'Privacy Policy',
             onTap: () async {
@@ -319,14 +320,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
 
           // Account actions (destructive actions at bottom per Apple HIG)
-          _SectionHeader('Account Actions'),
-          _SettingsTile(
+          SectionHeader('Account Actions'),
+          SettingsTile(
             leading: Icon(Icons.logout_rounded, color: AppColors.error),
             title: 'Sign Out',
             titleColor: AppColors.error,
             onTap: _signOut,
           ),
-          _SettingsTile(
+          SettingsTile(
             leading: Icon(Icons.delete_forever_rounded, color: AppColors.error),
             title: 'Delete Account',
             titleColor: AppColors.error,
@@ -351,59 +352,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 }
 
-// Clean section header
-class _SectionHeader extends StatelessWidget {
-  const _SectionHeader(this.title);
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.fromLTRB(16, 24, 16, 8),
-      child: Text(
-        title.toUpperCase(),
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: AppColors.textSecondary,
-              letterSpacing: 0.5,
-            ),
-      ),
-    );
-  }
-}
-
-// iOS-style settings tile
-class _SettingsTile extends StatelessWidget {
-  const _SettingsTile({
-    required this.leading,
-    required this.title,
-    this.subtitle,
-    this.trailing,
-    this.onTap,
-    this.titleColor,
-  });
-
-  final Widget leading;
-  final String title;
-  final String? subtitle;
-  final Widget? trailing;
-  final VoidCallback? onTap;
-  final Color? titleColor;
-
-  @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      leading: leading,
-      title: Text(
-        title,
-        style: TextStyle(color: titleColor),
-      ),
-      subtitle: subtitle != null ? Text(subtitle!) : null,
-      trailing: trailing ?? (onTap != null 
-          ? Icon(Icons.chevron_right, color: AppColors.textHint) 
-          : null),
-      onTap: onTap,
-    );
-  }
-}
+// Now using shared molecules:
+// - SectionHeader from shared/molecules/section_header.dart
+// - SettingsTile from shared/molecules/settings_tile.dart
 
 
