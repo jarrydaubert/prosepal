@@ -294,14 +294,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               Icons.mail_outline_rounded,
               color: AppColors.textSecondary,
             ),
-            title: 'Contact Us',
-            subtitle: 'support@prosepal.app',
-            onTap: () async {
-              final uri = Uri.parse('mailto:support@prosepal.app');
-              if (await canLaunchUrl(uri)) {
-                await launchUrl(uri);
-              }
-            },
+            title: 'Send Feedback',
+            subtitle: 'Questions, bugs, or feature requests',
+            onTap: () => context.pushNamed('feedback'),
           ),
           SettingsTile(
             leading: Icon(

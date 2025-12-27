@@ -3,6 +3,7 @@ import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:uuid/uuid.dart';
 
 import '../models/models.dart';
+import 'error_log_service.dart';
 
 /// Exception types for AI service errors
 class AiServiceException implements Exception {
@@ -103,8 +104,9 @@ class AiService {
         recipientName: recipientName,
         personalDetails: personalDetails,
       );
-    } on GenerativeAIException catch (e) {
-      // Log in debug mode
+    } on GenerativeAIException catch (e, stackTrace) {
+      // Log error for feedback reports
+      ErrorLogService.instance.log(e, stackTrace);
       if (kDebugMode) {
         debugPrint('Gemini API error: $e');
       }
@@ -134,10 +136,11 @@ class AiService {
         'Failed to generate messages. Please try again.',
         originalError: e,
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
       if (e is AiServiceException) rethrow;
 
-      // Log unexpected errors in debug mode
+      // Log error for feedback reports
+      ErrorLogService.instance.log(e, stackTrace);
       if (kDebugMode) {
         debugPrint('Unexpected AI error: $e');
       }

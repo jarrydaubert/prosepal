@@ -12,6 +12,7 @@ import '../features/home/home_screen.dart';
 import '../features/onboarding/onboarding_screen.dart';
 import '../features/paywall/paywall_screen.dart';
 import '../features/results/results_screen.dart';
+import '../features/settings/feedback_screen.dart';
 import '../features/settings/settings_screen.dart';
 
 final appRouter = GoRouter(
@@ -65,6 +66,11 @@ final appRouter = GoRouter(
       path: '/settings',
       name: 'settings',
       builder: (context, state) => const SettingsScreen(),
+    ),
+    GoRoute(
+      path: '/feedback',
+      name: 'feedback',
+      builder: (context, state) => const FeedbackScreen(),
     ),
   ],
 );

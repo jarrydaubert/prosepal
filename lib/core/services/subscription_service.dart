@@ -5,9 +5,15 @@ import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:purchases_ui_flutter/purchases_ui_flutter.dart';
 
 class SubscriptionService {
-  // RevenueCat API Keys (test keys - replace with production keys before release)
-  static const String _iosApiKey = 'test_iCdJYZJvbduyqGECAsUtDJKYClX';
-  static const String _androidApiKey = 'test_iCdJYZJvbduyqGECAsUtDJKYClX';
+  // RevenueCat API Keys loaded from environment (--dart-define)
+  static const String _iosApiKey = String.fromEnvironment(
+    'REVENUECAT_IOS_KEY',
+    defaultValue: '',
+  );
+  static const String _androidApiKey = String.fromEnvironment(
+    'REVENUECAT_ANDROID_KEY',
+    defaultValue: '',
+  );
   static const String _entitlementId = 'pro';
 
   bool _isInitialized = false;
@@ -16,9 +22,20 @@ class SubscriptionService {
   Future<void> initialize() async {
     if (_isInitialized) return;
 
-    await Purchases.setLogLevel(LogLevel.debug);
-
     final apiKey = Platform.isIOS ? _iosApiKey : _androidApiKey;
+
+    if (apiKey.isEmpty) {
+      debugPrint(
+        'WARNING: RevenueCat API key not provided. '
+        'Run with --dart-define=REVENUECAT_IOS_KEY=your_key',
+      );
+      return;
+    }
+
+    // Only enable debug logging in debug mode
+    if (kDebugMode) {
+      await Purchases.setLogLevel(LogLevel.debug);
+    }
 
     final config = PurchasesConfiguration(apiKey);
     await Purchases.configure(config);
