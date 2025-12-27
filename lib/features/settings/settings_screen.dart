@@ -318,12 +318,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               color: AppColors.textSecondary,
             ),
             title: 'Terms of Service',
-            onTap: () async {
-              final uri = Uri.parse('https://prosepal.app/terms');
-              if (await canLaunchUrl(uri)) {
-                await launchUrl(uri, mode: LaunchMode.inAppBrowserView);
-              }
-            },
+            onTap: () => context.pushNamed('terms'),
           ),
           SettingsTile(
             leading: Icon(
@@ -331,12 +326,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               color: AppColors.textSecondary,
             ),
             title: 'Privacy Policy',
-            onTap: () async {
-              final uri = Uri.parse('https://prosepal.app/privacy');
-              if (await canLaunchUrl(uri)) {
-                await launchUrl(uri, mode: LaunchMode.inAppBrowserView);
-              }
-            },
+            onTap: () => context.pushNamed('privacy'),
           ),
 
           // Account actions (destructive actions at bottom per Apple HIG)
