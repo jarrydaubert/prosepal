@@ -1,5 +1,6 @@
 import 'package:sign_in_with_apple/sign_in_with_apple.dart'
-    as apple show
+    as apple
+    show
         SignInWithApple,
         AuthorizationCredentialAppleID,
         AppleIDAuthorizationScopes,
