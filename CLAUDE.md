@@ -21,7 +21,8 @@ Prosepal is an AI-powered message helper app that generates personalized message
 | Analytics | Firebase Analytics | 12.1.0 |
 | Crashes | Firebase Crashlytics | 5.0.6 |
 | Auth | Supabase | 2.12.0 |
-| Auth UI | supabase_auth_ui | 0.4.1 (Magic Link) |
+| Google Sign In | google_sign_in | 7.2.0 |
+| Apple Sign In | sign_in_with_apple | 7.0.1 |
 | Biometrics | local_auth | 2.3.0 |
 | Local Storage | SharedPreferences | 2.5.3 |
 
@@ -99,9 +100,9 @@ lib/
 ## Authentication
 
 **Providers:**
-- Apple Sign In (native)
-- Google Sign In (OAuth)
-- Email Magic Link (passwordless via supabase_auth_ui)
+- Apple Sign In (native SDK)
+- Google Sign In (native SDK)
+- Email Magic Link (custom UI with Supabase OTP)
 
 **Supabase Project:**
 - URL: `https://mwoxtqxzunsjmbdqezif.supabase.co`

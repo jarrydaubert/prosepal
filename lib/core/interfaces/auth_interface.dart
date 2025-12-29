@@ -21,8 +21,8 @@ abstract class IAuthService {
   /// Sign in with Apple (native)
   Future<AuthResponse> signInWithApple();
 
-  /// Sign in with Google (OAuth)
-  Future<void> signInWithGoogle();
+  /// Sign in with Google (native SDK)
+  Future<AuthResponse> signInWithGoogle();
 
   /// Sign in with Email and Password
   Future<AuthResponse> signInWithEmail({
