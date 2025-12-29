@@ -16,7 +16,7 @@ Prosepal is an AI-powered message helper app that generates personalized message
 | Language | Dart | 3.6+ |
 | State Management | Riverpod | 3.0.3 |
 | Navigation | go_router | 17.0.1 |
-| AI | google_generative_ai | 0.4.7 (Gemini 2.5 Flash) |
+| AI | firebase_ai | 3.6.1 (gemini-3-flash-preview) |
 | Payments | RevenueCat | 9.10.2 |
 | Analytics | Firebase Analytics | 12.1.0 |
 | Crashes | Firebase Crashlytics | 5.0.6 |
@@ -29,8 +29,8 @@ Prosepal is an AI-powered message helper app that generates personalized message
 ## Commands
 
 ```bash
-# Run app with Gemini API key
-flutter run --dart-define=GEMINI_API_KEY=your_key_here
+# Run app (Firebase AI handles Gemini auth)
+flutter run
 
 # Run tests
 flutter test
@@ -186,10 +186,9 @@ flutter test
 
 ## API Keys (Development)
 
-Passed via `--dart-define`:
-```bash
-flutter run --dart-define=GEMINI_API_KEY=xxx
-```
+**Gemini AI:** Handled by Firebase AI Logic SDK (no dart-define needed)
+- API key managed server-side via Firebase Console
+- Enable Gemini Developer API in Firebase Console > AI Logic
 
 **RevenueCat:** Test key in code (replace for production)
 

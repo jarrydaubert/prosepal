@@ -1,5 +1,5 @@
+import 'package:firebase_ai/firebase_ai.dart';
 import 'package:flutter/foundation.dart';
-import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:uuid/uuid.dart';
 
 import '../models/models.dart';
@@ -28,19 +28,17 @@ class AiRateLimitException extends AiServiceException {
 }
 
 class AiService {
-  AiService({required String apiKey}) : _apiKey = apiKey;
+  AiService();
 
-  final String _apiKey;
   GenerativeModel? _model;
-  final _uuid = Uuid();
+  final _uuid = const Uuid();
 
   static const _maxRetries = 3;
   static const _initialDelayMs = 500;
 
   GenerativeModel get model {
-    _model ??= GenerativeModel(
+    _model ??= FirebaseAI.googleAI().generativeModel(
       model: 'gemini-3-flash-preview',
-      apiKey: _apiKey,
       generationConfig: GenerationConfig(
         temperature: 0.85,
         topK: 40,
@@ -48,10 +46,26 @@ class AiService {
         maxOutputTokens: 1024,
       ),
       safetySettings: [
-        SafetySetting(HarmCategory.harassment, HarmBlockThreshold.medium),
-        SafetySetting(HarmCategory.hateSpeech, HarmBlockThreshold.medium),
-        SafetySetting(HarmCategory.sexuallyExplicit, HarmBlockThreshold.high),
-        SafetySetting(HarmCategory.dangerousContent, HarmBlockThreshold.medium),
+        SafetySetting(
+          HarmCategory.harassment,
+          HarmBlockThreshold.medium,
+          HarmBlockMethod.probability,
+        ),
+        SafetySetting(
+          HarmCategory.hateSpeech,
+          HarmBlockThreshold.medium,
+          HarmBlockMethod.probability,
+        ),
+        SafetySetting(
+          HarmCategory.sexuallyExplicit,
+          HarmBlockThreshold.high,
+          HarmBlockMethod.probability,
+        ),
+        SafetySetting(
+          HarmCategory.dangerousContent,
+          HarmBlockThreshold.medium,
+          HarmBlockMethod.probability,
+        ),
       ],
     );
     return _model!;
@@ -114,11 +128,11 @@ class AiService {
 
   /// Executes operation with exponential backoff retry for transient errors
   Future<T> _executeWithRetry<T>(Future<T> Function() operation) async {
-    int attempt = 0;
+    var attempt = 0;
     while (true) {
       try {
         return await operation();
-      } on GenerativeAIException catch (e, stackTrace) {
+      } on FirebaseAIException catch (e, stackTrace) {
         attempt++;
         final message = e.message.toLowerCase();
         final isRetryable =
@@ -142,7 +156,7 @@ class AiService {
         // Log and categorize error
         ErrorLogService.instance.log(e, stackTrace);
         if (kDebugMode) {
-          debugPrint('Gemini API error: $e');
+          debugPrint('Firebase AI error: $e');
         }
 
         if (message.contains('rate') || message.contains('quota')) {
@@ -215,7 +229,7 @@ class AiService {
     String? personalDetails,
   }) {
     final recipientPart = recipientName != null && recipientName.isNotEmpty
-        ? 'Recipient\'s name: $recipientName'
+        ? "Recipient's name: $recipientName"
         : '';
 
     final detailsPart = personalDetails != null && personalDetails.isNotEmpty
@@ -270,8 +284,7 @@ MESSAGE 3:
     String? personalDetails,
   }) {
     final messages = <GeneratedMessage>[];
-    final now = DateTime.now()
-        .toUtc(); // Use UTC for cross-timezone consistency
+    final now = DateTime.now().toUtc();
 
     // Split by MESSAGE markers
     final pattern = RegExp(r'MESSAGE\s*\d+:\s*', caseSensitive: false);

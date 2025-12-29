@@ -10,26 +10,17 @@ void main() {
     late AiService service;
 
     setUp(() {
-      service = AiService(apiKey: 'test-api-key');
+      service = AiService();
     });
 
-    test('should initialize with API key', () {
+    test('should initialize without API key (Firebase handles auth)', () {
       expect(service, isNotNull);
     });
 
-    test('should create model lazily', () {
-      expect(service.model, isNotNull);
-    });
-
-    test('should reuse same model instance', () {
-      final model1 = service.model;
-      final model2 = service.model;
-      expect(identical(model1, model2), isTrue);
-    });
-
-    test('should accept different API keys', () {
-      final service1 = AiService(apiKey: 'key-1');
-      final service2 = AiService(apiKey: 'key-2');
+    // Note: model getter requires Firebase initialization, tested in integration tests
+    test('should create separate service instances', () {
+      final service1 = AiService();
+      final service2 = AiService();
       expect(service1, isNotNull);
       expect(service2, isNotNull);
       expect(identical(service1, service2), isFalse);

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 
@@ -15,7 +14,7 @@ import 'package:prosepal/features/generate/generate_screen.dart';
 
 /// Mock AI Service that returns predictable results and tracks calls
 class MockAiService extends AiService {
-  MockAiService() : super(apiKey: 'test-key');
+  MockAiService() : super();
 
   bool shouldFail = false;
   AiServiceException? exceptionToThrow;
@@ -41,9 +40,6 @@ class MockAiService extends AiService {
     lastRecipientName = null;
     lastPersonalDetails = null;
   }
-
-  @override
-  GenerativeModel get model => throw UnimplementedError('Mock does not use model');
 
   @override
   Future<GenerationResult> generateMessages({
