@@ -3,7 +3,7 @@ import 'package:local_auth/local_auth.dart';
 import '../services/biometric_service.dart';
 
 /// Abstract interface for biometric authentication
-/// Allows mocking in tests without platform dependencies
+/// Allows mocking in tests without local_auth dependency
 abstract class IBiometricService {
   /// Check if device supports biometrics
   Future<bool> get isSupported;
@@ -29,6 +29,6 @@ abstract class IBiometricService {
   /// Authenticate with biometrics
   Future<BiometricResult> authenticate({String? reason});
 
-  /// Authenticate if biometrics are enabled
+  /// Authenticate only if biometrics are enabled
   Future<BiometricResult> authenticateIfEnabled();
 }

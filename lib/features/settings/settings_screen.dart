@@ -8,8 +8,8 @@ import 'package:in_app_review/in_app_review.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/interfaces/biometric_interface.dart';
 import '../../core/providers/providers.dart';
-import '../../core/services/biometric_service.dart';
 import '../../shared/molecules/molecules.dart';
 import '../../shared/theme/app_colors.dart';
 import '../../shared/theme/app_spacing.dart';
@@ -30,6 +30,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   final InAppReview _inAppReview = InAppReview.instance;
 
+  IBiometricService get _biometricService => ref.read(biometricServiceProvider);
+
   @override
   void initState() {
     super.initState();
@@ -38,9 +40,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   Future<void> _loadBiometricSettings() async {
-    final supported = await BiometricService.instance.isSupported;
-    final enabled = await BiometricService.instance.isEnabled;
-    final type = await BiometricService.instance.biometricTypeName;
+    final biometric = _biometricService;
+    final supported = await biometric.isSupported;
+    final enabled = await biometric.isEnabled;
+    final type = await biometric.biometricTypeName;
 
     if (mounted) {
       setState(() {
@@ -68,13 +71,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   Future<void> _toggleBiometrics(bool value) async {
     if (value) {
-      final result = await BiometricService.instance.authenticate(
+      final result = await _biometricService.authenticate(
         reason: 'Authenticate to enable $_biometricType',
       );
       if (!result.success) return;
     }
 
-    await BiometricService.instance.setEnabled(value);
+    await _biometricService.setEnabled(value);
     setState(() => _biometricsEnabled = value);
   }
 

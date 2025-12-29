@@ -2,6 +2,8 @@ import 'package:flutter/services.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../interfaces/biometric_interface.dart';
+
 /// Result of biometric authentication attempt
 class BiometricResult {
   final bool success;
@@ -22,15 +24,22 @@ enum BiometricError {
   unknown,
 }
 
-class BiometricService {
+/// Biometric authentication service implementation
+///
+/// Handles Face ID/Touch ID authentication and preference storage.
+/// Use via provider for testability, or singleton for legacy code.
+class BiometricService implements IBiometricService {
   BiometricService._();
   static final instance = BiometricService._();
+
+  /// Factory constructor for DI
+  factory BiometricService() => instance;
 
   final LocalAuthentication _auth = LocalAuthentication();
 
   static const _biometricsEnabledKey = 'biometrics_enabled';
 
-  /// Check if device supports biometrics
+  @override
   Future<bool> get isSupported async {
     try {
       return await _auth.canCheckBiometrics || await _auth.isDeviceSupported();
@@ -39,7 +48,7 @@ class BiometricService {
     }
   }
 
-  /// Get available biometric types (Face ID, Touch ID, etc.)
+  @override
   Future<List<BiometricType>> get availableBiometrics async {
     try {
       return await _auth.getAvailableBiometrics();
@@ -48,39 +57,38 @@ class BiometricService {
     }
   }
 
-  /// Check if Face ID is available
+  @override
   Future<bool> get hasFaceId async {
     final biometrics = await availableBiometrics;
     return biometrics.contains(BiometricType.face);
   }
 
-  /// Check if Touch ID is available
+  @override
   Future<bool> get hasTouchId async {
     final biometrics = await availableBiometrics;
     return biometrics.contains(BiometricType.fingerprint);
   }
 
-  /// Get a friendly name for the available biometric type
+  @override
   Future<String> get biometricTypeName async {
     if (await hasFaceId) return 'Face ID';
     if (await hasTouchId) return 'Touch ID';
     return 'Biometrics';
   }
 
-  /// Check if user has enabled biometric lock
+  @override
   Future<bool> get isEnabled async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getBool(_biometricsEnabledKey) ?? false;
   }
 
-  /// Enable or disable biometric lock
+  @override
   Future<void> setEnabled(bool enabled) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_biometricsEnabledKey, enabled);
   }
 
-  /// Authenticate with biometrics
-  /// Returns [BiometricResult] with success status and optional error
+  @override
   Future<BiometricResult> authenticate({String? reason}) async {
     try {
       final success = await _auth.authenticate(
@@ -145,8 +153,7 @@ class BiometricService {
     }
   }
 
-  /// Authenticate if biometrics are enabled
-  /// Returns [BiometricResult] - success is true if auth passed OR biometrics not enabled
+  @override
   Future<BiometricResult> authenticateIfEnabled() async {
     if (!await isEnabled) {
       return BiometricResult(success: true); // Not enabled, allow access

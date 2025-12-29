@@ -318,6 +318,64 @@ Add basic Firebase Crashlytics initialization mock for improved test coverage.
 
 ---
 
+## 10. SettingsScreen Improvements
+
+**Status:** Current implementation is solid and production-ready. These are polish items.
+
+### 10.1 DI Refactoring (Required for Testing)
+
+**Problem:** Screen uses `BiometricService.instance` singleton and `ref.read(subscriptionServiceProvider)` directly, making widget tests fail.
+
+**Solution:**
+```dart
+// Before
+final supported = await BiometricService.instance.isSupported;
+
+// After - inject via provider
+final biometricService = ref.watch(biometricServiceProvider);
+final supported = await biometricService.isSupported;
+```
+
+| File | Changes |
+|------|---------|
+| `lib/core/providers/providers.dart` | Add `biometricServiceProvider` |
+| `lib/features/settings/settings_screen.dart` | Use providers instead of singletons |
+| `test/widgets/screens/settings_screen_test.dart` | Create with mocked providers |
+
+### 10.2 Visual Polish
+
+| Enhancement | Description | Priority |
+|-------------|-------------|----------|
+| Micro-animations | Fade/scale on tile taps | P3 |
+| Glassmorphism headers | Blurred section backgrounds | P4 |
+| Dynamic theming | Light/dark/system toggle | P3 |
+
+### 10.3 Accessibility
+
+| Improvement | Current | Target |
+|-------------|---------|--------|
+| Semantics | Rating tile only | All interactive elements |
+| VoiceOver | Partial | Full support with state announcements |
+| Contrast | Standard | Verify WCAG AA compliance |
+
+### 10.4 Missing Features
+
+| Feature | Status | Priority |
+|---------|--------|----------|
+| Help & FAQ navigation | `// TODO` | P2 |
+| App Store ID for reviews | Empty string | P2 |
+| Loading states for async | Basic spinner | P3 |
+
+### 10.5 Files to Modify
+
+| File | Changes |
+|------|---------|
+| `lib/features/settings/settings_screen.dart` | DI, accessibility, polish |
+| `lib/core/providers/providers.dart` | Add biometric provider |
+| `lib/core/services/biometric_service.dart` | Remove singleton, add interface |
+
+---
+
 ## Priority Matrix
 
 | Priority | Item | Effort | Impact |
@@ -325,12 +383,14 @@ Add basic Firebase Crashlytics initialization mock for improved test coverage.
 | ~~P0~~ | ~~Firebase AI migration~~ | ~~High~~ | ✅ **DONE** |
 | P1 | Run integration tests on device | Low | High |
 | P1 | Fix 674 lint suggestions | Medium | Medium |
-| P2 | Create missing widget tests | Medium | Medium |
+| P2 | SettingsScreen DI refactor | Medium | Medium |
+| P2 | Create settings_screen_test.dart | Medium | Medium |
 | P2 | Onboarding improvements | High | High |
 | P3 | Model test consolidation | Low | Low |
 | P3 | Subscription mock enhancements | Medium | Low |
 | P3 | CI coverage threshold | Low | Medium |
 | P4 | Performance optimizations | Medium | Medium |
+| P4 | SettingsScreen visual polish | Low | Low |
 
 ---
 
