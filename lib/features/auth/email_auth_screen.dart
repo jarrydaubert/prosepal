@@ -101,34 +101,34 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
       children: [
         // Animated success icon
         Container(
-          width: 100,
-          height: 100,
-          decoration: BoxDecoration(
-            color: AppColors.success.withValues(alpha: 0.1),
-            shape: BoxShape.circle,
-          ),
-          child: Icon(
-            Icons.mark_email_read_outlined,
-            size: 48,
-            color: AppColors.success,
-          ),
-        )
+              width: 100,
+              height: 100,
+              decoration: BoxDecoration(
+                color: AppColors.success.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.mark_email_read_outlined,
+                size: 48,
+                color: AppColors.success,
+              ),
+            )
             .animate()
             .fadeIn(duration: 400.ms)
             .scale(begin: Offset(0.8, 0.8), curve: Curves.easeOutBack),
         SizedBox(height: AppSpacing.xl),
         Text(
           'Check your email',
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
         ).animate().fadeIn(delay: 200.ms),
         SizedBox(height: AppSpacing.sm),
         Text(
           'We sent a magic link to',
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: AppColors.textSecondary,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.bodyLarge?.copyWith(color: AppColors.textSecondary),
           textAlign: TextAlign.center,
         ).animate().fadeIn(delay: 300.ms),
         if (_sentToEmail != null) ...[
@@ -136,18 +136,18 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
           Text(
             _sentToEmail!,
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.primary,
-                ),
+              fontWeight: FontWeight.w600,
+              color: AppColors.primary,
+            ),
             textAlign: TextAlign.center,
           ).animate().fadeIn(delay: 400.ms),
         ],
         SizedBox(height: AppSpacing.md),
         Text(
           'Tap the link in your email to sign in instantly.\nNo password needed!',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppColors.textSecondary,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
           textAlign: TextAlign.center,
         ).animate().fadeIn(delay: 500.ms),
         SizedBox(height: AppSpacing.xxl),
@@ -156,9 +156,9 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
         if (_resendCooldown > 0)
           Text(
             'Resend available in ${_resendCooldown}s',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppColors.textHint,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: AppColors.textHint),
           ).animate().fadeIn()
         else
           TextButton.icon(
@@ -194,9 +194,9 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
               Expanded(
                 child: Text(
                   "Didn't get the email? Check your spam folder.",
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.info,
-                      ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(color: AppColors.info),
                 ),
               ),
             ],
@@ -217,25 +217,21 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
             color: AppColors.primary.withValues(alpha: 0.1),
             shape: BoxShape.circle,
           ),
-          child: Icon(
-            Icons.email_outlined,
-            size: 36,
-            color: AppColors.primary,
-          ),
+          child: Icon(Icons.email_outlined, size: 36, color: AppColors.primary),
         ).animate().fadeIn().scale(begin: Offset(0.9, 0.9)),
         SizedBox(height: AppSpacing.lg),
         Text(
           'Passwordless sign in',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
         ).animate().fadeIn(delay: 100.ms),
         SizedBox(height: AppSpacing.sm),
         Text(
           "Enter your email and we'll send you\na magic link to sign in instantly.",
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppColors.textSecondary,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
           textAlign: TextAlign.center,
         ).animate().fadeIn(delay: 200.ms),
         SizedBox(height: AppSpacing.xl),
@@ -303,40 +299,40 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
     int delayMs,
   ) {
     return Row(
-      children: [
-        Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: AppColors.primary.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Icon(icon, color: AppColors.primary, size: 20),
-        ),
-        SizedBox(width: AppSpacing.md),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, color: AppColors.primary, size: 20),
+            ),
+            SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
-              ),
-              Text(
-                subtitle,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  ),
+                  Text(
+                    subtitle,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: AppColors.textSecondary,
                     ),
+                  ),
+                ],
               ),
-            ],
-          ),
-        ),
-      ],
-    ).animate().fadeIn(delay: Duration(milliseconds: delayMs)).slideX(
-          begin: 0.1,
-          duration: 300.ms,
-        );
+            ),
+          ],
+        )
+        .animate()
+        .fadeIn(delay: Duration(milliseconds: delayMs))
+        .slideX(begin: 0.1, duration: 300.ms);
   }
 }

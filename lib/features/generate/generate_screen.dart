@@ -36,7 +36,7 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
 
     if (occasion == null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        context.go('/');
+        context.go('/home');
       });
       return SizedBox.shrink();
     }
@@ -165,11 +165,15 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
         key: ValueKey('details'),
         recipientName: ref.watch(recipientNameProvider),
         personalDetails: ref.watch(personalDetailsProvider),
+        selectedLength: ref.watch(selectedLengthProvider),
         onRecipientNameChanged: (name) {
           ref.read(recipientNameProvider.notifier).state = name;
         },
         onPersonalDetailsChanged: (details) {
           ref.read(personalDetailsProvider.notifier).state = details;
+        },
+        onLengthChanged: (length) {
+          ref.read(selectedLengthProvider.notifier).state = length;
         },
       ),
       _ => SizedBox.shrink(),
@@ -229,6 +233,7 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
     final occasion = ref.read(selectedOccasionProvider);
     final relationship = ref.read(selectedRelationshipProvider);
     final tone = ref.read(selectedToneProvider);
+    final length = ref.read(selectedLengthProvider);
     final recipientName = ref.read(recipientNameProvider);
     final personalDetails = ref.read(personalDetailsProvider);
 
@@ -245,11 +250,17 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
         occasion: occasion,
         relationship: relationship,
         tone: tone,
+        length: length,
         recipientName: recipientName.isNotEmpty ? recipientName : null,
         personalDetails: personalDetails.isNotEmpty ? personalDetails : null,
       );
 
       await usageService.recordGeneration();
+
+      // Check if we should request a review (after 3rd generation)
+      final reviewService = ref.read(reviewServiceProvider);
+      final totalGenerations = usageService.getTotalCount();
+      await reviewService.checkAndRequestReview(totalGenerations);
 
       ref.read(generationResultProvider.notifier).state = result;
       ref.read(isGeneratingProvider.notifier).state = false;
@@ -300,7 +311,12 @@ class _StepIndicator extends StatelessWidget {
 
             return Expanded(
               child: Semantics(
-                label: '${_stepLabels[index]}: ${isCompleted ? 'completed' : isActive ? 'current' : 'pending'}',
+                label:
+                    '${_stepLabels[index]}: ${isCompleted
+                        ? 'completed'
+                        : isActive
+                        ? 'current'
+                        : 'pending'}',
                 child: Container(
                   margin: EdgeInsets.symmetric(horizontal: 2),
                   height: 4,

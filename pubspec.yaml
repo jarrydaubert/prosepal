@@ -48,6 +48,9 @@ dependencies:
   local_auth: ^3.0.0
   supabase_auth_ui: ^0.4.1  # Pinned - newer versions have dep conflicts
   sign_in_button: ^4.0.1
+  share_plus: ^12.0.1
+  package_info_plus: ^9.0.0
+  in_app_review: ^2.0.11
 
 dev_dependencies:
   flutter_test:
@@ -58,6 +61,13 @@ dev_dependencies:
   build_runner: ^2.10.4
   custom_lint: ^0.8.1
   # riverpod_lint removed temporarily due to lack of 3.x release; re-add when available
+
+  # Testing packages
+  mocktail: ^1.0.4  # Mocking without code generation
+  mock_supabase_http_client: ^0.0.3  # Official Supabase mock client
+  http: ^1.4.0  # For HTTP mocking
+  integration_test:
+    sdk: flutter
 
 flutter:
   uses-material-design: true

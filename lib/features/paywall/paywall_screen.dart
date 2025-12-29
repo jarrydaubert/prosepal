@@ -25,7 +25,9 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
   void initState() {
     super.initState();
     // Auto-show RevenueCat paywall on load
-    WidgetsBinding.instance.addPostFrameCallback((_) => _showRevenueCatPaywall());
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _showRevenueCatPaywall(),
+    );
   }
 
   Future<void> _showRevenueCatPaywall() async {
@@ -132,8 +134,8 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
               Text(
                 'Loading subscription options...',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
+                  color: AppColors.textSecondary,
+                ),
               ),
             ],
           ),
@@ -166,15 +168,14 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                 child: Column(
                   children: [
                     // Header
-                    Text('✨', style: TextStyle(fontSize: 48))
-                        .animate()
-                        .scale(duration: 500.ms, curve: Curves.elasticOut),
+                    Text('✨', style: TextStyle(fontSize: 48)).animate().scale(
+                      duration: 500.ms,
+                      curve: Curves.elasticOut,
+                    ),
                     Gap(AppSpacing.lg),
                     Text(
                       'Unlock Prosepal Pro',
-                      style: Theme.of(context)
-                          .textTheme
-                          .headlineMedium
+                      style: Theme.of(context).textTheme.headlineMedium
                           ?.copyWith(fontWeight: FontWeight.bold),
                       textAlign: TextAlign.center,
                     ),
@@ -182,8 +183,8 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                     Text(
                       'Write the perfect message, every time',
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            color: AppColors.textSecondary,
-                          ),
+                        color: AppColors.textSecondary,
+                      ),
                       textAlign: TextAlign.center,
                     ),
                     Gap(AppSpacing.xxl),
@@ -191,9 +192,9 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                     // Features
                     ..._features.asMap().entries.map((entry) {
                       return _FeatureRow(
-                        icon: entry.value.icon,
-                        text: entry.value.text,
-                      )
+                            icon: entry.value.icon,
+                            text: entry.value.text,
+                          )
                           .animate()
                           .fadeIn(
                             delay: Duration(milliseconds: entry.key * 100),
@@ -212,32 +213,32 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                       padding: EdgeInsets.all(AppSpacing.lg),
                       decoration: BoxDecoration(
                         color: AppColors.info.withValues(alpha: 0.1),
-                        borderRadius:
-                            BorderRadius.circular(AppSpacing.radiusMedium),
+                        borderRadius: BorderRadius.circular(
+                          AppSpacing.radiusMedium,
+                        ),
                         border: Border.all(
                           color: AppColors.info.withValues(alpha: 0.3),
                         ),
                       ),
                       child: Column(
                         children: [
-                          Icon(Icons.info_outline,
-                              color: AppColors.info, size: 32),
+                          Icon(
+                            Icons.info_outline,
+                            color: AppColors.info,
+                            size: 32,
+                          ),
                           Gap(AppSpacing.md),
                           Text(
                             'Subscription Setup Required',
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleMedium
+                            style: Theme.of(context).textTheme.titleMedium
                                 ?.copyWith(fontWeight: FontWeight.bold),
                             textAlign: TextAlign.center,
                           ),
                           Gap(AppSpacing.sm),
                           Text(
                             'Configure your RevenueCat products in the dashboard to enable in-app purchases.',
-                            style:
-                                Theme.of(context).textTheme.bodySmall?.copyWith(
-                                      color: AppColors.textSecondary,
-                                    ),
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(color: AppColors.textSecondary),
                             textAlign: TextAlign.center,
                           ),
                         ],

@@ -8,6 +8,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'app/app.dart';
 import 'core/providers/providers.dart';
+import 'core/services/review_service.dart';
 import 'core/services/subscription_service.dart';
 import 'firebase_options.dart';
 
@@ -53,6 +54,10 @@ void main() async {
 
   // Initialize SharedPreferences
   final prefs = await SharedPreferences.getInstance();
+
+  // Record first launch for review timing
+  final reviewService = ReviewService(prefs);
+  await reviewService.recordFirstLaunchIfNeeded();
 
   runApp(
     ProviderScope(

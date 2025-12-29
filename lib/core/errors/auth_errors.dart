@@ -67,10 +67,12 @@ class AuthErrorHandler {
   static String getMessage(Object error) => getResult(error).message;
 
   static AuthErrorResult _handleAuthException(AuthException error) {
-    final message = error.message.toLowerCase();
+    // Normalize message for resilient matching (Supabase may change casing/spacing)
+    final message = error.message.toLowerCase().trim();
     final statusCode = error.statusCode;
 
-    // Invalid credentials - check message first (statusCode may be null in tests)
+    // Invalid credentials
+    // Supabase returns: "Invalid login credentials" or similar
     if (message.contains('invalid login credentials') ||
         message.contains('invalid email or password')) {
       return const AuthErrorResult(
@@ -80,6 +82,7 @@ class AuthErrorHandler {
     }
 
     // Invalid email format
+    // Supabase returns: "Invalid email" for malformed addresses
     if (message.contains('invalid email')) {
       return const AuthErrorResult(
         message: 'Please enter a valid email address.',
@@ -87,10 +90,13 @@ class AuthErrorHandler {
       );
     }
 
-    // Rate limiting (429 or message-based)
+    // Rate limiting (429 status or various message patterns)
+    // Supabase returns: "Rate limit exceeded", "Too many requests",
+    // "Email rate limit exceeded", "For security purposes..."
     if (statusCode == '429' ||
         message.contains('rate limit') ||
-        message.contains('too many')) {
+        message.contains('too many') ||
+        message.contains('for security purposes')) {
       return const AuthErrorResult(
         message: 'Too many attempts. Please wait a moment and try again.',
         shouldRetry: false, // Don't immediately retry rate limits
@@ -98,6 +104,7 @@ class AuthErrorHandler {
     }
 
     // Email not confirmed
+    // Supabase returns: "Email not confirmed"
     if (message.contains('email not confirmed')) {
       return const AuthErrorResult(
         message: 'Please check your email and confirm your account.',
@@ -106,6 +113,7 @@ class AuthErrorHandler {
     }
 
     // User already exists
+    // Supabase returns: "User already registered" or "already exists"
     if (message.contains('user already registered') ||
         message.contains('already exists')) {
       return const AuthErrorResult(
@@ -116,6 +124,7 @@ class AuthErrorHandler {
     }
 
     // Weak password
+    // Supabase returns: "Password is too weak" or similar
     if (message.contains('password') && message.contains('weak')) {
       return const AuthErrorResult(
         message: 'Password is too weak. Use at least 6 characters.',
@@ -123,15 +132,8 @@ class AuthErrorHandler {
       );
     }
 
-    // Invalid email format
-    if (message.contains('invalid email')) {
-      return const AuthErrorResult(
-        message: 'Please enter a valid email address.',
-        shouldRetry: true,
-      );
-    }
-
     // Session expired
+    // Supabase returns: "Session expired", "Token expired", etc.
     if (message.contains('expired')) {
       return const AuthErrorResult(
         message: 'Your session has expired. Please sign in again.',
@@ -139,7 +141,8 @@ class AuthErrorHandler {
       );
     }
 
-    // OAuth errors (includes cancellation)
+    // User cancellation (OAuth, social sign-in, etc.)
+    // Various patterns: "cancelled", "canceled", "User cancelled the operation"
     if (message.contains('cancel')) {
       return const AuthErrorResult(
         message: 'Sign in was cancelled.',
@@ -148,6 +151,8 @@ class AuthErrorHandler {
       );
     }
 
+    // OAuth/provider errors
+    // Supabase returns: "OAuth provider error", "Provider error", etc.
     if (message.contains('oauth') || message.contains('provider')) {
       return const AuthErrorResult(
         message: 'Sign in failed. Please try again.',

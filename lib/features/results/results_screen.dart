@@ -4,6 +4,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
 import 'package:go_router/go_router.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../core/models/models.dart';
 import '../../core/providers/providers.dart';
@@ -35,43 +36,51 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Your Messages'),
-        leading: IconButton(
-          icon: Icon(Icons.close),
-          onPressed: () {
-            resetGenerationForm(ref);
-            context.go('/');
-          },
+        leading: Semantics(
+          label: 'Close and return home',
+          button: true,
+          child: IconButton(
+            icon: Icon(Icons.close),
+            tooltip: 'Close',
+            onPressed: () {
+              resetGenerationForm(ref);
+              context.go('/');
+            },
+          ),
         ),
       ),
       body: Column(
         children: [
           // Context header
-          Container(
-            width: double.infinity,
-            padding: EdgeInsets.all(AppSpacing.lg),
-            color: AppColors.surfaceVariant,
-            child: Row(
-              children: [
-                Text(result.occasion.emoji, style: TextStyle(fontSize: 24)),
-                Gap(AppSpacing.sm),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '${result.occasion.label} • ${result.relationship.label}',
-                        style: Theme.of(context).textTheme.titleSmall,
-                      ),
-                      Text(
-                        '${result.tone.label} tone',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppColors.textSecondary,
+          Semantics(
+            label:
+                'Generated ${result.occasion.label} message for ${result.relationship.label} with ${result.tone.label} tone',
+            child: Container(
+              width: double.infinity,
+              padding: EdgeInsets.all(AppSpacing.lg),
+              color: AppColors.surfaceVariant,
+              child: Row(
+                children: [
+                  Text(result.occasion.emoji, style: TextStyle(fontSize: 24)),
+                  Gap(AppSpacing.sm),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '${result.occasion.label} • ${result.relationship.label}',
+                          style: Theme.of(context).textTheme.titleSmall,
                         ),
-                      ),
-                    ],
+                        Text(
+                          '${result.tone.label} tone',
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(color: AppColors.textSecondary),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
 
@@ -90,6 +99,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                             index: index,
                             isCopied: _copiedIndex == index,
                             onCopy: () => _copyMessage(message.text, index),
+                            onShare: () => _shareMessage(message.text),
                           )
                           .animate()
                           .fadeIn(
@@ -141,9 +151,16 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Message copied to clipboard!'),
+          content: Row(
+            children: [
+              Icon(Icons.check_circle, color: Colors.white, size: 20),
+              Gap(AppSpacing.sm),
+              Text('Message copied to clipboard!'),
+            ],
+          ),
           duration: Duration(seconds: 2),
           behavior: SnackBarBehavior.floating,
+          backgroundColor: AppColors.success,
         ),
       );
     }
@@ -153,6 +170,12 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
       setState(() => _copiedIndex = null);
     }
   }
+
+  Future<void> _shareMessage(String text) async {
+    await SharePlus.instance.share(
+      ShareParams(text: text, subject: 'Message from Prosepal'),
+    );
+  }
 }
 
 class _MessageCard extends StatelessWidget {
@@ -161,93 +184,118 @@ class _MessageCard extends StatelessWidget {
     required this.index,
     required this.isCopied,
     required this.onCopy,
+    required this.onShare,
   });
 
   final GeneratedMessage message;
   final int index;
   final bool isCopied;
   final VoidCallback onCopy;
+  final VoidCallback onShare;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
-        border: Border.all(color: AppColors.surfaceVariant),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header
-          Container(
-            padding: EdgeInsets.symmetric(
-              horizontal: AppSpacing.lg,
-              vertical: AppSpacing.md,
+    return Semantics(
+      label: 'Message option ${index + 1}',
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
+          border: Border.all(color: AppColors.surfaceVariant),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 10,
+              offset: Offset(0, 4),
             ),
-            decoration: BoxDecoration(
-              color: AppColors.surfaceVariant.withValues(alpha: 0.5),
-              borderRadius: BorderRadius.vertical(
-                top: Radius.circular(AppSpacing.radiusMedium),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header with actions
+            Container(
+              padding: EdgeInsets.symmetric(
+                horizontal: AppSpacing.lg,
+                vertical: AppSpacing.md,
               ),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 24,
-                  height: 24,
-                  decoration: BoxDecoration(
-                    color: AppColors.primary,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Center(
-                    child: Text(
-                      '${index + 1}',
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: AppColors.textOnPrimary,
-                        fontWeight: FontWeight.bold,
+              decoration: BoxDecoration(
+                color: AppColors.surfaceVariant.withValues(alpha: 0.5),
+                borderRadius: BorderRadius.vertical(
+                  top: Radius.circular(AppSpacing.radiusMedium),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 24,
+                    height: 24,
+                    decoration: BoxDecoration(
+                      color: AppColors.primary,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: Text(
+                        '${index + 1}',
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: AppColors.textOnPrimary,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),
-                ),
-                Gap(AppSpacing.sm),
-                Text(
-                  'Option ${index + 1}',
-                  style: Theme.of(context).textTheme.titleSmall,
-                ),
-                Spacer(),
-                TextButton.icon(
-                  onPressed: onCopy,
-                  icon: Icon(isCopied ? Icons.check : Icons.copy, size: 18),
-                  label: Text(isCopied ? 'Copied!' : 'Copy'),
-                  style: TextButton.styleFrom(
-                    foregroundColor: isCopied
-                        ? AppColors.success
-                        : AppColors.primary,
+                  Gap(AppSpacing.sm),
+                  Text(
+                    'Option ${index + 1}',
+                    style: Theme.of(context).textTheme.titleSmall,
                   ),
-                ),
-              ],
+                  Spacer(),
+                  // Share button
+                  Semantics(
+                    label: 'Share option ${index + 1}',
+                    button: true,
+                    child: IconButton(
+                      onPressed: onShare,
+                      icon: Icon(Icons.share_outlined, size: 20),
+                      tooltip: 'Share',
+                      style: IconButton.styleFrom(
+                        foregroundColor: AppColors.textSecondary,
+                      ),
+                    ),
+                  ),
+                  // Copy button
+                  Semantics(
+                    label: isCopied
+                        ? 'Option ${index + 1} copied'
+                        : 'Copy option ${index + 1}',
+                    button: true,
+                    child: TextButton.icon(
+                      onPressed: onCopy,
+                      icon: Icon(isCopied ? Icons.check : Icons.copy, size: 18),
+                      label: Text(isCopied ? 'Copied!' : 'Copy'),
+                      style: TextButton.styleFrom(
+                        foregroundColor: isCopied
+                            ? AppColors.success
+                            : AppColors.primary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
 
-          // Message content
-          Padding(
-            padding: EdgeInsets.all(AppSpacing.lg),
-            child: SelectableText(
-              message.text,
-              style: Theme.of(
-                context,
-              ).textTheme.bodyLarge?.copyWith(height: 1.6),
+            // Message content
+            Padding(
+              padding: EdgeInsets.all(AppSpacing.lg),
+              child: SelectableText(
+                message.text,
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyLarge?.copyWith(height: 1.6),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

@@ -8,11 +8,7 @@ class BiometricResult {
   final BiometricError? error;
   final String? message;
 
-  const BiometricResult({
-    required this.success,
-    this.error,
-    this.message,
-  });
+  const BiometricResult({required this.success, this.error, this.message});
 }
 
 /// Types of biometric errors
@@ -85,9 +81,7 @@ class BiometricService {
 
   /// Authenticate with biometrics
   /// Returns [BiometricResult] with success status and optional error
-  Future<BiometricResult> authenticate({
-    String? reason,
-  }) async {
+  Future<BiometricResult> authenticate({String? reason}) async {
     try {
       final success = await _auth.authenticate(
         localizedReason: reason ?? 'Authenticate to access Prosepal',
@@ -138,7 +132,8 @@ class BiometricService {
           return BiometricResult(
             success: false,
             error: BiometricError.unknown,
-            message: e.description ?? 'Authentication failed. Please try again.',
+            message:
+                e.description ?? 'Authentication failed. Please try again.',
           );
       }
     } on PlatformException {

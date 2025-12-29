@@ -131,17 +131,17 @@ class _LockScreenState extends State<LockScreen> {
               Text(
                 'Prosepal',
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                  fontWeight: FontWeight.bold,
+                ),
               ).animate().fadeIn(delay: 100.ms),
 
               SizedBox(height: AppSpacing.sm),
 
               Text(
                 'Tap to unlock',
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyLarge?.copyWith(color: AppColors.textSecondary),
               ).animate().fadeIn(delay: 200.ms),
 
               const Spacer(),
@@ -152,8 +152,9 @@ class _LockScreenState extends State<LockScreen> {
                   padding: EdgeInsets.all(AppSpacing.md),
                   decoration: BoxDecoration(
                     color: AppColors.error.withValues(alpha: 0.1),
-                    borderRadius:
-                        BorderRadius.circular(AppSpacing.radiusMedium),
+                    borderRadius: BorderRadius.circular(
+                      AppSpacing.radiusMedium,
+                    ),
                     border: Border.all(
                       color: AppColors.error.withValues(alpha: 0.3),
                     ),
@@ -188,8 +189,9 @@ class _LockScreenState extends State<LockScreen> {
                     backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
-                      borderRadius:
-                          BorderRadius.circular(AppSpacing.radiusMedium),
+                      borderRadius: BorderRadius.circular(
+                        AppSpacing.radiusMedium,
+                      ),
                     ),
                   ),
                   icon: _isAuthenticating
@@ -210,10 +212,7 @@ class _LockScreenState extends State<LockScreen> {
                     _isAuthenticating
                         ? 'Authenticating...'
                         : 'Unlock with $_biometricType',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                   ),
                 ),
               ).animate().fadeIn(delay: 300.ms),
@@ -223,9 +222,9 @@ class _LockScreenState extends State<LockScreen> {
                 SizedBox(height: AppSpacing.lg),
                 Text(
                   'Having trouble? Make sure $_biometricType is set up in your device settings.',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.textHint,
-                      ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(color: AppColors.textHint),
                   textAlign: TextAlign.center,
                 ).animate().fadeIn(),
               ],

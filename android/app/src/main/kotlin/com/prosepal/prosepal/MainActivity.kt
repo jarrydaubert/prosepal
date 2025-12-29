@@ -1,5 +1,6 @@
 package com.prosepal.prosepal
 
-import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.android.FlutterFragmentActivity
 
-class MainActivity : FlutterActivity()
+// FlutterFragmentActivity required for RevenueCat paywalls (purchases_ui_flutter)
+class MainActivity : FlutterFragmentActivity()
