@@ -58,10 +58,11 @@ class SubscriptionService implements ISubscriptionService {
   );
 
   // Environment flags
-  // TODO: Set back to false before App Store submission!
+  // NOTE: Test Store is for AUTOMATED TESTING only, not device testing!
+  // For device testing, use production key with Sandbox Apple ID account.
   static const bool _useTestStore = bool.fromEnvironment(
     'REVENUECAT_USE_TEST_STORE',
-    defaultValue: true, // TEMPORARY: Using Test Store for development
+    defaultValue: false,
   );
 
   // Allow override of production keys via dart-define
