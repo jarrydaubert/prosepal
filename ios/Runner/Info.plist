@@ -49,5 +49,18 @@
 	<string>Prosepal uses Face ID to protect your account and keep your messages private.</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+	<!-- Google Sign In URL Scheme - Replace YOUR_IOS_CLIENT_ID with actual value -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<!-- Format: com.googleusercontent.apps.{numbers from iOS client ID} -->
+				<string>$(GOOGLE_REVERSED_CLIENT_ID)</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>

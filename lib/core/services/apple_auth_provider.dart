@@ -1,0 +1,77 @@
+import 'package:sign_in_with_apple/sign_in_with_apple.dart'
+    as apple show
+        SignInWithApple,
+        AuthorizationCredentialAppleID,
+        AppleIDAuthorizationScopes,
+        WebAuthenticationOptions,
+        generateNonce;
+
+import '../interfaces/apple_auth_provider.dart';
+
+/// Real implementation of Apple Sign In using native SDK (sign_in_with_apple 7.x)
+///
+/// ## Security Notes
+/// - The nonce returned by [generateRawNonce] must be SHA-256 hashed before
+///   passing to [getCredential]. The raw nonce is then sent to Supabase for
+///   token validation. See [AuthService.signInWithApple] for correct usage.
+/// - [getCredential] throws [SignInWithAppleAuthorizationException] on
+///   failure or user cancellation. Callers should handle cancellation
+///   (AuthorizationErrorCode.canceled) as non-error where appropriate.
+///
+/// ## Platform Support
+/// - iOS: Full native support via ASAuthorizationController
+/// - macOS: Full native support
+/// - Android: Not supported (isAvailable returns false)
+/// - Web: Requires webAuthenticationOptions with clientId and redirectUri
+///
+/// ## Credential Revocation
+/// Apple recommends server-side token validation for detecting revocations.
+/// The [onCredentialRevoked] stream is not exposed by the current package;
+/// implement server-side checks or native AppDelegate integration if needed.
+class AppleAuthProvider implements IAppleAuthProvider {
+  /// Generate cryptographically secure random nonce
+  ///
+  /// Returns URL-safe random string. Caller must SHA-256 hash this value
+  /// before passing to [getCredential], while sending raw value to Supabase.
+  @override
+  String generateRawNonce([int length = 32]) =>
+      apple.generateNonce(length: length);
+
+  /// Check if Sign in with Apple is available on current platform
+  ///
+  /// Returns false on Android, Windows, Linux. Always check before
+  /// showing Apple Sign In button to avoid runtime errors.
+  @override
+  Future<bool> isAvailable() => apple.SignInWithApple.isAvailable();
+
+  /// Request Apple ID credential via native SDK
+  ///
+  /// [nonce] should be SHA-256 hashed value (not raw) for security.
+  /// Throws [SignInWithAppleAuthorizationException] on failure/cancellation.
+  @override
+  Future<apple.AuthorizationCredentialAppleID> getCredential({
+    required List<apple.AppleIDAuthorizationScopes> scopes,
+    required String nonce,
+    apple.WebAuthenticationOptions? webAuthenticationOptions,
+    String? state,
+  }) {
+    return apple.SignInWithApple.getAppleIDCredential(
+      scopes: scopes,
+      nonce: nonce,
+      webAuthenticationOptions: webAuthenticationOptions,
+      state: state,
+    );
+  }
+
+  /// Stream of credential revocation events
+  ///
+  /// Note: The sign_in_with_apple package (7.x) does not expose a client-side
+  /// revocation listener. This returns an empty stream as a safe default.
+  ///
+  /// For production apps requiring revocation detection:
+  /// 1. Implement server-side token validation (recommended by Apple)
+  /// 2. Check token validity on app resume/foreground
+  /// 3. For iOS-only: integrate via native AppDelegate if critical
+  @override
+  Stream<void> get onCredentialRevoked => const Stream.empty();
+}

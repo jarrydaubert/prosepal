@@ -58,11 +58,24 @@ Session createFakeSession({
 /// - Configurable state via [setLoggedIn], [setUser]
 /// - Auto-emits auth state events when [autoEmitAuthState] is true
 /// - Per-method error simulation via [methodErrors]
+/// - Simulated network delay via [simulateDelay]
 /// - Call tracking for verification
 /// - Rich fake User/Session objects
+///
+/// ## Usage
+/// ```dart
+/// final mockAuth = MockAuthService();
+/// mockAuth.setLoggedIn(true, email: 'user@test.com');
+/// mockAuth.autoEmitAuthState = true;
+/// mockAuth.simulateDelay = Duration(milliseconds: 500);
+/// ```
 class MockAuthService implements IAuthService {
   /// If true, automatically emits AuthState events on sign-in/sign-out
   bool autoEmitAuthState = false;
+
+  /// Simulated network delay for async operations
+  /// Useful for testing loading indicators
+  Duration? simulateDelay;
 
   // Configurable state for tests
   User? _currentUser;
@@ -122,6 +135,7 @@ class MockAuthService implements IAuthService {
     _displayName = null;
     _email = null;
     autoEmitAuthState = false;
+    simulateDelay = null;
     signInWithAppleCallCount = 0;
     signInWithGoogleCallCount = 0;
     signInWithEmailCallCount = 0;
@@ -133,6 +147,12 @@ class MockAuthService implements IAuthService {
     lastPasswordUsed = null;
     errorToThrow = null;
     methodErrors.clear();
+  }
+
+  Future<void> _maybeDelay() async {
+    if (simulateDelay != null) {
+      await Future.delayed(simulateDelay!);
+    }
   }
 
   @override
@@ -153,6 +173,7 @@ class MockAuthService implements IAuthService {
   @override
   Future<AuthResponse> signInWithApple() async {
     signInWithAppleCallCount++;
+    await _maybeDelay();
     final error = _getError('signInWithApple');
     if (error != null) throw error;
     final user = createFakeUser(
@@ -174,6 +195,7 @@ class MockAuthService implements IAuthService {
   @override
   Future<AuthResponse> signInWithGoogle() async {
     signInWithGoogleCallCount++;
+    await _maybeDelay();
     final error = _getError('signInWithGoogle');
     if (error != null) throw error;
     final user = createFakeUser(
@@ -200,6 +222,7 @@ class MockAuthService implements IAuthService {
     signInWithEmailCallCount++;
     lastEmailUsed = email;
     lastPasswordUsed = password;
+    await _maybeDelay();
     final error = _getError('signInWithEmail');
     if (error != null) throw error;
     final user = createFakeUser(email: email, displayName: _displayName);

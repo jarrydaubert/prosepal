@@ -1,54 +1,106 @@
 import 'dart:convert';
-import 'dart:io' show Platform;
 
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../interfaces/apple_auth_provider.dart';
 import '../interfaces/auth_interface.dart';
+import '../interfaces/google_auth_provider.dart';
+import '../interfaces/supabase_auth_provider.dart';
 
+// ===========================================================================
 // Google OAuth Client IDs - configured in Google Cloud Console
-// Web client ID is used as serverClientId for ID token validation
+// ===========================================================================
+// GOOGLE_WEB_CLIENT_ID: Web client ID, required for:
+//   - Android: ID token retrieval (if not using google-services.json)
+//   - Web: Browser-based OAuth flow
+//   - Backend: Token validation with Google's servers
+//
+// GOOGLE_IOS_CLIENT_ID: iOS client ID, required for:
+//   - iOS: Native Sign In With Google SDK
+//   - Set in GoogleService-Info.plist CLIENT_ID field
+//
+// Pass via dart-define: --dart-define=GOOGLE_WEB_CLIENT_ID=xxx
+// ===========================================================================
 const _googleWebClientId = String.fromEnvironment(
   'GOOGLE_WEB_CLIENT_ID',
   defaultValue: '',
 );
-// iOS client ID for native sign-in
 const _googleIosClientId = String.fromEnvironment(
   'GOOGLE_IOS_CLIENT_ID',
   defaultValue: '',
 );
 
-/// Authentication service using Supabase
-/// Supports Apple Sign-In, Google OAuth, and email/password flows
+/// Authentication service using dependency injection for testability
+///
+/// Supports Apple Sign-In, Google OAuth, and email/magic link flows.
+/// All external dependencies are injected via constructor.
+///
+/// ## Usage
+/// ```dart
+/// final authService = AuthService(
+///   supabaseAuth: SupabaseAuthProvider(),
+///   appleAuth: AppleAuthProvider(),
+///   googleAuth: GoogleAuthProvider(),
+/// );
+///
+/// // Check availability before showing buttons
+/// if (await authService.isAppleSignInAvailable()) {
+///   // Show Apple Sign In button
+/// }
+/// ```
+///
+/// ## Environment Variables
+/// - `GOOGLE_WEB_CLIENT_ID`: Web client ID for Android/Web token retrieval
+/// - `GOOGLE_IOS_CLIENT_ID`: iOS client ID for native SDK
 class AuthService implements IAuthService {
-  AuthService._();
-  static final instance = AuthService._();
+  AuthService({
+    required ISupabaseAuthProvider supabaseAuth,
+    required IAppleAuthProvider appleAuth,
+    required IGoogleAuthProvider googleAuth,
+  })  : _supabase = supabaseAuth,
+        _apple = appleAuth,
+        _google = googleAuth;
 
-  SupabaseClient get _client => Supabase.instance.client;
+  final ISupabaseAuthProvider _supabase;
+  final IAppleAuthProvider _apple;
+  final IGoogleAuthProvider _google;
+
+  // ===========================================================================
+  // Platform Availability
+  // ===========================================================================
+
+  /// Check if Apple Sign In is available on current platform
+  ///
+  /// Returns false on Android, Windows, Linux where Apple Sign In is unsupported.
+  /// Use this to conditionally show/hide the Apple Sign In button.
+  Future<bool> isAppleSignInAvailable() => _apple.isAvailable();
+
+  /// Check if Google Sign In is available on current platform
+  ///
+  /// Returns false if not properly configured or on unsupported platforms.
+  Future<bool> isGoogleSignInAvailable() => _google.isAvailable();
 
   @override
-  User? get currentUser => _client.auth.currentUser;
+  User? get currentUser => _supabase.currentUser;
 
   @override
   bool get isLoggedIn => currentUser != null;
 
   @override
-  Stream<AuthState> get authStateChanges => _client.auth.onAuthStateChange;
+  Stream<AuthState> get authStateChanges => _supabase.onAuthStateChange;
 
   @override
   String? get displayName {
     final user = currentUser;
     if (user == null) return null;
     final metadata = user.userMetadata;
-    // Try full_name, then name, then capitalize email prefix
     final name =
         metadata?['full_name'] as String? ??
         metadata?['name'] as String? ??
         user.email?.split('@').first;
-    // Capitalize first letter if from email
     if (name != null && user.email?.startsWith(name) == true) {
       return name[0].toUpperCase() + name.substring(1);
     }
@@ -58,8 +110,15 @@ class AuthService implements IAuthService {
   @override
   String? get email => currentUser?.email;
 
-  /// SHA256 hash for nonce
-  String _sha256ofString(String input) {
+  // ===========================================================================
+  // OAuth Sign In
+  // ===========================================================================
+
+  /// SHA256 hash for nonce (required for Apple Sign In security)
+  ///
+  /// The raw nonce is sent to Supabase for token validation, while
+  /// the hashed nonce is sent to Apple SDK to prevent replay attacks.
+  String sha256ofString(String input) {
     final bytes = utf8.encode(input);
     final digest = sha256.convert(bytes);
     return digest.toString();
@@ -67,70 +126,96 @@ class AuthService implements IAuthService {
 
   @override
   Future<AuthResponse> signInWithApple() async {
-    // Use generateNonce from sign_in_with_apple 7.x
-    final rawNonce = generateNonce();
-    final hashedNonce = _sha256ofString(rawNonce);
-
-    final credential = await SignInWithApple.getAppleIDCredential(
-      scopes: [
-        AppleIDAuthorizationScopes.email,
-        AppleIDAuthorizationScopes.fullName,
-      ],
-      nonce: hashedNonce,
-    );
-
-    final idToken = credential.identityToken;
-    if (idToken == null) {
-      throw AuthException('Apple Sign In failed: No identity token');
+    // Check platform availability first
+    if (!await _apple.isAvailable()) {
+      throw AuthException(
+        'Apple Sign In is not available on this platform',
+      );
     }
 
-    return await _client.auth.signInWithIdToken(
-      provider: OAuthProvider.apple,
-      idToken: idToken,
-      nonce: rawNonce,
-    );
+    try {
+      // Generate nonce for replay attack prevention
+      final rawNonce = _apple.generateRawNonce();
+      final hashedNonce = sha256ofString(rawNonce);
+
+      final credential = await _apple.getCredential(
+        scopes: [
+          AppleIDAuthorizationScopes.email,
+          AppleIDAuthorizationScopes.fullName,
+        ],
+        nonce: hashedNonce,
+      );
+
+      final idToken = credential.identityToken;
+      if (idToken == null) {
+        throw AuthException('Apple Sign In failed: No identity token');
+      }
+
+      return await _supabase.signInWithIdToken(
+        provider: OAuthProvider.apple,
+        idToken: idToken,
+        nonce: rawNonce,
+      );
+    } on SignInWithAppleAuthorizationException catch (e) {
+      // User cancelled or authorization failed
+      if (e.code == AuthorizationErrorCode.canceled) {
+        throw AuthException('Apple Sign In cancelled');
+      }
+      throw AuthException('Apple Sign In failed: ${e.message}');
+    }
   }
 
   @override
   Future<AuthResponse> signInWithGoogle() async {
-    // Initialize Google Sign In (7.x API - singleton pattern)
-    final googleSignIn = GoogleSignIn.instance;
+    // Check platform availability first
+    if (!await _google.isAvailable()) {
+      throw AuthException(
+        'Google Sign In is not available on this platform',
+      );
+    }
 
-    await googleSignIn.initialize(
+    // Initialize with platform-appropriate client IDs
+    // serverClientId: Required for Android ID token retrieval and backend validation
+    // clientId: Required for iOS native SDK
+    await _google.initialize(
       serverClientId: _googleWebClientId,
-      clientId: Platform.isIOS ? _googleIosClientId : null,
+      clientId: _googleIosClientId,
+      scopes: const ['email', 'profile'],
     );
 
-    // Try lightweight auth first (silent sign-in if previously authenticated)
-    var googleUser = await googleSignIn.attemptLightweightAuthentication();
+    // Try silent re-auth first (better UX for returning users)
+    var result = await _google.attemptLightweightAuthentication();
 
-    // If no existing session, prompt user to sign in
-    googleUser ??= await googleSignIn.authenticate();
+    // If no cached session, prompt user
+    result ??= await _google.authenticate();
 
-    final idToken = googleUser.authentication.idToken;
+    // User cancelled sign-in (authenticate returns null on cancel)
+    if (result == null) {
+      throw AuthException('Google Sign In cancelled');
+    }
+
+    final idToken = result.idToken;
     if (idToken == null) {
       throw AuthException('Google Sign In failed: No ID token');
     }
 
-    // Get access token for Supabase (requires email/profile scopes)
-    final authorization = await googleUser.authorizationClient
-            .authorizationForScopes(['email', 'profile']) ??
-        await googleUser.authorizationClient
-            .authorizeScopes(['email', 'profile']);
-
-    return await _client.auth.signInWithIdToken(
+    return await _supabase.signInWithIdToken(
       provider: OAuthProvider.google,
       idToken: idToken,
-      accessToken: authorization.accessToken,
+      accessToken: result.accessToken,
     );
   }
+
+  // ===========================================================================
+  // Email / Password Authentication
+  // ===========================================================================
 
   @override
   Future<AuthResponse> signInWithEmail({
     required String email,
     required String password,
   }) async {
-    return await _client.auth.signInWithPassword(
+    return await _supabase.signInWithPassword(
       email: email,
       password: password,
     );
@@ -141,35 +226,55 @@ class AuthService implements IAuthService {
     required String email,
     required String password,
   }) async {
-    return await _client.auth.signUp(email: email, password: password);
+    return await _supabase.signUp(email: email, password: password);
   }
 
   @override
   Future<void> resetPassword(String email) async {
-    await _client.auth.resetPasswordForEmail(email);
+    // Use deep link to handle password reset in app
+    await _supabase.resetPasswordForEmail(
+      email,
+      redirectTo: kIsWeb ? null : 'com.prosepal.prosepal://reset-callback',
+    );
   }
+
+  // ===========================================================================
+  // Magic Link (Passwordless)
+  // ===========================================================================
 
   @override
   Future<void> signInWithMagicLink(String email) async {
-    await _client.auth.signInWithOtp(
+    // Deep link required for mobile to capture auth callback
+    await _supabase.signInWithOtp(
       email: email,
       emailRedirectTo: kIsWeb ? null : 'com.prosepal.prosepal://login-callback',
     );
   }
 
+  // ===========================================================================
+  // User Management
+  // ===========================================================================
+
   @override
   Future<void> updateEmail(String newEmail) async {
-    await _client.auth.updateUser(UserAttributes(email: newEmail));
+    await _supabase.updateUser(UserAttributes(email: newEmail));
   }
 
   @override
   Future<void> updatePassword(String newPassword) async {
-    await _client.auth.updateUser(UserAttributes(password: newPassword));
+    await _supabase.updateUser(UserAttributes(password: newPassword));
   }
 
   @override
   Future<void> signOut() async {
-    await _client.auth.signOut();
+    // Also sign out from Google to clear cached credentials
+    try {
+      await _google.signOut();
+    } catch (_) {
+      // Ignore - may not be signed in with Google
+    }
+
+    await _supabase.signOut();
   }
 
   @override
@@ -178,31 +283,26 @@ class AuthService implements IAuthService {
     if (user == null) return;
 
     try {
-      // Call Edge Function to delete user (requires service role on server)
-      final response = await _client.functions.invoke(
-        'delete-user',
-        headers: {
-          'Authorization': 'Bearer ${_client.auth.currentSession?.accessToken}',
-        },
-      );
-
-      if (response.status != 200) {
-        if (kDebugMode) {
-          debugPrint('Account deletion failed: ${response.data}');
-        }
-        // Still sign out locally even if server deletion fails
-      }
+      // Call edge function to delete user (requires admin/service role)
+      await _supabase.deleteUser();
     } catch (e) {
-      // Edge Function may not be deployed yet
       if (kDebugMode) {
         debugPrint('Account deletion error: $e');
         debugPrint(
           'Deploy the delete-user Edge Function in Supabase dashboard.',
         );
       }
+      // Continue with sign-out even if deletion fails
+      // User may need to contact support for full deletion
     }
 
-    // Always sign out locally
-    await signOut();
+    // Clear all local state and provider sessions
+    try {
+      await _google.disconnect(); // Revoke Google access
+    } catch (_) {
+      // Ignore - may not be signed in with Google
+    }
+
+    await _supabase.signOut();
   }
 }
