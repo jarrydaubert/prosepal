@@ -4,7 +4,26 @@ import 'package:flutter/foundation.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:purchases_ui_flutter/purchases_ui_flutter.dart';
 
-class SubscriptionService {
+import 'package:prosepal/core/interfaces/subscription_interface.dart';
+
+/// RevenueCat subscription service implementation
+///
+/// Handles in-app purchases, subscription status, and paywall presentation.
+/// Uses native RevenueCat SDK with Test Store for development.
+///
+/// ## Environment Configuration
+/// - Test Store (default in debug): Instant purchases, no sandbox accounts
+/// - Production: Real App Store/Play Store transactions
+///
+/// ## Usage
+/// ```dart
+/// final service = SubscriptionService();
+/// await service.initialize();
+/// if (await service.isPro()) {
+///   // User has pro access
+/// }
+/// ```
+class SubscriptionService implements ISubscriptionService {
   // ==========================================================================
   // RevenueCat API Keys
   // ==========================================================================
@@ -70,10 +89,10 @@ class SubscriptionService {
 
   bool _isInitialized = false;
 
-  /// Check if RevenueCat is ready to use
+  @override
   bool get isConfigured => _isInitialized;
 
-  /// Initialize RevenueCat SDK
+  @override
   Future<void> initialize() async {
     if (_isInitialized) return;
 
@@ -106,7 +125,7 @@ class SubscriptionService {
     }
   }
 
-  /// Check if user has Pro entitlement
+  @override
   Future<bool> isPro() async {
     if (!_isInitialized) return false;
     try {
@@ -118,7 +137,7 @@ class SubscriptionService {
     }
   }
 
-  /// Get current customer info
+  @override
   Future<CustomerInfo?> getCustomerInfo() async {
     if (!_isInitialized) return null;
     try {
@@ -129,7 +148,7 @@ class SubscriptionService {
     }
   }
 
-  /// Get available offerings (products)
+  @override
   Future<Offerings?> getOfferings() async {
     if (!_isInitialized) return null;
     try {
@@ -140,7 +159,7 @@ class SubscriptionService {
     }
   }
 
-  /// Purchase a package
+  @override
   Future<bool> purchasePackage(Package package) async {
     try {
       final result = await Purchases.purchase(PurchaseParams.package(package));
@@ -160,7 +179,7 @@ class SubscriptionService {
     }
   }
 
-  /// Restore purchases
+  @override
   Future<bool> restorePurchases() async {
     if (!_isInitialized) {
       debugPrint('RevenueCat not initialized - cannot restore purchases');
@@ -175,8 +194,7 @@ class SubscriptionService {
     }
   }
 
-  /// Show RevenueCat's built-in paywall
-  /// Returns true if user purchased or restored, false if dismissed or failed
+  @override
   Future<bool> showPaywall() async {
     if (!_isInitialized) {
       debugPrint('RevenueCat not initialized - cannot show paywall');
@@ -193,7 +211,7 @@ class SubscriptionService {
     }
   }
 
-  /// Show RevenueCat's built-in paywall only if user doesn't have entitlement
+  @override
   Future<bool> showPaywallIfNeeded() async {
     if (!_isInitialized) {
       debugPrint('RevenueCat not initialized - cannot show paywall');
@@ -210,7 +228,7 @@ class SubscriptionService {
     }
   }
 
-  /// Show RevenueCat's Customer Center (manage subscriptions)
+  @override
   Future<void> showCustomerCenter() async {
     if (!_isInitialized) {
       debugPrint('RevenueCat not initialized - cannot show customer center');
@@ -223,12 +241,12 @@ class SubscriptionService {
     }
   }
 
-  /// Listen to customer info updates
+  @override
   void addCustomerInfoListener(void Function(CustomerInfo) listener) {
     Purchases.addCustomerInfoUpdateListener(listener);
   }
 
-  /// Identify user (for when they sign in with Supabase later)
+  @override
   Future<void> identifyUser(String userId) async {
     if (!_isInitialized) {
       debugPrint('RevenueCat not initialized, skipping identify');
@@ -241,7 +259,7 @@ class SubscriptionService {
     }
   }
 
-  /// Log out user
+  @override
   Future<void> logOut() async {
     try {
       await Purchases.logOut();
