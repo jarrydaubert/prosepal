@@ -17,6 +17,10 @@
 | **Firebase AI** | `firebase_ai: ^3.6.1` | Gemini AI message generation |
 | **Local Auth** | `local_auth: ^3.0.0` | Biometric authentication (Face ID/Touch ID) |
 | **Firebase Core** | `firebase_core`, `firebase_crashlytics` | App initialization, crash reporting |
+| **Firebase Analytics** | `firebase_analytics: ^12.1.0` | Usage analytics, event tracking |
+| **Share Plus** | `share_plus: ^12.0.1` | Native share sheet for messages |
+| **In App Review** | `in_app_review: ^2.0.11` | App Store review prompts |
+| **URL Launcher** | `url_launcher: ^6.3.1` | Open external links (support, legal) |
 | **Vercel** | Hosting | Landing page, privacy policy, terms, support |
 | **GitHub** | Repository | Source control, CI/CD |
 
