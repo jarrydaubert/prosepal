@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:prosepal/core/services/subscription_service.dart';
-import 'package:purchases_flutter/purchases_flutter.dart';
 
 import '../mocks/mock_subscription_service.dart';
 

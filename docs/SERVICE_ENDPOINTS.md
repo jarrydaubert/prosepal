@@ -8,6 +8,127 @@
 
 ---
 
+## Authentication Architecture
+
+### Best Practice: Native SDK + Supabase Token Validation
+
+Supabase recommends using **native SDKs** for social sign-in providers, then passing the ID token to Supabase for session management. This provides:
+
+- **Better UX** - Native popups instead of browser redirects
+- **Consistency** - Same pattern for Apple, Google, Facebook
+- **Security** - Tokens validated server-side by Supabase
+- **Account linking** - Same email from different providers = same user
+
+### Authentication Flow Patterns
+
+| Method | Native SDK | Supabase Role | Best Practice |
+|--------|-----------|---------------|:-------------:|
+| **Apple** | `sign_in_with_apple` → ID token | `signInWithIdToken()` validates & creates session | ✅ |
+| **Google** | `google_sign_in` → ID token | `signInWithIdToken()` validates & creates session | ✅ |
+| **Magic Link** | N/A | `signInWithOtp()` handles full flow | ✅ |
+| **Email/Password** | N/A | `signInWithPassword()` / `signUp()` | ✅ |
+
+### What Supabase Provides
+
+1. **Session Management** - JWT tokens, refresh tokens, expiry handling
+2. **User Database** - `auth.users` table with unified user records
+3. **Token Validation** - Verifies ID tokens from Apple/Google are legitimate
+4. **Account Linking** - Same email from different providers = same user record
+5. **Magic Link Flow** - Complete email OTP flow (send, verify, create session)
+
+### Implementation Pattern (Recommended)
+
+```dart
+// Apple Sign In - Native SDK + Supabase
+Future<AuthResponse> signInWithApple() async {
+  // 1. Get credential from native SDK
+  final credential = await SignInWithApple.getAppleIDCredential(...);
+  
+  // 2. Pass ID token to Supabase for validation & session
+  return await supabase.auth.signInWithIdToken(
+    provider: OAuthProvider.apple,
+    idToken: credential.identityToken!,
+    nonce: rawNonce,
+  );
+}
+
+// Google Sign In - Native SDK + Supabase
+Future<AuthResponse> signInWithGoogle() async {
+  // 1. Get credential from native SDK
+  final googleUser = await GoogleSignIn().signIn();
+  final googleAuth = await googleUser!.authentication;
+  
+  // 2. Pass ID token to Supabase for validation & session
+  return await supabase.auth.signInWithIdToken(
+    provider: OAuthProvider.google,
+    idToken: googleAuth.idToken!,
+  );
+}
+
+// Magic Link - Supabase handles everything
+Future<void> signInWithMagicLink(String email) async {
+  await supabase.auth.signInWithOtp(
+    email: email,
+    emailRedirectTo: 'com.prosepal.prosepal://login-callback',
+  );
+}
+```
+
+### Anti-Pattern: OAuth Browser Flow
+
+```dart
+// ❌ NOT RECOMMENDED - Opens external browser, poor UX
+await supabase.auth.signInWithOAuth(OAuthProvider.google);
+```
+
+This approach:
+- Opens Safari/Chrome (context switch)
+- Requires redirect URL handling
+- Less native feel
+- No One Tap support
+
+### Official Sign-In Buttons (Required)
+
+Apple and Google require using their official branded buttons:
+
+| Provider | Package | Button Widget | Notes |
+|----------|---------|---------------|-------|
+| **Apple** | `sign_in_with_apple` | `SignInWithAppleButton` | Required by Apple HIG |
+| **Google** | `sign_in_button` | `SignInButton(Buttons.google, ...)` | Required by Google branding |
+| **Email** | N/A | Custom button | No branding requirements |
+
+```dart
+// Apple - Official button from sign_in_with_apple package
+SignInWithAppleButton(
+  text: 'Continue with Apple',
+  onPressed: _signInWithApple,
+  style: SignInWithAppleButtonStyle.black,
+  borderRadius: BorderRadius.all(Radius.circular(12)),
+)
+
+// Google - Official button from sign_in_button package
+SignInButton(
+  Buttons.google,
+  text: 'Continue with Google',
+  onPressed: _signInWithGoogle,
+  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+)
+```
+
+### Dependency Notes
+
+| Package | Version | Purpose | Notes |
+|---------|---------|---------|-------|
+| `supabase_flutter` | ^2.12.0 | Auth session management | Core dependency |
+| `sign_in_with_apple` | ^6.1.4 | Native Apple credential + button | iOS only |
+| `google_sign_in` | ^6.2.2 | Native Google credential | Use 6.x for compatibility |
+| `sign_in_button` | ^4.0.1 | Official Google branded button | Required by Google |
+
+> **Note:** `supabase_auth_ui` removed - we use custom magic link UI instead.
+> This allows us to use latest `google_sign_in` without conflicts.
+
+---
+
 ## 1. Supabase Auth
 
 **Package:** `supabase_flutter: ^2.12.0`  
@@ -68,73 +189,148 @@
 
 **Unit: 0/1 (device only)** | **Integration: 0/1 (device only)**
 
+### Implementation ✅ Best Practice
+
+```dart
+Future<AuthResponse> signInWithApple() async {
+  final rawNonce = _generateNonce();
+  final hashedNonce = _sha256ofString(rawNonce);
+
+  // 1. Native SDK gets Apple credential
+  final credential = await SignInWithApple.getAppleIDCredential(
+    scopes: [AppleIDAuthorizationScopes.email, AppleIDAuthorizationScopes.fullName],
+    nonce: hashedNonce,
+  );
+
+  // 2. Pass ID token to Supabase for validation & session
+  return await _client.auth.signInWithIdToken(
+    provider: OAuthProvider.apple,
+    idToken: credential.identityToken!,
+    nonce: rawNonce,
+  );
+}
+```
+
 ### Notes
 - Cannot be unit tested - requires real device with Apple ID
 - iOS only - no Android equivalent
-- Credential is passed to Supabase `signInWithIdToken()`
+- Nonce prevents replay attacks (hashed for Apple, raw for Supabase)
 
 ---
 
-## 3. Google Sign In
+## 3. Google Sign In (Native)
 
-**Package:** `google_sign_in: ^7.2.0` (in pubspec.yaml but **NOT USED**)  
-**Actual implementation:** Supabase OAuth (`auth.signInWithOAuth()`)  
+**Package:** `google_sign_in: ^6.2.2`  
+**Used for:** Native Google Sign In credential  
 **File:** `auth_service.dart`  
 **Docs:** https://supabase.com/docs/guides/auth/social-login/auth-google
 
-### Current Implementation (OAuth - Browser Flow)
+### SDK Methods Used
 
-Google Sign In currently uses **Supabase OAuth flow** which opens a browser/webview to Google's login page, then redirects back to the app.
+| SDK Method | Service Method | Location | Unit | Integration |
+|------------|---------------|----------|:----:|:-----------:|
+| `GoogleSignIn().signIn()` | `signInWithGoogle()` | auth_service.dart | ⚠️ | ⚠️ |
+| `GoogleSignInAccount.authentication` | `signInWithGoogle()` | auth_service.dart | ⚠️ | ⚠️ |
 
-**Current flow:**
-1. User taps "Sign in with Google"
-2. `auth.signInWithOAuth(OAuthProvider.google)` called
-3. Browser opens → Google login page displayed
-4. User authenticates with Google
-5. Redirect to `com.prosepal.prosepal://login-callback`
-6. Supabase creates session
+**Unit: 0/2 (device only)** | **Integration: 0/2 (device only)**
 
-**SDK method:** `auth.signInWithOAuth()` - Listed in Supabase Auth section above
+### Implementation ✅ Best Practice
 
-**Testing:** Covered via Supabase `signInWithGoogle()` mock in `MockAuthService`
-
-### Best Practice: Native Google Sign In
-
-> ⚠️ **Recommendation:** Supabase docs support BOTH approaches, but **native `google_sign_in`** provides better UX.
-
-| Approach | UX | Setup Complexity | Package |
-|----------|----|-----------------:|---------|
-| **OAuth (current)** | Opens browser | Simple | None (built into Supabase) |
-| **Native (recommended)** | Google popup in-app | More setup | `google_sign_in` |
-
-**Native implementation (from Supabase docs):**
 ```dart
-import 'package:google_sign_in/google_sign_in.dart';
-
-Future<void> signInWithGoogle() async {
+Future<AuthResponse> signInWithGoogle() async {
+  // 1. Native SDK gets Google credential
   final googleSignIn = GoogleSignIn(
-    scopes: ['email', 'profile'],
+    // iOS client ID from Google Cloud Console
+    clientId: 'YOUR_IOS_CLIENT_ID.apps.googleusercontent.com',
+    serverClientId: 'YOUR_WEB_CLIENT_ID.apps.googleusercontent.com',
   );
+  
   final googleUser = await googleSignIn.signIn();
-  final googleAuth = await googleUser!.authentication;
+  if (googleUser == null) {
+    throw AuthException('Google Sign In cancelled');
+  }
+  
+  final googleAuth = await googleUser.authentication;
   final idToken = googleAuth.idToken;
+  
+  if (idToken == null) {
+    throw AuthException('No ID Token from Google');
+  }
 
-  if (idToken == null) throw Exception('No ID Token found.');
-
-  await supabase.auth.signInWithIdToken(
+  // 2. Pass ID token to Supabase for validation & session
+  return await _client.auth.signInWithIdToken(
     provider: OAuthProvider.google,
     idToken: idToken,
   );
 }
 ```
 
-**Benefits of native approach:**
-- Better UX (Google popup within app, not browser redirect)
-- Consistent with Apple Sign In (both use native SDKs)
-- One Tap / automatic sign-in support
-- No context switch to browser
+### Setup Requirements
 
-**Note:** The `google_sign_in: ^7.2.0` package is already in pubspec.yaml but unused. Migration would use this existing dependency.
+**Google Cloud Console:**
+1. Create OAuth 2.0 Client IDs for iOS and Web
+2. Add iOS bundle ID: `com.prosepal.prosepal`
+3. Add Web client ID to Supabase Dashboard → Auth → Providers → Google
+
+**iOS (Info.plist):**
+```xml
+<key>CFBundleURLTypes</key>
+<array>
+  <dict>
+    <key>CFBundleURLSchemes</key>
+    <array>
+      <string>com.googleusercontent.apps.YOUR_IOS_CLIENT_ID</string>
+    </array>
+  </dict>
+</array>
+```
+
+### Notes
+- Cannot be unit tested - requires real device with Google account
+- Works on iOS and Android
+- Consistent UX with Apple Sign In (native popup, no browser)
+- Supports One Tap / automatic sign-in
+
+---
+
+## 4. Magic Link (Email OTP)
+
+**Package:** `supabase_flutter: ^2.12.0`  
+**Used for:** Passwordless email authentication  
+**File:** `auth_service.dart`  
+**Docs:** https://supabase.com/docs/guides/auth/auth-email-passwordless
+
+### SDK Methods Used
+
+| SDK Method | Service Method | Location | Unit | Integration |
+|------------|---------------|----------|:----:|:-----------:|
+| `auth.signInWithOtp()` | `signInWithMagicLink()` | auth_service.dart | ✅ | ✅ |
+
+### Implementation ✅ Best Practice
+
+```dart
+Future<void> signInWithMagicLink(String email) async {
+  await _client.auth.signInWithOtp(
+    email: email,
+    emailRedirectTo: kIsWeb ? null : 'com.prosepal.prosepal://login-callback',
+  );
+}
+```
+
+### Notes
+- Supabase handles the entire flow (send email, verify token, create session)
+- No native SDK needed - Supabase is the provider
+- Deep link handling required for mobile apps
+- Email template customizable in Supabase Dashboard
+
+### UI Options
+
+| Approach | Pros | Cons |
+|----------|------|------|
+| **Custom UI** (recommended) | Full control, no extra deps | More code |
+| `supabase_auth_ui` (`SupaMagicAuth`) | Pre-built widget | Adds dependency, version conflicts |
+
+**Custom UI is preferred** - it's just a TextField + Button calling `signInWithMagicLink()`.
 
 ---
 

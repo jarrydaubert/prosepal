@@ -75,7 +75,8 @@ void main() {
     return true;
   }
 
-  /// Enter text in a TextField and submit
+  // Helper for future email input tests (currently unused)
+  // ignore: unused_element, no_leading_underscores_for_local_identifiers
   Future<void> enterTextAndSubmit(
     WidgetTester tester, {
     required Finder field,
