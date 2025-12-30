@@ -4,11 +4,57 @@
 
 ---
 
+## 0. Recently Completed (Dec 2025)
+
+### 0.1 UI Modernization (2025 Trends) ✅
+
+| Screen | Improvements |
+|--------|--------------|
+| **AuthScreen** | Glassmorphism logo, gradient background, scale animations, official Google branding assets |
+| **OnboardingScreen** | Linear progress bar, glassmorphism emoji containers, haptic feedback, animated CTA button |
+| **SettingsScreen** | Modern card-based account header, Pro badge with glow, subtle gray background |
+| **HomeScreen** | Subtle gradient background, refined typography |
+
+### 0.2 UX Improvements ✅
+
+| Feature | Files Modified |
+|---------|----------------|
+| Keyboard dismiss on tap outside | `email_auth_screen.dart`, `feedback_screen.dart`, `details_input.dart` |
+| Password sign-in for Apple Review | `email_auth_screen.dart` |
+
+### 0.3 Test Coverage ✅
+
+| Addition | Details |
+|----------|---------|
+| `settings_screen_test.dart` | 26 comprehensive widget tests |
+| Model test consolidation | Deleted duplicate test files |
+| CI coverage reporting | Added to GitHub Actions |
+
+### 0.4 Supabase v2 Upgrade Check ✅
+
+**Current version:** `supabase_flutter: ^2.12.0` - Already on v2!
+
+| Breaking Change | Status | Notes |
+|-----------------|--------|-------|
+| `Provider` → `OAuthProvider` | ✅ Already using | Using `OAuthProvider.apple`, `OAuthProvider.google` |
+| `signInWithApple()` deprecated | ✅ Handled | Using `sign_in_with_apple` package directly |
+| PKCE default auth flow | ✅ N/A | Using native OAuth, not deep-link flows |
+| `is_` → `isFilter`, `in_` → `inFilter` | ✅ N/A | No PostgREST queries in app (auth-only usage) |
+| `.on()` → `.onPostgresChanges()` | ✅ N/A | No Realtime subscriptions used |
+| Session refresh not awaited | ✅ Handled | App checks session validity appropriately |
+| `webview_flutter` removed | ✅ N/A | Using native sign-in SDKs |
+
+**Conclusion:** No migration needed. App is already v2 compliant.
+
+---
+
 ## 1. Onboarding Improvements
 
 **Current:** 4-page PageView with emoji icons, gradient backgrounds, flutter_animate
 
 **Target:** Modern 2025 onboarding - shorter, value-first, immersive
+
+**Status:** Partially complete - glassmorphism and haptics added, page reduction still pending
 
 ### 1.1 Page Reduction (4 → 3)
 
@@ -378,28 +424,43 @@ final supported = await biometricService.isSupported;
 
 ## Priority Matrix
 
-| Priority | Item | Effort | Impact |
-|----------|------|--------|--------|
-| ~~P0~~ | ~~Firebase AI migration~~ | ~~High~~ | ✅ **DONE** |
-| P1 | Run integration tests on device | Low | High |
-| P1 | Fix 674 lint suggestions | Medium | Medium |
-| P2 | SettingsScreen DI refactor | Medium | Medium |
-| P2 | Create settings_screen_test.dart | Medium | Medium |
-| P2 | Onboarding improvements | High | High |
-| P3 | Model test consolidation | Low | Low |
-| P3 | Subscription mock enhancements | Medium | Low |
-| P3 | CI coverage threshold | Low | Medium |
-| P4 | Performance optimizations | Medium | Medium |
-| P4 | SettingsScreen visual polish | Low | Low |
+| Priority | Item | Effort | Impact | Status |
+|----------|------|--------|--------|--------|
+| ~~P0~~ | ~~Firebase AI migration~~ | ~~High~~ | ~~High~~ | ✅ **DONE** |
+| ~~P0~~ | ~~Supabase v2 upgrade check~~ | ~~Low~~ | ~~High~~ | ✅ **DONE** (already compliant) |
+| ~~P1~~ | ~~UI Modernization (Auth, Onboarding, Settings, Home)~~ | ~~High~~ | ~~High~~ | ✅ **DONE** |
+| ~~P1~~ | ~~Create settings_screen_test.dart~~ | ~~Medium~~ | ~~Medium~~ | ✅ **DONE** (26 tests) |
+| ~~P2~~ | ~~Model test consolidation~~ | ~~Low~~ | ~~Low~~ | ✅ **DONE** |
+| **P0** | **RevenueCat offerings empty** | Low | **BLOCKER** | ❌ Dashboard config needed |
+| **P0** | **Test on real device** | Low | **BLOCKER** | ❌ Apple Sign In, paywall |
+| **P0** | **App Store ID for reviews** | Low | **BLOCKER** | ❌ Add after app is live |
+| P1 | Run integration tests on device | Medium | High | ❌ Pending |
+| P1 | Fix 674 lint suggestions | Medium | Medium | ❌ Pending |
+| P2 | Onboarding page reduction (4→3) | Medium | Medium | ❌ Pending |
+| P3 | Subscription mock enhancements | Medium | Low | ❌ Pending |
+| P3 | Lottie animations | Medium | Medium | ❌ Pending |
+| P4 | Performance optimizations | Medium | Medium | ❌ Pending |
+| P4 | Dark mode support | High | Medium | ❌ Pending |
+
+---
+
+## 🔴 Release Blockers
+
+| Item | Action Required |
+|------|-----------------|
+| **RevenueCat offerings empty** | Go to https://app.revenuecat.com → Products → Offerings → Add packages to 'default' |
+| **Test on real device** | Connect device, run `flutter run`, test Apple Sign In + paywall |
+| **App Store ID for reviews** | Add to `_rateApp()` in settings_screen.dart after app goes live |
 
 ---
 
 ## Notes
 
 - ✅ **Firebase AI migration COMPLETED** - now using firebase_ai 3.6.1
-- Onboarding changes are UX polish, not blocking release
-- Subscription mock enhancements improve test quality but current tests are sufficient
-- Model test duplication doesn't break anything, just adds noise
+- ✅ **Supabase v2 COMPLIANT** - already using 2.12.0 with correct patterns
+- ✅ **UI Modernization COMPLETED** - 2025 trends applied to all major screens
+- ✅ **Test coverage improved** - 554 tests passing, settings screen tested
+- Onboarding page reduction is UX polish, not blocking release
 - 674 lint issues are info-level (suggestions), not errors
 
 ---
