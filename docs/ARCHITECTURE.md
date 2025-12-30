@@ -182,19 +182,21 @@ prosepal/
 │           └── generate_screen_test.dart # Generate wizard widget tests
 │
 ├── integration_test/             # E2E integration tests
-│   ├── app_test.dart             # Full app flow tests
+│   ├── app_test.dart             # Full app flow tests (12 tests)
 │   ├── auth_test.dart            # Auth flow integration tests
 │   ├── revenuecat_test.dart      # Subscription flow tests
-│   └── firebase_test.dart        # Firebase integration tests
+│   ├── firebase_test.dart        # Firebase integration tests
+│   ├── e2e_subscription_test.dart  # Subscription UI flows (29 tests)
+│   └── e2e_user_journey_test.dart  # Complete user journeys
 │
 ├── docs/                         # Documentation
 │   ├── ARCHITECTURE.md           # This file - directory structure
 │   ├── BACKLOG.md                # Feature backlog and priorities
+│   ├── LAUNCH_CHECKLIST.md       # RevenueCat launch checklist
 │   ├── PRODUCT_SPEC.md           # Product requirements
 │   ├── SERVICE_ENDPOINTS.md      # SDK methods and test coverage
 │   ├── STACK_TEMPLATE.md         # Technology stack reference
-│   ├── TEST_AUDIT.md             # Test coverage audit
-│   └── ASO_METADATA.md           # App Store metadata
+│   └── TEST_AUDIT.md             # Test coverage audit
 │
 ├── assets/
 │   └── images/                   # App images (logo, icons)
@@ -213,6 +215,42 @@ prosepal/
 ├── firebase.json                 # Firebase project config
 └── CLAUDE.md                     # AI assistant context
 ```
+
+## Brand System
+
+### Color Palette (3 Core Colors)
+
+| Role | Color | Hex | Usage |
+|------|-------|-----|-------|
+| **Primary** | Coral | `#E57373` | CTAs, links, selection states, brand identity |
+| **Text Primary** | Charcoal | `#2D3436` | Headings, body text (12.6:1 contrast) |
+| **Text Secondary** | Gray | `#636E72` | Supporting text (4.6:1 contrast) |
+| **Background** | Warm White | `#FAFAFA` | App background |
+| **Surface** | White | `#FFFFFF` | Cards, modals |
+
+### Semantic Colors
+
+| Purpose | Color | Hex |
+|---------|-------|-----|
+| Success | Green | `#4CAF50` |
+| Warning | Orange | `#FF9800` |
+| Error | Red | `#E53935` |
+| Info | Blue | `#2196F3` |
+
+### Occasion Cards
+All occasions use unified primary color with opacity:
+```dart
+AppColors.occasionBackground(index)  // Primary with 0.08-0.12 opacity
+AppColors.occasionBorder(index)      // Primary with 0.25 opacity
+```
+
+### Gradients
+```dart
+AppColors.primaryGradient      // Coral to light coral (CTAs)
+AppColors.backgroundGradient   // Subtle coral fade (screens)
+```
+
+---
 
 ## Key Patterns
 
