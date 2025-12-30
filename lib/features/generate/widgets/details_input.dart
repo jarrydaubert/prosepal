@@ -71,7 +71,7 @@ class _DetailsInputState extends State<DetailsInput> {
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
       child: SingleChildScrollView(
-        padding: EdgeInsets.all(AppSpacing.screenPadding),
+        padding: const EdgeInsets.all(AppSpacing.screenPadding),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -79,24 +79,24 @@ class _DetailsInputState extends State<DetailsInput> {
               'Add personal touches',
               style: Theme.of(context).textTheme.headlineSmall,
             ),
-            Gap(AppSpacing.sm),
+            const Gap(AppSpacing.sm),
             Text(
               'Optional details to make your message more personal',
               style: Theme.of(
                 context,
               ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
             ),
-            Gap(AppSpacing.xl),
+            const Gap(AppSpacing.xl),
 
             // Recipient name
             Text(
               "Recipient's name",
               style: Theme.of(context).textTheme.titleSmall,
             ),
-            Gap(AppSpacing.sm),
+            const Gap(AppSpacing.sm),
             TextField(
               controller: _nameController,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 hintText: 'e.g., Sarah, Mom, John',
                 prefixIcon: Icon(Icons.person_outline),
                 labelText: "Recipient's name", // For accessibility
@@ -104,17 +104,17 @@ class _DetailsInputState extends State<DetailsInput> {
               textCapitalization: TextCapitalization.words,
               onChanged: widget.onRecipientNameChanged,
             ),
-            Gap(AppSpacing.xl),
+            const Gap(AppSpacing.xl),
 
             // Personal details
             Text(
               'Personal details or context',
               style: Theme.of(context).textTheme.titleSmall,
             ),
-            Gap(AppSpacing.sm),
+            const Gap(AppSpacing.sm),
             TextField(
               controller: _detailsController,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 hintText:
                     'e.g., She loves gardening, Just got promoted, We met in college',
                 prefixIcon: Padding(
@@ -130,14 +130,14 @@ class _DetailsInputState extends State<DetailsInput> {
               textCapitalization: TextCapitalization.sentences,
               onChanged: widget.onPersonalDetailsChanged,
             ),
-            Gap(AppSpacing.xl),
+            const Gap(AppSpacing.xl),
 
             // Message length
             Text(
               'Message length',
               style: Theme.of(context).textTheme.titleSmall,
             ),
-            Gap(AppSpacing.sm),
+            const Gap(AppSpacing.sm),
             Semantics(
               label: 'Message length selector',
               child: Wrap(
@@ -153,7 +153,7 @@ class _DetailsInputState extends State<DetailsInput> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           if (isSelected)
-                            Padding(
+                            const Padding(
                               padding: EdgeInsets.only(right: AppSpacing.xs),
                               child: Icon(
                                 Icons.check,
@@ -162,11 +162,11 @@ class _DetailsInputState extends State<DetailsInput> {
                               ),
                             ),
                           Text(length.emoji),
-                          Gap(AppSpacing.xs),
+                          const Gap(AppSpacing.xs),
                           Text(
                             length.label,
                             style: isSelected
-                                ? TextStyle(
+                                ? const TextStyle(
                                     fontWeight: FontWeight.w600,
                                     color: AppColors.primary,
                                   )
@@ -190,18 +190,18 @@ class _DetailsInputState extends State<DetailsInput> {
                 }).toList(),
               ),
             ),
-            Gap(AppSpacing.sm),
+            const Gap(AppSpacing.sm),
             Text(
               widget.selectedLength.description,
               style: Theme.of(
                 context,
               ).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
             ),
-            Gap(AppSpacing.lg),
+            const Gap(AppSpacing.lg),
 
             // Tip card
             Container(
-              padding: EdgeInsets.all(AppSpacing.md),
+              padding: const EdgeInsets.all(AppSpacing.md),
               decoration: BoxDecoration(
                 color: AppColors.info.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
@@ -212,12 +212,12 @@ class _DetailsInputState extends State<DetailsInput> {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.lightbulb_outline,
                     color: AppColors.info,
                     size: 20,
                   ),
-                  Gap(AppSpacing.sm),
+                  const Gap(AppSpacing.sm),
                   Expanded(
                     child: Text(
                       'The more details you provide, the more personalized your message will be!',

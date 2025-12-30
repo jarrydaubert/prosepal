@@ -47,10 +47,10 @@ void main() {
     final router = GoRouter(
       initialLocation: '/results',
       routes: [
-        GoRoute(path: '/', builder: (_, __) => Scaffold(body: Text('Home'))),
+        GoRoute(path: '/', builder: (_, __) => const Scaffold(body: Text('Home'))),
         GoRoute(
           path: '/results',
-          builder: (_, __) => ResultsScreen(),
+          builder: (_, __) => const ResultsScreen(),
         ),
       ],
     );
@@ -89,7 +89,7 @@ void main() {
       });
 
       testWidgets('shows all generated messages', (tester) async {
-        final result = createTestResult(messageCount: 3);
+        final result = createTestResult();
 
         await tester.pumpWidget(buildTestWidget(result: result));
         await tester.pumpAndSettle();
@@ -154,7 +154,7 @@ void main() {
       });
 
       testWidgets('redirects to home if no result', (tester) async {
-        await tester.pumpWidget(buildTestWidget(result: null));
+        await tester.pumpWidget(buildTestWidget());
         await tester.pumpAndSettle();
 
         expect(find.text('Home'), findsOneWidget);

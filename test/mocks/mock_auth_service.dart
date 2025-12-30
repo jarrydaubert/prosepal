@@ -184,7 +184,7 @@ class MockAuthService implements IAuthService {
     _isLoggedIn = true;
     _email = user.email;
     if (autoEmitAuthState) {
-      emitAuthState(AuthState(AuthChangeEvent.signedIn, null));
+      emitAuthState(const AuthState(AuthChangeEvent.signedIn, null));
     }
     return AuthResponse(
       session: createFakeSession(user: user),
@@ -206,7 +206,7 @@ class MockAuthService implements IAuthService {
     _isLoggedIn = true;
     _email = user.email;
     if (autoEmitAuthState) {
-      emitAuthState(AuthState(AuthChangeEvent.signedIn, null));
+      emitAuthState(const AuthState(AuthChangeEvent.signedIn, null));
     }
     return AuthResponse(
       session: createFakeSession(user: user),
@@ -230,7 +230,7 @@ class MockAuthService implements IAuthService {
     _isLoggedIn = true;
     _email = email;
     if (autoEmitAuthState) {
-      emitAuthState(AuthState(AuthChangeEvent.signedIn, null));
+      emitAuthState(const AuthState(AuthChangeEvent.signedIn, null));
     }
     return AuthResponse(
       session: createFakeSession(user: user),
@@ -253,7 +253,6 @@ class MockAuthService implements IAuthService {
     _currentUser = user;
     _email = email;
     return AuthResponse(
-      session: null, // No session until email confirmed
       user: user,
     );
   }
@@ -279,7 +278,7 @@ class MockAuthService implements IAuthService {
     if (error != null) throw error;
     _email = newEmail;
     if (autoEmitAuthState) {
-      emitAuthState(AuthState(AuthChangeEvent.userUpdated, null));
+      emitAuthState(const AuthState(AuthChangeEvent.userUpdated, null));
     }
   }
 
@@ -288,7 +287,7 @@ class MockAuthService implements IAuthService {
     final error = _getError('updatePassword');
     if (error != null) throw error;
     if (autoEmitAuthState) {
-      emitAuthState(AuthState(AuthChangeEvent.userUpdated, null));
+      emitAuthState(const AuthState(AuthChangeEvent.userUpdated, null));
     }
   }
 
@@ -302,7 +301,7 @@ class MockAuthService implements IAuthService {
     _email = null;
     _displayName = null;
     if (autoEmitAuthState) {
-      emitAuthState(AuthState(AuthChangeEvent.signedOut, null));
+      emitAuthState(const AuthState(AuthChangeEvent.signedOut, null));
     }
   }
 

@@ -80,7 +80,7 @@ final isProProvider = StateProvider<bool>((ref) => false);
 /// Async check of pro status from RevenueCat
 final checkProStatusProvider = FutureProvider<bool>((ref) async {
   final subscriptionService = ref.watch(subscriptionServiceProvider);
-  return await subscriptionService.isPro();
+  return subscriptionService.isPro();
 });
 
 // ============================================================

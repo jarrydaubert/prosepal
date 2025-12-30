@@ -54,7 +54,7 @@ void main() {
     });
 
     test('should create network exception with original error', () {
-      final exception = AiNetworkException(
+      const exception = AiNetworkException(
         'Connection lost',
         originalError: 'Socket error',
       );
@@ -152,22 +152,22 @@ Third message content here.''';
 
   group('AiService prompt building', () {
     test('should include occasion in prompt context', () {
-      final occasion = Occasion.birthday;
+      const occasion = Occasion.birthday;
       expect(occasion.prompt, equals('birthday celebration'));
     });
 
     test('should include relationship in prompt context', () {
-      final relationship = Relationship.closeFriend;
+      const relationship = Relationship.closeFriend;
       expect(relationship.prompt, equals('a close friend'));
     });
 
     test('should include tone in prompt context', () {
-      final tone = Tone.heartfelt;
+      const tone = Tone.heartfelt;
       expect(tone.prompt, contains('warm'));
     });
 
     test('should include message length in prompt context', () {
-      final length = MessageLength.brief;
+      const length = MessageLength.brief;
       expect(length.prompt, contains('1-2 sentences'));
     });
 

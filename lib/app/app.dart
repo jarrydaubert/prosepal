@@ -72,7 +72,7 @@ class _ProsepalAppState extends ConsumerState<ProsepalApp>
             child!,
             // Privacy screen when app is backgrounded
             if (_isInBackground)
-              Container(
+              ColoredBox(
                 color: AppColors.background,
                 child: Center(
                   child: ClipRRect(

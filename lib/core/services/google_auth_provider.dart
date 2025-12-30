@@ -2,8 +2,6 @@ import 'dart:io' show Platform;
 
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:google_sign_in_platform_interface/google_sign_in_platform_interface.dart'
-    show GoogleSignInException, GoogleSignInExceptionCode;
 
 import '../interfaces/google_auth_provider.dart';
 

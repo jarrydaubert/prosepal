@@ -19,7 +19,7 @@ class RelationshipPicker extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: EdgeInsets.all(AppSpacing.screenPadding),
+      padding: const EdgeInsets.all(AppSpacing.screenPadding),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -27,21 +27,21 @@ class RelationshipPicker extends StatelessWidget {
             'Who is it for?',
             style: Theme.of(context).textTheme.headlineSmall,
           ),
-          Gap(AppSpacing.sm),
+          const Gap(AppSpacing.sm),
           Text(
             'Select your relationship with the recipient',
             style: Theme.of(
               context,
             ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
           ),
-          Gap(AppSpacing.xl),
+          const Gap(AppSpacing.xl),
           ...Relationship.values.asMap().entries.map((entry) {
             final index = entry.key;
             final relationship = entry.value;
             final isSelected = selectedRelationship == relationship;
 
             return Padding(
-              padding: EdgeInsets.only(bottom: AppSpacing.md),
+              padding: const EdgeInsets.only(bottom: AppSpacing.md),
               child:
                   _RelationshipTile(
                         relationship: relationship,
@@ -92,8 +92,8 @@ class _RelationshipTile extends StatelessWidget {
           onTap: onTap,
           borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
           child: AnimatedContainer(
-            duration: Duration(milliseconds: 200),
-            padding: EdgeInsets.all(AppSpacing.lg),
+            duration: const Duration(milliseconds: 200),
+            padding: const EdgeInsets.all(AppSpacing.lg),
             decoration: BoxDecoration(
               color: isSelected
                   ? AppColors.primary.withValues(alpha: 0.1)
@@ -108,8 +108,8 @@ class _RelationshipTile extends StatelessWidget {
             ),
             child: Row(
               children: [
-                Text(relationship.emoji, style: TextStyle(fontSize: 28)),
-                Gap(AppSpacing.lg),
+                Text(relationship.emoji, style: const TextStyle(fontSize: 28)),
+                const Gap(AppSpacing.lg),
                 Expanded(
                   child: Text(
                     relationship.label,
@@ -122,7 +122,7 @@ class _RelationshipTile extends StatelessWidget {
                   ),
                 ),
                 if (isSelected)
-                  Icon(Icons.check_circle, color: AppColors.primary),
+                  const Icon(Icons.check_circle, color: AppColors.primary),
               ],
             ),
           ),

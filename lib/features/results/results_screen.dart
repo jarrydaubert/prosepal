@@ -30,17 +30,17 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         context.go('/');
       });
-      return SizedBox.shrink();
+      return const SizedBox.shrink();
     }
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Your Messages'),
+        title: const Text('Your Messages'),
         leading: Semantics(
           label: 'Close and return home',
           button: true,
           child: IconButton(
-            icon: Icon(Icons.close),
+            icon: const Icon(Icons.close),
             tooltip: 'Close',
             onPressed: () {
               resetGenerationForm(ref);
@@ -57,12 +57,12 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                 'Generated ${result.occasion.label} message for ${result.relationship.label} with ${result.tone.label} tone',
             child: Container(
               width: double.infinity,
-              padding: EdgeInsets.all(AppSpacing.lg),
+              padding: const EdgeInsets.all(AppSpacing.lg),
               color: AppColors.surfaceVariant,
               child: Row(
                 children: [
-                  Text(result.occasion.emoji, style: TextStyle(fontSize: 24)),
-                  Gap(AppSpacing.sm),
+                  Text(result.occasion.emoji, style: const TextStyle(fontSize: 24)),
+                  const Gap(AppSpacing.sm),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -87,12 +87,12 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
           // Messages
           Expanded(
             child: ListView.builder(
-              padding: EdgeInsets.all(AppSpacing.screenPadding),
+              padding: const EdgeInsets.all(AppSpacing.screenPadding),
               itemCount: result.messages.length,
               itemBuilder: (context, index) {
                 final message = result.messages[index];
                 return Padding(
-                  padding: EdgeInsets.only(bottom: AppSpacing.lg),
+                  padding: const EdgeInsets.only(bottom: AppSpacing.lg),
                   child:
                       _MessageCard(
                             message: message,
@@ -121,7 +121,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
           // Bottom actions
           SafeArea(
             child: Padding(
-              padding: EdgeInsets.all(AppSpacing.screenPadding),
+              padding: const EdgeInsets.all(AppSpacing.screenPadding),
               child: Row(
                 children: [
                   Expanded(
@@ -150,7 +150,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+        const SnackBar(
           content: Row(
             children: [
               Icon(Icons.check_circle, color: Colors.white, size: 20),
@@ -165,7 +165,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
       );
     }
 
-    await Future.delayed(Duration(seconds: 2));
+    await Future.delayed(const Duration(seconds: 2));
     if (mounted) {
       setState(() => _copiedIndex = null);
     }
@@ -197,7 +197,7 @@ class _MessageCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Semantics(
       label: 'Message option ${index + 1}',
-      child: Container(
+      child: DecoratedBox(
         decoration: BoxDecoration(
           color: AppColors.surface,
           borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
@@ -206,7 +206,7 @@ class _MessageCard extends StatelessWidget {
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 10,
-              offset: Offset(0, 4),
+              offset: const Offset(0, 4),
             ),
           ],
         ),
@@ -215,13 +215,13 @@ class _MessageCard extends StatelessWidget {
           children: [
             // Header with actions
             Container(
-              padding: EdgeInsets.symmetric(
+              padding: const EdgeInsets.symmetric(
                 horizontal: AppSpacing.lg,
                 vertical: AppSpacing.md,
               ),
               decoration: BoxDecoration(
                 color: AppColors.surfaceVariant.withValues(alpha: 0.5),
-                borderRadius: BorderRadius.vertical(
+                borderRadius: const BorderRadius.vertical(
                   top: Radius.circular(AppSpacing.radiusMedium),
                 ),
               ),
@@ -230,7 +230,7 @@ class _MessageCard extends StatelessWidget {
                   Container(
                     width: 24,
                     height: 24,
-                    decoration: BoxDecoration(
+                    decoration: const BoxDecoration(
                       color: AppColors.primary,
                       shape: BoxShape.circle,
                     ),
@@ -244,19 +244,19 @@ class _MessageCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                  Gap(AppSpacing.sm),
+                  const Gap(AppSpacing.sm),
                   Text(
                     'Option ${index + 1}',
                     style: Theme.of(context).textTheme.titleSmall,
                   ),
-                  Spacer(),
+                  const Spacer(),
                   // Share button
                   Semantics(
                     label: 'Share option ${index + 1}',
                     button: true,
                     child: IconButton(
                       onPressed: onShare,
-                      icon: Icon(Icons.share_outlined, size: 20),
+                      icon: const Icon(Icons.share_outlined, size: 20),
                       tooltip: 'Share',
                       style: IconButton.styleFrom(
                         foregroundColor: AppColors.textSecondary,
@@ -286,7 +286,7 @@ class _MessageCard extends StatelessWidget {
 
             // Message content
             Padding(
-              padding: EdgeInsets.all(AppSpacing.lg),
+              padding: const EdgeInsets.all(AppSpacing.lg),
               child: SelectableText(
                 message.text,
                 style: Theme.of(

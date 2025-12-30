@@ -38,7 +38,7 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         context.go('/home');
       });
-      return SizedBox.shrink();
+      return const SizedBox.shrink();
     }
 
     return Stack(
@@ -49,12 +49,12 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(occasion.emoji),
-                Gap(AppSpacing.sm),
+                const Gap(AppSpacing.sm),
                 Text(occasion.label),
               ],
             ),
             leading: IconButton(
-              icon: Icon(Icons.arrow_back),
+              icon: const Icon(Icons.arrow_back),
               onPressed: () {
                 if (_currentStep > 0) {
                   setState(() => _currentStep--);
@@ -73,7 +73,7 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
               // Content
               Expanded(
                 child: AnimatedSwitcher(
-                  duration: Duration(milliseconds: 300),
+                  duration: const Duration(milliseconds: 300),
                   child: _buildStep(context),
                 ),
               ),
@@ -81,11 +81,11 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
               // Error message with dismiss
               if (error != null)
                 Padding(
-                  padding: EdgeInsets.symmetric(
+                  padding: const EdgeInsets.symmetric(
                     horizontal: AppSpacing.screenPadding,
                   ),
                   child: Container(
-                    padding: EdgeInsets.all(AppSpacing.md),
+                    padding: const EdgeInsets.all(AppSpacing.md),
                     decoration: BoxDecoration(
                       color: AppColors.error.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(
@@ -97,12 +97,12 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
                     ),
                     child: Row(
                       children: [
-                        Icon(Icons.error_outline, color: AppColors.error),
-                        Gap(AppSpacing.sm),
+                        const Icon(Icons.error_outline, color: AppColors.error),
+                        const Gap(AppSpacing.sm),
                         Expanded(
                           child: Text(
                             error,
-                            style: TextStyle(color: AppColors.error),
+                            style: const TextStyle(color: AppColors.error),
                           ),
                         ),
                         GestureDetector(
@@ -110,7 +110,7 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
                             ref.read(generationErrorProvider.notifier).state =
                                 null;
                           },
-                          child: Icon(
+                          child: const Icon(
                             Icons.close,
                             color: AppColors.error,
                             size: 18,
@@ -124,7 +124,7 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
               // Bottom button
               SafeArea(
                 child: Padding(
-                  padding: EdgeInsets.all(AppSpacing.screenPadding),
+                  padding: const EdgeInsets.all(AppSpacing.screenPadding),
                   child: _buildBottomButton(
                     context,
                     occasion: occasion,
@@ -148,21 +148,21 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
   Widget _buildStep(BuildContext context) {
     return switch (_currentStep) {
       0 => RelationshipPicker(
-        key: ValueKey('relationship'),
+        key: const ValueKey('relationship'),
         selectedRelationship: ref.watch(selectedRelationshipProvider),
         onSelected: (r) {
           ref.read(selectedRelationshipProvider.notifier).state = r;
         },
       ),
       1 => ToneSelector(
-        key: ValueKey('tone'),
+        key: const ValueKey('tone'),
         selectedTone: ref.watch(selectedToneProvider),
         onSelected: (t) {
           ref.read(selectedToneProvider.notifier).state = t;
         },
       ),
       2 => DetailsInput(
-        key: ValueKey('details'),
+        key: const ValueKey('details'),
         recipientName: ref.watch(recipientNameProvider),
         personalDetails: ref.watch(personalDetailsProvider),
         selectedLength: ref.watch(selectedLengthProvider),
@@ -176,7 +176,7 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
           ref.read(selectedLengthProvider.notifier).state = length;
         },
       ),
-      _ => SizedBox.shrink(),
+      _ => const SizedBox.shrink(),
     };
   }
 
@@ -303,7 +303,7 @@ class _StepIndicator extends StatelessWidget {
     return Semantics(
       label: 'Step ${currentStep + 1} of 3: ${_stepLabels[currentStep]}',
       child: Padding(
-        padding: EdgeInsets.all(AppSpacing.screenPadding),
+        padding: const EdgeInsets.all(AppSpacing.screenPadding),
         child: Row(
           children: List.generate(3, (index) {
             final isActive = index == currentStep;
@@ -318,7 +318,7 @@ class _StepIndicator extends StatelessWidget {
                         ? 'current'
                         : 'pending'}',
                 child: Container(
-                  margin: EdgeInsets.symmetric(horizontal: 2),
+                  margin: const EdgeInsets.symmetric(horizontal: 2),
                   height: 4,
                   decoration: BoxDecoration(
                     color: isActive || isCompleted

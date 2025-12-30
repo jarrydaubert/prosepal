@@ -26,11 +26,9 @@ import '../interfaces/supabase_auth_provider.dart';
 // ===========================================================================
 const _googleWebClientId = String.fromEnvironment(
   'GOOGLE_WEB_CLIENT_ID',
-  defaultValue: '',
 );
 const _googleIosClientId = String.fromEnvironment(
   'GOOGLE_IOS_CLIENT_ID',
-  defaultValue: '',
 );
 
 /// Authentication service using dependency injection for testability
@@ -101,7 +99,7 @@ class AuthService implements IAuthService {
         metadata?['full_name'] as String? ??
         metadata?['name'] as String? ??
         user.email?.split('@').first;
-    if (name != null && user.email?.startsWith(name) == true) {
+    if (name != null && (user.email?.startsWith(name) ?? false)) {
       return name[0].toUpperCase() + name.substring(1);
     }
     return name;
@@ -128,7 +126,7 @@ class AuthService implements IAuthService {
   Future<AuthResponse> signInWithApple() async {
     // Check platform availability first
     if (!await _apple.isAvailable()) {
-      throw AuthException('Apple Sign In is not available on this platform');
+      throw const AuthException('Apple Sign In is not available on this platform');
     }
 
     try {
@@ -146,7 +144,7 @@ class AuthService implements IAuthService {
 
       final idToken = credential.identityToken;
       if (idToken == null) {
-        throw AuthException('Apple Sign In failed: No identity token');
+        throw const AuthException('Apple Sign In failed: No identity token');
       }
 
       return await _supabase.signInWithIdToken(
@@ -157,7 +155,7 @@ class AuthService implements IAuthService {
     } on SignInWithAppleAuthorizationException catch (e) {
       // User cancelled or authorization failed
       if (e.code == AuthorizationErrorCode.canceled) {
-        throw AuthException('Apple Sign In cancelled');
+        throw const AuthException('Apple Sign In cancelled');
       }
       throw AuthException('Apple Sign In failed: ${e.message}');
     }
@@ -167,7 +165,7 @@ class AuthService implements IAuthService {
   Future<AuthResponse> signInWithGoogle() async {
     // Check platform availability first
     if (!await _google.isAvailable()) {
-      throw AuthException('Google Sign In is not available on this platform');
+      throw const AuthException('Google Sign In is not available on this platform');
     }
 
     // Initialize with platform-appropriate client IDs
@@ -176,7 +174,6 @@ class AuthService implements IAuthService {
     await _google.initialize(
       serverClientId: _googleWebClientId,
       clientId: _googleIosClientId,
-      scopes: const ['email', 'profile'],
     );
 
     // Try silent re-auth first (better UX for returning users)
@@ -187,15 +184,15 @@ class AuthService implements IAuthService {
 
     // User cancelled sign-in (authenticate returns null on cancel)
     if (result == null) {
-      throw AuthException('Google Sign In cancelled');
+      throw const AuthException('Google Sign In cancelled');
     }
 
     final idToken = result.idToken;
     if (idToken == null) {
-      throw AuthException('Google Sign In failed: No ID token');
+      throw const AuthException('Google Sign In failed: No ID token');
     }
 
-    return await _supabase.signInWithIdToken(
+    return _supabase.signInWithIdToken(
       provider: OAuthProvider.google,
       idToken: idToken,
       accessToken: result.accessToken,
@@ -211,7 +208,7 @@ class AuthService implements IAuthService {
     required String email,
     required String password,
   }) async {
-    return await _supabase.signInWithPassword(email: email, password: password);
+    return _supabase.signInWithPassword(email: email, password: password);
   }
 
   @override
@@ -219,7 +216,7 @@ class AuthService implements IAuthService {
     required String email,
     required String password,
   }) async {
-    return await _supabase.signUp(email: email, password: password);
+    return _supabase.signUp(email: email, password: password);
   }
 
   @override

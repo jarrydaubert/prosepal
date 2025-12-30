@@ -28,7 +28,7 @@ class AppCard extends StatelessWidget {
         : borderColor ?? AppColors.surfaceVariant;
 
     final card = Container(
-      padding: padding ?? EdgeInsets.all(AppSpacing.cardPadding),
+      padding: padding ?? const EdgeInsets.all(AppSpacing.cardPadding),
       decoration: BoxDecoration(
         color: color ?? AppColors.surface,
         borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
@@ -72,7 +72,7 @@ class AppAccentCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final content = Container(
+    final content = DecoratedBox(
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
@@ -84,7 +84,7 @@ class AppAccentCard extends StatelessWidget {
             width: 4,
             decoration: BoxDecoration(
               color: accentColor,
-              borderRadius: BorderRadius.only(
+              borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(AppSpacing.radiusMedium),
                 bottomLeft: Radius.circular(AppSpacing.radiusMedium),
               ),
@@ -92,7 +92,7 @@ class AppAccentCard extends StatelessWidget {
           ),
           Expanded(
             child: Padding(
-              padding: padding ?? EdgeInsets.all(AppSpacing.cardPadding),
+              padding: padding ?? const EdgeInsets.all(AppSpacing.cardPadding),
               child: child,
             ),
           ),

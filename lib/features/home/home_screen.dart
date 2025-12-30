@@ -18,7 +18,7 @@ class HomeScreen extends ConsumerWidget {
     final isPro = ref.watch(isProProvider);
 
     return Scaffold(
-      body: Container(
+      body: DecoratedBox(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
@@ -33,7 +33,7 @@ class HomeScreen extends ConsumerWidget {
               // Header
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: EdgeInsets.all(AppSpacing.screenPadding),
+                  padding: const EdgeInsets.all(AppSpacing.screenPadding),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -65,13 +65,13 @@ class HomeScreen extends ConsumerWidget {
                             button: true,
                             child: IconButton(
                               onPressed: () => context.pushNamed('settings'),
-                              icon: Icon(Icons.settings_outlined),
+                              icon: const Icon(Icons.settings_outlined),
                               tooltip: 'Settings',
                             ),
                           ),
                         ],
                       ),
-                      Gap(AppSpacing.lg),
+                      const Gap(AppSpacing.lg),
                       // Usage indicator
                       UsageIndicator(
                         remaining: remaining,
@@ -86,21 +86,21 @@ class HomeScreen extends ConsumerWidget {
               // Section header
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: EdgeInsets.symmetric(
+                  padding: const EdgeInsets.symmetric(
                     horizontal: AppSpacing.screenPadding,
                   ),
                   child: Text(
-                    'What\'s the occasion?',
+                    "What's the occasion?",
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                 ),
               ),
 
-              SliverToBoxAdapter(child: Gap(AppSpacing.md)),
+              const SliverToBoxAdapter(child: Gap(AppSpacing.md)),
 
               // Occasion grid
               SliverPadding(
-                padding: EdgeInsets.symmetric(
+                padding: const EdgeInsets.symmetric(
                   horizontal: AppSpacing.screenPadding,
                 ),
                 sliver: OccasionGrid(
@@ -112,7 +112,7 @@ class HomeScreen extends ConsumerWidget {
                 ),
               ),
 
-              SliverToBoxAdapter(child: Gap(AppSpacing.xxl)),
+              const SliverToBoxAdapter(child: Gap(AppSpacing.xxl)),
             ],
           ),
         ),

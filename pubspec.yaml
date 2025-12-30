@@ -67,6 +67,7 @@ dev_dependencies:
   integration_test:
     sdk: flutter
 
+  google_sign_in_platform_interface: any
 flutter:
   uses-material-design: true
   

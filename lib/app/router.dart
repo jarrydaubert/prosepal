@@ -139,7 +139,7 @@ class _SplashScreenState extends ConsumerState<_SplashScreen> {
                 height: 80,
               ),
             ),
-            SizedBox(height: 24),
+            const SizedBox(height: 24),
             Text(
               'Prosepal',
               style: Theme.of(

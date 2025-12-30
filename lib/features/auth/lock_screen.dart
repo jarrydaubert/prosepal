@@ -58,7 +58,7 @@ class _LockScreenState extends State<LockScreen> {
         setState(() => _errorMessage = result.message);
 
         // Auto-dismiss error after 4 seconds
-        Future.delayed(Duration(seconds: 4), () {
+        Future.delayed(const Duration(seconds: 4), () {
           if (mounted && _errorMessage == result.message) {
             setState(() => _errorMessage = null);
           }
@@ -77,15 +77,15 @@ class _LockScreenState extends State<LockScreen> {
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
-        title: Text('Biometrics Locked'),
-        content: Text(
+        title: const Text('Biometrics Locked'),
+        content: const Text(
           'Too many failed attempts. Please unlock your device with your '
           'passcode first, then try again.',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('OK'),
+            child: const Text('OK'),
           ),
         ],
       ),
@@ -98,21 +98,21 @@ class _LockScreenState extends State<LockScreen> {
       backgroundColor: Colors.white,
       body: SafeArea(
         child: Padding(
-          padding: EdgeInsets.all(AppSpacing.screenPadding),
+          padding: const EdgeInsets.all(AppSpacing.screenPadding),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Spacer(),
 
               // App logo with shadow
-              Container(
+              DecoratedBox(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(24),
                   boxShadow: [
                     BoxShadow(
                       color: AppColors.primary.withValues(alpha: 0.2),
                       blurRadius: 20,
-                      offset: Offset(0, 8),
+                      offset: const Offset(0, 8),
                     ),
                   ],
                 ),
@@ -124,9 +124,9 @@ class _LockScreenState extends State<LockScreen> {
                     height: 100,
                   ),
                 ),
-              ).animate().fadeIn().scale(begin: Offset(0.9, 0.9)),
+              ).animate().fadeIn().scale(begin: const Offset(0.9, 0.9)),
 
-              SizedBox(height: AppSpacing.xl),
+              const SizedBox(height: AppSpacing.xl),
 
               Text(
                 'Prosepal',
@@ -135,7 +135,7 @@ class _LockScreenState extends State<LockScreen> {
                 ),
               ).animate().fadeIn(delay: 100.ms),
 
-              SizedBox(height: AppSpacing.sm),
+              const SizedBox(height: AppSpacing.sm),
 
               Text(
                 'Tap to unlock',
@@ -149,7 +149,7 @@ class _LockScreenState extends State<LockScreen> {
               // Error message
               if (_errorMessage != null) ...[
                 Container(
-                  padding: EdgeInsets.all(AppSpacing.md),
+                  padding: const EdgeInsets.all(AppSpacing.md),
                   decoration: BoxDecoration(
                     color: AppColors.error.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(
@@ -161,22 +161,22 @@ class _LockScreenState extends State<LockScreen> {
                   ),
                   child: Row(
                     children: [
-                      Icon(
+                      const Icon(
                         Icons.error_outline,
                         color: AppColors.error,
                         size: 20,
                       ),
-                      SizedBox(width: AppSpacing.sm),
+                      const SizedBox(width: AppSpacing.sm),
                       Expanded(
                         child: Text(
                           _errorMessage!,
-                          style: TextStyle(color: AppColors.error),
+                          style: const TextStyle(color: AppColors.error),
                         ),
                       ),
                     ],
                   ),
                 ).animate().fadeIn().shake(),
-                SizedBox(height: AppSpacing.lg),
+                const SizedBox(height: AppSpacing.lg),
               ],
 
               // Unlock button
@@ -195,7 +195,7 @@ class _LockScreenState extends State<LockScreen> {
                     ),
                   ),
                   icon: _isAuthenticating
-                      ? SizedBox(
+                      ? const SizedBox(
                           width: 20,
                           height: 20,
                           child: CircularProgressIndicator(
@@ -212,14 +212,14 @@ class _LockScreenState extends State<LockScreen> {
                     _isAuthenticating
                         ? 'Authenticating...'
                         : 'Unlock with $_biometricType',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                   ),
                 ),
               ).animate().fadeIn(delay: 300.ms),
 
               // Retry hint after failed attempts
               if (_failedAttempts >= 2 && !_isAuthenticating) ...[
-                SizedBox(height: AppSpacing.lg),
+                const SizedBox(height: AppSpacing.lg),
                 Text(
                   'Having trouble? Make sure $_biometricType is set up in your device settings.',
                   style: Theme.of(
@@ -229,7 +229,7 @@ class _LockScreenState extends State<LockScreen> {
                 ).animate().fadeIn(),
               ],
 
-              SizedBox(height: AppSpacing.xxl),
+              const SizedBox(height: AppSpacing.xxl),
             ],
           ),
         ),

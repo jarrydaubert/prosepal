@@ -83,6 +83,6 @@ class MockBiometricService implements IBiometricService {
     if (!_isSupported) {
       return const BiometricResult(success: true);
     }
-    return await authenticate();
+    return authenticate();
   }
 }

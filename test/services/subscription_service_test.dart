@@ -582,9 +582,9 @@ void main() {
       const yearlyPrice = 29.99;
       const monthsInYear = 12;
 
-      final yearlyFromMonthly = monthlyPrice * monthsInYear;
-      final savings = yearlyFromMonthly - yearlyPrice;
-      final savingsPercent = (savings / yearlyFromMonthly) * 100;
+      const yearlyFromMonthly = monthlyPrice * monthsInYear;
+      const savings = yearlyFromMonthly - yearlyPrice;
+      const savingsPercent = (savings / yearlyFromMonthly) * 100;
 
       expect(savings, greaterThan(0));
       expect(savingsPercent, greaterThan(40)); // > 40% savings
@@ -626,7 +626,7 @@ void main() {
       final activeEntitlements = {'pro': true, 'trial': false};
 
       final hasPro = activeEntitlements.containsKey(entitlementId) &&
-          activeEntitlements[entitlementId] == true;
+          (activeEntitlements[entitlementId] ?? false);
 
       expect(hasPro, isTrue);
     });
@@ -645,7 +645,7 @@ void main() {
       final activeEntitlements = {'pro': false};
 
       final hasPro = activeEntitlements.containsKey(entitlementId) &&
-          activeEntitlements[entitlementId] == true;
+          (activeEntitlements[entitlementId] ?? false);
 
       expect(hasPro, isFalse);
     });

@@ -18,7 +18,7 @@ class OccasionTile extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
-        child: Container(
+        child: DecoratedBox(
           decoration: BoxDecoration(
             color: occasion.color.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
@@ -27,8 +27,8 @@ class OccasionTile extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(occasion.emoji, style: TextStyle(fontSize: 32)),
-              Gap(AppSpacing.sm),
+              Text(occasion.emoji, style: const TextStyle(fontSize: 32)),
+              const Gap(AppSpacing.sm),
               Text(
                 occasion.label,
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(

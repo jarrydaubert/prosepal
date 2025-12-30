@@ -13,7 +13,7 @@ import '../../shared/theme/app_colors.dart';
 import '../../shared/theme/app_spacing.dart';
 
 /// Consistent button height for all auth buttons
-const double _kAuthButtonHeight = 50.0;
+const double _kAuthButtonHeight = 50;
 
 /// Consistent border radius for all auth buttons
 final BorderRadius _kAuthButtonRadius = BorderRadius.circular(
@@ -34,7 +34,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   void _showError(String message) {
     setState(() => _error = message);
     // Auto-dismiss after 6 seconds (longer for readability)
-    Future.delayed(Duration(seconds: 6), () {
+    Future.delayed(const Duration(seconds: 6), () {
       if (mounted && _error == message) {
         setState(() => _error = null);
       }
@@ -101,7 +101,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Container(
+      body: DecoratedBox(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
@@ -116,12 +116,12 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
         ),
         child: SafeArea(
           child: Padding(
-            padding: EdgeInsets.all(AppSpacing.screenPadding),
+            padding: const EdgeInsets.all(AppSpacing.screenPadding),
             child: Column(
               children: [
                 const Spacer(flex: 2),
                 // App Logo with glassmorphism container
-                Container(
+                DecoratedBox(
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(32),
                         boxShadow: [
@@ -129,7 +129,6 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                             color: AppColors.primary.withValues(alpha: 0.25),
                             blurRadius: 40,
                             offset: const Offset(0, 12),
-                            spreadRadius: 0,
                           ),
                         ],
                       ),
@@ -166,7 +165,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                       duration: 700.ms,
                       curve: Curves.easeOutBack,
                     ),
-                SizedBox(height: AppSpacing.xl + 8),
+                const SizedBox(height: AppSpacing.xl + 8),
                 // Title with refined typography
                 Text(
                       'Welcome to Prosepal',
@@ -184,7 +183,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                       duration: 600.ms,
                       curve: Curves.easeOutCubic,
                     ),
-                SizedBox(height: AppSpacing.sm + 4),
+                const SizedBox(height: AppSpacing.sm + 4),
                 // Tagline with improved styling
                 Text(
                       'The right words, right now',
@@ -206,7 +205,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                 // Error message with dismiss button
                 if (_error != null) ...[
                   Container(
-                        padding: EdgeInsets.all(AppSpacing.md),
+                        padding: const EdgeInsets.all(AppSpacing.md),
                         decoration: BoxDecoration(
                           color: AppColors.error.withValues(alpha: 0.08),
                           borderRadius: BorderRadius.circular(16),
@@ -216,16 +215,16 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                         ),
                         child: Row(
                           children: [
-                            Icon(
+                            const Icon(
                               Icons.error_outline_rounded,
                               color: AppColors.error,
                               size: 20,
                             ),
-                            SizedBox(width: AppSpacing.sm),
+                            const SizedBox(width: AppSpacing.sm),
                             Expanded(
                               child: Text(
                                 _error!,
-                                style: TextStyle(
+                                style: const TextStyle(
                                   color: AppColors.error,
                                   fontSize: 14,
                                 ),
@@ -245,7 +244,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                       .animate()
                       .fadeIn(duration: 300.ms)
                       .shake(hz: 3, duration: 400.ms),
-                  SizedBox(height: AppSpacing.lg),
+                  const SizedBox(height: AppSpacing.lg),
                 ],
                 // Auth buttons with micro-interactions
                 Column(
@@ -261,12 +260,11 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                                 onPressed: _isLoading
                                     ? () {}
                                     : _signInWithApple,
-                                style: SignInWithAppleButtonStyle.black,
                                 borderRadius: _kAuthButtonRadius,
                               ),
                             ),
                           ),
-                          SizedBox(height: AppSpacing.md),
+                          const SizedBox(height: AppSpacing.md),
                         ],
                         // Google Sign In
                         _AnimatedAuthButton(
@@ -274,7 +272,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                             onPressed: _isLoading ? null : _signInWithGoogle,
                           ),
                         ),
-                        SizedBox(height: AppSpacing.md),
+                        const SizedBox(height: AppSpacing.md),
                         // Email Sign In
                         _AnimatedAuthButton(
                           child: _EmailSignInButton(
@@ -290,10 +288,10 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                       duration: 600.ms,
                       curve: Curves.easeOutCubic,
                     ),
-                SizedBox(height: AppSpacing.xl),
+                const SizedBox(height: AppSpacing.xl),
                 // Loading or legal
                 if (_isLoading)
-                  SizedBox(
+                  const SizedBox(
                     width: 28,
                     height: 28,
                     child: CircularProgressIndicator(
@@ -349,7 +347,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                       ),
                     ],
                   ).animate().fadeIn(delay: 850.ms, duration: 500.ms),
-                SizedBox(height: AppSpacing.lg),
+                const SizedBox(height: AppSpacing.lg),
               ],
             ),
           ),
@@ -421,8 +419,8 @@ class _GoogleSignInButton extends StatelessWidget {
               width: 20,
               height: 20,
             ),
-            SizedBox(width: AppSpacing.sm),
-            Text(
+            const SizedBox(width: AppSpacing.sm),
+            const Text(
               'Continue with Google',
               style: TextStyle(
                 fontSize: 17,
@@ -457,7 +455,7 @@ class _EmailSignInButton extends StatelessWidget {
           shadowColor: AppColors.primary.withValues(alpha: 0.3),
           shape: RoundedRectangleBorder(borderRadius: _kAuthButtonRadius),
         ),
-        child: Row(
+        child: const Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(Icons.email_outlined, size: 20),

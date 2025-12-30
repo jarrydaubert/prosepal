@@ -392,7 +392,7 @@ void main() {
     testWidgets('cancellation does not show error', (tester) async {
       // Simulate user cancellation (common for OAuth flows)
       mockAuth.methodErrors['signInWithGoogle'] =
-          AuthException('User cancelled the sign-in flow');
+          const AuthException('User cancelled the sign-in flow');
       await pumpApp(tester);
 
       await tester.tap(find.text('Continue with Google'));
@@ -541,7 +541,7 @@ void main() {
       // Simulate external auth state change (e.g., magic link callback)
       mockAuth.setLoggedIn(true, email: 'magic@example.com');
       mockAuth.setUser(createFakeUser(email: 'magic@example.com'));
-      mockAuth.emitAuthState(AuthState(AuthChangeEvent.signedIn, null));
+      mockAuth.emitAuthState(const AuthState(AuthChangeEvent.signedIn, null));
 
       await tester.pumpAndSettle();
 
@@ -560,7 +560,7 @@ void main() {
       // Simulate sign out event
       mockAuth.setLoggedIn(false);
       mockAuth.setUser(null);
-      mockAuth.emitAuthState(AuthState(AuthChangeEvent.signedOut, null));
+      mockAuth.emitAuthState(const AuthState(AuthChangeEvent.signedOut, null));
 
       await tester.pumpAndSettle();
 

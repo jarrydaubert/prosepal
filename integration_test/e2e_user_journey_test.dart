@@ -7,7 +7,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:prosepal/app/app.dart';
 import 'package:prosepal/core/providers/providers.dart';
-import 'package:prosepal/core/models/models.dart';
 
 /// E2E Tests for Complete User Journeys
 ///

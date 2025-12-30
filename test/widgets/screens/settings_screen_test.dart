@@ -53,28 +53,28 @@ void main() {
     final router = GoRouter(
       initialLocation: '/settings',
       routes: [
-        GoRoute(path: '/', builder: (_, __) => Scaffold(body: Text('Home'))),
-        GoRoute(path: '/auth', builder: (_, __) => Scaffold(body: Text('Auth'))),
-        GoRoute(path: '/settings', builder: (_, __) => SettingsScreen()),
+        GoRoute(path: '/', builder: (_, __) => const Scaffold(body: Text('Home'))),
+        GoRoute(path: '/auth', builder: (_, __) => const Scaffold(body: Text('Auth'))),
+        GoRoute(path: '/settings', builder: (_, __) => const SettingsScreen()),
         GoRoute(
           path: '/paywall',
           name: 'paywall',
-          builder: (_, __) => Scaffold(body: Text('Paywall')),
+          builder: (_, __) => const Scaffold(body: Text('Paywall')),
         ),
         GoRoute(
           path: '/feedback',
           name: 'feedback',
-          builder: (_, __) => Scaffold(body: Text('Feedback')),
+          builder: (_, __) => const Scaffold(body: Text('Feedback')),
         ),
         GoRoute(
           path: '/terms',
           name: 'terms',
-          builder: (_, __) => Scaffold(body: Text('Terms')),
+          builder: (_, __) => const Scaffold(body: Text('Terms')),
         ),
         GoRoute(
           path: '/privacy',
           name: 'privacy',
-          builder: (_, __) => Scaffold(body: Text('Privacy')),
+          builder: (_, __) => const Scaffold(body: Text('Privacy')),
         ),
       ],
     );
@@ -134,7 +134,7 @@ void main() {
 
     group('Subscription Section', () {
       testWidgets('shows Free Plan for non-pro users', (tester) async {
-        await tester.pumpWidget(buildTestWidget(isPro: false));
+        await tester.pumpWidget(buildTestWidget());
         await tester.pumpAndSettle();
 
         expect(find.text('Free Plan'), findsOneWidget);
@@ -158,7 +158,7 @@ void main() {
       });
 
       testWidgets('hides Manage Subscription for free users', (tester) async {
-        await tester.pumpWidget(buildTestWidget(isPro: false));
+        await tester.pumpWidget(buildTestWidget());
         await tester.pumpAndSettle();
 
         expect(find.text('Manage Subscription'), findsNothing);
@@ -172,7 +172,7 @@ void main() {
       });
 
       testWidgets('Upgrade button navigates to paywall', (tester) async {
-        await tester.pumpWidget(buildTestWidget(isPro: false));
+        await tester.pumpWidget(buildTestWidget());
         await tester.pumpAndSettle();
 
         await tester.tap(find.text('Upgrade'));
@@ -184,7 +184,7 @@ void main() {
 
     group('Security Section', () {
       testWidgets('shows biometrics when supported', (tester) async {
-        await tester.pumpWidget(buildTestWidget(biometricsSupported: true));
+        await tester.pumpWidget(buildTestWidget());
         await tester.pumpAndSettle();
 
         expect(find.text('SECURITY'), findsOneWidget);
@@ -200,7 +200,7 @@ void main() {
       });
 
       testWidgets('shows switch for biometrics', (tester) async {
-        await tester.pumpWidget(buildTestWidget(biometricsSupported: true));
+        await tester.pumpWidget(buildTestWidget());
         await tester.pumpAndSettle();
 
         expect(find.byType(Switch), findsOneWidget);
@@ -217,7 +217,7 @@ void main() {
       });
 
       testWidgets('shows 0 for new users', (tester) async {
-        await tester.pumpWidget(buildTestWidget(totalGenerated: 0));
+        await tester.pumpWidget(buildTestWidget());
         await tester.pumpAndSettle();
 
         expect(find.text('0 messages generated'), findsOneWidget);
@@ -411,7 +411,6 @@ void main() {
       testWidgets('can scroll to all section headers', (tester) async {
         await tester.pumpWidget(buildTestWidget(
           email: 'test@example.com',
-          biometricsSupported: true,
         ));
         await tester.pumpAndSettle();
 

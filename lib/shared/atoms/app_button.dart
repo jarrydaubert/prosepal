@@ -53,7 +53,7 @@ class AppButton extends StatelessWidget {
             children: [
               if (icon != null) ...[
                 Icon(icon, size: AppSpacing.iconSizeSmall),
-                SizedBox(width: AppSpacing.sm),
+                const SizedBox(width: AppSpacing.sm),
               ],
               Text(label),
             ],
@@ -123,7 +123,7 @@ class AppGradientButton extends StatelessWidget {
               BoxShadow(
                 color: AppColors.primary.withValues(alpha: 0.3),
                 blurRadius: 8,
-                offset: Offset(0, 4),
+                offset: const Offset(0, 4),
               ),
             ],
           ),
@@ -134,7 +134,7 @@ class AppGradientButton extends StatelessWidget {
               borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
               child: Center(
                 child: isLoading
-                    ? SizedBox(
+                    ? const SizedBox(
                         height: 20,
                         width: 20,
                         child: CircularProgressIndicator(
@@ -151,7 +151,7 @@ class AppGradientButton extends StatelessWidget {
                               color: AppColors.textOnPrimary,
                               size: AppSpacing.iconSizeSmall,
                             ),
-                            SizedBox(width: AppSpacing.sm),
+                            const SizedBox(width: AppSpacing.sm),
                           ],
                           Text(
                             label,
@@ -170,8 +170,8 @@ class AppGradientButton extends StatelessWidget {
         .animate()
         .fadeIn(duration: 300.ms)
         .scale(
-          begin: Offset(0.95, 0.95),
-          end: Offset(1, 1),
+          begin: const Offset(0.95, 0.95),
+          end: const Offset(1, 1),
           duration: 300.ms,
           curve: Curves.easeOut,
         );

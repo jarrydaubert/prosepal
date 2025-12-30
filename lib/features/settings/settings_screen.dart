@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -132,22 +131,22 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Sign Out'),
-        content: Text('Are you sure you want to sign out?'),
+        title: const Text('Sign Out'),
+        content: const Text('Are you sure you want to sign out?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: Text('Cancel'),
+            child: const Text('Cancel'),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text('Sign Out', style: TextStyle(color: AppColors.error)),
+            child: const Text('Sign Out', style: TextStyle(color: AppColors.error)),
           ),
         ],
       ),
     );
 
-    if (confirm == true) {
+    if (confirm ?? false) {
       await ref.read(subscriptionServiceProvider).logOut();
       await ref.read(authServiceProvider).signOut();
       if (mounted) context.go('/auth');
@@ -159,19 +158,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final firstConfirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Delete Account'),
-        content: Text(
+        title: const Text('Delete Account'),
+        content: const Text(
           'This will permanently delete your account and all associated data. '
           'This action cannot be undone.',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: Text('Cancel'),
+            child: const Text('Cancel'),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text('Continue', style: TextStyle(color: AppColors.error)),
+            child: const Text('Continue', style: TextStyle(color: AppColors.error)),
           ),
         ],
       ),
@@ -183,8 +182,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final finalConfirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Are you absolutely sure?'),
-        content: Column(
+        title: const Text('Are you absolutely sure?'),
+        content: const Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -203,11 +202,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: Text('Cancel'),
+            child: const Text('Cancel'),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text(
+            child: const Text(
               'Delete My Account',
               style: TextStyle(color: AppColors.error),
             ),
@@ -216,7 +215,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       ),
     );
 
-    if (finalConfirm == true) {
+    if (finalConfirm ?? false) {
       await ref.read(subscriptionServiceProvider).logOut();
       await ref.read(authServiceProvider).deleteAccount();
       if (mounted) context.go('/auth');
@@ -242,17 +241,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       body: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 16),
         children: [
-          Gap(AppSpacing.sm),
+          const Gap(AppSpacing.sm),
           // Account section
-          SectionHeader('Account'),
+          const SectionHeader('Account'),
           _buildModernCard(
             context,
             child: _buildAccountHeader(context, userName, userEmail, isPro),
           ),
-          Gap(AppSpacing.lg),
+          const Gap(AppSpacing.lg),
 
           // Subscription section
-          SectionHeader('Subscription'),
+          const SectionHeader('Subscription'),
           SettingsTile(
             leading: Icon(
               isPro ? Icons.star_rounded : Icons.star_outline_rounded,
@@ -266,12 +265,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 ? null
                 : TextButton(
                     onPressed: () => context.pushNamed('paywall'),
-                    child: Text('Upgrade'),
+                    child: const Text('Upgrade'),
                   ),
           ),
           if (isPro)
             SettingsTile(
-              leading: Icon(
+              leading: const Icon(
                 Icons.credit_card_outlined,
                 color: AppColors.textSecondary,
               ),
@@ -285,12 +284,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             button: true,
             child: SettingsTile(
               leading: _isRestoringPurchases
-                  ? SizedBox(
+                  ? const SizedBox(
                       width: 24,
                       height: 24,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : Icon(Icons.refresh_rounded, color: AppColors.textSecondary),
+                  : const Icon(Icons.refresh_rounded, color: AppColors.textSecondary),
               title: 'Restore Purchases',
               subtitle: 'Reinstalled? Restore your Pro subscription',
               onTap: _isRestoringPurchases ? null : _restorePurchases,
@@ -299,7 +298,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
           // Security section
           if (_biometricsSupported) ...[
-            SectionHeader('Security'),
+            const SectionHeader('Security'),
             SettingsTile(
               leading: Icon(
                 _biometricType == 'Face ID' ? Icons.face : Icons.fingerprint,
@@ -315,17 +314,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ],
 
           // Stats section
-          SectionHeader('Your Stats'),
+          const SectionHeader('Your Stats'),
           SettingsTile(
-            leading: Icon(Icons.auto_awesome_rounded, color: AppColors.primary),
+            leading: const Icon(Icons.auto_awesome_rounded, color: AppColors.primary),
             title: '$totalGenerated messages generated',
             subtitle: 'All time',
           ),
 
           // Support section
-          SectionHeader('Support'),
+          const SectionHeader('Support'),
           SettingsTile(
-            leading: Icon(
+            leading: const Icon(
               Icons.help_outline_rounded,
               color: AppColors.textSecondary,
             ),
@@ -335,7 +334,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             },
           ),
           SettingsTile(
-            leading: Icon(
+            leading: const Icon(
               Icons.mail_outline_rounded,
               color: AppColors.textSecondary,
             ),
@@ -347,7 +346,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             label: 'Rate Prosepal in the app store',
             button: true,
             child: SettingsTile(
-              leading: Icon(
+              leading: const Icon(
                 Icons.star_outline_rounded,
                 color: AppColors.textSecondary,
               ),
@@ -358,9 +357,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
 
           // Legal section
-          SectionHeader('Legal'),
+          const SectionHeader('Legal'),
           SettingsTile(
-            leading: Icon(
+            leading: const Icon(
               Icons.description_outlined,
               color: AppColors.textSecondary,
             ),
@@ -368,7 +367,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             onTap: () => context.pushNamed('terms'),
           ),
           SettingsTile(
-            leading: Icon(
+            leading: const Icon(
               Icons.privacy_tip_outlined,
               color: AppColors.textSecondary,
             ),
@@ -377,15 +376,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
 
           // Account actions (destructive actions at bottom per Apple HIG)
-          SectionHeader('Account Actions'),
+          const SectionHeader('Account Actions'),
           SettingsTile(
-            leading: Icon(Icons.logout_rounded, color: AppColors.error),
+            leading: const Icon(Icons.logout_rounded, color: AppColors.error),
             title: 'Sign Out',
             titleColor: AppColors.error,
             onTap: _signOut,
           ),
           SettingsTile(
-            leading: Icon(Icons.delete_forever_rounded, color: AppColors.error),
+            leading: const Icon(Icons.delete_forever_rounded, color: AppColors.error),
             title: 'Delete Account',
             titleColor: AppColors.error,
             subtitle: 'Permanently delete your account and data',
@@ -393,7 +392,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
 
           // App info footer
-          Gap(AppSpacing.xl),
+          const Gap(AppSpacing.xl),
           Center(
             child: Text(
               'Prosepal ${_appVersion.isNotEmpty ? _appVersion : ""}',
@@ -402,7 +401,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
             ),
           ),
-          Gap(AppSpacing.xxl),
+          const Gap(AppSpacing.xxl),
         ],
       ),
     );
@@ -410,7 +409,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   /// Modern card with subtle shadow and rounded corners
   Widget _buildModernCard(BuildContext context, {required Widget child}) {
-    return Container(
+    return DecoratedBox(
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -438,7 +437,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       child: Row(
         children: [
           // Avatar with glow effect for Pro users
-          Container(
+          DecoratedBox(
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               boxShadow: isPro

@@ -31,7 +31,7 @@ class _ProBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.symmetric(
+      padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.md,
         vertical: AppSpacing.sm,
       ),
@@ -42,8 +42,8 @@ class _ProBadge extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.star, size: 16, color: AppColors.textPrimary),
-          Gap(AppSpacing.xs),
+          const Icon(Icons.star, size: 16, color: AppColors.textPrimary),
+          const Gap(AppSpacing.xs),
           Text(
             'PRO',
             style: Theme.of(
@@ -68,7 +68,7 @@ class _FreeUsageCard extends StatelessWidget {
       onTap: onUpgrade,
       borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
       child: Container(
-        padding: EdgeInsets.all(AppSpacing.md),
+        padding: const EdgeInsets.all(AppSpacing.md),
         decoration: BoxDecoration(
           color: AppColors.surfaceVariant,
           borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
@@ -76,7 +76,7 @@ class _FreeUsageCard extends StatelessWidget {
         child: Row(
           children: [
             Container(
-              padding: EdgeInsets.all(AppSpacing.sm),
+              padding: const EdgeInsets.all(AppSpacing.sm),
               decoration: BoxDecoration(
                 color: remaining > 0
                     ? AppColors.success.withValues(alpha: 0.2)
@@ -91,7 +91,7 @@ class _FreeUsageCard extends StatelessWidget {
                 ),
               ),
             ),
-            Gap(AppSpacing.md),
+            const Gap(AppSpacing.md),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -113,7 +113,7 @@ class _FreeUsageCard extends StatelessWidget {
                 ],
               ),
             ),
-            Icon(
+            const Icon(
               Icons.arrow_forward_ios,
               size: 16,
               color: AppColors.textSecondary,

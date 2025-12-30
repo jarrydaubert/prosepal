@@ -33,7 +33,7 @@ class SelectionChip extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
         child: Container(
-          padding: EdgeInsets.symmetric(
+          padding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.md,
             vertical: AppSpacing.sm,
           ),
@@ -51,15 +51,15 @@ class SelectionChip extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               if (emoji != null) ...[
-                Text(emoji!, style: TextStyle(fontSize: 18)),
-                Gap(AppSpacing.sm),
+                Text(emoji!, style: const TextStyle(fontSize: 18)),
+                const Gap(AppSpacing.sm),
               ] else if (icon != null) ...[
                 Icon(
                   icon,
                   size: 18,
                   color: isSelected ? effectiveColor : AppColors.textSecondary,
                 ),
-                Gap(AppSpacing.sm),
+                const Gap(AppSpacing.sm),
               ],
               Text(
                 label,

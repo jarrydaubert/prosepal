@@ -62,7 +62,6 @@ class SubscriptionService implements ISubscriptionService {
   // For device testing, use production key with Sandbox Apple ID account.
   static const bool _useTestStore = bool.fromEnvironment(
     'REVENUECAT_USE_TEST_STORE',
-    defaultValue: false,
   );
 
   // Allow override of production keys via dart-define
@@ -72,7 +71,6 @@ class SubscriptionService implements ISubscriptionService {
   );
   static const String _androidApiKey = String.fromEnvironment(
     'REVENUECAT_ANDROID_KEY',
-    defaultValue: _androidProductionKey,
   );
 
   static const String _entitlementId = 'pro';

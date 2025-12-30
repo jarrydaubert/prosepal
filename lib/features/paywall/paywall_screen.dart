@@ -41,7 +41,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
         ref.read(isProProvider.notifier).state = true;
         context.pop();
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          const SnackBar(
             content: Row(
               children: [
                 Icon(Icons.check_circle, color: Colors.white),
@@ -67,7 +67,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
     ref.read(isProProvider.notifier).state = true;
     context.pop();
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
+      const SnackBar(
         content: Text('Pro activated! (Demo mode)'),
         behavior: SnackBarBehavior.floating,
       ),
@@ -85,7 +85,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
         ref.read(isProProvider.notifier).state = true;
         context.pop();
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          const SnackBar(
             content: Row(
               children: [
                 Icon(Icons.check_circle, color: Colors.white),
@@ -100,7 +100,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
       } else if (mounted) {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          const SnackBar(
             content: Text('No purchases to restore'),
             behavior: SnackBarBehavior.floating,
           ),
@@ -110,7 +110,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
       if (mounted) {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          const SnackBar(
             content: Text('Failed to restore purchases'),
             backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,
@@ -129,8 +129,8 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              CircularProgressIndicator(color: AppColors.primary),
-              Gap(AppSpacing.lg),
+              const CircularProgressIndicator(color: AppColors.primary),
+              const Gap(AppSpacing.lg),
               Text(
                 'Loading subscription options...',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -155,7 +155,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                 label: 'Close',
                 button: true,
                 child: IconButton(
-                  icon: Icon(Icons.close),
+                  icon: const Icon(Icons.close),
                   onPressed: () => context.pop(),
                   tooltip: 'Close',
                 ),
@@ -164,22 +164,22 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
 
             Expanded(
               child: SingleChildScrollView(
-                padding: EdgeInsets.all(AppSpacing.screenPadding),
+                padding: const EdgeInsets.all(AppSpacing.screenPadding),
                 child: Column(
                   children: [
                     // Header
-                    Text('✨', style: TextStyle(fontSize: 48)).animate().scale(
+                    const Text('✨', style: TextStyle(fontSize: 48)).animate().scale(
                       duration: 500.ms,
                       curve: Curves.elasticOut,
                     ),
-                    Gap(AppSpacing.lg),
+                    const Gap(AppSpacing.lg),
                     Text(
                       'Unlock Prosepal Pro',
                       style: Theme.of(context).textTheme.headlineMedium
                           ?.copyWith(fontWeight: FontWeight.bold),
                       textAlign: TextAlign.center,
                     ),
-                    Gap(AppSpacing.sm),
+                    const Gap(AppSpacing.sm),
                     Text(
                       'Write the perfect message, every time',
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
@@ -187,7 +187,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                       ),
                       textAlign: TextAlign.center,
                     ),
-                    Gap(AppSpacing.xxl),
+                    const Gap(AppSpacing.xxl),
 
                     // Features
                     ..._features.asMap().entries.map((entry) {
@@ -206,11 +206,11 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                           );
                     }),
 
-                    Gap(AppSpacing.xxl),
+                    const Gap(AppSpacing.xxl),
 
                     // Info card
                     Container(
-                      padding: EdgeInsets.all(AppSpacing.lg),
+                      padding: const EdgeInsets.all(AppSpacing.lg),
                       decoration: BoxDecoration(
                         color: AppColors.info.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(
@@ -222,19 +222,19 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                       ),
                       child: Column(
                         children: [
-                          Icon(
+                          const Icon(
                             Icons.info_outline,
                             color: AppColors.info,
                             size: 32,
                           ),
-                          Gap(AppSpacing.md),
+                          const Gap(AppSpacing.md),
                           Text(
                             'Subscription Setup Required',
                             style: Theme.of(context).textTheme.titleMedium
                                 ?.copyWith(fontWeight: FontWeight.bold),
                             textAlign: TextAlign.center,
                           ),
-                          Gap(AppSpacing.sm),
+                          const Gap(AppSpacing.sm),
                           Text(
                             'Configure your RevenueCat products in the dashboard to enable in-app purchases.',
                             style: Theme.of(context).textTheme.bodySmall
@@ -245,7 +245,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                       ),
                     ),
 
-                    Gap(AppSpacing.xl),
+                    const Gap(AppSpacing.xl),
 
                     // Retry RevenueCat button
                     AppButton(
@@ -254,7 +254,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                       onPressed: _showRevenueCatPaywall,
                     ),
 
-                    Gap(AppSpacing.md),
+                    const Gap(AppSpacing.md),
 
                     // Demo mode button (for testing)
                     AppButton(
@@ -264,7 +264,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                       onPressed: _activateDemoMode,
                     ),
 
-                    Gap(AppSpacing.lg),
+                    const Gap(AppSpacing.lg),
 
                     // Restore & Legal
                     Row(
@@ -272,17 +272,17 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                       children: [
                         TextButton(
                           onPressed: () => context.pushNamed('privacy'),
-                          child: Text('Privacy'),
+                          child: const Text('Privacy'),
                         ),
-                        Text('•', style: TextStyle(color: AppColors.textHint)),
+                        const Text('•', style: TextStyle(color: AppColors.textHint)),
                         TextButton(
                           onPressed: () => context.pushNamed('terms'),
-                          child: Text('Terms'),
+                          child: const Text('Terms'),
                         ),
-                        Text('•', style: TextStyle(color: AppColors.textHint)),
+                        const Text('•', style: TextStyle(color: AppColors.textHint)),
                         TextButton(
                           onPressed: _restorePurchases,
-                          child: Text('Restore'),
+                          child: const Text('Restore'),
                         ),
                       ],
                     ),
@@ -322,18 +322,18 @@ class _FeatureRow extends StatelessWidget {
     return Semantics(
       label: text,
       child: Padding(
-        padding: EdgeInsets.only(bottom: AppSpacing.md),
+        padding: const EdgeInsets.only(bottom: AppSpacing.md),
         child: Row(
           children: [
             Container(
-              padding: EdgeInsets.all(AppSpacing.sm),
+              padding: const EdgeInsets.all(AppSpacing.sm),
               decoration: BoxDecoration(
                 color: AppColors.success.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(icon, size: 20, color: AppColors.success),
             ),
-            Gap(AppSpacing.md),
+            const Gap(AppSpacing.md),
             Expanded(
               child: Text(text, style: Theme.of(context).textTheme.bodyMedium),
             ),

@@ -6,11 +6,11 @@ import '../interfaces/biometric_interface.dart';
 
 /// Result of biometric authentication attempt
 class BiometricResult {
+
+  const BiometricResult({required this.success, this.error, this.message});
   final bool success;
   final BiometricError? error;
   final String? message;
-
-  const BiometricResult({required this.success, this.error, this.message});
 }
 
 /// Types of biometric errors
@@ -29,11 +29,11 @@ enum BiometricError {
 /// Handles Face ID/Touch ID authentication and preference storage.
 /// Use via provider for testability, or singleton for legacy code.
 class BiometricService implements IBiometricService {
-  BiometricService._();
-  static final instance = BiometricService._();
 
   /// Factory constructor for DI
   factory BiometricService() => instance;
+  BiometricService._();
+  static final instance = BiometricService._();
 
   final LocalAuthentication _auth = LocalAuthentication();
 
@@ -93,7 +93,6 @@ class BiometricService implements IBiometricService {
     try {
       final success = await _auth.authenticate(
         localizedReason: reason ?? 'Authenticate to access Prosepal',
-        biometricOnly: false, // Allow PIN/passcode fallback for accessibility
         persistAcrossBackgrounding: true, // Resume prompt if app backgrounds
       );
       return BiometricResult(success: success);
@@ -102,37 +101,37 @@ class BiometricService implements IBiometricService {
       switch (e.code) {
         case LocalAuthExceptionCode.noBiometricHardware:
         case LocalAuthExceptionCode.biometricHardwareTemporarilyUnavailable:
-          return BiometricResult(
+          return const BiometricResult(
             success: false,
             error: BiometricError.notAvailable,
             message: 'Biometrics not available on this device.',
           );
         case LocalAuthExceptionCode.noBiometricsEnrolled:
-          return BiometricResult(
+          return const BiometricResult(
             success: false,
             error: BiometricError.notEnrolled,
             message: 'No biometrics enrolled. Set up in device settings.',
           );
         case LocalAuthExceptionCode.temporaryLockout:
-          return BiometricResult(
+          return const BiometricResult(
             success: false,
             error: BiometricError.lockedOut,
             message: 'Too many attempts. Try again later.',
           );
         case LocalAuthExceptionCode.biometricLockout:
-          return BiometricResult(
+          return const BiometricResult(
             success: false,
             error: BiometricError.permanentlyLockedOut,
             message: 'Biometrics locked. Use device passcode to unlock.',
           );
         case LocalAuthExceptionCode.noCredentialsSet:
-          return BiometricResult(
+          return const BiometricResult(
             success: false,
             error: BiometricError.passcodeNotSet,
             message: 'Set up a device passcode first.',
           );
         case LocalAuthExceptionCode.userCanceled:
-          return BiometricResult(
+          return const BiometricResult(
             success: false,
             error: BiometricError.cancelled,
           );
@@ -145,7 +144,7 @@ class BiometricService implements IBiometricService {
           );
       }
     } on PlatformException {
-      return BiometricResult(
+      return const BiometricResult(
         success: false,
         error: BiometricError.unknown,
         message: 'Authentication failed. Please try again.',
@@ -156,11 +155,11 @@ class BiometricService implements IBiometricService {
   @override
   Future<BiometricResult> authenticateIfEnabled() async {
     if (!await isEnabled) {
-      return BiometricResult(success: true); // Not enabled, allow access
+      return const BiometricResult(success: true); // Not enabled, allow access
     }
     if (!await isSupported) {
-      return BiometricResult(success: true); // Not supported, allow access
+      return const BiometricResult(success: true); // Not supported, allow access
     }
-    return await authenticate();
+    return authenticate();
   }
 }

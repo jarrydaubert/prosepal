@@ -41,7 +41,7 @@ void main() {
 
     test('should not overwrite existing first launch timestamp', () async {
       // Set an initial timestamp
-      final initialTime = DateTime(2025, 1, 1).millisecondsSinceEpoch;
+      final initialTime = DateTime(2025).millisecondsSinceEpoch;
       await prefs.setInt('first_launch_timestamp', initialTime);
 
       // Create new service and try to record
@@ -188,7 +188,7 @@ void main() {
 
   group('ReviewService timing logic', () {
     test('should calculate days since first launch correctly', () {
-      final firstLaunch = DateTime(2025, 1, 1);
+      final firstLaunch = DateTime(2025);
       final now = DateTime(2025, 1, 4);
 
       final daysSince = now.difference(firstLaunch).inDays;
@@ -196,8 +196,8 @@ void main() {
     });
 
     test('should handle same day correctly', () {
-      final firstLaunch = DateTime(2025, 1, 1, 10, 0);
-      final now = DateTime(2025, 1, 1, 15, 0);
+      final firstLaunch = DateTime(2025, 1, 1, 10);
+      final now = DateTime(2025, 1, 1, 15);
 
       final daysSince = now.difference(firstLaunch).inDays;
       expect(daysSince, equals(0));

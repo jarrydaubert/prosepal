@@ -57,7 +57,7 @@ class ReviewService {
     // Add slight delay for better UX (let results screen render first)
     await Future.delayed(const Duration(milliseconds: 800));
 
-    return await requestReview();
+    return requestReview();
   }
 
   /// Request an in-app review if available.
