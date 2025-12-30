@@ -318,11 +318,11 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
                 autocorrect: false,
-                textInputAction:
-                    _usePassword ? TextInputAction.next : TextInputAction.done,
+                textInputAction: _usePassword
+                    ? TextInputAction.next
+                    : TextInputAction.done,
                 validator: _validateEmail,
-                onFieldSubmitted: (_) =>
-                    _usePassword ? null : _sendMagicLink(),
+                onFieldSubmitted: (_) => _usePassword ? null : _sendMagicLink(),
                 decoration: InputDecoration(
                   labelText: 'Email address',
                   hintText: 'you@example.com',
@@ -383,8 +383,10 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
                       borderRadius: BorderRadius.circular(
                         AppSpacing.radiusMedium,
                       ),
-                      borderSide:
-                          BorderSide(color: AppColors.primary, width: 2),
+                      borderSide: BorderSide(
+                        color: AppColors.primary,
+                        width: 2,
+                      ),
                     ),
                     errorBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(
@@ -440,9 +442,7 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
             _passwordController.clear();
           }),
           child: Text(
-            _usePassword
-                ? 'Use magic link instead'
-                : 'Sign in with password',
+            _usePassword ? 'Use magic link instead' : 'Sign in with password',
             style: TextStyle(color: AppColors.textSecondary),
           ),
         ),

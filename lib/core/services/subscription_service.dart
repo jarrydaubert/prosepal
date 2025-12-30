@@ -211,8 +211,11 @@ class SubscriptionService implements ISubscriptionService {
     try {
       // First check if we can get offerings
       final offerings = await Purchases.getOfferings();
-      debugPrint('Offerings: ${offerings.current?.availablePackages.length ?? 0} packages');
-      if (offerings.current == null || offerings.current!.availablePackages.isEmpty) {
+      debugPrint(
+        'Offerings: ${offerings.current?.availablePackages.length ?? 0} packages',
+      );
+      if (offerings.current == null ||
+          offerings.current!.availablePackages.isEmpty) {
         debugPrint('No offerings available - check RevenueCat dashboard');
         return false;
       }
