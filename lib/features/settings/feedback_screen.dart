@@ -90,58 +90,61 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text('Send Feedback')),
-      body: Padding(
-        padding: EdgeInsets.all(AppSpacing.screenPadding),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              'Questions, bugs, or feature requests? We\'d love to hear from you.',
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
-            ),
-            Gap(AppSpacing.lg),
-            Expanded(
-              child: Semantics(
-                label: 'Feedback message input',
-                hint: 'Enter your feedback, bug report, or feature request',
-                child: TextField(
-                  controller: _controller,
-                  maxLines: null,
-                  expands: true,
-                  textAlignVertical: TextAlignVertical.top,
-                  textCapitalization: TextCapitalization.sentences,
-                  decoration: InputDecoration(
-                    labelText: 'Your feedback',
-                    hintText: 'Describe your issue or suggestion...',
-                    alignLabelWithHint: true,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(
-                        AppSpacing.radiusMedium,
+    return GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(),
+      child: Scaffold(
+        appBar: AppBar(title: const Text('Send Feedback')),
+        body: Padding(
+          padding: EdgeInsets.all(AppSpacing.screenPadding),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                'Questions, bugs, or feature requests? We\'d love to hear from you.',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              Gap(AppSpacing.lg),
+              Expanded(
+                child: Semantics(
+                  label: 'Feedback message input',
+                  hint: 'Enter your feedback, bug report, or feature request',
+                  child: TextField(
+                    controller: _controller,
+                    maxLines: null,
+                    expands: true,
+                    textAlignVertical: TextAlignVertical.top,
+                    textCapitalization: TextCapitalization.sentences,
+                    decoration: InputDecoration(
+                      labelText: 'Your feedback',
+                      hintText: 'Describe your issue or suggestion...',
+                      alignLabelWithHint: true,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(
+                          AppSpacing.radiusMedium,
+                        ),
                       ),
                     ),
                   ),
                 ),
               ),
-            ),
-            Gap(AppSpacing.sm),
-            Text(
-              'Device info will be attached to help us debug issues.',
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(color: AppColors.textHint),
-            ),
-            Gap(AppSpacing.lg),
-            AppButton(
-              label: 'Send',
-              onPressed: _isSending ? null : _send,
-              isLoading: _isSending,
-              icon: Icons.send_rounded,
-            ),
-          ],
+              Gap(AppSpacing.sm),
+              Text(
+                'Device info will be attached to help us debug issues.',
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: AppColors.textHint),
+              ),
+              Gap(AppSpacing.lg),
+              AppButton(
+                label: 'Send',
+                onPressed: _isSending ? null : _send,
+                isLoading: _isSending,
+                icon: Icons.send_rounded,
+              ),
+            ],
+          ),
         ),
       ),
     );

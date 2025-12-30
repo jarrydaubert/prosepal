@@ -18,87 +18,103 @@ class HomeScreen extends ConsumerWidget {
     final isPro = ref.watch(isProProvider);
 
     return Scaffold(
-      body: SafeArea(
-        child: CustomScrollView(
-          slivers: [
-            // Header
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.all(AppSpacing.screenPadding),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Prosepal',
-                              style: Theme.of(context).textTheme.headlineMedium
-                                  ?.copyWith(fontWeight: FontWeight.bold),
-                            ),
-                            Text(
-                              'The right words, right now',
-                              style: Theme.of(context).textTheme.bodyMedium
-                                  ?.copyWith(color: AppColors.textSecondary),
-                            ),
-                          ],
-                        ),
-                        Semantics(
-                          label: 'Settings',
-                          button: true,
-                          child: IconButton(
-                            onPressed: () => context.pushNamed('settings'),
-                            icon: Icon(Icons.settings_outlined),
-                            tooltip: 'Settings',
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [AppColors.primary.withValues(alpha: 0.04), Colors.white],
+            stops: const [0.0, 0.3],
+          ),
+        ),
+        child: SafeArea(
+          child: CustomScrollView(
+            slivers: [
+              // Header
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.all(AppSpacing.screenPadding),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Prosepal',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .headlineMedium
+                                    ?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: -0.5,
+                                    ),
+                              ),
+                              Text(
+                                'The right words, right now',
+                                style: Theme.of(context).textTheme.bodyMedium
+                                    ?.copyWith(color: AppColors.textSecondary),
+                              ),
+                            ],
                           ),
-                        ),
-                      ],
-                    ),
-                    Gap(AppSpacing.lg),
-                    // Usage indicator
-                    UsageIndicator(
-                      remaining: remaining,
-                      isPro: isPro,
-                      onUpgrade: () => context.pushNamed('paywall'),
-                    ),
-                  ],
+                          Semantics(
+                            label: 'Settings',
+                            button: true,
+                            child: IconButton(
+                              onPressed: () => context.pushNamed('settings'),
+                              icon: Icon(Icons.settings_outlined),
+                              tooltip: 'Settings',
+                            ),
+                          ),
+                        ],
+                      ),
+                      Gap(AppSpacing.lg),
+                      // Usage indicator
+                      UsageIndicator(
+                        remaining: remaining,
+                        isPro: isPro,
+                        onUpgrade: () => context.pushNamed('paywall'),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
 
-            // Section header
-            SliverToBoxAdapter(
-              child: Padding(
+              // Section header
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: AppSpacing.screenPadding,
+                  ),
+                  child: Text(
+                    'What\'s the occasion?',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                ),
+              ),
+
+              SliverToBoxAdapter(child: Gap(AppSpacing.md)),
+
+              // Occasion grid
+              SliverPadding(
                 padding: EdgeInsets.symmetric(
                   horizontal: AppSpacing.screenPadding,
                 ),
-                child: Text(
-                  'What\'s the occasion?',
-                  style: Theme.of(context).textTheme.titleLarge,
+                sliver: OccasionGrid(
+                  onOccasionSelected: (occasion) {
+                    ref.read(selectedOccasionProvider.notifier).state =
+                        occasion;
+                    context.pushNamed('generate');
+                  },
                 ),
               ),
-            ),
 
-            SliverToBoxAdapter(child: Gap(AppSpacing.md)),
-
-            // Occasion grid
-            SliverPadding(
-              padding: EdgeInsets.symmetric(
-                horizontal: AppSpacing.screenPadding,
-              ),
-              sliver: OccasionGrid(
-                onOccasionSelected: (occasion) {
-                  ref.read(selectedOccasionProvider.notifier).state = occasion;
-                  context.pushNamed('generate');
-                },
-              ),
-            ),
-
-            SliverToBoxAdapter(child: Gap(AppSpacing.xxl)),
-          ],
+              SliverToBoxAdapter(child: Gap(AppSpacing.xxl)),
+            ],
+          ),
         ),
       ),
     );

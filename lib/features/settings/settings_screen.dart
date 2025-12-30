@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -232,26 +233,23 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final userName = authService.displayName;
 
     return Scaffold(
-      appBar: AppBar(title: Text('Settings')),
+      backgroundColor: const Color(0xFFF8F9FA),
+      appBar: AppBar(
+        title: const Text('Settings'),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+      ),
       body: ListView(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
         children: [
-          // Account section (most important - at top per Apple HIG)
+          Gap(AppSpacing.sm),
+          // Account section
           SectionHeader('Account'),
-          SettingsTile(
-            leading: CircleAvatar(
-              radius: 20,
-              backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-              child: Text(
-                (userName ?? userEmail ?? 'U')[0].toUpperCase(),
-                style: TextStyle(
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-            title: userName ?? 'User',
-            subtitle: userEmail,
+          _buildModernCard(
+            context,
+            child: _buildAccountHeader(context, userName, userEmail, isPro),
           ),
+          Gap(AppSpacing.lg),
 
           // Subscription section
           SectionHeader('Subscription'),
@@ -399,9 +397,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           Center(
             child: Text(
               'Prosepal ${_appVersion.isNotEmpty ? _appVersion : ""}',
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(color: AppColors.textHint),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: AppColors.textHint.withValues(alpha: 0.6),
+              ),
             ),
           ),
           Gap(AppSpacing.xxl),
@@ -409,8 +407,122 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       ),
     );
   }
-}
 
-// Now using shared molecules:
-// - SectionHeader from shared/molecules/section_header.dart
-// - SettingsTile from shared/molecules/settings_tile.dart
+  /// Modern card with subtle shadow and rounded corners
+  Widget _buildModernCard(BuildContext context, {required Widget child}) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: child,
+    );
+  }
+
+  /// Account header with avatar and pro badge
+  Widget _buildAccountHeader(
+    BuildContext context,
+    String? userName,
+    String? userEmail,
+    bool isPro,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        children: [
+          // Avatar with glow effect for Pro users
+          Container(
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              boxShadow: isPro
+                  ? [
+                      BoxShadow(
+                        color: Colors.amber.withValues(alpha: 0.3),
+                        blurRadius: 12,
+                        spreadRadius: 2,
+                      ),
+                    ]
+                  : null,
+            ),
+            child: CircleAvatar(
+              radius: 28,
+              backgroundColor: isPro
+                  ? Colors.amber.shade100
+                  : AppColors.primary.withValues(alpha: 0.1),
+              child: Text(
+                (userName ?? userEmail ?? 'U')[0].toUpperCase(),
+                style: TextStyle(
+                  fontSize: 20,
+                  color: isPro ? Colors.amber.shade800 : AppColors.primary,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          // Name and email
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        userName ?? 'User',
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w600),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (isPro) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Text(
+                          'PRO',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                if (userEmail != null) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    userEmail,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

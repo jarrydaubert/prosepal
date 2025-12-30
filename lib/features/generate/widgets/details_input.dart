@@ -68,157 +68,169 @@ class _DetailsInputState extends State<DetailsInput> {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: EdgeInsets.all(AppSpacing.screenPadding),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Add personal touches',
-            style: Theme.of(context).textTheme.headlineSmall,
-          ),
-          Gap(AppSpacing.sm),
-          Text(
-            'Optional details to make your message more personal',
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
-          ),
-          Gap(AppSpacing.xl),
-
-          // Recipient name
-          Text(
-            "Recipient's name",
-            style: Theme.of(context).textTheme.titleSmall,
-          ),
-          Gap(AppSpacing.sm),
-          TextField(
-            controller: _nameController,
-            decoration: InputDecoration(
-              hintText: 'e.g., Sarah, Mom, John',
-              prefixIcon: Icon(Icons.person_outline),
-              labelText: "Recipient's name", // For accessibility
+    return GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(),
+      child: SingleChildScrollView(
+        padding: EdgeInsets.all(AppSpacing.screenPadding),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Add personal touches',
+              style: Theme.of(context).textTheme.headlineSmall,
             ),
-            textCapitalization: TextCapitalization.words,
-            onChanged: widget.onRecipientNameChanged,
-          ),
-          Gap(AppSpacing.xl),
+            Gap(AppSpacing.sm),
+            Text(
+              'Optional details to make your message more personal',
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
+            ),
+            Gap(AppSpacing.xl),
 
-          // Personal details
-          Text(
-            'Personal details or context',
-            style: Theme.of(context).textTheme.titleSmall,
-          ),
-          Gap(AppSpacing.sm),
-          TextField(
-            controller: _detailsController,
-            decoration: InputDecoration(
-              hintText:
-                  'e.g., She loves gardening, Just got promoted, We met in college',
-              prefixIcon: Padding(
-                padding: EdgeInsets.only(
-                  bottom: 48,
-                ), // Align to top for multiline
-                child: Icon(Icons.notes_outlined),
+            // Recipient name
+            Text(
+              "Recipient's name",
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
+            Gap(AppSpacing.sm),
+            TextField(
+              controller: _nameController,
+              decoration: InputDecoration(
+                hintText: 'e.g., Sarah, Mom, John',
+                prefixIcon: Icon(Icons.person_outline),
+                labelText: "Recipient's name", // For accessibility
               ),
-              alignLabelWithHint: true,
-              labelText: 'Personal details', // For accessibility
+              textCapitalization: TextCapitalization.words,
+              onChanged: widget.onRecipientNameChanged,
             ),
-            maxLines: 4,
-            textCapitalization: TextCapitalization.sentences,
-            onChanged: widget.onPersonalDetailsChanged,
-          ),
-          Gap(AppSpacing.xl),
+            Gap(AppSpacing.xl),
 
-          // Message length
-          Text('Message length', style: Theme.of(context).textTheme.titleSmall),
-          Gap(AppSpacing.sm),
-          Semantics(
-            label: 'Message length selector',
-            child: Wrap(
-              spacing: AppSpacing.sm,
-              runSpacing: AppSpacing.sm,
-              children: MessageLength.values.map((length) {
-                final isSelected = widget.selectedLength == length;
-                return Semantics(
-                  label: '${length.label}: ${length.description}',
-                  selected: isSelected,
-                  child: ChoiceChip(
-                    label: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (isSelected)
-                          Padding(
-                            padding: EdgeInsets.only(right: AppSpacing.xs),
-                            child: Icon(
-                              Icons.check,
-                              size: 16,
-                              color: AppColors.primary,
-                            ),
-                          ),
-                        Text(length.emoji),
-                        Gap(AppSpacing.xs),
-                        Text(
-                          length.label,
-                          style: isSelected
-                              ? TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.primary,
-                                )
-                              : null,
-                        ),
-                      ],
-                    ),
-                    selected: isSelected,
-                    onSelected: (_) => widget.onLengthChanged(length),
-                    selectedColor: AppColors.primary.withValues(alpha: 0.15),
-                    backgroundColor: AppColors.surface,
-                    side: BorderSide(
-                      color: isSelected
-                          ? AppColors.primary
-                          : AppColors.surfaceVariant,
-                      width: isSelected ? 1.5 : 1,
-                    ),
-                    showCheckmark: false,
-                  ),
-                );
-              }).toList(),
+            // Personal details
+            Text(
+              'Personal details or context',
+              style: Theme.of(context).textTheme.titleSmall,
             ),
-          ),
-          Gap(AppSpacing.sm),
-          Text(
-            widget.selectedLength.description,
-            style: Theme.of(
-              context,
-            ).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
-          ),
-          Gap(AppSpacing.lg),
-
-          // Tip card
-          Container(
-            padding: EdgeInsets.all(AppSpacing.md),
-            decoration: BoxDecoration(
-              color: AppColors.info.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
-              border: Border.all(color: AppColors.info.withValues(alpha: 0.3)),
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(Icons.lightbulb_outline, color: AppColors.info, size: 20),
-                Gap(AppSpacing.sm),
-                Expanded(
-                  child: Text(
-                    'The more details you provide, the more personalized your message will be!',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodySmall?.copyWith(color: AppColors.info),
-                  ),
+            Gap(AppSpacing.sm),
+            TextField(
+              controller: _detailsController,
+              decoration: InputDecoration(
+                hintText:
+                    'e.g., She loves gardening, Just got promoted, We met in college',
+                prefixIcon: Padding(
+                  padding: EdgeInsets.only(
+                    bottom: 48,
+                  ), // Align to top for multiline
+                  child: Icon(Icons.notes_outlined),
                 ),
-              ],
+                alignLabelWithHint: true,
+                labelText: 'Personal details', // For accessibility
+              ),
+              maxLines: 4,
+              textCapitalization: TextCapitalization.sentences,
+              onChanged: widget.onPersonalDetailsChanged,
             ),
-          ),
-        ],
+            Gap(AppSpacing.xl),
+
+            // Message length
+            Text(
+              'Message length',
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
+            Gap(AppSpacing.sm),
+            Semantics(
+              label: 'Message length selector',
+              child: Wrap(
+                spacing: AppSpacing.sm,
+                runSpacing: AppSpacing.sm,
+                children: MessageLength.values.map((length) {
+                  final isSelected = widget.selectedLength == length;
+                  return Semantics(
+                    label: '${length.label}: ${length.description}',
+                    selected: isSelected,
+                    child: ChoiceChip(
+                      label: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (isSelected)
+                            Padding(
+                              padding: EdgeInsets.only(right: AppSpacing.xs),
+                              child: Icon(
+                                Icons.check,
+                                size: 16,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                          Text(length.emoji),
+                          Gap(AppSpacing.xs),
+                          Text(
+                            length.label,
+                            style: isSelected
+                                ? TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.primary,
+                                  )
+                                : null,
+                          ),
+                        ],
+                      ),
+                      selected: isSelected,
+                      onSelected: (_) => widget.onLengthChanged(length),
+                      selectedColor: AppColors.primary.withValues(alpha: 0.15),
+                      backgroundColor: AppColors.surface,
+                      side: BorderSide(
+                        color: isSelected
+                            ? AppColors.primary
+                            : AppColors.surfaceVariant,
+                        width: isSelected ? 1.5 : 1,
+                      ),
+                      showCheckmark: false,
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+            Gap(AppSpacing.sm),
+            Text(
+              widget.selectedLength.description,
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+            ),
+            Gap(AppSpacing.lg),
+
+            // Tip card
+            Container(
+              padding: EdgeInsets.all(AppSpacing.md),
+              decoration: BoxDecoration(
+                color: AppColors.info.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
+                border: Border.all(
+                  color: AppColors.info.withValues(alpha: 0.3),
+                ),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(
+                    Icons.lightbulb_outline,
+                    color: AppColors.info,
+                    size: 20,
+                  ),
+                  Gap(AppSpacing.sm),
+                  Expanded(
+                    child: Text(
+                      'The more details you provide, the more personalized your message will be!',
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodySmall?.copyWith(color: AppColors.info),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
