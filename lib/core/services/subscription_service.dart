@@ -263,6 +263,11 @@ class SubscriptionService implements ISubscriptionService {
   }
 
   @override
+  void removeCustomerInfoListener(void Function(CustomerInfo) listener) {
+    Purchases.removeCustomerInfoUpdateListener(listener);
+  }
+
+  @override
   Future<void> identifyUser(String userId) async {
     if (!_isInitialized) {
       debugPrint('RevenueCat not initialized, skipping identify');
