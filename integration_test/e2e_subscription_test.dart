@@ -14,7 +14,7 @@ import 'package:prosepal/core/models/models.dart';
 /// These tests verify the subscription-related UI flows work correctly.
 /// They use mocked subscription state since real purchases require device testing.
 ///
-/// Run with: flutter test integration_test/e2e_subscription_test.dart -d <device_id>
+/// Run with: flutter test integration_test/e2e_subscription_test.dart -d [device_id]
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 

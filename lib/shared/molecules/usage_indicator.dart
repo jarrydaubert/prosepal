@@ -36,7 +36,7 @@ class _ProBadge extends StatelessWidget {
         vertical: AppSpacing.sm,
       ),
       decoration: BoxDecoration(
-        gradient: AppColors.premiumGradient,
+        gradient: AppColors.primaryGradient,
         borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
       ),
       child: Row(
