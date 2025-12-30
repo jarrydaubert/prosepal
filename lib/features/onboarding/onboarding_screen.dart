@@ -1,4 +1,7 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -49,9 +52,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   ];
 
   void _nextPage() {
+    HapticFeedback.lightImpact();
     if (_currentPage < _pages.length - 1) {
       _pageController.nextPage(
-        duration: Duration(milliseconds: 400),
+        duration: const Duration(milliseconds: 450),
         curve: Curves.easeOutCubic,
       );
     } else {
@@ -74,37 +78,82 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   @override
   Widget build(BuildContext context) {
     final currentGradient = _pages[_currentPage].gradientColors;
+    final isLastPage = _currentPage == _pages.length - 1;
 
     return Scaffold(
       body: AnimatedContainer(
-        duration: Duration(milliseconds: 500),
+        duration: const Duration(milliseconds: 600),
+        curve: Curves.easeInOut,
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              currentGradient[0].withValues(alpha: 0.15),
-              currentGradient[1].withValues(alpha: 0.08),
+              currentGradient[0].withValues(alpha: 0.12),
+              currentGradient[1].withValues(alpha: 0.06),
+              Colors.white,
               Colors.white,
             ],
-            stops: [0.0, 0.4, 1.0],
+            stops: const [0.0, 0.3, 0.6, 1.0],
           ),
         ),
         child: SafeArea(
           child: Column(
             children: [
-              // Skip button
-              Align(
-                alignment: Alignment.topRight,
-                child: Padding(
-                  padding: EdgeInsets.all(AppSpacing.md),
-                  child: TextButton(
-                    onPressed: _completeOnboarding,
-                    style: TextButton.styleFrom(
-                      foregroundColor: AppColors.textSecondary,
+              // Top bar with progress and skip
+              Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: AppSpacing.screenPadding,
+                  vertical: AppSpacing.sm,
+                ),
+                child: Row(
+                  children: [
+                    // Progress indicator
+                    Expanded(
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(4),
+                        child: TweenAnimationBuilder<double>(
+                          tween: Tween(
+                            begin: 0,
+                            end: (_currentPage + 1) / _pages.length,
+                          ),
+                          duration: const Duration(milliseconds: 400),
+                          curve: Curves.easeOutCubic,
+                          builder: (context, value, _) =>
+                              LinearProgressIndicator(
+                                value: value,
+                                backgroundColor: Colors.grey.shade200,
+                                valueColor: AlwaysStoppedAnimation(
+                                  Color.lerp(
+                                    currentGradient[0],
+                                    currentGradient[1],
+                                    0.5,
+                                  ),
+                                ),
+                                minHeight: 4,
+                              ),
+                        ),
+                      ),
                     ),
-                    child: Text('Skip'),
-                  ),
+                    const SizedBox(width: 16),
+                    // Skip button
+                    TextButton(
+                      onPressed: _completeOnboarding,
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppColors.textSecondary.withValues(
+                          alpha: 0.7,
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                      ),
+                      child: const Text(
+                        'Skip',
+                        style: TextStyle(fontWeight: FontWeight.w500),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               // Page content
@@ -130,15 +179,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 padding: EdgeInsets.all(AppSpacing.screenPadding),
                 child: Column(
                   children: [
-                    // Dots
+                    // Dots with improved styling
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: List.generate(
                         _pages.length,
                         (index) => AnimatedContainer(
-                          duration: Duration(milliseconds: 300),
-                          margin: EdgeInsets.symmetric(horizontal: 4),
-                          width: _currentPage == index ? 28 : 8,
+                          duration: const Duration(milliseconds: 350),
+                          curve: Curves.easeOutCubic,
+                          margin: const EdgeInsets.symmetric(horizontal: 4),
+                          width: _currentPage == index ? 32 : 8,
                           height: 8,
                           decoration: BoxDecoration(
                             gradient: _currentPage == index
@@ -148,54 +198,41 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                 : null,
                             color: _currentPage == index
                                 ? null
-                                : AppColors.textHint.withValues(alpha: 0.4),
+                                : Colors.grey.shade300,
                             borderRadius: BorderRadius.circular(4),
                           ),
                         ),
                       ),
                     ),
                     SizedBox(height: AppSpacing.xl),
-                    // Button with gradient
-                    Container(
-                      width: double.infinity,
-                      height: AppSpacing.buttonHeight,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: _pages[_currentPage].gradientColors,
-                        ),
-                        borderRadius: BorderRadius.circular(
-                          AppSpacing.radiusMedium,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: _pages[_currentPage].gradientColors[0]
-                                .withValues(alpha: 0.4),
-                            blurRadius: 12,
-                            offset: Offset(0, 4),
-                          ),
-                        ],
+                    // Button with gradient and scale animation
+                    _AnimatedButton(
+                      onPressed: _nextPage,
+                      gradient: LinearGradient(
+                        colors: _pages[_currentPage].gradientColors,
                       ),
-                      child: ElevatedButton(
-                        onPressed: _nextPage,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.transparent,
-                          shadowColor: Colors.transparent,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(
-                              AppSpacing.radiusMedium,
+                      shadowColor: _pages[_currentPage].gradientColors[0],
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            isLastPage ? 'Get Started' : 'Continue',
+                            style: const TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                              letterSpacing: 0.3,
                             ),
                           ),
-                        ),
-                        child: Text(
-                          _currentPage == _pages.length - 1
-                              ? 'Get Started'
-                              : 'Continue',
-                          style: TextStyle(
-                            fontSize: 17,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
-                        ),
+                          if (isLastPage) ...[
+                            const SizedBox(width: 8),
+                            const Icon(
+                              Icons.arrow_forward_rounded,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                          ],
+                        ],
                       ),
                     ),
                     SizedBox(height: AppSpacing.md),
@@ -204,6 +241,62 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Animated button with scale effect on press
+class _AnimatedButton extends StatefulWidget {
+  const _AnimatedButton({
+    required this.onPressed,
+    required this.gradient,
+    required this.shadowColor,
+    required this.child,
+  });
+
+  final VoidCallback onPressed;
+  final Gradient gradient;
+  final Color shadowColor;
+  final Widget child;
+
+  @override
+  State<_AnimatedButton> createState() => _AnimatedButtonState();
+}
+
+class _AnimatedButtonState extends State<_AnimatedButton> {
+  bool _isPressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _isPressed = true),
+      onTapUp: (_) {
+        setState(() => _isPressed = false);
+        widget.onPressed();
+      },
+      onTapCancel: () => setState(() => _isPressed = false),
+      child: AnimatedScale(
+        scale: _isPressed ? 0.96 : 1.0,
+        duration: const Duration(milliseconds: 120),
+        curve: Curves.easeInOut,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          width: double.infinity,
+          height: AppSpacing.buttonHeight,
+          decoration: BoxDecoration(
+            gradient: widget.gradient,
+            borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
+            boxShadow: [
+              BoxShadow(
+                color: widget.shadowColor.withValues(alpha: 0.35),
+                blurRadius: _isPressed ? 8 : 16,
+                offset: Offset(0, _isPressed ? 2 : 6),
+              ),
+            ],
+          ),
+          child: Center(child: widget.child),
         ),
       ),
     );
@@ -227,38 +320,59 @@ class _OnboardingPageWidget extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Large emoji with gradient background
+          // Large emoji with glassmorphism container
           Container(
-                width: 140,
-                height: 140,
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      page.gradientColors[0].withValues(alpha: 0.2),
-                      page.gradientColors[1].withValues(alpha: 0.1),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(40),
-                  border: Border.all(
-                    color: page.gradientColors[0].withValues(alpha: 0.3),
-                    width: 2,
-                  ),
+                  borderRadius: BorderRadius.circular(44),
+                  boxShadow: [
+                    BoxShadow(
+                      color: page.gradientColors[0].withValues(alpha: 0.25),
+                      blurRadius: 30,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
                 ),
-                child: Center(
-                  child: Text(page.emoji, style: TextStyle(fontSize: 64)),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(44),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                    child: Container(
+                      width: 150,
+                      height: 150,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            page.gradientColors[0].withValues(alpha: 0.15),
+                            page.gradientColors[1].withValues(alpha: 0.08),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(44),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.4),
+                          width: 1.5,
+                        ),
+                      ),
+                      child: Center(
+                        child: Text(
+                          page.emoji,
+                          style: const TextStyle(fontSize: 68),
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
               )
               .animate(target: isActive ? 1 : 0)
-              .fadeIn(duration: 500.ms)
+              .fadeIn(duration: 600.ms, curve: Curves.easeOut)
               .scale(
-                begin: Offset(0.8, 0.8),
-                end: Offset(1, 1),
-                duration: 500.ms,
+                begin: const Offset(0.85, 0.85),
+                end: const Offset(1, 1),
+                duration: 600.ms,
                 curve: Curves.easeOutBack,
               ),
-          SizedBox(height: AppSpacing.xxl),
+          SizedBox(height: AppSpacing.xxl + 8),
           // Title with gradient text
           ShaderMask(
                 shaderCallback: (bounds) => LinearGradient(
@@ -267,29 +381,41 @@ class _OnboardingPageWidget extends StatelessWidget {
                 child: Text(
                   page.title,
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w700,
                     color: Colors.white,
-                    height: 1.2,
+                    height: 1.15,
+                    letterSpacing: -0.5,
                   ),
                   textAlign: TextAlign.center,
                 ),
               )
               .animate(target: isActive ? 1 : 0)
-              .fadeIn(delay: 150.ms, duration: 400.ms)
-              .slideY(begin: 0.3, end: 0, duration: 400.ms),
-          SizedBox(height: AppSpacing.lg),
-          // Subtitle
+              .fadeIn(delay: 180.ms, duration: 500.ms)
+              .slideY(
+                begin: 0.2,
+                end: 0,
+                duration: 500.ms,
+                curve: Curves.easeOutCubic,
+              ),
+          SizedBox(height: AppSpacing.lg + 4),
+          // Subtitle with improved styling
           Text(
                 page.subtitle,
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   color: AppColors.textSecondary,
-                  height: 1.6,
+                  height: 1.7,
+                  letterSpacing: 0.1,
                 ),
                 textAlign: TextAlign.center,
               )
               .animate(target: isActive ? 1 : 0)
-              .fadeIn(delay: 300.ms, duration: 400.ms)
-              .slideY(begin: 0.3, end: 0, duration: 400.ms),
+              .fadeIn(delay: 350.ms, duration: 500.ms)
+              .slideY(
+                begin: 0.2,
+                end: 0,
+                duration: 500.ms,
+                curve: Curves.easeOutCubic,
+              ),
         ],
       ),
     );
