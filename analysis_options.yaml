@@ -10,14 +10,17 @@ analyzer:
 linter:
   rules:
     # Code quality
+    - avoid_dynamic_calls
     - avoid_print
     - avoid_unnecessary_containers
+    - prefer_relative_imports
     - prefer_single_quotes
     - prefer_const_constructors
     - prefer_const_declarations
     - prefer_const_literals_to_create_immutables
     - prefer_final_locals
     - prefer_final_in_for_each
+    - require_trailing_commas
     - sort_constructors_first
     - unawaited_futures
     - use_key_in_widget_constructors

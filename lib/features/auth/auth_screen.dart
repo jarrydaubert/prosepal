@@ -252,15 +252,19 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                         // Apple Sign In (iOS/macOS only, first per Apple guidelines)
                         if (Platform.isIOS || Platform.isMacOS) ...[
                           _AnimatedAuthButton(
-                            child: SizedBox(
-                              width: double.infinity,
-                              height: _kAuthButtonHeight,
-                              child: SignInWithAppleButton(
-                                text: 'Continue with Apple',
-                                onPressed: _isLoading
-                                    ? () {}
-                                    : _signInWithApple,
-                                borderRadius: _kAuthButtonRadius,
+                            child: IgnorePointer(
+                              ignoring: _isLoading,
+                              child: Opacity(
+                                opacity: _isLoading ? 0.6 : 1.0,
+                                child: SizedBox(
+                                  width: double.infinity,
+                                  height: _kAuthButtonHeight,
+                                  child: SignInWithAppleButton(
+                                    text: 'Continue with Apple',
+                                    onPressed: _signInWithApple,
+                                    borderRadius: _kAuthButtonRadius,
+                                  ),
+                                ),
                               ),
                             ),
                           ),
@@ -268,15 +272,21 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                         ],
                         // Google Sign In
                         _AnimatedAuthButton(
-                          child: _GoogleSignInButton(
-                            onPressed: _isLoading ? null : _signInWithGoogle,
+                          child: Opacity(
+                            opacity: _isLoading ? 0.6 : 1.0,
+                            child: _GoogleSignInButton(
+                              onPressed: _isLoading ? null : _signInWithGoogle,
+                            ),
                           ),
                         ),
                         const SizedBox(height: AppSpacing.md),
                         // Email Sign In
                         _AnimatedAuthButton(
-                          child: _EmailSignInButton(
-                            onPressed: _isLoading ? null : _signInWithEmail,
+                          child: Opacity(
+                            opacity: _isLoading ? 0.6 : 1.0,
+                            child: _EmailSignInButton(
+                              onPressed: _isLoading ? null : _signInWithEmail,
+                            ),
                           ),
                         ),
                       ],

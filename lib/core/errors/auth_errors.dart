@@ -68,8 +68,57 @@ class AuthErrorHandler {
     final message = error.message.toLowerCase().trim();
     final statusCode = error.statusCode;
 
-    // Invalid credentials
-    // Supabase returns: "Invalid login credentials" or similar
+    // ============================================================
+    // Priority 1: Check statusCode first (more reliable than message)
+    // ============================================================
+
+    // Rate limiting (429)
+    if (statusCode == '429') {
+      return const AuthErrorResult(
+        message: 'Too many attempts. Please wait a moment and try again.',
+        shouldRetry: false,
+      );
+    }
+
+    // Bad request (400) - typically invalid credentials or validation
+    if (statusCode == '400') {
+      // Check specific message patterns within 400
+      if (message.contains('invalid login credentials') ||
+          message.contains('invalid email or password')) {
+        return const AuthErrorResult(
+          message: 'Invalid email or password. Please try again.',
+        );
+      }
+      if (message.contains('invalid email')) {
+        return const AuthErrorResult(
+          message: 'Please enter a valid email address.',
+        );
+      }
+    }
+
+    // Unauthorized (401) - session/token issues
+    if (statusCode == '401') {
+      return const AuthErrorResult(
+        message: 'Your session has expired. Please sign in again.',
+      );
+    }
+
+    // Conflict (409) - user already exists
+    if (statusCode == '409' || statusCode == '422') {
+      if (message.contains('already')) {
+        return const AuthErrorResult(
+          message:
+              'An account with this email already exists. Try signing in instead.',
+          shouldRetry: false,
+        );
+      }
+    }
+
+    // ============================================================
+    // Priority 2: Fall back to message matching for edge cases
+    // ============================================================
+
+    // Invalid credentials (fallback if statusCode not set)
     if (message.contains('invalid login credentials') ||
         message.contains('invalid email or password')) {
       return const AuthErrorResult(
@@ -78,23 +127,19 @@ class AuthErrorHandler {
     }
 
     // Invalid email format
-    // Supabase returns: "Invalid email" for malformed addresses
     if (message.contains('invalid email')) {
       return const AuthErrorResult(
         message: 'Please enter a valid email address.',
       );
     }
 
-    // Rate limiting (429 status or various message patterns)
-    // Supabase returns: "Rate limit exceeded", "Too many requests",
-    // "Email rate limit exceeded", "For security purposes..."
-    if (statusCode == '429' ||
-        message.contains('rate limit') ||
+    // Rate limiting (message fallback)
+    if (message.contains('rate limit') ||
         message.contains('too many') ||
         message.contains('for security purposes')) {
       return const AuthErrorResult(
         message: 'Too many attempts. Please wait a moment and try again.',
-        shouldRetry: false, // Don't immediately retry rate limits
+        shouldRetry: false,
       );
     }
 
