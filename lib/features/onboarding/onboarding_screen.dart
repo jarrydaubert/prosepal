@@ -20,34 +20,34 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
 
+  // Unified brand colors - coral gradient throughout
+  static const List<Color> _brandGradient = [
+    Color(0xFFE57373),
+    Color(0xFFEF9A9A),
+  ];
+
+  // Reduced from 4 to 3 pages - more concise, value-focused
   final List<_OnboardingPage> _pages = [
     _OnboardingPage(
+      emoji: '💬',
+      title: 'Stuck on What\nto Write?',
+      subtitle:
+          'Birthday, wedding, sympathy — finding the right words is hard. We make it easy.',
+      gradientColors: _brandGradient,
+    ),
+    _OnboardingPage(
       emoji: '✨',
-      title: 'Perfect Words for\nEvery Occasion',
+      title: 'AI-Crafted\nMessages',
       subtitle:
-          'Birthday, wedding, sympathy, thank you — we help you write heartfelt messages that truly connect.',
-      gradientColors: [Color(0xFFE57373), Color(0xFFFF8A65)],
+          'Tell us the occasion and relationship. Get 3 unique, heartfelt messages in seconds.',
+      gradientColors: _brandGradient,
     ),
     _OnboardingPage(
-      emoji: '🎯',
-      title: 'Personalized\nJust for You',
+      emoji: '🎉',
+      title: 'Try 3 Free\nMessages',
       subtitle:
-          'Tell us about the recipient and occasion, and our AI crafts 3 unique message options tailored to your needs.',
-      gradientColors: [Color(0xFF7E57C2), Color(0xFFB388FF)],
-    ),
-    _OnboardingPage(
-      emoji: '⚡',
-      title: 'Quick & Easy',
-      subtitle:
-          'Standing in the card aisle? Get beautiful messages in seconds. Copy, paste, done.',
-      gradientColors: [Color(0xFF26A69A), Color(0xFF80CBC4)],
-    ),
-    _OnboardingPage(
-      emoji: '📝',
-      title: 'Why Prosepal?',
-      subtitle:
-          '"Prose" (prohz) means everyday language — warm, natural words. We\'re your pal for heartfelt messages.',
-      gradientColors: [Color(0xFFFFB74D), Color(0xFFFFD54F)],
+          'No account needed to start. Standing in the card aisle? We\'ve got you.',
+      gradientColors: _brandGradient,
     ),
   ];
 
