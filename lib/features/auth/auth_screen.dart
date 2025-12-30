@@ -1,4 +1,5 @@
 import 'dart:io' show Platform;
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -100,184 +101,288 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.all(AppSpacing.screenPadding),
-          child: Column(
-            children: [
-              const Spacer(flex: 2),
-              // App Logo with shadow
-              Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(28),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.primary.withValues(alpha: 0.3),
-                          blurRadius: 30,
-                          offset: Offset(0, 10),
-                        ),
-                      ],
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(28),
-                      child: Image.asset(
-                        'assets/images/logo.png',
-                        width: 120,
-                        height: 120,
-                      ),
-                    ),
-                  )
-                  .animate()
-                  .fadeIn(duration: 600.ms)
-                  .scale(
-                    begin: Offset(0.8, 0.8),
-                    duration: 600.ms,
-                    curve: Curves.easeOutBack,
-                  ),
-              SizedBox(height: AppSpacing.xl),
-              // Title
-              Text(
-                    'Welcome to Prosepal',
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                    textAlign: TextAlign.center,
-                  )
-                  .animate()
-                  .fadeIn(delay: 200.ms, duration: 500.ms)
-                  .slideY(begin: 0.3, duration: 500.ms),
-              SizedBox(height: AppSpacing.sm),
-              // Tagline
-              Text(
-                    'The right words, right now',
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
-                    textAlign: TextAlign.center,
-                  )
-                  .animate()
-                  .fadeIn(delay: 400.ms, duration: 500.ms)
-                  .slideY(begin: 0.3, duration: 500.ms),
-              const Spacer(flex: 2),
-              // Error message with dismiss button
-              if (_error != null) ...[
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              AppColors.primary.withValues(alpha: 0.06),
+              Colors.white,
+              Colors.white,
+            ],
+            stops: const [0.0, 0.4, 1.0],
+          ),
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: EdgeInsets.all(AppSpacing.screenPadding),
+            child: Column(
+              children: [
+                const Spacer(flex: 2),
+                // App Logo with glassmorphism container
                 Container(
-                  padding: EdgeInsets.all(AppSpacing.md),
-                  decoration: BoxDecoration(
-                    color: AppColors.error.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(
-                      AppSpacing.radiusMedium,
-                    ),
-                    border: Border.all(
-                      color: AppColors.error.withValues(alpha: 0.3),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.error_outline,
-                        color: AppColors.error,
-                        size: 20,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(32),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.primary.withValues(alpha: 0.25),
+                            blurRadius: 40,
+                            offset: const Offset(0, 12),
+                            spreadRadius: 0,
+                          ),
+                        ],
                       ),
-                      SizedBox(width: AppSpacing.sm),
-                      Expanded(
-                        child: Text(
-                          _error!,
-                          style: TextStyle(color: AppColors.error),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(32),
+                        child: BackdropFilter(
+                          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.8),
+                              borderRadius: BorderRadius.circular(32),
+                              border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.5),
+                                width: 1.5,
+                              ),
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(24),
+                              child: Image.asset(
+                                'assets/images/logo.png',
+                                width: 140,
+                                height: 140,
+                              ),
+                            ),
+                          ),
                         ),
                       ),
-                      GestureDetector(
-                        onTap: _dismissError,
-                        child: Icon(
-                          Icons.close,
-                          color: AppColors.error,
-                          size: 18,
-                        ),
+                    )
+                    .animate()
+                    .fadeIn(duration: 700.ms, curve: Curves.easeOut)
+                    .scale(
+                      begin: const Offset(0.85, 0.85),
+                      duration: 700.ms,
+                      curve: Curves.easeOutBack,
+                    ),
+                SizedBox(height: AppSpacing.xl + 8),
+                // Title with refined typography
+                Text(
+                      'Welcome to Prosepal',
+                      style: Theme.of(context).textTheme.headlineMedium
+                          ?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: -0.5,
+                          ),
+                      textAlign: TextAlign.center,
+                    )
+                    .animate()
+                    .fadeIn(delay: 250.ms, duration: 600.ms)
+                    .slideY(
+                      begin: 0.2,
+                      duration: 600.ms,
+                      curve: Curves.easeOutCubic,
+                    ),
+                SizedBox(height: AppSpacing.sm + 4),
+                // Tagline with improved styling
+                Text(
+                      'The right words, right now',
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        color: AppColors.textSecondary,
+                        letterSpacing: 0.3,
+                        fontWeight: FontWeight.w500,
                       ),
-                    ],
-                  ),
-                ).animate().fadeIn().shake(),
-                SizedBox(height: AppSpacing.lg),
-              ],
-              // Auth buttons - Using official branded buttons with consistent sizing
-              Column(
-                    children: [
-                      // Apple Sign In (iOS/macOS only, first per Apple guidelines)
-                      // Uses official SignInWithAppleButton from sign_in_with_apple package
-                      if (Platform.isIOS || Platform.isMacOS) ...[
-                        SizedBox(
-                          width: double.infinity,
-                          height: _kAuthButtonHeight,
-                          child: SignInWithAppleButton(
-                            text: 'Continue with Apple',
-                            onPressed: _isLoading ? () {} : _signInWithApple,
-                            style: SignInWithAppleButtonStyle.black,
-                            borderRadius: _kAuthButtonRadius,
+                      textAlign: TextAlign.center,
+                    )
+                    .animate()
+                    .fadeIn(delay: 450.ms, duration: 600.ms)
+                    .slideY(
+                      begin: 0.2,
+                      duration: 600.ms,
+                      curve: Curves.easeOutCubic,
+                    ),
+                const Spacer(flex: 2),
+                // Error message with dismiss button
+                if (_error != null) ...[
+                  Container(
+                        padding: EdgeInsets.all(AppSpacing.md),
+                        decoration: BoxDecoration(
+                          color: AppColors.error.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: AppColors.error.withValues(alpha: 0.2),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.error_outline_rounded,
+                              color: AppColors.error,
+                              size: 20,
+                            ),
+                            SizedBox(width: AppSpacing.sm),
+                            Expanded(
+                              child: Text(
+                                _error!,
+                                style: TextStyle(
+                                  color: AppColors.error,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                            GestureDetector(
+                              onTap: _dismissError,
+                              child: Icon(
+                                Icons.close_rounded,
+                                color: AppColors.error.withValues(alpha: 0.7),
+                                size: 18,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                      .animate()
+                      .fadeIn(duration: 300.ms)
+                      .shake(hz: 3, duration: 400.ms),
+                  SizedBox(height: AppSpacing.lg),
+                ],
+                // Auth buttons with micro-interactions
+                Column(
+                      children: [
+                        // Apple Sign In (iOS/macOS only, first per Apple guidelines)
+                        if (Platform.isIOS || Platform.isMacOS) ...[
+                          _AnimatedAuthButton(
+                            child: SizedBox(
+                              width: double.infinity,
+                              height: _kAuthButtonHeight,
+                              child: SignInWithAppleButton(
+                                text: 'Continue with Apple',
+                                onPressed: _isLoading
+                                    ? () {}
+                                    : _signInWithApple,
+                                style: SignInWithAppleButtonStyle.black,
+                                borderRadius: _kAuthButtonRadius,
+                              ),
+                            ),
+                          ),
+                          SizedBox(height: AppSpacing.md),
+                        ],
+                        // Google Sign In
+                        _AnimatedAuthButton(
+                          child: _GoogleSignInButton(
+                            onPressed: _isLoading ? null : _signInWithGoogle,
                           ),
                         ),
                         SizedBox(height: AppSpacing.md),
+                        // Email Sign In
+                        _AnimatedAuthButton(
+                          child: _EmailSignInButton(
+                            onPressed: _isLoading ? null : _signInWithEmail,
+                          ),
+                        ),
                       ],
-                      // Google Sign In - Custom button matching Apple style
-                      // (Google branding: white bg, Google logo, dark text)
-                      _GoogleSignInButton(
-                        onPressed: _isLoading ? null : _signInWithGoogle,
+                    )
+                    .animate()
+                    .fadeIn(delay: 650.ms, duration: 600.ms)
+                    .slideY(
+                      begin: 0.15,
+                      duration: 600.ms,
+                      curve: Curves.easeOutCubic,
+                    ),
+                SizedBox(height: AppSpacing.xl),
+                // Loading or legal
+                if (_isLoading)
+                  SizedBox(
+                    width: 28,
+                    height: 28,
+                    child: CircularProgressIndicator(
+                      color: AppColors.primary,
+                      strokeWidth: 2.5,
+                    ),
+                  )
+                else
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    children: [
+                      Text(
+                        'By continuing, you agree to our ',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
                       ),
-                      SizedBox(height: AppSpacing.md),
-                      // Email Sign In - Custom button matching the same style
-                      _EmailSignInButton(
-                        onPressed: _isLoading ? null : _signInWithEmail,
+                      GestureDetector(
+                        onTap: () => context.pushNamed('terms'),
+                        child: Text(
+                          'Terms',
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.w600,
+                                decoration: TextDecoration.underline,
+                                decorationColor: AppColors.primary.withValues(
+                                  alpha: 0.5,
+                                ),
+                              ),
+                        ),
+                      ),
+                      Text(
+                        ' and ',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () => context.pushNamed('privacy'),
+                        child: Text(
+                          'Privacy Policy',
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.w600,
+                                decoration: TextDecoration.underline,
+                                decorationColor: AppColors.primary.withValues(
+                                  alpha: 0.5,
+                                ),
+                              ),
+                        ),
                       ),
                     ],
-                  )
-                  .animate()
-                  .fadeIn(delay: 600.ms, duration: 500.ms)
-                  .slideY(begin: 0.2, duration: 500.ms),
-              SizedBox(height: AppSpacing.xl),
-              // Loading or legal
-              if (_isLoading)
-                CircularProgressIndicator(color: AppColors.primary)
-              else
-                Wrap(
-                  alignment: WrapAlignment.center,
-                  children: [
-                    Text(
-                      'By continuing, you agree to our ',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                    GestureDetector(
-                      onTap: () => context.pushNamed('terms'),
-                      child: Text(
-                        'Terms',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                    Text(
-                      ' and ',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                    GestureDetector(
-                      onTap: () => context.pushNamed('privacy'),
-                      child: Text(
-                        'Privacy Policy',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
-                ).animate().fadeIn(delay: 800.ms, duration: 400.ms),
-              SizedBox(height: AppSpacing.lg),
-            ],
+                  ).animate().fadeIn(delay: 850.ms, duration: 500.ms),
+                SizedBox(height: AppSpacing.lg),
+              ],
+            ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Animated wrapper for auth buttons with scale feedback
+class _AnimatedAuthButton extends StatefulWidget {
+  const _AnimatedAuthButton({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_AnimatedAuthButton> createState() => _AnimatedAuthButtonState();
+}
+
+class _AnimatedAuthButtonState extends State<_AnimatedAuthButton> {
+  bool _isPressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _isPressed = true),
+      onTapUp: (_) => setState(() => _isPressed = false),
+      onTapCancel: () => setState(() => _isPressed = false),
+      child: AnimatedScale(
+        scale: _isPressed ? 0.97 : 1.0,
+        duration: const Duration(milliseconds: 100),
+        curve: Curves.easeInOut,
+        child: widget.child,
       ),
     );
   }
