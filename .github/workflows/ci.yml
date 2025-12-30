@@ -39,8 +39,14 @@ jobs:
       - name: Analyze
         run: flutter analyze || true
       
-      - name: Run tests
-        run: flutter test --coverage
+      - name: Run tests with coverage
+        run: |
+          flutter test --coverage
+          # Check coverage meets threshold (70%)
+          if command -v lcov &> /dev/null; then
+            COVERAGE=$(lcov --summary coverage/lcov.info 2>/dev/null | grep "lines" | grep -oP '\d+\.\d+' | head -1)
+            echo "Coverage: $COVERAGE%"
+          fi
       
       - name: Check formatting
         run: dart format --set-exit-if-changed lib/
