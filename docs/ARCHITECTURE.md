@@ -125,7 +125,6 @@ prosepal/
 │       ├── organisms/            # Complex components
 │       │   ├── organisms.dart        # Barrel export
 │       │   ├── message_card.dart     # Generated message with copy button
-│       │   ├── occasion_tile.dart    # Occasion card for home grid
 │       │   └── paywall_card.dart     # Subscription offer card
 │       │
 │       └── theme/                # Design tokens
@@ -134,17 +133,15 @@ prosepal/
 │           ├── app_theme.dart        # ThemeData configuration
 │           └── app_typography.dart   # Text styles
 │
-├── test/                         # Unit and widget tests
-│   ├── widget_test.dart          # Basic smoke test
+├── test/                         # Unit and widget tests (365 tests)
+│   ├── README.md                 # Test documentation
 │   │
 │   ├── mocks/
 │   │   ├── mocks.dart                # Barrel export
 │   │   ├── mock_auth_service.dart    # IAuthService mock with call tracking
-│   │   ├── mock_auth_service_test.dart  # Tests for the mock itself
 │   │   ├── mock_biometric_service.dart  # IBiometricService mock
-│   │   ├── mock_biometric_service_test.dart
 │   │   ├── mock_subscription_service.dart  # ISubscriptionService mock
-│   │   └── mock_subscription_service_test.dart
+│   │   └── mock_supabase_auth_provider.dart  # Supabase auth provider mock
 │   │
 │   ├── app/
 │   │   └── app_lifecycle_test.dart   # App state lifecycle tests
@@ -160,14 +157,11 @@ prosepal/
 │   │   └── message_length_test.dart  # MessageLength enum tests
 │   │
 │   ├── services/
-│   │   ├── ai_service_test.dart          # AI service unit tests
-│   │   ├── ai_service_http_test.dart     # AI HTTP/retry logic tests
-│   │   ├── ai_service_generation_test.dart  # Generation flow tests
-│   │   ├── auth_service_with_mock_test.dart  # Auth via mock tests
-│   │   ├── auth_service_crypto_test.dart     # Nonce/SHA256 tests
+│   │   ├── ai_service_generation_test.dart  # AI generation + parsing tests
+│   │   ├── auth_service_test.dart        # Auth service unit tests
 │   │   ├── auth_service_compliance_test.dart # URL/contract tests
-│   │   ├── biometric_service_mock_test.dart  # Biometric tests
-│   │   ├── subscription_service_with_mock_test.dart  # Subscription tests
+│   │   ├── biometric_service_test.dart   # Biometric service tests
+│   │   ├── subscription_service_test.dart  # Subscription tests
 │   │   ├── usage_service_test.dart       # Usage tracking tests
 │   │   ├── review_service_test.dart      # Review prompt tests
 │   │   └── error_log_service_test.dart   # Error logging tests
@@ -179,15 +173,16 @@ prosepal/
 │   └── widgets/
 │       └── screens/
 │           ├── home_screen_test.dart     # Home screen widget tests
-│           └── generate_screen_test.dart # Generate wizard widget tests
+│           ├── generate_screen_test.dart # Generate wizard widget tests
+│           ├── results_screen_test.dart  # Results screen widget tests
+│           └── settings_screen_test.dart # Settings screen widget tests
 │
-├── integration_test/             # E2E integration tests
-│   ├── app_test.dart             # Full app flow tests (12 tests)
-│   ├── auth_test.dart            # Auth flow integration tests
-│   ├── revenuecat_test.dart      # Subscription flow tests
-│   ├── firebase_test.dart        # Firebase integration tests
-│   ├── e2e_subscription_test.dart  # Subscription UI flows (29 tests)
-│   └── e2e_user_journey_test.dart  # Complete user journeys
+├── integration_test/             # E2E integration tests (59 tests)
+│   ├── app_test.dart             # Full app flow tests
+│   ├── e2e_subscription_test.dart  # Subscription UI flows
+│   ├── e2e_user_journey_test.dart  # Complete user journeys
+│   └── device_only/
+│       └── revenuecat_test.dart  # RevenueCat tests (real device only)
 │
 ├── docs/                         # Documentation
 │   ├── ARCHITECTURE.md           # This file - directory structure
