@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
@@ -8,7 +10,11 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'app/app.dart';
 import 'core/providers/providers.dart';
+import 'core/services/apple_auth_provider.dart';
+import 'core/services/auth_service.dart';
+import 'core/services/google_auth_provider.dart';
 import 'core/services/review_service.dart';
+import 'core/services/supabase_auth_provider.dart';
 import 'core/services/subscription_service.dart';
 import 'firebase_options.dart';
 
@@ -59,11 +65,21 @@ void main() async {
   final reviewService = ReviewService(prefs);
   await reviewService.recordFirstLaunchIfNeeded();
 
+  // Pre-initialize OAuth providers for faster sign-in UX
+  final authService = AuthService(
+    supabaseAuth: SupabaseAuthProvider(),
+    appleAuth: AppleAuthProvider(),
+    googleAuth: GoogleAuthProvider(),
+  );
+  // Non-blocking: don't await, let app start while initializing
+  unawaited(authService.initializeProviders());
+
   runApp(
     ProviderScope(
       overrides: [
         sharedPreferencesProvider.overrideWithValue(prefs),
         subscriptionServiceProvider.overrideWithValue(subscriptionService),
+        authServiceProvider.overrideWithValue(authService),
       ],
       child: const ProsepalApp(),
     ),

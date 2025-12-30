@@ -156,6 +156,11 @@ class MockAuthService implements IAuthService {
   }
 
   @override
+  Future<void> initializeProviders() async {
+    // No-op in mock - providers don't need initialization
+  }
+
+  @override
   User? get currentUser => _currentUser;
 
   @override
