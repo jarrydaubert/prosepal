@@ -505,9 +505,12 @@ MESSAGE 3:
 ''';
 }
 
+int _testIdCounter = 0;
+
 GeneratedMessage _createTestMessage(String text, Occasion occasion) {
+  _testIdCounter++;
   return GeneratedMessage(
-    id: DateTime.now().microsecondsSinceEpoch.toString(),
+    id: '${DateTime.now().microsecondsSinceEpoch}_$_testIdCounter',
     text: text,
     occasion: occasion,
     relationship: Relationship.closeFriend,
