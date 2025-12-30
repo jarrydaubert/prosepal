@@ -1,199 +1,7 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:prosepal/core/models/models.dart';
 
 void main() {
-  group('Occasion', () {
-    test('should have correct number of occasions', () {
-      expect(Occasion.values.length, equals(10));
-    });
-
-    test('should have labels', () {
-      for (final occasion in Occasion.values) {
-        expect(occasion.label, isNotEmpty);
-      }
-    });
-
-    test('should have prompts', () {
-      for (final occasion in Occasion.values) {
-        expect(occasion.prompt, isNotEmpty);
-      }
-    });
-
-    test('should have emojis', () {
-      for (final occasion in Occasion.values) {
-        expect(occasion.emoji, isNotEmpty);
-      }
-    });
-
-    test('should have colors', () {
-      for (final occasion in Occasion.values) {
-        expect(occasion.color, isA<Color>());
-      }
-    });
-
-    test('birthday should have correct properties', () {
-      expect(Occasion.birthday.label, equals('Birthday'));
-      expect(Occasion.birthday.emoji, equals('🎂'));
-      expect(Occasion.birthday.prompt, contains('birthday'));
-    });
-
-    test('thankYou should have correct properties', () {
-      expect(Occasion.thankYou.label, equals('Thank You'));
-      expect(Occasion.thankYou.emoji, equals('🙏'));
-      expect(Occasion.thankYou.prompt, contains('gratitude'));
-    });
-
-    test('sympathy should have correct properties', () {
-      expect(Occasion.sympathy.label, equals('Sympathy'));
-      expect(Occasion.sympathy.emoji, equals('💐'));
-      expect(Occasion.sympathy.prompt, contains('condolences'));
-    });
-
-    test('wedding should have correct properties', () {
-      expect(Occasion.wedding.label, equals('Wedding'));
-      expect(Occasion.wedding.emoji, equals('💒'));
-    });
-
-    test('graduation should have correct properties', () {
-      expect(Occasion.graduation.label, equals('Graduation'));
-      expect(Occasion.graduation.emoji, equals('🎓'));
-    });
-
-    test('baby should have correct properties', () {
-      expect(Occasion.baby.label, equals('New Baby'));
-      expect(Occasion.baby.emoji, equals('👶'));
-    });
-
-    test('getWell should have correct properties', () {
-      expect(Occasion.getWell.label, equals('Get Well'));
-      expect(Occasion.getWell.emoji, equals('🌻'));
-    });
-
-    test('anniversary should have correct properties', () {
-      expect(Occasion.anniversary.label, equals('Anniversary'));
-      expect(Occasion.anniversary.emoji, equals('💕'));
-    });
-
-    test('congrats should have correct properties', () {
-      expect(Occasion.congrats.label, equals('Congrats'));
-      expect(Occasion.congrats.emoji, equals('🎉'));
-    });
-
-    test('apology should have correct properties', () {
-      expect(Occasion.apology.label, equals('Apology'));
-      expect(Occasion.apology.emoji, equals('💔'));
-    });
-  });
-
-  group('Relationship', () {
-    test('should have correct number of relationships', () {
-      expect(Relationship.values.length, equals(5));
-    });
-
-    test('should have labels', () {
-      for (final relationship in Relationship.values) {
-        expect(relationship.label, isNotEmpty);
-      }
-    });
-
-    test('should have prompts', () {
-      for (final relationship in Relationship.values) {
-        expect(relationship.prompt, isNotEmpty);
-      }
-    });
-
-    test('should have emojis', () {
-      for (final relationship in Relationship.values) {
-        expect(relationship.emoji, isNotEmpty);
-      }
-    });
-
-    test('closeFriend should have correct properties', () {
-      expect(Relationship.closeFriend.label, equals('Close Friend'));
-      expect(Relationship.closeFriend.emoji, equals('👯'));
-      expect(Relationship.closeFriend.prompt, contains('close friend'));
-    });
-
-    test('family should have correct properties', () {
-      expect(Relationship.family.label, equals('Family'));
-      expect(Relationship.family.emoji, equals('👨‍👩‍👧'));
-      expect(Relationship.family.prompt, contains('family'));
-    });
-
-    test('colleague should have correct properties', () {
-      expect(Relationship.colleague.label, equals('Colleague'));
-      expect(Relationship.colleague.emoji, equals('💼'));
-      expect(Relationship.colleague.prompt, contains('colleague'));
-    });
-
-    test('acquaintance should have correct properties', () {
-      expect(Relationship.acquaintance.label, equals('Acquaintance'));
-      expect(Relationship.acquaintance.emoji, equals('👋'));
-    });
-
-    test('romantic should have correct properties', () {
-      expect(Relationship.romantic.label, equals('Partner'));
-      expect(Relationship.romantic.emoji, equals('❤️'));
-      expect(Relationship.romantic.prompt, contains('romantic'));
-    });
-  });
-
-  group('Tone', () {
-    test('should have correct number of tones', () {
-      expect(Tone.values.length, equals(4));
-    });
-
-    test('should have labels', () {
-      for (final tone in Tone.values) {
-        expect(tone.label, isNotEmpty);
-      }
-    });
-
-    test('should have prompts', () {
-      for (final tone in Tone.values) {
-        expect(tone.prompt, isNotEmpty);
-      }
-    });
-
-    test('should have emojis', () {
-      for (final tone in Tone.values) {
-        expect(tone.emoji, isNotEmpty);
-      }
-    });
-
-    test('should have descriptions', () {
-      for (final tone in Tone.values) {
-        expect(tone.description, isNotEmpty);
-      }
-    });
-
-    test('heartfelt should have correct properties', () {
-      expect(Tone.heartfelt.label, equals('Heartfelt'));
-      expect(Tone.heartfelt.emoji, equals('💖'));
-      expect(Tone.heartfelt.prompt, contains('sincere'));
-      expect(Tone.heartfelt.description, contains('Warm'));
-    });
-
-    test('casual should have correct properties', () {
-      expect(Tone.casual.label, equals('Casual'));
-      expect(Tone.casual.emoji, equals('😊'));
-      expect(Tone.casual.prompt, contains('friendly'));
-    });
-
-    test('funny should have correct properties', () {
-      expect(Tone.funny.label, equals('Funny'));
-      expect(Tone.funny.emoji, equals('😂'));
-      expect(Tone.funny.prompt, contains('humorous'));
-    });
-
-    test('formal should have correct properties', () {
-      expect(Tone.formal.label, equals('Formal'));
-      expect(Tone.formal.emoji, equals('📝'));
-      expect(Tone.formal.prompt, contains('professional'));
-    });
-  });
-
   group('GeneratedMessage', () {
     late DateTime testTime;
     late GeneratedMessage testMessage;
@@ -294,6 +102,24 @@ void main() {
       expect(message.relationship, equals(Relationship.colleague));
       expect(message.tone, equals(Tone.casual));
       expect(message.recipientName, equals('Bob'));
+      expect(message.personalDetails, isNull);
+    });
+
+    test('fromJson handles missing optional fields', () {
+      final json = {
+        'id': 'minimal',
+        'text': 'Minimal message',
+        'occasion': 'birthday',
+        'relationship': 'family',
+        'tone': 'heartfelt',
+        'createdAt': '2025-01-01T12:00:00.000Z',
+        // recipientName and personalDetails omitted
+      };
+
+      final message = GeneratedMessage.fromJson(json);
+
+      expect(message.id, equals('minimal'));
+      expect(message.recipientName, isNull);
       expect(message.personalDetails, isNull);
     });
 

@@ -13,6 +13,19 @@ import 'package:prosepal/core/services/ai_service.dart';
 /// 
 /// Reference: docs/INTEGRATION_TESTING.md - Google AI section
 void main() {
+  group('AiService Instantiation', () {
+    test('should initialize without API key (Firebase handles auth)', () {
+      final service = AiService();
+      expect(service, isNotNull);
+    });
+
+    test('should create separate service instances', () {
+      final service1 = AiService();
+      final service2 = AiService();
+      expect(identical(service1, service2), isFalse);
+    });
+  });
+
   group('AiService.generateMessages() - Response Parsing', () {
     test('should parse 3 messages from valid MESSAGE format', () {
       const response = '''
@@ -141,6 +154,37 @@ Fifth message should also be ignored.
       final messages = _parseMessages(response);
       expect(messages.length, equals(3));
     });
+
+    test('should handle malformed MESSAGE markers gracefully', () {
+      const response = '''
+MESSAGE:
+Missing number marker.
+
+MESSAGE 1:
+Valid first message here.
+
+message 2:
+Lowercase marker should still work.
+''';
+
+      final messages = _parseMessages(response);
+      // Should extract at least the valid ones
+      expect(messages.isNotEmpty, isTrue);
+    });
+
+    test('should handle empty response', () {
+      const response = '';
+
+      final messages = _parseMessages(response);
+      expect(messages, isEmpty);
+    });
+
+    test('should handle response with only whitespace', () {
+      const response = '   \n\n   \t   ';
+
+      final messages = _parseMessages(response);
+      expect(messages, isEmpty);
+    });
   });
 
   group('AiService Exception Types', () {
@@ -224,6 +268,9 @@ Fifth message should also be ignored.
     test('should calculate exponential backoff correctly', () {
       const initialDelayMs = 500;
 
+      // Attempt 0 returns initial delay
+      expect(_calculateBackoff(initialDelayMs, 0), equals(500));
+      // Subsequent attempts double
       expect(_calculateBackoff(initialDelayMs, 1), equals(1000));
       expect(_calculateBackoff(initialDelayMs, 2), equals(2000));
       expect(_calculateBackoff(initialDelayMs, 3), equals(4000));

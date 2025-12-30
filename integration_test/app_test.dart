@@ -16,8 +16,12 @@ import 'package:prosepal/core/models/models.dart';
 /// Run with: flutter test integration_test/app_test.dart -d [device_id]
 ///
 /// Requirements:
-/// - Real device or simulator
+/// - Simulator or real device
 /// - Network connectivity for Supabase initialization
+///
+/// Note: Tests are designed to be non-destructive and handle various
+/// authentication states gracefully. Some tests may skip assertions
+/// if the user is not logged in.
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
@@ -34,6 +38,11 @@ void main() {
       'hasCompletedOnboarding': true,
     });
     prefs = await SharedPreferences.getInstance();
+  });
+
+  tearDown(() async {
+    // Reset onboarding flag to known state between tests
+    await prefs.setBool('hasCompletedOnboarding', true);
   });
 
   group('App Launch', () {

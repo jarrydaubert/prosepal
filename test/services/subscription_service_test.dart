@@ -396,6 +396,9 @@ void main() {
 
       expect(await subscriptionService.isPro(), isTrue);
     });
+
+    // Note: CustomerInfo listener tested in integration tests
+    // (CustomerInfo object requires RevenueCat SDK initialization)
   });
 
   group('call count tracking', () {
@@ -518,158 +521,6 @@ void main() {
 
     test('identifyUser completes without error', () async {
       await service.identifyUser('test-user-id');
-    });
-  });
-
-  // ============================================================
-  // CONFIGURATION & PRODUCT TESTS
-  // From: subscription_service_mock_test.dart
-  // ============================================================
-
-  group('API Key Configuration', () {
-    test('iOS API key has correct format', () {
-      const iosKey = 'appl_dWOaTNoefQCZUxqvQfsTPuMqYuk';
-      expect(iosKey.startsWith('appl_'), isTrue);
-      expect(iosKey.length, greaterThan(10));
-    });
-
-    test('Test Store key has correct format', () {
-      const testKey = 'test_iCdJYZJvbduyqGECAsUtDJKYClX';
-      expect(testKey.startsWith('test_'), isTrue);
-    });
-
-    test('entitlement ID is correct', () {
-      const entitlementId = 'pro';
-      expect(entitlementId, equals('pro'));
-    });
-  });
-
-  group('Product IDs', () {
-    test('weekly product ID has correct format', () {
-      const productId = 'com.prosepal.pro.weekly';
-      expect(productId, startsWith('com.prosepal'));
-      expect(productId, endsWith('weekly'));
-    });
-
-    test('monthly product ID has correct format', () {
-      const productId = 'com.prosepal.pro.monthly';
-      expect(productId, startsWith('com.prosepal'));
-      expect(productId, endsWith('monthly'));
-    });
-
-    test('yearly product ID has correct format', () {
-      const productId = 'com.prosepal.pro.yearly';
-      expect(productId, startsWith('com.prosepal'));
-      expect(productId, endsWith('yearly'));
-    });
-  });
-
-  group('Pricing Validation', () {
-    test('weekly price is reasonable', () {
-      const weeklyPrice = 2.99;
-      expect(weeklyPrice, lessThan(5.0));
-      expect(weeklyPrice, greaterThan(0));
-    });
-
-    test('monthly price is reasonable', () {
-      const monthlyPrice = 4.99;
-      expect(monthlyPrice, lessThan(10.0));
-      expect(monthlyPrice, greaterThan(0));
-    });
-
-    test('yearly provides savings over monthly', () {
-      const monthlyPrice = 4.99;
-      const yearlyPrice = 29.99;
-      const monthsInYear = 12;
-
-      const yearlyFromMonthly = monthlyPrice * monthsInYear;
-      const savings = yearlyFromMonthly - yearlyPrice;
-      const savingsPercent = (savings / yearlyFromMonthly) * 100;
-
-      expect(savings, greaterThan(0));
-      expect(savingsPercent, greaterThan(40)); // > 40% savings
-    });
-  });
-
-  group('Trial Period Validation', () {
-    test('weekly has 3-day trial', () {
-      const trialDays = 3;
-      expect(trialDays, equals(3));
-    });
-
-    test('monthly has 7-day trial', () {
-      const trialDays = 7;
-      expect(trialDays, equals(7));
-    });
-
-    test('yearly has 7-day trial', () {
-      const trialDays = 7;
-      expect(trialDays, equals(7));
-    });
-  });
-
-  group('Usage Limits', () {
-    test('free tier allows 3 lifetime generations', () {
-      const freeLimit = 3;
-      expect(freeLimit, equals(3));
-    });
-
-    test('pro tier allows 500 monthly generations', () {
-      const proLimit = 500;
-      expect(proLimit, equals(500));
-    });
-  });
-
-  group('Entitlement Logic', () {
-    test('check for pro entitlement correctly', () {
-      const entitlementId = 'pro';
-      final activeEntitlements = {'pro': true, 'trial': false};
-
-      final hasPro = activeEntitlements.containsKey(entitlementId) &&
-          (activeEntitlements[entitlementId] ?? false);
-
-      expect(hasPro, isTrue);
-    });
-
-    test('returns false when entitlement not present', () {
-      const entitlementId = 'pro';
-      final activeEntitlements = <String, bool>{};
-
-      final hasPro = activeEntitlements.containsKey(entitlementId);
-
-      expect(hasPro, isFalse);
-    });
-
-    test('returns false when entitlement is inactive', () {
-      const entitlementId = 'pro';
-      final activeEntitlements = {'pro': false};
-
-      final hasPro = activeEntitlements.containsKey(entitlementId) &&
-          (activeEntitlements[entitlementId] ?? false);
-
-      expect(hasPro, isFalse);
-    });
-  });
-
-  group('PaywallResult Scenarios', () {
-    test('purchased result grants access', () {
-      const resultCode = 'purchased';
-      expect(resultCode == 'purchased' || resultCode == 'restored', isTrue);
-    });
-
-    test('restored result grants access', () {
-      const resultCode = 'restored';
-      expect(resultCode == 'purchased' || resultCode == 'restored', isTrue);
-    });
-
-    test('cancelled result does not grant access', () {
-      const resultCode = 'cancelled';
-      expect(resultCode != 'purchased' && resultCode != 'restored', isTrue);
-    });
-
-    test('error result does not grant access', () {
-      const resultCode = 'error';
-      expect(resultCode != 'purchased' && resultCode != 'restored', isTrue);
     });
   });
 }
