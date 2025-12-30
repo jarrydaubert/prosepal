@@ -25,8 +25,6 @@
 
 ---
 
----
-
 ## 1. Dark Mode Support
 
 **Priority:** P4
