@@ -102,6 +102,7 @@ class _DetailsInputState extends State<DetailsInput> {
                 labelText: "Recipient's name", // For accessibility
               ),
               textCapitalization: TextCapitalization.words,
+              textInputAction: TextInputAction.next,
               onChanged: widget.onRecipientNameChanged,
             ),
             const Gap(AppSpacing.xl),
@@ -128,7 +129,9 @@ class _DetailsInputState extends State<DetailsInput> {
               ),
               maxLines: 4,
               textCapitalization: TextCapitalization.sentences,
+              textInputAction: TextInputAction.done,
               onChanged: widget.onPersonalDetailsChanged,
+              onEditingComplete: () => FocusScope.of(context).unfocus(),
             ),
             const Gap(AppSpacing.xl),
 

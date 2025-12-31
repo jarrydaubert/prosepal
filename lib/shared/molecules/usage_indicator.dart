@@ -11,16 +11,18 @@ class UsageIndicator extends StatelessWidget {
     required this.remaining,
     required this.isPro,
     this.onUpgrade,
+    this.onProTap,
   });
 
   final int remaining;
   final bool isPro;
   final VoidCallback? onUpgrade;
+  final VoidCallback? onProTap;
 
   @override
   Widget build(BuildContext context) {
     if (isPro) {
-      return _ProBadge();
+      return _ProBadge(onTap: onProTap);
     }
 
     return _FreeUsageCard(remaining: remaining, onUpgrade: onUpgrade);
@@ -28,29 +30,40 @@ class UsageIndicator extends StatelessWidget {
 }
 
 class _ProBadge extends StatelessWidget {
+  const _ProBadge({this.onTap});
+
+  final VoidCallback? onTap;
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.md,
-        vertical: AppSpacing.sm,
-      ),
-      decoration: BoxDecoration(
-        gradient: AppColors.primaryGradient,
-        borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(Icons.star, size: 16, color: AppColors.textPrimary),
-          const Gap(AppSpacing.xs),
-          Text(
-            'PRO',
-            style: Theme.of(
-              context,
-            ).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.bold),
-          ),
-        ],
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.sm,
+        ),
+        decoration: BoxDecoration(
+          gradient: AppColors.primaryGradient,
+          borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.star, size: 16, color: AppColors.textPrimary),
+            const Gap(AppSpacing.xs),
+            Text(
+              'PRO',
+              style: Theme.of(
+                context,
+              ).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            if (onTap != null) ...[
+              const Gap(AppSpacing.xs),
+              const Icon(Icons.chevron_right, size: 16, color: AppColors.textPrimary),
+            ],
+          ],
+        ),
       ),
     );
   }

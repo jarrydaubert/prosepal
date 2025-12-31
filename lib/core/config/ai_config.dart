@@ -4,9 +4,9 @@
 /// Update model name here when new versions are released.
 abstract final class AiConfig {
   /// Current Gemini model identifier
-  /// See: https://ai.google.dev/gemini-api/docs/models
-  /// Updated Dec 2025: Gemini 3 Flash offers enhanced speed and quality
-  static const String model = 'gemini-3-flash-preview';
+  /// See: https://firebase.google.com/docs/ai-logic/models
+  /// Using stable Gemini 2.5 Flash - no billing required
+  static const String model = 'gemini-2.5-flash';
 
   /// Generation parameters
   static const double temperature = 0.85;

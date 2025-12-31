@@ -59,8 +59,12 @@ void main() async {
 
   // Initialize RevenueCat
   final subscriptionService = SubscriptionService();
+  bool initialProStatus = false;
   try {
     await subscriptionService.initialize();
+    // Check pro status on startup
+    initialProStatus = await subscriptionService.isPro();
+    debugPrint('Initial pro status: $initialProStatus');
   } catch (e) {
     debugPrint('RevenueCat initialization failed: $e');
   }
@@ -87,6 +91,8 @@ void main() async {
         sharedPreferencesProvider.overrideWithValue(prefs),
         subscriptionServiceProvider.overrideWithValue(subscriptionService),
         authServiceProvider.overrideWithValue(authService),
+        // Initialize pro status from RevenueCat
+        isProProvider.overrideWith((ref) => initialProStatus),
       ],
       child: const ProsepalApp(),
     ),
