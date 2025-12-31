@@ -61,7 +61,10 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
               color: AppColors.surfaceVariant,
               child: Row(
                 children: [
-                  Text(result.occasion.emoji, style: const TextStyle(fontSize: 24)),
+                  Text(
+                    result.occasion.emoji,
+                    style: const TextStyle(fontSize: 24),
+                  ),
                   const Gap(AppSpacing.sm),
                   Expanded(
                     child: Column(

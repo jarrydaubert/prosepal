@@ -47,10 +47,7 @@ void main() {
     test('unhappy: initialization error throws', () async {
       subscriptionService.errorToThrow = Exception('API key invalid');
 
-      expect(
-        () => subscriptionService.initialize(),
-        throwsA(isA<Exception>()),
-      );
+      expect(() => subscriptionService.initialize(), throwsA(isA<Exception>()));
     });
   });
 
@@ -119,10 +116,7 @@ void main() {
     test('unhappy: error throws', () async {
       subscriptionService.errorToThrow = Exception('API error');
 
-      expect(
-        () => subscriptionService.isPro(),
-        throwsA(isA<Exception>()),
-      );
+      expect(() => subscriptionService.isPro(), throwsA(isA<Exception>()));
     });
   });
 
@@ -299,10 +293,7 @@ void main() {
     test('unhappy: logout error throws', () async {
       subscriptionService.errorToThrow = Exception('Logout failed');
 
-      expect(
-        () => subscriptionService.logOut(),
-        throwsA(isA<Exception>()),
-      );
+      expect(() => subscriptionService.logOut(), throwsA(isA<Exception>()));
     });
   });
 

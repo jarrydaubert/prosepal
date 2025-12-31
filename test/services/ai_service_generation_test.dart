@@ -3,14 +3,14 @@ import 'package:prosepal/core/models/models.dart';
 import 'package:prosepal/core/services/ai_service.dart';
 
 /// Tests for AiService.generateMessages() with mocked responses
-/// 
+///
 /// These tests verify the actual generateMessages() method behavior
 /// by testing the parsing, error handling, and output structure.
-/// 
+///
 /// Note: The google_generative_ai package doesn't expose HTTP client injection,
 /// so we test the parsing/error logic directly and verify exception types.
 /// Full E2E testing with real API happens in integration_test/
-/// 
+///
 /// Reference: docs/INTEGRATION_TESTING.md - Google AI section
 void main() {
   group('AiService Instantiation', () {
@@ -227,24 +227,37 @@ Lowercase marker should still work.
 
   group('AiService Error Classification', () {
     test('should identify rate limit errors', () {
-      final patterns = ['rate limit exceeded', 'quota exceeded', 'too many requests'];
-      
+      final patterns = [
+        'rate limit exceeded',
+        'quota exceeded',
+        'too many requests',
+      ];
+
       for (final msg in patterns) {
         expect(_isRateLimitError(msg), isTrue, reason: 'Failed for: $msg');
       }
     });
 
     test('should identify network errors', () {
-      final patterns = ['network error', 'connection failed', 'socket exception', 'no internet'];
-      
+      final patterns = [
+        'network error',
+        'connection failed',
+        'socket exception',
+        'no internet',
+      ];
+
       for (final msg in patterns) {
         expect(_isNetworkError(msg), isTrue, reason: 'Failed for: $msg');
       }
     });
 
     test('should identify content blocked errors', () {
-      final patterns = ['content blocked', 'safety filter', 'blocked by safety'];
-      
+      final patterns = [
+        'content blocked',
+        'safety filter',
+        'blocked by safety',
+      ];
+
       for (final msg in patterns) {
         expect(_isContentBlockedError(msg), isTrue, reason: 'Failed for: $msg');
       }
@@ -278,7 +291,7 @@ Lowercase marker should still work.
 
     test('should apply jitter within bounds', () {
       const delayMs = 1000;
-      
+
       // Jitter is 0-20% of delay
       for (var i = 0; i < 10; i++) {
         final jitter = _calculateJitter(delayMs);
@@ -289,7 +302,7 @@ Lowercase marker should still work.
 
     test('should respect max retries', () {
       const maxRetries = 3;
-      
+
       expect(_shouldRetry(1, maxRetries, 'rate limit'), isTrue);
       expect(_shouldRetry(2, maxRetries, 'rate limit'), isTrue);
       expect(_shouldRetry(3, maxRetries, 'rate limit'), isFalse);
@@ -297,7 +310,7 @@ Lowercase marker should still work.
 
     test('should not retry non-retryable errors', () {
       const maxRetries = 3;
-      
+
       expect(_shouldRetry(1, maxRetries, 'invalid api key'), isFalse);
     });
   });
@@ -474,17 +487,17 @@ List<String> _parseMessages(String response) {
 
 bool _isRateLimitError(String message) {
   final lower = message.toLowerCase();
-  return lower.contains('rate') || 
-         lower.contains('quota') || 
-         lower.contains('too many');
+  return lower.contains('rate') ||
+      lower.contains('quota') ||
+      lower.contains('too many');
 }
 
 bool _isNetworkError(String message) {
   final lower = message.toLowerCase();
-  return lower.contains('network') || 
-         lower.contains('connection') || 
-         lower.contains('socket') ||
-         lower.contains('internet');
+  return lower.contains('network') ||
+      lower.contains('connection') ||
+      lower.contains('socket') ||
+      lower.contains('internet');
 }
 
 bool _isContentBlockedError(String message) {
@@ -495,9 +508,9 @@ bool _isContentBlockedError(String message) {
 bool _isRetryableError(String message) {
   final lower = message.toLowerCase();
   return lower.contains('rate') ||
-         lower.contains('quota') ||
-         lower.contains('unavailable') ||
-         lower.contains('timeout');
+      lower.contains('quota') ||
+      lower.contains('unavailable') ||
+      lower.contains('timeout');
 }
 
 int _calculateBackoff(int initialDelayMs, int attempt) {

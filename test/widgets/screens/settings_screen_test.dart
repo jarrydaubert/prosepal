@@ -53,8 +53,14 @@ void main() {
     final router = GoRouter(
       initialLocation: '/settings',
       routes: [
-        GoRoute(path: '/', builder: (_, __) => const Scaffold(body: Text('Home'))),
-        GoRoute(path: '/auth', builder: (_, __) => const Scaffold(body: Text('Auth'))),
+        GoRoute(
+          path: '/',
+          builder: (_, __) => const Scaffold(body: Text('Home')),
+        ),
+        GoRoute(
+          path: '/auth',
+          builder: (_, __) => const Scaffold(body: Text('Auth')),
+        ),
         GoRoute(path: '/settings', builder: (_, __) => const SettingsScreen()),
         GoRoute(
           path: '/paywall',
@@ -101,10 +107,9 @@ void main() {
       });
 
       testWidgets('shows Account section with user info', (tester) async {
-        await tester.pumpWidget(buildTestWidget(
-          email: 'test@example.com',
-          displayName: 'Test User',
-        ));
+        await tester.pumpWidget(
+          buildTestWidget(email: 'test@example.com', displayName: 'Test User'),
+        );
         await tester.pumpAndSettle();
 
         expect(find.text('ACCOUNT'), findsOneWidget);
@@ -113,19 +118,16 @@ void main() {
       });
 
       testWidgets('shows user initial in avatar', (tester) async {
-        await tester.pumpWidget(buildTestWidget(
-          email: 'jane@example.com',
-          displayName: 'Jane Doe',
-        ));
+        await tester.pumpWidget(
+          buildTestWidget(email: 'jane@example.com', displayName: 'Jane Doe'),
+        );
         await tester.pumpAndSettle();
 
         expect(find.text('J'), findsOneWidget);
       });
 
       testWidgets('shows email initial when no display name', (tester) async {
-        await tester.pumpWidget(buildTestWidget(
-          email: 'bob@example.com',
-        ));
+        await tester.pumpWidget(buildTestWidget(email: 'bob@example.com'));
         await tester.pumpAndSettle();
 
         expect(find.text('B'), findsOneWidget);
@@ -425,9 +427,7 @@ void main() {
 
     group('All Sections Scrollable', () {
       testWidgets('can scroll to all section headers', (tester) async {
-        await tester.pumpWidget(buildTestWidget(
-          email: 'test@example.com',
-        ));
+        await tester.pumpWidget(buildTestWidget(email: 'test@example.com'));
         await tester.pumpAndSettle();
 
         // Top sections visible without scroll

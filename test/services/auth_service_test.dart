@@ -105,7 +105,10 @@ void main() {
       await authService.signInWithApple();
 
       expect(mockApple.lastScopes, contains(AppleIDAuthorizationScopes.email));
-      expect(mockApple.lastScopes, contains(AppleIDAuthorizationScopes.fullName));
+      expect(
+        mockApple.lastScopes,
+        contains(AppleIDAuthorizationScopes.fullName),
+      );
     });
 
     test('throws when identity token is null', () async {
@@ -115,11 +118,13 @@ void main() {
 
       expect(
         () => authService.signInWithApple(),
-        throwsA(isA<AuthException>().having(
-          (e) => e.message,
-          'message',
-          contains('No identity token'),
-        )),
+        throwsA(
+          isA<AuthException>().having(
+            (e) => e.message,
+            'message',
+            contains('No identity token'),
+          ),
+        ),
       );
     });
 
@@ -163,11 +168,13 @@ void main() {
 
       expect(
         () => authService.signInWithApple(),
-        throwsA(isA<AuthException>().having(
-          (e) => e.message,
-          'message',
-          contains('cancelled'),
-        )),
+        throwsA(
+          isA<AuthException>().having(
+            (e) => e.message,
+            'message',
+            contains('cancelled'),
+          ),
+        ),
       );
     });
 
@@ -179,18 +186,21 @@ void main() {
 
       expect(
         () => authService.signInWithApple(),
-        throwsA(isA<AuthException>().having(
-          (e) => e.message,
-          'message',
-          contains('Some failure'),
-        )),
+        throwsA(
+          isA<AuthException>().having(
+            (e) => e.message,
+            'message',
+            contains('Some failure'),
+          ),
+        ),
       );
     });
 
     test('propagates supabase errors', () async {
       mockApple.credentialToReturn = createFakeAppleCredential();
-      mockSupabase.methodErrors['signInWithIdToken'] =
-          const AuthException('Invalid token');
+      mockSupabase.methodErrors['signInWithIdToken'] = const AuthException(
+        'Invalid token',
+      );
 
       expect(
         () => authService.signInWithApple(),
@@ -227,8 +237,11 @@ void main() {
       await authService.signInWithGoogle();
 
       expect(mockGoogle.lightweightCalls, 1);
-      expect(mockGoogle.authenticateCalls, 0,
-          reason: 'Should not call authenticate if lightweight succeeds');
+      expect(
+        mockGoogle.authenticateCalls,
+        0,
+        reason: 'Should not call authenticate if lightweight succeeds',
+      );
     });
 
     test('falls back to authenticate when lightweight returns null', () async {
@@ -259,17 +272,17 @@ void main() {
     });
 
     test('throws when ID token is null', () async {
-      mockGoogle.authenticateResult = createFakeGoogleAuthResult(
-        idToken: null,
-      );
+      mockGoogle.authenticateResult = createFakeGoogleAuthResult(idToken: null);
 
       expect(
         () => authService.signInWithGoogle(),
-        throwsA(isA<AuthException>().having(
-          (e) => e.message,
-          'message',
-          contains('No ID token'),
-        )),
+        throwsA(
+          isA<AuthException>().having(
+            (e) => e.message,
+            'message',
+            contains('No ID token'),
+          ),
+        ),
       );
     });
 
@@ -308,19 +321,13 @@ void main() {
     test('propagates google provider errors', () async {
       mockGoogle.errorToThrow = Exception('Google auth failed');
 
-      expect(
-        () => authService.signInWithGoogle(),
-        throwsA(isA<Exception>()),
-      );
+      expect(() => authService.signInWithGoogle(), throwsA(isA<Exception>()));
     });
 
     test('propagates interrupted errors with specific code', () async {
       mockGoogle.simulateInterrupted('Connection interrupted');
 
-      expect(
-        () => authService.signInWithGoogle(),
-        throwsA(isA<Exception>()),
-      );
+      expect(() => authService.signInWithGoogle(), throwsA(isA<Exception>()));
     });
   });
 
@@ -350,8 +357,9 @@ void main() {
     });
 
     test('propagates auth errors', () async {
-      mockSupabase.methodErrors['signInWithPassword'] =
-          const AuthException('Invalid credentials');
+      mockSupabase.methodErrors['signInWithPassword'] = const AuthException(
+        'Invalid credentials',
+      );
 
       expect(
         () => authService.signInWithEmail(
@@ -379,15 +387,18 @@ void main() {
       expect(mockSupabase.lastPassword, 'newpass123');
     });
 
-    test('returns AuthResponse with user but no session (email not confirmed)', () async {
-      final result = await authService.signUpWithEmail(
-        email: 'new@test.com',
-        password: 'pass',
-      );
+    test(
+      'returns AuthResponse with user but no session (email not confirmed)',
+      () async {
+        final result = await authService.signUpWithEmail(
+          email: 'new@test.com',
+          password: 'pass',
+        );
 
-      expect(result.user, isNotNull);
-      expect(result.session, isNull);
-    });
+        expect(result.user, isNotNull);
+        expect(result.session, isNull);
+      },
+    );
   });
 
   // ============================================================
@@ -407,7 +418,10 @@ void main() {
 
       // On mobile, should have redirect URL
       // Note: kIsWeb is false in tests
-      expect(mockSupabase.lastRedirectTo, 'com.prosepal.prosepal://login-callback');
+      expect(
+        mockSupabase.lastRedirectTo,
+        'com.prosepal.prosepal://login-callback',
+      );
     });
   });
 
@@ -582,14 +596,12 @@ void main() {
       final subscription = authService.authStateChanges.listen(states.add);
 
       // Emit test events
-      mockSupabase.emitAuthState(AuthState(
-        AuthChangeEvent.signedIn,
-        createFakeSession(),
-      ));
-      mockSupabase.emitAuthState(const AuthState(
-        AuthChangeEvent.signedOut,
-        null,
-      ));
+      mockSupabase.emitAuthState(
+        AuthState(AuthChangeEvent.signedIn, createFakeSession()),
+      );
+      mockSupabase.emitAuthState(
+        const AuthState(AuthChangeEvent.signedOut, null),
+      );
 
       // Allow stream to process
       await Future.delayed(Duration.zero);
@@ -602,13 +614,10 @@ void main() {
     });
 
     test('stream is broadcast (multiple listeners allowed)', () {
-      expect(
-        () {
-          authService.authStateChanges.listen((_) {});
-          authService.authStateChanges.listen((_) {});
-        },
-        returnsNormally,
-      );
+      expect(() {
+        authService.authStateChanges.listen((_) {});
+        authService.authStateChanges.listen((_) {});
+      }, returnsNormally);
     });
   });
 
@@ -641,11 +650,14 @@ void main() {
   // ============================================================
 
   group('signOut cleanup', () {
-    test('calls signOut on google provider to clear cached credentials', () async {
-      await authService.signOut();
+    test(
+      'calls signOut on google provider to clear cached credentials',
+      () async {
+        await authService.signOut();
 
-      expect(mockGoogle.signOutCalls, 1);
-    });
+        expect(mockGoogle.signOutCalls, 1);
+      },
+    );
   });
 
   // ============================================================

@@ -6,7 +6,6 @@ import '../interfaces/biometric_interface.dart';
 
 /// Result of biometric authentication attempt
 class BiometricResult {
-
   const BiometricResult({required this.success, this.error, this.message});
   final bool success;
   final BiometricError? error;
@@ -29,7 +28,6 @@ enum BiometricError {
 /// Handles Face ID/Touch ID authentication and preference storage.
 /// Use via provider for testability, or singleton for legacy code.
 class BiometricService implements IBiometricService {
-
   /// Factory constructor for DI
   factory BiometricService() => instance;
   BiometricService._();
@@ -158,7 +156,9 @@ class BiometricService implements IBiometricService {
       return const BiometricResult(success: true); // Not enabled, allow access
     }
     if (!await isSupported) {
-      return const BiometricResult(success: true); // Not supported, allow access
+      return const BiometricResult(
+        success: true,
+      ); // Not supported, allow access
     }
     return authenticate();
   }

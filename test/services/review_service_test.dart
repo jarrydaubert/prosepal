@@ -56,33 +56,42 @@ void main() {
       test('returns false if generations < minimum (3)', () async {
         // Set first launch to 10 days ago to satisfy day requirement
         final tenDaysAgo = DateTime.now().subtract(const Duration(days: 10));
-        await prefs.setInt('first_launch_timestamp', tenDaysAgo.millisecondsSinceEpoch);
+        await prefs.setInt(
+          'first_launch_timestamp',
+          tenDaysAgo.millisecondsSinceEpoch,
+        );
         service = ReviewService(prefs);
 
         final result = await service.checkAndRequestReview(2);
         expect(result, isFalse);
       });
 
-      test('returns false if not enough days since first launch (< 2)', () async {
-        await prefs.setInt(
-          'first_launch_timestamp',
-          DateTime.now().millisecondsSinceEpoch,
-        );
-        service = ReviewService(prefs);
+      test(
+        'returns false if not enough days since first launch (< 2)',
+        () async {
+          await prefs.setInt(
+            'first_launch_timestamp',
+            DateTime.now().millisecondsSinceEpoch,
+          );
+          service = ReviewService(prefs);
 
-        final result = await service.checkAndRequestReview(10);
-        expect(result, isFalse);
-      });
+          final result = await service.checkAndRequestReview(10);
+          expect(result, isFalse);
+        },
+      );
 
       test('returns true when all conditions met', () async {
         // Set first launch to 3 days ago
         final threeDaysAgo = DateTime.now().subtract(const Duration(days: 3));
-        await prefs.setInt('first_launch_timestamp', threeDaysAgo.millisecondsSinceEpoch);
+        await prefs.setInt(
+          'first_launch_timestamp',
+          threeDaysAgo.millisecondsSinceEpoch,
+        );
         service = ReviewService(prefs);
 
         // 5 generations (>= 3 minimum)
         final result = await service.checkAndRequestReview(5);
-        
+
         // Should be eligible (actual review request may fail in test env)
         // The method returns true if conditions are met, regardless of platform result
         expect(result, isA<bool>());

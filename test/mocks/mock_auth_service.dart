@@ -22,11 +22,16 @@ User createFakeUser({
     email: email,
     phone: phone,
     aud: 'authenticated',
-    appMetadata: {'provider': 'email', 'providers': ['email']},
-    userMetadata: userMetadata ?? {
-      if (displayName != null) 'full_name': displayName,
-      if (displayName != null) 'name': displayName,
+    appMetadata: {
+      'provider': 'email',
+      'providers': ['email'],
     },
+    userMetadata:
+        userMetadata ??
+        {
+          if (displayName != null) 'full_name': displayName,
+          if (displayName != null) 'name': displayName,
+        },
     createdAt: createdAt?.toIso8601String() ?? now,
     lastSignInAt: lastSignInAt?.toIso8601String() ?? now,
     emailConfirmedAt: emailConfirmed ? now : null,
@@ -192,10 +197,7 @@ class MockAuthService implements IAuthService {
     if (autoEmitAuthState) {
       emitAuthState(AuthState(AuthChangeEvent.signedIn, session));
     }
-    return AuthResponse(
-      session: session,
-      user: user,
-    );
+    return AuthResponse(session: session, user: user);
   }
 
   @override
@@ -215,10 +217,7 @@ class MockAuthService implements IAuthService {
     if (autoEmitAuthState) {
       emitAuthState(AuthState(AuthChangeEvent.signedIn, session));
     }
-    return AuthResponse(
-      session: session,
-      user: user,
-    );
+    return AuthResponse(session: session, user: user);
   }
 
   @override
@@ -240,10 +239,7 @@ class MockAuthService implements IAuthService {
     if (autoEmitAuthState) {
       emitAuthState(AuthState(AuthChangeEvent.signedIn, session));
     }
-    return AuthResponse(
-      session: session,
-      user: user,
-    );
+    return AuthResponse(session: session, user: user);
   }
 
   @override
@@ -260,9 +256,7 @@ class MockAuthService implements IAuthService {
     final user = createFakeUser(email: email, emailConfirmed: false);
     _currentUser = user;
     _email = email;
-    return AuthResponse(
-      user: user,
-    );
+    return AuthResponse(user: user);
   }
 
   @override

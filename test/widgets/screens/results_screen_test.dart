@@ -41,24 +41,23 @@ void main() {
     );
   }
 
-  Widget buildTestWidget({
-    GenerationResult? result,
-  }) {
+  Widget buildTestWidget({GenerationResult? result}) {
     final router = GoRouter(
       initialLocation: '/results',
       routes: [
-        GoRoute(path: '/', builder: (_, __) => const Scaffold(body: Text('Home'))),
         GoRoute(
-          path: '/results',
-          builder: (_, __) => const ResultsScreen(),
+          path: '/',
+          builder: (_, __) => const Scaffold(body: Text('Home')),
         ),
+        GoRoute(path: '/results', builder: (_, __) => const ResultsScreen()),
       ],
     );
 
     return ProviderScope(
       overrides: [
         sharedPreferencesProvider.overrideWithValue(prefs),
-        if (result != null) generationResultProvider.overrideWith((ref) => result),
+        if (result != null)
+          generationResultProvider.overrideWith((ref) => result),
       ],
       child: MaterialApp.router(routerConfig: router),
     );
@@ -129,7 +128,6 @@ void main() {
 
         expect(find.byIcon(Icons.share_outlined), findsNWidgets(2));
       });
-
     });
 
     group('Navigation', () {

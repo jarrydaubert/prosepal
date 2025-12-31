@@ -22,27 +22,47 @@ class AiServiceException implements Exception {
 
 /// Network connectivity issues
 class AiNetworkException extends AiServiceException {
-  const AiNetworkException(super.message, {super.originalError, super.errorCode});
+  const AiNetworkException(
+    super.message, {
+    super.originalError,
+    super.errorCode,
+  });
 }
 
 /// Content blocked by safety filters
 class AiContentBlockedException extends AiServiceException {
-  const AiContentBlockedException(super.message, {super.originalError, super.errorCode});
+  const AiContentBlockedException(
+    super.message, {
+    super.originalError,
+    super.errorCode,
+  });
 }
 
 /// Rate limiting or quota exceeded
 class AiRateLimitException extends AiServiceException {
-  const AiRateLimitException(super.message, {super.originalError, super.errorCode});
+  const AiRateLimitException(
+    super.message, {
+    super.originalError,
+    super.errorCode,
+  });
 }
 
 /// Model or service temporarily unavailable
 class AiUnavailableException extends AiServiceException {
-  const AiUnavailableException(super.message, {super.originalError, super.errorCode});
+  const AiUnavailableException(
+    super.message, {
+    super.originalError,
+    super.errorCode,
+  });
 }
 
 /// Invalid or empty response from model
 class AiEmptyResponseException extends AiServiceException {
-  const AiEmptyResponseException(super.message, {super.originalError, super.errorCode});
+  const AiEmptyResponseException(
+    super.message, {
+    super.originalError,
+    super.errorCode,
+  });
 }
 
 /// Response parsing failed
@@ -382,7 +402,9 @@ Format rules:
       if (json case {'messages': final List<dynamic> messageList}) {
         return [
           for (final item in messageList)
-            if (item case {'text': final String text} when text.trim().isNotEmpty)
+            if (item case {
+              'text': final String text,
+            } when text.trim().isNotEmpty)
               GeneratedMessage(
                 id: _uuid.v4(),
                 text: text.trim(),

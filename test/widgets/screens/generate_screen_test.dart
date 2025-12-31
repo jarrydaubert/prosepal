@@ -136,31 +136,35 @@ void main() {
     MockAiService? customAiService,
   }) {
     final aiService = customAiService ?? mockAiService;
-    final testRouter = router ?? GoRouter(
-      initialLocation: '/generate',
-      routes: [
-        GoRoute(
-          path: '/',
-          name: 'home',
-          builder: (context, state) => const Scaffold(body: Text('Home')),
-        ),
-        GoRoute(
-          path: '/generate',
-          name: 'generate',
-          builder: (context, state) => const GenerateScreen(),
-        ),
-        GoRoute(
-          path: '/results',
-          name: 'results',
-          builder: (context, state) => const Scaffold(body: Text('Results Screen')),
-        ),
-        GoRoute(
-          path: '/paywall',
-          name: 'paywall',
-          builder: (context, state) => const Scaffold(body: Text('Paywall Screen')),
-        ),
-      ],
-    );
+    final testRouter =
+        router ??
+        GoRouter(
+          initialLocation: '/generate',
+          routes: [
+            GoRoute(
+              path: '/',
+              name: 'home',
+              builder: (context, state) => const Scaffold(body: Text('Home')),
+            ),
+            GoRoute(
+              path: '/generate',
+              name: 'generate',
+              builder: (context, state) => const GenerateScreen(),
+            ),
+            GoRoute(
+              path: '/results',
+              name: 'results',
+              builder: (context, state) =>
+                  const Scaffold(body: Text('Results Screen')),
+            ),
+            GoRoute(
+              path: '/paywall',
+              name: 'paywall',
+              builder: (context, state) =>
+                  const Scaffold(body: Text('Paywall Screen')),
+            ),
+          ],
+        );
 
     return ProviderScope(
       overrides: [
@@ -171,12 +175,12 @@ void main() {
         isProProvider.overrideWith((ref) => isPro),
         remainingGenerationsProvider.overrideWith((ref) => remaining),
         selectedOccasionProvider.overrideWith((ref) => selectedOccasion),
-        selectedRelationshipProvider.overrideWith((ref) => selectedRelationship),
+        selectedRelationshipProvider.overrideWith(
+          (ref) => selectedRelationship,
+        ),
         selectedToneProvider.overrideWith((ref) => selectedTone),
       ],
-      child: MaterialApp.router(
-        routerConfig: testRouter,
-      ),
+      child: MaterialApp.router(routerConfig: testRouter),
     );
   }
 
@@ -209,9 +213,9 @@ void main() {
   // ============================================================
   group('GenerateScreen Step 1: Relationship Picker', () {
     testWidgets('displays all relationship options', (tester) async {
-      await tester.pumpWidget(createTestableGenerateScreen(
-        selectedOccasion: Occasion.birthday,
-      ));
+      await tester.pumpWidget(
+        createTestableGenerateScreen(selectedOccasion: Occasion.birthday),
+      );
       await tester.pumpAndSettle();
 
       for (final relationship in Relationship.values) {
@@ -224,19 +228,21 @@ void main() {
     });
 
     testWidgets('shows step indicator with 3 segments', (tester) async {
-      await tester.pumpWidget(createTestableGenerateScreen(
-        selectedOccasion: Occasion.birthday,
-      ));
+      await tester.pumpWidget(
+        createTestableGenerateScreen(selectedOccasion: Occasion.birthday),
+      );
       await tester.pumpAndSettle();
 
       // Step indicator consists of 3 Container widgets in a Row
       expect(find.byType(GenerateScreen), findsOneWidget);
     });
 
-    testWidgets('Continue button is disabled when no relationship selected', (tester) async {
-      await tester.pumpWidget(createTestableGenerateScreen(
-        selectedOccasion: Occasion.birthday,
-      ));
+    testWidgets('Continue button is disabled when no relationship selected', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        createTestableGenerateScreen(selectedOccasion: Occasion.birthday),
+      );
       await tester.pumpAndSettle();
 
       final continueButton = find.text('Continue');
@@ -251,10 +257,12 @@ void main() {
       expect(find.text('Heartfelt'), findsNothing); // Tone not visible
     });
 
-    testWidgets('Continue button navigates after selecting relationship', (tester) async {
-      await tester.pumpWidget(createTestableGenerateScreen(
-        selectedOccasion: Occasion.birthday,
-      ));
+    testWidgets('Continue button navigates after selecting relationship', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        createTestableGenerateScreen(selectedOccasion: Occasion.birthday),
+      );
       await tester.pumpAndSettle();
 
       // Select relationship
@@ -273,9 +281,9 @@ void main() {
 
     testWidgets('each relationship option is tappable', (tester) async {
       for (final relationship in Relationship.values) {
-        await tester.pumpWidget(createTestableGenerateScreen(
-          selectedOccasion: Occasion.birthday,
-        ));
+        await tester.pumpWidget(
+          createTestableGenerateScreen(selectedOccasion: Occasion.birthday),
+        );
         await tester.pumpAndSettle();
 
         await tester.tap(find.text(relationship.label));
@@ -284,8 +292,11 @@ void main() {
         await tester.pumpAndSettle();
 
         // Should advance to step 2
-        expect(find.text('Heartfelt'), findsOneWidget,
-            reason: '${relationship.label} should allow navigation');
+        expect(
+          find.text('Heartfelt'),
+          findsOneWidget,
+          reason: '${relationship.label} should allow navigation',
+        );
       }
     });
   });
@@ -295,9 +306,9 @@ void main() {
   // ============================================================
   group('GenerateScreen Step 2: Tone Selector', () {
     testWidgets('displays all tone options', (tester) async {
-      await tester.pumpWidget(createTestableGenerateScreen(
-        selectedOccasion: Occasion.birthday,
-      ));
+      await tester.pumpWidget(
+        createTestableGenerateScreen(selectedOccasion: Occasion.birthday),
+      );
       await tester.pumpAndSettle();
       await navigateToStep2(tester);
 
@@ -310,10 +321,12 @@ void main() {
       }
     });
 
-    testWidgets('Continue button navigates to step 3 after selecting tone', (tester) async {
-      await tester.pumpWidget(createTestableGenerateScreen(
-        selectedOccasion: Occasion.birthday,
-      ));
+    testWidgets('Continue button navigates to step 3 after selecting tone', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        createTestableGenerateScreen(selectedOccasion: Occasion.birthday),
+      );
       await tester.pumpAndSettle();
       await navigateToStep2(tester);
 
@@ -328,9 +341,9 @@ void main() {
 
     testWidgets('each tone option is tappable', (tester) async {
       for (final tone in Tone.values) {
-        await tester.pumpWidget(createTestableGenerateScreen(
-          selectedOccasion: Occasion.birthday,
-        ));
+        await tester.pumpWidget(
+          createTestableGenerateScreen(selectedOccasion: Occasion.birthday),
+        );
         await tester.pumpAndSettle();
         await navigateToStep2(tester);
 
@@ -339,8 +352,11 @@ void main() {
         await tester.tap(find.text('Continue'));
         await tester.pumpAndSettle();
 
-        expect(find.text('Generate Messages'), findsOneWidget,
-            reason: '${tone.label} should allow navigation to step 3');
+        expect(
+          find.text('Generate Messages'),
+          findsOneWidget,
+          reason: '${tone.label} should allow navigation to step 3',
+        );
       }
     });
   });
@@ -350,9 +366,9 @@ void main() {
   // ============================================================
   group('GenerateScreen Step 3: Details & Generate', () {
     testWidgets('shows Generate button', (tester) async {
-      await tester.pumpWidget(createTestableGenerateScreen(
-        selectedOccasion: Occasion.birthday,
-      ));
+      await tester.pumpWidget(
+        createTestableGenerateScreen(selectedOccasion: Occasion.birthday),
+      );
       await tester.pumpAndSettle();
       await navigateToStep3(tester);
 
@@ -360,22 +376,25 @@ void main() {
     });
 
     testWidgets('shows all message length options', (tester) async {
-      await tester.pumpWidget(createTestableGenerateScreen(
-        selectedOccasion: Occasion.birthday,
-      ));
+      await tester.pumpWidget(
+        createTestableGenerateScreen(selectedOccasion: Occasion.birthday),
+      );
       await tester.pumpAndSettle();
       await navigateToStep3(tester);
 
       for (final length in MessageLength.values) {
-        expect(find.text(length.label), findsOneWidget,
-            reason: 'Should display ${length.label} length option');
+        expect(
+          find.text(length.label),
+          findsOneWidget,
+          reason: 'Should display ${length.label} length option',
+        );
       }
     });
 
     testWidgets('Brief length is selectable', (tester) async {
-      await tester.pumpWidget(createTestableGenerateScreen(
-        selectedOccasion: Occasion.birthday,
-      ));
+      await tester.pumpWidget(
+        createTestableGenerateScreen(selectedOccasion: Occasion.birthday),
+      );
       await tester.pumpAndSettle();
       await navigateToStep3(tester);
 
@@ -395,11 +414,15 @@ void main() {
   // FREE TIER LIMITS
   // ============================================================
   group('GenerateScreen Free Tier Limits', () {
-    testWidgets('shows Upgrade button when 0 generations remaining', (tester) async {
-      await tester.pumpWidget(createTestableGenerateScreen(
-        selectedOccasion: Occasion.birthday,
-        remaining: 0,
-      ));
+    testWidgets('shows Upgrade button when 0 generations remaining', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        createTestableGenerateScreen(
+          selectedOccasion: Occasion.birthday,
+          remaining: 0,
+        ),
+      );
       await tester.pumpAndSettle();
       await navigateToStep3(tester);
 
@@ -408,10 +431,12 @@ void main() {
     });
 
     testWidgets('Upgrade button navigates to paywall', (tester) async {
-      await tester.pumpWidget(createTestableGenerateScreen(
-        selectedOccasion: Occasion.birthday,
-        remaining: 0,
-      ));
+      await tester.pumpWidget(
+        createTestableGenerateScreen(
+          selectedOccasion: Occasion.birthday,
+          remaining: 0,
+        ),
+      );
       await tester.pumpAndSettle();
       await navigateToStep3(tester);
 
@@ -421,11 +446,15 @@ void main() {
       expect(find.text('Paywall Screen'), findsOneWidget);
     });
 
-    testWidgets('shows Generate button when generations remaining > 0', (tester) async {
-      await tester.pumpWidget(createTestableGenerateScreen(
-        selectedOccasion: Occasion.birthday,
-        remaining: 1,
-      ));
+    testWidgets('shows Generate button when generations remaining > 0', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        createTestableGenerateScreen(
+          selectedOccasion: Occasion.birthday,
+          remaining: 1,
+        ),
+      );
       await tester.pumpAndSettle();
       await navigateToStep3(tester);
 
@@ -438,12 +467,16 @@ void main() {
   // PRO USER SCENARIOS
   // ============================================================
   group('GenerateScreen Pro User', () {
-    testWidgets('Pro user sees Generate button with high remaining', (tester) async {
-      await tester.pumpWidget(createTestableGenerateScreen(
-        selectedOccasion: Occasion.birthday,
-        isPro: true,
-        remaining: 500,
-      ));
+    testWidgets('Pro user sees Generate button with high remaining', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        createTestableGenerateScreen(
+          selectedOccasion: Occasion.birthday,
+          isPro: true,
+          remaining: 500,
+        ),
+      );
       await tester.pumpAndSettle();
       await navigateToStep3(tester);
 
@@ -457,9 +490,9 @@ void main() {
   // ============================================================
   group('GenerateScreen Navigation', () {
     testWidgets('back button returns to previous step', (tester) async {
-      await tester.pumpWidget(createTestableGenerateScreen(
-        selectedOccasion: Occasion.birthday,
-      ));
+      await tester.pumpWidget(
+        createTestableGenerateScreen(selectedOccasion: Occasion.birthday),
+      );
       await tester.pumpAndSettle();
       await navigateToStep2(tester);
 
@@ -476,9 +509,9 @@ void main() {
     });
 
     testWidgets('back from step 3 returns to step 2', (tester) async {
-      await tester.pumpWidget(createTestableGenerateScreen(
-        selectedOccasion: Occasion.birthday,
-      ));
+      await tester.pumpWidget(
+        createTestableGenerateScreen(selectedOccasion: Occasion.birthday),
+      );
       await tester.pumpAndSettle();
       await navigateToStep3(tester);
 
@@ -491,9 +524,9 @@ void main() {
     });
 
     testWidgets('shows occasion name and emoji in app bar', (tester) async {
-      await tester.pumpWidget(createTestableGenerateScreen(
-        selectedOccasion: Occasion.birthday,
-      ));
+      await tester.pumpWidget(
+        createTestableGenerateScreen(selectedOccasion: Occasion.birthday),
+      );
       await tester.pumpAndSettle();
 
       expect(find.text('Birthday'), findsOneWidget);
@@ -501,9 +534,7 @@ void main() {
     });
 
     testWidgets('redirects to home if no occasion selected', (tester) async {
-      await tester.pumpWidget(createTestableGenerateScreen(
-        
-      ));
+      await tester.pumpWidget(createTestableGenerateScreen());
       await tester.pumpAndSettle();
 
       expect(find.text('Home'), findsOneWidget);
@@ -517,10 +548,12 @@ void main() {
     testWidgets('tapping Generate calls AI service once', (tester) async {
       final freshMock = MockAiService();
 
-      await tester.pumpWidget(createTestableGenerateScreen(
-        selectedOccasion: Occasion.birthday,
-        customAiService: freshMock,
-      ));
+      await tester.pumpWidget(
+        createTestableGenerateScreen(
+          selectedOccasion: Occasion.birthday,
+          customAiService: freshMock,
+        ),
+      );
       await tester.pumpAndSettle();
       await navigateToStep3(tester);
 
@@ -535,10 +568,12 @@ void main() {
     testWidgets('AI service receives correct occasion', (tester) async {
       final freshMock = MockAiService();
 
-      await tester.pumpWidget(createTestableGenerateScreen(
-        selectedOccasion: Occasion.wedding,
-        customAiService: freshMock,
-      ));
+      await tester.pumpWidget(
+        createTestableGenerateScreen(
+          selectedOccasion: Occasion.wedding,
+          customAiService: freshMock,
+        ),
+      );
       await tester.pumpAndSettle();
 
       // Select Family relationship (first item, should be visible)
@@ -573,10 +608,12 @@ void main() {
       final errorMock = MockAiService();
       errorMock.exceptionToThrow = const AiNetworkException('No internet');
 
-      await tester.pumpWidget(createTestableGenerateScreen(
-        selectedOccasion: Occasion.birthday,
-        customAiService: errorMock,
-      ));
+      await tester.pumpWidget(
+        createTestableGenerateScreen(
+          selectedOccasion: Occasion.birthday,
+          customAiService: errorMock,
+        ),
+      );
       await tester.pumpAndSettle();
       await navigateToStep3(tester);
 
@@ -589,12 +626,16 @@ void main() {
 
     testWidgets('shows rate limit error message', (tester) async {
       final errorMock = MockAiService();
-      errorMock.exceptionToThrow = const AiRateLimitException('Too many requests');
+      errorMock.exceptionToThrow = const AiRateLimitException(
+        'Too many requests',
+      );
 
-      await tester.pumpWidget(createTestableGenerateScreen(
-        selectedOccasion: Occasion.birthday,
-        customAiService: errorMock,
-      ));
+      await tester.pumpWidget(
+        createTestableGenerateScreen(
+          selectedOccasion: Occasion.birthday,
+          customAiService: errorMock,
+        ),
+      );
       await tester.pumpAndSettle();
       await navigateToStep3(tester);
 
@@ -609,10 +650,12 @@ void main() {
       final errorMock = MockAiService();
       errorMock.exceptionToThrow = const AiNetworkException('No internet');
 
-      await tester.pumpWidget(createTestableGenerateScreen(
-        selectedOccasion: Occasion.birthday,
-        customAiService: errorMock,
-      ));
+      await tester.pumpWidget(
+        createTestableGenerateScreen(
+          selectedOccasion: Occasion.birthday,
+          customAiService: errorMock,
+        ),
+      );
       await tester.pumpAndSettle();
       await navigateToStep3(tester);
 
@@ -629,10 +672,12 @@ void main() {
       final errorMock = MockAiService();
       errorMock.exceptionToThrow = const AiNetworkException('No internet');
 
-      await tester.pumpWidget(createTestableGenerateScreen(
-        selectedOccasion: Occasion.birthday,
-        customAiService: errorMock,
-      ));
+      await tester.pumpWidget(
+        createTestableGenerateScreen(
+          selectedOccasion: Occasion.birthday,
+          customAiService: errorMock,
+        ),
+      );
       await tester.pumpAndSettle();
       await navigateToStep3(tester);
 
@@ -655,9 +700,9 @@ void main() {
   group('GenerateScreen All Occasions', () {
     for (final occasion in Occasion.values) {
       testWidgets('works for ${occasion.label}', (tester) async {
-        await tester.pumpWidget(createTestableGenerateScreen(
-          selectedOccasion: occasion,
-        ));
+        await tester.pumpWidget(
+          createTestableGenerateScreen(selectedOccasion: occasion),
+        );
         await tester.pumpAndSettle();
 
         // App bar shows occasion

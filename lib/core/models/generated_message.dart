@@ -22,7 +22,7 @@ extension EnumByNameOrNull<T extends Enum> on Iterable<T> {
 @freezed
 abstract class GeneratedMessage with _$GeneratedMessage {
   const GeneratedMessage._();
-  
+
   const factory GeneratedMessage({
     required String id,
     required String text,

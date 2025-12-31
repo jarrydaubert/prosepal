@@ -316,7 +316,9 @@ class _OnboardingPageWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screenPadding * 1.5),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.screenPadding * 1.5,
+      ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [

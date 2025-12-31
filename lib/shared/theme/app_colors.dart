@@ -99,10 +99,7 @@ class AppColors {
   static LinearGradient get backgroundGradient => LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
-    colors: [
-      primary.withValues(alpha: 0.05),
-      background,
-    ],
+    colors: [primary.withValues(alpha: 0.05), background],
   );
 
   // ===========================================================================

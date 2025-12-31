@@ -364,8 +364,12 @@ User createFakeUser({
     id: id,
     email: email,
     aud: 'authenticated',
-    appMetadata: {'provider': 'email', 'providers': ['email']},
-    userMetadata: userMetadata ??
+    appMetadata: {
+      'provider': 'email',
+      'providers': ['email'],
+    },
+    userMetadata:
+        userMetadata ??
         {
           if (displayName != null) 'full_name': displayName,
           if (displayName != null) 'name': displayName,

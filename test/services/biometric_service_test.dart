@@ -78,7 +78,10 @@ void main() {
       expect(BiometricError.values, contains(BiometricError.notAvailable));
       expect(BiometricError.values, contains(BiometricError.notEnrolled));
       expect(BiometricError.values, contains(BiometricError.lockedOut));
-      expect(BiometricError.values, contains(BiometricError.permanentlyLockedOut));
+      expect(
+        BiometricError.values,
+        contains(BiometricError.permanentlyLockedOut),
+      );
       expect(BiometricError.values, contains(BiometricError.passcodeNotSet));
       expect(BiometricError.values, contains(BiometricError.cancelled));
       expect(BiometricError.values, contains(BiometricError.unknown));
