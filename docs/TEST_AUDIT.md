@@ -1,6 +1,6 @@
 # Test Audit
 
-> **365 tests** | `flutter test` | Last audited: Dec 2025
+> **376 tests** | `flutter test` | Last audited: Dec 2025
 
 ---
 
@@ -68,7 +68,7 @@ Every test must answer: **"What bug would this catch?"**
 
 | Screen | Status | Notes |
 |--------|--------|-------|
-| `paywall_screen.dart` | ⚠️ | Fallback paywall has debug info - not prod ready. Needs cleanup + widget test |
+| `paywall_screen.dart` | ✅ | 11 widget tests added, fallback cleaned up |
 | `auth_screen.dart` | OK | Covered by integration tests |
 | `onboarding_screen.dart` | OK | First-run only, low risk |
 | `lock_screen.dart` | OK | Biometric service tested, UI simple |
@@ -100,7 +100,7 @@ Every test must answer: **"What bug would this catch?"**
 | `MockBiometricService` | Add `BiometricType.iris` if needed for future devices |
 
 ### Missing Widget Tests (Priority Order)
-1. **`paywall_screen_test.dart`** - Revenue-critical, only covered by integration tests
+1. ~~**`paywall_screen_test.dart`**~~ - ✅ Added (11 tests)
 2. **`auth_screen_test.dart`** - Sign-in options, error messages, OAuth provider selection
 3. **`onboarding_screen_test.dart`** - Multi-step flow, completion persistence, skip behavior
 4. **`lock_screen_test.dart`** - Biometric prompt, blur overlay on backgrounding
