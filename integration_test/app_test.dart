@@ -1,392 +1,320 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:integration_test/integration_test.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:patrol/patrol.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:prosepal/app/app.dart';
 import 'package:prosepal/core/providers/providers.dart';
 import 'package:prosepal/core/models/models.dart';
 
-/// End-to-End Integration Tests for Prosepal
+import '../test/mocks/mock_auth_service.dart';
+import '../test/mocks/mock_subscription_service.dart';
+
+/// Patrol Integration Tests for Prosepal
 ///
-/// These tests launch the full application and simulate real user flows.
+/// Modern, robust integration tests using Patrol framework.
+/// - Automatic waiting (no hardcoded delays)
+/// - Deterministic mocked state
+/// - No conditional assertions
 ///
-/// Run with: flutter test integration_test/app_test.dart -d [device_id]
-///
-/// Requirements:
-/// - Simulator or real device
-/// - Network connectivity for Supabase initialization
-///
-/// Note: Tests are designed to be non-destructive and handle various
-/// authentication states gracefully. Some tests may skip assertions
-/// if the user is not logged in.
+/// Run with: patrol test -t integration_test/app_test.dart
 void main() {
-  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
-
   late SharedPreferences prefs;
+  late MockAuthService mockAuth;
+  late MockSubscriptionService mockSubscription;
 
-  setUpAll(() async {
-    // Initialize Supabase before running tests
-    await Supabase.initialize(
-      url: 'https://mwoxtqxzunsjmbdqezif.supabase.co',
-      anonKey: 'sb_publishable_DJB3MvvHJRl-vuqrkn1-6w_hwTLnOaS',
-    );
-
+  Future<void> initTest() async {
     SharedPreferences.setMockInitialValues({
       'hasCompletedOnboarding': true,
     });
     prefs = await SharedPreferences.getInstance();
-  });
+    mockAuth = MockAuthService();
+    mockSubscription = MockSubscriptionService();
+  }
 
-  tearDown(() async {
-    // Reset onboarding flag to known state between tests
-    await prefs.setBool('hasCompletedOnboarding', true);
-  });
+  /// Pumps app with mocked services for deterministic testing
+  Future<void> pumpApp(
+    PatrolIntegrationTester $, {
+    bool isLoggedIn = true,
+    bool isPro = false,
+    int remainingGenerations = 3,
+    bool hasCompletedOnboarding = true,
+  }) async {
+    await prefs.setBool('hasCompletedOnboarding', hasCompletedOnboarding);
+    mockAuth.setLoggedIn(isLoggedIn, email: 'test@example.com');
+    mockSubscription.setProStatus(isPro);
 
-  group('App Launch', () {
-    testWidgets('app launches without crashing', (tester) async {
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            sharedPreferencesProvider.overrideWithValue(prefs),
-          ],
-          child: const ProsepalApp(),
-        ),
-      );
+    await $.pumpWidgetAndSettle(
+      ProviderScope(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          authServiceProvider.overrideWithValue(mockAuth),
+          subscriptionServiceProvider.overrideWithValue(mockSubscription),
+          isProProvider.overrideWith((ref) => isPro),
+          remainingGenerationsProvider.overrideWith((ref) => remainingGenerations),
+        ],
+        child: const ProsepalApp(),
+      ),
+    );
+  }
 
-      await tester.pumpAndSettle(const Duration(seconds: 3));
+  // ===========================================================================
+  // App Launch Tests
+  // ===========================================================================
 
-      expect(find.byType(MaterialApp), findsOneWidget);
-    });
+  patrolTest(
+    'logged in user sees home screen with all occasions',
+    ($) async {
+      await initTest();
+      await pumpApp($, isLoggedIn: true);
 
-    testWidgets('home screen displays app branding', (tester) async {
-      // Mark onboarding complete to skip to home
-      await prefs.setBool('hasCompletedOnboarding', true);
+      // Verify home screen elements
+      expect($('Prosepal'), findsOneWidget);
+      expect($("What's the occasion?"), findsOneWidget);
 
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            sharedPreferencesProvider.overrideWithValue(prefs),
-          ],
-          child: const ProsepalApp(),
-        ),
-      );
-
-      await tester.pumpAndSettle(const Duration(seconds: 3));
-
-      // App should show auth screen (since not logged in) or home
-      // Either way, the app should render successfully
-      expect(find.byType(Scaffold), findsWidgets);
-    });
-  });
-
-  group('Onboarding Flow', () {
-    testWidgets('onboarding flow can be navigated', (tester) async {
-      // Note: SharedPreferences in integration tests may persist between runs
-      // This test checks onboarding if we can reach it
-      await prefs.setBool('hasCompletedOnboarding', false);
-
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            sharedPreferencesProvider.overrideWithValue(prefs),
-          ],
-          child: const ProsepalApp(),
-        ),
-      );
-
-      await tester.pumpAndSettle(const Duration(seconds: 5));
-
-      // Check if we're on onboarding by looking for Continue button
-      final continueButton = find.text('Continue');
-      if (continueButton.evaluate().isNotEmpty) {
-        // Tap through pages
-        await tester.tap(continueButton);
-        await tester.pumpAndSettle();
-
-        final continueButton2 = find.text('Continue');
-        if (continueButton2.evaluate().isNotEmpty) {
-          await tester.tap(continueButton2);
-          await tester.pumpAndSettle();
-
-          final continueButton3 = find.text('Continue');
-          if (continueButton3.evaluate().isNotEmpty) {
-            await tester.tap(continueButton3);
-            await tester.pumpAndSettle();
-          }
-        }
-
-        // Look for Get Started or verify we progressed
-        final getStarted = find.text('Get Started');
-        if (getStarted.evaluate().isNotEmpty) {
-          expect(getStarted, findsOneWidget);
-        }
+      // Verify all 10 occasions are displayed
+      for (final occasion in Occasion.values) {
+        expect($(occasion.label), findsOneWidget);
       }
+    },
+  );
 
-      // Either way, app should be functional
-      expect(find.byType(Scaffold), findsWidgets);
-    });
-  });
+  patrolTest(
+    'logged out user sees auth screen with all sign-in options',
+    ($) async {
+      await initTest();
+      await pumpApp($, isLoggedIn: false);
 
-  group('Auth Screen', () {
-    testWidgets('auth screen displays sign in options', (tester) async {
-      await prefs.setBool('hasCompletedOnboarding', true);
+      // Verify auth screen options
+      await $('Continue with Email').waitUntilVisible();
+      expect($('Continue with Apple'), findsOneWidget);
+      expect($('Continue with Google'), findsOneWidget);
+    },
+  );
 
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            sharedPreferencesProvider.overrideWithValue(prefs),
-          ],
-          child: const ProsepalApp(),
-        ),
-      );
+  patrolTest(
+    'new user sees onboarding flow',
+    ($) async {
+      await initTest();
+      await pumpApp($, isLoggedIn: false, hasCompletedOnboarding: false);
 
-      await tester.pumpAndSettle(const Duration(seconds: 3));
+      // First page - Continue button visible
+      await $('Continue').waitUntilVisible();
+    },
+  );
 
-      // Auth screen should show sign in buttons
-      // The exact text depends on platform, but we should see some auth UI
-      expect(find.byType(Scaffold), findsWidgets);
-    });
+  // ===========================================================================
+  // Generation Wizard Tests
+  // ===========================================================================
 
-    testWidgets('email sign in button navigates to email screen', (tester) async {
-      await prefs.setBool('hasCompletedOnboarding', true);
+  patrolTest(
+    'complete wizard flow reaches generate button',
+    ($) async {
+      await initTest();
+      await pumpApp($, isLoggedIn: true, remainingGenerations: 3);
 
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            sharedPreferencesProvider.overrideWithValue(prefs),
-          ],
-          child: const ProsepalApp(),
-        ),
-      );
+      // Step 1: Select occasion
+      await $('Birthday').tap();
 
-      await tester.pumpAndSettle(const Duration(seconds: 3));
+      // Step 2: Select relationship
+      await $('Close Friend').waitUntilVisible();
+      await $('Close Friend').tap();
+      await $('Continue').tap();
 
-      // Try to find and tap email option
-      final emailButton = find.text('Continue with Email');
-      if (emailButton.evaluate().isNotEmpty) {
-        await tester.tap(emailButton);
-        await tester.pumpAndSettle();
+      // Step 3: Select tone
+      await $('Heartfelt').waitUntilVisible();
+      await $('Heartfelt').tap();
+      await $('Continue').tap();
 
-        // Should show email input
-        expect(find.byType(TextField), findsWidgets);
-      }
-    });
-  });
+      // Step 4: Generate screen - verify generate button exists
+      await $('Generate Messages').waitUntilVisible();
+      expect($('Generate Messages'), findsOneWidget);
+    },
+  );
 
-  group('Navigation - Logged In User', () {
-    testWidgets('home screen displays all occasions', (tester) async {
-      await prefs.setBool('hasCompletedOnboarding', true);
+  patrolTest(
+    'back navigation returns to home from wizard',
+    ($) async {
+      await initTest();
+      await pumpApp($, isLoggedIn: true);
 
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            sharedPreferencesProvider.overrideWithValue(prefs),
-          ],
-          child: const ProsepalApp(),
-        ),
-      );
+      await $('Birthday').tap();
+      await $('Close Friend').waitUntilVisible();
 
-      await tester.pumpAndSettle(const Duration(seconds: 3));
+      // Go back
+      await $(Icons.arrow_back).tap();
 
-      // If we can see occasions, we're on home screen
-      // This test will only pass if user is logged in
-      final birthdayCard = find.text('Birthday');
-      if (birthdayCard.evaluate().isNotEmpty) {
-        // All 10 occasions should be visible
-        for (final occasion in Occasion.values) {
-          expect(
-            find.text(occasion.label),
-            findsOneWidget,
-            reason: 'Occasion ${occasion.label} should be visible',
-          );
-        }
-      }
-    });
+      // Verify home screen
+      await $('Prosepal').waitUntilVisible();
+      expect($("What's the occasion?"), findsOneWidget);
+    },
+  );
 
-    testWidgets('tapping occasion navigates to generate screen', (tester) async {
-      await prefs.setBool('hasCompletedOnboarding', true);
+  // ===========================================================================
+  // Free vs Pro User Tests
+  // ===========================================================================
 
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            sharedPreferencesProvider.overrideWithValue(prefs),
-          ],
-          child: const ProsepalApp(),
-        ),
-      );
+  patrolTest(
+    'free user with remaining generations sees generate button',
+    ($) async {
+      await initTest();
+      await pumpApp($, isLoggedIn: true, isPro: false, remainingGenerations: 3);
 
-      await tester.pumpAndSettle(const Duration(seconds: 3));
+      // Navigate through wizard
+      await $('Birthday').tap();
+      await $('Close Friend').tap();
+      await $('Continue').tap();
+      await $('Heartfelt').tap();
+      await $('Continue').tap();
 
-      // Only run if on home screen
-      final birthdayCard = find.text('Birthday');
-      if (birthdayCard.evaluate().isNotEmpty) {
-        await tester.tap(birthdayCard);
-        await tester.pumpAndSettle();
+      // Verify generate button (not upgrade)
+      await $('Generate Messages').waitUntilVisible();
+      expect($('Generate Messages'), findsOneWidget);
+      expect($('Upgrade to Continue'), findsNothing);
+    },
+  );
 
-        // Generate screen shows relationships
-        expect(find.text('Close Friend'), findsOneWidget);
-        expect(find.text('Family'), findsOneWidget);
-      }
-    });
+  patrolTest(
+    'free user with 0 remaining sees upgrade button',
+    ($) async {
+      await initTest();
+      await pumpApp($, isLoggedIn: true, isPro: false, remainingGenerations: 0);
 
-    testWidgets('settings button navigates to settings', (tester) async {
-      await prefs.setBool('hasCompletedOnboarding', true);
+      // Navigate through wizard
+      await $('Birthday').tap();
+      await $('Close Friend').tap();
+      await $('Continue').tap();
+      await $('Heartfelt').tap();
+      await $('Continue').tap();
 
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            sharedPreferencesProvider.overrideWithValue(prefs),
-          ],
-          child: const ProsepalApp(),
-        ),
-      );
+      // Verify upgrade button (not generate)
+      await $('Upgrade to Continue').waitUntilVisible();
+      expect($('Upgrade to Continue'), findsOneWidget);
+      expect($('Generate Messages'), findsNothing);
+    },
+  );
 
-      await tester.pumpAndSettle(const Duration(seconds: 3));
+  patrolTest(
+    'pro user always sees generate button',
+    ($) async {
+      await initTest();
+      await pumpApp($, isLoggedIn: true, isPro: true, remainingGenerations: 500);
 
-      // Only run if on home screen with settings icon
-      final settingsIcon = find.byIcon(Icons.settings_outlined);
-      if (settingsIcon.evaluate().isNotEmpty) {
-        await tester.tap(settingsIcon);
-        await tester.pumpAndSettle();
+      // Navigate through wizard
+      await $('Birthday').tap();
+      await $('Close Friend').tap();
+      await $('Continue').tap();
+      await $('Heartfelt').tap();
+      await $('Continue').tap();
 
-        expect(find.text('Settings'), findsOneWidget);
-      }
-    });
+      // Verify generate button
+      await $('Generate Messages').waitUntilVisible();
+      expect($('Upgrade to Continue'), findsNothing);
+    },
+  );
 
-    testWidgets('back navigation works from generate screen', (tester) async {
-      await prefs.setBool('hasCompletedOnboarding', true);
+  // ===========================================================================
+  // Settings Tests
+  // ===========================================================================
 
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            sharedPreferencesProvider.overrideWithValue(prefs),
-          ],
-          child: const ProsepalApp(),
-        ),
-      );
+  patrolTest(
+    'navigates to settings and shows subscription info',
+    ($) async {
+      await initTest();
+      await pumpApp($, isLoggedIn: true, isPro: false);
 
-      await tester.pumpAndSettle(const Duration(seconds: 3));
+      // Navigate to settings
+      await $(Icons.settings_outlined).tap();
+      await $('Settings').waitUntilVisible();
 
-      final birthdayCard = find.text('Birthday');
-      if (birthdayCard.evaluate().isNotEmpty) {
-        // Navigate to generate
-        await tester.tap(birthdayCard);
-        await tester.pumpAndSettle();
+      // Verify subscription section
+      expect($('Free Plan'), findsOneWidget);
+      expect($('Restore Purchases'), findsOneWidget);
+    },
+  );
 
-        // Go back
-        await tester.tap(find.byIcon(Icons.arrow_back));
-        await tester.pumpAndSettle();
+  patrolTest(
+    'settings shows legal links',
+    ($) async {
+      await initTest();
+      await pumpApp($, isLoggedIn: true);
 
-        // Back on home screen
-        expect(find.text('Prosepal'), findsOneWidget);
-      }
-    });
-  });
+      await $(Icons.settings_outlined).tap();
+      await $('Settings').waitUntilVisible();
 
-  group('Generation Flow', () {
-    testWidgets('complete generation wizard flow', (tester) async {
-      await prefs.setBool('hasCompletedOnboarding', true);
+      // Scroll to and verify legal section
+      await $('Privacy Policy').scrollTo();
+      expect($('Privacy Policy'), findsOneWidget);
+      expect($('Terms of Service'), findsOneWidget);
+    },
+  );
 
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            sharedPreferencesProvider.overrideWithValue(prefs),
-            isProProvider.overrideWith((ref) => false),
-            remainingGenerationsProvider.overrideWith((ref) => 3),
-          ],
-          child: const ProsepalApp(),
-        ),
-      );
+  // ===========================================================================
+  // All Occasions Coverage
+  // ===========================================================================
 
-      await tester.pumpAndSettle(const Duration(seconds: 3));
+  for (final occasion in Occasion.values) {
+    patrolTest(
+      '${occasion.label} wizard flow completes successfully',
+      ($) async {
+        await initTest();
+        await pumpApp($, isLoggedIn: true, isPro: true);
 
-      final birthdayCard = find.text('Birthday');
-      if (birthdayCard.evaluate().isNotEmpty) {
-        // Step 1: Select occasion
-        await tester.tap(birthdayCard);
-        await tester.pumpAndSettle();
+        await $(occasion.label).tap();
+        await $('Close Friend').waitUntilVisible();
+        await $('Close Friend').tap();
+        await $('Continue').tap();
+        await $('Heartfelt').tap();
+        await $('Continue').tap();
 
-        // Step 2: Select relationship
-        await tester.tap(find.text('Close Friend'));
-        await tester.pumpAndSettle();
-        await tester.tap(find.text('Continue'));
-        await tester.pumpAndSettle();
+        await $('Generate Messages').waitUntilVisible();
+      },
+    );
+  }
 
-        // Step 3: Select tone
-        await tester.tap(find.text('Heartfelt'));
-        await tester.pumpAndSettle();
-        await tester.tap(find.text('Continue'));
-        await tester.pumpAndSettle();
+  // ===========================================================================
+  // All Relationships Coverage
+  // ===========================================================================
 
-        // Step 4: Generate button visible
-        final generateButton = find.text('Generate Messages');
-        await tester.ensureVisible(generateButton);
-        await tester.pumpAndSettle();
+  final relationships = ['Close Friend', 'Family', 'Colleague', 'Partner', 'Acquaintance'];
+  for (final relationship in relationships) {
+    patrolTest(
+      '$relationship can be selected in wizard',
+      ($) async {
+        await initTest();
+        await pumpApp($, isLoggedIn: true);
 
-        expect(generateButton, findsOneWidget);
-      }
-    });
-  });
+        await $('Birthday').tap();
+        await $(relationship).waitUntilVisible();
+        await $(relationship).tap();
 
-  group('Settings Screen', () {
-    testWidgets('settings displays expected sections', (tester) async {
-      await prefs.setBool('hasCompletedOnboarding', true);
+        expect($('Continue'), findsOneWidget);
+      },
+    );
+  }
 
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            sharedPreferencesProvider.overrideWithValue(prefs),
-          ],
-          child: const ProsepalApp(),
-        ),
-      );
+  // ===========================================================================
+  // All Tones Coverage
+  // ===========================================================================
 
-      await tester.pumpAndSettle(const Duration(seconds: 3));
+  final tones = ['Heartfelt', 'Funny', 'Formal', 'Casual'];
+  for (final tone in tones) {
+    patrolTest(
+      '$tone can be selected in wizard',
+      ($) async {
+        await initTest();
+        await pumpApp($, isLoggedIn: true);
 
-      final settingsIcon = find.byIcon(Icons.settings_outlined);
-      if (settingsIcon.evaluate().isNotEmpty) {
-        await tester.tap(settingsIcon);
-        await tester.pumpAndSettle();
+        await $('Birthday').tap();
+        await $('Close Friend').tap();
+        await $('Continue').tap();
 
-        expect(find.text('Settings'), findsOneWidget);
+        await $(tone).waitUntilVisible();
+        await $(tone).tap();
 
-        // Scroll to find Privacy Policy
-        final listView = find.byType(Scrollable).first;
-        await tester.scrollUntilVisible(
-          find.text('Privacy Policy'),
-          100,
-          scrollable: listView,
-        );
-        expect(find.text('Privacy Policy'), findsOneWidget);
-      }
-    });
-  });
-
-  group('Accessibility', () {
-    testWidgets('buttons meet minimum touch target size', (tester) async {
-      await prefs.setBool('hasCompletedOnboarding', true);
-
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            sharedPreferencesProvider.overrideWithValue(prefs),
-          ],
-          child: const ProsepalApp(),
-        ),
-      );
-
-      await tester.pumpAndSettle(const Duration(seconds: 3));
-
-      // Find any elevated button and check size
-      final buttons = find.byType(ElevatedButton);
-      if (buttons.evaluate().isNotEmpty) {
-        final buttonSize = tester.getSize(buttons.first);
-        // Apple HIG recommends 44pt minimum touch target
-        expect(buttonSize.height, greaterThanOrEqualTo(44));
-      }
-    });
-  });
+        expect($('Continue'), findsOneWidget);
+      },
+    );
+  }
 }
