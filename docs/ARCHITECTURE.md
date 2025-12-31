@@ -194,14 +194,26 @@ docs/
 └── STACK_TEMPLATE.md             # Tech stack reference
 ```
 
+### Assets
+
+```
+assets/
+└── images/
+    ├── logo.png                  # App logo (splash, about)
+    └── icons/                    # Custom icons
+```
+
 ### Config Files
 
 ```
 pubspec.yaml                      # Flutter dependencies
-analysis_options.yaml             # Linter rules
+pubspec.lock                      # Locked dependency versions
+analysis_options.yaml             # Linter rules (strict mode)
 firebase.json                     # Firebase project config
+.gitignore                        # Git exclusions
 .github/workflows/ci.yml          # GitHub Actions CI
 CLAUDE.md                         # AI assistant context
+README.md                         # Project overview
 ```
 
 ---
