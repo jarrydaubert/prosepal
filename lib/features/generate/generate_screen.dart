@@ -26,6 +26,22 @@ class GenerateScreen extends ConsumerStatefulWidget {
 
 class _GenerateScreenState extends ConsumerState<GenerateScreen> {
   int _currentStep = 0;
+  Timer? _errorDismissTimer;
+
+  @override
+  void dispose() {
+    _errorDismissTimer?.cancel();
+    super.dispose();
+  }
+
+  void _scheduleErrorDismiss() {
+    _errorDismissTimer?.cancel();
+    _errorDismissTimer = Timer(const Duration(seconds: 8), () {
+      if (mounted) {
+        ref.read(generationErrorProvider.notifier).state = null;
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -36,6 +52,13 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
     final error = ref.watch(generationErrorProvider);
     final remaining = ref.watch(remainingGenerationsProvider);
     final isPro = ref.watch(isProProvider);
+
+    // Auto-dismiss error after 8 seconds
+    ref.listen<String?>(generationErrorProvider, (previous, next) {
+      if (next != null && previous == null) {
+        _scheduleErrorDismiss();
+      }
+    });
 
     if (occasion == null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
