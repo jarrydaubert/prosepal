@@ -1,16 +1,65 @@
-# prosepal
+# Prosepal
 
-A new Flutter project.
+AI-powered message helper for greeting cards and special occasions.
+
+**"The right words, right now"**
+
+## Features
+
+- 10 occasions (Birthday, Wedding, Sympathy, Thank You, etc.)
+- 5 relationship types
+- 4 tones (Heartfelt, Casual, Funny, Formal)
+- 3 AI-generated message options per request
+- Free tier with Pro subscription upgrades
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|------------|
+| Framework | Flutter |
+| State | Riverpod |
+| Navigation | go_router |
+| AI | Firebase AI (Gemini) |
+| Auth | Supabase |
+| Payments | RevenueCat |
+| Analytics | Firebase Analytics + Crashlytics |
 
 ## Getting Started
 
-This project is a starting point for a Flutter application.
+```bash
+# Install dependencies
+flutter pub get
 
-A few resources to get you started if this is your first Flutter project:
+# Run the app
+flutter run
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+# Run tests
+flutter test
+```
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Project Structure
+
+```
+lib/
+├── app/           # App shell, router
+├── core/          # Services, models, providers
+├── features/      # Feature screens
+└── shared/        # Reusable UI components
+```
+
+## Documentation
+
+See `docs/` for detailed documentation:
+- `ARCHITECTURE.md` - Project structure
+- `LAUNCH_CHECKLIST.md` - Release checklist
+- `TEST_AUDIT.md` - Test coverage
+
+## Environment Setup
+
+1. **Firebase**: Add `google-services.json` (Android) and `GoogleService-Info.plist` (iOS)
+2. **Supabase**: Configure URL and anon key in `main.dart`
+3. **RevenueCat**: Add API keys in `subscription_service.dart`
+
+## License
+
+Proprietary - All rights reserved
