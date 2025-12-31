@@ -274,7 +274,27 @@ class SubscriptionService implements ISubscriptionService {
       return;
     }
     try {
-      await Purchases.logIn(userId);
+      // Get current app user ID before login
+      final currentAppUserId = await Purchases.appUserID;
+      debugPrint('RevenueCat: Current ID before logIn: $currentAppUserId');
+
+      final result = await Purchases.logIn(userId);
+      debugPrint('RevenueCat logIn result:');
+      debugPrint('  - Target userId: $userId');
+      debugPrint('  - Created new customer: ${result.created}');
+      debugPrint(
+        '  - Active entitlements: ${result.customerInfo.entitlements.active.keys}',
+      );
+
+      // Log the new app user ID after login
+      final newAppUserId = await Purchases.appUserID;
+      debugPrint('  - App User ID after logIn: $newAppUserId');
+
+      if (result.customerInfo.entitlements.active.containsKey(_entitlementId)) {
+        debugPrint('  - Pro entitlement ACTIVE');
+      } else {
+        debugPrint('  - No pro entitlement');
+      }
     } catch (e) {
       debugPrint('Error identifying user: $e');
     }
