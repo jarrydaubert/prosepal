@@ -25,6 +25,9 @@ class ShimmerButton extends StatefulWidget {
     this.shimmerEnabled = true,
   });
 
+  /// Global flag to disable shimmer effect (useful for testing)
+  static bool disableShimmerForTesting = false;
+
   final VoidCallback? onPressed;
   final String label;
   final IconData? icon;
@@ -96,7 +99,7 @@ class _ShimmerButtonState extends State<ShimmerButton> {
               child: Stack(
                 children: [
                   // Shimmer overlay
-                  if (_isEnabled && widget.shimmerEnabled && !widget.isLoading)
+                  if (_isEnabled && widget.shimmerEnabled && !widget.isLoading && !ShimmerButton.disableShimmerForTesting)
                     Positioned.fill(
                       child: Shimmer.fromColors(
                         baseColor: Colors.transparent,

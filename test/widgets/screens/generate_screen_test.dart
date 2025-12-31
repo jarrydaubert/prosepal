@@ -11,6 +11,7 @@ import 'package:prosepal/core/services/ai_service.dart';
 import 'package:prosepal/core/services/usage_service.dart';
 import 'package:prosepal/core/services/review_service.dart';
 import 'package:prosepal/features/generate/generate_screen.dart';
+import 'package:prosepal/shared/atoms/shimmer_button.dart';
 
 /// Mock AI Service that returns predictable results and tracks calls
 class MockAiService extends AiService {
@@ -114,6 +115,11 @@ void main() {
 
   late SharedPreferences mockPrefs;
   late MockAiService mockAiService;
+
+  setUpAll(() {
+    // Disable shimmer animation to prevent pumpAndSettle timeout
+    ShimmerButton.disableShimmerForTesting = true;
+  });
 
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
