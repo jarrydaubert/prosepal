@@ -10,9 +10,9 @@
 | **Tagline** | "The right words, right now" |
 | **Bundle ID (iOS)** | com.prosepal.prosepal |
 | **Package (Android)** | com.prosepal.prosepal |
-| **Platforms** | iOS (App Store), Android (Google Play), Web |
+| **Platforms** | iOS (App Store), Android (Google Play) |
 | **Minimum iOS** | 15.0 |
-| **Minimum Android** | API 21 (Android 5.0) |
+| **Minimum Android** | API 23 (Android 6.0) |
 | **Framework** | Flutter 3.38+ |
 
 ---
@@ -519,7 +519,7 @@ Pro user at max usage:
 |----------|-------|--------|
 | iOS | Apple App Store | Primary launch |
 | Android | Google Play Store | Primary launch |
-| Web | prosepal.app (future) | Post-launch |
+| Web | N/A | Not planned |
 
 ### Key Flutter Packages (pubspec.yaml)
 
