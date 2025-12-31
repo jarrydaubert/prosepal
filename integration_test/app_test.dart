@@ -7,7 +7,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:prosepal/app/app.dart';
 import 'package:prosepal/core/providers/providers.dart';
 import 'package:prosepal/core/models/models.dart';
+import 'package:prosepal/core/services/ai_service.dart';
 
+import '../test/mocks/mock_ai_service.dart';
 import '../test/mocks/mock_auth_service.dart';
 import '../test/mocks/mock_subscription_service.dart';
 
@@ -23,6 +25,7 @@ void main() {
   late SharedPreferences prefs;
   late MockAuthService mockAuth;
   late MockSubscriptionService mockSubscription;
+  late MockAiService mockAi;
 
   Future<void> initTest() async {
     SharedPreferences.setMockInitialValues({
@@ -31,6 +34,7 @@ void main() {
     prefs = await SharedPreferences.getInstance();
     mockAuth = MockAuthService();
     mockSubscription = MockSubscriptionService();
+    mockAi = MockAiService();
   }
 
   /// Pumps app with mocked services for deterministic testing
@@ -40,6 +44,7 @@ void main() {
     bool isPro = false,
     int remainingGenerations = 3,
     bool hasCompletedOnboarding = true,
+    MockAiService? aiService,
   }) async {
     await prefs.setBool('hasCompletedOnboarding', hasCompletedOnboarding);
     mockAuth.setLoggedIn(isLoggedIn, email: 'test@example.com');
@@ -51,6 +56,7 @@ void main() {
           sharedPreferencesProvider.overrideWithValue(prefs),
           authServiceProvider.overrideWithValue(mockAuth),
           subscriptionServiceProvider.overrideWithValue(mockSubscription),
+          aiServiceProvider.overrideWithValue(aiService ?? mockAi),
           isProProvider.overrideWith((ref) => isPro),
           remainingGenerationsProvider.overrideWith((ref) => remainingGenerations),
         ],
@@ -317,4 +323,239 @@ void main() {
       },
     );
   }
+
+  // ===========================================================================
+  // Generation Outcome Tests (with MockAiService)
+  // ===========================================================================
+
+  patrolTest(
+    'generation flow shows results screen with messages',
+    ($) async {
+      await initTest();
+      mockAi.messagesToReturn = [
+        'Birthday message 1 - Have a wonderful day!',
+        'Birthday message 2 - Wishing you the best!',
+        'Birthday message 3 - Celebrate in style!',
+      ];
+      await pumpApp($, isLoggedIn: true, isPro: true, aiService: mockAi);
+
+      // Navigate wizard
+      await $('Birthday').tap();
+      await $('Close Friend').tap();
+      await $('Continue').tap();
+      await $('Heartfelt').tap();
+      await $('Continue').tap();
+
+      // Tap Generate
+      await $('Generate Messages').tap();
+
+      // Verify results screen with generated messages
+      await $('Birthday message 1').waitUntilVisible();
+      expect($('Birthday message 1'), findsOneWidget);
+      expect($('Birthday message 2'), findsOneWidget);
+      expect($('Birthday message 3'), findsOneWidget);
+
+      // Verify AI service was called correctly
+      expect(mockAi.generateCallCount, 1);
+      expect(mockAi.lastOccasion, Occasion.birthday);
+      expect(mockAi.lastRelationship, Relationship.closeFriend);
+      expect(mockAi.lastTone, Tone.heartfelt);
+    },
+  );
+
+  patrolTest(
+    'copy button appears on generated messages',
+    ($) async {
+      await initTest();
+      await pumpApp($, isLoggedIn: true, isPro: true, aiService: mockAi);
+
+      await $('Birthday').tap();
+      await $('Close Friend').tap();
+      await $('Continue').tap();
+      await $('Heartfelt').tap();
+      await $('Continue').tap();
+      await $('Generate Messages').tap();
+
+      // Wait for results then check for copy icons
+      await $(Icons.copy).waitUntilVisible();
+      expect($(Icons.copy), findsWidgets);
+    },
+  );
+
+  // ===========================================================================
+  // Error Handling Tests
+  // ===========================================================================
+
+  patrolTest(
+    'network error shows user-friendly message',
+    ($) async {
+      await initTest();
+      mockAi.errorToThrow = const AiNetworkException(
+        'Unable to connect. Please check your internet connection.',
+      );
+      await pumpApp($, isLoggedIn: true, isPro: true, aiService: mockAi);
+
+      await $('Birthday').tap();
+      await $('Close Friend').tap();
+      await $('Continue').tap();
+      await $('Heartfelt').tap();
+      await $('Continue').tap();
+      await $('Generate Messages').tap();
+
+      // Verify error message displayed
+      await $('Unable to connect').waitUntilVisible();
+      expect($('internet connection'), findsOneWidget);
+    },
+  );
+
+  patrolTest(
+    'rate limit error shows appropriate message',
+    ($) async {
+      await initTest();
+      mockAi.errorToThrow = const AiRateLimitException(
+        'Too many requests. Please wait a moment.',
+      );
+      await pumpApp($, isLoggedIn: true, isPro: true, aiService: mockAi);
+
+      await $('Birthday').tap();
+      await $('Close Friend').tap();
+      await $('Continue').tap();
+      await $('Heartfelt').tap();
+      await $('Continue').tap();
+      await $('Generate Messages').tap();
+
+      await $('Too many requests').waitUntilVisible();
+    },
+  );
+
+  patrolTest(
+    'content blocked error shows safety message',
+    ($) async {
+      await initTest();
+      mockAi.errorToThrow = const AiContentBlockedException(
+        'Content was blocked by safety filters.',
+      );
+      await pumpApp($, isLoggedIn: true, isPro: true, aiService: mockAi);
+
+      await $('Birthday').tap();
+      await $('Close Friend').tap();
+      await $('Continue').tap();
+      await $('Heartfelt').tap();
+      await $('Continue').tap();
+      await $('Generate Messages').tap();
+
+      await $('blocked').waitUntilVisible();
+    },
+  );
+
+  patrolTest(
+    'error can be dismissed and user can retry',
+    ($) async {
+      await initTest();
+      mockAi.errorToThrow = const AiNetworkException('Network error');
+      await pumpApp($, isLoggedIn: true, isPro: true, aiService: mockAi);
+
+      await $('Birthday').tap();
+      await $('Close Friend').tap();
+      await $('Continue').tap();
+      await $('Heartfelt').tap();
+      await $('Continue').tap();
+      await $('Generate Messages').tap();
+
+      // Error shown
+      await $('Network error').waitUntilVisible();
+
+      // Dismiss error (look for dismiss button or OK)
+      if ($('OK').exists) {
+        await $('OK').tap();
+      } else if ($('Dismiss').exists) {
+        await $('Dismiss').tap();
+      }
+
+      // Clear error and retry
+      mockAi.errorToThrow = null;
+      await $('Generate Messages').tap();
+
+      // Should now show results
+      await $('Happy Birthday').waitUntilVisible();
+    },
+  );
+
+  // ===========================================================================
+  // Pro User Specific Tests
+  // ===========================================================================
+
+  patrolTest(
+    'pro user sees Pro Plan in settings',
+    ($) async {
+      await initTest();
+      await pumpApp($, isLoggedIn: true, isPro: true);
+
+      await $(Icons.settings_outlined).tap();
+      await $('Settings').waitUntilVisible();
+
+      expect($('Pro Plan'), findsOneWidget);
+      expect($('Free Plan'), findsNothing);
+    },
+  );
+
+  patrolTest(
+    'pro user can generate unlimited messages',
+    ($) async {
+      await initTest();
+      await pumpApp($, isLoggedIn: true, isPro: true, remainingGenerations: 500);
+
+      await $('Birthday').tap();
+      await $('Close Friend').tap();
+      await $('Continue').tap();
+      await $('Heartfelt').tap();
+      await $('Continue').tap();
+
+      // Should see generate, never upgrade
+      await $('Generate Messages').waitUntilVisible();
+      expect($('Upgrade'), findsNothing);
+      expect($('remaining'), findsNothing);
+    },
+  );
+
+  // ===========================================================================
+  // Upgrade Flow Tests
+  // ===========================================================================
+
+  patrolTest(
+    'upgrade button navigates to paywall',
+    ($) async {
+      await initTest();
+      await pumpApp($, isLoggedIn: true, isPro: false, remainingGenerations: 0);
+
+      await $('Birthday').tap();
+      await $('Close Friend').tap();
+      await $('Continue').tap();
+      await $('Heartfelt').tap();
+      await $('Continue').tap();
+
+      await $('Upgrade to Continue').tap();
+
+      // Should navigate to paywall screen
+      await $('Unlock').waitUntilVisible();
+    },
+  );
+
+  patrolTest(
+    'free user sees remaining generations count',
+    ($) async {
+      await initTest();
+      await pumpApp($, isLoggedIn: true, isPro: false, remainingGenerations: 2);
+
+      await $('Birthday').tap();
+      await $('Close Friend').tap();
+      await $('Continue').tap();
+      await $('Heartfelt').tap();
+      await $('Continue').tap();
+
+      // Should show remaining count somewhere on generate screen
+      await $('Generate Messages').waitUntilVisible();
+      expect($('2'), findsWidgets); // Free tier shows count
+    },
+  );
 }
