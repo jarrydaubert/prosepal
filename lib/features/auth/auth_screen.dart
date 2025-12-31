@@ -58,6 +58,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
         await ref
             .read(subscriptionServiceProvider)
             .identifyUser(response.user!.id);
+        // Sync usage from server (restores usage after reinstall)
+        await ref.read(usageServiceProvider).syncFromServer();
       }
       if (mounted) context.go('/home');
     } catch (e) {
@@ -82,6 +84,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
         await ref
             .read(subscriptionServiceProvider)
             .identifyUser(response.user!.id);
+        // Sync usage from server (restores usage after reinstall)
+        await ref.read(usageServiceProvider).syncFromServer();
       }
       if (mounted) context.go('/home');
     } catch (e) {

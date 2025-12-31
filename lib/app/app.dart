@@ -53,9 +53,13 @@ class _ProsepalAppState extends ConsumerState<ProsepalApp>
         await ref
             .read(subscriptionServiceProvider)
             .identifyUser(session.user.id);
+        // Sync usage from server (restores usage after reinstall)
+        await ref.read(usageServiceProvider).syncFromServer();
         // Navigate to home
         appRouter.go('/home');
       } else if (event == AuthChangeEvent.signedOut) {
+        // Clear sync marker so next user gets fresh sync
+        await ref.read(usageServiceProvider).clearSyncMarker();
         appRouter.go('/auth');
       }
     });
