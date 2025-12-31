@@ -21,8 +21,8 @@ if (keystorePropertiesFile.exists()) {
 
 android {
     namespace = "com.prosepal.prosepal"
-    // Android 15 (API 35) - latest stable as of Dec 2025
-    compileSdk = 35
+    // Android 16 (API 36) - required by androidx.core:core:1.17.0
+    compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -38,7 +38,7 @@ android {
         applicationId = "com.prosepal.prosepal"
         // minSdk 23 (Android 6.0) - covers 99%+ of devices
         // targetSdk 35 (Android 15) - required by Play Store Aug 2025
-        minSdk = 23
+        minSdk = flutter.minSdkVersion
         targetSdk = 35
         versionCode = flutter.versionCode
         versionName = flutter.versionName
