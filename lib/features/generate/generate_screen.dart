@@ -1,8 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:gap/gap.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/models/models.dart';
@@ -12,7 +12,6 @@ import '../../shared/atoms/app_button.dart';
 import '../../shared/atoms/shimmer_button.dart';
 import '../../shared/molecules/generation_loading_overlay.dart';
 import '../../shared/theme/app_colors.dart';
-import '../../shared/theme/app_spacing.dart';
 import 'widgets/details_input.dart';
 import 'widgets/relationship_picker.dart';
 import 'widgets/tone_selector.dart';
@@ -53,7 +52,6 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
     final remaining = ref.watch(remainingGenerationsProvider);
     final isPro = ref.watch(isProProvider);
 
-    // Auto-dismiss error after 8 seconds
     ref.listen<String?>(generationErrorProvider, (previous, next) {
       if (next != null && previous == null) {
         _scheduleErrorDismiss();
@@ -70,18 +68,39 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
     return Stack(
       children: [
         Scaffold(
+          backgroundColor: AppColors.background,
           appBar: AppBar(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
             title: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(occasion.emoji),
-                const Gap(AppSpacing.sm),
-                Text(occasion.label),
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: occasion.backgroundColor,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: occasion.borderColor, width: 2),
+                  ),
+                  child: Center(
+                    child: Text(occasion.emoji, style: const TextStyle(fontSize: 18)),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  occasion.label,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
               ],
             ),
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back),
+            leading: _BackButton(
               onPressed: () {
+                HapticFeedback.lightImpact();
                 if (_currentStep > 0) {
                   setState(() => _currentStep--);
                 } else {
@@ -93,64 +112,22 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
           ),
           body: Column(
             children: [
-              // Progress indicator
               _StepIndicator(currentStep: _currentStep),
-
-              // Content
               Expanded(
                 child: AnimatedSwitcher(
                   duration: const Duration(milliseconds: 300),
                   child: _buildStep(context),
                 ),
               ),
-
-              // Error message with dismiss
-              if (error != null)
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.screenPadding,
-                  ),
-                  child: Container(
-                    padding: const EdgeInsets.all(AppSpacing.md),
-                    decoration: BoxDecoration(
-                      color: AppColors.error.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(
-                        AppSpacing.radiusMedium,
-                      ),
-                      border: Border.all(
-                        color: AppColors.error.withValues(alpha: 0.3),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.error_outline, color: AppColors.error),
-                        const Gap(AppSpacing.sm),
-                        Expanded(
-                          child: Text(
-                            error,
-                            style: const TextStyle(color: AppColors.error),
-                          ),
-                        ),
-                        GestureDetector(
-                          onTap: () {
-                            ref.read(generationErrorProvider.notifier).state =
-                                null;
-                          },
-                          child: const Icon(
-                            Icons.close,
-                            color: AppColors.error,
-                            size: 18,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-
-              // Bottom button
+              if (error != null) _ErrorBanner(
+                error: error,
+                onDismiss: () {
+                  ref.read(generationErrorProvider.notifier).state = null;
+                },
+              ),
               SafeArea(
                 child: Padding(
-                  padding: const EdgeInsets.all(AppSpacing.screenPadding),
+                  padding: const EdgeInsets.all(20),
                   child: _buildBottomButton(
                     context,
                     occasion: occasion,
@@ -165,7 +142,6 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
             ],
           ),
         ),
-        // Loading overlay
         if (isGenerating) const GenerationLoadingOverlay(),
       ],
     );
@@ -325,6 +301,40 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
   }
 }
 
+// =============================================================================
+// COMPONENTS
+// =============================================================================
+
+class _BackButton extends StatelessWidget {
+  const _BackButton({required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 8),
+      child: GestureDetector(
+        onTap: onPressed,
+        child: Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: AppColors.primaryLight,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.primary, width: 2),
+          ),
+          child: const Icon(
+            Icons.arrow_back,
+            color: AppColors.primary,
+            size: 20,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _StepIndicator extends StatelessWidget {
   const _StepIndicator({required this.currentStep});
 
@@ -337,7 +347,7 @@ class _StepIndicator extends StatelessWidget {
     return Semantics(
       label: 'Step ${currentStep + 1} of 3: ${_stepLabels[currentStep]}',
       child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.screenPadding),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         child: Row(
           children: List.generate(3, (index) {
             final isActive = index == currentStep;
@@ -352,18 +362,87 @@ class _StepIndicator extends StatelessWidget {
                         ? 'current'
                         : 'pending'}',
                 child: Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 2),
-                  height: 4,
+                  margin: const EdgeInsets.symmetric(horizontal: 3),
+                  height: 6,
                   decoration: BoxDecoration(
                     color: isActive || isCompleted
                         ? AppColors.primary
                         : AppColors.surfaceVariant,
-                    borderRadius: BorderRadius.circular(2),
+                    borderRadius: BorderRadius.circular(3),
+                    border: isActive
+                        ? Border.all(color: AppColors.primary, width: 1)
+                        : null,
                   ),
                 ),
               ),
             );
           }),
+        ),
+      ),
+    );
+  }
+}
+
+class _ErrorBanner extends StatelessWidget {
+  const _ErrorBanner({required this.error, required this.onDismiss});
+
+  final String error;
+  final VoidCallback onDismiss;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: AppColors.error.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.error, width: 2),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: AppColors.error.withValues(alpha: 0.2),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.error_outline,
+                color: AppColors.error,
+                size: 18,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                error,
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: AppColors.error,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            GestureDetector(
+              onTap: onDismiss,
+              child: Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: AppColors.error.withValues(alpha: 0.2),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.close,
+                  color: AppColors.error,
+                  size: 16,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

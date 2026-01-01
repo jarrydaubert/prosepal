@@ -17,11 +17,58 @@
 | Priority | Item | Effort | Impact |
 |----------|------|--------|--------|
 | **P0** | **App Store ID for reviews** | Low | Post-approval |
+| P1 | Bold styling refactor (paywall remaining) | Low | High |
+| P2 | GenUI SDK exploration | Medium | High |
 | P4 | Dark mode support | High | Medium |
 
 ---
 
-## 1. Dark Mode Support
+## 1. Bold Styling Refactor
+
+**Status:** Nearly Complete (Jan 2026)
+
+### Completed Screens
+- onboarding_screen.dart
+- auth_screen.dart
+- email_auth_screen.dart
+- home_screen.dart + occasion_grid.dart + usage_indicator.dart
+- generate_screen.dart + relationship_picker.dart + tone_selector.dart + details_input.dart
+- results_screen.dart
+- settings_screen.dart
+
+### Remaining
+- paywall_screen.dart
+
+### Pattern Established
+- **Borders**: 2-3px primary color, no shadows/glassmorphism
+- **Animations**: ValueKey for proper re-triggering
+- **Text**: Direct TextStyle (not Theme.of(context))
+- **Feedback**: HapticFeedback.lightImpact() on press
+- **Structure**: Components at bottom with `// === COMPONENTS ===` header
+- **Padding**: 20px horizontal consistently
+
+---
+
+## 2. GenUI SDK for Flutter
+
+**Priority:** P2 - Research
+
+**What**: Runtime dynamic UI generation using AI
+**Use Case**: Let users customize message card designs at runtime with AI-generated layouts
+
+### Research Notes
+- Look into Flutter GenUI SDK for implementation
+- Use AI Studio for rapid UI prototyping with Prosepal-themed prompts
+- Extract reusable widgets from generated code
+
+### Software 3.0 Concepts (Karpathy, Y Combinator 2025)
+- LLMs as "operating system" for software creation
+- Shift from traditional coding to prompt engineering
+- Human-in-the-loop oversight for generated code
+
+---
+
+## 3. Dark Mode Support
 
 **Priority:** P4
 
@@ -32,7 +79,25 @@
 
 ---
 
-## 2. App Store Optimization (ASO) Metadata
+## 4. Future App Ideas (Post-Prosepal)
+
+### AI Content Generator (Jasper.ai Clone)
+- **Target**: $10M+ MRR company
+- **Feature**: Mobile app for messages, captions, marketing copy
+- **Builds on**: Prosepal's greeting card AI expertise
+- **Stack**: Flutter + Claude Opus + Supabase + Riverpod
+
+### FAQ/Knowledge Base Generator (Intercom/Notion Clone)
+- **Feature**: Auto-generate FAQs from chat logs/reviews
+- **Use Case**: Business response libraries
+
+### AI Audio Message Creator (Descript Clone)
+- **Feature**: Text-to-audio voiceovers, audiograms
+- **Extends**: Prosepal to multimedia greeting cards
+
+---
+
+## 5. App Store Optimization (ASO) Metadata
 
 > Use when submitting to App Store Connect.
 
@@ -105,7 +170,7 @@ Download now and never struggle with "what to write" again.
 
 ---
 
-## 3. Code Quality Improvements
+## 6. Code Quality Improvements
 
 ### BiometricService Dependency Injection
 - Singleton pattern limits full test isolation

@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:gap/gap.dart';
 
 import '../../../core/models/occasion.dart';
 import '../../../shared/theme/app_colors.dart';
-import '../../../shared/theme/app_spacing.dart';
 
 class OccasionGrid extends StatelessWidget {
   const OccasionGrid({super.key, required this.onOccasionSelected});
@@ -15,29 +13,29 @@ class OccasionGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SliverGrid(
-      // Responsive grid: adapts columns based on screen width
       gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: 200, // Each tile max 200px wide
-        mainAxisSpacing: AppSpacing.md,
-        crossAxisSpacing: AppSpacing.md,
-        childAspectRatio: 1.4,
+        maxCrossAxisExtent: 200,
+        mainAxisSpacing: 12,
+        crossAxisSpacing: 12,
+        childAspectRatio: 1.3,
       ),
       delegate: SliverChildBuilderDelegate((context, index) {
         final occasion = Occasion.values[index];
-        return OccasionTile(
-              occasion: occasion,
-              onTap: () => onOccasionSelected(occasion),
-            )
-            .animate()
+        return _OccasionTile(
+          key: ValueKey('occasion_${occasion.name}'),
+          occasion: occasion,
+          onTap: () => onOccasionSelected(occasion),
+        )
+            .animate(key: ValueKey('occasion_anim_$index'))
             .fadeIn(
-              delay: Duration(milliseconds: index * 50),
-              duration: 300.ms,
+              delay: Duration(milliseconds: 100 + index * 40),
+              duration: 350.ms,
             )
             .scale(
-              begin: const Offset(0.9, 0.9),
+              begin: const Offset(0.92, 0.92),
               end: const Offset(1, 1),
-              delay: Duration(milliseconds: index * 50),
-              duration: 300.ms,
+              delay: Duration(milliseconds: 100 + index * 40),
+              duration: 350.ms,
               curve: Curves.easeOut,
             );
       }, childCount: Occasion.values.length),
@@ -45,17 +43,25 @@ class OccasionGrid extends StatelessWidget {
   }
 }
 
-class OccasionTile extends StatefulWidget {
-  const OccasionTile({super.key, required this.occasion, required this.onTap});
+// =============================================================================
+// COMPONENTS
+// =============================================================================
+
+class _OccasionTile extends StatefulWidget {
+  const _OccasionTile({
+    super.key,
+    required this.occasion,
+    required this.onTap,
+  });
 
   final Occasion occasion;
   final VoidCallback onTap;
 
   @override
-  State<OccasionTile> createState() => _OccasionTileState();
+  State<_OccasionTile> createState() => _OccasionTileState();
 }
 
-class _OccasionTileState extends State<OccasionTile>
+class _OccasionTileState extends State<_OccasionTile>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
   late final Animation<double> _scaleAnimation;
@@ -104,29 +110,43 @@ class _OccasionTileState extends State<OccasionTile>
           onTapDown: _handleTapDown,
           onTapUp: _handleTapUp,
           onTapCancel: _handleTapCancel,
-          child: DecoratedBox(
+          child: Container(
             decoration: BoxDecoration(
               color: widget.occasion.backgroundColor,
-              borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
-              border: Border.all(color: widget.occasion.borderColor),
-              boxShadow: [
-                BoxShadow(
-                  color: widget.occasion.borderColor.withValues(alpha: 0.3),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: widget.occasion.borderColor,
+                width: 3,
+              ),
             ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(widget.occasion.emoji, style: const TextStyle(fontSize: 32)),
-                const Gap(AppSpacing.sm),
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: widget.occasion.borderColor,
+                      width: 2,
+                    ),
+                  ),
+                  child: Center(
+                    child: Text(
+                      widget.occasion.emoji,
+                      style: const TextStyle(fontSize: 24),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
                 Text(
                   widget.occasion.label,
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
                     color: AppColors.textPrimary,
-                    fontWeight: FontWeight.w600,
                   ),
                   textAlign: TextAlign.center,
                 ),

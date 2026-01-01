@@ -139,7 +139,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('PRO'), findsOneWidget);
-      expect(find.byIcon(Icons.star), findsOneWidget);
+      expect(find.byIcon(Icons.star_rounded), findsOneWidget);
       // Should NOT show free user elements
       expect(find.text('Free messages remaining'), findsNothing);
       expect(find.text('Upgrade for unlimited'), findsNothing);
@@ -190,9 +190,13 @@ void main() {
         await tester.pumpWidget(createTestableHomeScreen());
         await tester.pumpAndSettle();
 
-        // Find and tap the occasion
+        // Find and tap the occasion (scroll if needed)
         final occasionFinder = find.text(occasion.label);
         expect(occasionFinder, findsOneWidget);
+
+        // Scroll to make sure the occasion is visible
+        await tester.ensureVisible(occasionFinder);
+        await tester.pumpAndSettle();
 
         await tester.tap(occasionFinder);
         await tester.pumpAndSettle();
@@ -214,11 +218,12 @@ void main() {
       final settingsButton = find.byIcon(Icons.settings_outlined);
       expect(settingsButton, findsOneWidget);
 
-      // Button should be tappable
-      final buttonWidget = tester.widget<IconButton>(
-        find.ancestor(of: settingsButton, matching: find.byType(IconButton)),
+      // Button should be tappable (wrapped in GestureDetector)
+      final gestureDetector = find.ancestor(
+        of: settingsButton,
+        matching: find.byType(GestureDetector),
       );
-      expect(buttonWidget.onPressed, isNotNull);
+      expect(gestureDetector, findsOneWidget);
     });
 
     testWidgets('should have scrollable content', (tester) async {
