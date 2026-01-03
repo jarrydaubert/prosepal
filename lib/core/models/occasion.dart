@@ -73,6 +73,24 @@ enum Occasion {
     emoji: '💔',
     prompt: 'apologizing and expressing sincere regret',
     opacity: _OccasionOpacity.low,
+  ),
+  retirement(
+    label: 'Retirement',
+    emoji: '🏖️',
+    prompt: 'celebrating retirement and wishing well for the next chapter',
+    opacity: _OccasionOpacity.medium,
+  ),
+  housewarming(
+    label: 'New Home',
+    emoji: '🏠',
+    prompt: 'congratulating on a new home and wishing happiness there',
+    opacity: _OccasionOpacity.high,
+  ),
+  encouragement(
+    label: 'Encouragement',
+    emoji: '💪',
+    prompt: 'offering encouragement and support during a challenge',
+    opacity: _OccasionOpacity.low,
   );
 
   const Occasion({
