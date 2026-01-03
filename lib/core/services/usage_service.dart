@@ -24,7 +24,7 @@ class UsageService {
   static const _keyLastSyncUserId = 'last_sync_user_id';
 
   // Limits
-  static const int freeLifetimeLimit = 3;
+  static const int freeLifetimeLimit = 1;
   static const int proMonthlyLimit = 500;
 
   // Supabase table and columns

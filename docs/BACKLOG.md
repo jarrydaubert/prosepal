@@ -9,6 +9,7 @@
 | Item | Action Required |
 |------|-----------------|
 | **App Store ID for reviews** | Add to `_rateApp()` in settings_screen.dart after app goes live |
+| **IAP Products** | Submit for review in App Store Connect |
 
 ---
 
@@ -17,9 +18,20 @@
 | Priority | Item | Effort | Impact |
 |----------|------|--------|--------|
 | **P0** | **App Store ID for reviews** | Low | Post-approval |
+| **P0** | **Submit IAP products** | Low | Required for launch |
 | P1 | Bold styling refactor (paywall remaining) | Low | High |
 | P2 | GenUI SDK exploration | Medium | High |
 | P4 | Dark mode support | High | Medium |
+
+---
+
+## ✅ Recently Completed (Jan 2026)
+
+- [x] Production logging (Firebase Crashlytics) for AI, subscriptions, auth
+- [x] User diagnostic reports (Settings > Feedback > View report)
+- [x] HarmBlockMethod fix for Google AI compatibility
+- [x] Launch checklist with pricing analysis & scaling costs
+- [x] Emergency playbook for rate limits/outages
 
 ---
 

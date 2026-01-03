@@ -42,7 +42,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
 
     if (result == null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        context.go('/');
+        context.go('/home');
       });
       return const SizedBox.shrink();
     }
@@ -65,7 +65,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
             leading: _CloseButton(
               onPressed: () {
                 resetGenerationForm(ref);
-                context.go('/');
+                context.go('/home');
               },
             ),
           ),
@@ -121,7 +121,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                           icon: Icons.refresh,
                           onPressed: () {
                             resetGenerationForm(ref);
-                            context.go('/');
+                            context.go('/home');
                           },
                         ),
                       ),

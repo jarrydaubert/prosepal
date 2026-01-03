@@ -13,7 +13,10 @@ import '../../core/services/biometric_service.dart';
 import '../../shared/theme/app_colors.dart';
 
 class AuthScreen extends ConsumerStatefulWidget {
-  const AuthScreen({super.key});
+  const AuthScreen({super.key, this.redirectTo});
+  
+  /// Optional route to navigate to after successful auth (e.g., 'paywall')
+  final String? redirectTo;
 
   @override
   ConsumerState<AuthScreen> createState() => _AuthScreenState();
@@ -39,6 +42,12 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
 
   Future<void> _navigateAfterAuth() async {
     if (!mounted) return;
+    
+    // If we have a redirect destination (e.g., from upgrade flow), go there
+    if (widget.redirectTo != null) {
+      context.go('/${widget.redirectTo}');
+      return;
+    }
     
     final biometricService = BiometricService.instance;
     final isSupported = await biometricService.isSupported;
@@ -109,6 +118,14 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    final isSmallScreen = size.width < 380;
+    
+    // Responsive sizing
+    final logoSize = size.width * 0.38; // ~38% of screen width
+    final titleSize = isSmallScreen ? 24.0 : 28.0;
+    final subtitleSize = isSmallScreen ? 15.0 : 16.0;
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
@@ -120,8 +137,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
 
               // App Logo with bold border container
               Container(
-                width: 160,
-                height: 160,
+                width: logoSize,
+                height: logoSize,
                 decoration: BoxDecoration(
                   color: AppColors.primaryLight,
                   borderRadius: BorderRadius.circular(40),
@@ -131,8 +148,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                   borderRadius: BorderRadius.circular(36),
                   child: Image.asset(
                     'assets/images/logo.png',
-                    width: 140,
-                    height: 140,
+                    width: logoSize - 20,
+                    height: logoSize - 20,
                   ),
                 ),
               )
@@ -140,14 +157,14 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                   .fadeIn(duration: 400.ms)
                   .scale(delay: 100.ms, curve: Curves.easeOutBack),
 
-              const SizedBox(height: 40),
+              const SizedBox(height: 32),
 
               // Title
-              const Text(
+              Text(
                 'Welcome to Prosepal',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontSize: 28,
+                  fontSize: titleSize,
                   fontWeight: FontWeight.bold,
                   color: AppColors.primary,
                 ),
@@ -163,7 +180,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                 'The right words, right now',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: subtitleSize,
                   color: Colors.grey[700],
                   height: 1.5,
                 ),

@@ -12,7 +12,7 @@ import '../features/generate/generate_screen.dart';
 import '../features/home/home_screen.dart';
 import '../features/onboarding/biometric_setup_screen.dart';
 import '../features/onboarding/onboarding_screen.dart';
-import '../features/paywall/paywall_screen.dart';
+import '../features/paywall/custom_paywall_screen.dart';
 import '../features/results/results_screen.dart';
 import '../features/settings/feedback_screen.dart';
 import '../features/settings/legal_screen.dart';
@@ -33,7 +33,10 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/auth',
       name: 'auth',
-      builder: (context, state) => const AuthScreen(),
+      builder: (context, state) {
+        final redirectTo = state.uri.queryParameters['redirect'];
+        return AuthScreen(redirectTo: redirectTo);
+      },
     ),
     GoRoute(
       path: '/auth/email',
@@ -68,7 +71,7 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/paywall',
       name: 'paywall',
-      builder: (context, state) => const PaywallScreen(),
+      builder: (context, state) => const CustomPaywallScreen(),
     ),
     GoRoute(
       path: '/settings',
@@ -121,11 +124,12 @@ class _SplashScreenState extends ConsumerState<_SplashScreen> {
 
     if (!hasCompletedOnboarding) {
       context.go('/onboarding');
-    } else if (!isLoggedIn) {
-      context.go('/auth');
-    } else if (biometricsEnabled) {
+    } else if (isLoggedIn && biometricsEnabled) {
+      // Only show lock screen for logged-in users with biometrics enabled
       context.go('/lock');
     } else {
+      // Allow anonymous users to use the app (free token)
+      // Auth is only required when they exhaust free token or want to purchase
       context.go('/home');
     }
   }

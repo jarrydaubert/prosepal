@@ -36,7 +36,7 @@ const _onboardingPages = [
   ),
   OnboardingPageData(
     emoji: '🎉',
-    title: 'Try 3 Free\nMessages',
+    title: 'Try 1 Free\nMessage',
     subtitle:
         "No account needed to start. Standing in the card aisle? We've got you.",
   ),
@@ -68,7 +68,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   Future<void> _completeOnboarding() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('hasCompletedOnboarding', true);
-    if (mounted) context.go('/auth');
+    // Go straight to home - honor "No account needed" promise
+    // Auth is only required when user exhausts free token or wants to purchase
+    if (mounted) context.go('/home');
   }
 
   @override
@@ -253,6 +255,15 @@ class _OnboardingPageWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    final isSmallScreen = size.width < 380;
+    
+    // Responsive sizing
+    final emojiContainerSize = size.width * 0.45; // ~45% of screen width
+    final emojiSize = emojiContainerSize * 0.4;
+    final titleSize = isSmallScreen ? 24.0 : 28.0;
+    final subtitleSize = isSmallScreen ? 15.0 : 16.0;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 40),
       child: Column(
@@ -260,8 +271,8 @@ class _OnboardingPageWidget extends StatelessWidget {
         children: [
           // Large emoji with bold border container
           Container(
-            width: 200,
-            height: 200,
+            width: emojiContainerSize,
+            height: emojiContainerSize,
             decoration: BoxDecoration(
               color: AppColors.primaryLight,
               borderRadius: BorderRadius.circular(32),
@@ -270,7 +281,7 @@ class _OnboardingPageWidget extends StatelessWidget {
             child: Center(
               child: Text(
                 page.emoji,
-                style: const TextStyle(fontSize: 80),
+                style: TextStyle(fontSize: emojiSize),
               ),
             ),
           )
@@ -278,14 +289,14 @@ class _OnboardingPageWidget extends StatelessWidget {
               .fadeIn(duration: 400.ms)
               .scale(delay: 100.ms, curve: Curves.easeOutBack),
 
-          const SizedBox(height: 60),
+          const SizedBox(height: 48),
 
           // Title
           Text(
             page.title,
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 28,
+            style: TextStyle(
+              fontSize: titleSize,
               fontWeight: FontWeight.bold,
               color: AppColors.primary,
             ),
@@ -294,14 +305,14 @@ class _OnboardingPageWidget extends StatelessWidget {
               .fadeIn(delay: 300.ms)
               .slideY(begin: 0.2, end: 0),
 
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
 
           // Description
           Text(
             page.subtitle,
             textAlign: TextAlign.center,
             style: TextStyle(
-              fontSize: 16,
+              fontSize: subtitleSize,
               color: Colors.grey[700],
               height: 1.5,
             ),

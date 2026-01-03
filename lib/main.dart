@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:firebase_app_check/firebase_app_check.dart'; // Required for AppleProvider/AndroidProvider enums
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -15,8 +16,8 @@ import 'core/services/apple_auth_provider.dart';
 import 'core/services/auth_service.dart';
 import 'core/services/google_auth_provider.dart';
 import 'core/services/review_service.dart';
-import 'core/services/supabase_auth_provider.dart';
 import 'core/services/subscription_service.dart';
+import 'core/services/supabase_auth_provider.dart';
 import 'firebase_options.dart';
 
 void main() async {
@@ -46,6 +47,14 @@ void main() async {
   } catch (e) {
     debugPrint('Firebase initialization failed: $e');
   }
+
+  // Activate Firebase App Check
+  // Force real App Attest on iOS (debug provider is flaky on physical devices)
+  // Real attestation works reliably in both debug and release builds
+  await FirebaseAppCheck.instance.activate(
+    androidProvider: AndroidProvider.playIntegrity,
+    appleProvider: AppleProvider.appAttest,
+  );
 
   // Initialize Supabase
   try {

@@ -394,7 +394,7 @@ packages:
     source: hosted
     version: "0.6.1+1"
   firebase_app_check:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: firebase_app_check
       sha256: f4e6edfbdf178af7004589c52975a04c8f79ca8118e13bfd54ed2fca64271ba6
@@ -1099,18 +1099,18 @@ packages:
     dependency: "direct main"
     description:
       name: purchases_flutter
-      sha256: "0a8ce3855dacb8c28e1e8de99cfe5592be2cb350c1210259d6fa4d9d0b152f89"
+      sha256: "3e7d7ac44a0656f3758cfc96221f58b123d1c595ff575eec9e0d2f98f8810f40"
       url: "https://pub.dev"
     source: hosted
-    version: "9.10.2"
+    version: "9.10.3"
   purchases_ui_flutter:
     dependency: "direct main"
     description:
       name: purchases_ui_flutter
-      sha256: cb9eac034536fa2c62beb0c4a9e921a09e505ee7fbe304370a6764044ed9aef2
+      sha256: "56be1865b87a358b74bce78143a97cd42be69470627d4bc07ee2fdfa9ac54d84"
       url: "https://pub.dev"
     source: hosted
-    version: "9.10.2"
+    version: "9.10.3"
   realtime_client:
     dependency: transitive
     description:

@@ -55,12 +55,17 @@ class _ProsepalAppState extends ConsumerState<ProsepalApp>
             .identifyUser(session.user.id);
         // Sync usage from server (restores usage after reinstall)
         await ref.read(usageServiceProvider).syncFromServer();
-        // Navigate to home
-        appRouter.go('/home');
+        // Note: Navigation is handled by AuthScreen._navigateAfterAuth()
+        // This listener handles deep link / magic link callbacks when app is backgrounded
+        final currentPath = appRouter.routerDelegate.currentConfiguration.fullPath;
+        if (!currentPath.startsWith('/auth')) {
+          appRouter.go('/home');
+        }
       } else if (event == AuthChangeEvent.signedOut) {
         // Clear sync marker so next user gets fresh sync
         await ref.read(usageServiceProvider).clearSyncMarker();
-        appRouter.go('/auth');
+        // Go to home - anonymous users can still use free token
+        appRouter.go('/home');
       }
     });
   }
