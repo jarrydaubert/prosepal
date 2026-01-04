@@ -69,14 +69,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   Future<void> _toggleBiometrics(bool value) async {
+    debugPrint('Biometrics toggle: $value');
     if (value) {
+      debugPrint('Authenticating to enable biometrics...');
       final result = await _biometricService.authenticate(
         reason: 'Authenticate to enable $_biometricType',
       );
+      debugPrint('Biometrics auth result: ${result.success}');
       if (!result.success) return;
     }
 
     await _biometricService.setEnabled(value);
+    debugPrint('Biometrics enabled set to: $value');
     setState(() => _biometricsEnabled = value);
   }
 
@@ -153,9 +157,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
 
     if (confirm ?? false) {
-      await ref.read(subscriptionServiceProvider).logOut();
-      await ref.read(authServiceProvider).signOut();
-      if (mounted) context.go('/auth');
+      // Only log out of RevenueCat if user is authenticated (not anonymous)
+      final authService = ref.read(authServiceProvider);
+      if (authService.currentUser != null) {
+        try {
+          await ref.read(subscriptionServiceProvider).logOut();
+        } catch (e) {
+          // Ignore RevenueCat logout errors for anonymous users
+          debugPrint('RevenueCat logout skipped (anonymous user)');
+        }
+      }
+      await authService.signOut();
+      if (mounted) context.go('/home');
     }
   }
 
@@ -225,9 +238,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
 
     if (finalConfirm ?? false) {
-      await ref.read(subscriptionServiceProvider).logOut();
-      await ref.read(authServiceProvider).deleteAccount();
-      if (mounted) context.go('/auth');
+      // Only log out of RevenueCat if user is authenticated
+      final authService = ref.read(authServiceProvider);
+      if (authService.currentUser != null) {
+        try {
+          await ref.read(subscriptionServiceProvider).logOut();
+        } catch (e) {
+          debugPrint('RevenueCat logout skipped during delete');
+        }
+      }
+      await authService.deleteAccount();
+      if (mounted) context.go('/home');
     }
   }
 
@@ -262,7 +283,22 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
           // Account section
           const SectionHeader('Account'),
-          _AccountCard(userName: userName, userEmail: userEmail, isPro: isPro),
+          if (userEmail != null)
+            _AccountCard(userName: userName, userEmail: userEmail, isPro: isPro)
+          else
+            SettingsTile(
+              leading: const Icon(
+                Icons.person_add_outlined,
+                color: AppColors.primary,
+              ),
+              title: 'Sign In / Create Account',
+              subtitle: 'Sync your messages across devices',
+              trailing: const Icon(
+                Icons.chevron_right,
+                color: AppColors.textSecondary,
+              ),
+              onTap: () => context.push('/auth'),
+            ),
           const SizedBox(height: 20),
 
           // Subscription section
@@ -389,24 +425,26 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             onTap: () => context.pushNamed('privacy'),
           ),
 
-          // Account actions
-          const SectionHeader('Account Actions'),
-          SettingsTile(
-            leading: const Icon(Icons.logout_rounded, color: AppColors.error),
-            title: 'Sign Out',
-            titleColor: AppColors.error,
-            onTap: _signOut,
-          ),
-          SettingsTile(
-            leading: const Icon(
-              Icons.delete_forever_rounded,
-              color: AppColors.error,
+          // Account actions (only show if signed in)
+          if (userEmail != null) ...[
+            const SectionHeader('Account Actions'),
+            SettingsTile(
+              leading: const Icon(Icons.logout_rounded, color: AppColors.error),
+              title: 'Sign Out',
+              titleColor: AppColors.error,
+              onTap: _signOut,
             ),
-            title: 'Delete Account',
-            titleColor: AppColors.error,
-            subtitle: 'Permanently delete your account and data',
-            onTap: _deleteAccount,
-          ),
+            SettingsTile(
+              leading: const Icon(
+                Icons.delete_forever_rounded,
+                color: AppColors.error,
+              ),
+              title: 'Delete Account',
+              titleColor: AppColors.error,
+              subtitle: 'Permanently delete your account and data',
+              onTap: _deleteAccount,
+            ),
+          ],
 
           // App info footer
           const SizedBox(height: 32),

@@ -92,7 +92,11 @@ class CustomerInfoNotifier extends StateNotifier<CustomerInfo?> {
 
   void _updateCustomerInfo(CustomerInfo info) {
     final hasPro = info.entitlements.active.containsKey('pro');
+    final activeEntitlements = info.entitlements.active.keys.toList();
+    final allEntitlements = info.entitlements.all.keys.toList();
     debugPrint('CustomerInfoNotifier: updated, hasPro=$hasPro');
+    debugPrint('CustomerInfoNotifier: active entitlements=$activeEntitlements');
+    debugPrint('CustomerInfoNotifier: all entitlements=$allEntitlements');
     state = info;
   }
 

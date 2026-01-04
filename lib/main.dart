@@ -100,8 +100,7 @@ void main() async {
         sharedPreferencesProvider.overrideWithValue(prefs),
         subscriptionServiceProvider.overrideWithValue(subscriptionService),
         authServiceProvider.overrideWithValue(authService),
-        // Initialize pro status from RevenueCat
-        isProProvider.overrideWith((ref) => initialProStatus),
+        // Note: isProProvider now derives from customerInfoProvider reactively
       ],
       child: const ProsepalApp(),
     ),

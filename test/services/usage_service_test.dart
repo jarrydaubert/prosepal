@@ -16,13 +16,13 @@ void main() {
       expect(usageService.getTotalCount(), equals(0));
     });
 
-    test('should start with 3 remaining free generations', () {
-      expect(usageService.getRemainingFree(), equals(3));
+    test('should start with 1 remaining free generation', () {
+      expect(usageService.getRemainingFree(), equals(1));
     });
 
     test('should decrement remaining after recording generation', () async {
       await usageService.recordGeneration();
-      expect(usageService.getRemainingFree(), equals(2));
+      expect(usageService.getRemainingFree(), equals(0));
     });
 
     test('should increment total count after recording generation', () async {
@@ -34,8 +34,6 @@ void main() {
       'should return false for canGenerateFree when free limit reached',
       () async {
         await usageService.recordGeneration();
-        await usageService.recordGeneration();
-        await usageService.recordGeneration();
         expect(usageService.canGenerateFree(), equals(false));
       },
     );
@@ -43,8 +41,6 @@ void main() {
     test(
       'should return true for canGeneratePro when under monthly limit',
       () async {
-        await usageService.recordGeneration();
-        await usageService.recordGeneration();
         await usageService.recordGeneration();
         expect(usageService.canGeneratePro(), equals(true));
       },
@@ -82,7 +78,7 @@ void main() {
     });
 
     test('constants should have correct values', () {
-      expect(UsageService.freeLifetimeLimit, equals(3));
+      expect(UsageService.freeLifetimeLimit, equals(1));
       expect(UsageService.proMonthlyLimit, equals(500));
     });
   });

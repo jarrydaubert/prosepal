@@ -161,7 +161,9 @@ class AiService {
     );
 
     return _executeWithRetry(() async {
+      Log.info('AI calling generateContent...');
       final response = await model.generateContent([Content.text(prompt)]);
+      Log.info('AI response received');
 
       // Check for blocked content
       if (response.promptFeedback?.blockReason case final reason?) {
@@ -174,6 +176,8 @@ class AiService {
       }
 
       final jsonText = response.text;
+      Log.info('AI raw response length: ${jsonText?.length ?? 0}');
+      Log.info('AI raw response: $jsonText');
       if (jsonText == null || jsonText.isEmpty) {
         throw const AiEmptyResponseException(
           'The AI model returned an empty response. Please try again.',
@@ -182,6 +186,7 @@ class AiService {
       }
 
       // Parse structured JSON response
+      Log.info('AI parsing JSON response...');
       final messages = _parseJsonResponse(
         jsonText,
         occasion: occasion,
@@ -191,6 +196,7 @@ class AiService {
         personalDetails: personalDetails,
       );
 
+      Log.info('AI parsed ${messages.length} messages');
       if (messages.isEmpty) {
         Log.warning('AI returned no messages');
         throw const AiEmptyResponseException(

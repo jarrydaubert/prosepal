@@ -14,11 +14,20 @@ enum _OccasionOpacity {
 }
 
 enum Occasion {
+  // ============================================================
+  // CORE OCCASIONS (Most common, evergreen)
+  // ============================================================
   birthday(
     label: 'Birthday',
     emoji: '🎂',
     prompt: 'birthday celebration',
     opacity: _OccasionOpacity.low,
+  ),
+  kidsBirthday(
+    label: "Kid's Birthday",
+    emoji: '🎈',
+    prompt: 'fun, child-appropriate birthday celebration for a young child',
+    opacity: _OccasionOpacity.medium,
   ),
   thankYou(
     label: 'Thank You',
@@ -37,6 +46,12 @@ enum Occasion {
     emoji: '💒',
     prompt: 'wedding celebration and marriage',
     opacity: _OccasionOpacity.low,
+  ),
+  engagement(
+    label: 'Engagement',
+    emoji: '💍',
+    prompt: 'congratulating on an engagement',
+    opacity: _OccasionOpacity.high,
   ),
   graduation(
     label: 'Graduation',
@@ -91,6 +106,176 @@ enum Occasion {
     emoji: '💪',
     prompt: 'offering encouragement and support during a challenge',
     opacity: _OccasionOpacity.low,
+  ),
+  thinkingOfYou(
+    label: 'Thinking of You',
+    emoji: '🤗',
+    prompt: 'sending warm thoughts and letting someone know you care',
+    opacity: _OccasionOpacity.medium,
+  ),
+  justBecause(
+    label: 'Just Because',
+    emoji: '💝',
+    prompt: 'sending love, appreciation, or a smile just because',
+    opacity: _OccasionOpacity.high,
+  ),
+
+  // ============================================================
+  // HOLIDAYS (Major seasonal occasions)
+  // ============================================================
+  mothersDay(
+    label: "Mother's Day",
+    emoji: '👩‍👧‍👦',
+    prompt: "celebrating and appreciating a mother on Mother's Day",
+    opacity: _OccasionOpacity.medium,
+  ),
+  fathersDay(
+    label: "Father's Day",
+    emoji: '👨‍👧‍👦',
+    prompt: "celebrating and appreciating a father on Father's Day",
+    opacity: _OccasionOpacity.low,
+  ),
+  valentinesDay(
+    label: "Valentine's Day",
+    emoji: '❤️',
+    prompt: "expressing romantic love on Valentine's Day",
+    opacity: _OccasionOpacity.high,
+  ),
+  christmas(
+    label: 'Christmas',
+    emoji: '🎄',
+    prompt: 'warm holiday wishes for Christmas',
+    opacity: _OccasionOpacity.low,
+  ),
+  thanksgiving(
+    label: 'Thanksgiving',
+    emoji: '🦃',
+    prompt: 'giving thanks and warm wishes for Thanksgiving',
+    opacity: _OccasionOpacity.medium,
+  ),
+  easter(
+    label: 'Easter',
+    emoji: '🥚',
+    prompt: 'warm Easter wishes and spring celebration',
+    opacity: _OccasionOpacity.high,
+  ),
+  halloween(
+    label: 'Halloween',
+    emoji: '🎃',
+    prompt: 'fun Halloween greetings and spooky wishes',
+    opacity: _OccasionOpacity.low,
+  ),
+  newYear(
+    label: 'New Year',
+    emoji: '🎆',
+    prompt: 'New Year wishes for happiness and success',
+    opacity: _OccasionOpacity.medium,
+  ),
+
+  // ============================================================
+  // CULTURAL/RELIGIOUS HOLIDAYS (Inclusive)
+  // ============================================================
+  hanukkah(
+    label: 'Hanukkah',
+    emoji: '🕎',
+    prompt: 'warm wishes for Hanukkah and the Festival of Lights',
+    opacity: _OccasionOpacity.high,
+  ),
+  diwali(
+    label: 'Diwali',
+    emoji: '🪔',
+    prompt: 'celebrating Diwali, the festival of lights and new beginnings',
+    opacity: _OccasionOpacity.low,
+  ),
+  eid(
+    label: 'Eid',
+    emoji: '🌙',
+    prompt: 'warm Eid wishes for joy, peace, and celebration',
+    opacity: _OccasionOpacity.medium,
+  ),
+  lunarNewYear(
+    label: 'Lunar New Year',
+    emoji: '🧧',
+    prompt: 'celebrating Lunar New Year with prosperity and good fortune',
+    opacity: _OccasionOpacity.high,
+  ),
+  kwanzaa(
+    label: 'Kwanzaa',
+    emoji: '🕯️',
+    prompt: 'honoring Kwanzaa principles of unity, creativity, and faith',
+    opacity: _OccasionOpacity.low,
+  ),
+
+  // ============================================================
+  // CAREER & MILESTONES
+  // ============================================================
+  newJob(
+    label: 'New Job',
+    emoji: '💼',
+    prompt: 'congratulating on a new job or career move',
+    opacity: _OccasionOpacity.medium,
+  ),
+  promotion(
+    label: 'Promotion',
+    emoji: '📈',
+    prompt: 'congratulating on a job promotion',
+    opacity: _OccasionOpacity.high,
+  ),
+  farewell(
+    label: 'Farewell',
+    emoji: '👋',
+    prompt: 'saying goodbye or bon voyage',
+    opacity: _OccasionOpacity.low,
+  ),
+  goodLuck(
+    label: 'Good Luck',
+    emoji: '🤞',
+    prompt: 'wishing good luck for an upcoming event or challenge',
+    opacity: _OccasionOpacity.medium,
+  ),
+
+  // ============================================================
+  // APPRECIATION (Role-specific thanks)
+  // ============================================================
+  thankYouService(
+    label: 'Thank You for Service',
+    emoji: '🎖️',
+    prompt: 'thanking a veteran or service member for their sacrifice and service',
+    opacity: _OccasionOpacity.high,
+  ),
+  thankYouTeacher(
+    label: 'Thank You Teacher',
+    emoji: '🍎',
+    prompt: 'thanking a teacher for their dedication and impact on learning',
+    opacity: _OccasionOpacity.low,
+  ),
+  thankYouHealthcare(
+    label: 'Thank You Healthcare',
+    emoji: '🩺',
+    prompt: 'expressing gratitude to a nurse, doctor, or healthcare professional',
+    opacity: _OccasionOpacity.medium,
+  ),
+
+  // ============================================================
+  // PET OCCASIONS
+  // ============================================================
+  petBirthday(
+    label: 'Pet Birthday',
+    emoji: '🐶',
+    prompt: 'fun birthday celebration for a beloved pet',
+    opacity: _OccasionOpacity.high,
+  ),
+  newPet(
+    label: 'New Pet',
+    emoji: '🐕',
+    prompt: 'welcoming a new pet into the family',
+    opacity: _OccasionOpacity.low,
+  ),
+  petSympathy(
+    label: 'Pet Loss',
+    emoji: '🌈',
+    prompt: 'offering condolences for the loss of a beloved pet',
+    opacity: _OccasionOpacity.medium,
   );
 
   const Occasion({
