@@ -229,23 +229,153 @@ Log.info('Lock screen shown');
 
 ---
 
+## Journey 7: Reinstall (Anonymous) → Fresh State
+
+| # | Action | Expected | Log |
+|---|--------|----------|-----|
+| 1 | Delete app | - | - |
+| 2 | Reinstall | - | - |
+| 3 | Launch | Onboarding | `[INFO] Fresh install detected` |
+| 4 | Complete onboarding | Home | `[INFO] Onboarding completed` |
+| 5 | See 1 free remaining | Home | - |
+
+---
+
+## Journey 8: Reinstall (Pro) → Restore
+
+| # | Action | Expected | Log |
+|---|--------|----------|-----|
+| 1 | Delete app (was Pro) | - | - |
+| 2 | Reinstall + launch | Home (0 free) | - |
+| 3 | Sign in (same account) | Home | `[INFO] User signed in` |
+| 4 | RevenueCat restores | PRO badge | `[INFO] RevenueCat user identified` |
+| 5 | Usage synced | Server count | `[INFO] Usage restored from server` |
+
+---
+
+## Journey 9: Multiple Accounts
+
+| # | Action | Expected | Log |
+|---|--------|----------|-----|
+| 1 | Sign in Account A | Pro badge | `[INFO] User signed in` |
+| 2 | Generate message | Success | `[INFO] AI generation success` |
+| 3 | Sign out | Auth screen | `[INFO] User signed out` |
+| 4 | Sign in Account B | Free badge | `[INFO] User signed in` |
+| 5 | Usage isolated | B's count | `[INFO] Usage synced from server` |
+
+---
+
+## Journey 10: App Background/Resume
+
+| # | Action | Expected | Log |
+|---|--------|----------|-----|
+| 1 | Mid-wizard, background app | - | `[INFO] App backgrounded` |
+| 2 | Resume app | Lock (if bio) or wizard | `[INFO] App resumed` |
+| 3 | State preserved | Same step | - |
+| 4 | Complete wizard | Results | `[INFO] AI generation success` |
+
+---
+
+## Journey 11: Orientation Change
+
+| # | Action | Expected | Log |
+|---|--------|----------|-----|
+| 1 | Start wizard | Step 1 | - |
+| 2 | Rotate device | State preserved | - |
+| 3 | Complete wizard | Results | - |
+| 4 | Rotate on results | Cards reflow | - |
+
+---
+
+## v1.1 Journeys (Post-Launch)
+
+### Journey 12: Birthday Reminders
+
+| # | Action | Expected | Log |
+|---|--------|----------|-----|
+| 1 | Settings > Add Contact | Contact form | `[INFO] Contact form opened` |
+| 2 | Enter name + birthday | - | - |
+| 3 | Save contact | Contacts list | `[INFO] Contact saved` |
+| 4 | Day before birthday | Push notification | `[INFO] Reminder triggered` |
+| 5 | Tap notification | Generate (prefilled) | `[INFO] Deep link opened` |
+
+**Edge Cases:**
+- Notification permission denied → Nudge in settings
+- Offline when reminder due → Queue locally
+
+---
+
+### Journey 13: Shareable Card Preview
+
+| # | Action | Expected | Log |
+|---|--------|----------|-----|
+| 1 | Generate messages | Results | - |
+| 2 | Tap Share as Card | Preview modal | `[INFO] Card preview opened` |
+| 3 | See message on card | Rendered image | - |
+| 4 | Tap Share | System sheet | `[INFO] Share initiated` |
+| 5 | Send via iMessage | Sent | `[INFO] Share completed` |
+
+**Edge Cases:**
+- No share permission → Fallback to copy text
+- Cancel share → Return to preview
+
+---
+
+### Journey 14: Photo Integration
+
+| # | Action | Expected | Log |
+|---|--------|----------|-----|
+| 1 | Wizard step 3 | Details input | - |
+| 2 | Tap Add Photo | Photo picker | `[INFO] Photo picker opened` |
+| 3 | Select photo | Thumbnail shown | `[INFO] Photo selected` |
+| 4 | Generate | AI uses photo | `[INFO] AI generation started` |
+| 5 | Results | "I love this photo..." | `[INFO] AI generation success` |
+
+**Edge Cases:**
+- Permission denied → Explain why needed
+- Large image → Compress before upload
+- No photo → Normal generation
+
+---
+
+## Edge Cases (All Journeys)
+
+### Performance
+| Case | Expected | Test |
+|------|----------|------|
+| Slow network (>5s) | Loading indicator stays | F7.1 |
+| Generation timeout (30s) | Error message | AIErr.* |
+| Large details (>500 chars) | Truncation warning | - |
+
+### Platform
+| Case | Expected | Test |
+|------|----------|------|
+| iOS low battery | Normal operation | Manual |
+| Do Not Disturb | Notifications queued | Manual |
+| App kill mid-generation | Resume from home | F7.1 |
+
+### Abuse Prevention
+| Case | Expected | Test |
+|------|----------|------|
+| Rapid generate taps | Debounced | F7.1 |
+| Anonymous reinstall abuse | New free token (acceptable) | J7 |
+| Pro limit (500/mo) | Soft block + message | - |
+
+---
+
 ## Action Items
 
-### 1. Add Missing Logs
-- [ ] biometric_service.dart - enable/disable/auth events
-- [ ] auth_service.dart - sign in/out/delete events
-- [ ] onboarding_screen.dart - started/completed
-- [ ] lock_screen.dart - shown/auth events
-- [ ] generate_screen.dart - wizard started
-- [ ] results_screen.dart - copy/share events
-- [ ] home_screen.dart - occasion selected
+### P0: Pre-Launch
+- [ ] Add missing logs (biometric, auth, screens)
+- [ ] Verify all Journey 1-6 logs fire correctly
+- [ ] Manual test Journey 4 (biometrics) on device
 
-### 2. Add Log Verification Tests
-- [ ] Create `test/services/log_coverage_test.dart`
-- [ ] Verify each journey produces expected logs
-- [ ] Mock Log service, assert calls
+### P1: Post-Launch Prep
+- [ ] Design Journey 12-14 (reminders, share, photo)
+- [ ] Add log events for v1.1 features
+- [ ] Create golden path tests F17-F20
 
-### 3. Add Biometric Journey Tests
-- [ ] Golden path: F15 - Biometric enable/disable
-- [ ] Golden path: F16 - Lock screen auth
-- [ ] Scenario: Biometric.* group
+### P2: Future
+- [ ] Log verification test suite
+- [ ] Performance baseline tests
+- [ ] Localization journey (when ready)
