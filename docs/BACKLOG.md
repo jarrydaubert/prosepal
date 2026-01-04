@@ -23,6 +23,42 @@
 
 ---
 
+## Testing
+
+> See `TESTING.md` for flows, edge cases, known issues. Scenarios drive automation tests.
+
+### Automated Test Coverage
+
+| Flow | Test File | Status |
+|------|-----------|--------|
+| Fresh install (anonymous) | `scenario_tests.dart` | Covered |
+| Upgrade path | `scenario_tests.dart` | Covered |
+| Reinstall (Pro restore) | `scenario_tests.dart` | Covered |
+| Multi-device sync | `scenario_tests.dart` | Covered |
+| AI generation + truncation | `scenario_tests.dart` | Covered |
+| Payment edge cases | `scenario_tests.dart` | Covered |
+| Auth edge cases | `scenario_tests.dart` | Covered |
+| Settings screen | `scenario_tests.dart` | Covered |
+
+### Manual Tests Required (Real Device)
+
+| Test | Why Manual |
+|------|------------|
+| Apple/Google Sign In | OAuth requires real device |
+| Sandbox purchases | StoreKit sandbox |
+| Biometric lock/unlock | Hardware |
+| Magic link deep link | Email + URL scheme |
+
+### Known Issues to Fix
+
+| ID | Issue | Severity |
+|----|-------|----------|
+| L5 | User stuck after 3 failed biometrics | Medium |
+| R3 | Supabase session persists in Keychain | Low |
+| O1 | No offline banner | Low |
+
+---
+
 ## v1.1 Post-Launch Features
 
 ### Birthday Reminders + Push Notifications

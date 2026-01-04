@@ -1,6 +1,10 @@
 # Testing
 
-## User Flows
+> Flows and edge cases here drive `integration_test/scenario_tests.dart`
+
+---
+
+## User Flows (Automated)
 
 ### Flow 1: Fresh Install (Anonymous)
 ```
@@ -24,43 +28,54 @@ Sign in on Device B → identifyUser() → Pro synced
 
 ---
 
-## Edge Cases
+## Edge Cases (Automated)
 
 ### Payments
-- **Offline purchase**: StoreKit queues, completes when online
-- **Purchase interrupted**: StoreKit 2 auto-restores on relaunch
-- **Subscription expires**: RevenueCat listener updates Pro status
-- **Refund**: RevenueCat webhook revokes Pro
+- Offline purchase → StoreKit queues, completes when online
+- Purchase interrupted → StoreKit 2 auto-restores on relaunch
+- Subscription expires → RevenueCat listener updates Pro status
+- Refund → RevenueCat webhook revokes Pro
 
 ### Usage
-- **Free user generates offline**: Local decrement, syncs later
-- **Pro expires after using >1**: Remaining = 0
+- Free user generates offline → Local decrement, syncs later
+- Pro expires after using >1 → Remaining = 0
 
 ### Auth
-- **Session expires**: Supabase auto-refreshes JWT
-- **Face ID revoked**: Error handled, shows retry
+- Session expires → Supabase auto-refreshes JWT
+- Face ID revoked → Error handled, shows retry
 
 ---
 
 ## Known Issues
 
-| ID | Issue | Severity |
-|----|-------|----------|
-| L5 | User stuck after 3 failed biometrics | Medium |
-| R3 | Supabase session may persist in Keychain after reinstall | Low |
-| O1 | No offline banner | Low |
+| ID | Issue | Severity | Automated |
+|----|-------|----------|-----------|
+| L5 | User stuck after 3 failed biometrics | Medium | No |
+| R3 | Supabase session persists in Keychain after reinstall | Low | No |
+| O1 | No offline banner | Low | No |
 
 ---
 
-## Pre-Launch Manual Tests
+## Manual Tests (Real Device Only)
 
-| Test | Method |
-|------|--------|
-| Apple Sign In | Real device |
-| Google Sign In | Real device |
-| Magic link deep link | Real device + email |
-| Purchase → Pro unlocked | Sandbox account |
-| Restore purchases | Sandbox account |
-| AI generates 3 messages | Real device |
-| Biometric lock/unlock | Real device |
-| Delete account | Real device |
+| Test | Why Manual |
+|------|------------|
+| Apple Sign In | OAuth |
+| Google Sign In | OAuth |
+| Magic link deep link | Email + URL scheme |
+| Purchase → Pro unlocked | Sandbox StoreKit |
+| Restore purchases | Sandbox StoreKit |
+| AI generates 3 messages | Real Gemini API |
+| Biometric lock/unlock | Hardware |
+| Delete account | Destructive |
+
+---
+
+## Test Files
+
+| File | Purpose |
+|------|---------|
+| `test/**` | Unit/widget tests (mocked) |
+| `integration_test/scenario_tests.dart` | All flows + edge cases (Patrol) |
+| `integration_test/golden_path_test.dart` | Firebase Test Lab smoke tests |
+| `integration_test/simple_test.dart` | Basic sanity tests |
