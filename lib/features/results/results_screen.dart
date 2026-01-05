@@ -22,6 +22,7 @@ class ResultsScreen extends ConsumerStatefulWidget {
 class _ResultsScreenState extends ConsumerState<ResultsScreen> {
   int? _copiedIndex;
   late final ConfettiController _confettiController;
+  DateTime? _lastConfettiTime;
 
   @override
   void initState() {
@@ -90,7 +91,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                         index: index,
                         isCopied: _copiedIndex == index,
                         onCopy: () => _copyMessage(message.text, index),
-                        onShare: () => _shareMessage(message.text),
+                        onShare: () => _shareMessage(message.text, index),
                       )
                           .animate(key: ValueKey('msg_anim_$index'))
                           .fadeIn(
@@ -158,13 +159,28 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
     );
   }
 
+  bool get _reduceMotion =>
+      MediaQuery.of(context).disableAnimations;
+
+  void _playConfetti() {
+    if (_reduceMotion) return;
+    
+    final now = DateTime.now();
+    if (_lastConfettiTime != null &&
+        now.difference(_lastConfettiTime!).inMilliseconds < 1500) {
+      return; // Debounce: skip if played within last 1.5s
+    }
+    _lastConfettiTime = now;
+    _confettiController.play();
+  }
+
   Future<void> _copyMessage(String text, int index) async {
     Log.info('Message copied', {'option': index + 1});
     await Clipboard.setData(ClipboardData(text: text));
     HapticFeedback.mediumImpact();
     setState(() => _copiedIndex = index);
 
-    _confettiController.play();
+    _playConfetti();
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -204,9 +220,13 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
     }
   }
 
-  Future<void> _shareMessage(String text) async {
+  Future<void> _shareMessage(String text, int index) async {
+    Log.info('Message shared', {'option': index + 1});
     await SharePlus.instance.share(
-      ShareParams(text: text, subject: 'Message from Prosepal'),
+      ShareParams(
+        text: '$text\n\n— Created with Prosepal',
+        subject: 'Message from Prosepal',
+      ),
     );
   }
 }

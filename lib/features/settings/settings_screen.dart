@@ -63,7 +63,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           _appVersion = 'v${packageInfo.version} (${packageInfo.buildNumber})';
         });
       }
-    } catch (_) {
+    } catch (e) {
+      Log.warning('Failed to load app version', {'error': '$e'});
       if (mounted) {
         setState(() => _appVersion = 'v1.0.0');
       }
@@ -71,18 +72,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   Future<void> _toggleBiometrics(bool value) async {
-    debugPrint('Biometrics toggle: $value');
     if (value) {
-      debugPrint('Authenticating to enable biometrics...');
       final result = await _biometricService.authenticate(
         reason: 'Authenticate to enable $_biometricType',
       );
-      debugPrint('Biometrics auth result: ${result.success}');
       if (!result.success) return;
     }
 
     await _biometricService.setEnabled(value);
-    debugPrint('Biometrics enabled set to: $value');
     setState(() => _biometricsEnabled = value);
   }
 
@@ -106,6 +103,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
             backgroundColor: restored ? AppColors.success : null,
           ),
+        );
+      }
+    } catch (e) {
+      Log.warning('Restore purchases failed', {'error': '$e'});
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to restore purchases')),
         );
       }
     } finally {
@@ -180,7 +184,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           await ref.read(subscriptionServiceProvider).logOut();
         } catch (e) {
           // Ignore RevenueCat logout errors for anonymous users
-          debugPrint('RevenueCat logout skipped (anonymous user)');
+          Log.warning('RevenueCat logout skipped', {'reason': 'anonymous user'});
         }
       }
       await authService.signOut();
@@ -260,7 +264,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         try {
           await ref.read(subscriptionServiceProvider).logOut();
         } catch (e) {
-          debugPrint('RevenueCat logout skipped during delete');
+          Log.warning('RevenueCat logout skipped during delete', {'error': '$e'});
         }
       }
       await authService.deleteAccount();
@@ -539,7 +543,9 @@ class _AccountCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return Semantics(
+      label: 'Account: ${userName ?? userEmail ?? "User"}${isPro ? ", Pro subscriber" : ""}',
+      child: Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -635,6 +641,7 @@ class _AccountCard extends StatelessWidget {
           ),
         ],
       ),
+      ),
     );
   }
 }
@@ -678,7 +685,9 @@ class _StatsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return Semantics(
+      label: '$totalGenerated messages generated all time',
+      child: Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.primaryLight,
@@ -721,6 +730,7 @@ class _StatsCard extends StatelessWidget {
             ],
           ),
         ],
+      ),
       ),
     );
   }

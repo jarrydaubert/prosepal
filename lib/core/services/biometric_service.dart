@@ -103,7 +103,10 @@ class BiometricService implements IBiometricService {
       }
       return BiometricResult(success: success);
     } on LocalAuthException catch (e) {
-      Log.warning('Biometric auth error', {'code': e.code.name});
+      Log.warning('Biometric auth error', {
+        'code': e.code.name,
+        'message': e.description ?? 'unknown',
+      });
       // Handle specific errors with user-friendly messages
       switch (e.code) {
         case LocalAuthExceptionCode.noBiometricHardware:
@@ -150,7 +153,11 @@ class BiometricService implements IBiometricService {
                 e.description ?? 'Authentication failed. Please try again.',
           );
       }
-    } on PlatformException {
+    } on PlatformException catch (e) {
+      Log.warning('Biometric platform error', {
+        'code': e.code,
+        'message': e.message ?? 'unknown',
+      });
       return const BiometricResult(
         success: false,
         error: BiometricError.unknown,

@@ -38,12 +38,16 @@ class _ProBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        HapticFeedback.lightImpact();
-        onTap?.call();
-      },
-      child: Container(
+    return Semantics(
+      label: 'Pro subscription active',
+      button: onTap != null,
+      hint: onTap != null ? 'Double tap to manage subscription' : null,
+      child: GestureDetector(
+        onTap: () {
+          HapticFeedback.lightImpact();
+          onTap?.call();
+        },
+        child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
           color: AppColors.primaryLight,
@@ -86,6 +90,7 @@ class _ProBadge extends StatelessWidget {
             ],
           ],
         ),
+        ),
       ),
     );
   }
@@ -101,12 +106,18 @@ class _FreeUsageCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        HapticFeedback.lightImpact();
-        onUpgrade?.call();
-      },
-      child: Container(
+    return Semantics(
+      label: remaining > 0
+          ? '$remaining free messages remaining'
+          : 'Free trial ended',
+      button: true,
+      hint: 'Double tap to upgrade to Pro',
+      child: GestureDetector(
+        onTap: () {
+          HapticFeedback.lightImpact();
+          onUpgrade?.call();
+        },
+        child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Colors.white,
@@ -174,6 +185,7 @@ class _FreeUsageCard extends StatelessWidget {
               ),
             ),
           ],
+        ),
         ),
       ),
     );

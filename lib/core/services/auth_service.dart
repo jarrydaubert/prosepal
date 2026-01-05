@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -87,7 +87,7 @@ class AuthService implements IAuthService {
         );
       } catch (e) {
         // Non-fatal: sign-in will still work, just slower on first attempt
-        debugPrint('Google Sign-In pre-initialization failed: $e');
+        Log.warning('Google Sign-In pre-initialization failed', {'error': '$e'});
       }
     }
 
@@ -328,14 +328,13 @@ class AuthService implements IAuthService {
       // Call edge function to delete user (requires admin/service role)
       await _supabase.deleteUser();
       Log.info('Account deleted');
-    } catch (e) {
-      Log.error('Account deletion error', e);
-      if (kDebugMode) {
-        debugPrint('Account deletion error: $e');
-        debugPrint(
-          'Deploy the delete-user Edge Function in Supabase dashboard.',
-        );
-      }
+    } catch (e, stackTrace) {
+      Log.error(
+        'Account deletion failed - user may need to contact support',
+        e,
+        stackTrace,
+        {'hint': 'Ensure delete-user Edge Function is deployed in Supabase'},
+      );
       // Continue with sign-out even if deletion fails
       // User may need to contact support for full deletion
     }

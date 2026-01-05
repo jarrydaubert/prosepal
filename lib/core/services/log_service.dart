@@ -98,9 +98,11 @@ abstract final class Log {
   /// Get recent logs as exportable string (for user support)
   /// Privacy-safe: Only contains app actions, no PII
   static String getExportableLog() {
+    final now = DateTime.now();
     final buffer = StringBuffer();
     buffer.writeln('=== Prosepal Debug Log ===');
-    buffer.writeln('Exported: ${DateTime.now().toIso8601String()}');
+    buffer.writeln('Exported: ${now.toUtc().toIso8601String()} (UTC)');
+    buffer.writeln('Timezone: UTC${now.timeZoneOffset.isNegative ? "" : "+"}${now.timeZoneOffset.inHours}');
     buffer.writeln('Entries: ${_buffer.length}');
     buffer.writeln('');
 
