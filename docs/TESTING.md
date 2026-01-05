@@ -1,6 +1,6 @@
 # Testing
 
-> Flows and edge cases here drive `integration_test/scenario_tests.dart`
+> Flows and edge cases here drive `integration_test/app_test.dart` (mocked Patrol tests)
 
 ---
 
@@ -75,7 +75,8 @@ Sign in on Device B → identifyUser() → Pro synced
 
 | File | Purpose |
 |------|---------|
-| `test/**` | Unit/widget tests (mocked) |
-| `integration_test/scenario_tests.dart` | All flows + edge cases (Patrol) |
-| `integration_test/golden_path_test.dart` | Firebase Test Lab smoke tests |
-| `integration_test/simple_test.dart` | Basic sanity tests |
+| `test/**` | Unit/widget tests (427 tests, mocked) |
+| `integration_test/app_test.dart` | Mocked Patrol tests (52 tests) |
+| `integration_test/e2e_test.dart` | Firebase Test Lab entry point |
+| `integration_test/journeys/` | Modular journey tests (j1-j10, 75 tests) |
+| `integration_test/coverage/` | Exhaustive option coverage (66 tests) |
