@@ -35,6 +35,9 @@ import 'journeys/j4_settings_test.dart' as j4;
 import 'journeys/j5_navigation_test.dart' as j5;
 import 'journeys/j6_error_resilience_test.dart' as j6;
 import 'journeys/j7_restore_flow_test.dart' as j7;
+import 'journeys/j8_paywall_test.dart' as j8;
+import 'journeys/j9_wizard_details_test.dart' as j9;
+import 'journeys/j10_results_actions_test.dart' as j10;
 
 // Coverage tests
 import 'coverage/occasions_test.dart' as occasions;
@@ -50,6 +53,9 @@ void main() {
   j5.main(); // Navigation
   j6.main(); // Error Resilience
   j7.main(); // Restore Flow
+  j8.main(); // Paywall
+  j9.main(); // Wizard Details & Customization
+  j10.main(); // Results Actions
 
   // Coverage tests (all options work)
   occasions.main();
