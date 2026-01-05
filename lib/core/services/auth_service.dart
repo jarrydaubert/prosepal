@@ -9,6 +9,7 @@ import '../interfaces/apple_auth_provider.dart';
 import '../interfaces/auth_interface.dart';
 import '../interfaces/google_auth_provider.dart';
 import '../interfaces/supabase_auth_provider.dart';
+import 'log_service.dart';
 
 // ===========================================================================
 // Google OAuth Client IDs - configured in Google Cloud Console
@@ -151,6 +152,8 @@ class AuthService implements IAuthService {
 
   @override
   Future<AuthResponse> signInWithApple() async {
+    Log.info('Sign in started', {'provider': 'apple'});
+    
     // Check platform availability first
     if (!await _apple.isAvailable()) {
       throw const AuthException(
@@ -176,22 +179,29 @@ class AuthService implements IAuthService {
         throw const AuthException('Apple Sign In failed: No identity token');
       }
 
-      return await _supabase.signInWithIdToken(
+      final response = await _supabase.signInWithIdToken(
         provider: OAuthProvider.apple,
         idToken: idToken,
         nonce: rawNonce,
       );
+      
+      Log.info('User signed in', {'provider': 'apple'});
+      return response;
     } on SignInWithAppleAuthorizationException catch (e) {
       // User cancelled or authorization failed
       if (e.code == AuthorizationErrorCode.canceled) {
+        Log.info('Sign in cancelled', {'provider': 'apple'});
         throw const AuthException('Apple Sign In cancelled');
       }
+      Log.warning('Sign in failed', {'provider': 'apple', 'error': e.message});
       throw AuthException('Apple Sign In failed: ${e.message}');
     }
   }
 
   @override
   Future<AuthResponse> signInWithGoogle() async {
+    Log.info('Sign in started', {'provider': 'google'});
+    
     // Check platform availability first
     if (!await _google.isAvailable()) {
       throw const AuthException(
@@ -215,19 +225,24 @@ class AuthService implements IAuthService {
 
     // User cancelled sign-in (authenticate returns null on cancel)
     if (result == null) {
+      Log.info('Sign in cancelled', {'provider': 'google'});
       throw const AuthException('Google Sign In cancelled');
     }
 
     final idToken = result.idToken;
     if (idToken == null) {
+      Log.warning('Sign in failed', {'provider': 'google', 'error': 'No ID token'});
       throw const AuthException('Google Sign In failed: No ID token');
     }
 
-    return _supabase.signInWithIdToken(
+    final response = await _supabase.signInWithIdToken(
       provider: OAuthProvider.google,
       idToken: idToken,
       accessToken: result.accessToken,
     );
+    
+    Log.info('User signed in', {'provider': 'google'});
+    return response;
   }
 
   // ===========================================================================
@@ -288,6 +303,8 @@ class AuthService implements IAuthService {
 
   @override
   Future<void> signOut() async {
+    Log.info('Sign out initiated');
+    
     // Also sign out from Google to clear cached credentials
     try {
       await _google.signOut();
@@ -296,17 +313,23 @@ class AuthService implements IAuthService {
     }
 
     await _supabase.signOut();
+    Log.info('User signed out');
+    Log.clearBuffer(); // Clear logs on sign out for privacy
   }
 
   @override
   Future<void> deleteAccount() async {
+    Log.info('Delete account initiated');
+    
     final user = currentUser;
     if (user == null) return;
 
     try {
       // Call edge function to delete user (requires admin/service role)
       await _supabase.deleteUser();
+      Log.info('Account deleted');
     } catch (e) {
+      Log.error('Account deletion error', e);
       if (kDebugMode) {
         debugPrint('Account deletion error: $e');
         debugPrint(
@@ -325,5 +348,6 @@ class AuthService implements IAuthService {
     }
 
     await _supabase.signOut();
+    Log.clearBuffer(); // Clear logs for privacy
   }
 }

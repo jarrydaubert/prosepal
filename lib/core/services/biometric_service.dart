@@ -3,6 +3,7 @@ import 'package:local_auth/local_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../interfaces/biometric_interface.dart';
+import 'log_service.dart';
 
 /// Result of biometric authentication attempt
 class BiometricResult {
@@ -82,19 +83,27 @@ class BiometricService implements IBiometricService {
 
   @override
   Future<void> setEnabled(bool enabled) async {
+    Log.info(enabled ? 'Biometrics enabled' : 'Biometrics disabled');
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_biometricsEnabledKey, enabled);
   }
 
   @override
   Future<BiometricResult> authenticate({String? reason}) async {
+    Log.info('Biometric auth started');
     try {
       final success = await _auth.authenticate(
         localizedReason: reason ?? 'Authenticate to access Prosepal',
         persistAcrossBackgrounding: true, // Resume prompt if app backgrounds
       );
+      if (success) {
+        Log.info('Biometric auth success');
+      } else {
+        Log.warning('Biometric auth failed');
+      }
       return BiometricResult(success: success);
     } on LocalAuthException catch (e) {
+      Log.warning('Biometric auth error', {'code': e.code.name});
       // Handle specific errors with user-friendly messages
       switch (e.code) {
         case LocalAuthExceptionCode.noBiometricHardware:

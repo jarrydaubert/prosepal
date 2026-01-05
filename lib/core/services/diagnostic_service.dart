@@ -118,6 +118,18 @@ abstract final class DiagnosticService {
     buffer.writeln(errorLog);
     buffer.writeln();
 
+    // User action breadcrumbs (last 50 actions)
+    buffer.writeln('--- Recent Actions ---');
+    final breadcrumbs = Log.getRecentBreadcrumbs(count: 50);
+    if (breadcrumbs.isEmpty) {
+      buffer.writeln('No actions recorded');
+    } else {
+      for (final crumb in breadcrumbs) {
+        buffer.writeln(crumb);
+      }
+    }
+    buffer.writeln();
+
     // Footer
     buffer.writeln('=== End of Report ===');
     buffer.writeln();
