@@ -8,14 +8,22 @@ import 'package:prosepal/core/models/models.dart';
 import 'package:prosepal/core/providers/providers.dart';
 import 'package:prosepal/features/home/home_screen.dart';
 
+import '../../mocks/mock_auth_service.dart';
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   late SharedPreferences mockPrefs;
+  late MockAuthService mockAuth;
 
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
     mockPrefs = await SharedPreferences.getInstance();
+    mockAuth = MockAuthService();
+  });
+
+  tearDown(() {
+    mockAuth.dispose();
   });
 
   /// Helper to create a testable HomeScreen with all required providers
@@ -48,6 +56,12 @@ void main() {
               builder: (context, state) =>
                   const Scaffold(body: Text('Paywall Screen')),
             ),
+            GoRoute(
+              path: '/auth',
+              name: 'auth',
+              builder: (context, state) =>
+                  const Scaffold(body: Text('Auth Screen')),
+            ),
           ],
         );
 
@@ -56,6 +70,7 @@ void main() {
         sharedPreferencesProvider.overrideWithValue(mockPrefs),
         isProProvider.overrideWith((ref) => isPro),
         remainingGenerationsProvider.overrideWith((ref) => remaining),
+        authServiceProvider.overrideWithValue(mockAuth),
       ],
       child: MaterialApp.router(routerConfig: testRouter),
     );
@@ -153,14 +168,16 @@ void main() {
       expect(find.text('Tap to unlock 500/month'), findsNothing);
     });
 
-    testWidgets('tapping usage card navigates to paywall', (tester) async {
+    testWidgets('tapping usage card navigates to auth for anonymous user',
+        (tester) async {
       await tester.pumpWidget(createTestableHomeScreen(remaining: 2));
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Tap to unlock 500/month'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Paywall Screen'), findsOneWidget);
+      // Anonymous users go to auth first, then paywall
+      expect(find.text('Auth Screen'), findsOneWidget);
     });
   });
 
