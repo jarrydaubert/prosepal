@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/providers/providers.dart';
@@ -107,8 +108,21 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
       final email = _emailController.text.trim();
       final password = _passwordController.text;
       final authService = ref.read(authServiceProvider);
-      await authService.signInWithEmail(email: email, password: password);
-      // Navigation handled by auth state listener
+      final response =
+          await authService.signInWithEmail(email: email, password: password);
+
+      // Identify with RevenueCat and sync usage (same as Apple/Google)
+      if (response.user != null) {
+        await ref
+            .read(subscriptionServiceProvider)
+            .identifyUser(response.user!.id);
+        await ref.read(usageServiceProvider).syncFromServer();
+      }
+
+      // Navigate after successful auth
+      if (mounted) {
+        context.go('/home');
+      }
     } catch (e) {
       _showError(_getErrorMessage(e));
     } finally {
