@@ -26,53 +26,39 @@ import '../interfaces/subscription_interface.dart';
 /// ```
 class SubscriptionService implements ISubscriptionService {
   // ==========================================================================
-  // RevenueCat API Keys
+  // RevenueCat API Keys (REQUIRED via dart-define)
   // ==========================================================================
   //
   // These are PUBLIC keys (safe to include in app) - they only allow client-side operations.
+  // Keys MUST be provided via dart-define to prevent accidental use of wrong keys.
   //
-  // KEY TYPES:
-  // - Production keys (appl_*, goog_*): Use for App Store/Play Store builds
-  // - Test Store key: Use ONLY for automated testing, crashes in production!
+  // REQUIRED FOR BUILDS:
+  //   flutter build ios --dart-define=REVENUECAT_IOS_KEY=appl_xxx
+  //   flutter build android --dart-define=REVENUECAT_ANDROID_KEY=goog_xxx
   //
-  // SWITCHING KEYS:
-  // Override via dart-define for different environments:
-  //   flutter run --dart-define=REVENUECAT_IOS_KEY=your_key
-  //   flutter run --dart-define=REVENUECAT_USE_TEST_STORE=true
+  // FOR TESTING:
+  //   flutter run --dart-define=REVENUECAT_USE_TEST_STORE=true \
+  //               --dart-define=REVENUECAT_TEST_STORE_KEY=test_xxx
   //
-  // BEFORE APP STORE SUBMISSION:
-  // Verify you're using the production key (appl_*), NOT the Test Store key!
+  // Get keys from: RevenueCat Dashboard > Project Settings > API Keys
   // ==========================================================================
 
-  // Production API Keys (defaults for release builds)
-  static const String _iosProductionKey = 'appl_dWOaTNoefQCZUxqvQfsTPuMqYuk';
-  static const String _androidProductionKey =
-      'goog_LhhImNjMzktDFOKCksvGbHnRJVT';
-
-  // Test Store Key (for automated testing only - get from RevenueCat Dashboard)
-  // Dashboard: Project Settings > Apps > Test Store
-  // WARNING: Using Test Store in production will crash the app!
-  static const String _testStoreKey = String.fromEnvironment(
-    'REVENUECAT_TEST_STORE_KEY',
-    defaultValue:
-        'test_iCdJYZJvbduyqGECAsUtDJKYClX', // Test Store key for development
-  );
-
-  // Environment flags
-  // NOTE: Test Store is for AUTOMATED TESTING only, not device testing!
-  // For device testing, use production key with Sandbox Apple ID account.
-  static const bool _useTestStore = bool.fromEnvironment(
-    'REVENUECAT_USE_TEST_STORE',
-  );
-
-  // Allow override of production keys via dart-define
-  static const String _iosApiKey = String.fromEnvironment(
-    'REVENUECAT_IOS_KEY',
-    defaultValue: _iosProductionKey,
-  );
+  // Production API Keys - MUST be provided via dart-define for release builds
+  static const String _iosApiKey = String.fromEnvironment('REVENUECAT_IOS_KEY');
   static const String _androidApiKey = String.fromEnvironment(
     'REVENUECAT_ANDROID_KEY',
-    defaultValue: _androidProductionKey,
+  );
+
+  // Test Store Key (for automated testing only)
+  // Dashboard: Project Settings > Apps > Test Store
+  // WARNING: Test Store in production WILL crash!
+  static const String _testStoreKey = String.fromEnvironment(
+    'REVENUECAT_TEST_STORE_KEY',
+  );
+
+  // Use Test Store for automated testing (not device testing)
+  static const bool _useTestStore = bool.fromEnvironment(
+    'REVENUECAT_USE_TEST_STORE',
   );
 
   static const String _entitlementId = 'pro';
@@ -130,7 +116,21 @@ class SubscriptionService implements ISubscriptionService {
     final apiKey = _activeApiKey;
 
     if (apiKey.isEmpty) {
-      Log.warning('RevenueCat API key not provided');
+      final keyName = Platform.isIOS ? 'REVENUECAT_IOS_KEY' : 'REVENUECAT_ANDROID_KEY';
+      if (kReleaseMode) {
+        Log.error(
+          'FATAL: RevenueCat API key not provided',
+          'Missing $keyName dart-define',
+        );
+        throw StateError(
+          'RevenueCat API key not provided. '
+          'Set via: flutter build ${Platform.isIOS ? "ios" : "apk"} '
+          '--dart-define=$keyName=your_key',
+        );
+      }
+      Log.warning('RevenueCat API key not provided - subscriptions disabled', {
+        'hint': 'Set $keyName via dart-define for production builds',
+      });
       return;
     }
 
