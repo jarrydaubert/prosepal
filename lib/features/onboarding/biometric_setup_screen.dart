@@ -1,20 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/services/biometric_service.dart';
+import '../../core/providers/providers.dart';
+import '../../core/services/biometric_service.dart' show BiometricError;
 import '../../shared/theme/app_colors.dart';
 
-class BiometricSetupScreen extends StatefulWidget {
+class BiometricSetupScreen extends ConsumerStatefulWidget {
   const BiometricSetupScreen({super.key});
 
   @override
-  State<BiometricSetupScreen> createState() => _BiometricSetupScreenState();
+  ConsumerState<BiometricSetupScreen> createState() =>
+      _BiometricSetupScreenState();
 }
 
-class _BiometricSetupScreenState extends State<BiometricSetupScreen> {
-  final _biometricService = BiometricService.instance;
+class _BiometricSetupScreenState extends ConsumerState<BiometricSetupScreen> {
   String _biometricName = 'Face ID';
   bool _isLoading = false;
 
@@ -25,20 +27,23 @@ class _BiometricSetupScreenState extends State<BiometricSetupScreen> {
   }
 
   Future<void> _loadBiometricType() async {
-    final name = await _biometricService.biometricTypeName;
+    // Use provider for consistency and testability
+    final biometricService = ref.read(biometricServiceProvider);
+    final name = await biometricService.biometricTypeName;
     if (mounted) setState(() => _biometricName = name);
   }
 
   Future<void> _enableBiometrics() async {
     setState(() => _isLoading = true);
-    HapticFeedback.lightImpact();
+    await HapticFeedback.lightImpact();
 
-    final result = await _biometricService.authenticate(
+    final biometricService = ref.read(biometricServiceProvider);
+    final result = await biometricService.authenticate(
       reason: 'Authenticate to enable $_biometricName',
     );
 
     if (result.success) {
-      await _biometricService.setEnabled(true);
+      await biometricService.setEnabled(true);
       if (mounted) context.go('/home');
     } else if (result.error != BiometricError.cancelled) {
       if (mounted) {
@@ -123,7 +128,7 @@ class _BiometricSetupScreenState extends State<BiometricSetupScreen> {
               const Spacer(flex: 2),
 
               // Benefits
-              _BenefitRow(
+              const _BenefitRow(
                 icon: Icons.lock_outline,
                 text: 'Keep your messages private',
               ).animate().fadeIn(delay: 600.ms).slideX(begin: 0.1, end: 0),

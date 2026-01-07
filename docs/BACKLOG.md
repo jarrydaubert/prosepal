@@ -121,6 +121,10 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 | Log export sanitization | `settings_screen.dart` | Truncate/hash user IDs before export |
 | Restore rate limiting | `settings_screen.dart` | Add cooldown on restore purchase attempts |
 | Add App Store ID | `settings_screen.dart` | Fill in appStoreId after iOS release |
+| Biometric setup localization | `biometric_setup_screen.dart` | Extract strings to .arb |
+| Biometric setup accessibility | `biometric_setup_screen.dart` | Add Semantics for benefits/icon |
+| Skip preference tracking | `biometric_setup_screen.dart` | Store skip for deferred re-prompt |
+| Strong biometric preference | `biometric_setup_screen.dart` | Prefer Class 3 biometrics when available |
 
 ---
 
