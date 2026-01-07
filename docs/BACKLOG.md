@@ -21,6 +21,13 @@
 | Hardcoded usage limits | `usage_service.dart` | Move to remote config |
 | Supabase singleton | `usage_service.dart` | Inject client for testability |
 | Integration/E2E tests | `integration_test/` | Navigation flows: onboarding→auth→paywall→biometric |
+| Re-auth for sensitive ops | `auth_service.dart` | Prompt re-auth before updateEmail/updatePassword/deleteAccount if session stale |
+| Require env vars for keys | `auth_service.dart`, `subscription_service.dart` | Remove hardcoded defaults, require all keys via dart-define |
+| Error injection in tests | `test/services/` | Add paths for simulating null ID tokens, network failures |
+| Rate limiting auth attempts | `auth_service.dart` | Client-side exponential backoff for failed sign-ins |
+| Paywall offering flexibility | `subscription_service.dart` | Support custom/specific offerings, not just default |
+| Promotional offers | `subscription_service.dart` | Handle eligibility checks for promo offers |
+| Pending purchase handling | `subscription_service.dart` | UI feedback for purchases in pending state |
 
 ---
 
@@ -42,6 +49,16 @@
 | Analytics opt-out | Settings toggle to disable Firebase Analytics |
 | Apple Privacy Labels | Fill in App Store Connect (similar to Play Data Safety) |
 | Apple token revocation | Call Apple revocation endpoint on account delete |
+
+---
+
+## Observability & Analytics
+
+| Item | Location | Notes |
+|------|----------|-------|
+| Auth flow analytics | `auth_service.dart` | Anonymized events for sign-in success/failure rates |
+| Purchase funnel analytics | `subscription_service.dart` | Track paywall views, purchase attempts, conversions |
+| Email confirmation redirects | `auth_service.dart` | Handle Supabase email confirmation flow properly |
 
 ---
 
