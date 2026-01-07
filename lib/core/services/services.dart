@@ -10,6 +10,7 @@ export 'google_auth_provider.dart';
 export 'history_service.dart';
 export 'log_service.dart';
 export 'rate_limit_service.dart';
+export 'reauth_service.dart';
 export 'review_service.dart';
 export 'supabase_auth_provider.dart';
 export 'subscription_service.dart';
