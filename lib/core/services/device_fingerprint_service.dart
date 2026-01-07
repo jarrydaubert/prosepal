@@ -125,12 +125,15 @@ class DeviceFingerprintService {
     }
 
     try {
-      final response = await supabase.rpc('check_device_free_tier', params: {
-        'p_device_fingerprint': fingerprint,
-        'p_platform': getPlatform(),
-        'p_user_id': _userId,
-        'p_mark_used': false,
-      });
+      final response = await supabase.rpc(
+        'check_device_free_tier',
+        params: {
+          'p_device_fingerprint': fingerprint,
+          'p_platform': getPlatform(),
+          'p_user_id': _userId,
+          'p_mark_used': false,
+        },
+      );
 
       final result = response as Map<String, dynamic>;
       final allowed = result['allowed'] as bool? ?? true;
@@ -145,8 +148,8 @@ class DeviceFingerprintService {
         allowed: allowed,
         reason: allowed
             ? (isNewDevice
-                ? DeviceCheckReason.newDevice
-                : DeviceCheckReason.notUsedYet)
+                  ? DeviceCheckReason.newDevice
+                  : DeviceCheckReason.notUsedYet)
             : DeviceCheckReason.alreadyUsed,
       );
     } catch (e) {
@@ -178,19 +181,20 @@ class DeviceFingerprintService {
     }
 
     try {
-      final response = await supabase.rpc('check_device_free_tier', params: {
-        'p_device_fingerprint': fingerprint,
-        'p_platform': getPlatform(),
-        'p_user_id': _userId,
-        'p_mark_used': true,
-      });
+      final response = await supabase.rpc(
+        'check_device_free_tier',
+        params: {
+          'p_device_fingerprint': fingerprint,
+          'p_platform': getPlatform(),
+          'p_user_id': _userId,
+          'p_mark_used': true,
+        },
+      );
 
       final result = response as Map<String, dynamic>;
       final allowed = result['allowed'] as bool? ?? false;
 
-      Log.info('Device marked as used free tier', {
-        'success': allowed,
-      });
+      Log.info('Device marked as used free tier', {'success': allowed});
 
       return allowed;
     } catch (e) {
@@ -208,10 +212,7 @@ class DeviceFingerprintService {
 
 /// Result of a device free tier check
 class DeviceCheckResult {
-  const DeviceCheckResult({
-    required this.allowed,
-    required this.reason,
-  });
+  const DeviceCheckResult({required this.allowed, required this.reason});
 
   /// Whether free tier usage is allowed
   final bool allowed;

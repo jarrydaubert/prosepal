@@ -36,14 +36,14 @@ Future<void> skipOnboarding(WidgetTester tester) async {
         find.text("What's the occasion?").evaluate().isNotEmpty) {
       break;
     }
-    
+
     // Tap "Get Started" to complete onboarding (final carousel page)
     if (find.text('Get Started').evaluate().isNotEmpty) {
       await tester.tap(find.text('Get Started'));
       await tester.pumpAndSettle(const Duration(seconds: 2));
       break;
     }
-    
+
     // Tap "Continue" to advance carousel
     if (find.text('Continue').evaluate().isNotEmpty) {
       await tester.tap(find.text('Continue'));
@@ -85,7 +85,11 @@ Future<bool> completeWizard(
   if (find.text(occasion).evaluate().isEmpty) {
     final scrollable = find.byType(Scrollable).first;
     try {
-      await tester.scrollUntilVisible(find.text(occasion), 200, scrollable: scrollable);
+      await tester.scrollUntilVisible(
+        find.text(occasion),
+        200,
+        scrollable: scrollable,
+      );
       await tester.pumpAndSettle();
     } catch (_) {
       return false;
@@ -144,10 +148,18 @@ bool anyTextExists(List<String> texts) {
 }
 
 /// Scroll until text is visible, returns true if found
-Future<bool> scrollToText(WidgetTester tester, String text, {double delta = 200}) async {
+Future<bool> scrollToText(
+  WidgetTester tester,
+  String text, {
+  double delta = 200,
+}) async {
   final scrollable = find.byType(Scrollable).first;
   try {
-    await tester.scrollUntilVisible(find.text(text), delta, scrollable: scrollable);
+    await tester.scrollUntilVisible(
+      find.text(text),
+      delta,
+      scrollable: scrollable,
+    );
     await tester.pumpAndSettle();
     return true;
   } catch (_) {

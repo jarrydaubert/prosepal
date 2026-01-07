@@ -1,10 +1,10 @@
 /// Journey 7 & 8: Reinstall & Restore Flows
-/// 
+///
 /// Tests restore and reinstall scenarios:
 /// 1. Pro restore banner detection
 /// 2. Restore from settings
 /// 3. Sign in to claim Pro
-/// 
+///
 /// Expected logs:
 /// - [INFO] Anonymous user has Pro - prompting sign-in to claim
 /// - [INFO] Restore initiated
@@ -28,8 +28,11 @@ void main() {
       final hasHome = exists(find.text('Birthday'));
       final hasAuth = exists(find.text('Continue with Email'));
 
-      expect(hasRestoreBanner || hasOnboarding || hasHome || hasAuth, isTrue,
-          reason: 'App should show appropriate initial screen');
+      expect(
+        hasRestoreBanner || hasOnboarding || hasHome || hasAuth,
+        isTrue,
+        reason: 'App should show appropriate initial screen',
+      );
 
       await screenshot(tester, 'j7_1_launch');
     });
@@ -39,9 +42,13 @@ void main() {
 
       if (exists(find.text('Pro subscription found!'))) {
         expect(find.text('Sign in to restore your Pro access'), findsOneWidget);
-        
+
         expect(
-          anyTextExists(['Continue with Apple', 'Continue with Google', 'Continue with Email']),
+          anyTextExists([
+            'Continue with Apple',
+            'Continue with Google',
+            'Continue with Email',
+          ]),
           isTrue,
           reason: 'Should show sign-in options',
         );
@@ -72,7 +79,11 @@ void main() {
         await tester.pumpAndSettle(const Duration(seconds: 2));
 
         expect(
-          anyTextExists(['Continue with Apple', 'Continue with Google', 'Continue with Email']),
+          anyTextExists([
+            'Continue with Apple',
+            'Continue with Google',
+            'Continue with Email',
+          ]),
           isTrue,
           reason: 'Should show auth screen',
         );
@@ -86,14 +97,18 @@ void main() {
       if (!atHome) return;
 
       // Fresh install should have 1 free generation
-      final hasFreeIndicator = find.textContaining('1').evaluate().isNotEmpty &&
+      final hasFreeIndicator =
+          find.textContaining('1').evaluate().isNotEmpty &&
           find.textContaining('free').evaluate().isNotEmpty;
       final hasPro = exists(find.text('PRO'));
       final hasZero = find.textContaining('0').evaluate().isNotEmpty;
 
       // Should have either 1 free, 0 free (used), or Pro
-      expect(hasFreeIndicator || hasPro || hasZero, isTrue,
-          reason: 'Should show usage status');
+      expect(
+        hasFreeIndicator || hasPro || hasZero,
+        isTrue,
+        reason: 'Should show usage status',
+      );
 
       await screenshot(tester, 'j7_5_fresh_state');
     });

@@ -4,10 +4,7 @@ import 'log_service.dart';
 
 /// Result of a throttle check
 class ThrottleResult {
-  const ThrottleResult({
-    required this.allowed,
-    this.waitSeconds = 0,
-  });
+  const ThrottleResult({required this.allowed, this.waitSeconds = 0});
 
   final bool allowed;
   final int waitSeconds;
@@ -131,9 +128,7 @@ class AuthThrottleService {
     if (identifier.contains('@')) {
       final parts = identifier.split('@');
       final name = parts[0];
-      final masked = name.length > 2
-          ? '${name.substring(0, 2)}***'
-          : '***';
+      final masked = name.length > 2 ? '${name.substring(0, 2)}***' : '***';
       return '$masked@${parts[1]}';
     }
     return '***';
@@ -151,10 +146,7 @@ class AuthThrottleService {
 }
 
 class _AttemptRecord {
-  const _AttemptRecord({
-    required this.failureCount,
-    required this.lastAttempt,
-  });
+  const _AttemptRecord({required this.failureCount, required this.lastAttempt});
 
   final int failureCount;
   final DateTime lastAttempt;

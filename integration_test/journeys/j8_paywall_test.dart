@@ -1,13 +1,13 @@
 /// Journey 8: Paywall & Purchase Flow
-/// 
+///
 /// Tests the paywall screen and purchase path:
 /// 1. Paywall displays correctly
 /// 2. Pricing visible
 /// 3. Purchase buttons work
 /// 4. Terms/Privacy links
-/// 
+///
 /// Note: Actual purchase requires StoreKit sandbox (manual test)
-/// 
+///
 /// Expected logs:
 /// - [INFO] Paywall shown
 /// - [INFO] Paywall offerings loaded
@@ -33,11 +33,17 @@ void main() {
         await tester.pumpAndSettle(const Duration(seconds: 3));
 
         // Should show auth or paywall
-        final atAuth = anyTextExists(['Continue with Apple', 'Continue with Email']);
+        final atAuth = anyTextExists([
+          'Continue with Apple',
+          'Continue with Email',
+        ]);
         final atPaywall = anyTextExists(['Subscribe', 'Pro', 'month', 'year']);
 
-        expect(atAuth || atPaywall, isTrue,
-            reason: 'Should reach auth or paywall');
+        expect(
+          atAuth || atPaywall,
+          isTrue,
+          reason: 'Should reach auth or paywall',
+        );
 
         await screenshot(tester, 'j8_1_upgrade_destination');
       }
@@ -60,7 +66,8 @@ void main() {
       }
 
       // Check for pricing elements
-      final hasPricing = find.textContaining('\$').evaluate().isNotEmpty ||
+      final hasPricing =
+          find.textContaining('\$').evaluate().isNotEmpty ||
           find.textContaining('month').evaluate().isNotEmpty ||
           find.textContaining('year').evaluate().isNotEmpty;
 
@@ -85,7 +92,8 @@ void main() {
         }
 
         // Look for restore option on paywall
-        final hasRestore = exists(find.text('Restore')) ||
+        final hasRestore =
+            exists(find.text('Restore')) ||
             find.textContaining('restore').evaluate().isNotEmpty;
 
         await screenshot(tester, 'j8_3_paywall_restore');

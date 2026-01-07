@@ -1,5 +1,5 @@
 /// Coverage: All 41 Occasions
-/// 
+///
 /// Smoke tests that each occasion loads the wizard correctly.
 /// Groups: Core, Holidays, Cultural, Career, Appreciation, Pets
 library;
@@ -53,12 +53,7 @@ void main() {
   ];
 
   // Career
-  final careerOccasions = [
-    'New Job',
-    'Promotion',
-    'Farewell',
-    'Good Luck',
-  ];
+  final careerOccasions = ['New Job', 'Promotion', 'Farewell', 'Good Luck'];
 
   // Appreciation
   final appreciationOccasions = [
@@ -68,11 +63,7 @@ void main() {
   ];
 
   // Pets
-  final petOccasions = [
-    'Pet Birthday',
-    'New Pet',
-    'Pet Loss',
-  ];
+  final petOccasions = ['Pet Birthday', 'New Pet', 'Pet Loss'];
 
   group('Coverage: Core Occasions', () {
     for (final occasion in coreOccasions) {

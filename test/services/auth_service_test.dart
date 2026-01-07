@@ -642,18 +642,20 @@ void main() {
       expect(mockApple.isAvailableCalls, 1);
     });
 
-    test('isGoogleSignInAvailable returns false when client ID not configured',
-        () async {
-      // In tests, GOOGLE_WEB_CLIENT_ID is not set via dart-define,
-      // so validation fails and returns false without calling provider
-      mockGoogle.isAvailableResult = true;
+    test(
+      'isGoogleSignInAvailable returns false when client ID not configured',
+      () async {
+        // In tests, GOOGLE_WEB_CLIENT_ID is not set via dart-define,
+        // so validation fails and returns false without calling provider
+        mockGoogle.isAvailableResult = true;
 
-      final result = await authService.isGoogleSignInAvailable();
+        final result = await authService.isGoogleSignInAvailable();
 
-      expect(result, false);
-      // Provider should NOT be called when validation fails
-      expect(mockGoogle.isAvailableCalls, 0);
-    });
+        expect(result, false);
+        // Provider should NOT be called when validation fails
+        expect(mockGoogle.isAvailableCalls, 0);
+      },
+    );
   });
 
   // ============================================================

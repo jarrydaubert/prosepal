@@ -1,11 +1,11 @@
 /// Journey 6: Error Handling & Resilience
-/// 
+///
 /// Tests error handling and edge cases:
 /// 1. Rapid taps don't crash app
 /// 2. Scroll edge cases
 /// 3. Error states display correctly
 /// 4. Recovery from errors
-/// 
+///
 /// Expected logs:
 /// - [ERROR] Firebase AI error
 /// - [INFO] Retry attempted
@@ -30,8 +30,11 @@ void main() {
       }
       await tester.pumpAndSettle();
 
-      expect(find.byType(MaterialApp), findsOneWidget,
-          reason: 'App should remain stable');
+      expect(
+        find.byType(MaterialApp),
+        findsOneWidget,
+        reason: 'App should remain stable',
+      );
 
       await screenshot(tester, 'j6_1_rapid_taps');
     });
@@ -48,8 +51,11 @@ void main() {
       }
       await tester.pumpAndSettle();
 
-      expect(find.byType(MaterialApp), findsOneWidget,
-          reason: 'App should remain stable');
+      expect(
+        find.byType(MaterialApp),
+        findsOneWidget,
+        reason: 'App should remain stable',
+      );
 
       await screenshot(tester, 'j6_2_rapid_skip');
     });
@@ -59,7 +65,7 @@ void main() {
       if (!atHome) return;
 
       final scrollable = find.byType(Scrollable).first;
-      
+
       // Scroll to bottom aggressively
       await tester.fling(scrollable, const Offset(0, -1000), 2000);
       await tester.pumpAndSettle();
@@ -68,8 +74,11 @@ void main() {
       await tester.fling(scrollable, const Offset(0, 1000), 2000);
       await tester.pumpAndSettle();
 
-      expect(find.text('Birthday'), findsOneWidget,
-          reason: 'Should scroll back to show Birthday');
+      expect(
+        find.text('Birthday'),
+        findsOneWidget,
+        reason: 'Should scroll back to show Birthday',
+      );
 
       await screenshot(tester, 'j6_3_scroll_recovery');
     });
@@ -79,7 +88,7 @@ void main() {
       if (!atSettings) return;
 
       final scrollable = find.byType(Scrollable).first;
-      
+
       // Aggressive scrolling
       await tester.fling(scrollable, const Offset(0, -800), 1500);
       await tester.pumpAndSettle();
@@ -99,18 +108,21 @@ void main() {
 
       if (exists(find.text('Generate Messages'))) {
         await tester.tap(find.text('Generate Messages'));
-        
+
         // Immediately try tapping other things while loading
         await tester.pump(const Duration(milliseconds: 500));
-        
+
         if (exists(find.byIcon(Icons.arrow_back))) {
           await tester.tap(find.byIcon(Icons.arrow_back), warnIfMissed: false);
         }
-        
+
         await tester.pumpAndSettle(const Duration(seconds: 15));
 
-        expect(find.byType(MaterialApp), findsOneWidget,
-            reason: 'App should handle taps during loading');
+        expect(
+          find.byType(MaterialApp),
+          findsOneWidget,
+          reason: 'App should handle taps during loading',
+        );
 
         await screenshot(tester, 'j6_5_tap_during_load');
       }
@@ -137,8 +149,11 @@ void main() {
         if (!exists(find.text('Birthday'))) break;
       }
 
-      expect(find.byType(MaterialApp), findsOneWidget,
-          reason: 'App should handle repeated wizard entries');
+      expect(
+        find.byType(MaterialApp),
+        findsOneWidget,
+        reason: 'App should handle repeated wizard entries',
+      );
 
       await screenshot(tester, 'j6_6_repeated_wizard');
     });

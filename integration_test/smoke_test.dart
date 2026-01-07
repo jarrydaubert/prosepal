@@ -35,7 +35,8 @@ void main() {
     setUp(() async {
       SharedPreferences.setMockInitialValues({'hasCompletedOnboarding': true});
       prefs = await SharedPreferences.getInstance();
-      mockAuth = MockAuthService()..setLoggedIn(true, email: 'test@example.com');
+      mockAuth = MockAuthService()
+        ..setLoggedIn(true, email: 'test@example.com');
       mockSubscription = MockSubscriptionService()..setIsPro(false);
       mockAi = MockAiService();
     });
@@ -97,7 +98,8 @@ void main() {
       await tester.pumpAndSettle();
 
       // Should show relationship selection
-      final hasRelationships = find.text('Close Friend').evaluate().isNotEmpty ||
+      final hasRelationships =
+          find.text('Close Friend').evaluate().isNotEmpty ||
           find.text('Family').evaluate().isNotEmpty;
       expect(hasRelationships, isTrue);
       await binding.convertFlutterSurfaceToImage();

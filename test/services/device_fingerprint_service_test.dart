@@ -61,12 +61,15 @@ void main() {
         expect(service.canUseFreeTierCallCount, equals(2));
       });
 
-      test('returns allowed=true on server error (graceful degradation)', () async {
-        service.simulateServerError();
-        final result = await service.canUseFreeTier();
-        expect(result.allowed, isTrue);
-        expect(result.reason, equals(DeviceCheckReason.serverError));
-      });
+      test(
+        'returns allowed=true on server error (graceful degradation)',
+        () async {
+          service.simulateServerError();
+          final result = await service.canUseFreeTier();
+          expect(result.allowed, isTrue);
+          expect(result.reason, equals(DeviceCheckReason.serverError));
+        },
+      );
 
       test('returns allowed=true when fingerprint unavailable', () async {
         service.simulateNoFingerprint();
@@ -117,7 +120,10 @@ void main() {
         expect(service.allowFreeTier, isTrue);
         expect(service.canUseFreeTierCallCount, equals(0));
         expect(service.markFreeTierUsedCalled, isFalse);
-        expect(service.mockFingerprint, equals('mock-device-fingerprint-12345'));
+        expect(
+          service.mockFingerprint,
+          equals('mock-device-fingerprint-12345'),
+        );
       });
     });
   });
@@ -130,21 +136,26 @@ void main() {
       );
       expect(
         result.toString(),
-        equals('DeviceCheckResult(allowed: true, reason: DeviceCheckReason.newDevice)'),
+        equals(
+          'DeviceCheckResult(allowed: true, reason: DeviceCheckReason.newDevice)',
+        ),
       );
     });
   });
 
   group('DeviceCheckReason', () {
     test('has all expected values', () {
-      expect(DeviceCheckReason.values, containsAll([
-        DeviceCheckReason.newDevice,
-        DeviceCheckReason.notUsedYet,
-        DeviceCheckReason.alreadyUsed,
-        DeviceCheckReason.fingerprintUnavailable,
-        DeviceCheckReason.serverUnavailable,
-        DeviceCheckReason.serverError,
-      ]));
+      expect(
+        DeviceCheckReason.values,
+        containsAll([
+          DeviceCheckReason.newDevice,
+          DeviceCheckReason.notUsedYet,
+          DeviceCheckReason.alreadyUsed,
+          DeviceCheckReason.fingerprintUnavailable,
+          DeviceCheckReason.serverUnavailable,
+          DeviceCheckReason.serverError,
+        ]),
+      );
     });
   });
 }

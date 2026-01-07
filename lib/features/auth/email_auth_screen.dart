@@ -115,7 +115,9 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
     // Check rate limiting before attempting sign-in
     final throttleCheck = throttle.checkThrottle(email);
     if (!throttleCheck.allowed) {
-      _showError('Too many attempts. Please wait ${throttleCheck.waitSeconds} seconds.');
+      _showError(
+        'Too many attempts. Please wait ${throttleCheck.waitSeconds} seconds.',
+      );
       return;
     }
 
@@ -124,8 +126,10 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
     try {
       final password = _passwordController.text;
       final authService = ref.read(authServiceProvider);
-      final response =
-          await authService.signInWithEmail(email: email, password: password);
+      final response = await authService.signInWithEmail(
+        email: email,
+        password: password,
+      );
 
       // Success - reset throttle
       throttle.recordSuccess(email);

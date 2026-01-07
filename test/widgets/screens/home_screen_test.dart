@@ -168,8 +168,9 @@ void main() {
       expect(find.text('Tap to unlock 500/month'), findsNothing);
     });
 
-    testWidgets('tapping usage card navigates to auth for anonymous user',
-        (tester) async {
+    testWidgets('tapping usage card navigates to auth for anonymous user', (
+      tester,
+    ) async {
       await tester.pumpWidget(createTestableHomeScreen(remaining: 2));
       await tester.pumpAndSettle();
 

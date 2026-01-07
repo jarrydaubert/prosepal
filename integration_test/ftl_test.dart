@@ -44,7 +44,8 @@ void main() {
     setUp(() async {
       SharedPreferences.setMockInitialValues({'hasCompletedOnboarding': true});
       prefs = await SharedPreferences.getInstance();
-      mockAuth = MockAuthService()..setLoggedIn(true, email: 'test@example.com');
+      mockAuth = MockAuthService()
+        ..setLoggedIn(true, email: 'test@example.com');
       mockSubscription = MockSubscriptionService()..setIsPro(false);
       mockAi = MockAiService();
     });
@@ -211,16 +212,16 @@ void main() {
     testWidgets('14. Multiple wizard entries', (tester) async {
       await tester.pumpWidget(buildApp());
       await tester.pumpAndSettle();
-      
+
       // Enter and exit wizard twice
       await tester.tap(find.text('Birthday'));
       await tester.pumpAndSettle();
       await tester.tap(find.byIcon(Icons.arrow_back));
       await tester.pumpAndSettle();
-      
+
       await tester.tap(find.text('Thank You'));
       await tester.pumpAndSettle();
-      
+
       expect(find.text('Close Friend'), findsOneWidget);
       await screenshot(tester, '14_reentry');
     });
@@ -228,26 +229,26 @@ void main() {
     testWidgets('15. Deep navigation', (tester) async {
       await tester.pumpWidget(buildApp());
       await tester.pumpAndSettle();
-      
+
       // Home → Settings → Privacy → Back → Back → Home
       await tester.tap(find.byIcon(Icons.settings_outlined));
       await tester.pumpAndSettle();
-      
+
       // Scroll to Privacy
       final scrollable = find.byType(Scrollable).first;
       await tester.fling(scrollable, const Offset(0, -200), 500);
       await tester.pumpAndSettle();
-      
+
       if (find.text('Privacy Policy').evaluate().isNotEmpty) {
         await tester.tap(find.text('Privacy Policy'));
         await tester.pumpAndSettle();
         await tester.tap(find.byIcon(Icons.arrow_back));
         await tester.pumpAndSettle();
       }
-      
+
       await tester.tap(find.byIcon(Icons.arrow_back));
       await tester.pumpAndSettle();
-      
+
       expect(find.text('Birthday'), findsOneWidget);
       await screenshot(tester, '15_deep_nav');
     });
@@ -291,13 +292,14 @@ void main() {
     testWidgets('16. Fresh install shows onboarding', (tester) async {
       await tester.pumpWidget(buildFreshApp());
       await tester.pumpAndSettle(const Duration(seconds: 3));
-      
+
       // Should show onboarding (Continue button) or home if skipped
-      final hasOnboarding = find.text('Continue').evaluate().isNotEmpty ||
+      final hasOnboarding =
+          find.text('Continue').evaluate().isNotEmpty ||
           find.text('Skip').evaluate().isNotEmpty ||
           find.text('Get Started').evaluate().isNotEmpty;
       final hasHome = find.text('Birthday').evaluate().isNotEmpty;
-      
+
       expect(hasOnboarding || hasHome, isTrue);
       await screenshot(tester, '16_fresh_install');
     });
@@ -305,7 +307,7 @@ void main() {
     testWidgets('17. Can skip onboarding', (tester) async {
       await tester.pumpWidget(buildFreshApp());
       await tester.pumpAndSettle(const Duration(seconds: 3));
-      
+
       // Try to skip or continue through onboarding
       for (int i = 0; i < 5; i++) {
         if (find.text('Skip').evaluate().isNotEmpty) {
@@ -323,7 +325,7 @@ void main() {
           await tester.pumpAndSettle();
         }
       }
-      
+
       await screenshot(tester, '17_after_onboarding');
     });
   });

@@ -87,10 +87,7 @@ void main() async {
   // Protects user-generated messages from being captured
   if (!kDebugMode) {
     try {
-      await ScreenSecure.init(
-        screenshotBlock: true,
-        screenRecordBlock: true,
-      );
+      await ScreenSecure.init(screenshotBlock: true, screenRecordBlock: true);
       Log.info('Screen security enabled');
     } catch (e) {
       Log.warning('Screen security init failed', {'error': '$e'});

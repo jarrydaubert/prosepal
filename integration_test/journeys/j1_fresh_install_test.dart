@@ -1,5 +1,5 @@
 /// Journey 1: Fresh Install → Free Generation → Close
-/// 
+///
 /// Tests the complete first-time user experience:
 /// 1. App launch
 /// 2. Onboarding completion
@@ -7,7 +7,7 @@
 /// 4. Wizard flow (occasion → relationship → tone)
 /// 5. AI generation
 /// 6. Results and copy
-/// 
+///
 /// Expected logs:
 /// - [INFO] Onboarding started
 /// - [INFO] Onboarding completed
@@ -30,7 +30,11 @@ void main() {
 
       expect(find.byType(MaterialApp), findsOneWidget);
       expect(
-        anyTextExists(['Continue', 'Continue with Email', "What's the occasion?"]),
+        anyTextExists([
+          'Continue',
+          'Continue with Email',
+          "What's the occasion?",
+        ]),
         isTrue,
         reason: 'Should show onboarding, auth, or home',
       );
@@ -45,20 +49,20 @@ void main() {
       int pages = 0;
       while (pages < 10) {
         // Check if we've reached auth or home
-        if (exists(find.text('Birthday')) || 
+        if (exists(find.text('Birthday')) ||
             exists(find.text('Continue with Email')) ||
             exists(find.text('Continue with Apple')) ||
             exists(find.text("What's the occasion?"))) {
           break;
         }
-        
+
         // Tap "Get Started" to complete onboarding (final carousel page)
         if (exists(find.text('Get Started'))) {
           await tester.tap(find.text('Get Started'));
           await tester.pumpAndSettle(const Duration(seconds: 2));
           break;
         }
-        
+
         // Tap "Continue" to advance carousel
         if (exists(find.text('Continue'))) {
           await tester.tap(find.text('Continue'));
@@ -73,7 +77,12 @@ void main() {
       await tester.pumpAndSettle(const Duration(seconds: 2));
 
       expect(
-        anyTextExists(['Continue with Email', 'Continue with Apple', 'Birthday', "What's the occasion?"]),
+        anyTextExists([
+          'Continue with Email',
+          'Continue with Apple',
+          'Birthday',
+          "What's the occasion?",
+        ]),
         isTrue,
         reason: 'Should reach auth or home after onboarding',
       );
@@ -103,12 +112,16 @@ void main() {
       if (!atHome) return;
 
       // Should show either free remaining count or PRO badge
-      final hasFreeIndicator = find.textContaining('free').evaluate().isNotEmpty ||
+      final hasFreeIndicator =
+          find.textContaining('free').evaluate().isNotEmpty ||
           find.textContaining('remaining').evaluate().isNotEmpty;
       final hasProBadge = find.text('PRO').evaluate().isNotEmpty;
 
-      expect(hasFreeIndicator || hasProBadge, isTrue,
-          reason: 'Should show usage status');
+      expect(
+        hasFreeIndicator || hasProBadge,
+        isTrue,
+        reason: 'Should show usage status',
+      );
 
       await screenshot(tester, 'j1_4_usage_indicator');
     });
@@ -154,7 +167,9 @@ void main() {
       await screenshot(tester, 'j1_6_tones');
     });
 
-    testWidgets('J1.7: Wizard step 3 - Final step with generate/upgrade', (tester) async {
+    testWidgets('J1.7: Wizard step 3 - Final step with generate/upgrade', (
+      tester,
+    ) async {
       final atHome = await navigateToHome(tester);
       if (!atHome) return;
 

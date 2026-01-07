@@ -305,10 +305,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     if (firstConfirm != true) return;
 
     // Require re-authentication for sensitive operation
-    final reauthResult = await ref.read(reauthServiceProvider).requireReauth(
-      context: context,
-      reason: 'Verify your identity to delete your account.',
-    );
+    final reauthResult = await ref
+        .read(reauthServiceProvider)
+        .requireReauth(
+          context: context,
+          reason: 'Verify your identity to delete your account.',
+        );
     if (!reauthResult.success) {
       if (reauthResult.errorMessage != null && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

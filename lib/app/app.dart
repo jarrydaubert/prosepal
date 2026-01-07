@@ -71,8 +71,7 @@ class _ProsepalAppState extends ConsumerState<ProsepalApp>
     }
 
     // Skip if already on lock screen or splash
-    final currentPath =
-        appRouter.routerDelegate.currentConfiguration.fullPath;
+    final currentPath = appRouter.routerDelegate.currentConfiguration.fullPath;
     if (currentPath == '/lock' || currentPath == '/splash') {
       return;
     }
@@ -81,7 +80,8 @@ class _ProsepalAppState extends ConsumerState<ProsepalApp>
     try {
       final biometricService = ref.read(biometricServiceProvider);
       final isEnabled = await biometricService.isEnabled;
-      final isAvailable = (await biometricService.availableBiometrics).isNotEmpty;
+      final isAvailable =
+          (await biometricService.availableBiometrics).isNotEmpty;
 
       if (isEnabled && isAvailable) {
         Log.info('Biometric lock on resume - redirecting to /lock');

@@ -1,5 +1,5 @@
 /// Coverage: All 14 Relationships
-/// 
+///
 /// Tests that each relationship can be selected in the wizard.
 /// Groups: Personal, Professional, Community
 library;
@@ -23,18 +23,10 @@ void main() {
   ];
 
   // Professional relationships
-  final professionalRelationships = [
-    'Colleague',
-    'Boss',
-    'Mentor',
-    'Teacher',
-  ];
+  final professionalRelationships = ['Colleague', 'Boss', 'Mentor', 'Teacher'];
 
   // Community relationships
-  final communityRelationships = [
-    'Neighbor',
-    'Acquaintance',
-  ];
+  final communityRelationships = ['Neighbor', 'Acquaintance'];
 
   group('Coverage: Personal Relationships', () {
     for (final relationship in personalRelationships) {
@@ -50,8 +42,11 @@ void main() {
           await tester.pumpAndSettle();
 
           // Should enable Continue button
-          expect(exists(find.text('Continue')), isTrue,
-              reason: '$relationship should be selectable');
+          expect(
+            exists(find.text('Continue')),
+            isTrue,
+            reason: '$relationship should be selectable',
+          );
         }
       });
     }
@@ -70,8 +65,11 @@ void main() {
           await tester.tap(find.text(relationship));
           await tester.pumpAndSettle();
 
-          expect(exists(find.text('Continue')), isTrue,
-              reason: '$relationship should be selectable');
+          expect(
+            exists(find.text('Continue')),
+            isTrue,
+            reason: '$relationship should be selectable',
+          );
         }
       });
     }
@@ -90,8 +88,11 @@ void main() {
           await tester.tap(find.text(relationship));
           await tester.pumpAndSettle();
 
-          expect(exists(find.text('Continue')), isTrue,
-              reason: '$relationship should be selectable');
+          expect(
+            exists(find.text('Continue')),
+            isTrue,
+            reason: '$relationship should be selectable',
+          );
         }
       });
     }

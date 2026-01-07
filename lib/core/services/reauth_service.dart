@@ -102,10 +102,7 @@ class ReauthService {
     // Check if user has a password (email auth)
     final user = _supabaseAuth.currentUser;
     if (user == null) {
-      return const ReauthResult(
-        success: false,
-        errorMessage: 'Not signed in',
-      );
+      return const ReauthResult(success: false, errorMessage: 'Not signed in');
     }
 
     // Check provider - OAuth users may not have a password
@@ -153,10 +150,7 @@ class ReauthService {
       return const ReauthResult(success: true);
     } on AuthException catch (e) {
       Log.warning('Re-auth failed via password', {'error': e.message});
-      return ReauthResult(
-        success: false,
-        errorMessage: 'Incorrect password',
-      );
+      return ReauthResult(success: false, errorMessage: 'Incorrect password');
     }
   }
 
@@ -180,10 +174,7 @@ class ReauthService {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                reason,
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
+              Text(reason, style: Theme.of(context).textTheme.bodyMedium),
               const SizedBox(height: 16),
               Text(
                 'Enter your password for $email',
@@ -249,9 +240,9 @@ class ReauthService {
             const SizedBox(height: 16),
             Text(
               'For better security, enable biometrics in Settings.',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    fontStyle: FontStyle.italic,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(fontStyle: FontStyle.italic),
             ),
           ],
         ),

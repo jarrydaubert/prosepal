@@ -1,11 +1,11 @@
 /// Journey 10: Results Screen Actions
-/// 
+///
 /// Tests all actions on the results screen:
 /// 1. Copy each message option
 /// 2. Share functionality
 /// 3. Start Over
 /// 4. Regenerate (if available)
-/// 
+///
 /// Expected logs:
 /// - [INFO] Message copied | option=1/2/3
 /// - [INFO] Share initiated
@@ -30,8 +30,8 @@ void main() {
       await tester.tap(find.text('Generate Messages'));
       await tester.pumpAndSettle(const Duration(seconds: 15));
 
-      return exists(find.text('Your Messages')) || 
-             exists(find.text('Option 1'));
+      return exists(find.text('Your Messages')) ||
+          exists(find.text('Option 1'));
     }
 
     testWidgets('J10.1: Results show 3 message options', (tester) async {
@@ -51,8 +51,11 @@ void main() {
 
       // Should have at least one copy button
       final copyButtons = find.text('Copy');
-      expect(copyButtons.evaluate().isNotEmpty, isTrue,
-          reason: 'Should have Copy buttons');
+      expect(
+        copyButtons.evaluate().isNotEmpty,
+        isTrue,
+        reason: 'Should have Copy buttons',
+      );
 
       await screenshot(tester, 'j10_2_copy_buttons');
     });
@@ -65,8 +68,11 @@ void main() {
         await tester.tap(find.text('Copy').first);
         await tester.pumpAndSettle();
 
-        expect(exists(find.text('Copied!')), isTrue,
-            reason: 'Should show Copied! confirmation');
+        expect(
+          exists(find.text('Copied!')),
+          isTrue,
+          reason: 'Should show Copied! confirmation',
+        );
 
         await screenshot(tester, 'j10_3_copied_confirmation');
       }
@@ -91,7 +97,8 @@ void main() {
       if (!atResults) return;
 
       // Look for share button/icon
-      final hasShare = exists(find.text('Share')) ||
+      final hasShare =
+          exists(find.text('Share')) ||
           exists(find.byIcon(Icons.share)) ||
           exists(find.byIcon(Icons.share_outlined));
 

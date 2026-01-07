@@ -43,10 +43,7 @@ class MockDeviceFingerprintService extends DeviceFingerprintService {
   @override
   Future<DeviceCheckResult> canUseFreeTier() async {
     canUseFreeTierCallCount++;
-    return DeviceCheckResult(
-      allowed: allowFreeTier,
-      reason: deviceCheckReason,
-    );
+    return DeviceCheckResult(allowed: allowFreeTier, reason: deviceCheckReason);
   }
 
   @override

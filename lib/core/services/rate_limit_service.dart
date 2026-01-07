@@ -69,11 +69,14 @@ class RateLimitService {
     }
 
     try {
-      final response = await supabase.rpc('check_rate_limit', params: {
-        'p_user_id': userId,
-        'p_device_fingerprint': deviceFingerprint,
-        'p_endpoint': endpoint,
-      });
+      final response = await supabase.rpc(
+        'check_rate_limit',
+        params: {
+          'p_user_id': userId,
+          'p_device_fingerprint': deviceFingerprint,
+          'p_endpoint': endpoint,
+        },
+      );
 
       final result = response as Map<String, dynamic>;
       final allowed = result['allowed'] as bool? ?? true;

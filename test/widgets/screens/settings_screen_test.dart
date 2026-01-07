@@ -173,8 +173,9 @@ void main() {
         expect(find.text('Restore Purchases'), findsOneWidget);
       });
 
-      testWidgets('Upgrade button navigates to auth for anonymous user',
-          (tester) async {
+      testWidgets('Upgrade button navigates to auth for anonymous user', (
+        tester,
+      ) async {
         await tester.pumpWidget(buildTestWidget());
         await tester.pumpAndSettle();
 
@@ -188,10 +189,10 @@ void main() {
 
     group('Security Section', () {
       // Biometrics only shown for signed-in users (prevents lockout)
-      testWidgets('shows biometrics when supported and signed in',
-          (tester) async {
-        await tester
-            .pumpWidget(buildTestWidget(email: 'test@example.com'));
+      testWidgets('shows biometrics when supported and signed in', (
+        tester,
+      ) async {
+        await tester.pumpWidget(buildTestWidget(email: 'test@example.com'));
         await tester.pumpAndSettle();
 
         expect(find.text('SECURITY'), findsOneWidget);
@@ -208,10 +209,12 @@ void main() {
       });
 
       testWidgets('hides biometrics when not supported', (tester) async {
-        await tester.pumpWidget(buildTestWidget(
-          email: 'test@example.com',
-          biometricsSupported: false,
-        ));
+        await tester.pumpWidget(
+          buildTestWidget(
+            email: 'test@example.com',
+            biometricsSupported: false,
+          ),
+        );
         await tester.pumpAndSettle();
 
         expect(find.text('SECURITY'), findsNothing);
@@ -219,18 +222,16 @@ void main() {
       });
 
       testWidgets('shows switch for biometrics when signed in', (tester) async {
-        await tester
-            .pumpWidget(buildTestWidget(email: 'test@example.com'));
+        await tester.pumpWidget(buildTestWidget(email: 'test@example.com'));
         await tester.pumpAndSettle();
 
         expect(find.byType(Switch), findsOneWidget);
       });
 
       testWidgets('switch reflects enabled state', (tester) async {
-        await tester.pumpWidget(buildTestWidget(
-          email: 'test@example.com',
-          biometricsEnabled: true,
-        ));
+        await tester.pumpWidget(
+          buildTestWidget(email: 'test@example.com', biometricsEnabled: true),
+        );
         await tester.pumpAndSettle();
 
         final switchWidget = tester.widget<Switch>(find.byType(Switch));
@@ -238,10 +239,9 @@ void main() {
       });
 
       testWidgets('switch reflects disabled state', (tester) async {
-        await tester.pumpWidget(buildTestWidget(
-          email: 'test@example.com',
-          biometricsEnabled: false,
-        ));
+        await tester.pumpWidget(
+          buildTestWidget(email: 'test@example.com', biometricsEnabled: false),
+        );
         await tester.pumpAndSettle();
 
         final switchWidget = tester.widget<Switch>(find.byType(Switch));
