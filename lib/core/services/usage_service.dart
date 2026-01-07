@@ -22,6 +22,8 @@ class UsageService {
   static const _keyMonthlyCount = 'monthly_generation_count';
   static const _keyMonthlyDate = 'monthly_generation_month';
   static const _keyLastSyncUserId = 'last_sync_user_id';
+  // Device-level flag - survives account deletion (fraud prevention, not user data)
+  static const _keyDeviceUsedFreeTier = 'device_used_free_tier';
 
   // Limits
   static const int freeLifetimeLimit = 1;
@@ -64,8 +66,19 @@ class UsageService {
   }
 
   /// Check if user can generate (free tier - lifetime limit)
+  /// Also checks device-level flag to prevent abuse after account deletion
   bool canGenerateFree() {
+    // Device already used free tier (survives account deletion)
+    if (_prefs.getBool(_keyDeviceUsedFreeTier) == true) {
+      return false;
+    }
     return getTotalCount() < freeLifetimeLimit;
+  }
+
+  /// Mark device as having used free tier (fraud prevention)
+  /// This survives account deletion - not user data, device data
+  Future<void> markDeviceUsedFreeTier() async {
+    await _prefs.setBool(_keyDeviceUsedFreeTier, true);
   }
 
   /// Check if user can generate (pro tier)
@@ -90,7 +103,13 @@ class UsageService {
   // ===========================================================================
 
   /// Record a generation - updates local cache AND server
-  Future<void> recordGeneration() async {
+  /// [isPro] - if false, marks device as having used free tier
+  Future<void> recordGeneration({bool isPro = false}) async {
+    // Mark device as having used free tier (survives account deletion)
+    if (!isPro) {
+      await markDeviceUsedFreeTier();
+    }
+
     final thisMonth = _monthString();
 
     // Update local cache first (for immediate UI feedback)

@@ -80,8 +80,8 @@ class _ProsepalAppState extends ConsumerState<ProsepalApp>
         } else if (event == AuthChangeEvent.signedOut) {
           // Clear sync marker so next user gets fresh sync
           await ref.read(usageServiceProvider).clearSyncMarker();
-          // Go to home - anonymous users can still use free token
-          appRouter.go('/home');
+          // Note: Navigation is handled by caller (settings_screen)
+          // Sign out → /home, Delete account → /onboarding
         }
       });
     } catch (_) {
