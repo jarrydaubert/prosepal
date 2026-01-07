@@ -115,6 +115,12 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 | Paywall analytics | `custom_paywall_screen.dart` | Track impressions, package views, conversions |
 | Intro/promo offers | `custom_paywall_screen.dart` | Support RevenueCat promotional offers and trials |
 | Offering retry | `custom_paywall_screen.dart` | Add retry button on load failure, cache last-known |
+| Settings localization | `settings_screen.dart` | Extract strings to .arb files |
+| Settings accessibility | `settings_screen.dart` | Expand Semantics, increase small text sizes |
+| Platform service abstraction | `settings_screen.dart` | Abstract Platform.isIOS into testable service |
+| Log export sanitization | `settings_screen.dart` | Truncate/hash user IDs before export |
+| Restore rate limiting | `settings_screen.dart` | Add cooldown on restore purchase attempts |
+| Add App Store ID | `settings_screen.dart` | Fill in appStoreId after iOS release |
 
 ---
 
