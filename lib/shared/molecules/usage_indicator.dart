@@ -162,7 +162,7 @@ class _FreeUsageCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   const Text(
-                    'Upgrade for unlimited',
+                    'Tap to unlock 500/month',
                     style: TextStyle(
                       fontSize: 13,
                       color: AppColors.textSecondary,

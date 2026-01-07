@@ -83,16 +83,26 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                   itemCount: result.messages.length,
                   itemBuilder: (context, index) {
                     final message = result.messages[index];
+                    final card = _MessageCard(
+                      key: ValueKey('message_$index'),
+                      message: message,
+                      index: index,
+                      isCopied: _copiedIndex == index,
+                      onCopy: () => _copyMessage(message.text, index),
+                      onShare: () => _shareMessage(message.text, index),
+                    );
+                    
+                    // Skip animations if user prefers reduced motion
+                    if (_reduceMotion) {
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 16),
+                        child: card,
+                      );
+                    }
+                    
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 16),
-                      child: _MessageCard(
-                        key: ValueKey('message_$index'),
-                        message: message,
-                        index: index,
-                        isCopied: _copiedIndex == index,
-                        onCopy: () => _copyMessage(message.text, index),
-                        onShare: () => _shareMessage(message.text, index),
-                      )
+                      child: card
                           .animate(key: ValueKey('msg_anim_$index'))
                           .fadeIn(
                             delay: Duration(milliseconds: index * 100),
@@ -107,6 +117,19 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                           ),
                     );
                   },
+                ),
+              ),
+
+              // Gemini attribution
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Text(
+                  'Built with Google Gemini',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[500],
+                  ),
+                  textAlign: TextAlign.center,
                 ),
               ),
 

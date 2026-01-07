@@ -12,6 +12,8 @@ PODS:
     - GoogleUtilities/UserDefaults (~> 8.0)
     - PromisesObjC (~> 2.4)
   - CocoaAsyncSocket (7.6.5)
+  - device_info_plus (0.0.1):
+    - Flutter
   - Firebase/Auth (12.6.0):
     - Firebase/CoreOnly
     - FirebaseAuth (~> 12.6.0)
@@ -108,6 +110,8 @@ PODS:
     - nanopb (~> 3.30910.0)
     - PromisesSwift (~> 2.1)
   - Flutter (1.0.0)
+  - flutter_native_splash (2.4.3):
+    - Flutter
   - google_sign_in_ios (0.0.1):
     - Flutter
     - FlutterMacOS
@@ -236,12 +240,14 @@ PODS:
 
 DEPENDENCIES:
   - app_links (from `.symlinks/plugins/app_links/ios`)
+  - device_info_plus (from `.symlinks/plugins/device_info_plus/ios`)
   - firebase_analytics (from `.symlinks/plugins/firebase_analytics/ios`)
   - firebase_app_check (from `.symlinks/plugins/firebase_app_check/ios`)
   - firebase_auth (from `.symlinks/plugins/firebase_auth/ios`)
   - firebase_core (from `.symlinks/plugins/firebase_core/ios`)
   - firebase_crashlytics (from `.symlinks/plugins/firebase_crashlytics/ios`)
   - Flutter (from `Flutter`)
+  - flutter_native_splash (from `.symlinks/plugins/flutter_native_splash/ios`)
   - google_sign_in_ios (from `.symlinks/plugins/google_sign_in_ios/darwin`)
   - in_app_review (from `.symlinks/plugins/in_app_review/ios`)
   - integration_test (from `.symlinks/plugins/integration_test/ios`)
@@ -294,6 +300,8 @@ SPEC REPOS:
 EXTERNAL SOURCES:
   app_links:
     :path: ".symlinks/plugins/app_links/ios"
+  device_info_plus:
+    :path: ".symlinks/plugins/device_info_plus/ios"
   firebase_analytics:
     :path: ".symlinks/plugins/firebase_analytics/ios"
   firebase_app_check:
@@ -306,6 +314,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/firebase_crashlytics/ios"
   Flutter:
     :path: Flutter
+  flutter_native_splash:
+    :path: ".symlinks/plugins/flutter_native_splash/ios"
   google_sign_in_ios:
     :path: ".symlinks/plugins/google_sign_in_ios/darwin"
   in_app_review:
@@ -340,6 +350,7 @@ SPEC CHECKSUMS:
   AppAuth: 1c1a8afa7e12f2ec3a294d9882dfa5ab7d3cb063
   AppCheckCore: cc8fd0a3a230ddd401f326489c99990b013f0c4f
   CocoaAsyncSocket: 065fd1e645c7abab64f7a6a2007a48038fdc6a99
+  device_info_plus: 21fcca2080fbcd348be798aa36c3e5ed849eefbe
   Firebase: a451a7b61536298fd5cbfe3a746fd40443a50679
   firebase_analytics: 4f9cca09e65f6c2944a862c6dc86f6bed9fb769c
   firebase_app_check: 9f4ea327e72d5675588cdcbb21d89a7e2d015887
@@ -359,6 +370,7 @@ SPEC CHECKSUMS:
   FirebaseRemoteConfigInterop: 3443b8cb8fffd76bb3e03b2a84bfd3db952fcda4
   FirebaseSessions: 2e8f808347e665dff3e5843f275715f07045297d
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
+  flutter_native_splash: c32d145d68aeda5502d5f543ee38c192065986cf
   google_sign_in_ios: 00dfa94252eb10278b64828c81bcb7158a81a53a
   GoogleAdsOnDeviceConversion: d68c69dd9581a0f5da02617b6f377e5be483970f
   GoogleAppMeasurement: 3bf40aff49a601af5da1c3345702fcb4991d35ee

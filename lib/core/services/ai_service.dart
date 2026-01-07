@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:firebase_ai/firebase_ai.dart';
 import 'package:flutter/foundation.dart';
@@ -71,11 +72,188 @@ class AiParseException extends AiServiceException {
   const AiParseException(super.message, {super.originalError, super.errorCode});
 }
 
+/// Error classification result for testability
+class AiErrorClassification {
+  const AiErrorClassification({
+    required this.exceptionType,
+    required this.message,
+    required this.errorCode,
+    this.isRetryable = false,
+  });
+
+  final Type exceptionType;
+  final String message;
+  final String errorCode;
+  final bool isRetryable;
+}
+
 class AiService {
   AiService();
 
   GenerativeModel? _model;
   final _uuid = const Uuid();
+  final _random = Random();
+
+  /// Create typed exception from classification result
+  static AiServiceException _createException(
+    AiErrorClassification classification,
+    Object originalError,
+  ) {
+    return switch (classification.exceptionType) {
+      const (AiNetworkException) => AiNetworkException(
+        classification.message,
+        originalError: originalError,
+        errorCode: classification.errorCode,
+      ),
+      const (AiContentBlockedException) => AiContentBlockedException(
+        classification.message,
+        originalError: originalError,
+        errorCode: classification.errorCode,
+      ),
+      const (AiRateLimitException) => AiRateLimitException(
+        classification.message,
+        originalError: originalError,
+        errorCode: classification.errorCode,
+      ),
+      const (AiUnavailableException) => AiUnavailableException(
+        classification.message,
+        originalError: originalError,
+        errorCode: classification.errorCode,
+      ),
+      _ => AiServiceException(
+        classification.message,
+        originalError: originalError,
+        errorCode: classification.errorCode,
+      ),
+    };
+  }
+
+  // ============================================================
+  // ERROR CLASSIFICATION - Extracted for testability
+  // ============================================================
+
+  /// Classify Firebase AI errors based on message content
+  /// Returns classification with exception type, user message, and retry info
+  @visibleForTesting
+  static AiErrorClassification classifyFirebaseAIError(String errorMessage) {
+    final message = errorMessage.toLowerCase();
+
+    // Rate limiting
+    if (message.contains('rate') || message.contains('quota')) {
+      return AiErrorClassification(
+        exceptionType: AiRateLimitException,
+        message: 'Our servers are busy right now. Please wait a moment and try again.',
+        errorCode: 'RATE_LIMIT',
+        isRetryable: true,
+      );
+    }
+
+    // Network errors
+    if (message.contains('network') || message.contains('connection')) {
+      return AiErrorClassification(
+        exceptionType: AiNetworkException,
+        message: 'Unable to connect. Please check your internet connection.',
+        errorCode: 'NETWORK_ERROR',
+        isRetryable: false,
+      );
+    }
+
+    // Content blocked
+    if (message.contains('blocked') || message.contains('safety')) {
+      return AiErrorClassification(
+        exceptionType: AiContentBlockedException,
+        message: 'Your message details triggered our safety filters. '
+            'Try removing any sensitive words or phrases.',
+        errorCode: 'CONTENT_BLOCKED',
+        isRetryable: false,
+      );
+    }
+
+    // Service unavailable
+    if (message.contains('unavailable') || message.contains('503')) {
+      return AiErrorClassification(
+        exceptionType: AiUnavailableException,
+        message: 'The AI service is temporarily unavailable. Please try again in a few minutes.',
+        errorCode: 'SERVICE_UNAVAILABLE',
+        isRetryable: true,
+      );
+    }
+
+    // Timeout
+    if (message.contains('timeout')) {
+      return AiErrorClassification(
+        exceptionType: AiNetworkException,
+        message: 'The request timed out. Please check your connection and try again.',
+        errorCode: 'TIMEOUT',
+        isRetryable: true,
+      );
+    }
+
+    // Invalid request
+    if (message.contains('invalid') || message.contains('malformed')) {
+      return AiErrorClassification(
+        exceptionType: AiServiceException,
+        message: 'There was an issue with the request. Please try again.',
+        errorCode: 'INVALID_REQUEST',
+        isRetryable: false,
+      );
+    }
+
+    // Generic fallback
+    return const AiErrorClassification(
+      exceptionType: AiServiceException,
+      message: 'Unable to generate messages right now. Please try again.',
+      errorCode: 'FIREBASE_AI_ERROR',
+      isRetryable: false,
+    );
+  }
+
+  /// Classify general (non-Firebase) errors based on error string
+  @visibleForTesting
+  static AiErrorClassification classifyGeneralError(String errorString) {
+    final errorStr = errorString.toLowerCase();
+
+    // Network errors
+    if (errorStr.contains('network') ||
+        errorStr.contains('socket') ||
+        errorStr.contains('connection') ||
+        errorStr.contains('host')) {
+      return AiErrorClassification(
+        exceptionType: AiNetworkException,
+        message: 'Unable to connect. Please check your internet connection.',
+        errorCode: 'NETWORK_ERROR',
+        isRetryable: false,
+      );
+    }
+
+    // Timeout
+    if (errorStr.contains('timeout')) {
+      return AiErrorClassification(
+        exceptionType: AiNetworkException,
+        message: 'The request timed out. Please try again.',
+        errorCode: 'TIMEOUT',
+        isRetryable: true,
+      );
+    }
+
+    // Permission errors
+    if (errorStr.contains('permission') || errorStr.contains('denied')) {
+      return AiErrorClassification(
+        exceptionType: AiServiceException,
+        message: 'Permission error. Please restart the app and try again.',
+        errorCode: 'PERMISSION_DENIED',
+        isRetryable: false,
+      );
+    }
+
+    // Generic fallback
+    return const AiErrorClassification(
+      exceptionType: AiServiceException,
+      message: 'Something unexpected happened. Please try again.',
+      errorCode: 'UNKNOWN_ERROR',
+      isRetryable: false,
+    );
+  }
 
   /// JSON schema for structured output - 3 message strings
   static final _responseSchema = Schema.object(
@@ -151,7 +329,7 @@ class AiService {
       'length': length.name,
     });
 
-    final prompt = _buildPrompt(
+    final prompt = buildPrompt(
       occasion: occasion,
       relationship: relationship,
       tone: tone,
@@ -187,7 +365,7 @@ class AiService {
 
       // Parse structured JSON response
       Log.info('AI parsing JSON response...');
-      final messages = _parseJsonResponse(
+      final messages = parseJsonResponse(
         jsonText,
         occasion: occasion,
         relationship: relationship,
@@ -234,136 +412,49 @@ class AiService {
         return await operation();
       } on FirebaseAIException catch (e, stackTrace) {
         attempt++;
-        final message = e.message.toLowerCase();
-        final isRetryable =
-            message.contains('rate') ||
-            message.contains('quota') ||
-            message.contains('unavailable') ||
-            message.contains('timeout');
+        final classification = classifyFirebaseAIError(e.message);
 
-        if (isRetryable && attempt < AiConfig.maxRetries) {
-          // Exponential backoff with jitter
+        if (classification.isRetryable && attempt < AiConfig.maxRetries) {
+          // Exponential backoff with jitter (0-20% of delay)
           final delayMs = AiConfig.initialDelayMs * (1 << attempt);
-          final jitter =
-              (delayMs * 0.2 * (DateTime.now().millisecond % 10) / 10).toInt();
-          if (kDebugMode) {
-            debugPrint('Retry attempt $attempt after ${delayMs + jitter}ms');
-          }
+          final jitter = (delayMs * 0.2 * _random.nextDouble()).toInt();
+          Log.info('AI retry attempt', {
+            'attempt': attempt,
+            'delayMs': delayMs + jitter,
+          });
           await Future.delayed(Duration(milliseconds: delayMs + jitter));
           continue;
         }
 
-        // Log and categorize error
+        // Log and throw classified exception
         ErrorLogService.instance.log(e, stackTrace);
         Log.error('Firebase AI error', e, stackTrace, {'attempt': attempt});
-
-        // Categorize Firebase AI errors with specific messages
-        if (message.contains('rate') || message.contains('quota')) {
-          throw AiRateLimitException(
-            'Our servers are busy right now. Please wait a moment and try again.',
-            originalError: e,
-            errorCode: 'RATE_LIMIT',
-          );
-        }
-        if (message.contains('network') || message.contains('connection')) {
-          throw AiNetworkException(
-            'Unable to connect. Please check your internet connection.',
-            originalError: e,
-            errorCode: 'NETWORK_ERROR',
-          );
-        }
-        if (message.contains('blocked') || message.contains('safety')) {
-          throw AiContentBlockedException(
-            'Your message details triggered our safety filters. '
-            'Try removing any sensitive words or phrases.',
-            originalError: e,
-            errorCode: 'CONTENT_BLOCKED',
-          );
-        }
-        if (message.contains('unavailable') || message.contains('503')) {
-          throw AiUnavailableException(
-            'The AI service is temporarily unavailable. Please try again in a few minutes.',
-            originalError: e,
-            errorCode: 'SERVICE_UNAVAILABLE',
-          );
-        }
-        if (message.contains('timeout')) {
-          throw AiNetworkException(
-            'The request timed out. Please check your connection and try again.',
-            originalError: e,
-            errorCode: 'TIMEOUT',
-          );
-        }
-        if (message.contains('invalid') || message.contains('malformed')) {
-          throw AiServiceException(
-            'There was an issue with the request. Please try again.',
-            originalError: e,
-            errorCode: 'INVALID_REQUEST',
-          );
-        }
-
-        // Generic Firebase AI error - provide context
-        throw AiServiceException(
-          'Unable to generate messages right now. Please try again.',
-          originalError: e,
-          errorCode: 'FIREBASE_AI_ERROR',
-        );
+        throw _createException(classification, e);
       } catch (e, stackTrace) {
         if (e is AiServiceException) rethrow;
 
         attempt++;
-        final errorStr = e.toString().toLowerCase();
-        final isRetryable =
-            errorStr.contains('timeout') || errorStr.contains('unavailable');
+        final classification = classifyGeneralError(e.toString());
 
-        if (isRetryable && attempt < AiConfig.maxRetries) {
+        if (classification.isRetryable && attempt < AiConfig.maxRetries) {
+          // Exponential backoff with jitter (0-20% of delay)
           final delayMs = AiConfig.initialDelayMs * (1 << attempt);
-          await Future.delayed(Duration(milliseconds: delayMs));
+          final jitter = (delayMs * 0.2 * _random.nextDouble()).toInt();
+          await Future.delayed(Duration(milliseconds: delayMs + jitter));
           continue;
         }
 
-        // Log error for feedback reports
+        // Log and throw classified exception
         ErrorLogService.instance.log(e, stackTrace);
         Log.error('Unexpected AI error', e, stackTrace, {'attempt': attempt});
-
-        // Categorize general errors
-        if (errorStr.contains('network') ||
-            errorStr.contains('socket') ||
-            errorStr.contains('connection') ||
-            errorStr.contains('host')) {
-          throw AiNetworkException(
-            'Unable to connect. Please check your internet connection.',
-            originalError: e,
-            errorCode: 'NETWORK_ERROR',
-          );
-        }
-        if (errorStr.contains('timeout')) {
-          throw AiNetworkException(
-            'The request timed out. Please try again.',
-            originalError: e,
-            errorCode: 'TIMEOUT',
-          );
-        }
-        if (errorStr.contains('permission') || errorStr.contains('denied')) {
-          throw AiServiceException(
-            'Permission error. Please restart the app and try again.',
-            originalError: e,
-            errorCode: 'PERMISSION_DENIED',
-          );
-        }
-
-        // Fallback with more context
-        throw AiServiceException(
-          'Something unexpected happened. Please try again.',
-          originalError: e,
-          errorCode: 'UNKNOWN_ERROR',
-        );
+        throw _createException(classification, e);
       }
     }
   }
 
   /// Build prompt for structured JSON output
-  String _buildPrompt({
+  @visibleForTesting
+  String buildPrompt({
     required Occasion occasion,
     required Relationship relationship,
     required Tone tone,
@@ -393,7 +484,8 @@ $context
 
   /// Parse structured JSON response from Gemini
   /// Uses Dart 3 pattern matching for type-safe extraction
-  List<GeneratedMessage> _parseJsonResponse(
+  @visibleForTesting
+  List<GeneratedMessage> parseJsonResponse(
     String jsonText, {
     required Occasion occasion,
     required Relationship relationship,

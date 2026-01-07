@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/models/models.dart';
 import '../../core/providers/providers.dart';
 import '../../core/services/ai_service.dart';
+import '../../core/services/log_service.dart';
 import '../../shared/atoms/app_button.dart';
 import '../../shared/atoms/shimmer_button.dart';
 import '../../shared/molecules/generation_loading_overlay.dart';
@@ -257,6 +258,9 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
   }
 
   Future<void> _generate(BuildContext context) async {
+    // Dismiss keyboard before starting generation
+    FocusScope.of(context).unfocus();
+
     final occasion = ref.read(selectedOccasionProvider);
     final relationship = ref.read(selectedRelationshipProvider);
     final tone = ref.read(selectedToneProvider);
@@ -283,6 +287,14 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
       );
 
       await usageService.recordGeneration();
+      
+      // Force Riverpod to re-read usage after recording
+      ref.invalidate(remainingGenerationsProvider);
+      ref.invalidate(totalUsageProvider);
+
+      // Save to history for later viewing
+      final historyService = ref.read(historyServiceProvider);
+      await historyService.saveGeneration(result);
 
       // Check if we should request a review (after 3rd generation)
       final reviewService = ref.read(reviewServiceProvider);
@@ -295,31 +307,44 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
       if (!mounted) return;
       unawaited(context.pushNamed('results'));
     } on AiNetworkException catch (e) {
+      Log.warning('AI generation failed: network', {'error': e.message});
       ref.read(isGeneratingProvider.notifier).state = false;
       ref.read(generationErrorProvider.notifier).state = e.message;
     } on AiRateLimitException catch (e) {
+      Log.warning('AI generation failed: rate limit', {'error': e.message});
       ref.read(isGeneratingProvider.notifier).state = false;
       ref.read(generationErrorProvider.notifier).state = e.message;
     } on AiContentBlockedException catch (e) {
+      Log.warning('AI generation failed: content blocked', {'error': e.message});
       ref.read(isGeneratingProvider.notifier).state = false;
       ref.read(generationErrorProvider.notifier).state = e.message;
     } on AiUnavailableException catch (e) {
+      Log.warning('AI generation failed: service unavailable', {'error': e.message});
       ref.read(isGeneratingProvider.notifier).state = false;
       ref.read(generationErrorProvider.notifier).state = e.message;
-    } on AiEmptyResponseException {
+    } on AiEmptyResponseException catch (e) {
+      Log.warning('AI generation failed: empty response', {'error': e.message});
       ref.read(isGeneratingProvider.notifier).state = false;
       ref.read(generationErrorProvider.notifier).state =
           'No messages were generated. Please try again.';
-    } on AiParseException {
+    } on AiParseException catch (e) {
+      Log.warning('AI generation failed: parse error', {
+        'error': e.message,
+        'code': e.errorCode,
+        'original': '${e.originalError}',
+      });
       ref.read(isGeneratingProvider.notifier).state = false;
       ref.read(generationErrorProvider.notifier).state =
           'There was an issue processing the response. Please try again.';
     } on AiServiceException catch (e) {
+      Log.warning('AI generation failed: service error', {
+        'error': e.message,
+        'code': e.errorCode,
+      });
       ref.read(isGeneratingProvider.notifier).state = false;
       ref.read(generationErrorProvider.notifier).state = e.message;
     } catch (e, stackTrace) {
-      debugPrint('Unexpected generation error: $e');
-      debugPrint('Stack trace: $stackTrace');
+      Log.error('AI generation failed: unexpected', e, stackTrace);
       ref.read(isGeneratingProvider.notifier).state = false;
       ref.read(generationErrorProvider.notifier).state =
           'An unexpected error occurred. Please try again.';

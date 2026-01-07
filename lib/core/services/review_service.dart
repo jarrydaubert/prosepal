@@ -2,6 +2,8 @@ import 'package:flutter/foundation.dart';
 import 'package:in_app_review/in_app_review.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'log_service.dart';
+
 /// Service to handle in-app review requests.
 ///
 /// Triggers review prompt when:
@@ -66,23 +68,16 @@ class ReviewService {
     try {
       final isAvailable = await _inAppReview.isAvailable();
       if (!isAvailable) {
-        if (kDebugMode) {
-          debugPrint('In-app review not available');
-        }
+        Log.info('In-app review not available');
         return false;
       }
 
       await _inAppReview.requestReview();
       await _prefs.setBool(_hasRequestedReviewKey, true);
-
-      if (kDebugMode) {
-        debugPrint('In-app review requested successfully');
-      }
+      Log.info('In-app review requested');
       return true;
     } catch (e) {
-      if (kDebugMode) {
-        debugPrint('Error requesting review: $e');
-      }
+      Log.warning('Error requesting review', {'error': '$e'});
       return false;
     }
   }
@@ -93,10 +88,9 @@ class ReviewService {
       await _inAppReview.openStoreListing(
         appStoreId: _appStoreId.isNotEmpty ? _appStoreId : null,
       );
+      Log.info('Store listing opened');
     } catch (e) {
-      if (kDebugMode) {
-        debugPrint('Error opening store listing: $e');
-      }
+      Log.warning('Error opening store listing', {'error': '$e'});
     }
   }
 
@@ -110,7 +104,7 @@ class ReviewService {
     if (kDebugMode) {
       await _prefs.remove(_hasRequestedReviewKey);
       await _prefs.remove(_firstLaunchKey);
-      debugPrint('Review state reset');
+      Log.info('Review state reset');
     }
   }
 }

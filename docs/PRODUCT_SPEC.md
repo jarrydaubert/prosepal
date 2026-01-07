@@ -74,7 +74,7 @@
 
 | Tier | Price | Trial | Limit |
 |------|-------|-------|-------|
-| Free | $0 | - | 3 lifetime |
+| Free | $0 | - | 1 lifetime |
 | Weekly | $2.99/wk | 3-day | 500/mo |
 | Monthly | $4.99/mo | 7-day | 500/mo |
 | Yearly | $29.99/yr | 7-day | 500/mo |

@@ -232,6 +232,16 @@ class UsageService {
     await _prefs.remove(_keyLastSyncUserId);
   }
 
+  /// Clear ALL usage data (call on sign out - internet cafe test)
+  /// Leaves no trace of previous user's activity
+  Future<void> clearAllUsage() async {
+    await _prefs.remove(_keyTotalCount);
+    await _prefs.remove(_keyMonthlyCount);
+    await _prefs.remove(_keyMonthlyDate);
+    await _prefs.remove(_keyLastSyncUserId);
+    Log.info('Usage cleared');
+  }
+
   // ===========================================================================
   // UTILITIES
   // ===========================================================================

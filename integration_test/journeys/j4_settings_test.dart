@@ -30,7 +30,7 @@ void main() {
       expect(atSettings, isTrue, reason: 'Should reach settings');
       expect(find.text('Settings'), findsOneWidget);
 
-      await screenshot('j4_1_settings');
+      await screenshot(tester, 'j4_1_settings');
     });
 
     testWidgets('J4.2: Subscription status visible', (tester) async {
@@ -43,7 +43,7 @@ void main() {
       expect(hasProPlan || hasFreePlan, isTrue,
           reason: 'Should show subscription status');
 
-      await screenshot('j4_2_subscription');
+      await screenshot(tester, 'j4_2_subscription');
     });
 
     testWidgets('J4.3: Biometric toggle exists (if supported)', (tester) async {
@@ -56,7 +56,7 @@ void main() {
           exists(find.textContaining('Biometric'));
 
       // May not exist on all devices
-      await screenshot('j4_3_biometric_option');
+      await screenshot(tester, 'j4_3_biometric_option');
     });
 
     testWidgets('J4.4: Restore Purchases option exists', (tester) async {
@@ -67,7 +67,7 @@ void main() {
       
       expect(found, isTrue, reason: 'Should have Restore Purchases option');
 
-      await screenshot('j4_4_restore');
+      await screenshot(tester, 'j4_4_restore');
     });
 
     testWidgets('J4.5: Restore Purchases triggers restore', (tester) async {
@@ -79,7 +79,7 @@ void main() {
         await tester.pumpAndSettle(const Duration(seconds: 3));
 
         // Should show loading, success, or error
-        await screenshot('j4_5_restore_result');
+        await screenshot(tester, 'j4_5_restore_result');
       }
     });
 
@@ -92,7 +92,7 @@ void main() {
         await tester.pumpAndSettle();
 
         // Should navigate to privacy screen
-        await screenshot('j4_6_privacy');
+        await screenshot(tester, 'j4_6_privacy');
       }
     });
 
@@ -104,7 +104,7 @@ void main() {
         await tester.tap(find.text('Terms of Service'));
         await tester.pumpAndSettle();
 
-        await screenshot('j4_7_terms');
+        await screenshot(tester, 'j4_7_terms');
       }
     });
 
@@ -115,7 +115,7 @@ void main() {
       final found = await scrollToText(tester, 'Send Feedback');
       
       // Feedback may or may not exist
-      await screenshot('j4_8_feedback_option');
+      await screenshot(tester, 'j4_8_feedback_option');
     });
 
     testWidgets('J4.9: Delete Account (authenticated only)', (tester) async {
@@ -134,7 +134,7 @@ void main() {
       expect(hasDelete || hasSignIn, isTrue,
           reason: 'Should show Delete Account (auth) or Sign In (anon)');
 
-      await screenshot('j4_9_delete_or_signin');
+      await screenshot(tester, 'j4_9_delete_or_signin');
     });
 
     testWidgets('J4.10: Delete Account shows warning', (tester) async {
@@ -154,7 +154,7 @@ void main() {
         expect(hasWarning, isTrue,
             reason: 'Should show delete confirmation');
 
-        await screenshot('j4_10_delete_warning');
+        await screenshot(tester, 'j4_10_delete_warning');
       }
     });
 
@@ -172,7 +172,7 @@ void main() {
           find.textContaining('v1.').evaluate().isNotEmpty ||
           find.textContaining('1.0').evaluate().isNotEmpty;
 
-      await screenshot('j4_11_version');
+      await screenshot(tester, 'j4_11_version');
     });
 
     testWidgets('J4.12: Back from settings returns to home', (tester) async {
@@ -188,7 +188,7 @@ void main() {
           reason: 'Should return to home',
         );
 
-        await screenshot('j4_12_back_to_home');
+        await screenshot(tester, 'j4_12_back_to_home');
       }
     });
   });

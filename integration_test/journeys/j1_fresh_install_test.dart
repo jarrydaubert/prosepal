@@ -35,29 +35,50 @@ void main() {
         reason: 'Should show onboarding, auth, or home',
       );
 
-      await screenshot('j1_1_launch');
+      await screenshot(tester, 'j1_1_launch');
     });
 
     testWidgets('J1.2: Onboarding completes to home', (tester) async {
       await launchApp(tester);
 
-      // Count onboarding pages
+      // Navigate through onboarding carousel (up to 10 pages max)
       int pages = 0;
-      while (exists(find.text('Continue')) && 
-             !exists(find.text('Birthday')) && 
-             pages < 5) {
-        await tester.tap(find.text('Continue'));
-        await tester.pumpAndSettle(const Duration(seconds: 1));
-        pages++;
+      while (pages < 10) {
+        // Check if we've reached auth or home
+        if (exists(find.text('Birthday')) || 
+            exists(find.text('Continue with Email')) ||
+            exists(find.text('Continue with Apple')) ||
+            exists(find.text("What's the occasion?"))) {
+          break;
+        }
+        
+        // Tap "Get Started" to complete onboarding (final carousel page)
+        if (exists(find.text('Get Started'))) {
+          await tester.tap(find.text('Get Started'));
+          await tester.pumpAndSettle(const Duration(seconds: 2));
+          break;
+        }
+        
+        // Tap "Continue" to advance carousel
+        if (exists(find.text('Continue'))) {
+          await tester.tap(find.text('Continue'));
+          await tester.pumpAndSettle(const Duration(seconds: 1));
+          pages++;
+        } else {
+          break;
+        }
       }
 
+      // Give extra time for final screen to render
+      await tester.pumpAndSettle(const Duration(seconds: 2));
+
       expect(
-        anyTextExists(['Continue with Email', 'Birthday']),
+        anyTextExists(['Continue with Email', 'Continue with Apple', 'Birthday', "What's the occasion?"]),
         isTrue,
         reason: 'Should reach auth or home after onboarding',
       );
 
-      await screenshot('j1_2_after_onboarding');
+      await screenshot(tester, 'j1_2_after_onboarding');
     });
 
     testWidgets('J1.3: Home shows occasions grid', (tester) async {
@@ -74,7 +95,7 @@ void main() {
         reason: 'Should show multiple occasion options',
       );
 
-      await screenshot('j1_3_home_occasions');
+      await screenshot(tester, 'j1_3_home_occasions');
     });
 
     testWidgets('J1.4: Free user sees usage indicator', (tester) async {
@@ -89,7 +110,7 @@ void main() {
       expect(hasFreeIndicator || hasProBadge, isTrue,
           reason: 'Should show usage status');
 
-      await screenshot('j1_4_usage_indicator');
+      await screenshot(tester, 'j1_4_usage_indicator');
     });
 
     testWidgets('J1.5: Wizard step 1 - Select relationship', (tester) async {
@@ -105,7 +126,7 @@ void main() {
         reason: 'Should show relationship options',
       );
 
-      await screenshot('j1_5_relationships');
+      await screenshot(tester, 'j1_5_relationships');
     });
 
     testWidgets('J1.6: Wizard step 2 - Select tone', (tester) async {
@@ -130,7 +151,7 @@ void main() {
         reason: 'Should show tone options',
       );
 
-      await screenshot('j1_6_tones');
+      await screenshot(tester, 'j1_6_tones');
     });
 
     testWidgets('J1.7: Wizard step 3 - Final step with generate/upgrade', (tester) async {
@@ -146,7 +167,7 @@ void main() {
         reason: 'Should show Generate or Upgrade button',
       );
 
-      await screenshot('j1_7_final_step');
+      await screenshot(tester, 'j1_7_final_step');
     });
 
     testWidgets('J1.8: Generate triggers AI call', (tester) async {
@@ -165,7 +186,7 @@ void main() {
           reason: 'Should show results or error',
         );
 
-        await screenshot('j1_8_generation_result');
+        await screenshot(tester, 'j1_8_generation_result');
       }
     });
 
@@ -184,7 +205,7 @@ void main() {
           expect(find.text('Option 2'), findsOneWidget);
           expect(find.text('Option 3'), findsOneWidget);
 
-          await screenshot('j1_9_three_options');
+          await screenshot(tester, 'j1_9_three_options');
         }
       }
     });
@@ -204,7 +225,7 @@ void main() {
           await tester.pumpAndSettle();
 
           expect(find.text('Copied!'), findsOneWidget);
-          await screenshot('j1_10_copied');
+          await screenshot(tester, 'j1_10_copied');
         }
       }
     });
@@ -229,7 +250,7 @@ void main() {
             reason: 'Should return to home',
           );
 
-          await screenshot('j1_11_start_over');
+          await screenshot(tester, 'j1_11_start_over');
         }
       }
     });

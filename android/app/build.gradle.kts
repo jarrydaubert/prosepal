@@ -42,9 +42,11 @@ android {
         targetSdk = 35
         versionCode = flutter.versionCode
         versionName = flutter.versionName
-        // Required for Firebase Test Lab integration tests
+        // Required for Flutter integration tests on Firebase Test Lab
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
+
+
 
     signingConfigs {
         create("release") {
@@ -80,7 +82,7 @@ flutter {
 }
 
 dependencies {
-    // Firebase Test Lab integration test dependencies (latest stable Jan 2026)
+    // Firebase Test Lab integration test dependencies
     androidTestImplementation("androidx.test:runner:1.6.2")
     androidTestImplementation("androidx.test:rules:1.6.1")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")

@@ -52,8 +52,20 @@ class HomeScreen extends ConsumerWidget {
                             ),
                           ],
                         ),
-                        _SettingsButton(
-                          onPressed: () => context.pushNamed('settings'),
+                        Row(
+                          children: [
+                            _IconButton(
+                              icon: Icons.history,
+                              onPressed: () => context.pushNamed('history'),
+                              tooltip: 'Message history',
+                            ),
+                            const SizedBox(width: 8),
+                            _IconButton(
+                              icon: Icons.settings_outlined,
+                              onPressed: () => context.pushNamed('settings'),
+                              tooltip: 'Settings',
+                            ),
+                          ],
                         ),
                       ],
                     )
@@ -120,15 +132,21 @@ class HomeScreen extends ConsumerWidget {
 // COMPONENTS
 // =============================================================================
 
-class _SettingsButton extends StatelessWidget {
-  const _SettingsButton({required this.onPressed});
+class _IconButton extends StatelessWidget {
+  const _IconButton({
+    required this.icon,
+    required this.onPressed,
+    this.tooltip = '',
+  });
 
+  final IconData icon;
   final VoidCallback onPressed;
+  final String tooltip;
 
   @override
   Widget build(BuildContext context) {
     return Semantics(
-      label: 'Settings',
+      label: tooltip,
       button: true,
       child: GestureDetector(
         onTap: onPressed,
@@ -140,8 +158,8 @@ class _SettingsButton extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: AppColors.primary, width: 2),
           ),
-          child: const Icon(
-            Icons.settings_outlined,
+          child: Icon(
+            icon,
             color: AppColors.primary,
             size: 22,
           ),

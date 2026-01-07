@@ -39,7 +39,7 @@ void main() {
         expect(atAuth || atPaywall, isTrue,
             reason: 'Should reach auth or paywall');
 
-        await screenshot('j8_1_upgrade_destination');
+        await screenshot(tester, 'j8_1_upgrade_destination');
       }
     });
 
@@ -64,7 +64,7 @@ void main() {
           find.textContaining('month').evaluate().isNotEmpty ||
           find.textContaining('year').evaluate().isNotEmpty;
 
-      await screenshot('j8_2_paywall_pricing');
+      await screenshot(tester, 'j8_2_paywall_pricing');
     });
 
     testWidgets('J8.3: Paywall has restore purchases link', (tester) async {
@@ -88,7 +88,7 @@ void main() {
         final hasRestore = exists(find.text('Restore')) ||
             find.textContaining('restore').evaluate().isNotEmpty;
 
-        await screenshot('j8_3_paywall_restore');
+        await screenshot(tester, 'j8_3_paywall_restore');
       }
     });
 
@@ -111,7 +111,7 @@ void main() {
           'Pro',
         ]);
 
-        await screenshot('j8_4_paywall_benefits');
+        await screenshot(tester, 'j8_4_paywall_benefits');
       }
     });
   });

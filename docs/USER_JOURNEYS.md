@@ -137,27 +137,13 @@
 | 1 | Sign in | Home | `[INFO] User signed in` | Manual |
 | 2 | Tap Settings | Settings | - | F3.1 |
 | 3 | See biometric toggle | Settings | - | F12.1 |
-| 4 | Enable biometrics | Settings | `[INFO] Biometrics enable requested` | **MISSING** |
+| 4 | Enable biometrics | Settings | `[INFO] Biometrics enable requested` | Manual |
 | 5 | System prompt | Settings | - | Manual |
-| 6 | Authenticate | Settings | `[INFO] Biometrics enabled` | **MISSING** |
+| 6 | Authenticate | Settings | `[INFO] Biometrics enabled` | Manual |
 | 7 | Close app | - | `[INFO] App backgrounded` | - |
-| 8 | Reopen app | Lock | `[INFO] Lock screen shown` | **MISSING** |
-| 9 | Authenticate | Lock | `[INFO] Biometric auth started` | **MISSING** |
-| 10 | Success | Home | `[INFO] Biometric auth success` | **MISSING** |
-
-### Missing Logs (Need to Add)
-```dart
-// biometric_service.dart
-Log.info('Biometrics enable requested');
-Log.info('Biometrics enabled');
-Log.info('Biometrics disabled');
-Log.info('Biometric auth started');
-Log.info('Biometric auth success');
-Log.info('Biometric auth failed', {'error': error.name});
-
-// lock_screen.dart
-Log.info('Lock screen shown');
-```
+| 8 | Reopen app | Lock | `[INFO] Lock screen shown` | Manual |
+| 9 | Authenticate | Lock | `[INFO] Biometric auth started` | Manual |
+| 10 | Success | Home | `[INFO] Biometric auth success` | Manual |
 
 ---
 
@@ -186,46 +172,16 @@ Log.info('Lock screen shown');
 
 ---
 
-## Log Coverage Audit
-
-### Services with Logging ✅
-| Service | Info | Warn | Error |
-|---------|------|------|-------|
-| ai_service | ✅ | ✅ | ✅ |
-| subscription_service | ✅ | ✅ | ✅ |
-| usage_service | ✅ | ✅ | ✅ |
-| diagnostic_service | ✅ | - | - |
-| router | ✅ | ✅ | - |
-
-### Services Missing Logging ❌
-| Service | Needed |
-|---------|--------|
-| biometric_service | Enable/disable, auth start/success/fail |
-| auth_service | Sign in/out, delete account |
-| review_service | Review prompted, submitted |
-
-### Screens Missing Logging ❌
-| Screen | Needed |
-|--------|--------|
-| onboarding_screen | Started, completed |
-| lock_screen | Shown, auth attempt |
-| settings_screen | Biometric toggle, sign out tap |
-| generate_screen | Wizard started, step navigation |
-| results_screen | Copy, share, regenerate |
-| home_screen | Occasion selected |
-
----
-
 ## Test Coverage Matrix
 
 | Journey | Scenario Tests | Golden Path | Manual |
 |---------|---------------|-------------|--------|
-| 1: Fresh → Free Gen | ✅ Anon.* | ✅ F1-F2, F8 | - |
-| 2: Upgrade → Purchase | ✅ Anon.3 | ✅ F4 | ✅ StoreKit |
-| 3: Pro → Sign Out | ✅ Pro.*, Auth.* | ✅ F3 | - |
-| 4: Biometrics | ❌ | ❌ | ✅ Manual |
-| 5: Delete Account | ✅ Auth.3 | ❌ | ✅ Manual |
-| 6: AI Error → Retry | ✅ AIErr.* | ❌ | - |
+| 1: Fresh → Free Gen | Anon.* | F1-F2, F8 | - |
+| 2: Upgrade → Purchase | Anon.3 | F4 | StoreKit |
+| 3: Pro → Sign Out | Pro.*, Auth.* | F3 | - |
+| 4: Biometrics | - | - | Manual |
+| 5: Delete Account | Auth.3 | - | Manual |
+| 6: AI Error → Retry | AIErr.* | - | - |
 
 ---
 
@@ -384,7 +340,7 @@ Log.info('Lock screen shown');
 ### Coverage Tests
 | File | What | Tests |
 |------|------|-------|
-| occasions_test.dart | All 41 occasions | 41 |
+| occasions_test.dart | All 40 occasions | 40 |
 | relationships_test.dart | All 14 relationships | 14 |
 | tones_test.dart | All 6 tones + combos | 11 |
 
@@ -392,21 +348,7 @@ Log.info('Lock screen shown');
 
 ---
 
-## Logs Added This Session ✅
-
-| Service/Screen | Logs |
-|----------------|------|
-| biometric_service | enabled, disabled, auth started/success/failed |
-| auth_service | sign in started/success, sign out, delete account |
-| onboarding_screen | started, completed |
-| lock_screen | shown |
-| home_screen | wizard started + occasion |
-| results_screen | message copied + option # |
-| settings_screen | export debug log |
-
----
-
-## Still Missing (Manual Test Required)
+## Manual Testing Required
 
 | Feature | Why Manual |
 |---------|------------|
@@ -415,25 +357,3 @@ Log.info('Lock screen shown');
 | Biometric Lock/Unlock | Hardware required |
 | Push Notifications | v1.1 feature |
 | Share to iMessage | System sheet |
-
----
-
-## Action Items
-
-### P0: Pre-Launch (Complete ✅)
-- [x] Add missing logs (biometric, auth, screens)
-- [x] Split tests into journey files
-- [x] Add Export Debug Log feature
-- [x] Auto-attach breadcrumbs to feedback
-- [ ] Run Firebase Test Lab to verify all tests pass
-- [ ] Manual test biometrics on physical device
-- [ ] Manual test sandbox purchase
-
-### P1: Post-Launch Prep
-- [ ] Design Journey 12-14 (reminders, share, photo)
-- [ ] Add log events for v1.1 features
-- [ ] Performance baseline tests
-
-### P2: Future
-- [ ] Log verification test suite
-- [ ] Localization journey

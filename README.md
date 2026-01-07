@@ -6,11 +6,12 @@ AI-powered message helper for greeting cards and special occasions.
 
 ## Features
 
-- 10 occasions (Birthday, Wedding, Sympathy, Thank You, etc.)
-- 5 relationship types
-- 4 tones (Heartfelt, Casual, Funny, Formal)
+- 40 occasions (Birthday, Wedding, Sympathy, Thank You, etc.)
+- 14 relationship types
+- 6 tones (Heartfelt, Casual, Funny, Formal, Inspirational, Playful)
+- 3 message lengths (Brief, Standard, Detailed)
 - 3 AI-generated message options per request
-- Free tier with Pro subscription upgrades
+- Free tier (1 lifetime) with Pro subscription (500/month)
 
 ## Tech Stack
 

@@ -13,268 +13,282 @@ enum _OccasionOpacity {
   final double value;
 }
 
+/// Occasions ordered by predicted usage frequency (most used first)
+/// This order determines display order in the occasion grid
 enum Occasion {
   // ============================================================
-  // CORE OCCASIONS (Most common, evergreen)
+  // TIER 1: HIGHEST USAGE (Universal, frequent occasions)
   // ============================================================
   birthday(
     label: 'Birthday',
     emoji: '🎂',
-    prompt: 'birthday celebration',
+    prompt: 'birthday celebration - joyful wishes for their special day and the year ahead',
     opacity: _OccasionOpacity.low,
-  ),
-  kidsBirthday(
-    label: "Kid's Birthday",
-    emoji: '🎈',
-    prompt: 'fun, child-appropriate birthday celebration for a young child',
-    opacity: _OccasionOpacity.medium,
   ),
   thankYou(
     label: 'Thank You',
     emoji: '🙏',
-    prompt: 'expressing gratitude and appreciation',
+    prompt: 'expressing genuine, specific gratitude - make it personal and meaningful',
     opacity: _OccasionOpacity.medium,
   ),
   sympathy(
     label: 'Sympathy',
     emoji: '💐',
-    prompt: 'offering condolences and comfort during a difficult time',
+    prompt: 'offering condolences and comfort - acknowledge grief with warmth, avoid clichés, be genuinely supportive',
     opacity: _OccasionOpacity.high,
   ),
   wedding(
     label: 'Wedding',
     emoji: '💒',
-    prompt: 'wedding celebration and marriage',
+    prompt: 'wedding celebration - heartfelt wishes for their journey together as a married couple',
     opacity: _OccasionOpacity.low,
   ),
-  engagement(
-    label: 'Engagement',
-    emoji: '💍',
-    prompt: 'congratulating on an engagement',
-    opacity: _OccasionOpacity.high,
-  ),
-  graduation(
-    label: 'Graduation',
-    emoji: '🎓',
-    prompt: 'graduation achievement and new beginnings',
+  christmas(
+    label: 'Christmas',
+    emoji: '🎄',
+    prompt: 'warm Christmas wishes - capture the spirit of the season with joy and goodwill',
     opacity: _OccasionOpacity.medium,
   ),
-  baby(
-    label: 'New Baby',
-    emoji: '👶',
-    prompt: 'welcoming a new baby and congratulating new parents',
-    opacity: _OccasionOpacity.high,
-  ),
+
+  // ============================================================
+  // TIER 2: HIGH USAGE (Common life events & occasions)
+  // ============================================================
   getWell(
     label: 'Get Well',
     emoji: '🌻',
-    prompt: 'wishing someone a speedy recovery',
+    prompt: 'get well wishes - encouraging and warm without minimizing their situation',
     opacity: _OccasionOpacity.low,
-  ),
-  anniversary(
-    label: 'Anniversary',
-    emoji: '💕',
-    prompt: 'celebrating an anniversary milestone',
-    opacity: _OccasionOpacity.medium,
   ),
   congrats(
     label: 'Congrats',
     emoji: '🎉',
-    prompt: 'congratulating someone on their achievement',
+    prompt: 'congratulations on an achievement - celebrate their hard work and success enthusiastically',
     opacity: _OccasionOpacity.high,
   ),
-  apology(
-    label: 'Apology',
-    emoji: '💔',
-    prompt: 'apologizing and expressing sincere regret',
-    opacity: _OccasionOpacity.low,
-  ),
-  retirement(
-    label: 'Retirement',
-    emoji: '🏖️',
-    prompt: 'celebrating retirement and wishing well for the next chapter',
-    opacity: _OccasionOpacity.medium,
-  ),
-  housewarming(
-    label: 'New Home',
-    emoji: '🏠',
-    prompt: 'congratulating on a new home and wishing happiness there',
-    opacity: _OccasionOpacity.high,
-  ),
-  encouragement(
-    label: 'Encouragement',
-    emoji: '💪',
-    prompt: 'offering encouragement and support during a challenge',
-    opacity: _OccasionOpacity.low,
-  ),
-  thinkingOfYou(
-    label: 'Thinking of You',
-    emoji: '🤗',
-    prompt: 'sending warm thoughts and letting someone know you care',
-    opacity: _OccasionOpacity.medium,
-  ),
-  justBecause(
-    label: 'Just Because',
-    emoji: '💝',
-    prompt: 'sending love, appreciation, or a smile just because',
-    opacity: _OccasionOpacity.high,
-  ),
-
-  // ============================================================
-  // HOLIDAYS (Major seasonal occasions)
-  // ============================================================
   mothersDay(
     label: "Mother's Day",
     emoji: '👩‍👧‍👦',
-    prompt: "celebrating and appreciating a mother on Mother's Day",
+    prompt: "celebrating a mother on Mother's Day - express love, appreciation, and gratitude for all she does",
     opacity: _OccasionOpacity.medium,
   ),
   fathersDay(
     label: "Father's Day",
     emoji: '👨‍👧‍👦',
-    prompt: "celebrating and appreciating a father on Father's Day",
+    prompt: "celebrating a father on Father's Day - express love, appreciation, and gratitude for his guidance",
     opacity: _OccasionOpacity.low,
+  ),
+  baby(
+    label: 'New Baby',
+    emoji: '👶',
+    prompt: 'welcoming a new baby - joyful congratulations for the new parents on this life-changing moment',
+    opacity: _OccasionOpacity.high,
+  ),
+
+  // ============================================================
+  // TIER 3: MODERATE USAGE (Milestones & seasonal)
+  // ============================================================
+  graduation(
+    label: 'Graduation',
+    emoji: '🎓',
+    prompt: 'graduation celebration - honor their achievement and wish them well on the exciting path ahead',
+    opacity: _OccasionOpacity.medium,
+  ),
+  anniversary(
+    label: 'Anniversary',
+    emoji: '💕',
+    prompt: 'celebrating an anniversary milestone - honor the journey and love they share together',
+    opacity: _OccasionOpacity.medium,
   ),
   valentinesDay(
     label: "Valentine's Day",
     emoji: '❤️',
-    prompt: "expressing romantic love on Valentine's Day",
+    prompt: "expressing romantic love on Valentine's Day - heartfelt and genuine, not cheesy",
     opacity: _OccasionOpacity.high,
   ),
-  christmas(
-    label: 'Christmas',
-    emoji: '🎄',
-    prompt: 'warm holiday wishes for Christmas',
-    opacity: _OccasionOpacity.low,
-  ),
-  thanksgiving(
-    label: 'Thanksgiving',
-    emoji: '🦃',
-    prompt: 'giving thanks and warm wishes for Thanksgiving',
+  thinkingOfYou(
+    label: 'Thinking of You',
+    emoji: '🤗',
+    prompt: 'letting someone know you care - warm thoughts that brighten their day',
     opacity: _OccasionOpacity.medium,
-  ),
-  easter(
-    label: 'Easter',
-    emoji: '🥚',
-    prompt: 'warm Easter wishes and spring celebration',
-    opacity: _OccasionOpacity.high,
-  ),
-  halloween(
-    label: 'Halloween',
-    emoji: '🎃',
-    prompt: 'fun Halloween greetings and spooky wishes',
-    opacity: _OccasionOpacity.low,
   ),
   newYear(
     label: 'New Year',
     emoji: '🎆',
-    prompt: 'New Year wishes for happiness and success',
+    prompt: 'New Year wishes - hopeful sentiments for happiness, health, and success in the year ahead',
     opacity: _OccasionOpacity.medium,
+  ),
+  engagement(
+    label: 'Engagement',
+    emoji: '💍',
+    prompt: 'congratulating on an engagement - celebrate this exciting step toward marriage',
+    opacity: _OccasionOpacity.high,
+  ),
+  kidsBirthday(
+    label: "Kid's Birthday",
+    emoji: '🎈',
+    prompt: 'fun, child-appropriate birthday celebration - playful and age-appropriate excitement',
+    opacity: _OccasionOpacity.medium,
+  ),
+  justBecause(
+    label: 'Just Because',
+    emoji: '💝',
+    prompt: 'sending love or appreciation for no special reason - spontaneous warmth and connection',
+    opacity: _OccasionOpacity.high,
   ),
 
   // ============================================================
-  // CULTURAL/RELIGIOUS HOLIDAYS (Inclusive)
+  // TIER 4: OCCASIONAL USE (Life milestones)
   // ============================================================
-  hanukkah(
-    label: 'Hanukkah',
-    emoji: '🕎',
-    prompt: 'warm wishes for Hanukkah and the Festival of Lights',
+  housewarming(
+    label: 'New Home',
+    emoji: '🏠',
+    prompt: 'congratulating on a new home - warm wishes for happiness and memories in their new space',
     opacity: _OccasionOpacity.high,
   ),
-  diwali(
-    label: 'Diwali',
-    emoji: '🪔',
-    prompt: 'celebrating Diwali, the festival of lights and new beginnings',
-    opacity: _OccasionOpacity.low,
-  ),
-  eid(
-    label: 'Eid',
-    emoji: '🌙',
-    prompt: 'warm Eid wishes for joy, peace, and celebration',
+  retirement(
+    label: 'Retirement',
+    emoji: '🏖️',
+    prompt: 'celebrating retirement - honor their career and wish them well for this exciting new chapter',
     opacity: _OccasionOpacity.medium,
   ),
-  lunarNewYear(
-    label: 'Lunar New Year',
-    emoji: '🧧',
-    prompt: 'celebrating Lunar New Year with prosperity and good fortune',
-    opacity: _OccasionOpacity.high,
-  ),
-  kwanzaa(
-    label: 'Kwanzaa',
-    emoji: '🕯️',
-    prompt: 'honoring Kwanzaa principles of unity, creativity, and faith',
-    opacity: _OccasionOpacity.low,
-  ),
-
-  // ============================================================
-  // CAREER & MILESTONES
-  // ============================================================
   newJob(
     label: 'New Job',
     emoji: '💼',
-    prompt: 'congratulating on a new job or career move',
+    prompt: 'congratulating on a new job - celebrate this career milestone and wish them success',
     opacity: _OccasionOpacity.medium,
   ),
-  promotion(
-    label: 'Promotion',
-    emoji: '📈',
-    prompt: 'congratulating on a job promotion',
+  encouragement(
+    label: 'Encouragement',
+    emoji: '💪',
+    prompt: 'offering support during a challenge - uplifting and genuine without toxic positivity',
+    opacity: _OccasionOpacity.low,
+  ),
+
+  // ============================================================
+  // TIER 5: SEASONAL (Holiday-specific)
+  // ============================================================
+  easter(
+    label: 'Easter',
+    emoji: '🥚',
+    prompt: 'warm Easter wishes - celebrate spring, renewal, and joy of the season',
     opacity: _OccasionOpacity.high,
+  ),
+  thanksgiving(
+    label: 'Thanksgiving',
+    emoji: '🦃',
+    prompt: 'Thanksgiving wishes - express gratitude and warm thoughts for the holiday',
+    opacity: _OccasionOpacity.medium,
+  ),
+  halloween(
+    label: 'Halloween',
+    emoji: '🎃',
+    prompt: 'fun Halloween greetings - playful spooky wishes appropriate for the occasion',
+    opacity: _OccasionOpacity.low,
+  ),
+
+  // ============================================================
+  // TIER 6: SPECIFIC SITUATIONS
+  // ============================================================
+  apology(
+    label: 'Apology',
+    emoji: '💔',
+    prompt: 'sincere apology - acknowledge what went wrong, express genuine remorse without making excuses',
+    opacity: _OccasionOpacity.low,
   ),
   farewell(
     label: 'Farewell',
     emoji: '👋',
-    prompt: 'saying goodbye or bon voyage',
+    prompt: 'saying goodbye - heartfelt farewell that honors the relationship and wishes them well',
     opacity: _OccasionOpacity.low,
   ),
   goodLuck(
     label: 'Good Luck',
     emoji: '🤞',
-    prompt: 'wishing good luck for an upcoming event or challenge',
+    prompt: 'wishing good luck - encouraging words for an upcoming challenge, interview, or big moment',
     opacity: _OccasionOpacity.medium,
+  ),
+  promotion(
+    label: 'Promotion',
+    emoji: '📈',
+    prompt: 'congratulating on a promotion - celebrate their hard work and well-deserved recognition',
+    opacity: _OccasionOpacity.high,
   ),
 
   // ============================================================
-  // APPRECIATION (Role-specific thanks)
+  // TIER 7: APPRECIATION (Role-specific thanks)
   // ============================================================
-  thankYouService(
-    label: 'Thank You for Service',
-    emoji: '🎖️',
-    prompt: 'thanking a veteran or service member for their sacrifice and service',
-    opacity: _OccasionOpacity.high,
-  ),
   thankYouTeacher(
     label: 'Thank You Teacher',
     emoji: '🍎',
-    prompt: 'thanking a teacher for their dedication and impact on learning',
+    prompt: 'thanking a teacher - express gratitude for their dedication, patience, and impact on learning',
     opacity: _OccasionOpacity.low,
   ),
   thankYouHealthcare(
     label: 'Thank You Healthcare',
     emoji: '🩺',
-    prompt: 'expressing gratitude to a nurse, doctor, or healthcare professional',
+    prompt: 'thanking a healthcare worker - express gratitude for their care, compassion, and expertise',
     opacity: _OccasionOpacity.medium,
+  ),
+  thankYouService(
+    label: 'Thank You for Service',
+    emoji: '🎖️',
+    prompt: 'thanking a veteran or service member - honor their sacrifice and service to the country',
+    opacity: _OccasionOpacity.high,
   ),
 
   // ============================================================
-  // PET OCCASIONS
+  // TIER 8: CULTURAL/RELIGIOUS HOLIDAYS
+  // ============================================================
+  hanukkah(
+    label: 'Hanukkah',
+    emoji: '🕎',
+    prompt: 'warm Hanukkah wishes - celebrate the Festival of Lights with joy and tradition',
+    opacity: _OccasionOpacity.high,
+  ),
+  diwali(
+    label: 'Diwali',
+    emoji: '🪔',
+    prompt: 'Diwali wishes - celebrate the festival of lights with joy, prosperity, and new beginnings',
+    opacity: _OccasionOpacity.low,
+  ),
+  eid(
+    label: 'Eid',
+    emoji: '🌙',
+    prompt: 'warm Eid wishes - celebrate with joy, peace, blessings, and togetherness',
+    opacity: _OccasionOpacity.medium,
+  ),
+  lunarNewYear(
+    label: 'Lunar New Year',
+    emoji: '🧧',
+    prompt: 'Lunar New Year wishes - celebrate with prosperity, good fortune, and family blessings',
+    opacity: _OccasionOpacity.high,
+  ),
+  kwanzaa(
+    label: 'Kwanzaa',
+    emoji: '🕯️',
+    prompt: 'Kwanzaa wishes - honor the principles of unity, creativity, faith, and community',
+    opacity: _OccasionOpacity.low,
+  ),
+
+  // ============================================================
+  // TIER 9: PET OCCASIONS
   // ============================================================
   petBirthday(
     label: 'Pet Birthday',
     emoji: '🐶',
-    prompt: 'fun birthday celebration for a beloved pet',
+    prompt: 'fun pet birthday celebration - playful wishes for a beloved furry family member',
     opacity: _OccasionOpacity.high,
   ),
   newPet(
     label: 'New Pet',
     emoji: '🐕',
-    prompt: 'welcoming a new pet into the family',
+    prompt: 'welcoming a new pet - congratulate them on their new furry, feathered, or scaly family member',
     opacity: _OccasionOpacity.low,
   ),
   petSympathy(
     label: 'Pet Loss',
     emoji: '🌈',
-    prompt: 'offering condolences for the loss of a beloved pet',
+    prompt: 'condolences for pet loss - acknowledge their grief with warmth and understanding for a beloved companion',
     opacity: _OccasionOpacity.medium,
   );
 

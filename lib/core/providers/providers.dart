@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart'; // Required for legacy StateProvider (your existing form providers)
 import 'package:purchases_flutter/purchases_flutter.dart'; // Required for CustomerInfo
@@ -51,6 +50,12 @@ final usageServiceProvider = Provider<UsageService>((ref) {
   return UsageService(prefs);
 });
 
+/// Generation history service
+final historyServiceProvider = Provider<HistoryService>((ref) {
+  final prefs = ref.watch(sharedPreferencesProvider);
+  return HistoryService(prefs);
+});
+
 /// AI generation service (Firebase AI - no API key needed in client code)
 final aiServiceProvider = Provider<AiService>((ref) {
   return AiService();
@@ -93,10 +98,10 @@ class CustomerInfoNotifier extends StateNotifier<CustomerInfo?> {
   void _updateCustomerInfo(CustomerInfo info) {
     final hasPro = info.entitlements.active.containsKey('pro');
     final activeEntitlements = info.entitlements.active.keys.toList();
-    final allEntitlements = info.entitlements.all.keys.toList();
-    debugPrint('CustomerInfoNotifier: updated, hasPro=$hasPro');
-    debugPrint('CustomerInfoNotifier: active entitlements=$activeEntitlements');
-    debugPrint('CustomerInfoNotifier: all entitlements=$allEntitlements');
+    Log.info('Pro status updated', {
+      'hasPro': hasPro,
+      'activeEntitlements': activeEntitlements,
+    });
     state = info;
   }
 

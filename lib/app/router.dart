@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
@@ -16,9 +17,11 @@ import '../features/onboarding/biometric_setup_screen.dart';
 import '../features/onboarding/onboarding_screen.dart';
 import '../features/paywall/custom_paywall_screen.dart';
 import '../features/results/results_screen.dart';
+import '../features/history/history_screen.dart';
 import '../features/settings/feedback_screen.dart';
 import '../features/settings/legal_screen.dart';
 import '../features/settings/settings_screen.dart';
+import '../shared/theme/app_colors.dart';
 
 final appRouter = GoRouter(
   initialLocation: '/splash',
@@ -82,6 +85,11 @@ final appRouter = GoRouter(
       builder: (context, state) => const SettingsScreen(),
     ),
     GoRoute(
+      path: '/history',
+      name: 'history',
+      builder: (context, state) => const HistoryScreen(),
+    ),
+    GoRoute(
       path: '/feedback',
       name: 'feedback',
       builder: (context, state) => const FeedbackScreen(),
@@ -117,9 +125,9 @@ class _SplashScreenState extends ConsumerState<_SplashScreen> {
   }
 
   Future<void> _determineInitialRoute() async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    if (!mounted) return;
-
+    // No artificial delay - determine route as fast as possible
+    // Native splash stays visible until we call FlutterNativeSplash.remove()
+    
     final prefs = await SharedPreferences.getInstance();
     final hasCompletedOnboarding =
         prefs.getBool('hasCompletedOnboarding') ?? false;
@@ -127,15 +135,35 @@ class _SplashScreenState extends ConsumerState<_SplashScreen> {
     final isLoggedIn = authService.isLoggedIn;
     final biometricsEnabled = await BiometricService.instance.isEnabled;
 
+    // Fix L5: Check if biometrics are actually available on device
+    // User may have enabled in app but later disabled in device settings
+    var biometricsAvailable = false;
+    if (biometricsEnabled) {
+      final available = await BiometricService.instance.availableBiometrics;
+      biometricsAvailable = available.isNotEmpty;
+      if (!biometricsAvailable) {
+        // Biometrics were enabled but are no longer available - auto-disable
+        Log.warning('Biometrics enabled but unavailable - auto-disabling');
+        await BiometricService.instance.setEnabled(false);
+      }
+    }
+
     // Auto-restore: Check if anonymous user has Pro from previous purchase
     // This catches reinstalls where user purchased but isn't signed in yet
     if (!isLoggedIn) {
       _hasProFromRestore = await _checkAnonymousProStatus();
     }
 
+    if (!mounted) return;
+
+    // Remove native splash right before navigation
+    FlutterNativeSplash.remove();
+
     if (!hasCompletedOnboarding) {
       context.go('/onboarding');
-    } else if (isLoggedIn && biometricsEnabled) {
+    } else if (biometricsEnabled && biometricsAvailable) {
+      // Biometric lock applies to all users (logged in or anonymous)
+      // User explicitly enabled it, so respect their choice
       context.go('/lock');
     } else if (_hasProFromRestore) {
       // Has Pro but not signed in - prompt to claim it
@@ -163,27 +191,18 @@ class _SplashScreenState extends ConsumerState<_SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Matches native splash: logo centered on background color
+    // No text - seamless transition from native splash
     return Scaffold(
+      backgroundColor: AppColors.background,
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(20),
-              child: Image.asset(
-                'assets/images/logo.png',
-                width: 80,
-                height: 80,
-              ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'Prosepal',
-              style: Theme.of(
-                context,
-              ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
-            ),
-          ],
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: Image.asset(
+            'assets/images/logo.png',
+            width: 80,
+            height: 80,
+          ),
         ),
       ),
     );

@@ -33,7 +33,7 @@ void main() {
       expect(hasBrief || hasStandard || hasDetailed, isTrue,
           reason: 'Should show message length options');
 
-      await screenshot('j9_1_length_options');
+      await screenshot(tester, 'j9_1_length_options');
     });
 
     testWidgets('J9.2: Brief length selectable', (tester) async {
@@ -46,7 +46,7 @@ void main() {
         await tester.tap(find.text('Brief'));
         await tester.pumpAndSettle();
 
-        await screenshot('j9_2_brief_selected');
+        await screenshot(tester, 'j9_2_brief_selected');
       }
     });
 
@@ -60,7 +60,7 @@ void main() {
         await tester.tap(find.text('Detailed'));
         await tester.pumpAndSettle();
 
-        await screenshot('j9_3_detailed_selected');
+        await screenshot(tester, 'j9_3_detailed_selected');
       }
     });
 
@@ -76,7 +76,7 @@ void main() {
           find.textContaining('Name').evaluate().isNotEmpty ||
           find.textContaining('recipient').evaluate().isNotEmpty;
 
-      await screenshot('j9_4_name_input');
+      await screenshot(tester, 'j9_4_name_input');
     });
 
     testWidgets('J9.5: Can enter recipient name', (tester) async {
@@ -92,7 +92,7 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.text('Sarah'), findsOneWidget);
-        await screenshot('j9_5_name_entered');
+        await screenshot(tester, 'j9_5_name_entered');
       }
     });
 
@@ -108,7 +108,7 @@ void main() {
           find.textContaining('personal').evaluate().isNotEmpty ||
           find.textContaining('Personal').evaluate().isNotEmpty;
 
-      await screenshot('j9_6_details_input');
+      await screenshot(tester, 'j9_6_details_input');
     });
 
     testWidgets('J9.7: Can enter personal details', (tester) async {
@@ -123,7 +123,7 @@ void main() {
         await tester.enterText(textFields.at(1), 'We met at college');
         await tester.pumpAndSettle();
 
-        await screenshot('j9_7_details_entered');
+        await screenshot(tester, 'j9_7_details_entered');
       }
     });
   });

@@ -31,7 +31,7 @@ void main() {
       expect(hasRestoreBanner || hasOnboarding || hasHome || hasAuth, isTrue,
           reason: 'App should show appropriate initial screen');
 
-      await screenshot('j7_1_launch');
+      await screenshot(tester, 'j7_1_launch');
     });
 
     testWidgets('J7.2: Restore banner prompts sign-in', (tester) async {
@@ -46,7 +46,7 @@ void main() {
           reason: 'Should show sign-in options',
         );
 
-        await screenshot('j7_2_restore_banner');
+        await screenshot(tester, 'j7_2_restore_banner');
       }
     });
 
@@ -59,7 +59,7 @@ void main() {
         await tester.pumpAndSettle(const Duration(seconds: 5));
 
         // Should show result (success, failure, or loading)
-        await screenshot('j7_3_restore_result');
+        await screenshot(tester, 'j7_3_restore_result');
       }
     });
 
@@ -77,7 +77,7 @@ void main() {
           reason: 'Should show auth screen',
         );
 
-        await screenshot('j7_4_sign_in');
+        await screenshot(tester, 'j7_4_sign_in');
       }
     });
 
@@ -95,7 +95,7 @@ void main() {
       expect(hasFreeIndicator || hasPro || hasZero, isTrue,
           reason: 'Should show usage status');
 
-      await screenshot('j7_5_fresh_state');
+      await screenshot(tester, 'j7_5_fresh_state');
     });
   });
 }

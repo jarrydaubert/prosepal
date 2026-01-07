@@ -3,27 +3,36 @@
 ## Pre-Launch
 
 ### App Store Connect
-- [ ] Submit IAP products for review
-- [ ] App privacy nutrition labels complete
-- [ ] Screenshots finalized
-- [ ] Privacy policy URL set (prosepal.app/privacy)
+- Submit IAP products for review
+- App privacy nutrition labels
+- Screenshots and store listing
+- Privacy policy URL (prosepal.app/privacy)
+- Add App Store ID to code after approval
+
+### Google Play Console
+- Upload AAB to Internal Testing
+- Store listing (screenshots, description)
+- Privacy policy URL
+- Submit for review
 
 ### RevenueCat
-- [ ] Production API keys (not sandbox)
-- [ ] Webhook configured (optional)
+- Verify production API keys
+- Webhook (optional)
 
 ### Supabase
-- [ ] RLS policies production-ready
-- [ ] Using production project (not dev)
+- RLS policies production-ready
+- `delete-user` Edge Function deployed
 
 ### Code
-- [ ] Paywall bold styling applied
-- [ ] Version/build number incremented
-- [ ] Release build tested (Xcode Archive)
+- iOS Archive built
+- Version/build incremented
 
 ### Testing
-- [ ] TestFlight internal testing complete
-- [ ] All manual tests passed (see TESTING.md)
+- TestFlight internal testing
+- Play Store internal testing
+- Manual test: Sign in → Purchase → Restore
+- Manual test: Sign out clears everything
+- Manual test: Delete account flow
 
 ---
 
@@ -31,24 +40,16 @@
 
 1. Monitor Crashlytics for crash spikes
 2. Monitor RevenueCat for purchases
-3. Check App Store Connect for reviews
+3. Check store reviews
 
 ---
 
 ## Post-Launch Monitoring
 
-### Daily (5 mins)
-| Dashboard | Check |
-|-----------|-------|
-| RevenueCat | Revenue, new subs, churn |
-| Crashlytics | Crash-free rate, new issues |
-| App Store Connect | Downloads, ratings, reviews |
-
-### Weekly
-| Dashboard | Metrics |
-|-----------|---------|
-| RevenueCat | MRR, trial conversions |
-| Firebase Analytics | DAU/MAU, session duration |
+### Daily
+- RevenueCat: Revenue, new subs, churn
+- Crashlytics: Crash-free rate, new issues
+- Store: Downloads, ratings, reviews
 
 ### Health Thresholds
 | Metric | Healthy | Warning |
@@ -70,7 +71,7 @@
 | Yearly | $29.99/yr | $9.00 | $20.99 |
 
 ### API Cost
-- Gemini 2.5 Flash: ~$0.0004 per generation
+- Gemini: ~$0.0004 per generation
 - 10K generations = $4
 
 ### Free Tier Limits
@@ -86,6 +87,6 @@
 
 | Issue | Action |
 |-------|--------|
-| Gemini rate limited (429) | Check quotas, enable billing, request increase |
-| Supabase paused | Restore in dashboard, consider Pro ($25/mo) |
-| RevenueCat issues | Check webhook failures, verify production keys |
+| Gemini rate limited (429) | Check quotas, enable billing |
+| Supabase paused | Restore in dashboard |
+| RevenueCat issues | Check webhook failures, verify keys |
