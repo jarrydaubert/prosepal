@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart'; // Required for legacy StateProvider (your existing form providers)
 import 'package:purchases_flutter/purchases_flutter.dart'; // Required for CustomerInfo
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../interfaces/interfaces.dart';
 import '../models/models.dart';
@@ -37,6 +38,18 @@ final authServiceProvider = Provider<IAuthService>((ref) {
     appleAuth: ref.watch(appleAuthProvider),
     googleAuth: ref.watch(googleAuthProvider),
   );
+});
+
+/// Auth state stream - widgets can watch this to react to sign in/out
+final authStateProvider = StreamProvider<AuthState>((ref) {
+  final authService = ref.watch(authServiceProvider);
+  return authService.authStateChanges;
+});
+
+/// Whether user is currently logged in - reacts to auth state changes
+final isLoggedInProvider = Provider<bool>((ref) {
+  final authState = ref.watch(authStateProvider);
+  return authState.whenOrNull(data: (state) => state.session != null) ?? false;
 });
 
 /// SharedPreferences provider - must be initialized in main.dart
