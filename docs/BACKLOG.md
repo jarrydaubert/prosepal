@@ -67,6 +67,7 @@
 | Confetti preference | `results_screen.dart` | Add user toggle or limit to first copy per session |
 | Message card height bounds | `results_screen.dart` | Constrain SelectableText height for long messages on small screens |
 | "Use this message" action | `results_screen.dart` | Button to pre-fill form for iteration on specific message |
+| Shareable message image | `results_screen.dart` | Export message as image with app watermark for viral sharing |
 | UsageService race condition | `usage_service.dart` | Atomic increment via Supabase RPC |
 | Hardcoded usage limits | `usage_service.dart` | Move to remote config |
 | Supabase singleton | `usage_service.dart` | Inject client for testability |
