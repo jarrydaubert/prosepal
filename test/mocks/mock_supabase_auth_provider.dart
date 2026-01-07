@@ -315,6 +315,11 @@ class MockSupabaseAuthProvider implements ISupabaseAuthProvider {
     _currentSession = null;
   }
 
+  @override
+  Future<void> exchangeAppleToken(String authorizationCode) async {
+    // No-op in mock - just track if needed
+  }
+
   /// Reset all state
   void reset() {
     _currentUser = null;

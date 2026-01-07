@@ -290,4 +290,22 @@ class SupabaseAuthProvider implements ISupabaseAuthProvider {
       headers: {'Authorization': 'Bearer $accessToken'},
     );
   }
+
+  /// Exchange Apple authorization code for refresh token
+  ///
+  /// Calls edge function to exchange the code and store the refresh token.
+  /// Required for Apple compliance - tokens must be revoked on account delete.
+  @override
+  Future<void> exchangeAppleToken(String authorizationCode) async {
+    final accessToken = _auth.currentSession?.accessToken;
+    if (accessToken == null) {
+      throw const AuthException('No active session for Apple token exchange');
+    }
+
+    await _functions.invoke(
+      'exchange-apple-token',
+      headers: {'Authorization': 'Bearer $accessToken'},
+      body: {'authorization_code': authorizationCode},
+    );
+  }
 }

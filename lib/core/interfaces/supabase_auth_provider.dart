@@ -153,4 +153,15 @@ abstract class ISupabaseAuthProvider {
   /// or edge function with admin privileges - typically call via edge function.
   /// This method is for the RPC/function call pattern.
   Future<void> deleteUser();
+
+  /// Exchange Apple authorization code for refresh token
+  ///
+  /// Call immediately after Apple Sign In to exchange the short-lived
+  /// authorization code for a long-lived refresh token. The refresh token
+  /// is stored server-side and used to revoke Apple tokens when the user
+  /// deletes their account (Apple compliance requirement).
+  ///
+  /// The authorization code expires in 5 minutes, so this must be called
+  /// immediately after sign-in succeeds.
+  Future<void> exchangeAppleToken(String authorizationCode);
 }

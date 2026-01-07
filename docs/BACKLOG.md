@@ -1,6 +1,6 @@
 # Backlog
 
-> Actionable items only. High-level.
+> Prioritized TODO items only.
 
 ---
 
@@ -11,118 +11,79 @@
 | App Store ID | Add to `_rateApp()` and `review_service.dart` after approval |
 | IAP Products | Submit in App Store Connect |
 
-## Security - Server-Side Enforcement (P0) - IMPLEMENTED
-
-> Server-side usage enforcement has been implemented.
-
-| Item | Status |
-|------|--------|
-| **Atomic usage increment RPC** | Done - `002_create_usage_rpc.sql` |
-| **Server-side limit check** | Done - `checkAndIncrementServerSide()` in `usage_service.dart` |
-| **Resume-time biometric lock** | Done - `_checkBiometricLockOnResume()` in `app.dart` |
-| **404 error route** | Done - `_ErrorScreen` in `router.dart` |
-
-### Deployment Required
+## Deployment Required
 
 ```bash
 # Run in Supabase SQL Editor (Dashboard > SQL Editor)
-# File: supabase/migrations/002_create_usage_rpc.sql
+supabase/migrations/004_create_device_usage.sql
+supabase/migrations/005_create_device_check_rpc.sql
+supabase/migrations/006_create_rate_limiting.sql
+supabase/migrations/007_create_apple_credentials.sql
+
+# Deploy Edge Functions
+supabase functions deploy delete-user
+supabase functions deploy exchange-apple-token
+
+# Set Apple secrets (for token revocation)
+supabase secrets set APPLE_TEAM_ID=xxx APPLE_CLIENT_ID=xxx APPLE_KEY_ID=xxx APPLE_PRIVATE_KEY=xxx
 ```
-
-### Remaining P0 Items
-
-| Item | Location | Action |
-|------|----------|--------|
-| **Device fingerprinting** | `usage_service.dart` | Replace SharedPreferences device flag with server-side tracking |
-| **Rate limiting** | Supabase | Add IP/user rate limiting to prevent abuse |
 
 ---
 
-## Technical Debt
+## P1 - Security
 
-| Item | Location | Notes |
-|------|----------|-------|
-| Enum fallback handling | `generated_message.dart` | Add "unknown" enum variant or return default on invalid values for forward compatibility |
-| Deserialization resilience | `generated_message.dart` | Wrap history loading in try-catch with graceful degradation for corrupted data |
-| Model utilities | `generated_message.dart` | Add extensions for formatted preview text, shareable string, character count |
-| Serialization tests | `test/models/` | Add unit tests for JSON round-trip serialization of GeneratedMessage/GenerationResult |
-| Enum localization | `message_length.dart`, `occasion.dart`, `relationship.dart`, `tone.dart` | Extract labels/descriptions to .arb files for i18n |
-| Enum utilities | `message_length.dart` | Add extension for `fromLabel()`, `next()` cycling if needed |
-| Prompt word counts | `message_length.dart` | Add approximate word counts alongside sentences for multilingual consistency |
-| Log initialization safety | `log_service.dart` | Add explicit `init()` method with queued early logs flushed post-Firebase setup |
-| Log param redaction | `log_service.dart` | Auto-redact sensitive keys (email, token, password) in exports |
-| Debug/verbose log levels | `log_service.dart` | Add suppressed-in-release levels for finer granularity |
-| Log export filtering | `log_service.dart` | Support timestamp range and level-based filtering in exports |
-| Consolidate ErrorLogService | `error_log_service.dart` | Merge into LogService or deprecate - duplicates buffer/export functionality |
-| Error export enhancement | `log_service.dart` | Add device metadata (OS, app version) to exports after consolidation |
-| Device info abstraction | `diagnostic_service.dart` | Extract Platform.isIOS/isAndroid to testable service, support web/desktop |
-| Diagnostic runtime flags | `diagnostic_service.dart` | Add Firebase init status, connectivity, Flutter version to report |
-| Diagnostic export formats | `diagnostic_service.dart` | Add JSON/markdown alternatives for programmatic support parsing |
-| Diagnostic service tests | `test/services/` | Unit tests for report generation with mocked failures |
-| Auth error types | `auth_interface.dart` | Define sealed class for auth errors (network, invalid credentials, requires re-auth) |
-| Auth method documentation | `auth_interface.dart` | Add Dart docs specifying exceptions, preconditions, postconditions |
-| Re-auth for sensitive ops | `auth_interface.dart` | Add `reauthenticate()` or require recent auth for updateEmail/updatePassword/delete |
-| Provider availability checks | `auth_interface.dart` | Add `isAppleSignInAvailable()` for conditional UI rendering |
-| Results screen localization | `results_screen.dart` | Extract "Your Messages", "Copied!", button labels to .arb files |
-| Confetti preference | `results_screen.dart` | Add user toggle or limit to first copy per session |
-| Message card height bounds | `results_screen.dart` | Constrain SelectableText height for long messages on small screens |
-| "Use this message" action | `results_screen.dart` | Button to pre-fill form for iteration on specific message |
-| Shareable message image | `results_screen.dart` | Export message as image with app watermark for viral sharing |
-| Subscription test logging | `subscription_service_test.dart` | Mock LogService to verify warnings during degradation |
-| Subscription init tests | `subscription_service_test.dart` | Add tests for initialize() behavior and isConfigured state |
-| Subscription integration tests | `integration_test/` | Device-based tests for purchase, restore, paywall flows |
-| Auth stream test reliability | `auth_service_test.dart` | Replace Future.delayed with emitsInOrder for deterministic stream tests |
-| Auth re-auth simulation | `auth_service_test.dart` | Mock "requires recent login" errors for updateEmail/updatePassword/delete |
-| Auth config decoupling | `auth_service_test.dart` | Inject client ID validation for deterministic Google availability tests |
-| Auth integration tests | `integration_test/` | Device-based tests for Apple/Google native flows, deep links |
-| UsageService race condition | `usage_service.dart` | Atomic increment via Supabase RPC |
-| Hardcoded usage limits | `usage_service.dart` | Move to remote config |
-| Supabase singleton | `usage_service.dart` | Inject client for testability |
-| Integration/E2E tests | `integration_test/` | Navigation flows: onboarding→auth→paywall→biometric |
-| Re-auth for sensitive ops | `auth_service.dart` | Prompt re-auth before updateEmail/updatePassword/deleteAccount if session stale |
-| Require env vars for keys | `auth_service.dart`, `subscription_service.dart` | Remove hardcoded defaults, require all keys via dart-define |
-| Error injection in tests | `test/services/` | Add paths for simulating null ID tokens, network failures |
-| Rate limiting auth attempts | `auth_service.dart` | Client-side exponential backoff for failed sign-ins |
-| Paywall offering flexibility | `subscription_service.dart` | Support custom/specific offerings, not just default |
-| Promotional offers | `subscription_service.dart` | Handle eligibility checks for promo offers |
-| Pending purchase handling | `subscription_service.dart` | UI feedback for purchases in pending state |
-| Biometric dialog localization | `biometric_service.dart` | Add authMessages for branded/localized prompts |
-| Biometric timeout | `biometric_service.dart` | Expose authTimeout option for time-limited prompts |
-| Biometric config validation | `biometric_service.dart` | Runtime checks for Info.plist/manifest setup |
-| Secure storage integration | `biometric_service.dart` | Combine with flutter_secure_storage for sensitive data |
-| History server sync | `history_service.dart` | Supabase sync for cross-device persistence (like UsageService) |
-| History storage migration | `history_service.dart` | Migrate to hive/sqflite for larger data support |
-| History export/share | `history_service.dart` | Allow users to export history as JSON |
-| Form state consolidation | `providers.dart` | Consolidate form StateProviders into single NotifierProvider |
-| AutoDispose for transient state | `providers.dart` | Add autoDispose to generation result/error providers |
-| Auth screen localization | `auth_screen.dart` | Extract strings to .arb files |
-| Auth screen accessibility | `auth_screen.dart` | Add Semantics widgets, verify contrast ratios |
-| Google button branding | `auth_screen.dart` | Verify google_g.png is official asset or use SDK button |
-| Auth analytics events | `auth_screen.dart` | Track sign-in attempts/success for funnel analysis |
-| Email auth localization | `email_auth_screen.dart` | Extract strings to .arb files |
-| Email auth accessibility | `email_auth_screen.dart` | Add Semantics widgets, verify contrast ratios |
-| Sign-up integration | `email_auth_screen.dart` | Link to sign-up screen or auto-detect new users |
-| Paywall localization | `custom_paywall_screen.dart` | Extract strings, use NumberFormat for currencies |
-| Paywall accessibility | `custom_paywall_screen.dart` | Add Semantics, increase legal text size, verify contrast |
-| Paywall analytics | `custom_paywall_screen.dart` | Track impressions, package views, conversions |
-| Intro/promo offers | `custom_paywall_screen.dart` | Support RevenueCat promotional offers and trials |
-| Offering retry | `custom_paywall_screen.dart` | Add retry button on load failure, cache last-known |
-| Settings localization | `settings_screen.dart` | Extract strings to .arb files |
-| Settings accessibility | `settings_screen.dart` | Expand Semantics, increase small text sizes |
-| Platform service abstraction | `settings_screen.dart` | Abstract Platform.isIOS into testable service |
-| Log export sanitization | `settings_screen.dart` | Truncate/hash user IDs before export |
-| Restore rate limiting | `settings_screen.dart` | Add cooldown on restore purchase attempts |
-| Add App Store ID | `settings_screen.dart` | Fill in appStoreId after iOS release |
-| Biometric setup localization | `biometric_setup_screen.dart` | Extract strings to .arb |
-| Biometric setup accessibility | `biometric_setup_screen.dart` | Add Semantics for benefits/icon |
-| Skip preference tracking | `biometric_setup_screen.dart` | Store skip for deferred re-prompt |
-| Strong biometric preference | `biometric_setup_screen.dart` | Prefer Class 3 biometrics when available |
-| Screenshot prevention | `app.dart` | Platform-specific screenshot blocking (FlutterWindowManager) |
-| Additional auth events | `app.dart` | Handle tokenRefreshed, passwordRecovery events |
-| Typed route generation | `router.dart` | Use go_router_builder for type-safe routes |
-| Edge function rate limiting | `delete-user/index.ts` | Add request throttling for abuse prevention |
-| RevenueCat cleanup on delete | `delete-user/index.ts` | Revoke RC identifiers via webhook |
-| Structured logging | `delete-user/index.ts` | JSON output for Supabase Logs integration |
+| Item | Location |
+|------|----------|
+| Re-auth for sensitive ops | `auth_service.dart` - Prompt re-auth before updateEmail/updatePassword/deleteAccount |
+| Require env vars for keys | `auth_service.dart`, `subscription_service.dart` - Remove hardcoded defaults |
+| Rate limiting auth attempts | `auth_service.dart` - Client-side exponential backoff |
+| Screenshot prevention | `app.dart` - Platform-specific blocking |
+
+---
+
+## P2 - Technical Debt
+
+| Item | Location |
+|------|----------|
+| Consolidate ErrorLogService | `error_log_service.dart` - Merge into LogService |
+| Form state consolidation | `providers.dart` - Single NotifierProvider |
+| AutoDispose for transient state | `providers.dart` |
+| Supabase singleton injection | `usage_service.dart` - For testability |
+| Hardcoded usage limits | `usage_service.dart` - Move to remote config |
+
+---
+
+## P3 - Compliance (v1.1)
+
+| Item | Notes |
+|------|-------|
+| Data export feature | GDPR right to portability |
+| Analytics opt-out | Settings toggle |
+| Apple Privacy Labels | Fill in App Store Connect |
+
+---
+
+## P4 - Localization & Accessibility
+
+| Item | Location |
+|------|----------|
+| Results screen | `results_screen.dart` - Extract strings to .arb |
+| Auth screens | `auth_screen.dart`, `email_auth_screen.dart` |
+| Paywall | `custom_paywall_screen.dart` |
+| Settings | `settings_screen.dart` |
+| Accessibility | Add Semantics widgets throughout |
+
+---
+
+## P5 - v1.1 Features
+
+- Regeneration option ("Generate More")
+- Message history / favorites
+- Feedback (thumbs up/down per message)
+- Occasion search/filter
+- More tones (Sarcastic, Nostalgic, Poetic)
+- Multi-language (Spanish, French)
+- Birthday reminders + push notifications
 
 ---
 
@@ -133,79 +94,3 @@
 | Supabase session persists in Keychain | Low |
 | No offline banner | Low |
 | HomeScreen usage indicator tests failing (3) | Low |
-
----
-
-## Compliance (v1.1)
-
-| Item | Notes |
-|------|-------|
-| Data export feature | GDPR right to portability - export user data as JSON |
-| Analytics opt-out | Settings toggle to disable Firebase Analytics |
-| Apple Privacy Labels | Fill in App Store Connect (similar to Play Data Safety) |
-| Apple token revocation | Call Apple revocation endpoint on account delete |
-
----
-
-## Observability & Analytics
-
-| Item | Location | Notes |
-|------|----------|-------|
-| Auth flow analytics | `auth_service.dart` | Anonymized events for sign-in success/failure rates |
-| Purchase funnel analytics | `subscription_service.dart` | Track paywall views, purchase attempts, conversions |
-| Email confirmation redirects | `auth_service.dart` | Handle Supabase email confirmation flow properly |
-
----
-
-## v1.1 Features
-
-### Core
-- Regeneration option ("Generate More")
-- Message history / favorites
-- Feedback (thumbs up/down per message)
-- Pull-to-refresh on home
-- Occasion search/filter
-
-### Security
-- Lifecycle re-auth (biometrics on resume)
-- Passcode fallback
-- Apple token revocation on delete
-- Encrypted history storage
-
-### Enhancements
-- More tones (Sarcastic, Nostalgic, Poetic)
-- "Make it rhyme" toggle
-- Multi-language (Spanish, French)
-- Tablet/landscape layout
-
-### Integrations
-- Birthday reminders + push notifications
-- Shareable card preview (image export)
-- Photo integration (Gemini multimodal)
-
----
-
-## Future Ideas (v2.0+)
-
-- International expansion (Japan)
-- Group messages
-- Scheduling
-- Address book sync
-
----
-
-## ASO Metadata
-
-**iOS App Name:** `Prosepal - Card Message Writer`
-**iOS Subtitle:** `AI Birthday & Thank You Notes`
-**Keywords:** `greeting card writer,thank you note,wedding message,sympathy card,get well,anniversary,graduation`
-**Category:** Utilities / Lifestyle
-**Age Rating:** 4+
-
-**Screenshot Captions:**
-1. "The right words, right now"
-2. "Birthday, wedding, sympathy & more"
-3. "Tailored to your relationship"
-4. "3 unique messages in seconds"
-5. "Funny, warm, or formal"
-6. "Standing in the card aisle? We've got you"

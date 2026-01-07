@@ -14,6 +14,8 @@ import 'package:prosepal/features/generate/generate_screen.dart';
 import 'package:prosepal/shared/atoms/shimmer_button.dart';
 
 import '../../mocks/mock_auth_service.dart';
+import '../../mocks/mock_device_fingerprint_service.dart';
+import '../../mocks/mock_rate_limit_service.dart';
 
 /// Mock AI Service that returns predictable results and tracks calls
 class MockAiService extends AiService {
@@ -188,7 +190,13 @@ void main() {
         sharedPreferencesProvider.overrideWithValue(mockPrefs),
         aiServiceProvider.overrideWithValue(aiService),
         authServiceProvider.overrideWithValue(mockAuthService),
-        usageServiceProvider.overrideWith((ref) => UsageService(mockPrefs)),
+        usageServiceProvider.overrideWith(
+          (ref) => UsageService(
+            mockPrefs,
+            MockDeviceFingerprintService(),
+            MockRateLimitService(),
+          ),
+        ),
         reviewServiceProvider.overrideWith((ref) => ReviewService(mockPrefs)),
         isProProvider.overrideWith((ref) => isPro),
         remainingGenerationsProvider.overrideWith((ref) => remaining),

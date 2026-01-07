@@ -94,10 +94,25 @@ final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
   );
 });
 
+/// Device fingerprint service for server-side free tier tracking
+final deviceFingerprintServiceProvider = Provider<DeviceFingerprintService>((
+  ref,
+) {
+  return DeviceFingerprintService();
+});
+
+/// Rate limiting service to prevent API abuse
+final rateLimitServiceProvider = Provider<RateLimitService>((ref) {
+  final deviceFingerprint = ref.watch(deviceFingerprintServiceProvider);
+  return RateLimitService(deviceFingerprint);
+});
+
 /// Usage tracking service
 final usageServiceProvider = Provider<UsageService>((ref) {
   final prefs = ref.watch(sharedPreferencesProvider);
-  return UsageService(prefs);
+  final deviceFingerprint = ref.watch(deviceFingerprintServiceProvider);
+  final rateLimit = ref.watch(rateLimitServiceProvider);
+  return UsageService(prefs, deviceFingerprint, rateLimit);
 });
 
 /// Generation history service
