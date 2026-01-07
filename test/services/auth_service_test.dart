@@ -497,19 +497,26 @@ void main() {
       expect(mockSupabase.signOutCalls, 1);
     });
 
-    test('still signs out when deleteUser fails', () async {
+    test('throws and does not sign out when deleteUser fails', () async {
       mockSupabase.setLoggedIn(true);
       mockSupabase.methodErrors['deleteUser'] = Exception('Server error');
 
-      await authService.deleteAccount();
+      await expectLater(
+        authService.deleteAccount(),
+        throwsA(isA<AuthException>()),
+      );
 
-      expect(mockSupabase.signOutCalls, 1);
+      // Should NOT sign out when deletion fails - user needs to try again
+      expect(mockSupabase.signOutCalls, 0);
     });
 
-    test('does nothing when no user', () async {
+    test('throws when no user signed in', () async {
       mockSupabase.setLoggedIn(false);
 
-      await authService.deleteAccount();
+      await expectLater(
+        authService.deleteAccount(),
+        throwsA(isA<AuthException>()),
+      );
 
       expect(mockSupabase.deleteUserCalls, 0);
       expect(mockSupabase.signOutCalls, 0);
@@ -635,13 +642,17 @@ void main() {
       expect(mockApple.isAvailableCalls, 1);
     });
 
-    test('isGoogleSignInAvailable delegates to google provider', () async {
-      mockGoogle.isAvailableResult = false;
+    test('isGoogleSignInAvailable returns false when client ID not configured',
+        () async {
+      // In tests, GOOGLE_WEB_CLIENT_ID is not set via dart-define,
+      // so validation fails and returns false without calling provider
+      mockGoogle.isAvailableResult = true;
 
       final result = await authService.isGoogleSignInAvailable();
 
       expect(result, false);
-      expect(mockGoogle.isAvailableCalls, 1);
+      // Provider should NOT be called when validation fails
+      expect(mockGoogle.isAvailableCalls, 0);
     });
   });
 

@@ -28,6 +28,19 @@ import 'log_service.dart';
 const _googleWebClientId = String.fromEnvironment('GOOGLE_WEB_CLIENT_ID');
 const _googleIosClientId = String.fromEnvironment('GOOGLE_IOS_CLIENT_ID');
 
+/// Validates that required Google client IDs are configured.
+/// Returns true if Google Sign-In can work, false otherwise.
+bool _validateGoogleClientIds() {
+  if (_googleWebClientId.isEmpty) {
+    Log.warning(
+      'GOOGLE_WEB_CLIENT_ID not configured - Google Sign-In disabled',
+      {'hint': 'Pass via --dart-define=GOOGLE_WEB_CLIENT_ID=xxx'},
+    );
+    return false;
+  }
+  return true;
+}
+
 /// Authentication service using dependency injection for testability
 ///
 /// Supports Apple Sign-In, Google OAuth, and email/magic link flows.
@@ -109,7 +122,11 @@ class AuthService implements IAuthService {
   /// Check if Google Sign In is available on current platform
   ///
   /// Returns false if not properly configured or on unsupported platforms.
-  Future<bool> isGoogleSignInAvailable() => _google.isAvailable();
+  /// Also validates that required client IDs are configured.
+  Future<bool> isGoogleSignInAvailable() async {
+    if (!_validateGoogleClientIds()) return false;
+    return _google.isAvailable();
+  }
 
   @override
   User? get currentUser => _supabase.currentUser;
@@ -125,14 +142,22 @@ class AuthService implements IAuthService {
     final user = currentUser;
     if (user == null) return null;
     final metadata = user.userMetadata;
-    final name =
+
+    // Prefer provider-supplied name, fall back to email username
+    final rawName =
         metadata?['full_name'] as String? ??
         metadata?['name'] as String? ??
         user.email?.split('@').first;
-    if (name != null && (user.email?.startsWith(name) ?? false)) {
-      return name[0].toUpperCase() + name.substring(1);
-    }
-    return name;
+
+    if (rawName == null || rawName.isEmpty) return null;
+
+    // Capitalize each word for consistent display
+    return rawName
+        .trim()
+        .split(' ')
+        .where((s) => s.isNotEmpty)
+        .map((s) => s[0].toUpperCase() + s.substring(1).toLowerCase())
+        .join(' ');
   }
 
   @override
@@ -327,31 +352,37 @@ class AuthService implements IAuthService {
     Log.info('Delete account initiated');
 
     final user = currentUser;
-    if (user == null) return;
+    if (user == null) {
+      throw const AuthException('No user signed in');
+    }
 
+    // Call edge function to delete user (requires admin/service role)
+    // This MUST succeed before we proceed - do not sign out on failure
     try {
-      // Call edge function to delete user (requires admin/service role)
       await _supabase.deleteUser();
-      Log.info('Account deleted');
+      Log.info('Account deleted from server');
     } catch (e, stackTrace) {
       Log.error(
-        'Account deletion failed - user may need to contact support',
+        'Account deletion failed',
         e,
         stackTrace,
         {'hint': 'Ensure delete-user Edge Function is deployed in Supabase'},
       );
-      // Continue with sign-out even if deletion fails
-      // User may need to contact support for full deletion
+      // Rethrow - caller must handle this and inform user
+      throw AuthException(
+        'Failed to delete account. Please try again or contact support.',
+      );
     }
 
-    // Clear all local state and provider sessions
+    // Server deletion succeeded - now clean up local state
     try {
       await _google.disconnect(); // Revoke Google access
     } catch (_) {
-      // Ignore - may not be signed in with Google
+      // Non-fatal: may not be signed in with Google
     }
 
     await _supabase.signOut();
     Log.clearBuffer(); // Clear logs for privacy
+    Log.info('Delete account completed');
   }
 }
