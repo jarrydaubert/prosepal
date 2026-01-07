@@ -406,8 +406,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
           ),
 
-          // Security section
-          if (_biometricsSupported) ...[
+          // Security section (only for signed-in users to prevent lockout)
+          if (_biometricsSupported && userEmail != null) ...[
             const SectionHeader('Security'),
             SettingsTile(
               leading: Icon(
