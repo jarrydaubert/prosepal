@@ -33,6 +33,17 @@
 
 ---
 
+## Compliance (v1.1)
+
+| Item | Notes |
+|------|-------|
+| Data export feature | GDPR right to portability - export user data as JSON |
+| Analytics opt-out | Settings toggle to disable Firebase Analytics |
+| Apple Privacy Labels | Fill in App Store Connect (similar to Play Data Safety) |
+| Apple token revocation | Call Apple revocation endpoint on account delete |
+
+---
+
 ## v1.1 Features
 
 ### Core
