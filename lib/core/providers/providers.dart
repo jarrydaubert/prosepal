@@ -61,6 +61,11 @@ final authServiceProvider = Provider<IAuthService>((ref) {
   );
 });
 
+/// Auth throttle service - rate limiting for auth attempts
+final authThrottleServiceProvider = Provider<AuthThrottleService>((ref) {
+  return AuthThrottleService();
+});
+
 /// Auth state stream - widgets can watch this to react to sign in/out
 final authStateProvider = StreamProvider<AuthState>((ref) {
   final authService = ref.watch(authServiceProvider);

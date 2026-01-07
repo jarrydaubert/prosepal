@@ -109,14 +109,26 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
   Future<void> _signInWithPassword() async {
     if (!_formKey.currentState!.validate()) return;
 
+    final email = _emailController.text.trim();
+    final throttle = ref.read(authThrottleServiceProvider);
+
+    // Check rate limiting before attempting sign-in
+    final throttleCheck = throttle.checkThrottle(email);
+    if (!throttleCheck.allowed) {
+      _showError('Too many attempts. Please wait ${throttleCheck.waitSeconds} seconds.');
+      return;
+    }
+
     setState(() => _isLoading = true);
 
     try {
-      final email = _emailController.text.trim();
       final password = _passwordController.text;
       final authService = ref.read(authServiceProvider);
       final response =
           await authService.signInWithEmail(email: email, password: password);
+
+      // Success - reset throttle
+      throttle.recordSuccess(email);
 
       // Identify with RevenueCat and sync usage (same as Apple/Google)
       if (response.user != null) {
@@ -130,7 +142,12 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
       if (mounted) {
         context.go('/home');
       }
+    } on AuthException catch (e) {
+      // Record failure for rate limiting (only for auth failures)
+      throttle.recordFailure(email);
+      _showError(_getErrorMessage(e));
     } catch (e) {
+      // Non-auth errors don't count toward throttle
       _showError(_getErrorMessage(e));
     } finally {
       if (mounted) setState(() => _isLoading = false);
