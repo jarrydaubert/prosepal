@@ -125,6 +125,10 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 | Biometric setup accessibility | `biometric_setup_screen.dart` | Add Semantics for benefits/icon |
 | Skip preference tracking | `biometric_setup_screen.dart` | Store skip for deferred re-prompt |
 | Strong biometric preference | `biometric_setup_screen.dart` | Prefer Class 3 biometrics when available |
+| Biometric re-auth on resume | `app.dart` | Prompt biometric when resuming if enabled |
+| Screenshot prevention | `app.dart` | Platform-specific screenshot blocking (FlutterWindowManager) |
+| Additional auth events | `app.dart` | Handle tokenRefreshed, passwordRecovery events |
+| Router redirect guards | `app.dart` | Use GoRouter redirects instead of fullPath check |
 
 ---
 

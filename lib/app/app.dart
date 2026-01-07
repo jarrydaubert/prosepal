@@ -70,19 +70,31 @@ class _ProsepalAppState extends ConsumerState<ProsepalApp>
 
         if (event == AuthChangeEvent.signedIn && session != null) {
           // Link RevenueCat to user for purchase restoration
-          await ref
-              .read(subscriptionServiceProvider)
-              .identifyUser(session.user.id);
-          Log.info('Auth listener: RevenueCat identified');
+          try {
+            await ref
+                .read(subscriptionServiceProvider)
+                .identifyUser(session.user.id);
+            Log.info('Auth listener: RevenueCat identified');
+          } catch (e) {
+            Log.warning('Auth listener: RevenueCat identify failed', {
+              'error': '$e',
+            });
+          }
+
           // Sync usage from server (restores usage after reinstall)
-          await ref.read(usageServiceProvider).syncFromServer();
-          Log.info('Auth listener: Usage synced from server');
+          try {
+            await ref.read(usageServiceProvider).syncFromServer();
+            Log.info('Auth listener: Usage synced from server');
+          } catch (e) {
+            Log.warning('Auth listener: Usage sync failed', {'error': '$e'});
+          }
 
           // Navigate after sign-in
           // - Magic links: user returns to app, listener must navigate
           // - Apple/Google/Email buttons: AuthScreen navigates directly
           // - To avoid race conditions, only navigate if on auth screens
           //   (Apple/Google navigate immediately, won't be on /auth anymore)
+          // Note: fullPath check is simple but sufficient for current routes
           final currentPath =
               appRouter.routerDelegate.currentConfiguration.fullPath;
           if (currentPath.startsWith('/auth')) {
@@ -94,8 +106,14 @@ class _ProsepalAppState extends ConsumerState<ProsepalApp>
           }
         } else if (event == AuthChangeEvent.signedOut) {
           // Clear sync marker so next user gets fresh sync
-          await ref.read(usageServiceProvider).clearSyncMarker();
-          Log.info('Auth listener: Sync marker cleared (signedOut)');
+          try {
+            await ref.read(usageServiceProvider).clearSyncMarker();
+            Log.info('Auth listener: Sync marker cleared (signedOut)');
+          } catch (e) {
+            Log.warning('Auth listener: Clear sync marker failed', {
+              'error': '$e',
+            });
+          }
           // Note: Navigation is handled by caller (settings_screen)
           // Sign out → /home, Delete account → /onboarding
         }
@@ -117,16 +135,23 @@ class _ProsepalAppState extends ConsumerState<ProsepalApp>
           children: [
             child!,
             // Privacy screen when app is backgrounded
-            if (_isInBackground)
-              ColoredBox(
-                color: AppColors.background,
-                child: Center(
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(24),
-                    child: const AppLogo(size: 100),
+            // AnimatedOpacity provides smooth transition
+            AnimatedOpacity(
+              opacity: _isInBackground ? 1.0 : 0.0,
+              duration: const Duration(milliseconds: 150),
+              child: IgnorePointer(
+                ignoring: !_isInBackground,
+                child: ColoredBox(
+                  color: AppColors.background,
+                  child: Center(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(24),
+                      child: const AppLogo(size: 100),
+                    ),
                   ),
                 ),
               ),
+            ),
           ],
         );
       },
