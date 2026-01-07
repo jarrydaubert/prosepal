@@ -53,6 +53,8 @@
 | Log param redaction | `log_service.dart` | Auto-redact sensitive keys (email, token, password) in exports |
 | Debug/verbose log levels | `log_service.dart` | Add suppressed-in-release levels for finer granularity |
 | Log export filtering | `log_service.dart` | Support timestamp range and level-based filtering in exports |
+| Consolidate ErrorLogService | `error_log_service.dart` | Merge into LogService or deprecate - duplicates buffer/export functionality |
+| Error export enhancement | `log_service.dart` | Add device metadata (OS, app version) to exports after consolidation |
 | UsageService race condition | `usage_service.dart` | Atomic increment via Supabase RPC |
 | Hardcoded usage limits | `usage_service.dart` | Move to remote config |
 | Supabase singleton | `usage_service.dart` | Inject client for testability |
