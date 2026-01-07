@@ -160,16 +160,28 @@ class _SplashScreenState extends ConsumerState<_SplashScreen> {
     // Remove native splash right before navigation
     FlutterNativeSplash.remove();
 
+    Log.info('Router: Initial navigation', {
+      'onboarded': hasCompletedOnboarding,
+      'loggedIn': isLoggedIn,
+      'bioEnabled': biometricsEnabled,
+      'bioAvailable': biometricsAvailable,
+      'hasProRestore': _hasProFromRestore,
+    });
+
     if (!hasCompletedOnboarding) {
+      Log.info('Router: -> /onboarding (not onboarded)');
       context.go('/onboarding');
     } else if (biometricsEnabled && biometricsAvailable) {
       // Biometric lock applies to all users (logged in or anonymous)
       // User explicitly enabled it, so respect their choice
+      Log.info('Router: -> /lock (biometrics enabled)');
       context.go('/lock');
     } else if (_hasProFromRestore) {
       // Has Pro but not signed in - prompt to claim it
+      Log.info('Router: -> /auth?restore=true (has Pro, not signed in)');
       context.go('/auth?restore=true');
     } else {
+      Log.info('Router: -> /home (default)');
       context.go('/home');
     }
   }

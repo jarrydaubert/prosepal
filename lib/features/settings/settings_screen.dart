@@ -206,6 +206,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
 
     if (confirm ?? false) {
+      Log.info('Sign out started');
       // Clear all user-specific data (internet cafe test: leave no trace)
       final authService = ref.read(authServiceProvider);
 
@@ -213,6 +214,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       if (authService.currentUser != null) {
         try {
           await ref.read(subscriptionServiceProvider).logOut();
+          Log.info('Sign out: RevenueCat logged out');
         } catch (e) {
           Log.warning('RevenueCat logout skipped', {'error': '$e'});
         }
@@ -220,16 +222,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
       // 2. Clear history (personal messages)
       await ref.read(historyServiceProvider).clearHistory();
+      Log.info('Sign out: History cleared');
 
       // 3. Clear usage counts (user-specific)
       await ref.read(usageServiceProvider).clearAllUsage();
+      Log.info('Sign out: Usage cleared');
 
       // 4. Disable biometrics (security setting tied to user)
       await _biometricService.setEnabled(false);
       setState(() => _biometricsEnabled = false);
+      Log.info('Sign out: Biometrics disabled');
 
       // 5. Sign out (clears tokens, Google session, logs)
       await authService.signOut();
+      Log.info('Sign out: Auth signed out, navigating to /home');
 
       if (mounted) context.go('/home');
     }
@@ -270,15 +276,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
 
     if (finalConfirm ?? false) {
+      Log.info('Delete account started');
       final authService = ref.read(authServiceProvider);
 
       // 1. Delete account FIRST while JWT is still valid
       // This calls the edge function which needs the access token
       await authService.deleteAccount();
+      Log.info('Delete account: Supabase delete called');
 
       // 2. Log out of RevenueCat (after delete, session may be gone)
       try {
         await ref.read(subscriptionServiceProvider).logOut();
+        Log.info('Delete account: RevenueCat logged out');
       } catch (e) {
         Log.warning('RevenueCat logout skipped during delete', {
           'error': '$e',
@@ -289,8 +298,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       await ref.read(historyServiceProvider).clearHistory();
       await ref.read(usageServiceProvider).clearAllUsage();
       await _biometricService.setEnabled(false);
+      Log.info('Delete account: Local data cleared');
 
       // Navigate to onboarding for fresh start (not home)
+      Log.info('Delete account: Navigating to /onboarding');
       if (mounted) context.go('/onboarding');
     }
   }
