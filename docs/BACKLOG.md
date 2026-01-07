@@ -107,6 +107,9 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 | Auth screen accessibility | `auth_screen.dart` | Add Semantics widgets, verify contrast ratios |
 | Google button branding | `auth_screen.dart` | Verify google_g.png is official asset or use SDK button |
 | Auth analytics events | `auth_screen.dart` | Track sign-in attempts/success for funnel analysis |
+| Email auth localization | `email_auth_screen.dart` | Extract strings to .arb files |
+| Email auth accessibility | `email_auth_screen.dart` | Add Semantics widgets, verify contrast ratios |
+| Sign-up integration | `email_auth_screen.dart` | Link to sign-up screen or auto-detect new users |
 
 ---
 
