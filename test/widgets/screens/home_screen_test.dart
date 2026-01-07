@@ -128,7 +128,7 @@ void main() {
 
       expect(find.text('3'), findsOneWidget);
       expect(find.text('Free messages remaining'), findsOneWidget);
-      expect(find.text('Upgrade for unlimited'), findsOneWidget);
+      expect(find.text('Tap to unlock 500/month'), findsOneWidget);
     });
 
     testWidgets('exhausted user sees trial ended message', (tester) async {
@@ -137,7 +137,7 @@ void main() {
 
       expect(find.text('0'), findsOneWidget);
       expect(find.text('Free trial ended'), findsOneWidget);
-      expect(find.text('Upgrade for unlimited'), findsOneWidget);
+      expect(find.text('Tap to unlock 500/month'), findsOneWidget);
     });
 
     testWidgets('pro user sees PRO badge instead of usage card', (
@@ -150,14 +150,14 @@ void main() {
       expect(find.byIcon(Icons.star_rounded), findsOneWidget);
       // Should NOT show free user elements
       expect(find.text('Free messages remaining'), findsNothing);
-      expect(find.text('Upgrade for unlimited'), findsNothing);
+      expect(find.text('Tap to unlock 500/month'), findsNothing);
     });
 
     testWidgets('tapping usage card navigates to paywall', (tester) async {
       await tester.pumpWidget(createTestableHomeScreen(remaining: 2));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Upgrade for unlimited'));
+      await tester.tap(find.text('Tap to unlock 500/month'));
       await tester.pumpAndSettle();
 
       expect(find.text('Paywall Screen'), findsOneWidget);
