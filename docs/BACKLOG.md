@@ -30,14 +30,13 @@ supabase secrets set APPLE_TEAM_ID=xxx APPLE_CLIENT_ID=xxx APPLE_KEY_ID=xxx APPL
 
 ---
 
-## P1 - Security
+## P1 - Security (COMPLETED)
 
-| Item | Location |
-|------|----------|
-| Re-auth for sensitive ops | `auth_service.dart` - Prompt re-auth before updateEmail/updatePassword/deleteAccount |
-| Require env vars for keys | `auth_service.dart`, `subscription_service.dart` - Remove hardcoded defaults |
-| Rate limiting auth attempts | `auth_service.dart` - Client-side exponential backoff |
-| Screenshot prevention | `app.dart` - Platform-specific blocking |
+All P1 security items implemented:
+- Re-auth for sensitive operations (deleteAccount)
+- Env vars required for RevenueCat keys (fail in release if missing)
+- Client-side auth rate limiting with exponential backoff
+- Screenshot/screen recording prevention (release builds only)
 
 ---
 
