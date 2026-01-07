@@ -1,123 +1,45 @@
 # User Journeys
 
-> Core navigation flows. Keep concise and up to date.
+## App Launch
+1. `!onboarded` → `/onboarding`
+2. `biometrics` → `/lock` → `/home`
+3. `anon+Pro` → `/auth?restore=true`
+4. `else` → `/home`
 
----
+## Flows
+- **Fresh:** Launch → Onboarding → Home (anon, 1 free)
+- **Anon Upgrade:** Upgrade → Auth → Sign In → Paywall → Purchase → Bio? → Home
+- **Logged Upgrade:** Upgrade → Paywall → Purchase → Bio? → Home
+- **Sign Out:** Settings → Confirm → Clear all → Home (anon)
 
-## App Launch Flow
+## Relaunch
+| State | Bio | Route |
+|-------|-----|-------|
+| Anon | Off | `/home` |
+| Anon | On | `/lock` → `/home` |
+| Logged | Off | `/home` |
+| Logged | On | `/lock` → `/home` |
+| Anon+Pro | - | `/auth?restore=true` |
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                      APP LAUNCH                              │
-├─────────────────────────────────────────────────────────────┤
-│ 1. !hasCompletedOnboarding    → /onboarding                 │
-│ 2. biometricsEnabled          → /lock → /home               │
-│ 3. anonymousWithPro           → /auth?restore=true          │
-│ 4. else                       → /home                       │
-└─────────────────────────────────────────────────────────────┘
-```
+## Rules
+- Bio toggle: **signed-in users only** (prevents lockout)
+- Sign out clears: history, usage, bio, RevenueCat, session
+- Upgrade always requires auth if anonymous
 
----
-
-## Core Flows
-
-### 1. Fresh Install
-```
-Launch → Onboarding (3 screens) → Home (anonymous, 1 free)
-```
-
-### 2. Anonymous → Upgrade
-```
-Tap Upgrade → Auth (required) → Sign In → Paywall → Purchase → Biometrics Dialog → Home
-                                                              ↓
-                                                    Enable → /biometric-setup → Home
-                                                    Skip   → Home (pop paywall)
-```
-
-### 3. Logged In → Upgrade
-```
-Tap Upgrade → Paywall → Purchase → Biometrics Dialog → Home
-```
-
-### 4. Relaunch Scenarios
-
-| State | Biometrics | Route |
-|-------|------------|-------|
-| Anonymous | Off | `/home` |
-| Anonymous | On | `/lock` → `/home` |
-| Logged in | Off | `/home` |
-| Logged in | On | `/lock` → `/home` |
-| Anonymous + Pro (restore) | - | `/auth?restore=true` |
-
-### 5. Sign Out
-```
-Settings → Sign Out → Confirm → Clears all data → /home (anonymous)
-```
-
-Cleared: History, Usage, Biometrics, RevenueCat link, Auth session
-
-### 6. Biometrics
-```
-Settings → Security (only visible if signed in) → Toggle On → Authenticate → Enabled
-```
-
-**Rule:** Biometrics toggle ONLY shown to signed-in users (prevents lockout)
-
----
-
-## Screen Entry Points
-
-| Screen | Entry From |
-|--------|------------|
+## Screens
+| Route | Entry |
+|-------|-------|
 | `/onboarding` | Fresh install |
-| `/home` | After onboarding, after auth, after purchase |
-| `/auth` | Upgrade (anonymous), Settings sign-in, Restore |
-| `/paywall` | Upgrade (logged in), After auth redirect |
-| `/lock` | App launch (biometrics enabled) |
-| `/biometric-setup` | After auth (no redirect), After purchase (enable) |
-| `/generate` | Occasion tapped |
-| `/results` | Generation complete |
+| `/home` | Default |
+| `/auth` | Anon upgrade, settings, restore |
+| `/paywall` | Logged upgrade, post-auth redirect |
+| `/lock` | Bio enabled + launch |
+| `/biometric-setup` | Post-auth, post-purchase |
+| `/generate` | Occasion tap |
+| `/results` | Generation done |
 | `/settings` | Settings icon |
 
----
-
-## Edge Cases
-
-| Scenario | Handling |
-|----------|----------|
-| Anonymous tries upgrade | Redirect to auth first |
-| Anonymous enables biometrics | **Blocked** - toggle hidden |
-| Biometrics fail repeatedly | "Try Again" or device passcode fallback |
-| Pro user reinstalls | RevenueCat restores via App Store receipt |
-| Sign out clears biometrics | Yes - security setting tied to user |
-
----
-
-## Test Coverage Needed
-
-| Flow | Status |
-|------|--------|
-| Fresh install → Free generation | Unit tests ✅ |
-| Anonymous upgrade → Auth → Paywall | **Needs integration test** |
-| Purchase → Biometrics → Home | **Needs integration test** |
-| App relaunch (all states) | **Needs integration test** |
-| Sign out clears data | Unit tests ✅ |
-| Biometrics lock/unlock | Manual only |
-
----
-
-## Log Events (Key)
-
-```
-[INFO] Onboarding started/completed
-[INFO] App launched | initialProStatus=bool
-[INFO] Wizard started | occasion=x
-[INFO] AI generation started/success/failed
-[INFO] Sign in started | provider=x
-[INFO] User signed in | userId=x
-[INFO] Purchase completed | hasPro=true
-[INFO] Pro status updated | hasPro=bool
-[INFO] Biometric auth started/success
-[INFO] Sign out initiated
-[INFO] User signed out
-```
+## Integration Tests Needed
+- [ ] Anon → Auth → Paywall → Purchase → Home
+- [ ] Relaunch all states
+- [ ] Sign out clears data
