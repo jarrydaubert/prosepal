@@ -9,7 +9,6 @@ import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 import '../../core/errors/auth_errors.dart';
 import '../../core/providers/providers.dart';
-import '../../core/services/biometric_service.dart';
 import '../../shared/atoms/app_logo.dart';
 import '../../shared/theme/app_colors.dart';
 
@@ -53,7 +52,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       return;
     }
 
-    final biometricService = BiometricService.instance;
+    // Use provider for consistency and testability
+    final biometricService = ref.read(biometricServiceProvider);
     final isSupported = await biometricService.isSupported;
     final isAlreadyEnabled = await biometricService.isEnabled;
 
@@ -252,15 +252,19 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
               Column(
                     children: [
                       // Apple Sign In (iOS/macOS only, first per Apple guidelines)
+                      // IMPORTANT: Use official SignInWithAppleButton styling
+                      // Custom text/styling violates Apple HIG and causes rejection
                       if (Platform.isIOS || Platform.isMacOS) ...[
                         _AuthButton(
                           onPressed: _isLoading ? null : _signInWithApple,
                           isLoading: _isLoading,
-                          child: SignInWithAppleButton(
-                            text: 'Continue with Apple',
+                          child: SizedBox(
                             height: 56,
-                            onPressed: _signInWithApple,
-                            borderRadius: BorderRadius.circular(16),
+                            child: SignInWithAppleButton(
+                              onPressed: _signInWithApple,
+                              // Use default styling per Apple Human Interface Guidelines
+                              style: SignInWithAppleButtonStyle.black,
+                            ),
                           ),
                         ),
                         const SizedBox(height: 12),

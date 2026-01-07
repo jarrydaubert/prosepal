@@ -103,6 +103,10 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 | History export/share | `history_service.dart` | Allow users to export history as JSON |
 | Form state consolidation | `providers.dart` | Consolidate form StateProviders into single NotifierProvider |
 | AutoDispose for transient state | `providers.dart` | Add autoDispose to generation result/error providers |
+| Auth screen localization | `auth_screen.dart` | Extract strings to .arb files |
+| Auth screen accessibility | `auth_screen.dart` | Add Semantics widgets, verify contrast ratios |
+| Google button branding | `auth_screen.dart` | Verify google_g.png is official asset or use SDK button |
+| Auth analytics events | `auth_screen.dart` | Track sign-in attempts/success for funnel analysis |
 
 ---
 
