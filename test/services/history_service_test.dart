@@ -58,16 +58,16 @@ void main() {
       final result = createTestResult();
       await service.saveGeneration(result);
 
-      final history = service.getHistory();
+      final history = await service.getHistory();
 
       expect(history.length, equals(1));
       expect(history[0].result.occasion, equals(Occasion.birthday));
       expect(history[0].result.messages.length, equals(2));
     });
 
-    test('returns empty list when no history exists', () {
+    test('returns empty list when no history exists', () async {
       // Bug: Crashes on fresh install with no history
-      final history = service.getHistory();
+      final history = await service.getHistory();
       expect(history, isEmpty);
     });
 
@@ -80,7 +80,7 @@ void main() {
       await Future.delayed(const Duration(milliseconds: 10));
       await service.saveGeneration(result2);
 
-      final history = service.getHistory();
+      final history = await service.getHistory();
 
       expect(history[0].result.occasion, equals(Occasion.wedding));
       expect(history[1].result.occasion, equals(Occasion.birthday));
@@ -109,7 +109,7 @@ void main() {
       );
 
       await service.saveGeneration(result);
-      final history = service.getHistory();
+      final history = await service.getHistory();
       final loaded = history[0].result;
 
       expect(loaded.messages[0].text, contains('🎂'));
@@ -138,7 +138,8 @@ void main() {
       }
 
       // Verify all saved
-      expect(service.getHistory().length, equals(5));
+      final history = await service.getHistory();
+      expect(history.length, equals(5));
 
       // The service should trim when exceeding maxHistoryItems
       // This test verifies the trim logic works
@@ -159,13 +160,13 @@ void main() {
         createTestResult(occasion: Occasion.wedding),
       );
 
-      var history = service.getHistory();
+      var history = await service.getHistory();
       expect(history.length, equals(2)); // Verify both saved
 
       final idToDelete = history[0].id; // Delete newest (wedding)
 
       await service.deleteGeneration(idToDelete);
-      history = service.getHistory();
+      history = await service.getHistory();
 
       expect(history.length, equals(1));
       expect(
@@ -181,7 +182,8 @@ void main() {
       // Should not throw
       await service.deleteGeneration('non-existent-id');
 
-      expect(service.getHistory().length, equals(1));
+      final history = await service.getHistory();
+      expect(history.length, equals(1));
     });
 
     test('clearHistory removes all items', () async {
@@ -192,7 +194,8 @@ void main() {
 
       await service.clearHistory();
 
-      expect(service.getHistory(), isEmpty);
+      final history = await service.getHistory();
+      expect(history, isEmpty);
     });
 
     // ============================================================
@@ -204,7 +207,7 @@ void main() {
       // Bug: App crashes if SharedPreferences contains invalid JSON
       await prefs.setString('generation_history', 'not valid json {{{');
 
-      final history = service.getHistory();
+      final history = await service.getHistory();
 
       expect(history, isEmpty); // Should recover gracefully, not crash
     });
@@ -213,7 +216,7 @@ void main() {
       // Bug: Empty string treated as valid JSON
       await prefs.setString('generation_history', '');
 
-      final history = service.getHistory();
+      final history = await service.getHistory();
 
       expect(history, isEmpty);
     });
@@ -229,7 +232,7 @@ void main() {
       await Future.delayed(const Duration(milliseconds: 5));
       await service.saveGeneration(createTestResult());
 
-      final history = service.getHistory();
+      final history = await service.getHistory();
 
       expect(history[0].id, isNot(equals(history[1].id)));
     });

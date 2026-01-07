@@ -40,12 +40,15 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     super.dispose();
   }
 
-  void _loadHistory() {
+  Future<void> _loadHistory() async {
     final historyService = ref.read(historyServiceProvider);
-    setState(() {
-      _allHistory = historyService.getHistory();
-      _applyFilters();
-    });
+    final history = await historyService.getHistory();
+    if (mounted) {
+      setState(() {
+        _allHistory = history;
+        _applyFilters();
+      });
+    }
   }
 
   void _applyFilters() {
