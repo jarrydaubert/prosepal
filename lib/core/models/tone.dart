@@ -1,6 +1,6 @@
 /// Tone options for message generation
 /// Ordered by predicted user preference (most versatile first)
-/// Prompts optimized for Google Gemini 3 Flash
+/// Prompts optimized for Google Gemini
 enum Tone {
   heartfelt(
     label: 'Heartfelt',

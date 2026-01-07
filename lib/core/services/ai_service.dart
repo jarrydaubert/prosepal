@@ -72,6 +72,15 @@ class AiParseException extends AiServiceException {
   const AiParseException(super.message, {super.originalError, super.errorCode});
 }
 
+/// Response truncated (hit maxTokens) - retryable
+class AiTruncationException extends AiServiceException {
+  const AiTruncationException(
+    super.message, {
+    super.originalError,
+    super.errorCode,
+  });
+}
+
 /// Error classification result for testability
 class AiErrorClassification {
   const AiErrorClassification({
@@ -363,9 +372,13 @@ class AiService {
         );
       }
 
-      // Check for maxTokens finish reason (truncation)
+      // Check for maxTokens finish reason (truncation) - retry
       if (candidate?.finishReason == FinishReason.maxTokens) {
-        Log.warning('AI response truncated - hit maxTokens limit');
+        Log.warning('AI response truncated - hit maxTokens limit, retrying');
+        throw const AiTruncationException(
+          'Response was truncated. Retrying...',
+          errorCode: 'TRUNCATED',
+        );
       }
 
       final jsonText = response.text;
@@ -440,6 +453,26 @@ class AiService {
         ErrorLogService.instance.log(e, stackTrace);
         Log.error('Firebase AI error', e, stackTrace, {'attempt': attempt});
         throw _createException(classification, e);
+      } on AiTruncationException catch (e, stackTrace) {
+        // Truncation is retryable - model may succeed on retry
+        attempt++;
+        if (attempt < AiConfig.maxRetries) {
+          final delayMs = AiConfig.initialDelayMs * (1 << attempt);
+          final jitter = (delayMs * 0.2 * _random.nextDouble()).toInt();
+          Log.info('AI retry after truncation', {
+            'attempt': attempt,
+            'delayMs': delayMs + jitter,
+          });
+          await Future.delayed(Duration(milliseconds: delayMs + jitter));
+          continue;
+        }
+        // Max retries reached - throw user-friendly error
+        ErrorLogService.instance.log(e, stackTrace);
+        Log.error('AI truncation persisted after retries', e, stackTrace);
+        throw const AiServiceException(
+          'The AI response was incomplete. Please try again.',
+          errorCode: 'TRUNCATION_FAILED',
+        );
       } catch (e, stackTrace) {
         if (e is AiServiceException) rethrow;
 

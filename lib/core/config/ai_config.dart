@@ -5,8 +5,7 @@
 abstract final class AiConfig {
   /// Current Gemini model identifier
   /// See: https://firebase.google.com/docs/ai-logic/models
-  /// Gemini 3 Flash: faster, cheaper, better quality than 2.5
-  static const String model = 'gemini-3-flash-preview';
+  static const String model = 'gemini-2.5-flash';
 
   /// Generation parameters
   static const double temperature = 0.85;
@@ -19,7 +18,7 @@ abstract final class AiConfig {
   static const int initialDelayMs = 500;
 
   /// System instruction (set once per model, saves tokens per call)
-  /// Optimized for Gemini 3 Flash - clear, specific guidance
+  /// Optimized for Gemini - clear, specific guidance
   static const String systemInstruction = '''
 You are an expert at crafting greeting card messages that feel personal and genuine.
 

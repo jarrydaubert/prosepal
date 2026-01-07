@@ -285,7 +285,7 @@ else context.go('/home');
 class AiService {
   Future<List<String>> generate(String prompt) async {
     final model = FirebaseAI.googleAI().generativeModel(
-      model: 'gemini-3-flash-preview',
+      model: 'gemini-2.5-flash',
       generationConfig: GenerationConfig(
         responseMimeType: 'application/json',
         responseSchema: Schema.object(
