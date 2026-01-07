@@ -29,11 +29,11 @@ Build separate apps targeting adjacent AI writing niches using same Flutter stac
 - Clone strategy rarely builds defensible moat
 - App Store review overhead per app
 
-### Execution
+### Execution (Droid CLI Workflow)
 1. Scrape competitor (public pages) → structured JSON
-2. Build unique mobile app with Prosepal animations/polish
+2. Prompt Droid: "Inspire from [JSON] but build unique mobile app with [our animations/polish]"
 3. Same Flutter stack, different prompts/UI skin
-4. Undercut pricing
+4. Undercut pricing ($4.99 vs $20+)
 
 ---
 
