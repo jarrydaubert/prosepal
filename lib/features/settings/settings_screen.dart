@@ -270,33 +270,28 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
 
     if (finalConfirm ?? false) {
-      // Clear all user-specific data (same as sign out)
       final authService = ref.read(authServiceProvider);
 
-      // 1. Log out of RevenueCat
-      if (authService.currentUser != null) {
-        try {
-          await ref.read(subscriptionServiceProvider).logOut();
-        } catch (e) {
-          Log.warning('RevenueCat logout skipped during delete', {
-            'error': '$e',
-          });
-        }
-      }
-
-      // 2. Clear history (personal messages)
-      await ref.read(historyServiceProvider).clearHistory();
-
-      // 3. Clear usage counts
-      await ref.read(usageServiceProvider).clearAllUsage();
-
-      // 4. Disable biometrics
-      await _biometricService.setEnabled(false);
-
-      // 5. Delete account (also signs out)
+      // 1. Delete account FIRST while JWT is still valid
+      // This calls the edge function which needs the access token
       await authService.deleteAccount();
 
-      if (mounted) context.go('/home');
+      // 2. Log out of RevenueCat (after delete, session may be gone)
+      try {
+        await ref.read(subscriptionServiceProvider).logOut();
+      } catch (e) {
+        Log.warning('RevenueCat logout skipped during delete', {
+          'error': '$e',
+        });
+      }
+
+      // 3. Clear local data (history, usage, biometrics)
+      await ref.read(historyServiceProvider).clearHistory();
+      await ref.read(usageServiceProvider).clearAllUsage();
+      await _biometricService.setEnabled(false);
+
+      // Navigate to onboarding for fresh start (not home)
+      if (mounted) context.go('/onboarding');
     }
   }
 
