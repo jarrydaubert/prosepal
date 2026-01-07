@@ -8,24 +8,24 @@ import 'log_service.dart';
 /// Free tier usage is stored in Supabase to survive app reinstalls.
 /// Local cache (SharedPreferences) provides fast reads; server is source of truth.
 ///
-/// Flow:
+/// ## Architecture
+/// - **Server-side enforcement**: [checkAndIncrementServerSide] validates and
+///   increments atomically via Supabase RPC - REQUIRED for authenticated users
+/// - **Client-side cache**: Local SharedPreferences for UI display (remaining
+///   counts) and offline/anonymous fallback
+///
+/// ## Flow
 /// 1. User signs in -> syncFromServer() fetches their usage
-/// 2. User generates -> recordGeneration() updates both local + server
-/// 3. User reinstalls -> signs in -> gets their existing usage from server
+/// 2. User generates -> checkAndIncrementServerSide() validates + increments
+/// 3. Local cache updated from RPC response
+/// 4. User reinstalls -> signs in -> gets their existing usage from server
 ///
-/// ## SECURITY WARNING
-/// Current implementation uses CLIENT-SIDE enforcement for quota checks.
-/// This is vulnerable to bypass via:
-/// - SharedPreferences modification (rooted devices, ADB)
-/// - App data clearing
-/// - Modified clients
-///
-/// For production monetization, implement SERVER-SIDE enforcement:
-/// 1. Create Supabase RPC function `check_and_increment_usage`
-/// 2. Function validates limits atomically before allowing generation
-/// 3. Client calls RPC instead of local checks
-///
-/// See BACKLOG.md for migration plan.
+/// ## Security
+/// Authenticated users MUST use [checkAndIncrementServerSide] which calls
+/// the `check_and_increment_usage` Supabase RPC function. This prevents:
+/// - SharedPreferences tampering
+/// - App data clearing exploits
+/// - Modified client attacks
 class UsageService {
   UsageService(this._prefs);
 
@@ -116,11 +116,100 @@ class UsageService {
   }
 
   // ===========================================================================
-  // WRITE OPERATIONS (local + server)
+  // SERVER-SIDE ENFORCEMENT (REQUIRED for authenticated users)
+  // ===========================================================================
+
+  /// Check limits and increment usage atomically on the server.
+  ///
+  /// This is the PRIMARY method for usage validation. It calls the Supabase
+  /// RPC function `check_and_increment_usage` which:
+  /// 1. Checks if user is within limits (with row-level locking)
+  /// 2. Increments usage atomically if allowed
+  /// 3. Returns the result
+  ///
+  /// Returns [UsageCheckResult] with:
+  /// - [allowed]: true if generation can proceed
+  /// - [remaining]: remaining generations
+  /// - [errorMessage]: user-friendly error if not allowed
+  ///
+  /// Throws [UsageCheckException] on network/server errors.
+  Future<UsageCheckResult> checkAndIncrementServerSide({
+    required bool isPro,
+  }) async {
+    final userId = _userId;
+    final supabase = _supabase;
+
+    if (userId == null || supabase == null) {
+      Log.warning('Server-side check failed: user not authenticated');
+      throw UsageCheckException('Please sign in to continue');
+    }
+
+    final monthKey = _monthString();
+
+    try {
+      final response = await supabase.rpc('check_and_increment_usage', params: {
+        'p_user_id': userId,
+        'p_is_pro': isPro,
+        'p_month_key': monthKey,
+      });
+
+      final result = response as Map<String, dynamic>;
+      final allowed = result['allowed'] as bool? ?? false;
+      final totalCount = result['total_count'] as int? ?? 0;
+      final monthlyCount = result['monthly_count'] as int? ?? 0;
+      final remaining = result['remaining'] as int? ?? 0;
+      final limit = result['limit'] as int? ?? (isPro ? proMonthlyLimit : freeLifetimeLimit);
+
+      Log.info('Server-side usage check', {
+        'allowed': allowed,
+        'totalCount': totalCount,
+        'monthlyCount': monthlyCount,
+        'remaining': remaining,
+        'isPro': isPro,
+      });
+
+      // Update local cache to match server (for UI display)
+      await _prefs.setInt(_keyTotalCount, totalCount);
+      await _prefs.setInt(_keyMonthlyCount, monthlyCount);
+      await _prefs.setString(_keyMonthlyDate, monthKey);
+
+      // Mark device as having used free tier
+      if (allowed && !isPro) {
+        await markDeviceUsedFreeTier();
+      }
+
+      if (!allowed) {
+        final message = isPro
+            ? 'You\'ve reached your monthly limit of $limit messages'
+            : 'You\'ve used your free message. Upgrade to Pro for more!';
+        return UsageCheckResult(
+          allowed: false,
+          remaining: 0,
+          errorMessage: message,
+        );
+      }
+
+      return UsageCheckResult(
+        allowed: true,
+        remaining: remaining,
+      );
+    } catch (e) {
+      Log.error('Server-side usage check failed', e);
+      throw UsageCheckException(
+        'Unable to verify usage. Please check your connection.',
+      );
+    }
+  }
+
+  // ===========================================================================
+  // CLIENT-SIDE FALLBACK (for anonymous users only)
   // ===========================================================================
 
   /// Record a generation - updates local cache AND server
   /// [isPro] - if false, marks device as having used free tier
+  ///
+  /// NOTE: For authenticated users, use [checkAndIncrementServerSide] instead.
+  /// This method is for anonymous users or offline fallback only.
   Future<void> recordGeneration({bool isPro = false}) async {
     // Mark device as having used free tier (survives account deletion)
     if (!isPro) {
@@ -292,4 +381,36 @@ class UsageService {
     final now = DateTime.now();
     return '${now.year}-${now.month.toString().padLeft(2, '0')}';
   }
+}
+
+// =============================================================================
+// RESULT TYPES
+// =============================================================================
+
+/// Result of server-side usage check
+class UsageCheckResult {
+  const UsageCheckResult({
+    required this.allowed,
+    required this.remaining,
+    this.errorMessage,
+  });
+
+  /// Whether the generation is allowed
+  final bool allowed;
+
+  /// Remaining generations after this one
+  final int remaining;
+
+  /// User-friendly error message if not allowed
+  final String? errorMessage;
+}
+
+/// Exception thrown when server-side usage check fails
+class UsageCheckException implements Exception {
+  const UsageCheckException(this.message);
+
+  final String message;
+
+  @override
+  String toString() => message;
 }

@@ -24,6 +24,8 @@ import '../shared/theme/app_colors.dart';
 
 final appRouter = GoRouter(
   initialLocation: '/splash',
+  // Handle unknown routes with error page
+  errorBuilder: (context, state) => _ErrorScreen(error: state.error),
   routes: [
     GoRoute(
       path: '/splash',
@@ -212,6 +214,71 @@ class _SplashScreenState extends ConsumerState<_SplashScreen> {
         child: ClipRRect(
           borderRadius: BorderRadius.circular(20),
           child: const AppLogo(size: 80),
+        ),
+      ),
+    );
+  }
+}
+
+/// Error screen for unknown routes (404)
+class _ErrorScreen extends StatelessWidget {
+  const _ErrorScreen({this.error});
+
+  final Exception? error;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      body: SafeArea(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(40),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(
+                  Icons.error_outline,
+                  size: 64,
+                  color: AppColors.textSecondary,
+                ),
+                const SizedBox(height: 24),
+                const Text(
+                  'Page not found',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'The page you\'re looking for doesn\'t exist.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.grey[600],
+                  ),
+                ),
+                const SizedBox(height: 32),
+                ElevatedButton(
+                  onPressed: () => context.go('/home'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 32,
+                      vertical: 16,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text('Go Home'),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );

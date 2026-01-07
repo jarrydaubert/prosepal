@@ -19,6 +19,10 @@ class ProsepalApp extends ConsumerStatefulWidget {
 class _ProsepalAppState extends ConsumerState<ProsepalApp>
     with WidgetsBindingObserver {
   bool _isInBackground = false;
+  DateTime? _backgroundedAt;
+
+  // Require re-auth if backgrounded for more than this duration
+  static const _lockTimeout = Duration(seconds: 30);
 
   @override
   void initState() {
@@ -44,11 +48,47 @@ class _ProsepalAppState extends ConsumerState<ProsepalApp>
           state == AppLifecycleState.hidden;
     });
 
-    // Log lifecycle transitions
+    // Track when app was backgrounded for timeout calculation
     if (_isInBackground && !wasInBackground) {
+      _backgroundedAt = DateTime.now();
       Log.info('App backgrounded');
     } else if (!_isInBackground && wasInBackground) {
       Log.info('App resumed');
+      _checkBiometricLockOnResume();
+    }
+  }
+
+  /// Check if biometric re-authentication is required on resume
+  Future<void> _checkBiometricLockOnResume() async {
+    // Skip if we don't have a background timestamp
+    if (_backgroundedAt == null) return;
+
+    // Skip if backgrounded for less than timeout (e.g., brief phone call)
+    final elapsed = DateTime.now().difference(_backgroundedAt!);
+    if (elapsed < _lockTimeout) {
+      Log.info('Skip biometric lock - backgrounded only ${elapsed.inSeconds}s');
+      return;
+    }
+
+    // Skip if already on lock screen or splash
+    final currentPath =
+        appRouter.routerDelegate.currentConfiguration.fullPath;
+    if (currentPath == '/lock' || currentPath == '/splash') {
+      return;
+    }
+
+    // Check if biometrics are enabled
+    try {
+      final biometricService = ref.read(biometricServiceProvider);
+      final isEnabled = await biometricService.isEnabled;
+      final isAvailable = (await biometricService.availableBiometrics).isNotEmpty;
+
+      if (isEnabled && isAvailable) {
+        Log.info('Biometric lock on resume - redirecting to /lock');
+        appRouter.go('/lock');
+      }
+    } catch (e) {
+      Log.warning('Failed to check biometric lock on resume', {'error': '$e'});
     }
   }
 
