@@ -171,7 +171,7 @@ class UsageService {
     try {
       final response = await supabase
           .from(_table)
-          .select()
+          .select('total_count, monthly_count, month_key')
           .eq('user_id', userId)
           .maybeSingle();
 
