@@ -20,6 +20,7 @@
 | UsageService race condition | `usage_service.dart` | Atomic increment via Supabase RPC |
 | Hardcoded usage limits | `usage_service.dart` | Move to remote config |
 | Supabase singleton | `usage_service.dart` | Inject client for testability |
+| Integration/E2E tests | `integration_test/` | Navigation flows: onboarding→auth→paywall→biometric |
 
 ---
 
