@@ -43,7 +43,8 @@ class ShimmerButton extends StatefulWidget {
 class _ShimmerButtonState extends State<ShimmerButton> {
   bool _isPressed = false;
 
-  bool get _isEnabled => widget.enabled && !widget.isLoading && widget.onPressed != null;
+  bool get _isEnabled =>
+      widget.enabled && !widget.isLoading && widget.onPressed != null;
 
   void _handleTapDown(TapDownDetails details) {
     if (_isEnabled) {
@@ -99,7 +100,10 @@ class _ShimmerButtonState extends State<ShimmerButton> {
               child: Stack(
                 children: [
                   // Shimmer overlay
-                  if (_isEnabled && widget.shimmerEnabled && !widget.isLoading && !ShimmerButton.disableShimmerForTesting)
+                  if (_isEnabled &&
+                      widget.shimmerEnabled &&
+                      !widget.isLoading &&
+                      !ShimmerButton.disableShimmerForTesting)
                     Positioned.fill(
                       child: Shimmer.fromColors(
                         baseColor: Colors.transparent,
@@ -192,7 +196,8 @@ class ShimmerOutlineButton extends StatefulWidget {
 class _ShimmerOutlineButtonState extends State<ShimmerOutlineButton> {
   bool _isPressed = false;
 
-  bool get _isEnabled => widget.enabled && !widget.isLoading && widget.onPressed != null;
+  bool get _isEnabled =>
+      widget.enabled && !widget.isLoading && widget.onPressed != null;
 
   @override
   Widget build(BuildContext context) {
@@ -218,12 +223,11 @@ class _ShimmerOutlineButtonState extends State<ShimmerOutlineButton> {
             width: double.infinity,
             height: AppSpacing.buttonHeight,
             decoration: BoxDecoration(
-              color: _isPressed ? color.withValues(alpha: 0.05) : Colors.transparent,
+              color: _isPressed
+                  ? color.withValues(alpha: 0.05)
+                  : Colors.transparent,
               borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
-              border: Border.all(
-                color: color,
-                width: 1.5,
-              ),
+              border: Border.all(color: color, width: 1.5),
             ),
             child: Center(
               child: widget.isLoading

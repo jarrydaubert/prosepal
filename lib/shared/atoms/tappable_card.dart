@@ -62,18 +62,12 @@ class _TappableCardState extends State<TappableCard>
     _scaleAnimation = Tween<double>(
       begin: 1.0,
       end: 0.97,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeInOut,
-    ));
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
 
     _elevationAnimation = Tween<double>(
       begin: widget.elevation,
       end: widget.pressedElevation,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeInOut,
-    ));
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
   @override
@@ -100,8 +94,8 @@ class _TappableCardState extends State<TappableCard>
 
   @override
   Widget build(BuildContext context) {
-    final borderRadius = widget.borderRadius ??
-        BorderRadius.circular(AppSpacing.radiusMedium);
+    final borderRadius =
+        widget.borderRadius ?? BorderRadius.circular(AppSpacing.radiusMedium);
 
     final effectiveBorderColor = widget.selected
         ? (widget.selectedBorderColor ?? AppColors.primary)
@@ -217,10 +211,7 @@ class _SelectableChipState extends State<SelectableChip>
         animation: _controller,
         builder: (context, child) {
           final bounce = 1.0 + (_controller.value * 0.1);
-          return Transform.scale(
-            scale: bounce,
-            child: child,
-          );
+          return Transform.scale(scale: bounce, child: child);
         },
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
@@ -246,7 +237,9 @@ class _SelectableChipState extends State<SelectableChip>
                 Icon(
                   widget.icon,
                   size: 18,
-                  color: widget.selected ? accentColor : AppColors.textSecondary,
+                  color: widget.selected
+                      ? accentColor
+                      : AppColors.textSecondary,
                 ),
                 const SizedBox(width: 6),
               ],
@@ -254,16 +247,14 @@ class _SelectableChipState extends State<SelectableChip>
                 widget.label,
                 style: TextStyle(
                   color: widget.selected ? accentColor : AppColors.textPrimary,
-                  fontWeight: widget.selected ? FontWeight.w600 : FontWeight.w500,
+                  fontWeight: widget.selected
+                      ? FontWeight.w600
+                      : FontWeight.w500,
                 ),
               ),
               if (widget.selected) ...[
                 const SizedBox(width: 6),
-                Icon(
-                  Icons.check_rounded,
-                  size: 16,
-                  color: accentColor,
-                ),
+                Icon(Icons.check_rounded, size: 16, color: accentColor),
               ],
             ],
           ),

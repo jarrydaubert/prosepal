@@ -91,7 +91,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                       onCopy: () => _copyMessage(message.text, index),
                       onShare: () => _shareMessage(message.text, index),
                     );
-                    
+
                     // Skip animations if user prefers reduced motion
                     if (_reduceMotion) {
                       return Padding(
@@ -99,7 +99,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                         child: card,
                       );
                     }
-                    
+
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 16),
                       child: card
@@ -125,10 +125,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Text(
                   'Built with Google Gemini',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[500],
-                  ),
+                  style: TextStyle(fontSize: 12, color: Colors.grey[500]),
                   textAlign: TextAlign.center,
                 ),
               ),
@@ -182,12 +179,11 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
     );
   }
 
-  bool get _reduceMotion =>
-      MediaQuery.of(context).disableAnimations;
+  bool get _reduceMotion => MediaQuery.of(context).disableAnimations;
 
   void _playConfetti() {
     if (_reduceMotion) return;
-    
+
     final now = DateTime.now();
     if (_lastConfettiTime != null &&
         now.difference(_lastConfettiTime!).inMilliseconds < 1500) {
@@ -318,7 +314,10 @@ class _ContextHeader extends StatelessWidget {
               decoration: BoxDecoration(
                 color: Colors.white,
                 shape: BoxShape.circle,
-                border: Border.all(color: result.occasion.borderColor, width: 2),
+                border: Border.all(
+                  color: result.occasion.borderColor,
+                  width: 2,
+                ),
               ),
               child: Center(
                 child: Text(
@@ -481,8 +480,8 @@ class _ActionButton extends StatelessWidget {
     final color = isSuccess
         ? AppColors.success
         : isPrimary
-            ? AppColors.primary
-            : AppColors.textSecondary;
+        ? AppColors.primary
+        : AppColors.textSecondary;
 
     return Semantics(
       label: label,
@@ -498,8 +497,8 @@ class _ActionButton extends StatelessWidget {
             color: isSuccess
                 ? AppColors.success.withValues(alpha: 0.15)
                 : isPrimary
-                    ? AppColors.primary.withValues(alpha: 0.15)
-                    : Colors.white,
+                ? AppColors.primary.withValues(alpha: 0.15)
+                : Colors.white,
             borderRadius: BorderRadius.circular(8),
             border: Border.all(color: color, width: 2),
           ),

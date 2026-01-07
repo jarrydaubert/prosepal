@@ -87,12 +87,14 @@ abstract final class Log {
     if (_buffer.length >= _maxBufferSize) {
       _buffer.removeFirst();
     }
-    _buffer.add(LogEntry(
-      timestamp: DateTime.now(),
-      level: level,
-      message: message,
-      params: params,
-    ));
+    _buffer.add(
+      LogEntry(
+        timestamp: DateTime.now(),
+        level: level,
+        message: message,
+        params: params,
+      ),
+    );
   }
 
   /// Get recent logs as exportable string (for user support)
@@ -102,7 +104,9 @@ abstract final class Log {
     final buffer = StringBuffer();
     buffer.writeln('=== Prosepal Debug Log ===');
     buffer.writeln('Exported: ${now.toUtc().toIso8601String()} (UTC)');
-    buffer.writeln('Timezone: UTC${now.timeZoneOffset.isNegative ? "" : "+"}${now.timeZoneOffset.inHours}');
+    buffer.writeln(
+      'Timezone: UTC${now.timeZoneOffset.isNegative ? "" : "+"}${now.timeZoneOffset.inHours}',
+    );
     buffer.writeln('Entries: ${_buffer.length}');
     buffer.writeln('');
 
@@ -117,10 +121,7 @@ abstract final class Log {
   static List<String> getRecentBreadcrumbs({int count = 50}) {
     final entries = _buffer.toList();
     final start = entries.length > count ? entries.length - count : 0;
-    return entries
-        .sublist(start)
-        .map((e) => e.toBreadcrumb())
-        .toList();
+    return entries.sublist(start).map((e) => e.toBreadcrumb()).toList();
   }
 
   /// Clear log buffer (call on sign out for privacy)
@@ -196,7 +197,9 @@ class LogEntry {
     final buffer = StringBuffer('$time [$_levelPrefix] $message');
     if (params != null && params!.isNotEmpty) {
       buffer.write(' | ');
-      buffer.write(params!.entries.map((e) => '${e.key}=${e.value}').join(', '));
+      buffer.write(
+        params!.entries.map((e) => '${e.key}=${e.value}').join(', '),
+      );
     }
     return buffer.toString();
   }

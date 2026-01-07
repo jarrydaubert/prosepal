@@ -71,7 +71,8 @@ class _ProsepalAppState extends ConsumerState<ProsepalApp>
           await ref.read(usageServiceProvider).syncFromServer();
           // Note: Navigation is handled by AuthScreen._navigateAfterAuth()
           // This listener handles deep link / magic link callbacks when app is backgrounded
-          final currentPath = appRouter.routerDelegate.currentConfiguration.fullPath;
+          final currentPath =
+              appRouter.routerDelegate.currentConfiguration.fullPath;
           if (!currentPath.startsWith('/auth')) {
             appRouter.go('/home');
           }

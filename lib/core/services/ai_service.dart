@@ -142,7 +142,8 @@ class AiService {
     if (message.contains('rate') || message.contains('quota')) {
       return AiErrorClassification(
         exceptionType: AiRateLimitException,
-        message: 'Our servers are busy right now. Please wait a moment and try again.',
+        message:
+            'Our servers are busy right now. Please wait a moment and try again.',
         errorCode: 'RATE_LIMIT',
         isRetryable: true,
       );
@@ -162,7 +163,8 @@ class AiService {
     if (message.contains('blocked') || message.contains('safety')) {
       return AiErrorClassification(
         exceptionType: AiContentBlockedException,
-        message: 'Your message details triggered our safety filters. '
+        message:
+            'Your message details triggered our safety filters. '
             'Try removing any sensitive words or phrases.',
         errorCode: 'CONTENT_BLOCKED',
         isRetryable: false,
@@ -173,7 +175,8 @@ class AiService {
     if (message.contains('unavailable') || message.contains('503')) {
       return AiErrorClassification(
         exceptionType: AiUnavailableException,
-        message: 'The AI service is temporarily unavailable. Please try again in a few minutes.',
+        message:
+            'The AI service is temporarily unavailable. Please try again in a few minutes.',
         errorCode: 'SERVICE_UNAVAILABLE',
         isRetryable: true,
       );
@@ -183,7 +186,8 @@ class AiService {
     if (message.contains('timeout')) {
       return AiErrorClassification(
         exceptionType: AiNetworkException,
-        message: 'The request timed out. Please check your connection and try again.',
+        message:
+            'The request timed out. Please check your connection and try again.',
         errorCode: 'TIMEOUT',
         isRetryable: true,
       );
@@ -273,21 +277,9 @@ class AiService {
   /// Safety settings for content generation
   /// Note: HarmBlockMethod must be null for Google AI (only supported by Vertex AI)
   static final _safetySettings = [
-    SafetySetting(
-      HarmCategory.harassment,
-      HarmBlockThreshold.medium,
-      null,
-    ),
-    SafetySetting(
-      HarmCategory.hateSpeech,
-      HarmBlockThreshold.medium,
-      null,
-    ),
-    SafetySetting(
-      HarmCategory.sexuallyExplicit,
-      HarmBlockThreshold.high,
-      null,
-    ),
+    SafetySetting(HarmCategory.harassment, HarmBlockThreshold.medium, null),
+    SafetySetting(HarmCategory.hateSpeech, HarmBlockThreshold.medium, null),
+    SafetySetting(HarmCategory.sexuallyExplicit, HarmBlockThreshold.high, null),
     SafetySetting(
       HarmCategory.dangerousContent,
       HarmBlockThreshold.medium,

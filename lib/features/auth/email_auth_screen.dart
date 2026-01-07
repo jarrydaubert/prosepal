@@ -175,8 +175,9 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
                     formKey: _formKey,
                     isLoading: _isLoading,
                     usePassword: _usePassword,
-                    onSubmit:
-                        _usePassword ? _signInWithPassword : _sendMagicLink,
+                    onSubmit: _usePassword
+                        ? _signInWithPassword
+                        : _sendMagicLink,
                     onToggleMode: () => setState(() {
                       _usePassword = !_usePassword;
                       _passwordController.clear();
@@ -215,19 +216,19 @@ class _EmailSentView extends StatelessWidget {
 
         // Success icon with bold border
         Container(
-          width: 120,
-          height: 120,
-          decoration: BoxDecoration(
-            color: AppColors.success.withValues(alpha: 0.15),
-            shape: BoxShape.circle,
-            border: Border.all(color: AppColors.success, width: 4),
-          ),
-          child: const Icon(
-            Icons.mark_email_read_outlined,
-            size: 56,
-            color: AppColors.success,
-          ),
-        )
+              width: 120,
+              height: 120,
+              decoration: BoxDecoration(
+                color: AppColors.success.withValues(alpha: 0.15),
+                shape: BoxShape.circle,
+                border: Border.all(color: AppColors.success, width: 4),
+              ),
+              child: const Icon(
+                Icons.mark_email_read_outlined,
+                size: 56,
+                color: AppColors.success,
+              ),
+            )
             .animate(key: const ValueKey('success_icon'))
             .fadeIn(duration: 400.ms)
             .scale(delay: 100.ms, curve: Curves.easeOutBack),
@@ -236,13 +237,13 @@ class _EmailSentView extends StatelessWidget {
 
         // Title
         const Text(
-          'Check your email',
-          style: TextStyle(
-            fontSize: 28,
-            fontWeight: FontWeight.bold,
-            color: AppColors.primary,
-          ),
-        )
+              'Check your email',
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: AppColors.primary,
+              ),
+            )
             .animate(key: const ValueKey('success_title'))
             .fadeIn(delay: 300.ms)
             .slideY(begin: 0.2, end: 0),
@@ -363,19 +364,19 @@ class _EmailInputView extends StatelessWidget {
 
         // Icon with bold border
         Container(
-          width: 100,
-          height: 100,
-          decoration: BoxDecoration(
-            color: AppColors.primaryLight,
-            shape: BoxShape.circle,
-            border: Border.all(color: AppColors.primary, width: 4),
-          ),
-          child: Icon(
-            usePassword ? Icons.lock_outline : Icons.email_outlined,
-            size: 44,
-            color: AppColors.primary,
-          ),
-        )
+              width: 100,
+              height: 100,
+              decoration: BoxDecoration(
+                color: AppColors.primaryLight,
+                shape: BoxShape.circle,
+                border: Border.all(color: AppColors.primary, width: 4),
+              ),
+              child: Icon(
+                usePassword ? Icons.lock_outline : Icons.email_outlined,
+                size: 44,
+                color: AppColors.primary,
+              ),
+            )
             .animate(key: ValueKey('icon_$usePassword'))
             .fadeIn(duration: 400.ms)
             .scale(delay: 100.ms, curve: Curves.easeOutBack),
@@ -384,13 +385,13 @@ class _EmailInputView extends StatelessWidget {
 
         // Title
         Text(
-          usePassword ? 'Sign in with password' : 'Passwordless sign in',
-          style: const TextStyle(
-            fontSize: 28,
-            fontWeight: FontWeight.bold,
-            color: AppColors.primary,
-          ),
-        )
+              usePassword ? 'Sign in with password' : 'Passwordless sign in',
+              style: const TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: AppColors.primary,
+              ),
+            )
             .animate(key: ValueKey('title_$usePassword'))
             .fadeIn(delay: 300.ms)
             .slideY(begin: 0.2, end: 0),
@@ -419,8 +420,9 @@ class _EmailInputView extends StatelessWidget {
                 hint: 'you@example.com',
                 icon: Icons.email_outlined,
                 keyboardType: TextInputType.emailAddress,
-                textInputAction:
-                    usePassword ? TextInputAction.next : TextInputAction.done,
+                textInputAction: usePassword
+                    ? TextInputAction.next
+                    : TextInputAction.done,
                 validator: validateEmail,
                 onSubmitted: usePassword ? null : (_) => onSubmit(),
               ),
@@ -625,39 +627,39 @@ class _BenefitItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
-      children: [
-        Container(
-          width: 48,
-          height: 48,
-          decoration: BoxDecoration(
-            color: AppColors.primaryLight,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.primary, width: 2),
-          ),
-          child: Icon(icon, color: AppColors.primary, size: 24),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
-                ),
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: AppColors.primaryLight,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.primary, width: 2),
               ),
-              Text(
-                subtitle,
-                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+              child: Icon(icon, color: AppColors.primary, size: 24),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  Text(
+                    subtitle,
+                    style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                  ),
+                ],
               ),
-            ],
-          ),
-        ),
-      ],
-    )
+            ),
+          ],
+        )
         .animate(key: ValueKey('benefit_$title'))
         .fadeIn(delay: Duration(milliseconds: delay))
         .slideX(begin: 0.1, end: 0);

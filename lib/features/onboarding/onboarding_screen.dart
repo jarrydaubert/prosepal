@@ -25,12 +25,14 @@ const _onboardingPages = [
   OnboardingPageData(
     emoji: '✍️',
     title: 'The Right Words,\nRight Now',
-    subtitle: 'AI-powered messages for birthdays, thank yous, sympathy, and 40+ occasions.',
+    subtitle:
+        'AI-powered messages for birthdays, thank yous, sympathy, and 40+ occasions.',
   ),
   OnboardingPageData(
     emoji: '⚡',
     title: 'Pick. Tap.\nDone.',
-    subtitle: 'Choose the occasion and tone. Get 3 personalized options instantly.',
+    subtitle:
+        'Choose the occasion and tone. Get 3 personalized options instantly.',
   ),
   OnboardingPageData(
     emoji: '🎁',
@@ -103,7 +105,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   // Progress indicator
                   Expanded(
                     child: Semantics(
-                      label: 'Onboarding progress: step ${_currentPage + 1} of ${_onboardingPages.length}',
+                      label:
+                          'Onboarding progress: step ${_currentPage + 1} of ${_onboardingPages.length}',
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(4),
                         child: TweenAnimationBuilder<double>(
@@ -113,13 +116,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           ),
                           duration: const Duration(milliseconds: 200),
                           curve: Curves.easeOut,
-                          builder: (context, value, _) => LinearProgressIndicator(
-                            value: value,
-                            backgroundColor: AppColors.primaryLight,
-                            valueColor:
-                                const AlwaysStoppedAnimation(AppColors.primary),
-                            minHeight: 4,
-                          ),
+                          builder: (context, value, _) =>
+                              LinearProgressIndicator(
+                                value: value,
+                                backgroundColor: AppColors.primaryLight,
+                                valueColor: const AlwaysStoppedAnimation(
+                                  AppColors.primary,
+                                ),
+                                minHeight: 4,
+                              ),
                         ),
                       ),
                     ),
@@ -172,27 +177,33 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               child: Column(
                 children: [
                   // Animated page indicators
-                  Builder(builder: (context) {
-                    final reduceMotion = MediaQuery.of(context).disableAnimations;
-                    return Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: List.generate(
-                        _onboardingPages.length,
-                        (index) => AnimatedContainer(
-                          duration: reduceMotion ? Duration.zero : const Duration(milliseconds: 300),
-                          margin: const EdgeInsets.symmetric(horizontal: 4),
-                          width: _currentPage == index ? 30 : 10,
-                          height: 10,
-                          decoration: BoxDecoration(
-                            color: _currentPage == index
-                                ? AppColors.primary
-                                : AppColors.primaryLight,
-                            borderRadius: BorderRadius.circular(5),
+                  Builder(
+                    builder: (context) {
+                      final reduceMotion = MediaQuery.of(
+                        context,
+                      ).disableAnimations;
+                      return Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: List.generate(
+                          _onboardingPages.length,
+                          (index) => AnimatedContainer(
+                            duration: reduceMotion
+                                ? Duration.zero
+                                : const Duration(milliseconds: 300),
+                            margin: const EdgeInsets.symmetric(horizontal: 4),
+                            width: _currentPage == index ? 30 : 10,
+                            height: 10,
+                            decoration: BoxDecoration(
+                              color: _currentPage == index
+                                  ? AppColors.primary
+                                  : AppColors.primaryLight,
+                              borderRadius: BorderRadius.circular(5),
+                            ),
                           ),
                         ),
-                      ),
-                    );
-                  }),
+                      );
+                    },
+                  ),
                   const SizedBox(height: AppSpacing.xl),
                   // Action button with scale animation
                   _AnimatedButton(
@@ -219,10 +230,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
 /// Animated button with scale effect on press
 class _AnimatedButton extends StatefulWidget {
-  const _AnimatedButton({
-    required this.onPressed,
-    required this.child,
-  });
+  const _AnimatedButton({required this.onPressed, required this.child});
 
   final VoidCallback onPressed;
   final Widget child;
@@ -237,7 +245,7 @@ class _AnimatedButtonState extends State<_AnimatedButton> {
   @override
   Widget build(BuildContext context) {
     final reduceMotion = MediaQuery.of(context).disableAnimations;
-    
+
     return GestureDetector(
       onTapDown: (_) => setState(() => _isPressed = true),
       onTapUp: (_) {
@@ -247,7 +255,9 @@ class _AnimatedButtonState extends State<_AnimatedButton> {
       onTapCancel: () => setState(() => _isPressed = false),
       child: AnimatedScale(
         scale: _isPressed && !reduceMotion ? 0.96 : 1.0,
-        duration: reduceMotion ? Duration.zero : const Duration(milliseconds: 100),
+        duration: reduceMotion
+            ? Duration.zero
+            : const Duration(milliseconds: 100),
         curve: Curves.easeInOut,
         child: Container(
           width: double.infinity,
@@ -279,7 +289,7 @@ class _OnboardingPageWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
     final isSmallScreen = size.width < 380;
-    
+
     // Responsive sizing
     final emojiContainerSize = size.width * 0.45; // ~45% of screen width
     final emojiSize = emojiContainerSize * 0.4;
@@ -289,7 +299,8 @@ class _OnboardingPageWidget extends StatelessWidget {
     final isLastPage = pageNumber == totalPages;
 
     return Semantics(
-      label: 'Onboarding page $pageNumber of $totalPages: ${page.title.replaceAll('\n', ' ')}',
+      label:
+          'Onboarding page $pageNumber of $totalPages: ${page.title.replaceAll('\n', ' ')}',
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 40),
         child: Column(
@@ -309,10 +320,7 @@ class _OnboardingPageWidget extends StatelessWidget {
             _buildSubtitle(subtitleSize),
 
             // Pro teaser on last slide
-            if (isLastPage) ...[
-              const SizedBox(height: 24),
-              _buildProTeaser(),
-            ],
+            if (isLastPage) ...[const SizedBox(height: 24), _buildProTeaser()],
           ],
         ),
       ),
@@ -360,10 +368,7 @@ class _OnboardingPageWidget extends StatelessWidget {
         border: Border.all(color: AppColors.primary, width: 4),
       ),
       child: Center(
-        child: Text(
-          page.emoji,
-          style: TextStyle(fontSize: emojiSize),
-        ),
+        child: Text(page.emoji, style: TextStyle(fontSize: emojiSize)),
       ),
     );
   }

@@ -127,7 +127,7 @@ class _SplashScreenState extends ConsumerState<_SplashScreen> {
   Future<void> _determineInitialRoute() async {
     // No artificial delay - determine route as fast as possible
     // Native splash stays visible until we call FlutterNativeSplash.remove()
-    
+
     final prefs = await SharedPreferences.getInstance();
     final hasCompletedOnboarding =
         prefs.getBool('hasCompletedOnboarding') ?? false;
@@ -198,11 +198,7 @@ class _SplashScreenState extends ConsumerState<_SplashScreen> {
       body: Center(
         child: ClipRRect(
           borderRadius: BorderRadius.circular(20),
-          child: Image.asset(
-            'assets/images/logo.png',
-            width: 80,
-            height: 80,
-          ),
+          child: Image.asset('assets/images/logo.png', width: 80, height: 80),
         ),
       ),
     );

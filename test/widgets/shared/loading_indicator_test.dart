@@ -6,9 +6,7 @@ void main() {
   group('LoadingIndicator', () {
     testWidgets('displays CircularProgressIndicator', (tester) async {
       await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(body: LoadingIndicator()),
-        ),
+        const MaterialApp(home: Scaffold(body: LoadingIndicator())),
       );
 
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
@@ -17,9 +15,7 @@ void main() {
     testWidgets('displays message when provided', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
-          home: Scaffold(
-            body: LoadingIndicator(message: 'Loading...'),
-          ),
+          home: Scaffold(body: LoadingIndicator(message: 'Loading...')),
         ),
       );
 
@@ -28,9 +24,7 @@ void main() {
 
     testWidgets('does not display message when null', (tester) async {
       await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(body: LoadingIndicator()),
-        ),
+        const MaterialApp(home: Scaffold(body: LoadingIndicator())),
       );
 
       // Should only have the progress indicator, no text
@@ -40,9 +34,7 @@ void main() {
     testWidgets('applies custom color when provided', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
-          home: Scaffold(
-            body: LoadingIndicator(color: Colors.red),
-          ),
+          home: Scaffold(body: LoadingIndicator(color: Colors.red)),
         ),
       );
 
@@ -54,9 +46,7 @@ void main() {
 
     testWidgets('is centered', (tester) async {
       await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(body: LoadingIndicator()),
-        ),
+        const MaterialApp(home: Scaffold(body: LoadingIndicator())),
       );
 
       expect(find.byType(Center), findsOneWidget);
@@ -68,10 +58,7 @@ void main() {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
-            body: LoadingOverlay(
-              isLoading: false,
-              child: Text('Content'),
-            ),
+            body: LoadingOverlay(isLoading: false, child: Text('Content')),
           ),
         ),
       );
@@ -84,10 +71,7 @@ void main() {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
-            body: LoadingOverlay(
-              isLoading: true,
-              child: Text('Content'),
-            ),
+            body: LoadingOverlay(isLoading: true, child: Text('Content')),
           ),
         ),
       );

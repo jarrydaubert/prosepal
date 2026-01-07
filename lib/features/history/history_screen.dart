@@ -128,7 +128,8 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
       builder: (context) => AlertDialog(
         title: const Text('Clear History'),
         content: const Text(
-            'Delete all saved messages? This cannot be undone.'),
+          'Delete all saved messages? This cannot be undone.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -152,7 +153,10 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
 
   /// Get unique occasions from history for filter chips
   List<Occasion> get _availableOccasions {
-    final occasions = _allHistory.map((h) => h.result.occasion).toSet().toList();
+    final occasions = _allHistory
+        .map((h) => h.result.occasion)
+        .toSet()
+        .toList();
     // Sort by frequency (most used first)
     occasions.sort((a, b) {
       final countA = _allHistory.where((h) => h.result.occasion == a).length;
@@ -187,8 +191,10 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
         actions: [
           if (_allHistory.isNotEmpty)
             IconButton(
-              icon: const Icon(Icons.delete_outline,
-                  color: AppColors.textSecondary),
+              icon: const Icon(
+                Icons.delete_outline,
+                color: AppColors.textSecondary,
+              ),
               onPressed: _clearAll,
               tooltip: 'Clear all',
             ),
@@ -207,12 +213,18 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                     decoration: InputDecoration(
                       hintText: 'Search messages...',
                       hintStyle: TextStyle(color: Colors.grey[500]),
-                      prefixIcon:
-                          Icon(Icons.search, color: Colors.grey[500], size: 20),
+                      prefixIcon: Icon(
+                        Icons.search,
+                        color: Colors.grey[500],
+                        size: 20,
+                      ),
                       suffixIcon: _searchQuery.isNotEmpty
                           ? IconButton(
-                              icon: Icon(Icons.clear,
-                                  color: Colors.grey[500], size: 20),
+                              icon: Icon(
+                                Icons.clear,
+                                color: Colors.grey[500],
+                                size: 20,
+                              ),
                               onPressed: () {
                                 _searchController.clear();
                                 _onSearchChanged('');
@@ -222,7 +234,9 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                       filled: true,
                       fillColor: Colors.white,
                       contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 12),
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide(color: Colors.grey.shade300),
@@ -233,8 +247,10 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide:
-                            const BorderSide(color: AppColors.primary, width: 2),
+                        borderSide: const BorderSide(
+                          color: AppColors.primary,
+                          width: 2,
+                        ),
                       ),
                     ),
                   ),
@@ -275,8 +291,10 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                           return Padding(
                             padding: const EdgeInsets.only(right: 8),
                             child: FilterChip(
-                              avatar: Text(occasion.emoji,
-                                  style: const TextStyle(fontSize: 14)),
+                              avatar: Text(
+                                occasion.emoji,
+                                style: const TextStyle(fontSize: 14),
+                              ),
                               label: Text('${occasion.label} ($count)'),
                               selected: _selectedOccasion == occasion,
                               onSelected: (_) =>
@@ -377,10 +395,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
             const SizedBox(height: 8),
             Text(
               'Your generated messages will appear here',
-              style: TextStyle(
-                fontSize: 15,
-                color: Colors.grey[600],
-              ),
+              style: TextStyle(fontSize: 15, color: Colors.grey[600]),
               textAlign: TextAlign.center,
             ),
           ],
@@ -396,11 +411,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.search_off,
-              size: 48,
-              color: Colors.grey[400],
-            ),
+            Icon(Icons.search_off, size: 48, color: Colors.grey[400]),
             const SizedBox(height: 16),
             Text(
               'No messages found',
@@ -504,16 +515,18 @@ class _HistoryCardState extends State<_HistoryCard> {
             // Header
             InkWell(
               onTap: () => setState(() => _isExpanded = !_isExpanded),
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(14)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(14),
+              ),
               child: Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: occasion.backgroundColor,
                   borderRadius: BorderRadius.vertical(
                     top: const Radius.circular(14),
-                    bottom:
-                        _isExpanded ? Radius.zero : const Radius.circular(14),
+                    bottom: _isExpanded
+                        ? Radius.zero
+                        : const Radius.circular(14),
                   ),
                 ),
                 child: Row(
@@ -524,12 +537,16 @@ class _HistoryCardState extends State<_HistoryCard> {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         shape: BoxShape.circle,
-                        border:
-                            Border.all(color: occasion.borderColor, width: 2),
+                        border: Border.all(
+                          color: occasion.borderColor,
+                          width: 2,
+                        ),
                       ),
                       child: Center(
-                        child: Text(occasion.emoji,
-                            style: const TextStyle(fontSize: 20)),
+                        child: Text(
+                          occasion.emoji,
+                          style: const TextStyle(fontSize: 20),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -548,8 +565,10 @@ class _HistoryCardState extends State<_HistoryCard> {
                           const SizedBox(height: 2),
                           Text(
                             '${result.tone.label} • ${_formatDate(widget.item.savedAt)}',
-                            style:
-                                TextStyle(fontSize: 12, color: Colors.grey[600]),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                            ),
                           ),
                         ],
                       ),
@@ -601,9 +620,7 @@ class _HistoryCardState extends State<_HistoryCard> {
                   onPressed: widget.onDelete,
                   icon: const Icon(Icons.delete_outline, size: 18),
                   label: const Text('Delete'),
-                  style: TextButton.styleFrom(
-                    foregroundColor: AppColors.error,
-                  ),
+                  style: TextButton.styleFrom(foregroundColor: AppColors.error),
                 ),
               ),
             ],
@@ -672,10 +689,7 @@ class _MessageItem extends StatelessWidget {
                 ),
               ),
               const Spacer(),
-              _SmallButton(
-                icon: Icons.share_outlined,
-                onPressed: onShare,
-              ),
+              _SmallButton(icon: Icons.share_outlined, onPressed: onShare),
               const SizedBox(width: 8),
               _SmallButton(
                 icon: isCopied ? Icons.check : Icons.copy,
@@ -749,7 +763,9 @@ class _SmallButton extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: isPrimary ? AppColors.primary : AppColors.textSecondary,
+                  color: isPrimary
+                      ? AppColors.primary
+                      : AppColors.textSecondary,
                 ),
               ),
             ],

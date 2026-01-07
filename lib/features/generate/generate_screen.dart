@@ -85,7 +85,10 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
                     border: Border.all(color: occasion.borderColor, width: 2),
                   ),
                   child: Center(
-                    child: Text(occasion.emoji, style: const TextStyle(fontSize: 18)),
+                    child: Text(
+                      occasion.emoji,
+                      style: const TextStyle(fontSize: 18),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -120,12 +123,13 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
                   child: _buildStep(context),
                 ),
               ),
-              if (error != null) _ErrorBanner(
-                error: error,
-                onDismiss: () {
-                  ref.read(generationErrorProvider.notifier).state = null;
-                },
-              ),
+              if (error != null)
+                _ErrorBanner(
+                  error: error,
+                  onDismiss: () {
+                    ref.read(generationErrorProvider.notifier).state = null;
+                  },
+                ),
               SafeArea(
                 child: Padding(
                   padding: const EdgeInsets.all(20),
@@ -227,13 +231,8 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              isLoggedIn 
-                  ? 'Go Pro for more messages'
-                  : 'Sign in to go Pro',
-              style: TextStyle(
-                fontSize: 13,
-                color: Colors.grey[600],
-              ),
+              isLoggedIn ? 'Go Pro for more messages' : 'Sign in to go Pro',
+              style: TextStyle(fontSize: 13, color: Colors.grey[600]),
             ),
           ],
         );
@@ -243,7 +242,9 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
         label: isGenerating ? 'Generating...' : 'Generate Messages',
         icon: Icons.auto_awesome,
         isLoading: isGenerating,
-        onPressed: canGenerate && !isGenerating ? () => _generate(context) : null,
+        onPressed: canGenerate && !isGenerating
+            ? () => _generate(context)
+            : null,
       );
     }
 
@@ -287,7 +288,7 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
       );
 
       await usageService.recordGeneration();
-      
+
       // Force Riverpod to re-read usage after recording
       ref.invalidate(remainingGenerationsProvider);
       ref.invalidate(totalUsageProvider);
@@ -315,11 +316,15 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
       ref.read(isGeneratingProvider.notifier).state = false;
       ref.read(generationErrorProvider.notifier).state = e.message;
     } on AiContentBlockedException catch (e) {
-      Log.warning('AI generation failed: content blocked', {'error': e.message});
+      Log.warning('AI generation failed: content blocked', {
+        'error': e.message,
+      });
       ref.read(isGeneratingProvider.notifier).state = false;
       ref.read(generationErrorProvider.notifier).state = e.message;
     } on AiUnavailableException catch (e) {
-      Log.warning('AI generation failed: service unavailable', {'error': e.message});
+      Log.warning('AI generation failed: service unavailable', {
+        'error': e.message,
+      });
       ref.read(isGeneratingProvider.notifier).state = false;
       ref.read(generationErrorProvider.notifier).state = e.message;
     } on AiEmptyResponseException catch (e) {

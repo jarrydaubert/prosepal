@@ -60,10 +60,13 @@ void main() {
       expect(result, isFalse);
     });
 
-    test('showCustomerCenter completes without crash when not initialized', () async {
-      // Bug: Crash when opening customer center before init
-      await expectLater(service.showCustomerCenter(), completes);
-    });
+    test(
+      'showCustomerCenter completes without crash when not initialized',
+      () async {
+        // Bug: Crash when opening customer center before init
+        await expectLater(service.showCustomerCenter(), completes);
+      },
+    );
 
     test('identifyUser completes without crash when not initialized', () async {
       // Bug: Crash when identifying user before init

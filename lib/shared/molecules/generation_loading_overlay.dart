@@ -71,42 +71,42 @@ class _GenerationLoadingOverlayState extends State<GenerationLoadingOverlay>
       child: Material(
         color: Colors.transparent,
         child: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              _accentColor.withValues(alpha: 0.95),
-              _accentColor.withValues(alpha: 0.85),
-              AppColors.primaryDark.withValues(alpha: 0.9),
-            ],
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                _accentColor.withValues(alpha: 0.95),
+                _accentColor.withValues(alpha: 0.85),
+                AppColors.primaryDark.withValues(alpha: 0.9),
+              ],
+            ),
           ),
-        ),
-        child: Stack(
-          children: [
-            // Floating orbs background
-            ..._buildFloatingOrbs(),
+          child: Stack(
+            children: [
+              // Floating orbs background
+              ..._buildFloatingOrbs(),
 
-            // Main content
-            SafeArea(
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    // Animated sparkle icon
-                    _buildAnimatedIcon(),
-                    const SizedBox(height: AppSpacing.xxl),
+              // Main content
+              SafeArea(
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // Animated sparkle icon
+                      _buildAnimatedIcon(),
+                      const SizedBox(height: AppSpacing.xxl),
 
-                    // Rotating message
-                    _buildMessage(),
-                    const SizedBox(height: AppSpacing.xl),
+                      // Rotating message
+                      _buildMessage(),
+                      const SizedBox(height: AppSpacing.xl),
 
-                    // Progress dots
-                    _buildProgressDots(),
-                  ],
+                      // Progress dots
+                      _buildProgressDots(),
+                    ],
+                  ),
                 ),
               ),
-            ),
             ],
           ),
         ),
@@ -125,99 +125,96 @@ class _GenerationLoadingOverlayState extends State<GenerationLoadingOverlay>
       return Positioned(
         left: left - size / 2,
         top: top - size / 2,
-        child: AnimatedBuilder(
-          animation: _pulseController,
-          builder: (context, child) {
-            final scale = 0.8 + _pulseController.value * 0.4;
-            final opacity = 0.08 + _pulseController.value * 0.12;
-            return Transform.scale(
-              scale: scale,
-              child: Container(
-                width: size,
-                height: size,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white.withValues(alpha: opacity),
-                ),
-              ),
-            );
-          },
-        ).animate(delay: Duration(milliseconds: delay)).fadeIn(duration: 1000.ms),
+        child:
+            AnimatedBuilder(
+                  animation: _pulseController,
+                  builder: (context, child) {
+                    final scale = 0.8 + _pulseController.value * 0.4;
+                    final opacity = 0.08 + _pulseController.value * 0.12;
+                    return Transform.scale(
+                      scale: scale,
+                      child: Container(
+                        width: size,
+                        height: size,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white.withValues(alpha: opacity),
+                        ),
+                      ),
+                    );
+                  },
+                )
+                .animate(delay: Duration(milliseconds: delay))
+                .fadeIn(duration: 1000.ms),
       );
     });
   }
 
   Widget _buildAnimatedIcon() {
     return Container(
-          width: 120,
-          height: 120,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: Colors.white.withValues(alpha: 0.15),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.3),
-              width: 2,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.white.withValues(alpha: 0.2),
-                blurRadius: 30,
-                spreadRadius: 5,
-              ),
-            ],
+      width: 120,
+      height: 120,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: Colors.white.withValues(alpha: 0.15),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.3),
+          width: 2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.white.withValues(alpha: 0.2),
+            blurRadius: 30,
+            spreadRadius: 5,
           ),
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              // Outer pulsing ring
-              AnimatedBuilder(
-                animation: _pulseController,
-                builder: (context, _) {
-                  return Container(
-                    width: 100 + _pulseController.value * 15,
-                    height: 100 + _pulseController.value * 15,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: Colors.white.withValues(
-                          alpha: 0.3 - _pulseController.value * 0.2,
-                        ),
-                        width: 1.5,
-                      ),
+        ],
+      ),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // Outer pulsing ring
+          AnimatedBuilder(
+            animation: _pulseController,
+            builder: (context, _) {
+              return Container(
+                width: 100 + _pulseController.value * 15,
+                height: 100 + _pulseController.value * 15,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Colors.white.withValues(
+                      alpha: 0.3 - _pulseController.value * 0.2,
                     ),
-                  );
-                },
-              ),
-              // Inner sparkle icon
-              const Icon(
-                Icons.auto_awesome,
-                color: Colors.white,
-                size: 48,
-              )
-                  .animate(onComplete: (c) => c.repeat())
-                  .scale(
-                    begin: const Offset(1, 1),
-                    end: const Offset(1.1, 1.1),
-                    duration: 1000.ms,
-                    curve: Curves.easeInOut,
-                  )
-                  .then()
-                  .scale(
-                    begin: const Offset(1.1, 1.1),
-                    end: const Offset(1, 1),
-                    duration: 1000.ms,
-                    curve: Curves.easeInOut,
+                    width: 1.5,
                   ),
-            ],
+                ),
+              );
+            },
           ),
-        )
-        .animate()
-        .scale(
-          begin: const Offset(0.8, 0.8),
-          end: const Offset(1, 1),
-          duration: 600.ms,
-          curve: Curves.easeOutBack,
-        );
+          // Inner sparkle icon
+          const Icon(Icons.auto_awesome, color: Colors.white, size: 48)
+              .animate(onComplete: (c) => c.repeat())
+              .scale(
+                begin: const Offset(1, 1),
+                end: const Offset(1.1, 1.1),
+                duration: 1000.ms,
+                curve: Curves.easeInOut,
+              )
+              .then()
+              .scale(
+                begin: const Offset(1.1, 1.1),
+                end: const Offset(1, 1),
+                duration: 1000.ms,
+                curve: Curves.easeInOut,
+              ),
+        ],
+      ),
+    ).animate().scale(
+      begin: const Offset(0.8, 0.8),
+      end: const Offset(1, 1),
+      duration: 600.ms,
+      curve: Curves.easeOutBack,
+    );
   }
 
   Widget _buildMessage() {
@@ -227,13 +224,16 @@ class _GenerationLoadingOverlayState extends State<GenerationLoadingOverlay>
         return FadeTransition(
           opacity: animation,
           child: SlideTransition(
-            position: Tween<Offset>(
-              begin: const Offset(0, 0.2),
-              end: Offset.zero,
-            ).animate(CurvedAnimation(
-              parent: animation,
-              curve: Curves.easeOutCubic,
-            )),
+            position:
+                Tween<Offset>(
+                  begin: const Offset(0, 0.2),
+                  end: Offset.zero,
+                ).animate(
+                  CurvedAnimation(
+                    parent: animation,
+                    curve: Curves.easeOutCubic,
+                  ),
+                ),
             child: child,
           ),
         );
@@ -257,14 +257,14 @@ class _GenerationLoadingOverlayState extends State<GenerationLoadingOverlay>
       mainAxisAlignment: MainAxisAlignment.center,
       children: List.generate(3, (index) {
         return Container(
-          margin: const EdgeInsets.symmetric(horizontal: 4),
-          width: 8,
-          height: 8,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: Colors.white.withValues(alpha: 0.5),
-          ),
-        )
+              margin: const EdgeInsets.symmetric(horizontal: 4),
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withValues(alpha: 0.5),
+              ),
+            )
             .animate(
               delay: Duration(milliseconds: index * 200),
               onComplete: (c) => c.repeat(),

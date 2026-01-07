@@ -96,10 +96,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       final restored = await ref
           .read(subscriptionServiceProvider)
           .restorePurchases();
-      
+
       // Force refresh customer info to update pro status across all screens
       ref.invalidate(customerInfoProvider);
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -115,11 +115,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     } on PlatformException catch (e) {
       Log.warning('Restore purchases failed', {'error': '$e'});
       if (mounted) {
-        final isNetworkError = e.code == 'NETWORK_ERROR' ||
+        final isNetworkError =
+            e.code == 'NETWORK_ERROR' ||
             e.message?.toLowerCase().contains('network') == true ||
             e.message?.toLowerCase().contains('internet') == true ||
             e.message?.toLowerCase().contains('offline') == true;
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -134,7 +135,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       Log.warning('Restore purchases failed', {'error': '$e'});
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Unable to restore purchases. Please try again.')),
+          const SnackBar(
+            content: Text('Unable to restore purchases. Please try again.'),
+          ),
         );
       }
     } finally {
@@ -171,15 +174,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   Future<void> _exportDebugLog() async {
     Log.info('Export debug log requested');
-    
+
     final log = Log.getExportableLog();
-    
+
     // Share as text (user can save or send to support)
     await SharePlus.instance.share(
-      ShareParams(
-        text: log,
-        subject: 'Prosepal Debug Log',
-      ),
+      ShareParams(text: log, subject: 'Prosepal Debug Log'),
     );
   }
 
@@ -208,7 +208,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     if (confirm ?? false) {
       // Clear all user-specific data (internet cafe test: leave no trace)
       final authService = ref.read(authServiceProvider);
-      
+
       // 1. Log out of RevenueCat (unlink user)
       if (authService.currentUser != null) {
         try {
@@ -217,20 +217,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           Log.warning('RevenueCat logout skipped', {'error': '$e'});
         }
       }
-      
+
       // 2. Clear history (personal messages)
       await ref.read(historyServiceProvider).clearHistory();
-      
+
       // 3. Clear usage counts (user-specific)
       await ref.read(usageServiceProvider).clearAllUsage();
-      
+
       // 4. Disable biometrics (security setting tied to user)
       await _biometricService.setEnabled(false);
       setState(() => _biometricsEnabled = false);
-      
+
       // 5. Sign out (clears tokens, Google session, logs)
       await authService.signOut();
-      
+
       if (mounted) context.go('/home');
     }
   }
@@ -272,28 +272,30 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     if (finalConfirm ?? false) {
       // Clear all user-specific data (same as sign out)
       final authService = ref.read(authServiceProvider);
-      
+
       // 1. Log out of RevenueCat
       if (authService.currentUser != null) {
         try {
           await ref.read(subscriptionServiceProvider).logOut();
         } catch (e) {
-          Log.warning('RevenueCat logout skipped during delete', {'error': '$e'});
+          Log.warning('RevenueCat logout skipped during delete', {
+            'error': '$e',
+          });
         }
       }
-      
+
       // 2. Clear history (personal messages)
       await ref.read(historyServiceProvider).clearHistory();
-      
+
       // 3. Clear usage counts
       await ref.read(usageServiceProvider).clearAllUsage();
-      
+
       // 4. Disable biometrics
       await _biometricService.setEnabled(false);
-      
+
       // 5. Delete account (also signs out)
       await authService.deleteAccount();
-      
+
       if (mounted) context.go('/home');
     }
   }
@@ -506,10 +508,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           Center(
             child: Text(
               'Prosepal ${_appVersion.isNotEmpty ? _appVersion : ""}',
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey[400],
-              ),
+              style: TextStyle(fontSize: 12, color: Colors.grey[400]),
             ),
           ),
           const SizedBox(height: 40),
@@ -570,103 +569,104 @@ class _AccountCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Semantics(
-      label: 'Account: ${userName ?? userEmail ?? "User"}${isPro ? ", Pro subscriber" : ""}',
+      label:
+          'Account: ${userName ?? userEmail ?? "User"}${isPro ? ", Pro subscriber" : ""}',
       child: Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isPro ? Colors.amber : AppColors.primary,
-          width: 3,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isPro ? Colors.amber : AppColors.primary,
+            width: 3,
+          ),
         ),
-      ),
-      child: Row(
-        children: [
-          // Avatar
-          Container(
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(
-              color: isPro
-                  ? Colors.amber.withValues(alpha: 0.15)
-                  : AppColors.primaryLight,
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: isPro ? Colors.amber : AppColors.primary,
-                width: 2,
-              ),
-            ),
-            child: Center(
-              child: Text(
-                (userName ?? userEmail ?? 'U')[0].toUpperCase(),
-                style: TextStyle(
-                  fontSize: 22,
-                  color: isPro ? Colors.amber.shade800 : AppColors.primary,
-                  fontWeight: FontWeight.bold,
+        child: Row(
+          children: [
+            // Avatar
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: isPro
+                    ? Colors.amber.withValues(alpha: 0.15)
+                    : AppColors.primaryLight,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: isPro ? Colors.amber : AppColors.primary,
+                  width: 2,
                 ),
               ),
-            ),
-          ),
-          const SizedBox(width: 16),
-          // Name and email
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Flexible(
-                      child: Text(
-                        userName ?? 'User',
-                        style: const TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textPrimary,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    if (isPro) ...[
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.amber,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: Colors.amber.shade700,
-                            width: 2,
-                          ),
-                        ),
-                        child: const Text(
-                          'PRO',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-                if (userEmail != null) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    userEmail!,
-                    style: TextStyle(fontSize: 13, color: Colors.grey[600]),
-                    overflow: TextOverflow.ellipsis,
+              child: Center(
+                child: Text(
+                  (userName ?? userEmail ?? 'U')[0].toUpperCase(),
+                  style: TextStyle(
+                    fontSize: 22,
+                    color: isPro ? Colors.amber.shade800 : AppColors.primary,
+                    fontWeight: FontWeight.bold,
                   ),
-                ],
-              ],
+                ),
+              ),
             ),
-          ),
-        ],
-      ),
+            const SizedBox(width: 16),
+            // Name and email
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          userName ?? 'User',
+                          style: const TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textPrimary,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      if (isPro) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.amber,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: Colors.amber.shade700,
+                              width: 2,
+                            ),
+                          ),
+                          child: const Text(
+                            'PRO',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  if (userEmail != null) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      userEmail!,
+                      style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -714,49 +714,49 @@ class _StatsCard extends StatelessWidget {
     return Semantics(
       label: '$totalGenerated messages generated all time',
       child: Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.primaryLight,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.primary, width: 3),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
-              border: Border.all(color: AppColors.primary, width: 2),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.primaryLight,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.primary, width: 3),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+                border: Border.all(color: AppColors.primary, width: 2),
+              ),
+              child: const Icon(
+                Icons.auto_awesome_rounded,
+                color: AppColors.primary,
+                size: 24,
+              ),
             ),
-            child: const Icon(
-              Icons.auto_awesome_rounded,
-              color: AppColors.primary,
-              size: 24,
-            ),
-          ),
-          const SizedBox(width: 16),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '$totalGenerated messages generated',
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
+            const SizedBox(width: 16),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '$totalGenerated messages generated',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                'All time',
-                style: TextStyle(fontSize: 13, color: Colors.grey[600]),
-              ),
-            ],
-          ),
-        ],
-      ),
+                const SizedBox(height: 2),
+                Text(
+                  'All time',
+                  style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -830,9 +830,7 @@ class _DeleteConfirmationDialogState extends State<_DeleteConfirmationDialog> {
           onPressed: _canDelete ? () => Navigator.pop(context, true) : null,
           child: Text(
             'Delete My Account',
-            style: TextStyle(
-              color: _canDelete ? AppColors.error : Colors.grey,
-            ),
+            style: TextStyle(color: _canDelete ? AppColors.error : Colors.grey),
           ),
         ),
       ],

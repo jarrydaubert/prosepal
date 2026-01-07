@@ -46,7 +46,8 @@ class SubscriptionService implements ISubscriptionService {
 
   // Production API Keys (defaults for release builds)
   static const String _iosProductionKey = 'appl_dWOaTNoefQCZUxqvQfsTPuMqYuk';
-  static const String _androidProductionKey = 'goog_LhhImNjMzktDFOKCksvGbHnRJVT';
+  static const String _androidProductionKey =
+      'goog_LhhImNjMzktDFOKCksvGbHnRJVT';
 
   // Test Store Key (for automated testing only - get from RevenueCat Dashboard)
   // Dashboard: Project Settings > Apps > Test Store

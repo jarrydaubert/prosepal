@@ -81,9 +81,12 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
         );
 
         if (shouldCopy == true && mounted) {
-          await Clipboard.setData(ClipboardData(
-            text: 'To: support@prosepal.app\nSubject: Prosepal Feedback\n\n$fullMessage',
-          ));
+          await Clipboard.setData(
+            ClipboardData(
+              text:
+                  'To: support@prosepal.app\nSubject: Prosepal Feedback\n\n$fullMessage',
+            ),
+          );
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Copied! Paste into your email app')),
           );
@@ -159,10 +162,7 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
                 child: Text.rich(
                   TextSpan(
                     text: 'Diagnostic info will be attached. ',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: AppColors.textHint,
-                    ),
+                    style: TextStyle(fontSize: 13, color: AppColors.textHint),
                     children: [
                       TextSpan(
                         text: 'View report',
@@ -253,12 +253,14 @@ class _DiagnosticReportSheet extends StatelessWidget {
                         icon: const Icon(Icons.share_rounded),
                         onPressed: () {
                           unawaited(HapticFeedback.lightImpact());
-                          unawaited(SharePlus.instance.share(
-                            ShareParams(
-                              text: report,
-                              subject: 'Prosepal Diagnostic Report',
+                          unawaited(
+                            SharePlus.instance.share(
+                              ShareParams(
+                                text: report,
+                                subject: 'Prosepal Diagnostic Report',
+                              ),
                             ),
-                          ));
+                          );
                         },
                         tooltip: 'Share',
                       ),

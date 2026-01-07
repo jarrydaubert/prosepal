@@ -432,24 +432,27 @@ void main() {
   // FREE TIER LIMITS
   // ============================================================
   group('GenerateScreen Free Tier Limits', () {
-    testWidgets('shows Upgrade button when 0 generations remaining (logged in)', (
+    testWidgets(
+      'shows Upgrade button when 0 generations remaining (logged in)',
+      (tester) async {
+        await tester.pumpWidget(
+          createTestableGenerateScreen(
+            selectedOccasion: Occasion.birthday,
+            remaining: 0,
+            isLoggedIn: true,
+          ),
+        );
+        await tester.pumpAndSettle();
+        await navigateToStep3(tester);
+
+        expect(find.text('Upgrade to Continue'), findsOneWidget);
+        expect(find.text('Generate Messages'), findsNothing);
+      },
+    );
+
+    testWidgets('Upgrade button navigates to paywall when logged in', (
       tester,
     ) async {
-      await tester.pumpWidget(
-        createTestableGenerateScreen(
-          selectedOccasion: Occasion.birthday,
-          remaining: 0,
-          isLoggedIn: true,
-        ),
-      );
-      await tester.pumpAndSettle();
-      await navigateToStep3(tester);
-
-      expect(find.text('Upgrade to Continue'), findsOneWidget);
-      expect(find.text('Generate Messages'), findsNothing);
-    });
-
-    testWidgets('Upgrade button navigates to paywall when logged in', (tester) async {
       await tester.pumpWidget(
         createTestableGenerateScreen(
           selectedOccasion: Occasion.birthday,
@@ -466,7 +469,9 @@ void main() {
       expect(find.text('Paywall Screen'), findsOneWidget);
     });
 
-    testWidgets('Upgrade button navigates to auth when not logged in', (tester) async {
+    testWidgets('Upgrade button navigates to auth when not logged in', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         createTestableGenerateScreen(
           selectedOccasion: Occasion.birthday,

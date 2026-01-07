@@ -236,7 +236,8 @@ void main() {
       });
 
       test('handles missing text field gracefully', () {
-        const json = '{"messages": [{"content": "wrong field"}, {"text": "valid"}]}';
+        const json =
+            '{"messages": [{"content": "wrong field"}, {"text": "valid"}]}';
 
         final messages = service.parseJsonResponse(
           json,
@@ -369,9 +370,16 @@ void main() {
           length: MessageLength.standard,
         );
 
-        expect(prompt.isNotEmpty, isTrue, reason: '${occasion.label} prompt should not be empty');
-        expect(prompt.contains(occasion.prompt), isTrue,
-            reason: '${occasion.label} prompt should contain occasion.prompt');
+        expect(
+          prompt.isNotEmpty,
+          isTrue,
+          reason: '${occasion.label} prompt should not be empty',
+        );
+        expect(
+          prompt.contains(occasion.prompt),
+          isTrue,
+          reason: '${occasion.label} prompt should contain occasion.prompt',
+        );
       }
     });
 
@@ -384,8 +392,12 @@ void main() {
           length: MessageLength.standard,
         );
 
-        expect(prompt.contains(relationship.prompt), isTrue,
-            reason: '${relationship.label} prompt should contain relationship.prompt');
+        expect(
+          prompt.contains(relationship.prompt),
+          isTrue,
+          reason:
+              '${relationship.label} prompt should contain relationship.prompt',
+        );
       }
     });
 
@@ -398,8 +410,11 @@ void main() {
           length: MessageLength.standard,
         );
 
-        expect(prompt.contains(tone.prompt), isTrue,
-            reason: '${tone.label} prompt should contain tone.prompt');
+        expect(
+          prompt.contains(tone.prompt),
+          isTrue,
+          reason: '${tone.label} prompt should contain tone.prompt',
+        );
       }
     });
 
@@ -412,8 +427,11 @@ void main() {
           length: length,
         );
 
-        expect(prompt.contains(length.prompt), isTrue,
-            reason: '${length.label} prompt should contain length.prompt');
+        expect(
+          prompt.contains(length.prompt),
+          isTrue,
+          reason: '${length.label} prompt should contain length.prompt',
+        );
       }
     });
   });
@@ -435,7 +453,9 @@ void main() {
       });
 
       test('classifies "quota exceeded" as AiRateLimitException', () {
-        final result = AiService.classifyFirebaseAIError('API quota exceeded for today');
+        final result = AiService.classifyFirebaseAIError(
+          'API quota exceeded for today',
+        );
 
         expect(result.exceptionType, equals(AiRateLimitException));
         expect(result.errorCode, equals('RATE_LIMIT'));
@@ -450,7 +470,9 @@ void main() {
 
     group('network errors', () {
       test('classifies "network error" as AiNetworkException', () {
-        final result = AiService.classifyFirebaseAIError('Network error occurred');
+        final result = AiService.classifyFirebaseAIError(
+          'Network error occurred',
+        );
 
         expect(result.exceptionType, equals(AiNetworkException));
         expect(result.errorCode, equals('NETWORK_ERROR'));
@@ -467,7 +489,9 @@ void main() {
 
     group('content blocked errors', () {
       test('classifies "content blocked" as AiContentBlockedException', () {
-        final result = AiService.classifyFirebaseAIError('Content was blocked by safety filters');
+        final result = AiService.classifyFirebaseAIError(
+          'Content was blocked by safety filters',
+        );
 
         expect(result.exceptionType, equals(AiContentBlockedException));
         expect(result.errorCode, equals('CONTENT_BLOCKED'));
@@ -484,7 +508,9 @@ void main() {
 
     group('service unavailable errors', () {
       test('classifies "unavailable" as AiUnavailableException', () {
-        final result = AiService.classifyFirebaseAIError('Service temporarily unavailable');
+        final result = AiService.classifyFirebaseAIError(
+          'Service temporarily unavailable',
+        );
 
         expect(result.exceptionType, equals(AiUnavailableException));
         expect(result.errorCode, equals('SERVICE_UNAVAILABLE'));
@@ -492,7 +518,9 @@ void main() {
       });
 
       test('classifies "503" as AiUnavailableException', () {
-        final result = AiService.classifyFirebaseAIError('Error 503: Service unavailable');
+        final result = AiService.classifyFirebaseAIError(
+          'Error 503: Service unavailable',
+        );
 
         expect(result.exceptionType, equals(AiUnavailableException));
       });
@@ -500,7 +528,9 @@ void main() {
 
     group('timeout errors', () {
       test('classifies "timeout" as AiNetworkException with TIMEOUT code', () {
-        final result = AiService.classifyFirebaseAIError('Request timeout after 30s');
+        final result = AiService.classifyFirebaseAIError(
+          'Request timeout after 30s',
+        );
 
         expect(result.exceptionType, equals(AiNetworkException));
         expect(result.errorCode, equals('TIMEOUT'));
@@ -510,7 +540,9 @@ void main() {
 
     group('invalid request errors', () {
       test('classifies "invalid" as AiServiceException', () {
-        final result = AiService.classifyFirebaseAIError('Invalid request format');
+        final result = AiService.classifyFirebaseAIError(
+          'Invalid request format',
+        );
 
         expect(result.exceptionType, equals(AiServiceException));
         expect(result.errorCode, equals('INVALID_REQUEST'));
@@ -518,7 +550,9 @@ void main() {
       });
 
       test('classifies "malformed" as AiServiceException', () {
-        final result = AiService.classifyFirebaseAIError('Malformed JSON in request');
+        final result = AiService.classifyFirebaseAIError(
+          'Malformed JSON in request',
+        );
 
         expect(result.exceptionType, equals(AiServiceException));
         expect(result.errorCode, equals('INVALID_REQUEST'));
@@ -527,7 +561,9 @@ void main() {
 
     group('unknown errors', () {
       test('classifies unknown error as generic AiServiceException', () {
-        final result = AiService.classifyFirebaseAIError('Something completely unexpected');
+        final result = AiService.classifyFirebaseAIError(
+          'Something completely unexpected',
+        );
 
         expect(result.exceptionType, equals(AiServiceException));
         expect(result.errorCode, equals('FIREBASE_AI_ERROR'));
@@ -546,20 +582,26 @@ void main() {
   group('classifyGeneralError', () {
     group('network errors', () {
       test('classifies "network" as AiNetworkException', () {
-        final result = AiService.classifyGeneralError('SocketException: Network unreachable');
+        final result = AiService.classifyGeneralError(
+          'SocketException: Network unreachable',
+        );
 
         expect(result.exceptionType, equals(AiNetworkException));
         expect(result.errorCode, equals('NETWORK_ERROR'));
       });
 
       test('classifies "socket" as AiNetworkException', () {
-        final result = AiService.classifyGeneralError('SocketException: Connection refused');
+        final result = AiService.classifyGeneralError(
+          'SocketException: Connection refused',
+        );
 
         expect(result.exceptionType, equals(AiNetworkException));
       });
 
       test('classifies "connection" as AiNetworkException', () {
-        final result = AiService.classifyGeneralError('Connection reset by peer');
+        final result = AiService.classifyGeneralError(
+          'Connection reset by peer',
+        );
 
         expect(result.exceptionType, equals(AiNetworkException));
       });
@@ -573,7 +615,9 @@ void main() {
 
     group('timeout errors', () {
       test('classifies "timeout" as AiNetworkException with TIMEOUT code', () {
-        final result = AiService.classifyGeneralError('TimeoutException: Future timed out');
+        final result = AiService.classifyGeneralError(
+          'TimeoutException: Future timed out',
+        );
 
         expect(result.exceptionType, equals(AiNetworkException));
         expect(result.errorCode, equals('TIMEOUT'));
@@ -591,7 +635,9 @@ void main() {
       });
 
       test('classifies "denied" as AiServiceException', () {
-        final result = AiService.classifyGeneralError('Access denied to resource');
+        final result = AiService.classifyGeneralError(
+          'Access denied to resource',
+        );
 
         expect(result.exceptionType, equals(AiServiceException));
         expect(result.errorCode, equals('PERMISSION_DENIED'));
@@ -600,7 +646,9 @@ void main() {
 
     group('unknown errors', () {
       test('classifies unknown error as generic AiServiceException', () {
-        final result = AiService.classifyGeneralError('NullPointerException: null');
+        final result = AiService.classifyGeneralError(
+          'NullPointerException: null',
+        );
 
         expect(result.exceptionType, equals(AiServiceException));
         expect(result.errorCode, equals('UNKNOWN_ERROR'));

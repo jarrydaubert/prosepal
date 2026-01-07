@@ -8,10 +8,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: AppButton(
-              label: 'Click Me',
-              onPressed: () {},
-            ),
+            body: AppButton(label: 'Click Me', onPressed: () {}),
           ),
         ),
       );
@@ -25,10 +22,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: AppButton(
-              label: 'Press',
-              onPressed: () => pressed = true,
-            ),
+            body: AppButton(label: 'Press', onPressed: () => pressed = true),
           ),
         ),
       );
@@ -42,12 +36,7 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
-          home: Scaffold(
-            body: AppButton(
-              label: 'Disabled',
-              onPressed: null,
-            ),
-          ),
+          home: Scaffold(body: AppButton(label: 'Disabled', onPressed: null)),
         ),
       );
 
@@ -250,10 +239,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: AppGradientButton(
-              label: 'Gradient',
-              onPressed: () {},
-            ),
+            body: AppGradientButton(label: 'Gradient', onPressed: () {}),
           ),
         ),
       );

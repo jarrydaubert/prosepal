@@ -332,7 +332,9 @@ void main() {
     });
 
     group('Account Actions', () {
-      testWidgets('shows account action options for signed-in user', (tester) async {
+      testWidgets('shows account action options for signed-in user', (
+        tester,
+      ) async {
         // Account actions only show for signed-in users
         await tester.pumpWidget(buildTestWidget(email: 'test@example.com'));
         await tester.pumpAndSettle();

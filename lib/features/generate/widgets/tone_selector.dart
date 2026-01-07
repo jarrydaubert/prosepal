@@ -51,11 +51,11 @@ class ToneSelector extends StatelessWidget {
               final isSelected = selectedTone == tone;
 
               return _ToneTile(
-                key: ValueKey('tone_${tone.name}'),
-                tone: tone,
-                isSelected: isSelected,
-                onTap: () => onSelected(tone),
-              )
+                    key: ValueKey('tone_${tone.name}'),
+                    tone: tone,
+                    isSelected: isSelected,
+                    onTap: () => onSelected(tone),
+                  )
                   .animate(key: ValueKey('tone_anim_$index'))
                   .fadeIn(
                     delay: Duration(milliseconds: index * 40),
@@ -148,10 +148,7 @@ class _ToneTile extends StatelessWidget {
               const SizedBox(height: 2),
               Text(
                 tone.description,
-                style: TextStyle(
-                  fontSize: 11,
-                  color: Colors.grey[600],
-                ),
+                style: TextStyle(fontSize: 11, color: Colors.grey[600]),
                 textAlign: TextAlign.center,
               ),
               if (isSelected) ...[

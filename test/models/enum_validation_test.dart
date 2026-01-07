@@ -146,14 +146,17 @@ void main() {
 
     test('expected tones exist', () {
       // Bug: Core tone accidentally deleted
-      expect(Tone.values.map((t) => t.name), containsAll([
-        'heartfelt',
-        'casual',
-        'funny',
-        'formal',
-        'inspirational',
-        'playful',
-      ]));
+      expect(
+        Tone.values.map((t) => t.name),
+        containsAll([
+          'heartfelt',
+          'casual',
+          'funny',
+          'formal',
+          'inspirational',
+          'playful',
+        ]),
+      );
     });
   });
 
@@ -209,11 +212,10 @@ void main() {
 
     test('expected lengths exist with correct names', () {
       // Bug: Length renamed breaking saved preferences
-      expect(MessageLength.values.map((l) => l.name), containsAll([
-        'brief',
-        'standard',
-        'detailed',
-      ]));
+      expect(
+        MessageLength.values.map((l) => l.name),
+        containsAll(['brief', 'standard', 'detailed']),
+      );
     });
   });
 
@@ -268,16 +270,19 @@ void main() {
 
     test('expected relationships exist', () {
       // Bug: Core relationship accidentally deleted
-      expect(Relationship.values.map((r) => r.name), containsAll([
-        'closeFriend',
-        'family',
-        'parent',
-        'child',
-        'sibling',
-        'romantic',
-        'colleague',
-        'boss',
-      ]));
+      expect(
+        Relationship.values.map((r) => r.name),
+        containsAll([
+          'closeFriend',
+          'family',
+          'parent',
+          'child',
+          'sibling',
+          'romantic',
+          'colleague',
+          'boss',
+        ]),
+      );
     });
 
     test('no duplicate labels', () {
