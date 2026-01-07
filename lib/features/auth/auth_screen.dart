@@ -10,6 +10,7 @@ import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import '../../core/errors/auth_errors.dart';
 import '../../core/providers/providers.dart';
 import '../../core/services/biometric_service.dart';
+import '../../shared/atoms/app_logo.dart';
 import '../../shared/theme/app_colors.dart';
 
 class AuthScreen extends ConsumerStatefulWidget {
@@ -159,11 +160,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                     ),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(36),
-                      child: Image.asset(
-                        'assets/images/logo.png',
-                        width: logoSize - 20,
-                        height: logoSize - 20,
-                      ),
+                      child: AppLogo(size: logoSize - 20),
                     ),
                   )
                   .animate(key: const ValueKey('logo'))

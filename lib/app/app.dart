@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../core/providers/providers.dart';
 import '../core/services/log_service.dart';
+import '../shared/atoms/app_logo.dart';
 import '../shared/theme/app_colors.dart';
 import '../shared/theme/app_theme.dart';
 import 'router.dart';
@@ -106,11 +107,7 @@ class _ProsepalAppState extends ConsumerState<ProsepalApp>
                 child: Center(
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(24),
-                    child: Image.asset(
-                      'assets/images/logo.png',
-                      width: 100,
-                      height: 100,
-                    ),
+                    child: const AppLogo(size: 100),
                   ),
                 ),
               ),
