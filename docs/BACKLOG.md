@@ -28,6 +28,10 @@
 | Paywall offering flexibility | `subscription_service.dart` | Support custom/specific offerings, not just default |
 | Promotional offers | `subscription_service.dart` | Handle eligibility checks for promo offers |
 | Pending purchase handling | `subscription_service.dart` | UI feedback for purchases in pending state |
+| Biometric dialog localization | `biometric_service.dart` | Add authMessages for branded/localized prompts |
+| Biometric timeout | `biometric_service.dart` | Expose authTimeout option for time-limited prompts |
+| Biometric config validation | `biometric_service.dart` | Runtime checks for Info.plist/manifest setup |
+| Secure storage integration | `biometric_service.dart` | Combine with flutter_secure_storage for sensitive data |
 
 ---
 
