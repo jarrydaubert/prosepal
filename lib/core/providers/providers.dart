@@ -1,12 +1,33 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod/legacy.dart'; // Required for legacy StateProvider (your existing form providers)
-import 'package:purchases_flutter/purchases_flutter.dart'; // Required for CustomerInfo
+// StateNotifier and StateProvider are in legacy.dart for Riverpod 2.x
+// These are still fully supported; "legacy" just means non-code-gen API
+// ignore: implementation_imports
+import 'package:flutter_riverpod/legacy.dart';
+import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../interfaces/interfaces.dart';
 import '../models/models.dart';
 import '../services/services.dart';
+
+// ============================================================
+// Provider Architecture Notes
+// ============================================================
+//
+// This file follows Riverpod 2.x best practices:
+// - Services as singletons via Provider (testable via overrides)
+// - Reactive state via StateNotifierProvider (CustomerInfo)
+// - Derived state via Provider (isProProvider, remainingGenerationsProvider)
+// - Form state via StateProvider (simple, no validation logic)
+//
+// StateNotifier/StateProvider from legacy.dart are fully supported in
+// Riverpod 2.x. The "legacy" designation refers to the non-code-gen API,
+// not deprecated functionality.
+//
+// For testing, override auth providers and sharedPreferencesProvider.
+// See test/mocks/ for examples.
+//
 
 // ============================================================
 // Auth Provider Dependencies (for dependency injection)
@@ -52,9 +73,25 @@ final isLoggedInProvider = Provider<bool>((ref) {
   return authState.whenOrNull(data: (state) => state.session != null) ?? false;
 });
 
-/// SharedPreferences provider - must be initialized in main.dart
+/// SharedPreferences provider - MUST be initialized in main.dart before runApp
+///
+/// Example:
+/// ```dart
+/// void main() async {
+///   WidgetsFlutterBinding.ensureInitialized();
+///   final prefs = await SharedPreferences.getInstance();
+///   runApp(ProviderScope(
+///     overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
+///     child: MyApp(),
+///   ));
+/// }
+/// ```
 final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
-  throw UnimplementedError('Initialize sharedPreferencesProvider in main.dart');
+  throw StateError(
+    'sharedPreferencesProvider not initialized. '
+    'Override it in main.dart before runApp(). '
+    'See provider documentation for example.',
+  );
 });
 
 /// Usage tracking service
@@ -139,10 +176,19 @@ final isProProvider = Provider<bool>((ref) {
   return customerInfo?.entitlements.active.containsKey('pro') ?? false;
 });
 
-/// Async manual check (kept for backward compatibility if any code uses it)
+/// Async manual check with error handling
+/// Prefer `isProProvider` for reactive UI - this is for one-off checks.
+/// Returns false on error (safe default for monetization).
 final checkProStatusProvider = FutureProvider<bool>((ref) async {
-  final subscriptionService = ref.watch(subscriptionServiceProvider);
-  return subscriptionService.isPro();
+  try {
+    final subscriptionService = ref.watch(subscriptionServiceProvider);
+    return await subscriptionService.isPro();
+  } catch (e) {
+    Log.warning('checkProStatusProvider failed, returning false', {
+      'error': '$e',
+    });
+    return false;
+  }
 });
 
 // ============================================================
@@ -167,8 +213,11 @@ final remainingGenerationsProvider = Provider<int>((ref) {
 });
 
 // ============================================================
-// Generation Form State (Legacy StateProvider - kept for compatibility)
+// Generation Form State
 // ============================================================
+// Simple StateProvider for form fields. Consider consolidating into
+// a single NotifierProvider<GenerationFormState> if validation logic
+// is needed (see BACKLOG.md).
 
 final selectedOccasionProvider = StateProvider<Occasion?>((ref) => null);
 
@@ -187,8 +236,10 @@ final recipientNameProvider = StateProvider<String>((ref) => '');
 final personalDetailsProvider = StateProvider<String>((ref) => '');
 
 // ============================================================
-// Generation Results State (Legacy StateProvider - kept for compatibility)
+// Generation Results State
 // ============================================================
+// Transient state for current generation. Could add autoDispose
+// if memory optimization is needed (see BACKLOG.md).
 
 final generationResultProvider = StateProvider<GenerationResult?>(
   (ref) => null,

@@ -101,6 +101,8 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 | History server sync | `history_service.dart` | Supabase sync for cross-device persistence (like UsageService) |
 | History storage migration | `history_service.dart` | Migrate to hive/sqflite for larger data support |
 | History export/share | `history_service.dart` | Allow users to export history as JSON |
+| Form state consolidation | `providers.dart` | Consolidate form StateProviders into single NotifierProvider |
+| AutoDispose for transient state | `providers.dart` | Add autoDispose to generation result/error providers |
 
 ---
 
