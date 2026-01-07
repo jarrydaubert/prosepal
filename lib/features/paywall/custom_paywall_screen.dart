@@ -114,13 +114,18 @@ class _CustomPaywallScreenState extends ConsumerState<CustomPaywallScreen> {
           );
 
           if (enableBiometrics == true && mounted) {
-            context.pop();
-            context.push('/biometric-setup');
+            // Use go() to replace paywall with biometric setup
+            context.go('/biometric-setup');
             return;
           }
         }
 
-        context.pop();
+        // Go home after purchase (canPop check prevents error when navigated directly)
+        if (context.canPop()) {
+          context.pop();
+        } else {
+          context.go('/home');
+        }
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Row(
