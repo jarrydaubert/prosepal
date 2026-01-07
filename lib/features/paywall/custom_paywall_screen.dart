@@ -75,24 +75,56 @@ class _CustomPaywallScreenState extends ConsumerState<CustomPaywallScreen> {
     if (_isPurchasing) return;
 
     setState(() => _isPurchasing = true);
+    Log.info('Purchase started', {'package': package.identifier});
 
     try {
       final result = await Purchases.purchase(PurchaseParams.package(package));
       final hasPro = result.customerInfo.entitlements.active.containsKey('pro');
+      Log.info('Purchase result', {
+        'hasPro': hasPro,
+        'customerId': result.customerInfo.originalAppUserId,
+      });
 
       if (hasPro && mounted) {
         await HapticFeedback.mediumImpact();
         ref.invalidate(customerInfoProvider);
-        Log.info('Purchase completed', {'hasPro': true});
+        Log.info('Purchase completed successfully');
 
         await Future<void>.delayed(const Duration(milliseconds: 200));
         if (!mounted) return;
 
-        // Check if biometrics available but not enabled - offer setup
-        final biometricsAvailable = await BiometricService.instance.isSupported;
-        final biometricsEnabled = await BiometricService.instance.isEnabled;
+        // Step 1: Check if user is signed in - prompt to create account if not
+        final isLoggedIn = ref.read(authServiceProvider).isLoggedIn;
+        Log.info('Purchase: Checking auth state', {'isLoggedIn': isLoggedIn});
+
+        if (!isLoggedIn) {
+          Log.info('Purchase: Redirecting to auth for account creation');
+          context.go('/auth');
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Create an account to secure your Pro subscription'),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+          return;
+        }
+
+        // Step 2: Check if biometrics available but not enabled - offer setup
+        bool biometricsAvailable = false;
+        bool biometricsEnabled = false;
+        try {
+          biometricsAvailable = await BiometricService.instance.isSupported;
+          biometricsEnabled = await BiometricService.instance.isEnabled;
+          Log.info('Purchase: Biometrics check', {
+            'available': biometricsAvailable,
+            'enabled': biometricsEnabled,
+          });
+        } catch (e) {
+          Log.warning('Purchase: Biometrics check failed', {'error': '$e'});
+        }
 
         if (biometricsAvailable && !biometricsEnabled && mounted) {
+          Log.info('Purchase: Showing biometrics enrollment dialog');
           final enableBiometrics = await showDialog<bool>(
             context: context,
             builder: (context) => AlertDialog(
@@ -113,14 +145,19 @@ class _CustomPaywallScreenState extends ConsumerState<CustomPaywallScreen> {
             ),
           );
 
+          Log.info('Purchase: Biometrics dialog result', {
+            'enableBiometrics': enableBiometrics,
+          });
+
           if (enableBiometrics == true && mounted) {
-            // Use go() to replace paywall with biometric setup
+            Log.info('Purchase: Navigating to biometric setup');
             context.go('/biometric-setup');
             return;
           }
         }
 
-        // Go home after purchase (canPop check prevents error when navigated directly)
+        // Step 3: Go home after purchase
+        Log.info('Purchase: Navigating to home');
         if (context.canPop()) {
           context.pop();
         } else {
@@ -139,14 +176,36 @@ class _CustomPaywallScreenState extends ConsumerState<CustomPaywallScreen> {
             behavior: SnackBarBehavior.floating,
           ),
         );
+      } else if (!hasPro && mounted) {
+        Log.warning('Purchase: Completed but no pro entitlement');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Purchase completed but subscription not active. Please contact support.'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
       }
     } on PlatformException catch (e) {
-      // Handle user cancellation gracefully
       final errorCode = PurchasesErrorHelper.getErrorCode(e);
-      if (errorCode != PurchasesErrorCode.purchaseCancelledError && mounted) {
+      if (errorCode == PurchasesErrorCode.purchaseCancelledError) {
+        Log.info('Purchase: Cancelled by user');
+      } else {
+        Log.error('Purchase failed', e, StackTrace.current);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Purchase failed: ${e.message}'),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      }
+    } catch (e, stackTrace) {
+      Log.error('Purchase failed unexpectedly', e, stackTrace);
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Purchase failed: ${e.message}'),
+          const SnackBar(
+            content: Text('An error occurred. Please try again.'),
             behavior: SnackBarBehavior.floating,
           ),
         );

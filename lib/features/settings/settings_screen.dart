@@ -207,37 +207,61 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
     if (confirm ?? false) {
       Log.info('Sign out started');
-      // Clear all user-specific data (internet cafe test: leave no trace)
-      final authService = ref.read(authServiceProvider);
+      try {
+        // Clear all user-specific data (internet cafe test: leave no trace)
+        final authService = ref.read(authServiceProvider);
 
-      // 1. Log out of RevenueCat (unlink user)
-      if (authService.currentUser != null) {
+        // 1. Log out of RevenueCat (unlink user)
+        if (authService.currentUser != null) {
+          try {
+            await ref.read(subscriptionServiceProvider).logOut();
+            Log.info('Sign out: RevenueCat logged out');
+          } catch (e) {
+            Log.warning('Sign out: RevenueCat logout failed', {'error': '$e'});
+          }
+        }
+
+        // 2. Clear history (personal messages)
         try {
-          await ref.read(subscriptionServiceProvider).logOut();
-          Log.info('Sign out: RevenueCat logged out');
+          await ref.read(historyServiceProvider).clearHistory();
+          Log.info('Sign out: History cleared');
         } catch (e) {
-          Log.warning('RevenueCat logout skipped', {'error': '$e'});
+          Log.warning('Sign out: History clear failed', {'error': '$e'});
+        }
+
+        // 3. Clear usage counts (user-specific)
+        try {
+          await ref.read(usageServiceProvider).clearAllUsage();
+          Log.info('Sign out: Usage cleared');
+        } catch (e) {
+          Log.warning('Sign out: Usage clear failed', {'error': '$e'});
+        }
+
+        // 4. Disable biometrics (security setting tied to user)
+        try {
+          await _biometricService.setEnabled(false);
+          setState(() => _biometricsEnabled = false);
+          Log.info('Sign out: Biometrics disabled');
+        } catch (e) {
+          Log.warning('Sign out: Biometrics disable failed', {'error': '$e'});
+        }
+
+        // 5. Sign out (clears tokens, Google session, logs)
+        await authService.signOut();
+        Log.info('Sign out completed successfully');
+
+        if (mounted) context.go('/home');
+      } catch (e) {
+        Log.error('Sign out failed', e);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Sign out failed. Please try again.'),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
         }
       }
-
-      // 2. Clear history (personal messages)
-      await ref.read(historyServiceProvider).clearHistory();
-      Log.info('Sign out: History cleared');
-
-      // 3. Clear usage counts (user-specific)
-      await ref.read(usageServiceProvider).clearAllUsage();
-      Log.info('Sign out: Usage cleared');
-
-      // 4. Disable biometrics (security setting tied to user)
-      await _biometricService.setEnabled(false);
-      setState(() => _biometricsEnabled = false);
-      Log.info('Sign out: Biometrics disabled');
-
-      // 5. Sign out (clears tokens, Google session, logs)
-      await authService.signOut();
-      Log.info('Sign out: Auth signed out, navigating to /home');
-
-      if (mounted) context.go('/home');
     }
   }
 
@@ -277,32 +301,76 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
     if (finalConfirm ?? false) {
       Log.info('Delete account started');
-      final authService = ref.read(authServiceProvider);
-
-      // 1. Delete account FIRST while JWT is still valid
-      // This calls the edge function which needs the access token
-      await authService.deleteAccount();
-      Log.info('Delete account: Supabase delete called');
-
-      // 2. Log out of RevenueCat (after delete, session may be gone)
       try {
-        await ref.read(subscriptionServiceProvider).logOut();
-        Log.info('Delete account: RevenueCat logged out');
+        final authService = ref.read(authServiceProvider);
+
+        // 1. Delete account FIRST while JWT is still valid
+        // This calls the edge function which needs the access token
+        try {
+          await authService.deleteAccount();
+          Log.info('Delete account: Supabase delete successful');
+        } catch (e) {
+          Log.error('Delete account: Supabase delete failed', e);
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Failed to delete account. Please try again.'),
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
+          return; // Don't continue if account deletion failed
+        }
+
+        // 2. Log out of RevenueCat (after delete, session may be gone)
+        try {
+          await ref.read(subscriptionServiceProvider).logOut();
+          Log.info('Delete account: RevenueCat logged out');
+        } catch (e) {
+          Log.warning('Delete account: RevenueCat logout failed', {
+            'error': '$e',
+          });
+        }
+
+        // 3. Clear local data (history, usage, biometrics)
+        try {
+          await ref.read(historyServiceProvider).clearHistory();
+          Log.info('Delete account: History cleared');
+        } catch (e) {
+          Log.warning('Delete account: History clear failed', {'error': '$e'});
+        }
+
+        try {
+          await ref.read(usageServiceProvider).clearAllUsage();
+          Log.info('Delete account: Usage cleared');
+        } catch (e) {
+          Log.warning('Delete account: Usage clear failed', {'error': '$e'});
+        }
+
+        try {
+          await _biometricService.setEnabled(false);
+          Log.info('Delete account: Biometrics disabled');
+        } catch (e) {
+          Log.warning('Delete account: Biometrics disable failed', {
+            'error': '$e',
+          });
+        }
+
+        Log.info('Delete account completed successfully');
+
+        // Navigate to onboarding for fresh start (not home)
+        if (mounted) context.go('/onboarding');
       } catch (e) {
-        Log.warning('RevenueCat logout skipped during delete', {
-          'error': '$e',
-        });
+        Log.error('Delete account failed unexpectedly', e);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('An error occurred. Please try again.'),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
       }
-
-      // 3. Clear local data (history, usage, biometrics)
-      await ref.read(historyServiceProvider).clearHistory();
-      await ref.read(usageServiceProvider).clearAllUsage();
-      await _biometricService.setEnabled(false);
-      Log.info('Delete account: Local data cleared');
-
-      // Navigate to onboarding for fresh start (not home)
-      Log.info('Delete account: Navigating to /onboarding');
-      if (mounted) context.go('/onboarding');
     }
   }
 
