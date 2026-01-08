@@ -98,17 +98,17 @@ patrol:
     bundle_id: com.prosepal.prosepal
 
 # Native splash screen configuration
-# Color #2D2D37 matches logo background (dark charcoal)
+# Color #454650 (RGB 69,70,80) - medium gray
 flutter_native_splash:
-  color: "#2D2D37"
+  color: "#454650"
   image: assets/images/logo.png
-  color_dark: "#2D2D37"
+  color_dark: "#454650"
   image_dark: assets/images/logo.png
   
   # Android 12+ uses adaptive splash with circular icon mask
   # Just use solid color - the logo doesn't work well with circular crop
   android_12:
-    color: "#2D2D37"
-    color_dark: "#2D2D37"
+    color: "#454650"
+    color_dark: "#454650"
 
   web: false
