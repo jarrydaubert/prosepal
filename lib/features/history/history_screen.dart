@@ -557,7 +557,9 @@ class _HistoryCardState extends State<_HistoryCard> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            '${occasion.label} - ${result.relationship.label}',
+                            result.recipientName?.isNotEmpty == true
+                                ? result.recipientName!
+                                : '${result.tone.label} ${result.relationship.label}',
                             style: const TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.bold,
@@ -566,7 +568,7 @@ class _HistoryCardState extends State<_HistoryCard> {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            '${result.tone.label} • ${_formatDate(widget.item.savedAt)}',
+                            '${occasion.label} • ${_formatDate(widget.item.savedAt)}',
                             style: TextStyle(
                               fontSize: 12,
                               color: Colors.grey[600],

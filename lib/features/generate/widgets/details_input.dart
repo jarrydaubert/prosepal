@@ -117,7 +117,8 @@ class _DetailsInputState extends State<DetailsInput> {
             const SizedBox(height: 10),
             _StyledTextField(
               controller: _detailsController,
-              hintText: 'e.g., She loves gardening, Just got promoted',
+              hintText:
+                  'Add as much detail as possible for a more personalized message...',
               icon: Icons.notes_outlined,
               maxLines: 4,
               maxLength: 300,
@@ -144,10 +145,6 @@ class _DetailsInputState extends State<DetailsInput> {
               widget.selectedLength.description,
               style: TextStyle(fontSize: 13, color: Colors.grey[600]),
             ),
-            const SizedBox(height: 20),
-
-            // Tip card
-            _TipCard(),
           ],
         ),
       ),
@@ -271,8 +268,6 @@ class _LengthSelector extends StatelessWidget {
                           color: Colors.white,
                         ),
                       ),
-                    Text(length.emoji, style: const TextStyle(fontSize: 16)),
-                    const SizedBox(width: 6),
                     Text(
                       length.label,
                       style: TextStyle(
@@ -296,45 +291,4 @@ class _LengthSelector extends StatelessWidget {
   }
 }
 
-class _TipCard extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.info.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.info, width: 2),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: AppColors.info.withValues(alpha: 0.2),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.lightbulb_outline,
-              color: AppColors.info,
-              size: 18,
-            ),
-          ),
-          const SizedBox(width: 12),
-          const Expanded(
-            child: Text(
-              'The more details you provide, the more personalized your message will be!',
-              style: TextStyle(
-                fontSize: 13,
-                color: AppColors.info,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
+
