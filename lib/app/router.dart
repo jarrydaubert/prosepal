@@ -192,6 +192,12 @@ class _SplashScreenState extends ConsumerState<_SplashScreen> {
   /// Returns true if user has active Pro entitlement (from App Store receipt).
   Future<bool> _checkAnonymousProStatus() async {
     try {
+      // Use subscription service to check if RevenueCat is configured
+      final subscriptionService = ref.read(subscriptionServiceProvider);
+      if (!subscriptionService.isConfigured) {
+        Log.warning('RevenueCat not configured - skipping anonymous Pro check');
+        return false;
+      }
       final customerInfo = await Purchases.getCustomerInfo();
       final hasPro = customerInfo.entitlements.active.containsKey('pro');
       if (hasPro) {
