@@ -278,12 +278,22 @@ class SupabaseAuthProvider implements ISupabaseAuthProvider {
   /// Caller should handle failure gracefully and sign out regardless.
   @override
   Future<void> deleteUser() async {
-    if (_auth.currentSession == null) {
+    // Refresh session to ensure fresh JWT
+    await _auth.refreshSession();
+    
+    final session = _auth.currentSession;
+    if (session == null) {
       throw const AuthException('No active session for user deletion');
     }
 
-    // Supabase client auto-adds Authorization header from current session
-    await _functions.invoke('delete-user');
+    // Get auth headers from client (includes refreshed JWT)
+    final authHeaders = Supabase.instance.client.auth.headers;
+    
+    // Pass explicitly - SDK auto-header may not work reliably
+    await _functions.invoke(
+      'delete-user',
+      headers: authHeaders,
+    );
   }
 
   /// Exchange Apple authorization code for refresh token
@@ -292,13 +302,15 @@ class SupabaseAuthProvider implements ISupabaseAuthProvider {
   /// Required for Apple compliance - tokens must be revoked on account delete.
   @override
   Future<void> exchangeAppleToken(String authorizationCode) async {
-    if (_auth.currentSession == null) {
+    final session = _auth.currentSession;
+    if (session == null) {
       throw const AuthException('No active session for Apple token exchange');
     }
 
-    // Supabase client auto-adds Authorization header from current session
+    // Explicitly pass JWT - SDK auto-header may not work in all cases
     await _functions.invoke(
       'exchange-apple-token',
+      headers: {'Authorization': 'Bearer ${session.accessToken}'},
       body: {'authorization_code': authorizationCode},
     );
   }
