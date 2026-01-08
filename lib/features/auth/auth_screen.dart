@@ -220,7 +220,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: subtitleSize,
-                          color: Colors.grey[700],
+                          color: AppColors.textSecondary,
                           height: 1.5,
                         ),
                       )
@@ -252,7 +252,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                               'Create an account to purchase a subscription',
                               style: TextStyle(
                                 fontSize: 14,
-                                color: Colors.grey[700],
+                                color: AppColors.textSecondary,
                                 height: 1.4,
                               ),
                             ),
@@ -295,7 +295,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                                   'Sign in to restore your Pro access',
                                   style: TextStyle(
                                     fontSize: 13,
-                                    color: Colors.grey[700],
+                                    color: AppColors.textSecondary,
                                   ),
                                 ),
                               ],
@@ -565,7 +565,7 @@ class _LegalText extends StatelessWidget {
       children: [
         Text(
           'By continuing, you agree to our ',
-          style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+          style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
         ),
         GestureDetector(
           onTap: onTermsTap,
@@ -579,7 +579,7 @@ class _LegalText extends StatelessWidget {
             ),
           ),
         ),
-        Text(' and ', style: TextStyle(fontSize: 13, color: Colors.grey[600])),
+        Text(' and ', style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
         GestureDetector(
           onTap: onPrivacyTap,
           child: const Text(
