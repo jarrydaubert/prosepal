@@ -26,8 +26,8 @@ fi
 
 cd "$PROJECT_DIR"
 
-# Find Android device
-DEVICE=$(flutter devices | grep -i "android" | head -1 | awk '{print $NF}' | tr -d '()')
+# Find Android device - extract device ID (second field separated by •)
+DEVICE=$(flutter devices | grep -i "android" | head -1 | awk -F'•' '{print $2}' | xargs)
 
 if [ -z "$DEVICE" ]; then
     echo "No Android device found. Connect your device and try again."

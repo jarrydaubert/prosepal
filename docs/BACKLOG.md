@@ -19,6 +19,7 @@
 | Data export feature | GDPR right to portability |
 | Analytics opt-out | Settings toggle |
 | Apple Privacy Labels | Fill in App Store Connect |
+| Cross-platform subscription docs | Add FAQ/Terms note: subscriptions are per-store (iOS/Android separate) |
 
 ---
 
