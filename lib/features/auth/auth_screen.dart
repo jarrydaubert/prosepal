@@ -72,6 +72,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   }
 
   Future<void> _signInWithApple() async {
+    if (_isLoading) return; // Prevent double-tap race condition
     setState(() {
       _isLoading = true;
       _error = null;
@@ -87,7 +88,12 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       );
       if (response.user != null) {
         // Sync usage from server (restores usage after reinstall)
-        await ref.read(usageServiceProvider).syncFromServer();
+        // Non-critical - don't block auth success if sync fails
+        try {
+          await ref.read(usageServiceProvider).syncFromServer();
+        } catch (e) {
+          Log.warning('Usage sync failed after auth', {'error': '$e'});
+        }
       }
       await _navigateAfterAuth();
     } catch (e) {
@@ -100,6 +106,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   }
 
   Future<void> _signInWithGoogle() async {
+    if (_isLoading) return; // Prevent double-tap race condition
     setState(() {
       _isLoading = true;
       _error = null;
@@ -115,7 +122,12 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       );
       if (response.user != null) {
         // Sync usage from server (restores usage after reinstall)
-        await ref.read(usageServiceProvider).syncFromServer();
+        // Non-critical - don't block auth success if sync fails
+        try {
+          await ref.read(usageServiceProvider).syncFromServer();
+        } catch (e) {
+          Log.warning('Usage sync failed after auth', {'error': '$e'});
+        }
       }
       await _navigateAfterAuth();
     } catch (e) {
