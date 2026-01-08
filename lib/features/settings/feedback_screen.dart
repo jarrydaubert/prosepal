@@ -7,6 +7,7 @@ import 'package:gap/gap.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/providers/providers.dart';
 import '../../core/services/diagnostic_service.dart';
 import '../../shared/atoms/app_button.dart';
 import '../../shared/theme/app_colors.dart';
@@ -44,7 +45,10 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
     setState(() => _isSending = true);
     unawaited(HapticFeedback.lightImpact());
 
-    final diagnosticReport = await DiagnosticService.generateReport();
+    final isRcConfigured = ref.read(subscriptionServiceProvider).isConfigured;
+    final diagnosticReport = await DiagnosticService.generateReport(
+      isRevenueCatConfigured: isRcConfigured,
+    );
     final fullMessage = '$message\n\n$diagnosticReport';
 
     final subject = Uri.encodeComponent('Prosepal Feedback');
@@ -99,7 +103,10 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
 
   Future<void> _shareDiagnostics() async {
     unawaited(HapticFeedback.lightImpact());
-    final report = await DiagnosticService.generateReport();
+    final isRcConfigured = ref.read(subscriptionServiceProvider).isConfigured;
+    final report = await DiagnosticService.generateReport(
+      isRevenueCatConfigured: isRcConfigured,
+    );
 
     if (!mounted) return;
 

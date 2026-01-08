@@ -212,16 +212,10 @@ class _SplashScreenState extends ConsumerState<_SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Matches native splash: logo centered on dark charcoal background
-    // No text - seamless transition from native splash
+    // Matches native splash: styled logo on dark charcoal background
     return Scaffold(
       backgroundColor: AppColors.splash,
-      body: Center(
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(20),
-          child: const AppLogo(size: 80),
-        ),
-      ),
+      body: const Center(child: AppLogoStyled(size: 100)),
     );
   }
 }

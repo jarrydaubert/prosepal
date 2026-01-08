@@ -21,9 +21,12 @@ import 'log_service.dart';
 abstract final class DiagnosticService {
   /// Generate a diagnostic report for support
   ///
+  /// [isRevenueCatConfigured] - Pass true only if RevenueCat SDK is initialized.
+  /// When false, subscription status section is skipped to avoid native crashes.
+  ///
   /// Includes:
   /// - App version and device info
-  /// - Subscription status (no payment details)
+  /// - Subscription status (no payment details) - only if RevenueCat configured
   /// - Auth status (no credentials)
   /// - Recent error log
   /// - Session info
@@ -33,7 +36,9 @@ abstract final class DiagnosticService {
   /// - Payment card info
   /// - Passwords or tokens
   /// - Location data
-  static Future<String> generateReport() async {
+  static Future<String> generateReport({
+    bool isRevenueCatConfigured = false,
+  }) async {
     final buffer = StringBuffer();
 
     buffer.writeln('=== Prosepal Diagnostic Report ===');
@@ -105,30 +110,35 @@ abstract final class DiagnosticService {
     buffer.writeln();
 
     // Subscription status (no payment details)
+    // Only query RevenueCat if configured to avoid native SDK crashes
     buffer.writeln('--- Subscription Status ---');
-    try {
-      final customerInfo = await Purchases.getCustomerInfo();
-      final isActive = customerInfo.entitlements.active.isNotEmpty;
-      buffer.writeln('Pro Status: ${isActive ? 'Active' : 'Free'}');
+    if (isRevenueCatConfigured) {
+      try {
+        final customerInfo = await Purchases.getCustomerInfo();
+        final isActive = customerInfo.entitlements.active.isNotEmpty;
+        buffer.writeln('Pro Status: ${isActive ? 'Active' : 'Free'}');
 
-      if (isActive) {
-        final entitlement = customerInfo.entitlements.active.values.first;
-        buffer.writeln('Product: ${entitlement.productIdentifier}');
-        if (entitlement.expirationDate != null) {
-          // Just show date, not full timestamp
-          buffer.writeln(
-            'Expires: ${entitlement.expirationDate!.substring(0, 10)}',
-          );
+        if (isActive) {
+          final entitlement = customerInfo.entitlements.active.values.first;
+          buffer.writeln('Product: ${entitlement.productIdentifier}');
+          if (entitlement.expirationDate != null) {
+            // Just show date, not full timestamp
+            buffer.writeln(
+              'Expires: ${entitlement.expirationDate!.substring(0, 10)}',
+            );
+          }
+          buffer.writeln('Will Renew: ${entitlement.willRenew ? 'Yes' : 'No'}');
         }
-        buffer.writeln('Will Renew: ${entitlement.willRenew ? 'Yes' : 'No'}');
-      }
 
-      buffer.writeln(
-        'RC User ID: ${_truncateId(customerInfo.originalAppUserId)}',
-      );
-    } catch (e) {
-      Log.warning('Subscription status retrieval failed', {'error': '$e'});
-      buffer.writeln('Subscription: Unable to retrieve');
+        buffer.writeln(
+          'RC User ID: ${_truncateId(customerInfo.originalAppUserId)}',
+        );
+      } catch (e) {
+        Log.warning('Subscription status retrieval failed', {'error': '$e'});
+        buffer.writeln('Subscription: Unable to retrieve');
+      }
+    } else {
+      buffer.writeln('Pro Status: Not configured (debug build)');
     }
     buffer.writeln();
 
