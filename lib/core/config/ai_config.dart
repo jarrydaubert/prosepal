@@ -11,7 +11,7 @@ abstract final class AiConfig {
   static const double temperature = 0.85;
   static const int topK = 40;
   static const double topP = 0.95;
-  static const int maxOutputTokens = 1024; // 3 messages ~500-600 tokens
+  static const int maxOutputTokens = 4096;
 
   /// Retry configuration
   static const int maxRetries = 3;
