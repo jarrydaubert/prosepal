@@ -22,7 +22,8 @@ class _ProsepalAppState extends ConsumerState<ProsepalApp>
   DateTime? _backgroundedAt;
 
   // Require re-auth if backgrounded for more than this duration
-  static const _lockTimeout = Duration(seconds: 30);
+  // 60s is reasonable for a content app (not banking-level security)
+  static const _lockTimeout = Duration(seconds: 60);
 
   @override
   void initState() {
