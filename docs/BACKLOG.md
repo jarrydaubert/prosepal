@@ -47,6 +47,14 @@
 
 ---
 
+## Tech Debt
+
+| Item | Notes |
+|------|-------|
+| Simplify auth screen navigation | Remove `redirectTo` params - just `pop()` on dismiss and let calling screens react to auth state changes |
+
+---
+
 ## Known Issues
 
 | Issue | Severity |
