@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
@@ -83,7 +82,6 @@ class _TappableCardState extends State<TappableCard>
   void _handleTapUp(TapUpDetails details) {
     _controller.reverse();
     if (widget.enableHaptic) {
-      HapticFeedback.lightImpact();
     }
     widget.onTap();
   }
@@ -204,7 +202,6 @@ class _SelectableChipState extends State<SelectableChip>
 
     return GestureDetector(
       onTap: () {
-        HapticFeedback.selectionClick();
         widget.onTap();
       },
       child: AnimatedBuilder(

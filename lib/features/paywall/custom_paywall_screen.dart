@@ -88,7 +88,6 @@ class _CustomPaywallScreenState extends ConsumerState<CustomPaywallScreen> {
       });
 
       if (hasPro && mounted) {
-        await HapticFeedback.mediumImpact();
         ref.invalidate(customerInfoProvider);
         Log.info('Purchase completed successfully');
 
@@ -242,7 +241,6 @@ class _CustomPaywallScreenState extends ConsumerState<CustomPaywallScreen> {
       if (!mounted) return;
 
       if (hasPro) {
-        await HapticFeedback.mediumImpact();
         ref.invalidate(customerInfoProvider);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(

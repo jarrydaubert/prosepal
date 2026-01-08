@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../theme/app_colors.dart';
 
@@ -44,7 +43,6 @@ class _ProBadge extends StatelessWidget {
       hint: onTap != null ? 'Double tap to manage subscription' : null,
       child: GestureDetector(
         onTap: () {
-          HapticFeedback.lightImpact();
           onTap?.call();
         },
         child: Container(
@@ -114,7 +112,6 @@ class _FreeUsageCard extends StatelessWidget {
       hint: 'Double tap to upgrade to Pro',
       child: GestureDetector(
         onTap: () {
-          HapticFeedback.lightImpact();
           onUpgrade?.call();
         },
         child: Container(

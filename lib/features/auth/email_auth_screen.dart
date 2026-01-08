@@ -632,7 +632,6 @@ class _PrimaryButtonState extends State<_PrimaryButton> {
       onTapUp: (_) {
         setState(() => _isPressed = false);
         if (!widget.isLoading) {
-          HapticFeedback.lightImpact();
           widget.onPressed();
         }
       },

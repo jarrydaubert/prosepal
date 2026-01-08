@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../../core/models/relationship.dart';
@@ -95,7 +94,6 @@ class _RelationshipTile extends StatelessWidget {
       selected: isSelected,
       child: GestureDetector(
         onTap: () {
-          HapticFeedback.lightImpact();
           onTap();
         },
         child: AnimatedContainer(
