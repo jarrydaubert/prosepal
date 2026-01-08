@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "530026851718-ctrnpr6hei11qmdco8al9dpa3mvcoe85.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.prosepal.prosepal",
+            "certificate_hash": "ab4969e8a3b024624313bc572be5d5d3ea010d96"
+          }
+        },
+        {
           "client_id": "530026851718-n8u4cf1843qkj8dfihkl496gd5elbmik.apps.googleusercontent.com",
           "client_type": 3
         }

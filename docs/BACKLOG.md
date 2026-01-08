@@ -74,6 +74,7 @@
 |-------|----------|
 | Supabase session persists in Keychain | Low |
 | No offline banner | Low |
+| Android: OnBackInvokedCallback not enabled | Low |
 
 ---
 
