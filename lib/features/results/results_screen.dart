@@ -41,9 +41,11 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
           appBar: AppBar(
             backgroundColor: Colors.transparent,
             elevation: 0,
-            title: const Text(
-              'Your Messages',
-              style: TextStyle(
+            title: Text(
+              result.recipientName?.isNotEmpty == true
+                  ? 'For ${result.recipientName}'
+                  : 'Your Messages',
+              style: const TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
                 color: AppColors.textPrimary,
