@@ -621,7 +621,33 @@ class _HistoryCardState extends State<_HistoryCard> {
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                 child: TextButton.icon(
-                  onPressed: widget.onDelete,
+                  onPressed: () async {
+                    final confirm = await showDialog<bool>(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Text('Delete Message'),
+                        content: const Text(
+                          'Are you sure you want to delete this message?',
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context, false),
+                            child: const Text('Cancel'),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.pop(context, true),
+                            style: TextButton.styleFrom(
+                              foregroundColor: AppColors.error,
+                            ),
+                            child: const Text('Delete'),
+                          ),
+                        ],
+                      ),
+                    );
+                    if (confirm == true) {
+                      widget.onDelete();
+                    }
+                  },
                   icon: const Icon(Icons.delete_outline, size: 18),
                   label: const Text('Delete'),
                   style: TextButton.styleFrom(foregroundColor: AppColors.error),

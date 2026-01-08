@@ -39,7 +39,7 @@
 ### Core Features
 
 - Regeneration option ("Generate More")
-- Message history / favorites
+- History multi-select (select all/individual, batch delete)
 - Feedback (thumbs up/down per message)
 - Occasion search/filter
 - More tones (Sarcastic, Nostalgic, Poetic)
