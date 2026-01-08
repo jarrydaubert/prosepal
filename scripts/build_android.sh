@@ -19,8 +19,15 @@ if [ -z "$REVENUECAT_ANDROID_KEY" ]; then
     exit 1
 fi
 
+if [ -z "$GOOGLE_WEB_CLIENT_ID" ]; then
+    echo "Error: GOOGLE_WEB_CLIENT_ID not set in .env.local"
+    exit 1
+fi
+
 echo "Building Android release AAB..."
 cd "$PROJECT_DIR"
-flutter build appbundle --release --dart-define=REVENUECAT_ANDROID_KEY=$REVENUECAT_ANDROID_KEY
+flutter build appbundle --release \
+    --dart-define=REVENUECAT_ANDROID_KEY=$REVENUECAT_ANDROID_KEY \
+    --dart-define=GOOGLE_WEB_CLIENT_ID=$GOOGLE_WEB_CLIENT_ID
 
 echo "Done! AAB at: build/app/outputs/bundle/release/app-release.aab"
