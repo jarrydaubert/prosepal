@@ -241,20 +241,7 @@ class ReauthService {
       barrierDismissible: false,
       builder: (context) => AlertDialog(
         title: const Text('Confirm Action'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(reason),
-            const SizedBox(height: 16),
-            Text(
-              'For better security, enable biometrics in Settings.',
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(fontStyle: FontStyle.italic),
-            ),
-          ],
-        ),
+        content: Text(reason),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
