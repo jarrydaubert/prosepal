@@ -105,11 +105,19 @@ class AppTheme {
       ),
       bottomSheetTheme: const BottomSheetThemeData(
         backgroundColor: AppColors.surface,
+        showDragHandle: true,
+        dragHandleColor: AppColors.textHint,
+        dragHandleSize: Size(32, 4),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(
             top: Radius.circular(AppSpacing.radiusXLarge),
           ),
         ),
+      ),
+      textSelectionTheme: TextSelectionThemeData(
+        cursorColor: AppColors.primary,
+        selectionColor: AppColors.primaryLight.withValues(alpha: 0.3),
+        selectionHandleColor: AppColors.primary,
       ),
     );
   }

@@ -48,3 +48,4 @@ key.properties
 # Local build scripts with API keys (DO NOT COMMIT)
 *.local.sh
 .env.local
+custom_lint.log
