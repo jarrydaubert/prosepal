@@ -48,6 +48,17 @@ class AppColors {
   /// Text on primary color backgrounds
   static const Color textOnPrimary = Color(0xFFFFFFFF);
 
+  /// Text on dark backgrounds (splash, privacy screen)
+  static const Color textOnDark = Color(0xFFFFFFFF);
+
+  // ===========================================================================
+  // SPLASH / LOADING COLORS
+  // ===========================================================================
+
+  /// Splash screen background - Dark charcoal matching logo
+  /// RGB: 45, 45, 55
+  static const Color splash = Color(0xFF2D2D37);
+
   // ===========================================================================
   // BACKGROUNDS & SURFACES
   // ===========================================================================
