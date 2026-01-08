@@ -1,4 +1,3 @@
-// Barrel file for atoms
 export 'app_button.dart';
-export 'app_card.dart';
-export 'app_icon.dart';
+export 'app_logo.dart';
+export 'tappable_card.dart';

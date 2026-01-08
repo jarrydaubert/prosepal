@@ -93,8 +93,7 @@ lib/
 │       ├── reauth_service.dart         # Re-authentication for sensitive ops
 │       ├── review_service.dart         # App Store review prompts
 │       ├── diagnostic_service.dart     # Debug diagnostics collection
-│       ├── log_service.dart            # Crashlytics logging
-│       └── error_log_service.dart      # Error log persistence
+│       └── log_service.dart            # Crashlytics logging
 │
 ├── features/                     # Feature modules
 │   ├── auth/
@@ -129,21 +128,20 @@ lib/
 │   │
 │   └── settings/
 │       ├── settings_screen.dart
-│       └── feedback_screen.dart  # Support with diagnostic logs
+│       ├── feedback_screen.dart  # Support with diagnostic logs
+│       └── legal_screen.dart     # Privacy policy, terms of service
 │
 └── shared/                       # Reusable UI (Atomic Design)
     ├── atoms/                    # Basic components
     │   ├── app_button.dart
+    │   ├── app_logo.dart
     │   └── tappable_card.dart
     │
     ├── molecules/                # Compound components
-    │   ├── copy_button.dart      # Copy with checkmark feedback
-    │   ├── usage_indicator.dart  # Free/Pro usage display
-    │   └── generation_loading_overlay.dart
-    │
-    ├── organisms/                # Complex components
-    │   ├── generating_overlay.dart  # Full-screen loading animation
-    │   └── message_card.dart
+    │   ├── generation_loading_overlay.dart  # Full-screen loading animation
+    │   ├── section_header.dart   # Settings section headers
+    │   ├── settings_tile.dart    # Settings row items
+    │   └── usage_indicator.dart  # Free/Pro usage display
     │
     └── theme/                    # Design tokens
         ├── app_colors.dart       # Brand colors, semantic colors
@@ -160,14 +158,15 @@ test/
 ├── mocks/                        # Test doubles
 │   ├── mocks.dart                # Barrel export
 │   ├── mock_ai_service.dart
+│   ├── mock_apple_auth_provider.dart
 │   ├── mock_auth_service.dart
 │   ├── mock_biometric_service.dart
-│   ├── mock_subscription_service.dart
-│   ├── mock_usage_service.dart
-│   ├── mock_history_service.dart
-│   ├── mock_rate_limit_service.dart
 │   ├── mock_device_fingerprint_service.dart
-│   └── mock_review_service.dart
+│   ├── mock_google_auth_provider.dart
+│   ├── mock_rate_limit_service.dart
+│   ├── mock_reauth_service.dart
+│   ├── mock_subscription_service.dart
+│   └── mock_supabase_auth_provider.dart
 ├── app/
 │   └── app_lifecycle_test.dart
 ├── errors/
@@ -193,14 +192,17 @@ test/
     │   ├── results_screen_test.dart
     │   └── settings_screen_test.dart
     └── shared/
-        └── selection_chip_test.dart
+        └── app_button_test.dart
 ```
 
 ### integration_test/ - E2E Tests (Patrol)
 
 ```
 integration_test/
-├── app_test.dart                 # Main test runner
+├── e2e_test.dart                 # Mocked E2E tests
+├── e2e_real_test.dart            # Real device E2E tests
+├── ftl_test.dart                 # Firebase Test Lab tests
+├── smoke_test.dart               # Quick smoke tests
 ├── journeys/                     # User journey tests
 │   ├── _helpers.dart             # Shared test utilities
 │   ├── j1_fresh_install_test.dart
