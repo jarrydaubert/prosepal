@@ -211,8 +211,8 @@ class _CustomPaywallScreenState extends ConsumerState<CustomPaywallScreen> {
   Future<void> _restorePurchases() async {
     if (_isRestoring) return;
 
-    // Check if already Pro - no need to restore
-    final currentPro = ref.read(isProProvider);
+    // Check if already Pro - no need to restore (use async check for accuracy)
+    final currentPro = await ref.read(subscriptionServiceProvider).isPro();
     if (currentPro) {
       Log.info('Restore: Already has Pro subscription');
       ScaffoldMessenger.of(context).showSnackBar(
