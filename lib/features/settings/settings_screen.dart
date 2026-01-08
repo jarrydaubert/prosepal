@@ -11,7 +11,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/interfaces/biometric_interface.dart';
 import '../../core/providers/providers.dart';
 import '../../core/services/log_service.dart';
-import '../../shared/molecules/molecules.dart';
+import '../../shared/components/molecules.dart';
 import '../../shared/theme/app_colors.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {

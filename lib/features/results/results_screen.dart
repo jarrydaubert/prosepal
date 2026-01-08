@@ -8,7 +8,7 @@ import 'package:share_plus/share_plus.dart';
 import '../../core/models/models.dart';
 import '../../core/providers/providers.dart';
 import '../../core/services/log_service.dart';
-import '../../shared/atoms/app_button.dart';
+import '../../shared/components/app_button.dart';
 import '../../shared/theme/app_colors.dart';
 
 class ResultsScreen extends ConsumerStatefulWidget {

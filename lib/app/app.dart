@@ -4,7 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../core/providers/providers.dart';
 import '../core/services/log_service.dart';
-import '../shared/atoms/app_logo.dart';
+import '../shared/components/app_logo.dart';
 import '../shared/theme/app_colors.dart';
 import '../shared/theme/app_theme.dart';
 import 'router.dart';
