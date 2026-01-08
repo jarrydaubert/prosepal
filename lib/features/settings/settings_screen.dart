@@ -94,6 +94,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
     setState(() => _isRestoringPurchases = true);
     try {
+      // Identify with RevenueCat before restore to link purchases to user
+      final authService = ref.read(authServiceProvider);
+      if (authService.currentUser?.id != null) {
+        await ref
+            .read(subscriptionServiceProvider)
+            .identifyUser(authService.currentUser!.id);
+      }
+
       final restored = await ref
           .read(subscriptionServiceProvider)
           .restorePurchases();
