@@ -24,6 +24,11 @@ void main() {
               builder: (context, state) => const OnboardingScreen(),
             ),
             GoRoute(
+              path: '/paywall',
+              builder: (context, state) =>
+                  const Scaffold(body: Text('Paywall Screen')),
+            ),
+            GoRoute(
               path: '/home',
               builder: (context, state) =>
                   const Scaffold(body: Text('Home Screen')),
@@ -50,7 +55,8 @@ void main() {
       await tester.tap(skipButton);
       await tester.pumpAndSettle();
 
-      expect(find.text('Home Screen'), findsOneWidget);
+      // Navigates to paywall (Day 0 conversion capture)
+      expect(find.text('Paywall Screen'), findsOneWidget);
     });
 
     testWidgets('completion persists - no repeat onboarding', (tester) async {

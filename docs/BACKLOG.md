@@ -9,7 +9,6 @@
 | Item | Action |
 |------|--------|
 | App Store ID | Add to `review_service.dart` after App Store approval |
-| IAP Products | Submit in App Store Connect |
 
 ---
 
@@ -42,9 +41,6 @@
 | Item | Rationale |
 |------|-----------|
 | Skip biometric prompt after sign-in | Only offer after purchase - feels contradictory right after authenticating |
-| A/B test paywall after onboarding | Capture Day 0 conversion window: "Start trial OR Try 1 free" |
-| Configurable lock timeout | Settings: Immediate / 1 min / 5 min / Never (if users ask) |
-| Restore Pro "continue as guest" option | Don't gate access for reinstalls - let them use Pro while prompting sign-in |
 
 ### Core Features
 

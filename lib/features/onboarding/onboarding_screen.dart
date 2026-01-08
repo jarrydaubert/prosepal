@@ -72,9 +72,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     Log.info('Onboarding completed');
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('hasCompletedOnboarding', true);
-    // Go straight to home - honor "No account needed" promise
-    // Auth is only required when user exhausts free token or wants to purchase
-    if (mounted) context.go('/home');
+    // Show paywall immediately to capture Day 0 conversions
+    // User can dismiss to try their 1 free message first
+    if (mounted) context.go('/paywall');
   }
 
   @override
