@@ -84,6 +84,10 @@ class HomeScreen extends ConsumerWidget {
                         final isLoggedIn = ref
                             .read(authServiceProvider)
                             .isLoggedIn;
+                        Log.info('Upgrade tapped', {
+                          'source': 'home',
+                          'isLoggedIn': isLoggedIn,
+                        });
                         if (isLoggedIn) {
                           context.pushNamed('paywall');
                         } else {

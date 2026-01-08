@@ -23,6 +23,7 @@ class FeedbackScreen extends ConsumerStatefulWidget {
 class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
   final _controller = TextEditingController();
   bool _isSending = false;
+  bool _includeLogs = true; // Default ON to help troubleshooting
 
   @override
   void dispose() {
@@ -45,11 +46,14 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
     setState(() => _isSending = true);
     unawaited(HapticFeedback.lightImpact());
 
-    final isRcConfigured = ref.read(subscriptionServiceProvider).isConfigured;
-    final diagnosticReport = await DiagnosticService.generateReport(
-      isRevenueCatConfigured: isRcConfigured,
-    );
-    final fullMessage = '$message\n\n$diagnosticReport';
+    String fullMessage = message;
+    if (_includeLogs) {
+      final isRcConfigured = ref.read(subscriptionServiceProvider).isConfigured;
+      final diagnosticReport = await DiagnosticService.generateReport(
+        isRevenueCatConfigured: isRcConfigured,
+      );
+      fullMessage = '$message\n\n$diagnosticReport';
+    }
 
     final subject = Uri.encodeComponent('Prosepal Feedback');
     final body = Uri.encodeComponent(fullMessage);
@@ -163,25 +167,73 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
                   ),
                 ),
               ),
-              const Gap(AppSpacing.sm),
-              GestureDetector(
-                onTap: _shareDiagnostics,
-                child: Text.rich(
-                  TextSpan(
-                    text: 'Diagnostic info will be attached. ',
-                    style: TextStyle(fontSize: 13, color: AppColors.textHint),
-                    children: [
-                      TextSpan(
-                        text: 'View report',
-                        style: TextStyle(
-                          color: AppColors.primary,
-                          decoration: TextDecoration.underline,
-                        ),
-                      ),
-                    ],
+              const Gap(AppSpacing.md),
+              // Toggle for including diagnostic logs
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
+                  border: Border.all(
+                    color: _includeLogs
+                        ? AppColors.primary.withValues(alpha: 0.3)
+                        : AppColors.textHint.withValues(alpha: 0.2),
                   ),
                 ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Include diagnostic logs',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const Gap(2),
+                          Text(
+                            'Helps us troubleshoot issues faster',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Switch.adaptive(
+                      value: _includeLogs,
+                      onChanged: (value) => setState(() => _includeLogs = value),
+                      activeColor: AppColors.primary,
+                    ),
+                  ],
+                ),
               ),
+              // View report link (only when logs enabled)
+              if (_includeLogs) ...[
+                const Gap(AppSpacing.sm),
+                GestureDetector(
+                  onTap: _shareDiagnostics,
+                  child: Text.rich(
+                    TextSpan(
+                      text: 'Preview: ',
+                      style: TextStyle(fontSize: 13, color: AppColors.textHint),
+                      children: [
+                        TextSpan(
+                          text: 'View diagnostic report',
+                          style: TextStyle(
+                            color: AppColors.primary,
+                            decoration: TextDecoration.underline,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
               const Gap(AppSpacing.lg),
               AppButton(
                 label: 'Send Feedback',

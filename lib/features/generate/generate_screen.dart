@@ -222,6 +222,10 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
               icon: Icons.star,
               style: AppButtonStyle.secondary,
               onPressed: () {
+                Log.info('Upgrade tapped', {
+                  'source': 'generate',
+                  'isLoggedIn': isLoggedIn,
+                });
                 if (isLoggedIn) {
                   context.pushNamed('paywall');
                 } else {
