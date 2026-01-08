@@ -101,15 +101,18 @@ class _CustomPaywallScreenState extends ConsumerState<CustomPaywallScreen> {
 
         if (!isLoggedIn) {
           Log.info('Purchase: Redirecting to auth for account creation');
-          context.go('/auth');
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                'Create an account to secure your Pro subscription',
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                  'Create an account to secure your Pro subscription',
+                ),
+                behavior: SnackBarBehavior.floating,
               ),
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
+            );
+            // Use push so user can dismiss with X and return to paywall
+            context.push('/auth?redirect=home');
+          }
           return;
         }
 
