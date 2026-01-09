@@ -5,8 +5,9 @@ import 'package:flutter/services.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:purchases_ui_flutter/purchases_ui_flutter.dart';
 
-import 'log_service.dart';
+import '../config/app_config.dart';
 import '../interfaces/subscription_interface.dart';
+import 'log_service.dart';
 
 /// RevenueCat subscription service implementation
 ///
@@ -14,8 +15,8 @@ import '../interfaces/subscription_interface.dart';
 /// Uses native RevenueCat SDK with Test Store for development.
 ///
 /// ## Environment Configuration
-/// - Test Store (default in debug): Instant purchases, no sandbox accounts
-/// - Production: Real App Store/Play Store transactions
+/// API keys are provided via dart-define through AppConfig.
+/// See `.env.example` for all required variables.
 ///
 /// ## Usage
 /// ```dart
@@ -26,42 +27,6 @@ import '../interfaces/subscription_interface.dart';
 /// }
 /// ```
 class SubscriptionService implements ISubscriptionService {
-  // ==========================================================================
-  // RevenueCat API Keys (REQUIRED via dart-define)
-  // ==========================================================================
-  //
-  // These are PUBLIC keys (safe to include in app) - they only allow client-side operations.
-  // Keys MUST be provided via dart-define to prevent accidental use of wrong keys.
-  //
-  // REQUIRED FOR BUILDS:
-  //   flutter build ios --dart-define=REVENUECAT_IOS_KEY=appl_xxx
-  //   flutter build android --dart-define=REVENUECAT_ANDROID_KEY=goog_xxx
-  //
-  // FOR TESTING:
-  //   flutter run --dart-define=REVENUECAT_USE_TEST_STORE=true \
-  //               --dart-define=REVENUECAT_TEST_STORE_KEY=test_xxx
-  //
-  // Get keys from: RevenueCat Dashboard > Project Settings > API Keys
-  // ==========================================================================
-
-  // Production API Keys - MUST be provided via dart-define for release builds
-  static const String _iosApiKey = String.fromEnvironment('REVENUECAT_IOS_KEY');
-  static const String _androidApiKey = String.fromEnvironment(
-    'REVENUECAT_ANDROID_KEY',
-  );
-
-  // Test Store Key (for automated testing only)
-  // Dashboard: Project Settings > Apps > Test Store
-  // WARNING: Test Store in production WILL crash!
-  static const String _testStoreKey = String.fromEnvironment(
-    'REVENUECAT_TEST_STORE_KEY',
-  );
-
-  // Use Test Store for automated testing (not device testing)
-  static const bool _useTestStore = bool.fromEnvironment(
-    'REVENUECAT_USE_TEST_STORE',
-  );
-
   static const String _entitlementId = 'pro';
 
   /// Check if current platform supports RevenueCat
@@ -74,15 +39,20 @@ class SubscriptionService implements ISubscriptionService {
   /// Get the appropriate API key based on platform and environment
   static String get _activeApiKey {
     // If Test Store is explicitly enabled and key is provided, use it
-    if (_useTestStore && _testStoreKey.isNotEmpty) {
-      return _testStoreKey;
+    if (AppConfig.useRevenueCatTestStore &&
+        AppConfig.revenueCatTestStoreKey.isNotEmpty) {
+      return AppConfig.revenueCatTestStoreKey;
     }
     // Otherwise use platform-specific production key
-    return Platform.isIOS ? _iosApiKey : _androidApiKey;
+    return Platform.isIOS
+        ? AppConfig.revenueCatIosKey
+        : AppConfig.revenueCatAndroidKey;
   }
 
   /// Check if using Test Store (for logging/debugging)
-  static bool get isUsingTestStore => _useTestStore && _testStoreKey.isNotEmpty;
+  static bool get isUsingTestStore =>
+      AppConfig.useRevenueCatTestStore &&
+      AppConfig.revenueCatTestStoreKey.isNotEmpty;
 
   bool _isInitialized = false;
 
@@ -365,8 +335,7 @@ class SubscriptionService implements ISubscriptionService {
     } on PlatformException catch (e) {
       // LOGOUT_CALLED_WITH_ANONYMOUS_USER is expected during delete account
       // flow where user may already be anonymous - not an error
-      if (e.code == '22' ||
-          e.message?.contains('anonymous') == true) {
+      if (e.code == '22' || e.message?.contains('anonymous') == true) {
         Log.info('RevenueCat: User already anonymous, skipping logout');
         await Log.clearUserId();
       } else {

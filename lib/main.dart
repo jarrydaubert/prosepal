@@ -13,6 +13,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'app/app.dart';
+import 'core/config/app_config.dart';
 import 'core/providers/providers.dart';
 import 'core/services/apple_auth_provider.dart';
 import 'core/services/auth_service.dart';
@@ -61,14 +62,21 @@ void main() async {
     providerApple: const AppleAppAttestProvider(),
   );
 
+  // Validate configuration early (throws in release if missing)
+  AppConfig.validate();
+
   // Initialize Supabase
-  try {
-    await Supabase.initialize(
-      url: 'https://mwoxtqxzunsjmbdqezif.supabase.co',
-      anonKey: 'sb_publishable_DJB3MvvHJRl-vuqrkn1-6w_hwTLnOaS',
-    );
-  } catch (e) {
-    Log.error('Supabase initialization failed', e);
+  if (AppConfig.hasSupabaseConfig) {
+    try {
+      await Supabase.initialize(
+        url: AppConfig.supabaseUrl,
+        anonKey: AppConfig.supabaseAnonKey,
+      );
+    } catch (e) {
+      Log.error('Supabase initialization failed', e);
+    }
+  } else {
+    Log.warning('Supabase skipped: configuration not provided');
   }
 
   // Initialize RevenueCat

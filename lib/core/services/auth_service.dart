@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../config/app_config.dart';
 import '../interfaces/apple_auth_provider.dart';
 import '../interfaces/auth_interface.dart';
 import '../interfaces/google_auth_provider.dart';
@@ -17,27 +18,10 @@ import 'log_service.dart';
 // ===========================================================================
 const _deepLinkScheme = 'com.prosepal.prosepal';
 
-// ===========================================================================
-// Google OAuth Client IDs - configured in Google Cloud Console
-// ===========================================================================
-// GOOGLE_WEB_CLIENT_ID: Web client ID, required for:
-//   - Android: ID token retrieval (if not using google-services.json)
-//   - Web: Browser-based OAuth flow
-//   - Backend: Token validation with Google's servers
-//
-// GOOGLE_IOS_CLIENT_ID: iOS client ID, required for:
-//   - iOS: Native Sign In With Google SDK
-//   - Set in GoogleService-Info.plist CLIENT_ID field
-//
-// Pass via dart-define: --dart-define=GOOGLE_WEB_CLIENT_ID=xxx
-// ===========================================================================
-const _googleWebClientId = String.fromEnvironment('GOOGLE_WEB_CLIENT_ID');
-const _googleIosClientId = String.fromEnvironment('GOOGLE_IOS_CLIENT_ID');
-
 /// Validates that required Google client IDs are configured.
 /// Returns true if Google Sign-In can work, false otherwise.
 bool _validateGoogleClientIds() {
-  if (_googleWebClientId.isEmpty) {
+  if (AppConfig.googleWebClientId.isEmpty) {
     Log.warning(
       'GOOGLE_WEB_CLIENT_ID not configured - Google Sign-In disabled',
       {'hint': 'Pass via --dart-define=GOOGLE_WEB_CLIENT_ID=xxx'},
@@ -101,8 +85,8 @@ class AuthService implements IAuthService {
     if (await _google.isAvailable()) {
       try {
         await _google.initialize(
-          serverClientId: _googleWebClientId,
-          clientId: _googleIosClientId,
+          serverClientId: AppConfig.googleWebClientId,
+          clientId: AppConfig.googleIosClientId,
         );
       } catch (e) {
         // Non-fatal: sign-in will still work, just slower on first attempt
@@ -229,11 +213,11 @@ class AuthService implements IAuthService {
           _supabase
               .exchangeAppleToken(authCode, accessToken: accessToken)
               .catchError((e) {
-            // Non-fatal: revocation will be skipped if exchange fails
-            Log.warning('Failed to exchange Apple authorization code', {
-              'error': '$e',
-            });
-          }),
+                // Non-fatal: revocation will be skipped if exchange fails
+                Log.warning('Failed to exchange Apple authorization code', {
+                  'error': '$e',
+                });
+              }),
         );
       }
 
@@ -264,8 +248,8 @@ class AuthService implements IAuthService {
     // Ensure initialized (no-op if already done at startup)
     if (!_providersInitialized) {
       await _google.initialize(
-        serverClientId: _googleWebClientId,
-        clientId: _googleIosClientId,
+        serverClientId: AppConfig.googleWebClientId,
+        clientId: AppConfig.googleIosClientId,
       );
     }
 
