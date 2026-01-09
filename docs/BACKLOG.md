@@ -27,6 +27,8 @@
 
 | Issue | Location | Fix |
 |-------|----------|-----|
+| Log parameter disclosure | `log_service.dart` | No PII filtering - raw data to Crashlytics (GDPR risk) |
+| Raw AI response in logs | `ai_service.dart:389` | User content logged - add truncation/hashing |
 | No root/jailbreak detection | App startup | Add SafetyNet/freeRASP for fraud prevention |
 | No E2E tests in CI | `.github/workflows/` | Tests exist in `integration_test/` but not in CI |
 | No app state restoration | Forms | Add RestorationMixin - form data lost on process death |
@@ -38,19 +40,17 @@
 
 | Issue | Location | Fix |
 |-------|----------|-----|
-| Missing CAPTCHA | `email_auth_screen.dart` | Add Turnstile/hCaptcha + Supabase config |
-| Prompt injection | `ai_service.dart:514-519` | User input directly in prompt |
+| Prompt injection | `ai_service.dart:514-519` | User input directly in prompt - add sanitization |
 | No input length validation | `ai_service.dart` | No character limit on recipientName/personalDetails |
+| Missing CAPTCHA | `email_auth_screen.dart` | Add Turnstile/hCaptcha + Supabase config |
+| String-based error detection | `auth_errors.dart:46-179` | Message matching as fallback |
+| No connectivity monitoring | App | No `connectivity_plus` - just error messages |
+| No circuit breakers | Network | Repeated failures don't trigger fallback |
 | Concurrent generation race | `generate_screen.dart:276` | Rapid taps before state update possible |
-| Raw JSON in logs | `ai_service.dart:389` | Logs full AI response |
 | Generic catch blocks | Throughout `/lib` | Many `catch (e)` lose exception type info |
 | Missing autoDispose | `providers.dart:251-279` | Form providers persist after screen disposal |
-| Log parameter disclosure | `log_service.dart` | No PII filtering - raw data to Crashlytics |
-| String-based error detection | `auth_errors.dart:46-179` | Message matching as fallback |
 | No Remote Config | App | Can't toggle features or kill switches remotely |
 | No health monitoring | Operations | No uptime monitoring for Supabase/Gemini |
-| No circuit breakers | Network | Repeated failures don't trigger fallback |
-| No connectivity monitoring | App | No `connectivity_plus` - just error messages |
 
 ---
 
