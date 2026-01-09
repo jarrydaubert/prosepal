@@ -66,7 +66,7 @@ lib/
 │   │
 │   ├── models/                   # Data models
 │   │   ├── models.dart           # Barrel export
-│   │   ├── occasion.dart         # Occasion enum with colors (45 occasions)
+│   │   ├── occasion.dart         # Occasion enum with colors (40 occasions)
 │   │   ├── relationship.dart     # Relationship enum
 │   │   ├── tone.dart             # Tone enum
 │   │   ├── message_length.dart   # MessageLength enum
@@ -123,8 +123,7 @@ lib/
 │   │   └── custom_paywall_screen.dart  # RevenueCat paywall
 │   │
 │   ├── onboarding/
-│   │   ├── onboarding_screen.dart
-│   │   └── biometric_setup_screen.dart
+│   │   └── onboarding_screen.dart
 │   │
 │   └── settings/
 │       ├── settings_screen.dart

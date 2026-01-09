@@ -33,7 +33,7 @@
 ///     j9_wizard_details_test.dart - Name/details customization
 ///     j10_results_actions_test.dart - Copy/share/regenerate
 ///   coverage/
-///     occasions_test.dart        - All 41 occasions load
+///     occasions_test.dart        - All 40 occasions load
 ///     relationships_test.dart    - All 14 relationships work
 ///     tones_test.dart            - All 6 tones work
 library;
@@ -110,7 +110,7 @@ void main() {
   // === COVERAGE TESTS ===
   // Bug: Specific option causes crash (edge cases)
 
-  // All 41 occasions load wizard without crash
+  // All 40 occasions load wizard without crash
   occasions.main();
 
   // All 14 relationships can be selected

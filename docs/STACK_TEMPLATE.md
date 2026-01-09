@@ -46,10 +46,8 @@ lib/
 │   ├── onboarding/           # First-run tutorial
 │   └── settings/             # Account, preferences, legal
 │
-└── shared/                   # Reusable UI (Atomic Design)
-    ├── atoms/                # Buttons, cards, icons
-    ├── molecules/            # Compound widgets
-    ├── organisms/            # Complex components
+└── shared/                   # Reusable UI
+    ├── components/           # Buttons, cards, indicators (flat)
     └── theme/                # Colors, typography, spacing
 ```
 

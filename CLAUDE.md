@@ -45,7 +45,7 @@ lib/
 ├── app/           # App shell, router
 ├── core/          # Services, models, providers, interfaces
 ├── features/      # Screens by feature (auth, home, generate, etc.)
-└── shared/        # Reusable UI (atoms, molecules, organisms, theme)
+└── shared/        # Reusable UI (components, theme)
 ```
 
 ## Documentation
@@ -55,7 +55,7 @@ lib/
 | `docs/ARCHITECTURE.md` | File map |
 | `docs/BACKLOG.md` | Remaining work |
 | `docs/LAUNCH_CHECKLIST.md` | Pre-launch tasks |
-| `docs/TEST_AUDIT.md` | Test coverage details |
+| `docs/TESTING.md` | Test coverage details |
 | `docs/SERVICE_ENDPOINTS.md` | SDK method coverage |
 
 ## Monetization
