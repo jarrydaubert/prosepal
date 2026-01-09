@@ -11,3 +11,4 @@ export 'mock_reauth_service.dart';
 export 'mock_supabase_auth_provider.dart'
     hide createFakeUser, createFakeSession;
 export 'mock_subscription_service.dart';
+export 'mock_history_service.dart';
