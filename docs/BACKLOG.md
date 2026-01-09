@@ -15,9 +15,7 @@
 
 ## CRITICAL
 
-| Issue | Location | Fix |
-|-------|----------|-----|
-| No force update mechanism | App startup | Can't force users off broken versions - add Remote Config |
+*All CRITICAL items resolved*
 
 ---
 

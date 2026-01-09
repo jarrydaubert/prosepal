@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -98,12 +99,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final prefs = ref.read(sharedPreferencesProvider);
     await prefs.setBool(_analyticsKey, value);
 
-    // Update Crashlytics collection setting
+    // Update both Analytics and Crashlytics collection
     try {
+      await FirebaseAnalytics.instance.setAnalyticsCollectionEnabled(value);
       await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(value);
       Log.info('Analytics collection ${value ? 'enabled' : 'disabled'}');
     } catch (e) {
-      Log.warning('Failed to update Crashlytics setting', {'error': '$e'});
+      Log.warning('Failed to update analytics settings', {'error': '$e'});
     }
 
     if (mounted) {
