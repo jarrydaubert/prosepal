@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:purchases_ui_flutter/purchases_ui_flutter.dart';
 
@@ -361,6 +362,16 @@ class SubscriptionService implements ISubscriptionService {
       await Purchases.logOut();
       await Log.clearUserId();
       Log.info('RevenueCat user logged out');
+    } on PlatformException catch (e) {
+      // LOGOUT_CALLED_WITH_ANONYMOUS_USER is expected during delete account
+      // flow where user may already be anonymous - not an error
+      if (e.code == '22' ||
+          e.message?.contains('anonymous') == true) {
+        Log.info('RevenueCat: User already anonymous, skipping logout');
+        await Log.clearUserId();
+      } else {
+        Log.error('Error logging out', e);
+      }
     } catch (e) {
       Log.error('Error logging out', e);
     }
