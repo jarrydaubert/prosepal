@@ -468,7 +468,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 Icons.chevron_right,
                 color: AppColors.textSecondary,
               ),
-              onTap: () => context.push('/auth?redirect=settings'),
+              onTap: () => context.push('/auth'),
             ),
           const SizedBox(height: 20),
 
