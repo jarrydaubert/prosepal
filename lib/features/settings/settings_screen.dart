@@ -13,6 +13,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/config/preference_keys.dart';
 import '../../core/interfaces/biometric_interface.dart';
 import '../../core/providers/providers.dart';
 import '../../core/services/log_service.dart';
@@ -41,8 +42,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _isRestoringPurchases = false;
   String _appVersion = '';
   bool _analyticsEnabled = true;
-
-  static const _analyticsKey = 'analytics_enabled';
 
   final InAppReview _inAppReview = InAppReview.instance;
 
@@ -89,7 +88,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   Future<void> _loadAnalyticsSetting() async {
     final prefs = ref.read(sharedPreferencesProvider);
-    final enabled = prefs.getBool(_analyticsKey) ?? true;
+    final enabled = prefs.getBool(PreferenceKeys.analyticsEnabled) ?? true;
     if (mounted) {
       setState(() => _analyticsEnabled = enabled);
     }
@@ -97,7 +96,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   Future<void> _toggleAnalytics(bool value) async {
     final prefs = ref.read(sharedPreferencesProvider);
-    await prefs.setBool(_analyticsKey, value);
+    await prefs.setBool(PreferenceKeys.analyticsEnabled, value);
 
     // Update both Analytics and Crashlytics collection
     try {
@@ -327,6 +326,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   Future<void> _exportData() async {
     Log.info('Export data started');
+    File? tempFile;
     try {
       final exportService = ref.read(dataExportServiceProvider);
       final jsonData = await exportService.exportUserData();
@@ -334,12 +334,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
       // Write to temp file
       final tempDir = await getTemporaryDirectory();
-      final file = File('${tempDir.path}/$filename');
-      await file.writeAsString(jsonData);
+      tempFile = File('${tempDir.path}/$filename');
+      await tempFile.writeAsString(jsonData);
 
       // Share the file
       await Share.shareXFiles(
-        [XFile(file.path)],
+        [XFile(tempFile.path)],
         subject: 'Prosepal Data Export',
       );
 
@@ -353,6 +353,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             behavior: SnackBarBehavior.floating,
           ),
         );
+      }
+    } finally {
+      // Clean up temp file
+      try {
+        if (tempFile != null && await tempFile.exists()) {
+          await tempFile.delete();
+        }
+      } catch (_) {
+        // Ignore cleanup errors
       }
     }
   }

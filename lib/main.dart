@@ -16,6 +16,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'app/app.dart';
 import 'app/router.dart';
 import 'core/config/app_config.dart';
+import 'core/config/preference_keys.dart';
 import 'core/providers/providers.dart';
 import 'core/services/apple_auth_provider.dart';
 import 'core/services/auth_service.dart';
@@ -69,7 +70,8 @@ Future<void> _initializeApp() async {
       // Apply user's analytics preference (GDPR consent)
       try {
         final prefs = await SharedPreferences.getInstance();
-        final analyticsEnabled = prefs.getBool('analytics_enabled') ?? true;
+        final analyticsEnabled =
+            prefs.getBool(PreferenceKeys.analyticsEnabled) ?? true;
         await FirebaseAnalytics.instance
             .setAnalyticsCollectionEnabled(analyticsEnabled);
         await FirebaseCrashlytics.instance
