@@ -66,18 +66,18 @@
 
 ### CRITICAL - Must Fix Before Launch
 
-| # | Issue | Location | Fix |
-|---|-------|----------|-----|
-| 1 | **API keys hardcoded** | `main.dart:67-68`, `firebase_options.dart` | Use `--dart-define` for Supabase URL/key (RevenueCat already does this) |
-| 2 | **Usage tracking bypass** | `usage_service.dart` | SharedPreferences unencrypted - rooted devices can reset. Use `flutter_secure_storage` |
-| 3 | **Rate limit fails open** | `rate_limit_service.dart:102-109` | Returns `allowed: true` on server error. Fix: fail closed (deny) + local fallback |
-| 4 | **No route guards** | `router.dart:24-102` | /generate, /paywall, /settings accessible via deep link without auth. Add redirect guard |
-| 5 | **Missing error boundary** | `app.dart` | No `ErrorWidget.builder` override - unhandled exceptions crash app |
-| 6 | **Non-blocking init failures** | `main.dart:38-84` | Firebase/Supabase/RC failures caught but app continues broken. Show error screen |
-| 7 | **RevenueCat listener leak** | `subscription_service.dart:307-316` | Listeners not tracked - memory grows unbounded. Track in Set for cleanup |
-| 8 | **Double-identify bug** | `app.dart:116`, `paywall`, `settings` | `identifyUser()` called in 4 places. Only call once on initial sign-in |
-| 9 | **Deep link scheme hijackable** | `auth_service.dart:18`, `AndroidManifest.xml` | Custom scheme can be intercepted. Migrate to HTTPS app links with domain verification |
-| 10 | **Apple token exchange race** | `auth_service.dart:221-238` | `unawaited()` - if app crashes, tokens can't be revoked on delete. Await or retry on resume |
+| # | Issue | Location | Status | Fix |
+|---|-------|----------|--------|-----|
+| 1 | **Supabase URL/key hardcoded** | `main.dart:67-68` | **CONFIRMED** | Use `--dart-define` like RevenueCat. Note: These ARE public keys by design, but consistency matters. |
+| 2 | **Rate limit fails open** | `rate_limit_service.dart:104` | **CONFIRMED** | Returns `allowed: true` on server error. Fix: fail closed + local fallback |
+| 3 | **No route guards** | `router.dart:24-102` | **CONFIRMED** | Deep links bypass auth. Add `redirect` guard to GoRouter |
+| 4 | **Non-blocking init failures** | `main.dart:38-84` | **CONFIRMED** | Firebase/Supabase/RC catch-and-continue. Show error screen if critical services fail |
+| 5 | **Deep link scheme hijackable** | `AndroidManifest.xml:35`, `Info.plist:73` | **CONFIRMED** | Custom scheme `com.prosepal.prosepal://` can be intercepted. Migrate to HTTPS App Links |
+| 6 | **Apple token exchange race** | `auth_service.dart:227-234` | **CONFIRMED** | `unawaited()` - if exchange fails, can't revoke on delete. Store authCode and retry |
+| 7 | **Missing error boundary** | `app.dart` | **PARTIAL** | Has Crashlytics but no user-friendly fallback UI. Add `ErrorWidget.builder` |
+| 8 | ~~Usage tracking bypass~~ | `usage_service.dart` | **FALSE** | Server-side `checkAndIncrementServerSide()` is enforced for auth users. Anonymous = 1 free anyway |
+| 9 | ~~RevenueCat listener leak~~ | `providers.dart:169,189` | **FALSE** | CustomerInfoNotifier properly adds/removes in constructor/dispose. Riverpod manages lifecycle |
+| 10 | ~~Double-identify bug~~ | Multiple files | **FALSE** | `Purchases.logIn()` is idempotent. Same userId = no-op. Doesn't create duplicate customers |
 
 ### HIGH - Fix Week 1 Post-Launch
 
@@ -157,6 +157,38 @@
 - Concurrent generation attempts
 - Auth state transitions during sensitive ops
 - Offline behavior with cached data
+
+---
+
+## External Dependency Resilience (Verified Risks)
+
+> Dependencies with confirmed deprecation timelines or breaking change potential.
+
+### Gemini Model - Action by May 2026
+
+| Item | Status | Action |
+|------|--------|--------|
+| `gemini-2.5-flash` shutdown | **June 2026** (confirmed) | Add model fallback list in `ai_config.dart` |
+| No fallback on model 404 | Missing | Catch `ModelNotFoundError`, try `gemini-2.5-flash-lite` then `gemini-3-flash` |
+| Model version not tracked | Missing | Add model name to analytics/logs for debugging |
+
+### Supabase Key Rotation - Monitor Throughout 2026
+
+| Item | Status | Action |
+|------|--------|--------|
+| Key format | ✅ Already using `sb_publishable_` | No action needed |
+| Rotation alerts | Missing | Subscribe to https://supabase.com/changelog |
+| Graceful auth failure | Missing | Show "maintenance" screen if auth fails, not crash |
+| Edge function JWT verification | Potential risk | If JWT secret rotates, edge functions reject requests |
+
+### App Resilience (Recommended)
+
+| Item | Priority | Action |
+|------|----------|--------|
+| Force update capability | P2 | Add Firebase Remote Config with `min_app_version` check on startup |
+| Maintenance mode UI | P2 | Remote-triggerable "under maintenance" screen |
+| Offline banner | P3 | Show connectivity status when offline |
+| Health check endpoint | P3 | Edge function to verify all services operational |
 
 ---
 
