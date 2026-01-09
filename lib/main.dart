@@ -133,6 +133,7 @@ Future<void> _initializeApp() async {
 
   // Validate configuration early (throws in release if missing)
   AppConfig.validate();
+  AppConfig.assertNoTestStoreInRelease();
 
   // Initialize Supabase (critical for auth and data)
   if (AppConfig.hasSupabaseConfig) {

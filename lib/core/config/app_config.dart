@@ -58,9 +58,18 @@ abstract final class AppConfig {
   );
 
   /// Whether to use Test Store (for automated testing)
+  /// WARNING: Test Store will crash in production - safeguard below
   static const bool useRevenueCatTestStore = bool.fromEnvironment(
     'REVENUECAT_USE_TEST_STORE',
   );
+
+  /// Safeguard: Prevent test store in release builds
+  static void assertNoTestStoreInRelease() {
+    assert(
+      !kReleaseMode || !useRevenueCatTestStore,
+      'FATAL: Test Store cannot be used in release builds!',
+    );
+  }
 
   // ===========================================================================
   // Google Sign-In Configuration
