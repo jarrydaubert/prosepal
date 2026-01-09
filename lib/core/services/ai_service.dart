@@ -10,6 +10,7 @@ import 'package:uuid/uuid.dart';
 import '../config/ai_config.dart';
 import '../models/models.dart';
 import 'log_service.dart';
+import 'remote_config_service.dart';
 
 /// Exception types for AI service errors
 /// Base exception for AI service errors
@@ -101,6 +102,7 @@ class AiService {
   AiService();
 
   GenerativeModel? _model;
+  String? _currentModelName;
   final _uuid = const Uuid();
   final _random = Random();
 
@@ -298,9 +300,28 @@ class AiService {
     ),
   ];
 
+  /// Get current model name from Remote Config (with fallback to default)
+  String get _modelName => RemoteConfigService.instance.aiModel;
+
+  /// Get fallback model name from Remote Config
+  String get _fallbackModelName => RemoteConfigService.instance.aiModelFallback;
+
   GenerativeModel get model {
-    _model ??= FirebaseAI.googleAI().generativeModel(
-      model: AiConfig.model,
+    final modelName = _modelName;
+
+    // Recreate model if name changed (Remote Config updated)
+    if (_model == null || _currentModelName != modelName) {
+      _currentModelName = modelName;
+      _model = _createModel(modelName);
+      Log.info('AI model initialized', {'model': modelName});
+    }
+    return _model!;
+  }
+
+  /// Create a GenerativeModel with the given model name
+  GenerativeModel _createModel(String modelName) {
+    return FirebaseAI.googleAI().generativeModel(
+      model: modelName,
       generationConfig: GenerationConfig(
         temperature: AiConfig.temperature,
         topK: AiConfig.topK,
@@ -312,7 +333,21 @@ class AiService {
       safetySettings: _safetySettings,
       systemInstruction: Content.system(AiConfig.systemInstruction),
     );
-    return _model!;
+  }
+
+  /// Switch to fallback model (call after primary model fails with 404)
+  /// TODO: Wire up in error handling when model 404 is detected
+  @visibleForTesting
+  void switchToFallback() {
+    final fallback = _fallbackModelName;
+    if (_currentModelName != fallback) {
+      Log.warning('Switching to fallback AI model', {
+        'from': _currentModelName,
+        'to': fallback,
+      });
+      _currentModelName = fallback;
+      _model = _createModel(fallback);
+    }
   }
 
   /// Generate messages with proper error handling and retry logic
@@ -444,7 +479,7 @@ class AiService {
 
       Log.info('AI generation success', {
         'messageCount': messages.length,
-        'model': AiConfig.model,
+        'model': _currentModelName,
       });
 
       return GenerationResult(

@@ -25,7 +25,7 @@ import 'core/services/init_service.dart';
 import 'core/services/log_service.dart';
 import 'core/services/review_service.dart';
 import 'core/services/device_security_service.dart';
-import 'core/services/force_update_service.dart';
+import 'core/services/remote_config_service.dart';
 import 'core/services/subscription_service.dart';
 import 'core/services/supabase_auth_provider.dart';
 import 'features/error/force_update_screen.dart';
@@ -97,21 +97,22 @@ Future<void> _initializeApp() async {
       Log.warning('Firebase App Check activation failed', {'error': '$e'});
     }
 
-    // Check for force update (only in release mode, requires Firebase)
+    // Initialize Remote Config (for AI model, force update, feature flags)
+    // Also handles force update check in release mode
     if (!kDebugMode) {
       try {
-        final forceUpdateService = ForceUpdateService();
-        await forceUpdateService.initialize();
-        final updateStatus = await forceUpdateService.checkForUpdate();
+        final remoteConfig = RemoteConfigService.instance;
+        await remoteConfig.initialize();
 
-        if (updateStatus == UpdateStatus.forceUpdateRequired) {
+        // Check for force update
+        if (await remoteConfig.isUpdateRequired()) {
           Log.warning('Force update required - blocking app');
           FlutterNativeSplash.remove();
-          runApp(ForceUpdateScreen(storeUrl: forceUpdateService.storeUrl));
+          runApp(ForceUpdateScreen(storeUrl: remoteConfig.storeUrl));
           return;
         }
       } catch (e) {
-        Log.warning('Force update check failed', {'error': '$e'});
+        Log.warning('Remote Config init failed', {'error': '$e'});
         // Continue - fail open
       }
 

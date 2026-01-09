@@ -132,9 +132,9 @@
 
 | Item | Action |
 |------|--------|
-| Model name hardcoded | Fetch from Firebase Remote Config - allows switching models without app update |
-| No fallback on model 404 | Catch error, try fallback models from Remote Config list |
-| `gemini-2.5-flash` deprecation | Monitor Google announcements, update Remote Config when needed |
+| ~~Model name hardcoded~~ | DONE - RemoteConfigService fetches `ai_model` from Remote Config |
+| Wire up model 404 fallback | `ai_service.dart:339` - Call `switchToFallback()` when model returns 404 |
+| `gemini-2.0-flash` deprecation | Monitor Google announcements, update Remote Config when needed |
 
 ### Supabase - Monitor 2026
 
