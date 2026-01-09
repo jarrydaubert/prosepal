@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -88,7 +89,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final isLoggedIn = ref.read(authServiceProvider).isLoggedIn;
     if (!isLoggedIn) {
       // Push auth without redirect - it will pop back here on success
-      context.push('/auth');
+      unawaited(context.push('/auth'));
       return;
     }
 
@@ -126,9 +127,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       if (mounted) {
         final isNetworkError =
             e.code == 'NETWORK_ERROR' ||
-            e.message?.toLowerCase().contains('network') == true ||
-            e.message?.toLowerCase().contains('internet') == true ||
-            e.message?.toLowerCase().contains('offline') == true;
+            (e.message?.toLowerCase().contains('network') ?? false) ||
+            (e.message?.toLowerCase().contains('internet') ?? false) ||
+            (e.message?.toLowerCase().contains('offline') ?? false);
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
