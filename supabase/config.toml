@@ -1,0 +1,12 @@
+# Supabase Edge Functions Configuration
+# https://supabase.com/docs/guides/functions/config
+
+# Disable platform-level JWT verification for functions that handle auth internally.
+# These functions verify users via auth.getUser() with the passed Bearer token,
+# making the platform check redundant.
+
+[functions.delete-user]
+verify_jwt = false
+
+[functions.exchange-apple-token]
+verify_jwt = false
