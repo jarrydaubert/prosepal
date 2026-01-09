@@ -30,9 +30,6 @@
 
 | Issue | Location | Fix |
 |-------|----------|-----|
-| Full prompt logged with PII | `ai_service.dart:343` | Mask personalDetails before logging |
-| Raw AI response in logs | `ai_service.dart:388-389` | Log status only, not content |
-| Log parameter disclosure | `log_service.dart` | No PII filtering - raw data to Crashlytics |
 | Paywall bypasses service interface | `custom_paywall_screen.dart` | Calls SDK directly - can't mock/test purchase flow |
 | Subscription service 21% coverage | `subscription_service.dart` | Revenue-critical, needs more tests |
 | Auth providers 0% coverage | `*_auth_provider.dart` | 86 lines untested auth flow |
