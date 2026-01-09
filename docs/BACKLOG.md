@@ -1,6 +1,6 @@
 # Backlog
 
-> **Note:** This file contains only outstanding TODO items. Completed work is tracked in git history, not here. Keep this file clean - remove items when done.
+> Outstanding TODO items only. Completed work tracked in git history.
 
 ---
 
@@ -8,69 +8,84 @@
 
 | Item | Action |
 |------|--------|
-| App Store ID | Add to `review_service.dart` and `settings_screen.dart` after App Store approval. Find in App Store Connect > App Information > Apple ID (numeric). |
+| App Store ID | Add to `review_service.dart` and `settings_screen.dart` after approval |
+| Supabase leaked password protection | Enable toggle in Dashboard > Auth (requires paid plan) |
 
 ---
 
-## Operational & Compliance Gaps (Verified)
+## CRITICAL
 
-> Beyond code issues - operational, compliance, and resilience gaps.
-
-### Critical - Pre-Launch Assessment
-
-| Gap | Category | Status | Notes |
-|-----|----------|--------|-------|
-| No data export | Compliance | **CONFIRMED** | GDPR/CCPA right to portability. Need export button in settings |
-| No analytics consent toggle | Compliance | **CONFIRMED** | Privacy policy mentions opt-out but no actual toggle exists |
-| Deep links hijackable | Security | **CONFIRMED** | Already in code audit - custom scheme can be intercepted |
-| No force update mechanism | Operations | **CONFIRMED** | Can't force users off broken versions. Need Remote Config |
-| No SSL certificate pinning | Security | **NOT FOUND** | No pinning configured. Consider for banking-level security apps |
-| Offline Pro users locked out | Resilience | **CONFIRMED** | Already in code audit - no local cache of pro status |
-| No database backups documented | Operations | **CONFIRMED** | No backup/recovery docs. Supabase handles auto-backups but undocumented |
-
-### High - Week 1 Post-Launch
-
-| Gap | Category | Status | Notes |
-|-----|----------|--------|-------|
-| No root/jailbreak detection | Security | **CONFIRMED** | No SafetyNet/freeRASP. Consider for fraud prevention |
-| No timeouts on Supabase calls | Resilience | **CONFIRMED** | AI has 30s timeout, but auth/usage calls don't |
-| No E2E tests in CI | Testing | **CONFIRMED** | Tests exist in `integration_test/` but not in CI workflow |
-| No error boundary UI | UX | **CONFIRMED** | Already in code audit - crashes show red screen |
-| No app state restoration | UX | **CONFIRMED** | No RestorationMixin. Form data lost on process death |
-| History stored unencrypted | Security | **CONFIRMED** | SharedPreferences - user messages readable on rooted devices |
-| Privacy policy accuracy | Compliance | **NEEDS REVIEW** | Should verify policy matches actual data practices |
-
-### Medium - v1.1
-
-| Gap | Category | Status | Notes |
-|-----|----------|--------|-------|
-| No Remote Config / feature flags | Operations | **CONFIRMED** | Can't toggle features or kill switches remotely |
-| No health monitoring / alerting | Operations | **VALID** | No uptime monitoring for Supabase/Gemini |
-| No circuit breakers | Resilience | **VALID** | Repeated failures don't trigger fallback |
-| No connectivity monitoring | Resilience | **CONFIRMED** | No `connectivity_plus` - just error messages |
-| No visual regression tests | Testing | **VALID** | No golden tests |
-| No performance tests | Testing | **VALID** | No load/stress tests |
-| No accessibility test suite | Testing | **VALID** | No a11y automation |
-| No localization infrastructure | i18n | **CONFIRMED** | No .arb files or l10n setup |
+| Issue | Location | Fix |
+|-------|----------|-----|
+| No data export | Settings | GDPR/CCPA right to portability - add export button |
+| No analytics consent toggle | Settings | Privacy policy mentions opt-out but no toggle exists |
+| No force update mechanism | App startup | Can't force users off broken versions - add Remote Config |
 
 ---
 
-## P3 - Compliance (v1.1)
+## HIGH
+
+| Issue | Location | Fix |
+|-------|----------|-----|
+| No root/jailbreak detection | App startup | Add SafetyNet/freeRASP for fraud prevention |
+| No E2E tests in CI | `.github/workflows/` | Tests exist in `integration_test/` but not in CI |
+| No app state restoration | Forms | Add RestorationMixin - form data lost on process death |
+| Privacy policy accuracy | Legal | Verify policy matches actual data practices |
+
+---
+
+## MEDIUM
+
+| Issue | Location | Fix |
+|-------|----------|-----|
+| Missing CAPTCHA | `email_auth_screen.dart` | Add Turnstile/hCaptcha + Supabase config |
+| Prompt injection | `ai_service.dart:514-519` | User input directly in prompt |
+| No input length validation | `ai_service.dart` | No character limit on recipientName/personalDetails |
+| Concurrent generation race | `generate_screen.dart:276` | Rapid taps before state update possible |
+| Raw JSON in logs | `ai_service.dart:389` | Logs full AI response |
+| Generic catch blocks | Throughout `/lib` | Many `catch (e)` lose exception type info |
+| Missing autoDispose | `providers.dart:251-279` | Form providers persist after screen disposal |
+| Log parameter disclosure | `log_service.dart` | No PII filtering - raw data to Crashlytics |
+| String-based error detection | `auth_errors.dart:46-179` | Message matching as fallback |
+| No Remote Config | App | Can't toggle features or kill switches remotely |
+| No health monitoring | Operations | No uptime monitoring for Supabase/Gemini |
+| No circuit breakers | Network | Repeated failures don't trigger fallback |
+| No connectivity monitoring | App | No `connectivity_plus` - just error messages |
+
+---
+
+## LOW
+
+| Issue | Location | Fix |
+|-------|----------|-----|
+| Missing Google nonce | `auth_service.dart` | Native SDK has built-in protections |
+| No StoreKit2 config | `subscription_service.dart` | Add `usesStoreKit2IfAvailable: true` |
+| No deferred purchase handling | `subscription_service.dart` | Handle iOS parental controls |
+| StateNotifier legacy API | `providers.dart` | Migrate to Notifier/AsyncNotifier |
+| Form state in 6 providers | `providers.dart:251-279` | Consolidate to single NotifierProvider |
+| No offline detection | AI service | Check connectivity before generation |
+| AI model not singleton | `ai_service.dart` | Enforce singleton pattern |
+| No SSL certificate pinning | Network | Consider for banking-level security |
+| No visual regression tests | Testing | Add golden tests |
+| No performance tests | Testing | Add load/stress tests |
+| No accessibility test suite | Testing | Add a11y automation |
+
+---
+
+## Compliance (v1.1)
 
 | Item | Notes |
 |------|-------|
-| Data export feature | GDPR right to portability |
-| Analytics opt-out | Settings toggle |
 | Apple Privacy Labels | Fill in App Store Connect |
-| Cross-platform subscription docs | Add FAQ/Terms note: subscriptions are per-store (iOS/Android separate) |
+| Cross-platform subscription docs | Add FAQ note: subscriptions are per-store |
 
 ---
 
-## P4 - Localization & Accessibility
+## Localization
 
 | Item | Location |
 |------|----------|
-| Results screen | `results_screen.dart` - Extract strings to .arb |
+| Results screen | `results_screen.dart` - Extract to .arb |
 | Auth screens | `auth_screen.dart`, `email_auth_screen.dart` |
 | Paywall | `custom_paywall_screen.dart` |
 | Settings | `settings_screen.dart` |
@@ -78,12 +93,10 @@
 
 ---
 
-## P5 - v1.1 Features
-
-### Core Features
+## v1.1 Features
 
 - Regeneration option ("Generate More")
-- History multi-select (select all/individual, batch delete)
+- History multi-select and batch delete
 - Feedback (thumbs up/down per message)
 - Occasion search/filter
 - More tones (Sarcastic, Nostalgic, Poetic)
@@ -92,115 +105,30 @@
 
 ---
 
-## P7 - MRR-Gated Experiments
-
-> Only explore these once revenue justifies the increased server costs.
-
-| Item | Trigger | Notes |
-|------|---------|-------|
-| Increase free tier to 3 lifetime | MRR > $5k | More engagement opportunities, better retention for users not ready to pay. Trade-off: slower conversion, higher Gemini API costs |
-| 1 free/month for churned users | MRR > $10k | Win-back campaign - let lapsed users try again |
-
----
-
-## Architecture Audit (Gold Standard Fixes)
-
-> Combined deep audit findings. Fix before cloning as template.
-
-### CRITICAL - Must Fix Before Launch
-
-| Issue | Location | Fix |
-|-------|----------|-----|
-| Supabase leaked password protection | Supabase Dashboard > Auth | Enable "Leaked password protection" toggle (requires paid plan) |
-
-### HIGH - Fix Week 1 Post-Launch
-
-*No HIGH items remaining*
-
-### MEDIUM - Fix Weeks 2-3
-
-| Issue | Location | Fix |
-|-------|----------|-----|
-| Missing CAPTCHA | `email_auth_screen.dart` | Add Turnstile/hCaptcha widget + Supabase config (defense-in-depth) |
-| Prompt injection | `ai_service.dart:514-519` | User input directly in prompt. Low impact for greeting cards |
-| No input length validation | `ai_service.dart` | No character limit on recipientName/personalDetails |
-| Concurrent generation race | `generate_screen.dart:276` | UI disables button, but rapid taps before state update possible |
-| Raw JSON in logs | `ai_service.dart:389` | `Log.info('AI raw response: $jsonText')` logs full response |
-| Generic catch blocks | Throughout `/lib` | Many `catch (e)` lose exception type info |
-| Missing autoDispose | `providers.dart:251-279` | Form providers persist after screen disposal |
-| Log parameter disclosure | `log_service.dart` | No PII filtering - raw data passed to Crashlytics |
-| String-based error detection | `auth_errors.dart:46-179` | Uses statusCode first (good), but message matching as fallback |
-
-### LOW - Post-Launch Polish
-
-| Issue | Location | Fix |
-|-------|----------|-----|
-| Missing Google nonce | `auth_service.dart` | Native SDK has built-in replay protections |
-| No StoreKit2 config | `subscription_service.dart` | Add `usesStoreKit2IfAvailable: true` for modern iOS |
-| No deferred purchase handling | `subscription_service.dart` | Handle iOS parental controls |
-| StateNotifier legacy API | `providers.dart` | Migrate to Notifier/AsyncNotifier (Riverpod 3.x modern) |
-| Form state in 6 providers | `providers.dart:251-279` | Consolidate to single NotifierProvider<FormState> |
-| No offline detection | AI service | Check connectivity before generation |
-| AI model not singleton | `ai_service.dart` | Multiple instances possible via Provider. Enforce singleton |
-
-### What's Already Good (Preserve These!)
-
-| Pattern | Location | Why |
-|---------|----------|-----|
-| Server-side usage enforcement | `usage_service.dart` | RPC with RLS prevents client tampering |
-| AI error classification + retry | `ai_service.dart` | Typed exceptions, exponential backoff with jitter |
-| Service/Interface pattern | `core/interfaces/` | Clean DI, testable via overrides |
-| Device fingerprinting | `device_fingerprint_service.dart` | Prevents free tier reinstall abuse |
-| Privacy screen on background | `app.dart` | Prevents app switcher screenshots |
-| Biometric lock with timeout | `app.dart`, `reauth_service.dart` | Security without annoying users |
-| Apple token exchange | `supabase_auth_provider.dart` | Required for account deletion compliance |
-| Test Store blocked in release | `subscription_service.dart` | Prevents production crash |
-| syncPurchases on init | `subscription_service.dart` | Restores subscriptions after reinstall |
-| App Check enabled | `main.dart` | Firebase attestation |
-| HTTPS-only enforced | Network config | Both platforms |
-| Centralized logging | `log_service.dart` | Crashlytics integration |
-
-### Testing Gaps to Address
-
-- Listener memory leak scenarios
-- Prompt injection attempts
-- Route guard bypass via deep links
-- Network failure recovery paths
-- Concurrent generation attempts
-- Auth state transitions during sensitive ops
-- Offline behavior with cached data
-
----
-
-## External Dependency Resilience (Verified Risks)
-
-> Dependencies with confirmed deprecation timelines or breaking change potential.
+## External Dependencies
 
 ### Gemini Model - Action by May 2026
 
-| Item | Status | Action |
-|------|--------|--------|
-| `gemini-2.5-flash` shutdown | **June 2026** (confirmed) | Add model fallback list in `ai_config.dart` |
-| No fallback on model 404 | Missing | Catch `ModelNotFoundError`, try `gemini-2.5-flash-lite` then `gemini-3-flash` |
-| Model version not tracked | Missing | Add model name to analytics/logs for debugging |
+| Item | Action |
+|------|--------|
+| `gemini-2.5-flash` shutdown June 2026 | Add model fallback list in `ai_config.dart` |
+| No fallback on model 404 | Catch error, try `gemini-2.5-flash-lite` then `gemini-3-flash` |
 
-### Supabase Key Rotation - Monitor Throughout 2026
+### Supabase - Monitor 2026
 
-| Item | Status | Action |
-|------|--------|--------|
-| Key format | ✅ Already using `sb_publishable_` | No action needed |
-| Rotation alerts | Missing | Subscribe to https://supabase.com/changelog |
-| Graceful auth failure | Missing | Show "maintenance" screen if auth fails, not crash |
-| Edge function JWT verification | Potential risk | If JWT secret rotates, edge functions reject requests |
+| Item | Action |
+|------|--------|
+| Key rotation alerts | Subscribe to supabase.com/changelog |
+| Graceful auth failure | Show "maintenance" screen, not crash |
 
-### App Resilience (Recommended)
+---
 
-| Item | Priority | Action |
-|------|----------|--------|
-| Force update capability | P2 | Add Firebase Remote Config with `min_app_version` check on startup |
-| Maintenance mode UI | P2 | Remote-triggerable "under maintenance" screen |
-| Offline banner | P3 | Show connectivity status when offline |
-| Health check endpoint | P3 | Edge function to verify all services operational |
+## MRR-Gated Experiments
+
+| Item | Trigger | Notes |
+|------|---------|-------|
+| Increase free tier to 3 lifetime | MRR > $5k | Better retention, higher API costs |
+| 1 free/month for churned users | MRR > $10k | Win-back campaign |
 
 ---
 
@@ -208,7 +136,7 @@
 
 | Item | Notes |
 |------|-------|
-| Simplify auth screen navigation | Remove `redirectTo` params - just `pop()` on dismiss and let calling screens react to auth state changes |
+| Simplify auth navigation | Remove `redirectTo` params - just `pop()` on dismiss |
 
 ---
 
@@ -217,36 +145,35 @@
 | Issue | Severity |
 |-------|----------|
 | Supabase session persists in Keychain | Low |
-| No offline banner | Low |
 | Android: OnBackInvokedCallback not enabled | Low |
 
 ---
 
-## P6 - SEO Content Strategy (Post-Launch)
+## What's Already Good (Preserve)
 
-> Wait until app is live and has reviews. Focus on App Store ASO first.
-
-### Tier 1 - Low Difficulty, High Volume
-| Keyword | Volume | Difficulty | Action |
-|---------|--------|------------|--------|
-| sympathy messages | 135K | 27% | Create `/messages/sympathy` landing page |
-| condolence messages | 60K | 23% | Bundle with sympathy page |
-
-### Tier 2 - Medium Difficulty
-| Keyword | Volume | Difficulty | Action |
-|---------|--------|------------|--------|
-| happy birthday wishes | 368K | 57% | Create `/messages/birthday` page |
-| congratulations messages | 135K | 48% | Create `/messages/congratulations` page |
-| thank you notes | 110K | 45% | Create `/messages/thank-you` page |
-
-### Content Ideas
-- "50 Sympathy Card Messages That Actually Help"
-- "What to Write in a Wedding Card (With Examples)"
-- "Birthday Wishes for Every Relationship"
+| Pattern | Location |
+|---------|----------|
+| Server-side usage enforcement (RPC + RLS) | `usage_service.dart` |
+| AI error classification + retry | `ai_service.dart` |
+| Service/Interface pattern | `core/interfaces/` |
+| Device fingerprinting | `device_fingerprint_service.dart` |
+| Privacy screen on background | `app.dart` |
+| Biometric lock with timeout | `app.dart`, `reauth_service.dart` |
+| Apple token exchange | `supabase_auth_provider.dart` |
+| Test Store blocked in release | `subscription_service.dart` |
+| syncPurchases on init | `subscription_service.dart` |
+| App Check enabled | `main.dart` |
+| HTTPS-only enforced | Network config |
+| Centralized logging | `log_service.dart` |
+| 30s timeout on network calls | Auth/Supabase services |
+| Encrypted secure storage | Biometric pref, history |
+| HTTPS Universal/App Links | Deep link security |
+| Global sign-out | All sessions invalidated |
+| Rate limiting (fail-closed) | Client + server |
 
 ---
 
-## P8 - Future Expansion
+## Future Expansion
 
 | Initiative | Reference |
 |------------|-----------|
