@@ -269,7 +269,7 @@ class UsageService {
       }
 
       return UsageCheckResult(allowed: true, remaining: remaining);
-    } catch (e) {
+    } on PostgrestException catch (e) {
       Log.error('Server-side usage check failed', e);
       throw UsageCheckException(
         'Unable to verify usage. Please check your connection.',
@@ -339,7 +339,7 @@ class UsageService {
         'totalCount': totalCount,
         'monthlyCount': monthlyCount,
       });
-    } catch (e) {
+    } on PostgrestException catch (e) {
       // Log but don't fail - local cache is still accurate
       Log.error('Failed to sync usage to server', e);
     }
@@ -422,7 +422,7 @@ class UsageService {
 
       // Mark this user as synced
       await _prefs.setString(_keyLastSyncUserId, userId);
-    } catch (e) {
+    } on PostgrestException catch (e) {
       Log.error('Failed to sync usage from server', e);
       // Continue with local cache - better than blocking
     }
