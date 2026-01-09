@@ -11,10 +11,10 @@
 abstract final class AiConfig {
   /// Default Gemini model (used if Remote Config unavailable)
   /// See: https://firebase.google.com/docs/ai-logic/models
-  static const String defaultModel = 'gemini-2.0-flash';
+  static const String defaultModel = 'gemini-2.5-flash';
 
   /// Fallback model if primary fails (404, deprecated, etc.)
-  static const String defaultFallbackModel = 'gemini-2.0-flash-lite';
+  static const String defaultFallbackModel = 'gemini-2.0-flash';
 
   /// @deprecated Use RemoteConfigService.instance.aiModel instead
   /// Kept for backward compatibility during migration
