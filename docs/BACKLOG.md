@@ -117,10 +117,9 @@
 
 | Issue | Location | Fix |
 |-------|----------|-----|
-| Provider init race | `providers.dart:167-174` | Async fetch could overwrite fresher listener data |
-| Missing Google nonce | `auth_service.dart:253-301` | Apple has nonce, Google doesn't. Add for replay protection |
-| Missing CAPTCHA | `email_auth_screen.dart` | Interface supports captchaToken but not implemented |
-| Unencrypted biometric pref | `biometric_service.dart:96-105` | SharedPreferences can be modified. Use flutter_secure_storage |
+| Missing Google nonce | `auth_service.dart` | Native SDK has built-in protections; lower priority |
+| Missing CAPTCHA | `email_auth_screen.dart` | Add Turnstile/hCaptcha widget + Supabase config |
+| Unencrypted biometric pref | `biometric_service.dart` | Add flutter_secure_storage dependency |
 
 ### MEDIUM - Fix Weeks 2-3
 
