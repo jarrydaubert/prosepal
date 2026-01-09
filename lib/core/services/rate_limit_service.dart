@@ -3,15 +3,18 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'device_fingerprint_service.dart';
 import 'log_service.dart';
 
-/// Service for server-side rate limiting.
+/// Service for rate limiting with server-side + local fallback.
 ///
 /// Prevents API abuse by tracking request frequency per user and device.
-/// Uses Supabase RPC function `check_rate_limit` which implements sliding
-/// window rate limiting.
+/// Uses Supabase RPC function `check_rate_limit` with sliding window.
 ///
-/// ## Rate Limits (configurable in database)
-/// - User: 20 requests/minute
-/// - Device: 30 requests/minute
+/// ## Security Model: Fail Closed
+/// If server check fails, falls back to local rate limiting rather than
+/// allowing unlimited requests. This prevents abuse when server is down.
+///
+/// ## Rate Limits
+/// - Server-side: 20 requests/minute per user, 30/minute per device
+/// - Local fallback: 10 requests/minute (conservative)
 ///
 /// ## Usage
 /// ```dart
@@ -25,6 +28,11 @@ class RateLimitService {
   RateLimitService(this._deviceFingerprint);
 
   final DeviceFingerprintService _deviceFingerprint;
+
+  // Local rate limiting fallback (in-memory)
+  final List<DateTime> _localRequestTimestamps = [];
+  static const _localWindowDuration = Duration(minutes: 1);
+  static const _localMaxRequests = 10; // Conservative fallback limit
 
   /// Get Supabase client (may be null if not initialized)
   SupabaseClient? get _supabase {
@@ -48,24 +56,25 @@ class RateLimitService {
   /// - [retryAfter]: seconds until rate limit resets (if blocked)
   /// - [reason]: why request was blocked (if blocked)
   ///
-  /// Graceful degradation: Returns allowed=true if server check fails.
+  /// Fail closed: Uses local fallback if server check fails.
   Future<RateLimitResult> checkRateLimit({
     String endpoint = 'generation',
   }) async {
     final supabase = _supabase;
 
+    // No server available - use local fallback (fail closed)
     if (supabase == null) {
-      Log.warning('Rate limit check skipped: Supabase not initialized');
-      return const RateLimitResult(allowed: true);
+      Log.warning('Rate limit using local fallback: Supabase not initialized');
+      return _checkLocalRateLimit();
     }
 
     final userId = _userId;
     final deviceFingerprint = await _deviceFingerprint.getDeviceFingerprint();
 
-    // If we have neither user nor device, allow (can't track)
+    // No identifier available - use local fallback (fail closed)
     if (userId == null && deviceFingerprint == null) {
-      Log.warning('Rate limit check skipped: no identifier available');
-      return const RateLimitResult(allowed: true);
+      Log.warning('Rate limit using local fallback: no identifier available');
+      return _checkLocalRateLimit();
     }
 
     try {
@@ -100,13 +109,62 @@ class RateLimitService {
 
       return const RateLimitResult(allowed: true);
     } catch (e) {
-      Log.error('Rate limit check failed', e);
-      // Graceful degradation - allow on error
-      return const RateLimitResult(
-        allowed: true,
-        reason: RateLimitReason.serverError,
+      Log.error('Rate limit check failed, using local fallback', e);
+      // Fail closed with local fallback - don't allow unlimited on server error
+      return _checkLocalRateLimit();
+    }
+  }
+
+  /// Local rate limiting fallback when server is unavailable.
+  ///
+  /// Uses a simple sliding window counter in memory.
+  /// More conservative than server limits to prevent abuse.
+  RateLimitResult _checkLocalRateLimit() {
+    final now = DateTime.now();
+    final windowStart = now.subtract(_localWindowDuration);
+
+    // Remove expired timestamps
+    _localRequestTimestamps.removeWhere((ts) => ts.isBefore(windowStart));
+
+    // Check if within limit
+    if (_localRequestTimestamps.length >= _localMaxRequests) {
+      // Calculate retry time based on oldest request in window
+      final oldestInWindow = _localRequestTimestamps.first;
+      final retryAfter = oldestInWindow
+          .add(_localWindowDuration)
+          .difference(now)
+          .inSeconds;
+
+      Log.warning('Local rate limit exceeded', {
+        'requestsInWindow': _localRequestTimestamps.length,
+        'maxRequests': _localMaxRequests,
+        'retryAfter': retryAfter,
+      });
+
+      return RateLimitResult(
+        allowed: false,
+        retryAfter: retryAfter > 0 ? retryAfter : 1,
+        reason: RateLimitReason.localFallback,
       );
     }
+
+    // Record this request
+    _localRequestTimestamps.add(now);
+
+    Log.info('Local rate limit check passed', {
+      'requestsInWindow': _localRequestTimestamps.length,
+      'maxRequests': _localMaxRequests,
+    });
+
+    return const RateLimitResult(
+      allowed: true,
+      reason: RateLimitReason.localFallback,
+    );
+  }
+
+  /// Clear local rate limit history (for testing)
+  void clearLocalHistory() {
+    _localRequestTimestamps.clear();
   }
 
   RateLimitReason? _parseReason(String? reason) {
@@ -157,7 +215,7 @@ class RateLimitResult {
       'RateLimitResult(allowed: $allowed, retryAfter: $retryAfter, reason: $reason)';
 }
 
-/// Reasons for rate limit denial
+/// Reasons for rate limit status
 enum RateLimitReason {
   /// Per-user rate limit exceeded
   userLimit,
@@ -171,8 +229,8 @@ enum RateLimitReason {
   /// Global rate limit exceeded (emergency brake)
   globalLimit,
 
-  /// Server error during check
-  serverError,
+  /// Using local fallback (server unavailable)
+  localFallback,
 
   /// Unknown reason
   unknown,
