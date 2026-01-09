@@ -61,6 +61,8 @@
 
 | Issue | Location | Fix |
 |-------|----------|-----|
+| No timeout on splash Pro check | `router.dart:244` | Add timeout with fallback to prevent hang on slow network |
+| No notification on bio auto-disable | `router.dart:200` | Show toast when biometrics unavailable and auto-disabled |
 | Missing Google nonce | `auth_service.dart` | Native SDK has built-in protections |
 | Generic catch blocks | Throughout `/lib` | ~65 remaining, core services done |
 | No SSL certificate pinning | Network | Consider for banking-level security |
