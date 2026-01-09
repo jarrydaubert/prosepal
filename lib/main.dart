@@ -13,6 +13,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'app/app.dart';
+import 'app/router.dart';
 import 'core/config/app_config.dart';
 import 'core/providers/providers.dart';
 import 'core/services/apple_auth_provider.dart';
@@ -118,6 +119,9 @@ void main() async {
   // Non-blocking: don't await, let app start while initializing
   unawaited(authService.initializeProviders());
 
+  // Create router with route guards (prevents deep link bypass)
+  final router = createAppRouter(prefs);
+
   runApp(
     ProviderScope(
       overrides: [
@@ -126,7 +130,7 @@ void main() async {
         authServiceProvider.overrideWithValue(authService),
         // Note: isProProvider now derives from customerInfoProvider reactively
       ],
-      child: const ProsepalApp(),
+      child: ProsepalApp(router: router),
     ),
   );
 }
