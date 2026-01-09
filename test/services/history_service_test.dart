@@ -1,20 +1,18 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:prosepal/core/models/models.dart';
 import 'package:prosepal/core/services/history_service.dart';
 
 /// HistoryService Unit Tests
 ///
-/// Tests REAL HistoryService with mocked SharedPreferences.
+/// Tests REAL HistoryService with mocked FlutterSecureStorage.
 /// Each test answers: "What bug does this catch?"
 void main() {
-  late SharedPreferences prefs;
   late HistoryService service;
 
   setUp(() async {
-    SharedPreferences.setMockInitialValues({});
-    prefs = await SharedPreferences.getInstance();
-    service = HistoryService(prefs);
+    FlutterSecureStorage.setMockInitialValues({});
+    service = HistoryService();
   });
 
   GenerationResult createTestResult({
@@ -204,8 +202,12 @@ void main() {
     // ============================================================
 
     test('handles corrupted JSON gracefully', () async {
-      // Bug: App crashes if SharedPreferences contains invalid JSON
-      await prefs.setString('generation_history', 'not valid json {{{');
+      // Bug: App crashes if secure storage contains invalid JSON
+      // Pre-seed with corrupted data
+      FlutterSecureStorage.setMockInitialValues({
+        'generation_history': 'not valid json {{{',
+      });
+      service = HistoryService();
 
       final history = await service.getHistory();
 
@@ -214,7 +216,10 @@ void main() {
 
     test('handles empty string gracefully', () async {
       // Bug: Empty string treated as valid JSON
-      await prefs.setString('generation_history', '');
+      FlutterSecureStorage.setMockInitialValues({
+        'generation_history': '',
+      });
+      service = HistoryService();
 
       final history = await service.getHistory();
 

@@ -1,6 +1,6 @@
 import 'package:flutter/services.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:local_auth/local_auth.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../interfaces/biometric_interface.dart';
 import 'log_service.dart';
@@ -35,6 +35,11 @@ class BiometricService implements IBiometricService {
   static final instance = BiometricService._();
 
   final LocalAuthentication _auth = LocalAuthentication();
+
+  /// Secure storage for biometric preference (prevents tampering on rooted devices)
+  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage(
+    aOptions: AndroidOptions(encryptedSharedPreferences: true),
+  );
 
   static const _biometricsEnabledKey = 'biometrics_enabled';
 
@@ -93,15 +98,17 @@ class BiometricService implements IBiometricService {
 
   @override
   Future<bool> get isEnabled async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool(_biometricsEnabledKey) ?? false;
+    final value = await _secureStorage.read(key: _biometricsEnabledKey);
+    return value == 'true';
   }
 
   @override
   Future<void> setEnabled(bool enabled) async {
     Log.info(enabled ? 'Biometrics enabled' : 'Biometrics disabled');
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_biometricsEnabledKey, enabled);
+    await _secureStorage.write(
+      key: _biometricsEnabledKey,
+      value: enabled.toString(),
+    );
   }
 
   @override

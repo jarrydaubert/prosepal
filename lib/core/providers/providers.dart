@@ -120,10 +120,9 @@ final usageServiceProvider = Provider<UsageService>((ref) {
   return UsageService(prefs, deviceFingerprint, rateLimit);
 });
 
-/// Generation history service
+/// Generation history service (uses secure storage internally)
 final historyServiceProvider = Provider<HistoryService>((ref) {
-  final prefs = ref.watch(sharedPreferencesProvider);
-  return HistoryService(prefs);
+  return HistoryService();
 });
 
 /// AI generation service (Firebase AI - no API key needed in client code)
