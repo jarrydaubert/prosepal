@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../core/config/preference_keys.dart';
 import '../core/providers/providers.dart';
 import '../core/services/log_service.dart';
 import '../features/auth/auth_screen.dart';
@@ -70,7 +71,8 @@ String? _routeGuard(GoRouterState state, SharedPreferences prefs) {
 
   // Check if onboarding is completed
   final hasCompletedOnboarding =
-      prefs.getBool('hasCompletedOnboarding') ?? false;
+      prefs.getBool(PreferenceKeys.hasCompletedOnboarding) ??
+          PreferenceKeys.hasCompletedOnboardingDefault;
 
   if (!hasCompletedOnboarding) {
     // Deep link tried to bypass onboarding - redirect to splash
@@ -181,7 +183,8 @@ class _SplashScreenState extends ConsumerState<_SplashScreen> {
     // Use providers for consistency and testability
     final prefs = ref.read(sharedPreferencesProvider);
     final hasCompletedOnboarding =
-        prefs.getBool('hasCompletedOnboarding') ?? false;
+        prefs.getBool(PreferenceKeys.hasCompletedOnboarding) ??
+          PreferenceKeys.hasCompletedOnboardingDefault;
     final authService = ref.read(authServiceProvider);
     final isLoggedIn = authService.isLoggedIn;
     final biometricService = ref.read(biometricServiceProvider);

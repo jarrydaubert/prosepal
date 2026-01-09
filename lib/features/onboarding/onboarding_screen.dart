@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../core/config/preference_keys.dart';
 import '../../core/services/log_service.dart';
 import '../../shared/theme/app_colors.dart';
 import '../../shared/theme/app_spacing.dart';
@@ -71,7 +72,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   Future<void> _completeOnboarding() async {
     Log.info('Onboarding completed');
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('hasCompletedOnboarding', true);
+    await prefs.setBool(PreferenceKeys.hasCompletedOnboarding, true);
     // Show paywall immediately to capture Day 0 conversions
     // User can dismiss to try their 1 free message first
     if (mounted) context.go('/paywall');

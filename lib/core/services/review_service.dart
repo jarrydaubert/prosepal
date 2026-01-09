@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:in_app_review/in_app_review.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../config/preference_keys.dart';
 import 'log_service.dart';
 
 /// Service to handle in-app review requests.
@@ -17,9 +18,6 @@ class ReviewService {
 
   final SharedPreferences _prefs;
   final InAppReview _inAppReview = InAppReview.instance;
-
-  static const _hasRequestedReviewKey = 'has_requested_review';
-  static const _firstLaunchKey = 'first_launch_timestamp';
   static const _minGenerationsForReview = 3;
   static const _minDaysBeforeReview = 2;
 
@@ -29,9 +27,9 @@ class ReviewService {
 
   /// Records the first launch timestamp if not already set.
   Future<void> recordFirstLaunchIfNeeded() async {
-    if (!_prefs.containsKey(_firstLaunchKey)) {
+    if (!_prefs.containsKey(PreferenceKeys.reviewFirstLaunch)) {
       await _prefs.setInt(
-        _firstLaunchKey,
+        PreferenceKeys.reviewFirstLaunch,
         DateTime.now().millisecondsSinceEpoch,
       );
     }
@@ -41,14 +39,15 @@ class ReviewService {
   /// Returns true if review was requested.
   Future<bool> checkAndRequestReview(int totalGenerations) async {
     // Already requested once - don't ask again
-    final hasRequested = _prefs.getBool(_hasRequestedReviewKey) ?? false;
+    final hasRequested = _prefs.getBool(PreferenceKeys.reviewHasRequested) ??
+        PreferenceKeys.reviewHasRequestedDefault;
     if (hasRequested) return false;
 
     // Need at least minimum generations
     if (totalGenerations < _minGenerationsForReview) return false;
 
     // Check if enough days have passed since first launch
-    final firstLaunch = _prefs.getInt(_firstLaunchKey);
+    final firstLaunch = _prefs.getInt(PreferenceKeys.reviewFirstLaunch);
     if (firstLaunch != null) {
       final daysSinceFirstLaunch = DateTime.now()
           .difference(DateTime.fromMillisecondsSinceEpoch(firstLaunch))
@@ -73,7 +72,7 @@ class ReviewService {
       }
 
       await _inAppReview.requestReview();
-      await _prefs.setBool(_hasRequestedReviewKey, true);
+      await _prefs.setBool(PreferenceKeys.reviewHasRequested, true);
       Log.info('In-app review requested');
       return true;
     } on Exception catch (e) {
@@ -96,14 +95,15 @@ class ReviewService {
 
   /// Check if review has already been requested.
   bool get hasRequestedReview =>
-      _prefs.getBool(_hasRequestedReviewKey) ?? false;
+      _prefs.getBool(PreferenceKeys.reviewHasRequested) ??
+      PreferenceKeys.reviewHasRequestedDefault;
 
   /// Reset review state (DEBUG ONLY - for testing).
   @visibleForTesting
   Future<void> resetReviewState() async {
     if (kDebugMode) {
-      await _prefs.remove(_hasRequestedReviewKey);
-      await _prefs.remove(_firstLaunchKey);
+      await _prefs.remove(PreferenceKeys.reviewHasRequested);
+      await _prefs.remove(PreferenceKeys.reviewFirstLaunch);
       Log.info('Review state reset');
     }
   }
