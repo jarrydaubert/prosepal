@@ -1,10 +1,30 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:prosepal/core/interfaces/auth_interface.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+// =============================================================================
+// Test Data Factories
+// =============================================================================
+
 /// Creates a fake User for testing
-/// All fields are configurable with sensible defaults
+///
+/// Designed for supabase_flutter 2.x (tested with v2.12.0).
+/// All fields are configurable with sensible defaults.
+///
+/// ## Example
+/// ```dart
+/// // Basic user:
+/// final user = createFakeUser(email: 'test@example.com');
+///
+/// // Unconfirmed email (sign-up scenario):
+/// final unconfirmed = createFakeUser(emailConfirmed: false);
+///
+/// // Anonymous user:
+/// final anon = createFakeUser(isAnonymous: true);
+/// ```
+@visibleForTesting
 User createFakeUser({
   String id = 'test-user-id-123',
   String email = 'test@example.com',
@@ -42,6 +62,15 @@ User createFakeUser({
 }
 
 /// Creates a fake Session for testing
+///
+/// ## Example
+/// ```dart
+/// final session = createFakeSession(
+///   user: createFakeUser(email: 'test@example.com'),
+///   expiresIn: 7200,
+/// );
+/// ```
+@visibleForTesting
 Session createFakeSession({
   String accessToken = 'fake-access-token-xyz',
   String refreshToken = 'fake-refresh-token-abc',
@@ -59,30 +88,53 @@ Session createFakeSession({
 
 /// Mock implementation of IAuthService for testing
 ///
-/// Features:
+/// Designed for supabase_flutter 2.x (tested with v2.12.0).
+///
+/// ## Features
 /// - Configurable state via [setLoggedIn], [setUser]
 /// - Auto-emits auth state events when [autoEmitAuthState] is true
 /// - Per-method error simulation via [methodErrors]
+/// - Supabase-specific error helpers (rate limit, invalid credentials, etc.)
 /// - Simulated network delay via [simulateDelay]
 /// - Call tracking for verification
 /// - Rich fake User/Session objects
 ///
-/// ## Usage
+/// ## Basic Usage
 /// ```dart
 /// final mockAuth = MockAuthService();
 /// mockAuth.setLoggedIn(true, email: 'user@test.com');
 /// mockAuth.autoEmitAuthState = true;
-/// mockAuth.simulateDelay = Duration(milliseconds: 500);
+/// ```
+///
+/// ## Error Simulation
+/// ```dart
+/// // Rate limit error:
+/// mockAuth.simulateRateLimit();
+///
+/// // Invalid credentials:
+/// mockAuth.simulateInvalidCredentials();
+///
+/// // Per-method error:
+/// mockAuth.methodErrors['signInWithEmail'] = AuthException('Bad request');
 /// ```
 class MockAuthService implements IAuthService {
+  // ---------------------------------------------------------------------------
+  // Configuration
+  // ---------------------------------------------------------------------------
+
   /// If true, automatically emits AuthState events on sign-in/sign-out
+  @visibleForTesting
   bool autoEmitAuthState = false;
 
   /// Simulated network delay for async operations
   /// Useful for testing loading indicators
+  @visibleForTesting
   Duration? simulateDelay;
 
-  // Configurable state for tests
+  // ---------------------------------------------------------------------------
+  // State Management
+  // ---------------------------------------------------------------------------
+
   User? _currentUser;
   bool _isLoggedIn = false;
   String? _displayName;
@@ -103,37 +155,134 @@ class MockAuthService implements IAuthService {
     _isLoggedIn = user != null;
   }
 
-  /// Manually emit an auth state event
+  /// Manually emit an auth state event for fine-grained control
   void emitAuthState(AuthState state) {
     _authStateController.add(state);
   }
 
-  // Tracking for test verification
+  // ---------------------------------------------------------------------------
+  // Call Tracking
+  // ---------------------------------------------------------------------------
+
+  /// Number of times signInWithApple() was called
+  @visibleForTesting
   int signInWithAppleCallCount = 0;
+
+  /// Number of times signInWithGoogle() was called
+  @visibleForTesting
   int signInWithGoogleCallCount = 0;
+
+  /// Number of times signInWithEmail() was called
+  @visibleForTesting
   int signInWithEmailCallCount = 0;
+
+  /// Number of times signUpWithEmail() was called
+  @visibleForTesting
   int signUpWithEmailCallCount = 0;
+
+  /// Number of times resetPassword() was called
+  @visibleForTesting
   int resetPasswordCallCount = 0;
+
+  /// Number of times signInWithMagicLink() was called
+  @visibleForTesting
+  int signInWithMagicLinkCallCount = 0;
+
+  /// Number of times updateEmail() was called
+  @visibleForTesting
+  int updateEmailCallCount = 0;
+
+  /// Number of times updatePassword() was called
+  @visibleForTesting
+  int updatePasswordCallCount = 0;
+
+  /// Number of times signOut() was called
+  @visibleForTesting
   int signOutCallCount = 0;
+
+  /// Number of times deleteAccount() was called
+  @visibleForTesting
   int deleteAccountCallCount = 0;
 
+  /// Last email passed to any email method
+  @visibleForTesting
   String? lastEmailUsed;
+
+  /// Last password passed to any password method
+  @visibleForTesting
   String? lastPasswordUsed;
 
+  // ---------------------------------------------------------------------------
+  // Error Simulation
+  // ---------------------------------------------------------------------------
+
   /// Global error - thrown by any method if set
+  @visibleForTesting
   Exception? errorToThrow;
 
   /// Per-method errors - takes precedence over [errorToThrow]
+  ///
   /// Keys: 'signInWithEmail', 'signUpWithEmail', 'signInWithApple',
   /// 'signInWithGoogle', 'signOut', 'resetPassword', 'signInWithMagicLink',
   /// 'updateEmail', 'updatePassword', 'deleteAccount'
+  @visibleForTesting
   final Map<String, Exception> methodErrors = {};
 
   Exception? _getError(String method) {
     return methodErrors[method] ?? errorToThrow;
   }
 
-  /// Reset all state and counters
+  /// Simulate rate limiting (429)
+  void simulateRateLimit([String message = 'Rate limit exceeded']) {
+    errorToThrow = AuthException(message, statusCode: '429');
+  }
+
+  /// Simulate invalid credentials (400)
+  void simulateInvalidCredentials([
+    String message = 'Invalid login credentials',
+  ]) {
+    errorToThrow = AuthException(message, statusCode: '400');
+  }
+
+  /// Simulate email not confirmed (400)
+  void simulateEmailNotConfirmed([String message = 'Email not confirmed']) {
+    errorToThrow = AuthException(message, statusCode: '400');
+  }
+
+  /// Simulate user not found (400)
+  void simulateUserNotFound([String message = 'User not found']) {
+    errorToThrow = AuthException(message, statusCode: '400');
+  }
+
+  /// Simulate email already registered (422)
+  void simulateEmailAlreadyRegistered([
+    String message = 'User already registered',
+  ]) {
+    errorToThrow = AuthException(message, statusCode: '422');
+  }
+
+  /// Simulate weak password (422)
+  void simulateWeakPassword([
+    String message = 'Password should be at least 6 characters',
+  ]) {
+    errorToThrow = AuthException(message, statusCode: '422');
+  }
+
+  /// Simulate session expired (401)
+  void simulateSessionExpired([String message = 'Session expired']) {
+    errorToThrow = AuthException(message, statusCode: '401');
+  }
+
+  /// Simulate network error
+  void simulateNetworkError([String message = 'Network error']) {
+    errorToThrow = AuthException(message, statusCode: '0');
+  }
+
+  // ---------------------------------------------------------------------------
+  // Reset
+  // ---------------------------------------------------------------------------
+
+  /// Reset all state and counters to defaults
   void reset() {
     _currentUser = null;
     _isLoggedIn = false;
@@ -146,6 +295,9 @@ class MockAuthService implements IAuthService {
     signInWithEmailCallCount = 0;
     signUpWithEmailCallCount = 0;
     resetPasswordCallCount = 0;
+    signInWithMagicLinkCallCount = 0;
+    updateEmailCallCount = 0;
+    updatePasswordCallCount = 0;
     signOutCallCount = 0;
     deleteAccountCallCount = 0;
     lastEmailUsed = null;
@@ -159,6 +311,10 @@ class MockAuthService implements IAuthService {
       await Future.delayed(simulateDelay!);
     }
   }
+
+  // ---------------------------------------------------------------------------
+  // IAuthService Implementation
+  // ---------------------------------------------------------------------------
 
   @override
   Future<void> initializeProviders() async {
@@ -269,13 +425,17 @@ class MockAuthService implements IAuthService {
 
   @override
   Future<void> signInWithMagicLink(String email) async {
+    signInWithMagicLinkCallCount++;
     lastEmailUsed = email;
+    await _maybeDelay();
     final error = _getError('signInWithMagicLink');
     if (error != null) throw error;
   }
 
   @override
   Future<void> updateEmail(String newEmail) async {
+    updateEmailCallCount++;
+    await _maybeDelay();
     final error = _getError('updateEmail');
     if (error != null) throw error;
     _email = newEmail;
@@ -286,6 +446,9 @@ class MockAuthService implements IAuthService {
 
   @override
   Future<void> updatePassword(String newPassword) async {
+    updatePasswordCallCount++;
+    lastPasswordUsed = newPassword;
+    await _maybeDelay();
     final error = _getError('updatePassword');
     if (error != null) throw error;
     if (autoEmitAuthState) {
