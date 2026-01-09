@@ -12,6 +12,49 @@
 
 ---
 
+## Operational & Compliance Gaps (Verified)
+
+> Beyond code issues - operational, compliance, and resilience gaps.
+
+### Critical - Pre-Launch Assessment
+
+| Gap | Category | Status | Notes |
+|-----|----------|--------|-------|
+| No data export | Compliance | **CONFIRMED** | GDPR/CCPA right to portability. Need export button in settings |
+| No analytics consent toggle | Compliance | **CONFIRMED** | Privacy policy mentions opt-out but no actual toggle exists |
+| Deep links hijackable | Security | **CONFIRMED** | Already in code audit - custom scheme can be intercepted |
+| No force update mechanism | Operations | **CONFIRMED** | Can't force users off broken versions. Need Remote Config |
+| No SSL certificate pinning | Security | **NOT FOUND** | No pinning configured. Consider for banking-level security apps |
+| Offline Pro users locked out | Resilience | **CONFIRMED** | Already in code audit - no local cache of pro status |
+| No database backups documented | Operations | **CONFIRMED** | No backup/recovery docs. Supabase handles auto-backups but undocumented |
+
+### High - Week 1 Post-Launch
+
+| Gap | Category | Status | Notes |
+|-----|----------|--------|-------|
+| No root/jailbreak detection | Security | **CONFIRMED** | No SafetyNet/freeRASP. Consider for fraud prevention |
+| No timeouts on Supabase calls | Resilience | **CONFIRMED** | AI has 30s timeout, but auth/usage calls don't |
+| No E2E tests in CI | Testing | **CONFIRMED** | Tests exist in `integration_test/` but not in CI workflow |
+| No error boundary UI | UX | **CONFIRMED** | Already in code audit - crashes show red screen |
+| No app state restoration | UX | **CONFIRMED** | No RestorationMixin. Form data lost on process death |
+| History stored unencrypted | Security | **CONFIRMED** | SharedPreferences - user messages readable on rooted devices |
+| Privacy policy accuracy | Compliance | **NEEDS REVIEW** | Should verify policy matches actual data practices |
+
+### Medium - v1.1
+
+| Gap | Category | Status | Notes |
+|-----|----------|--------|-------|
+| No Remote Config / feature flags | Operations | **CONFIRMED** | Can't toggle features or kill switches remotely |
+| No health monitoring / alerting | Operations | **VALID** | No uptime monitoring for Supabase/Gemini |
+| No circuit breakers | Resilience | **VALID** | Repeated failures don't trigger fallback |
+| No connectivity monitoring | Resilience | **CONFIRMED** | No `connectivity_plus` - just error messages |
+| No visual regression tests | Testing | **VALID** | No golden tests |
+| No performance tests | Testing | **VALID** | No load/stress tests |
+| No accessibility test suite | Testing | **VALID** | No a11y automation |
+| No localization infrastructure | i18n | **CONFIRMED** | No .arb files or l10n setup |
+
+---
+
 ## P3 - Compliance (v1.1)
 
 | Item | Notes |
