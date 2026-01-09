@@ -50,6 +50,9 @@ class UsageService {
   static const int freeLifetimeLimit = 1;
   static const int proMonthlyLimit = 500;
 
+  /// Network timeout for Supabase calls (prevents indefinite hangs)
+  static const _timeout = Duration(seconds: 30);
+
   // Supabase table and columns
   static const _table = 'user_usage';
 
@@ -225,7 +228,7 @@ class UsageService {
           'p_is_pro': isPro,
           'p_month_key': monthKey,
         },
-      );
+      ).timeout(_timeout);
 
       final result = response as Map<String, dynamic>;
       final allowed = result['allowed'] as bool? ?? false;

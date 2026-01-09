@@ -86,6 +86,17 @@ class SupabaseAuthProvider implements ISupabaseAuthProvider {
   GoTrueClient get _auth => Supabase.instance.client.auth;
   FunctionsClient get _functions => Supabase.instance.client.functions;
 
+  /// Network timeout for auth operations (prevents indefinite hangs)
+  static const _timeout = Duration(seconds: 30);
+
+  /// Wrap async operations with timeout to prevent hanging
+  Future<T> _withTimeout<T>(Future<T> operation) {
+    return operation.timeout(
+      _timeout,
+      onTimeout: () => throw const AuthException('Request timed out'),
+    );
+  }
+
   @override
   User? get currentUser => _auth.currentUser;
 
@@ -116,12 +127,12 @@ class SupabaseAuthProvider implements ISupabaseAuthProvider {
     String? nonce,
     String? accessToken,
   }) {
-    return _auth.signInWithIdToken(
+    return _withTimeout(_auth.signInWithIdToken(
       provider: provider,
       idToken: idToken,
       nonce: nonce,
       accessToken: accessToken,
-    );
+    ));
   }
 
   /// Sign in via browser-based OAuth flow
@@ -160,11 +171,11 @@ class SupabaseAuthProvider implements ISupabaseAuthProvider {
     required String password,
     String? captchaToken,
   }) {
-    return _auth.signInWithPassword(
+    return _withTimeout(_auth.signInWithPassword(
       email: email,
       password: password,
       captchaToken: captchaToken,
-    );
+    ));
   }
 
   /// Create new user account
@@ -180,12 +191,12 @@ class SupabaseAuthProvider implements ISupabaseAuthProvider {
     Map<String, dynamic>? data,
     String? captchaToken,
   }) {
-    return _auth.signUp(
+    return _withTimeout(_auth.signUp(
       email: email,
       password: password,
       data: data,
       captchaToken: captchaToken,
-    );
+    ));
   }
 
   /// Send password reset email
@@ -198,11 +209,11 @@ class SupabaseAuthProvider implements ISupabaseAuthProvider {
     String? redirectTo,
     String? captchaToken,
   }) {
-    return _auth.resetPasswordForEmail(
+    return _withTimeout(_auth.resetPasswordForEmail(
       email,
       redirectTo: redirectTo,
       captchaToken: captchaToken,
-    );
+    ));
   }
 
   // ===========================================================================
@@ -219,11 +230,11 @@ class SupabaseAuthProvider implements ISupabaseAuthProvider {
     String? emailRedirectTo,
     String? captchaToken,
   }) {
-    return _auth.signInWithOtp(
+    return _withTimeout(_auth.signInWithOtp(
       email: email,
       emailRedirectTo: emailRedirectTo,
       captchaToken: captchaToken,
-    );
+    ));
   }
 
   // ===========================================================================
@@ -304,10 +315,10 @@ class SupabaseAuthProvider implements ISupabaseAuthProvider {
     // 3. Call edge function with explicit Bearer token
     // Note: auth.headers does NOT include Bearer token, must construct explicitly
     Log.info('deleteUser: Invoking edge function');
-    await _functions.invoke(
+    await _withTimeout(_functions.invoke(
       'delete-user',
       headers: {'Authorization': 'Bearer ${session.accessToken}'},
-    );
+    ));
     Log.info('deleteUser: Edge function completed');
   }
 
@@ -331,10 +342,10 @@ class SupabaseAuthProvider implements ISupabaseAuthProvider {
 
     // Call edge function with explicit Bearer token
     // Note: auth.headers does NOT include Bearer token, must construct explicitly
-    await _functions.invoke(
+    await _withTimeout(_functions.invoke(
       'exchange-apple-token',
       headers: {'Authorization': 'Bearer $token'},
       body: {'authorization_code': authorizationCode},
-    );
+    ));
   }
 }
