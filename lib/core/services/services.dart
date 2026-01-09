@@ -6,6 +6,7 @@ export 'auth_throttle_service.dart';
 export 'biometric_service.dart';
 export 'data_export_service.dart';
 export 'device_fingerprint_service.dart';
+export 'device_security_service.dart';
 export 'diagnostic_service.dart';
 export 'force_update_service.dart';
 export 'google_auth_provider.dart';

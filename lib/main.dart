@@ -24,6 +24,7 @@ import 'core/services/google_auth_provider.dart';
 import 'core/services/init_service.dart';
 import 'core/services/log_service.dart';
 import 'core/services/review_service.dart';
+import 'core/services/device_security_service.dart';
 import 'core/services/force_update_service.dart';
 import 'core/services/subscription_service.dart';
 import 'core/services/supabase_auth_provider.dart';
@@ -112,6 +113,19 @@ Future<void> _initializeApp() async {
       } catch (e) {
         Log.warning('Force update check failed', {'error': '$e'});
         // Continue - fail open
+      }
+
+      // Check device security (root/jailbreak detection)
+      try {
+        final securityService = DeviceSecurityService();
+        final status = await securityService.checkDeviceSecurity();
+        if (status == DeviceSecurityStatus.compromised) {
+          // Log for analytics but don't block (soft enforcement)
+          // Can be changed to hard block if abuse is detected
+          Log.warning('Compromised device detected - allowing with warning');
+        }
+      } catch (e) {
+        Log.warning('Device security check failed', {'error': '$e'});
       }
     }
   }
