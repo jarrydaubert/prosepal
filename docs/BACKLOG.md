@@ -17,6 +17,9 @@
 
 | Issue | Location | Fix |
 |-------|----------|-----|
+| Session refresh silently fails | `supabase_auth_provider.dart:297-301` | Add retry with backoff, fail operation if 3x fails |
+| Edge function not verified | `supabase_auth_provider.dart:375` | Add health check for delete-user/exchange-apple-token on init |
+| Account deletion orphan data | Edge function | Verify cleanup of usage, fingerprints, history tables |
 | No data export | Settings | GDPR/CCPA right to portability - add export button |
 | No analytics consent toggle | Settings | Privacy policy mentions opt-out but no toggle exists |
 | No force update mechanism | App startup | Can't force users off broken versions - add Remote Config |
@@ -27,8 +30,12 @@
 
 | Issue | Location | Fix |
 |-------|----------|-----|
-| Log parameter disclosure | `log_service.dart` | No PII filtering - raw data to Crashlytics (GDPR risk) |
-| Raw AI response in logs | `ai_service.dart:389` | User content logged - add truncation/hashing |
+| Full prompt logged with PII | `ai_service.dart:343` | Mask personalDetails before logging |
+| Raw AI response in logs | `ai_service.dart:388-389` | Log status only, not content |
+| Log parameter disclosure | `log_service.dart` | No PII filtering - raw data to Crashlytics |
+| Fire-and-forget sync loses data | `usage_service.dart:309-310` | Add retry queue, persist pending syncs |
+| Rate limit state lost on restart | `rate_limit_service.dart` | Persist timestamps to SharedPreferences |
+| OAuth re-auth weak | `reauth_service.dart:133-140` | Require password/re-OAuth for sensitive ops |
 | No root/jailbreak detection | App startup | Add SafetyNet/freeRASP for fraud prevention |
 | No E2E tests in CI | `.github/workflows/` | Tests exist in `integration_test/` but not in CI |
 | No app state restoration | Forms | Add RestorationMixin - form data lost on process death |
@@ -51,6 +58,9 @@
 | Missing autoDispose | `providers.dart:251-279` | Form providers persist after screen disposal |
 | No Remote Config | App | Can't toggle features or kill switches remotely |
 | No health monitoring | Operations | No uptime monitoring for Supabase/Gemini |
+| Magic link custom scheme fallback | `supabase_auth_provider.dart:332` | Deprecate, use HTTPS universal links only |
+| RevenueCat in dart-define | Build system | Visible in logs - use --dart-define-from-file |
+| Device fingerprint spoofable | `device_fingerprint_service.dart` | Document as deterrent, jailbreak detection is real fix |
 
 ---
 
@@ -68,6 +78,9 @@
 | No SSL certificate pinning | Network | Consider for banking-level security |
 | No visual regression tests | Testing | Add golden tests |
 | No performance tests | Testing | Add load/stress tests |
+| Navigation string path comparison | `app.dart` | Use route names for robustness |
+| Legacy appRouter variable | `router.dart` | Remove after migration (marked TODO) |
+| No history pagination | `history_service.dart` | 200-item cap fine, add lazy loading v1.1 |
 | No accessibility test suite | Testing | Add a11y automation |
 
 ---
