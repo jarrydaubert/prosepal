@@ -60,6 +60,60 @@
 
 ---
 
+## Architecture Audit (Gold Standard Fixes)
+
+> Deep audit findings for making this codebase the template for future apps.
+
+### P0 - Critical (Fix Before Cloning)
+
+| Issue | Location | Fix |
+|-------|----------|-----|
+| Supabase URL/key hardcoded | `main.dart:67-68` | Use dart-define like RevenueCat (consistency) |
+
+### P1 - Important (Should Fix)
+
+| Issue | Location | Fix |
+|-------|----------|-----|
+| SignOut scope is local-only | `supabase_auth_provider.dart:270` | Use `SignOutScope.global` to invalidate all sessions |
+| Generic catch blocks (22 files) | Throughout `/lib` | Add specific exception types (AuthException, PurchasesErrorCode, etc.) |
+| CustomerInfo listener lifecycle | `providers.dart:164-199` | Track listener refs to prevent potential leaks |
+| No provider pre-initialization | `main.dart` | Call `authService.initializeProviders()` for faster first sign-in |
+
+### P2 - Nice to Have (Post-Launch)
+
+| Issue | Location | Fix |
+|-------|----------|-----|
+| No StoreKit2 configuration | `subscription_service.dart` | Add `usesStoreKit2IfAvailable: true` for modern iOS |
+| No deferred purchase handling | `subscription_service.dart` | Handle iOS parental controls (PurchasesErrorCode.productNotAvailableForPurchaseError) |
+| StateNotifier/StateProvider legacy API | `providers.dart` | Migrate to Notifier/AsyncNotifier (Riverpod 3.x modern) |
+| Auth listener magic link race | `app.dart:97-142` | Debounce or use single navigation source |
+| No environment config abstraction | Various | Create AppConfig class with all dart-defines |
+| No offline detection | AI service | Check connectivity before generation |
+
+### P3 - Low Priority
+
+| Issue | Location | Notes |
+|-------|----------|-------|
+| Form state spread across 6 providers | `providers.dart:251-279` | Could consolidate to single NotifierProvider<FormState> |
+| No autoDispose on form providers | `providers.dart` | Add .autoDispose for memory optimization |
+| unawaited token exchange | `auth_service.dart:206-214` | Fire-and-forget could fail silently (acceptable trade-off) |
+
+### What's Already Good (Keep These Patterns)
+
+| Pattern | Location | Why It's Good |
+|---------|----------|---------------|
+| AI error classification + retry | `ai_service.dart` | Comprehensive typed exceptions, exponential backoff with jitter |
+| Server-side usage enforcement | `usage_service.dart` | Atomic RPC prevents client tampering |
+| Device fingerprinting | `device_fingerprint_service.dart` | Prevents free tier abuse via reinstall |
+| Service/Interface pattern | `core/interfaces/` | Clean DI, easy to mock in tests |
+| Privacy screen on background | `app.dart` | Prevents screenshots in app switcher |
+| Biometric lock with timeout | `app.dart`, `reauth_service.dart` | Security without annoying users |
+| Apple token exchange | `supabase_auth_provider.dart` | Required for account deletion compliance |
+| Test Store blocked in release | `subscription_service.dart` | Prevents accidental production crash |
+| syncPurchases on init | `subscription_service.dart` | Restores subscriptions after reinstall |
+
+---
+
 ## Tech Debt
 
 | Item | Notes |
