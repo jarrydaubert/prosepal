@@ -163,5 +163,12 @@ abstract class ISupabaseAuthProvider {
   ///
   /// The authorization code expires in 5 minutes, so this must be called
   /// immediately after sign-in succeeds.
-  Future<void> exchangeAppleToken(String authorizationCode);
+  ///
+  /// [accessToken] - Optional access token to use for authentication.
+  /// If provided, bypasses session lookup which fixes timing issues when
+  /// called immediately after sign-in (before session is persisted).
+  Future<void> exchangeAppleToken(
+    String authorizationCode, {
+    String? accessToken,
+  });
 }

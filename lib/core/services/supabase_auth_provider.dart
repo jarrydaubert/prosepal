@@ -290,28 +290,23 @@ class SupabaseAuthProvider implements ISupabaseAuthProvider {
       // Continue anyway - current session might still be valid
     }
     
-    // 2. Verify we have a session
+    // 2. Verify we have a session with access token
     final session = _auth.currentSession;
-    if (session == null) {
-      Log.error('deleteUser: No session after refresh');
-      throw const AuthException('No active session for user deletion');
+    if (session?.accessToken == null) {
+      Log.error('deleteUser: No access token available');
+      throw const AuthException('No access token available for user deletion');
     }
     Log.info('deleteUser: Session valid', {
-      'userId': session.user.id.substring(0, 8),
+      'userId': session!.user.id.substring(0, 8),
       'expiresAt': session.expiresAt?.toString() ?? 'unknown',
     });
 
-    // 3. Get auth headers from client (best practice per Supabase docs)
-    final authHeaders = Supabase.instance.client.auth.headers;
-    Log.info('deleteUser: Got auth headers', {
-      'hasAuth': authHeaders.containsKey('Authorization'),
-    });
-    
-    // 4. Call edge function with explicit headers
+    // 3. Call edge function with explicit Bearer token
+    // Note: auth.headers does NOT include Bearer token, must construct explicitly
     Log.info('deleteUser: Invoking edge function');
     await _functions.invoke(
       'delete-user',
-      headers: authHeaders,
+      headers: {'Authorization': 'Bearer ${session.accessToken}'},
     );
     Log.info('deleteUser: Edge function completed');
   }
@@ -320,19 +315,25 @@ class SupabaseAuthProvider implements ISupabaseAuthProvider {
   ///
   /// Calls edge function to exchange the code and store the refresh token.
   /// Required for Apple compliance - tokens must be revoked on account delete.
+  ///
+  /// [accessToken] - Optional access token to use. If provided, bypasses session
+  /// lookup which fixes timing issues when called immediately after sign-in.
   @override
-  Future<void> exchangeAppleToken(String authorizationCode) async {
-    final session = _auth.currentSession;
-    if (session == null) {
-      throw const AuthException('No active session for Apple token exchange');
+  Future<void> exchangeAppleToken(
+    String authorizationCode, {
+    String? accessToken,
+  }) async {
+    // Use provided token or fall back to current session
+    final token = accessToken ?? _auth.currentSession?.accessToken;
+    if (token == null) {
+      throw const AuthException('No access token for Apple token exchange');
     }
 
-    // Get auth headers from client (best practice per Supabase docs)
-    final authHeaders = Supabase.instance.client.auth.headers;
-    
+    // Call edge function with explicit Bearer token
+    // Note: auth.headers does NOT include Bearer token, must construct explicitly
     await _functions.invoke(
       'exchange-apple-token',
-      headers: authHeaders,
+      headers: {'Authorization': 'Bearer $token'},
       body: {'authorization_code': authorizationCode},
     );
   }
