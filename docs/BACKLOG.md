@@ -17,7 +17,6 @@
 
 | Issue | Location | Fix |
 |-------|----------|-----|
-| Session refresh silently fails | `supabase_auth_provider.dart:297-301` | Add retry with backoff, fail operation if 3x fails |
 | Edge function not verified | `supabase_auth_provider.dart:375` | Add health check for delete-user/exchange-apple-token on init |
 | Account deletion orphan data | Edge function | Verify cleanup of usage, fingerprints, history tables |
 | No data export | Settings | GDPR/CCPA right to portability - add export button |
