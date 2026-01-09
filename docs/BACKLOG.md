@@ -54,7 +54,7 @@
 | String-based error detection | `auth_errors.dart:46-179` | Message matching as fallback |
 | No connectivity monitoring | App | No `connectivity_plus` - just error messages |
 | No circuit breakers | Network | Repeated failures don't trigger fallback |
-| Concurrent generation race | `generate_screen.dart:276` | Rapid taps before state update possible |
+
 | Generic catch blocks | Throughout `/lib` | Many `catch (e)` lose exception type info |
 | Missing autoDispose | `providers.dart:251-279` | Form providers persist after screen disposal |
 | No Remote Config | App | Can't toggle features or kill switches remotely |

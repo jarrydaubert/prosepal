@@ -1,3 +1,4 @@
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'device_fingerprint_service.dart';
@@ -29,10 +30,45 @@ class RateLimitService {
 
   final DeviceFingerprintService _deviceFingerprint;
 
-  // Local rate limiting fallback (in-memory)
-  final List<DateTime> _localRequestTimestamps = [];
+  // Local rate limiting fallback (persisted to survive app restart)
+  List<DateTime> _localRequestTimestamps = [];
   static const _localWindowDuration = Duration(minutes: 1);
   static const _localMaxRequests = 10; // Conservative fallback limit
+  static const _prefsKey = 'rate_limit_timestamps';
+  bool _initialized = false;
+
+  /// Load persisted timestamps from SharedPreferences
+  Future<void> _ensureInitialized() async {
+    if (_initialized) return;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final stored = prefs.getStringList(_prefsKey);
+      if (stored != null) {
+        final now = DateTime.now();
+        final windowStart = now.subtract(_localWindowDuration);
+        // Only load timestamps within the current window
+        _localRequestTimestamps = stored
+            .map((s) => DateTime.tryParse(s))
+            .whereType<DateTime>()
+            .where((ts) => ts.isAfter(windowStart))
+            .toList();
+      }
+    } catch (e) {
+      Log.warning('Failed to load rate limit history', {'error': '$e'});
+    }
+    _initialized = true;
+  }
+
+  /// Persist timestamps to SharedPreferences
+  Future<void> _persistTimestamps() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final strings = _localRequestTimestamps.map((ts) => ts.toIso8601String()).toList();
+      await prefs.setStringList(_prefsKey, strings);
+    } catch (e) {
+      Log.warning('Failed to persist rate limit history', {'error': '$e'});
+    }
+  }
 
   /// Get Supabase client (may be null if not initialized)
   SupabaseClient? get _supabase {
@@ -117,9 +153,11 @@ class RateLimitService {
 
   /// Local rate limiting fallback when server is unavailable.
   ///
-  /// Uses a simple sliding window counter in memory.
+  /// Uses a sliding window counter persisted to SharedPreferences.
   /// More conservative than server limits to prevent abuse.
-  RateLimitResult _checkLocalRateLimit() {
+  Future<RateLimitResult> _checkLocalRateLimit() async {
+    await _ensureInitialized();
+
     final now = DateTime.now();
     final windowStart = now.subtract(_localWindowDuration);
 
@@ -148,8 +186,9 @@ class RateLimitService {
       );
     }
 
-    // Record this request
+    // Record this request and persist
     _localRequestTimestamps.add(now);
+    await _persistTimestamps();
 
     Log.info('Local rate limit check passed', {
       'requestsInWindow': _localRequestTimestamps.length,
@@ -163,8 +202,13 @@ class RateLimitService {
   }
 
   /// Clear local rate limit history (for testing)
-  void clearLocalHistory() {
+  Future<void> clearLocalHistory() async {
     _localRequestTimestamps.clear();
+    _initialized = false;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_prefsKey);
+    } catch (_) {}
   }
 
   RateLimitReason? _parseReason(String? reason) {
