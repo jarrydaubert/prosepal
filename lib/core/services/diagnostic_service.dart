@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -52,7 +53,7 @@ abstract final class DiagnosticService {
       buffer.writeln('Version: ${packageInfo.version}');
       buffer.writeln('Build: ${packageInfo.buildNumber}');
       buffer.writeln('Package: ${packageInfo.packageName}');
-    } catch (e) {
+    } on Exception catch (e) {
       Log.warning('App info retrieval failed', {'error': '$e'});
       buffer.writeln('Version: Unable to retrieve');
     }
@@ -75,7 +76,7 @@ abstract final class DiagnosticService {
         buffer.writeln('Manufacturer: ${android.manufacturer}');
         buffer.writeln('Device: ${android.device}');
       }
-    } catch (e) {
+    } on Exception catch (e) {
       Log.warning('Device info retrieval failed', {'error': '$e'});
     }
     if (kDebugMode) {
@@ -103,7 +104,7 @@ abstract final class DiagnosticService {
       } else {
         buffer.writeln('Signed In: No');
       }
-    } catch (e) {
+    } on Exception catch (e) {
       Log.warning('Auth status retrieval failed', {'error': '$e'});
       buffer.writeln('Auth Status: Unable to retrieve');
     }
@@ -133,7 +134,7 @@ abstract final class DiagnosticService {
         buffer.writeln(
           'RC User ID: ${_truncateId(customerInfo.originalAppUserId)}',
         );
-      } catch (e) {
+      } on PlatformException catch (e) {
         Log.warning('Subscription status retrieval failed', {'error': '$e'});
         buffer.writeln('Subscription: Unable to retrieve');
       }

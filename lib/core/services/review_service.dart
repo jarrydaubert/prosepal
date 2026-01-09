@@ -76,7 +76,7 @@ class ReviewService {
       await _prefs.setBool(_hasRequestedReviewKey, true);
       Log.info('In-app review requested');
       return true;
-    } catch (e) {
+    } on Exception catch (e) {
       Log.warning('Error requesting review', {'error': '$e'});
       return false;
     }
@@ -89,7 +89,7 @@ class ReviewService {
         appStoreId: _appStoreId.isNotEmpty ? _appStoreId : null,
       );
       Log.info('Store listing opened');
-    } catch (e) {
+    } on Exception catch (e) {
       Log.warning('Error opening store listing', {'error': '$e'});
     }
   }

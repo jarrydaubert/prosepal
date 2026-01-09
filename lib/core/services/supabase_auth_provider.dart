@@ -328,7 +328,7 @@ class SupabaseAuthProvider implements ISupabaseAuthProvider {
     try {
       await _auth.refreshSession();
       Log.info('deleteUser: Session refreshed');
-    } catch (e) {
+    } on AuthException catch (e) {
       Log.warning('deleteUser: Session refresh failed', {'error': '$e'});
       // Continue anyway - current session might still be valid
     }
