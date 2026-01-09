@@ -11,7 +11,6 @@ import '../features/auth/email_auth_screen.dart';
 import '../features/auth/lock_screen.dart';
 import '../features/generate/generate_screen.dart';
 import '../features/home/home_screen.dart';
-import '../features/onboarding/biometric_setup_screen.dart';
 import '../features/onboarding/onboarding_screen.dart';
 import '../features/paywall/custom_paywall_screen.dart';
 import '../features/results/results_screen.dart';
@@ -49,11 +48,6 @@ final appRouter = GoRouter(
       path: '/auth/email',
       name: 'emailAuth',
       builder: (context, state) => const EmailAuthScreen(),
-    ),
-    GoRoute(
-      path: '/biometric-setup',
-      name: 'biometricSetup',
-      builder: (context, state) => const BiometricSetupScreen(),
     ),
     GoRoute(
       path: '/lock',
