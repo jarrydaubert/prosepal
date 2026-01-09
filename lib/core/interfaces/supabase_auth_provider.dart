@@ -171,4 +171,13 @@ abstract class ISupabaseAuthProvider {
     String authorizationCode, {
     String? accessToken,
   });
+
+  /// Verify edge functions are deployed and responding
+  ///
+  /// Checks that required edge functions (delete-user, exchange-apple-token)
+  /// are reachable. Returns a map of function names to their status.
+  ///
+  /// Call during app initialization to detect deployment issues early.
+  /// Logs warnings for any unavailable functions but doesn't throw.
+  Future<Map<String, bool>> verifyEdgeFunctions();
 }
