@@ -22,8 +22,10 @@ import 'core/services/google_auth_provider.dart';
 import 'core/services/init_service.dart';
 import 'core/services/log_service.dart';
 import 'core/services/review_service.dart';
+import 'core/services/force_update_service.dart';
 import 'core/services/subscription_service.dart';
 import 'core/services/supabase_auth_provider.dart';
+import 'features/error/force_update_screen.dart';
 import 'features/error/init_error_screen.dart';
 import 'firebase_options.dart';
 
@@ -87,6 +89,25 @@ Future<void> _initializeApp() async {
       );
     } catch (e) {
       Log.warning('Firebase App Check activation failed', {'error': '$e'});
+    }
+
+    // Check for force update (only in release mode, requires Firebase)
+    if (!kDebugMode) {
+      try {
+        final forceUpdateService = ForceUpdateService();
+        await forceUpdateService.initialize();
+        final updateStatus = await forceUpdateService.checkForUpdate();
+
+        if (updateStatus == UpdateStatus.forceUpdateRequired) {
+          Log.warning('Force update required - blocking app');
+          FlutterNativeSplash.remove();
+          runApp(ForceUpdateScreen(storeUrl: forceUpdateService.storeUrl));
+          return;
+        }
+      } catch (e) {
+        Log.warning('Force update check failed', {'error': '$e'});
+        // Continue - fail open
+      }
     }
   }
 
