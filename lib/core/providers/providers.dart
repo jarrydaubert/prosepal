@@ -125,6 +125,14 @@ final historyServiceProvider = Provider<HistoryService>((ref) {
   return HistoryService();
 });
 
+/// Data export service for GDPR/CCPA data portability
+final dataExportServiceProvider = Provider<DataExportService>((ref) {
+  return DataExportService(
+    usageService: ref.watch(usageServiceProvider),
+    historyService: ref.watch(historyServiceProvider),
+  );
+});
+
 /// AI generation service (Firebase AI - no API key needed in client code)
 final aiServiceProvider = Provider<AiService>((ref) {
   return AiService();
