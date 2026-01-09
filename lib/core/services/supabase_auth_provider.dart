@@ -67,9 +67,9 @@ import 'log_service.dart';
 ///     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 ///   )
 ///
-///   // TODO: Clean up user data before deleting auth user
-///   // await adminClient.from('saved_messages').delete().eq('user_id', user.id)
-///   // await adminClient.from('user_preferences').delete().eq('user_id', user.id)
+///   // Note: The deployed edge function handles user_usage cleanup
+///   // Add additional table cleanup here as needed:
+///   // await adminClient.from('your_table').delete().eq('user_id', user.id)
 ///
 ///   const { error: deleteError } = await adminClient.auth.admin.deleteUser(user.id)
 ///   if (deleteError) {
