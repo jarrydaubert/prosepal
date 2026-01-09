@@ -264,10 +264,10 @@ class SupabaseAuthProvider implements ISupabaseAuthProvider {
     return _auth.updateUser(attributes);
   }
 
-  /// Sign out and clear local session
+  /// Sign out and invalidate all sessions (not just local device)
   @override
   Future<void> signOut() {
-    return _auth.signOut();
+    return _auth.signOut(scope: SignOutScope.global);
   }
 
   /// Delete user account via edge function
@@ -280,7 +280,7 @@ class SupabaseAuthProvider implements ISupabaseAuthProvider {
   @override
   Future<void> deleteUser() async {
     Log.info('deleteUser: Starting');
-    
+
     // 1. Refresh session to ensure fresh JWT
     try {
       await _auth.refreshSession();
@@ -289,7 +289,7 @@ class SupabaseAuthProvider implements ISupabaseAuthProvider {
       Log.warning('deleteUser: Session refresh failed', {'error': '$e'});
       // Continue anyway - current session might still be valid
     }
-    
+
     // 2. Verify we have a session with access token
     final session = _auth.currentSession;
     if (session?.accessToken == null) {

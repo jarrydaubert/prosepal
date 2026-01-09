@@ -177,15 +177,13 @@ class SubscriptionService implements ISubscriptionService {
       );
       Log.info('Purchase completed', {'hasPro': hasPro});
       return hasPro;
-    } on PurchasesErrorCode catch (e) {
-      if (e == PurchasesErrorCode.purchaseCancelledError) {
+    } on PlatformException catch (e) {
+      final errorCode = PurchasesErrorHelper.getErrorCode(e);
+      if (errorCode == PurchasesErrorCode.purchaseCancelledError) {
         Log.info('Purchase cancelled by user');
       } else {
-        Log.error('Purchase error', e);
+        Log.error('Purchase error', e, null, {'errorCode': errorCode.name});
       }
-      return false;
-    } catch (e) {
-      Log.error('Purchase error', e);
       return false;
     }
   }
