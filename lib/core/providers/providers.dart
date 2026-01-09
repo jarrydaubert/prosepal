@@ -265,39 +265,38 @@ final remainingGenerationsProvider = Provider<int>((ref) {
 // ============================================================
 // Generation Form State
 // ============================================================
-// Simple StateProvider for form fields. Consider consolidating into
-// a single NotifierProvider<GenerationFormState> if validation logic
-// is needed (see BACKLOG.md).
+// Form providers with autoDispose - cleans up when generate screen is disposed.
+// This prevents memory leaks and stale state when navigating away.
 
-final selectedOccasionProvider = StateProvider<Occasion?>((ref) => null);
+final selectedOccasionProvider =
+    StateProvider.autoDispose<Occasion?>((ref) => null);
 
-final selectedRelationshipProvider = StateProvider<Relationship?>(
-  (ref) => null,
-);
+final selectedRelationshipProvider =
+    StateProvider.autoDispose<Relationship?>((ref) => null);
 
-final selectedToneProvider = StateProvider<Tone?>((ref) => null);
+final selectedToneProvider = StateProvider.autoDispose<Tone?>((ref) => null);
 
-final selectedLengthProvider = StateProvider<MessageLength>(
+final selectedLengthProvider = StateProvider.autoDispose<MessageLength>(
   (ref) => MessageLength.standard,
 );
 
-final recipientNameProvider = StateProvider<String>((ref) => '');
+final recipientNameProvider = StateProvider.autoDispose<String>((ref) => '');
 
-final personalDetailsProvider = StateProvider<String>((ref) => '');
+final personalDetailsProvider = StateProvider.autoDispose<String>((ref) => '');
 
 // ============================================================
 // Generation Results State
 // ============================================================
-// Transient state for current generation. Could add autoDispose
-// if memory optimization is needed (see BACKLOG.md).
+// Transient state with autoDispose - cleans up when generate screen is disposed.
 
-final generationResultProvider = StateProvider<GenerationResult?>(
+final generationResultProvider = StateProvider.autoDispose<GenerationResult?>(
   (ref) => null,
 );
 
-final isGeneratingProvider = StateProvider<bool>((ref) => false);
+final isGeneratingProvider = StateProvider.autoDispose<bool>((ref) => false);
 
-final generationErrorProvider = StateProvider<String?>((ref) => null);
+final generationErrorProvider =
+    StateProvider.autoDispose<String?>((ref) => null);
 
 // ============================================================
 // Form Reset Utility

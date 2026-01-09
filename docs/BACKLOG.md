@@ -34,7 +34,7 @@
 | Auth providers 0% coverage | `*_auth_provider.dart` | 86 lines untested auth flow |
 | Reauth service 1% coverage | `reauth_service.dart` | Security-critical, nearly untested |
 | Fire-and-forget sync loses data | `usage_service.dart:309-310` | Add retry queue, persist pending syncs |
-| Rate limit state lost on restart | `rate_limit_service.dart` | Persist timestamps to SharedPreferences |
+
 | OAuth re-auth weak | `reauth_service.dart:133-140` | Require password/re-OAuth for sensitive ops |
 | No root/jailbreak detection | App startup | Add SafetyNet/freeRASP for fraud prevention |
 | No E2E tests in CI | `.github/workflows/` | Tests exist in `integration_test/` but not in CI |
