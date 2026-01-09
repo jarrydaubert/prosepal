@@ -145,6 +145,38 @@ abstract final class Log {
     await _instance?.setCustomKey(key, value);
   }
 
+  /// Keys that may contain PII and should be redacted
+  static const _piiKeys = {
+    'email',
+    'password',
+    'token',
+    'accessToken',
+    'refreshToken',
+    'idToken',
+    'personalDetails',
+    'recipientName',
+    'prompt',
+    'message',
+    'text',
+    'content',
+    'response',
+    'name',
+    'displayName',
+    'phone',
+    'address',
+  };
+
+  /// Sanitize params by redacting PII values
+  static Map<String, dynamic> _sanitize(Map<String, dynamic> params) {
+    return params.map((key, value) {
+      final lowerKey = key.toLowerCase();
+      if (_piiKeys.any((pii) => lowerKey.contains(pii.toLowerCase()))) {
+        return MapEntry(key, '[REDACTED]');
+      }
+      return MapEntry(key, value);
+    });
+  }
+
   static String _format(
     String level,
     String message,
@@ -152,8 +184,10 @@ abstract final class Log {
   ) {
     final buffer = StringBuffer('[$level] $message');
     if (params != null && params.isNotEmpty) {
+      final sanitized = _sanitize(params);
       buffer.write(' | ');
-      buffer.write(params.entries.map((e) => '${e.key}=${e.value}').join(', '));
+      buffer.write(
+          sanitized.entries.map((e) => '${e.key}=${e.value}').join(', '));
     }
     return buffer.toString();
   }
