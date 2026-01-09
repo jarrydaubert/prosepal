@@ -69,9 +69,9 @@
 | Issue | Location | Fix |
 |-------|----------|-----|
 | Missing Google nonce | `auth_service.dart` | Native SDK has built-in protections |
-| No StoreKit2 config | `subscription_service.dart` | Add `usesStoreKit2IfAvailable: true` |
+
 | No deferred purchase handling | `subscription_service.dart` | Handle iOS parental controls |
-| No offline detection | AI service | Check connectivity before generation |
+
 | No SSL certificate pinning | Network | Consider for banking-level security |
 | No visual regression tests | Testing | Add golden tests |
 | No performance tests | Testing | Add load/stress tests |
