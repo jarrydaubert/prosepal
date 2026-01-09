@@ -41,6 +41,7 @@
 
 | Issue | Location | Fix |
 |-------|----------|-----|
+| Mockito exploration | `test/mocks/` | Evaluate migrating simple mocks to Mockito for reduced boilerplate. Current manual mocks excel at state tracking and error simulation. Consider Mockito for new simple interface mocks. |
 | Auth/lock logic in root widget | `app.dart` | Extract to `AppLifecycleManager` service for testability |
 | Imperative biometric lock navigation | `app.dart` | Move to router redirect + Riverpod notifier pattern |
 | Auth navigation race conditions | `app.dart` | Use GoRouter `refreshListenable` + global redirect |

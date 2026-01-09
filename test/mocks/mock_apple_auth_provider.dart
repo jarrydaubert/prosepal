@@ -1,8 +1,12 @@
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 import 'package:prosepal/core/interfaces/apple_auth_provider.dart';
 
-/// Mock implementation of IAppleAuthProvider for testing (sign_in_with_apple 7.x)
+/// Mock implementation of IAppleAuthProvider for testing
+///
+/// Designed for sign_in_with_apple 7.x (tested with v7.0.1).
+/// Updates to error codes or API should be verified against package changelog.
 ///
 /// ## Usage
 /// ```dart
@@ -15,44 +19,86 @@ import 'package:prosepal/core/interfaces/apple_auth_provider.dart';
 /// ```
 ///
 /// ## Error Simulation
-/// Use [errorToThrow] with [SignInWithAppleAuthorizationException] to test
-/// cancellation vs error handling:
+/// Use convenience methods or set [errorToThrow] directly:
 /// ```dart
+/// // Convenience method:
+/// mockApple.simulateCancellation();
+///
+/// // Direct exception:
 /// mockApple.errorToThrow = SignInWithAppleAuthorizationException(
-///   code: AuthorizationErrorCode.canceled,
-///   message: 'User cancelled',
+///   code: AuthorizationErrorCode.failed,
+///   message: 'Keychain error',
 /// );
 /// ```
+///
+/// ## Apple Privacy Model
+/// Use [createFakeAppleCredentialFirstSignIn] for first sign-in (includes name/email)
+/// and [createFakeAppleCredential] for subsequent sign-ins (null name/email).
 class MockAppleAuthProvider implements IAppleAuthProvider {
+  // ---------------------------------------------------------------------------
+  // Configuration
+  // ---------------------------------------------------------------------------
+
   /// Nonce to return from generateRawNonce()
   /// Default is 32 characters (recommended length for security)
+  @visibleForTesting
   String nonceToReturn = 'test-nonce-1234567890123456789012';
 
   /// Value to return from isAvailable()
+  @visibleForTesting
   bool isAvailableResult = true;
 
   /// Credential to return from getCredential()
+  @visibleForTesting
   AuthorizationCredentialAppleID? credentialToReturn;
 
   /// Error to throw (if set, throws instead of returning)
   ///
-  /// Use [SignInWithAppleAuthorizationException] for realistic error simulation:
-  /// - AuthorizationErrorCode.canceled: User cancelled
-  /// - AuthorizationErrorCode.failed: Authorization failed
-  /// - AuthorizationErrorCode.invalidResponse: Invalid response from Apple
-  /// - AuthorizationErrorCode.notHandled: Not handled
-  /// - AuthorizationErrorCode.unknown: Unknown error
+  /// Use [SignInWithAppleAuthorizationException] for realistic error simulation.
+  /// See convenience methods: [simulateCancellation], [simulateAuthorizationFailure],
+  /// [simulateNotHandled], [simulateInvalidResponse], [simulateUnknownError].
+  @visibleForTesting
   Exception? errorToThrow;
 
-  /// Track calls for verification
+  // ---------------------------------------------------------------------------
+  // Call Tracking
+  // ---------------------------------------------------------------------------
+
+  /// Number of times generateRawNonce() was called
+  @visibleForTesting
   int generateNonceCalls = 0;
+
+  /// Number of times isAvailable() was called
+  @visibleForTesting
   int isAvailableCalls = 0;
+
+  /// Number of times getCredential() was called
+  @visibleForTesting
   int getCredentialCalls = 0;
+
+  /// Last scopes passed to getCredential()
+  @visibleForTesting
   List<AppleIDAuthorizationScopes>? lastScopes;
+
+  /// Last nonce passed to getCredential()
+  @visibleForTesting
   String? lastNonce;
+
+  /// Last webAuthenticationOptions passed to getCredential()
+  @visibleForTesting
   WebAuthenticationOptions? lastWebAuthOptions;
+
+  /// Last state passed to getCredential()
+  @visibleForTesting
   String? lastState;
+
+  /// Last length passed to generateRawNonce()
+  @visibleForTesting
   int? lastNonceLength;
+
+  // ---------------------------------------------------------------------------
+  // IAppleAuthProvider Implementation
+  // ---------------------------------------------------------------------------
 
   @override
   String generateRawNonce([int length = 32]) {
@@ -98,7 +144,11 @@ class MockAppleAuthProvider implements IAppleAuthProvider {
     return credentialToReturn!;
   }
 
-  /// Simulate user cancellation (convenience method)
+  // ---------------------------------------------------------------------------
+  // Error Simulation Helpers
+  // ---------------------------------------------------------------------------
+
+  /// Simulate user cancellation (AuthorizationErrorCode.canceled)
   void simulateCancellation() {
     errorToThrow = const SignInWithAppleAuthorizationException(
       code: AuthorizationErrorCode.canceled,
@@ -106,7 +156,7 @@ class MockAppleAuthProvider implements IAppleAuthProvider {
     );
   }
 
-  /// Simulate authorization failure (convenience method)
+  /// Simulate authorization failure (AuthorizationErrorCode.failed)
   void simulateAuthorizationFailure([String message = 'Authorization failed']) {
     errorToThrow = SignInWithAppleAuthorizationException(
       code: AuthorizationErrorCode.failed,
@@ -114,7 +164,35 @@ class MockAppleAuthProvider implements IAppleAuthProvider {
     );
   }
 
-  /// Reset all state
+  /// Simulate not handled error (AuthorizationErrorCode.notHandled)
+  void simulateNotHandled([String message = 'Not handled']) {
+    errorToThrow = SignInWithAppleAuthorizationException(
+      code: AuthorizationErrorCode.notHandled,
+      message: message,
+    );
+  }
+
+  /// Simulate invalid response (AuthorizationErrorCode.invalidResponse)
+  void simulateInvalidResponse([String message = 'Invalid response']) {
+    errorToThrow = SignInWithAppleAuthorizationException(
+      code: AuthorizationErrorCode.invalidResponse,
+      message: message,
+    );
+  }
+
+  /// Simulate unknown error (AuthorizationErrorCode.unknown)
+  void simulateUnknownError([String message = 'Unknown error']) {
+    errorToThrow = SignInWithAppleAuthorizationException(
+      code: AuthorizationErrorCode.unknown,
+      message: message,
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Reset
+  // ---------------------------------------------------------------------------
+
+  /// Reset all state to defaults
   void reset() {
     nonceToReturn = 'test-nonce-1234567890123456789012';
     isAvailableResult = true;
@@ -131,9 +209,15 @@ class MockAppleAuthProvider implements IAppleAuthProvider {
   }
 }
 
+// =============================================================================
+// Test Data Factories
+// =============================================================================
+
 /// Helper to create a fake Apple credential for testing
 ///
-/// ## Field Notes (sign_in_with_apple 7.x)
+/// Designed for sign_in_with_apple 7.x (tested with v7.0.1).
+///
+/// ## Field Notes (Apple Privacy Model)
 /// - [userIdentifier]: Always provided, stable across sign-ins
 /// - [givenName], [familyName], [email]: Only provided on FIRST sign-in,
 ///   null on subsequent sign-ins (Apple privacy feature)
@@ -142,6 +226,19 @@ class MockAppleAuthProvider implements IAppleAuthProvider {
 ///
 /// ## Failure Simulation
 /// Use [withNullIdentityToken] = true to simulate missing identity token error
+///
+/// ## Example
+/// ```dart
+/// // Subsequent sign-in (no name/email):
+/// final cred = createFakeAppleCredential();
+///
+/// // First sign-in (includes name/email):
+/// final firstCred = createFakeAppleCredentialFirstSignIn();
+///
+/// // Missing identity token (error case):
+/// final badCred = createFakeAppleCredential(withNullIdentityToken: true);
+/// ```
+@visibleForTesting
 AuthorizationCredentialAppleID createFakeAppleCredential({
   String userIdentifier = 'apple-user-123',
   String? givenName,
@@ -164,6 +261,11 @@ AuthorizationCredentialAppleID createFakeAppleCredential({
 }
 
 /// Create a credential simulating first-time sign-in (includes name/email)
+///
+/// Apple only provides name and email on the FIRST sign-in. Subsequent
+/// sign-ins return null for these fields. Use this factory to test
+/// first sign-in scenarios.
+@visibleForTesting
 AuthorizationCredentialAppleID createFakeAppleCredentialFirstSignIn({
   String userIdentifier = 'apple-user-123',
   String givenName = 'John',
