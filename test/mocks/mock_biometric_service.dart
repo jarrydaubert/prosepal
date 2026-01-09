@@ -89,6 +89,10 @@ class MockBiometricService implements IBiometricService {
       _availableBiometrics;
 
   @override
+  Future<bool> get hasEnrolledBiometrics async =>
+      _availableBiometrics.isNotEmpty;
+
+  @override
   Future<bool> get hasFaceId async => _hasFaceId;
 
   @override
