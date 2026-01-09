@@ -238,29 +238,34 @@ void main() {
     });
 
     testWidgets('search filters by recipient name', (tester) async {
-      // TODO: Flaky - timing issue with search debounce
-      return; // Skip for now
       mockHistory.setHistory([
         TestHistoryFactory.createItem(
           id: 'item-1',
           recipientName: 'John',
+          messageTexts: ['Hello from John'],
         ),
         TestHistoryFactory.createItem(
           id: 'item-2',
           recipientName: 'Jane',
+          messageTexts: ['Hello from Jane'],
         ),
       ]);
 
       await tester.pumpWidget(createTestableHistoryScreen());
-      await tester.pump(const Duration(seconds: 1));
+      await tester.pumpAndSettle();
 
-      // Search for "Jane"
+      // Initially both visible
+      expect(find.text('John'), findsOneWidget);
+      expect(find.text('Jane'), findsOneWidget);
+
+      // Search for "Jane" - will match recipient name
       await tester.enterText(find.byType(TextField), 'Jane');
       await tester.pump(const Duration(milliseconds: 400)); // Wait for debounce
-      await tester.pump(const Duration(milliseconds: 100));
+      await tester.pumpAndSettle();
 
-      // Only Jane should be visible
-      expect(find.text('Jane'), findsOneWidget);
+      // John should be filtered out, Jane should remain
+      // Note: 'Jane' appears twice - in search field and in card
+      expect(find.text('Jane'), findsNWidgets(2));
       expect(find.text('John'), findsNothing);
     });
 
