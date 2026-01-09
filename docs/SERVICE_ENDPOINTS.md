@@ -8,21 +8,21 @@
 
 ## SDKs Overview
 
-| SDK | Package | Purpose |
-|-----|---------|---------|
-| **Supabase Auth** | `supabase_flutter: ^2.12.0` | User authentication, session management, edge functions |
-| **Sign In With Apple** | `sign_in_with_apple: ^7.0.1` | Native Apple OAuth on iOS/macOS |
-| **Google Sign In** | `google_sign_in: ^7.2.0` | Native Google OAuth on iOS/Android |
-| **RevenueCat** | `purchases_flutter: ^9.10.3` | In-app subscriptions, paywall UI, entitlements |
-| **Firebase AI** | `firebase_ai: ^3.6.1` | Gemini AI message generation |
-| **Local Auth** | `local_auth: ^3.0.0` | Biometric authentication (Face ID/Touch ID) |
-| **Firebase Core** | `firebase_core`, `firebase_crashlytics` | App initialization, crash reporting |
-| **Firebase Analytics** | `firebase_analytics: ^12.1.0` | Usage analytics, event tracking |
-| **Share Plus** | `share_plus: ^12.0.1` | Native share sheet for messages |
-| **In App Review** | `in_app_review: ^2.0.11` | App Store review prompts |
-| **URL Launcher** | `url_launcher: ^6.3.1` | Open external links (support, legal) |
-| **Vercel** | Hosting | Landing page, privacy policy, terms, support |
-| **GitHub** | Repository | Source control, CI/CD |
+> Package versions: see `pubspec.yaml` (source of truth)
+
+| SDK | Purpose |
+|-----|---------|
+| **Supabase Auth** | User authentication, session management, edge functions |
+| **Sign In With Apple** | Native Apple OAuth on iOS/macOS |
+| **Google Sign In** | Native Google OAuth on iOS/Android |
+| **RevenueCat** | In-app subscriptions, paywall UI, entitlements |
+| **Firebase AI** | Gemini AI message generation |
+| **Local Auth** | Biometric authentication (Face ID/Touch ID) |
+| **Firebase Core** | App initialization, crash reporting |
+| **Firebase Analytics** | Usage analytics, event tracking |
+| **Share Plus** | Native share sheet for messages |
+| **In App Review** | App Store review prompts |
+| **URL Launcher** | Open external links (support, legal) |
 
 ---
 
