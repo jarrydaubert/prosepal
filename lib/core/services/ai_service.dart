@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'dart:async';
+import 'dart:io';
 import 'dart:math';
 
 import 'package:firebase_ai/firebase_ai.dart';
@@ -330,6 +332,14 @@ class AiService {
       'length': length.name,
     });
 
+    // Quick connectivity check before attempting generation
+    if (!await _hasConnectivity()) {
+      throw const AiNetworkException(
+        'No internet connection. Please check your network and try again.',
+        errorCode: 'NO_CONNECTIVITY',
+      );
+    }
+
     // Input length validation (defense-in-depth)
     const maxNameLength = 50;
     const maxDetailsLength = 500; // Allow slightly more than UI for edge cases
@@ -510,6 +520,23 @@ class AiService {
         Log.error('Unexpected AI error', e, stackTrace, {'attempt': attempt});
         throw _createException(classification, e);
       }
+    }
+  }
+
+  /// Check for internet connectivity using DNS lookup
+  /// Returns false if device is offline
+  Future<bool> _hasConnectivity() async {
+    try {
+      final result = await InternetAddress.lookup('google.com')
+          .timeout(const Duration(seconds: 3));
+      return result.isNotEmpty && result[0].rawAddress.isNotEmpty;
+    } on SocketException {
+      return false;
+    } on TimeoutException {
+      return false;
+    } catch (_) {
+      // On error, assume connected and let the actual request fail with better error
+      return true;
     }
   }
 
