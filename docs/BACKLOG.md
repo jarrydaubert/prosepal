@@ -111,7 +111,8 @@
 
 | Issue | Location | Fix |
 |-------|----------|-----|
-| Update Supabase redirect URLs | Supabase Dashboard | Add `https://prosepal.app/auth/*` to allowed redirect URLs |
+| Supabase function search_path mutable | `check_and_increment_usage` SQL function | Add `SET search_path = ''` to function definition |
+| Supabase leaked password protection | Supabase Dashboard > Auth | Enable "Leaked password protection" toggle |
 
 ### HIGH - Fix Week 1 Post-Launch
 
