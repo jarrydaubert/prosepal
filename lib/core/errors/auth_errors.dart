@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -33,6 +34,11 @@ class AuthErrorHandler {
     // Apple Sign In Errors
     if (error is SignInWithAppleAuthorizationException) {
       return _handleAppleError(error);
+    }
+
+    // Google Sign In Errors
+    if (error is GoogleSignInException) {
+      return _handleGoogleError(error);
     }
 
     // Timeout errors
@@ -189,11 +195,30 @@ class AuthErrorHandler {
       );
     }
 
+    // CAPTCHA required
+    // Supabase returns: "captcha verification required" or similar
+    if (message.contains('captcha')) {
+      return const AuthErrorResult(
+        message: 'Verification required. Please try again.',
+        shouldRetry: false,
+      );
+    }
+
     // OAuth/provider errors
     // Supabase returns: "OAuth provider error", "Provider error", etc.
     if (message.contains('oauth') || message.contains('provider')) {
       return const AuthErrorResult(
         message: 'Sign in failed. Please try again.',
+      );
+    }
+
+    // Invalid refresh token / session revoked
+    if (message.contains('refresh token') ||
+        message.contains('invalid token') ||
+        message.contains('revoked')) {
+      return const AuthErrorResult(
+        message: 'Your session is no longer valid. Please sign in again.',
+        shouldRetry: false,
       );
     }
 
@@ -241,6 +266,67 @@ class AuthErrorHandler {
     // All other cases (failed, invalidResponse, unknown, credentialExport, credentialImport, etc.)
     return const AuthErrorResult(
       message: 'Apple Sign In failed. Please try again.',
+    );
+  }
+
+  static AuthErrorResult _handleGoogleError(GoogleSignInException error) {
+    // Log in debug mode for monitoring
+    if (kDebugMode) {
+      debugPrint('Google Sign In error: ${error.code} - ${error.description}');
+    }
+
+    // User cancelled
+    if (error.code == GoogleSignInExceptionCode.canceled) {
+      return const AuthErrorResult(
+        message: 'Sign in was cancelled.',
+        isCancellation: true,
+        shouldRetry: false,
+      );
+    }
+
+    // User interrupted (but not intentional cancel)
+    if (error.code == GoogleSignInExceptionCode.interrupted) {
+      return const AuthErrorResult(
+        message: 'Sign in was interrupted. Please try again.',
+      );
+    }
+
+    // Client configuration error (e.g., missing client ID)
+    if (error.code == GoogleSignInExceptionCode.clientConfigurationError) {
+      return const AuthErrorResult(
+        message: 'Google Sign In is not available. Please try another method.',
+        shouldRetry: false,
+      );
+    }
+
+    // Provider configuration error (underlying SDK issue)
+    if (error.code == GoogleSignInExceptionCode.providerConfigurationError) {
+      return const AuthErrorResult(
+        message: 'Google Sign In is not available. Please try another method.',
+        shouldRetry: false,
+      );
+    }
+
+    // UI unavailable (no Activity on Android, etc.)
+    if (error.code == GoogleSignInExceptionCode.uiUnavailable) {
+      return const AuthErrorResult(
+        message: 'Unable to show sign in. Please try again.',
+      );
+    }
+
+    // Unknown error - check description for network hints
+    if (error.code == GoogleSignInExceptionCode.unknownError) {
+      final desc = error.description?.toLowerCase() ?? '';
+      if (desc.contains('network') || desc.contains('connection')) {
+        return const AuthErrorResult(
+          message: 'Please check your internet connection and try again.',
+        );
+      }
+    }
+
+    // All other cases
+    return const AuthErrorResult(
+      message: 'Google Sign In failed. Please try again.',
     );
   }
 
