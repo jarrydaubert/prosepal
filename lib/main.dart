@@ -62,6 +62,16 @@ Future<void> _initializeApp() async {
         FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
         return true;
       };
+
+      // Apply user's analytics preference (GDPR consent)
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final analyticsEnabled = prefs.getBool('analytics_enabled') ?? true;
+        await FirebaseCrashlytics.instance
+            .setCrashlyticsCollectionEnabled(analyticsEnabled);
+      } catch (_) {
+        // Default to enabled if prefs not available
+      }
     }
   } catch (e) {
     Log.error('Firebase initialization failed', e);

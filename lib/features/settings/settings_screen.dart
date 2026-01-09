@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -38,6 +39,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   String _biometricType = 'Biometrics';
   bool _isRestoringPurchases = false;
   String _appVersion = '';
+  bool _analyticsEnabled = true;
+
+  static const _analyticsKey = 'analytics_enabled';
 
   final InAppReview _inAppReview = InAppReview.instance;
 
@@ -48,6 +52,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     super.initState();
     _loadBiometricSettings();
     _loadAppVersion();
+    _loadAnalyticsSetting();
   }
 
   Future<void> _loadBiometricSettings() async {
@@ -78,6 +83,31 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       if (mounted) {
         setState(() => _appVersion = 'v1.0.0');
       }
+    }
+  }
+
+  Future<void> _loadAnalyticsSetting() async {
+    final prefs = ref.read(sharedPreferencesProvider);
+    final enabled = prefs.getBool(_analyticsKey) ?? true;
+    if (mounted) {
+      setState(() => _analyticsEnabled = enabled);
+    }
+  }
+
+  Future<void> _toggleAnalytics(bool value) async {
+    final prefs = ref.read(sharedPreferencesProvider);
+    await prefs.setBool(_analyticsKey, value);
+
+    // Update Crashlytics collection setting
+    try {
+      await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(value);
+      Log.info('Analytics collection ${value ? 'enabled' : 'disabled'}');
+    } catch (e) {
+      Log.warning('Failed to update Crashlytics setting', {'error': '$e'});
+    }
+
+    if (mounted) {
+      setState(() => _analyticsEnabled = value);
     }
   }
 
@@ -639,6 +669,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
             title: 'Privacy Policy',
             onTap: () => context.pushNamed('privacy'),
+          ),
+          SettingsTile(
+            leading: const Icon(
+              Icons.analytics_outlined,
+              color: AppColors.textSecondary,
+            ),
+            title: 'Analytics & Crash Reports',
+            subtitle: _analyticsEnabled
+                ? 'Help improve Prosepal'
+                : 'Disabled - no data collected',
+            trailing: Switch.adaptive(
+              value: _analyticsEnabled,
+              onChanged: _toggleAnalytics,
+            ),
           ),
 
           // Account actions (only show if signed in)
