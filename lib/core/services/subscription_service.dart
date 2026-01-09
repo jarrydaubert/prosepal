@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -56,8 +57,33 @@ class SubscriptionService implements ISubscriptionService {
 
   bool _isInitialized = false;
 
+  /// Stream controller for customer info updates
+  StreamController<CustomerInfo>? _customerInfoController;
+
   @override
   bool get isConfigured => _isInitialized;
+
+  @override
+  Stream<CustomerInfo>? get customerInfoStream {
+    if (!_isInitialized) return null;
+    _customerInfoController ??= StreamController<CustomerInfo>.broadcast(
+      onListen: () {
+        // Set up the SDK listener when first subscriber attaches
+        Purchases.addCustomerInfoUpdateListener(_onCustomerInfoUpdate);
+      },
+      onCancel: () {
+        // Clean up when no more subscribers
+        Purchases.removeCustomerInfoUpdateListener(_onCustomerInfoUpdate);
+        _customerInfoController?.close();
+        _customerInfoController = null;
+      },
+    );
+    return _customerInfoController!.stream;
+  }
+
+  void _onCustomerInfoUpdate(CustomerInfo info) {
+    _customerInfoController?.add(info);
+  }
 
   @override
   Future<void> initialize() async {
@@ -137,12 +163,19 @@ class SubscriptionService implements ISubscriptionService {
 
   @override
   Future<bool> isPro() async {
+    return hasEntitlement(_entitlementId);
+  }
+
+  @override
+  Future<bool> hasEntitlement(String entitlementId) async {
     if (!_isInitialized) return false;
     try {
       final customerInfo = await Purchases.getCustomerInfo();
-      return customerInfo.entitlements.active.containsKey(_entitlementId);
+      return customerInfo.entitlements.active.containsKey(entitlementId);
     } on PlatformException catch (e) {
-      Log.error('Error checking pro status', e);
+      Log.error('Error checking entitlement', e, null, {
+        'entitlementId': entitlementId,
+      });
       return false;
     }
   }

@@ -95,8 +95,10 @@ class MockSubscriptionService implements ISubscriptionService {
     _isPro = false;
     _customerInfo = null;
     _offerings = null;
+    _entitlements.clear();
     initializeCallCount = 0;
     isProCallCount = 0;
+    hasEntitlementCallCount = 0;
     getCustomerInfoCallCount = 0;
     getOfferingsCallCount = 0;
     purchasePackageCallCount = 0;
@@ -108,6 +110,7 @@ class MockSubscriptionService implements ISubscriptionService {
     logOutCallCount = 0;
     lastIdentifiedUserId = null;
     lastPurchasedPackage = null;
+    lastCheckedEntitlement = null;
     purchaseResult = true;
     restoreResult = false;
     paywallResult = false;
@@ -124,6 +127,12 @@ class MockSubscriptionService implements ISubscriptionService {
   bool get isConfigured => _isConfigured;
 
   @override
+  Stream<CustomerInfo>? get customerInfoStream {
+    if (!_isConfigured) return null;
+    return _customerInfoController.stream;
+  }
+
+  @override
   Future<void> initialize() async {
     initializeCallCount++;
     final error = _getError('initialize');
@@ -133,11 +142,33 @@ class MockSubscriptionService implements ISubscriptionService {
 
   @override
   Future<bool> isPro() async {
-    isProCallCount++;
+    return hasEntitlement('pro');
+  }
+
+  /// Map of entitlement IDs to their active status
+  /// Default: only 'pro' is checked, controlled by _isPro
+  final Map<String, bool> _entitlements = {};
+
+  /// Set a specific entitlement's active status
+  void setEntitlement(String entitlementId, bool active) {
+    _entitlements[entitlementId] = active;
+  }
+
+  int hasEntitlementCallCount = 0;
+  String? lastCheckedEntitlement;
+
+  @override
+  Future<bool> hasEntitlement(String entitlementId) async {
+    hasEntitlementCallCount++;
+    lastCheckedEntitlement = entitlementId;
     if (!_isConfigured) return false;
-    final error = _getError('isPro');
+    final error = _getError('hasEntitlement');
     if (error != null) throw error;
-    return _isPro;
+    // Check custom entitlements first, fall back to _isPro for 'pro'
+    if (_entitlements.containsKey(entitlementId)) {
+      return _entitlements[entitlementId]!;
+    }
+    return entitlementId == 'pro' ? _isPro : false;
   }
 
   @override
