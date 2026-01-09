@@ -202,23 +202,27 @@ class AuthService implements IAuthService {
         nonce: rawNonce,
       );
 
-      // Exchange authorization code for refresh token (for revocation on delete)
-      // Must happen immediately as code expires in 5 minutes
+      // Exchange authorization code for refresh token (required for account deletion)
+      // Must happen immediately as Apple auth codes expire in 5 minutes
       // Pass access token directly to avoid timing issues (session may not be persisted yet)
+      // CRITICAL: Awaited to ensure token is stored - required for App Store compliance
       final authCode = credential.authorizationCode;
       final accessToken = response.session?.accessToken;
       if (accessToken != null) {
-        // Fire and forget - don't block sign-in flow
-        unawaited(
-          _supabase
-              .exchangeAppleToken(authCode, accessToken: accessToken)
-              .catchError((e) {
-                // Non-fatal: revocation will be skipped if exchange fails
-                Log.warning('Failed to exchange Apple authorization code', {
-                  'error': '$e',
-                });
-              }),
-        );
+        try {
+          await _supabase.exchangeAppleToken(
+            authCode,
+            accessToken: accessToken,
+          );
+          Log.info('Apple token exchange successful');
+        } catch (e) {
+          // Log but don't fail sign-in - user can still use app
+          // Account deletion will fail, but that's a rare edge case
+          Log.error(
+            'Apple token exchange failed - account deletion may fail',
+            e,
+          );
+        }
       }
 
       Log.info('User signed in', {'provider': 'apple'});

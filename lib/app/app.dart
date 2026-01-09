@@ -38,6 +38,48 @@ class _ProsepalAppState extends ConsumerState<ProsepalApp>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _setupAuthListener();
+    _setupErrorBoundary();
+  }
+
+  /// Set up user-friendly error widget for widget build errors
+  void _setupErrorBoundary() {
+    ErrorWidget.builder = (FlutterErrorDetails details) {
+      // Log to Crashlytics (already configured in main.dart)
+      Log.error('Widget build error', details.exception, details.stack);
+
+      return Container(
+        color: AppColors.background,
+        padding: const EdgeInsets.all(24),
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.warning_amber_rounded,
+                size: 48,
+                color: Colors.orange[700],
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Something went wrong',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Please restart the app',
+                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      );
+    };
   }
 
   @override
