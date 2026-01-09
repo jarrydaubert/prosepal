@@ -1,12 +1,47 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-/// Interface for Supabase Auth operations
+/// Interface for Supabase Auth operations (supabase_flutter 2.x).
 ///
 /// Abstracts GoTrueClient for testability. All methods may throw
 /// [AuthException] on failure (network, invalid credentials, etc).
 ///
-/// For native mobile OAuth (Apple/Google), use [signInWithIdToken].
-/// For browser-based OAuth, use [signInWithOAuth].
+/// ## Authentication Methods
+/// - Native OAuth (Apple/Google): [signInWithIdToken]
+/// - Browser OAuth (GitHub, etc): [signInWithOAuth]
+/// - Email/Password: [signInWithPassword], [signUp]
+/// - Magic Link: [signInWithOtp]
+///
+/// ## Multi-Factor Authentication (MFA)
+/// Supabase supports TOTP-based MFA. Flow:
+/// 1. User enrolls: [mfaEnroll] returns QR code URI
+/// 2. User verifies first code: [mfaVerify] activates the factor
+/// 3. On future logins: [mfaChallenge] + [mfaVerify] for aal2
+/// 4. To remove: [mfaUnenroll]
+///
+/// Check [currentSession?.aal] for assurance level:
+/// - `aal1`: Standard authentication
+/// - `aal2`: MFA verified (TOTP code validated this session)
+///
+/// ## Captcha Integration
+/// Methods accepting [captchaToken] integrate with Supabase's anti-abuse:
+/// - **Required for public apps**: Sign up, password reset, OTP
+/// - **Recommended for all**: Sign in (prevents credential stuffing)
+/// - Get token from hCaptcha/Turnstile widget before calling
+/// - If captcha is enabled in Supabase dashboard but token is null,
+///   the request will fail with [AuthException]
+///
+/// ## Token Refresh
+/// The Supabase SDK auto-refreshes tokens ~60 seconds before expiry.
+/// [refreshSession] is for manual refresh (e.g., after app resume).
+/// Listen to [onAuthStateChange] for [AuthChangeEvent.tokenRefreshed].
+///
+/// ## Deep Link Handling
+/// OAuth and magic link flows redirect to your app via deep links.
+/// Configure in:
+/// - iOS: Info.plist URL schemes + Associated Domains
+/// - Android: AndroidManifest.xml intent filters
+/// - Supabase Dashboard: Authentication > URL Configuration
+/// See: https://supabase.com/docs/guides/auth/native-mobile-deep-linking
 abstract class ISupabaseAuthProvider {
   /// Current authenticated user (null if not logged in)
   User? get currentUser;
@@ -180,4 +215,98 @@ abstract class ISupabaseAuthProvider {
   /// Call during app initialization to detect deployment issues early.
   /// Logs warnings for any unavailable functions but doesn't throw.
   Future<Map<String, bool>> verifyEdgeFunctions();
+
+  // ===========================================================================
+  // Multi-Factor Authentication (MFA)
+  // ===========================================================================
+
+  /// Enroll a new TOTP factor for MFA.
+  ///
+  /// Returns [AuthMFAEnrollResponse] containing:
+  /// - `id`: Factor ID (save this for verification)
+  /// - `totp.qr_code`: Data URI for QR code image
+  /// - `totp.secret`: Manual entry secret for authenticator apps
+  /// - `totp.uri`: otpauth:// URI for programmatic use
+  ///
+  /// After enrollment, user must verify with [mfaVerify] to activate.
+  /// The factor is not active until first successful verification.
+  ///
+  /// [friendlyName] - Optional display name for the factor (e.g., "Work Phone")
+  ///
+  /// Throws [AuthException] if user is not authenticated.
+  Future<AuthMFAEnrollResponse> mfaEnroll({String? friendlyName});
+
+  /// Create an MFA challenge for verification.
+  ///
+  /// [factorId] - The factor ID from [mfaEnroll] or [mfaListFactors]
+  ///
+  /// Returns [AuthMFAChallengeResponse] with challenge ID needed for [mfaVerify].
+  /// Challenge expires after a short time (typically 5 minutes).
+  ///
+  /// Call this before [mfaVerify] during login flow or when
+  /// upgrading session from aal1 to aal2.
+  Future<AuthMFAChallengeResponse> mfaChallenge(String factorId);
+
+  /// Verify TOTP code to complete MFA.
+  ///
+  /// [factorId] - The factor ID being verified
+  /// [challengeId] - Challenge ID from [mfaChallenge]
+  /// [code] - 6-digit TOTP code from authenticator app
+  ///
+  /// On success:
+  /// - For first verification: Factor becomes active
+  /// - For login: Session upgraded to aal2
+  ///
+  /// Returns [AuthMFAVerifyResponse] with new session tokens.
+  ///
+  /// Throws [AuthException] if code is invalid or expired.
+  Future<AuthMFAVerifyResponse> mfaVerify({
+    required String factorId,
+    required String challengeId,
+    required String code,
+  });
+
+  /// Remove an MFA factor.
+  ///
+  /// [factorId] - The factor ID to remove
+  ///
+  /// User must have aal2 session to unenroll factors.
+  /// If this is the last factor, user returns to aal1-only auth.
+  ///
+  /// Throws [AuthException] if factor not found or insufficient privileges.
+  Future<AuthMFAUnenrollResponse> mfaUnenroll(String factorId);
+
+  /// List all MFA factors for current user.
+  ///
+  /// Returns [AuthMFAListFactorsResponse] containing:
+  /// - `all`: All enrolled factors
+  /// - `totp`: TOTP factors only
+  ///
+  /// Each factor includes:
+  /// - `id`: Factor ID for challenge/verify/unenroll
+  /// - `friendlyName`: Display name if provided
+
+  /// - `status`: 'verified' or 'unverified'
+  /// - `createdAt`: Enrollment timestamp
+  ///
+  /// Use to check if user has MFA enabled and show management UI.
+  Future<AuthMFAListFactorsResponse> mfaListFactors();
+
+  /// Get current MFA/AAL status.
+  ///
+  /// Returns [AuthMFAGetAuthenticatorAssuranceLevelResponse]:
+  /// - `currentLevel`: Current AAL ('aal1' or 'aal2')
+  /// - `nextLevel`: Required AAL based on enrolled factors
+  /// - `currentAuthenticationMethods`: Methods used this session
+  ///
+  /// Use to determine if user needs to complete MFA challenge:
+  /// ```dart
+  /// final status = await mfaGetAuthenticatorAssuranceLevel();
+  /// if (status.nextLevel == 'aal2' && status.currentLevel == 'aal1') {
+  ///   // User has MFA enabled but hasn't verified this session
+  ///   // Show MFA challenge screen
+  /// }
+  /// ```
+  Future<AuthMFAGetAuthenticatorAssuranceLevelResponse>
+      mfaGetAuthenticatorAssuranceLevel();
 }

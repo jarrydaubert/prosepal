@@ -332,6 +332,139 @@ class MockSupabaseAuthProvider implements ISupabaseAuthProvider {
     };
   }
 
+  // ===========================================================================
+  // MFA Methods (mock implementations)
+  // ===========================================================================
+
+  int mfaEnrollCalls = 0;
+  int mfaChallengeCalls = 0;
+  int mfaVerifyCalls = 0;
+  int mfaUnenrollCalls = 0;
+  int mfaListFactorsCalls = 0;
+  int mfaGetAALCalls = 0;
+
+  String? lastMfaFactorId;
+  String? lastMfaChallengeId;
+  String? lastMfaCode;
+  String? lastMfaFriendlyName;
+
+  /// Mock MFA factors for testing
+  List<Factor> mockFactors = [];
+
+  /// Mock AAL level ('aal1' or 'aal2')
+  AuthenticatorAssuranceLevels mockCurrentAAL = AuthenticatorAssuranceLevels.aal1;
+  AuthenticatorAssuranceLevels mockNextAAL = AuthenticatorAssuranceLevels.aal1;
+
+  @override
+  Future<AuthMFAEnrollResponse> mfaEnroll({String? friendlyName}) async {
+    mfaEnrollCalls++;
+    lastMfaFriendlyName = friendlyName;
+
+    final error = _getError('mfaEnroll');
+    if (error != null) throw error;
+
+    // Return mock enrollment response
+    return AuthMFAEnrollResponse.fromJson({
+      'id': 'mock-factor-id',
+      'type': 'totp',
+      'totp': {
+        'qr_code': 'data:image/svg+xml;base64,mock-qr-code',
+        'secret': 'MOCK_SECRET_BASE32',
+        'uri': 'otpauth://totp/App:user@example.com?secret=MOCK_SECRET_BASE32',
+      },
+    });
+  }
+
+  @override
+  Future<AuthMFAChallengeResponse> mfaChallenge(String factorId) async {
+    mfaChallengeCalls++;
+    lastMfaFactorId = factorId;
+
+    final error = _getError('mfaChallenge');
+    if (error != null) throw error;
+
+    return AuthMFAChallengeResponse.fromJson({
+      'id': 'mock-challenge-id',
+      'expires_at': DateTime.now().add(const Duration(minutes: 5)).millisecondsSinceEpoch,
+    });
+  }
+
+  @override
+  Future<AuthMFAVerifyResponse> mfaVerify({
+    required String factorId,
+    required String challengeId,
+    required String code,
+  }) async {
+    mfaVerifyCalls++;
+    lastMfaFactorId = factorId;
+    lastMfaChallengeId = challengeId;
+    lastMfaCode = code;
+
+    final error = _getError('mfaVerify');
+    if (error != null) throw error;
+
+    // Simulate session upgrade to aal2
+    final user = _currentUser ?? createFakeUser();
+    _currentSession = createFakeSession(user: user);
+
+    return AuthMFAVerifyResponse.fromJson({
+      'access_token': 'mock-aal2-access-token',
+      'token_type': 'bearer',
+      'expires_in': 3600,
+      'refresh_token': 'mock-aal2-refresh-token',
+      'user': {
+        'id': user.id,
+        'email': user.email,
+        'aud': 'authenticated',
+        'role': 'authenticated',
+        'created_at': DateTime.now().toIso8601String(),
+      },
+    });
+  }
+
+  @override
+  Future<AuthMFAUnenrollResponse> mfaUnenroll(String factorId) async {
+    mfaUnenrollCalls++;
+    lastMfaFactorId = factorId;
+
+    final error = _getError('mfaUnenroll');
+    if (error != null) throw error;
+
+    // Remove from mock factors
+    mockFactors.removeWhere((f) => f.id == factorId);
+
+    return AuthMFAUnenrollResponse.fromJson({'id': factorId});
+  }
+
+  @override
+  Future<AuthMFAListFactorsResponse> mfaListFactors() async {
+    mfaListFactorsCalls++;
+
+    final error = _getError('mfaListFactors');
+    if (error != null) throw error;
+
+    return AuthMFAListFactorsResponse(
+      all: mockFactors,
+      totp: mockFactors.where((f) => f.factorType == FactorType.totp).toList(),
+      phone: mockFactors.where((f) => f.factorType == FactorType.phone).toList(),
+    );
+  }
+
+  @override
+  Future<AuthMFAGetAuthenticatorAssuranceLevelResponse>
+      mfaGetAuthenticatorAssuranceLevel() async {
+    mfaGetAALCalls++;
+
+    final error = _getError('mfaGetAuthenticatorAssuranceLevel');
+    if (error != null) throw error;
+
+    return AuthMFAGetAuthenticatorAssuranceLevelResponse(
+      currentLevel: mockCurrentAAL,
+      nextLevel: mockNextAAL,
+      currentAuthenticationMethods: [],
+    );
+  }
+
   /// Reset all state
   void reset() {
     _currentUser = null;
@@ -361,6 +494,20 @@ class MockSupabaseAuthProvider implements ISupabaseAuthProvider {
     lastQueryParams = null;
     lastUserAttributes = null;
     lastRefreshToken = null;
+    // MFA
+    mfaEnrollCalls = 0;
+    mfaChallengeCalls = 0;
+    mfaVerifyCalls = 0;
+    mfaUnenrollCalls = 0;
+    mfaListFactorsCalls = 0;
+    mfaGetAALCalls = 0;
+    lastMfaFactorId = null;
+    lastMfaChallengeId = null;
+    lastMfaCode = null;
+    lastMfaFriendlyName = null;
+    mockFactors = [];
+    mockCurrentAAL = AuthenticatorAssuranceLevels.aal1;
+    mockNextAAL = AuthenticatorAssuranceLevels.aal1;
   }
 
   void dispose() {
