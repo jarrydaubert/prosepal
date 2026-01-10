@@ -47,11 +47,6 @@
 		<string>Prosepal uses Face ID to protect your account and keep your messages private.</string>
 		<key>ITSAppUsesNonExemptEncryption</key>
 		<false/>
-		<!-- Disable local network discovery prompt (not needed for this app) -->
-		<key>NSLocalNetworkUsageDescription</key>
-		<string>Prosepal does not require local network access.</string>
-		<key>NSBonjourServices</key>
-		<array/>
 		<!-- Google Sign In URL Scheme - Replace YOUR_IOS_CLIENT_ID with actual value -->
 		<key>CFBundleURLTypes</key>
 		<array>
