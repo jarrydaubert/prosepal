@@ -94,8 +94,6 @@
 
 **Console:** https://appstoreconnect.apple.com
 
-**Apple ID: `6757088726`** (add to code in Phase 3)
-
 | Item | Location | Status | Details |
 |------|----------|--------|---------|
 | Bundle ID | App Information | ✅ | `com.prosepal.prosepal` |
@@ -219,11 +217,8 @@ Google requires closed testing before production release:
 
 ### After App Store Approval
 
-**Apple ID: `6757088726`** - Already added to code ✅
-
-- [x] Update `review_service.dart` - DONE
-- [x] Update `settings_screen.dart` - DONE
-- [ ] No rebuild needed - ID already in code
+- [x] Apple ID `6757088726` added to `review_service.dart` and `settings_screen.dart`
+- [ ] Verify in-app review prompt works in production
 
 ### After Play Store Approval
 
