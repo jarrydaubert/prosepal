@@ -1,12 +1,22 @@
 # Testing
 
-> Flows and edge cases here drive `integration_test/app_test.dart` (mocked Patrol tests)
+> Test strategy and edge cases for Prosepal
 
 ---
 
-## User Flows (Automated)
+## Test Structure
 
-### Flow 1: Fresh Install (Anonymous)
+| Location | Purpose |
+|----------|---------|
+| `test/**` | Unit/widget tests (mocked) |
+| `integration_test/journeys/` | User journey tests (j1-j10) |
+| `integration_test/coverage/` | Exhaustive option coverage |
+
+---
+
+## Automated User Flows
+
+### Flow 1: Fresh Install
 ```
 Launch → Onboarding → Home → Generate (1 free) → Results → Home (0 remaining)
 ```
@@ -21,62 +31,76 @@ Home → Generate → "Upgrade to Continue" → Auth → Paywall → Purchase �
 Reinstall → Home (0) → Auth (same creds) → Pro restored via RevenueCat
 ```
 
-### Flow 4: Multi-Device
+### Flow 4: Multi-Device Sync
 ```
-Sign in on Device B → identifyUser() → Pro synced
+Sign in on Device B → identifyUser() → Pro synced from RevenueCat
 ```
 
 ---
 
-## Edge Cases (Automated)
+## Edge Cases (Covered by Tests)
 
 ### Payments
-- Offline purchase → StoreKit queues, completes when online
-- Purchase interrupted → StoreKit 2 auto-restores on relaunch
-- Subscription expires → RevenueCat listener updates Pro status
-- Refund → RevenueCat webhook revokes Pro
+| Scenario | Expected Behavior |
+|----------|-------------------|
+| Offline purchase | StoreKit queues, completes when online |
+| Purchase interrupted | StoreKit 2 auto-restores on relaunch |
+| Subscription expires | RevenueCat listener updates Pro status |
+| Refund processed | RevenueCat webhook revokes Pro |
 
 ### Usage
-- Free user generates offline → Local decrement, syncs later
-- Pro expires after using >1 → Remaining = 0
+| Scenario | Expected Behavior |
+|----------|-------------------|
+| Free user generates offline | Local decrement, syncs when online |
+| Pro expires after using >1 | Remaining = 0 (not negative) |
 
 ### Auth
-- Session expires → Supabase auto-refreshes JWT
-- Face ID revoked → Error handled, shows retry
-
----
-
-## Known Issues
-
-| ID | Issue | Severity | Automated |
-|----|-------|----------|-----------|
-| L5 | User stuck after 3 failed biometrics | Medium | No |
-| R3 | Supabase session persists in Keychain after reinstall | Low | No |
-| O1 | No offline banner | Low | No |
+| Scenario | Expected Behavior |
+|----------|-------------------|
+| Session expires | Supabase auto-refreshes JWT |
+| Face ID permission revoked | Error handled, shows retry option |
 
 ---
 
 ## Manual Tests (Real Device Only)
 
-| Test | Why Manual |
-|------|------------|
-| Apple Sign In | OAuth |
-| Google Sign In | OAuth |
-| Magic link deep link | Email + URL scheme |
-| Purchase → Pro unlocked | Sandbox StoreKit |
-| Restore purchases | Sandbox StoreKit |
-| AI generates 3 messages | Real Gemini API |
-| Biometric lock/unlock | Hardware |
-| Delete account | Destructive |
+These cannot be automated and require manual verification:
+
+| Test | Reason |
+|------|--------|
+| Apple Sign In | OAuth flow requires real Apple ID |
+| Google Sign In | OAuth flow requires real Google account |
+| Magic link deep link | Requires email + URL scheme |
+| Purchase → Pro unlocked | Requires Sandbox StoreKit |
+| Restore purchases | Requires Sandbox StoreKit |
+| AI generates 3 messages | Requires real Gemini API |
+| Biometric lock/unlock | Requires hardware |
+| Delete account | Destructive, verify Apple token revocation |
 
 ---
 
-## Test Files
+## Known Limitations
 
-| File | Purpose |
-|------|---------|
-| `test/**` | Unit/widget tests (mocked) |
-| `integration_test/app_test.dart` | Mocked Patrol tests |
-| `integration_test/e2e_test.dart` | Firebase Test Lab entry point |
-| `integration_test/journeys/` | Modular journey tests (j1-j10) |
-| `integration_test/coverage/` | Exhaustive option coverage |
+| Issue | Severity | Notes |
+|-------|----------|-------|
+| 3 failed biometrics shows generic error | Medium | iOS limitation, can't distinguish |
+| Supabase session persists in Keychain after reinstall | Low | Expected iOS behavior |
+| No offline banner | Low | App works offline, no indicator |
+
+---
+
+## Running Tests
+
+```bash
+# All unit/widget tests
+flutter test
+
+# Specific test file
+flutter test test/services/auth_service_test.dart
+
+# Integration tests (requires device)
+flutter test integration_test/
+
+# With coverage
+flutter test --coverage
+```
