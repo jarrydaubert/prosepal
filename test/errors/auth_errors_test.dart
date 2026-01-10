@@ -89,18 +89,8 @@ const _supabaseErrorCases = <(String, String, bool, bool)>[
     false,
   ),
   // Invalid email
-  (
-    'Invalid email format',
-    'Please enter a valid email address.',
-    true,
-    false,
-  ),
-  (
-    'Invalid email',
-    'Please enter a valid email address.',
-    true,
-    false,
-  ),
+  ('Invalid email format', 'Please enter a valid email address.', true, false),
+  ('Invalid email', 'Please enter a valid email address.', true, false),
   // Session/token expired
   (
     'Session expired',
@@ -121,31 +111,11 @@ const _supabaseErrorCases = <(String, String, bool, bool)>[
     false,
   ),
   // OAuth/provider errors
-  (
-    'OAuth provider error',
-    'Sign in failed. Please try again.',
-    true,
-    false,
-  ),
-  (
-    'Provider error occurred',
-    'Sign in failed. Please try again.',
-    true,
-    false,
-  ),
+  ('OAuth provider error', 'Sign in failed. Please try again.', true, false),
+  ('Provider error occurred', 'Sign in failed. Please try again.', true, false),
   // Cancellation
-  (
-    'User cancelled the operation',
-    'Sign in was cancelled.',
-    false,
-    true,
-  ),
-  (
-    'User canceled',
-    'Sign in was cancelled.',
-    false,
-    true,
-  ),
+  ('User cancelled the operation', 'Sign in was cancelled.', false, true),
+  ('User canceled', 'Sign in was cancelled.', false, true),
   // CAPTCHA
   (
     'captcha verification required',
@@ -170,12 +140,28 @@ const _supabaseErrorCases = <(String, String, bool, bool)>[
 
 /// Supabase status code cases: (statusCode, message, expectedFriendlyMessage)
 const _supabaseStatusCodeCases = <(String, String, String)>[
-  ('429', 'any message', 'Too many attempts. Please wait a moment and try again.'),
+  (
+    '429',
+    'any message',
+    'Too many attempts. Please wait a moment and try again.',
+  ),
   ('401', 'any message', 'Your session has expired. Please sign in again.'),
-  ('400', 'Invalid login credentials', 'Invalid email or password. Please try again.'),
+  (
+    '400',
+    'Invalid login credentials',
+    'Invalid email or password. Please try again.',
+  ),
   ('400', 'Invalid email', 'Please enter a valid email address.'),
-  ('409', 'User already exists', 'An account with this email already exists. Try signing in instead.'),
-  ('422', 'User already registered', 'An account with this email already exists. Try signing in instead.'),
+  (
+    '409',
+    'User already exists',
+    'An account with this email already exists. Try signing in instead.',
+  ),
+  (
+    '422',
+    'User already registered',
+    'An account with this email already exists. Try signing in instead.',
+  ),
 ];
 
 /// Network error patterns
@@ -202,12 +188,18 @@ void main() {
     });
 
     test('should allow custom isCancellation flag', () {
-      const result = AuthErrorResult(message: 'Cancelled', isCancellation: true);
+      const result = AuthErrorResult(
+        message: 'Cancelled',
+        isCancellation: true,
+      );
       expect(result.isCancellation, isTrue);
     });
 
     test('should allow custom shouldRetry flag', () {
-      const result = AuthErrorResult(message: 'Rate limited', shouldRetry: false);
+      const result = AuthErrorResult(
+        message: 'Rate limited',
+        shouldRetry: false,
+      );
       expect(result.shouldRetry, isFalse);
     });
   });

@@ -221,7 +221,8 @@ class MockSupabaseAuthProvider implements ISupabaseAuthProvider {
 
   /// Simulate rate limiting (429)
   void simulateRateLimit([
-    String message = 'For security purposes, you can only request this after 60 seconds',
+    String message =
+        'For security purposes, you can only request this after 60 seconds',
   ]) {
     methodErrors['signInWithPassword'] = AuthException(
       message,
@@ -524,10 +525,7 @@ class MockSupabaseAuthProvider implements ISupabaseAuthProvider {
   @override
   Future<Map<String, bool>> verifyEdgeFunctions() async {
     // Mock always returns success
-    return {
-      'delete-user': true,
-      'exchange-apple-token': true,
-    };
+    return {'delete-user': true, 'exchange-apple-token': true};
   }
 
   // ---------------------------------------------------------------------------
@@ -584,7 +582,8 @@ class MockSupabaseAuthProvider implements ISupabaseAuthProvider {
 
   /// Mock current AAL level ('aal1' or 'aal2')
   @visibleForTesting
-  AuthenticatorAssuranceLevels mockCurrentAAL = AuthenticatorAssuranceLevels.aal1;
+  AuthenticatorAssuranceLevels mockCurrentAAL =
+      AuthenticatorAssuranceLevels.aal1;
 
   /// Mock next AAL level ('aal1' or 'aal2')
   @visibleForTesting
@@ -626,7 +625,9 @@ class MockSupabaseAuthProvider implements ISupabaseAuthProvider {
 
     return AuthMFAChallengeResponse.fromJson({
       'id': 'mock-challenge-id',
-      'expires_at': DateTime.now().add(const Duration(minutes: 5)).millisecondsSinceEpoch,
+      'expires_at': DateTime.now()
+          .add(const Duration(minutes: 5))
+          .millisecondsSinceEpoch,
     });
   }
 
@@ -690,13 +691,15 @@ class MockSupabaseAuthProvider implements ISupabaseAuthProvider {
     return AuthMFAListFactorsResponse(
       all: mockFactors,
       totp: mockFactors.where((f) => f.factorType == FactorType.totp).toList(),
-      phone: mockFactors.where((f) => f.factorType == FactorType.phone).toList(),
+      phone: mockFactors
+          .where((f) => f.factorType == FactorType.phone)
+          .toList(),
     );
   }
 
   @override
   Future<AuthMFAGetAuthenticatorAssuranceLevelResponse>
-      mfaGetAuthenticatorAssuranceLevel() async {
+  mfaGetAuthenticatorAssuranceLevel() async {
     mfaGetAALCalls++;
     await _maybeDelay();
 

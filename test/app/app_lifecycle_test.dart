@@ -105,7 +105,8 @@ void main() {
           expect(
             isBackgroundState(state),
             shouldShow,
-            reason: 'Privacy screen should ${shouldShow ? "" : "not "}show '
+            reason:
+                'Privacy screen should ${shouldShow ? "" : "not "}show '
                 'when app is $description',
           );
         });
@@ -166,7 +167,8 @@ void main() {
           expect(
             result,
             route,
-            reason: 'Expected $route for: onboarding=$onboarding, '
+            reason:
+                'Expected $route for: onboarding=$onboarding, '
                 'loggedIn=$loggedIn, biometrics=$bio',
           );
         });
@@ -203,7 +205,8 @@ void main() {
           expect(
             result,
             route,
-            reason: 'Event $event with session=$session should navigate to '
+            reason:
+                'Event $event with session=$session should navigate to '
                 '${route ?? "nowhere"}',
           );
         });

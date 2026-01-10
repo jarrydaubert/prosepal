@@ -86,7 +86,10 @@ void main() {
       await tester.pumpWidget(createTestableEmailAuthScreen());
       await tester.pumpAndSettle();
 
-      expect(find.widgetWithText(TextFormField, 'Email address'), findsOneWidget);
+      expect(
+        find.widgetWithText(TextFormField, 'Email address'),
+        findsOneWidget,
+      );
     });
 
     testWidgets('displays magic link mode by default', (tester) async {

@@ -1,0 +1,28 @@
+#!/bin/bash
+# Pre-commit hook for Flutter/Dart projects
+# Runs format and analyze on lib/ before allowing commit
+#
+# To install: cp scripts/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
+# Or run: ./scripts/setup-hooks.sh
+
+set -e
+
+echo "🔍 Running pre-commit checks..."
+
+# Format lib/ and test/
+echo "📝 Formatting code..."
+dart format --set-exit-if-changed lib/ test/
+if [ $? -ne 0 ]; then
+  echo "❌ Formatting failed. Run 'dart format lib/ test/' to fix."
+  exit 1
+fi
+
+# Analyze lib/ only (matches CI - test files have tolerated warnings)
+echo "🔬 Analyzing lib/..."
+flutter analyze lib/ --no-fatal-infos
+if [ $? -ne 0 ]; then
+  echo "❌ Analysis found errors. Fix them before committing."
+  exit 1
+fi
+
+echo "✅ Pre-commit checks passed!"

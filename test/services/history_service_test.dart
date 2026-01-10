@@ -216,9 +216,7 @@ void main() {
 
     test('handles empty string gracefully', () async {
       // Bug: Empty string treated as valid JSON
-      FlutterSecureStorage.setMockInitialValues({
-        'generation_history': '',
-      });
+      FlutterSecureStorage.setMockInitialValues({'generation_history': ''});
       service = HistoryService();
 
       final history = await service.getHistory();
