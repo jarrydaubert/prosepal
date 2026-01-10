@@ -644,7 +644,10 @@ class _LegalText extends StatelessWidget {
             ),
           ),
         ),
-        Text(' and ', style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+        Text(
+          ' and ',
+          style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+        ),
         GestureDetector(
           onTap: onPrivacyTap,
           child: const Text(

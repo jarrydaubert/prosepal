@@ -25,9 +25,9 @@ class InvalidEnumValueException extends FormatException {
     required this.invalidValue,
     required this.validValues,
   }) : super(
-          'Invalid $enumType value: "$invalidValue". '
-          'Expected one of: ${validValues.join(", ")}',
-        );
+         'Invalid $enumType value: "$invalidValue". '
+         'Expected one of: ${validValues.join(", ")}',
+       );
 
   /// The enum type that failed to parse (e.g., "Occasion")
   final String enumType;
@@ -59,11 +59,7 @@ extension EnumByNameOrNull<T extends Enum> on Iterable<T> {
 /// Helper to parse an enum value with detailed error messages
 ///
 /// Throws [InvalidEnumValueException] if the value is not found.
-T parseEnum<T extends Enum>(
-  List<T> values,
-  String json,
-  String enumTypeName,
-) {
+T parseEnum<T extends Enum>(List<T> values, String json, String enumTypeName) {
   final result = values.byNameOrNull(json);
   if (result == null) {
     throw InvalidEnumValueException(

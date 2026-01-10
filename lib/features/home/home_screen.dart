@@ -85,7 +85,8 @@ class HomeScreen extends ConsumerWidget {
                             .read(authServiceProvider)
                             .isLoggedIn;
                         final usageService = ref.read(usageServiceProvider);
-                        final isReturningUser = usageService.hasDeviceUsedFreeTier();
+                        final isReturningUser = usageService
+                            .hasDeviceUsedFreeTier();
                         Log.info('Upgrade tapped', {
                           'source': 'home',
                           'isLoggedIn': isLoggedIn,

@@ -279,8 +279,9 @@ final remainingGenerationsProvider = Provider<int>((ref) {
 
 final selectedOccasionProvider = StateProvider<Occasion?>((ref) => null);
 
-final selectedRelationshipProvider =
-    StateProvider.autoDispose<Relationship?>((ref) => null);
+final selectedRelationshipProvider = StateProvider.autoDispose<Relationship?>(
+  (ref) => null,
+);
 
 final selectedToneProvider = StateProvider.autoDispose<Tone?>((ref) => null);
 
@@ -304,8 +305,9 @@ final generationResultProvider = StateProvider<GenerationResult?>(
 
 final isGeneratingProvider = StateProvider.autoDispose<bool>((ref) => false);
 
-final generationErrorProvider =
-    StateProvider.autoDispose<String?>((ref) => null);
+final generationErrorProvider = StateProvider.autoDispose<String?>(
+  (ref) => null,
+);
 
 // ============================================================
 // Form Reset Utility

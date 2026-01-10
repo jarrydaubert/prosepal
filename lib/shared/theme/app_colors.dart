@@ -92,20 +92,16 @@ class AppColors {
 
   /// Background gradient
   static LinearGradient get backgroundGradient => LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [primary.withValues(alpha: 0.15), background],
-      );
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    colors: [primary.withValues(alpha: 0.15), background],
+  );
 
   /// Hero section gradient
   static const LinearGradient heroGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [
-      Color(0xFFFFEBEE),
-      Color(0xFFFFF8F8),
-      Color(0xFFFFFFFF),
-    ],
+    colors: [Color(0xFFFFEBEE), Color(0xFFFFF8F8), Color(0xFFFFFFFF)],
     stops: [0.0, 0.5, 1.0],
   );
 }

@@ -308,5 +308,5 @@ abstract class ISupabaseAuthProvider {
   /// }
   /// ```
   Future<AuthMFAGetAuthenticatorAssuranceLevelResponse>
-      mfaGetAuthenticatorAssuranceLevel();
+  mfaGetAuthenticatorAssuranceLevel();
 }

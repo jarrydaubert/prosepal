@@ -228,14 +228,16 @@ class UsageService {
     final monthKey = _monthString();
 
     try {
-      final response = await supabase.rpc(
-        'check_and_increment_usage',
-        params: {
-          'p_user_id': userId,
-          'p_is_pro': isPro,
-          'p_month_key': monthKey,
-        },
-      ).timeout(_timeout);
+      final response = await supabase
+          .rpc(
+            'check_and_increment_usage',
+            params: {
+              'p_user_id': userId,
+              'p_is_pro': isPro,
+              'p_month_key': monthKey,
+            },
+          )
+          .timeout(_timeout);
 
       final result = response as Map<String, dynamic>;
       final allowed = result['allowed'] as bool? ?? false;

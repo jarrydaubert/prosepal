@@ -541,9 +541,9 @@ class _CustomPaywallScreenState extends ConsumerState<CustomPaywallScreen> {
           Expanded(
             child: Text(
               'Perfect for birthdays, thank yous, and heartfelt moments',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: AppColors.textSecondary,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
             ),
           ),
         ],

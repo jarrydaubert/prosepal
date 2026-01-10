@@ -15,8 +15,8 @@ class DataExportService {
   DataExportService({
     required UsageService usageService,
     required HistoryService historyService,
-  })  : _usageService = usageService,
-        _historyService = historyService;
+  }) : _usageService = usageService,
+       _historyService = historyService;
 
   /// Export all user data as JSON string
   ///
@@ -73,7 +73,12 @@ class DataExportService {
               'recipientName': item.result.recipientName,
               'personalDetails': item.result.personalDetails,
               'messages': item.result.messages
-                  .map((m) => {'text': m.text, 'createdAt': m.createdAt.toIso8601String()})
+                  .map(
+                    (m) => {
+                      'text': m.text,
+                      'createdAt': m.createdAt.toIso8601String(),
+                    },
+                  )
                   .toList(),
             },
           )

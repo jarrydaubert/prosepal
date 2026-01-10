@@ -338,10 +338,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       await tempFile.writeAsString(jsonData);
 
       // Share the file
-      await Share.shareXFiles(
-        [XFile(tempFile.path)],
-        subject: 'Prosepal Data Export',
-      );
+      await Share.shareXFiles([
+        XFile(tempFile.path),
+      ], subject: 'Prosepal Data Export');
 
       Log.info('Data export shared successfully');
     } catch (e) {
@@ -565,7 +564,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       final isLoggedIn = ref
                           .read(authServiceProvider)
                           .isLoggedIn;
-                      final isReturningUser = usageService.hasDeviceUsedFreeTier();
+                      final isReturningUser = usageService
+                          .hasDeviceUsedFreeTier();
                       if (isLoggedIn) {
                         context.pushNamed('paywall');
                       } else if (isReturningUser) {

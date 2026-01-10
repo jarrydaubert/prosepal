@@ -158,12 +158,14 @@ class SupabaseAuthProvider implements ISupabaseAuthProvider {
     String? nonce,
     String? accessToken,
   }) {
-    return _withTimeout(_auth.signInWithIdToken(
-      provider: provider,
-      idToken: idToken,
-      nonce: nonce,
-      accessToken: accessToken,
-    ));
+    return _withTimeout(
+      _auth.signInWithIdToken(
+        provider: provider,
+        idToken: idToken,
+        nonce: nonce,
+        accessToken: accessToken,
+      ),
+    );
   }
 
   /// Sign in via browser-based OAuth flow
@@ -202,11 +204,13 @@ class SupabaseAuthProvider implements ISupabaseAuthProvider {
     required String password,
     String? captchaToken,
   }) {
-    return _withTimeout(_auth.signInWithPassword(
-      email: email,
-      password: password,
-      captchaToken: captchaToken,
-    ));
+    return _withTimeout(
+      _auth.signInWithPassword(
+        email: email,
+        password: password,
+        captchaToken: captchaToken,
+      ),
+    );
   }
 
   /// Create new user account
@@ -222,12 +226,14 @@ class SupabaseAuthProvider implements ISupabaseAuthProvider {
     Map<String, dynamic>? data,
     String? captchaToken,
   }) {
-    return _withTimeout(_auth.signUp(
-      email: email,
-      password: password,
-      data: data,
-      captchaToken: captchaToken,
-    ));
+    return _withTimeout(
+      _auth.signUp(
+        email: email,
+        password: password,
+        data: data,
+        captchaToken: captchaToken,
+      ),
+    );
   }
 
   /// Send password reset email
@@ -240,11 +246,13 @@ class SupabaseAuthProvider implements ISupabaseAuthProvider {
     String? redirectTo,
     String? captchaToken,
   }) {
-    return _withTimeout(_auth.resetPasswordForEmail(
-      email,
-      redirectTo: redirectTo,
-      captchaToken: captchaToken,
-    ));
+    return _withTimeout(
+      _auth.resetPasswordForEmail(
+        email,
+        redirectTo: redirectTo,
+        captchaToken: captchaToken,
+      ),
+    );
   }
 
   // ===========================================================================
@@ -261,11 +269,13 @@ class SupabaseAuthProvider implements ISupabaseAuthProvider {
     String? emailRedirectTo,
     String? captchaToken,
   }) {
-    return _withTimeout(_auth.signInWithOtp(
-      email: email,
-      emailRedirectTo: emailRedirectTo,
-      captchaToken: captchaToken,
-    ));
+    return _withTimeout(
+      _auth.signInWithOtp(
+        email: email,
+        emailRedirectTo: emailRedirectTo,
+        captchaToken: captchaToken,
+      ),
+    );
   }
 
   // ===========================================================================
@@ -349,10 +359,12 @@ class SupabaseAuthProvider implements ISupabaseAuthProvider {
     // 3. Call edge function with explicit Bearer token
     // Note: auth.headers does NOT include Bearer token, must construct explicitly
     Log.info('deleteUser: Invoking edge function');
-    await _withTimeout(_functions.invoke(
-      'delete-user',
-      headers: {'Authorization': 'Bearer ${session.accessToken}'},
-    ));
+    await _withTimeout(
+      _functions.invoke(
+        'delete-user',
+        headers: {'Authorization': 'Bearer ${session.accessToken}'},
+      ),
+    );
     Log.info('deleteUser: Edge function completed');
   }
 
@@ -376,11 +388,13 @@ class SupabaseAuthProvider implements ISupabaseAuthProvider {
 
     // Call edge function with explicit Bearer token
     // Note: auth.headers does NOT include Bearer token, must construct explicitly
-    await _withTimeout(_functions.invoke(
-      'exchange-apple-token',
-      headers: {'Authorization': 'Bearer $token'},
-      body: {'authorization_code': authorizationCode},
-    ));
+    await _withTimeout(
+      _functions.invoke(
+        'exchange-apple-token',
+        headers: {'Authorization': 'Bearer $token'},
+        body: {'authorization_code': authorizationCode},
+      ),
+    );
   }
 
   /// Verify edge functions are deployed and responding
@@ -403,7 +417,8 @@ class SupabaseAuthProvider implements ISupabaseAuthProvider {
         // 401/403 = function exists but auth required (expected)
         // 404 or 'not found' = function not deployed
         final reason = e.reasonPhrase?.toLowerCase() ?? '';
-        final isDeployed = e.status == 401 ||
+        final isDeployed =
+            e.status == 401 ||
             e.status == 403 ||
             (e.status != 404 && !reason.contains('not found'));
         results[name] = isDeployed;
@@ -411,7 +426,10 @@ class SupabaseAuthProvider implements ISupabaseAuthProvider {
         if (isDeployed) {
           Log.info('Edge function verified', {'function': name});
         } else {
-          Log.error('Edge function not deployed: $name (status: ${e.status})', e);
+          Log.error(
+            'Edge function not deployed: $name (status: ${e.status})',
+            e,
+          );
         }
       } on TimeoutException {
         // Timeout could mean function is slow but exists
@@ -430,9 +448,13 @@ class SupabaseAuthProvider implements ISupabaseAuthProvider {
     // Log summary
     final allDeployed = results.values.every((v) => v);
     if (!allDeployed) {
-      final missing =
-          results.entries.where((e) => !e.value).map((e) => e.key).join(', ');
-      Log.error('Missing edge functions: $missing - account deletion will fail');
+      final missing = results.entries
+          .where((e) => !e.value)
+          .map((e) => e.key)
+          .join(', ');
+      Log.error(
+        'Missing edge functions: $missing - account deletion will fail',
+      );
     }
 
     return results;
@@ -447,10 +469,9 @@ class SupabaseAuthProvider implements ISupabaseAuthProvider {
   /// Returns QR code and secret for user to scan/enter in authenticator app.
   @override
   Future<AuthMFAEnrollResponse> mfaEnroll({String? friendlyName}) {
-    return _withTimeout(_auth.mfa.enroll(
-      factorType: FactorType.totp,
-      friendlyName: friendlyName,
-    ));
+    return _withTimeout(
+      _auth.mfa.enroll(factorType: FactorType.totp, friendlyName: friendlyName),
+    );
   }
 
   /// Create challenge for MFA verification
@@ -468,11 +489,13 @@ class SupabaseAuthProvider implements ISupabaseAuthProvider {
     required String challengeId,
     required String code,
   }) {
-    return _withTimeout(_auth.mfa.verify(
-      factorId: factorId,
-      challengeId: challengeId,
-      code: code,
-    ));
+    return _withTimeout(
+      _auth.mfa.verify(
+        factorId: factorId,
+        challengeId: challengeId,
+        code: code,
+      ),
+    );
   }
 
   /// Remove an MFA factor
@@ -492,7 +515,7 @@ class SupabaseAuthProvider implements ISupabaseAuthProvider {
   /// Check if user needs to complete MFA challenge.
   @override
   Future<AuthMFAGetAuthenticatorAssuranceLevelResponse>
-      mfaGetAuthenticatorAssuranceLevel() async {
+  mfaGetAuthenticatorAssuranceLevel() async {
     return _auth.mfa.getAuthenticatorAssuranceLevel();
   }
 }

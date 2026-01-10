@@ -72,7 +72,7 @@ String? _routeGuard(GoRouterState state, SharedPreferences prefs) {
   // Check if onboarding is completed
   final hasCompletedOnboarding =
       prefs.getBool(PreferenceKeys.hasCompletedOnboarding) ??
-          PreferenceKeys.hasCompletedOnboardingDefault;
+      PreferenceKeys.hasCompletedOnboardingDefault;
 
   if (!hasCompletedOnboarding) {
     // Deep link tried to bypass onboarding - redirect to splash
@@ -189,7 +189,7 @@ class _SplashScreenState extends ConsumerState<_SplashScreen> {
     final prefs = ref.read(sharedPreferencesProvider);
     final hasCompletedOnboarding =
         prefs.getBool(PreferenceKeys.hasCompletedOnboarding) ??
-          PreferenceKeys.hasCompletedOnboardingDefault;
+        PreferenceKeys.hasCompletedOnboardingDefault;
     final authService = ref.read(authServiceProvider);
     final isLoggedIn = authService.isLoggedIn;
     final biometricService = ref.read(biometricServiceProvider);
