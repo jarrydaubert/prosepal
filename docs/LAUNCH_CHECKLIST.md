@@ -180,7 +180,18 @@ Google requires closed testing before production release:
 2. Have **12+ testers opted-in** (currently 0)
 3. Run closed test for **14+ days**
 
-**Subscriptions:** ⏳ Pending verification
+**Subscriptions (Monetize > Subscriptions):**
+
+| Product | ID | Status | Details |
+|---------|-----|--------|---------|
+| Pro Weekly | `com.prosepal.pro.weekly` | ✅ Active | 174 countries, USD $2.99 |
+| Pro Monthly | `com.prosepal.pro.monthly` | ✅ Active | 174 countries |
+| Pro Yearly | `com.prosepal.pro.yearly` | ✅ Active | 174 countries |
+
+- Grace period: 3 days ✅
+- Account hold: 57 days (auto) ✅
+- Resubscribe: Allow ✅
+- Product IDs match RevenueCat ✅
 
 ### Manual Testing (Before Submission) ⏳ PENDING
 
