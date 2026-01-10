@@ -83,7 +83,19 @@ Deno.serve(async (req) => {
       )
     }
 
-    const { authorization_code } = await req.json()
+    // Parse body - handle empty body gracefully (e.g., health check calls)
+    let authorization_code: string | undefined
+    try {
+      const body = await req.json()
+      authorization_code = body?.authorization_code
+    } catch {
+      // Empty or invalid JSON body
+      return new Response(
+        JSON.stringify({ error: 'Missing or invalid request body' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
     if (!authorization_code) {
       return new Response(
         JSON.stringify({ error: 'Missing authorization_code' }),
