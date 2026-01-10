@@ -13,6 +13,14 @@
 
 ---
 
+## Recurring Maintenance (Calendar Reminders)
+
+| Item | Frequency | Next Due | Action |
+|------|-----------|----------|--------|
+| Apple OAuth secret | 6 months | ~July 2026 | Regenerate in Apple Developer Console, update in Supabase Auth > Apple provider. **No notification - app breaks silently!** |
+
+---
+
 ## CRITICAL
 
 *All CRITICAL items resolved*
