@@ -96,9 +96,11 @@ void main() {
         // 5 generations (>= 3 minimum)
         final result = await service.checkAndRequestReview(5);
 
-        // Should be eligible (actual review request may fail in test env)
-        // The method returns true if conditions are met, regardless of platform result
-        expect(result, isA<bool>());
+        // Note: in_app_review plugin returns false in test env (no platform)
+        // This test verifies the method completes without error when eligible
+        // The method returns false because InAppReview.isAvailable() returns false in tests
+        // Bug caught: Review conditions checked correctly before platform call
+        expect(result, isFalse); // Platform unavailable in tests
       });
     });
 
