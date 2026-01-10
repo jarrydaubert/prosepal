@@ -111,7 +111,7 @@
 | Test account | App Review | ✅ | appreview@prosepal.app |
 | Review notes | App Review | ✅ | Step-by-step testing instructions |
 | RevenueCat webhooks | App Information | ✅ | Production + Sandbox URLs configured |
-| Copyright | Version 1.0 | ⚠️ | Shows 2025, should be 2026 |
+| Copyright | Version 1.0 | ✅ | 2026 |
 | Screenshots | Version 1.0 | ❌ | 0 of 10 - NEED TO UPLOAD |
 | Build | Version 1.0 | ❌ | Not uploaded - run `./scripts/build_ios.sh` |
 | IAPs linked to version | Version 1.0 | ❌ | Click "Select In-App Purchases or Subscriptions" |
