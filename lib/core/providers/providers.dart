@@ -295,9 +295,10 @@ final personalDetailsProvider = StateProvider.autoDispose<String>((ref) => '');
 // ============================================================
 // Generation Results State
 // ============================================================
-// Transient state with autoDispose - cleans up when generate screen is disposed.
+// generationResultProvider must NOT autoDispose - it's set before navigation
+// and needs to survive the route transition to results screen.
 
-final generationResultProvider = StateProvider.autoDispose<GenerationResult?>(
+final generationResultProvider = StateProvider<GenerationResult?>(
   (ref) => null,
 );
 

@@ -211,6 +211,10 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
       if (!canGenerate) {
         // Check if user is logged in - require auth before paywall
         final isLoggedIn = ref.read(authServiceProvider).isLoggedIn;
+        // Check if returning user (has used app before) - they get auto-restore flow
+        final usageService = ref.read(usageServiceProvider);
+        final isReturningUser = usageService.getTotalCount() > 0;
+
         return Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -222,11 +226,15 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
                 Log.info('Upgrade tapped', {
                   'source': 'generate',
                   'isLoggedIn': isLoggedIn,
+                  'isReturningUser': isReturningUser,
                 });
                 if (isLoggedIn) {
                   context.pushNamed('paywall');
+                } else if (isReturningUser) {
+                  // Returning user: auth → auto-restore → home (if Pro) or paywall
+                  context.push('/auth?autorestore=true');
                 } else {
-                  // Require sign-in first, then redirect to paywall
+                  // Fresh user: auth → paywall (can explore pricing)
                   context.push('/auth?redirect=paywall');
                 }
               },

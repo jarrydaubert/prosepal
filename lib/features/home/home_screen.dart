@@ -84,13 +84,20 @@ class HomeScreen extends ConsumerWidget {
                         final isLoggedIn = ref
                             .read(authServiceProvider)
                             .isLoggedIn;
+                        final usageService = ref.read(usageServiceProvider);
+                        final isReturningUser = usageService.getTotalCount() > 0;
                         Log.info('Upgrade tapped', {
                           'source': 'home',
                           'isLoggedIn': isLoggedIn,
+                          'isReturningUser': isReturningUser,
                         });
                         if (isLoggedIn) {
                           context.pushNamed('paywall');
+                        } else if (isReturningUser) {
+                          // Returning user: auth → auto-restore → home or paywall
+                          context.push('/auth?autorestore=true');
                         } else {
+                          // Fresh user: auth → paywall
                           context.push('/auth?redirect=paywall');
                         }
                       },

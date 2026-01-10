@@ -185,6 +185,7 @@ class _StyledTextFieldState extends State<_StyledTextField> {
   Widget build(BuildContext context) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 150),
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
@@ -213,7 +214,8 @@ class _StyledTextFieldState extends State<_StyledTextField> {
               padding: EdgeInsets.only(bottom: widget.maxLines > 1 ? 60 : 0),
               child: Icon(widget.icon, color: AppColors.primary, size: 22),
             ),
-            // Remove all TextField borders - Container handles the border
+            // Remove all TextField styling - Container handles everything
+            filled: false,
             border: InputBorder.none,
             enabledBorder: InputBorder.none,
             focusedBorder: InputBorder.none,
