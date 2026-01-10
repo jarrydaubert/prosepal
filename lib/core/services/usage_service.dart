@@ -220,7 +220,7 @@ class UsageService {
           remaining: 0,
           errorMessage:
               'This device has already used its free message. '
-              'Upgrade to Pro for unlimited access!',
+              'Upgrade to Pro for 500 messages/month!',
         );
       }
     }

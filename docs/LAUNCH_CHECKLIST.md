@@ -129,7 +129,7 @@
 | Pro Yearly (`com.prosepal.pro.yearly`) | ✅ | 1 year, matches RevenueCat |
 | Availability | ✅ | All countries |
 | IAP Review Screenshots | ⚠️ | **OLD PAYWALL DESIGN - update before submission** |
-| Localization description | ⚠️ | Says "500 messages" but Pro is unlimited - update text |
+| Localization description | ✅ | Says "500 messages per month" - correct (Pro limit is 500/month) |
 | Family Sharing | ⚠️ | Currently OFF - consider enabling |
 
 ### Google Play Console ⏳ PENDING
