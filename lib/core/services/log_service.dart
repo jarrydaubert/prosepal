@@ -166,8 +166,14 @@ abstract final class Log {
     'address',
   };
 
-  /// Sanitize params by redacting PII values
+  /// Sanitize params by redacting PII values (release mode only)
+  ///
+  /// In debug mode, full values are shown for easier debugging.
+  /// In release mode, PII is redacted to protect user privacy in crash logs.
   static Map<String, dynamic> _sanitize(Map<String, dynamic> params) {
+    // Allow full debugging in debug mode - redact only in release
+    if (kDebugMode) return params;
+
     return params.map((key, value) {
       final lowerKey = key.toLowerCase();
       if (_piiKeys.any((pii) => lowerKey.contains(pii.toLowerCase()))) {
