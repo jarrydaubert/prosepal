@@ -93,6 +93,7 @@ void main() {
     });
 
     testWidgets('J10.5: Share button exists', (tester) async {
+      // Bug: Share functionality missing from results screen
       final atResults = await navigateToResults(tester);
       if (!atResults) return;
 
@@ -102,6 +103,7 @@ void main() {
           exists(find.byIcon(Icons.share)) ||
           exists(find.byIcon(Icons.share_outlined));
 
+      expect(hasShare, isTrue, reason: 'Results should have share button');
       await screenshot(tester, 'j10_5_share_button');
     });
 
@@ -123,11 +125,18 @@ void main() {
       }
     });
 
-    testWidgets('J10.7: Messages are readable length', (tester) async {
+    testWidgets('J10.7: Messages have visible content', (tester) async {
+      // Bug: Generated messages are empty or not displayed
       final atResults = await navigateToResults(tester);
       if (!atResults) return;
 
-      // Just verify we can see content
+      // Verify message cards/content are visible (not empty results)
+      final hasContent =
+          exists(find.byType(Card)) ||
+          exists(find.text('Copy')) ||
+          exists(find.text('Option 1'));
+
+      expect(hasContent, isTrue, reason: 'Results should show message content');
       await screenshot(tester, 'j10_7_message_content');
     });
   });
