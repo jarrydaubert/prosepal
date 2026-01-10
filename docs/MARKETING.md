@@ -1,7 +1,7 @@
 # Prosepal Marketing Strategy
 
-> **Version**: 2.1 | Global markets edition
-> **Last Updated**: January 2026
+> **Version**: 2.2 | AI execution playbook edition
+> **Last Updated**: January 10, 2026
 > **Markets**: USA, UK, Canada, Australia, New Zealand, Ireland
 
 ---
@@ -20,6 +20,7 @@
 10. [Retention & Engagement](#retention)
 11. [Metrics & Benchmarks](#metrics)
 12. [Launch Roadmap](#roadmap)
+13. [AI-Powered Execution Playbook](#ai-execution)
 
 ---
 
@@ -792,7 +793,9 @@ This captures:
 <a name="roadmap"></a>
 ## 12. Launch Roadmap
 
-### Pre-Launch (Now)
+### Phase 0: Pre-Approval Prep (Now)
+
+**Goal**: Be launch-ready the moment App Store approves.
 
 | Task | Owner | Status |
 |------|-------|--------|
@@ -801,6 +804,40 @@ This captures:
 | Keywords researched | Marketing | ✅ |
 | Review prompt implemented | Dev | ✅ |
 | Analytics configured | Dev | ✅ |
+| Mum/Mom localization in AI output | Dev | ⬜ |
+| Optional share watermark on copy | Dev | ⬜ |
+| 30 TikTok scripts generated | Marketing | ⬜ |
+| 50 Pinterest pins generated | Marketing | ⬜ |
+| Product Hunt assets drafted | Marketing | ⬜ |
+| 3 SEO blog posts for prosepal.app | Marketing | ⬜ |
+| Launch tweet thread drafted | Marketing | ⬜ |
+| IndieHackers post drafted | Marketing | ⬜ |
+
+### Day-1 Launch Checklist
+
+**Hour 0-1** (Approval notification):
+- [ ] Verify app is live and downloadable
+- [ ] Test purchase flow end-to-end
+- [ ] Post launch tweet thread
+- [ ] Share in personal networks (WhatsApp, Discord, etc.)
+- [ ] Post on IndieHackers
+
+**Hour 1-4**:
+- [ ] Post first TikTok video
+- [ ] Seed first 10 Pinterest pins
+- [ ] Post in r/FlutterDev, r/SideProject
+- [ ] Monitor for first reviews, respond immediately
+
+**Day 1 Evening**:
+- [ ] Check App Store Connect metrics
+- [ ] Respond to all comments/mentions
+- [ ] Schedule Product Hunt for next Tuesday
+
+**Day 2-7**:
+- [ ] Post TikTok daily
+- [ ] Respond to every review (especially negative)
+- [ ] A/B test screenshot variants if possible
+- [ ] Prepare Product Hunt assets if not done
 
 ### Phase 1: Foundation (Weeks 1-4)
 
@@ -865,6 +902,311 @@ This captures:
 
 ---
 
+<a name="ai-execution"></a>
+## 13. AI-Powered Execution Playbook
+
+> **Philosophy**: AI is your virtual marketing team. Claude and other LLMs handle 80% of content creation, analysis, and iteration—you provide direction and final approval.
+
+### Why This Works for Solo Founders
+
+| Traditional Approach | AI-Powered Approach |
+|---------------------|---------------------|
+| Hire freelance copywriter ($500+) | Batch-generate with Claude (free) |
+| Agency for ad creative ($2K+/mo) | Generate 50 variants in one session |
+| SEO consultant ($1K+/mo) | AI writes optimized blog posts |
+| Social media manager ($1.5K+/mo) | Batch content + scheduling tools |
+
+**Trade-off**: More of your time upfront, but full control, faster iteration, and dramatically lower cost. Many indie devs in 2025-2026 are hitting $1K-10K/mo this way.
+
+### The Batch Content Workflow
+
+**Core principle**: Don't context-switch. Batch your AI sessions into focused 1-2 hour blocks.
+
+| Session Type | Frequency | Output |
+|--------------|-----------|--------|
+| Content generation | Weekly (Monday) | Week's TikToks, pins, posts |
+| Analytics review | Weekly (Sunday) | Insights fed back to AI |
+| ASO refresh | Bi-weekly | Updated keywords, descriptions |
+| Ad creative | As needed | 10-20 variants per session |
+
+### Prompt Templates
+
+#### ASO Optimization Prompt
+
+```
+My Flutter app is Prosepal - an AI greeting card message writer. Target users:
+25-45yo busy professionals who freeze at blank cards.
+
+Current metrics: [paste App Store Connect data]
+
+Suggest:
+1. 20 high-potential keywords for ASO (mix of high-volume and low-competition)
+2. A/B test variants for my 30-character title
+3. Two 80-character subtitle options
+4. Improvements to my app description (under 4000 chars)
+
+Focus on: [current season/upcoming holiday]
+```
+
+#### TikTok Batch Generation Prompt
+
+```
+Generate 10 TikTok video scripts for Prosepal (AI greeting card message writer).
+
+Format for each:
+- Hook (first 1-3 seconds, text overlay)
+- Problem (5 seconds)
+- Solution/Demo (10-15 seconds)
+- CTA (2-3 seconds)
+
+Content pillars to use:
+1. The Struggle - "POV: You bought a sympathy card and now you're having an existential crisis"
+2. The Speed Run - "Writing a card message in 30 seconds (not clickbait)"
+3. The Transformation - "What I would have written vs. what AI wrote"
+4. The Niche - "When your coworker's dog dies and you don't know what to say"
+5. The Reaction - "My mom's reaction to the message I wrote her"
+
+Target: 25-45yo, time-starved, care about relationships
+Tone: Warm, slightly playful, relatable
+Length: 15-30 seconds each
+
+Include 2 scripts specifically for UK audience (reference Card Factory, Tesco card aisle, "Mum" spelling).
+```
+
+#### Pinterest Batch Generation Prompt
+
+```
+Generate 15 Pinterest pin concepts for Prosepal.
+
+For each pin provide:
+1. Pin title (max 100 chars, keyword-rich)
+2. Pin description (max 500 chars, include CTA)
+3. Board to pin to
+4. Visual concept (what the graphic should show)
+
+Categories to cover:
+- Birthday messages (3 pins)
+- Thank you messages (3 pins)
+- Sympathy/condolence (3 pins)
+- Wedding/anniversary (2 pins)
+- Seasonal: [current upcoming holiday] (4 pins)
+
+Target keywords: "what to write in [occasion] card", "[occasion] card message ideas"
+CTA: "Generate your own personalized message → Prosepal app"
+```
+
+#### Paid Ads Creative Prompt
+
+```
+Write 10 Apple Search Ads variants for Prosepal.
+
+Format: Headline (30 chars max) + Description (45 chars max)
+
+Angles to test:
+1. Pain relief ("Never stare at blank cards")
+2. Speed ("30 seconds to perfect words")
+3. Quality ("Messages that sound like you")
+4. Social proof ("Join 10K+ card writers")
+5. Occasion-specific (birthday, sympathy, thank you)
+
+Include 2 UK-specific variants.
+```
+
+#### Weekly Analytics Review Prompt
+
+```
+Here are my Prosepal metrics for [week/month]:
+
+App Store:
+- Impressions: X
+- Product page views: X
+- Downloads: X
+- Conversion rate: X%
+
+Revenue:
+- Trials started: X
+- Paid conversions: X
+- MRR: $X
+
+Top keywords: [paste from App Store Connect]
+Top content: [paste TikTok/Pinterest analytics]
+
+Apple Search Ads (if running):
+- Spend: $X
+- Installs: X
+- CPI: $X
+- Conversions: X
+
+Questions:
+1. What are the biggest levers to focus on next week?
+2. Which keywords should I double down on or cut?
+3. What content themes are resonating?
+4. Where am I leaving money on the table?
+```
+
+#### Competitor Analysis Prompt
+
+```
+Analyze the top 5 competing apps for AI greeting card/message writing:
+1. Wishbot
+2. Cardsy
+3. GreetingCardWriter
+4. [others in App Store search results]
+
+For each, identify:
+- App Store title and subtitle
+- Primary keywords they're targeting
+- Pricing model
+- What they're doing well
+- What they're doing poorly
+- Gaps Prosepal can exploit
+
+Also check: What are people complaining about in their 1-3 star reviews?
+```
+
+### Weekly Execution Cadence
+
+| Day | Task | Time | AI-Assisted |
+|-----|------|------|-------------|
+| **Monday** | Batch generate week's content | 1-2 hrs | ✅ |
+| **Tuesday** | Post TikTok #1, schedule pins | 30 min | - |
+| **Wednesday** | Post TikTok #2, engage comments | 30 min | - |
+| **Thursday** | Post TikTok #3, Reddit participation | 45 min | ✅ (draft replies) |
+| **Friday** | Post TikTok #4, review mid-week data | 30 min | - |
+| **Saturday** | Post TikTok #5, seed Pinterest | 30 min | - |
+| **Sunday** | Analytics review, plan next week | 1 hr | ✅ |
+
+**Total time**: ~5-6 hours/week on marketing
+
+### Content Volume Targets
+
+| Channel | Weekly Volume | Monthly Volume |
+|---------|---------------|----------------|
+| TikTok/Reels | 5-7 posts | 20-28 posts |
+| Pinterest | 10-15 pins | 40-60 pins |
+| Reddit | 2-3 genuine comments | 8-12 comments |
+| Blog (prosepal.app) | 1 post | 4 posts |
+| X/Twitter | 3-5 posts | 12-20 posts |
+
+### SEO Content Strategy (prosepal.app)
+
+The landing page should work harder for organic traffic. Target long-tail keywords with blog content.
+
+**Priority Blog Posts** (generate with AI, publish on prosepal.app/blog):
+
+| Title | Target Keyword | Search Intent |
+|-------|----------------|---------------|
+| "What to Write in a Sympathy Card: 50 Thoughtful Examples" | what to write in sympathy card | High intent, 110K+ monthly |
+| "Birthday Card Messages That Don't Sound Generic" | birthday card message ideas | High volume |
+| "Thank You Card Wording for Every Situation" | thank you card wording | Medium volume |
+| "How to Write a Wedding Card Message (With Examples)" | wedding card message | Seasonal spikes |
+| "Graduation Card Messages They'll Actually Remember" | graduation card message | May-June spike |
+
+**Blog Post Prompt Template**:
+
+```
+Write a 1500-word SEO-optimized blog post.
+
+Title: "[Target title]"
+Target keyword: "[keyword]" - use naturally 3-5 times
+Secondary keywords: [related terms]
+
+Structure:
+1. Hook that acknowledges the struggle
+2. Quick tips (skimmable)
+3. 15-20 example messages organized by relationship/tone
+4. Subtle CTA: "Need something more personalized? Prosepal generates custom messages in 30 seconds."
+5. FAQ section (3-4 questions for featured snippets)
+
+Tone: Warm, helpful, not salesy
+Word count: 1500-2000 words
+```
+
+### Product Hunt Launch Plan
+
+**Best day**: Tuesday or Wednesday, 12:01 AM PT
+
+**Assets to Prepare** (generate with AI):
+
+| Asset | Details |
+|-------|---------|
+| Tagline | Max 60 chars: "AI that writes your greeting card messages in 30 seconds" |
+| Description | 260 chars explaining value prop |
+| First Comment | Founder story - why you built this, personal angle |
+| Gallery | 5 images: logo, 3 screenshots, 1 before/after |
+| Maker Bio | Short personal story + link to app |
+
+**Launch Day Checklist**:
+- [ ] Post goes live 12:01 AM PT
+- [ ] Share to personal networks immediately
+- [ ] Post in relevant Slack/Discord communities
+- [ ] Tweet thread announcing launch
+- [ ] Respond to every comment within 1 hour
+- [ ] Share progress updates throughout day
+
+**Product Hunt Prompt**:
+
+```
+I'm launching Prosepal on Product Hunt - an AI app that writes greeting card messages.
+
+Generate:
+1. Tagline (max 60 chars)
+2. Short description (max 260 chars)
+3. First comment as the maker (personal, authentic, tell why I built this)
+4. 5 FAQ questions and answers
+5. 10 reply templates for common comments (thank yous, feature questions, etc.)
+
+Tone: Indie hacker, authentic, grateful, not corporate
+```
+
+### Iteration Loop: Feed Data Back to AI
+
+The playbook's secret weapon: **weekly feedback loops**.
+
+```
+[After each week, provide AI with:]
+
+What worked:
+- TikTok about [topic] got X views
+- Pinterest pin about [occasion] got X saves
+- Keyword "[keyword]" drove X impressions
+
+What didn't work:
+- TikTok about [topic] flopped (X views)
+- Keyword "[keyword]" has high competition, low conversions
+
+Upcoming context:
+- [Holiday] is in X weeks
+- Saw competitor do [thing]
+- User feedback: [quote]
+
+Generate next week's content strategy adjustments.
+```
+
+### Tool Stack for Solo Execution
+
+| Purpose | Free Tool | Paid Alternative |
+|---------|-----------|------------------|
+| AI content | Claude (free tier) | Claude Pro ($20/mo) |
+| Design | Canva (free) | Canva Pro ($13/mo) |
+| Scheduling | Manual posting | Buffer/Later ($15/mo) |
+| Analytics | Native platform analytics | - |
+| Link tracking | Bitly (free tier) | - |
+| Email capture | Carrd form + Google Sheets | ConvertKit (free to 1K) |
+
+### Quick Wins Before Launch
+
+| Task | Effort | Impact |
+|------|--------|--------|
+| Add "Mum/Mom" localization to AI output | Medium | High (UK market) |
+| Add optional share watermark to copied messages | Low | Medium (viral loop) |
+| Publish 3 SEO blog posts to prosepal.app | Medium | High (long-term traffic) |
+| Prepare 30 TikTok scripts | Medium | High (content runway) |
+| Draft Product Hunt assets | Low | Medium (launch spike) |
+| Generate 50 Pinterest pins | Low | Medium (evergreen traffic) |
+
+---
+
 ## Appendix: Quick Reference
 
 ### Elevator Pitch (30 seconds)
@@ -893,15 +1235,16 @@ This captures:
 
 ## Appendix: Future Considerations
 
-*From January 2026 strategy review*
+*From January 2026 strategy review + AI execution playbook integration*
 
 ### Growth Acceleration
 
-| Item | Rationale |
-|------|-----------|
-| **Referral program** | No viral loop currently - add shareable outputs with app watermark, referral incentives |
-| **Increase paid test budgets** | $50-100/day may be too conservative for statistically significant ROAS data in 2026 market |
-| **Platform diversification** | Heavy TikTok/Instagram reliance risks algorithm changes - add YouTube Shorts, expand Pinterest |
+| Item | Rationale | Status |
+|------|-----------|--------|
+| **Viral loop via share watermark** | No viral loop currently - add optional "✍️ Written with Prosepal" when copying | Phase 0 task |
+| **Referral program** | Incentivize sharing with free generations or Pro trial extension | Post-launch |
+| **Increase paid test budgets** | $50-100/day may be too conservative for statistically significant ROAS data in 2026 market | Phase 3 |
+| **Platform diversification** | Heavy TikTok/Instagram reliance risks algorithm changes - add YouTube Shorts, expand Pinterest | Phase 2+ |
 
 ### Market Expansion
 
@@ -910,16 +1253,25 @@ This captures:
 | ~~Global data earlier~~ | ~~Current stats are U.S.-centric~~ | ✅ Done - UK/CA/AU/NZ/IE data added |
 | **Balance occasion messaging** | Sympathy emphasis may narrow perceived utility - highlight high-volume occasions (birthday, thank you) equally | Pending |
 | **Quarterly competitor refresh** | AI landscape evolving fast - schedule updates to track Thankbox, Venngage, emerging tools | Pending |
-| **UK-first paid acquisition** | UK has 94% card penetration, highest per-capita - consider prioritising UK Apple Search Ads | New |
-| **Localisation (Mum vs Mom)** | AI output should adapt spelling to user's locale (colour/color, Mum/Mom) | New |
+| **UK-first paid acquisition** | UK has 94% card penetration, highest per-capita - prioritise UK Apple Search Ads | Phase 3 |
+| **Localisation (Mum vs Mom)** | AI output should adapt spelling to user's locale (colour/color, Mum/Mom) | Phase 0 task |
 
 ### Retention Depth
 
-| Item | Rationale |
-|------|-----------|
-| **Email/SMS re-engagement** | No flows defined beyond push notifications |
-| **Seasonal campaigns** | Tie push notifications to major holidays with countdown messaging |
-| **Cohort-specific targets** | Add Pro conversion benchmarks by persona (Last-Minute Carer vs. Thoughtful Giver) |
+| Item | Rationale | Status |
+|------|-----------|--------|
+| **Email/SMS re-engagement** | No flows defined beyond push notifications | Post-launch |
+| **Seasonal campaigns** | Tie push notifications to major holidays with countdown messaging | Phase 2 |
+| **Cohort-specific targets** | Add Pro conversion benchmarks by persona (Last-Minute Carer vs. Thoughtful Giver) | Month 3+ |
+
+### Content & SEO
+
+| Item | Rationale | Status |
+|------|-----------|--------|
+| **prosepal.app/blog** | Landing page should drive organic traffic via SEO content | Phase 0 task |
+| **AI batch content workflow** | Operationalize weekly content generation with Claude | See Section 13 |
+| **Product Hunt launch** | One-time visibility spike, good for early social proof | Week 2 |
+| **Pinterest as evergreen channel** | Long content lifespan (60%+ saves are 1+ year old) | Phase 1-2 |
 
 ---
 
@@ -939,4 +1291,4 @@ This captures:
 
 ---
 
-*Document maintained by Marketing. Last research update: January 2026. v2.1 Global markets edition.*
+*Document maintained by Marketing. Last update: January 10, 2026. v2.2 AI execution playbook edition.*

@@ -21,9 +21,8 @@ class ReviewService {
   static const _minGenerationsForReview = 3;
   static const _minDaysBeforeReview = 2;
 
-  // RELEASE BLOCKER: Set after Apple approval
-  // App Store Connect > App Information > Apple ID (numeric, e.g., '1234567890')
-  static const _appStoreId = '';
+  // App Store Connect > App Information > Apple ID
+  static const _appStoreId = '6757088726';
 
   /// Records the first launch timestamp if not already set.
   Future<void> recordFirstLaunchIfNeeded() async {
