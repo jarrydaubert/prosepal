@@ -468,9 +468,9 @@ class _CustomPaywallScreenState extends ConsumerState<CustomPaywallScreen> {
           'Birthday, wedding, sympathy & more',
         ).animate().fadeIn(delay: 250.ms),
         _buildFeatureRow(
-          Icons.sync,
-          'Sync across devices',
-          'iPhone, iPad, Android',
+          Icons.history,
+          'Message history',
+          'Save and revisit your favorites',
         ).animate().fadeIn(delay: 300.ms),
         _buildFeatureRow(
           Icons.fingerprint,
@@ -529,13 +529,12 @@ class _CustomPaywallScreenState extends ConsumerState<CustomPaywallScreen> {
       ),
       child: Row(
         children: [
-          const Text('💬', style: TextStyle(fontSize: 18)),
+          const Text('💡', style: TextStyle(fontSize: 18)),
           const Gap(AppSpacing.sm),
           Expanded(
             child: Text(
-              '"Saved me in the card aisle!"',
+              'Perfect for birthdays, thank yous, and heartfelt moments',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                fontStyle: FontStyle.italic,
                 color: AppColors.textSecondary,
               ),
             ),

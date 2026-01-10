@@ -538,7 +538,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 color: AppColors.primary,
               ),
               title: 'Sign In / Create Account',
-              subtitle: 'Sync your messages across devices',
+              subtitle: 'Save your subscription and preferences',
               trailing: const Icon(
                 Icons.chevron_right,
                 color: AppColors.textSecondary,

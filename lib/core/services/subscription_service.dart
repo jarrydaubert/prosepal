@@ -133,9 +133,9 @@ class SubscriptionService implements ISubscriptionService {
       return;
     }
 
-    // Only enable debug logging in debug mode
+    // Use warn level even in debug - debug level logs raw JWT receipts
     if (kDebugMode) {
-      await Purchases.setLogLevel(LogLevel.debug);
+      await Purchases.setLogLevel(LogLevel.warn);
     }
 
     // StoreKit2 is the default in purchases_flutter 9.x
