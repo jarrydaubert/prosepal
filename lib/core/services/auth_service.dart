@@ -281,6 +281,9 @@ class AuthService implements IAuthService {
       throw const AuthException('Google Sign In failed: No ID token');
     }
 
+    // Note: google_sign_in 7.x on iOS includes a nonce in the ID token.
+    // Enable "Skip nonce checks" for Google in Supabase Dashboard to fix
+    // "Nonces mismatch" error, since we can't access the raw nonce.
     final response = await _supabase.signInWithIdToken(
       provider: OAuthProvider.google,
       idToken: idToken,
