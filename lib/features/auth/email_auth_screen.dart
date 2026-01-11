@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/providers/providers.dart';
+import '../../core/services/log_service.dart';
 import '../../shared/theme/app_colors.dart';
 import '../paywall/paywall_sheet.dart';
 
@@ -148,8 +149,9 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
         context.go('/home');
         // Show paywall if coming from paywall flow
         if (widget.returnToPaywall) {
+          Log.info('Email auth: Returning to paywall');
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) showPaywall(context);
+            if (mounted) showPaywall(context, source: 'email_auth');
           });
         }
       }

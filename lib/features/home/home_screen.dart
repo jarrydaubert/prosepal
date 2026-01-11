@@ -98,7 +98,7 @@ class HomeScreen extends ConsumerWidget {
                           context.push('/auth?autorestore=true');
                         } else {
                           // Show paywall sheet (has inline auth)
-                          showPaywall(context);
+                          showPaywall(context, source: 'home');
                         }
                       },
                       onProTap: () async {
