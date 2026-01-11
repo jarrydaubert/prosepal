@@ -110,7 +110,8 @@ final _routes = <RouteBase>[
     path: '/auth/email',
     name: 'emailAuth',
     builder: (context, state) => EmailAuthScreen(
-      returnToPaywall: state.uri.queryParameters['returnToPaywall'] == 'true',
+      autoPurchase: state.uri.queryParameters['autoPurchase'] == 'true',
+      packageId: state.uri.queryParameters['package'],
     ),
   ),
   // Auth callback routes - Supabase SDK handles the auth, these just redirect

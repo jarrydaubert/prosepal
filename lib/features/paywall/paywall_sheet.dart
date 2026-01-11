@@ -223,11 +223,20 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
   }
 
   void _signInWithEmail() {
-    Log.info('Paywall: Email auth selected');
-    // Close sheet and navigate to email auth, then re-show sheet after
-    _navigatedToEmailAuth = true; // Prevent false dismiss analytics
+    final packages = _offering?.availablePackages ?? [];
+    if (packages.isEmpty) return;
+
+    final selectedPackage = packages[_selectedPackageIndex];
+    Log.info('Paywall: Email auth selected', {
+      'package': selectedPackage.identifier,
+    });
+
+    // Pass selected package for auto-purchase after auth
+    _navigatedToEmailAuth = true;
     Navigator.of(context).pop(false);
-    context.push('/auth/email?returnToPaywall=true');
+    context.push(
+      '/auth/email?autoPurchase=true&package=${Uri.encodeComponent(selectedPackage.identifier)}',
+    );
   }
 
   // ===========================================================================
