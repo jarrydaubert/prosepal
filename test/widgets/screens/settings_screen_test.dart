@@ -173,17 +173,18 @@ void main() {
         expect(find.text('Restore Purchases'), findsOneWidget);
       });
 
-      testWidgets('Upgrade button navigates to auth for anonymous user', (
+      testWidgets('Upgrade button shows paywall sheet for anonymous user', (
         tester,
       ) async {
         await tester.pumpWidget(buildTestWidget());
         await tester.pumpAndSettle();
 
+        // Tap upgrade - should show paywall sheet (modal)
         await tester.tap(find.text('Upgrade'));
-        await tester.pumpAndSettle();
+        await tester.pump();
 
-        // Anonymous users go to auth first
-        expect(find.text('Auth'), findsOneWidget);
+        // Verify a modal bottom sheet was shown (BottomSheet widget)
+        expect(find.byType(BottomSheet), findsOneWidget);
       });
     });
 

@@ -9,9 +9,13 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/providers/providers.dart';
 import '../../shared/theme/app_colors.dart';
+import '../paywall/paywall_sheet.dart';
 
 class EmailAuthScreen extends ConsumerStatefulWidget {
-  const EmailAuthScreen({super.key});
+  const EmailAuthScreen({super.key, this.returnToPaywall = false});
+
+  /// If true, show paywall sheet after successful auth
+  final bool returnToPaywall;
 
   @override
   ConsumerState<EmailAuthScreen> createState() => _EmailAuthScreenState();
@@ -142,6 +146,12 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
       // Navigate after successful auth
       if (mounted) {
         context.go('/home');
+        // Show paywall if coming from paywall flow
+        if (widget.returnToPaywall) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) showPaywall(context);
+          });
+        }
       }
     } on AuthException catch (e) {
       // Record failure for rate limiting (only for auth failures)
