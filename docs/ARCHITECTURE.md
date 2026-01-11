@@ -1,358 +1,573 @@
-# Prosepal Architecture
+# Prosepal Architecture Overview
 
-> Directory structure and file purposes. Evergreen reference - no metrics or versions.
+---
+**Document Control**
+
+| Field | Value |
+|-------|-------|
+| Version | 1.0.0 |
+| Classification | Internal |
+| Owner | Development Team |
+| Last Reviewed | 2026-01-11 |
+| Next Review | 2026-07-11 |
 
 ---
 
-## Project Structure
+## Scope
+
+This document covers the technical architecture of the Prosepal mobile application:
+
+**In Scope:**
+- Flutter application architecture and patterns
+- State management and dependency injection
+- Authentication and authorization flows
+- AI generation pipeline
+- Subscription and monetization
+- Data persistence and configuration
+
+**Out of Scope:**
+- prosepal-web marketing site (separate codebase)
+- Infrastructure/DevOps (Firebase, Supabase consoles)
+- Security controls (see `SECURITY.md`)
+
+---
+
+## Executive Summary
+
+Prosepal is a production-grade Flutter application for AI-powered greeting card message generation. Built on a shared tech stack designed for portfolio replication, it implements clean architecture principles with interface-based dependency injection, multi-provider authentication, subscription monetization, and reactive state management.
+
+---
+
+## Tech Stack
+
+| Layer | Technology | Purpose |
+|-------|------------|---------|
+| Framework | Flutter 3.38+ / Dart 3.10+ | Cross-platform mobile |
+| State | Riverpod 3.x | Reactive state management |
+| Navigation | GoRouter | Declarative routing with guards |
+| AI | Firebase AI (Gemini 2.5 Flash) | Message generation |
+| Auth | Supabase | Multi-provider authentication |
+| Database | Supabase PostgreSQL | User data, usage tracking |
+| Payments | RevenueCat | Subscription management |
+| Analytics | Firebase Analytics | User behavior tracking |
+| Crash Reporting | Firebase Crashlytics | Error monitoring |
+| Feature Flags | Firebase Remote Config | Runtime configuration |
+
+---
+
+## System Architecture
 
 ```
-Project Nexus/
-├── prosepal/                     # Flutter mobile app
-└── prosepal-web/                 # Vercel landing page
+┌─────────────────────────────────────────────────────────────────┐
+│                      PRESENTATION LAYER                         │
+│  ┌────────────────────────────────────────────────────────────┐ │
+│  │  features/ (9 modules)                                      │ │
+│  │  ├── auth/          Sign-in screens                        │ │
+│  │  ├── home/          Occasion grid (40 occasions)           │ │
+│  │  ├── generate/      Multi-step wizard                      │ │
+│  │  ├── results/       Generated messages                     │ │
+│  │  ├── history/       Past generations                       │ │
+│  │  ├── paywall/       Subscription UI                        │ │
+│  │  ├── settings/      Account management                     │ │
+│  │  ├── onboarding/    User education                         │ │
+│  │  └── error/         Error screens                          │ │
+│  └────────────────────────────────────────────────────────────┘ │
+│  ┌────────────────────────────────────────────────────────────┐ │
+│  │  shared/                                                    │ │
+│  │  ├── components/    Reusable widgets                       │ │
+│  │  └── theme/         Design tokens, colors, typography      │ │
+│  └────────────────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                    ┌─────────▼─────────┐
+                    │   STATE LAYER     │
+                    │  core/providers/  │
+                    │  (Riverpod 3.x)   │
+                    └─────────┬─────────┘
+                              │
+┌─────────────────────────────▼───────────────────────────────────┐
+│                     BUSINESS LOGIC LAYER                        │
+│  ┌────────────────────────────────────────────────────────────┐ │
+│  │  core/services/ (21 files)                                  │ │
+│  │  ├── ai_service.dart           Gemini generation           │ │
+│  │  ├── auth_service.dart         Multi-provider auth         │ │
+│  │  ├── subscription_service.dart RevenueCat integration      │ │
+│  │  ├── usage_service.dart        Tier tracking               │ │
+│  │  ├── history_service.dart      Message storage             │ │
+│  │  ├── biometric_service.dart    Face ID/Touch ID            │ │
+│  │  ├── rate_limit_service.dart   API abuse prevention        │ │
+│  │  ├── remote_config_service.dart Feature flags              │ │
+│  │  └── log_service.dart          Crashlytics integration     │ │
+│  └────────────────────────────────────────────────────────────┘ │
+│  ┌────────────────────────────────────────────────────────────┐ │
+│  │  core/interfaces/                                           │ │
+│  │  ├── IAuthService              Auth contract               │ │
+│  │  ├── ISubscriptionService      Payment contract            │ │
+│  │  ├── IAppleAuthProvider        Apple OAuth contract        │ │
+│  │  ├── IGoogleAuthProvider       Google OAuth contract       │ │
+│  │  └── ISupabaseAuthProvider     Backend contract            │ │
+│  └────────────────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+┌─────────────────────────────▼───────────────────────────────────┐
+│                         DATA LAYER                              │
+│  ┌────────────────────────────────────────────────────────────┐ │
+│  │  core/models/ (Freezed immutable models)                    │ │
+│  │  ├── GeneratedMessage, GenerationResult                    │ │
+│  │  ├── Occasion (40 values), Relationship, Tone              │ │
+│  │  └── MessageLength                                          │ │
+│  └────────────────────────────────────────────────────────────┘ │
+│  ┌────────────────────────────────────────────────────────────┐ │
+│  │  core/config/                                               │ │
+│  │  ├── app_config.dart           Environment variables       │ │
+│  │  ├── ai_config.dart            Model parameters            │ │
+│  │  └── preference_keys.dart      Storage key constants       │ │
+│  └────────────────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+┌─────────────────────────────▼───────────────────────────────────┐
+│                      EXTERNAL SERVICES                          │
+│                                                                 │
+│   Firebase           Supabase          RevenueCat              │
+│   ├─ Crashlytics     ├─ Auth           ├─ Subscriptions        │
+│   ├─ Analytics       ├─ Database       └─ Paywalls             │
+│   ├─ Remote Config   ├─ RLS Policies                           │
+│   └─ AI (Gemini)     └─ Edge Functions                         │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## prosepal-web/ (Landing Page)
-
-```
-prosepal-web/
-├── public/
-│   ├── index.html                # Landing page with App Store/Play Store badges
-│   ├── privacy.html              # Privacy policy
-│   ├── terms.html                # Terms of service
-│   ├── support.html              # Support/contact page
-│   ├── logo.png                  # App logo
-│   ├── favicon.png               # Browser favicon
-│   ├── apple-touch-icon.png      # iOS home screen icon
-│   ├── llms.txt                  # LLM context file
-│   ├── sitemap.xml               # Search engine sitemap
-│   └── robots.txt                # Search engine crawl rules
-├── package.json                  # Node dependencies (serve)
-├── vercel.json                   # Vercel deployment config
-└── .vercel/                      # Vercel project metadata
-```
-
----
-
-## prosepal/ (Flutter App)
-
-### lib/ - Application Source
+## Directory Structure
 
 ```
 lib/
-├── main.dart                     # Entry point, Firebase/Supabase init
-├── firebase_options.dart         # Firebase config (auto-generated)
-│
+├── main.dart                     Entry point, service initialization
+├── firebase_options.dart         Firebase config (auto-generated)
 ├── app/
-│   ├── app.dart                  # Root MaterialApp, auth state listener, lock timeout
-│   └── router.dart               # GoRouter config, route guards
-│
+│   ├── app.dart                 Root widget, lifecycle management
+│   └── router.dart              GoRouter config, route guards
 ├── core/
-│   ├── config/
-│   │   └── ai_config.dart        # AI model parameters (model name, tokens, etc.)
-│   │
-│   ├── errors/
-│   │   └── auth_errors.dart      # User-friendly error message mapping
-│   │
-│   ├── interfaces/               # Service contracts (for DI/testing)
-│   │   ├── auth_interface.dart
-│   │   ├── biometric_interface.dart
-│   │   ├── subscription_interface.dart
-│   │   ├── apple_auth_provider.dart
-│   │   ├── google_auth_provider.dart
-│   │   └── supabase_auth_provider.dart
-│   │
-│   ├── models/                   # Data models
-│   │   ├── models.dart           # Barrel export
-│   │   ├── occasion.dart         # Occasion enum with colors (40 occasions)
-│   │   ├── relationship.dart     # Relationship enum
-│   │   ├── tone.dart             # Tone enum
-│   │   ├── message_length.dart   # MessageLength enum
-│   │   ├── generated_message.dart      # Freezed model
-│   │   ├── generated_message.freezed.dart
-│   │   └── generated_message.g.dart
-│   │
-│   ├── providers/
-│   │   └── providers.dart        # Riverpod providers (state management)
-│   │
-│   └── services/                 # Business logic
-│       ├── ai_service.dart       # Firebase AI (Gemini) integration
-│       ├── auth_service.dart     # Auth orchestrator
-│       ├── auth_throttle_service.dart  # Auth rate limiting
-│       ├── apple_auth_provider.dart
-│       ├── google_auth_provider.dart
-│       ├── supabase_auth_provider.dart
-│       ├── biometric_service.dart      # Face ID / Touch ID / Fingerprint
-│       ├── subscription_service.dart   # RevenueCat integration
-│       ├── usage_service.dart          # Free/Pro usage tracking (Supabase)
-│       ├── history_service.dart        # Message history (Supabase)
-│       ├── rate_limit_service.dart     # API rate limiting (Supabase)
-│       ├── device_fingerprint_service.dart  # Device ID tracking
-│       ├── reauth_service.dart         # Re-authentication for sensitive ops
-│       ├── review_service.dart         # App Store review prompts
-│       ├── diagnostic_service.dart     # Debug diagnostics collection
-│       └── log_service.dart            # Crashlytics logging
-│
-├── features/                     # Feature modules
-│   ├── auth/
-│   │   ├── auth_screen.dart      # Sign in (Apple, Google, Email)
-│   │   ├── email_auth_screen.dart
-│   │   └── lock_screen.dart      # Biometric unlock
-│   │
-│   ├── home/
-│   │   ├── home_screen.dart      # Occasion grid
-│   │   └── widgets/
-│   │       └── occasion_grid.dart
-│   │
-│   ├── generate/
-│   │   ├── generate_screen.dart  # Multi-step wizard
-│   │   └── widgets/
-│   │       ├── relationship_picker.dart
-│   │       ├── tone_selector.dart
-│   │       └── details_input.dart
-│   │
-│   ├── results/
-│   │   └── results_screen.dart   # Generated messages display
-│   │
-│   ├── history/
-│   │   └── history_screen.dart   # Past generations
-│   │
-│   ├── paywall/
-│   │   └── custom_paywall_screen.dart  # RevenueCat paywall
-│   │
-│   ├── onboarding/
-│   │   └── onboarding_screen.dart
-│   │
-│   └── settings/
-│       ├── settings_screen.dart
-│       ├── feedback_screen.dart  # Support with diagnostic logs
-│       └── legal_screen.dart     # Privacy policy, terms of service
-│
-└── shared/                       # Reusable UI
-    ├── components/               # All shared widgets (flat structure)
-    │   ├── app_button.dart
-    │   ├── app_logo.dart
-    │   ├── generation_loading_overlay.dart
-    │   ├── section_header.dart
-    │   ├── settings_tile.dart
-    │   ├── tappable_card.dart
-    │   └── usage_indicator.dart
+│   ├── config/                  Configuration (ai_config, app_config)
+│   ├── errors/                  Error classification (auth_errors)
+│   ├── interfaces/              Service contracts for DI
+│   ├── models/                  Freezed data models
+│   ├── providers/               Riverpod providers
+│   └── services/                Business logic (21 services)
+├── features/                     Feature modules (9 modules)
+│   ├── auth/                    Sign-in, email auth, lock screen
+│   ├── error/                   Error display screens
+│   ├── generate/                Multi-step generation wizard
+│   ├── history/                 Past generations
+│   ├── home/                    Occasion grid
+│   ├── onboarding/              User education flow
+│   ├── paywall/                 RevenueCat paywall
+│   ├── results/                 Generated messages display
+│   └── settings/                Account, feedback, legal
+└── shared/
+    ├── components/              Reusable widgets (flat structure)
+    └── theme/                   Design tokens, colors, typography
+```
+
+---
+
+## Key Architectural Patterns
+
+### 1. Dependency Injection
+
+**Pattern:** Interface-based DI with Riverpod providers
+
+| Benefit | Implementation |
+|---------|----------------|
+| Testability | Provider overrides in tests |
+| Loose coupling | Services depend on interfaces, not implementations |
+| Single responsibility | One service per concern |
+
+```dart
+// Interface definition
+abstract class IAuthService {
+  Future<AuthResponse?> signInWithApple();
+  Future<AuthResponse?> signInWithGoogle();
+  Future<void> signOut();
+}
+
+// Provider registration with dependencies
+final authServiceProvider = Provider<IAuthService>((ref) {
+  return AuthService(
+    supabaseAuth: ref.watch(supabaseAuthProvider),
+    appleAuth: ref.watch(appleAuthProvider),
+    googleAuth: ref.watch(googleAuthProvider),
+  );
+});
+```
+
+### 2. State Management (Riverpod 3.x)
+
+| Provider Type | Use Case | Example |
+|---------------|----------|---------|
+| `Provider` | Service singletons | `authServiceProvider` |
+| `StateNotifierProvider` | Complex state with listeners | `customerInfoProvider` |
+| `StateProvider` | Simple mutable state | `selectedOccasionProvider` |
+| `FutureProvider` | Async data | `checkProStatusProvider` |
+
+**autoDispose Strategy:**
+
+| State Type | autoDispose | Reason |
+|------------|-------------|--------|
+| Form state | Yes | Cleanup on screen dispose |
+| User session | No | Survives navigation |
+| Service providers | No | Singleton lifetime |
+
+### 3. Error Handling
+
+**AI Service Exception Hierarchy:**
+
+```
+AiException (abstract)
+├── AiNetworkException       No connectivity
+├── AiRateLimitException     Too many requests
+├── AiContentBlockedException Safety filter triggered
+├── AiUnavailableException   Service down (retryable)
+├── AiEmptyResponseException No content returned
+├── AiParseException         Invalid JSON response
+├── AiTruncationException    Hit maxTokens (retryable)
+└── AiServiceException       Catch-all
+```
+
+**Retry Configuration:**
+- Exponential backoff with jitter
+- Max 3 retries
+- Only retryable exceptions trigger retry
+
+### 4. Navigation (GoRouter)
+
+**Route Protection:**
+
+| Route Type | Behavior |
+|------------|----------|
+| Public (`/splash`, `/onboarding`) | Always accessible |
+| Auth (`/auth/*`) | Accessible during auth flow |
+| Protected (`/home`, `/generate/*`) | Requires onboarding completion |
+
+---
+
+## Authentication Architecture
+
+### Multi-Provider Flow
+
+```
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│    Apple    │     │   Google    │     │   Email     │
+│   Sign-In   │     │   Sign-In   │     │ Magic Link  │
+└──────┬──────┘     └──────┬──────┘     └──────┬──────┘
+       │                   │                   │
+       ▼                   ▼                   ▼
+┌──────────────────────────────────────────────────────┐
+│                    AuthService                        │
+│  • SHA-256 nonce generation (replay prevention)      │
+│  • Token extraction and validation                   │
+│  • Provider-specific error handling                  │
+└──────────────────────────┬───────────────────────────┘
+                           │
+                           ▼
+┌──────────────────────────────────────────────────────┐
+│              SupabaseAuthProvider                     │
+│  • signInWithIdToken() - OAuth token exchange        │
+│  • signInWithOtp() - Magic link                      │
+│  • Session management (JWT, auto-refresh)            │
+└──────────────────────────┬───────────────────────────┘
+                           │
+                           ▼
+┌──────────────────────────────────────────────────────┐
+│                 Post-Auth Actions                     │
+│  • RevenueCat.identifyUser(userId)                   │
+│  • UsageService.syncFromServer()                     │
+│  • Navigate to /home                                 │
+└──────────────────────────────────────────────────────┘
+```
+
+### Deep Link Configuration
+
+| Type | URL Pattern | Handler |
+|------|-------------|---------|
+| Magic Link | `https://prosepal.app/auth/login-callback` | Supabase SDK |
+| Password Reset | `https://prosepal.app/auth/reset-callback` | Supabase SDK |
+
+---
+
+## Subscription & Monetization
+
+### Tier System
+
+| Tier | Generations | Period | Enforcement |
+|------|-------------|--------|-------------|
+| Free | 1 | Lifetime (per device) | Client + server |
+| Pro | 500 | Monthly (resetting) | Server-side RPC |
+
+### RevenueCat Integration
+
+```
+┌─────────────────────────────────────────────────────┐
+│                 SubscriptionService                  │
+│  • initialize()        SDK setup                    │
+│  • isPro()             Check 'pro' entitlement      │
+│  • purchasePackage()   Complete purchase            │
+│  • restorePurchases()  Restore from receipts        │
+│  • customerInfoStream  Reactive updates             │
+└──────────────────────────┬──────────────────────────┘
+                           │
+                           ▼
+┌──────────────────────────────────────────────────────┐
+│              CustomerInfoNotifier                     │
+│  • Listens to RevenueCat stream                      │
+│  • Caches pro status in SharedPreferences            │
+│  • Exposes isProProvider for UI reactivity           │
+└──────────────────────────────────────────────────────┘
+```
+
+---
+
+## AI Generation Pipeline
+
+```
+User Input
     │
-    └── theme/                    # Design tokens
-        ├── app_colors.dart       # Brand colors, semantic colors
-        ├── app_durations.dart    # Animation timing tokens
-        ├── app_shadows.dart      # Elevation/shadow tokens
-        ├── app_spacing.dart      # 8px grid system
-        ├── app_theme.dart        # MaterialApp theme
-        └── app_typography.dart   # Nunito font scale
-```
-
-### test/ - Unit & Widget Tests
-
-```
-test/
-├── README.md                     # Test documentation
-├── mocks/                        # Test doubles
-│   ├── mocks.dart                # Barrel export
-│   ├── mock_ai_service.dart
-│   ├── mock_apple_auth_provider.dart
-│   ├── mock_auth_service.dart
-│   ├── mock_biometric_service.dart
-│   ├── mock_device_fingerprint_service.dart
-│   ├── mock_google_auth_provider.dart
-│   ├── mock_rate_limit_service.dart
-│   ├── mock_reauth_service.dart
-│   ├── mock_subscription_service.dart
-│   └── mock_supabase_auth_provider.dart
-├── app/
-│   └── app_lifecycle_test.dart
-├── errors/
-│   └── auth_errors_test.dart
-├── models/
-│   ├── models_test.dart
-│   └── enum_validation_test.dart
-├── services/
-│   ├── ai_service_test.dart
-│   ├── auth_service_test.dart
-│   ├── auth_throttle_service_test.dart
-│   ├── biometric_service_test.dart
-│   ├── device_fingerprint_service_test.dart
-│   ├── history_service_test.dart
-│   ├── rate_limit_service_test.dart
-│   ├── review_service_test.dart
-│   ├── subscription_service_test.dart
-│   └── usage_service_test.dart
-└── widgets/
-    ├── screens/
-    │   ├── generate_screen_test.dart
-    │   ├── home_screen_test.dart
-    │   ├── results_screen_test.dart
-    │   └── settings_screen_test.dart
-    └── shared/
-        └── app_button_test.dart
-```
-
-### integration_test/ - E2E Tests (Patrol)
-
-```
-integration_test/
-├── e2e_test.dart                 # Mocked E2E tests
-├── e2e_real_test.dart            # Real device E2E tests
-├── ftl_test.dart                 # Firebase Test Lab tests
-├── smoke_test.dart               # Quick smoke tests
-├── journeys/                     # User journey tests
-│   ├── _helpers.dart             # Shared test utilities
-│   ├── j1_fresh_install_test.dart
-│   ├── j2_upgrade_flow_test.dart
-│   ├── j3_pro_generate_test.dart
-│   ├── j4_settings_test.dart
-│   ├── j5_navigation_test.dart
-│   ├── j6_error_resilience_test.dart
-│   ├── j7_restore_flow_test.dart
-│   ├── j8_paywall_test.dart
-│   ├── j9_wizard_details_test.dart
-│   └── j10_results_actions_test.dart
-└── coverage/                     # Coverage tests
-    ├── occasions_test.dart
-    ├── relationships_test.dart
-    └── tones_test.dart
-```
-
-### Platform Code
-
-```
-ios/
-├── Runner/
-│   ├── Info.plist                # Permissions, URL schemes, ATS
-│   └── AppDelegate.swift
-├── Podfile                       # iOS 15.0 minimum
-└── Runner.xcworkspace/
-
-android/
-├── app/
-│   ├── build.gradle.kts          # SDK versions, signing, R8/ProGuard
-│   ├── proguard-rules.pro        # Obfuscation rules
-│   ├── google-services.json      # Firebase config
-│   └── src/main/
-│       ├── AndroidManifest.xml   # Permissions, orientation
-│       └── res/xml/
-│           └── network_security_config.xml  # Block cleartext traffic
-├── key.properties.example        # Signing config template
-└── key.properties                # Actual signing config (gitignored)
-```
-
-### Database (Supabase)
-
-```
-supabase/
-└── functions/
-    └── index.ts                  # Edge functions (delete-user, etc.)
-```
-
-### Documentation
-
-```
-docs/
-├── ARCHITECTURE.md               # This file
-├── BACKLOG.md                    # Feature backlog & priorities
-├── PRODUCT_SPEC.md               # Product requirements
-├── LAUNCH_CHECKLIST.md           # Release checklist
-├── APP_STORE_SUBMISSION_GUIDE.md # App Store submission guide
-├── SERVICE_ENDPOINTS.md          # SDK method coverage
-├── STACK_TEMPLATE.md             # Tech stack blueprint
-├── SUBSCRIPTION_TESTING.md       # RevenueCat manual testing
-├── TESTING.md                    # Test strategy
-├── USER_JOURNEYS.md              # User flow documentation
-├── CLONING_PLAYBOOK.md           # How to clone for new apps
-├── EXPANSION_STRATEGY.md         # Growth plans
-├── PORTFOLIO_STRATEGY.md         # Multi-app strategy
-└── MARKETING.md                  # Marketing content & ASO
-```
-
-### Assets
-
-```
-assets/
-└── images/
-    ├── logo.png                  # App logo (splash, about)
-    └── icons/
-        ├── google_g.png          # Google sign-in button
-        ├── google_g@2x.png
-        └── google_g@3x.png
-```
-
-### Scripts
-
-```
-scripts/
-└── build_release.local.sh        # Local release build script
-```
-
-### Config Files
-
-```
-pubspec.yaml                      # Flutter dependencies
-pubspec.lock                      # Locked dependency versions
-analysis_options.yaml             # Linter rules (strict-casts, strict-raw-types)
-firebase.json                     # Firebase project config
-.gitignore                        # Git exclusions
-.github/workflows/ci.yml          # GitHub Actions CI
-CLAUDE.md                         # AI assistant context
+    ▼
+┌─────────────────────────────────────────────────────┐
+│                  Input Validation                    │
+│  • Connectivity check (DNS lookup, 3s timeout)      │
+│  • Input sanitization (prompt injection defense)    │
+│  • Length limits: name 50, details 500 chars        │
+└──────────────────────────┬──────────────────────────┘
+                           │
+                           ▼
+┌─────────────────────────────────────────────────────┐
+│                  Prompt Building                     │
+│  • System instruction (ai_config.dart)              │
+│  • Occasion/relationship/tone context               │
+│  • Recipient personalization (optional)             │
+└──────────────────────────┬──────────────────────────┘
+                           │
+                           ▼
+┌─────────────────────────────────────────────────────┐
+│              Firebase AI (Gemini 2.5)               │
+│  • Model: gemini-2.5-flash (via Remote Config)      │
+│  • Safety: harassment, hate, explicit filters       │
+│  • Timeout: 30 seconds                              │
+└──────────────────────────┬──────────────────────────┘
+                           │
+                           ▼
+┌─────────────────────────────────────────────────────┐
+│               Response Processing                    │
+│  • Blocked content detection                        │
+│  • Truncation detection (auto-retry)                │
+│  • JSON parsing with schema validation              │
+│  • UUID assignment + timestamps                     │
+└──────────────────────────┬──────────────────────────┘
+                           │
+                           ▼
+             GenerationResult (3 messages)
 ```
 
 ---
 
-## Security
+## Data Persistence
 
-| Layer | Implementation |
-|-------|----------------|
-| **Transport** | HTTPS only (Android: network_security_config, iOS: ATS) |
-| **Auth** | Supabase (bcrypt passwords, JWT sessions) |
-| **Biometric** | Local Auth (Face ID / Touch ID / Fingerprint) |
-| **Payments** | RevenueCat → App Store/Play Store (no card data) |
-| **Code** | R8/ProGuard obfuscation, log stripping |
-| **Rate Limiting** | Supabase RPC functions |
-| **Device Tracking** | Fingerprint service for abuse prevention |
+| Data Type | Storage | Encryption | Scope |
+|-----------|---------|------------|-------|
+| Auth Session | Supabase SDK | JWT tokens | App-wide |
+| Preferences | SharedPreferences | No | Local |
+| Message History | Flutter Secure Storage | Platform encryption | Local |
+| Device ID | Flutter Secure Storage | Platform encryption | Device |
+| Logs | Memory buffer (200 max) | No | Session |
 
 ---
 
-## Key Patterns
-
-| Pattern | Location |
-|---------|----------|
-| Dependency Injection | `core/interfaces/` + `core/providers/` |
-| Immutable Models | Freezed in `core/models/` |
-| Feature Modules | `features/{name}/` with screen + widgets |
-| Shared Components | `shared/components/` (flat structure) |
-| Service Layer | `core/services/` implements `core/interfaces/` |
-| State Management | Riverpod providers in `core/providers/` |
-
----
-
-## Data Flow
+## Startup Sequence
 
 ```
-User Action
-    ↓
-Feature Screen (UI)
-    ↓
-Riverpod Provider (State)
-    ↓
-Service (Business Logic)
-    ↓
-External API (Firebase AI, Supabase, RevenueCat)
+main()
+  │
+  ├─ Preserve native splash
+  ├─ Lock to portrait orientation
+  │
+  ├─ Firebase.initializeApp()
+  │   └─ Set up Crashlytics error handlers
+  │
+  ├─ Firebase App Check (non-blocking)
+  │
+  ├─ Remote Config initialization
+  │   └─ Check force update required
+  │       └─ If true: ForceUpdateScreen → exit
+  │
+  ├─ AppConfig.validate()
+  │
+  ├─ Supabase.initialize()
+  │
+  ├─ SubscriptionService.initialize() [non-critical]
+  │
+  ├─ SharedPreferences.getInstance()
+  │
+  ├─ AuthService.initializeProviders() [pre-warm OAuth]
+  │
+  ├─ Create GoRouter with route guards
+  │
+  └─ runApp(ProviderScope with overrides)
+      │
+      └─ Remove native splash
 ```
 
 ---
 
-## Test Coverage
+## Configuration Management
 
-| Layer | Test Type | Location |
-|-------|-----------|----------|
-| Models | Unit | `test/models/` |
-| Services | Unit | `test/services/` |
-| Widgets | Widget | `test/widgets/` |
-| User Journeys | Integration | `integration_test/journeys/` |
-| Enum Coverage | Integration | `integration_test/coverage/` |
+### Build-Time (dart-define)
+
+| Variable | Purpose |
+|----------|---------|
+| `SUPABASE_URL` | Supabase project URL |
+| `SUPABASE_ANON_KEY` | Supabase anonymous key |
+| `REVENUECAT_IOS_KEY` | RevenueCat iOS API key |
+| `REVENUECAT_ANDROID_KEY` | RevenueCat Android API key |
+| `GOOGLE_WEB_CLIENT_ID` | Google OAuth web client |
+| `GOOGLE_IOS_CLIENT_ID` | Google OAuth iOS client |
+
+### Runtime (Remote Config)
+
+| Parameter | Default | Purpose |
+|-----------|---------|---------|
+| `ai_model` | gemini-2.5-flash | Primary AI model |
+| `ai_model_fallback` | gemini-2.5-flash-lite | Fallback model |
+| `min_app_version_ios` | 1.0.0 | Force update threshold |
+| `min_app_version_android` | 1.0.0 | Force update threshold |
+| `force_update_enabled` | false | Toggle force updates |
+
+---
+
+## Monitoring & Observability
+
+| Aspect | Tool | Data Collected |
+|--------|------|----------------|
+| Crashes | Firebase Crashlytics | Stack traces, device info, breadcrumbs |
+| Analytics | Firebase Analytics | Screen views, events, user properties |
+| Feature Flags | Firebase Remote Config | AI model, force update, toggles |
+| Logging | In-memory buffer | Last 200 entries (PII redacted) |
+
+---
+
+## Testing Strategy
+
+### Test Pyramid
+
+| Level | Location | Purpose |
+|-------|----------|---------|
+| Unit | `test/services/`, `test/models/` | Services, models, utilities |
+| Widget | `test/widgets/` | Screen rendering, interactions |
+| Integration | `integration_test/journeys/` | User journeys (Patrol) |
+
+### Mocking Pattern
+
+Manual mocks without code generation for explicit control:
+
+```dart
+class MockAiService implements AiService {
+  List<String> calls = [];
+  GenerationResult? mockResult;
+
+  @override
+  Future<GenerationResult> generateMessages(...) async {
+    calls.add('generateMessages');
+    return mockResult ?? _defaultResult;
+  }
+}
+```
+
+### Test Coverage Summary
+
+| Component | Coverage | Status |
+|-----------|----------|--------|
+| Models | ~90% | Good |
+| Core services | ~60% | Partial |
+| Subscription | 21% | Needs work |
+| Auth providers | 0% | Needs work |
+| ReAuth | 1% | Needs work |
+| Widgets | ~75% | Partial |
+
+---
+
+## Known Gaps & Improvements
+
+See `BACKLOG.md` for full details. Summary:
+
+### High Priority
+
+| Issue | Impact | Recommendation |
+|-------|--------|----------------|
+| Subscription service test coverage (21%) | Revenue-critical undertested | Write comprehensive tests |
+| Auth providers test coverage (0%) | OAuth flows untested | Add provider flow tests |
+| ReAuth service test coverage (1%) | Security-critical undertested | Test all auth paths |
+
+### Medium Priority
+
+| Issue | Impact | Recommendation |
+|-------|--------|----------------|
+| Auth/lock logic in root widget | Hard to test | Extract to AppLifecycleManager |
+| No connectivity monitoring | Reactive errors only | Add connectivity_plus |
+| String-based error detection | Fragile matching | Use typed error enums |
+
+### Low Priority (Tech Debt)
+
+| Issue | Impact | Recommendation |
+|-------|--------|----------------|
+| Navigation string paths | Refactoring risk | Use named route constants |
+| AI config not remote-configurable | Requires app update | Move to Remote Config |
+| 357 lint info warnings | Code cleanliness | Fix in batches by rule |
+
+---
+
+## Architecture Rating
+
+| Aspect | Rating | Notes |
+|--------|--------|-------|
+| Code Quality | A | Clean, well-organized |
+| Patterns | A | Interface-based DI, proper separation |
+| Security | A- | Comprehensive; see SECURITY.md |
+| Testing | B | Gaps in revenue/security services |
+| Documentation | A | Inline docs + external docs |
+| Scalability | A | Clean blueprint for portfolio |
+| Maintainability | A | Easy to extend and modify |
+
+**Overall: A (Excellent)** - Production-grade architecture with documented improvement areas.
+
+---
+
+## Related Documentation
+
+| Document | Purpose |
+|----------|---------|
+| `SECURITY.md` | Security controls & OWASP compliance |
+| `BACKLOG.md` | Known issues & improvement roadmap |
+| `TESTING.md` | Test strategy & coverage details |
+| `LAUNCH_CHECKLIST.md` | Release checklist |
+| `CLONING_PLAYBOOK.md` | Portfolio replication guide |
+
+---
+
+## Glossary
+
+| Term | Definition |
+|------|------------|
+| DI | Dependency Injection - pattern for loose coupling |
+| Freezed | Code generation library for immutable models |
+| GoRouter | Declarative navigation library for Flutter |
+| Riverpod | Reactive state management library |
+| RLS | Row Level Security - Supabase database access control |
+| RPC | Remote Procedure Call - Supabase server functions |
+
+---
+
+## Change Log
+
+| Version | Date | Author | Changes |
+|---------|------|--------|---------|
+| 1.0.0 | 2026-01-11 | Development Team | Initial comprehensive architecture documentation |

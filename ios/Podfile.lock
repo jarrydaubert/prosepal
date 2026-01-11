@@ -128,9 +128,6 @@ PODS:
     - PromisesSwift (~> 2.1)
   - FirebaseSharedSwift (12.6.0)
   - Flutter (1.0.0)
-  - flutter_jailbreak_detection (1.0.0):
-    - Flutter
-    - IOSSecuritySuite
   - flutter_native_splash (2.4.3):
     - Flutter
   - flutter_secure_storage_darwin (10.0.0):
@@ -215,7 +212,6 @@ PODS:
     - Flutter
   - integration_test (0.0.1):
     - Flutter
-  - IOSSecuritySuite (2.2.0)
   - local_auth_darwin (0.0.1):
     - Flutter
     - FlutterMacOS
@@ -251,8 +247,6 @@ PODS:
   - RevenueCat (5.52.1)
   - RevenueCatUI (5.52.1):
     - RevenueCat (= 5.52.1)
-  - screen_secure (0.0.1):
-    - Flutter
   - share_plus (0.0.1):
     - Flutter
   - shared_preferences_foundation (0.0.1):
@@ -273,7 +267,6 @@ DEPENDENCIES:
   - firebase_crashlytics (from `.symlinks/plugins/firebase_crashlytics/ios`)
   - firebase_remote_config (from `.symlinks/plugins/firebase_remote_config/ios`)
   - Flutter (from `Flutter`)
-  - flutter_jailbreak_detection (from `.symlinks/plugins/flutter_jailbreak_detection/ios`)
   - flutter_native_splash (from `.symlinks/plugins/flutter_native_splash/ios`)
   - flutter_secure_storage_darwin (from `.symlinks/plugins/flutter_secure_storage_darwin/darwin`)
   - google_sign_in_ios (from `.symlinks/plugins/google_sign_in_ios/darwin`)
@@ -285,7 +278,6 @@ DEPENDENCIES:
   - patrol (from `.symlinks/plugins/patrol/darwin`)
   - purchases_flutter (from `.symlinks/plugins/purchases_flutter/ios`)
   - purchases_ui_flutter (from `.symlinks/plugins/purchases_ui_flutter/ios`)
-  - screen_secure (from `.symlinks/plugins/screen_secure/ios`)
   - share_plus (from `.symlinks/plugins/share_plus/ios`)
   - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/darwin`)
   - sign_in_with_apple (from `.symlinks/plugins/sign_in_with_apple/ios`)
@@ -319,7 +311,6 @@ SPEC REPOS:
     - GoogleUtilities
     - GTMAppAuth
     - GTMSessionFetcher
-    - IOSSecuritySuite
     - nanopb
     - PromisesObjC
     - PromisesSwift
@@ -348,8 +339,6 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/firebase_remote_config/ios"
   Flutter:
     :path: Flutter
-  flutter_jailbreak_detection:
-    :path: ".symlinks/plugins/flutter_jailbreak_detection/ios"
   flutter_native_splash:
     :path: ".symlinks/plugins/flutter_native_splash/ios"
   flutter_secure_storage_darwin:
@@ -372,8 +361,6 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/purchases_flutter/ios"
   purchases_ui_flutter:
     :path: ".symlinks/plugins/purchases_ui_flutter/ios"
-  screen_secure:
-    :path: ".symlinks/plugins/screen_secure/ios"
   share_plus:
     :path: ".symlinks/plugins/share_plus/ios"
   shared_preferences_foundation:
@@ -412,7 +399,6 @@ SPEC CHECKSUMS:
   FirebaseSessions: 2e8f808347e665dff3e5843f275715f07045297d
   FirebaseSharedSwift: 79f27fff0addd15c3de19b87fba426f3cc2c964f
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
-  flutter_jailbreak_detection: a74360daaf5cbc80639959463b4b1395873c90b5
   flutter_native_splash: c32d145d68aeda5502d5f543ee38c192065986cf
   flutter_secure_storage_darwin: acdb3f316ed05a3e68f856e0353b133eec373a23
   google_sign_in_ios: 00dfa94252eb10278b64828c81bcb7158a81a53a
@@ -425,7 +411,6 @@ SPEC CHECKSUMS:
   GTMSessionFetcher: 5aea5ba6bd522a239e236100971f10cb71b96ab6
   in_app_review: 7dd1ea365263f834b8464673f9df72c80c17c937
   integration_test: 4a889634ef21a45d28d50d622cf412dc6d9f586e
-  IOSSecuritySuite: ba76f34cb367b9230934ac37904e26a40d033e3d
   local_auth_darwin: c3ee6cce0a8d56be34c8ccb66ba31f7f180aaebb
   nanopb: fad817b59e0457d11a5dfbde799381cd727c1275
   package_info_plus: af8e2ca6888548050f16fa2f1938db7b5a5df499
@@ -440,7 +425,6 @@ SPEC CHECKSUMS:
   RecaptchaInterop: 11e0b637842dfb48308d242afc3f448062325aba
   RevenueCat: c3d07077a0cc70b7c90a5a6072d60f9905d2dbc0
   RevenueCatUI: cf72c82fae460b511a069f266429ea03db45722d
-  screen_secure: 5ba03415e5ed556c52829b3fe9a41855e6d8b73b
   share_plus: 50da8cb520a8f0f65671c6c6a99b3617ed10a58a
   shared_preferences_foundation: 7036424c3d8ec98dfe75ff1667cb0cd531ec82bb
   sign_in_with_apple: c5dcc141574c8c54d5ac99dd2163c0c72ad22418

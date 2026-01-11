@@ -206,9 +206,11 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     final titleSize = isSmallScreen ? 24.0 : 28.0;
     final subtitleSize = isSmallScreen ? 15.0 : 16.0;
 
-    // Can dismiss if user came from another screen (has redirectTo or can pop)
-    final canDismiss = widget.redirectTo != null || context.canPop();
+    // Can dismiss UNLESS in payment flow (redirectTo='paywall')
+    // Payment flow requires auth - no escape
     final isPaywallRedirect = widget.redirectTo == 'paywall';
+    final canDismiss =
+        !isPaywallRedirect && (widget.redirectTo != null || context.canPop());
 
     return Scaffold(
       backgroundColor: AppColors.background,

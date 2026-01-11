@@ -294,9 +294,9 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
       final authService = ref.read(authServiceProvider);
       final isPro = ref.read(isProProvider);
 
-      // Server-side usage check for authenticated users (prevents bypass)
-      // Anonymous users fall back to client-side check (already done in canGenerate)
+      // Server-side usage check
       if (authService.isLoggedIn) {
+        // Authenticated users: full server-side check and increment
         try {
           final usageResult = await usageService.checkAndIncrementServerSide(
             isPro: isPro,
@@ -311,6 +311,28 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
           ref.read(isGeneratingProvider.notifier).state = false;
           ref.read(generationErrorProvider.notifier).state = e.message;
           return;
+        }
+      } else if (!isPro) {
+        // Anonymous free tier: server-side device fingerprint check (prevents reinstall abuse)
+        try {
+          final deviceCheck = await usageService
+              .checkDeviceFreeTierServerSide();
+          if (!deviceCheck.allowed) {
+            ref.read(isGeneratingProvider.notifier).state = false;
+            ref.read(generationErrorProvider.notifier).state =
+                'This device has already used its free message. '
+                'Upgrade to Pro for 500 messages/month!';
+            return;
+          }
+        } on Exception catch (e) {
+          Log.warning('Device fingerprint check failed', {'error': '$e'});
+          // Fall back to local check on network error
+          if (!usageService.canGenerateFree()) {
+            ref.read(isGeneratingProvider.notifier).state = false;
+            ref.read(generationErrorProvider.notifier).state =
+                'Free message already used. Upgrade to Pro!';
+            return;
+          }
         }
       }
 

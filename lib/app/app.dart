@@ -7,7 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../core/providers/providers.dart';
 import '../core/services/log_service.dart';
-import '../shared/components/app_logo.dart';
+
 import '../shared/theme/app_colors.dart';
 import '../shared/theme/app_theme.dart';
 import 'router.dart';
@@ -228,26 +228,6 @@ class _ProsepalAppState extends ConsumerState<ProsepalApp>
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       routerConfig: _router,
-      builder: (context, child) {
-        return Stack(
-          children: [
-            child!,
-            // Privacy screen when app is backgrounded
-            // Uses styled logo on dark splash background
-            AnimatedOpacity(
-              opacity: _isInBackground ? 1.0 : 0.0,
-              duration: const Duration(milliseconds: 150),
-              child: IgnorePointer(
-                ignoring: !_isInBackground,
-                child: const ColoredBox(
-                  color: AppColors.splash,
-                  child: Center(child: AppLogoStyled(size: 100)),
-                ),
-              ),
-            ),
-          ],
-        );
-      },
     );
   }
 }
