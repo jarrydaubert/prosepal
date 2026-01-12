@@ -115,11 +115,22 @@ Future<void> _initializeApp() async {
   late final SharedPreferences prefs;
   final subscriptionService = SubscriptionService();
 
+  // Create provider container early so we can update initStatusProvider
+  final container = ProviderContainer();
+
   await Future.wait([
     // Supabase (critical for auth and data)
-    _initSupabase(init),
+    _initSupabase(init).then((_) {
+      if (init.isSupabaseReady) {
+        container.read(initStatusProvider.notifier).markSupabaseReady();
+      }
+    }),
     // RevenueCat (non-critical - app works without subscriptions)
-    _initRevenueCat(subscriptionService, init),
+    _initRevenueCat(subscriptionService, init).then((_) {
+      if (init.isRevenueCatReady) {
+        container.read(initStatusProvider.notifier).markRevenueCatReady();
+      }
+    }),
     // SharedPreferences (fast, local)
     SharedPreferences.getInstance().then((p) => prefs = p),
   ]);
@@ -183,13 +194,20 @@ Future<void> _initializeApp() async {
   // Create router with route guards (prevents deep link bypass)
   final router = createAppRouter(prefs);
 
+  // Update container with service overrides
+  // Note: We created container early to update initStatusProvider during init
+  final scopeContainer = ProviderContainer(
+    overrides: [
+      sharedPreferencesProvider.overrideWithValue(prefs),
+      subscriptionServiceProvider.overrideWithValue(subscriptionService),
+      authServiceProvider.overrideWithValue(authService),
+    ],
+    parent: container,
+  );
+
   runApp(
-    ProviderScope(
-      overrides: [
-        sharedPreferencesProvider.overrideWithValue(prefs),
-        subscriptionServiceProvider.overrideWithValue(subscriptionService),
-        authServiceProvider.overrideWithValue(authService),
-      ],
+    UncontrolledProviderScope(
+      container: scopeContainer,
       child: ProsepalApp(router: router),
     ),
   );

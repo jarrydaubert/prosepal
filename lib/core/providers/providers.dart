@@ -30,6 +30,83 @@ import '../services/services.dart';
 //
 
 // ============================================================
+// Init Status Provider (for startup loading states)
+// ============================================================
+
+/// Tracks initialization status of services for UI loading states.
+///
+/// UI components can watch this to show loading indicators while
+/// services are initializing.
+class InitStatus {
+  const InitStatus({
+    this.supabaseReady = false,
+    this.revenueCatReady = false,
+    this.timedOut = false,
+    this.error,
+  });
+
+  final bool supabaseReady;
+  final bool revenueCatReady;
+  final bool timedOut;
+  final String? error;
+
+  /// Critical services ready (Supabase is required for auth/data)
+  bool get criticalReady => supabaseReady;
+
+  /// All services ready
+  bool get allReady => supabaseReady && revenueCatReady;
+
+  InitStatus copyWith({
+    bool? supabaseReady,
+    bool? revenueCatReady,
+    bool? timedOut,
+    String? error,
+  }) {
+    return InitStatus(
+      supabaseReady: supabaseReady ?? this.supabaseReady,
+      revenueCatReady: revenueCatReady ?? this.revenueCatReady,
+      timedOut: timedOut ?? this.timedOut,
+      error: error ?? this.error,
+    );
+  }
+}
+
+/// Notifier for initialization status.
+///
+/// Updated by main.dart as services initialize.
+class InitStatusNotifier extends StateNotifier<InitStatus> {
+  InitStatusNotifier() : super(const InitStatus());
+
+  void markSupabaseReady() {
+    state = state.copyWith(supabaseReady: true);
+  }
+
+  void markRevenueCatReady() {
+    state = state.copyWith(revenueCatReady: true);
+  }
+
+  void markTimedOut() {
+    state = state.copyWith(timedOut: true);
+  }
+
+  void setError(String error) {
+    state = state.copyWith(error: error);
+  }
+
+  void reset() {
+    state = const InitStatus();
+  }
+}
+
+/// Provider for initialization status.
+///
+/// Watch this in UI to show loading states during startup.
+final initStatusProvider =
+    StateNotifierProvider<InitStatusNotifier, InitStatus>((ref) {
+      return InitStatusNotifier();
+    });
+
+// ============================================================
 // Auth Provider Dependencies (for dependency injection)
 // ============================================================
 
