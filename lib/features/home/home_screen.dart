@@ -106,10 +106,22 @@ class HomeScreen extends ConsumerWidget {
                           }
                         },
                         onProTap: () async {
-                          final subscriptionService = ref.read(
-                            subscriptionServiceProvider,
-                          );
-                          await subscriptionService.showCustomerCenter();
+                          final isLoggedIn = ref
+                              .read(authServiceProvider)
+                              .isLoggedIn;
+                          if (!isLoggedIn) {
+                            // Anonymous Pro user - prompt to sign in to protect subscription
+                            Log.info('Pro badge tapped (anonymous)', {
+                              'source': 'home',
+                            });
+                            context.push('/auth?restore=true');
+                          } else {
+                            // Signed in - show customer center
+                            final subscriptionService = ref.read(
+                              subscriptionServiceProvider,
+                            );
+                            await subscriptionService.showCustomerCenter();
+                          }
                         },
                       ).animate().fadeIn(delay: 200.ms),
                   ],
