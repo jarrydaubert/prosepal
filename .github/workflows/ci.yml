@@ -85,15 +85,17 @@ jobs:
           retention-days: 7
 
   # ============================================
-  # ANDROID BUILD (Linux - 1x multiplier, ~5 mins)
-  # Only on main branch pushes
+  # ANDROID BUILD (Linux - 1x multiplier)
+  # DISABLED: Takes 50+ min on free tier runners, exceeds timeout
+  # Android needs 14-day closed testing anyway - build locally for releases
+  # Re-enable when: upgrading runners OR launching Android
   # ============================================
   build-android:
     name: Build Android
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     needs: analyze
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: false  # DISABLED - see comment above
     
     steps:
       - uses: actions/checkout@v4
