@@ -65,12 +65,18 @@ void main() {
           ],
         );
 
+    // Create a pre-initialized initStatusNotifier for tests
+    final initStatusNotifier = InitStatusNotifier()
+      ..markSupabaseReady()
+      ..markRevenueCatReady();
+
     return ProviderScope(
       overrides: [
         sharedPreferencesProvider.overrideWithValue(mockPrefs),
         isProProvider.overrideWith((ref) => isPro),
         remainingGenerationsProvider.overrideWith((ref) => remaining),
         authServiceProvider.overrideWithValue(mockAuth),
+        initStatusProvider.overrideWith((ref) => initStatusNotifier),
       ],
       child: MaterialApp.router(routerConfig: testRouter),
     );
