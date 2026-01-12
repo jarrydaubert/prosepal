@@ -78,8 +78,8 @@ class HomeScreen extends ConsumerWidget {
 
                     const SizedBox(height: 20),
 
-                    // Usage indicator (shimmer while RevenueCat loads)
-                    if (!initStatus.revenueCatReady)
+                    // Usage indicator (shimmer while RevenueCat loads, fallback if timed out)
+                    if (!initStatus.revenueCatReady && !initStatus.timedOut)
                       const _UsageIndicatorShimmer()
                     else
                       UsageIndicator(

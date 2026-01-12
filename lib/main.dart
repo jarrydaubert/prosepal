@@ -118,6 +118,17 @@ Future<void> _initializeApp() async {
   // Create provider container early so we can update initStatusProvider
   final container = ProviderContainer();
 
+  // Start RevenueCat timeout timer (5 seconds)
+  // If RevenueCat takes too long, mark as timed out so UI can show fallback
+  const revenueCatTimeout = Duration(seconds: 5);
+  Timer? revenueCatTimeoutTimer;
+  revenueCatTimeoutTimer = Timer(revenueCatTimeout, () {
+    if (!init.isRevenueCatReady) {
+      Log.warning('RevenueCat init timed out', {'timeout': '5s'});
+      container.read(initStatusProvider.notifier).markTimedOut();
+    }
+  });
+
   await Future.wait([
     // Supabase (critical for auth and data)
     _initSupabase(init).then((_) {
@@ -127,6 +138,7 @@ Future<void> _initializeApp() async {
     }),
     // RevenueCat (non-critical - app works without subscriptions)
     _initRevenueCat(subscriptionService, init).then((_) {
+      revenueCatTimeoutTimer?.cancel(); // Cancel timeout if init succeeds
       if (init.isRevenueCatReady) {
         container.read(initStatusProvider.notifier).markRevenueCatReady();
       }
