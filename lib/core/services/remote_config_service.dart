@@ -59,10 +59,10 @@ class RemoteConfigService {
         _forceUpdateEnabledKey: true,
       });
 
-      // Configure fetch settings
+      // Configure fetch settings (short timeout to not block launch)
       await _remoteConfig!.setConfigSettings(
         RemoteConfigSettings(
-          fetchTimeout: const Duration(seconds: 10),
+          fetchTimeout: const Duration(seconds: 3),
           minimumFetchInterval: const Duration(hours: 1),
         ),
       );
