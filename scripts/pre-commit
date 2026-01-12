@@ -1,28 +1,31 @@
 #!/bin/bash
 # Pre-commit hook for Flutter/Dart projects
-# Runs format and analyze on lib/ before allowing commit
-#
-# To install: cp scripts/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
-# Or run: ./scripts/setup-hooks.sh
+# Install: cp scripts/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
 
 set -e
 
+# Allow bypass for emergencies: SKIP_HOOKS=1 git commit -m "WIP"
+if [ "$SKIP_HOOKS" = "1" ]; then
+  echo "⚠️  Skipping pre-commit hooks (SKIP_HOOKS=1)"
+  exit 0
+fi
+
 echo "🔍 Running pre-commit checks..."
 
-# Format lib/ and test/
-echo "📝 Formatting code..."
-dart format --set-exit-if-changed lib/ test/
-if [ $? -ne 0 ]; then
-  echo "❌ Formatting failed. Run 'dart format lib/ test/' to fix."
-  exit 1
+# Get staged Dart files only
+STAGED_DART=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.dart$' || true)
+
+if [ -z "$STAGED_DART" ]; then
+  echo "✅ No Dart files staged, skipping checks"
+  exit 0
 fi
 
-# Analyze lib/ only (matches CI - test files have tolerated warnings)
+# Format only staged files
+echo "📝 Checking format on staged files..."
+echo "$STAGED_DART" | xargs dart format --set-exit-if-changed
+
+# Analyze lib/ (full analysis - catches cross-file issues)
 echo "🔬 Analyzing lib/..."
 flutter analyze lib/ --no-fatal-infos
-if [ $? -ne 0 ]; then
-  echo "❌ Analysis found errors. Fix them before committing."
-  exit 1
-fi
 
 echo "✅ Pre-commit checks passed!"
