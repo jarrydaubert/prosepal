@@ -37,9 +37,7 @@ class BiometricService implements IBiometricService {
   final LocalAuthentication _auth = LocalAuthentication();
 
   /// Secure storage for biometric preference (prevents tampering on rooted devices)
-  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage(
-    aOptions: AndroidOptions(encryptedSharedPreferences: true),
-  );
+  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
 
   static const _biometricsEnabledKey = 'biometrics_enabled';
 

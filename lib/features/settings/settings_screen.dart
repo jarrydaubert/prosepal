@@ -345,9 +345,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       await tempFile.writeAsString(jsonData);
 
       // Share the file
-      await Share.shareXFiles([
-        XFile(tempFile.path),
-      ], subject: 'Prosepal Data Export');
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [XFile(tempFile.path)],
+          subject: 'Prosepal Data Export',
+        ),
+      );
 
       Log.info('Data export shared successfully');
     } catch (e) {
