@@ -115,8 +115,8 @@ Future<void> _initializeApp() async {
   late final SharedPreferences prefs;
   final subscriptionService = SubscriptionService();
 
-  // Create provider container early so we can update initStatusProvider
-  final container = ProviderContainer();
+  // Create InitStatusNotifier early so we can update it during init
+  final initStatusNotifier = InitStatusNotifier();
 
   // Start RevenueCat timeout timer (5 seconds)
   // If RevenueCat takes too long, mark as timed out so UI can show fallback
@@ -125,7 +125,7 @@ Future<void> _initializeApp() async {
   revenueCatTimeoutTimer = Timer(revenueCatTimeout, () {
     if (!init.isRevenueCatReady) {
       Log.warning('RevenueCat init timed out', {'timeout': '5s'});
-      container.read(initStatusProvider.notifier).markTimedOut();
+      initStatusNotifier.markTimedOut();
     }
   });
 
@@ -133,14 +133,14 @@ Future<void> _initializeApp() async {
     // Supabase (critical for auth and data)
     _initSupabase(init).then((_) {
       if (init.isSupabaseReady) {
-        container.read(initStatusProvider.notifier).markSupabaseReady();
+        initStatusNotifier.markSupabaseReady();
       }
     }),
     // RevenueCat (non-critical - app works without subscriptions)
     _initRevenueCat(subscriptionService, init).then((_) {
       revenueCatTimeoutTimer?.cancel(); // Cancel timeout if init succeeds
       if (init.isRevenueCatReady) {
-        container.read(initStatusProvider.notifier).markRevenueCatReady();
+        initStatusNotifier.markRevenueCatReady();
       }
     }),
     // SharedPreferences (fast, local)
@@ -206,20 +206,19 @@ Future<void> _initializeApp() async {
   // Create router with route guards (prevents deep link bypass)
   final router = createAppRouter(prefs);
 
-  // Update container with service overrides
-  // Note: We created container early to update initStatusProvider during init
-  final scopeContainer = ProviderContainer(
+  // Create single container with all service overrides
+  final container = ProviderContainer(
     overrides: [
       sharedPreferencesProvider.overrideWithValue(prefs),
       subscriptionServiceProvider.overrideWithValue(subscriptionService),
       authServiceProvider.overrideWithValue(authService),
+      initStatusProvider.overrideWith((ref) => initStatusNotifier),
     ],
-    parent: container,
   );
 
   runApp(
     UncontrolledProviderScope(
-      container: scopeContainer,
+      container: container,
       child: ProsepalApp(router: router),
     ),
   );
