@@ -50,6 +50,12 @@ class InitStatus {
   final bool timedOut;
   final String? error;
 
+  /// Convenience getters
+  bool get isSupabaseReady => supabaseReady;
+  bool get isRevenueCatReady => revenueCatReady;
+  bool get isTimedOut => timedOut;
+  bool get hasError => error != null;
+
   /// Critical services ready (Supabase is required for auth/data)
   bool get criticalReady => supabaseReady;
 

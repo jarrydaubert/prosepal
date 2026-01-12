@@ -29,7 +29,6 @@ import 'core/services/remote_config_service.dart';
 import 'core/services/subscription_service.dart';
 import 'core/services/supabase_auth_provider.dart';
 import 'features/error/force_update_screen.dart';
-import 'features/error/init_error_screen.dart';
 import 'firebase_options.dart';
 
 void main() async {
@@ -104,109 +103,30 @@ Future<void> _initializeApp() async {
   }
 
   // =========================================================================
-  // PHASE 3: Config validation (sync, fast)
+  // PHASE 3: Config validation + SharedPrefs (sync, fast)
   // =========================================================================
   AppConfig.validate();
   AppConfig.assertNoTestStoreInRelease();
 
-  // =========================================================================
-  // PHASE 4: Supabase + RevenueCat + SharedPrefs in PARALLEL
-  // =========================================================================
-  late final SharedPreferences prefs;
-  final subscriptionService = SubscriptionService();
+  // Get SharedPreferences first (fast, local) - needed for router
+  final prefs = await SharedPreferences.getInstance();
+  Log.info('Phase 3 complete', {'ms': stopwatch.elapsedMilliseconds});
 
-  // Create InitStatusNotifier early so we can update it during init
+  // =========================================================================
+  // PHASE 4: Show Flutter splash immediately, init services in background
+  // =========================================================================
+  final subscriptionService = SubscriptionService();
   final initStatusNotifier = InitStatusNotifier();
 
-  // Start RevenueCat timeout timer (5 seconds)
-  // If RevenueCat takes too long, mark as timed out so UI can show fallback
-  const revenueCatTimeout = Duration(seconds: 5);
-  Timer? revenueCatTimeoutTimer;
-  revenueCatTimeoutTimer = Timer(revenueCatTimeout, () {
-    if (!init.isRevenueCatReady) {
-      Log.warning('RevenueCat init timed out', {'timeout': '5s'});
-      initStatusNotifier.markTimedOut();
-    }
-  });
-
-  await Future.wait([
-    // Supabase (critical for auth and data)
-    _initSupabase(init).then((_) {
-      if (init.isSupabaseReady) {
-        initStatusNotifier.markSupabaseReady();
-      }
-    }),
-    // RevenueCat (non-critical - app works without subscriptions)
-    _initRevenueCat(subscriptionService, init).then((_) {
-      revenueCatTimeoutTimer?.cancel(); // Cancel timeout if init succeeds
-      if (init.isRevenueCatReady) {
-        initStatusNotifier.markRevenueCatReady();
-      }
-    }),
-    // SharedPreferences (fast, local)
-    SharedPreferences.getInstance().then((p) => prefs = p),
-  ]);
-  Log.info('Phase 4 complete', {'ms': stopwatch.elapsedMilliseconds});
-
-  // Check for critical failures before continuing
-  if (!init.isCriticalReady) {
-    Log.error('Critical service initialization failed', {
-      'firebase': init.isFirebaseReady,
-      'supabase': init.isSupabaseReady,
-      'error': init.criticalError,
-    });
-
-    FlutterNativeSplash.remove();
-    runApp(
-      InitErrorScreen(
-        errorMessage: init.criticalError ?? 'Unknown error',
-        onRetry: () async {
-          init.reset();
-          _forceUpdateRequired = false;
-          await _initializeApp();
-        },
-      ),
-    );
-    return;
-  }
-
-  // =========================================================================
-  // PHASE 5: Post-init setup (non-blocking where possible)
-  // =========================================================================
-
-  // Record first launch for review timing
-  final reviewService = ReviewService(prefs);
-  unawaited(reviewService.recordFirstLaunchIfNeeded());
-
-  // Apply GDPR analytics preference (non-blocking)
-  unawaited(_applyAnalyticsPreference(prefs));
-
-  // Log final Pro status
-  if (init.isRevenueCatReady) {
-    final isPro = await subscriptionService.isPro();
-    Log.info('App launched', {
-      'initialProStatus': isPro,
-      'totalInitMs': stopwatch.elapsedMilliseconds,
-    });
-  } else {
-    Log.info('App launched', {
-      'initialProStatus': 'unknown (RevenueCat failed)',
-      'totalInitMs': stopwatch.elapsedMilliseconds,
-    });
-  }
-
-  // Pre-initialize OAuth providers for faster sign-in UX
+  // Create auth service early
   final authService = AuthService(
     supabaseAuth: SupabaseAuthProvider(),
     appleAuth: AppleAuthProvider(),
     googleAuth: GoogleAuthProvider(),
   );
-  unawaited(authService.initializeProviders());
 
-  // Create router with route guards (prevents deep link bypass)
+  // Create router and container
   final router = createAppRouter(prefs);
-
-  // Create single container with all service overrides
   final container = ProviderContainer(
     overrides: [
       sharedPreferencesProvider.overrideWithValue(prefs),
@@ -216,12 +136,68 @@ Future<void> _initializeApp() async {
     ],
   );
 
+  // Remove native splash and show Flutter splash immediately
+  FlutterNativeSplash.remove();
   runApp(
     UncontrolledProviderScope(
       container: container,
       child: ProsepalApp(router: router),
     ),
   );
+
+  // Continue initialization in background
+  Log.info('App shown, continuing init in background');
+
+  // Start RevenueCat timeout timer (5 seconds)
+  const revenueCatTimeout = Duration(seconds: 5);
+  Timer? revenueCatTimeoutTimer;
+  revenueCatTimeoutTimer = Timer(revenueCatTimeout, () {
+    if (!init.isRevenueCatReady) {
+      Log.warning('RevenueCat init timed out', {'timeout': '5s'});
+      initStatusNotifier.markTimedOut();
+    }
+  });
+
+  // Run Supabase and RevenueCat in parallel (background)
+  unawaited(
+    Future.wait([
+      _initSupabase(init).then((_) {
+        if (init.isSupabaseReady) {
+          initStatusNotifier.markSupabaseReady();
+        }
+      }),
+      _initRevenueCat(subscriptionService, init).then((_) {
+        revenueCatTimeoutTimer?.cancel();
+        if (init.isRevenueCatReady) {
+          initStatusNotifier.markRevenueCatReady();
+        }
+      }),
+    ]).then((_) {
+      Log.info('Background init complete', {
+        'ms': stopwatch.elapsedMilliseconds,
+      });
+
+      // Check for critical failures
+      if (!init.isCriticalReady) {
+        Log.error('Critical service initialization failed', {
+          'firebase': init.isFirebaseReady,
+          'supabase': init.isSupabaseReady,
+          'error': init.criticalError,
+        });
+        initStatusNotifier.setError(
+          init.criticalError ?? 'Service init failed',
+        );
+      }
+    }),
+  );
+
+  // =========================================================================
+  // PHASE 5: Post-init setup (non-blocking)
+  // =========================================================================
+  final reviewService = ReviewService(prefs);
+  unawaited(reviewService.recordFirstLaunchIfNeeded());
+  unawaited(_applyAnalyticsPreference(prefs));
+  unawaited(authService.initializeProviders());
 }
 
 // =============================================================================
