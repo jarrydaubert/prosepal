@@ -104,8 +104,22 @@ void main() {
       expect(hasEmailOption, isTrue);
     });
 
-    testWidgets('redirect flow has dismiss button', (tester) async {
-      // BUG: User redirected to auth (e.g. from paywall) has no way back
+    testWidgets('redirect flow has dismiss button (non-paywall)', (
+      tester,
+    ) async {
+      // Non-paywall redirects allow dismissal
+      tester.view.physicalSize = const Size(1080, 1920);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      await tester.pumpWidget(createTestableAuthScreen(redirectTo: 'home'));
+      await tester.pump(const Duration(milliseconds: 500));
+
+      expect(find.byIcon(Icons.close), findsOneWidget);
+    });
+
+    testWidgets('paywall redirect flow has NO dismiss button', (tester) async {
+      // Paywall redirect requires auth - no escape (by design)
       tester.view.physicalSize = const Size(1080, 1920);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(() => tester.view.resetPhysicalSize());
@@ -113,7 +127,8 @@ void main() {
       await tester.pumpWidget(createTestableAuthScreen(redirectTo: 'paywall'));
       await tester.pump(const Duration(milliseconds: 500));
 
-      expect(find.byIcon(Icons.close), findsOneWidget);
+      // Close button should NOT be present for paywall redirect
+      expect(find.byIcon(Icons.close), findsNothing);
     });
   });
 }
