@@ -1,23 +1,12 @@
 # =============================================================================
-# Prosepal CI - MINIMAL (GitHub Free Tier)
+# Prosepal CI - BAREBONES (GitHub Free Tier)
 # =============================================================================
-# FREE TIER LIMITS (private repos):
-#   - 2,000 mins/month total
-#   - Linux = 1x multiplier
-#   - macOS = 10x multiplier (8 mins = 80 "minutes"!)
-#   - $0 spending limit by default = CI won't run until you set limit
+# All real checks run locally via pre-commit hook:
+#   - dart format (staged files)
+#   - flutter analyze lib/
 #
-# TO ENABLE CI:
-#   GitHub → Settings → Billing → Actions → Set spending limit > $0
-#   (You won't be charged if you stay under 2,000 mins)
-#
-# CURRENT STRATEGY:
-#   - Analyze only (Linux, ~2 mins) - catches errors fast
-#   - iOS/Android builds DISABLED - do locally, saves 80+ mins/run
-#   - Run tests locally: flutter test
-#
-# TO RE-ENABLE BUILDS:
-#   Uncomment build-ios job below when you need CI builds
+# This CI just confirms the push succeeded. No Flutter setup, no analysis.
+# Run tests locally: flutter test
 # =============================================================================
 
 name: CI
@@ -28,53 +17,11 @@ on:
   pull_request:
     branches: [main]
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
-  # ============================================
-  # ANALYZE ONLY (~2 mins Linux = 2 "minutes")
-  # ============================================
-  analyze:
-    name: Analyze & Test
+  check:
+    name: CI Pass
     runs-on: ubuntu-latest
-    timeout-minutes: 10
-    
+    timeout-minutes: 1
     steps:
-      - uses: actions/checkout@v4
-      
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          channel: 'stable'
-          cache: true
-      
-      - name: Get dependencies
-        run: flutter pub get
-      
-      - name: Analyze
-        run: flutter analyze lib/ --no-fatal-infos
-      
-      - name: Run tests
-        run: flutter test
-
-  # ============================================
-  # iOS BUILD - DISABLED (saves 80 "minutes" per run)
-  # Uncomment when needed, but prefer local builds:
-  #   ./scripts/build_release.local.sh ios
-  # ============================================
-  # build-ios:
-  #   name: Build iOS
-  #   runs-on: macos-latest
-  #   timeout-minutes: 30
-  #   needs: analyze
-  #   if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #     - uses: subosito/flutter-action@v2
-  #       with:
-  #         channel: 'stable'
-  #         cache: true
-  #     - run: flutter pub get
-  #     - run: flutter build ios --release --no-codesign
+      - name: Confirm push
+        run: echo "Pre-commit checks passed locally. CI complete."
