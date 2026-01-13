@@ -158,6 +158,28 @@ class UsageService {
     return _prefs.getBool(_keyDeviceUsedFreeTier) == true;
   }
 
+  /// Sync device state from server during app startup.
+  /// Updates local cache to match server - call this in splash screen.
+  /// This ensures accurate state is shown immediately after reinstall.
+  Future<void> syncDeviceStateFromServer() async {
+    try {
+      final result = await checkDeviceFreeTierServerSide();
+      Log.info('Device state synced from server', {
+        'allowed': result.allowed,
+        'reason': result.reason.toString(),
+      });
+
+      // If server says device already used free tier, update local cache
+      if (!result.allowed && result.reason == DeviceCheckReason.alreadyUsed) {
+        await _prefs.setBool(_keyDeviceUsedFreeTier, true);
+        Log.info('Local cache updated: device has used free tier');
+      }
+    } catch (e) {
+      Log.warning('Failed to sync device state from server', {'error': '$e'});
+      // Continue without syncing - local cache may be stale but app still works
+    }
+  }
+
   /// Get remaining pro generations this month
   int getRemainingProMonthly() {
     final used = getMonthlyCount();

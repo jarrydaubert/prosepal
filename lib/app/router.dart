@@ -215,6 +215,10 @@ class _SplashScreenState extends ConsumerState<_SplashScreen> {
   }
 
   Future<void> _determineInitialRoute() async {
+    // Sync device state from server FIRST - ensures accurate state on home screen
+    final usageService = ref.read(usageServiceProvider);
+    await usageService.syncDeviceStateFromServer();
+
     final prefs = ref.read(sharedPreferencesProvider);
     final hasCompletedOnboarding =
         prefs.getBool(PreferenceKeys.hasCompletedOnboarding) ??

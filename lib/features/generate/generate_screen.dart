@@ -210,12 +210,7 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
       final canGenerate = remaining > 0;
 
       if (!canGenerate) {
-        // Check if user is logged in - require auth before paywall
         final isLoggedIn = ref.read(authServiceProvider).isLoggedIn;
-        // Check if returning user (device has used free tier) - they get auto-restore flow
-        // Uses device flag that survives sign out, not local count
-        final usageService = ref.read(usageServiceProvider);
-        final isReturningUser = usageService.hasDeviceUsedFreeTier();
 
         return Column(
           mainAxisSize: MainAxisSize.min,
@@ -225,18 +220,9 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
               icon: Icons.star,
               style: AppButtonStyle.secondary,
               onPressed: () {
-                Log.info('Upgrade tapped', {
-                  'source': 'generate',
-                  'isLoggedIn': isLoggedIn,
-                  'isReturningUser': isReturningUser,
-                });
-                if (isReturningUser && !isLoggedIn) {
-                  // Returning user: try auto-restore first (may already have Pro)
-                  context.push('/auth?autorestore=true');
-                } else {
-                  // Show paywall sheet (has inline auth for fresh users)
-                  showPaywall(context, source: 'generate');
-                }
+                Log.info('Upgrade tapped', {'source': 'generate'});
+                // Always show paywall - it has inline auth
+                showPaywall(context, source: 'generate');
               },
             ),
             const SizedBox(height: 8),

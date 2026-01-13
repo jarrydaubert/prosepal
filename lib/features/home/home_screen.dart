@@ -86,24 +86,9 @@ class HomeScreen extends ConsumerWidget {
                         remaining: remaining,
                         isPro: isPro,
                         onUpgrade: () {
-                          final isLoggedIn = ref
-                              .read(authServiceProvider)
-                              .isLoggedIn;
-                          final usageService = ref.read(usageServiceProvider);
-                          final isReturningUser = usageService
-                              .hasDeviceUsedFreeTier();
-                          Log.info('Upgrade tapped', {
-                            'source': 'home',
-                            'isLoggedIn': isLoggedIn,
-                            'isReturningUser': isReturningUser,
-                          });
-                          if (isReturningUser && !isLoggedIn) {
-                            // Returning user: try auto-restore first
-                            context.push('/auth?autorestore=true');
-                          } else {
-                            // Show paywall sheet (has inline auth)
-                            showPaywall(context, source: 'home');
-                          }
+                          Log.info('Upgrade tapped', {'source': 'home'});
+                          // Always show paywall - it has inline auth
+                          showPaywall(context, source: 'home');
                         },
                         onProTap: () async {
                           final isLoggedIn = ref
