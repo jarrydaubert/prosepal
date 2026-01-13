@@ -180,12 +180,39 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
     Log.info('Email auth: Auto-purchasing', {'package': packageId});
 
     try {
-      // Identify user with RevenueCat first
+      // Identify user with RevenueCat first (may restore existing subscription)
       final authService = ref.read(authServiceProvider);
       if (authService.currentUser?.id != null) {
         await ref
             .read(subscriptionServiceProvider)
             .identifyUser(authService.currentUser!.id);
+      }
+
+      // Check if user already has Pro from restored subscription
+      ref.invalidate(customerInfoProvider);
+      final hasPro = await ref
+          .read(checkProStatusProvider.future)
+          .timeout(const Duration(seconds: 5), onTimeout: () => false);
+      if (hasPro && mounted) {
+        Log.info('Email auth: Pro already restored, skipping purchase');
+        context.go('/home');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.white, size: 20),
+                SizedBox(width: 8),
+                Text('Welcome back! Your Pro subscription is restored.'),
+              ],
+            ),
+            backgroundColor: AppColors.success,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        );
+        return;
       }
 
       // Get offerings and find the selected package
@@ -198,11 +225,13 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
 
       // Execute purchase
       final result = await Purchases.purchase(PurchaseParams.package(package));
-      final hasPro = result.customerInfo.entitlements.active.containsKey('pro');
+      final purchasedPro = result.customerInfo.entitlements.active.containsKey(
+        'pro',
+      );
 
       Log.info('Email auth: Purchase completed', {
         'package': packageId,
-        'hasPro': hasPro,
+        'hasPro': purchasedPro,
       });
 
       // Refresh pro status
