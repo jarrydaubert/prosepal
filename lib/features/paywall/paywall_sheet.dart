@@ -159,8 +159,9 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
             .read(subscriptionServiceProvider)
             .identifyUser(response.user!.id);
 
-        // Check if user already has Pro from restored subscription
-        final hasPro = ref.read(isProProvider);
+        // Force fetch fresh CustomerInfo to avoid race condition with listener
+        ref.invalidate(customerInfoProvider);
+        final hasPro = await ref.read(checkProStatusProvider.future);
         if (hasPro && mounted) {
           Log.info('PaywallSheet: Apple sign-in restored Pro, closing');
           _purchaseCompleted = true;
@@ -213,8 +214,9 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
             .read(subscriptionServiceProvider)
             .identifyUser(response.user!.id);
 
-        // Check if user already has Pro from restored subscription
-        final hasPro = ref.read(isProProvider);
+        // Force fetch fresh CustomerInfo to avoid race condition with listener
+        ref.invalidate(customerInfoProvider);
+        final hasPro = await ref.read(checkProStatusProvider.future);
         if (hasPro && mounted) {
           Log.info('PaywallSheet: Google sign-in restored Pro, closing');
           _purchaseCompleted = true;
