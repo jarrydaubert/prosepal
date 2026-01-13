@@ -182,6 +182,8 @@ class _ProsepalAppState extends ConsumerState<ProsepalApp>
           // Sync usage from server (restores usage after reinstall)
           try {
             await ref.read(usageServiceProvider).syncFromServer();
+            // Force UI to update with new usage state
+            ref.invalidate(remainingGenerationsProvider);
             Log.info('Auth listener: Usage synced from server');
           } catch (e) {
             Log.warning('Auth listener: Usage sync failed', {'error': '$e'});

@@ -446,6 +446,13 @@ class UsageService {
           'finalTotal': finalTotal,
         });
 
+        // If user has account usage, mark device as used (prevents "1 free" showing
+        // when user reinstalls and signs in with existing account usage)
+        if (finalTotal > 0 && !hasDeviceUsedFreeTier()) {
+          await _prefs.setBool(_keyDeviceUsedFreeTier, true);
+          Log.info('Device marked used (user has account usage)');
+        }
+
         // If local was higher, sync back to server
         if (localTotal > serverTotal) {
           _syncToServer(finalTotal, getMonthlyCount(), thisMonth);

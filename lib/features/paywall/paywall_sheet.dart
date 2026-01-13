@@ -171,13 +171,35 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
           return;
         }
 
-        // No Pro restored - auto-trigger purchase with selected package
-        if (mounted) {
-          Log.info('PaywallSheet: Apple sign-in success, auto-purchasing');
-          setState(() => _isAuthenticating = false);
-          final packages = _offering?.availablePackages ?? [];
-          if (packages.isNotEmpty) {
-            await _purchasePackage(packages[_selectedPackageIndex]);
+        // No Pro restored - close paywall and trigger purchase
+        // This shows the payment dialog over home screen (not paywall)
+        final packages = _offering?.availablePackages ?? [];
+        if (packages.isNotEmpty && mounted) {
+          final selectedPackage = packages[_selectedPackageIndex];
+          Log.info('PaywallSheet: Apple sign-in success, closing for purchase');
+          Navigator.of(context).pop(); // Close paywall first
+
+          // Trigger purchase (system dialog appears over home screen)
+          try {
+            Log.info('Purchase started', {
+              'package': selectedPackage.identifier,
+            });
+            final result = await Purchases.purchase(
+              PurchaseParams.package(selectedPackage),
+            );
+            final purchasedPro = result.customerInfo.entitlements.active
+                .containsKey('pro');
+            Log.info('Purchase completed', {
+              'package': selectedPackage.identifier,
+              'hasPro': purchasedPro,
+            });
+            ref.invalidate(customerInfoProvider);
+          } on PlatformException catch (e) {
+            if (e.code != 'PURCHASE_CANCELLED' &&
+                e.message?.contains('cancelled') != true &&
+                e.message?.contains('canceled') != true) {
+              Log.warning('Purchase failed', {'error': '$e'});
+            }
           }
           return;
         }
@@ -228,13 +250,37 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
           return;
         }
 
-        // No Pro restored - auto-trigger purchase with selected package
-        if (mounted) {
-          Log.info('PaywallSheet: Google sign-in success, auto-purchasing');
-          setState(() => _isAuthenticating = false);
-          final packages = _offering?.availablePackages ?? [];
-          if (packages.isNotEmpty) {
-            await _purchasePackage(packages[_selectedPackageIndex]);
+        // No Pro restored - close paywall and trigger purchase
+        // This shows the payment dialog over home screen (not paywall)
+        final packages = _offering?.availablePackages ?? [];
+        if (packages.isNotEmpty && mounted) {
+          final selectedPackage = packages[_selectedPackageIndex];
+          Log.info(
+            'PaywallSheet: Google sign-in success, closing for purchase',
+          );
+          Navigator.of(context).pop(); // Close paywall first
+
+          // Trigger purchase (system dialog appears over home screen)
+          try {
+            Log.info('Purchase started', {
+              'package': selectedPackage.identifier,
+            });
+            final result = await Purchases.purchase(
+              PurchaseParams.package(selectedPackage),
+            );
+            final purchasedPro = result.customerInfo.entitlements.active
+                .containsKey('pro');
+            Log.info('Purchase completed', {
+              'package': selectedPackage.identifier,
+              'hasPro': purchasedPro,
+            });
+            ref.invalidate(customerInfoProvider);
+          } on PlatformException catch (e) {
+            if (e.code != 'PURCHASE_CANCELLED' &&
+                e.message?.contains('cancelled') != true &&
+                e.message?.contains('canceled') != true) {
+              Log.warning('Purchase failed', {'error': '$e'});
+            }
           }
           return;
         }
