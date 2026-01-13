@@ -22,6 +22,7 @@ class HistoryScreen extends ConsumerStatefulWidget {
 class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   List<SavedGeneration> _allHistory = [];
   List<SavedGeneration> _filteredHistory = [];
+  Map<Occasion, int> _occasionCounts = {};
   Occasion? _selectedOccasion;
   String _searchQuery = '';
   final _searchController = TextEditingController();
@@ -52,6 +53,13 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   }
 
   void _applyFilters() {
+    // Pre-compute occasion counts once (O(n) instead of O(n²) in sorting)
+    _occasionCounts = {};
+    for (final item in _allHistory) {
+      final occasion = item.result.occasion;
+      _occasionCounts[occasion] = (_occasionCounts[occasion] ?? 0) + 1;
+    }
+
     var filtered = _allHistory;
 
     // Filter by occasion
@@ -154,18 +162,12 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     }
   }
 
-  /// Get unique occasions from history for filter chips
+  /// Get unique occasions from history for filter chips (sorted by frequency)
   List<Occasion> get _availableOccasions {
-    final occasions = _allHistory
-        .map((h) => h.result.occasion)
-        .toSet()
-        .toList();
-    // Sort by frequency (most used first)
-    occasions.sort((a, b) {
-      final countA = _allHistory.where((h) => h.result.occasion == a).length;
-      final countB = _allHistory.where((h) => h.result.occasion == b).length;
-      return countB.compareTo(countA);
-    });
+    final occasions = _occasionCounts.keys.toList();
+    occasions.sort(
+      (a, b) => (_occasionCounts[b] ?? 0).compareTo(_occasionCounts[a] ?? 0),
+    );
     return occasions;
   }
 
@@ -288,9 +290,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                         ),
                         // Occasion chips
                         ..._availableOccasions.take(6).map((occasion) {
-                          final count = _allHistory
-                              .where((h) => h.result.occasion == occasion)
-                              .length;
+                          final count = _occasionCounts[occasion] ?? 0;
                           return Padding(
                             padding: const EdgeInsets.only(right: 8),
                             child: FilterChip(
