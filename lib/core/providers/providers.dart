@@ -392,6 +392,10 @@ final generationErrorProvider = StateProvider.autoDispose<String?>(
   (ref) => null,
 );
 
+/// Pending paywall source - set this before navigating to home to auto-show paywall.
+/// Home screen checks this on build and shows paywall if non-null, then clears it.
+final pendingPaywallSourceProvider = StateProvider<String?>((ref) => null);
+
 // ============================================================
 // Form Reset Utility
 // ============================================================

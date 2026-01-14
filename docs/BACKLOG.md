@@ -39,6 +39,8 @@
 
 | Issue | Location | Fix |
 |-------|----------|-----|
+| Password reset deep link UX | `router.dart:121` | Create dedicated `/auth/reset-password` screen that extracts token from deep link instead of redirecting to generic `/auth` |
+| Auto-purchase race after email auth | `email_auth_screen.dart:238-241` | Navigate-then-purchase pattern may fail; show dialog before navigation or use deferred callback |
 | Document service configurations | Firebase/Supabase/RevenueCat | Screen-by-screen audit of what's enabled/configured in each dashboard. Create `docs/SERVICE_CONFIG.md` with screenshots or detailed notes for reproducibility. |
 | Mockito exploration | `test/mocks/` | Evaluate migrating simple mocks to Mockito for reduced boilerplate. Current manual mocks excel at state tracking and error simulation. Consider Mockito for new simple interface mocks. |
 | Paywall component decomposition | `paywall_sheet.dart` | 890 lines - extract PaywallHeader, BenefitsSection, PackageSelector, AuthSection for maintainability |
@@ -69,6 +71,7 @@
 
 | Issue | Location | Fix |
 |-------|----------|-----|
+| Settings restore missing usage sync | `settings_screen.dart:143-153` | Add `usageService.syncFromServer()` call after restore for UI consistency |
 | Audit autoDispose usage | `providers.dart` | Review all StateProviders - autoDispose only for single-screen state, not cross-screen navigation state. Fixed: selectedOccasionProvider, generationResultProvider |
 | No timeout on splash Pro check | `router.dart:244` | Add timeout with fallback to prevent hang on slow network |
 | No notification on bio auto-disable | `router.dart:200` | Show toast when biometrics unavailable and auto-disabled |
@@ -219,6 +222,7 @@ Target: Zero analyzer warnings for squeaky clean codebase.
 | Pattern | Location |
 |---------|----------|
 | Server-side usage enforcement (RPC + RLS) | `usage_service.dart` |
+| Server-side Pro verification (RevenueCat webhook) | `supabase/functions/revenuecat-webhook/`, `user_entitlements` table |
 | AI error classification + retry | `ai_service.dart` |
 | Service/Interface pattern | `core/interfaces/` |
 | Device fingerprinting | `device_fingerprint_service.dart` |

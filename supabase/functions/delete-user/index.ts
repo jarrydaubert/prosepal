@@ -232,7 +232,23 @@ Deno.serve(async (req) => {
       console.warn(`Error deleting user_usage for ${userIdPrefix}:`, e)
     }
 
-    // 2b. Delete rate limit logs for this user
+    // 2b. Delete user_entitlements (subscription status)
+    try {
+      const { error: entitlementError } = await adminClient
+        .from('user_entitlements')
+        .delete()
+        .eq('user_id', user.id)
+
+      if (entitlementError) {
+        console.warn(`Failed to delete user_entitlements for ${userIdPrefix}:`, entitlementError.message)
+      } else {
+        console.log(`Deleted user_entitlements for ${userIdPrefix}`)
+      }
+    } catch (e) {
+      console.warn(`Error deleting user_entitlements for ${userIdPrefix}:`, e)
+    }
+
+    // 2c. Delete rate limit logs for this user
     try {
       const { error: rateLimitError } = await adminClient
         .from('rate_limit_log')
@@ -249,7 +265,7 @@ Deno.serve(async (req) => {
       console.warn(`Error deleting rate_limit_log for ${userIdPrefix}:`, e)
     }
 
-    // 2c. Remove user_id from device_usage.associated_user_ids (GDPR erasure)
+    // 2d. Remove user_id from device_usage.associated_user_ids (GDPR erasure)
     // This uses array_remove to clean up the user reference from any devices
     try {
       const { error: deviceError } = await adminClient.rpc('remove_user_from_devices', {

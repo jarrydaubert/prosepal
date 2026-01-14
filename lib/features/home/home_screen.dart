@@ -19,6 +19,16 @@ class HomeScreen extends ConsumerWidget {
     final remaining = ref.watch(remainingGenerationsProvider);
     final isPro = ref.watch(isProProvider);
 
+    // Check for pending paywall (e.g., after email sign-in from paywall sync)
+    final pendingPaywallSource = ref.watch(pendingPaywallSourceProvider);
+    if (pendingPaywallSource != null) {
+      // Clear immediately to prevent re-triggering
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.read(pendingPaywallSourceProvider.notifier).state = null;
+        showPaywall(context, source: pendingPaywallSource);
+      });
+    }
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
