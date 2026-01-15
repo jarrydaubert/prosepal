@@ -352,6 +352,9 @@ class UsageService {
   }
 
   /// Sync usage TO server (called after each generation)
+  ///
+  /// Uses RPC instead of direct upsert to prevent abuse (users can't reset counts).
+  /// The RPC only allows INCREASING counts, never decreasing.
   Future<void> _syncToServer(
     int totalCount,
     int monthlyCount,
@@ -368,13 +371,15 @@ class UsageService {
     }
 
     try {
-      await supabase.from(_table).upsert({
-        'user_id': userId,
-        'total_count': totalCount,
-        'monthly_count': monthlyCount,
-        'month_key': monthKey,
-        'updated_at': DateTime.now().toUtc().toIso8601String(),
-      });
+      await supabase.rpc(
+        'sync_user_usage',
+        params: {
+          'p_user_id': userId,
+          'p_total_count': totalCount,
+          'p_monthly_count': monthlyCount,
+          'p_month_key': monthKey,
+        },
+      );
 
       Log.info('Usage synced to server', {
         'totalCount': totalCount,

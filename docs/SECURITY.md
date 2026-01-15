@@ -476,5 +476,6 @@ We will not pursue legal action against security researchers who:
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
+| 1.2.0 | 2026-01-15 | Development Team | Security fix: Locked down `user_usage` table to RPC-only writes (migration 011). Direct INSERT/UPDATE policies removed to prevent usage count reset attacks. Added `sync_user_usage` RPC with monotonic-only updates. |
 | 1.1.0 | 2026-01-11 | Development Team | Added document control, scope, threat model, data retention, third-party security, expanded disclosure policy, glossary, changelog. Fixed M4 OWASP status. |
 | 1.0.0 | 2026-01-10 | Development Team | Initial security documentation |
