@@ -73,6 +73,7 @@
 | Issue | Location | Fix |
 |-------|----------|-----|
 | Settings restore missing usage sync | `settings_screen.dart:143-153` | Add `usageService.syncFromServer()` call after restore for UI consistency |
+| Device fingerprint resets on reinstall | `device_fingerprint_service.dart` | `identifierForVendor` resets when app deleted. Fix: Use Keychain persistence or Apple DeviceCheck API for persistent device ID |
 | Audit autoDispose usage | `providers.dart` | Review all StateProviders - autoDispose only for single-screen state, not cross-screen navigation state. Fixed: selectedOccasionProvider, generationResultProvider |
 | No timeout on splash Pro check | `router.dart:244` | Add timeout with fallback to prevent hang on slow network |
 | No notification on bio auto-disable | `router.dart:200` | Show toast when biometrics unavailable and auto-disabled |

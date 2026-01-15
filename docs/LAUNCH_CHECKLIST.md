@@ -1,6 +1,6 @@
 # Launch Checklist
 
-> Last verified: 2026-01-14
+> Last verified: 2026-01-15
 
 ---
 
@@ -8,47 +8,41 @@
 
 | Platform | Status | Details |
 |----------|--------|---------|
-| iOS | **REJECTED** | Build 1.0 (26) rejected 2026-01-14, 3 issues to fix |
+| iOS | **RESUBMITTED** | Build 29 submitted 2026-01-15, all 3 rejection issues fixed |
 | Android | Blocked | Requires 14-day closed testing with 12+ testers |
 
 ---
 
-## iOS Rejection - 2026-01-14
+## iOS Rejection - 2026-01-14 (RESOLVED)
 
 **Submission ID:** `fd10a068-12ca-4dd3-954e-f2b8efd31d5c`
 **Review Device:** iPad Air 11-inch (M3)
 
-### Issue 1: Guideline 5.1.1 - Requiring Sign-In Before Purchase ❌ CODE CHANGE
+### Issue 1: Guideline 5.1.1 - Requiring Sign-In Before Purchase ✅ FIXED
 
-**Problem:** App requires users to register/sign-in before purchasing subscriptions. Apple prohibits requiring auth for non-account-based IAP.
+**Problem:** App required users to register/sign-in before purchasing subscriptions.
 
-**Current flow:** Sign in → Purchase
-**Required flow:** Purchase allowed without sign-in (auth optional for cross-device sync)
+**Fix (Build 29):**
+- Restructured paywall so purchase works WITHOUT sign-in
+- Auth moved to optional "Sync across devices" section below purchase CTA
+- Anonymous users can purchase via RevenueCat `$RCAnonymousID`
+- Sign-in only needed to sync subscription across devices
 
-**Fix (paywall_sheet.dart):**
-1. Show subscription packages immediately to all users (no auth gate)
-2. Allow anonymous purchases via RevenueCat (skip `identifyUser()` for anon users)
-3. Make sign-in optional: "Sign in to sync purchases across devices"
-4. Only call `identifyUser()` AFTER optional sign-in, not as prerequisite
-
-**RevenueCat supports this:** Anonymous users get a random `$RCAnonymousID`, purchases work fine. If they sign in later, call `logIn()` to transfer purchases to their account.
-
-### Issue 2: Guideline 3.1.2 - Missing Terms of Use ❌ METADATA
+### Issue 2: Guideline 3.1.2 - Missing Terms of Use ✅ FIXED
 
 **Problem:** No Terms of Use (EULA) link in App Store metadata.
 
-**Fix (App Store Connect):**
-- Option A: Add standard Apple EULA link to App Description: `https://www.apple.com/legal/internet-services/itunes/dev/stdeula/`
-- Option B: Add custom EULA in App Store Connect > App Information > EULA field
+**Fix:**
+- Added to App Store description: `https://www.apple.com/legal/internet-services/itunes/dev/stdeula/`
+- Added Privacy Policy link: `https://www.prosepal.app/privacy.html`
 
-### Issue 3: Guideline 2.3.2 - Paid Features Not Labeled ❌ METADATA
+### Issue 3: Guideline 2.3.2 - Paid Features Not Labeled ✅ FIXED
 
-**Problem:** Screenshots/description reference paid features without clarifying they require purchase.
+**Problem:** Description referenced paid features without clarifying purchase required.
 
-**Fix (App Store Connect):**
-- Add "Pro" badges to screenshots showing premium features, OR
-- Add to description: "Free: 1 message. Pro subscription: 500 messages/month."
-- Ensure screenshots showing unlimited usage are clearly marked as Pro
+**Fix:**
+- Updated description: "Try your first message FREE! Then unlock unlimited generations with Prosepal Pro"
+- Clear distinction between free tier (1 message) and Pro (500/month)
 
 ### Resubmission Checklist
 
@@ -56,11 +50,13 @@
 |------|------|--------|
 | Allow anonymous purchases in paywall | Code | ✅ |
 | Make sign-in optional (sync benefit only) | Code | ✅ |
-| Add Terms of Use link to App Description | Metadata | ⏳ |
-| Update screenshots with Pro labels OR clarify in description | Metadata | ⏳ |
-| Increment build number | Build | ⏳ |
-| Test anonymous purchase flow in sandbox | Testing | ⏳ |
-| Resubmit for review | Submission | ⏳ |
+| Add Terms of Use link to App Description | Metadata | ✅ |
+| Update description with clear free/paid distinction | Metadata | ✅ |
+| Fix subscription descriptions (500/month) | Metadata | ✅ |
+| Increment build number (29) | Build | ✅ |
+| Upload dSYMs to Firebase | Build | ✅ |
+| Reply to Apple with fix summary | Submission | ✅ |
+| Resubmit for review | Submission | ✅ 2026-01-15 |
 
 ---
 
@@ -124,21 +120,32 @@
 
 ## Phase 2: Store Submission
 
-### iOS ❌ REJECTED 2026-01-14
+### iOS ⏳ IN REVIEW (Build 29)
 
-- Build 1.0 (26) uploaded via Xcode
-- dSYMs uploaded to Firebase Crashlytics
-- Screenshots updated (paywall bottom sheet)
-- IAP screenshots updated
-- IAPs linked to version
-- ~~Submitted for review at 2:46 PM~~
-- **REJECTED** - See "iOS Rejection - 2026-01-14" section above
+**Build History:**
+- Build 27: ❌ Rejected 2026-01-14 (missing 5.1.1/3.1.2/2.3.2 fixes)
+- Build 29: ✅ Submitted 2026-01-15 (all fixes applied)
+
+**Build 29 Includes:**
+- 5.1.1 fix: Paywall restructure (purchase without sign-in)
+- Server-side Pro verification (RevenueCat webhook)
+- iPad paywall optimization
+- Email auth UX improvements
+
+**Metadata Updates:**
+- Terms of Use link added to description
+- Privacy Policy link added to description  
+- "Try your first message FREE!" clarification
+- Subscription descriptions updated (500/month)
+- New paywall screenshots uploaded
+
+**dSYMs:** ✅ Uploaded to Firebase Crashlytics
 
 ### Android ⏳ BLOCKED
 
 Requires 14-day closed testing with 12+ opted-in testers before production access.
 
-### App Store Connect ⏳ PARTIALLY VERIFIED 2026-01-10
+### App Store Connect ✅ VERIFIED 2026-01-15
 
 **Console:** https://appstoreconnect.apple.com
 
@@ -158,10 +165,10 @@ Requires 14-day closed testing with 12+ opted-in testers before production acces
 | Review notes | App Review | ✅ | Step-by-step testing instructions |
 | RevenueCat webhooks | App Information | ✅ | Production + Sandbox URLs configured |
 | Copyright | Version 1.0 | ✅ | 2026 |
-| Screenshots | Version 1.0 | ⚠️ | 5 screenshots uploaded - **UPDATE: Paywall changed to bottom sheet** |
-| Build | Version 1.0 | ❌ | Not uploaded - run `./scripts/build_ios.sh` |
+| Screenshots | Version 1.0 | ✅ | 5 screenshots uploaded |
+| Build | Version 1.0 | ✅ | Build 29 selected |
 | IAPs linked to version | Version 1.0 | ✅ | All 3 subscriptions linked |
-| Submit for Review | Version 1.0 | ⏳ | After above items complete |
+| Submit for Review | Version 1.0 | ✅ | Submitted 2026-01-15 |
 
 **Subscriptions (Monetization > Subscriptions):**
 
@@ -174,8 +181,8 @@ Requires 14-day closed testing with 12+ opted-in testers before production acces
 | Pro Monthly (`com.prosepal.pro.monthly`) | ✅ | 1 month, matches RevenueCat |
 | Pro Yearly (`com.prosepal.pro.yearly`) | ✅ | 1 year, matches RevenueCat |
 | Availability | ✅ | All countries |
-| IAP Review Screenshots | ⚠️ | **UPDATE: Paywall changed to bottom sheet with inline auth** |
-| Localization description | ✅ | Says "500 messages per month" - correct (Pro limit is 500/month) |
+| IAP Review Screenshots | ✅ | Updated with new paywall (logged out view) |
+| Localization description | ✅ | Updated to "500 messages per month" |
 | Subscription Group Display Name | ✅ | Changed to "Pro" (was "Pro Weekly") |
 | Family Sharing | ➖ | OFF - enable post-revenue |
 
@@ -353,10 +360,12 @@ Max 12 renewals per day in sandbox.
 
 ### Known Limitations
 
-| Issue | Severity |
-|-------|----------|
-| 3 failed biometrics shows generic error | Medium |
-| Supabase session persists after reinstall | Low |
+| Issue | Severity | Notes |
+|-------|----------|-------|
+| Device fingerprint resets on reinstall | Medium | `identifierForVendor` resets when app deleted. Fix in v1.1: Keychain/DeviceCheck |
+| 3 failed biometrics shows generic error | Medium | |
+| Supabase session persists after reinstall | Low | |
+| USD shown in sandbox | Low | TestFlight shows USD, production shows localized currency |
 
 ### Cost (Per User)
 
