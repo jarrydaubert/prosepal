@@ -43,7 +43,11 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Android signing (DO NOT COMMIT)
 key.properties
+*.jks
+*.keystore
 
 # Local build scripts with API keys (DO NOT COMMIT)
 *.local.sh
