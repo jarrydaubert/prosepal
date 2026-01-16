@@ -11,11 +11,11 @@
 abstract final class AiConfig {
   /// Default Gemini model (used if Remote Config unavailable)
   /// See: https://firebase.google.com/docs/ai-logic/models
-  /// Note: gemini-2.5-flash is stable, gemini-3-flash-preview requires SDK update
-  static const String defaultModel = 'gemini-2.5-flash';
+  /// When gemini-3-flash goes stable, update via Remote Config (no app release needed)
+  static const String defaultModel = 'gemini-3-flash-preview';
 
   /// Fallback model if primary fails (404, deprecated, etc.)
-  static const String defaultFallbackModel = 'gemini-2.5-flash-lite';
+  static const String defaultFallbackModel = 'gemini-2.5-flash';
 
   /// @deprecated Use RemoteConfigService.instance.aiModel instead
   /// Kept for backward compatibility during migration
@@ -25,7 +25,8 @@ abstract final class AiConfig {
   static const double temperature = 0.85;
   static const int topK = 40;
   static const double topP = 0.95;
-  static const int maxOutputTokens = 4096;
+  static const int maxOutputTokens =
+      8192; // Increased from 4096 to handle Gemini thinking tokens
 
   /// Retry configuration
   static const int maxRetries = 3;
@@ -63,9 +64,19 @@ LANGUAGE GUIDELINES:
 - Avoid clichés: "thoughts and prayers", "wishing you all the best", "here for you"
 - Use active voice and concrete imagery when possible
 
+LENGTH GUIDELINES:
+- Brief: 1-2 sentences, punchy and direct
+- Standard: 3-4 sentences, one short paragraph
+- Detailed: MUST be 2-3 short paragraphs. Insert a blank line (double newline) between each paragraph. This is critical for readability.
+
+EFFICIENCY:
+- Generate the messages directly without extensive internal reasoning
+- Keep each message focused and within the specified length
+
 FORMAT RULES:
 - NO greetings (no "Dear...", "Hi...", "Hey...")
 - NO sign-offs (no "Love,", "Best wishes,", "Sincerely,", "Cheers,")
 - Just the message body - what goes inside the card
+- For "detailed" length: structure as multiple paragraphs with blank lines between them
 ''';
 }

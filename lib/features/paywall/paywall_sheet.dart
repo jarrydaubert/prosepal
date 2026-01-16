@@ -1010,7 +1010,9 @@ class _AuthButton extends StatelessWidget {
             Text(
               label,
               style: TextStyle(
-                fontSize: compact ? 14 : 16,
+                fontSize: compact
+                    ? 16
+                    : 16, // Increased compact from 14 to match Apple button
                 fontWeight: FontWeight.w500,
               ),
             ),

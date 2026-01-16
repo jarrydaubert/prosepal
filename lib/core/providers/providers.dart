@@ -41,18 +41,25 @@ class InitStatus {
   const InitStatus({
     this.supabaseReady = false,
     this.revenueCatReady = false,
+    this.remoteConfigReady = false,
     this.timedOut = false,
     this.error,
+    this.forceUpdateRequired = false,
+    this.forceUpdateStoreUrl,
   });
 
   final bool supabaseReady;
   final bool revenueCatReady;
+  final bool remoteConfigReady;
   final bool timedOut;
   final String? error;
+  final bool forceUpdateRequired;
+  final String? forceUpdateStoreUrl;
 
   /// Convenience getters
   bool get isSupabaseReady => supabaseReady;
   bool get isRevenueCatReady => revenueCatReady;
+  bool get isRemoteConfigReady => remoteConfigReady;
   bool get isTimedOut => timedOut;
   bool get hasError => error != null;
 
@@ -65,14 +72,20 @@ class InitStatus {
   InitStatus copyWith({
     bool? supabaseReady,
     bool? revenueCatReady,
+    bool? remoteConfigReady,
     bool? timedOut,
     String? error,
+    bool? forceUpdateRequired,
+    String? forceUpdateStoreUrl,
   }) {
     return InitStatus(
       supabaseReady: supabaseReady ?? this.supabaseReady,
       revenueCatReady: revenueCatReady ?? this.revenueCatReady,
+      remoteConfigReady: remoteConfigReady ?? this.remoteConfigReady,
       timedOut: timedOut ?? this.timedOut,
       error: error ?? this.error,
+      forceUpdateRequired: forceUpdateRequired ?? this.forceUpdateRequired,
+      forceUpdateStoreUrl: forceUpdateStoreUrl ?? this.forceUpdateStoreUrl,
     );
   }
 }
@@ -91,12 +104,23 @@ class InitStatusNotifier extends StateNotifier<InitStatus> {
     state = state.copyWith(revenueCatReady: true);
   }
 
+  void markRemoteConfigReady() {
+    state = state.copyWith(remoteConfigReady: true);
+  }
+
   void markTimedOut() {
     state = state.copyWith(timedOut: true);
   }
 
   void setError(String error) {
     state = state.copyWith(error: error);
+  }
+
+  void setForceUpdate(String storeUrl) {
+    state = state.copyWith(
+      forceUpdateRequired: true,
+      forceUpdateStoreUrl: storeUrl,
+    );
   }
 
   void reset() {

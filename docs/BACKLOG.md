@@ -1,6 +1,8 @@
 # Backlog
 
-> Outstanding TODO items only. Completed work tracked in git history.
+> **Burn-down list: Outstanding TODO items only.**
+> Completed work is removed from this doc and tracked in git history.
+> Do NOT mark items as "DONE" - just delete them when complete.
 
 ---
 
@@ -9,6 +11,7 @@
 | Item | Action |
 |------|--------|
 | Supabase leaked password protection | Enable toggle in Dashboard > Auth (requires paid plan) |
+| Review Firebase Remote Config | Verify `ai_model` and `ai_model_fallback` match code defaults (gemini-3-flash-preview, gemini-2.5-flash). Update if you want v1.0.0 users on Gemini 3. |
 
 ---
 
@@ -24,6 +27,7 @@
 
 | Issue | Location | Fix |
 |-------|----------|-----|
+
 | Paywall bypasses service interface | `paywall_sheet.dart` | Route getOfferings(), purchasePackage(), restorePurchases() through ISubscriptionService for testability |
 | Subscription service 21% coverage | `subscription_service.dart` | Revenue-critical, needs more tests |
 | Auth providers 0% coverage | `*_auth_provider.dart` | 86 lines untested auth flow |
@@ -39,6 +43,7 @@
 
 | Issue | Location | Fix |
 |-------|----------|-----|
+| Add paragraph breaks for longer messages | `ai_config.dart` | Normal/detailed length messages display as one block. Update AI prompt to instruct paragraph breaks (2-3 paragraphs for detailed). If inconsistent, consider structured `paragraphs: [...]` array in JSON schema |
 | Paywall sync button sizing consistency | `paywall_sheet.dart:964-1008` | Google/Email buttons use 14pt font, Apple official widget uses ~17pt. Increase custom `_AuthButton` compact font from 14 to 16 to match Apple's visual weight |
 | Password reset deep link UX | `router.dart:121` | Create dedicated `/auth/reset-password` screen that extracts token from deep link instead of redirecting to generic `/auth` |
 | Auto-purchase race after email auth | `email_auth_screen.dart:238-241` | Navigate-then-purchase pattern may fail; show dialog before navigation or use deferred callback |
@@ -153,13 +158,16 @@
 
 ## External Dependencies
 
-### Gemini Model - Action by May 2026
+### Gemini Model - Action by March 2026
+
+**CRITICAL: Gemini 2.0 Flash/Flash-Lite retire March 3, 2026**
 
 | Item | Action |
 |------|--------|
 | ~~Model name hardcoded~~ | DONE - RemoteConfigService fetches `ai_model` from Remote Config |
+| **Switch to Gemini 3 Flash** | Update Remote Config: `ai_model` → `gemini-3-flash-preview`, `ai_model_fallback` → `gemini-2.5-flash`. Test thoroughly before March 3, 2026 deadline |
 | Wire up model 404 fallback | `ai_service.dart:339` - Call `switchToFallback()` when model returns 404 |
-| Model version monitoring | Default: gemini-3-flash-preview, fallback: gemini-2.5-flash. Update Remote Config when 3-flash goes stable |
+| Model version monitoring | When gemini-3-flash goes stable (non-preview), update Remote Config |
 
 ### Supabase - Monitor 2026
 

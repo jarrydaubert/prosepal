@@ -28,7 +28,6 @@ import 'core/services/review_service.dart';
 import 'core/services/remote_config_service.dart';
 import 'core/services/subscription_service.dart';
 import 'core/services/supabase_auth_provider.dart';
-import 'features/error/force_update_screen.dart';
 import 'firebase_options.dart';
 
 void main() async {
@@ -83,37 +82,18 @@ Future<void> _initializeApp() async {
   }
 
   // =========================================================================
-  // PHASE 2: App Check + Remote Config in PARALLEL (both need Firebase)
-  // =========================================================================
-  if (init.isFirebaseReady) {
-    await Future.wait([
-      // App Check activation
-      _initAppCheck(),
-      // Remote Config (includes force update check in release)
-      if (!kDebugMode) _initRemoteConfigAndCheckForceUpdate(init),
-    ]);
-    Log.info('Phase 2 complete', {'ms': stopwatch.elapsedMilliseconds});
-
-    // Check if force update was triggered (returns early from _initializeApp)
-    if (_forceUpdateRequired) {
-      FlutterNativeSplash.remove();
-      runApp(ForceUpdateScreen(storeUrl: _forceUpdateStoreUrl));
-      return;
-    }
-  }
-
-  // =========================================================================
-  // PHASE 3: Config validation + SharedPrefs (sync, fast)
+  // PHASE 2: Config validation + SharedPrefs (sync, fast)
   // =========================================================================
   AppConfig.validate();
   AppConfig.assertNoTestStoreInRelease();
 
   // Get SharedPreferences first (fast, local) - needed for router
   final prefs = await SharedPreferences.getInstance();
-  Log.info('Phase 3 complete', {'ms': stopwatch.elapsedMilliseconds});
+  Log.info('Phase 2 complete', {'ms': stopwatch.elapsedMilliseconds});
 
   // =========================================================================
-  // PHASE 4: Show Flutter splash immediately, init services in background
+  // PHASE 3: Show Flutter splash IMMEDIATELY, init services in background
+  // This eliminates the ~2s grey native splash while Remote Config loads
   // =========================================================================
   final subscriptionService = SubscriptionService();
   final initStatusNotifier = InitStatusNotifier();
@@ -158,14 +138,21 @@ Future<void> _initializeApp() async {
     }
   });
 
-  // Run Supabase and RevenueCat in parallel (background)
+  // Run all background services in parallel
   unawaited(
     Future.wait([
+      // App Check (non-blocking)
+      if (init.isFirebaseReady) _initAppCheck(),
+      // Remote Config + force update check (in background, checked by splash screen)
+      if (init.isFirebaseReady && !kDebugMode)
+        _initRemoteConfigAndCheckForceUpdate(initStatusNotifier),
+      // Supabase
       _initSupabase(init).then((_) {
         if (init.isSupabaseReady) {
           initStatusNotifier.markSupabaseReady();
         }
       }),
+      // RevenueCat
       _initRevenueCat(subscriptionService, init).then((_) {
         revenueCatTimeoutTimer?.cancel();
         if (init.isRevenueCatReady) {
@@ -192,7 +179,7 @@ Future<void> _initializeApp() async {
   );
 
   // =========================================================================
-  // PHASE 5: Post-init setup (non-blocking)
+  // PHASE 4: Post-init setup (non-blocking)
   // =========================================================================
   final reviewService = ReviewService(prefs);
   unawaited(reviewService.recordFirstLaunchIfNeeded());
@@ -203,10 +190,6 @@ Future<void> _initializeApp() async {
 // =============================================================================
 // Helper functions for parallel initialization
 // =============================================================================
-
-/// Force update state (set by _initRemoteConfigAndCheckForceUpdate)
-bool _forceUpdateRequired = false;
-String _forceUpdateStoreUrl = '';
 
 /// Initialize Firebase App Check
 Future<void> _initAppCheck() async {
@@ -221,20 +204,23 @@ Future<void> _initAppCheck() async {
 }
 
 /// Initialize Remote Config and check for force update
-/// Sets _forceUpdateRequired if update is needed
-Future<void> _initRemoteConfigAndCheckForceUpdate(InitService init) async {
+/// Updates InitStatusNotifier with force update state (checked by splash screen)
+Future<void> _initRemoteConfigAndCheckForceUpdate(
+  InitStatusNotifier notifier,
+) async {
   try {
     final remoteConfig = RemoteConfigService.instance;
     await remoteConfig.initialize();
+    notifier.markRemoteConfigReady();
 
     if (await remoteConfig.isUpdateRequired()) {
-      Log.warning('Force update required - blocking app');
-      _forceUpdateRequired = true;
-      _forceUpdateStoreUrl = remoteConfig.storeUrl;
+      Log.warning('Force update required');
+      notifier.setForceUpdate(remoteConfig.storeUrl);
     }
   } catch (e) {
     Log.warning('Remote Config init failed', {'error': '$e'});
     // Continue - fail open (don't require update if we can't check)
+    notifier.markRemoteConfigReady();
   }
 }
 
