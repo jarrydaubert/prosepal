@@ -229,9 +229,9 @@ This update makes yours even better:
 ### v1.1.0 (January 2026)
 **Selected:** Option A (Quote-Forward)
 ```
-"The difference between the right word and the almost right word is the difference between lightning and a lightning bug." — Mark Twain
+"Words are, of course, the most powerful drug used by mankind." — Rudyard Kipling
 
-This update helps you find the lightning:
+This update makes yours even better:
 
 - Regenerate: Not quite right? Generate 3 more with one tap
 - 3 new tones: Sarcastic, Nostalgic, and Poetic
