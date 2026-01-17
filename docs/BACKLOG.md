@@ -28,11 +28,8 @@
 
 | Issue | Location | Fix |
 |-------|----------|-----|
-
+| RemoteConfigService untested | `remote_config_service.dart` | Force update logic, AI model switching - add version comparison tests |
 | Paywall bypasses service interface | `paywall_sheet.dart` | Route getOfferings(), purchasePackage(), restorePurchases() through ISubscriptionService for testability |
-| Subscription service 21% coverage | `subscription_service.dart` | Revenue-critical, needs more tests |
-| Auth providers 0% coverage | `*_auth_provider.dart` | 86 lines untested auth flow |
-| Reauth service 1% coverage | `reauth_service.dart` | Security-critical, nearly untested |
 | Fire-and-forget sync loses data | `usage_service.dart:351` | Add retry queue, persist pending syncs |
 | OAuth re-auth for sensitive ops | `reauth_service.dart:121-135` | Redirect to OAuth provider for account deletion (not just dialog) |
 | No E2E tests in CI | `.github/workflows/` | Tests exist in `integration_test/` but not in CI |
@@ -44,6 +41,7 @@
 
 | Issue | Location | Fix |
 |-------|----------|-----|
+| DataExportService untested | `data_export_service.dart` | GDPR compliance - add JSON structure validity tests |
 | Paywall sync button sizing consistency | `paywall_sheet.dart:964-1008` | Google/Email buttons use 14pt font, Apple official widget uses ~17pt. Increase custom `_AuthButton` compact font from 14 to 16 to match Apple's visual weight |
 | Password reset deep link UX | `router.dart:121` | Create dedicated `/auth/reset-password` screen that extracts token from deep link instead of redirecting to generic `/auth` |
 | Auto-purchase race after email auth | `email_auth_screen.dart:238-241` | Navigate-then-purchase pattern may fail; show dialog before navigation or use deferred callback |
@@ -61,8 +59,7 @@
 
 | Auth navigation race conditions | `app.dart` | Use GoRouter `refreshListenable` + global redirect |
 | Missing CAPTCHA | `email_auth_screen.dart` | Add Turnstile/hCaptcha + Supabase config |
-| Device fingerprint 7% coverage | `device_fingerprint_service.dart` | Free tier abuse prevention undertested |
-| AI service 37% coverage | `ai_service.dart` | Retry logic branches untested |
+
 | String-based error detection | `auth_errors.dart:46-179` | Message matching as fallback |
 | No connectivity monitoring | App | No `connectivity_plus` - just error messages |
 | No circuit breakers | Network | Repeated failures don't trigger fallback |
@@ -77,6 +74,7 @@
 
 | Issue | Location | Fix |
 |-------|----------|-----|
+| DiagnosticService untested | `diagnostic_service.dart` | Support feature - add basic report generation tests |
 | Settings restore missing usage sync | `settings_screen.dart:143-153` | Add `usageService.syncFromServer()` call after restore for UI consistency |
 | Device fingerprint resets on reinstall | `device_fingerprint_service.dart` | `identifierForVendor` resets when app deleted. Fix: Use Keychain persistence or Apple DeviceCheck API for persistent device ID |
 | Audit autoDispose usage | `providers.dart` | Review all StateProviders - autoDispose only for single-screen state, not cross-screen navigation state. Fixed: selectedOccasionProvider, generationResultProvider |
