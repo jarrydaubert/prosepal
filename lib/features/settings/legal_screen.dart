@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../shared/components/components.dart';
 import '../../shared/theme/app_colors.dart';
 import '../../shared/theme/app_spacing.dart';
 
@@ -13,11 +14,22 @@ class TermsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Terms of Use'),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        title: const Text(
+          'Terms of Use',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        leading: AppBackButton(onPressed: () => Navigator.pop(context)),
         actions: [
           IconButton(
-            icon: const Icon(Icons.open_in_new),
+            icon: const Icon(Icons.open_in_new, color: AppColors.primary),
             tooltip: 'Open in browser',
             onPressed: () => launchUrl(Uri.parse(_webUrl)),
           ),
@@ -102,11 +114,22 @@ class PrivacyScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Privacy Policy'),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        title: const Text(
+          'Privacy Policy',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        leading: AppBackButton(onPressed: () => Navigator.pop(context)),
         actions: [
           IconButton(
-            icon: const Icon(Icons.open_in_new),
+            icon: const Icon(Icons.open_in_new, color: AppColors.primary),
             tooltip: 'Open in browser',
             onPressed: () => launchUrl(Uri.parse(_webUrl)),
           ),

@@ -11,6 +11,7 @@
 | Item | Action |
 |------|--------|
 | Supabase leaked password protection | Enable toggle in Dashboard > Auth (requires paid plan) |
+| Auth loading spinner missing | Show loading overlay after Apple/Google sheet closes while waiting for sign-in completion (noticeable pause currently) |
 
 ---
 
@@ -147,10 +148,7 @@
 
 | Feature | Notes |
 |---------|-------|
-| Regeneration ("Generate More") | #1 user request - "give me 3 more" button on results |
-| More tones | Sarcastic, Nostalgic, Poetic - just prompt tweaks |
 | History multi-select + batch delete | QoL improvement, reduce churn friction |
-| Occasion search/filter | Needed if 15+ occasions |
 
 ---
 
@@ -167,16 +165,13 @@
 
 ## External Dependencies
 
-### Gemini Model - Action by March 2026
+### Gemini Model
 
-**CRITICAL: Gemini 2.0 Flash/Flash-Lite retire March 3, 2026**
+Using `gemini-3-flash-preview` (primary) + `gemini-2.5-flash` (fallback) as of v1.1.0.
 
 | Item | Action |
 |------|--------|
-| ~~Model name hardcoded~~ | DONE - RemoteConfigService fetches `ai_model` from Remote Config |
-| **Switch to Gemini 3 Flash** | Update Remote Config: `ai_model` → `gemini-3-flash-preview`, `ai_model_fallback` → `gemini-2.5-flash`. Test thoroughly before March 3, 2026 deadline |
-| Wire up model 404 fallback | `ai_service.dart:339` - Call `switchToFallback()` when model returns 404 |
-| Model version monitoring | When gemini-3-flash goes stable (non-preview), update Remote Config |
+| Model version monitoring | When gemini-3-flash goes stable (non-preview), update to stable version |
 
 ### Supabase - Monitor 2026
 

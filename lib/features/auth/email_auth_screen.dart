@@ -10,6 +10,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/providers/providers.dart';
 import '../../core/services/log_service.dart';
+import '../../shared/components/components.dart';
 import '../../shared/theme/app_colors.dart';
 
 class EmailAuthScreen extends ConsumerStatefulWidget {
@@ -371,9 +372,17 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
       child: Scaffold(
         backgroundColor: AppColors.background,
         appBar: AppBar(
-          title: const Text('Continue with Email'),
-          backgroundColor: AppColors.background,
+          backgroundColor: Colors.transparent,
           elevation: 0,
+          title: const Text(
+            'Continue with Email',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          leading: AppBackButton(onPressed: () => Navigator.pop(context)),
         ),
         body: SafeArea(
           child: SingleChildScrollView(

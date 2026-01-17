@@ -526,6 +526,27 @@ void main() {
       });
     });
 
+    group('model not found errors', () {
+      test('classifies "404" as MODEL_NOT_FOUND', () {
+        final result = AiService.classifyFirebaseAIError(
+          'Error 404: Resource not found',
+        );
+
+        expect(result.exceptionType, equals(AiServiceException));
+        expect(result.errorCode, equals('MODEL_NOT_FOUND'));
+        expect(result.isRetryable, isTrue);
+      });
+
+      test('classifies "not found" as MODEL_NOT_FOUND', () {
+        final result = AiService.classifyFirebaseAIError(
+          'Model gemini-3-flash-preview not found',
+        );
+
+        expect(result.exceptionType, equals(AiServiceException));
+        expect(result.errorCode, equals('MODEL_NOT_FOUND'));
+      });
+    });
+
     group('timeout errors', () {
       test('classifies "timeout" as AiNetworkException with TIMEOUT code', () {
         final result = AiService.classifyFirebaseAIError(
@@ -641,6 +662,28 @@ void main() {
 
         expect(result.exceptionType, equals(AiServiceException));
         expect(result.errorCode, equals('PERMISSION_DENIED'));
+      });
+    });
+
+    group('SDK parse errors', () {
+      test('classifies "Unhandled format for Content" as retryable', () {
+        final result = AiService.classifyGeneralError(
+          'Unhandled format for Content: {}',
+        );
+
+        expect(result.exceptionType, equals(AiServiceException));
+        expect(result.errorCode, equals('SDK_PARSE_ERROR'));
+        expect(result.isRetryable, isTrue);
+      });
+
+      test('classifies "content: {}" pattern as retryable', () {
+        final result = AiService.classifyGeneralError(
+          'Error parsing response content: {}',
+        );
+
+        expect(result.exceptionType, equals(AiServiceException));
+        expect(result.errorCode, equals('SDK_PARSE_ERROR'));
+        expect(result.isRetryable, isTrue);
       });
     });
 

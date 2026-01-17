@@ -357,8 +357,9 @@ class AuthService implements IAuthService {
     // Also sign out from Google to clear cached credentials
     try {
       await _google.signOut();
-    } catch (_) {
-      // Ignore - may not be signed in with Google
+    } on Exception catch (e) {
+      // Expected if user wasn't signed in with Google
+      Log.info('Google sign-out skipped', {'reason': '$e'});
     }
 
     await _supabase.signOut();

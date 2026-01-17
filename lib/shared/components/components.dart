@@ -1,4 +1,5 @@
 // Shared UI components
+export 'app_back_button.dart';
 export 'app_button.dart';
 export 'app_logo.dart';
 export 'generation_loading_overlay.dart';

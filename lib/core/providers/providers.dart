@@ -378,6 +378,24 @@ final remainingGenerationsProvider = Provider<int>((ref) {
 });
 
 // ============================================================
+// Occasion Search State
+// ============================================================
+// Search query for filtering occasions on home screen.
+// autoDispose so it resets when leaving home screen.
+
+final occasionSearchProvider = StateProvider<String>((ref) => '');
+
+/// Filtered occasions based on search query.
+/// Matches against label (case-insensitive).
+final filteredOccasionsProvider = Provider<List<Occasion>>((ref) {
+  final query = ref.watch(occasionSearchProvider).toLowerCase().trim();
+  if (query.isEmpty) return Occasion.values;
+  return Occasion.values
+      .where((o) => o.label.toLowerCase().contains(query))
+      .toList();
+});
+
+// ============================================================
 // Generation Form State
 // ============================================================
 // Form providers - selectedOccasion must NOT autoDispose as it's set before

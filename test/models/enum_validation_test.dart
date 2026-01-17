@@ -90,9 +90,9 @@ void main() {
   // ============================================================
 
   group('Tone enum', () {
-    test('has exactly 6 tones', () {
-      // Bug: Tone count changed but not reflected in UI/tests
-      expect(Tone.values.length, equals(6));
+    test('has exactly 9 tones', () {
+      // v1.1.0: Added sarcastic, nostalgic, poetic
+      expect(Tone.values.length, equals(9));
     });
 
     test('all tones have non-empty labels', () {

@@ -5,6 +5,7 @@
 
 import 'package:freezed_annotation/freezed_annotation.dart';
 
+import 'message_length.dart';
 import 'occasion.dart';
 import 'relationship.dart';
 import 'tone.dart';
@@ -147,6 +148,9 @@ abstract class GenerationResult with _$GenerationResult {
     /// The tone used for generation
     @ToneConverter() required Tone tone,
 
+    /// The message length used for generation
+    @MessageLengthConverter() required MessageLength length,
+
     /// Optional recipient name used in generation
     String? recipientName,
 
@@ -201,4 +205,21 @@ class ToneConverter implements JsonConverter<Tone, String> {
 
   @override
   String toJson(Tone object) => object.name;
+}
+
+/// JSON converter for MessageLength enum with safe parsing
+///
+/// Returns [MessageLength.standard] for null values (backward compatibility
+/// with history entries created before length field was added).
+class MessageLengthConverter implements JsonConverter<MessageLength, String?> {
+  const MessageLengthConverter();
+
+  @override
+  MessageLength fromJson(String? json) {
+    if (json == null) return MessageLength.standard;
+    return parseEnum(MessageLength.values, json, 'MessageLength');
+  }
+
+  @override
+  String toJson(MessageLength object) => object.name;
 }

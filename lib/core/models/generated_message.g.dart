@@ -43,6 +43,9 @@ _GenerationResult _$GenerationResultFromJson(Map<String, dynamic> json) =>
         json['relationship'] as String,
       ),
       tone: const ToneConverter().fromJson(json['tone'] as String),
+      length: const MessageLengthConverter().fromJson(
+        json['length'] as String?,
+      ),
       recipientName: json['recipientName'] as String?,
       personalDetails: json['personalDetails'] as String?,
     );
@@ -54,6 +57,7 @@ Map<String, dynamic> _$GenerationResultToJson(
   'occasion': const OccasionConverter().toJson(instance.occasion),
   'relationship': const RelationshipConverter().toJson(instance.relationship),
   'tone': const ToneConverter().toJson(instance.tone),
+  'length': const MessageLengthConverter().toJson(instance.length),
   'recipientName': instance.recipientName,
   'personalDetails': instance.personalDetails,
 };

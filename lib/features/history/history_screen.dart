@@ -10,6 +10,7 @@ import 'package:share_plus/share_plus.dart';
 import '../../core/models/models.dart';
 import '../../core/providers/providers.dart';
 import '../../core/services/history_service.dart';
+import '../../shared/components/components.dart';
 import '../../shared/theme/app_colors.dart';
 
 class HistoryScreen extends ConsumerStatefulWidget {
@@ -189,10 +190,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
             color: AppColors.textPrimary,
           ),
         ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
-          onPressed: () => context.pop(),
-        ),
+        leading: AppBackButton(onPressed: () => context.pop()),
         actions: [
           if (_allHistory.isNotEmpty)
             IconButton(
@@ -211,7 +209,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
               children: [
                 // Search bar
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
                   child: TextField(
                     controller: _searchController,
                     onChanged: _onSearchChanged,

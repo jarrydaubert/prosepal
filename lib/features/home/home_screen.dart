@@ -29,132 +29,175 @@ class HomeScreen extends ConsumerWidget {
       });
     }
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: CustomScrollView(
-          slivers: [
-            // Header
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'Prosepal',
-                                  style: TextStyle(
-                                    fontSize: 32,
-                                    fontWeight: FontWeight.bold,
-                                    color: AppColors.primary,
+    return GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(),
+      child: Scaffold(
+        backgroundColor: AppColors.background,
+        body: SafeArea(
+          child: CustomScrollView(
+            slivers: [
+              // Header
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      const Text(
+                                        'Prosepal',
+                                        style: TextStyle(
+                                          fontSize: 32,
+                                          fontWeight: FontWeight.bold,
+                                          color: AppColors.primary,
+                                        ),
+                                      ),
+                                      if (isPro) ...[
+                                        const SizedBox(width: 10),
+                                        _ProPill(
+                                          onTap: () async {
+                                            final isLoggedIn = ref
+                                                .read(authServiceProvider)
+                                                .isLoggedIn;
+                                            if (!isLoggedIn) {
+                                              Log.info(
+                                                'Pro badge tapped (anonymous)',
+                                                {'source': 'home'},
+                                              );
+                                              context.push(
+                                                '/auth?restore=true',
+                                              );
+                                            } else {
+                                              final subscriptionService = ref
+                                                  .read(
+                                                    subscriptionServiceProvider,
+                                                  );
+                                              await subscriptionService
+                                                  .showCustomerCenter();
+                                            }
+                                          },
+                                        ),
+                                      ],
+                                    ],
                                   ),
-                                ),
-                                Text(
-                                  'The right words, right now',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.grey[600],
+                                  Text(
+                                    'The right words, right now',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.grey[600],
+                                    ),
                                   ),
-                                ),
-                              ],
-                            ),
-                            Row(
-                              children: [
-                                _IconButton(
-                                  icon: Icons.history,
-                                  onPressed: () => context.pushNamed('history'),
-                                  tooltip: 'Message history',
-                                ),
-                                const SizedBox(width: 8),
-                                _IconButton(
-                                  icon: Icons.settings_outlined,
-                                  onPressed: () =>
-                                      context.pushNamed('settings'),
-                                  tooltip: 'Settings',
-                                ),
-                              ],
-                            ),
-                          ],
-                        )
-                        .animate(key: const ValueKey('header'))
-                        .fadeIn(duration: 400.ms)
-                        .slideY(begin: -0.1, end: 0),
+                                ],
+                              ),
+                              Row(
+                                children: [
+                                  _IconButton(
+                                    icon: Icons.history,
+                                    onPressed: () =>
+                                        context.pushNamed('history'),
+                                    tooltip: 'Message history',
+                                  ),
+                                  const SizedBox(width: 8),
+                                  _IconButton(
+                                    icon: Icons.settings_outlined,
+                                    onPressed: () =>
+                                        context.pushNamed('settings'),
+                                    tooltip: 'Settings',
+                                  ),
+                                ],
+                              ),
+                            ],
+                          )
+                          .animate(key: const ValueKey('header'))
+                          .fadeIn(duration: 400.ms)
+                          .slideY(begin: -0.1, end: 0),
 
-                    const SizedBox(height: 20),
-
-                    // Usage indicator (shimmer while RevenueCat loads, fallback if timed out)
-                    if (!initStatus.revenueCatReady && !initStatus.timedOut)
-                      const _UsageIndicatorShimmer()
-                    else
-                      UsageIndicator(
-                        remaining: remaining,
-                        isPro: isPro,
-                        onUpgrade: () {
-                          Log.info('Upgrade tapped', {'source': 'home'});
-                          // Always show paywall - it has inline auth
-                          showPaywall(context, source: 'home');
-                        },
-                        onProTap: () async {
-                          final isLoggedIn = ref
-                              .read(authServiceProvider)
-                              .isLoggedIn;
-                          if (!isLoggedIn) {
-                            // Anonymous Pro user - prompt to sign in to protect subscription
-                            Log.info('Pro badge tapped (anonymous)', {
-                              'source': 'home',
-                            });
-                            context.push('/auth?restore=true');
-                          } else {
-                            // Signed in - show customer center
-                            final subscriptionService = ref.read(
-                              subscriptionServiceProvider,
-                            );
-                            await subscriptionService.showCustomerCenter();
-                          }
-                        },
-                      ).animate().fadeIn(delay: 200.ms),
-                  ],
+                      // Usage indicator for free users only (Pro badge is in header)
+                      if (!isPro) ...[
+                        const SizedBox(height: 20),
+                        if (!initStatus.revenueCatReady && !initStatus.timedOut)
+                          const _UsageIndicatorShimmer()
+                        else
+                          UsageIndicator(
+                            remaining: remaining,
+                            isPro: false,
+                            onUpgrade: () {
+                              Log.info('Upgrade tapped', {'source': 'home'});
+                              showPaywall(context, source: 'home');
+                            },
+                          ).animate().fadeIn(delay: 200.ms),
+                      ],
+                    ],
+                  ),
                 ),
               ),
-            ),
 
-            // Section header
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: const Text(
-                  "What's the occasion?",
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
+              // Section header
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: const Text(
+                    "What's the occasion?",
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
+                  ).animate().fadeIn(delay: 300.ms),
+                ),
+              ),
+
+              const SliverToBoxAdapter(child: SizedBox(height: 12)),
+
+              // Search field
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: _OccasionSearchField(
+                    onChanged: (value) {
+                      ref.read(occasionSearchProvider.notifier).state = value;
+                      if (value.isNotEmpty) {
+                        final count = ref
+                            .read(filteredOccasionsProvider)
+                            .length;
+                        Log.info('Occasion search', {
+                          'query': value,
+                          'results': count,
+                        });
+                      }
+                    },
                   ),
-                ).animate().fadeIn(delay: 300.ms),
+                ),
               ),
-            ),
 
-            const SliverToBoxAdapter(child: SizedBox(height: 16)),
+              const SliverToBoxAdapter(child: SizedBox(height: 16)),
 
-            // Occasion grid
-            SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              sliver: OccasionGrid(
-                onOccasionSelected: (occasion) {
-                  Log.info('Wizard started', {'occasion': occasion.name});
-                  ref.read(selectedOccasionProvider.notifier).state = occasion;
-                  context.pushNamed('generate');
-                },
+              // Occasion grid
+              SliverPadding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                sliver: OccasionGrid(
+                  occasions: ref.watch(filteredOccasionsProvider),
+                  onOccasionSelected: (occasion) {
+                    Log.info('Wizard started', {'occasion': occasion.name});
+                    ref.read(selectedOccasionProvider.notifier).state =
+                        occasion;
+                    // Clear search when selecting
+                    ref.read(occasionSearchProvider.notifier).state = '';
+                    context.pushNamed('generate');
+                  },
+                ),
               ),
-            ),
 
-            const SliverToBoxAdapter(child: SizedBox(height: 40)),
-          ],
+              const SliverToBoxAdapter(child: SizedBox(height: 40)),
+            ],
+          ),
         ),
       ),
     );
@@ -192,6 +235,109 @@ class _IconButton extends StatelessWidget {
             border: Border.all(color: AppColors.primary, width: 2),
           ),
           child: Icon(icon, color: AppColors.primary, size: 22),
+        ),
+      ),
+    );
+  }
+}
+
+/// Compact amber PRO pill badge (matches settings screen style).
+class _ProPill extends StatelessWidget {
+  const _ProPill({this.onTap});
+
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: 'Pro subscription active',
+      button: onTap != null,
+      hint: onTap != null ? 'Double tap to manage subscription' : null,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: Colors.amber,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.amber.shade700, width: 2),
+          ),
+          child: const Text(
+            'PRO',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Search field for filtering occasions.
+class _OccasionSearchField extends StatefulWidget {
+  const _OccasionSearchField({required this.onChanged});
+
+  final ValueChanged<String> onChanged;
+
+  @override
+  State<_OccasionSearchField> createState() => _OccasionSearchFieldState();
+}
+
+class _OccasionSearchFieldState extends State<_OccasionSearchField> {
+  final _controller = TextEditingController();
+  bool _hasText = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller.addListener(_onTextChanged);
+  }
+
+  void _onTextChanged() {
+    final hasText = _controller.text.isNotEmpty;
+    if (hasText != _hasText) {
+      setState(() => _hasText = hasText);
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.removeListener(_onTextChanged);
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: _controller,
+      onChanged: widget.onChanged,
+      textInputAction: TextInputAction.search,
+      decoration: InputDecoration(
+        hintText: 'Search occasions...',
+        hintStyle: TextStyle(color: Colors.grey[400]),
+        prefixIcon: Icon(Icons.search, color: Colors.grey[400]),
+        suffixIcon: _hasText
+            ? IconButton(
+                icon: Icon(Icons.clear, color: Colors.grey[400]),
+                onPressed: () {
+                  _controller.clear();
+                  widget.onChanged('');
+                },
+              )
+            : null,
+        filled: true,
+        fillColor: Colors.grey[100],
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 12,
         ),
       ),
     );

@@ -82,6 +82,7 @@ class MockAiService extends AiService {
       occasion: occasion,
       relationship: relationship,
       tone: tone,
+      length: length,
       recipientName: recipientName,
       personalDetails: personalDetails,
       messages: [

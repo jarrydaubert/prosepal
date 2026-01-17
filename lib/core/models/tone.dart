@@ -43,6 +43,27 @@ enum Tone {
     prompt:
         'cheeky, teasing, and fun - gentle sarcasm and inside-joke energy between close friends',
     description: 'Cheeky and teasing',
+  ),
+  sarcastic(
+    label: 'Sarcastic',
+    emoji: '🙄',
+    prompt:
+        'dry wit, ironic, and subtly mocking - affectionate roasting between people who get each other',
+    description: 'Dry and ironic',
+  ),
+  nostalgic(
+    label: 'Nostalgic',
+    emoji: '🌅',
+    prompt:
+        'reflective, sentimental about shared history - honors memories and the journey together',
+    description: 'Reflective and sentimental',
+  ),
+  poetic(
+    label: 'Poetic',
+    emoji: '🪶',
+    prompt:
+        'lyrical, beautiful language with imagery - elevated prose that reads like poetry without being forced',
+    description: 'Lyrical and elegant',
   );
 
   const Tone({
