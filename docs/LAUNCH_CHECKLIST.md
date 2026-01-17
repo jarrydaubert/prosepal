@@ -9,7 +9,7 @@
 | Platform | Status | Details |
 |----------|--------|---------|
 | iOS | **LIVE** | v1.0.1 Build 29 - https://apps.apple.com/app/id6757088726 |
-| iOS | **PENDING** | v1.1.0 Build 31 - Ready for submission |
+| iOS | **IN REVIEW** | v1.1.0 Build 31 - Submitted 2026-01-17, auto-release enabled |
 | Android | Blocked | Requires 14-day closed testing with 12+ testers |
 
 ---
@@ -113,7 +113,7 @@
 | Item | Status | Notes |
 |------|--------|-------|
 | App Attest environment | ✅ | Changed to `production` |
-| 628 tests passing | ✅ | All pass |
+| 626 tests passing | ✅ | All pass |
 | 0 warnings in lib/ | ✅ | Only info-level items |
 | Pre-commit hook | ✅ | Auto format + analyze |
 

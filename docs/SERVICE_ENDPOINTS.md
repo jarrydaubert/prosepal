@@ -129,4 +129,4 @@
 | Biometrics | ✅ 4/4 | ⚠️ Device |
 | Firebase Core | ⚠️ Manual | ⚠️ Manual |
 
-**Total unit/widget tests:** 376
+**Total unit/widget tests:** 626
