@@ -345,10 +345,16 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
     try {
       final customerInfo = await Purchases.restorePurchases();
       final hasPro = customerInfo.entitlements.active.containsKey('pro');
+      final activeEntitlements = customerInfo.entitlements.active.keys.toList();
+
+      Log.info('Restore completed', {
+        'hasPro': hasPro,
+        'activeEntitlements': activeEntitlements,
+        'allEntitlements': customerInfo.entitlements.all.keys.toList(),
+      });
 
       if (hasPro && mounted) {
         ref.invalidate(customerInfoProvider);
-        Log.info('Restore completed', {'hasPro': true});
         HapticFeedback.mediumImpact();
         _purchaseCompleted = true;
 
@@ -373,7 +379,7 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
         _showError('No active subscription found');
       }
     } on Exception catch (e) {
-      Log.error('Restore error', {'error': '$e'});
+      Log.error('Restore error', {'error': '$e', 'type': e.runtimeType});
       _showError('Could not restore purchases. Please try again.');
     } finally {
       if (mounted) {
