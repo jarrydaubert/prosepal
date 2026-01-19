@@ -1,7 +1,7 @@
 # Prosepal Marketing Strategy
 
-> **Version**: 3.1 | Bootstrapped organic-first plan
-> **Last Updated**: January 12, 2026
+> **Version**: 3.2 | Bootstrapped organic-first plan + ChatGPT Ads strategy
+> **Last Updated**: January 18, 2026
 > **Markets**: USA, UK, Canada, Australia, New Zealand, Ireland
 
 ---
@@ -677,6 +677,113 @@ Build organic content first, then scale winners via paid ads:
 - Exclude low-performing placements
 - Create custom product pages for top keywords
 - Test different screenshot sets
+
+#### $199 Apple Credit Strategy
+
+Apple provides a $199 credit for new advertisers. Use this two-campaign structure to maximize learning:
+
+**Campaign 1: Exact Match ($130)**
+- Mode: Advanced, Search Match OFF
+- Target: US only, new users only
+- Daily cap: $10-15/day
+- Keywords (exact match):
+  - `greeting card message`, `card message ideas`, `what to write in card`
+  - `sympathy card message`, `birthday card message`, `thank you card message`
+- Start with 8-10 keywords max
+
+**Campaign 2: Discovery ($69)**
+- Mode: Advanced, Search Match ON
+- Target: US only, new users only
+- Daily cap: $5-7/day
+- Add ALL Exact Match keywords as NEGATIVES (prevents overlap)
+- Weekly: Check Search Terms report, move winners to Exact Match
+
+**Success Metrics**:
+| Metric | Target | Action if Miss |
+|--------|--------|----------------|
+| CPI | < $2.00 | Pause keyword |
+| TTR | > 7% | Improve screenshots |
+| Conversion Rate | > 50% | Check App Store listing |
+
+**What $199 Buys**: Keyword validation, CPI benchmarks, conversion data, screenshot performance insights.
+
+---
+
+### ChatGPT Ads (Emerging - Monitor Closely)
+
+> **Status**: Testing began January 2026 in US. Self-serve NOT yet available.
+> **Last Updated**: January 2026
+
+#### Why This Matters for Prosepal
+
+Users literally ask ChatGPT: "Help me write a sympathy card message" - this is **100% intent match** with our product. The marketing doc already identifies ChatGPT as an indirect competitor ("requires prompt engineering"). Advertising at the moment of that friction is strategically perfect.
+
+#### Current State
+
+| Factor | Status |
+|--------|--------|
+| Launch | Testing in "coming weeks" (Jan 2026) |
+| Who sees ads | Free + Go ($8/mo) tiers only |
+| Ad format | Bottom of response, clearly labeled, contextual |
+| Pricing | NOT disclosed - CPM/CPC unknown |
+| Advertiser access | NO sign-up available yet |
+| Targeting | Semantic intent matching (not keywords) |
+| User base | 800M weekly active users |
+
+#### The Facebook 2007 Parallel
+
+Analysts compare this to Facebook's early ad era (2007-2008): massive user base, nascent ad platform, low competition, cheap inventory. Early movers on Facebook saw outsized ROI before big budgets flooded in.
+
+**What's similar**: Huge engaged user base, contextual targeting, low initial competition.
+
+**What's different**: No self-serve ads yet, pricing unknown, Google/Meta preparing responses.
+
+**Verdict**: Opportunity is real, but window may be shorter and less accessible than the Facebook analogy suggests.
+
+#### Strategic Fit
+
+| Factor | Prosepal Alignment |
+|--------|-------------------|
+| Intent match | 100% - users ask exactly what we solve |
+| Conversion potential | AI-referred traffic converts 4-5x higher than search |
+| Competition | Currently zero in greeting card AI category |
+| Positioning | We're the "solution" to ChatGPT's friction |
+
+#### Action Plan
+
+**Immediate (Now)**:
+- [ ] Monitor OpenAI announcements weekly
+- [ ] Bookmark: [openai.com/index/our-approach-to-advertising](https://openai.com/index/our-approach-to-advertising-and-expanding-access/)
+- [ ] Subscribe to SearchEngineLand, Digiday for early access news
+- [ ] Track ChatGPT referral traffic (add UTM detection for `chat.openai.com`)
+
+**Before Ads Available**:
+- [ ] Build organic ChatGPT citations via prosepal.app/blog content
+- [ ] Structure FAQ/how-to content that AI models cite
+- [ ] Ensure brand is mentioned in AI training data (PR, content)
+
+**When Self-Serve Opens**:
+- Budget: $100-200 initial test (exception to $1K MRR rule due to early-mover window)
+- Target intents: "sympathy card," "birthday message," "thank you note"
+- Success criteria: CPI < $1.50 (better than ASA)
+- Compare against Apple Search Ads baseline
+
+#### Timeline Estimate
+
+| Phase | Timing | Advertiser Access |
+|-------|--------|-------------------|
+| Testing | Q1 2026 (now) | Major brands only (likely) |
+| Limited rollout | Q2-Q3 2026 | Expanded, possibly self-serve |
+| General availability | Q4 2026+ | Self-serve for all |
+
+#### Priority vs Other Channels
+
+1. **Apple Search Ads** - Available now, high intent, use $199 credit
+2. **ChatGPT Ads** - When available, potentially higher intent, move fast
+3. **Google Ads** - Proven but requires more budget
+4. **Meta Ads** - Last, needs UGC library
+
+---
 
 ### Google Ads (Month 4+)
 
