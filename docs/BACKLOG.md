@@ -19,6 +19,7 @@
 
 | Item | Frequency | Next Due | Action |
 |------|-----------|----------|--------|
+| **iOS Release Build** | Every release | Always | **MUST use `./scripts/build_ios.sh`** - never plain `flutter build ios` or Xcode directly. Keys are baked at compile time. See `docs/LAUNCH_CHECKLIST.md`. |
 | Apple OAuth secret | 6 months | ~July 2026 | Regenerate in Apple Developer Console, update in Supabase Auth > Apple provider. **No notification - app breaks silently!** |
 | **Cost vs Usage Analysis** | Monthly | Feb 2026 | Review Firebase billing vs active users. Track: avg generations/user, % super users (>300/mo), cost/user. Alert if >30% super users or cost/user exceeds $3/mo. Break-even at ~42% super users @ $29.99/yr. |
 

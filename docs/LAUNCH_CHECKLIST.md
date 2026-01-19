@@ -1,6 +1,41 @@
 # Launch Checklist
 
-> Last verified: 2026-01-17
+> Last verified: 2026-01-19
+
+---
+
+## ⚠️ CRITICAL: iOS Release Build Process
+
+**DO NOT** build via Xcode directly or use plain `flutter build ios`. API keys will be missing and the app will grey screen!
+
+### Correct Build Steps:
+
+```bash
+# 1. Ensure .env.local exists with all keys
+cat .env.local  # Should have SUPABASE_URL, SUPABASE_ANON_KEY, REVENUECAT_IOS_KEY, etc.
+
+# 2. Run the build script (passes dart-defines)
+./scripts/build_ios.sh
+
+# 3. THEN open Xcode to archive
+open ios/Runner.xcworkspace
+# Product → Archive → Distribute App
+```
+
+### Why This Matters:
+- `dart-define` values (API keys) are baked in at **compile time**
+- Running `flutter build ios` without the script = empty config
+- Empty config = Supabase skipped = splash screen waits forever = **grey screen**
+
+### Debug vs Release:
+| Build Type | Command | Keys Passed? |
+|------------|---------|--------------|
+| Debug | `./scripts/run_ios.sh` | ✅ Yes |
+| Release | `./scripts/build_ios.sh` | ✅ Yes |
+| Release | `flutter build ios` | ❌ NO! |
+| Release | Xcode Archive directly | ❌ NO! |
+
+**Learned the hard way:** v1.1.0 shipped without keys → grey screen → pulled from App Store.
 
 ---
 
