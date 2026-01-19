@@ -407,9 +407,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     if (firstConfirm != true) return;
 
     // Require re-authentication for sensitive operation
-    final reauthResult = await ref
-        .read(reauthServiceProvider)
-        .requireReauth(
+    final reauthService = ref.read(reauthServiceProvider);
+    if (reauthService == null) {
+      Log.warning('ReauthService not available - Supabase not initialized');
+      return;
+    }
+    final reauthResult = await reauthService.requireReauth(
           context: context,
           reason: 'Verify your identity to delete your account.',
         );

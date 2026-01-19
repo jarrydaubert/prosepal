@@ -262,7 +262,13 @@ final biometricServiceProvider = Provider<IBiometricService>((ref) {
 });
 
 /// Re-authentication service for sensitive operations
-final reauthServiceProvider = Provider<ReauthService>((ref) {
+final reauthServiceProvider = Provider<ReauthService?>((ref) {
+  // Return null if Supabase isn't initialized yet
+  try {
+    Supabase.instance.client;
+  } catch (_) {
+    return null;
+  }
   final biometricService = ref.watch(biometricServiceProvider);
   return ReauthService(
     biometricService: biometricService,

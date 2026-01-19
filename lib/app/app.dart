@@ -148,79 +148,70 @@ class _ProsepalAppState extends ConsumerState<ProsepalApp>
   }
 
   void _setupAuthListener() {
-    // Skip if Supabase isn't initialized (e.g., integration tests with mocks)
+    // Skip if Supabase isn't initialized (accessing .instance throws if not)
+    late final Supabase supabase;
     try {
-      final supabase = Supabase.instance;
+      supabase = Supabase.instance;
       if (!supabase.isInitialized) return;
-
-      // Listen for auth state changes (magic link, OAuth callback, etc.)
-      _authSubscription = supabase.client.auth.onAuthStateChange.listen((
-        data,
-      ) async {
-        final event = data.event;
-        final session = data.session;
-        Log.info('Auth state changed', {
-          'event': event.name,
-          'hasSession': session != null,
-          'userId': session?.user.id.substring(0, 8),
-        });
-
-        if (event == AuthChangeEvent.signedIn && session != null) {
-          // Identify with RevenueCat to restore Pro entitlements
-          // This is safe - "New Customers" metric tracks first purchase, not identification
-          try {
-            await ref
-                .read(subscriptionServiceProvider)
-                .identifyUser(session.user.id);
-            Log.info('Auth listener: RevenueCat identified');
-          } catch (e) {
-            Log.warning('Auth listener: RevenueCat identify failed', {
-              'error': '$e',
-            });
-          }
-
-          // Sync usage from server (restores usage after reinstall)
-          try {
-            await ref.read(usageServiceProvider).syncFromServer();
-            // Force UI to update with new usage state
-            ref.invalidate(remainingGenerationsProvider);
-            Log.info('Auth listener: Usage synced from server');
-          } catch (e) {
-            Log.warning('Auth listener: Usage sync failed', {'error': '$e'});
-          }
-
-          // Navigate after sign-in
-          // - Magic links: user returns to app, listener must navigate
-          // - Apple/Google/Email buttons: AuthScreen navigates directly
-          // - To avoid race conditions, only navigate if on auth screens
-          //   (Apple/Google navigate immediately, won't be on /auth anymore)
-          // Note: fullPath check is simple but sufficient for current routes
-          final currentPath =
-              _router.routerDelegate.currentConfiguration.fullPath;
-          if (currentPath.startsWith('/auth')) {
-            // Still on auth screen = magic link callback, navigate away
-            Log.info(
-              'Auth listener: Magic link sign-in, navigating to /home (from $currentPath)',
-            );
-            _router.go('/home');
-          }
-        } else if (event == AuthChangeEvent.signedOut) {
-          // Clear sync marker so next user gets fresh sync
-          try {
-            await ref.read(usageServiceProvider).clearSyncMarker();
-            Log.info('Auth listener: Sync marker cleared (signedOut)');
-          } catch (e) {
-            Log.warning('Auth listener: Clear sync marker failed', {
-              'error': '$e',
-            });
-          }
-          // Note: Navigation is handled by caller (settings_screen)
-          // Sign out → /home, Delete account → /onboarding
-        }
-      });
     } catch (_) {
-      // Supabase not initialized - skip auth listener (integration tests with mocks)
+      // Supabase not initialized yet - skip auth listener
+      return;
     }
+
+    // Listen for auth state changes (magic link, OAuth callback, etc.)
+    _authSubscription = supabase.client.auth.onAuthStateChange.listen((
+      data,
+    ) async {
+      final event = data.event;
+      final session = data.session;
+      Log.info('Auth state changed', {
+        'event': event.name,
+        'hasSession': session != null,
+        'userId': session?.user.id.substring(0, 8),
+      });
+
+      if (event == AuthChangeEvent.signedIn && session != null) {
+        // Identify with RevenueCat to restore Pro entitlements
+        try {
+          await ref
+              .read(subscriptionServiceProvider)
+              .identifyUser(session.user.id);
+          Log.info('Auth listener: RevenueCat identified');
+        } catch (e) {
+          Log.warning('Auth listener: RevenueCat identify failed', {
+            'error': '$e',
+          });
+        }
+
+        // Sync usage from server (restores usage after reinstall)
+        try {
+          await ref.read(usageServiceProvider).syncFromServer();
+          ref.invalidate(remainingGenerationsProvider);
+          Log.info('Auth listener: Usage synced from server');
+        } catch (e) {
+          Log.warning('Auth listener: Usage sync failed', {'error': '$e'});
+        }
+
+        // Navigate after sign-in (magic links only)
+        final currentPath =
+            _router.routerDelegate.currentConfiguration.fullPath;
+        if (currentPath.startsWith('/auth')) {
+          Log.info(
+            'Auth listener: Magic link sign-in, navigating to /home (from $currentPath)',
+          );
+          _router.go('/home');
+        }
+      } else if (event == AuthChangeEvent.signedOut) {
+        try {
+          await ref.read(usageServiceProvider).clearSyncMarker();
+          Log.info('Auth listener: Sync marker cleared (signedOut)');
+        } catch (e) {
+          Log.warning('Auth listener: Clear sync marker failed', {
+            'error': '$e',
+          });
+        }
+      }
+    });
   }
 
   @override
