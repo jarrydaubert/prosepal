@@ -150,6 +150,11 @@ Future<void> _initializeApp() async {
       _initSupabase(init).then((_) {
         if (init.isSupabaseReady) {
           initStatusNotifier.markSupabaseReady();
+        } else {
+          // Mark as "ready" even on failure so splash can proceed
+          // (app handles missing Supabase gracefully)
+          Log.warning('Supabase init failed, marking ready anyway');
+          initStatusNotifier.markSupabaseReady();
         }
       }),
       // RevenueCat
@@ -226,6 +231,12 @@ Future<void> _initRemoteConfigAndCheckForceUpdate(
 
 /// Initialize Supabase
 Future<void> _initSupabase(InitService init) async {
+  Log.info('Supabase init starting', {
+    'hasConfig': AppConfig.hasSupabaseConfig,
+    'urlPresent': AppConfig.supabaseUrl.isNotEmpty,
+    'keyPresent': AppConfig.supabaseAnonKey.isNotEmpty,
+  });
+
   if (!AppConfig.hasSupabaseConfig) {
     Log.warning('Supabase skipped: configuration not provided');
     init.supabaseFailed('Configuration not provided');
@@ -237,6 +248,7 @@ Future<void> _initSupabase(InitService init) async {
       url: AppConfig.supabaseUrl,
       anonKey: AppConfig.supabaseAnonKey,
     );
+    Log.info('Supabase initialized successfully');
     init.supabaseReady();
   } catch (e) {
     Log.error('Supabase initialization failed', e);
