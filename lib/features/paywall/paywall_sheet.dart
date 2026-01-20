@@ -577,17 +577,26 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
       ),
       const Gap(4),
       Text(
-        'Heartfelt messages, whenever you need them',
+        _contextSubtitle,
         style: TextStyle(fontSize: 14, color: Colors.grey[600]),
       ),
     ],
   );
 
+  /// Context-aware subtitle based on where paywall was triggered
+  String get _contextSubtitle => switch (widget.source) {
+    'generate' => "You've used your free message. Keep creating!",
+    'home_limit' => 'Unlock unlimited heartfelt messages',
+    'settings' => 'Upgrade your Prosepal experience',
+    'onboarding' => 'Get unlimited access to every occasion',
+    _ => 'Heartfelt messages, whenever you need them',
+  };
+
   Widget _buildBenefits() {
     const benefits = [
-      ('500/month', Icons.message_outlined),
-      ('All occasions', Icons.celebration_outlined),
-      ('Priority AI', Icons.bolt_outlined),
+      ('Unlimited messages', Icons.all_inclusive),
+      ('Every occasion', Icons.celebration_outlined),
+      ('Instant inspiration', Icons.bolt_outlined),
     ];
 
     return Row(
@@ -913,7 +922,7 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
                   ),
                 )
               : const Text(
-                  'Continue',
+                  'Unlock 500 Messages',
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                 ),
         ),
