@@ -672,16 +672,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           // Preferences section
           const SectionHeader('Preferences'),
           SettingsTile(
-            leading: Icon(
-              _useUkSpelling ? Icons.flag : Icons.flag_outlined,
+            leading: const Icon(
+              Icons.translate,
               color: AppColors.textSecondary,
             ),
-            title: 'British Spelling',
-            subtitle: _useUkSpelling
-                ? 'Using Mum, favourite, colour'
-                : 'Using Mom, favorite, color',
-            trailing: Switch.adaptive(
-              value: _useUkSpelling,
+            title: 'Spelling',
+            subtitle: _useUkSpelling ? 'Mum, favourite' : 'Mom, favorite',
+            trailing: _SpellingPicker(
+              isUk: _useUkSpelling,
               onChanged: _toggleSpelling,
             ),
           ),
@@ -1143,6 +1141,83 @@ class _DeleteConfirmationDialogState extends State<_DeleteConfirmationDialog> {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Segmented picker for US/UK spelling preference
+class _SpellingPicker extends StatelessWidget {
+  const _SpellingPicker({required this.isUk, required this.onChanged});
+
+  final bool isUk;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.grey[200],
+        borderRadius: BorderRadius.circular(8),
+      ),
+      padding: const EdgeInsets.all(2),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _PickerOption(
+            label: '🇺🇸 US',
+            isSelected: !isUk,
+            onTap: () => onChanged(false),
+          ),
+          _PickerOption(
+            label: '🇬🇧 UK',
+            isSelected: isUk,
+            onTap: () => onChanged(true),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PickerOption extends StatelessWidget {
+  const _PickerOption({
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.white : Colors.transparent,
+          borderRadius: BorderRadius.circular(6),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.1),
+                    blurRadius: 2,
+                    offset: const Offset(0, 1),
+                  ),
+                ]
+              : null,
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+            color: isSelected ? AppColors.textPrimary : AppColors.textSecondary,
+          ),
+        ),
+      ),
     );
   }
 }
