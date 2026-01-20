@@ -272,6 +272,27 @@ final reauthServiceProvider = Provider<ReauthService?>((ref) {
 });
 
 // ============================================================
+// Calendar & Notifications
+// ============================================================
+
+/// Calendar service for managing saved occasions
+final calendarServiceProvider = Provider<CalendarService>(
+  (ref) => CalendarService(),
+);
+
+/// Notification service for reminders
+final notificationServiceProvider = Provider<NotificationService>((ref) {
+  final prefs = ref.watch(sharedPreferencesProvider);
+  return NotificationService(prefs);
+});
+
+/// Upcoming occasions (auto-refreshes when calendar is updated)
+final upcomingOccasionsProvider = FutureProvider<List<SavedOccasion>>((ref) {
+  final calendarService = ref.watch(calendarServiceProvider);
+  return calendarService.getUpcomingOccasions(limit: 10);
+});
+
+// ============================================================
 // RevenueCat CustomerInfo (Reactive via StateNotifier + Listener)
 // ============================================================
 

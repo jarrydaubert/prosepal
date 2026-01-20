@@ -99,6 +99,13 @@ class HomeScreen extends ConsumerWidget {
                               Row(
                                 children: [
                                   _IconButton(
+                                    icon: Icons.calendar_month_outlined,
+                                    onPressed: () =>
+                                        context.pushNamed('calendar'),
+                                    tooltip: 'Upcoming occasions',
+                                  ),
+                                  const SizedBox(width: 8),
+                                  _IconButton(
                                     icon: Icons.history,
                                     onPressed: () =>
                                         context.pushNamed('history'),
