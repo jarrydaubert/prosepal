@@ -321,6 +321,7 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
         }
       }
 
+      final useUkSpelling = ref.read(isUkSpellingProvider);
       final result = await aiService.generateMessages(
         occasion: occasion,
         relationship: relationship,
@@ -328,6 +329,7 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
         length: length,
         recipientName: recipientName.isNotEmpty ? recipientName : null,
         personalDetails: personalDetails.isNotEmpty ? personalDetails : null,
+        useUkSpelling: useUkSpelling,
       );
 
       // For anonymous users, record generation client-side

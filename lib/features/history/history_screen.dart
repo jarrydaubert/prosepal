@@ -348,8 +348,19 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                       ? _buildNoResultsState()
                       : ListView.builder(
                           padding: const EdgeInsets.all(16),
-                          itemCount: _filteredHistory.length,
+                          itemCount: _filteredHistory.length + 1,
                           itemBuilder: (context, index) {
+                            if (index == _filteredHistory.length) {
+                              return Padding(
+                                padding: const EdgeInsets.only(
+                                  top: 8,
+                                  bottom: 24,
+                                ),
+                                child: Center(
+                                  child: _buildDeviceOnlyDisclaimer(),
+                                ),
+                              );
+                            }
                             final item = _filteredHistory[index];
                             return _HistoryCard(
                               item: item,
@@ -399,9 +410,25 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
               style: TextStyle(fontSize: 15, color: Colors.grey[600]),
               textAlign: TextAlign.center,
             ),
+            const SizedBox(height: 24),
+            _buildDeviceOnlyDisclaimer(),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildDeviceOnlyDisclaimer() {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(Icons.smartphone, size: 14, color: Colors.grey[500]),
+        const SizedBox(width: 6),
+        Text(
+          'History is stored on this device only',
+          style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+        ),
+      ],
     );
   }
 

@@ -7,6 +7,7 @@ import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../config/preference_keys.dart';
 import '../interfaces/interfaces.dart';
 import '../models/models.dart';
 import '../services/services.dart';
@@ -360,6 +361,23 @@ final checkProStatusProvider = FutureProvider<bool>((ref) async {
     });
     return false;
   }
+});
+
+// ============================================================
+// Spelling Preference
+// ============================================================
+
+/// Spelling preference: 'us' or 'uk'
+/// Used to customize AI output (Mom vs Mum, favorite vs favourite)
+final spellingPreferenceProvider = Provider<String>((ref) {
+  final prefs = ref.watch(sharedPreferencesProvider);
+  return prefs.getString(PreferenceKeys.spellingPreference) ??
+      PreferenceKeys.spellingPreferenceDefault;
+});
+
+/// Whether UK spelling is enabled
+final isUkSpellingProvider = Provider<bool>((ref) {
+  return ref.watch(spellingPreferenceProvider) == 'uk';
 });
 
 // ============================================================

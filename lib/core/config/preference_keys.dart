@@ -81,4 +81,13 @@ abstract class PreferenceKeys {
   /// Cached pro status (for fast UI, not for entitlement checks)
   static const proStatusCache = 'pro_status_cache';
   static const proStatusCacheDefault = false;
+
+  // ===========================================================================
+  // Spelling / Localization
+  // ===========================================================================
+
+  /// Spelling preference: 'us' (Mom, favorite) or 'uk' (Mum, favourite)
+  /// Auto-detected from device locale, user can override in settings
+  static const spellingPreference = 'spelling_preference';
+  static const spellingPreferenceDefault = 'us';
 }

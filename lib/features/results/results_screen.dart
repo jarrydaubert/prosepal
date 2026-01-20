@@ -217,6 +217,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
       final usageService = ref.read(usageServiceProvider);
       final historyService = ref.read(historyServiceProvider);
 
+      final useUkSpelling = ref.read(isUkSpellingProvider);
       final result = await aiService.generateMessages(
         occasion: currentResult.occasion,
         relationship: currentResult.relationship,
@@ -224,6 +225,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
         length: currentResult.length,
         recipientName: currentResult.recipientName,
         personalDetails: currentResult.personalDetails,
+        useUkSpelling: useUkSpelling,
       );
 
       // Save to history

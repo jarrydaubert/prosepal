@@ -43,6 +43,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _isRestoringPurchases = false;
   String _appVersion = '';
   bool _analyticsEnabled = true;
+  bool _useUkSpelling = false;
 
   final InAppReview _inAppReview = InAppReview.instance;
 
@@ -54,6 +55,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     _loadBiometricSettings();
     _loadAppVersion();
     _loadAnalyticsSetting();
+    _loadSpellingSetting();
   }
 
   Future<void> _loadBiometricSettings() async {
@@ -93,6 +95,30 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     if (mounted) {
       setState(() => _analyticsEnabled = enabled);
     }
+  }
+
+  void _loadSpellingSetting() {
+    final prefs = ref.read(sharedPreferencesProvider);
+    final spelling =
+        prefs.getString(PreferenceKeys.spellingPreference) ??
+        PreferenceKeys.spellingPreferenceDefault;
+    if (mounted) {
+      setState(() => _useUkSpelling = spelling == 'uk');
+    }
+  }
+
+  Future<void> _toggleSpelling(bool useUk) async {
+    final prefs = ref.read(sharedPreferencesProvider);
+    await prefs.setString(
+      PreferenceKeys.spellingPreference,
+      useUk ? 'uk' : 'us',
+    );
+    Log.info('Spelling preference changed', {'useUk': useUk});
+    if (mounted) {
+      setState(() => _useUkSpelling = useUk);
+    }
+    // Invalidate provider to refresh any cached state
+    ref.invalidate(spellingPreferenceProvider);
   }
 
   Future<void> _toggleAnalytics(bool value) async {
@@ -413,9 +439,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       return;
     }
     final reauthResult = await reauthService.requireReauth(
-          context: context,
-          reason: 'Verify your identity to delete your account.',
-        );
+      context: context,
+      reason: 'Verify your identity to delete your account.',
+    );
     if (!reauthResult.success) {
       if (reauthResult.errorMessage != null && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -642,6 +668,23 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
             ),
           ],
+
+          // Preferences section
+          const SectionHeader('Preferences'),
+          SettingsTile(
+            leading: Icon(
+              _useUkSpelling ? Icons.flag : Icons.flag_outlined,
+              color: AppColors.textSecondary,
+            ),
+            title: 'British Spelling',
+            subtitle: _useUkSpelling
+                ? 'Using Mum, favourite, colour'
+                : 'Using Mom, favorite, color',
+            trailing: Switch.adaptive(
+              value: _useUkSpelling,
+              onChanged: _toggleSpelling,
+            ),
+          ),
 
           // Stats section
           const SectionHeader('Your Stats'),

@@ -146,8 +146,11 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       _error = null;
     });
 
+    // Capture services before async to avoid ref access after unmount
+    final authService = ref.read(authServiceProvider);
+    final usageService = ref.read(usageServiceProvider);
+
     try {
-      final authService = ref.read(authServiceProvider);
       // Timeout prevents stuck spinner if OAuth window killed externally
       final response = await authService.signInWithApple().timeout(
         const Duration(minutes: 2),
@@ -158,12 +161,12 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
         // Sync usage from server (restores usage after reinstall)
         // Non-critical - don't block auth success if sync fails
         try {
-          await ref.read(usageServiceProvider).syncFromServer();
+          await usageService.syncFromServer();
         } catch (e) {
           Log.warning('Usage sync failed after auth', {'error': '$e'});
         }
       }
-      await _navigateAfterAuth();
+      if (mounted) await _navigateAfterAuth();
     } catch (e) {
       if (!AuthErrorHandler.isCancellation(e)) {
         _showError(AuthErrorHandler.getMessage(e));
@@ -180,8 +183,11 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       _error = null;
     });
 
+    // Capture services before async to avoid ref access after unmount
+    final authService = ref.read(authServiceProvider);
+    final usageService = ref.read(usageServiceProvider);
+
     try {
-      final authService = ref.read(authServiceProvider);
       // Timeout prevents stuck spinner if OAuth window killed externally
       final response = await authService.signInWithGoogle().timeout(
         const Duration(minutes: 2),
@@ -192,12 +198,12 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
         // Sync usage from server (restores usage after reinstall)
         // Non-critical - don't block auth success if sync fails
         try {
-          await ref.read(usageServiceProvider).syncFromServer();
+          await usageService.syncFromServer();
         } catch (e) {
           Log.warning('Usage sync failed after auth', {'error': '$e'});
         }
       }
-      await _navigateAfterAuth();
+      if (mounted) await _navigateAfterAuth();
     } catch (e) {
       if (!AuthErrorHandler.isCancellation(e)) {
         _showError(AuthErrorHandler.getMessage(e));

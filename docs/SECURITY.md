@@ -55,10 +55,22 @@ Risk tolerance: Low for auth/payment, medium for content features.
 
 | Severity | Issue | Location | Status |
 |----------|-------|----------|--------|
-| **Critical** | `p_is_pro` client fallback in `check_and_increment_usage` - trusts client when no `user_entitlements` record exists | `migrations/012:71-76` | Remove fallback, default to `false` |
-| High | RevenueCat webhook uses shared secret only, no HMAC signature verification | `revenuecat-webhook/index.ts:76-84` | Implement per RevenueCat docs |
-| High | CORS wildcard (`*`) on all edge functions | All edge functions | Restrict or remove |
-| Medium | `device_usage` SELECT policy allows any auth user to read any device | `migrations/004:23-27` | Restrict to user's own devices |
+| Low | Webhook rate limiting | `revenuecat-webhook/index.ts` | Consider adding (defense in depth) |
+
+### Recently Resolved (2026-01-20)
+
+| Issue | Fix |
+|-------|-----|
+| ~~`p_is_pro` client fallback~~ | Migration 018: Defaults to `FALSE`, client param ignored |
+| ~~CORS wildcard on edge functions~~ | All functions now use `''` (no browser access) |
+| ~~`device_usage` overly permissive~~ | Migration 018: Users can only read own devices |
+
+### RevenueCat Webhook Security (Clarification)
+
+RevenueCat does **not** support HMAC signature verification. Per their docs, the Authorization header with shared secret is the only available method. Our implementation is correct. Additional hardening options:
+- IP allowlisting (RevenueCat publishes their IPs)
+- Request logging/anomaly alerting
+- Endpoint rate limiting
 
 ---
 
@@ -347,7 +359,7 @@ release {
 | M3: Insecure Communication | Pass | HTTPS enforced, no cleartext |
 | M4: Insecure Authentication | Partial | OAuth re-auth for sensitive ops planned (see Roadmap) |
 | M5: Insufficient Cryptography | Pass | Platform crypto (SHA256, ES256) |
-| M6: Insecure Authorization | Partial | RLS enforced; `p_is_pro` client fallback needs removal (see Active Issues) |
+| M6: Insecure Authorization | Pass | RLS enforced; server-side Pro verification (migration 018) |
 | M7: Client Code Quality | Pass | Input validation, error handling |
 | M8: Code Tampering | Pass | ProGuard + App Check |
 | M9: Reverse Engineering | Acceptable | ProGuard provides reasonable protection |
@@ -401,12 +413,10 @@ release {
 
 | Item | Priority | Target | Status |
 |------|----------|--------|--------|
-| Remove `p_is_pro` client fallback | Critical | Immediate | **Blocked** - needs migration |
-| RevenueCat webhook HMAC signature | High | v1.1 | Planned |
-| Restrict edge function CORS | High | v1.1 | Planned |
 | CAPTCHA on email auth | Medium | v1.1 | Planned |
 | OAuth re-authentication for sensitive ops | High | v1.1 | Planned |
-| Restrict `device_usage` SELECT policy | Medium | v1.1 | Planned |
+| Webhook rate limiting | Low | v1.1 | Planned |
+| RevenueCat IP allowlisting | Low | v1.2 | Backlog |
 | Configurable session timeout | Low | v1.2 | Backlog |
 | Persist auth throttle to secure storage | Low | v1.2 | Backlog |
 
@@ -493,7 +503,7 @@ We will not pursue legal action against security researchers who:
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
-| 1.3.0 | 2026-01-20 | Claude Code | Server-side audit: Added Active Issues section. Found `p_is_pro` client fallback (Critical), webhook signature gap (High), CORS wildcard (High), device_usage policy (Medium). Updated M6 OWASP status. |
+| 1.3.0 | 2026-01-20 | Claude Code | Server-side audit: Fixed `p_is_pro` client fallback (migration 018), removed CORS wildcards, restricted `device_usage` policy. Clarified RevenueCat webhook security (shared secret is correct - HMAC not available). M6 OWASP now Pass. |
 | 1.2.0 | 2026-01-15 | Development Team | Security fix: Locked down `user_usage` table to RPC-only writes (migration 011). Direct INSERT/UPDATE policies removed to prevent usage count reset attacks. Added `sync_user_usage` RPC with monotonic-only updates. |
 | 1.1.0 | 2026-01-11 | Development Team | Added document control, scope, threat model, data retention, third-party security, expanded disclosure policy, glossary, changelog. Fixed M4 OWASP status. |
 | 1.0.0 | 2026-01-10 | Development Team | Initial security documentation |
