@@ -10,6 +10,8 @@
 
 | Item | Action |
 |------|--------|
+| **`p_is_pro` client fallback (CRITICAL)** | Migration 012 trusts client `p_is_pro` when no `user_entitlements` record exists. Deploy migration to default to `false`. See `SECURITY.md` Active Issues. |
+| RevenueCat webhook signature | Uses shared secret only, not HMAC. Implement signature verification per RevenueCat docs. |
 | Supabase leaked password protection | Enable toggle in Dashboard > Auth. Requires Pro plan ($25/mo) - upgrade once revenue justifies it |
 | Auth loading spinner missing | Show loading overlay after Apple/Google sheet closes while waiting for sign-in completion (noticeable pause currently) |
 

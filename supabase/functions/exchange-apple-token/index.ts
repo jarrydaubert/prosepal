@@ -7,8 +7,10 @@ import { createClient } from "npm:@supabase/supabase-js@2"
 
 const APPLE_TOKEN_URL = 'https://appleid.apple.com/auth/token'
 
+// CORS restricted - only called from mobile app (native HTTP, not browser)
+// Empty origin blocks browser-based attacks while allowing mobile requests
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': '', // Mobile apps don't send Origin header
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
@@ -123,16 +125,12 @@ Deno.serve(async (req) => {
     // Generate client secret
     const clientSecret = await generateAppleClientSecret()
     if (!clientSecret || !appleClientId) {
-      // Apple credentials not configured - store code as fallback
-      const adminClient = createClient(supabaseUrl, supabaseServiceKey)
-      await adminClient.from('apple_credentials').upsert({
-        user_id: user.id,
-        authorization_code: authorization_code,
-        updated_at: new Date().toISOString()
-      })
+      // Apple credentials not configured - FAIL LOUDLY
+      // Do NOT store raw auth codes as fallback (security risk)
+      console.error('Apple credentials not configured - cannot exchange token')
       return new Response(
-        JSON.stringify({ success: true, note: 'Apple credentials not configured, code stored' }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: 'Apple Sign In not fully configured. Please contact support.' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
