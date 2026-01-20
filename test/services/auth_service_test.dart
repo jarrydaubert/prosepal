@@ -1,8 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:prosepal/core/services/auth_service.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
-import 'package:prosepal/core/services/auth_service.dart';
 
 import '../mocks/mock_apple_auth_provider.dart';
 import '../mocks/mock_google_auth_provider.dart';

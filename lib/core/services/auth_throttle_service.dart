@@ -135,9 +135,8 @@ class AuthThrottleService {
   }
 
   /// Get current failure count for an identifier (for testing/UI)
-  int getFailureCount(String identifier) {
-    return _attempts[identifier.toLowerCase()]?.failureCount ?? 0;
-  }
+  int getFailureCount(String identifier) =>
+      _attempts[identifier.toLowerCase()]?.failureCount ?? 0;
 
   /// Clear all throttle state (for testing)
   void clear() {

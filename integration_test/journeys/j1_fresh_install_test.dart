@@ -46,7 +46,7 @@ void main() {
       await launchApp(tester);
 
       // Navigate through onboarding carousel (up to 10 pages max)
-      int pages = 0;
+      var pages = 0;
       while (pages < 10) {
         // Check if we've reached auth or home
         if (exists(find.text('Birthday')) ||

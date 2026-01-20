@@ -76,8 +76,8 @@ void main() {
       await completeWizard(tester);
 
       // Look for name input field
-      final hasNameField = find.byType(TextField).evaluate().isNotEmpty;
-      final hasNameHint =
+      final _ =
+          find.byType(TextField).evaluate().isNotEmpty ||
           find.textContaining('name').evaluate().isNotEmpty ||
           find.textContaining('Name').evaluate().isNotEmpty ||
           find.textContaining('recipient').evaluate().isNotEmpty;
@@ -109,7 +109,7 @@ void main() {
       await completeWizard(tester);
 
       // Look for details/personal input
-      final hasDetails =
+      final _ =
           find.textContaining('detail').evaluate().isNotEmpty ||
           find.textContaining('Detail').evaluate().isNotEmpty ||
           find.textContaining('personal').evaluate().isNotEmpty ||

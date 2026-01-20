@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart' show visibleForTesting;
-import 'package:sign_in_with_apple/sign_in_with_apple.dart';
-
 import 'package:prosepal/core/interfaces/apple_auth_provider.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 /// Mock implementation of IAppleAuthProvider for testing
 ///
@@ -248,17 +247,15 @@ AuthorizationCredentialAppleID createFakeAppleCredential({
   String? identityToken = 'valid-id-token-abc123',
   String? state,
   bool withNullIdentityToken = false,
-}) {
-  return AuthorizationCredentialAppleID(
-    userIdentifier: userIdentifier,
-    givenName: givenName,
-    familyName: familyName,
-    email: email,
-    authorizationCode: authorizationCode,
-    identityToken: withNullIdentityToken ? null : identityToken,
-    state: state,
-  );
-}
+}) => AuthorizationCredentialAppleID(
+  userIdentifier: userIdentifier,
+  givenName: givenName,
+  familyName: familyName,
+  email: email,
+  authorizationCode: authorizationCode,
+  identityToken: withNullIdentityToken ? null : identityToken,
+  state: state,
+);
 
 /// Create a credential simulating first-time sign-in (includes name/email)
 ///
@@ -274,14 +271,12 @@ AuthorizationCredentialAppleID createFakeAppleCredentialFirstSignIn({
   String authorizationCode = 'auth-code-xyz',
   String identityToken = 'valid-id-token-abc123',
   String? state,
-}) {
-  return AuthorizationCredentialAppleID(
-    userIdentifier: userIdentifier,
-    givenName: givenName,
-    familyName: familyName,
-    email: email,
-    authorizationCode: authorizationCode,
-    identityToken: identityToken,
-    state: state,
-  );
-}
+}) => AuthorizationCredentialAppleID(
+  userIdentifier: userIdentifier,
+  givenName: givenName,
+  familyName: familyName,
+  email: email,
+  authorizationCode: authorizationCode,
+  identityToken: identityToken,
+  state: state,
+);

@@ -22,19 +22,17 @@ class SettingsTile extends StatelessWidget {
   final Color? titleColor;
 
   @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      leading: leading,
-      title: Text(title, style: TextStyle(color: titleColor)),
-      subtitle: subtitle != null ? Text(subtitle!) : null,
-      trailing:
-          trailing ??
-          (onTap != null
-              ? const Icon(Icons.chevron_right, color: AppColors.textHint)
-              : null),
-      onTap: onTap,
-    );
-  }
+  Widget build(BuildContext context) => ListTile(
+    leading: leading,
+    title: Text(title, style: TextStyle(color: titleColor)),
+    subtitle: subtitle != null ? Text(subtitle!) : null,
+    trailing:
+        trailing ??
+        (onTap != null
+            ? const Icon(Icons.chevron_right, color: AppColors.textHint)
+            : null),
+    onTap: onTap,
+  );
 }
 
 /// Settings tile with a switch toggle
@@ -55,14 +53,12 @@ class SettingsToggleTile extends StatelessWidget {
   final ValueChanged<bool> onChanged;
 
   @override
-  Widget build(BuildContext context) {
-    return SettingsTile(
-      leading: leading,
-      title: title,
-      subtitle: subtitle,
-      trailing: Switch.adaptive(value: value, onChanged: onChanged),
-    );
-  }
+  Widget build(BuildContext context) => SettingsTile(
+    leading: leading,
+    title: title,
+    subtitle: subtitle,
+    trailing: Switch.adaptive(value: value, onChanged: onChanged),
+  );
 }
 
 /// Destructive settings tile (red text for dangerous actions)
@@ -81,13 +77,11 @@ class SettingsDestructiveTile extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
-    return SettingsTile(
-      leading: Icon(icon, color: AppColors.error),
-      title: title,
-      subtitle: subtitle,
-      titleColor: AppColors.error,
-      onTap: onTap,
-    );
-  }
+  Widget build(BuildContext context) => SettingsTile(
+    leading: Icon(icon, color: AppColors.error),
+    title: title,
+    subtitle: subtitle,
+    titleColor: AppColors.error,
+    onTap: onTap,
+  );
 }

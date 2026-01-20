@@ -2,11 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-
 import 'package:prosepal/core/models/models.dart';
 import 'package:prosepal/core/providers/providers.dart';
 import 'package:prosepal/features/home/home_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../mocks/mock_auth_service.dart';
 
@@ -144,7 +143,7 @@ void main() {
     testWidgets('free user sees remaining count and upgrade prompt', (
       tester,
     ) async {
-      await tester.pumpWidget(createTestableHomeScreen(remaining: 3));
+      await tester.pumpWidget(createTestableHomeScreen());
       await tester.pumpAndSettle();
 
       expect(find.text('3'), findsOneWidget);

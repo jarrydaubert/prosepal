@@ -1,5 +1,5 @@
-import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:prosepal/core/models/models.dart';
 import 'package:prosepal/core/services/history_service.dart';
 
@@ -20,32 +20,30 @@ void main() {
     Relationship relationship = Relationship.closeFriend,
     Tone tone = Tone.heartfelt,
     MessageLength length = MessageLength.standard,
-  }) {
-    return GenerationResult(
-      messages: [
-        GeneratedMessage(
-          id: '1',
-          text: 'Test message 1',
-          occasion: occasion,
-          relationship: relationship,
-          tone: tone,
-          createdAt: DateTime.now(),
-        ),
-        GeneratedMessage(
-          id: '2',
-          text: 'Test message 2',
-          occasion: occasion,
-          relationship: relationship,
-          tone: tone,
-          createdAt: DateTime.now(),
-        ),
-      ],
-      occasion: occasion,
-      relationship: relationship,
-      tone: tone,
-      length: length,
-    );
-  }
+  }) => GenerationResult(
+    messages: [
+      GeneratedMessage(
+        id: '1',
+        text: 'Test message 1',
+        occasion: occasion,
+        relationship: relationship,
+        tone: tone,
+        createdAt: DateTime.now(),
+      ),
+      GeneratedMessage(
+        id: '2',
+        text: 'Test message 2',
+        occasion: occasion,
+        relationship: relationship,
+        tone: tone,
+        createdAt: DateTime.now(),
+      ),
+    ],
+    occasion: occasion,
+    relationship: relationship,
+    tone: tone,
+    length: length,
+  );
 
   group('HistoryService', () {
     // ============================================================
@@ -73,7 +71,7 @@ void main() {
 
     test('newest items appear first', () async {
       // Bug: History shows oldest first, user can't find recent messages
-      final result1 = createTestResult(occasion: Occasion.birthday);
+      final result1 = createTestResult();
       final result2 = createTestResult(occasion: Occasion.wedding);
 
       await service.saveGeneration(result1);
@@ -169,9 +167,7 @@ void main() {
 
     test('deletes specific item by id', () async {
       // Bug: Delete removes wrong item or crashes
-      await service.saveGeneration(
-        createTestResult(occasion: Occasion.birthday),
-      );
+      await service.saveGeneration(createTestResult());
       await Future.delayed(const Duration(milliseconds: 5));
       await service.saveGeneration(
         createTestResult(occasion: Occasion.wedding),

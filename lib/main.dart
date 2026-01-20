@@ -9,7 +9,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -23,9 +22,8 @@ import 'core/services/auth_service.dart';
 import 'core/services/google_auth_provider.dart';
 import 'core/services/init_service.dart';
 import 'core/services/log_service.dart';
-import 'core/services/review_service.dart';
-
 import 'core/services/remote_config_service.dart';
+import 'core/services/review_service.dart';
 import 'core/services/subscription_service.dart';
 import 'core/services/supabase_auth_provider.dart';
 import 'firebase_options.dart';
@@ -76,7 +74,7 @@ Future<void> _initializeApp() async {
         return true;
       };
     }
-  } catch (e) {
+  } on Exception catch (e) {
     Log.error('Firebase initialization failed', e);
     init.firebaseFailed('$e');
   }
@@ -217,10 +215,9 @@ Future<void> _initializeApp() async {
 Future<void> _initAppCheck() async {
   try {
     await FirebaseAppCheck.instance.activate(
-      providerAndroid: const AndroidPlayIntegrityProvider(),
       providerApple: const AppleAppAttestProvider(),
     );
-  } catch (e) {
+  } on Exception catch (e) {
     Log.warning('Firebase App Check activation failed', {'error': '$e'});
   }
 }
@@ -239,7 +236,7 @@ Future<void> _initRemoteConfigAndCheckForceUpdate(
       Log.warning('Force update required');
       notifier.setForceUpdate(remoteConfig.storeUrl);
     }
-  } catch (e) {
+  } on Exception catch (e) {
     Log.warning('Remote Config init failed', {'error': '$e'});
     // Continue - fail open (don't require update if we can't check)
     notifier.markRemoteConfigReady();
@@ -267,7 +264,7 @@ Future<void> _initSupabase(InitService init) async {
     );
     Log.info('Supabase initialized successfully');
     init.supabaseReady();
-  } catch (e) {
+  } on Exception catch (e) {
     Log.error('Supabase initialization failed', e);
     init.supabaseFailed('$e');
   }
@@ -281,7 +278,7 @@ Future<void> _initRevenueCat(
   try {
     await subscriptionService.initialize();
     init.revenueCatReady();
-  } catch (e) {
+  } on Exception catch (e) {
     Log.error('RevenueCat initialization failed', e);
     init.revenueCatFailed('$e');
   }
@@ -298,7 +295,7 @@ Future<void> _applyAnalyticsPreference(SharedPreferences prefs) async {
     await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(
       analyticsEnabled,
     );
-  } catch (e) {
+  } on Exception catch (e) {
     Log.warning('Failed to apply analytics preference', {'error': '$e'});
   }
 }

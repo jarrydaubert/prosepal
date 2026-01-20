@@ -3,15 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:uuid/uuid.dart';
-
 import 'package:prosepal/core/models/models.dart';
 import 'package:prosepal/core/providers/providers.dart';
 import 'package:prosepal/core/services/ai_service.dart';
-import 'package:prosepal/core/services/usage_service.dart';
 import 'package:prosepal/core/services/review_service.dart';
+import 'package:prosepal/core/services/usage_service.dart';
 import 'package:prosepal/features/generate/generate_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../mocks/mock_auth_service.dart';
 import '../../mocks/mock_device_fingerprint_service.dart';
@@ -483,7 +482,6 @@ void main() {
         createTestableGenerateScreen(
           selectedOccasion: Occasion.birthday,
           remaining: 0,
-          isLoggedIn: false,
         ),
       );
       await tester.pumpAndSettle();

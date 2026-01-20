@@ -8,14 +8,13 @@ import 'usage_service.dart';
 
 /// Service for exporting user data (GDPR/CCPA right to portability)
 class DataExportService {
-  final UsageService _usageService;
-  final HistoryService _historyService;
-
   DataExportService({
     required UsageService usageService,
     required HistoryService historyService,
   }) : _usageService = usageService,
        _historyService = historyService;
+  final UsageService _usageService;
+  final HistoryService _historyService;
 
   /// Export all user data as JSON string
   ///
@@ -44,7 +43,7 @@ class DataExportService {
           'lastSignInAt': user.lastSignInAt,
         };
       }
-    } catch (e) {
+    } on Exception catch (e) {
       Log.warning('Data export: Failed to get account info', {'error': '$e'});
     }
 
@@ -54,7 +53,7 @@ class DataExportService {
         'totalMessagesGenerated': _usageService.getTotalCount(),
         'monthlyMessagesGenerated': _usageService.getMonthlyCount(),
       };
-    } catch (e) {
+    } on Exception catch (e) {
       Log.warning('Data export: Failed to get usage stats', {'error': '$e'});
     }
 
@@ -82,7 +81,7 @@ class DataExportService {
             },
           )
           .toList();
-    } catch (e) {
+    } on Exception catch (e) {
       Log.warning('Data export: Failed to get history', {'error': '$e'});
       export['messageHistory'] = [];
     }

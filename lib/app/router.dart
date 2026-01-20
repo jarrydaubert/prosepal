@@ -12,10 +12,10 @@ import '../features/auth/email_auth_screen.dart';
 import '../features/auth/lock_screen.dart';
 import '../features/error/force_update_screen.dart';
 import '../features/generate/generate_screen.dart';
+import '../features/history/history_screen.dart';
 import '../features/home/home_screen.dart';
 import '../features/onboarding/onboarding_screen.dart';
 import '../features/results/results_screen.dart';
-import '../features/history/history_screen.dart';
 import '../features/settings/feedback_screen.dart';
 import '../features/settings/legal_screen.dart';
 import '../features/settings/settings_screen.dart';
@@ -37,14 +37,12 @@ const _authRoutes = {'/auth', '/auth/email', '/lock'};
 ///
 /// Note: Biometric lock is handled by splash screen because it requires async check.
 /// The redirect callback is synchronous, so we use splash as a gate.
-GoRouter createAppRouter(SharedPreferences prefs) {
-  return GoRouter(
-    initialLocation: '/splash',
-    errorBuilder: (context, state) => _ErrorScreen(error: state.error),
-    redirect: (context, state) => _routeGuard(state, prefs),
-    routes: _routes,
-  );
-}
+GoRouter createAppRouter(SharedPreferences prefs) => GoRouter(
+  initialLocation: '/splash',
+  errorBuilder: (context, state) => _ErrorScreen(error: state.error),
+  redirect: (context, state) => _routeGuard(state, prefs),
+  routes: _routes,
+);
 
 /// Legacy router without guards (for backward compatibility during transition)
 /// TODO: Remove once all usages migrate to createAppRouter
@@ -305,46 +303,44 @@ class _SplashScreenState extends ConsumerState<_SplashScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.splash,
-      body: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const AppLogoStyled(size: 100),
-            const SizedBox(height: 24),
-            Text(
-              'Prosepal',
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: Colors.white.withValues(alpha: 0.9),
-                letterSpacing: 1.2,
-              ),
+  Widget build(BuildContext context) => Scaffold(
+    backgroundColor: AppColors.splash,
+    body: Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const AppLogoStyled(),
+          const SizedBox(height: 24),
+          Text(
+            'Prosepal',
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              color: Colors.white.withValues(alpha: 0.9),
+              letterSpacing: 1.2,
             ),
-            const SizedBox(height: 32),
-            const SizedBox(
-              width: 24,
-              height: 24,
-              child: CircularProgressIndicator(
-                strokeWidth: 2.5,
-                valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
-              ),
+          ),
+          const SizedBox(height: 32),
+          const SizedBox(
+            width: 24,
+            height: 24,
+            child: CircularProgressIndicator(
+              strokeWidth: 2.5,
+              valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
             ),
-            const SizedBox(height: 16),
-            Text(
-              'Loading...',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.white.withValues(alpha: 0.6),
-              ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Loading...',
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.white.withValues(alpha: 0.6),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
-    );
-  }
+    ),
+  );
 }
 
 /// Error screen for unknown routes (404)
@@ -354,57 +350,55 @@ class _ErrorScreen extends StatelessWidget {
   final Exception? error;
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(40),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(
-                  Icons.error_outline,
-                  size: 64,
-                  color: AppColors.textSecondary,
+  Widget build(BuildContext context) => Scaffold(
+    backgroundColor: AppColors.background,
+    body: SafeArea(
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(40),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.error_outline,
+                size: 64,
+                color: AppColors.textSecondary,
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                'Page not found',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
                 ),
-                const SizedBox(height: 24),
-                const Text(
-                  'Page not found',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                "The page you're looking for doesn't exist.",
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+              ),
+              const SizedBox(height: 32),
+              ElevatedButton(
+                onPressed: () => context.go('/home'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 32,
+                    vertical: 16,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                const SizedBox(height: 12),
-                Text(
-                  'The page you\'re looking for doesn\'t exist.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-                ),
-                const SizedBox(height: 32),
-                ElevatedButton(
-                  onPressed: () => context.go('/home'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 32,
-                      vertical: 16,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: const Text('Go Home'),
-                ),
-              ],
-            ),
+                child: const Text('Go Home'),
+              ),
+            ],
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
 }

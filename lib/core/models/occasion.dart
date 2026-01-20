@@ -342,6 +342,7 @@ enum Occasion {
   final String label;
   final String emoji;
   final String prompt;
+  // ignore: library_private_types_in_public_api
   final _OccasionOpacity opacity;
 
   /// Get the unified brand color for this occasion

@@ -212,14 +212,12 @@ GoogleAuthResult createFakeGoogleAuthResult({
   String? accessToken = 'google-access-token-abc',
   String? email = 'user@gmail.com',
   String? displayName = 'Test User',
-}) {
-  return GoogleAuthResult(
-    idToken: idToken,
-    accessToken: accessToken,
-    email: email,
-    displayName: displayName,
-  );
-}
+}) => GoogleAuthResult(
+  idToken: idToken,
+  accessToken: accessToken,
+  email: email,
+  displayName: displayName,
+);
 
 /// Create a result with only ID token (no access token)
 /// Simulates scenario where authorization was not granted
@@ -227,11 +225,5 @@ GoogleAuthResult createFakeGoogleAuthResultIdTokenOnly({
   String idToken = 'google-id-token-xyz',
   String? email = 'user@gmail.com',
   String? displayName = 'Test User',
-}) {
-  return GoogleAuthResult(
-    idToken: idToken,
-    accessToken: null,
-    email: email,
-    displayName: displayName,
-  );
-}
+}) =>
+    GoogleAuthResult(idToken: idToken, email: email, displayName: displayName);

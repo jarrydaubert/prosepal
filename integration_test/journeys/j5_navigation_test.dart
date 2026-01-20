@@ -125,7 +125,7 @@ void main() {
       await completeWizard(tester);
 
       // Rapid back taps
-      for (int i = 0; i < 5; i++) {
+      for (var i = 0; i < 5; i++) {
         if (exists(find.byIcon(Icons.arrow_back))) {
           await tester.tap(find.byIcon(Icons.arrow_back), warnIfMissed: false);
           await tester.pump(const Duration(milliseconds: 100));

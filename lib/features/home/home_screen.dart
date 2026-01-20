@@ -220,25 +220,23 @@ class _IconButton extends StatelessWidget {
   final String tooltip;
 
   @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      label: tooltip,
-      button: true,
-      child: GestureDetector(
-        onTap: onPressed,
-        child: Container(
-          width: 44,
-          height: 44,
-          decoration: BoxDecoration(
-            color: AppColors.primaryLight,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.primary, width: 2),
-          ),
-          child: Icon(icon, color: AppColors.primary, size: 22),
+  Widget build(BuildContext context) => Semantics(
+    label: tooltip,
+    button: true,
+    child: GestureDetector(
+      onTap: onPressed,
+      child: Container(
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+          color: AppColors.primaryLight,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.primary, width: 2),
         ),
+        child: Icon(icon, color: AppColors.primary, size: 22),
       ),
-    );
-  }
+    ),
+  );
 }
 
 /// Compact amber PRO pill badge (matches settings screen style).
@@ -248,32 +246,30 @@ class _ProPill extends StatelessWidget {
   final VoidCallback? onTap;
 
   @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      label: 'Pro subscription active',
-      button: onTap != null,
-      hint: onTap != null ? 'Double tap to manage subscription' : null,
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-          decoration: BoxDecoration(
-            color: Colors.amber,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.amber.shade700, width: 2),
-          ),
-          child: const Text(
-            'PRO',
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
+  Widget build(BuildContext context) => Semantics(
+    label: 'Pro subscription active',
+    button: onTap != null,
+    hint: onTap != null ? 'Double tap to manage subscription' : null,
+    child: GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(
+          color: Colors.amber,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.amber.shade700, width: 2),
+        ),
+        child: const Text(
+          'PRO',
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
 }
 
 /// Search field for filtering occasions.
@@ -311,37 +307,32 @@ class _OccasionSearchFieldState extends State<_OccasionSearchField> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return TextField(
-      controller: _controller,
-      onChanged: widget.onChanged,
-      textInputAction: TextInputAction.search,
-      decoration: InputDecoration(
-        hintText: 'Search occasions...',
-        hintStyle: TextStyle(color: Colors.grey[400]),
-        prefixIcon: Icon(Icons.search, color: Colors.grey[400]),
-        suffixIcon: _hasText
-            ? IconButton(
-                icon: Icon(Icons.clear, color: Colors.grey[400]),
-                onPressed: () {
-                  _controller.clear();
-                  widget.onChanged('');
-                },
-              )
-            : null,
-        filled: true,
-        fillColor: Colors.grey[100],
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 12,
-        ),
+  Widget build(BuildContext context) => TextField(
+    controller: _controller,
+    onChanged: widget.onChanged,
+    textInputAction: TextInputAction.search,
+    decoration: InputDecoration(
+      hintText: 'Search occasions...',
+      hintStyle: TextStyle(color: Colors.grey[400]),
+      prefixIcon: Icon(Icons.search, color: Colors.grey[400]),
+      suffixIcon: _hasText
+          ? IconButton(
+              icon: Icon(Icons.clear, color: Colors.grey[400]),
+              onPressed: () {
+                _controller.clear();
+                widget.onChanged('');
+              },
+            )
+          : null,
+      filled: true,
+      fillColor: Colors.grey[100],
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide.none,
       ),
-    );
-  }
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+    ),
+  );
 }
 
 /// Shimmer placeholder for UsageIndicator while RevenueCat loads.
@@ -349,55 +340,54 @@ class _UsageIndicatorShimmer extends StatelessWidget {
   const _UsageIndicatorShimmer();
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.grey[300]!, width: 2),
-          ),
-          child: Row(
-            children: [
-              // Circle placeholder
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: Colors.grey[200],
-                  shape: BoxShape.circle,
+  Widget build(BuildContext context) =>
+      Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.grey[300]!, width: 2),
+            ),
+            child: Row(
+              children: [
+                // Circle placeholder
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[200],
+                    shape: BoxShape.circle,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 16),
-              // Text placeholders
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      width: 140,
-                      height: 16,
-                      decoration: BoxDecoration(
-                        color: Colors.grey[200],
-                        borderRadius: BorderRadius.circular(4),
+                const SizedBox(width: 16),
+                // Text placeholders
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        width: 140,
+                        height: 16,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[200],
+                          borderRadius: BorderRadius.circular(4),
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    Container(
-                      width: 100,
-                      height: 12,
-                      decoration: BoxDecoration(
-                        color: Colors.grey[200],
-                        borderRadius: BorderRadius.circular(4),
+                      const SizedBox(height: 8),
+                      Container(
+                        width: 100,
+                        height: 12,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[200],
+                          borderRadius: BorderRadius.circular(4),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-            ],
-          ),
-        )
-        .animate(onPlay: (controller) => controller.repeat())
-        .shimmer(duration: 1200.ms, color: Colors.grey[100]);
-  }
+              ],
+            ),
+          )
+          .animate(onPlay: (controller) => controller.repeat())
+          .shimmer(duration: 1200.ms, color: Colors.grey[100]);
 }

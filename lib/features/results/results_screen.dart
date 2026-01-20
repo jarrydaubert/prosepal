@@ -43,7 +43,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
             backgroundColor: Colors.transparent,
             elevation: 0,
             title: Text(
-              result.recipientName?.isNotEmpty == true
+              result.recipientName?.isNotEmpty ?? false
                   ? 'For ${result.recipientName}'
                   : 'Your Messages',
               style: const TextStyle(
@@ -135,7 +135,6 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                       Expanded(
                         child: AppButton(
                           label: 'Regenerate',
-                          style: AppButtonStyle.primary,
                           icon: Icons.auto_awesome,
                           isLoading: _isRegenerating,
                           onPressed: _isRegenerating
@@ -250,8 +249,8 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
       Log.warning('Regeneration failed', {'error': '$e'});
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Failed to generate. Please try again.'),
+          const SnackBar(
+            content: Text('Failed to generate. Please try again.'),
             backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,
           ),
@@ -275,30 +274,26 @@ class _CloseButton extends StatelessWidget {
   final VoidCallback onPressed;
 
   @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 8),
-      child: Semantics(
-        label: 'Close and return home',
-        button: true,
-        child: GestureDetector(
-          onTap: () {
-            onPressed();
-          },
-          child: Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: AppColors.primaryLight,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.primary, width: 2),
-            ),
-            child: const Icon(Icons.close, color: AppColors.primary, size: 20),
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(left: 8),
+    child: Semantics(
+      label: 'Close and return home',
+      button: true,
+      child: GestureDetector(
+        onTap: onPressed,
+        child: Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: AppColors.primaryLight,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.primary, width: 2),
           ),
+          child: const Icon(Icons.close, color: AppColors.primary, size: 20),
         ),
       ),
-    );
-  }
+    ),
+  );
 }
 
 class _ContextHeader extends StatelessWidget {
@@ -307,65 +302,60 @@ class _ContextHeader extends StatelessWidget {
   final GenerationResult result;
 
   @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      label:
-          'Generated ${result.occasion.label} message for ${result.relationship.label} with ${result.tone.label} tone',
-      child: Container(
-        width: double.infinity,
-        margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: result.occasion.backgroundColor,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: result.occasion.borderColor, width: 3),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: result.occasion.borderColor,
-                  width: 2,
-                ),
-              ),
-              child: Center(
-                child: Text(
-                  result.occasion.emoji,
-                  style: const TextStyle(fontSize: 22),
-                ),
-              ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '${result.occasion.label} - ${result.relationship.label}',
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    '${result.tone.label} tone',
-                    style: TextStyle(fontSize: 13, color: Colors.grey[600]),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+  Widget build(BuildContext context) => Semantics(
+    label:
+        'Generated ${result.occasion.label} message for ${result.relationship.label} with ${result.tone.label} tone',
+    child: Container(
+      width: double.infinity,
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: result.occasion.backgroundColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: result.occasion.borderColor, width: 3),
       ),
-    );
-  }
+      child: Row(
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              border: Border.all(color: result.occasion.borderColor, width: 2),
+            ),
+            child: Center(
+              child: Text(
+                result.occasion.emoji,
+                style: const TextStyle(fontSize: 22),
+              ),
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${result.occasion.label} - ${result.relationship.label}',
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '${result.tone.label} tone',
+                  style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
 }
 
 class _MessageCard extends StatelessWidget {
@@ -385,93 +375,89 @@ class _MessageCard extends StatelessWidget {
   final VoidCallback onShare;
 
   @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      label: 'Message option ${index + 1}',
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.primary, width: 3),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header with actions
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: AppColors.primaryLight,
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(13),
-                ),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 28,
-                    height: 28,
-                    decoration: const BoxDecoration(
-                      color: AppColors.primary,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Center(
-                      child: Text(
-                        '${index + 1}',
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
+  Widget build(BuildContext context) => Semantics(
+    label: 'Message option ${index + 1}',
+    child: DecoratedBox(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.primary, width: 3),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header with actions
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: const BoxDecoration(
+              color: AppColors.primaryLight,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(13)),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 28,
+                  height: 28,
+                  decoration: const BoxDecoration(
+                    color: AppColors.primary,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: Text(
+                      '${index + 1}',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
-                  const SizedBox(width: 10),
-                  Text(
-                    'Option ${index + 1}',
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  const Spacer(),
-                  // Share button
-                  _ActionButton(
-                    icon: Icons.share_outlined,
-                    label: 'Share',
-                    onPressed: onShare,
-                  ),
-                  const SizedBox(width: 8),
-                  // Copy button
-                  _ActionButton(
-                    icon: isCopied ? Icons.check : Icons.copy,
-                    label: isCopied ? 'Copied!' : 'Copy',
-                    isPrimary: true,
-                    isSuccess: isCopied,
-                    onPressed: onCopy,
-                  ),
-                ],
-              ),
-            ),
-
-            // Message content
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: SelectableText(
-                message.text,
-                style: const TextStyle(
-                  fontSize: 15,
-                  height: 1.6,
-                  color: AppColors.textPrimary,
                 ),
+                const SizedBox(width: 10),
+                Text(
+                  'Option ${index + 1}',
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const Spacer(),
+                // Share button
+                _ActionButton(
+                  icon: Icons.share_outlined,
+                  label: 'Share',
+                  onPressed: onShare,
+                ),
+                const SizedBox(width: 8),
+                // Copy button
+                _ActionButton(
+                  icon: isCopied ? Icons.check : Icons.copy,
+                  label: isCopied ? 'Copied!' : 'Copy',
+                  isPrimary: true,
+                  isSuccess: isCopied,
+                  onPressed: onCopy,
+                ),
+              ],
+            ),
+          ),
+
+          // Message content
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: SelectableText(
+              message.text,
+              style: const TextStyle(
+                fontSize: 15,
+                height: 1.6,
+                color: AppColors.textPrimary,
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
-    );
-  }
+    ),
+  );
 }
 
 class _ActionButton extends StatelessWidget {
@@ -501,9 +487,7 @@ class _ActionButton extends StatelessWidget {
       label: label,
       button: true,
       child: GestureDetector(
-        onTap: () {
-          onPressed();
-        },
+        onTap: onPressed,
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(

@@ -25,7 +25,7 @@ analyzer:
 linter:
   rules:
     # === CODE QUALITY ===
-    - avoid_dynamic_calls
+    # avoid_dynamic_calls - disabled, common with JSON/RevenueCat APIs
     - avoid_print
     - avoid_type_to_string
     - avoid_unnecessary_containers
@@ -38,7 +38,7 @@ linter:
     - prefer_final_in_for_each
     - require_trailing_commas
     - sort_constructors_first
-    - unawaited_futures
+    # unawaited_futures - disabled, intentional fire-and-forget is common in Flutter
     - use_key_in_widget_constructors
     - sized_box_for_whitespace
     - use_colored_box
@@ -63,13 +63,13 @@ linter:
     - unnecessary_statements
     - always_declare_return_types
     - avoid_returning_null_for_future
-    - avoid_slow_async_io
+    # avoid_slow_async_io - disabled, File.exists() is fine for our use
     - avoid_web_libraries_in_flutter
     - no_logic_in_create_state
     - prefer_void_to_null
     - use_build_context_synchronously
     - use_full_hex_values_for_flutter_colors
-    - discarded_futures
+    # discarded_futures - disabled, common in Flutter (initState, build, callbacks)
     - only_throw_errors
     
     # === TYPE SAFETY ===
@@ -85,13 +85,13 @@ linter:
     - avoid_bool_literals_in_conditional_expressions
     - avoid_escaping_inner_quotes
     - avoid_multiple_declarations_per_line
-    - avoid_positional_boolean_parameters
+    # avoid_positional_boolean_parameters - disabled, too strict for callbacks
     - avoid_redundant_argument_values
     - avoid_returning_this
     - avoid_setters_without_getters
     - avoid_unused_constructor_parameters
     - avoid_void_async
-    - cascade_invocations
+    # cascade_invocations - disabled, often reduces readability
     - directives_ordering
     - join_return_with_assignment
     - missing_whitespace_between_adjacent_strings
@@ -104,7 +104,7 @@ linter:
     - prefer_if_elements_to_conditional_expressions
     - prefer_int_literals
     - prefer_null_aware_method_calls
-    - sort_pub_dependencies
+    # sort_pub_dependencies - disabled, prefer organization by category
     - unnecessary_await_in_return
     - unnecessary_lambdas
     - unnecessary_parenthesis
@@ -112,7 +112,7 @@ linter:
     - use_is_even_rather_than_modulo
     - use_late_for_private_fields_and_variables
     - use_raw_strings
-    - use_setters_to_change_properties
+    # use_setters_to_change_properties - disabled, breaks test mock APIs
     - use_string_buffers
     - use_to_and_as_if_applicable
 

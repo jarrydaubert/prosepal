@@ -246,8 +246,8 @@ void main() {
 
       final json = result.toJson();
 
-      expect(json['messages'], isA<List>());
-      expect((json['messages'] as List).length, equals(2));
+      expect(json['messages'], isA<List<dynamic>>());
+      expect((json['messages'] as List<dynamic>).length, equals(2));
       expect(json['occasion'], equals('birthday'));
       expect(json['recipientName'], equals('Test'));
     });

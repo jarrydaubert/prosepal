@@ -14,14 +14,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-
 import 'package:prosepal/app/app.dart';
 import 'package:prosepal/core/providers/providers.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
+import '../test/mocks/mock_ai_service.dart';
 import '../test/mocks/mock_auth_service.dart';
 import '../test/mocks/mock_subscription_service.dart';
-import '../test/mocks/mock_ai_service.dart';
 
 void main() {
   final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -41,19 +40,17 @@ void main() {
       mockAi = MockAiService();
     });
 
-    Widget buildTestableApp() {
-      return ProviderScope(
-        overrides: [
-          sharedPreferencesProvider.overrideWithValue(prefs),
-          authServiceProvider.overrideWithValue(mockAuth),
-          subscriptionServiceProvider.overrideWithValue(mockSubscription),
-          aiServiceProvider.overrideWithValue(mockAi),
-          isProProvider.overrideWith((ref) => false),
-          remainingGenerationsProvider.overrideWith((ref) => 3),
-        ],
-        child: const ProsepalApp(),
-      );
-    }
+    Widget buildTestableApp() => ProviderScope(
+      overrides: [
+        sharedPreferencesProvider.overrideWithValue(prefs),
+        authServiceProvider.overrideWithValue(mockAuth),
+        subscriptionServiceProvider.overrideWithValue(mockSubscription),
+        aiServiceProvider.overrideWithValue(mockAi),
+        isProProvider.overrideWith((ref) => false),
+        remainingGenerationsProvider.overrideWith((ref) => 3),
+      ],
+      child: const ProsepalApp(),
+    );
 
     testWidgets('S1: App launches without crashing', (tester) async {
       // Bug: App crashes on launch due to initialization failure

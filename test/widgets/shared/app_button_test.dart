@@ -32,10 +32,10 @@ void main() {
     });
 
     testWidgets('does not call onPressed when disabled', (tester) async {
-      var pressed = false;
+      const pressed = false;
 
       await tester.pumpWidget(
-        MaterialApp(
+        const MaterialApp(
           home: Scaffold(body: AppButton(label: 'Disabled', onPressed: null)),
         ),
       );
@@ -103,11 +103,7 @@ void main() {
         await tester.pumpWidget(
           MaterialApp(
             home: Scaffold(
-              body: AppButton(
-                label: 'Primary',
-                style: AppButtonStyle.primary,
-                onPressed: () {},
-              ),
+              body: AppButton(label: 'Primary', onPressed: () {}),
             ),
           ),
         );
@@ -185,11 +181,7 @@ void main() {
         await tester.pumpWidget(
           MaterialApp(
             home: Scaffold(
-              body: AppButton(
-                label: 'Medium',
-                size: AppButtonSize.medium,
-                onPressed: () {},
-              ),
+              body: AppButton(label: 'Medium', onPressed: () {}),
             ),
           ),
         );

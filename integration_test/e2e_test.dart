@@ -38,9 +38,11 @@
 ///     tones_test.dart            - All 6 tones work
 library;
 
-// Smoke test (runs first - validates app launches)
-import 'smoke_test.dart' as smoke;
-
+// Coverage tests (all options work)
+import 'coverage/occasions_test.dart' as occasions;
+import 'coverage/relationships_test.dart' as relationships;
+import 'coverage/tones_test.dart' as tones;
+import 'journeys/j10_results_actions_test.dart' as j10;
 // User journey tests (critical paths)
 import 'journeys/j1_fresh_install_test.dart' as j1;
 import 'journeys/j2_upgrade_flow_test.dart' as j2;
@@ -51,12 +53,8 @@ import 'journeys/j6_error_resilience_test.dart' as j6;
 import 'journeys/j7_restore_flow_test.dart' as j7;
 import 'journeys/j8_paywall_test.dart' as j8;
 import 'journeys/j9_wizard_details_test.dart' as j9;
-import 'journeys/j10_results_actions_test.dart' as j10;
-
-// Coverage tests (all options work)
-import 'coverage/occasions_test.dart' as occasions;
-import 'coverage/relationships_test.dart' as relationships;
-import 'coverage/tones_test.dart' as tones;
+// Smoke test (runs first - validates app launches)
+import 'smoke_test.dart' as smoke;
 
 void main() {
   // === SMOKE TESTS ===

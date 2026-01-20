@@ -151,40 +151,38 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
     );
   }
 
-  Widget _buildStep(BuildContext context) {
-    return switch (_currentStep) {
-      0 => RelationshipPicker(
-        key: const ValueKey('relationship'),
-        selectedRelationship: ref.watch(selectedRelationshipProvider),
-        onSelected: (r) {
-          ref.read(selectedRelationshipProvider.notifier).state = r;
-        },
-      ),
-      1 => ToneSelector(
-        key: const ValueKey('tone'),
-        selectedTone: ref.watch(selectedToneProvider),
-        onSelected: (t) {
-          ref.read(selectedToneProvider.notifier).state = t;
-        },
-      ),
-      2 => DetailsInput(
-        key: const ValueKey('details'),
-        recipientName: ref.watch(recipientNameProvider),
-        personalDetails: ref.watch(personalDetailsProvider),
-        selectedLength: ref.watch(selectedLengthProvider),
-        onRecipientNameChanged: (name) {
-          ref.read(recipientNameProvider.notifier).state = name;
-        },
-        onPersonalDetailsChanged: (details) {
-          ref.read(personalDetailsProvider.notifier).state = details;
-        },
-        onLengthChanged: (length) {
-          ref.read(selectedLengthProvider.notifier).state = length;
-        },
-      ),
-      _ => const SizedBox.shrink(),
-    };
-  }
+  Widget _buildStep(BuildContext context) => switch (_currentStep) {
+    0 => RelationshipPicker(
+      key: const ValueKey('relationship'),
+      selectedRelationship: ref.watch(selectedRelationshipProvider),
+      onSelected: (r) {
+        ref.read(selectedRelationshipProvider.notifier).state = r;
+      },
+    ),
+    1 => ToneSelector(
+      key: const ValueKey('tone'),
+      selectedTone: ref.watch(selectedToneProvider),
+      onSelected: (t) {
+        ref.read(selectedToneProvider.notifier).state = t;
+      },
+    ),
+    2 => DetailsInput(
+      key: const ValueKey('details'),
+      recipientName: ref.watch(recipientNameProvider),
+      personalDetails: ref.watch(personalDetailsProvider),
+      selectedLength: ref.watch(selectedLengthProvider),
+      onRecipientNameChanged: (name) {
+        ref.read(recipientNameProvider.notifier).state = name;
+      },
+      onPersonalDetailsChanged: (details) {
+        ref.read(personalDetailsProvider.notifier).state = details;
+      },
+      onLengthChanged: (length) {
+        ref.read(selectedLengthProvider.notifier).state = length;
+      },
+    ),
+    _ => const SizedBox.shrink(),
+  };
 
   Widget _buildBottomButton(
     BuildContext context, {
@@ -396,7 +394,7 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
       });
       ref.read(isGeneratingProvider.notifier).state = false;
       ref.read(generationErrorProvider.notifier).state = e.message;
-    } catch (e, stackTrace) {
+    } on Exception catch (e, stackTrace) {
       Log.error('AI generation failed: unexpected', e, stackTrace);
       ref.read(isGeneratingProvider.notifier).state = false;
       ref.read(generationErrorProvider.notifier).state =
@@ -415,28 +413,22 @@ class _BackButton extends StatelessWidget {
   final VoidCallback onPressed;
 
   @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 8),
-      child: GestureDetector(
-        onTap: onPressed,
-        child: Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: AppColors.primaryLight,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.primary, width: 2),
-          ),
-          child: const Icon(
-            Icons.arrow_back,
-            color: AppColors.primary,
-            size: 20,
-          ),
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(left: 8),
+    child: GestureDetector(
+      onTap: onPressed,
+      child: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: AppColors.primaryLight,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.primary, width: 2),
         ),
+        child: const Icon(Icons.arrow_back, color: AppColors.primary, size: 20),
       ),
-    );
-  }
+    ),
+  );
 }
 
 class _StepIndicator extends StatelessWidget {
@@ -447,44 +439,42 @@ class _StepIndicator extends StatelessWidget {
   static const _stepLabels = ['Relationship', 'Tone', 'Details'];
 
   @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      label: 'Step ${currentStep + 1} of 3: ${_stepLabels[currentStep]}',
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        child: Row(
-          children: List.generate(3, (index) {
-            final isActive = index == currentStep;
-            final isCompleted = index < currentStep;
+  Widget build(BuildContext context) => Semantics(
+    label: 'Step ${currentStep + 1} of 3: ${_stepLabels[currentStep]}',
+    child: Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      child: Row(
+        children: List.generate(3, (index) {
+          final isActive = index == currentStep;
+          final isCompleted = index < currentStep;
 
-            return Expanded(
-              child: Semantics(
-                label:
-                    '${_stepLabels[index]}: ${isCompleted
-                        ? 'completed'
-                        : isActive
-                        ? 'current'
-                        : 'pending'}',
-                child: Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 3),
-                  height: 6,
-                  decoration: BoxDecoration(
-                    color: isActive || isCompleted
-                        ? AppColors.primary
-                        : AppColors.surfaceVariant,
-                    borderRadius: BorderRadius.circular(3),
-                    border: isActive
-                        ? Border.all(color: AppColors.primary, width: 1)
-                        : null,
-                  ),
+          return Expanded(
+            child: Semantics(
+              label:
+                  '${_stepLabels[index]}: ${isCompleted
+                      ? 'completed'
+                      : isActive
+                      ? 'current'
+                      : 'pending'}',
+              child: Container(
+                margin: const EdgeInsets.symmetric(horizontal: 3),
+                height: 6,
+                decoration: BoxDecoration(
+                  color: isActive || isCompleted
+                      ? AppColors.primary
+                      : AppColors.surfaceVariant,
+                  borderRadius: BorderRadius.circular(3),
+                  border: isActive
+                      ? Border.all(color: AppColors.primary)
+                      : null,
                 ),
               ),
-            );
-          }),
-        ),
+            ),
+          );
+        }),
       ),
-    );
-  }
+    ),
+  );
 }
 
 class _ErrorBanner extends StatelessWidget {
@@ -494,61 +484,55 @@ class _ErrorBanner extends StatelessWidget {
   final VoidCallback onDismiss;
 
   @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: AppColors.error.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.error, width: 2),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 32,
-              height: 32,
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 20),
+    child: Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.error.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.error, width: 2),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: AppColors.error.withValues(alpha: 0.2),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.error_outline,
+              color: AppColors.error,
+              size: 18,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              error,
+              style: const TextStyle(
+                fontSize: 14,
+                color: AppColors.error,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          GestureDetector(
+            onTap: onDismiss,
+            child: Container(
+              width: 28,
+              height: 28,
               decoration: BoxDecoration(
                 color: AppColors.error.withValues(alpha: 0.2),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
-                Icons.error_outline,
-                color: AppColors.error,
-                size: 18,
-              ),
+              child: const Icon(Icons.close, color: AppColors.error, size: 16),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                error,
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: AppColors.error,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-            GestureDetector(
-              onTap: onDismiss,
-              child: Container(
-                width: 28,
-                height: 28,
-                decoration: BoxDecoration(
-                  color: AppColors.error.withValues(alpha: 0.2),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.close,
-                  color: AppColors.error,
-                  size: 16,
-                ),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
-    );
-  }
+    ),
+  );
 }

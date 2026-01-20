@@ -40,7 +40,6 @@ void main() {
         // BUG-003: Crash when retryAfter is 0
         const result = RateLimitResult(
           allowed: false,
-          retryAfter: 0,
           reason: RateLimitReason.userLimit,
         );
 

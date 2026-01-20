@@ -36,34 +36,32 @@ class _ProBadge extends StatelessWidget {
   final VoidCallback? onTap;
 
   @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      label: 'Pro subscription active',
-      button: onTap != null,
-      hint: onTap != null ? 'Double tap to manage subscription' : null,
-      child: GestureDetector(
-        onTap: () {
-          onTap?.call();
-        },
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-          decoration: BoxDecoration(
-            color: Colors.amber,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.amber.shade700, width: 2),
-          ),
-          child: const Text(
-            'PRO',
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
+  Widget build(BuildContext context) => Semantics(
+    label: 'Pro subscription active',
+    button: onTap != null,
+    hint: onTap != null ? 'Double tap to manage subscription' : null,
+    child: GestureDetector(
+      onTap: () {
+        onTap?.call();
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(
+          color: Colors.amber,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.amber.shade700, width: 2),
+        ),
+        child: const Text(
+          'PRO',
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
 }
 
 class _FreeUsageCard extends StatelessWidget {
@@ -75,88 +73,86 @@ class _FreeUsageCard extends StatelessWidget {
   Color get _statusColor => remaining > 0 ? AppColors.success : AppColors.error;
 
   @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      label: remaining > 0
-          ? '$remaining free messages remaining'
-          : 'Free trial ended',
-      button: true,
-      hint: 'Double tap to upgrade to Pro',
-      child: GestureDetector(
-        onTap: () {
-          onUpgrade?.call();
-        },
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: _statusColor, width: 3),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: _statusColor.withValues(alpha: 0.15),
-                  shape: BoxShape.circle,
-                  border: Border.all(color: _statusColor, width: 2),
-                ),
-                child: Center(
-                  child: Text(
-                    '$remaining',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: _statusColor,
-                    ),
+  Widget build(BuildContext context) => Semantics(
+    label: remaining > 0
+        ? '$remaining free messages remaining'
+        : 'Free trial ended',
+    button: true,
+    hint: 'Double tap to upgrade to Pro',
+    child: GestureDetector(
+      onTap: () {
+        onUpgrade?.call();
+      },
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: _statusColor, width: 3),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: _statusColor.withValues(alpha: 0.15),
+                shape: BoxShape.circle,
+                border: Border.all(color: _statusColor, width: 2),
+              ),
+              child: Center(
+                child: Text(
+                  '$remaining',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: _statusColor,
                   ),
                 ),
               ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      remaining > 0
-                          ? 'Free messages remaining'
-                          : 'Free trial ended',
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
-                      ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    remaining > 0
+                        ? 'Free messages remaining'
+                        : 'Free trial ended',
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
                     ),
-                    const SizedBox(height: 2),
-                    const Text(
-                      'Tap to unlock 500/month',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: AppColors.textSecondary,
-                      ),
+                  ),
+                  const SizedBox(height: 2),
+                  const Text(
+                    'Tap to unlock 500/month',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: AppColors.textSecondary,
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: _statusColor.withValues(alpha: 0.15),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.arrow_forward_ios,
-                  size: 14,
-                  color: _statusColor,
-                ),
+            ),
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: _statusColor.withValues(alpha: 0.15),
+                shape: BoxShape.circle,
               ),
-            ],
-          ),
+              child: Icon(
+                Icons.arrow_forward_ios,
+                size: 14,
+                color: _statusColor,
+              ),
+            ),
+          ],
         ),
       ),
-    );
-  }
+    ),
+  );
 }

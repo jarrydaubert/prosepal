@@ -76,15 +76,13 @@ Session createFakeSession({
   String refreshToken = 'fake-refresh-token-abc',
   int expiresIn = 3600,
   User? user,
-}) {
-  return Session(
-    accessToken: accessToken,
-    refreshToken: refreshToken,
-    expiresIn: expiresIn,
-    tokenType: 'bearer',
-    user: user ?? createFakeUser(),
-  );
-}
+}) => Session(
+  accessToken: accessToken,
+  refreshToken: refreshToken,
+  expiresIn: expiresIn,
+  tokenType: 'bearer',
+  user: user ?? createFakeUser(),
+);
 
 /// Mock implementation of IAuthService for testing
 ///
@@ -228,9 +226,7 @@ class MockAuthService implements IAuthService {
   @visibleForTesting
   final Map<String, Exception> methodErrors = {};
 
-  Exception? _getError(String method) {
-    return methodErrors[method] ?? errorToThrow;
-  }
+  Exception? _getError(String method) => methodErrors[method] ?? errorToThrow;
 
   /// Simulate rate limiting (429)
   void simulateRateLimit([String message = 'Rate limit exceeded']) {

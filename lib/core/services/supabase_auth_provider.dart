@@ -1,6 +1,6 @@
-import 'package:supabase_flutter/supabase_flutter.dart';
-
 import 'dart:async';
+
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../interfaces/supabase_auth_provider.dart';
 import 'log_service.dart';
@@ -89,9 +89,9 @@ class SupabaseAuthProvider implements ISupabaseAuthProvider {
   bool get _isInitialized {
     try {
       // Accessing .client throws if not initialized
-      Supabase.instance.client;
+      final _ = Supabase.instance.client;
       return true;
-    } catch (_) {
+    } on Exception catch (_) {
       return false;
     }
   }
@@ -121,12 +121,10 @@ class SupabaseAuthProvider implements ISupabaseAuthProvider {
   static const _maxRetries = 3;
 
   /// Wrap async operations with timeout to prevent hanging
-  Future<T> _withTimeout<T>(Future<T> operation) {
-    return operation.timeout(
-      _timeout,
-      onTimeout: () => throw const AuthException('Request timed out'),
-    );
-  }
+  Future<T> _withTimeout<T>(Future<T> operation) => operation.timeout(
+    _timeout,
+    onTimeout: () => throw const AuthException('Request timed out'),
+  );
 
   /// Retry operation with exponential backoff (1s, 2s, 4s)
   Future<T> _withRetry<T>(
@@ -189,16 +187,14 @@ class SupabaseAuthProvider implements ISupabaseAuthProvider {
     required String idToken,
     String? nonce,
     String? accessToken,
-  }) {
-    return _withTimeout(
-      _auth.signInWithIdToken(
-        provider: provider,
-        idToken: idToken,
-        nonce: nonce,
-        accessToken: accessToken,
-      ),
-    );
-  }
+  }) => _withTimeout(
+    _auth.signInWithIdToken(
+      provider: provider,
+      idToken: idToken,
+      nonce: nonce,
+      accessToken: accessToken,
+    ),
+  );
 
   /// Sign in via browser-based OAuth flow
   ///
@@ -214,14 +210,12 @@ class SupabaseAuthProvider implements ISupabaseAuthProvider {
     String? redirectTo,
     String? scopes,
     Map<String, String>? queryParams,
-  }) {
-    return _auth.signInWithOAuth(
-      provider,
-      redirectTo: redirectTo,
-      scopes: scopes,
-      queryParams: queryParams,
-    );
-  }
+  }) => _auth.signInWithOAuth(
+    provider,
+    redirectTo: redirectTo,
+    scopes: scopes,
+    queryParams: queryParams,
+  );
 
   // ===========================================================================
   // Email / Password
@@ -235,15 +229,13 @@ class SupabaseAuthProvider implements ISupabaseAuthProvider {
     required String email,
     required String password,
     String? captchaToken,
-  }) {
-    return _withTimeout(
-      _auth.signInWithPassword(
-        email: email,
-        password: password,
-        captchaToken: captchaToken,
-      ),
-    );
-  }
+  }) => _withTimeout(
+    _auth.signInWithPassword(
+      email: email,
+      password: password,
+      captchaToken: captchaToken,
+    ),
+  );
 
   /// Create new user account
   ///
@@ -257,16 +249,14 @@ class SupabaseAuthProvider implements ISupabaseAuthProvider {
     required String password,
     Map<String, dynamic>? data,
     String? captchaToken,
-  }) {
-    return _withTimeout(
-      _auth.signUp(
-        email: email,
-        password: password,
-        data: data,
-        captchaToken: captchaToken,
-      ),
-    );
-  }
+  }) => _withTimeout(
+    _auth.signUp(
+      email: email,
+      password: password,
+      data: data,
+      captchaToken: captchaToken,
+    ),
+  );
 
   /// Send password reset email
   ///
@@ -277,15 +267,13 @@ class SupabaseAuthProvider implements ISupabaseAuthProvider {
     String email, {
     String? redirectTo,
     String? captchaToken,
-  }) {
-    return _withTimeout(
-      _auth.resetPasswordForEmail(
-        email,
-        redirectTo: redirectTo,
-        captchaToken: captchaToken,
-      ),
-    );
-  }
+  }) => _withTimeout(
+    _auth.resetPasswordForEmail(
+      email,
+      redirectTo: redirectTo,
+      captchaToken: captchaToken,
+    ),
+  );
 
   // ===========================================================================
   // Magic Link / OTP
@@ -300,15 +288,13 @@ class SupabaseAuthProvider implements ISupabaseAuthProvider {
     required String email,
     String? emailRedirectTo,
     String? captchaToken,
-  }) {
-    return _withTimeout(
-      _auth.signInWithOtp(
-        email: email,
-        emailRedirectTo: emailRedirectTo,
-        captchaToken: captchaToken,
-      ),
-    );
-  }
+  }) => _withTimeout(
+    _auth.signInWithOtp(
+      email: email,
+      emailRedirectTo: emailRedirectTo,
+      captchaToken: captchaToken,
+    ),
+  );
 
   // ===========================================================================
   // Session Management
@@ -323,21 +309,18 @@ class SupabaseAuthProvider implements ISupabaseAuthProvider {
   ///
   /// Throws [AuthException] if refresh token is invalid/expired after 3 retries.
   @override
-  Future<AuthResponse> refreshSession() {
-    return _withRetry(
-      () => _withTimeout(_auth.refreshSession()),
-      operationName: 'Session refresh',
-    );
-  }
+  Future<AuthResponse> refreshSession() => _withRetry(
+    () => _withTimeout(_auth.refreshSession()),
+    operationName: 'Session refresh',
+  );
 
   /// Restore session from refresh token
   ///
   /// Use for custom session persistence (e.g., secure storage).
   /// After calling, [currentUser] and [currentSession] will be populated.
   @override
-  Future<AuthResponse> setSession(String refreshToken) {
-    return _auth.setSession(refreshToken);
-  }
+  Future<AuthResponse> setSession(String refreshToken) =>
+      _auth.setSession(refreshToken);
 
   // ===========================================================================
   // User Management
@@ -347,15 +330,12 @@ class SupabaseAuthProvider implements ISupabaseAuthProvider {
   ///
   /// Email changes may require re-confirmation depending on settings.
   @override
-  Future<UserResponse> updateUser(UserAttributes attributes) {
-    return _auth.updateUser(attributes);
-  }
+  Future<UserResponse> updateUser(UserAttributes attributes) =>
+      _auth.updateUser(attributes);
 
   /// Sign out and invalidate all sessions (not just local device)
   @override
-  Future<void> signOut() {
-    return _auth.signOut(scope: SignOutScope.global);
-  }
+  Future<void> signOut() => _auth.signOut(scope: SignOutScope.global);
 
   /// Delete user account via edge function
   ///
@@ -467,7 +447,7 @@ class SupabaseAuthProvider implements ISupabaseAuthProvider {
         // Timeout could mean function is slow but exists
         results[name] = false;
         Log.warning('Edge function timeout', {'function': name});
-      } catch (e) {
+      } on Exception catch (e) {
         // Network error or other issue
         results[name] = false;
         Log.warning('Edge function check failed', {
@@ -500,17 +480,13 @@ class SupabaseAuthProvider implements ISupabaseAuthProvider {
   ///
   /// Returns QR code and secret for user to scan/enter in authenticator app.
   @override
-  Future<AuthMFAEnrollResponse> mfaEnroll({String? friendlyName}) {
-    return _withTimeout(
-      _auth.mfa.enroll(factorType: FactorType.totp, friendlyName: friendlyName),
-    );
-  }
+  Future<AuthMFAEnrollResponse> mfaEnroll({String? friendlyName}) =>
+      _withTimeout(_auth.mfa.enroll(friendlyName: friendlyName));
 
   /// Create challenge for MFA verification
   @override
-  Future<AuthMFAChallengeResponse> mfaChallenge(String factorId) {
-    return _withTimeout(_auth.mfa.challenge(factorId: factorId));
-  }
+  Future<AuthMFAChallengeResponse> mfaChallenge(String factorId) =>
+      _withTimeout(_auth.mfa.challenge(factorId: factorId));
 
   /// Verify TOTP code
   ///
@@ -520,34 +496,25 @@ class SupabaseAuthProvider implements ISupabaseAuthProvider {
     required String factorId,
     required String challengeId,
     required String code,
-  }) {
-    return _withTimeout(
-      _auth.mfa.verify(
-        factorId: factorId,
-        challengeId: challengeId,
-        code: code,
-      ),
-    );
-  }
+  }) => _withTimeout(
+    _auth.mfa.verify(factorId: factorId, challengeId: challengeId, code: code),
+  );
 
   /// Remove an MFA factor
   @override
-  Future<AuthMFAUnenrollResponse> mfaUnenroll(String factorId) {
-    return _withTimeout(_auth.mfa.unenroll(factorId));
-  }
+  Future<AuthMFAUnenrollResponse> mfaUnenroll(String factorId) =>
+      _withTimeout(_auth.mfa.unenroll(factorId));
 
   /// List all enrolled MFA factors
   @override
-  Future<AuthMFAListFactorsResponse> mfaListFactors() async {
-    return _auth.mfa.listFactors();
-  }
+  Future<AuthMFAListFactorsResponse> mfaListFactors() async =>
+      _auth.mfa.listFactors();
 
   /// Get current AAL status
   ///
   /// Check if user needs to complete MFA challenge.
   @override
   Future<AuthMFAGetAuthenticatorAssuranceLevelResponse>
-  mfaGetAuthenticatorAssuranceLevel() async {
-    return _auth.mfa.getAuthenticatorAssuranceLevel();
-  }
+  mfaGetAuthenticatorAssuranceLevel() async =>
+      _auth.mfa.getAuthenticatorAssuranceLevel();
 }

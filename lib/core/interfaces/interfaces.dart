@@ -14,6 +14,7 @@
 /// - [ISupabaseAuthProvider] - Supabase-specific auth operations
 ///
 /// All interfaces support dependency injection and mocking for testing.
+library;
 
 // Exports sorted alphabetically
 export 'apple_auth_provider.dart';

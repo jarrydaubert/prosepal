@@ -2,11 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-
 import 'package:prosepal/core/models/models.dart';
 import 'package:prosepal/core/providers/providers.dart';
 import 'package:prosepal/features/results/results_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   late SharedPreferences prefs;
@@ -48,9 +47,12 @@ void main() {
       routes: [
         GoRoute(
           path: '/',
-          builder: (_, __) => const Scaffold(body: Text('Home')),
+          builder: (context, state) => const Scaffold(body: Text('Home')),
         ),
-        GoRoute(path: '/results', builder: (_, __) => const ResultsScreen()),
+        GoRoute(
+          path: '/results',
+          builder: (context, state) => const ResultsScreen(),
+        ),
       ],
     );
 

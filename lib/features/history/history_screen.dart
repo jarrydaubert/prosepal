@@ -156,7 +156,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
       ),
     );
 
-    if (confirm == true) {
+    if (confirm ?? false) {
       final historyService = ref.read(historyServiceProvider);
       await historyService.clearHistory();
       _loadHistory();
@@ -176,289 +176,278 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
       _selectedOccasion != null || _searchQuery.isNotEmpty;
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: const Text(
-          'Message History',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
-          ),
+  Widget build(BuildContext context) => Scaffold(
+    backgroundColor: AppColors.background,
+    appBar: AppBar(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      title: const Text(
+        'Message History',
+        style: TextStyle(
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+          color: AppColors.textPrimary,
         ),
-        leading: AppBackButton(onPressed: () => context.pop()),
-        actions: [
-          if (_allHistory.isNotEmpty)
-            IconButton(
-              icon: const Icon(
-                Icons.delete_outline,
-                color: AppColors.textSecondary,
-              ),
-              onPressed: _clearAll,
-              tooltip: 'Clear all',
-            ),
-        ],
       ),
-      body: _allHistory.isEmpty
-          ? _buildEmptyState()
-          : Column(
-              children: [
-                // Search bar
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-                  child: TextField(
-                    controller: _searchController,
-                    onChanged: _onSearchChanged,
-                    decoration: InputDecoration(
-                      hintText: 'Search messages...',
-                      hintStyle: TextStyle(color: Colors.grey[500]),
-                      prefixIcon: Icon(
-                        Icons.search,
-                        color: Colors.grey[500],
-                        size: 20,
-                      ),
-                      suffixIcon: _searchQuery.isNotEmpty
-                          ? IconButton(
-                              icon: Icon(
-                                Icons.clear,
-                                color: Colors.grey[500],
-                                size: 20,
-                              ),
-                              onPressed: () {
-                                _searchController.clear();
-                                _onSearchChanged('');
-                              },
-                            )
-                          : null,
-                      filled: true,
-                      fillColor: Colors.white,
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Colors.grey.shade300),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Colors.grey.shade300),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(
-                          color: AppColors.primary,
-                          width: 2,
-                        ),
+      leading: AppBackButton(onPressed: () => context.pop()),
+      actions: [
+        if (_allHistory.isNotEmpty)
+          IconButton(
+            icon: const Icon(
+              Icons.delete_outline,
+              color: AppColors.textSecondary,
+            ),
+            onPressed: _clearAll,
+            tooltip: 'Clear all',
+          ),
+      ],
+    ),
+    body: _allHistory.isEmpty
+        ? _buildEmptyState()
+        : Column(
+            children: [
+              // Search bar
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                child: TextField(
+                  controller: _searchController,
+                  onChanged: _onSearchChanged,
+                  decoration: InputDecoration(
+                    hintText: 'Search messages...',
+                    hintStyle: TextStyle(color: Colors.grey[500]),
+                    prefixIcon: Icon(
+                      Icons.search,
+                      color: Colors.grey[500],
+                      size: 20,
+                    ),
+                    suffixIcon: _searchQuery.isNotEmpty
+                        ? IconButton(
+                            icon: Icon(
+                              Icons.clear,
+                              color: Colors.grey[500],
+                              size: 20,
+                            ),
+                            onPressed: () {
+                              _searchController.clear();
+                              _onSearchChanged('');
+                            },
+                          )
+                        : null,
+                    filled: true,
+                    fillColor: Colors.white,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Colors.grey.shade300),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Colors.grey.shade300),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(
+                        color: AppColors.primary,
+                        width: 2,
                       ),
                     ),
                   ),
                 ),
+              ),
 
-                // Filter chips
-                if (_availableOccasions.length > 1)
-                  SizedBox(
-                    height: 44,
-                    child: ListView(
-                      scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      children: [
-                        // "All" chip
-                        Padding(
+              // Filter chips
+              if (_availableOccasions.length > 1)
+                SizedBox(
+                  height: 44,
+                  child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    children: [
+                      // "All" chip
+                      Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: FilterChip(
+                          label: Text('All (${_allHistory.length})'),
+                          selected: _selectedOccasion == null,
+                          onSelected: (_) => _onOccasionFilterChanged(null),
+                          selectedColor: AppColors.primaryLight,
+                          checkmarkColor: AppColors.primary,
+                          labelStyle: TextStyle(
+                            color: _selectedOccasion == null
+                                ? AppColors.primary
+                                : AppColors.textSecondary,
+                            fontWeight: _selectedOccasion == null
+                                ? FontWeight.w600
+                                : FontWeight.normal,
+                          ),
+                        ),
+                      ),
+                      // Occasion chips
+                      ..._availableOccasions.take(6).map((occasion) {
+                        final count = _occasionCounts[occasion] ?? 0;
+                        return Padding(
                           padding: const EdgeInsets.only(right: 8),
                           child: FilterChip(
-                            label: Text('All (${_allHistory.length})'),
-                            selected: _selectedOccasion == null,
-                            onSelected: (_) => _onOccasionFilterChanged(null),
+                            avatar: Text(
+                              occasion.emoji,
+                              style: const TextStyle(fontSize: 14),
+                            ),
+                            label: Text('${occasion.label} ($count)'),
+                            selected: _selectedOccasion == occasion,
+                            onSelected: (_) =>
+                                _onOccasionFilterChanged(occasion),
                             selectedColor: AppColors.primaryLight,
                             checkmarkColor: AppColors.primary,
                             labelStyle: TextStyle(
-                              color: _selectedOccasion == null
+                              color: _selectedOccasion == occasion
                                   ? AppColors.primary
                                   : AppColors.textSecondary,
-                              fontWeight: _selectedOccasion == null
+                              fontWeight: _selectedOccasion == occasion
                                   ? FontWeight.w600
                                   : FontWeight.normal,
+                              fontSize: 13,
                             ),
                           ),
-                        ),
-                        // Occasion chips
-                        ..._availableOccasions.take(6).map((occasion) {
-                          final count = _occasionCounts[occasion] ?? 0;
-                          return Padding(
-                            padding: const EdgeInsets.only(right: 8),
-                            child: FilterChip(
-                              avatar: Text(
-                                occasion.emoji,
-                                style: const TextStyle(fontSize: 14),
-                              ),
-                              label: Text('${occasion.label} ($count)'),
-                              selected: _selectedOccasion == occasion,
-                              onSelected: (_) =>
-                                  _onOccasionFilterChanged(occasion),
-                              selectedColor: AppColors.primaryLight,
-                              checkmarkColor: AppColors.primary,
-                              labelStyle: TextStyle(
-                                color: _selectedOccasion == occasion
-                                    ? AppColors.primary
-                                    : AppColors.textSecondary,
-                                fontWeight: _selectedOccasion == occasion
-                                    ? FontWeight.w600
-                                    : FontWeight.normal,
-                                fontSize: 13,
-                              ),
-                            ),
-                          );
-                        }),
-                      ],
-                    ),
+                        );
+                      }),
+                    ],
                   ),
-
-                const SizedBox(height: 8),
-
-                // Results count & clear filters
-                if (_hasActiveFilters)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Row(
-                      children: [
-                        Text(
-                          '${_filteredHistory.length} result${_filteredHistory.length == 1 ? '' : 's'}',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                        const Spacer(),
-                        TextButton(
-                          onPressed: _clearFilters,
-                          child: const Text('Clear filters'),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                // History list
-                Expanded(
-                  child: _filteredHistory.isEmpty
-                      ? _buildNoResultsState()
-                      : ListView.builder(
-                          padding: const EdgeInsets.all(16),
-                          itemCount: _filteredHistory.length + 1,
-                          itemBuilder: (context, index) {
-                            if (index == _filteredHistory.length) {
-                              return Padding(
-                                padding: const EdgeInsets.only(
-                                  top: 8,
-                                  bottom: 24,
-                                ),
-                                child: Center(
-                                  child: _buildDeviceOnlyDisclaimer(),
-                                ),
-                              );
-                            }
-                            final item = _filteredHistory[index];
-                            return _HistoryCard(
-                              item: item,
-                              onDelete: () => _deleteItem(item.id),
-                              searchQuery: _searchQuery,
-                            );
-                          },
-                        ),
                 ),
-              ],
-            ),
-    );
-  }
 
-  Widget _buildEmptyState() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                color: AppColors.primaryLight,
-                shape: BoxShape.circle,
+              const SizedBox(height: 8),
+
+              // Results count & clear filters
+              if (_hasActiveFilters)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Row(
+                    children: [
+                      Text(
+                        '${_filteredHistory.length} result${_filteredHistory.length == 1 ? '' : 's'}',
+                        style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                      ),
+                      const Spacer(),
+                      TextButton(
+                        onPressed: _clearFilters,
+                        child: const Text('Clear filters'),
+                      ),
+                    ],
+                  ),
+                ),
+
+              // History list
+              Expanded(
+                child: _filteredHistory.isEmpty
+                    ? _buildNoResultsState()
+                    : ListView.builder(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: _filteredHistory.length + 1,
+                        itemBuilder: (context, index) {
+                          if (index == _filteredHistory.length) {
+                            return Padding(
+                              padding: const EdgeInsets.only(
+                                top: 8,
+                                bottom: 24,
+                              ),
+                              child: Center(
+                                child: _buildDeviceOnlyDisclaimer(),
+                              ),
+                            );
+                          }
+                          final item = _filteredHistory[index];
+                          return _HistoryCard(
+                            item: item,
+                            onDelete: () => _deleteItem(item.id),
+                            searchQuery: _searchQuery,
+                          );
+                        },
+                      ),
               ),
-              child: const Icon(
-                Icons.history,
-                size: 40,
-                color: AppColors.primary,
-              ),
+            ],
+          ),
+  );
+
+  Widget _buildEmptyState() => Center(
+    child: Padding(
+      padding: const EdgeInsets.all(32),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: 80,
+            height: 80,
+            decoration: const BoxDecoration(
+              color: AppColors.primaryLight,
+              shape: BoxShape.circle,
             ),
-            const SizedBox(height: 24),
-            const Text(
-              'No messages yet',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
-              ),
+            child: const Icon(
+              Icons.history,
+              size: 40,
+              color: AppColors.primary,
             ),
-            const SizedBox(height: 8),
-            Text(
-              'Your generated messages will appear here',
-              style: TextStyle(fontSize: 15, color: Colors.grey[600]),
-              textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 24),
+          const Text(
+            'No messages yet',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
             ),
-            const SizedBox(height: 24),
-            _buildDeviceOnlyDisclaimer(),
-          ],
-        ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Your generated messages will appear here',
+            style: TextStyle(fontSize: 15, color: Colors.grey[600]),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 24),
+          _buildDeviceOnlyDisclaimer(),
+        ],
       ),
-    );
-  }
+    ),
+  );
 
-  Widget _buildDeviceOnlyDisclaimer() {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(Icons.smartphone, size: 14, color: Colors.grey[500]),
-        const SizedBox(width: 6),
-        Text(
-          'History is stored on this device only',
-          style: TextStyle(fontSize: 12, color: Colors.grey[500]),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildNoResultsState() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.search_off, size: 48, color: Colors.grey[400]),
-            const SizedBox(height: 16),
-            Text(
-              'No messages found',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Colors.grey[600],
-              ),
-            ),
-            const SizedBox(height: 8),
-            TextButton(
-              onPressed: _clearFilters,
-              child: const Text('Clear filters'),
-            ),
-          ],
-        ),
+  Widget _buildDeviceOnlyDisclaimer() => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Icon(Icons.smartphone, size: 14, color: Colors.grey[500]),
+      const SizedBox(width: 6),
+      Text(
+        'History is stored on this device only',
+        style: TextStyle(fontSize: 12, color: Colors.grey[500]),
       ),
-    );
-  }
+    ],
+  );
+
+  Widget _buildNoResultsState() => Center(
+    child: Padding(
+      padding: const EdgeInsets.all(32),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.search_off, size: 48, color: Colors.grey[400]),
+          const SizedBox(height: 16),
+          Text(
+            'No messages found',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey[600],
+            ),
+          ),
+          const SizedBox(height: 8),
+          TextButton(
+            onPressed: _clearFilters,
+            child: const Text('Clear filters'),
+          ),
+        ],
+      ),
+    ),
+  );
 }
 
 class _HistoryCard extends StatefulWidget {
@@ -530,7 +519,7 @@ class _HistoryCardState extends State<_HistoryCard> {
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
-      child: Container(
+      child: DecoratedBox(
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
@@ -582,7 +571,7 @@ class _HistoryCardState extends State<_HistoryCard> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            result.recipientName?.isNotEmpty == true
+                            result.recipientName?.isNotEmpty ?? false
                                 ? result.recipientName!
                                 : '${result.tone.label} ${result.relationship.label}',
                             style: const TextStyle(
@@ -669,7 +658,7 @@ class _HistoryCardState extends State<_HistoryCard> {
                         ],
                       ),
                     );
-                    if (confirm == true) {
+                    if (confirm ?? false) {
                       widget.onDelete();
                     }
                   },
@@ -702,71 +691,69 @@ class _MessageItem extends StatelessWidget {
   final VoidCallback onShare;
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppColors.background,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade300),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 24,
-                height: 24,
-                decoration: const BoxDecoration(
-                  color: AppColors.primary,
-                  shape: BoxShape.circle,
-                ),
-                child: Center(
-                  child: Text(
-                    '${index + 1}',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
+  Widget build(BuildContext context) => Container(
+    margin: const EdgeInsets.only(bottom: 12),
+    padding: const EdgeInsets.all(12),
+    decoration: BoxDecoration(
+      color: AppColors.background,
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: Colors.grey.shade300),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              width: 24,
+              height: 24,
+              decoration: const BoxDecoration(
+                color: AppColors.primary,
+                shape: BoxShape.circle,
+              ),
+              child: Center(
+                child: Text(
+                  '${index + 1}',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
-              Text(
-                'Option ${index + 1}',
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              const Spacer(),
-              _SmallButton(icon: Icons.share_outlined, onPressed: onShare),
-              const SizedBox(width: 8),
-              _SmallButton(
-                icon: isCopied ? Icons.check : Icons.copy,
-                label: isCopied ? 'Copied' : 'Copy',
-                isPrimary: true,
-                onPressed: onCopy,
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          SelectableText(
-            text,
-            style: const TextStyle(
-              fontSize: 14,
-              height: 1.5,
-              color: AppColors.textPrimary,
             ),
+            const SizedBox(width: 8),
+            Text(
+              'Option ${index + 1}',
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const Spacer(),
+            _SmallButton(icon: Icons.share_outlined, onPressed: onShare),
+            const SizedBox(width: 8),
+            _SmallButton(
+              icon: isCopied ? Icons.check : Icons.copy,
+              label: isCopied ? 'Copied' : 'Copy',
+              isPrimary: true,
+              onPressed: onCopy,
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        SelectableText(
+          text,
+          style: const TextStyle(
+            fontSize: 14,
+            height: 1.5,
+            color: AppColors.textPrimary,
           ),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
 }
 
 class _SmallButton extends StatelessWidget {
@@ -783,49 +770,43 @@ class _SmallButton extends StatelessWidget {
   final VoidCallback onPressed;
 
   @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        onPressed();
-      },
-      child: Container(
-        padding: EdgeInsets.symmetric(
-          horizontal: label != null ? 10 : 8,
-          vertical: 6,
-        ),
-        decoration: BoxDecoration(
-          color: isPrimary
-              ? AppColors.primary.withValues(alpha: 0.1)
-              : Colors.grey.shade100,
-          borderRadius: BorderRadius.circular(6),
-          border: Border.all(
-            color: isPrimary ? AppColors.primary : Colors.grey.shade300,
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: 14,
-              color: isPrimary ? AppColors.primary : AppColors.textSecondary,
-            ),
-            if (label != null) ...[
-              const SizedBox(width: 4),
-              Text(
-                label!,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: isPrimary
-                      ? AppColors.primary
-                      : AppColors.textSecondary,
-                ),
-              ),
-            ],
-          ],
+  Widget build(BuildContext context) => GestureDetector(
+    onTap: onPressed,
+    child: Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: label != null ? 10 : 8,
+        vertical: 6,
+      ),
+      decoration: BoxDecoration(
+        color: isPrimary
+            ? AppColors.primary.withValues(alpha: 0.1)
+            : Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(
+          color: isPrimary ? AppColors.primary : Colors.grey.shade300,
         ),
       ),
-    );
-  }
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            size: 14,
+            color: isPrimary ? AppColors.primary : AppColors.textSecondary,
+          ),
+          if (label != null) ...[
+            const SizedBox(width: 4),
+            Text(
+              label!,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: isPrimary ? AppColors.primary : AppColors.textSecondary,
+              ),
+            ),
+          ],
+        ],
+      ),
+    ),
+  );
 }

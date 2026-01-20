@@ -7,10 +7,7 @@ import 'package:prosepal/core/services/log_service.dart';
 /// Firebase Crashlytics is not available in tests, so we test the
 /// pure Dart logic (buffer, formatting, export).
 void main() {
-  setUp(() {
-    // Clear buffer before each test
-    Log.clearBuffer();
-  });
+  setUp(Log.clearBuffer);
 
   group('Log Buffer Management', () {
     test('starts with empty buffer', () {

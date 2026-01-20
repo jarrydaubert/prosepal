@@ -1,9 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart' show visibleForTesting;
-import 'package:supabase_flutter/supabase_flutter.dart';
-
 import 'package:prosepal/core/interfaces/supabase_auth_provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Mock implementation of ISupabaseAuthProvider for testing
 ///
@@ -522,11 +521,12 @@ class MockSupabaseAuthProvider implements ISupabaseAuthProvider {
     // No-op in mock - just track if needed
   }
 
+  /// Mock always returns success
   @override
-  Future<Map<String, bool>> verifyEdgeFunctions() async {
-    // Mock always returns success
-    return {'delete-user': true, 'exchange-apple-token': true};
-  }
+  Future<Map<String, bool>> verifyEdgeFunctions() async => {
+    'delete-user': true,
+    'exchange-apple-token': true,
+  };
 
   // ---------------------------------------------------------------------------
   // MFA Call Tracking
@@ -834,12 +834,10 @@ Session createFakeSession({
   String refreshToken = 'fake-refresh-token-abc',
   int expiresIn = 3600,
   User? user,
-}) {
-  return Session(
-    accessToken: accessToken,
-    refreshToken: refreshToken,
-    expiresIn: expiresIn,
-    tokenType: 'bearer',
-    user: user ?? createFakeUser(),
-  );
-}
+}) => Session(
+  accessToken: accessToken,
+  refreshToken: refreshToken,
+  expiresIn: expiresIn,
+  tokenType: 'bearer',
+  user: user ?? createFakeUser(),
+);

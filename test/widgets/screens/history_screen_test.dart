@@ -2,11 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-
 import 'package:prosepal/core/models/models.dart';
 import 'package:prosepal/core/providers/providers.dart';
 import 'package:prosepal/features/history/history_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../mocks/mock_history_service.dart';
 
@@ -117,11 +116,7 @@ void main() {
     testWidgets('displays history items', (tester) async {
       // BUG-002: History items should render correctly
       mockHistory.setHistory([
-        TestHistoryFactory.createItem(
-          id: 'item-1',
-          occasion: Occasion.birthday,
-          recipientName: 'John',
-        ),
+        TestHistoryFactory.createItem(id: 'item-1', recipientName: 'John'),
         TestHistoryFactory.createItem(
           id: 'item-2',
           occasion: Occasion.sympathy,
@@ -138,12 +133,7 @@ void main() {
     });
 
     testWidgets('displays occasion labels', (tester) async {
-      mockHistory.setHistory([
-        TestHistoryFactory.createItem(
-          id: 'item-1',
-          occasion: Occasion.birthday,
-        ),
-      ]);
+      mockHistory.setHistory([TestHistoryFactory.createItem(id: 'item-1')]);
 
       await tester.pumpWidget(createTestableHistoryScreen());
       await tester.pumpAndSettle();
@@ -316,10 +306,7 @@ void main() {
     ) async {
       // BUG-006: Filter chips should appear with multiple occasions
       mockHistory.setHistory([
-        TestHistoryFactory.createItem(
-          id: 'item-1',
-          occasion: Occasion.birthday,
-        ),
+        TestHistoryFactory.createItem(id: 'item-1'),
         TestHistoryFactory.createItem(
           id: 'item-2',
           occasion: Occasion.sympathy,
@@ -337,14 +324,8 @@ void main() {
       tester,
     ) async {
       mockHistory.setHistory([
-        TestHistoryFactory.createItem(
-          id: 'item-1',
-          occasion: Occasion.birthday,
-        ),
-        TestHistoryFactory.createItem(
-          id: 'item-2',
-          occasion: Occasion.birthday,
-        ),
+        TestHistoryFactory.createItem(id: 'item-1'),
+        TestHistoryFactory.createItem(id: 'item-2'),
       ]);
 
       await tester.pumpWidget(createTestableHistoryScreen());

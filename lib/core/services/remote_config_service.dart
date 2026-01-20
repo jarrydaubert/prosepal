@@ -26,10 +26,10 @@ import 'log_service.dart';
 /// 2. Edit `ai_model` value
 /// 3. Publish changes - app will use new model on next launch
 class RemoteConfigService {
+  RemoteConfigService._();
   // Singleton for app-wide access
   static final RemoteConfigService _instance = RemoteConfigService._();
   static RemoteConfigService get instance => _instance;
-  RemoteConfigService._();
 
   // Keys
   static const _aiModelKey = 'ai_model';
@@ -77,7 +77,7 @@ class RemoteConfigService {
         'aiModelFallback': aiModelFallback,
         'forceUpdateEnabled': isForceUpdateEnabled,
       });
-    } catch (e) {
+    } on Exception catch (e) {
       Log.warning('Remote Config init failed - using defaults', {
         'error': '$e',
       });
@@ -107,9 +107,8 @@ class RemoteConfigService {
   // ===== Force Update Config =====
 
   /// Whether force update checking is enabled
-  bool get isForceUpdateEnabled {
-    return _remoteConfig?.getBool(_forceUpdateEnabledKey) ?? true;
-  }
+  bool get isForceUpdateEnabled =>
+      _remoteConfig?.getBool(_forceUpdateEnabledKey) ?? true;
 
   /// Minimum app version required for current platform
   String get minAppVersion {
@@ -131,7 +130,7 @@ class RemoteConfigService {
 
       final comparison = _compareVersions(currentVersion, minVersion);
       return comparison < 0; // Current version is below minimum
-    } catch (e) {
+    } on Exception catch (e) {
       Log.warning('Version check failed', {'error': '$e'});
       return false; // Fail open
     }
@@ -143,8 +142,12 @@ class RemoteConfigService {
     final parts1 = v1.split('.').map((p) => int.tryParse(p) ?? 0).toList();
     final parts2 = v2.split('.').map((p) => int.tryParse(p) ?? 0).toList();
 
-    while (parts1.length < 3) parts1.add(0);
-    while (parts2.length < 3) parts2.add(0);
+    while (parts1.length < 3) {
+      parts1.add(0);
+    }
+    while (parts2.length < 3) {
+      parts2.add(0);
+    }
 
     for (var i = 0; i < 3; i++) {
       if (parts1[i] < parts2[i]) return -1;
@@ -170,7 +173,7 @@ class RemoteConfigService {
     try {
       await _remoteConfig?.fetchAndActivate();
       Log.info('Remote Config refreshed');
-    } catch (e) {
+    } on Exception catch (e) {
       Log.warning('Remote Config refresh failed', {'error': '$e'});
     }
   }

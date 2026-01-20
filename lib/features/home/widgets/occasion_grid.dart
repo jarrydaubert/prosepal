@@ -101,7 +101,7 @@ class _OccasionTileState extends State<_OccasionTile>
       duration: const Duration(milliseconds: 100),
     );
     _scaleAnimation = Tween<double>(
-      begin: 1.0,
+      begin: 1,
       end: 0.95,
     ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
@@ -122,62 +122,60 @@ class _OccasionTileState extends State<_OccasionTile>
   void _handleTapCancel() => _controller.reverse();
 
   @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      label: '${widget.occasion.label} occasion',
-      button: true,
-      hint:
-          'Double tap to create a ${widget.occasion.label.toLowerCase()} message',
-      child: AnimatedBuilder(
-        animation: _scaleAnimation,
-        builder: (context, child) =>
-            Transform.scale(scale: _scaleAnimation.value, child: child),
-        child: GestureDetector(
-          onTapDown: _handleTapDown,
-          onTapUp: _handleTapUp,
-          onTapCancel: _handleTapCancel,
-          child: Container(
-            decoration: BoxDecoration(
-              color: widget.occasion.backgroundColor,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: widget.occasion.borderColor, width: 3),
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: widget.occasion.borderColor,
-                      width: 2,
-                    ),
-                  ),
-                  child: Center(
-                    child: Text(
-                      widget.occasion.emoji,
-                      style: const TextStyle(fontSize: 24),
-                    ),
+  Widget build(BuildContext context) => Semantics(
+    label: '${widget.occasion.label} occasion',
+    button: true,
+    hint:
+        'Double tap to create a ${widget.occasion.label.toLowerCase()} message',
+    child: AnimatedBuilder(
+      animation: _scaleAnimation,
+      builder: (context, child) =>
+          Transform.scale(scale: _scaleAnimation.value, child: child),
+      child: GestureDetector(
+        onTapDown: _handleTapDown,
+        onTapUp: _handleTapUp,
+        onTapCancel: _handleTapCancel,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: widget.occasion.backgroundColor,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: widget.occasion.borderColor, width: 3),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: widget.occasion.borderColor,
+                    width: 2,
                   ),
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  widget.occasion.label,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
+                child: Center(
+                  child: Text(
+                    widget.occasion.emoji,
+                    style: const TextStyle(fontSize: 24),
                   ),
-                  textAlign: TextAlign.center,
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                widget.occasion.label,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
 }

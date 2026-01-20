@@ -189,14 +189,14 @@ void main() {
         () {
           // Debug mode (test environment) should log warning but not throw
           // This allows development with partial configuration
-          expect(() => AppConfig.validate(), returnsNormally);
+          expect(AppConfig.validate, returnsNormally);
         },
       );
 
       test('assertNoTestStoreInRelease() passes when test store is false', () {
         // In test environment, useRevenueCatTestStore is false
         // Assertion should pass regardless of build mode
-        expect(() => AppConfig.assertNoTestStoreInRelease(), returnsNormally);
+        expect(AppConfig.assertNoTestStoreInRelease, returnsNormally);
       });
     });
 
@@ -229,7 +229,7 @@ void main() {
 
     group('live config format validation (when set)', () {
       test('supabaseUrl follows expected format when configured', () {
-        final url = AppConfig.supabaseUrl;
+        const url = AppConfig.supabaseUrl;
         if (url.isNotEmpty) {
           expect(
             validateSupabaseUrl(url),
@@ -240,7 +240,7 @@ void main() {
       });
 
       test('revenueCatIosKey follows expected format when configured', () {
-        final key = AppConfig.revenueCatIosKey;
+        const key = AppConfig.revenueCatIosKey;
         if (key.isNotEmpty) {
           expect(
             validateRevenueCatIosKey(key),
@@ -251,7 +251,7 @@ void main() {
       });
 
       test('revenueCatAndroidKey follows expected format when configured', () {
-        final key = AppConfig.revenueCatAndroidKey;
+        const key = AppConfig.revenueCatAndroidKey;
         if (key.isNotEmpty) {
           expect(
             validateRevenueCatAndroidKey(key),
@@ -262,7 +262,7 @@ void main() {
       });
 
       test('googleWebClientId follows expected format when configured', () {
-        final clientId = AppConfig.googleWebClientId;
+        const clientId = AppConfig.googleWebClientId;
         if (clientId.isNotEmpty) {
           expect(
             validateGoogleClientId(clientId),

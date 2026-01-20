@@ -31,7 +31,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:prosepal/main.dart' as app;
-import 'package:purchases_flutter/purchases_flutter.dart';
 
 late IntegrationTestWidgetsFlutterBinding binding;
 
@@ -46,12 +45,11 @@ void main() {
 
   bool exists(Finder finder) => finder.evaluate().isNotEmpty;
 
-  bool anyTextExists(List<String> texts) {
-    return texts.any((text) => find.text(text).evaluate().isNotEmpty);
-  }
+  bool anyTextExists(List<String> texts) =>
+      texts.any((text) => find.text(text).evaluate().isNotEmpty);
 
   Future<void> skipOnboarding(WidgetTester tester) async {
-    for (int i = 0; i < 5; i++) {
+    for (var i = 0; i < 5; i++) {
       if (exists(find.text('Birthday'))) break;
       if (exists(find.text('Get Started'))) {
         await tester.tap(find.text('Get Started'));
@@ -247,7 +245,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Check if Pro badge visible
-      final hasPro =
+      final _ =
           exists(find.text('PRO')) ||
           exists(find.textContaining('unlimited')) ||
           exists(find.textContaining('Pro'));

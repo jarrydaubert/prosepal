@@ -142,7 +142,7 @@ class _ProsepalAppState extends ConsumerState<ProsepalApp>
         Log.info('Biometric lock on resume - redirecting to /lock');
         _router.go('/lock');
       }
-    } catch (e) {
+    } on Exception catch (e) {
       Log.warning('Failed to check biometric lock on resume', {'error': '$e'});
     }
   }
@@ -153,7 +153,7 @@ class _ProsepalAppState extends ConsumerState<ProsepalApp>
     try {
       supabase = Supabase.instance;
       if (!supabase.isInitialized) return;
-    } catch (_) {
+    } on Exception catch (_) {
       // Supabase not initialized yet - skip auth listener
       return;
     }
@@ -177,7 +177,7 @@ class _ProsepalAppState extends ConsumerState<ProsepalApp>
               .read(subscriptionServiceProvider)
               .identifyUser(session.user.id);
           Log.info('Auth listener: RevenueCat identified');
-        } catch (e) {
+        } on Exception catch (e) {
           Log.warning('Auth listener: RevenueCat identify failed', {
             'error': '$e',
           });
@@ -188,7 +188,7 @@ class _ProsepalAppState extends ConsumerState<ProsepalApp>
           await ref.read(usageServiceProvider).syncFromServer();
           ref.invalidate(remainingGenerationsProvider);
           Log.info('Auth listener: Usage synced from server');
-        } catch (e) {
+        } on Exception catch (e) {
           Log.warning('Auth listener: Usage sync failed', {'error': '$e'});
         }
 
@@ -205,7 +205,7 @@ class _ProsepalAppState extends ConsumerState<ProsepalApp>
         try {
           await ref.read(usageServiceProvider).clearSyncMarker();
           Log.info('Auth listener: Sync marker cleared (signedOut)');
-        } catch (e) {
+        } on Exception catch (e) {
           Log.warning('Auth listener: Clear sync marker failed', {
             'error': '$e',
           });
@@ -215,12 +215,10 @@ class _ProsepalAppState extends ConsumerState<ProsepalApp>
   }
 
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp.router(
-      title: 'Prosepal',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.light,
-      routerConfig: _router,
-    );
-  }
+  Widget build(BuildContext context) => MaterialApp.router(
+    title: 'Prosepal',
+    debugShowCheckedModeBanner: false,
+    theme: AppTheme.light,
+    routerConfig: _router,
+  );
 }
