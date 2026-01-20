@@ -526,7 +526,9 @@ Build 20 high-intent landing pages at `prosepal.app/messages/[occasion]/[relatio
 2. "10 Example Messages" (static examples)
 3. CTA: "Want something personal? Generate yours →" (App Store link)
 
-**20 Priority Pages:**
+**20 Priority Pages (front-load highest intent):**
+
+*Weeks 1-2 (top 10):*
 1. `/messages/sympathy/coworker`
 2. `/messages/sympathy/friend`
 3. `/messages/sympathy/parent`
@@ -536,13 +538,15 @@ Build 20 high-intent landing pages at `prosepal.app/messages/[occasion]/[relatio
 7. `/messages/thank-you/boss`
 8. `/messages/thank-you/teacher`
 9. `/messages/wedding/friend`
-10. `/messages/wedding/sibling`
-11. `/messages/baby/friend`
-12. `/messages/get-well/coworker`
-13. `/messages/retirement/boss`
-14. `/messages/graduation/child`
-15. `/messages/anniversary/parents`
-16. `/messages/condolence/loss-of-parent`
+10. `/messages/condolence/loss-of-parent`
+
+*Weeks 3-4 (remaining 10):*
+11. `/messages/wedding/sibling`
+12. `/messages/baby/friend`
+13. `/messages/get-well/coworker`
+14. `/messages/retirement/boss`
+15. `/messages/graduation/child`
+16. `/messages/anniversary/parents`
 17. `/messages/condolence/loss-of-spouse`
 18. `/messages/apology/friend`
 19. `/messages/encouragement/friend`
@@ -1140,9 +1144,11 @@ This captures:
 
 ---
 
-### Phase 3: Revenue-Funded Paid (When MRR > $1,000)
+### Phase 3: Revenue-Funded Paid
 
-**Trigger**: Only start paid ads when MRR exceeds $1,000/month.
+**Trigger**: Start paid ads when EITHER:
+- MRR exceeds $1,000/month, OR
+- Organic installs plateau <30/day for 6+ weeks despite SEO/Pinterest efforts
 
 **Rule**: Spend max 30% of MRR on ads (not 70%!).
 
