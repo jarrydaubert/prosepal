@@ -1,7 +1,7 @@
 # Prosepal Marketing Strategy
 
-> **Version**: 3.2 | Bootstrapped organic-first plan + ChatGPT Ads strategy
-> **Last Updated**: January 18, 2026
+> **Version**: 3.3 | Search-first strategy (SEO + Pinterest), monthly AI video batch
+> **Last Updated**: January 20, 2026
 > **Markets**: USA, UK, Canada, Australia, New Zealand, Ireland
 
 ---
@@ -522,23 +522,9 @@ Build 20 high-intent landing pages at `prosepal.app/messages/[occasion]/[relatio
 - Google traffic = free forever
 
 **Page Structure (Avoid Thin Content):**
-```
-/messages/sympathy/coworker
-
-# What to Write in a Sympathy Card for a Coworker
-
-## 3 Tips for Sympathy Messages at Work (UNIQUE per page)
-1. Keep it professional but warm
-2. Acknowledge without oversharing  
-3. Offer specific help if appropriate
-
-## 10 Example Messages (Static)
-[Pre-written examples]
-
-## Want Something Personal?
-Generate a message that sounds like you →
-[App Store button]
-```
+1. "3 Tips for writing a [X] card" (UNIQUE per page)
+2. "10 Example Messages" (static examples)
+3. CTA: "Want something personal? Generate yours →" (App Store link)
 
 **20 Priority Pages:**
 1. `/messages/sympathy/coworker`
@@ -564,12 +550,8 @@ Generate a message that sounds like you →
 
 ### AI Content Factory (Replaces TikTok Grind)
 
-Use Dimitri-style AI pipeline to batch-create video content monthly:
-
-```
-Claude (script) → Nano Banana Pro (image) → ElevenLabs (voice) 
-→ InfiniteTalk (lip-sync) → CapCut (captions)
-```
+Use AI pipeline to batch-create video content monthly:
+Claude (script) → Nano Banana Pro (image) → ElevenLabs (voice) → InfiniteTalk (lip-sync) → CapCut (captions)
 
 **Process:**
 - **Once/month:** 2-hour session
@@ -658,38 +640,6 @@ Test different hooks with same demo footage:
 3. Top performer → boost with paid ads
 4. Repeat monthly
 
-### TikTok/Reels Strategy (Secondary - Legacy)
-
-**Why TikTok**:
-- 766M+ daily active users
-- Algorithm favors content quality over follower count
-- New accounts can go viral
-- Perfect for "before/after" transformation content
-
-**Content Pillars**:
-
-| Pillar | Example | Hook |
-|--------|---------|------|
-| **The Struggle** | "POV: You bought a sympathy card and now you're having an existential crisis" | Relatable pain |
-| **The Speed Run** | "Writing a card message in 30 seconds (not clickbait)" | Proof of speed |
-| **The Transformation** | "What I would have written vs. what AI wrote" | Quality comparison |
-| **The Niche** | "When your coworker's dog dies and you don't know what to say" | Specific scenarios |
-| **The Reaction** | "My mom's reaction to the message I wrote her" | Emotional payoff |
-
-**Video Formula** (Research-Backed):
-1. Hook in first 1-3 seconds (text overlay + movement)
-2. Jump cuts to maintain pace
-3. Show the app naturally (not forced)
-4. End with result + soft CTA
-5. 15-45 seconds optimal length
-
-**Viral Triggers**:
-- Duet/stitch opportunities
-- Relatable situations
-- "Wait for it" payoffs
-- Emotional moments
-- Controversial takes ("Hallmark cards are lazy")
-
 ### Regional Content Hooks
 
 **UK-Specific Content** (94% card penetration - huge opportunity):
@@ -716,23 +666,6 @@ Test different hooks with same demo footage:
 |------|---------|--------------|
 | **Sorry Culture** | "Canadian problem: your sympathy card is 90% apologising" | National stereotype, humorous |
 | **Bilingual** | "When you need both English and French versions" | Quebec market opportunity |
-
-### UGC-to-Paid Funnel
-
-Build organic content first, then scale winners via paid ads:
-
-**Step 1: Organic Library (Weeks 1-8)**
-- Post 5-7 TikToks/Reels per week
-- Track: views, watch time, saves, shares
-- Goal: 20+ videos with 5K+ views each
-
-**Step 2: Identify Winners (Week 8+)**
-- Select top 3-5 performers (highest engagement)
-- Note patterns: hook style, length, CTA format
-
-**Step 3: Scale via Paid (Month 4+)**
-- Use winning organic content as ad creative
-- Double spend on videos that maintain ROI
 
 ### Pinterest Strategy
 
@@ -1174,10 +1107,10 @@ This captures:
 | 3 | Ratings push | Respond to all reviews, optimize prompt timing |
 | 4 | ASO refinement | Update keywords based on Search Ads data (free reports) |
 
-**Sustainable Content Cadence** (4-5 hrs/week total):
-- TikTok/Reels: 3 posts/week (batch film on weekends)
-- Pinterest: 5-10 pins/week (AI-generated, quick to post)
-- Blog: 1 post every 2 weeks
+**Sustainable Content Cadence** (~2-3 hrs/week):
+- SEO pages: Build 20 programmatic pages (one-time)
+- Pinterest: 5-10 pins/week linking to SEO pages
+- TikTok: Monthly AI batch (8-12 clips), schedule 2-3/week
 - Reddit: Genuine participation when relevant
 
 **Success Criteria**:
@@ -1194,13 +1127,9 @@ This captures:
 
 | Week | Focus | Actions |
 |------|-------|---------|
-| 5-8 | TikTok consistency | Post 3x/week, test content pillars |
-| 9-12 | Pinterest SEO | 50+ pins seeded, boards optimized for search |
-| 13-16 | Identify winners | Note which content drives installs, double down |
-
-**SEO Ongoing**:
-- Publish 1 blog post every 2 weeks
-- By Week 16: 4-6 posts live
+| 5-8 | SEO pages live | Launch 20 programmatic pages, monitor traffic |
+| 9-12 | Pinterest amplification | 50+ pins linking to SEO pages |
+| 13-16 | Identify winners | Note which pages/pins drive installs, double down |
 
 **Success Criteria**:
 - 50+ organic installs/day
@@ -1420,22 +1349,20 @@ Also check: What are people complaining about in their 1-3 star reviews?
 
 | Day | Task | Time | AI-Assisted |
 |-----|------|------|-------------|
-| **Sunday** | Batch film 3 TikToks, generate week's pins | 1.5-2 hrs | ✅ |
-| **Monday** | Post TikTok #1, schedule 3 pins | 20 min | - |
-| **Wednesday** | Post TikTok #2, engage comments | 20 min | - |
-| **Friday** | Post TikTok #3, schedule 3 pins | 20 min | - |
-| **Saturday** | Analytics review (bi-weekly), Reddit if relevant | 30 min | ✅ |
+| **Sunday** | Monthly: Generate 8-12 AI video clips (2-hr session) | 2 hrs/month | ✅ |
+| **Mon/Wed/Fri** | Schedule pre-made content, engage comments | 15 min | - |
+| **Saturday** | Analytics review, Reddit if relevant | 30 min | ✅ |
 
-**Total time**: ~4-5 hours/week on marketing
+**Total time**: ~2-3 hours/week (plus monthly 2-hr batch session)
 
 ### Content Volume Targets (Realistic)
 
-| Channel | Weekly Volume | Monthly Volume |
-|---------|---------------|----------------|
-| TikTok/Reels | 3 posts | 12 posts |
-| Pinterest | 5-10 pins | 20-40 pins |
-| Reddit | As relevant | When genuine |
-| Blog (prosepal.app) | 1 post/2 weeks | 2 posts |
+| Channel | Volume | Notes |
+|---------|--------|-------|
+| SEO pages | 20 total | One-time build |
+| TikTok/Reels | 8-12/month | AI-generated batch |
+| Pinterest | 20-40/month | Link to SEO pages |
+| Reddit | As relevant | Genuine help only |
 
 ### SEO Content Strategy (prosepal.app)
 
@@ -1603,4 +1530,4 @@ Generate next week's content strategy adjustments.
 
 ---
 
-*Last update: January 12, 2026. v3.1 - Bootstrapped organic-first plan.*
+*Last update: January 20, 2026. v3.3 - Search-first strategy pivot.*
