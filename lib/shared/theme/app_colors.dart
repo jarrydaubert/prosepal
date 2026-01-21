@@ -1,107 +1,138 @@
 import 'package:flutter/material.dart';
 
-/// Prosepal Brand Color System
+/// Prosepal "Spotlight Cinematic" Color System
 ///
-/// Simplified 3-color palette for consistency:
-/// - Primary (Coral): CTAs, links, selection states, brand identity
-/// - Text (Charcoal): All text for maximum readability
-/// - Background (Warm White): Clean, warm canvas
+/// Dark theme with gold/amber accents - matches web landing page.
 ///
-/// WCAG AA Contrast Ratios:
-/// - textPrimary on background: 12.6:1 ✓
-/// - textSecondary on background: 4.6:1 ✓
-/// - primary on white: 3.2:1 (use for large text/icons only)
-/// - textOnPrimary on primary: 4.5:1 ✓
+/// WCAG Contrast Ratios:
+/// - textPrimary (#FFF) on bgDeep (#050505): 21:1 ✓
+/// - textSecondary (#888) on bgDeep: 5.6:1 ✓
+/// - accentGold (#FBBF24) on bgDeep: 11.3:1 ✓
 class AppColors {
   AppColors._();
 
   // ===========================================================================
-  // CORE BRAND COLORS
+  // BACKGROUNDS
   // ===========================================================================
 
-  /// Primary brand color - Warm coral
-  static const Color primary = Color(0xFFE57373);
+  /// Deepest background - near black
+  static const Color bgDeep = Color(0xFF050505);
 
-  /// Lighter variant for subtle backgrounds and hover states
-  static const Color primaryLight = Color(0xFFFFCDD2);
+  /// Standard dark background
+  static const Color bgDark = Color(0xFF0A0A0A);
 
-  /// Darker variant for pressed states and emphasis
-  static const Color primaryDark = Color(0xFFD32F2F);
+  /// Card/surface background
+  static const Color surface = Color(0xFF111111);
+
+  /// Elevated surface (modals, sheets)
+  static const Color surfaceElevated = Color(0xFF1A1A1A);
+
+  /// Surface variant for subtle differentiation
+  static const Color surfaceVariant = Color(0xFF1F1F1F);
+
+  /// Splash screen background
+  static const Color splash = Color(0xFF050505);
+
+  /// Main app background
+  static const Color background = Color(0xFF050505);
+
+  // ===========================================================================
+  // BRAND COLORS - Gold/Amber
+  // ===========================================================================
+
+  /// Primary brand color - Spotlight Gold
+  static const Color primary = Color(0xFFFBBF24);
+
+  /// Lighter gold for highlights
+  static const Color primaryLight = Color(0xFFFFEDD5);
+
+  /// Darker amber for pressed states
+  static const Color primaryDark = Color(0xFFF59E0B);
+
+  /// Legacy coral (kept for transition)
+  static const Color accentRose = Color(0xFFD4736B);
 
   // ===========================================================================
   // TEXT COLORS
   // ===========================================================================
 
-  /// Primary text - Near black (WCAG AAA: 12.6:1)
-  static const Color textPrimary = Color(0xFF2D3436);
+  /// Primary text - Pure white
+  static const Color textPrimary = Color(0xFFFFFFFF);
 
-  /// Secondary text - Dark gray (WCAG AA: 4.6:1)
-  static const Color textSecondary = Color(0xFF636E72);
+  /// Secondary text - Medium gray
+  static const Color textSecondary = Color(0xFF888888);
 
-  /// Hint/placeholder text
-  static const Color textHint = Color(0xFF9E9E9E);
+  /// Dim/hint text - Dark gray
+  static const Color textHint = Color(0xFF555555);
 
-  /// Text on primary color backgrounds
-  static const Color textOnPrimary = Color(0xFFFFFFFF);
+  /// Text on primary (gold) backgrounds
+  static const Color textOnPrimary = Color(0xFF050505);
 
-  /// Text on dark backgrounds
+  /// Text on dark backgrounds (same as primary for dark theme)
   static const Color textOnDark = Color(0xFFFFFFFF);
 
   // ===========================================================================
-  // BACKGROUNDS & SURFACES
+  // BORDERS
   // ===========================================================================
 
-  /// Splash screen background - Dark charcoal
-  static const Color splash = Color(0xFF2D2D37);
+  /// Subtle border - 5% white
+  static const Color borderSubtle = Color(0x0DFFFFFF);
 
-  /// Main app background - Warm off-white
-  static const Color background = Color(0xFFFAFAFA);
+  /// Light border - 10% white
+  static const Color borderLight = Color(0x1AFFFFFF);
 
-  /// Card/surface background - Pure white
-  static const Color surface = Color(0xFFFFFFFF);
-
-  /// Subtle surface variant
-  static const Color surfaceVariant = Color(0xFFF5F5F5);
+  /// Medium border - 15% white
+  static const Color borderMedium = Color(0x26FFFFFF);
 
   // ===========================================================================
   // SEMANTIC COLORS
   // ===========================================================================
 
-  static const Color success = Color(0xFF4CAF50);
-  static const Color warning = Color(0xFFFF9800);
-  static const Color error = Color(0xFFE53935);
-  static const Color info = Color(0xFF2196F3);
+  static const Color success = Color(0xFF22C55E);
+  static const Color warning = Color(0xFFF59E0B);
+  static const Color error = Color(0xFFEF4444);
+  static const Color info = Color(0xFF3B82F6);
 
   // ===========================================================================
   // OPACITY
   // ===========================================================================
 
-  /// Standard disabled state opacity (Material Design)
+  /// Standard disabled state opacity
   static const double disabledOpacity = 0.38;
 
   // ===========================================================================
   // GRADIENTS
   // ===========================================================================
 
-  /// Primary brand gradient
+  /// Primary brand gradient (gold)
   static const LinearGradient primaryGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [primary, Color(0xFFEF9A9A)],
+    colors: [primary, primaryDark],
   );
 
-  /// Background gradient
-  static LinearGradient get backgroundGradient => LinearGradient(
+  /// Spotlight gradient for hero effects
+  static const RadialGradient spotlightGradient = RadialGradient(
+    center: Alignment.topCenter,
+    radius: 1.5,
+    colors: [
+      Color(0x33FBBF24), // Gold 20%
+      Color(0x00FBBF24), // Gold 0%
+    ],
+  );
+
+  /// Background gradient (subtle)
+  static LinearGradient get backgroundGradient => const LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
-    colors: [primary.withValues(alpha: 0.15), background],
+    colors: [Color(0xFF0A0A0A), bgDeep],
   );
 
   /// Hero section gradient
   static const LinearGradient heroGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFFFFEBEE), Color(0xFFFFF8F8), Color(0xFFFFFFFF)],
+    colors: [Color(0xFF111111), bgDeep, bgDeep],
     stops: [0.0, 0.5, 1.0],
   );
 }
