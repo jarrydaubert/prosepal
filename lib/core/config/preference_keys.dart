@@ -34,6 +34,14 @@ abstract class PreferenceKeys {
   static const hasCompletedOnboarding = 'hasCompletedOnboarding';
   static const hasCompletedOnboardingDefault = false;
 
+  /// Whether user has generated their first message (for activation tracking)
+  static const hasGeneratedFirstMessage = 'has_generated_first_message';
+  static const hasGeneratedFirstMessageDefault = false;
+
+  /// Whether user has seen the first-action hint on home screen
+  static const hasSeenFirstActionHint = 'has_seen_first_action_hint';
+  static const hasSeenFirstActionHintDefault = false;
+
   // ===========================================================================
   // App Review
   // ===========================================================================

@@ -8,7 +8,6 @@ import '../../core/providers/providers.dart';
 import '../../core/services/log_service.dart';
 import '../../shared/theme/app_colors.dart';
 import '../../shared/theme/app_spacing.dart';
-import '../paywall/paywall_sheet.dart';
 
 /// Data model for onboarding pages - clean separation of concerns
 class OnboardingPageData {
@@ -92,14 +91,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       Log.info('Onboarding: -> /home (has Pro, signed in)');
       context.go('/home');
     } else {
-      // No Pro - go to home and show paywall sheet for Day 0 conversions
-      // User can dismiss to try their 1 free message first
-      Log.info('Onboarding: -> /home + paywall sheet (no Pro)');
+      // No Pro - go to home, let them experience value first
+      // Paywall will show AFTER first message copy (value-first approach)
+      Log.info('Onboarding: -> /home (value-first, paywall deferred)');
       context.go('/home');
-      // Show paywall sheet after navigation completes
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) showPaywall(context, source: 'onboarding');
-      });
     }
   }
 
@@ -398,35 +393,38 @@ class _OnboardingPageWidget extends StatelessWidget {
             // Description
             _buildSubtitle(subtitleSize),
 
-            // Pro teaser on last slide
-            if (isLastPage) ...[const SizedBox(height: 24), _buildProTeaser()],
+            // Free trial callout on last slide (value-first, no Pro mention)
+            if (isLastPage) ...[
+              const SizedBox(height: 24),
+              _buildFreeTrialCallout(),
+            ],
           ],
         ),
       ),
     );
   }
 
-  Widget _buildProTeaser() => Container(
+  Widget _buildFreeTrialCallout() => Container(
     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
     decoration: BoxDecoration(
-      color: AppColors.primaryLight.withValues(alpha: 0.5),
+      color: AppColors.success.withValues(alpha: 0.1),
       borderRadius: BorderRadius.circular(20),
-      border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+      border: Border.all(color: AppColors.success.withValues(alpha: 0.3)),
     ),
     child: Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         Icon(
-          Icons.star_rounded,
+          Icons.check_circle_outline,
           size: 16,
-          color: AppColors.primary.withValues(alpha: 0.8),
+          color: AppColors.success.withValues(alpha: 0.9),
         ),
         const SizedBox(width: 6),
         Text(
-          'Go Pro for 500 messages/month',
+          'Your first message is free!',
           style: TextStyle(
             fontSize: 13,
-            color: AppColors.primary.withValues(alpha: 0.8),
+            color: AppColors.success.withValues(alpha: 0.9),
             fontWeight: FontWeight.w500,
           ),
         ),

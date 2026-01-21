@@ -476,6 +476,14 @@ final generationErrorProvider = StateProvider.autoDispose<String?>(
 /// Home screen checks this on build and shows paywall if non-null, then clears it.
 final pendingPaywallSourceProvider = StateProvider<String?>((ref) => null);
 
+/// Whether to show the first-action hint on home screen (pulsing Birthday card).
+/// Initialized from SharedPreferences, dismissed when user taps any occasion.
+final showFirstActionHintProvider = StateProvider<bool>((ref) {
+  final prefs = ref.watch(sharedPreferencesProvider);
+  return !(prefs.getBool(PreferenceKeys.hasSeenFirstActionHint) ??
+      PreferenceKeys.hasSeenFirstActionHintDefault);
+});
+
 // ============================================================
 // Form Reset Utility
 // ============================================================

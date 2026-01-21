@@ -9,10 +9,14 @@ class OccasionGrid extends StatelessWidget {
     super.key,
     required this.occasions,
     required this.onOccasionSelected,
+    this.showFirstActionHint = false,
+    this.onHintDismissed,
   });
 
   final List<Occasion> occasions;
   final void Function(Occasion) onOccasionSelected;
+  final bool showFirstActionHint;
+  final VoidCallback? onHintDismissed;
 
   @override
   Widget build(BuildContext context) {
@@ -22,12 +26,27 @@ class OccasionGrid extends StatelessWidget {
     if (occasions.isEmpty) {
       return SliverToBoxAdapter(
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 40),
-          child: Center(
-            child: Text(
-              'No occasions found',
-              style: TextStyle(fontSize: 16, color: Colors.grey[500]),
-            ),
+          padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('🔍', style: TextStyle(fontSize: 48)),
+              const SizedBox(height: 12),
+              Text(
+                'No occasions found',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey[600],
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Try searching for "birthday" or "thank you"',
+                style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+                textAlign: TextAlign.center,
+              ),
+            ],
           ),
         ),
       );
@@ -42,21 +61,39 @@ class OccasionGrid extends StatelessWidget {
       ),
       delegate: SliverChildBuilderDelegate((context, index) {
         final occasion = occasions[index];
+        final isBirthday = occasion == Occasion.birthday;
+        final shouldPulse = showFirstActionHint && isBirthday;
+
         final tile = _OccasionTile(
           key: ValueKey('occasion_${occasion.name}'),
           occasion: occasion,
-          onTap: () => onOccasionSelected(occasion),
+          highlighted: shouldPulse,
+          onTap: () {
+            onHintDismissed?.call();
+            onOccasionSelected(occasion);
+          },
         );
 
         // Skip staggered animations if user prefers reduced motion
         // Also skip if filtered (search active) - feels snappier
         if (reduceMotion || occasions.length != Occasion.values.length) {
+          // Still apply pulse to birthday even with reduced motion (uses opacity only)
+          if (shouldPulse && !reduceMotion) {
+            return tile
+                .animate(onPlay: (c) => c.repeat(reverse: true))
+                .scale(
+                  begin: const Offset(1, 1),
+                  end: const Offset(1.05, 1.05),
+                  duration: 800.ms,
+                  curve: Curves.easeInOut,
+                );
+          }
           return tile;
         }
 
         // Cap stagger delay at 8 items (2 rows) to prevent blank screen on fast scroll
         final staggerDelay = index < 8 ? index * 25 : 200;
-        return tile
+        var animatedTile = tile
             .animate(key: ValueKey('occasion_anim_$index'))
             .fadeIn(
               delay: Duration(milliseconds: staggerDelay),
@@ -69,6 +106,21 @@ class OccasionGrid extends StatelessWidget {
               duration: 150.ms,
               curve: Curves.easeOut,
             );
+
+        // Add pulse animation for Birthday when hint is shown
+        if (shouldPulse) {
+          animatedTile = animatedTile
+              .then(delay: 300.ms)
+              .animate(onPlay: (c) => c.repeat(reverse: true))
+              .scale(
+                begin: const Offset(1, 1),
+                end: const Offset(1.05, 1.05),
+                duration: 800.ms,
+                curve: Curves.easeInOut,
+              );
+        }
+
+        return animatedTile;
       }, childCount: occasions.length),
     );
   }
@@ -79,10 +131,16 @@ class OccasionGrid extends StatelessWidget {
 // =============================================================================
 
 class _OccasionTile extends StatefulWidget {
-  const _OccasionTile({super.key, required this.occasion, required this.onTap});
+  const _OccasionTile({
+    super.key,
+    required this.occasion,
+    required this.onTap,
+    this.highlighted = false,
+  });
 
   final Occasion occasion;
   final VoidCallback onTap;
+  final bool highlighted;
 
   @override
   State<_OccasionTile> createState() => _OccasionTileState();
@@ -139,7 +197,21 @@ class _OccasionTileState extends State<_OccasionTile>
           decoration: BoxDecoration(
             color: widget.occasion.backgroundColor,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: widget.occasion.borderColor, width: 3),
+            border: Border.all(
+              color: widget.highlighted
+                  ? AppColors.primary
+                  : widget.occasion.borderColor,
+              width: widget.highlighted ? 4 : 3,
+            ),
+            boxShadow: widget.highlighted
+                ? [
+                    BoxShadow(
+                      color: AppColors.primary.withValues(alpha: 0.3),
+                      blurRadius: 12,
+                      spreadRadius: 2,
+                    ),
+                  ]
+                : null,
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,

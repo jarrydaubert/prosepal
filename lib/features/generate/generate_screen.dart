@@ -442,36 +442,61 @@ class _StepIndicator extends StatelessWidget {
   Widget build(BuildContext context) => Semantics(
     label: 'Step ${currentStep + 1} of 3: ${_stepLabels[currentStep]}',
     child: Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      child: Row(
-        children: List.generate(3, (index) {
-          final isActive = index == currentStep;
-          final isCompleted = index < currentStep;
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Progress bars
+          Row(
+            children: List.generate(3, (index) {
+              final isActive = index == currentStep;
+              final isCompleted = index < currentStep;
 
-          return Expanded(
-            child: Semantics(
-              label:
-                  '${_stepLabels[index]}: ${isCompleted
-                      ? 'completed'
-                      : isActive
-                      ? 'current'
-                      : 'pending'}',
-              child: Container(
-                margin: const EdgeInsets.symmetric(horizontal: 3),
-                height: 6,
-                decoration: BoxDecoration(
-                  color: isActive || isCompleted
-                      ? AppColors.primary
-                      : AppColors.surfaceVariant,
-                  borderRadius: BorderRadius.circular(3),
-                  border: isActive
-                      ? Border.all(color: AppColors.primary)
-                      : null,
+              return Expanded(
+                child: Semantics(
+                  label:
+                      '${_stepLabels[index]}: ${isCompleted
+                          ? 'completed'
+                          : isActive
+                          ? 'current'
+                          : 'pending'}',
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 3),
+                    height: 6,
+                    decoration: BoxDecoration(
+                      color: isActive || isCompleted
+                          ? AppColors.primary
+                          : AppColors.surfaceVariant,
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                  ),
                 ),
-              ),
-            ),
-          );
-        }),
+              );
+            }),
+          ),
+          const SizedBox(height: 8),
+          // Step labels
+          Row(
+            children: List.generate(3, (index) {
+              final isActive = index == currentStep;
+              final isCompleted = index < currentStep;
+
+              return Expanded(
+                child: Text(
+                  _stepLabels[index],
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
+                    color: isActive || isCompleted
+                        ? AppColors.primary
+                        : Colors.grey[400],
+                  ),
+                ),
+              );
+            }),
+          ),
+        ],
       ),
     ),
   );
