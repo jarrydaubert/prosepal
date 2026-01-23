@@ -224,6 +224,14 @@ final usageServiceProvider = Provider<UsageService>((ref) {
   return UsageService(prefs, deviceFingerprint, rateLimit);
 });
 
+/// Form restoration service for preserving form state across app restarts.
+///
+/// Persists form data to SharedPreferences so it survives process death.
+final formRestorationServiceProvider = Provider<FormRestorationService>((ref) {
+  final prefs = ref.watch(sharedPreferencesProvider);
+  return FormRestorationService(prefs);
+});
+
 /// Generation history service (uses secure storage internally)
 final historyServiceProvider = Provider<HistoryService>(
   (ref) => HistoryService(),
@@ -256,7 +264,10 @@ final biometricServiceProvider = Provider<IBiometricService>(
   (ref) => BiometricService(),
 );
 
-/// Re-authentication service for sensitive operations
+/// Re-authentication service for sensitive operations.
+///
+/// Requires OAuth re-sign for Apple/Google users on sensitive operations
+/// (account deletion, email change, etc.).
 final reauthServiceProvider = Provider<ReauthService?>((ref) {
   // Return null if Supabase isn't initialized yet
   try {
@@ -265,9 +276,11 @@ final reauthServiceProvider = Provider<ReauthService?>((ref) {
     return null;
   }
   final biometricService = ref.watch(biometricServiceProvider);
+  final authService = ref.watch(authServiceProvider);
   return ReauthService(
     biometricService: biometricService,
     supabaseAuth: Supabase.instance.client.auth,
+    authService: authService,
   );
 });
 

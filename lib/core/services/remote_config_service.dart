@@ -4,6 +4,7 @@ import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 import '../config/ai_config.dart';
+import '../interfaces/remote_config_interface.dart';
 import 'log_service.dart';
 
 /// Centralized Firebase Remote Config service
@@ -25,7 +26,7 @@ import 'log_service.dart';
 /// 1. Go to Firebase Console > Prosepal > Run > Remote Config
 /// 2. Edit `ai_model` value
 /// 3. Publish changes - app will use new model on next launch
-class RemoteConfigService {
+class RemoteConfigService implements IRemoteConfigService {
   RemoteConfigService._();
   // Singleton for app-wide access
   static final RemoteConfigService _instance = RemoteConfigService._();
@@ -41,10 +42,10 @@ class RemoteConfigService {
   FirebaseRemoteConfig? _remoteConfig;
   bool _initialized = false;
 
-  /// Initialize Remote Config with defaults
-  ///
-  /// Call this once during app startup (after Firebase.initializeApp).
-  /// Safe to call multiple times - subsequent calls are no-ops.
+  @override
+  bool get isInitialized => _initialized;
+
+  @override
   Future<void> initialize() async {
     if (_initialized) return;
 
@@ -88,16 +89,14 @@ class RemoteConfigService {
 
   // ===== AI Model Config =====
 
-  /// Current AI model to use
-  ///
-  /// Returns remote value if available, otherwise default.
+  @override
   String get aiModel {
     if (_remoteConfig == null) return AiConfig.defaultModel;
     final value = _remoteConfig!.getString(_aiModelKey);
     return value.isNotEmpty ? value : AiConfig.defaultModel;
   }
 
-  /// Fallback AI model if primary fails
+  @override
   String get aiModelFallback {
     if (_remoteConfig == null) return AiConfig.defaultFallbackModel;
     final value = _remoteConfig!.getString(_aiModelFallbackKey);
@@ -106,20 +105,18 @@ class RemoteConfigService {
 
   // ===== Force Update Config =====
 
-  /// Whether force update checking is enabled
+  @override
   bool get isForceUpdateEnabled =>
       _remoteConfig?.getBool(_forceUpdateEnabledKey) ?? true;
 
-  /// Minimum app version required for current platform
+  @override
   String get minAppVersion {
     if (_remoteConfig == null) return '1.0.0';
     final key = Platform.isIOS ? _minVersionIosKey : _minVersionAndroidKey;
     return _remoteConfig!.getString(key);
   }
 
-  /// Check if app version meets minimum requirement
-  ///
-  /// Returns true if update is required, false otherwise.
+  @override
   Future<bool> isUpdateRequired() async {
     if (!isForceUpdateEnabled) return false;
 
@@ -128,7 +125,7 @@ class RemoteConfigService {
       final currentVersion = packageInfo.version;
       final minVersion = minAppVersion;
 
-      final comparison = _compareVersions(currentVersion, minVersion);
+      final comparison = compareVersions(currentVersion, minVersion);
       return comparison < 0; // Current version is below minimum
     } on Exception catch (e) {
       Log.warning('Version check failed', {'error': '$e'});
@@ -136,9 +133,8 @@ class RemoteConfigService {
     }
   }
 
-  /// Compare semantic versions
-  /// Returns negative if v1 < v2, zero if equal, positive if v1 > v2
-  int _compareVersions(String v1, String v2) {
+  @override
+  int compareVersions(String v1, String v2) {
     final parts1 = v1.split('.').map((p) => int.tryParse(p) ?? 0).toList();
     final parts2 = v2.split('.').map((p) => int.tryParse(p) ?? 0).toList();
 
@@ -156,7 +152,7 @@ class RemoteConfigService {
     return 0;
   }
 
-  /// Get the store URL for current platform
+  @override
   String get storeUrl {
     if (Platform.isIOS) {
       // TODO: Update after App Store approval
@@ -166,9 +162,7 @@ class RemoteConfigService {
     }
   }
 
-  /// Force refresh config from server
-  ///
-  /// Use sparingly - respects minimumFetchInterval.
+  @override
   Future<void> refresh() async {
     try {
       await _remoteConfig?.fetchAndActivate();

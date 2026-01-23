@@ -27,11 +27,87 @@ class GenerateScreen extends ConsumerStatefulWidget {
 class _GenerateScreenState extends ConsumerState<GenerateScreen> {
   int _currentStep = 0;
   Timer? _errorDismissTimer;
+  Timer? _saveDebounceTimer;
+  bool _restorationAttempted = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Attempt to restore form state after first frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _attemptRestoreFormState();
+    });
+  }
 
   @override
   void dispose() {
     _errorDismissTimer?.cancel();
+    _saveDebounceTimer?.cancel();
     super.dispose();
+  }
+
+  /// Attempt to restore form state from previous session.
+  ///
+  /// Only runs once per screen lifecycle. Skips restoration if the user
+  /// has already started interacting with the form.
+  Future<void> _attemptRestoreFormState() async {
+    if (_restorationAttempted) return;
+    _restorationAttempted = true;
+
+    final formRestoration = ref.read(formRestorationServiceProvider);
+    final state = await formRestoration.restoreGenerateFormState();
+
+    if (state == null || !mounted) return;
+
+    // Only restore if current state is at the beginning
+    // (user hasn't started filling out form yet)
+    final currentOccasion = ref.read(selectedOccasionProvider);
+    if (currentOccasion != null && _currentStep > 0) {
+      // User has already started - don't overwrite
+      await formRestoration.clearGenerateFormState();
+      return;
+    }
+
+    // Restore state to providers
+    ref.read(selectedOccasionProvider.notifier).state = state.occasion;
+    ref.read(selectedRelationshipProvider.notifier).state = state.relationship;
+    ref.read(selectedToneProvider.notifier).state = state.tone;
+    ref.read(selectedLengthProvider.notifier).state = state.messageLength;
+    ref.read(recipientNameProvider.notifier).state = state.recipientName;
+    ref.read(personalDetailsProvider.notifier).state = state.personalDetails;
+
+    if (mounted) {
+      setState(() => _currentStep = state.currentStep);
+    }
+
+    Log.info('Form state restored from previous session', {
+      'occasion': state.occasion.label,
+      'step': state.currentStep,
+    });
+  }
+
+  /// Save form state (debounced to avoid excessive writes).
+  void _saveFormState() {
+    _saveDebounceTimer?.cancel();
+    _saveDebounceTimer = Timer(const Duration(milliseconds: 500), () {
+      _saveFormStateImmediate();
+    });
+  }
+
+  /// Save form state immediately (called on step change).
+  void _saveFormStateImmediate() {
+    final formRestoration = ref.read(formRestorationServiceProvider);
+    final occasion = ref.read(selectedOccasionProvider);
+
+    formRestoration.saveGenerateFormState(
+      occasion: occasion,
+      relationship: ref.read(selectedRelationshipProvider),
+      tone: ref.read(selectedToneProvider),
+      messageLength: ref.read(selectedLengthProvider),
+      recipientName: ref.read(recipientNameProvider),
+      personalDetails: ref.read(personalDetailsProvider),
+      currentStep: _currentStep,
+    );
   }
 
   void _scheduleErrorDismiss() {
@@ -58,6 +134,13 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
         _scheduleErrorDismiss();
       }
     });
+
+    // Save form state when key fields change (debounced to avoid excessive writes)
+    ref.listen(selectedRelationshipProvider, (_, __) => _saveFormState());
+    ref.listen(selectedToneProvider, (_, __) => _saveFormState());
+    ref.listen(selectedLengthProvider, (_, __) => _saveFormState());
+    ref.listen(recipientNameProvider, (_, __) => _saveFormState());
+    ref.listen(personalDetailsProvider, (_, __) => _saveFormState());
 
     if (occasion == null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -106,7 +189,12 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
               onPressed: () {
                 if (_currentStep > 0) {
                   setState(() => _currentStep--);
+                  _saveFormStateImmediate();
                 } else {
+                  // Going back to home - clear saved form state
+                  ref
+                      .read(formRestorationServiceProvider)
+                      .clearGenerateFormState();
                   resetGenerationForm(ref);
                   context.pop();
                 }
@@ -247,6 +335,7 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
       onPressed: canProceed
           ? () {
               setState(() => _currentStep++);
+              _saveFormStateImmediate();
             }
           : null,
     );
@@ -350,6 +439,9 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
 
       ref.read(generationResultProvider.notifier).state = result;
       ref.read(isGeneratingProvider.notifier).state = false;
+
+      // Clear form restoration state - generation successful
+      ref.read(formRestorationServiceProvider).clearGenerateFormState();
 
       if (!mounted) return;
       unawaited(context.pushNamed('results'));

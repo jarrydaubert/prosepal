@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../errors/auth_errors.dart';
+import '../interfaces/auth_interface.dart';
 import '../interfaces/biometric_interface.dart';
 import 'log_service.dart';
 
@@ -14,20 +16,29 @@ class ReauthResult {
   static const cancelled = ReauthResult(success: false);
 }
 
-/// Service for requiring re-authentication before sensitive operations
+/// Service for requiring re-authentication before sensitive operations.
 ///
 /// Sensitive operations (updateEmail, updatePassword, deleteAccount) should
 /// require recent authentication to prevent unauthorized changes on shared
 /// or stolen devices.
+///
+/// ## Re-auth Methods by Provider
+/// - **Email users**: Password prompt
+/// - **Apple users**: Re-sign with Apple (full OAuth flow)
+/// - **Google users**: Re-sign with Google (full OAuth flow)
+/// - **All users with biometrics**: Face ID / Touch ID (if enabled)
 class ReauthService {
   ReauthService({
     required IBiometricService biometricService,
     required GoTrueClient supabaseAuth,
+    required IAuthService authService,
   }) : _biometricService = biometricService,
-       _supabaseAuth = supabaseAuth;
+       _supabaseAuth = supabaseAuth,
+       _authService = authService;
 
   final IBiometricService _biometricService;
   final GoTrueClient _supabaseAuth;
+  final IAuthService _authService;
 
   /// Maximum time since last authentication before re-auth is required
   static const _reauthTimeout = Duration(minutes: 5);
@@ -119,19 +130,62 @@ class ReauthService {
     });
 
     if (!hasPasswordAuth) {
-      // OAuth-only user without biometrics - show confirmation dialog
+      // OAuth-only user without biometrics - require re-authentication with provider
       if (!context.mounted) return ReauthResult.cancelled;
 
-      final confirmed = await _showConfirmationDialog(
+      // Determine which OAuth provider to use
+      final appleIdentity = identities.firstWhere(
+        (i) => i.provider == 'apple',
+        orElse: () => identities.first,
+      );
+      final isApple = appleIdentity.provider == 'apple';
+
+      Log.info('Re-auth via OAuth required', {
+        'provider': isApple ? 'apple' : 'google',
+        'reason': reason,
+      });
+
+      // Show explanation dialog before OAuth flow
+      final proceed = await _showOAuthReauthDialog(
         context: context,
         reason: reason,
+        isApple: isApple,
       );
-      if (confirmed) {
-        markReauthenticated();
-        Log.info('Re-auth successful via confirmation');
-        return const ReauthResult(success: true);
+
+      if (!proceed) {
+        Log.info('Re-auth cancelled by user (OAuth dialog)');
+        return ReauthResult.cancelled;
       }
-      return ReauthResult.cancelled;
+
+      // Perform OAuth re-authentication
+      try {
+        if (isApple) {
+          await _authService.signInWithApple();
+        } else {
+          await _authService.signInWithGoogle();
+        }
+
+        markReauthenticated();
+        Log.info('Re-auth successful via OAuth', {
+          'provider': isApple ? 'apple' : 'google',
+        });
+        return const ReauthResult(success: true);
+      } on Exception catch (e) {
+        // Check if user cancelled the OAuth flow
+        if (AuthErrorHandler.isCancellation(e)) {
+          Log.info('Re-auth cancelled by user (OAuth flow)');
+          return ReauthResult.cancelled;
+        }
+
+        Log.warning('Re-auth failed via OAuth', {
+          'provider': isApple ? 'apple' : 'google',
+          'error': '$e',
+        });
+        return ReauthResult(
+          success: false,
+          errorMessage: AuthErrorHandler.getMessage(e),
+        );
+      }
     }
 
     // Email user - require password
@@ -234,17 +288,34 @@ class ReauthService {
     );
   }
 
-  /// Show confirmation dialog for OAuth users without biometrics
-  Future<bool> _showConfirmationDialog({
+  /// Show explanation dialog before OAuth re-authentication.
+  ///
+  /// Explains to the user why they need to sign in again before proceeding
+  /// with a sensitive operation.
+  Future<bool> _showOAuthReauthDialog({
     required BuildContext context,
     required String reason,
+    required bool isApple,
   }) async {
+    final providerName = isApple ? 'Apple' : 'Google';
+
     final result = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
-        title: const Text('Confirm Action'),
-        content: Text(reason),
+        title: const Text('Verify Your Identity'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(reason),
+            const SizedBox(height: 16),
+            Text(
+              'For your security, please sign in with $providerName again to continue.',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ],
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
@@ -252,7 +323,7 @@ class ReauthService {
           ),
           FilledButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Continue'),
+            child: Text('Sign in with $providerName'),
           ),
         ],
       ),
