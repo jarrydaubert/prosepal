@@ -90,6 +90,12 @@ abstract class PreferenceKeys {
   static const proStatusCache = 'pro_status_cache';
   static const proStatusCacheDefault = false;
 
+  /// Timestamp of last explicit paywall dismissal (ISO string)
+  static const paywallLastDismissed = 'paywall_last_dismissed';
+
+  /// True when a magic link was requested and we should log completion on sign-in
+  static const pendingMagicLinkAuth = 'pending_magic_link_auth';
+
   // ===========================================================================
   // Spelling / Localization
   // ===========================================================================

@@ -47,16 +47,16 @@ class _ProBadge extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
         decoration: BoxDecoration(
-          color: Colors.amber,
+          color: AppColors.proGold,
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.amber.shade700, width: 2),
+          border: Border.all(color: AppColors.proGoldDark, width: 2),
         ),
         child: const Text(
           'PRO',
           style: TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: AppColors.textOnPro,
           ),
         ),
       ),
@@ -128,7 +128,7 @@ class _FreeUsageCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   const Text(
-                    'Tap to unlock 500/month',
+                    'Tap to unlock unlimited',
                     style: TextStyle(
                       fontSize: 13,
                       color: AppColors.textSecondary,

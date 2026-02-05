@@ -17,6 +17,7 @@ import '../../core/config/preference_keys.dart';
 import '../../core/interfaces/biometric_interface.dart';
 import '../../core/providers/providers.dart';
 import '../../core/services/log_service.dart';
+import '../../core/services/usage_service.dart';
 import '../../shared/components/components.dart';
 import '../../shared/theme/app_colors.dart';
 import '../paywall/paywall_sheet.dart';
@@ -548,6 +549,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     }
   }
 
+  /// Pro subtitle - shows "Unlimited" normally, but remaining count when approaching limit
+  String _proSubtitle(UsageService usageService) {
+    final remaining = usageService.getRemainingProMonthly();
+    // Only show remaining count when approaching limit (< 50 remaining)
+    if (remaining < 50) {
+      return '$remaining messages remaining this month';
+    }
+    return 'Unlimited messages';
+  }
+
   @override
   Widget build(BuildContext context) {
     final isPro = ref.watch(isProProvider);
@@ -606,18 +617,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           SettingsTile(
             leading: Icon(
               isPro ? Icons.star_rounded : Icons.star_outline_rounded,
-              color: isPro ? Colors.amber : AppColors.textSecondary,
+              color: isPro ? AppColors.proGold : AppColors.textSecondary,
             ),
             title: isPro ? 'Prosepal Pro' : 'Free Plan',
             subtitle: isPro
-                ? '500 messages/month'
+                ? _proSubtitle(usageService)
                 : '${usageService.getRemainingFree()} free messages remaining',
             trailing: isPro
                 ? null
                 : _UpgradeButton(
                     onPressed: () {
                       // Always show paywall - it has inline auth
-                      showPaywall(context, source: 'settings');
+                      showPaywall(context, source: 'settings', force: true);
                     },
                   ),
           ),
@@ -853,7 +864,7 @@ class _AccountCard extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isPro ? Colors.amber : AppColors.primary,
+          color: isPro ? AppColors.proGold : AppColors.primary,
           width: 3,
         ),
       ),
@@ -865,11 +876,11 @@ class _AccountCard extends StatelessWidget {
             height: 56,
             decoration: BoxDecoration(
               color: isPro
-                  ? Colors.amber.withValues(alpha: 0.15)
+                  ? AppColors.proGold.withValues(alpha: 0.15)
                   : AppColors.primaryLight,
               shape: BoxShape.circle,
               border: Border.all(
-                color: isPro ? Colors.amber : AppColors.primary,
+                color: isPro ? AppColors.proGold : AppColors.primary,
                 width: 2,
               ),
             ),
@@ -878,7 +889,7 @@ class _AccountCard extends StatelessWidget {
                 (userName ?? userEmail ?? 'U')[0].toUpperCase(),
                 style: TextStyle(
                   fontSize: 22,
-                  color: isPro ? Colors.amber.shade800 : AppColors.primary,
+                  color: isPro ? AppColors.proGoldDark : AppColors.primary,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -911,17 +922,17 @@ class _AccountCard extends StatelessWidget {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.amber,
+                          color: AppColors.proGold,
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(
-                            color: Colors.amber.shade700,
+                            color: AppColors.proGoldDark,
                             width: 2,
                           ),
                         ),
                         child: const Text(
                           'PRO',
                           style: TextStyle(
-                            color: Colors.white,
+                            color: AppColors.textOnPro,
                             fontSize: 11,
                             fontWeight: FontWeight.bold,
                           ),
@@ -1074,13 +1085,15 @@ class _DeleteConfirmationDialogState extends State<_DeleteConfirmationDialog> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.amber.shade50,
+              color: AppColors.proGold.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.amber.shade200),
+              border: Border.all(
+                color: AppColors.proGold.withValues(alpha: 0.4),
+              ),
             ),
             child: const Row(
               children: [
-                Icon(Icons.info_outline, color: Colors.amber, size: 20),
+                Icon(Icons.info_outline, color: AppColors.proGold, size: 20),
                 SizedBox(width: 8),
                 Expanded(
                   child: Text(

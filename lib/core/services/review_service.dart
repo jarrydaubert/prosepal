@@ -8,18 +8,19 @@ import 'log_service.dart';
 /// Service to handle in-app review requests.
 ///
 /// Triggers review prompt when:
-/// - User has completed 3+ generations
-/// - At least 2 days since first app launch
+/// - User has completed 1+ generation (has experienced value)
+/// - At least 1 day since first app launch
 /// - Review hasn't been requested before
 ///
 /// This follows Apple and Google guidelines for non-intrusive review prompts.
+/// Timing adjusted for faster feedback from engaged users.
 class ReviewService {
   ReviewService(this._prefs);
 
   final SharedPreferences _prefs;
   final InAppReview _inAppReview = InAppReview.instance;
-  static const _minGenerationsForReview = 3;
-  static const _minDaysBeforeReview = 2;
+  static const _minGenerationsForReview = 1;
+  static const _minDaysBeforeReview = 1;
 
   // App Store Connect > App Information > Apple ID
   static const _appStoreId = '6757088726';

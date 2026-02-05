@@ -11,7 +11,7 @@ AI-powered message helper for greeting cards and special occasions.
 - 6 tones (Heartfelt, Casual, Funny, Formal, Inspirational, Playful)
 - 3 message lengths (Brief, Standard, Detailed)
 - 3 AI-generated message options per request
-- Free tier (1 lifetime) with Pro subscription (500/month)
+- Free tier (1 lifetime) with Pro subscription (unlimited, fair use policy)
 
 ## Tech Stack
 

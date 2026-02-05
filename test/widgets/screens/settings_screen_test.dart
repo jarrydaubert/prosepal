@@ -30,6 +30,20 @@ void main() {
     mockSubscription.reset();
   });
 
+  void testWidgetsWithPumps(
+    String description,
+    Future<void> Function(WidgetTester) body,
+  ) {
+    testWidgets(description, (tester) async {
+      try {
+        await body(tester);
+      } finally {
+        await tester.pump(const Duration(seconds: 2));
+        await tester.pump();
+      }
+    });
+  }
+
   Widget buildTestWidget({
     bool isPro = false,
     String? email,
@@ -101,14 +115,16 @@ void main() {
 
   group('SettingsScreen', () {
     group('Display', () {
-      testWidgets('shows app bar with title', (tester) async {
+      testWidgetsWithPumps('shows app bar with title', (tester) async {
         await tester.pumpWidget(buildTestWidget());
         await tester.pumpAndSettle();
 
         expect(find.text('Settings'), findsOneWidget);
       });
 
-      testWidgets('shows Account section with user info', (tester) async {
+      testWidgetsWithPumps('shows Account section with user info', (
+        tester,
+      ) async {
         await tester.pumpWidget(
           buildTestWidget(email: 'test@example.com', displayName: 'Test User'),
         );
@@ -119,7 +135,7 @@ void main() {
         expect(find.text('test@example.com'), findsOneWidget);
       });
 
-      testWidgets('shows user initial in avatar', (tester) async {
+      testWidgetsWithPumps('shows user initial in avatar', (tester) async {
         await tester.pumpWidget(
           buildTestWidget(email: 'jane@example.com', displayName: 'Jane Doe'),
         );
@@ -128,7 +144,9 @@ void main() {
         expect(find.text('J'), findsOneWidget);
       });
 
-      testWidgets('shows email initial when no display name', (tester) async {
+      testWidgetsWithPumps('shows email initial when no display name', (
+        tester,
+      ) async {
         await tester.pumpWidget(buildTestWidget(email: 'bob@example.com'));
         await tester.pumpAndSettle();
 
@@ -137,7 +155,7 @@ void main() {
     });
 
     group('Subscription Section', () {
-      testWidgets('shows Free Plan for non-pro users', (tester) async {
+      testWidgetsWithPumps('shows Free Plan for non-pro users', (tester) async {
         await tester.pumpWidget(buildTestWidget());
         await tester.pumpAndSettle();
 
@@ -145,54 +163,59 @@ void main() {
         expect(find.text('Upgrade'), findsOneWidget);
       });
 
-      testWidgets('shows Prosepal Pro for pro users', (tester) async {
+      testWidgetsWithPumps('shows Prosepal Pro for pro users', (tester) async {
         await tester.pumpWidget(buildTestWidget(isPro: true));
         await tester.pumpAndSettle();
 
         expect(find.text('Prosepal Pro'), findsOneWidget);
-        expect(find.text('500 messages/month'), findsOneWidget);
+        expect(find.text('Unlimited messages'), findsOneWidget);
         expect(find.text('Upgrade'), findsNothing);
       });
 
-      testWidgets('shows Manage Subscription for pro users', (tester) async {
+      testWidgetsWithPumps('shows Manage Subscription for pro users', (
+        tester,
+      ) async {
         await tester.pumpWidget(buildTestWidget(isPro: true));
         await tester.pumpAndSettle();
 
         expect(find.text('Manage Subscription'), findsOneWidget);
       });
 
-      testWidgets('hides Manage Subscription for free users', (tester) async {
+      testWidgetsWithPumps('hides Manage Subscription for free users', (
+        tester,
+      ) async {
         await tester.pumpWidget(buildTestWidget());
         await tester.pumpAndSettle();
 
         expect(find.text('Manage Subscription'), findsNothing);
       });
 
-      testWidgets('shows Restore Purchases option', (tester) async {
+      testWidgetsWithPumps('shows Restore Purchases option', (tester) async {
         await tester.pumpWidget(buildTestWidget());
         await tester.pumpAndSettle();
 
         expect(find.text('Restore Purchases'), findsOneWidget);
       });
 
-      testWidgets('Upgrade button shows paywall sheet for anonymous user', (
-        tester,
-      ) async {
-        await tester.pumpWidget(buildTestWidget());
-        await tester.pumpAndSettle();
+      testWidgetsWithPumps(
+        'Upgrade button shows paywall sheet for anonymous user',
+        (tester) async {
+          await tester.pumpWidget(buildTestWidget());
+          await tester.pumpAndSettle();
 
-        // Tap upgrade - should show paywall sheet (modal)
-        await tester.tap(find.text('Upgrade'));
-        await tester.pump();
+          // Tap upgrade - should show paywall sheet (modal)
+          await tester.tap(find.text('Upgrade'));
+          await tester.pump();
 
-        // Verify a modal bottom sheet was shown (BottomSheet widget)
-        expect(find.byType(BottomSheet), findsOneWidget);
-      });
+          // Verify a modal bottom sheet was shown (BottomSheet widget)
+          expect(find.byType(BottomSheet), findsOneWidget);
+        },
+      );
     });
 
     group('Security Section', () {
       // Biometrics only shown for signed-in users (prevents lockout)
-      testWidgets('shows biometrics when supported and signed in', (
+      testWidgetsWithPumps('shows biometrics when supported and signed in', (
         tester,
       ) async {
         await tester.pumpWidget(buildTestWidget(email: 'test@example.com'));
@@ -202,7 +225,9 @@ void main() {
         expect(find.text('Face ID'), findsOneWidget);
       });
 
-      testWidgets('hides biometrics for anonymous users', (tester) async {
+      testWidgetsWithPumps('hides biometrics for anonymous users', (
+        tester,
+      ) async {
         await tester.pumpWidget(buildTestWidget());
         await tester.pumpAndSettle();
 
@@ -211,7 +236,9 @@ void main() {
         expect(find.text('Face ID'), findsNothing);
       });
 
-      testWidgets('hides biometrics when not supported', (tester) async {
+      testWidgetsWithPumps('hides biometrics when not supported', (
+        tester,
+      ) async {
         await tester.pumpWidget(
           buildTestWidget(
             email: 'test@example.com',
@@ -224,14 +251,16 @@ void main() {
         expect(find.text('Face ID'), findsNothing);
       });
 
-      testWidgets('shows switch for biometrics when signed in', (tester) async {
+      testWidgetsWithPumps('shows switch for biometrics when signed in', (
+        tester,
+      ) async {
         await tester.pumpWidget(buildTestWidget(email: 'test@example.com'));
         await tester.pumpAndSettle();
 
         expect(find.byType(Switch), findsOneWidget);
       });
 
-      testWidgets('switch reflects enabled state', (tester) async {
+      testWidgetsWithPumps('switch reflects enabled state', (tester) async {
         await tester.pumpWidget(
           buildTestWidget(email: 'test@example.com', biometricsEnabled: true),
         );
@@ -241,7 +270,7 @@ void main() {
         expect(switchWidget.value, isTrue);
       });
 
-      testWidgets('switch reflects disabled state', (tester) async {
+      testWidgetsWithPumps('switch reflects disabled state', (tester) async {
         await tester.pumpWidget(buildTestWidget(email: 'test@example.com'));
         await tester.pumpAndSettle();
 
@@ -251,7 +280,7 @@ void main() {
     });
 
     group('Stats Section', () {
-      testWidgets('shows total messages generated', (tester) async {
+      testWidgetsWithPumps('shows total messages generated', (tester) async {
         await tester.pumpWidget(buildTestWidget(totalGenerated: 42));
         await tester.pumpAndSettle();
 
@@ -259,7 +288,7 @@ void main() {
         expect(find.text('42 messages generated'), findsOneWidget);
       });
 
-      testWidgets('shows 0 for new users', (tester) async {
+      testWidgetsWithPumps('shows 0 for new users', (tester) async {
         await tester.pumpWidget(buildTestWidget());
         await tester.pumpAndSettle();
 
@@ -268,7 +297,7 @@ void main() {
     });
 
     group('Support Section', () {
-      testWidgets('shows support options', (tester) async {
+      testWidgetsWithPumps('shows support options', (tester) async {
         await tester.pumpWidget(buildTestWidget());
         await tester.pumpAndSettle();
 
@@ -286,7 +315,9 @@ void main() {
         expect(find.text('Rate Prosepal'), findsOneWidget);
       });
 
-      testWidgets('Send Feedback navigates to feedback screen', (tester) async {
+      testWidgetsWithPumps('Send Feedback navigates to feedback screen', (
+        tester,
+      ) async {
         await tester.pumpWidget(buildTestWidget());
         await tester.pumpAndSettle();
 
@@ -305,7 +336,7 @@ void main() {
     });
 
     group('Legal Section', () {
-      testWidgets('shows legal options', (tester) async {
+      testWidgetsWithPumps('shows legal options', (tester) async {
         await tester.pumpWidget(buildTestWidget());
         await tester.pumpAndSettle();
 
@@ -321,7 +352,7 @@ void main() {
         expect(find.text('Privacy Policy'), findsOneWidget);
       });
 
-      testWidgets('Terms navigates to terms screen', (tester) async {
+      testWidgetsWithPumps('Terms navigates to terms screen', (tester) async {
         await tester.pumpWidget(buildTestWidget());
         await tester.pumpAndSettle();
 
@@ -338,7 +369,9 @@ void main() {
         expect(find.text('Terms'), findsOneWidget);
       });
 
-      testWidgets('Privacy navigates to privacy screen', (tester) async {
+      testWidgetsWithPumps('Privacy navigates to privacy screen', (
+        tester,
+      ) async {
         await tester.pumpWidget(buildTestWidget());
         await tester.pumpAndSettle();
 
@@ -357,7 +390,7 @@ void main() {
     });
 
     group('Account Actions', () {
-      testWidgets('shows account action options for signed-in user', (
+      testWidgetsWithPumps('shows account action options for signed-in user', (
         tester,
       ) async {
         // Account actions only show for signed-in users
@@ -376,7 +409,9 @@ void main() {
         expect(find.text('Delete Account'), findsOneWidget);
       });
 
-      testWidgets('hides account actions for anonymous user', (tester) async {
+      testWidgetsWithPumps('hides account actions for anonymous user', (
+        tester,
+      ) async {
         await tester.pumpWidget(buildTestWidget());
         await tester.pumpAndSettle();
 
@@ -386,7 +421,9 @@ void main() {
         expect(find.text('Delete Account'), findsNothing);
       });
 
-      testWidgets('Sign Out shows confirmation dialog', (tester) async {
+      testWidgetsWithPumps('Sign Out shows confirmation dialog', (
+        tester,
+      ) async {
         await tester.pumpWidget(buildTestWidget(email: 'test@example.com'));
         await tester.pumpAndSettle();
 
@@ -404,7 +441,7 @@ void main() {
         expect(find.text('Cancel'), findsOneWidget);
       });
 
-      testWidgets('Sign Out cancel dismisses dialog', (tester) async {
+      testWidgetsWithPumps('Sign Out cancel dismisses dialog', (tester) async {
         await tester.pumpWidget(buildTestWidget(email: 'test@example.com'));
         await tester.pumpAndSettle();
 
@@ -425,7 +462,9 @@ void main() {
         expect(find.text('Settings'), findsOneWidget);
       });
 
-      testWidgets('Delete Account shows confirmation dialog', (tester) async {
+      testWidgetsWithPumps('Delete Account shows confirmation dialog', (
+        tester,
+      ) async {
         await tester.pumpWidget(buildTestWidget(email: 'test@example.com'));
         await tester.pumpAndSettle();
 
@@ -442,7 +481,9 @@ void main() {
         expect(find.textContaining('permanently delete'), findsOneWidget);
       });
 
-      testWidgets('Delete Account cancel dismisses dialog', (tester) async {
+      testWidgetsWithPumps('Delete Account cancel dismisses dialog', (
+        tester,
+      ) async {
         await tester.pumpWidget(buildTestWidget(email: 'test@example.com'));
         await tester.pumpAndSettle();
 
@@ -464,7 +505,7 @@ void main() {
     });
 
     group('All Sections Scrollable', () {
-      testWidgets('can scroll to all section headers', (tester) async {
+      testWidgetsWithPumps('can scroll to all section headers', (tester) async {
         await tester.pumpWidget(buildTestWidget(email: 'test@example.com'));
         await tester.pumpAndSettle();
 

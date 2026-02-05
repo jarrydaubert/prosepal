@@ -89,9 +89,10 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
   /// Save form state (debounced to avoid excessive writes).
   void _saveFormState() {
     _saveDebounceTimer?.cancel();
-    _saveDebounceTimer = Timer(const Duration(milliseconds: 500), () {
-      _saveFormStateImmediate();
-    });
+    _saveDebounceTimer = Timer(
+      const Duration(milliseconds: 500),
+      _saveFormStateImmediate,
+    );
   }
 
   /// Save form state immediately (called on step change).
@@ -136,11 +137,11 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
     });
 
     // Save form state when key fields change (debounced to avoid excessive writes)
-    ref.listen(selectedRelationshipProvider, (_, __) => _saveFormState());
-    ref.listen(selectedToneProvider, (_, __) => _saveFormState());
-    ref.listen(selectedLengthProvider, (_, __) => _saveFormState());
-    ref.listen(recipientNameProvider, (_, __) => _saveFormState());
-    ref.listen(personalDetailsProvider, (_, __) => _saveFormState());
+    ref.listen(selectedRelationshipProvider, (_, _) => _saveFormState());
+    ref.listen(selectedToneProvider, (_, _) => _saveFormState());
+    ref.listen(selectedLengthProvider, (_, _) => _saveFormState());
+    ref.listen(recipientNameProvider, (_, _) => _saveFormState());
+    ref.listen(personalDetailsProvider, (_, _) => _saveFormState());
 
     if (occasion == null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -296,24 +297,31 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
       final canGenerate = remaining > 0;
 
       if (!canGenerate) {
-        final isLoggedIn = ref.read(authServiceProvider).isLoggedIn;
-
         return Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            Text(
+              "You've used your free message!",
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey[800],
+              ),
+            ),
+            const SizedBox(height: 12),
             AppButton(
-              label: 'Upgrade to Continue',
+              label: 'Continue with Pro',
               icon: Icons.star,
               style: AppButtonStyle.secondary,
               onPressed: () {
                 Log.info('Upgrade tapped', {'source': 'generate'});
                 // Always show paywall - it has inline auth
-                showPaywall(context, source: 'generate');
+                showPaywall(context, source: 'generate', force: true);
               },
             ),
             const SizedBox(height: 8),
             Text(
-              isLoggedIn ? 'Go Pro for more messages' : 'Sign in to go Pro',
+              'Unlimited messages for every occasion',
               style: TextStyle(fontSize: 13, color: Colors.grey[600]),
             ),
           ],
@@ -393,7 +401,7 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
             ref.read(isGeneratingProvider.notifier).state = false;
             ref.read(generationErrorProvider.notifier).state =
                 'This device has already used its free message. '
-                'Upgrade to Pro for 500 messages/month!';
+                'Upgrade to Pro for unlimited messages!';
             return;
           }
         } on Exception catch (e) {
@@ -409,6 +417,10 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
       }
 
       final useUkSpelling = ref.read(isUkSpellingProvider);
+      Log.event('generate_started', {
+        'occasion': occasion.name,
+        'has_personal_details': personalDetails.isNotEmpty,
+      });
       final result = await aiService.generateMessages(
         occasion: occasion,
         relationship: relationship,
@@ -418,6 +430,10 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
         personalDetails: personalDetails.isNotEmpty ? personalDetails : null,
         useUkSpelling: useUkSpelling,
       );
+      Log.event('generation_completed', {
+        'occasion': occasion.name,
+        'message_count': result.messages.length,
+      });
 
       // For anonymous users, record generation client-side
       if (!authService.isLoggedIn) {

@@ -127,7 +127,7 @@ class UsageService {
   SupabaseClient? get _supabase {
     try {
       return Supabase.instance.client;
-    } on Exception catch (_) {
+    } on Object {
       return null;
     }
   }
@@ -313,7 +313,7 @@ class UsageService {
           remaining: 0,
           errorMessage:
               'This device has already used its free message. '
-              'Upgrade to Pro for 500 messages/month!',
+              'Upgrade to Pro for unlimited messages!',
         );
       }
     }
@@ -526,9 +526,7 @@ class UsageService {
     _retryTimer?.cancel();
 
     // Schedule retry after base delay
-    _retryTimer = Timer(_baseRetryDelay, () {
-      processPendingSyncs();
-    });
+    _retryTimer = Timer(_baseRetryDelay, processPendingSyncs);
   }
 
   /// Process all pending syncs with retry logic.

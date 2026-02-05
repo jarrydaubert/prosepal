@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-/// Prosepal "Spotlight Cinematic" Color System
+/// Prosepal Material 3 Color System
 ///
-/// Dark theme with gold/amber accents - matches web landing page.
+/// Purple primary with gold reserved for Pro accents.
 ///
 /// WCAG Contrast Ratios:
 /// - textPrimary (#FFF) on bgDeep (#050505): 21:1 ✓
@@ -37,17 +37,23 @@ class AppColors {
   static const Color background = Color(0xFF050505);
 
   // ===========================================================================
-  // BRAND COLORS - Gold/Amber
+  // BRAND COLORS - Purple
   // ===========================================================================
 
-  /// Primary brand color - Spotlight Gold
-  static const Color primary = Color(0xFFFBBF24);
+  /// Primary brand color - Spotlight Purple
+  static const Color primary = Color(0xFF7C5DCA);
 
-  /// Lighter gold for highlights
-  static const Color primaryLight = Color(0xFFFFEDD5);
+  /// Lighter purple for highlights
+  static const Color primaryLight = Color(0xFFEDE7FF);
 
-  /// Darker amber for pressed states
-  static const Color primaryDark = Color(0xFFF59E0B);
+  /// Darker purple for pressed states
+  static const Color primaryDark = Color(0xFF5B3FAE);
+
+  /// Pro gold for badges and payment CTAs
+  static const Color proGold = Color(0xFFFBBF24);
+
+  /// Darker gold for pressed states
+  static const Color proGoldDark = Color(0xFFC4960A);
 
   /// Legacy coral (kept for transition)
   static const Color accentRose = Color(0xFFD4736B);
@@ -65,8 +71,11 @@ class AppColors {
   /// Dim/hint text - Dark gray
   static const Color textHint = Color(0xFF555555);
 
-  /// Text on primary (gold) backgrounds
-  static const Color textOnPrimary = Color(0xFF050505);
+  /// Text on primary (purple) backgrounds
+  static const Color textOnPrimary = Color(0xFFFFFFFF);
+
+  /// Text on pro gold backgrounds
+  static const Color textOnPro = Color(0xFF1C1B1F);
 
   /// Text on dark backgrounds (same as primary for dark theme)
   static const Color textOnDark = Color(0xFFFFFFFF);
@@ -104,7 +113,7 @@ class AppColors {
   // GRADIENTS
   // ===========================================================================
 
-  /// Primary brand gradient (gold)
+  /// Primary brand gradient (purple)
   static const LinearGradient primaryGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
@@ -116,8 +125,8 @@ class AppColors {
     center: Alignment.topCenter,
     radius: 1.5,
     colors: [
-      Color(0x33FBBF24), // Gold 20%
-      Color(0x00FBBF24), // Gold 0%
+      Color(0x337C5DCA), // Purple 20%
+      Color(0x007C5DCA), // Purple 0%
     ],
   );
 

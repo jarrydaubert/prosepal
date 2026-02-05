@@ -57,7 +57,7 @@ class NotificationService {
     );
 
     await _notifications.initialize(
-      settings,
+      settings: settings,
       onDidReceiveNotificationResponse: _onNotificationTap,
     );
 
@@ -138,11 +138,11 @@ class NotificationService {
         : '${occasion.occasion.label} is in ${occasion.reminderDaysBefore} days';
 
     await _notifications.zonedSchedule(
-      occasion.id.hashCode,
-      title,
-      body,
-      tzScheduledDate,
-      NotificationDetails(
+      id: occasion.id.hashCode,
+      title: title,
+      body: body,
+      scheduledDate: tzScheduledDate,
+      notificationDetails: const NotificationDetails(
         android: AndroidNotificationDetails(
           _channelId,
           _channelName,
@@ -151,17 +151,14 @@ class NotificationService {
           priority: Priority.high,
           icon: '@mipmap/ic_launcher',
         ),
-        iOS: const DarwinNotificationDetails(
+        iOS: DarwinNotificationDetails(
           presentAlert: true,
           presentBadge: true,
           presentSound: true,
         ),
       ),
       androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-      uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
       payload: 'occasion:${occasion.id}',
-      matchDateTimeComponents: null,
     );
 
     Log.info('Reminder scheduled', {
@@ -173,7 +170,7 @@ class NotificationService {
   /// Cancel a scheduled reminder
   Future<void> cancelReminder(String occasionId) async {
     if (!_initialized) await initialize();
-    await _notifications.cancel(occasionId.hashCode);
+    await _notifications.cancel(id: occasionId.hashCode);
     Log.info('Reminder cancelled', {'id': occasionId});
   }
 
@@ -216,10 +213,10 @@ class NotificationService {
     if (!_initialized) await initialize();
 
     await _notifications.show(
-      0,
-      '🎂 Test Notification',
-      'This is a test reminder from Prosepal',
-      NotificationDetails(
+      id: 0,
+      title: '🎂 Test Notification',
+      body: 'This is a test reminder from Prosepal',
+      notificationDetails: const NotificationDetails(
         android: AndroidNotificationDetails(
           _channelId,
           _channelName,
@@ -227,7 +224,7 @@ class NotificationService {
           importance: Importance.high,
           priority: Priority.high,
         ),
-        iOS: const DarwinNotificationDetails(
+        iOS: DarwinNotificationDetails(
           presentAlert: true,
           presentBadge: true,
           presentSound: true,

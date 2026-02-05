@@ -809,8 +809,9 @@ User createFakeUser({
     userMetadata:
         userMetadata ??
         {
-          if (displayName != null) 'full_name': displayName,
-          if (displayName != null) 'name': displayName,
+          ...?(displayName == null
+              ? null
+              : {'full_name': displayName, 'name': displayName}),
         },
     createdAt: now,
     emailConfirmedAt: emailConfirmed ? now : null,

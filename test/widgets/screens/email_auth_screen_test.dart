@@ -231,7 +231,11 @@ void main() {
       await tester.pumpAndSettle();
 
       // Toggle back to magic link mode
-      await tester.tap(find.text('Use magic link instead'));
+      final magicLinkToggle = find.text('Use magic link instead');
+      await tester.ensureVisible(magicLinkToggle);
+      await tester.pumpAndSettle();
+
+      await tester.tap(magicLinkToggle);
       await tester.pumpAndSettle();
 
       // Should be back in magic link mode

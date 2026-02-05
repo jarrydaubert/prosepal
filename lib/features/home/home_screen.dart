@@ -140,7 +140,7 @@ class HomeScreen extends ConsumerWidget {
                             isPro: false,
                             onUpgrade: () {
                               Log.info('Upgrade tapped', {'source': 'home'});
-                              showPaywall(context, source: 'home');
+                              showPaywall(context, source: 'home', force: true);
                             },
                           ).animate().fadeIn(delay: 200.ms),
                       ],
@@ -244,6 +244,11 @@ class HomeScreen extends ConsumerWidget {
                   onHintDismissed: () => _dismissFirstActionHint(ref),
                   onOccasionSelected: (occasion) {
                     Log.info('Wizard started', {'occasion': occasion.name});
+                    Log.event('occasion_tapped', {'occasion': occasion.name});
+                    // Dismiss first action hint on occasion tap (not just close)
+                    if (showFirstActionHint) {
+                      _dismissFirstActionHint(ref);
+                    }
                     ref.read(selectedOccasionProvider.notifier).state =
                         occasion;
                     // Clear search when selecting
@@ -321,16 +326,16 @@ class _ProPill extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
         decoration: BoxDecoration(
-          color: Colors.amber,
+          color: AppColors.proGold,
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.amber.shade700, width: 2),
+          border: Border.all(color: AppColors.proGoldDark, width: 2),
         ),
         child: const Text(
           'PRO',
           style: TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: AppColors.textOnPro,
           ),
         ),
       ),

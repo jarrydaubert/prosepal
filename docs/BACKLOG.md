@@ -29,6 +29,7 @@
 
 | Issue | Location | Fix |
 |-------|----------|-----|
+| OG image uses logo only | `prosepal-web/public/index.html:15,25` | Create proper 1200x630 OG preview image showing app mockup + "The right words for any card" headline + App Store badge. Update `og:image` and `twitter:image` meta tags to new path. |
 | DataExportService untested | `data_export_service.dart` | GDPR compliance - add JSON structure validity tests |
 | Paywall sync button sizing consistency | `paywall_sheet.dart:964-1008` | Google/Email buttons use 14pt font, Apple official widget uses ~17pt. Increase custom `_AuthButton` compact font from 14 to 16 to match Apple's visual weight |
 | Password reset deep link UX | `router.dart:121` | Create dedicated `/auth/reset-password` screen that extracts token from deep link instead of redirecting to generic `/auth` |
@@ -57,6 +58,11 @@
 | No health monitoring | Operations | No uptime monitoring for Supabase/Gemini |
 | Magic link custom scheme fallback | `supabase_auth_provider.dart:332` | Deprecate, use HTTPS universal links only |
 | RevenueCat in dart-define | Build system | Visible in logs - use --dart-define-from-file |
+| Email typo detection | `email_auth_screen.dart` | Detect common typos (gmial.com, gamil.com) and show suggestion modal before submit |
+| Password strength indicator | `email_auth_screen.dart` | Show visual strength meter (weak/medium/strong) as user types password |
+| Explain forced password mode | `email_auth_screen.dart:54` | When autoPurchase/showPaywallAfterAuth forces password mode, show info text explaining why |
+| Password mode benefits section | `email_auth_screen.dart:693-709` | Add benefits for password mode matching magic link (e.g., "Sign in anytime", "Works offline") |
+| Auth button text A/B test | `auth_screen.dart:435-442` | Test "Sign in with Email" vs "Continue with Email" for clarity |
 
 ---
 

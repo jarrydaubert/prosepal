@@ -32,7 +32,7 @@ dependencies:
   firebase_crashlytics: ^5.0.6
 
   # UI
-  google_fonts: ^7.0.0
+  google_fonts: ^8.0.1
   flutter_animate: ^4.5.2
   gap: ^3.0.1
 
@@ -51,7 +51,7 @@ dependencies:
   path_provider: ^2.1.5
   device_info_plus: ^12.3.0
   in_app_review: ^2.0.11
-  flutter_local_notifications: ^18.0.1
+  flutter_local_notifications: ^20.0.0
   add_2_calendar: ^3.0.1
   timezone: ^0.10.0
   freezed_annotation: ^3.1.0

@@ -81,10 +81,24 @@ void main() {
     );
   }
 
+  Future<void> pumpUntilFound(
+    WidgetTester tester,
+    Finder finder, {
+    Duration step = const Duration(milliseconds: 100),
+    int maxPumps = 20,
+  }) async {
+    for (var i = 0; i < maxPumps; i++) {
+      await tester.pump(step);
+      if (finder.evaluate().isNotEmpty) {
+        return;
+      }
+    }
+  }
+
   group('HomeScreen Rendering', () {
     testWidgets('should display app title and tagline', (tester) async {
       await tester.pumpWidget(createTestableHomeScreen());
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 300));
 
       expect(find.text('Prosepal'), findsOneWidget);
       expect(find.text('The right words, right now'), findsOneWidget);
@@ -92,7 +106,7 @@ void main() {
 
     testWidgets('should display settings button', (tester) async {
       await tester.pumpWidget(createTestableHomeScreen());
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 300));
 
       expect(find.byIcon(Icons.settings_outlined), findsOneWidget);
     });
@@ -101,14 +115,14 @@ void main() {
       tester,
     ) async {
       await tester.pumpWidget(createTestableHomeScreen());
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 300));
 
       expect(find.text("What's the occasion?"), findsOneWidget);
     });
 
     testWidgets('should display all occasions', (tester) async {
       await tester.pumpWidget(createTestableHomeScreen());
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 300));
 
       // Check each occasion is displayed (13 total: 10 original + 3 new)
       // Need to scroll to find items that may be off-screen
@@ -119,7 +133,7 @@ void main() {
           100,
           scrollable: find.byType(Scrollable).first,
         );
-        await tester.pumpAndSettle();
+        await tester.pump(const Duration(milliseconds: 300));
         expect(
           finder,
           findsOneWidget,
@@ -130,7 +144,7 @@ void main() {
 
     testWidgets('should display occasion emojis', (tester) async {
       await tester.pumpWidget(createTestableHomeScreen());
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 300));
 
       // Check a few key emojis are displayed
       expect(find.text('🎂'), findsOneWidget); // Birthday
@@ -144,33 +158,33 @@ void main() {
       tester,
     ) async {
       await tester.pumpWidget(createTestableHomeScreen());
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 300));
 
       expect(find.text('3'), findsOneWidget);
       expect(find.text('Free messages remaining'), findsOneWidget);
-      expect(find.text('Tap to unlock 500/month'), findsOneWidget);
+      expect(find.text('Tap to unlock unlimited'), findsOneWidget);
     });
 
     testWidgets('exhausted user sees trial ended message', (tester) async {
       await tester.pumpWidget(createTestableHomeScreen(remaining: 0));
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 300));
 
       expect(find.text('0'), findsOneWidget);
       expect(find.text('Free trial ended'), findsOneWidget);
-      expect(find.text('Tap to unlock 500/month'), findsOneWidget);
+      expect(find.text('Tap to unlock unlimited'), findsOneWidget);
     });
 
     testWidgets('pro user sees PRO badge instead of usage card', (
       tester,
     ) async {
       await tester.pumpWidget(createTestableHomeScreen(isPro: true));
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 300));
 
       // PRO badge shown as compact amber pill next to title
       expect(find.text('PRO'), findsOneWidget);
       // Should NOT show free user elements
       expect(find.text('Free messages remaining'), findsNothing);
-      expect(find.text('Tap to unlock 500/month'), findsNothing);
+      expect(find.text('Tap to unlock unlimited'), findsNothing);
     });
 
     // NOTE: "returning user -> auth" flow removed - paywall now handles all
@@ -183,10 +197,10 @@ void main() {
       tester,
     ) async {
       await tester.pumpWidget(createTestableHomeScreen());
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 300));
 
       await tester.tap(find.byIcon(Icons.settings_outlined));
-      await tester.pumpAndSettle();
+      await pumpUntilFound(tester, find.text('Settings Screen'));
 
       expect(find.text('Settings Screen'), findsOneWidget);
     });
@@ -195,11 +209,11 @@ void main() {
       tester,
     ) async {
       await tester.pumpWidget(createTestableHomeScreen());
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 300));
 
       // Tap on Birthday occasion
       await tester.tap(find.text('Birthday'));
-      await tester.pumpAndSettle();
+      await pumpUntilFound(tester, find.text('Generate Screen'));
 
       expect(find.text('Generate Screen'), findsOneWidget);
     });
@@ -210,7 +224,7 @@ void main() {
       for (final occasion in Occasion.values) {
         // Reset for each occasion
         await tester.pumpWidget(createTestableHomeScreen());
-        await tester.pumpAndSettle();
+        await tester.pump(const Duration(milliseconds: 300));
 
         // Find and tap the occasion (scroll if needed)
         final occasionFinder = find.text(occasion.label);
@@ -221,10 +235,10 @@ void main() {
           100,
           scrollable: find.byType(Scrollable).first,
         );
-        await tester.pumpAndSettle();
+        await tester.pump();
 
         await tester.tap(occasionFinder);
-        await tester.pumpAndSettle();
+        await pumpUntilFound(tester, find.text('Generate Screen'));
 
         expect(
           find.text('Generate Screen'),
@@ -238,7 +252,7 @@ void main() {
   group('HomeScreen Accessibility', () {
     testWidgets('should have accessible settings button', (tester) async {
       await tester.pumpWidget(createTestableHomeScreen());
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 300));
 
       final settingsButton = find.byIcon(Icons.settings_outlined);
       expect(settingsButton, findsOneWidget);
@@ -254,7 +268,7 @@ void main() {
 
     testWidgets('should have scrollable content', (tester) async {
       await tester.pumpWidget(createTestableHomeScreen());
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 300));
 
       // Verify CustomScrollView exists
       expect(find.byType(CustomScrollView), findsOneWidget);

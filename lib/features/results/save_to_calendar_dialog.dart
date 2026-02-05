@@ -235,10 +235,7 @@ class _DatePickerTile extends StatelessWidget {
           lastDate: DateTime.now().add(const Duration(days: 365 * 2)),
           builder: (context, child) => Theme(
             data: Theme.of(context).copyWith(
-              colorScheme: const ColorScheme.light(
-                primary: AppColors.primary,
-                onPrimary: Colors.white,
-              ),
+              colorScheme: const ColorScheme.light(primary: AppColors.primary),
             ),
             child: child!,
           ),

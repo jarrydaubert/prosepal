@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -6,26 +7,56 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
 import 'package:go_router/go_router.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
+import '../../core/config/preference_keys.dart';
 import '../../core/errors/auth_errors.dart';
 import '../../core/providers/providers.dart';
 import '../../core/services/log_service.dart';
 import '../../shared/theme/app_colors.dart';
 import '../../shared/theme/app_spacing.dart';
 
+const _paywallCooldown = Duration(hours: 24);
+
 /// Shows the paywall as a modal bottom sheet with inline auth.
 ///
 /// [source] identifies where the paywall was triggered from for analytics.
 /// Returns `true` if user successfully subscribed, `false` otherwise.
-Future<bool> showPaywall(BuildContext context, {String? source}) async =>
-    await showModalBottomSheet<bool>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => PaywallSheet(source: source),
-    ) ??
-    false;
+Future<bool> showPaywall(
+  BuildContext context, {
+  String? source,
+  bool force = false,
+}) async {
+  final prefs = ProviderScope.containerOf(
+    context,
+  ).read(sharedPreferencesProvider);
+
+  if (!force) {
+    final lastDismissed = prefs.getString(PreferenceKeys.paywallLastDismissed);
+    final lastDismissedAt = lastDismissed == null
+        ? null
+        : DateTime.tryParse(lastDismissed);
+    if (lastDismissedAt != null) {
+      final elapsed = DateTime.now().difference(lastDismissedAt);
+      if (elapsed < _paywallCooldown) {
+        Log.info('Paywall suppressed due to cooldown', {
+          'source': source,
+          'elapsedMinutes': elapsed.inMinutes,
+        });
+        return false;
+      }
+    }
+  }
+
+  return await showModalBottomSheet<bool>(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (context) => PaywallSheet(source: source),
+      ) ??
+      false;
+}
 
 /// Bottom sheet paywall with inline auth.
 ///
@@ -51,18 +82,30 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
   int _selectedPackageIndex = 0;
   String? _error;
   late final DateTime _openedAt;
+  late final SharedPreferences _prefs;
 
   @override
   void dispose() {
     // Analytics: enriched dismiss tracking (skip if navigating to email auth)
     if (!_purchaseCompleted && !_navigatedToEmailAuth) {
+      final viewDurationSec = DateTime.now().difference(_openedAt).inSeconds;
+      unawaited(
+        _prefs.setString(
+          PreferenceKeys.paywallLastDismissed,
+          DateTime.now().toIso8601String(),
+        ),
+      );
       Log.info('Paywall dismissed', {
         'reason': 'no_purchase',
         'source': widget.source,
-        'viewDurationSec': DateTime.now().difference(_openedAt).inSeconds,
+        'viewDurationSec': viewDurationSec,
         'hadAuthAttempt': _isAuthenticating,
         'selectedPackage': _selectedPackageIndex,
         'hadError': _error != null,
+      });
+      Log.event('paywall_dismissed', {
+        'source': widget.source ?? 'unknown',
+        'view_duration_sec': viewDurationSec,
       });
     }
     super.dispose();
@@ -72,12 +115,17 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
   void initState() {
     super.initState();
     _openedAt = DateTime.now();
+    _prefs = ref.read(sharedPreferencesProvider);
     _loadOfferings();
     // Analytics: track paywall impression with source
     final isLoggedIn = ref.read(authServiceProvider).isLoggedIn;
     Log.info('Paywall shown', {
       'source': widget.source,
       'isLoggedIn': isLoggedIn,
+    });
+    Log.event('paywall_shown', {
+      'source': widget.source ?? 'unknown',
+      'is_logged_in': isLoggedIn,
     });
   }
 
@@ -566,19 +614,19 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
           gradient: const LinearGradient(
-            colors: [AppColors.primary, Color(0xFFFF8A80)],
+            colors: [AppColors.proGold, AppColors.proGoldDark],
           ),
           borderRadius: BorderRadius.circular(20),
         ),
         child: const Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.star, color: Colors.white, size: 20),
+            Icon(Icons.star, color: AppColors.textOnPro, size: 20),
             Gap(6),
             Text(
               'Prosepal Pro',
               style: TextStyle(
-                color: Colors.white,
+                color: AppColors.textOnPro,
                 fontWeight: FontWeight.bold,
                 fontSize: 16,
               ),
@@ -588,24 +636,27 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
       ),
       const Gap(16),
       const Text(
-        'Never lost for words',
+        'You nailed that message',
         style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
       ),
       const Gap(4),
       Text(
         _contextSubtitle,
         style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+        textAlign: TextAlign.center,
       ),
     ],
   );
 
   /// Context-aware subtitle based on where paywall was triggered
   String get _contextSubtitle => switch (widget.source) {
-    'generate' => "You've used your free message. Keep creating!",
-    'home_limit' => 'Unlock unlimited heartfelt messages',
-    'settings' => 'Upgrade your Prosepal experience',
+    'generate' => "You've used your free message—keep the inspiration flowing",
+    'home_limit' => 'Unlock unlimited messages for every occasion',
+    'first_message' =>
+      'Unlock unlimited messages for birthdays, thank yous, and more',
+    'settings' => 'Get unlimited access to every occasion',
     'onboarding' => 'Get unlimited access to every occasion',
-    _ => 'Heartfelt messages, whenever you need them',
+    _ => 'Unlock unlimited messages for every occasion',
   };
 
   Widget _buildBenefits() {
@@ -920,13 +971,13 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
               ? null
               : () => _purchasePackage(selectedPackage),
           style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.primary,
-            foregroundColor: Colors.white,
+            backgroundColor: AppColors.proGold,
+            foregroundColor: AppColors.textOnPro,
             padding: const EdgeInsets.symmetric(vertical: 16),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),
-            disabledBackgroundColor: AppColors.primary.withValues(alpha: 0.6),
+            disabledBackgroundColor: AppColors.proGold.withValues(alpha: 0.6),
           ),
           child: _isPurchasing
               ? const SizedBox(
@@ -934,11 +985,11 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
                   width: 20,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: Colors.white,
+                    color: AppColors.textOnPro,
                   ),
                 )
               : const Text(
-                  'Unlock 500 Messages',
+                  'Continue Creating',
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                 ),
         ),
@@ -966,6 +1017,22 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
                     'Restore Purchases',
                     style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                   ),
+          ),
+        ),
+        const Gap(4),
+        // Maybe Later - explicit dismiss for better analytics
+        Center(
+          child: TextButton(
+            onPressed: () {
+              Log.info('Paywall dismissed via Maybe Later', {
+                'source': widget.source,
+              });
+              Navigator.of(context).pop(false);
+            },
+            child: Text(
+              'Maybe Later',
+              style: TextStyle(fontSize: 13, color: Colors.grey[500]),
+            ),
           ),
         ),
       ],
