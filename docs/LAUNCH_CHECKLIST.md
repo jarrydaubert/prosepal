@@ -1,6 +1,6 @@
 # Launch Checklist
 
-> Last verified: 2026-01-19
+> Last verified: 2026-02-11
 
 ---
 
@@ -155,11 +155,12 @@ open ios/Runner.xcworkspace
 
 ## Phase 2: Store Submission
 
-### iOS ⏳ IN REVIEW (Build 29)
+### iOS ✅ LIVE (Build 31)
 
 **Build History:**
 - Build 27: ❌ Rejected 2026-01-14 (missing 5.1.1/3.1.2/2.3.2 fixes)
 - Build 29: ✅ Submitted 2026-01-15 (all fixes applied)
+- Build 31: ✅ Live on App Store 2026-01-16
 
 **Build 29 Includes:**
 - 5.1.1 fix: Paywall restructure (purchase without sign-in)

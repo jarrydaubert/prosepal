@@ -7,6 +7,8 @@ import 'package:go_router/go_router.dart';
 import '../../core/models/models.dart';
 import '../../core/providers/providers.dart';
 import '../../core/services/ai_service.dart';
+import '../../core/services/device_fingerprint_service.dart'
+    show DeviceCheckReason;
 import '../../core/services/log_service.dart';
 import '../../core/services/usage_service.dart' show UsageCheckException;
 import '../../shared/components/app_button.dart';
@@ -398,10 +400,13 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
           final deviceCheck = await usageService
               .checkDeviceFreeTierServerSide();
           if (!deviceCheck.allowed) {
+            final errorMessage =
+                deviceCheck.reason == DeviceCheckReason.rateLimited
+                ? 'Too many attempts. Please wait a moment and try again.'
+                : 'This device has already used its free message. '
+                      'Upgrade to Pro for unlimited messages!';
             ref.read(isGeneratingProvider.notifier).state = false;
-            ref.read(generationErrorProvider.notifier).state =
-                'This device has already used its free message. '
-                'Upgrade to Pro for unlimited messages!';
+            ref.read(generationErrorProvider.notifier).state = errorMessage;
             return;
           }
         } on Exception catch (e) {

@@ -15,6 +15,14 @@
 
 ---
 
+## P1 - Audit Test Coverage Gaps
+
+| ID | Gap | Location | Action |
+|----|-----|----------|--------|
+| `AUDIT-10` | No end-to-end tests for auth race + stale entitlement edge cases | `integration_test/` | Add E2E coverage for sign-in routing, restore flow ordering, and stale local entitlement vs server truth. |
+
+---
+
 ## Recurring Maintenance (Calendar Reminders)
 
 | Item | Frequency | Next Due | Action |
@@ -46,7 +54,6 @@
 | Remove OAuth pre-warm | `main.dart` | Warm on auth screen instead of startup (~100-200ms saved) |
 | Swift Package Manager | `ios/` | Enable SPM for faster iOS builds (Flutter 3.38+ feature) |
 
-| Auth navigation race conditions | `app.dart` | Use GoRouter `refreshListenable` + global redirect |
 | Missing CAPTCHA | `email_auth_screen.dart` | Add Turnstile/hCaptcha + Supabase config |
 | Dependency update automation | `.github/` | Enable Dependabot for Flutter/Dart - 33 packages currently outdated |
 | Pre-release key scan | `LAUNCH_CHECKLIST.md` | Add step to scan bundle/APK for leaked keys before each release |

@@ -35,7 +35,7 @@
 ///   coverage/
 ///     occasions_test.dart        - All 40 occasions load
 ///     relationships_test.dart    - All 14 relationships work
-///     tones_test.dart            - All 6 tones work
+///     tones_test.dart            - All 9 tones work
 library;
 
 // Coverage tests (all options work)
@@ -114,6 +114,6 @@ void main() {
   // All 14 relationships can be selected
   relationships.main();
 
-  // All 6 tones can be selected
+  // All 9 tones can be selected
   tones.main();
 }

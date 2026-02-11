@@ -309,9 +309,6 @@ final upcomingOccasionsProvider = FutureProvider<List<SavedOccasion>>((ref) {
 // RevenueCat CustomerInfo (Reactive via StateNotifier + Listener)
 // ============================================================
 
-/// Key for caching pro status in SharedPreferences
-const _proStatusCacheKey = 'cached_pro_status';
-
 /// Notifier that holds the latest CustomerInfo and listens for updates
 class CustomerInfoNotifier extends StateNotifier<CustomerInfo?> {
   CustomerInfoNotifier(this._subscriptionService, this._prefs) : super(null) {
@@ -344,8 +341,16 @@ class CustomerInfoNotifier extends StateNotifier<CustomerInfo?> {
     });
     state = info;
 
-    // Cache pro status for offline fallback
-    _prefs.setBool(_proStatusCacheKey, hasPro);
+    // Cache pro status for offline fallback, scoped to the current user.
+    _prefs.setBool(PreferenceKeys.proStatusCache, hasPro);
+    try {
+      final userId = Supabase.instance.client.auth.currentUser?.id;
+      if (userId != null) {
+        _prefs.setString(PreferenceKeys.proStatusCacheUserId, userId);
+      }
+    } on Exception {
+      // Supabase may be unavailable in some test contexts.
+    }
   }
 
   @override
@@ -370,9 +375,25 @@ final isProProvider = Provider<bool>((ref) {
   if (customerInfo != null) {
     return customerInfo.entitlements.active.containsKey('pro');
   }
-  // Fallback to cached value when offline/loading
+
+  // Fallback to cached value when offline/loading.
+  // Cache is only valid for the currently authenticated user.
   final prefs = ref.watch(sharedPreferencesProvider);
-  return prefs.getBool(_proStatusCacheKey) ?? false;
+  final cachedPro = prefs.getBool(PreferenceKeys.proStatusCache) ?? false;
+  if (!cachedPro) return false;
+
+  final cachedUserId = prefs.getString(PreferenceKeys.proStatusCacheUserId);
+  String? currentUserId;
+  try {
+    currentUserId = Supabase.instance.client.auth.currentUser?.id;
+  } on Exception {
+    currentUserId = null;
+  }
+
+  if (currentUserId == null || cachedUserId == null) return false;
+  if (currentUserId != cachedUserId) return false;
+
+  return true;
 });
 
 /// Async manual check with error handling

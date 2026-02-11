@@ -74,15 +74,15 @@ class PendingSync {
 /// ## Flow
 /// 1. User signs in -> syncFromServer() fetches their usage
 /// 2. User generates -> checkAndIncrementServerSide() validates + increments
-/// 3. Rate limit checked first -> Device fingerprint checked -> Usage incremented
+/// 3. Rate limit checked first -> Server RPC validates + increments
 /// 4. Local cache updated from RPC response
 /// 5. User reinstalls -> signs in -> gets their existing usage from server
 ///
 /// ## Security
 /// Authenticated users MUST use [checkAndIncrementServerSide] which:
 /// 1. Checks rate limits (prevents abuse)
-/// 2. Checks device fingerprint (prevents reinstall abuse)
-/// 3. Calls `check_and_increment_usage` Supabase RPC (prevents client tampering)
+/// 2. Calls `check_and_increment_usage` Supabase RPC (prevents client tampering)
+/// 3. Uses server-returned entitlement status for enforcement decisions
 class UsageService {
   UsageService(this._prefs, this._deviceFingerprint, this._rateLimit);
 
@@ -265,8 +265,8 @@ class UsageService {
   ///
   /// This is the PRIMARY method for usage validation. It performs:
   /// 1. Rate limit check (prevents API abuse)
-  /// 2. Device fingerprint check (for free tier - prevents reinstall abuse)
-  /// 3. User-level usage check via Supabase RPC (with row-level locking)
+  /// 2. User-level usage check via Supabase RPC (with row-level locking)
+  ///    Pro/free status is determined server-side from entitlements.
   /// 4. Atomic increment if allowed
   ///
   /// Returns [UsageCheckResult] with:
@@ -300,24 +300,6 @@ class UsageService {
       );
     }
 
-    // 2. For free tier users, check device fingerprint
-    // This prevents abuse via account switching or reinstalls
-    if (!isPro) {
-      final deviceCheck = await _deviceFingerprint.canUseFreeTier();
-      if (!deviceCheck.allowed) {
-        Log.info('Free tier blocked by device fingerprint', {
-          'reason': deviceCheck.reason.name,
-        });
-        return const UsageCheckResult(
-          allowed: false,
-          remaining: 0,
-          errorMessage:
-              'This device has already used its free message. '
-              'Upgrade to Pro for unlimited messages!',
-        );
-      }
-    }
-
     final monthKey = _monthString();
 
     try {
@@ -337,16 +319,18 @@ class UsageService {
       final totalCount = result['total_count'] as int? ?? 0;
       final monthlyCount = result['monthly_count'] as int? ?? 0;
       final remaining = result['remaining'] as int? ?? 0;
+      final serverIsPro = result['is_pro'] as bool? ?? isPro;
       final limit =
           result['limit'] as int? ??
-          (isPro ? proMonthlyLimit : freeLifetimeLimit);
+          (serverIsPro ? proMonthlyLimit : freeLifetimeLimit);
 
       Log.info('Server-side usage check', {
         'allowed': allowed,
         'totalCount': totalCount,
         'monthlyCount': monthlyCount,
         'remaining': remaining,
-        'isPro': isPro,
+        'isProClient': isPro,
+        'isProServer': serverIsPro,
       });
 
       // Update local cache to match server (for UI display)
@@ -355,12 +339,12 @@ class UsageService {
       await _prefs.setString(_keyMonthlyDate, monthKey);
 
       // Mark device as having used free tier (both local + server)
-      if (allowed && !isPro) {
+      if (allowed && !serverIsPro) {
         await markDeviceUsedFreeTier();
       }
 
       if (!allowed) {
-        final message = isPro
+        final message = serverIsPro
             ? "You've reached your monthly limit of $limit messages"
             : "You've used your free message. Upgrade to Pro for more!";
         return UsageCheckResult(

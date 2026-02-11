@@ -180,7 +180,23 @@ class _ProsepalAppState extends ConsumerState<ProsepalApp>
 
       if (event == AuthChangeEvent.signedIn && session != null) {
         final prefs = ref.read(sharedPreferencesProvider);
-        if (prefs.getBool(PreferenceKeys.pendingMagicLinkAuth) ?? false) {
+
+        // Clear stale entitlement cache when account changes.
+        final cachedProUserId = prefs.getString(
+          PreferenceKeys.proStatusCacheUserId,
+        );
+        if (cachedProUserId != null && cachedProUserId != session.user.id) {
+          await prefs.remove(PreferenceKeys.proStatusCache);
+          await prefs.remove(PreferenceKeys.proStatusCacheUserId);
+          ref.invalidate(customerInfoProvider);
+          Log.info(
+            'Auth listener: Cleared stale Pro cache after account switch',
+          );
+        }
+
+        final wasPendingMagicLink =
+            prefs.getBool(PreferenceKeys.pendingMagicLinkAuth) ?? false;
+        if (wasPendingMagicLink) {
           await prefs.setBool(PreferenceKeys.pendingMagicLinkAuth, false);
           Log.event('auth_completed', {'method': 'magic_link'});
         }
@@ -206,10 +222,11 @@ class _ProsepalAppState extends ConsumerState<ProsepalApp>
           Log.warning('Auth listener: Usage sync failed', {'error': '$e'});
         }
 
-        // Navigate after sign-in (magic links only)
+        // Navigate after sign-in only for pending magic link flows.
+        // OAuth/email flows perform their own post-auth routing and paywall logic.
         final currentPath =
             _router.routerDelegate.currentConfiguration.fullPath;
-        if (currentPath.startsWith('/auth')) {
+        if (wasPendingMagicLink && currentPath.startsWith('/auth')) {
           Log.info(
             'Auth listener: Magic link sign-in, navigating to /home (from $currentPath)',
           );
@@ -217,6 +234,12 @@ class _ProsepalAppState extends ConsumerState<ProsepalApp>
         }
       } else if (event == AuthChangeEvent.signedOut) {
         try {
+          final prefs = ref.read(sharedPreferencesProvider);
+          await prefs.remove(PreferenceKeys.proStatusCache);
+          await prefs.remove(PreferenceKeys.proStatusCacheUserId);
+          ref.invalidate(customerInfoProvider);
+          ref.invalidate(remainingGenerationsProvider);
+
           await ref.read(usageServiceProvider).clearSyncMarker();
           Log.info('Auth listener: Sync marker cleared (signedOut)');
         } on Exception catch (e) {

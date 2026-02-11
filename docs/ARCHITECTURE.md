@@ -547,7 +547,7 @@ See `BACKLOG.md` for full details. Summary:
 |----------|---------|
 | `SECURITY.md` | Security controls & OWASP compliance |
 | `BACKLOG.md` | Known issues & improvement roadmap |
-| `TESTING.md` | Test strategy & coverage details |
+| `test/README.md` | Test strategy & coverage details |
 | `LAUNCH_CHECKLIST.md` | Release checklist |
 | `CLONING_PLAYBOOK.md` | Portfolio replication guide |
 

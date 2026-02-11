@@ -138,11 +138,23 @@ class DeviceFingerprintService {
       final result = response as Map<String, dynamic>;
       final allowed = result['allowed'] as bool? ?? true;
       final isNewDevice = result['is_new_device'] as bool? ?? true;
+      final reason = result['reason'] as String?;
 
       Log.info('Device free tier check', {
         'allowed': allowed,
         'isNewDevice': isNewDevice,
+        'reason': reason,
       });
+
+      if (!allowed &&
+          (reason == 'device_limit' ||
+              reason == 'user_limit' ||
+              reason == 'rate_limited')) {
+        return const DeviceCheckResult(
+          allowed: false,
+          reason: DeviceCheckReason.rateLimited,
+        );
+      }
 
       return DeviceCheckResult(
         allowed: allowed,
@@ -234,6 +246,9 @@ enum DeviceCheckReason {
 
   /// Device has already used the free tier
   alreadyUsed,
+
+  /// Too many checks in a short period
+  rateLimited,
 
   /// Could not get device fingerprint, defaulting to allow
   fingerprintUnavailable,

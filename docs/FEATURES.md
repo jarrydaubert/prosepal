@@ -1,9 +1,9 @@
 # Prosepal Features
 
 ## Generation
-- 44 occasions (Birthday, Thank You, Sympathy, Wedding, + 40 more)
+- 40 occasions (Birthday, Thank You, Sympathy, Wedding, + 36 more)
 - 14 relationships (Close Friend → Community Member)
-- 5 tones (Heartfelt, Casual, Funny, Formal, Poetic)
+- 9 tones (Heartfelt, Casual, Funny, Formal, Inspirational, Playful, Sarcastic, Nostalgic, Poetic)
 - 3 lengths (Brief, Standard, Detailed)
 - Recipient name personalization
 - Personal details/context (500 char)
@@ -65,7 +65,7 @@
 
 ## Platforms
 - iOS 15.0+
-- Android API 24+
+- Android API 23+
 
 ---
 
@@ -95,4 +95,4 @@
 - [ ] Restore → finds subscription
 - [ ] Expires → reverts to free
 
-*Updated: 2026-01-20*
+*Updated: 2026-02-11*
