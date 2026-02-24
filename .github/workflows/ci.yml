@@ -1,14 +1,3 @@
-# =============================================================================
-# Prosepal CI - BAREBONES (GitHub Free Tier)
-# =============================================================================
-# All real checks run locally via pre-commit hook:
-#   - dart format (staged files)
-#   - flutter analyze lib/
-#
-# This CI just confirms the push succeeded. No Flutter setup, no analysis.
-# Run tests locally: flutter test
-# =============================================================================
-
 name: CI
 
 on:
@@ -17,11 +6,41 @@ on:
   pull_request:
     branches: [main]
 
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  check:
-    name: CI Pass
+  quality:
+    name: Analyze And Test
     runs-on: ubuntu-latest
-    timeout-minutes: 1
+    timeout-minutes: 25
+    permissions:
+      contents: read
     steps:
-      - name: Confirm push
-        run: echo "Pre-commit checks passed locally. CI complete."
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: '3.38.6'
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Static analysis
+        run: flutter analyze --no-fatal-infos
+
+      - name: Unit and widget tests
+        run: flutter test --coverage
+
+      - name: Upload coverage artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-lcov
+          path: coverage/lcov.info
+          if-no-files-found: warn

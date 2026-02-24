@@ -294,7 +294,7 @@ Future<void> _initRevenueCat(
 Future<void> _applyAnalyticsPreference(SharedPreferences prefs) async {
   try {
     final analyticsEnabled =
-        prefs.getBool(PreferenceKeys.analyticsEnabled) ?? true;
+        prefs.getBool(PreferenceKeys.analyticsEnabled) ?? !kDebugMode;
     await FirebaseAnalytics.instance.setAnalyticsCollectionEnabled(
       analyticsEnabled,
     );

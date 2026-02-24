@@ -155,8 +155,7 @@ class RemoteConfigService implements IRemoteConfigService {
   @override
   String get storeUrl {
     if (Platform.isIOS) {
-      // TODO: Update after App Store approval
-      return 'https://apps.apple.com/app/prosepal/id0000000000';
+      return 'https://apps.apple.com/app/id6757088726';
     } else {
       return 'https://play.google.com/store/apps/details?id=com.prosepal.prosepal';
     }

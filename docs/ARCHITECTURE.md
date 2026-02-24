@@ -482,62 +482,12 @@ class MockAiService implements AiService {
 }
 ```
 
-### Test Coverage Summary
+### Verification References
 
-| Component | Coverage | Status |
-|-----------|----------|--------|
-| Models | ~90% | Good |
-| Core services | ~60% | Partial |
-| Subscription | 21% | Needs work |
-| Auth providers | 0% | Needs work |
-| ReAuth | 1% | Needs work |
-| Widgets | ~75% | Partial |
-
----
-
-## Known Gaps & Improvements
-
-See `BACKLOG.md` for full details. Summary:
-
-### High Priority
-
-| Issue | Impact | Recommendation |
-|-------|--------|----------------|
-| Subscription service test coverage (21%) | Revenue-critical undertested | Write comprehensive tests |
-| Auth providers test coverage (0%) | OAuth flows untested | Add provider flow tests |
-| ReAuth service test coverage (1%) | Security-critical undertested | Test all auth paths |
-
-### Medium Priority
-
-| Issue | Impact | Recommendation |
-|-------|--------|----------------|
-| Auth/lock logic in root widget | Hard to test | Extract to AppLifecycleManager |
-| No connectivity monitoring | Reactive errors only | Add connectivity_plus |
-| String-based error detection | Fragile matching | Use typed error enums |
-
-### Low Priority (Tech Debt)
-
-| Issue | Impact | Recommendation |
-|-------|--------|----------------|
-| Navigation string paths | Refactoring risk | Use named route constants |
-| AI config not remote-configurable | Requires app update | Move to Remote Config |
-| 357 lint info warnings | Code cleanliness | Fix in batches by rule |
-
----
-
-## Architecture Rating
-
-| Aspect | Rating | Notes |
-|--------|--------|-------|
-| Code Quality | A | Clean, well-organized |
-| Patterns | A | Interface-based DI, proper separation |
-| Security | A- | Comprehensive; see SECURITY.md |
-| Testing | B | Gaps in revenue/security services |
-| Documentation | A | Inline docs + external docs |
-| Scalability | A | Clean blueprint for portfolio |
-| Maintainability | A | Easy to extend and modify |
-
-**Overall: A (Excellent)** - Production-grade architecture with documented improvement areas.
+- Test workflow and release gates: `docs/TEST_STRATEGY.md`
+- Supabase verification steps: `docs/SUPABASE_TESTS.md`
+- Command quick reference: `test/README.md`
+- Open issues and pending work: `docs/BACKLOG.md`
 
 ---
 
@@ -546,8 +496,8 @@ See `BACKLOG.md` for full details. Summary:
 | Document | Purpose |
 |----------|---------|
 | `SECURITY.md` | Security controls & OWASP compliance |
-| `BACKLOG.md` | Known issues & improvement roadmap |
-| `test/README.md` | Test strategy & coverage details |
+| `BACKLOG.md` | Outstanding work (burn-down list) |
+| `test/README.md` | Test command quick reference |
 | `LAUNCH_CHECKLIST.md` | Release checklist |
 | `CLONING_PLAYBOOK.md` | Portfolio replication guide |
 

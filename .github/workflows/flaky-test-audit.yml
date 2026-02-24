@@ -1,0 +1,47 @@
+name: Flaky Test Audit
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 7 * * 1'
+
+concurrency:
+  group: flaky-audit-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  audit:
+    name: Stress Test Stability
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: '3.38.6'
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Run flaky test audit
+        env:
+          FULL_RUNS: '3'
+          SERIAL_RUNS: '1'
+          TARGET_RUNS: '4'
+          LOG_DIR: /tmp/prosepal-flake-audit
+        run: ./scripts/test_flake_audit.sh
+
+      - name: Upload flaky audit logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: flaky-test-audit-logs
+          path: /tmp/prosepal-flake-audit
+          if-no-files-found: warn

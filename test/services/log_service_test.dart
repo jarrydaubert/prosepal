@@ -47,6 +47,43 @@ void main() {
       expect(log, contains('action=click'));
     });
 
+    test('redacts known sensitive keys in export buffer', () {
+      Log.info('Password reset requested', {
+        'email': 'user@example.com',
+        'idToken': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.payload.signature',
+      });
+
+      final log = Log.getExportableLog();
+      expect(log, contains('email=[REDACTED]'));
+      expect(log, contains('idToken=[REDACTED]'));
+      expect(log, isNot(contains('user@example.com')));
+    });
+
+    test('redacts sensitive value patterns even on non-sensitive keys', () {
+      Log.warning('Unexpected response', {
+        'error': 'token rejected for user@example.com',
+        'details':
+            'jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.abcdefghijklmnop.defghijklmnopq',
+      });
+
+      final log = Log.getExportableLog();
+      expect(log, contains('error=token rejected for [REDACTED_EMAIL]'));
+      expect(log, contains('details=jwt=[REDACTED_TOKEN]'));
+    });
+
+    test('verbose export includes non-secret details when requested', () {
+      Log.info('Debug payload', {
+        'email': 'user@example.com',
+        'note': 'hello world',
+        'idToken': 'abc.def.ghi',
+      });
+
+      final verbose = Log.getExportableLog(includeSensitive: true);
+      expect(verbose, contains('email=user@example.com'));
+      expect(verbose, contains('note=hello world'));
+      expect(verbose, contains('idToken=[REDACTED]'));
+    });
+
     test('buffer respects max size (200 entries)', () {
       // Add 250 entries
       for (var i = 0; i < 250; i++) {

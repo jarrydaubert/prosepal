@@ -10,6 +10,7 @@
 /// fundamental is broken and all other tests will likely fail too.
 library;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -25,19 +26,39 @@ import '../test/mocks/mock_subscription_service.dart';
 void main() {
   final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
+  Future<void> maybeCaptureScreenshot(WidgetTester tester, String name) async {
+    // iOS can hang on convertFlutterSurfaceToImage/takeScreenshot in local runs.
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) {
+      return;
+    }
+
+    await binding.convertFlutterSurfaceToImage().timeout(
+      const Duration(seconds: 8),
+    );
+    await tester.pump();
+    await binding.takeScreenshot(name).timeout(const Duration(seconds: 8));
+  }
+
   group('Smoke Tests', () {
     late SharedPreferences prefs;
     late MockAuthService mockAuth;
     late MockSubscriptionService mockSubscription;
     late MockAiService mockAi;
+    late InitStatusNotifier initStatusNotifier;
+    late ErrorWidgetBuilder originalErrorWidgetBuilder;
 
     setUp(() async {
+      originalErrorWidgetBuilder = ErrorWidget.builder;
       SharedPreferences.setMockInitialValues({'hasCompletedOnboarding': true});
       prefs = await SharedPreferences.getInstance();
       mockAuth = MockAuthService()
         ..setLoggedIn(true, email: 'test@example.com');
       mockSubscription = MockSubscriptionService()..setIsPro(false);
       mockAi = MockAiService();
+      initStatusNotifier = InitStatusNotifier()
+        ..markSupabaseReady()
+        ..markRevenueCatReady()
+        ..markRemoteConfigReady();
     });
 
     Widget buildTestableApp() => ProviderScope(
@@ -48,76 +69,86 @@ void main() {
         aiServiceProvider.overrideWithValue(mockAi),
         isProProvider.overrideWith((ref) => false),
         remainingGenerationsProvider.overrideWith((ref) => 3),
+        initStatusProvider.overrideWith((ref) => initStatusNotifier),
       ],
       child: const ProsepalApp(),
     );
 
+    void registerAppCleanup(WidgetTester tester) {
+      addTearDown(() async {
+        // Dispose widget tree before end-of-test global state checks.
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pump(const Duration(milliseconds: 50));
+        ErrorWidget.builder = originalErrorWidgetBuilder;
+      });
+    }
+
     testWidgets('S1: App launches without crashing', (tester) async {
       // Bug: App crashes on launch due to initialization failure
+      registerAppCleanup(tester);
       await tester.pumpWidget(buildTestableApp());
-      await tester.pumpAndSettle(const Duration(seconds: 3));
+      await tester.pump(const Duration(seconds: 3));
 
       expect(find.byType(MaterialApp), findsOneWidget);
-      await binding.convertFlutterSurfaceToImage();
-      await tester.pump();
-      await binding.takeScreenshot('smoke_1_launch');
+      await maybeCaptureScreenshot(tester, 'smoke_1_launch');
     });
 
     testWidgets('S2: Home screen renders with title', (tester) async {
       // Bug: Home screen fails to render, shows blank/error
+      registerAppCleanup(tester);
       await tester.pumpWidget(buildTestableApp());
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 2));
 
       expect(find.text('Prosepal'), findsOneWidget);
       expect(find.text("What's the occasion?"), findsOneWidget);
-      await binding.convertFlutterSurfaceToImage();
-      await tester.pump();
-      await binding.takeScreenshot('smoke_2_home');
+      await maybeCaptureScreenshot(tester, 'smoke_2_home');
     });
 
     testWidgets('S3: At least one occasion is visible', (tester) async {
       // Bug: Occasion data fails to load, grid is empty
+      registerAppCleanup(tester);
       await tester.pumpWidget(buildTestableApp());
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 2));
 
       expect(find.text('Birthday'), findsOneWidget);
-      await binding.convertFlutterSurfaceToImage();
-      await tester.pump();
-      await binding.takeScreenshot('smoke_3_occasions');
+      await maybeCaptureScreenshot(tester, 'smoke_3_occasions');
     });
 
     testWidgets('S4: Tapping occasion navigates to wizard', (tester) async {
       // Bug: Navigation routing is broken
+      registerAppCleanup(tester);
       await tester.pumpWidget(buildTestableApp());
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 2));
 
       await tester.tap(find.text('Birthday'));
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 2));
 
       // Should show relationship selection
       final hasRelationships =
           find.text('Close Friend').evaluate().isNotEmpty ||
           find.text('Family').evaluate().isNotEmpty;
       expect(hasRelationships, isTrue);
-      await binding.convertFlutterSurfaceToImage();
-      await tester.pump();
-      await binding.takeScreenshot('smoke_4_navigation');
+      await maybeCaptureScreenshot(tester, 'smoke_4_navigation');
     });
 
     testWidgets('S5: Settings button is accessible', (tester) async {
       // Bug: Settings icon missing or not tappable
+      registerAppCleanup(tester);
       await tester.pumpWidget(buildTestableApp());
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 4));
 
-      expect(find.byIcon(Icons.settings_outlined), findsOneWidget);
+      expect(find.text('Prosepal'), findsOneWidget);
+      final settingsButton = find.byIcon(Icons.settings_outlined);
+      expect(settingsButton, findsOneWidget);
 
-      await tester.tap(find.byIcon(Icons.settings_outlined));
-      await tester.pumpAndSettle();
+      await tester.tap(settingsButton);
+      for (var i = 0; i < 20; i++) {
+        if (find.text('Settings').evaluate().isNotEmpty) break;
+        await tester.pump(const Duration(milliseconds: 200));
+      }
 
       expect(find.text('Settings'), findsOneWidget);
-      await binding.convertFlutterSurfaceToImage();
-      await tester.pump();
-      await binding.takeScreenshot('smoke_5_settings');
+      await maybeCaptureScreenshot(tester, 'smoke_5_settings');
     });
   });
 }
