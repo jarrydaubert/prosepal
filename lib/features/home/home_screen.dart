@@ -116,6 +116,7 @@ class HomeScreen extends ConsumerWidget {
                                   ),
                                   const SizedBox(width: 8),
                                   _IconButton(
+                                    key: const ValueKey('home_settings_button'),
                                     icon: Icons.settings_outlined,
                                     onPressed: () =>
                                         context.pushNamed('settings'),
@@ -281,6 +282,7 @@ Future<void> _dismissFirstActionHint(WidgetRef ref) async {
 
 class _IconButton extends StatelessWidget {
   const _IconButton({
+    super.key,
     required this.icon,
     required this.onPressed,
     this.tooltip = '',
