@@ -30,6 +30,7 @@ gcloud firebase test android run --type instrumentation --app build/app/outputs/
 ## CI Requirements
 
 - Run analyzer.
+- Run release-config preflight tests.
 - Run the critical smoke suite.
 - Run unit/widget suites.
 - Exclude tests tagged `flaky` from blocking CI runs.

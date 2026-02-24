@@ -317,6 +317,9 @@ Recommendation for next release:
 - Flake audit script passes configured repeated randomized/serial runs.
 - Android Firebase Test Lab critical suite passes with deterministic
   `integration_test/ftl_test.dart` coverage (`matrix-jheu7h7cb6lxa`, `4/4` passed).
+- Release config preflight is centralized in `scripts/release_preflight.sh`,
+  and CI now runs `scripts/test_release_preflight.sh` to assert missing/placeholder
+  release config fails deterministically.
 - Telemetry identity mapping is aligned across auth events:
   - authenticated user ID is applied to Crashlytics and Firebase Analytics on sign-in
   - user ID is cleared from Crashlytics and Firebase Analytics on sign-out
@@ -329,6 +332,7 @@ Recommendation for next release:
 ### Still unstable / in-progress
 - Integration smoke on iOS simulator is mostly working but currently has a flaky/failing settings interaction test path.
 - Wired physical-device validation gates (iOS + Android) are still pending final evidence capture.
+- Script-only iOS archive enforcement still needs final release-lane validation evidence.
 
 ### Dependencies
 - Dependencies are not fully up-to-date yet.

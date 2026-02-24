@@ -21,6 +21,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Release config preflight tests
+        run: ./scripts/test_release_preflight.sh
+
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
