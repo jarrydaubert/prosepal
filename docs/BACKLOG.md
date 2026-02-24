@@ -15,7 +15,6 @@
 
 | ID | Item | Definition of Done |
 |----|------|--------------------|
-| `VNEXT-06` | Account deletion subscription UX | Deletion flow includes active-subscription guidance, an accessible "Manage Subscription" path, and clear timing expectations. Tests are added/updated for changed behavior before closure. |
 | `VNEXT-07` | Integration determinism hardening | Flaky tests are repaired or quarantined from blocking gates; trusted critical-smoke suite is the blocking gate; flake audit passes agreed threshold. Tests are added/updated for changed behavior before closure. |
 | `VNEXT-08` | Device + Test Lab validation gates | Critical suite passes on one wired iOS and one wired Android physical device; selected Android Firebase Test Lab matrix passes; release evidence is captured. Tests are added/updated for changed behavior before closure. |
 | `VNEXT-09` | Release config preflight automation | CI/release preflight fails when required `dart-define` values are missing; iOS script-only archive enforcement is validated. Tests are added/updated for changed behavior before closure. |

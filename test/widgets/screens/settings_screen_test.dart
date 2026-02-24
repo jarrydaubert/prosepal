@@ -479,6 +479,13 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.textContaining('permanently delete'), findsOneWidget);
+        expect(find.text('Manage Subscription'), findsOneWidget);
+        expect(
+          find.textContaining(
+            'Active subscriptions are not automatically cancelled',
+          ),
+          findsOneWidget,
+        );
       });
 
       testWidgetsWithPumps('Delete Account cancel dismisses dialog', (

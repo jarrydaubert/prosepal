@@ -414,10 +414,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       builder: (context) => AlertDialog(
         title: const Text('Delete Account'),
         content: const Text(
-          'This will permanently delete your account and all associated data. '
-          'This action cannot be undone.',
+          'This permanently deletes your account and associated app data. '
+          'Deletion starts immediately after final confirmation and cannot be undone.\n\n'
+          'Active subscriptions are not automatically cancelled and may continue billing '
+          'through Apple or Google until you cancel them.',
         ),
         actions: [
+          TextButton(
+            onPressed: _manageSubscription,
+            child: const Text('Manage Subscription'),
+          ),
           TextButton(
             onPressed: () => Navigator.pop(context, false),
             child: const Text('Cancel'),
@@ -460,7 +466,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     // Second confirmation with typed confirmation (Apple HIG)
     final finalConfirm = await showDialog<bool>(
       context: context,
-      builder: (context) => _DeleteConfirmationDialog(),
+      builder: (context) =>
+          _DeleteConfirmationDialog(onManageSubscription: _manageSubscription),
     );
 
     if (finalConfirm ?? false) {
@@ -1045,6 +1052,10 @@ class _StatsCard extends StatelessWidget {
 
 /// Stateful dialog for delete confirmation with typed input
 class _DeleteConfirmationDialog extends StatefulWidget {
+  const _DeleteConfirmationDialog({required this.onManageSubscription});
+
+  final Future<void> Function() onManageSubscription;
+
   @override
   State<_DeleteConfirmationDialog> createState() =>
       _DeleteConfirmationDialogState();
@@ -1127,6 +1138,10 @@ class _DeleteConfirmationDialogState extends State<_DeleteConfirmationDialog> {
       ),
     ),
     actions: [
+      TextButton(
+        onPressed: widget.onManageSubscription,
+        child: const Text('Manage Subscription'),
+      ),
       TextButton(
         onPressed: () => Navigator.pop(context, false),
         child: const Text('Cancel'),
