@@ -45,6 +45,8 @@ abstract final class DiagnosticService {
     bool includeSensitiveLogs = false,
   }) async {
     final buffer = StringBuffer();
+    String? supabaseUserId;
+    String? revenueCatAppUserId;
 
     buffer.writeln('=== Prosepal Diagnostic Report ===');
     buffer.writeln('Generated: ${DateTime.now().toUtc().toIso8601String()}');
@@ -97,6 +99,7 @@ abstract final class DiagnosticService {
     try {
       final user = Supabase.instance.client.auth.currentUser;
       if (user != null) {
+        supabaseUserId = user.id;
         buffer.writeln('Signed In: Yes');
         buffer.writeln('User ID: ${_truncateId(user.id)}');
         buffer.writeln(
@@ -120,6 +123,7 @@ abstract final class DiagnosticService {
     if (isRevenueCatConfigured) {
       try {
         final customerInfo = await Purchases.getCustomerInfo();
+        revenueCatAppUserId = await Purchases.appUserID;
         final isActive = customerInfo.entitlements.active.isNotEmpty;
         buffer.writeln('Pro Status: ${isActive ? 'Active' : 'Free'}');
 
@@ -135,9 +139,7 @@ abstract final class DiagnosticService {
           buffer.writeln('Will Renew: ${entitlement.willRenew ? 'Yes' : 'No'}');
         }
 
-        buffer.writeln(
-          'RC User ID: ${_truncateId(customerInfo.originalAppUserId)}',
-        );
+        buffer.writeln('RC User ID: ${_truncateId(revenueCatAppUserId)}');
       } on PlatformException catch (e) {
         Log.warning('Subscription status retrieval failed', {'error': '$e'});
         buffer.writeln('Subscription: Unable to retrieve');
@@ -145,6 +147,16 @@ abstract final class DiagnosticService {
     } else {
       buffer.writeln('Pro Status: Not configured');
     }
+    buffer.writeln();
+
+    buffer.writeln('--- Identity Mapping ---');
+    final telemetryUserId = Log.currentUserId;
+    buffer.writeln('Supabase ID: ${_formatOptionalId(supabaseUserId)}');
+    buffer.writeln('RevenueCat ID: ${_formatOptionalId(revenueCatAppUserId)}');
+    buffer.writeln('Telemetry ID (app): ${_formatOptionalId(telemetryUserId)}');
+    buffer.writeln(
+      'Identity Status: ${_identityStatus(supabaseUserId, revenueCatAppUserId, telemetryUserId)}',
+    );
     buffer.writeln();
 
     // Recent logs (includes errors, warnings, and actions)
@@ -183,5 +195,40 @@ abstract final class DiagnosticService {
   static String _truncateId(String id) {
     if (id.length <= 8) return id;
     return '${id.substring(0, 8)}...';
+  }
+
+  @visibleForTesting
+  static String formatOptionalIdForTesting(String? value) =>
+      _formatOptionalId(value);
+
+  @visibleForTesting
+  static String identityStatusForTesting(
+    String? supabaseUserId,
+    String? revenueCatAppUserId,
+    String? telemetryUserId,
+  ) => _identityStatus(supabaseUserId, revenueCatAppUserId, telemetryUserId);
+
+  static String _formatOptionalId(String? value) {
+    if (value == null || value.isEmpty) return '(none)';
+    return _truncateId(value);
+  }
+
+  static String _identityStatus(
+    String? supabaseUserId,
+    String? revenueCatAppUserId,
+    String? telemetryUserId,
+  ) {
+    final telemetryAligned = supabaseUserId == telemetryUserId;
+    final revenueCatAligned =
+        (supabaseUserId == null && revenueCatAppUserId == null) ||
+        (supabaseUserId != null &&
+            revenueCatAppUserId != null &&
+            supabaseUserId == revenueCatAppUserId) ||
+        (supabaseUserId == null &&
+            revenueCatAppUserId != null &&
+            revenueCatAppUserId.startsWith('anon_'));
+
+    if (telemetryAligned && revenueCatAligned) return 'Aligned';
+    return 'Needs review';
   }
 }

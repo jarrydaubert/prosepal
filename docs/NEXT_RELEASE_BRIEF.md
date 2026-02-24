@@ -1,7 +1,5 @@
 # Prosepal Next Release Spec (Single Shareable Source)
 
-Status: Draft for review  
-Date: 2026-02-24  
 Owner: Product + Engineering
 
 This document is intentionally self-contained. It is the single source to review what is currently built, what is actually stable, and what we should target for the next release.
@@ -179,7 +177,9 @@ Recommendation for next release:
   - user switch on same device
   - reinstall + restore
 - Premium-critical surfaces refresh customer info before showing entitlement-dependent actions.
-- Source of truth: `docs/REVENUECAT_POLICY.md`.
+- Sources of truth:
+  - `docs/REVENUECAT_POLICY.md`
+  - `docs/IDENTITY_MAPPING.md`
 
 ### Paywall controls
 - Paywall shown as bottom sheet, not route page.
@@ -193,7 +193,7 @@ Recommendation for next release:
 ### Provider and model
 - AI generation uses Firebase AI SDK (Gemini).
 - Remote-configured primary and fallback model names are supported.
-- Current app defaults (as of 2026-02-24):
+- Current app defaults:
   - primary: `gemini-2.5-flash`
   - fallback: `gemini-2.5-flash-lite`
 - vNext production target:
@@ -279,7 +279,7 @@ Recommendation for next release:
 
 ---
 
-## 9) Current Test Setup (What Exists Today)
+## 9) Test Setup
 
 ### Test pyramid
 - Unit tests: service/model/logic coverage.
@@ -299,51 +299,25 @@ Recommendation for next release:
   - unit/widget tests with coverage artifact
 - Separate flaky-audit workflow runs periodic randomized/serial test stress script.
 
-### Firebase Test Lab setup status
+### Firebase Test Lab setup
 - Android instrumentation scaffold is present in project.
 - Dedicated FTL-oriented integration entrypoints exist.
-- `gcloud` is configured on this machine and project is set.
-- Required testing API is enabled in project.
-- End-to-end FTL critical suite was re-validated on 2026-02-24 with
-  `matrix-jheu7h7cb6lxa` (`oriole-33-en-portrait`), with `4/4` test cases passed.
+- Release validation requires executing the FTL critical suite and attaching evidence in release artifacts.
 
 ---
 
-## 10) Current Quality Status (As of 2026-02-24)
+## 10) Quality and Risk Model
 
-### Stable today
-- `flutter analyze` clean.
-- `flutter test` passes locally.
-- Flake audit script passes configured repeated randomized/serial runs.
-- Android Firebase Test Lab critical suite passes with deterministic
-  `integration_test/ftl_test.dart` coverage (`matrix-jheu7h7cb6lxa`, `4/4` passed).
-- Release config preflight is centralized in `scripts/release_preflight.sh`,
-  and CI now runs `scripts/test_release_preflight.sh` to assert missing/placeholder
-  release config fails deterministically.
-- AI cost/abuse verification runbook exists:
-  - `docs/AI_COST_ABUSE_RUNBOOK.md`
-  - audit command: `./scripts/audit_ai_cost_controls.sh`
-- Telemetry identity mapping is aligned across auth events:
-  - authenticated user ID is applied to Crashlytics and Firebase Analytics on sign-in
-  - user ID is cleared from Crashlytics and Firebase Analytics on sign-out
-- Debug builds default telemetry collection to disabled unless the user explicitly opts in, reducing developer/test noise in production analytics.
-- Exported diagnostics now support:
-  - privacy-safe default reports (redacted)
-  - optional advanced full technical report mode when user explicitly opts in
-  - secrets (password/tokens) remain redacted in both modes
+### Gate policy
+- Analyzer, unit/widget tests, and critical smoke are blocking gates.
+- Flaky tests are quarantined and tracked in backlog before release gating.
+- Release preflight is enforced via `scripts/release_preflight.sh` and `scripts/test_release_preflight.sh`.
+- AI cost/abuse controls are validated through `docs/AI_COST_ABUSE_RUNBOOK.md` and `./scripts/audit_ai_cost_controls.sh`.
+- Identity mapping is validated through `docs/IDENTITY_MAPPING.md` and diagnostics output.
 
-### Still unstable / in-progress
-- Integration smoke on iOS simulator is mostly working but currently has a flaky/failing settings interaction test path.
-- Wired physical-device validation gates (iOS + Android) are still pending final evidence capture.
-- Script-only iOS archive enforcement still needs final release-lane validation evidence.
-- AI cost controls are only partially verified from CLI evidence:
-  - Firebase services required for AI/App Check/RC are enabled.
-  - API key audit (2026-02-24) indicates missing app-level restrictions on Firebase auto-created platform keys.
-  - Billing budget alert verification (2026-02-24) is blocked until `billingbudgets.googleapis.com` and billing-account access are enabled for this project/account.
-
-### Dependencies
-- Dependencies are not fully up-to-date yet.
-- `flutter pub outdated` shows multiple packages behind latest resolvable/latest, including Riverpod-related packages, annotation/tooling, timezone, and pinned RevenueCat versions.
+### Backlog policy
+- Any open risk, gap, or unresolved validation item must live in `docs/BACKLOG.md`.
+- This document defines target architecture and release gates, not progress/status tracking.
 
 ---
 
@@ -476,16 +450,12 @@ Please comment directly on these points:
   - fix deterministic failures where possible
   - quarantine unstable tests from hard gate until repaired
   - keep a trusted critical-smoke suite as the blocking release gate
-- Define canonical user identity mapping across Supabase, RevenueCat, and telemetry for support/debug consistency.
+- Keep support diagnostics aligned with the canonical identity mapping doc and treat mismatches as release-blocking.
 
 ---
 
-## 15) Finalization Section
+## 15) Finalization
 
-When this document is accepted, update this block:
-- Document Status: Approved
-- Target Version: TBD
-- Product Sign-Off: Pending/Approved
-- Engineering Sign-Off: Pending/Approved
-- QA Sign-Off: Pending/Approved
-- Design Sign-Off: Pending/Approved
+- Freeze this document for the release candidate once sign-off is complete.
+- Record sign-off ownership and release version in the release record, not in this spec.
+- Move any unresolved item to `docs/BACKLOG.md` before release tagging.
