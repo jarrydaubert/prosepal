@@ -22,16 +22,16 @@
 
 | ID | Item | Definition of Done |
 |----|------|--------------------|
-| `VNEXT-01` | Dependency upgrades (staged batches) | Batch A/B/C executed in separate PRs; each batch passes `flutter analyze`, unit/widget suite, smoke integration suite; release notes capture package/version deltas and risks. |
-| `VNEXT-02` | App Check operational hardening | AI-critical paths validated with App Check enabled; iOS + Android provider behavior verified; enforcement posture explicitly documented; fallback behavior documented if provider fails. |
-| `VNEXT-06` | Account deletion subscription UX | Deletion flow copy reviewed for active-subscription guidance; "Manage Subscription" path is accessible in deletion context; user-facing timing/expectation copy finalized and tested. |
-| `VNEXT-07` | Integration determinism hardening | Flaky tests repaired or quarantined from blocking gate; trusted critical-smoke suite is the blocking gate; repeated-run flake audit passes at agreed threshold. |
-| `VNEXT-08` | Device and FTL validation gates | Critical suite passes on one wired iOS and one wired Android physical device; selected Android FTL matrix passes; results attached to release candidate evidence. |
-| `VNEXT-09` | Release config preflight automation | CI/release preflight fails when required `dart-define` values are missing; iOS script-only archive path enforcement documented and validated in runbook. |
-| `VNEXT-10` | AI cost/abuse controls | API/app restrictions verified; per-user rate-limit thresholds documented; budget alert configured; cost-spike kill-switch response runbook added. |
-| `VNEXT-11` | Canonical identity mapping | Single mapping document added for Supabase user ID, RevenueCat app user ID, Analytics user ID, and Crashlytics user ID usage; sign-in/sign-out transitions validated in QA checklist. |
-| `VNEXT-12` | UI parity with live baseline | Baseline screenshots from live app captured for core screens (auth/home/generate/results/paywall/settings); styling deltas cataloged; either matched to live style or explicitly approved as intentional deltas before release. |
-| `VNEXT-13` | Device abuse-control compliance decision | iOS/Android approach documented and approved (current fingerprinting with compliance rationale OR migration plan to native attestation APIs); release checklist updated with the chosen path and validation evidence. |
+| `VNEXT-01` | Dependency upgrades (staged batches) | Batch A/B/C executed in separate PRs; each batch passes `flutter analyze`, unit/widget suite, smoke integration suite; release notes capture package/version deltas and risks; tests are added/updated for changed behavior before closure. |
+| `VNEXT-02` | App Check operational hardening | AI-critical paths validated with App Check enabled; iOS + Android provider behavior verified; enforcement posture explicitly documented; fallback behavior documented if provider fails; tests are added/updated for changed behavior before closure. |
+| `VNEXT-06` | Account deletion subscription UX | Deletion flow copy reviewed for active-subscription guidance; "Manage Subscription" path is accessible in deletion context; user-facing timing/expectation copy finalized and tested; tests are added/updated for changed behavior before closure. |
+| `VNEXT-07` | Integration determinism hardening | Flaky tests repaired or quarantined from blocking gate; trusted critical-smoke suite is the blocking gate; repeated-run flake audit passes at agreed threshold; tests are added/updated for changed behavior before closure. |
+| `VNEXT-08` | Device and FTL validation gates | Critical suite passes on one wired iOS and one wired Android physical device; selected Android FTL matrix passes; results attached to release candidate evidence; tests are added/updated for changed behavior before closure. |
+| `VNEXT-09` | Release config preflight automation | CI/release preflight fails when required `dart-define` values are missing; iOS script-only archive path enforcement documented and validated in runbook; tests are added/updated for changed behavior before closure. |
+| `VNEXT-10` | AI cost/abuse controls | API/app restrictions verified; per-user rate-limit thresholds documented; budget alert configured; cost-spike kill-switch response runbook added; tests are added/updated for changed behavior before closure. |
+| `VNEXT-11` | Canonical identity mapping | Single mapping document added for Supabase user ID, RevenueCat app user ID, Analytics user ID, and Crashlytics user ID usage; sign-in/sign-out transitions validated in QA checklist; tests are added/updated for changed behavior before closure. |
+| `VNEXT-12` | UI parity with live baseline | Baseline screenshots from live app captured for core screens (auth/home/generate/results/paywall/settings); styling deltas cataloged; either matched to live style or explicitly approved as intentional deltas before release; tests are added/updated for changed behavior before closure. |
+| `VNEXT-13` | Device abuse-control compliance decision | iOS/Android approach documented and approved (current fingerprinting with compliance rationale OR migration plan to native attestation APIs); release checklist updated with the chosen path and validation evidence; tests are added/updated for changed behavior before closure. |
 
 ---
 
