@@ -36,7 +36,6 @@
 | ID | Gap | Location | Action |
 |----|-----|----------|--------|
 | `AUDIT-10` | Missing E2E for auth race + stale entitlement edge cases | `integration_test/` | Add E2E coverage for sign-in routing, restore ordering, and stale local entitlement vs server truth. |
-| `AUDIT-11` | Missing tests for diagnostic report redaction levels | `test/services/` | Add tests for standard vs advanced diagnostic payload redaction behavior. |
 | `AUDIT-12` | Missing visual regression guard for critical screens | `test/` | Add golden/visual regression tests for auth/home/generate/results/paywall/settings core states. |
 
 ## P1 - Engineering Tasks
