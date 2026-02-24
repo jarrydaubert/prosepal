@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 /// Prosepal Material 3 Color System
 ///
-/// Purple primary with gold reserved for Pro accents.
+/// Coral primary with gold reserved for Pro accents.
 ///
 /// WCAG Contrast Ratios:
 /// - textPrimary (#FFF) on bgDeep (#050505): 21:1 ✓
@@ -37,17 +37,17 @@ class AppColors {
   static const Color background = Color(0xFF050505);
 
   // ===========================================================================
-  // BRAND COLORS - Purple
+  // BRAND COLORS - Coral
   // ===========================================================================
 
-  /// Primary brand color - Spotlight Purple
-  static const Color primary = Color(0xFF7C5DCA);
+  /// Primary brand color - Coral
+  static const Color primary = Color(0xFFD4736B);
 
-  /// Lighter purple for highlights
-  static const Color primaryLight = Color(0xFFEDE7FF);
+  /// Lighter coral for highlights
+  static const Color primaryLight = Color(0xFFFCE9E7);
 
-  /// Darker purple for pressed states
-  static const Color primaryDark = Color(0xFF5B3FAE);
+  /// Darker coral for pressed states
+  static const Color primaryDark = Color(0xFFB95E57);
 
   /// Pro gold for badges and payment CTAs
   static const Color proGold = Color(0xFFFBBF24);
@@ -55,8 +55,8 @@ class AppColors {
   /// Darker gold for pressed states
   static const Color proGoldDark = Color(0xFFC4960A);
 
-  /// Legacy coral (kept for transition)
-  static const Color accentRose = Color(0xFFD4736B);
+  /// Legacy alias for coral
+  static const Color accentRose = primary;
 
   // ===========================================================================
   // TEXT COLORS
@@ -76,6 +76,9 @@ class AppColors {
 
   /// Text on pro gold backgrounds
   static const Color textOnPro = Color(0xFF1C1B1F);
+
+  /// Text on light cards/surfaces
+  static const Color textOnLight = Color(0xFF1C1B1F);
 
   /// Text on dark backgrounds (same as primary for dark theme)
   static const Color textOnDark = Color(0xFFFFFFFF);
@@ -113,7 +116,7 @@ class AppColors {
   // GRADIENTS
   // ===========================================================================
 
-  /// Primary brand gradient (purple)
+  /// Primary brand gradient (coral)
   static const LinearGradient primaryGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
@@ -125,8 +128,8 @@ class AppColors {
     center: Alignment.topCenter,
     radius: 1.5,
     colors: [
-      Color(0x337C5DCA), // Purple 20%
-      Color(0x007C5DCA), // Purple 0%
+      Color(0x33D4736B), // Coral 20%
+      Color(0x00D4736B), // Coral 0%
     ],
   );
 

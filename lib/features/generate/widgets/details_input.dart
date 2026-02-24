@@ -311,7 +311,7 @@ class _LengthSelector extends StatelessWidget {
                           : FontWeight.w500,
                       color: isSelected
                           ? AppColors.primary
-                          : AppColors.textPrimary,
+                          : AppColors.textOnLight,
                     ),
                   ),
                 ],

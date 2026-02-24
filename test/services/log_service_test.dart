@@ -279,6 +279,44 @@ void main() {
     });
   });
 
+  group('Analytics Param Normalization', () {
+    test('converts bool values to numeric flags', () {
+      final normalized = Log.normalizeAnalyticsParams({
+        'is_logged_in': false,
+        'has_personal_details': true,
+      });
+
+      expect(normalized, isNotNull);
+      expect(normalized!['is_logged_in'], equals(0));
+      expect(normalized['has_personal_details'], equals(1));
+    });
+
+    test('keeps string and numeric values unchanged', () {
+      final normalized = Log.normalizeAnalyticsParams({
+        'source': 'home',
+        'view_duration_sec': 14,
+        'score': 9.5,
+      });
+
+      expect(normalized, isNotNull);
+      expect(normalized!['source'], equals('home'));
+      expect(normalized['view_duration_sec'], equals(14));
+      expect(normalized['score'], equals(9.5));
+    });
+
+    test('normalizes DateTime and Duration values', () {
+      final timestamp = DateTime.utc(2026, 2, 24, 20, 37);
+      final normalized = Log.normalizeAnalyticsParams({
+        'started_at': timestamp,
+        'elapsed': const Duration(seconds: 5),
+      });
+
+      expect(normalized, isNotNull);
+      expect(normalized!['started_at'], equals('2026-02-24T20:37:00.000Z'));
+      expect(normalized['elapsed'], equals(5000));
+    });
+  });
+
   group('User Identity', () {
     test('setUserId stores identity and logs truncated ID', () async {
       await Log.setUserId('1234567890abcdef');

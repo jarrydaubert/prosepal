@@ -535,7 +535,7 @@ class _MessageCard extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
+                    color: AppColors.textOnLight,
                   ),
                 ),
                 const Spacer(),
@@ -566,7 +566,7 @@ class _MessageCard extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 15,
                 height: 1.6,
-                color: AppColors.textPrimary,
+                color: AppColors.textOnLight,
               ),
             ),
           ),

@@ -80,14 +80,25 @@ class _AddOccasionSheetState extends ConsumerState<AddOccasionSheet> {
             ),
             const SizedBox(height: 20),
 
-            // Title
-            Text(
-              _isEditing ? 'Edit Occasion' : 'Add Occasion',
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
-              ),
+            // Title + explicit close action
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    _isEditing ? 'Edit Occasion' : 'Add Occasion',
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textOnLight,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  tooltip: 'Close',
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(Icons.close, color: AppColors.textOnLight),
+                ),
+              ],
             ),
             const SizedBox(height: 24),
 
@@ -192,7 +203,7 @@ class _AddOccasionSheetState extends ConsumerState<AddOccasionSheet> {
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
-                            color: AppColors.textPrimary,
+                            color: AppColors.textOnLight,
                           ),
                         ),
                       ),
@@ -235,6 +246,13 @@ class _AddOccasionSheetState extends ConsumerState<AddOccasionSheet> {
               icon: _isEditing ? Icons.check : Icons.add,
               isLoading: _isSaving,
               onPressed: _isSaving ? null : _save,
+            ),
+            const SizedBox(height: 8),
+            Center(
+              child: TextButton(
+                onPressed: _isSaving ? null : () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
             ),
             const SizedBox(height: 16),
           ],
@@ -357,7 +375,7 @@ class _OccasionPicker extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: isSelected ? Colors.white : AppColors.textPrimary,
+                    color: isSelected ? Colors.white : AppColors.textOnLight,
                   ),
                 ),
               ],
@@ -412,7 +430,7 @@ class _DatePicker extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
-                  color: AppColors.textPrimary,
+                  color: AppColors.textOnLight,
                 ),
               ),
             ),
@@ -466,7 +484,7 @@ class _RelationshipPicker extends StatelessWidget {
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: isSelected ? Colors.white : AppColors.textPrimary,
+                color: isSelected ? Colors.white : AppColors.textOnLight,
               ),
             ),
           ),
@@ -506,7 +524,7 @@ class _ReminderOption extends StatelessWidget {
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w600,
-            color: isSelected ? Colors.white : AppColors.textPrimary,
+            color: isSelected ? Colors.white : AppColors.textOnLight,
           ),
         ),
       ),
