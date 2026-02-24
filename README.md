@@ -19,5 +19,6 @@ flutter test
 - `docs/NEXT_RELEASE_BRIEF.md` - vNext scope and release gates
 - `docs/BACKLOG.md` - Only open work tracker
 - `docs/TEST_STRATEGY.md` - Testing framework and gates
+- `docs/REMOTE_CONFIG.md` - Remote Config keys and safety rules
 - `docs/SUPABASE_TESTS.md` - Supabase verification runbook
 - `docs/DOCS_POLICY.md` - Evergreen documentation rules

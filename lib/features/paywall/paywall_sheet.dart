@@ -14,6 +14,7 @@ import '../../core/config/preference_keys.dart';
 import '../../core/errors/auth_errors.dart';
 import '../../core/providers/providers.dart';
 import '../../core/services/log_service.dart';
+import '../../core/services/remote_config_service.dart';
 import '../../shared/theme/app_colors.dart';
 import '../../shared/theme/app_spacing.dart';
 
@@ -28,6 +29,22 @@ Future<bool> showPaywall(
   String? source,
   bool force = false,
 }) async {
+  final remoteConfig = RemoteConfigService.instance;
+  if (!remoteConfig.isPaywallEnabled) {
+    Log.warning('Paywall blocked by Remote Config kill switch', {
+      'source': source,
+      'key': 'paywall_enabled',
+    });
+    return false;
+  }
+  if (!remoteConfig.isPremiumEnabled) {
+    Log.warning('Paywall blocked by Remote Config premium kill switch', {
+      'source': source,
+      'key': 'premium_enabled',
+    });
+    return false;
+  }
+
   final prefs = ProviderScope.containerOf(
     context,
   ).read(sharedPreferencesProvider);

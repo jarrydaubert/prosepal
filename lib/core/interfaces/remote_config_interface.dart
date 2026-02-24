@@ -41,6 +41,18 @@ abstract class IRemoteConfigService {
   /// for stronger replay resistance at the cost of stricter token behavior.
   bool get useLimitedUseAppCheckTokens;
 
+  /// Schema version for Remote Config payload compatibility checks.
+  int get configSchemaVersion;
+
+  /// Feature kill switch for AI generation.
+  bool get isAiEnabled;
+
+  /// Feature kill switch for paywall presentation.
+  bool get isPaywallEnabled;
+
+  /// Feature kill switch for premium subscription flows.
+  bool get isPremiumEnabled;
+
   // ===== Force Update Config =====
 
   /// Whether force update checking is enabled.

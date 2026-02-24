@@ -38,6 +38,10 @@ class RemoteConfigService implements IRemoteConfigService {
   static const _aiModelFallbackKey = 'ai_model_fallback';
   static const _aiLimitedUseAppCheckTokensKey =
       'ai_use_limited_app_check_tokens';
+  static const _configSchemaVersionKey = 'config_schema_version';
+  static const _aiEnabledKey = 'ai_enabled';
+  static const _paywallEnabledKey = 'paywall_enabled';
+  static const _premiumEnabledKey = 'premium_enabled';
   static const _minVersionIosKey = 'min_app_version_ios';
   static const _minVersionAndroidKey = 'min_app_version_android';
   static const _forceUpdateEnabledKey = 'force_update_enabled';
@@ -60,6 +64,10 @@ class RemoteConfigService implements IRemoteConfigService {
         _aiModelKey: AiConfig.defaultModel,
         _aiModelFallbackKey: AiConfig.defaultFallbackModel,
         _aiLimitedUseAppCheckTokensKey: false,
+        _configSchemaVersionKey: 1,
+        _aiEnabledKey: true,
+        _paywallEnabledKey: true,
+        _premiumEnabledKey: true,
         _minVersionIosKey: '1.0.0',
         _minVersionAndroidKey: '1.0.0',
         _forceUpdateEnabledKey: true,
@@ -81,6 +89,10 @@ class RemoteConfigService implements IRemoteConfigService {
         'aiModel': aiModel,
         'aiModelFallback': aiModelFallback,
         'limitedUseAppCheckTokens': useLimitedUseAppCheckTokens,
+        'configSchemaVersion': configSchemaVersion,
+        'aiEnabled': isAiEnabled,
+        'paywallEnabled': isPaywallEnabled,
+        'premiumEnabled': isPremiumEnabled,
         'forceUpdateEnabled': isForceUpdateEnabled,
       });
     } on Exception catch (e) {
@@ -117,6 +129,21 @@ class RemoteConfigService implements IRemoteConfigService {
   @override
   bool get useLimitedUseAppCheckTokens =>
       _remoteConfig?.getBool(_aiLimitedUseAppCheckTokensKey) ?? false;
+
+  @override
+  int get configSchemaVersion =>
+      _remoteConfig?.getInt(_configSchemaVersionKey) ?? 1;
+
+  @override
+  bool get isAiEnabled => _remoteConfig?.getBool(_aiEnabledKey) ?? true;
+
+  @override
+  bool get isPaywallEnabled =>
+      _remoteConfig?.getBool(_paywallEnabledKey) ?? true;
+
+  @override
+  bool get isPremiumEnabled =>
+      _remoteConfig?.getBool(_premiumEnabledKey) ?? true;
 
   /// Validate/sanitize model IDs sourced from Remote Config.
   ///
