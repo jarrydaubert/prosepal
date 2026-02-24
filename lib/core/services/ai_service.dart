@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:firebase_ai/firebase_ai.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 
@@ -341,7 +342,11 @@ class AiService {
   /// Note: ThinkingConfig removed - Gemini 3 uses dynamic thinking by default.
   /// JSON schema + ThinkingConfig combination can cause SDK parsing issues.
   GenerativeModel _createModel(String modelName) =>
-      FirebaseAI.googleAI().generativeModel(
+      FirebaseAI.googleAI(
+        appCheck: FirebaseAppCheck.instance,
+        useLimitedUseAppCheckTokens:
+            RemoteConfigService.instance.useLimitedUseAppCheckTokens,
+      ).generativeModel(
         model: modelName,
         generationConfig: GenerationConfig(
           temperature: AiConfig.temperature,

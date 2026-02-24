@@ -35,6 +35,8 @@ class RemoteConfigService implements IRemoteConfigService {
   // Keys
   static const _aiModelKey = 'ai_model';
   static const _aiModelFallbackKey = 'ai_model_fallback';
+  static const _aiLimitedUseAppCheckTokensKey =
+      'ai_use_limited_app_check_tokens';
   static const _minVersionIosKey = 'min_app_version_ios';
   static const _minVersionAndroidKey = 'min_app_version_android';
   static const _forceUpdateEnabledKey = 'force_update_enabled';
@@ -56,6 +58,7 @@ class RemoteConfigService implements IRemoteConfigService {
       await _remoteConfig!.setDefaults({
         _aiModelKey: AiConfig.defaultModel,
         _aiModelFallbackKey: AiConfig.defaultFallbackModel,
+        _aiLimitedUseAppCheckTokensKey: false,
         _minVersionIosKey: '1.0.0',
         _minVersionAndroidKey: '1.0.0',
         _forceUpdateEnabledKey: true,
@@ -76,6 +79,7 @@ class RemoteConfigService implements IRemoteConfigService {
       Log.info('Remote Config initialized', {
         'aiModel': aiModel,
         'aiModelFallback': aiModelFallback,
+        'limitedUseAppCheckTokens': useLimitedUseAppCheckTokens,
         'forceUpdateEnabled': isForceUpdateEnabled,
       });
     } on Exception catch (e) {
@@ -102,6 +106,10 @@ class RemoteConfigService implements IRemoteConfigService {
     final value = _remoteConfig!.getString(_aiModelFallbackKey);
     return value.isNotEmpty ? value : AiConfig.defaultFallbackModel;
   }
+
+  @override
+  bool get useLimitedUseAppCheckTokens =>
+      _remoteConfig?.getBool(_aiLimitedUseAppCheckTokensKey) ?? false;
 
   // ===== Force Update Config =====
 

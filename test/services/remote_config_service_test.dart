@@ -170,6 +170,15 @@ void main() {
       expect(mockService.aiModel, equals('model-a'));
       expect(mockService.aiModelFallback, equals('model-b'));
     });
+
+    test('limited-use App Check tokens flag is configurable', () {
+      // Bug: Token mode cannot be switched for AI calls
+      mockService.mockUseLimitedUseAppCheckTokens = true;
+      expect(mockService.useLimitedUseAppCheckTokens, isTrue);
+
+      mockService.mockUseLimitedUseAppCheckTokens = false;
+      expect(mockService.useLimitedUseAppCheckTokens, isFalse);
+    });
   });
 
   group('MockRemoteConfigService - Initialization', () {
@@ -288,6 +297,12 @@ void main() {
       // Default to true so we can enable force update via Remote Config
       // If this defaulted to false, we couldn't push a force update to old apps
       expect(service.isForceUpdateEnabled, isTrue);
+    });
+
+    test('useLimitedUseAppCheckTokens defaults to false', () {
+      final service = RemoteConfigService.instance;
+
+      expect(service.useLimitedUseAppCheckTokens, isFalse);
     });
 
     test('storeUrl returns valid URL', () {
