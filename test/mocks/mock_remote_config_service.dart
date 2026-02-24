@@ -29,8 +29,8 @@ class MockRemoteConfigService implements IRemoteConfigService {
   /// Mock value for [aiModel]. Defaults to 'gemini-2.5-flash'.
   String mockAiModel = 'gemini-2.5-flash';
 
-  /// Mock value for [aiModelFallback]. Defaults to 'gemini-2.0-flash'.
-  String mockAiModelFallback = 'gemini-2.0-flash';
+  /// Mock value for [aiModelFallback]. Defaults to 'gemini-2.5-flash-lite'.
+  String mockAiModelFallback = 'gemini-2.5-flash-lite';
 
   /// Mock value for [useLimitedUseAppCheckTokens]. Defaults to false.
   bool mockUseLimitedUseAppCheckTokens = false;
@@ -137,7 +137,7 @@ class MockRemoteConfigService implements IRemoteConfigService {
   void reset() {
     _initialized = false;
     mockAiModel = 'gemini-2.5-flash';
-    mockAiModelFallback = 'gemini-2.0-flash';
+    mockAiModelFallback = 'gemini-2.5-flash-lite';
     mockUseLimitedUseAppCheckTokens = false;
     mockForceUpdateEnabled = true;
     mockMinAppVersion = '1.0.0';

@@ -11,11 +11,19 @@
 abstract final class AiConfig {
   /// Default Gemini model (used if Remote Config unavailable)
   /// See: https://firebase.google.com/docs/ai-logic/models
-  /// When gemini-3-flash goes stable, update via Remote Config (no app release needed)
-  static const String defaultModel = 'gemini-3-flash-preview';
+  /// Keep this pinned to a stable, non-preview model for production safety.
+  static const String defaultModel = 'gemini-2.5-flash';
 
   /// Fallback model if primary fails (404, deprecated, etc.)
-  static const String defaultFallbackModel = 'gemini-2.5-flash';
+  static const String defaultFallbackModel = 'gemini-2.5-flash-lite';
+
+  /// Allowed Remote Config model IDs for production.
+  ///
+  /// Invalid IDs are ignored and replaced with safe defaults.
+  static const Set<String> allowedModelIds = {
+    defaultModel,
+    defaultFallbackModel,
+  };
 
   /// @deprecated Use RemoteConfigService.instance.aiModel instead
   /// Kept for backward compatibility during migration
@@ -38,7 +46,6 @@ abstract final class AiConfig {
   static const int maxDetailsLength = 500;
 
   /// System instruction (set once per model, saves tokens per call)
-  /// Streamlined for Gemini 3 - clear, concise guidance with examples
   static const String systemInstruction = '''
 Write exactly 3 unique greeting card message options.
 

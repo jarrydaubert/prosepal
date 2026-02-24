@@ -539,7 +539,7 @@ void main() {
 
       test('classifies "not found" as MODEL_NOT_FOUND', () {
         final result = AiService.classifyFirebaseAIError(
-          'Model gemini-3-flash-preview not found',
+          'Model gemini-experimental not found',
         );
 
         expect(result.exceptionType, equals(AiServiceException));

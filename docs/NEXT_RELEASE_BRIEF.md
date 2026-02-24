@@ -192,8 +192,8 @@ Recommendation for next release:
 - AI generation uses Firebase AI SDK (Gemini).
 - Remote-configured primary and fallback model names are supported.
 - Current app defaults (as of 2026-02-24):
-  - primary: `gemini-3-flash-preview`
-  - fallback: `gemini-2.5-flash`
+  - primary: `gemini-2.5-flash`
+  - fallback: `gemini-2.5-flash-lite`
 - vNext production target:
   - production default should be a pinned stable (non-preview) model ID
   - preview models only behind explicit internal/controlled flag
