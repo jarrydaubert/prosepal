@@ -304,7 +304,8 @@ Recommendation for next release:
 - Dedicated FTL-oriented integration entrypoints exist.
 - `gcloud` is configured on this machine and project is set.
 - Required testing API is enabled in project.
-- End-to-end FTL run success has not yet been re-validated in this audit pass.
+- End-to-end FTL critical suite was re-validated on 2026-02-24 with
+  `matrix-jheu7h7cb6lxa` (`oriole-33-en-portrait`), with `4/4` test cases passed.
 
 ---
 
@@ -314,6 +315,8 @@ Recommendation for next release:
 - `flutter analyze` clean.
 - `flutter test` passes locally.
 - Flake audit script passes configured repeated randomized/serial runs.
+- Android Firebase Test Lab critical suite passes with deterministic
+  `integration_test/ftl_test.dart` coverage (`matrix-jheu7h7cb6lxa`, `4/4` passed).
 - Telemetry identity mapping is aligned across auth events:
   - authenticated user ID is applied to Crashlytics and Firebase Analytics on sign-in
   - user ID is cleared from Crashlytics and Firebase Analytics on sign-out
@@ -325,7 +328,7 @@ Recommendation for next release:
 
 ### Still unstable / in-progress
 - Integration smoke on iOS simulator is mostly working but currently has a flaky/failing settings interaction test path.
-- Integration harness requires additional deterministic hardening before being considered release gate quality.
+- Wired physical-device validation gates (iOS + Android) are still pending final evidence capture.
 
 ### Dependencies
 - Dependencies are not fully up-to-date yet.
