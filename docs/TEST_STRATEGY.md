@@ -43,6 +43,7 @@ gcloud firebase test android run --type instrumentation --app build/app/outputs/
 - Critical integration suite on one wired iOS physical device and one wired Android physical device.
 - Android Firebase Test Lab critical suite run.
 - Supabase verification runbook execution.
+- AI cost/abuse runbook execution (`docs/AI_COST_ABUSE_RUNBOOK.md`).
 
 ## Flaky Test Policy
 

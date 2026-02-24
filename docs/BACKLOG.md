@@ -28,6 +28,8 @@
 |------|--------|
 | Supabase leaked-password protection | Enable leaked password protection in Supabase Auth when plan supports it. |
 | Auth loading spinner after OAuth sheet | Show loading overlay after Apple/Google sheet closes until auth completion resolves. |
+| Firebase API key app restrictions | Add platform application restrictions for Firebase auto-created Android/iOS/browser keys and verify with `./scripts/audit_ai_cost_controls.sh`. |
+| Billing budget alert controls | Enable budget alert verification path (permissions/API) and configure release budget thresholds + notifications for AI cost monitoring. |
 
 ## P1 - Testing Gaps
 
