@@ -13,6 +13,7 @@ This file is intentionally concise. Test strategy and policy live in docs.
 ```bash
 # Analyzer + unit/widget
 flutter analyze
+./scripts/test_critical_smoke.sh
 flutter test
 
 # Flake audit
