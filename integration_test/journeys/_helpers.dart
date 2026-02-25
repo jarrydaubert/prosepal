@@ -1,6 +1,7 @@
 /// Shared test helpers for integration tests
 library;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
@@ -8,6 +9,10 @@ import 'package:prosepal/main.dart' as app;
 
 /// Binding for screenshots in Firebase Test Lab
 late IntegrationTestWidgetsFlutterBinding binding;
+const captureIntegrationScreenshots = bool.fromEnvironment(
+  'INTEGRATION_CAPTURE_SCREENSHOTS',
+  defaultValue: false,
+);
 
 /// Initialize the test binding
 void initBinding() {
@@ -16,9 +21,21 @@ void initBinding() {
 
 /// Take a screenshot with the given name (Android requires convertFlutterSurfaceToImage first)
 Future<void> screenshot(WidgetTester tester, String name) async {
-  await binding.convertFlutterSurfaceToImage();
-  await tester.pump();
-  await binding.takeScreenshot(name);
+  if (!captureIntegrationScreenshots) return;
+  if (kIsWeb) return;
+
+  try {
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      await binding.convertFlutterSurfaceToImage().timeout(
+        const Duration(seconds: 8),
+      );
+      await tester.pump();
+    }
+    await binding.takeScreenshot(name).timeout(const Duration(seconds: 8));
+  } on Exception catch (error) {
+    // Screenshot capture is diagnostic-only and should not fail the journey.
+    debugPrint('[WARN] Screenshot skipped for $name: $error');
+  }
 }
 
 /// Launch app and wait for initial screen

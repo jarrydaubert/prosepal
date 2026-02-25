@@ -27,20 +27,37 @@
 /// - Works on virtual devices (no StoreKit/Play Billing needed)
 library;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:prosepal/main.dart' as app;
 
 late IntegrationTestWidgetsFlutterBinding binding;
+const captureIntegrationScreenshots = bool.fromEnvironment(
+  'INTEGRATION_CAPTURE_SCREENSHOTS',
+  defaultValue: false,
+);
 
 void main() {
   binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   Future<void> screenshot(WidgetTester tester, String name) async {
-    await binding.convertFlutterSurfaceToImage();
-    await tester.pump();
-    await binding.takeScreenshot(name);
+    if (!captureIntegrationScreenshots) return;
+    if (kIsWeb) return;
+
+    try {
+      if (defaultTargetPlatform == TargetPlatform.android) {
+        await binding.convertFlutterSurfaceToImage().timeout(
+          const Duration(seconds: 8),
+        );
+        await tester.pump();
+      }
+      await binding.takeScreenshot(name).timeout(const Duration(seconds: 8));
+    } on Exception catch (error) {
+      // Screenshot capture is diagnostic-only and should not fail E2E assertions.
+      debugPrint('[WARN] Screenshot skipped for $name: $error');
+    }
   }
 
   bool exists(Finder finder) => finder.evaluate().isNotEmpty;
