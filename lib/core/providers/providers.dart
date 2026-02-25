@@ -386,7 +386,7 @@ final isProProvider = Provider<bool>((ref) {
   String? currentUserId;
   try {
     currentUserId = Supabase.instance.client.auth.currentUser?.id;
-  } on Exception {
+  } on Object {
     currentUserId = null;
   }
 

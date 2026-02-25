@@ -539,20 +539,26 @@ class _MessageCard extends StatelessWidget {
                   ),
                 ),
                 const Spacer(),
-                // Share button
-                _ActionButton(
-                  icon: Icons.share_outlined,
-                  label: 'Share',
-                  onPressed: onShare,
-                ),
-                const SizedBox(width: 8),
-                // Copy button
-                _ActionButton(
-                  icon: isCopied ? Icons.check : Icons.copy,
-                  label: isCopied ? 'Copied!' : 'Copy',
-                  isPrimary: true,
-                  isSuccess: isCopied,
-                  onPressed: onCopy,
+                Flexible(
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 6,
+                    alignment: WrapAlignment.end,
+                    children: [
+                      _ActionButton(
+                        icon: Icons.share_outlined,
+                        label: 'Share',
+                        onPressed: onShare,
+                      ),
+                      _ActionButton(
+                        icon: isCopied ? Icons.check : Icons.copy,
+                        label: isCopied ? 'Copied!' : 'Copy',
+                        isPrimary: true,
+                        isSuccess: isCopied,
+                        onPressed: onCopy,
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -615,20 +621,29 @@ class _ActionButton extends StatelessWidget {
             borderRadius: BorderRadius.circular(8),
             border: Border.all(color: color, width: 2),
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: 16, color: color),
-              const SizedBox(width: 4),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: color,
-                ),
-              ),
-            ],
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final showLabel = constraints.maxWidth >= 84;
+              return Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(icon, size: 16, color: color),
+                  if (showLabel) ...[
+                    const SizedBox(width: 4),
+                    Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: color,
+                      ),
+                    ),
+                  ],
+                ],
+              );
+            },
           ),
         ),
       ),

@@ -16,12 +16,18 @@ flutter analyze
 ./scripts/test_release_preflight.sh
 ./scripts/test_critical_smoke.sh
 flutter test
+./scripts/check_service_coverage.sh coverage/lcov.info
 
 # Flake audit
 ./scripts/test_flake_audit.sh
 
+# Visual regression (critical screens)
+./scripts/test_visual_regression.sh
+./scripts/test_visual_regression.sh --update
+
 # AI cost/abuse control audit (ops verification)
 ./scripts/audit_ai_cost_controls.sh
+SUPABASE_DB_URL="postgresql://..." ./scripts/verify_supabase_readonly.sh
 
 # Local artifact cleanup
 ./scripts/cleanup.sh --dry-run
@@ -30,6 +36,7 @@ flutter test
 # Integration smoke/e2e
 flutter test integration_test/smoke_test.dart -d <device-id>
 flutter test integration_test/e2e_test.dart -d <device-id>
+flutter test integration_test/e2e_real_test.dart -d <android-device-id> --dart-define=REVENUECAT_USE_TEST_STORE=true
 ./scripts/run_wired_evidence.sh --suite smoke
 ./scripts/run_wired_evidence.sh --suite full
 
@@ -46,3 +53,4 @@ gcloud firebase test android run --type instrumentation --app build/app/outputs/
 - In-test integration screenshots are off by default for stability (`INTEGRATION_CAPTURE_SCREENSHOTS=false`); rely on wired evidence artifacts unless debugging screenshot APIs specifically.
 - iOS external screenshot capture is best-effort and depends on local `idevicescreenshot` pairing support.
 - Keep unstable tests out of blocking gates until fixed.
+- Visual regression failures emit expected/actual/diff artifacts to `test/failures/`.

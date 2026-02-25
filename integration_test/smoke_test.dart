@@ -30,7 +30,6 @@ void main() {
   final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
   const captureIntegrationScreenshots = bool.fromEnvironment(
     'INTEGRATION_CAPTURE_SCREENSHOTS',
-    defaultValue: false,
   );
 
   Future<void> maybeCaptureScreenshot(WidgetTester tester, String name) async {

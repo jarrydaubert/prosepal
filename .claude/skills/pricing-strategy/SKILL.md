@@ -708,3 +708,37 @@ If you need more context:
 - **marketing-psychology**: For pricing psychology principles
 - **ab-test-setup**: For testing pricing changes
 - **analytics-tracking**: For tracking pricing metrics
+
+## Prosepal Context
+
+### Current Pricing Model
+- **Free:** 1 message lifetime, no account required
+- **Paid plans:** Weekly / Monthly / Yearly subscriptions
+- **Platform:** RevenueCat manages offerings, entitlements, and store communication
+- **Commission:** Apple takes 15-30%, Google takes 15-30%
+
+### Pricing Constraints
+- **Store rules:** Apple and Google must approve pricing tiers; can't set arbitrary prices
+- **RevenueCat Offerings:** Price changes must go through RevenueCat offerings, not hardcoded
+- **No web payments:** All purchases through Apple/Google — no Stripe, no web checkout (for now)
+- **Fair use limit:** ~500 messages/month (prevents AI cost abuse, not a pricing tier)
+
+### Pricing Philosophy
+- One simple subscription = access to all features
+- No per-message pricing (causes anxiety and reduces usage)
+- Yearly is best value anchor — display prominently on paywall
+- Weekly plan exists for impulse/seasonal users (Valentine's Day, etc.)
+
+### Competitive Pricing Context
+- ChatGPT Plus: $20/month (but it's a general tool, not card-specific)
+- Hallmark cards: $5-10 each (physical card + message)
+- Prosepal should feel like a bargain vs. alternatives for frequent card senders
+
+### Key Files
+- `lib/core/services/subscription_service.dart` — Entitlement logic
+- `lib/features/paywall/` — Pricing display
+- `docs/NEXT_RELEASE_BRIEF.md` — Revenue model details
+
+### Reference
+- `paywall-upgrade-cro` skill — Optimizing the paywall itself
+- `churn-prevention` skill — Retention after purchase

@@ -197,6 +197,41 @@ void main() {
         expect(find.text('Restore Purchases'), findsOneWidget);
       });
 
+      testWidgetsWithPumps('restore purchases success shows confirmation', (
+        tester,
+      ) async {
+        mockSubscription.restoreResult = true;
+
+        await tester.pumpWidget(buildTestWidget(email: 'test@example.com'));
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('Restore Purchases'));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
+
+        expect(find.text('Purchases restored successfully!'), findsOneWidget);
+      });
+
+      testWidgetsWithPumps('restore purchases failure shows error', (
+        tester,
+      ) async {
+        mockSubscription.methodErrors['restorePurchases'] = Exception(
+          'restore failed',
+        );
+
+        await tester.pumpWidget(buildTestWidget(email: 'test@example.com'));
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('Restore Purchases'));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
+
+        expect(
+          find.text('Unable to restore purchases. Please try again.'),
+          findsOneWidget,
+        );
+      });
+
       testWidgetsWithPumps(
         'Upgrade button shows paywall sheet for anonymous user',
         (tester) async {

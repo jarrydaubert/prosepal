@@ -129,5 +129,54 @@ void main() {
       // Close button should NOT be present for paywall redirect
       expect(find.byIcon(Icons.close), findsNothing);
     });
+
+    testWidgets('shows loading then navigates on successful Google sign-in', (
+      tester,
+    ) async {
+      mockAuth.simulateDelay = const Duration(milliseconds: 300);
+
+      await tester.pumpWidget(createTestableAuthScreen());
+      await tester.pump(const Duration(milliseconds: 300));
+
+      await tester.tap(find.text('Sign in with Google'));
+      await tester.pump();
+
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      expect(mockAuth.signInWithGoogleCallCount, 1);
+
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Home Screen'), findsOneWidget);
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+    });
+
+    testWidgets('shows error banner when Google sign-in fails', (tester) async {
+      mockAuth.simulateRateLimit();
+
+      await tester.pumpWidget(createTestableAuthScreen());
+      await tester.pump(const Duration(milliseconds: 300));
+
+      await tester.tap(find.text('Sign in with Google'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+
+      expect(mockAuth.signInWithGoogleCallCount, 1);
+      expect(find.byIcon(Icons.error_outline_rounded), findsOneWidget);
+      expect(find.text('Home Screen'), findsNothing);
+
+      // Flush auto-dismiss timer started by AuthScreen._showError.
+      await tester.pump(const Duration(seconds: 11));
+    });
+
+    testWidgets('shows pro-restore banner when isProRestore is true', (
+      tester,
+    ) async {
+      await tester.pumpWidget(createTestableAuthScreen(isProRestore: true));
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(find.text('Pro subscription found!'), findsOneWidget);
+      expect(find.text('Sign in to restore your Pro access'), findsOneWidget);
+    });
   });
 }

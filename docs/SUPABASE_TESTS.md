@@ -9,6 +9,26 @@ Verify database schema, RPC security, and edge-function behavior used by the app
 - Access to Supabase project dashboard and SQL editor.
 - Access token/secret for edge-function calls where required.
 - Test user accounts available for authenticated flow checks.
+- `psql` installed locally for automated read-only verification.
+- `SUPABASE_DB_URL` connection string for the target project.
+
+## Automated Read-Only Verification
+
+Run the non-destructive database checks:
+
+```bash
+SUPABASE_DB_URL="postgresql://..." ./scripts/verify_supabase_readonly.sh
+```
+
+What this script verifies:
+- required app tables exist,
+- required RPC/functions exist,
+- RLS is enabled on protected tables,
+- at least one RLS policy exists on each protected table.
+
+Notes:
+- This script is read-only and does not mutate data.
+- Edge-function behavior checks and destructive/security-sensitive checks remain manual.
 
 ## Database Verification
 

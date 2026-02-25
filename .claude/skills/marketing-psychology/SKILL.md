@@ -449,3 +449,20 @@ If you need more context:
 - **popup-cro**: Use triggers and psychology in popups
 - **pricing-page optimization**: See page-cro for pricing psychology
 - **ab-test-setup**: Test psychological hypotheses
+
+## Prosepal Context
+
+### Key Psychological Principles at Play
+
+1. **Blank Card Anxiety** — The "blank page" effect: users experience mild anxiety when facing an empty card. Prosepal resolves this emotional friction.
+2. **Gifting Psychology** — Card messages are tied to gift-giving relationships. The message carries emotional weight disproportionate to its length.
+3. **Scarcity (1 Free Message)** — The single free message creates a natural scarcity trigger. After experiencing the value, the loss of future access motivates purchase.
+4. **Emotional Relief** — The primary value isn't the message itself — it's the relief of having the hard part done. Market the feeling, not the feature.
+5. **IKEA Effect** — Users who customize the tone/occasion feel ownership of the generated message, even though AI wrote it.
+6. **Peak-End Rule** — The moment of seeing the generated message (peak) and copying it to write in the card (end) define the experience. Optimize these two moments.
+
+### Application to Prosepal Marketing
+- Lead with empathy for the struggle, not features
+- "You've been there" > "Our AI generates"
+- Show the emotional relief, not the technology
+- Use seasonal urgency naturally (Valentine's Day is coming, not "LIMITED TIME")

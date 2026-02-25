@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 import '../../core/errors/auth_errors.dart';
@@ -92,9 +91,10 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
               .identifyUser(authService.currentUser!.id);
         }
 
-        // Restore purchases from App Store
-        final customerInfo = await Purchases.restorePurchases();
-        final hasPro = customerInfo.entitlements.active.containsKey('pro');
+        // Restore through the subscription service (mockable + platform-safe)
+        final hasPro = await ref
+            .read(subscriptionServiceProvider)
+            .restorePurchases();
         Log.info('Auto-restore completed', {'hasPro': hasPro});
 
         if (!mounted) return;
@@ -628,12 +628,16 @@ class _AuthButtonState extends State<_AuthButton> {
                   widget.icon!,
                   const SizedBox(width: 12),
                 ],
-                Text(
-                  widget.label ?? '',
-                  style: TextStyle(
-                    fontSize: 19,
-                    fontWeight: FontWeight.w500,
-                    color: textColor,
+                Flexible(
+                  child: Text(
+                    widget.label ?? '',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w500,
+                      color: textColor,
+                    ),
                   ),
                 ),
               ],

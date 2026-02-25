@@ -1026,23 +1026,27 @@ class _StatsCard extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 16),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '$totalGenerated messages generated',
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textOnLight,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '$totalGenerated messages generated',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textOnLight,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                'All time',
-                style: TextStyle(fontSize: 13, color: Colors.grey[600]),
-              ),
-            ],
+                const SizedBox(height: 2),
+                Text(
+                  'All time',
+                  style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                ),
+              ],
+            ),
           ),
         ],
       ),

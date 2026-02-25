@@ -506,3 +506,33 @@ If you need more context:
 - **page-cro**: For generating test ideas based on CRO principles
 - **analytics-tracking**: For setting up test measurement
 - **copywriting**: For creating variant copy
+
+## Prosepal Context
+
+### A/B Testing Infrastructure
+- **Platform:** Firebase Remote Config (not third-party tools)
+- **Current parameters:** `ai_model`, `min_app_version` — see `docs/NEXT_RELEASE_BRIEF.md`
+- **No web A/B testing tools** — No Optimizely, VWO, or Google Optimize (mobile app)
+
+### What to A/B Test in Prosepal
+- AI model parameters (temperature, prompt variations)
+- Paywall layout and copy
+- Onboarding flow steps
+- Pricing display (yearly first vs. monthly first)
+- CTA text on key screens
+
+### What NOT to A/B Test
+- Core AI generation quality (test offline, not in production)
+- Pricing itself (must go through RevenueCat Offerings for store compliance)
+- Auth methods (Apple/Google required by platform policies)
+
+### Implementation Pattern
+1. Define parameter in Firebase Remote Config
+2. Fetch config on app start (with sensible defaults)
+3. Read parameter via Remote Config service
+4. Log variant to Firebase Analytics for analysis
+5. Analyze in Firebase Console or BigQuery export
+
+### Key Files
+- Firebase Remote Config — console.firebase.google.com
+- `docs/NEXT_RELEASE_BRIEF.md` — Current RC parameters

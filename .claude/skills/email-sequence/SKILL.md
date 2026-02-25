@@ -923,3 +923,32 @@ If you need more context:
 - **copywriting**: For landing pages emails link to
 - **ab-test-setup**: For testing email elements
 - **popup-cro**: For email capture popups
+
+## Prosepal Context
+
+### Email Capture Points
+- **prosepal-web** — Landing page email signup (pre-launch / waitlist)
+- **In-app** — After account creation (Apple/Google/Email auth via Supabase)
+- **No mandatory email** — Users can use the app without providing email (deferred auth)
+
+### Key Email Sequences
+1. **Post-download welcome** — Explain value, encourage first message generation
+2. **Free message used** — Nudge toward subscription after they've seen the value
+3. **Seasonal reminders** — "Valentine's Day is 2 weeks away — got your cards ready?"
+4. **Win-back** — Re-engage lapsed subscribers before renewal lapses
+5. **Post-purchase onboarding** — Feature tips, occasion ideas, maximize perceived value
+
+### Email Tone
+- Same warm, empathetic voice as the app
+- Short and actionable — mobile-first reading
+- Each email should have ONE clear CTA
+- Don't send too frequently — this is an occasion-driven app, not a daily tool
+
+### What NOT to Email About
+- AI technology details (users don't care how it works)
+- Feature announcements (unless directly useful for upcoming occasion)
+- Generic newsletters with no clear value
+
+### Reference
+- `docs/MARKETING.md` — Email marketing strategy
+- `churn-prevention` skill — Retention email patterns

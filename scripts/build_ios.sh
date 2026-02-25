@@ -21,6 +21,7 @@ EXTRA_DEFINES=()
 
 if [ -n "$SDK_ROOT" ]; then
     echo "Using iOS SDK root: $SDK_ROOT"
+    export SDKROOT="$SDK_ROOT"
     EXTRA_DEFINES+=(--dart-define=SdkRoot="$SDK_ROOT")
 else
     echo "Warning: Could not resolve iOS SDK path via xcrun; continuing without SdkRoot define."

@@ -624,3 +624,30 @@ If you need more context:
 - **schema-markup**: For adding structured data to templates
 - **copywriting**: For the non-templated copy portions
 - **analytics-tracking**: For measuring programmatic page performance
+
+## Prosepal Context
+
+### Scope: prosepal-web Future Potential
+Programmatic SEO is a future opportunity for prosepal-web, not a current priority.
+
+### Template Opportunities
+1. **Occasion pages:** "/messages/birthday", "/messages/sympathy", "/messages/thank-you"
+2. **Occasion + relationship:** "/messages/birthday/friend", "/messages/sympathy/coworker"
+3. **Occasion + tone:** "/messages/birthday/funny", "/messages/sympathy/formal"
+4. **"What to write" guides:** "/what-to-write-in-a-birthday-card"
+
+### Data Source
+- Occasions, relationships, and tones are already defined in the app's AI service
+- `lib/core/services/ai_service.dart` contains the enumeration of options
+- These can be exported to drive web page generation
+
+### Implementation Notes
+- Each page should include 2-3 example AI-generated messages (pre-generated, not live)
+- CTA on every page: "Get unlimited personalized messages — Download Prosepal"
+- Canonical URLs to prevent occasion/relationship/tone permutation explosion
+- Start with top 10 occasions only, expand based on search volume data
+
+### Reference
+- `seo-audit` skill — SEO fundamentals
+- `ai-seo` skill — AI search optimization
+- prosepal-web repo — Implementation target

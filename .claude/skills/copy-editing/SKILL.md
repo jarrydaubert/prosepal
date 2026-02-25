@@ -437,3 +437,22 @@ If you need more context:
 | Reviewing and improving existing copy | copy-editing (this skill) |
 | Editing copy you just wrote | copy-editing (this skill) |
 | Structural or strategic page changes | page-cro |
+
+## Prosepal Context
+
+### What Gets Copy-Edited
+1. **App Store / Play Store listings** — Must be polished, keyword-optimized, and compliant
+2. **In-app UI strings** — Concise, warm, clear
+3. **Landing page copy (prosepal-web)** — Conversion-focused, SEO-aware
+4. **Marketing content** — Social posts, ad copy, email sequences
+5. **AI-generated message quality** — Reviewing and improving AI prompt outputs
+
+### Editing Standards
+- **Voice:** Warm, helpful, slightly playful — consistent across all surfaces
+- **Greeting card sensitivity:** Occasions include sympathy, loss, illness — tone must be respectful
+- **Brevity:** Mobile-first means shorter copy; every word must earn its place
+- **Accessibility:** Use plain language, avoid jargon, support screen readers
+
+### Reference
+- `copywriting` skill — For writing new copy
+- `product-marketing-context` skill — Brand voice and positioning

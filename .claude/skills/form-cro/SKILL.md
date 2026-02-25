@@ -423,3 +423,24 @@ If you need more context:
 - **popup-cro**: For forms inside popups/modals
 - **page-cro**: For the page containing the form
 - **ab-test-setup**: For testing form changes
+
+## Prosepal Context
+
+### Primary "Form": Message Generation Wizard
+The core Prosepal interaction is a multi-step form: select occasion → select relationship → select tone → generate message. This is the main conversion funnel.
+
+### Form CRO Principles for Prosepal
+- **Minimize steps** — Each additional step loses users; keep the generation wizard to 3-4 steps max
+- **Smart defaults** — Pre-select common options (e.g., "Birthday" as default occasion)
+- **Progressive disclosure** — Show only relevant options at each step (e.g., tone options based on occasion)
+- **Visual selectors** — Chips/cards > dropdowns for occasion and relationship selection
+- **No text input required** — The whole point is the user doesn't have to write; keep inputs to taps only
+
+### What NOT to Do
+- Don't add optional fields that delay generation
+- Don't require auth before the form is complete
+- Don't show all options at once (overwhelm = abandonment)
+
+### Key Files
+- `lib/features/` — Message generation screens
+- `lib/core/services/ai_service.dart` — Parameters the form collects
