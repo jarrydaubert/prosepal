@@ -16,6 +16,9 @@ const validPayload = {
   },
 }
 
+/**
+ * Builds a webhook request with auth and JSON body.
+ */
 function makeRequest(payload: unknown): Request {
   return new Request('https://example.supabase.co/functions/v1/revenuecat-webhook', {
     method: 'POST',
@@ -27,6 +30,9 @@ function makeRequest(payload: unknown): Request {
   })
 }
 
+/**
+ * Creates deterministic dependency overrides for webhook handler tests.
+ */
 function makeDeps(options: {
   upsertError?: { code?: string; message?: string; details?: string }
   now?: Date

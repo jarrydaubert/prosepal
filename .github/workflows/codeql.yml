@@ -8,6 +8,10 @@ on:
   schedule:
     - cron: '0 3 * * 1'
 
+concurrency:
+  group: codeql-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   actions: read
   contents: read
@@ -17,7 +21,7 @@ jobs:
   analyze:
     name: CodeQL
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
@@ -25,7 +29,7 @@ jobs:
       - name: Initialize CodeQL
         uses: github/codeql-action/init@89a39a4e59826350b863aa6b6252a07ad50cf83e
         with:
-          languages: actions
+          languages: actions,javascript-typescript
 
       - name: Analyze
         uses: github/codeql-action/analyze@89a39a4e59826350b863aa6b6252a07ad50cf83e

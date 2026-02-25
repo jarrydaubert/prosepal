@@ -1,21 +1,33 @@
-// exchange-apple-token: Exchange Apple authorization code for refresh token
-// Deploy: supabase functions deploy exchange-apple-token
-//
-// Called immediately after Apple Sign In to exchange the short-lived
-// authorization code for a long-lived refresh token (for revocation on delete).
+/**
+ * Exchanges an Apple authorization code for long-lived token material.
+ *
+ * Deploy with:
+ * `supabase functions deploy exchange-apple-token`
+ *
+ * Called immediately after Apple Sign In to persist refresh tokens that are
+ * needed later for compliant account-deletion revocation.
+ */
 import { createClient } from "npm:@supabase/supabase-js@2.95.3"
 
+/** Apple token exchange endpoint. */
 const APPLE_TOKEN_URL = 'https://appleid.apple.com/auth/token'
 
-// CORS restricted - only called from mobile app (native HTTP, not browser)
-// Empty origin blocks browser-based attacks while allowing mobile requests
+/**
+ * CORS policy for native mobile calls.
+ * Empty `Access-Control-Allow-Origin` blocks browser access while allowing
+ * native clients that do not send browser origin headers.
+ */
 const corsHeaders = {
   'Access-Control-Allow-Origin': '', // Mobile apps don't send Origin header
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
-// Generate Apple client secret JWT
+/**
+ * Creates a short-lived Apple client-secret JWT for token exchange.
+ *
+ * @returns Signed JWT string when credentials exist; otherwise `null`.
+ */
 async function generateAppleClientSecret(): Promise<string | null> {
   const teamId = Deno.env.get('APPLE_TEAM_ID')
   const clientId = Deno.env.get('APPLE_CLIENT_ID')
@@ -71,6 +83,10 @@ async function generateAppleClientSecret(): Promise<string | null> {
   }
 }
 
+/**
+ * Edge-function entrypoint.
+ * Validates caller auth, exchanges Apple auth code, and stores token material.
+ */
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })

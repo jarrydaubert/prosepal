@@ -312,7 +312,7 @@ Recommendation for next release:
 - Analyzer, unit/widget tests, and critical smoke are blocking gates.
 - Flaky tests are quarantined and tracked in backlog before release gating.
 - Release preflight is enforced via `scripts/release_preflight.sh` and `scripts/test_release_preflight.sh`.
-- AI cost/abuse controls are validated through `docs/AI_COST_ABUSE_RUNBOOK.md` and `./scripts/audit_ai_cost_controls.sh`.
+- AI cost/abuse controls are validated through `docs/DEVOPS.md` and `./scripts/audit_ai_cost_controls.sh`.
 - Identity mapping is validated through `docs/IDENTITY_MAPPING.md` and diagnostics output.
 
 ### Backlog policy
