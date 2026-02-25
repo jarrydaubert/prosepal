@@ -22,13 +22,28 @@ jobs:
       - name: Checkout
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
 
+      - name: Setup Flutter
+        uses: subosito/flutter-action@fd55f4c5af5b953cc57a2be44cb082c8f6635e8e
+        with:
+          channel: stable
+          flutter-version: '3.38.6'
+          cache: false
+
       - name: Initialize CodeQL
         uses: github/codeql-action/init@45580472a5bb82c4681c4ac726cfdb60060c2ee1
         with:
-          languages: java-kotlin,swift
+          languages: java-kotlin
 
-      - name: Autobuild
-        uses: github/codeql-action/autobuild@45580472a5bb82c4681c4ac726cfdb60060c2ee1
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Prepare Android local.properties
+        run: |
+          echo "flutter.sdk=${FLUTTER_ROOT}" > android/local.properties
+          echo "sdk.dir=${ANDROID_SDK_ROOT}" >> android/local.properties
+
+      - name: Build Android for CodeQL extraction
+        run: flutter build apk --debug
 
       - name: Analyze
         uses: github/codeql-action/analyze@45580472a5bb82c4681c4ac726cfdb60060c2ee1
