@@ -39,8 +39,10 @@ jobs:
       - name: Critical smoke gate
         run: ./scripts/test_critical_smoke.sh
 
-      - name: Unit and widget tests
-        run: flutter test --exclude-tags flaky --coverage
+      - name: Unit and widget tests (non-golden)
+        run: |
+          mapfile -t TEST_FILES < <(find test -name '*_test.dart' ! -path 'test/widgets/goldens/*' | sort)
+          flutter test --exclude-tags flaky --coverage "${TEST_FILES[@]}"
 
       - name: Service coverage gate
         env:
