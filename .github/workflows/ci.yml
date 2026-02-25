@@ -19,7 +19,7 @@ jobs:
       contents: read
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Release config preflight tests
         run: ./scripts/test_release_preflight.sh
