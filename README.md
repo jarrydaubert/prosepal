@@ -1,6 +1,20 @@
 # Prosepal
 
-AI-powered greeting-card message app.
+Prosepal is an AI-powered greeting message app for creating high-quality card and occasion messages quickly.
+
+## What It Does
+
+- Generates multiple message options from occasion, relationship, tone, and optional personal details.
+- Supports anonymous-first usage with optional account sign-in for persistence and restore flows.
+- Integrates subscription entitlements through RevenueCat.
+- Uses Firebase AI (Gemini) with runtime safety controls and operational kill-switches.
+
+## Reliability And Safety
+
+- Infrastructure-first release policy before major redesign work.
+- Hardened GitHub repository and Actions posture for public-repo safety.
+- Deterministic CI gate with analyzer, smoke tests, and TypeScript validation for Supabase functions.
+- Canonical DevOps runbook for release, rollback, and incident handling.
 
 ## Quick Start
 
@@ -11,6 +25,15 @@ flutter analyze
 flutter test
 ./scripts/test_flake_audit.sh
 ./scripts/cleanup.sh --dry-run
+```
+
+## Developer Commands
+
+```bash
+./scripts/run_ios.sh
+./scripts/run_android.sh
+./scripts/run_wired_evidence.sh --suite smoke
+./scripts/audit_ai_cost_controls.sh
 ```
 
 ## Core Docs
