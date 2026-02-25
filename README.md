@@ -10,7 +10,7 @@ flutter run
 flutter analyze
 flutter test
 ./scripts/test_flake_audit.sh
-npm run cleanup:dry-run
+./scripts/cleanup.sh --dry-run
 ```
 
 ## Core Docs

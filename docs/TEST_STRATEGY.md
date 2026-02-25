@@ -18,6 +18,7 @@ flutter analyze
 ./scripts/test_critical_smoke.sh
 flutter test
 ./scripts/test_flake_audit.sh
+./scripts/cleanup.sh --dry-run
 flutter test integration_test/smoke_test.dart -d <device-id>
 flutter test integration_test/e2e_test.dart -d <device-id>
 ./scripts/run_wired_evidence.sh --suite smoke

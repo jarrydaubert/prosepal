@@ -23,6 +23,10 @@ flutter test
 # AI cost/abuse control audit (ops verification)
 ./scripts/audit_ai_cost_controls.sh
 
+# Local artifact cleanup
+./scripts/cleanup.sh --dry-run
+./scripts/cleanup.sh
+
 # Integration smoke/e2e
 flutter test integration_test/smoke_test.dart -d <device-id>
 flutter test integration_test/e2e_test.dart -d <device-id>
