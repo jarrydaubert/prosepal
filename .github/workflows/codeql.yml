@@ -26,7 +26,7 @@ jobs:
         run: |
           git clone https://github.com/flutter/flutter.git --depth 1 --branch 3.38.6 "$HOME/flutter"
           echo "$HOME/flutter/bin" >> "$GITHUB_PATH"
-          flutter --version
+          "$HOME/flutter/bin/flutter" --version
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@45580472a5bb82c4681c4ac726cfdb60060c2ee1

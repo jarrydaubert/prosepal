@@ -24,7 +24,7 @@ jobs:
         run: |
           git clone https://github.com/flutter/flutter.git --depth 1 --branch 3.38.6 "$HOME/flutter"
           echo "$HOME/flutter/bin" >> "$GITHUB_PATH"
-          flutter --version
+          "$HOME/flutter/bin/flutter" --version
 
       - name: Install dependencies
         run: flutter pub get
