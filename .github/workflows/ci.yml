@@ -49,8 +49,8 @@ jobs:
           MIN_COVERAGE: '35'
         run: ./scripts/check_service_coverage.sh coverage/lcov.info
 
-      - name: Android debug build
-        run: flutter build apk --debug
+      - name: Flutter debug bundle build
+        run: flutter build bundle --debug
 
       - name: Upload coverage artifact
         if: always()
