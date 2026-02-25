@@ -70,8 +70,10 @@ The script checks:
   - Application restrictions for platform keys:
     - Android key: package + SHA-1/256
     - iOS key: bundle ID
-    - Browser key: allowed referrers
+    - Browser key: allowed referrers (production domains only; no localhost/127.0.0.1)
 - Confirm AI key(s) restricted to `generativelanguage.googleapis.com`.
+- Do not keep standalone Gemini API keys without app/server restrictions.
+  - Exception: Firebase-managed `Gemini Developer API key (auto created by Firebase)`.
 
 ### 2) App Check Production Posture
 
