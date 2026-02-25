@@ -1,27 +1,28 @@
-// revenuecat-webhook: Sync subscription status from RevenueCat
-// Deploy: supabase functions deploy revenuecat-webhook
-//
-// Setup in RevenueCat Dashboard:
-// 1. Go to Project Settings > Integrations > Webhooks
-// 2. Add webhook URL: https://<project>.supabase.co/functions/v1/revenuecat-webhook
-// 3. Add Authorization header with REVENUECAT_WEBHOOK_SECRET
-//
-// Environment variables required:
-// - REVENUECAT_WEBHOOK_SECRET: Shared secret for webhook auth
-// - SUPABASE_URL: Auto-set by Supabase
-// - SUPABASE_SERVICE_ROLE_KEY: Auto-set by Supabase
+/**
+ * RevenueCat webhook handler for entitlement synchronization.
+ *
+ * Deploy with:
+ * `supabase functions deploy revenuecat-webhook`
+ *
+ * Dashboard setup:
+ * 1. Project Settings -> Integrations -> Webhooks
+ * 2. URL: `https://<project>.supabase.co/functions/v1/revenuecat-webhook`
+ * 3. Authorization header value: `Bearer <REVENUECAT_WEBHOOK_SECRET>`
+ */
 
 import { createClient } from "npm:@supabase/supabase-js@2.95.3"
 
-// CORS disabled - this is a server-to-server webhook endpoint
-// RevenueCat calls this directly, not from a browser
+/**
+ * CORS policy for server-to-server webhook use.
+ * Empty origin prevents browser use.
+ */
 const corsHeaders = {
   'Access-Control-Allow-Origin': '', // No browser access needed
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
-// RevenueCat event types that indicate Pro status
+/** Event types that grant/maintain Pro access. */
 const PRO_GRANT_EVENTS = [
   'INITIAL_PURCHASE',
   'RENEWAL',
@@ -36,6 +37,7 @@ const PRO_REVOKE_EVENTS = [
   'BILLING_ISSUE',
 ]
 
+/** Minimal validated shape of incoming RevenueCat webhook payload. */
 interface RevenueCatEvent {
   event: {
     type: string
@@ -48,20 +50,24 @@ interface RevenueCatEvent {
   api_version: string
 }
 
+/** Environment getter abstraction for testability. */
 type EnvGetter = (key: string) => string | undefined
 
+/** Logger abstraction for testable structured logging. */
 type Logger = {
   log: (...args: unknown[]) => void
   warn: (...args: unknown[]) => void
   error: (...args: unknown[]) => void
 }
 
+/** Subset of database error fields consumed by this handler. */
 type DbError = {
   code?: string
   message?: string
   details?: string
 }
 
+/** Minimal admin-client contract required by this handler. */
 type AdminClient = {
   from: (table: string) => {
     upsert: (
@@ -71,11 +77,13 @@ type AdminClient = {
   }
 }
 
+/** Factory signature for creating admin clients. */
 type CreateAdminClient = (
   supabaseUrl: string,
   supabaseServiceKey: string,
 ) => AdminClient
 
+/** Optional dependency overrides for deterministic testing. */
 interface WebhookDeps {
   getEnv?: EnvGetter
   createAdminClient?: CreateAdminClient
@@ -83,6 +91,9 @@ interface WebhookDeps {
   now?: () => Date
 }
 
+/**
+ * Builds a JSON response with shared webhook headers.
+ */
 function jsonResponse(body: Record<string, unknown>, status: number): Response {
   return new Response(
     JSON.stringify(body),
@@ -93,12 +104,19 @@ function jsonResponse(body: Record<string, unknown>, status: number): Response {
   )
 }
 
+/**
+ * Validates UUID format for Supabase user IDs.
+ */
 function isUuid(value: string): boolean {
   const uuidRegex =
     /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
   return uuidRegex.test(value)
 }
 
+/**
+ * Returns true when the DB error indicates an unknown/deleted user and should
+ * be treated as a permanent no-retry condition.
+ */
 function isUnknownUserDbError(error: unknown): boolean {
   if (!error || typeof error !== 'object') return false
   const e = error as { code?: string; message?: string; details?: string }
@@ -110,6 +128,10 @@ function isUnknownUserDbError(error: unknown): boolean {
   )
 }
 
+/**
+ * Parses and validates a RevenueCat webhook payload.
+ * Invalid payloads are considered permanent and should be acknowledged.
+ */
 function parsePayload(payload: unknown): { ok: true; value: RevenueCatEvent } | { ok: false; reason: string } {
   if (!payload || typeof payload !== 'object') {
     return { ok: false, reason: 'Invalid payload root' }

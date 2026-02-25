@@ -28,4 +28,4 @@ This policy keeps project docs evergreen and actionable.
 ## Ownership
 
 - Any PR that adds TODO/status language to docs must move that content to backlog.
-- Any PR that changes workflows must update the related runbook in the same PR.
+- Any PR that changes workflows must update `docs/DEVOPS.md` in the same PR.

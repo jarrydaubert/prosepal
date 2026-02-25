@@ -4,7 +4,7 @@ This file is intentionally concise. Test strategy and policy live in docs.
 
 ## Primary References
 
-- [Test Strategy](../docs/TEST_STRATEGY.md)
+- [DevOps Runbook](../docs/DEVOPS.md)
 - [Docs Policy](../docs/DOCS_POLICY.md)
 - [Backlog](../docs/BACKLOG.md)
 

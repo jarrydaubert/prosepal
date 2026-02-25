@@ -484,8 +484,7 @@ class MockAiService implements AiService {
 
 ### Verification References
 
-- Test workflow and release gates: `docs/TEST_STRATEGY.md`
-- Supabase verification steps: `docs/SUPABASE_TESTS.md`
+- Test workflow, release gates, and operational verification: `docs/DEVOPS.md`
 - Command quick reference: `test/README.md`
 - Open issues and pending work: `docs/BACKLOG.md`
 
