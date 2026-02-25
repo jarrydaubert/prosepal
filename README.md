@@ -17,9 +17,11 @@ flutter test
 
 - `AGENTS.md` - Canonical agent policy
 - `CLAUDE.md` - Claude compatibility profile
+- `SECURITY.md` - Vulnerability reporting process
 - `docs/NEXT_RELEASE_BRIEF.md` - vNext scope and release gates
 - `docs/BACKLOG.md` - Only open work tracker
 - `docs/TEST_STRATEGY.md` - Testing framework and gates
+- `docs/RELEASE_POLICY.md` - Semantic release process and governance
 - `docs/REMOTE_CONFIG.md` - Remote Config keys and safety rules
 - `docs/REVENUECAT_POLICY.md` - Subscription identity and restore policy
 - `docs/IDENTITY_MAPPING.md` - Canonical auth/subscription/telemetry identity map
