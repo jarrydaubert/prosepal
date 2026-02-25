@@ -91,7 +91,7 @@ class SupabaseAuthProvider implements ISupabaseAuthProvider {
       // Accessing .client throws if not initialized
       final _ = Supabase.instance.client;
       return true;
-    } on Exception catch (_) {
+    } on Object catch (_) {
       return false;
     }
   }

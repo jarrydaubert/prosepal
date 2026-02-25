@@ -3,9 +3,12 @@ library;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
+import 'package:prosepal/core/config/preference_keys.dart';
 import 'package:prosepal/main.dart' as app;
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Binding for screenshots in Firebase Test Lab
 late IntegrationTestWidgetsFlutterBinding binding;
@@ -16,6 +19,7 @@ const captureIntegrationScreenshots = bool.fromEnvironment(
 /// Initialize the test binding
 void initBinding() {
   binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+  binding.framePolicy = LiveTestWidgetsFlutterBindingFramePolicy.onlyPumps;
 }
 
 /// Take a screenshot with the given name (Android requires convertFlutterSurfaceToImage first)
@@ -39,8 +43,14 @@ Future<void> screenshot(WidgetTester tester, String name) async {
 
 /// Launch app and wait for initial screen
 Future<void> launchApp(WidgetTester tester) async {
+  addTearDown(() async {
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(milliseconds: 50));
+  });
+
+  await _resetPersistentState();
   app.main();
-  await tester.pumpAndSettle(const Duration(seconds: 5));
+  await _pumpFor(tester, const Duration(seconds: 3));
 }
 
 /// Skip onboarding screens until home is visible
@@ -56,14 +66,14 @@ Future<void> skipOnboarding(WidgetTester tester) async {
     // Tap "Get Started" to complete onboarding (final carousel page)
     if (find.text('Get Started').evaluate().isNotEmpty) {
       await tester.tap(find.text('Get Started'));
-      await tester.pumpAndSettle(const Duration(seconds: 2));
+      await _pumpFor(tester, const Duration(seconds: 2));
       break;
     }
 
     // Tap "Continue" to advance carousel
     if (find.text('Continue').evaluate().isNotEmpty) {
       await tester.tap(find.text('Continue'));
-      await tester.pumpAndSettle(const Duration(seconds: 1));
+      await _pumpFor(tester, const Duration(seconds: 1));
       attempts++;
     } else {
       break;
@@ -85,7 +95,7 @@ Future<bool> navigateToSettings(WidgetTester tester) async {
   if (find.byIcon(Icons.settings_outlined).evaluate().isEmpty) return false;
 
   await tester.tap(find.byIcon(Icons.settings_outlined));
-  await tester.pumpAndSettle();
+  await _pumpFor(tester, const Duration(seconds: 1));
 
   return find.text('Settings').evaluate().isNotEmpty;
 }
@@ -106,33 +116,33 @@ Future<bool> completeWizard(
         200,
         scrollable: scrollable,
       );
-      await tester.pumpAndSettle();
+      await _pumpFor(tester, const Duration(seconds: 1));
     } on Exception catch (_) {
       return false;
     }
   }
 
   await tester.tap(find.text(occasion));
-  await tester.pumpAndSettle();
+  await _pumpFor(tester, const Duration(seconds: 1));
 
   // Select relationship
   if (find.text(relationship).evaluate().isNotEmpty) {
     await tester.tap(find.text(relationship));
-    await tester.pumpAndSettle();
+    await _pumpFor(tester, const Duration(seconds: 1));
   }
   if (find.text('Continue').evaluate().isNotEmpty) {
     await tester.tap(find.text('Continue'));
-    await tester.pumpAndSettle();
+    await _pumpFor(tester, const Duration(seconds: 1));
   }
 
   // Select tone
   if (find.text(tone).evaluate().isNotEmpty) {
     await tester.tap(find.text(tone));
-    await tester.pumpAndSettle();
+    await _pumpFor(tester, const Duration(seconds: 1));
   }
   if (find.text('Continue').evaluate().isNotEmpty) {
     await tester.tap(find.text('Continue'));
-    await tester.pumpAndSettle();
+    await _pumpFor(tester, const Duration(seconds: 1));
   }
 
   // Check final step
@@ -147,7 +157,7 @@ Future<bool> navigateToAuth(WidgetTester tester) async {
 
   if (find.text('Upgrade to Continue').evaluate().isNotEmpty) {
     await tester.tap(find.text('Upgrade to Continue'));
-    await tester.pumpAndSettle(const Duration(seconds: 2));
+    await _pumpFor(tester, const Duration(seconds: 2));
     return find.text('Continue with Email').evaluate().isNotEmpty ||
         find.text('Continue with Apple').evaluate().isNotEmpty;
   }
@@ -175,7 +185,7 @@ Future<bool> scrollToText(
       delta,
       scrollable: scrollable,
     );
-    await tester.pumpAndSettle();
+    await _pumpFor(tester, const Duration(seconds: 1));
     return true;
   } on Exception catch (_) {
     return false;
@@ -186,8 +196,29 @@ Future<bool> scrollToText(
 Future<bool> tapBack(WidgetTester tester) async {
   if (find.byIcon(Icons.arrow_back).evaluate().isNotEmpty) {
     await tester.tap(find.byIcon(Icons.arrow_back));
-    await tester.pumpAndSettle();
+    await _pumpFor(tester, const Duration(seconds: 1));
     return true;
   }
   return false;
+}
+
+Future<void> _resetPersistentState() async {
+  SharedPreferences.setMockInitialValues({
+    PreferenceKeys.hasCompletedOnboarding: false,
+    PreferenceKeys.hasSeenFirstActionHint: false,
+    PreferenceKeys.analyticsEnabled: false,
+  });
+  FlutterSecureStorage.setMockInitialValues(const <String, String>{});
+}
+
+Future<void> _pumpFor(
+  WidgetTester tester,
+  Duration duration, {
+  Duration step = const Duration(milliseconds: 100),
+}) async {
+  var elapsed = Duration.zero;
+  while (elapsed < duration) {
+    await tester.pump(step);
+    elapsed += step;
+  }
 }

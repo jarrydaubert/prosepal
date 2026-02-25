@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -32,6 +33,10 @@ void main() async {
   // Preserve native splash until we're ready
   final widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
+
+  // Avoid network font fetching in runtime/device tests.
+  // If a font isn't bundled locally, Flutter falls back to system fonts.
+  GoogleFonts.config.allowRuntimeFetching = false;
 
   // Lock to portrait orientation only
   await SystemChrome.setPreferredOrientations([
