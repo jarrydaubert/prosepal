@@ -55,20 +55,11 @@ The script checks:
 - API key restriction posture
 - Budget visibility / configured budget presence (if permissions allow)
 
-## Latest Audit Snapshot (2026-02-24)
+## Evidence Handling
 
-- Project: `prosepal-1a24b`
-- Command: `./scripts/audit_ai_cost_controls.sh`
-- Result: `FAIL`
-- Findings:
-  - Required AI/App Check/Remote Config services: pass
-  - Missing app-level restrictions on Firebase auto-created keys:
-    - Android key
-    - iOS key
-    - Browser key
-  - Billing budget verification blocked:
-    - `billingbudgets.googleapis.com` not enabled for project
-    - current account lacks budget listing path until API/access is enabled
+- Do not store time-bound audit results in this runbook.
+- Store per-run audit output in release evidence artifacts.
+- Any failure discovered by the audit must be tracked in `docs/BACKLOG.md`.
 
 ## Manual Verification Checklist
 
