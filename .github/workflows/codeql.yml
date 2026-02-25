@@ -25,10 +25,7 @@ jobs:
       - name: Initialize CodeQL
         uses: github/codeql-action/init@45580472a5bb82c4681c4ac726cfdb60060c2ee1
         with:
-          languages: java-kotlin,swift
-
-      - name: Autobuild
-        uses: github/codeql-action/autobuild@45580472a5bb82c4681c4ac726cfdb60060c2ee1
+          languages: actions
 
       - name: Analyze
         uses: github/codeql-action/analyze@45580472a5bb82c4681c4ac726cfdb60060c2ee1
