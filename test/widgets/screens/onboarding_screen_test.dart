@@ -23,7 +23,16 @@ void main() {
     mockAuth.dispose();
   });
 
-  Widget createTestableOnboardingScreen({GoRouter? router}) {
+  Widget createTestableOnboardingScreen({
+    GoRouter? router,
+    bool servicesReady = true,
+    bool isPro = false,
+    bool isLoggedIn = false,
+  }) {
+    if (isLoggedIn) {
+      mockAuth.setLoggedIn(true, email: 'test@example.com');
+    }
+
     final testRouter =
         router ??
         GoRouter(
@@ -52,15 +61,17 @@ void main() {
         );
 
     // Pre-initialize initStatusNotifier for tests (services ready)
-    final initStatusNotifier = InitStatusNotifier()
-      ..markSupabaseReady()
-      ..markRevenueCatReady();
+    final initStatusNotifier = InitStatusNotifier();
+    if (servicesReady) {
+      initStatusNotifier
+        ..markSupabaseReady()
+        ..markRevenueCatReady();
+    }
 
     return ProviderScope(
       overrides: [
         initStatusProvider.overrideWith((ref) => initStatusNotifier),
-        // Mock isProProvider to return false (no subscription)
-        isProProvider.overrideWith((ref) => false),
+        isProProvider.overrideWith((ref) => isPro),
         // Mock auth service to avoid Supabase initialization
         authServiceProvider.overrideWithValue(mockAuth),
       ],
@@ -131,6 +142,98 @@ void main() {
 
       final prefs = await SharedPreferences.getInstance();
       expect(prefs.getBool('hasCompletedOnboarding'), isTrue);
+    });
+
+    testWidgets(
+      'shows preparing state on last page when services are not ready',
+      (tester) async {
+        tester.view.physicalSize = const Size(1080, 1920);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(() => tester.view.resetPhysicalSize());
+
+        await tester.pumpWidget(
+          createTestableOnboardingScreen(servicesReady: false),
+        );
+        await tester.pump(const Duration(milliseconds: 500));
+
+        final pageView = tester.widget<PageView>(find.byType(PageView));
+        pageView.controller!.jumpToPage(2);
+        await tester.pump();
+
+        expect(
+          find.bySemanticsLabel('Onboarding progress: step 3 of 3'),
+          findsOneWidget,
+        );
+        expect(find.byType(CircularProgressIndicator), findsOneWidget);
+        expect(find.text('Preparing...'), findsOneWidget);
+        expect(find.text('Get Started'), findsNothing);
+      },
+    );
+
+    testWidgets(
+      'routes to auth restore when user has Pro but is not signed in',
+      (tester) async {
+        tester.view.physicalSize = const Size(1080, 1920);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(() => tester.view.resetPhysicalSize());
+
+        await tester.pumpWidget(createTestableOnboardingScreen(isPro: true));
+        await tester.pump(const Duration(milliseconds: 500));
+
+        await tester.tap(find.text('Continue'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Continue'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Get Started'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Auth Screen'), findsOneWidget);
+      },
+    );
+
+    testWidgets('routes to home when user has Pro and is signed in', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(1080, 1920);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      await tester.pumpWidget(
+        createTestableOnboardingScreen(isPro: true, isLoggedIn: true),
+      );
+      await tester.pump(const Duration(milliseconds: 500));
+
+      await tester.tap(find.text('Continue'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Continue'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Get Started'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Home Screen'), findsOneWidget);
+    });
+
+    testWidgets('progress semantics updates as user moves pages', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(1080, 1920);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      await tester.pumpWidget(createTestableOnboardingScreen());
+      await tester.pump(const Duration(milliseconds: 500));
+
+      expect(
+        find.bySemanticsLabel('Onboarding progress: step 1 of 3'),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.text('Continue'));
+      await tester.pumpAndSettle();
+      expect(
+        find.bySemanticsLabel('Onboarding progress: step 2 of 3'),
+        findsOneWidget,
+      );
     });
   });
 }

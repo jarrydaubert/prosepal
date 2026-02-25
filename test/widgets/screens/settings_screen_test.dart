@@ -246,6 +246,27 @@ void main() {
           expect(find.byType(BottomSheet), findsOneWidget);
         },
       );
+
+      testWidgetsWithPumps(
+        'Upgrade paywall shows load error when subscriptions are unavailable',
+        (tester) async {
+          mockSubscription.setConfigured(false);
+
+          await tester.pumpWidget(buildTestWidget());
+          await tester.pumpAndSettle();
+
+          await tester.tap(find.text('Upgrade'));
+          await tester.pump();
+          await tester.pump(const Duration(milliseconds: 300));
+
+          expect(
+            find.text('Unable to load subscriptions. Please try again later.'),
+            findsOneWidget,
+          );
+          expect(find.text('Retry'), findsOneWidget);
+          expect(find.text('Close'), findsOneWidget);
+        },
+      );
     });
 
     group('Security Section', () {
