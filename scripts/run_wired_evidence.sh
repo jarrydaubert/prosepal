@@ -177,10 +177,37 @@ extract_signals() {
     "$log_file" > "$output_file" || true
 }
 
+has_failure_signals() {
+  local signals_file="$1"
+  local test_file="$2"
+  local suite_name
+  suite_name="$(basename "$test_file")"
+
+  # Known non-fatal log noise from integration harness; keep this list short.
+  if [[ "$suite_name" == "e2e_test.dart" ]]; then
+    if [[ -s "$signals_file" ]]; then
+      rg -v "Critical service initialization failed|Init failed" "$signals_file" > "${signals_file}.filtered" || true
+      if [[ -s "${signals_file}.filtered" ]]; then
+        mv "${signals_file}.filtered" "$signals_file"
+        return 0
+      fi
+      rm -f "${signals_file}.filtered"
+    fi
+    return 1
+  fi
+
+  [[ -s "$signals_file" ]]
+}
+
 run_with_timeout() {
   local timeout_sec="$1"
   local log_file="$2"
   shift 2
+
+  local errexit_was_set=0
+  if [[ "$-" == *e* ]]; then
+    errexit_was_set=1
+  fi
 
   set +e
   "$@" >"$log_file" 2>&1 &
@@ -195,7 +222,11 @@ run_with_timeout() {
       sleep 2
       kill -KILL "$cmd_pid" 2>/dev/null || true
       wait "$cmd_pid" 2>/dev/null || true
-      set -e
+      if [[ "$errexit_was_set" -eq 1 ]]; then
+        set -e
+      else
+        set +e
+      fi
       return 124
     fi
 
@@ -205,7 +236,11 @@ run_with_timeout() {
 
   wait "$cmd_pid"
   local status=$?
-  set -e
+  if [[ "$errexit_was_set" -eq 1 ]]; then
+    set -e
+  else
+    set +e
+  fi
   return "$status"
 }
 
@@ -229,10 +264,16 @@ run_suite() {
     /opt/homebrew/share/android-commandlinetools/platform-tools/adb -s "$device_id" logcat -c >/dev/null 2>&1 || true
   fi
 
+  set +e
   run_with_timeout "$TEST_TIMEOUT_SEC" "$log_file" flutter test "$test_file" -d "$device_id"
   local command_status=$?
+  set -e
 
   extract_signals "$log_file" "$signals_file"
+  local has_signals=1
+  if has_failure_signals "$signals_file" "$test_file"; then
+    has_signals=0
+  fi
 
   if [[ "$platform" == "android" ]]; then
     /opt/homebrew/share/android-commandlinetools/platform-tools/adb -s "$device_id" logcat -d > "$platform_dir/${suite_name}.logcat.txt" 2>/dev/null || true
@@ -264,9 +305,15 @@ run_suite() {
     "$IDEVICE_SCREENSHOT_BIN" "$platform_dir/${suite_name}_final.png" >/dev/null 2>&1 || true
   fi
 
-  if [[ "$command_status" -eq 0 ]]; then
+  if [[ "$command_status" -eq 0 && "$has_signals" -ne 0 ]]; then
     append_result "$platform" "$suite_name" "PASS" "$log_file"
   else
+    if [[ "$command_status" -eq 124 ]]; then
+      echo "[ERROR] Suite timed out after ${TEST_TIMEOUT_SEC}s." >> "$log_file"
+    fi
+    if [[ "$has_signals" -eq 0 ]]; then
+      echo "[ERROR] Failure signals detected in log; marking suite as FAIL." >> "$log_file"
+    fi
     append_result "$platform" "$suite_name" "FAIL" "$log_file"
     overall_status=1
   fi
