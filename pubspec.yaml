@@ -42,12 +42,10 @@ dependencies:
   intl: ^0.20.2
   url_launcher: ^6.3.1
   supabase_flutter: ^2.12.0
-  google_sign_in: ^6.2.2  # Use 6.x for native sign-in (7.x has breaking API changes)
-  sign_in_with_apple: ^6.1.4  # Native Apple Sign In + official button
+  google_sign_in: ^7.2.0  # Native Google Sign In (7.x with new API)
+  sign_in_with_apple: ^7.0.1  # Native Apple Sign In + official button
   crypto: ^3.0.7
   local_auth: ^3.0.0
-  # Removed: supabase_auth_ui (using custom magic link UI)
-  # Removed: sign_in_button (using custom branded buttons)
   share_plus: ^12.0.1
   package_info_plus: ^9.0.0
   in_app_review: ^2.0.11

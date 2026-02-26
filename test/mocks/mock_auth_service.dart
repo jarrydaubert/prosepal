@@ -172,7 +172,7 @@ class MockAuthService implements IAuthService {
   }
 
   @override
-  Future<void> signInWithGoogle() async {
+  Future<AuthResponse> signInWithGoogle() async {
     signInWithGoogleCallCount++;
     final error = _getError('signInWithGoogle');
     if (error != null) throw error;
@@ -186,6 +186,10 @@ class MockAuthService implements IAuthService {
     if (autoEmitAuthState) {
       emitAuthState(AuthState(AuthChangeEvent.signedIn, null));
     }
+    return AuthResponse(
+      session: createFakeSession(user: user),
+      user: user,
+    );
   }
 
   @override

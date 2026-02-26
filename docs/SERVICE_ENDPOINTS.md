@@ -94,7 +94,7 @@ Apple and Google require using their official branded buttons:
 | Provider | Package | Button Widget | Notes |
 |----------|---------|---------------|-------|
 | **Apple** | `sign_in_with_apple` | `SignInWithAppleButton` | Required by Apple HIG |
-| **Google** | `sign_in_button` | `SignInButton(Buttons.google, ...)` | Required by Google branding |
+| **Google** | Custom | Custom button with official colors/logo | Google branding guidelines |
 | **Email** | N/A | Custom button | No branding requirements |
 
 ```dart
@@ -106,12 +106,15 @@ SignInWithAppleButton(
   borderRadius: BorderRadius.all(Radius.circular(12)),
 )
 
-// Google - Official button from sign_in_button package
-SignInButton(
-  Buttons.google,
-  text: 'Continue with Google',
+// Google - Custom button with official branding
+ElevatedButton.icon(
   onPressed: _signInWithGoogle,
-  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+  icon: Image.network('https://www.google.com/favicon.ico', height: 18),
+  label: Text('Continue with Google'),
+  style: ElevatedButton.styleFrom(
+    backgroundColor: Colors.white,
+    foregroundColor: Color(0xFF757575),
+  ),
 )
 ```
 
@@ -120,12 +123,8 @@ SignInButton(
 | Package | Version | Purpose | Notes |
 |---------|---------|---------|-------|
 | `supabase_flutter` | ^2.12.0 | Auth session management | Core dependency |
-| `sign_in_with_apple` | ^6.1.4 | Native Apple credential + button | iOS only |
-| `google_sign_in` | ^6.2.2 | Native Google credential | Use 6.x for compatibility |
-| `sign_in_button` | ^4.0.1 | Official Google branded button | Required by Google |
-
-> **Note:** `supabase_auth_ui` removed - we use custom magic link UI instead.
-> This allows us to use latest `google_sign_in` without conflicts.
+| `sign_in_with_apple` | ^7.0.1 | Native Apple credential + button | iOS only |
+| `google_sign_in` | ^7.2.0 | Native Google credential | 7.x with new API |
 
 ---
 
@@ -323,14 +322,9 @@ Future<void> signInWithMagicLink(String email) async {
 - Deep link handling required for mobile apps
 - Email template customizable in Supabase Dashboard
 
-### UI Options
+### UI
 
-| Approach | Pros | Cons |
-|----------|------|------|
-| **Custom UI** (recommended) | Full control, no extra deps | More code |
-| `supabase_auth_ui` (`SupaMagicAuth`) | Pre-built widget | Adds dependency, version conflicts |
-
-**Custom UI is preferred** - it's just a TextField + Button calling `signInWithMagicLink()`.
+Custom UI - TextField + Button calling `signInWithMagicLink()`.
 
 ---
 

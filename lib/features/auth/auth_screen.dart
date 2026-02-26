@@ -76,8 +76,13 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
 
     try {
       final authService = ref.read(authServiceProvider);
-      // Google OAuth opens browser - auth state listener handles navigation
-      await authService.signInWithGoogle();
+      final response = await authService.signInWithGoogle();
+      if (response.user != null) {
+        await ref
+            .read(subscriptionServiceProvider)
+            .identifyUser(response.user!.id);
+      }
+      if (mounted) context.go('/home');
     } catch (e) {
       if (!AuthErrorHandler.isCancellation(e)) {
         _showError(AuthErrorHandler.getMessage(e));
