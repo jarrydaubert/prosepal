@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../core/config/preference_keys.dart';
 import '../../core/providers/providers.dart';
 import '../../core/services/log_service.dart';
 import '../../shared/components/components.dart';
@@ -18,6 +20,7 @@ class HomeScreen extends ConsumerWidget {
     final initStatus = ref.watch(initStatusProvider);
     final remaining = ref.watch(remainingGenerationsProvider);
     final isPro = ref.watch(isProProvider);
+    final showFirstActionHint = ref.watch(showFirstActionHintProvider);
 
     // Check for pending paywall (e.g., after email sign-in from paywall sync)
     final pendingPaywallSource = ref.watch(pendingPaywallSourceProvider);
@@ -186,11 +189,59 @@ class HomeScreen extends ConsumerWidget {
 
               const SliverToBoxAdapter(child: SizedBox(height: 16)),
 
+              // First action hint banner (shows once for new users)
+              if (showFirstActionHint)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryLight,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: AppColors.primary.withValues(alpha: 0.3),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.touch_app,
+                            color: AppColors.primary,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 8),
+                          const Expanded(
+                            child: Text(
+                              'Tap any occasion to create your first message!',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () => _dismissFirstActionHint(ref),
+                            child: Icon(
+                              Icons.close,
+                              color: AppColors.primary.withValues(alpha: 0.6),
+                              size: 18,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+
               // Occasion grid
               SliverPadding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 sliver: OccasionGrid(
                   occasions: ref.watch(filteredOccasionsProvider),
+                  showFirstActionHint: showFirstActionHint,
+                  onHintDismissed: () => _dismissFirstActionHint(ref),
                   onOccasionSelected: (occasion) {
                     Log.info('Wizard started', {'occasion': occasion.name});
                     ref.read(selectedOccasionProvider.notifier).state =
@@ -209,6 +260,14 @@ class HomeScreen extends ConsumerWidget {
       ),
     );
   }
+}
+
+/// Dismiss the first action hint and persist to SharedPreferences
+Future<void> _dismissFirstActionHint(WidgetRef ref) async {
+  ref.read(showFirstActionHintProvider.notifier).state = false;
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setBool(PreferenceKeys.hasSeenFirstActionHint, true);
+  Log.info('First action hint dismissed');
 }
 
 // =============================================================================

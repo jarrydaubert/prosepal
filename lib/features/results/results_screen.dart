@@ -1,15 +1,19 @@
+import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../core/config/preference_keys.dart';
 import '../../core/models/models.dart';
 import '../../core/providers/providers.dart';
 import '../../core/services/log_service.dart';
 import '../../shared/components/app_button.dart';
 import '../../shared/theme/app_colors.dart';
+import '../paywall/paywall_sheet.dart';
 import 'save_to_calendar_dialog.dart';
 
 class ResultsScreen extends ConsumerStatefulWidget {
@@ -22,8 +26,23 @@ class ResultsScreen extends ConsumerStatefulWidget {
 class _ResultsScreenState extends ConsumerState<ResultsScreen> {
   int? _copiedIndex;
   bool _isRegenerating = false;
+  late ConfettiController _confettiController;
 
   bool get _reduceMotion => MediaQuery.of(context).disableAnimations;
+
+  @override
+  void initState() {
+    super.initState();
+    _confettiController = ConfettiController(
+      duration: const Duration(seconds: 2),
+    );
+  }
+
+  @override
+  void dispose() {
+    _confettiController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -150,54 +169,130 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
             ],
           ),
         ),
+        // Confetti overlay for first message celebration
+        Align(
+          alignment: Alignment.topCenter,
+          child: ConfettiWidget(
+            confettiController: _confettiController,
+            blastDirectionality: BlastDirectionality.explosive,
+            shouldLoop: false,
+            colors: const [
+              AppColors.primary,
+              AppColors.success,
+              Color(0xFFFFD700),
+              Color(0xFFFF69B4),
+            ],
+            numberOfParticles: 20,
+            gravity: 0.3,
+          ),
+        ),
       ],
     );
   }
 
   Future<void> _copyMessage(String text, int index) async {
     final result = ref.read(generationResultProvider);
+    final isPro = ref.read(isProProvider);
     Log.info('Message copied', {'option': index + 1});
     await Clipboard.setData(ClipboardData(text: text));
     setState(() => _copiedIndex = index);
 
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              Container(
-                width: 24,
-                height: 24,
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  shape: BoxShape.circle,
+    // Check if this is the user's first message copy
+    final prefs = await SharedPreferences.getInstance();
+    final isFirstMessage =
+        !(prefs.getBool(PreferenceKeys.hasGeneratedFirstMessage) ??
+            PreferenceKeys.hasGeneratedFirstMessageDefault);
+
+    if (isFirstMessage) {
+      // Mark first message as done
+      await prefs.setBool(PreferenceKeys.hasGeneratedFirstMessage, true);
+      Log.info('First message activation', {'option': index + 1});
+
+      // Celebration: confetti + special snackbar
+      if (!_reduceMotion) {
+        _confettiController.play();
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Container(
+                  width: 24,
+                  height: 24,
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.celebration,
+                    color: AppColors.primary,
+                    size: 16,
+                  ),
                 ),
-                child: const Icon(
-                  Icons.check,
-                  color: AppColors.success,
-                  size: 16,
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Text(
+                    'Your first message! You just saved 10 minutes.',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              const Text(
-                'Message copied!',
-                style: TextStyle(fontWeight: FontWeight.w600),
-              ),
-            ],
+              ],
+            ),
+            duration: const Duration(seconds: 3),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: AppColors.primary,
           ),
-          duration: const Duration(seconds: 2),
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: AppColors.success,
-        ),
-      );
+        );
+      }
+
+      // Show paywall after celebration (value-first approach)
+      await Future.delayed(const Duration(seconds: 3));
+      if (mounted && !isPro) {
+        showPaywall(context, source: 'first_message');
+      }
+    } else {
+      // Regular copy feedback
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Container(
+                  width: 24,
+                  height: 24,
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.check,
+                    color: AppColors.success,
+                    size: 16,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Text(
+                  'Message copied!',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ],
+            ),
+            duration: const Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: AppColors.success,
+          ),
+        );
+      }
     }
 
     await Future.delayed(const Duration(seconds: 2));
     if (mounted) {
       setState(() => _copiedIndex = null);
 
-      // Show save to calendar dialog after copy
-      if (result != null) {
+      // Show save to calendar dialog after copy (skip on first message - paywall shown)
+      if (result != null && !isFirstMessage) {
         _showSaveToCalendarDialog(result);
       }
     }
