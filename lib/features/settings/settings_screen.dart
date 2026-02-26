@@ -183,17 +183,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     }
   }
 
-  Future<void> _exportDebugLog() async {
-    Log.info('Export debug log requested');
-
-    final log = Log.getExportableLog();
-
-    // Share as text (user can save or send to support)
-    await SharePlus.instance.share(
-      ShareParams(text: log, subject: 'Prosepal Debug Log'),
-    );
-  }
-
   Future<void> _signOut() async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -558,15 +547,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             title: 'Send Feedback',
             subtitle: 'Questions, bugs, or feature requests',
             onTap: () => context.pushNamed('feedback'),
-          ),
-          SettingsTile(
-            leading: const Icon(
-              Icons.bug_report_outlined,
-              color: AppColors.textSecondary,
-            ),
-            title: 'Export Debug Log',
-            subtitle: 'Share with support if something\'s not working',
-            onTap: _exportDebugLog,
           ),
           Semantics(
             label: 'Rate Prosepal in the app store',

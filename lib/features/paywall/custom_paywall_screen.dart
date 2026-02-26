@@ -257,8 +257,12 @@ class _CustomPaywallScreenState extends ConsumerState<CustomPaywallScreen> {
             behavior: SnackBarBehavior.floating,
           ),
         );
-        // Pop after snackbar to ensure context is valid
-        context.pop();
+        // Navigate back after restore success
+        if (context.canPop()) {
+          context.pop();
+        } else {
+          context.go('/home');
+        }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -330,7 +334,14 @@ class _CustomPaywallScreenState extends ConsumerState<CustomPaywallScreen> {
                 const Text('Unable to load subscription options'),
                 const Gap(16),
                 TextButton(
-                  onPressed: () => context.pop(),
+                  onPressed: () {
+                    Log.info('Paywall dismissed', {'reason': 'load_error'});
+                    if (context.canPop()) {
+                      context.pop();
+                    } else {
+                      context.go('/home');
+                    }
+                  },
                   child: const Text('Go Back'),
                 ),
               ],
@@ -352,7 +363,14 @@ class _CustomPaywallScreenState extends ConsumerState<CustomPaywallScreen> {
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   IconButton(
-                    onPressed: () => context.pop(),
+                    onPressed: () {
+                      Log.info('Paywall dismissed', {'reason': 'user_closed'});
+                      if (context.canPop()) {
+                        context.pop();
+                      } else {
+                        context.go('/home');
+                      }
+                    },
                     icon: const Icon(
                       Icons.close,
                       color: AppColors.textSecondary,

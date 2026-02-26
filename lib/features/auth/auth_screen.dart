@@ -9,6 +9,7 @@ import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 import '../../core/errors/auth_errors.dart';
 import '../../core/providers/providers.dart';
+import '../../core/services/log_service.dart';
 import '../../shared/atoms/app_logo.dart';
 import '../../shared/theme/app_colors.dart';
 
@@ -46,20 +47,26 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   Future<void> _navigateAfterAuth() async {
     if (!mounted) return;
 
-    // If we have a redirect destination (e.g., from upgrade flow), go there
+    // If we have a redirect destination (e.g., from upgrade flow),
+    // replace auth screen with destination (preserves back stack)
     if (widget.redirectTo != null) {
-      context.go('/${widget.redirectTo}');
+      Log.info('Auth success: navigating to redirect', {
+        'redirect': widget.redirectTo,
+      });
+      context.replace('/${widget.redirectTo}');
       return;
     }
 
-    // Use provider for consistency and testability
+    // No redirect - this is initial login, use go() to reset to root flow
     final biometricService = ref.read(biometricServiceProvider);
     final isSupported = await biometricService.isSupported;
     final isAlreadyEnabled = await biometricService.isEnabled;
 
     if (isSupported && !isAlreadyEnabled) {
+      Log.info('Auth success: navigating to biometric setup');
       context.go('/biometric-setup');
     } else {
+      Log.info('Auth success: navigating to home');
       context.go('/home');
     }
   }
@@ -155,7 +162,14 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                 top: 8,
                 right: 8,
                 child: IconButton(
-                  onPressed: () => context.pop(),
+                  onPressed: () {
+                    Log.info('Auth dismissed', {'redirect': widget.redirectTo});
+                    if (context.canPop()) {
+                      context.pop();
+                    } else {
+                      context.go('/home');
+                    }
+                  },
                   icon: const Icon(Icons.close, size: 28),
                   color: AppColors.textSecondary,
                   tooltip: 'Close',
