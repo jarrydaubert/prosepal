@@ -111,15 +111,7 @@ Download now and never struggle with "what to write" again.
 
 ## 3. Code Quality Improvements
 
-### Gemini Structured Output
-- Current AI parsing uses regex on MESSAGE 1/2/3 format
-- Migrate to Gemini's JSON schema / structured generation
-- Eliminates fragile text parsing
 
-### Model Code Generation
-- Consider `freezed` + `json_serializable` for `GeneratedMessage`, `GenerationResult`
-- Auto-generates `copyWith`, equality, `toString`, JSON serialization
-- Reduces boilerplate and potential errors
 
 ### Google Sign-In Early Initialization
 - Currently initializes during `signInWithGoogle` call

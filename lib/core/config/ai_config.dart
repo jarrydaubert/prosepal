@@ -5,7 +5,8 @@
 abstract final class AiConfig {
   /// Current Gemini model identifier
   /// See: https://ai.google.dev/gemini-api/docs/models
-  static const String model = 'gemini-2.0-flash';
+  /// Updated Dec 2025: Gemini 3 Flash offers enhanced speed and quality
+  static const String model = 'gemini-3-flash-preview';
 
   /// Generation parameters
   static const double temperature = 0.85;

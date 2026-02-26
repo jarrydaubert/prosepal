@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:firebase_ai/firebase_ai.dart';
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
@@ -54,6 +56,45 @@ class AiService {
   GenerativeModel? _model;
   final _uuid = const Uuid();
 
+  /// JSON schema for structured output - 3 message strings
+  static final _responseSchema = Schema.object(
+    properties: {
+      'messages': Schema.array(
+        items: Schema.object(
+          properties: {
+            'text': Schema.string(
+              description: 'The greeting card message text',
+            ),
+          },
+        ),
+      ),
+    },
+  );
+
+  /// Safety settings for content generation
+  static final _safetySettings = [
+    SafetySetting(
+      HarmCategory.harassment,
+      HarmBlockThreshold.medium,
+      HarmBlockMethod.probability,
+    ),
+    SafetySetting(
+      HarmCategory.hateSpeech,
+      HarmBlockThreshold.medium,
+      HarmBlockMethod.probability,
+    ),
+    SafetySetting(
+      HarmCategory.sexuallyExplicit,
+      HarmBlockThreshold.high,
+      HarmBlockMethod.probability,
+    ),
+    SafetySetting(
+      HarmCategory.dangerousContent,
+      HarmBlockThreshold.medium,
+      HarmBlockMethod.probability,
+    ),
+  ];
+
   GenerativeModel get model {
     _model ??= FirebaseAI.googleAI().generativeModel(
       model: AiConfig.model,
@@ -62,29 +103,10 @@ class AiService {
         topK: AiConfig.topK,
         topP: AiConfig.topP,
         maxOutputTokens: AiConfig.maxOutputTokens,
+        responseMimeType: 'application/json',
+        responseSchema: _responseSchema,
       ),
-      safetySettings: [
-        SafetySetting(
-          HarmCategory.harassment,
-          HarmBlockThreshold.medium,
-          HarmBlockMethod.probability,
-        ),
-        SafetySetting(
-          HarmCategory.hateSpeech,
-          HarmBlockThreshold.medium,
-          HarmBlockMethod.probability,
-        ),
-        SafetySetting(
-          HarmCategory.sexuallyExplicit,
-          HarmBlockThreshold.high,
-          HarmBlockMethod.probability,
-        ),
-        SafetySetting(
-          HarmCategory.dangerousContent,
-          HarmBlockThreshold.medium,
-          HarmBlockMethod.probability,
-        ),
-      ],
+      safetySettings: _safetySettings,
     );
     return _model!;
   }
@@ -112,29 +134,39 @@ class AiService {
       final response = await model.generateContent([Content.text(prompt)]);
 
       // Check for blocked content
-      if (response.promptFeedback?.blockReason != null) {
+      if (response.promptFeedback?.blockReason case final reason?) {
         throw AiContentBlockedException(
-          'Content was blocked: ${response.promptFeedback?.blockReason}',
+          'Your message details triggered our safety filters. '
+          'Try removing any sensitive words or phrases.',
+          errorCode: 'CONTENT_BLOCKED',
+          originalError: reason,
         );
       }
 
-      final text = response.text ?? '';
-
-      if (text.isEmpty) {
+      final jsonText = response.text;
+      if (jsonText == null || jsonText.isEmpty) {
         throw const AiEmptyResponseException(
           'The AI model returned an empty response. Please try again.',
           errorCode: 'EMPTY_RESPONSE',
         );
       }
 
-      final messages = _parseMessages(
-        text,
+      // Parse structured JSON response
+      final messages = _parseJsonResponse(
+        jsonText,
         occasion: occasion,
         relationship: relationship,
         tone: tone,
         recipientName: recipientName,
         personalDetails: personalDetails,
       );
+
+      if (messages.isEmpty) {
+        throw const AiEmptyResponseException(
+          'No messages were generated. Please try again.',
+          errorCode: 'NO_MESSAGES',
+        );
+      }
 
       return GenerationResult(
         messages: messages,
@@ -287,6 +319,7 @@ class AiService {
     }
   }
 
+  /// Build prompt for structured JSON output
   String _buildPrompt({
     required Occasion occasion,
     required Relationship relationship,
@@ -295,102 +328,86 @@ class AiService {
     String? recipientName,
     String? personalDetails,
   }) {
-    final recipientPart = recipientName != null && recipientName.isNotEmpty
-        ? "Recipient's name: $recipientName"
-        : '';
+    final context = StringBuffer()
+      ..writeln('Occasion: ${occasion.prompt}')
+      ..writeln('Relationship: ${relationship.prompt}')
+      ..writeln('Tone: ${tone.prompt}')
+      ..writeln('Length: ${length.prompt}');
 
-    final detailsPart = personalDetails != null && personalDetails.isNotEmpty
-        ? 'Personal context to weave in naturally: $personalDetails'
-        : '';
+    if (recipientName case final name? when name.isNotEmpty) {
+      context.writeln("Recipient's name: $name");
+    }
+    if (personalDetails case final details? when details.isNotEmpty) {
+      context.writeln('Personal context: $details');
+    }
 
     return '''
-You are an expert at crafting heartfelt, memorable greeting card messages. Your messages consistently make recipients feel truly seen and valued.
+You are an expert at crafting heartfelt, memorable greeting card messages.
 
-**Your Task:** Write exactly 3 unique message options for a greeting card.
+Write exactly 3 unique message options for a greeting card.
 
-**Context:**
-- Occasion: ${occasion.prompt}
-- Relationship: ${relationship.prompt}  
-- Desired tone: ${tone.prompt}
-- Message length: ${length.prompt}
-${recipientPart.isNotEmpty ? '- $recipientPart' : ''}
-${detailsPart.isNotEmpty ? '- $detailsPart' : ''}
+Context:
+$context
 
-**Guidelines:**
-- Length: ${length.prompt} - this is important, respect the requested length
-- Make each message feel personal and specific, never generic or template-like
-- Each option should take a distinctly different emotional angle or approach
-- If a name is provided, incorporate it naturally (not just at the start)
+Guidelines:
+- Respect the requested length: ${length.prompt}
+- Make each message personal and specific, never generic
+- Each option should take a distinctly different emotional angle
+- If a name is provided, incorporate it naturally
 - If personal details are given, weave them in authentically
-- Capture the essence of the relationship
-- Use vivid, emotionally resonant language appropriate to the tone
+- Use emotionally resonant language appropriate to the tone
 
-**Format Rules:**
+Format rules:
 - NO greetings (no "Dear...", "Hi...", etc.)
 - NO sign-offs (no "Love,", "Best wishes,", "Sincerely,", etc.)
 - Just the message body itself
-
-**Output Format (follow exactly):**
-MESSAGE 1:
-[First message]
-
-MESSAGE 2:
-[Second message]
-
-MESSAGE 3:
-[Third message]
 ''';
   }
 
-  List<GeneratedMessage> _parseMessages(
-    String response, {
+  /// Parse structured JSON response from Gemini
+  /// Uses Dart 3 pattern matching for type-safe extraction
+  List<GeneratedMessage> _parseJsonResponse(
+    String jsonText, {
     required Occasion occasion,
     required Relationship relationship,
     required Tone tone,
     String? recipientName,
     String? personalDetails,
   }) {
-    final messages = <GeneratedMessage>[];
-    final now = DateTime.now().toUtc();
+    try {
+      final json = jsonDecode(jsonText);
+      final now = DateTime.now().toUtc();
 
-    // Split by MESSAGE markers
-    final pattern = RegExp(r'MESSAGE\s*\d+:\s*', caseSensitive: false);
-    final parts = response.split(pattern);
-
-    for (final part in parts) {
-      final trimmed = part.trim();
-      if (trimmed.isNotEmpty && trimmed.length > 10) {
-        messages.add(
-          GeneratedMessage(
-            id: _uuid.v4(),
-            text: trimmed,
-            occasion: occasion,
-            relationship: relationship,
-            tone: tone,
-            createdAt: now,
-            recipientName: recipientName,
-            personalDetails: personalDetails,
-          ),
-        );
+      // Dart 3 pattern matching for type-safe JSON extraction
+      if (json case {'messages': final List<dynamic> messageList}) {
+        return [
+          for (final item in messageList)
+            if (item case {'text': final String text} when text.trim().isNotEmpty)
+              GeneratedMessage(
+                id: _uuid.v4(),
+                text: text.trim(),
+                occasion: occasion,
+                relationship: relationship,
+                tone: tone,
+                createdAt: now,
+                recipientName: recipientName,
+                personalDetails: personalDetails,
+              ),
+        ];
       }
-    }
 
-    // Fallback: if parsing failed, treat whole response as one message
-    if (messages.isEmpty && response.trim().isNotEmpty) {
-      messages.add(
-        GeneratedMessage(
-          id: _uuid.v4(),
-          text: response.trim(),
-          occasion: occasion,
-          relationship: relationship,
-          tone: tone,
-          createdAt: now,
-          recipientName: recipientName,
-          personalDetails: personalDetails,
-        ),
+      // Schema mismatch - log and throw
+      throw AiParseException(
+        'Unexpected response format from AI model.',
+        errorCode: 'SCHEMA_MISMATCH',
+        originalError: 'Expected {messages: [{text: ...}]}, got: $jsonText',
+      );
+    } on FormatException catch (e) {
+      throw AiParseException(
+        'Failed to parse AI response. Please try again.',
+        errorCode: 'JSON_PARSE_ERROR',
+        originalError: e,
       );
     }
-
-    return messages.take(3).toList();
   }
 }

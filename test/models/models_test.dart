@@ -340,7 +340,8 @@ void main() {
       final str = result.toString();
 
       expect(str, contains('GenerationResult'));
-      expect(str, contains('2 messages'));
+      // Freezed generates full object representation instead of summary
+      expect(str, contains('messages'));
       expect(str, contains('birthday'));
     });
   });
