@@ -112,6 +112,7 @@ class SubscriptionService implements ISubscriptionService {
       await Purchases.setLogLevel(LogLevel.debug);
     }
 
+    // StoreKit2 is the default in purchases_flutter 9.x
     final config = PurchasesConfiguration(apiKey);
     await Purchases.configure(config);
 

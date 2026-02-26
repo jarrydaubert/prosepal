@@ -56,7 +56,7 @@
 | No circuit breakers | Network | Repeated failures don't trigger fallback |
 
 | Generic catch blocks | Throughout `/lib` | Many `catch (e)` lose exception type info |
-| Missing autoDispose | `providers.dart:251-279` | Form providers persist after screen disposal |
+
 | No Remote Config | App | Can't toggle features or kill switches remotely |
 | No health monitoring | Operations | No uptime monitoring for Supabase/Gemini |
 | Magic link custom scheme fallback | `supabase_auth_provider.dart:332` | Deprecate, use HTTPS universal links only |
