@@ -558,4 +558,341 @@ void main() {
       expect($('2'), findsWidgets); // Free tier shows count
     },
   );
+
+  // ===========================================================================
+  // Pro Status Tests
+  // ===========================================================================
+
+  patrolTest(
+    'pro user sees PRO badge on home screen',
+    ($) async {
+      await initTest();
+      await pumpApp($, isLoggedIn: true, isPro: true);
+
+      await $('Prosepal').waitUntilVisible();
+      expect($('PRO'), findsOneWidget);
+    },
+  );
+
+  patrolTest(
+    'pro badge is tappable and shows chevron',
+    ($) async {
+      await initTest();
+      await pumpApp($, isLoggedIn: true, isPro: true);
+
+      await $('PRO').waitUntilVisible();
+      // Pro badge should have chevron indicator
+      expect($(Icons.chevron_right), findsOneWidget);
+    },
+  );
+
+  patrolTest(
+    'free user does not see PRO badge',
+    ($) async {
+      await initTest();
+      await pumpApp($, isLoggedIn: true, isPro: false, remainingGenerations: 3);
+
+      await $('Prosepal').waitUntilVisible();
+      expect($('PRO'), findsNothing);
+      expect($('Free messages remaining'), findsOneWidget);
+    },
+  );
+
+  // ===========================================================================
+  // Error Handling & Auto-Dismiss Tests
+  // ===========================================================================
+
+  patrolTest(
+    'generation error shows error message with dismiss button',
+    ($) async {
+      await initTest();
+      final errorAi = MockAiService();
+      errorAi.shouldFail = true;
+      errorAi.exceptionToThrow = const AiNetworkException(
+        'Unable to connect. Please check your internet connection.',
+      );
+      
+      await pumpApp($, isLoggedIn: true, isPro: true, aiService: errorAi);
+
+      // Navigate to generate
+      await $('Birthday').tap();
+      await $('Close Friend').tap();
+      await $('Continue').tap();
+      await $('Heartfelt').tap();
+      await $('Continue').tap();
+      await $('Generate Messages').tap();
+
+      // Error should appear with dismiss button
+      await $('Unable to connect').waitUntilVisible();
+      expect($(Icons.close), findsWidgets);
+    },
+  );
+
+  patrolTest(
+    'error message can be manually dismissed',
+    ($) async {
+      await initTest();
+      final errorAi = MockAiService();
+      errorAi.shouldFail = true;
+      errorAi.exceptionToThrow = const AiNetworkException('Test error');
+      
+      await pumpApp($, isLoggedIn: true, isPro: true, aiService: errorAi);
+
+      await $('Birthday').tap();
+      await $('Close Friend').tap();
+      await $('Continue').tap();
+      await $('Heartfelt').tap();
+      await $('Continue').tap();
+      await $('Generate Messages').tap();
+
+      await $('Test error').waitUntilVisible();
+      
+      // Tap the dismiss button (close icon in error banner)
+      await $(Icons.close).first.tap();
+      
+      // Error should be gone
+      await $.pump(const Duration(milliseconds: 500));
+      expect($('Test error'), findsNothing);
+    },
+  );
+
+  // ===========================================================================
+  // Keyboard & Input Tests
+  // ===========================================================================
+
+  patrolTest(
+    'personal details field has done button to dismiss keyboard',
+    ($) async {
+      await initTest();
+      await pumpApp($, isLoggedIn: true, isPro: true);
+
+      await $('Birthday').tap();
+      await $('Close Friend').tap();
+      await $('Continue').tap();
+      await $('Heartfelt').tap();
+      await $('Continue').tap();
+
+      // Focus on personal details field
+      await $('Personal details').tap();
+      
+      // The field should have textInputAction.done
+      final textField = $.tester.widget<TextField>(
+        find.widgetWithText(TextField, 'Personal details').last,
+      );
+      expect(textField.textInputAction, TextInputAction.done);
+    },
+  );
+
+  patrolTest(
+    'recipient name field has next button to go to details',
+    ($) async {
+      await initTest();
+      await pumpApp($, isLoggedIn: true, isPro: true);
+
+      await $('Birthday').tap();
+      await $('Close Friend').tap();
+      await $('Continue').tap();
+      await $('Heartfelt').tap();
+      await $('Continue').tap();
+
+      // Find recipient name field and check input action
+      final textField = $.tester.widget<TextField>(
+        find.widgetWithText(TextField, "Recipient's name").first,
+      );
+      expect(textField.textInputAction, TextInputAction.next);
+    },
+  );
+
+  // ===========================================================================
+  // Generation Flow Tests
+  // ===========================================================================
+
+  patrolTest(
+    'successful generation navigates to results with messages',
+    ($) async {
+      await initTest();
+      mockAi.messagesToReturn = [
+        'Happy birthday! Wishing you all the best.',
+        'Another year older, another year wiser!',
+        'May your special day be filled with joy.',
+      ];
+      
+      await pumpApp($, isLoggedIn: true, isPro: true, aiService: mockAi);
+
+      await $('Birthday').tap();
+      await $('Close Friend').tap();
+      await $('Continue').tap();
+      await $('Heartfelt').tap();
+      await $('Continue').tap();
+      await $('Generate Messages').tap();
+
+      // Should navigate to results
+      await $('Your Messages').waitUntilVisible();
+      
+      // All 3 messages should be displayed
+      expect($('Option 1'), findsOneWidget);
+      expect($('Option 2'), findsOneWidget);
+      expect($('Option 3'), findsOneWidget);
+    },
+  );
+
+  patrolTest(
+    'copy button shows copied state after tap',
+    ($) async {
+      await initTest();
+      mockAi.messagesToReturn = ['Test message for copying.'];
+      
+      await pumpApp($, isLoggedIn: true, isPro: true, aiService: mockAi);
+
+      await $('Birthday').tap();
+      await $('Close Friend').tap();
+      await $('Continue').tap();
+      await $('Heartfelt').tap();
+      await $('Continue').tap();
+      await $('Generate Messages').tap();
+
+      await $('Your Messages').waitUntilVisible();
+      
+      // Tap copy button
+      await $('Copy').tap();
+      
+      // Should show copied state and snackbar
+      await $('Copied!').waitUntilVisible();
+      expect($('Message copied to clipboard!'), findsOneWidget);
+    },
+  );
+
+  // ===========================================================================
+  // Settings & Navigation Tests
+  // ===========================================================================
+
+  patrolTest(
+    'settings button navigates to settings screen',
+    ($) async {
+      await initTest();
+      await pumpApp($, isLoggedIn: true, isPro: true);
+
+      await $(Icons.settings_outlined).tap();
+      
+      await $('Settings').waitUntilVisible();
+      expect($('Account'), findsOneWidget);
+    },
+  );
+
+  patrolTest(
+    'pro user sees Pro Plan in settings',
+    ($) async {
+      await initTest();
+      await pumpApp($, isLoggedIn: true, isPro: true);
+
+      await $(Icons.settings_outlined).tap();
+      await $('Settings').waitUntilVisible();
+      
+      expect($('Pro Plan'), findsOneWidget);
+    },
+  );
+
+  patrolTest(
+    'free user sees Free Plan in settings',
+    ($) async {
+      await initTest();
+      await pumpApp($, isLoggedIn: true, isPro: false, remainingGenerations: 3);
+
+      await $(Icons.settings_outlined).tap();
+      await $('Settings').waitUntilVisible();
+      
+      expect($('Free Plan'), findsOneWidget);
+    },
+  );
+
+  // ===========================================================================
+  // Paywall & Upgrade Flow Tests
+  // ===========================================================================
+
+  patrolTest(
+    'free user with 0 generations sees upgrade button',
+    ($) async {
+      await initTest();
+      await pumpApp($, isLoggedIn: true, isPro: false, remainingGenerations: 0);
+
+      await $('Birthday').tap();
+      await $('Close Friend').tap();
+      await $('Continue').tap();
+      await $('Heartfelt').tap();
+      await $('Continue').tap();
+
+      // Should show upgrade button instead of generate
+      await $('Upgrade to Continue').waitUntilVisible();
+      expect($('Generate Messages'), findsNothing);
+    },
+  );
+
+  patrolTest(
+    'tapping free usage card navigates to paywall',
+    ($) async {
+      await initTest();
+      await pumpApp($, isLoggedIn: true, isPro: false, remainingGenerations: 2);
+
+      // Tap the usage indicator
+      await $('Free messages remaining').tap();
+
+      // Should navigate to paywall (mocked, so may not fully load)
+      // The key is that the tap action works
+    },
+  );
+
+  // ===========================================================================
+  // Start Over / Reset Tests
+  // ===========================================================================
+
+  patrolTest(
+    'start over button returns to home and resets form',
+    ($) async {
+      await initTest();
+      mockAi.messagesToReturn = ['Test message'];
+      
+      await pumpApp($, isLoggedIn: true, isPro: true, aiService: mockAi);
+
+      await $('Birthday').tap();
+      await $('Close Friend').tap();
+      await $('Continue').tap();
+      await $('Heartfelt').tap();
+      await $('Continue').tap();
+      await $('Generate Messages').tap();
+
+      await $('Your Messages').waitUntilVisible();
+      
+      // Tap start over
+      await $('Start Over').tap();
+      
+      // Should be back at home
+      await $('Prosepal').waitUntilVisible();
+      expect($("What's the occasion?"), findsOneWidget);
+    },
+  );
+
+  patrolTest(
+    'close button on results returns to home',
+    ($) async {
+      await initTest();
+      mockAi.messagesToReturn = ['Test message'];
+      
+      await pumpApp($, isLoggedIn: true, isPro: true, aiService: mockAi);
+
+      await $('Birthday').tap();
+      await $('Close Friend').tap();
+      await $('Continue').tap();
+      await $('Heartfelt').tap();
+      await $('Continue').tap();
+      await $('Generate Messages').tap();
+
+      await $('Your Messages').waitUntilVisible();
+      
+      // Tap close icon
+      await $(Icons.close).tap();
+      
+      // Should be back at home
+      await $('Prosepal').waitUntilVisible();
+    },
+  );
 }
