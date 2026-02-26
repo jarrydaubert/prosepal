@@ -49,7 +49,7 @@
 | Skip Remote Config fetch | `main.dart` | Use cached/defaults on startup, fetch async (~200-500ms saved) |
 | Remove OAuth pre-warm | `main.dart` | Warm on auth screen instead of startup (~100-200ms saved) |
 | Swift Package Manager | `ios/` | Enable SPM for faster iOS builds (Flutter 3.38+ feature) |
-| ~~Bottom sheet paywall~~ | `paywall_sheet.dart` | ✅ DONE - Modal sheet with inline auth implemented |
+
 | Auth navigation race conditions | `app.dart` | Use GoRouter `refreshListenable` + global redirect |
 | Missing CAPTCHA | `email_auth_screen.dart` | Add Turnstile/hCaptcha + Supabase config |
 | Device fingerprint 7% coverage | `device_fingerprint_service.dart` | Free tier abuse prevention undertested |

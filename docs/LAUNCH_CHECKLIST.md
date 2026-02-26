@@ -1,6 +1,15 @@
 # Launch Checklist
 
-> Last verified: 2026-01-10
+> Last verified: 2026-01-13
+
+---
+
+## Current Status
+
+| Platform | Status | Details |
+|----------|--------|---------|
+| iOS | **Waiting for Review** | Submitted 2026-01-13 at 2:46 PM, Build 1.0 (26) |
+| Android | Blocked | Requires 14-day closed testing with 12+ testers |
 
 ---
 
@@ -64,31 +73,18 @@
 
 ## Phase 2: Store Submission
 
-### Pre-Build ⏳ PENDING
+### iOS ✅ SUBMITTED 2026-01-13
 
-- [ ] Increment version/build in `pubspec.yaml`
-- [ ] Final `flutter test` pass
-- [ ] Final `flutter analyze lib/` pass
+- Build 1.0 (26) uploaded via Xcode
+- dSYMs uploaded to Firebase Crashlytics
+- Screenshots updated (paywall bottom sheet)
+- IAP screenshots updated
+- IAPs linked to version
+- Submitted for review at 2:46 PM
 
-### iOS Build & Upload ⏳ PENDING
+### Android ⏳ BLOCKED
 
-```bash
-./scripts/build_ios.sh
-```
-
-- [ ] iOS Archive built successfully
-- [ ] dSYM files saved from `build/debug-info/`
-- [ ] Upload to App Store Connect via Xcode or Transporter
-- [ ] Upload dSYMs to Firebase Crashlytics
-
-### Android Build & Upload ⏳ PENDING
-
-```bash
-./scripts/build_android.sh
-```
-
-- [ ] Android AAB built successfully
-- [ ] Upload to Google Play Console > Internal Testing
+Requires 14-day closed testing with 12+ opted-in testers before production access.
 
 ### App Store Connect ⏳ PARTIALLY VERIFIED 2026-01-10
 
