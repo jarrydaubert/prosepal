@@ -150,25 +150,28 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: Text('Continue with Email'),
+    return GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(),
+      child: Scaffold(
         backgroundColor: Colors.white,
-        elevation: 0,
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: EdgeInsets.all(AppSpacing.screenPadding),
-          child: Column(
-            children: [
-              SizedBox(height: AppSpacing.xl),
-              if (_emailSent) ...[
-                _buildSuccessState(context),
-              ] else ...[
-                _buildEmailInput(context),
+        appBar: AppBar(
+          title: const Text('Continue with Email'),
+          backgroundColor: Colors.white,
+          elevation: 0,
+        ),
+        body: SafeArea(
+          child: SingleChildScrollView(
+            padding: EdgeInsets.all(AppSpacing.screenPadding),
+            child: Column(
+              children: [
+                SizedBox(height: AppSpacing.xl),
+                if (_emailSent) ...[
+                  _buildSuccessState(context),
+                ] else ...[
+                  _buildEmailInput(context),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),
