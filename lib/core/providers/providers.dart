@@ -65,6 +65,11 @@ final reviewServiceProvider = Provider<ReviewService>((ref) {
   return ReviewService(prefs);
 });
 
+/// Biometric authentication service
+final biometricServiceProvider = Provider<IBiometricService>((ref) {
+  return BiometricService();
+});
+
 // ============================================================
 // Pro Status
 // ============================================================
