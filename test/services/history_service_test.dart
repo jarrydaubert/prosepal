@@ -128,20 +128,36 @@ void main() {
       expect(HistoryService.maxHistoryItems, equals(200));
     });
 
-    test('removes oldest items when limit exceeded', () async {
-      // Bug: New items not saved when at limit
-      // Save 5 items (using small number to keep test fast)
-      for (var i = 0; i < 5; i++) {
-        await service.saveGeneration(createTestResult());
-      }
+    test(
+      'removes oldest items when limit exceeded',
+      () async {
+        // Bug: New items not saved when at limit, or oldest not trimmed
+        // Must actually exceed the 200-item limit to test trim logic
+        const itemsToSave = HistoryService.maxHistoryItems + 5; // 205 items
 
-      // Verify all saved
-      final history = await service.getHistory();
-      expect(history.length, equals(5));
+        for (var i = 0; i < itemsToSave; i++) {
+          await service.saveGeneration(
+            createTestResult(
+              // Use different tones to identify items
+              tone: i == 0 ? Tone.funny : Tone.heartfelt,
+            ),
+          );
+        }
 
-      // The service should trim when exceeding maxHistoryItems
-      // This test verifies the trim logic works
-    });
+        final history = await service.getHistory();
+
+        // Should be capped at max
+        expect(history.length, equals(HistoryService.maxHistoryItems));
+
+        // Oldest items (funny tone) should have been trimmed
+        // All remaining items should be heartfelt (newer)
+        final hasOldestItem = history.any(
+          (item) => item.result.messages.first.tone == Tone.funny,
+        );
+        expect(hasOldestItem, isFalse, reason: 'Oldest item should be trimmed');
+      },
+      timeout: const Timeout(Duration(seconds: 30)),
+    );
 
     // ============================================================
     // DELETE

@@ -43,17 +43,8 @@ void main() {
       });
     });
 
-    group('Timeout Configuration', () {
-      test('re-auth timeout is 5 minutes', () {
-        // BUG-003: Timeout too short annoys users, too long is insecure
-        // Verify the constant is set appropriately
-        // Note: _reauthTimeout is private, but we document expected behavior
-        // The 5-minute timeout balances security with usability
-
-        // This test documents the expected behavior for future maintainers
-        expect(true, isTrue); // Placeholder - actual logic tested via mock
-      });
-    });
+    // Note: _reauthTimeout (5 minutes) is private and tested indirectly
+    // via mockLastAuth timestamps in the tests above
   });
 
   group('MockReauthService behavior', () {
