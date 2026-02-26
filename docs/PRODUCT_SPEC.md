@@ -30,6 +30,81 @@
 
 ---
 
+## Growth Strategy: Max's Portfolio Approach
+
+Inspired by @maks6361's indie dev strategy (30+ apps, $25k MRR in 10 months).
+
+### Key Principles Applied to Prosepal
+
+| Max's Strategy | Our Implementation |
+|----------------|-------------------|
+| Simple MVP, one feature | Occasion → Generate → Copy |
+| Flutter cross-platform | iOS + Android from day 1 |
+| RevenueCat subscriptions | Weekly/Monthly/Yearly trials |
+| ASO-first discovery | Keyword-optimized title/subtitle |
+| Fire and forget | Launch, monitor, iterate only winners |
+| Portfolio approach | Prosepal = first app, more to follow |
+
+### ASO Keywords to Target
+
+**Primary Keywords (High Intent):**
+- "what to write in card" (problem-aware)
+- "greeting card message" (solution-aware)
+- "birthday message generator"
+- "thank you note writer"
+- "sympathy card message"
+
+**Long-Tail Keywords (Less Competition):**
+- "what to write in graduation card"
+- "wedding card message ideas"
+- "get well soon message generator"
+- "condolence message helper"
+
+**App Store Title Strategy:**
+```
+Title: Prosepal - Card Message Writer
+Subtitle: AI Birthday, Thank You & Gift Messages
+```
+
+**Google Play Title:**
+```
+Prosepal: Card Message Writer - AI Birthday & Thank You Notes
+```
+
+### Subscription Strategy (Max's Model)
+
+| Tier | Price | Trial | Why |
+|------|-------|-------|-----|
+| Weekly | $2.99/week | 3-day | Impulse users, high LTV if converts |
+| Monthly | $4.99/mo | 7-day | Standard |
+| Yearly | $29.99/yr | 7-day | Best value, lock in |
+
+**Why Weekly?** Max found weekly subs convert well for utility apps - users who need it NOW will pay.
+
+### Launch Checklist (Max's Fire-and-Forget)
+
+- [ ] Launch iOS + Android same week
+- [ ] Don't babysit - check metrics after 5 days (iOS) / 2 weeks (Android)
+- [ ] If < 10 trials in first week → Move on or pivot keywords
+- [ ] If > 50 trials → Double down, add Apple Search Ads
+- [ ] Cross-promote future apps subtly
+
+### Portfolio Expansion Ideas
+
+If Prosepal works, clone the pattern for other text-generation niches:
+
+| App Idea | Same Tech | Keyword Niche |
+|----------|-----------|---------------|
+| **EmailPal** | ✅ | Professional email writer |
+| **CaptionPal** | ✅ | Social media caption generator |
+| **BioWriter** | ✅ | Dating/LinkedIn bio generator |
+| **ToastMaster** | ✅ | Wedding/event speech writer |
+| **ReviewHelper** | ✅ | Product review writer |
+
+Each app: Same Flutter codebase, same Gemini API, different prompts/UI skin.
+
+---
+
 ## Competitive Analysis (DETAILED)
 
 ### Direct Competitors - iOS
@@ -76,17 +151,26 @@
 
 ### Our Pricing Strategy
 
-| Tier | Daily Limit | Monthly Limit | Price | vs Competition |
-|------|-------------|---------------|-------|----------------|
-| **Free** | 3/day | ~90/mo | $0 | More generous than most |
-| **Pro Monthly** | 50/day | 500/mo | $4.99/mo | 29% cheaper than American Greetings |
-| **Pro Yearly** | 50/day | 500/mo | $29.99/yr | 17% cheaper than American Greetings |
+| Tier | Daily Limit | Monthly Limit | Price | Trial | vs Competition |
+|------|-------------|---------------|-------|-------|----------------|
+| **Free** | 3/day | ~90/mo | $0 | - | More generous than most |
+| **Pro Weekly** | 50/day | 500/mo | $2.99/wk | 3-day | Impulse buyers, high LTV |
+| **Pro Monthly** | 50/day | 500/mo | $4.99/mo | 7-day | 29% cheaper than American Greetings |
+| **Pro Yearly** | 50/day | 500/mo | $29.99/yr | 7-day | 17% cheaper than American Greetings |
 
 **Why this pricing:**
 - Under $5/mo = "coffee money" psychology
+- **Weekly option** = Max's strategy, converts impulse users who need it NOW
 - Yearly saves 50% = encourages commitment
 - Free tier generous enough to hook users
 - Cheaper than American Greetings (the biggest player)
+
+**RevenueCat Product IDs:**
+```
+com.prosepal.pro.weekly    // $2.99/week, 3-day trial
+com.prosepal.pro.monthly   // $4.99/month, 7-day trial
+com.prosepal.pro.yearly    // $29.99/year, 7-day trial
+```
 
 ### Usage Monitoring & Fair Use
 
