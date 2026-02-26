@@ -8,7 +8,6 @@ import 'package:sign_in_button/sign_in_button.dart';
 
 import '../../core/errors/auth_errors.dart';
 import '../../core/providers/providers.dart';
-import '../../core/services/auth_service.dart';
 import '../../shared/theme/app_colors.dart';
 import '../../shared/theme/app_spacing.dart';
 
@@ -44,7 +43,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     });
 
     try {
-      final response = await AuthService.instance.signInWithApple();
+      final authService = ref.read(authServiceProvider);
+      final response = await authService.signInWithApple();
       if (response.user != null) {
         await ref
             .read(subscriptionServiceProvider)
@@ -67,8 +67,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     });
 
     try {
+      final authService = ref.read(authServiceProvider);
       // Google OAuth opens browser - auth state listener handles navigation
-      await AuthService.instance.signInWithGoogle();
+      await authService.signInWithGoogle();
     } catch (e) {
       if (!AuthErrorHandler.isCancellation(e)) {
         _showError(AuthErrorHandler.getMessage(e));
@@ -190,35 +191,29 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                     children: [
                       // Apple Sign In (iOS/macOS only, first per Apple guidelines)
                       if (Platform.isIOS || Platform.isMacOS) ...[
-                        SizedBox(
-                          width: double.infinity,
-                          height: AppSpacing.buttonHeight,
-                          child: SignInButton(
-                            Buttons.apple,
-                            onPressed: _isLoading ? () {} : _signInWithApple,
-                            text: 'Continue with Apple',
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(
-                                AppSpacing.radiusMedium,
-                              ),
-                            ),
-                          ),
+                        _AuthButton(
+                          onPressed: _isLoading ? null : _signInWithApple,
+                          icon: Icons.apple,
+                          label: 'Continue with Apple',
+                          backgroundColor: Colors.black,
+                          foregroundColor: Colors.white,
                         ),
                         SizedBox(height: AppSpacing.md),
                       ],
-                      // Google Sign In (official branding)
+                      // Google Sign In (official branded button)
                       SizedBox(
                         width: double.infinity,
                         height: AppSpacing.buttonHeight,
                         child: SignInButton(
                           Buttons.google,
-                          onPressed: _isLoading ? () {} : _signInWithGoogle,
                           text: 'Continue with Google',
+                          onPressed: _isLoading ? () {} : _signInWithGoogle,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(
                               AppSpacing.radiusMedium,
                             ),
                           ),
+                          elevation: 2,
                         ),
                       ),
                       SizedBox(height: AppSpacing.md),

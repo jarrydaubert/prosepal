@@ -1,23 +1,25 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../core/services/auth_service.dart';
+import '../../core/providers/providers.dart';
 import '../../core/services/error_log_service.dart';
 import '../../shared/atoms/app_button.dart';
 import '../../shared/theme/app_colors.dart';
 import '../../shared/theme/app_spacing.dart';
 
-class FeedbackScreen extends StatefulWidget {
+class FeedbackScreen extends ConsumerStatefulWidget {
   const FeedbackScreen({super.key});
 
   @override
-  State<FeedbackScreen> createState() => _FeedbackScreenState();
+  ConsumerState<FeedbackScreen> createState() => _FeedbackScreenState();
 }
 
-class _FeedbackScreenState extends State<FeedbackScreen> {
+class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
   final _controller = TextEditingController();
   bool _isSending = false;
 
@@ -36,8 +38,14 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
     buffer.writeln('Dart: ${Platform.version.split(' ').first}');
     buffer.writeln('Locale: ${Platform.localeName}');
 
-    // App version from package_info would be better, but keeping it simple
-    buffer.writeln('App: Prosepal v1.0.0');
+    try {
+      final packageInfo = await PackageInfo.fromPlatform();
+      buffer.writeln(
+        'App: Prosepal v${packageInfo.version} (${packageInfo.buildNumber})',
+      );
+    } catch (_) {
+      buffer.writeln('App: Prosepal');
+    }
 
     return buffer.toString();
   }
@@ -53,7 +61,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
 
     setState(() => _isSending = true);
 
-    final email = AuthService.instance.email ?? 'Unknown';
+    final email = ref.read(authServiceProvider).email ?? 'Unknown';
     final deviceInfo = await _getDeviceInfo();
     final errorLog = ErrorLogService.instance.getFormattedLog();
 
@@ -97,17 +105,23 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
             ),
             Gap(AppSpacing.lg),
             Expanded(
-              child: TextField(
-                controller: _controller,
-                maxLines: null,
-                expands: true,
-                textAlignVertical: TextAlignVertical.top,
-                textCapitalization: TextCapitalization.sentences,
-                decoration: InputDecoration(
-                  hintText: 'Your message...',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(
-                      AppSpacing.radiusMedium,
+              child: Semantics(
+                label: 'Feedback message input',
+                hint: 'Enter your feedback, bug report, or feature request',
+                child: TextField(
+                  controller: _controller,
+                  maxLines: null,
+                  expands: true,
+                  textAlignVertical: TextAlignVertical.top,
+                  textCapitalization: TextCapitalization.sentences,
+                  decoration: InputDecoration(
+                    labelText: 'Your feedback',
+                    hintText: 'Describe your issue or suggestion...',
+                    alignLabelWithHint: true,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(
+                        AppSpacing.radiusMedium,
+                      ),
                     ),
                   ),
                 ),

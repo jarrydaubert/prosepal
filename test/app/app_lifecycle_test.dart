@@ -138,12 +138,18 @@ void main() {
     });
 
     test('should not navigate for token refresh', () {
-      final nav = determineNavigation(event: 'tokenRefreshed', hasSession: true);
+      final nav = determineNavigation(
+        event: 'tokenRefreshed',
+        hasSession: true,
+      );
       expect(nav, isNull);
     });
 
     test('should not navigate for password recovery', () {
-      final nav = determineNavigation(event: 'passwordRecovery', hasSession: false);
+      final nav = determineNavigation(
+        event: 'passwordRecovery',
+        hasSession: false,
+      );
       expect(nav, isNull);
     });
   });

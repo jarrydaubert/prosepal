@@ -316,7 +316,64 @@ supabase functions deploy delete-user --project-ref YOUR_PROJECT_REF
 flutter test                          # All tests
 flutter test --coverage               # With coverage
 flutter test test/services/           # Specific folder
+flutter test integration_test/        # E2E tests on device
 ```
+
+---
+
+## Service & Integration Testing
+
+> See `docs/INTEGRATION_TESTING.md` for complete testing guide.
+
+### Testing Hierarchy
+
+```
+┌────────────────────────────────────────────┐
+│ E2E Integration (integration_test/)        │ ← Device required
+├────────────────────────────────────────────┤
+│ Widget Tests (test/widgets/)               │ ← CI automated
+├────────────────────────────────────────────┤
+│ Unit Tests (test/services/)                │ ← CI automated
+└────────────────────────────────────────────┘
+```
+
+### Mock Packages (Unit Tests)
+
+| Service | Mock Package | Purpose |
+|---------|--------------|---------|
+| Supabase | `mock_supabase_http_client` | Database & auth mocking |
+| Firebase | `firebase_core_platform_interface` | Core mocking |
+| RevenueCat | **Test Store API key** | Instant mock purchases |
+| Google AI | `package:http/testing.dart` | HTTP response mocking |
+
+### RevenueCat Key Usage (CRITICAL)
+
+```dart
+// ✅ CORRECT: Test Store for ALL automated tests
+static const _testStoreKey = 'test_xxx'; // CI, unit tests, development
+
+// ✅ CORRECT: Production key for manual sandbox testing only
+static const _iosKey = 'appl_xxx'; // Apple Sandbox, TestFlight
+
+// ⚠️ NEVER use production key for automated tests!
+// ⚠️ Real charges possible, dashboard pollution
+```
+
+| Environment | API Key | Use Case |
+|-------------|---------|----------|
+| **Unit Tests / CI** | Test Store (`test_xxx`) | Automated, free, instant |
+| **Manual Device Testing** | Production (`appl_xxx`) | Apple Sandbox testers |
+| **TestFlight** | Production (`appl_xxx`) | Beta users |
+| **Production** | Production (`appl_xxx`) | Live users |
+
+### Test Case Categories
+
+| Category | Examples |
+|----------|----------|
+| **Happy Path** | Valid input → expected result |
+| **Unhappy Path** | Invalid credentials, rate limits, network errors |
+| **Edge Cases** | Empty responses, null values, malformed data |
+| **Manual Only** | Biometrics, Apple Sign In, real purchases |
 
 ---
 

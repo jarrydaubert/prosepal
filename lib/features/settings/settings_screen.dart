@@ -1,11 +1,14 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
 import 'package:go_router/go_router.dart';
+import 'package:in_app_review/in_app_review.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/providers/providers.dart';
-import '../../core/services/auth_service.dart';
 import '../../core/services/biometric_service.dart';
 import '../../shared/molecules/molecules.dart';
 import '../../shared/theme/app_colors.dart';
@@ -23,11 +26,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _biometricsEnabled = false;
   String _biometricType = 'Biometrics';
   bool _isRestoringPurchases = false;
+  String _appVersion = '';
+
+  final InAppReview _inAppReview = InAppReview.instance;
 
   @override
   void initState() {
     super.initState();
     _loadBiometricSettings();
+    _loadAppVersion();
   }
 
   Future<void> _loadBiometricSettings() async {
@@ -41,6 +48,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         _biometricsEnabled = enabled;
         _biometricType = type;
       });
+    }
+  }
+
+  Future<void> _loadAppVersion() async {
+    try {
+      final packageInfo = await PackageInfo.fromPlatform();
+      if (mounted) {
+        setState(() {
+          _appVersion = 'v${packageInfo.version} (${packageInfo.buildNumber})';
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _appVersion = 'v1.0.0');
+      }
     }
   }
 
@@ -80,11 +102,26 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   Future<void> _manageSubscription() async {
-    // Opens Apple's subscription management
-    final uri = Uri.parse('https://apps.apple.com/account/subscriptions');
+    // Platform-specific subscription management URLs
+    final String url;
+    if (Platform.isIOS) {
+      url = 'https://apps.apple.com/account/subscriptions';
+    } else {
+      // Android Play Store subscriptions
+      url = 'https://play.google.com/store/account/subscriptions';
+    }
+
+    final uri = Uri.parse(url);
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
+  }
+
+  Future<void> _rateApp() async {
+    // Opens the app store listing for rating
+    await _inAppReview.openStoreListing(
+      appStoreId: '', // Add App Store ID when available
+    );
   }
 
   Future<void> _signOut() async {
@@ -108,7 +145,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
     if (confirm == true) {
       await ref.read(subscriptionServiceProvider).logOut();
-      await AuthService.instance.signOut();
+      await ref.read(authServiceProvider).signOut();
       if (mounted) context.go('/auth');
     }
   }
@@ -177,7 +214,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
     if (finalConfirm == true) {
       await ref.read(subscriptionServiceProvider).logOut();
-      await AuthService.instance.deleteAccount();
+      await ref.read(authServiceProvider).deleteAccount();
       if (mounted) context.go('/auth');
     }
   }
@@ -187,8 +224,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final isPro = ref.watch(isProProvider);
     final usageService = ref.watch(usageServiceProvider);
     final totalGenerated = usageService.getTotalCount();
-    final userEmail = AuthService.instance.email;
-    final userName = AuthService.instance.displayName;
+    final authService = ref.watch(authServiceProvider);
+    final userEmail = authService.email;
+    final userName = authService.displayName;
 
     return Scaffold(
       appBar: AppBar(title: Text('Settings')),
@@ -239,17 +277,23 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               title: 'Manage Subscription',
               onTap: _manageSubscription,
             ),
-          SettingsTile(
-            leading: _isRestoringPurchases
-                ? SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : Icon(Icons.refresh_rounded, color: AppColors.textSecondary),
-            title: 'Restore Purchases',
-            subtitle: 'Reinstalled? Restore your Pro subscription',
-            onTap: _isRestoringPurchases ? null : _restorePurchases,
+          Semantics(
+            label: 'Restore previous purchases',
+            hint:
+                'Tap to restore your Pro subscription if you reinstalled the app',
+            button: true,
+            child: SettingsTile(
+              leading: _isRestoringPurchases
+                  ? SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Icon(Icons.refresh_rounded, color: AppColors.textSecondary),
+              title: 'Restore Purchases',
+              subtitle: 'Reinstalled? Restore your Pro subscription',
+              onTap: _isRestoringPurchases ? null : _restorePurchases,
+            ),
           ),
 
           // Security section
@@ -298,16 +342,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             subtitle: 'Questions, bugs, or feature requests',
             onTap: () => context.pushNamed('feedback'),
           ),
-          SettingsTile(
-            leading: Icon(
-              Icons.star_outline_rounded,
-              color: AppColors.textSecondary,
+          Semantics(
+            label: 'Rate Prosepal in the app store',
+            button: true,
+            child: SettingsTile(
+              leading: Icon(
+                Icons.star_outline_rounded,
+                color: AppColors.textSecondary,
+              ),
+              title: 'Rate Prosepal',
+              subtitle: 'Love the app? Leave a review!',
+              onTap: _rateApp,
             ),
-            title: 'Rate Prosepal',
-            subtitle: 'Love the app? Leave a review!',
-            onTap: () {
-              // TODO: Open app store review
-            },
           ),
 
           // Legal section
@@ -349,7 +395,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           Gap(AppSpacing.xl),
           Center(
             child: Text(
-              'Prosepal v1.0.0',
+              'Prosepal ${_appVersion.isNotEmpty ? _appVersion : ""}',
               style: Theme.of(
                 context,
               ).textTheme.bodySmall?.copyWith(color: AppColors.textHint),

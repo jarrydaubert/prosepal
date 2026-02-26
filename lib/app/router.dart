@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../core/providers/providers.dart';
 import '../core/services/biometric_service.dart';
 import '../features/auth/auth_screen.dart';
 import '../features/auth/email_auth_screen.dart';
@@ -87,14 +88,14 @@ final appRouter = GoRouter(
 );
 
 /// Splash screen that determines initial route
-class _SplashScreen extends StatefulWidget {
+class _SplashScreen extends ConsumerStatefulWidget {
   const _SplashScreen();
 
   @override
-  State<_SplashScreen> createState() => _SplashScreenState();
+  ConsumerState<_SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<_SplashScreen> {
+class _SplashScreenState extends ConsumerState<_SplashScreen> {
   @override
   void initState() {
     super.initState();
@@ -108,7 +109,8 @@ class _SplashScreenState extends State<_SplashScreen> {
     final prefs = await SharedPreferences.getInstance();
     final hasCompletedOnboarding =
         prefs.getBool('hasCompletedOnboarding') ?? false;
-    final isLoggedIn = Supabase.instance.client.auth.currentUser != null;
+    final authService = ref.read(authServiceProvider);
+    final isLoggedIn = authService.isLoggedIn;
     final biometricsEnabled = await BiometricService.instance.isEnabled;
 
     if (!hasCompletedOnboarding) {

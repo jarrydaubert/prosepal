@@ -6,9 +6,11 @@ import 'package:flutter/foundation.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../interfaces/auth_interface.dart';
+
 /// Authentication service using Supabase
 /// Supports Apple Sign-In, Google OAuth, and email/password flows
-class AuthService {
+class AuthService implements IAuthService {
   AuthService._();
   static final instance = AuthService._();
 

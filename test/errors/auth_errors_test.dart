@@ -76,6 +76,26 @@ void main() {
         );
       });
 
+      test('should return friendly message for email rate limit', () {
+        final error = AuthException('Email rate limit exceeded');
+        final message = AuthErrorHandler.getMessage(error);
+        expect(
+          message,
+          equals('Too many attempts. Please wait a moment and try again.'),
+        );
+      });
+
+      test('should return friendly message for security rate limit', () {
+        final error = AuthException(
+          'For security purposes, you can only request this once every 60 seconds',
+        );
+        final message = AuthErrorHandler.getMessage(error);
+        expect(
+          message,
+          equals('Too many attempts. Please wait a moment and try again.'),
+        );
+      });
+
       test('should return generic message for unknown error', () {
         final error = Exception('Unknown error');
         final message = AuthErrorHandler.getMessage(error);

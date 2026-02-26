@@ -34,12 +34,15 @@ class AiService {
   GenerativeModel? _model;
   final _uuid = Uuid();
 
+  static const _maxRetries = 3;
+  static const _initialDelayMs = 500;
+
   GenerativeModel get model {
     _model ??= GenerativeModel(
-      model: 'gemini-3-flash',
+      model: 'gemini-3-flash-preview',
       apiKey: _apiKey,
       generationConfig: GenerationConfig(
-        temperature: 0.9,
+        temperature: 0.85,
         topK: 40,
         topP: 0.95,
         maxOutputTokens: 1024,
@@ -54,12 +57,13 @@ class AiService {
     return _model!;
   }
 
-  /// Generate messages with proper error handling
+  /// Generate messages with proper error handling and retry logic
   /// Throws [AiServiceException] subtypes for different failure modes
   Future<GenerationResult> generateMessages({
     required Occasion occasion,
     required Relationship relationship,
     required Tone tone,
+    MessageLength length = MessageLength.standard,
     String? recipientName,
     String? personalDetails,
   }) async {
@@ -67,11 +71,12 @@ class AiService {
       occasion: occasion,
       relationship: relationship,
       tone: tone,
+      length: length,
       recipientName: recipientName,
       personalDetails: personalDetails,
     );
 
-    try {
+    return _executeWithRetry(() async {
       final response = await model.generateContent([Content.text(prompt)]);
 
       // Check for blocked content
@@ -104,62 +109,100 @@ class AiService {
         recipientName: recipientName,
         personalDetails: personalDetails,
       );
-    } on GenerativeAIException catch (e, stackTrace) {
-      // Log error for feedback reports
-      ErrorLogService.instance.log(e, stackTrace);
-      if (kDebugMode) {
-        debugPrint('Gemini API error: $e');
-      }
+    });
+  }
 
-      // Categorize the error
-      final message = e.message.toLowerCase();
-      if (message.contains('rate') || message.contains('quota')) {
-        throw AiRateLimitException(
-          'Too many requests. Please try again later.',
+  /// Executes operation with exponential backoff retry for transient errors
+  Future<T> _executeWithRetry<T>(Future<T> Function() operation) async {
+    int attempt = 0;
+    while (true) {
+      try {
+        return await operation();
+      } on GenerativeAIException catch (e, stackTrace) {
+        attempt++;
+        final message = e.message.toLowerCase();
+        final isRetryable =
+            message.contains('rate') ||
+            message.contains('quota') ||
+            message.contains('unavailable') ||
+            message.contains('timeout');
+
+        if (isRetryable && attempt < _maxRetries) {
+          // Exponential backoff with jitter
+          final delayMs = _initialDelayMs * (1 << attempt);
+          final jitter =
+              (delayMs * 0.2 * (DateTime.now().millisecond % 10) / 10).toInt();
+          if (kDebugMode) {
+            debugPrint('Retry attempt $attempt after ${delayMs + jitter}ms');
+          }
+          await Future.delayed(Duration(milliseconds: delayMs + jitter));
+          continue;
+        }
+
+        // Log and categorize error
+        ErrorLogService.instance.log(e, stackTrace);
+        if (kDebugMode) {
+          debugPrint('Gemini API error: $e');
+        }
+
+        if (message.contains('rate') || message.contains('quota')) {
+          throw AiRateLimitException(
+            'Too many requests. Please try again later.',
+            originalError: e,
+          );
+        }
+        if (message.contains('network') || message.contains('connection')) {
+          throw AiNetworkException(
+            'Network error. Please check your connection.',
+            originalError: e,
+          );
+        }
+        if (message.contains('blocked') || message.contains('safety')) {
+          throw AiContentBlockedException(
+            'Content was blocked by safety filters.',
+            originalError: e,
+          );
+        }
+
+        throw AiServiceException(
+          'Failed to generate messages. Please try again.',
+          originalError: e,
+        );
+      } catch (e, stackTrace) {
+        if (e is AiServiceException) rethrow;
+
+        attempt++;
+        final errorStr = e.toString().toLowerCase();
+        final isRetryable =
+            errorStr.contains('timeout') || errorStr.contains('unavailable');
+
+        if (isRetryable && attempt < _maxRetries) {
+          final delayMs = _initialDelayMs * (1 << attempt);
+          await Future.delayed(Duration(milliseconds: delayMs));
+          continue;
+        }
+
+        // Log error for feedback reports
+        ErrorLogService.instance.log(e, stackTrace);
+        if (kDebugMode) {
+          debugPrint('Unexpected AI error: $e');
+        }
+
+        // Network-related errors
+        if (errorStr.contains('network') ||
+            errorStr.contains('socket') ||
+            errorStr.contains('connection')) {
+          throw AiNetworkException(
+            'Network error. Please check your connection.',
+            originalError: e,
+          );
+        }
+
+        throw AiServiceException(
+          'Something went wrong. Please try again.',
           originalError: e,
         );
       }
-      if (message.contains('network') || message.contains('connection')) {
-        throw AiNetworkException(
-          'Network error. Please check your connection.',
-          originalError: e,
-        );
-      }
-      if (message.contains('blocked') || message.contains('safety')) {
-        throw AiContentBlockedException(
-          'Content was blocked by safety filters.',
-          originalError: e,
-        );
-      }
-
-      throw AiServiceException(
-        'Failed to generate messages. Please try again.',
-        originalError: e,
-      );
-    } catch (e, stackTrace) {
-      if (e is AiServiceException) rethrow;
-
-      // Log error for feedback reports
-      ErrorLogService.instance.log(e, stackTrace);
-      if (kDebugMode) {
-        debugPrint('Unexpected AI error: $e');
-      }
-
-      // Network-related errors
-      final errorStr = e.toString().toLowerCase();
-      if (errorStr.contains('network') ||
-          errorStr.contains('socket') ||
-          errorStr.contains('connection')) {
-        throw AiNetworkException(
-          'Network error. Please check your connection.',
-          originalError: e,
-        );
-      }
-
-      throw AiServiceException(
-        'Something went wrong. Please try again.',
-        originalError: e,
-      );
     }
   }
 
@@ -167,44 +210,54 @@ class AiService {
     required Occasion occasion,
     required Relationship relationship,
     required Tone tone,
+    required MessageLength length,
     String? recipientName,
     String? personalDetails,
   }) {
     final recipientPart = recipientName != null && recipientName.isNotEmpty
-        ? 'The recipient\'s name is $recipientName.'
+        ? 'Recipient\'s name: $recipientName'
         : '';
 
     final detailsPart = personalDetails != null && personalDetails.isNotEmpty
-        ? 'Additional context: $personalDetails'
+        ? 'Personal context to weave in naturally: $personalDetails'
         : '';
 
     return '''
-You are a skilled greeting card message writer. Generate exactly 3 different message options for a greeting card.
+You are an expert at crafting heartfelt, memorable greeting card messages. Your messages consistently make recipients feel truly seen and valued.
 
-Context:
+**Your Task:** Write exactly 3 unique message options for a greeting card.
+
+**Context:**
 - Occasion: ${occasion.prompt}
-- Recipient: ${relationship.prompt}
-- Tone: ${tone.prompt}
-$recipientPart
-$detailsPart
+- Relationship: ${relationship.prompt}  
+- Desired tone: ${tone.prompt}
+- Message length: ${length.prompt}
+${recipientPart.isNotEmpty ? '- $recipientPart' : ''}
+${detailsPart.isNotEmpty ? '- $detailsPart' : ''}
 
-Requirements:
-1. Each message should be 2-4 sentences
-2. Messages should feel personal and genuine, not generic
-3. Each option should have a different approach/angle
-4. Do NOT include greetings like "Dear [Name]" at the start
-5. Do NOT include sign-offs like "Best wishes" or "Love" at the end
-6. Just the message body content
+**Guidelines:**
+- Length: ${length.prompt} - this is important, respect the requested length
+- Make each message feel personal and specific, never generic or template-like
+- Each option should take a distinctly different emotional angle or approach
+- If a name is provided, incorporate it naturally (not just at the start)
+- If personal details are given, weave them in authentically
+- Capture the essence of the relationship
+- Use vivid, emotionally resonant language appropriate to the tone
 
-Format your response EXACTLY like this:
+**Format Rules:**
+- NO greetings (no "Dear...", "Hi...", etc.)
+- NO sign-offs (no "Love,", "Best wishes,", "Sincerely,", etc.)
+- Just the message body itself
+
+**Output Format (follow exactly):**
 MESSAGE 1:
-[First message here]
+[First message]
 
 MESSAGE 2:
-[Second message here]
+[Second message]
 
 MESSAGE 3:
-[Third message here]
+[Third message]
 ''';
   }
 

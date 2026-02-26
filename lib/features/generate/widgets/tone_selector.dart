@@ -88,7 +88,8 @@ class _ToneTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Semantics(
-      label: '${tone.label} tone: ${tone.description}, ${isSelected ? 'selected' : 'not selected'}',
+      label:
+          '${tone.label} tone: ${tone.description}, ${isSelected ? 'selected' : 'not selected'}',
       button: true,
       selected: isSelected,
       child: Material(
@@ -97,42 +98,44 @@ class _ToneTile extends StatelessWidget {
           onTap: onTap,
           borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
           child: AnimatedContainer(
-          duration: Duration(milliseconds: 200),
-          padding: EdgeInsets.all(AppSpacing.lg),
-          decoration: BoxDecoration(
-            color: isSelected
-                ? AppColors.primary.withValues(alpha: 0.1)
-                : AppColors.surface,
-            borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
-            border: Border.all(
-              color: isSelected ? AppColors.primary : AppColors.surfaceVariant,
-              width: isSelected ? 2 : 1,
+            duration: Duration(milliseconds: 200),
+            padding: EdgeInsets.all(AppSpacing.lg),
+            decoration: BoxDecoration(
+              color: isSelected
+                  ? AppColors.primary.withValues(alpha: 0.1)
+                  : AppColors.surface,
+              borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
+              border: Border.all(
+                color: isSelected
+                    ? AppColors.primary
+                    : AppColors.surfaceVariant,
+                width: isSelected ? 2 : 1,
+              ),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(tone.emoji, style: TextStyle(fontSize: 32)),
+                Gap(AppSpacing.sm),
+                Text(
+                  tone.label,
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                    color: isSelected ? AppColors.primary : null,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                Gap(AppSpacing.xs),
+                Text(
+                  tone.description,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
             ),
           ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(tone.emoji, style: TextStyle(fontSize: 32)),
-              Gap(AppSpacing.sm),
-              Text(
-                tone.label,
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                  color: isSelected ? AppColors.primary : null,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              Gap(AppSpacing.xs),
-              Text(
-                tone.description,
-                style: Theme.of(
-                  context,
-                ).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
         ),
       ),
     );
