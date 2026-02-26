@@ -43,6 +43,13 @@ class _CustomPaywallScreenState extends ConsumerState<CustomPaywallScreen> {
   Future<void> _loadOfferings() async {
     try {
       final offerings = await Purchases.getOfferings();
+      // Debug: Log currency info
+      for (final pkg in offerings.current?.availablePackages ?? []) {
+        debugPrint(
+          'RevenueCat: ${pkg.storeProduct.identifier} - '
+          '${pkg.storeProduct.currencyCode} - ${pkg.storeProduct.priceString}',
+        );
+      }
       if (mounted) {
         setState(() {
           _offering = offerings.current;

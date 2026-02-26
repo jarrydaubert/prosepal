@@ -330,10 +330,28 @@ class AiService {
       personalDetails: personalDetails,
     );
 
+    // Log the prompt for debugging
+    Log.info('AI prompt', {'prompt': prompt});
+
     return _executeWithRetry(() async {
       Log.info('AI calling generateContent...');
       final response = await model.generateContent([Content.text(prompt)]);
       Log.info('AI response received');
+
+      // Log comprehensive response details for debugging
+      final candidate = response.candidates?.firstOrNull;
+      final usage = response.usageMetadata;
+      Log.info('AI response details', {
+        'finishReason': candidate?.finishReason?.name ?? 'null',
+        'candidateCount': response.candidates?.length ?? 0,
+        'promptTokens': usage?.promptTokenCount,
+        'responseTokens': usage?.candidatesTokenCount,
+        'totalTokens': usage?.totalTokenCount,
+        'promptBlockReason': response.promptFeedback?.blockReason?.name,
+        'safetyRatings': candidate?.safetyRatings
+            ?.map((r) => '${r.category.name}:${r.probability.name}')
+            .join(', '),
+      });
 
       // Check for blocked content
       if (response.promptFeedback?.blockReason case final reason?) {
@@ -343,6 +361,11 @@ class AiService {
           errorCode: 'CONTENT_BLOCKED',
           originalError: reason,
         );
+      }
+
+      // Check for maxTokens finish reason (truncation)
+      if (candidate?.finishReason == FinishReason.maxTokens) {
+        Log.warning('AI response truncated - hit maxTokens limit');
       }
 
       final jsonText = response.text;
@@ -375,14 +398,9 @@ class AiService {
         );
       }
 
-      // Log token usage for cost tracking
-      final usage = response.usageMetadata;
       Log.info('AI generation success', {
         'messageCount': messages.length,
         'model': AiConfig.model,
-        'promptTokens': usage?.promptTokenCount,
-        'responseTokens': usage?.candidatesTokenCount,
-        'totalTokens': usage?.totalTokenCount,
       });
 
       return GenerationResult(
