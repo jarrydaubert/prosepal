@@ -117,9 +117,11 @@
 
 | Issue | Location | Fix |
 |-------|----------|-----|
-| Missing Google nonce | `auth_service.dart` | Native SDK has built-in protections; lower priority |
+| No timeout on auth/Supabase calls | `supabase_auth_provider.dart`, `usage_service.dart` | Add 30s timeout wrapper to prevent hanging |
+| History stored unencrypted | `history_service.dart` (SharedPreferences) | Move to flutter_secure_storage |
 | Missing CAPTCHA | `email_auth_screen.dart` | Add Turnstile/hCaptcha widget + Supabase config |
 | Unencrypted biometric pref | `biometric_service.dart` | Add flutter_secure_storage dependency |
+| Missing Google nonce | `auth_service.dart` | Native SDK has built-in protections; lower priority |
 
 ### MEDIUM - Fix Weeks 2-3
 
