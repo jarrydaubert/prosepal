@@ -78,25 +78,11 @@ class AppColors {
   static const Color info = Color(0xFF2196F3);
 
   // ===========================================================================
-  // OCCASION COLORS (Unified - all use primary with opacity)
+  // OCCASION COLORS
   // ===========================================================================
-  // Instead of 10 different colors, occasions use primary color
-  // with varying opacity for visual distinction while maintaining brand unity
-
-  /// Get occasion card background color
-  static Color occasionBackground(int index) {
-    // Cycle through 3 opacity levels for subtle variety
-    final opacities = [0.08, 0.10, 0.12];
-    return primary.withValues(alpha: opacities[index % opacities.length]);
-  }
-
-  /// Get occasion card border color
-  static Color occasionBorder(int index) {
-    return primary.withValues(alpha: 0.25);
-  }
-
-  /// Occasion text color - always primary for consistency
-  static const Color occasionText = primary;
+  // Occasion-specific colors are now defined in the Occasion enum with
+  // explicit per-variant opacity values (reorder-safe).
+  // See: lib/core/models/occasion.dart
 
   // ===========================================================================
   // GRADIENTS

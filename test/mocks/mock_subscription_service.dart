@@ -196,6 +196,12 @@ class MockSubscriptionService implements ISubscriptionService {
   }
 
   @override
+  void removeCustomerInfoListener(void Function(CustomerInfo) listener) {
+    // In mock, listeners are managed via stream controller
+    // Real implementation would remove from RevenueCat SDK
+  }
+
+  @override
   Future<void> identifyUser(String userId) async {
     identifyUserCallCount++;
     lastIdentifiedUserId = userId;

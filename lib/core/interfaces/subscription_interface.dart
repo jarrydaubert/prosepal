@@ -36,6 +36,9 @@ abstract class ISubscriptionService {
   /// Listen to customer info updates
   void addCustomerInfoListener(void Function(CustomerInfo) listener);
 
+  /// Remove customer info update listener
+  void removeCustomerInfoListener(void Function(CustomerInfo) listener);
+
   /// Identify user
   Future<void> identifyUser(String userId);
 
