@@ -134,11 +134,8 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
       // Success - reset throttle
       throttle.recordSuccess(email);
 
-      // Identify with RevenueCat and sync usage (same as Apple/Google)
+      // Sync usage from server (restores usage after reinstall)
       if (response.user != null) {
-        await ref
-            .read(subscriptionServiceProvider)
-            .identifyUser(response.user!.id);
         await ref.read(usageServiceProvider).syncFromServer();
       }
 

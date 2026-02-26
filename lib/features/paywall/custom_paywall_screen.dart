@@ -80,6 +80,14 @@ class _CustomPaywallScreenState extends ConsumerState<CustomPaywallScreen> {
     Log.info('Purchase started', {'package': package.identifier});
 
     try {
+      // Identify with RevenueCat before purchase (only creates customer on purchase)
+      final authService = ref.read(authServiceProvider);
+      if (authService.isLoggedIn && authService.currentUser?.id != null) {
+        await ref
+            .read(subscriptionServiceProvider)
+            .identifyUser(authService.currentUser!.id);
+      }
+
       final result = await Purchases.purchase(PurchaseParams.package(package));
       final hasPro = result.customerInfo.entitlements.active.containsKey('pro');
       Log.info('Purchase result', {
@@ -234,6 +242,14 @@ class _CustomPaywallScreenState extends ConsumerState<CustomPaywallScreen> {
     Log.info('Restore purchases started');
 
     try {
+      // Identify with RevenueCat before restore to link purchases to user
+      final authService = ref.read(authServiceProvider);
+      if (authService.isLoggedIn && authService.currentUser?.id != null) {
+        await ref
+            .read(subscriptionServiceProvider)
+            .identifyUser(authService.currentUser!.id);
+      }
+
       final customerInfo = await Purchases.restorePurchases();
       final hasPro = customerInfo.entitlements.active.containsKey('pro');
       Log.info('Restore purchases completed', {'hasPro': hasPro});

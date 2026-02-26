@@ -93,9 +93,6 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
             throw Exception('Sign in timed out. Please try again.'),
       );
       if (response.user != null) {
-        await ref
-            .read(subscriptionServiceProvider)
-            .identifyUser(response.user!.id);
         // Sync usage from server (restores usage after reinstall)
         await ref.read(usageServiceProvider).syncFromServer();
       }
@@ -124,9 +121,6 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
             throw Exception('Sign in timed out. Please try again.'),
       );
       if (response.user != null) {
-        await ref
-            .read(subscriptionServiceProvider)
-            .identifyUser(response.user!.id);
         // Sync usage from server (restores usage after reinstall)
         await ref.read(usageServiceProvider).syncFromServer();
       }

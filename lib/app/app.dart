@@ -110,17 +110,11 @@ class _ProsepalAppState extends ConsumerState<ProsepalApp>
         });
 
         if (event == AuthChangeEvent.signedIn && session != null) {
-          // Link RevenueCat to user for purchase restoration
-          try {
-            await ref
-                .read(subscriptionServiceProvider)
-                .identifyUser(session.user.id);
-            Log.info('Auth listener: RevenueCat identified');
-          } catch (e) {
-            Log.warning('Auth listener: RevenueCat identify failed', {
-              'error': '$e',
-            });
-          }
+          // Note: We don't identify with RevenueCat here to avoid inflating
+          // customer count. Users are identified only when:
+          // 1. Making a purchase (paywall screen)
+          // 2. Restoring purchases (settings or paywall)
+          // This keeps "New Customers" metric accurate to actual subscribers.
 
           // Sync usage from server (restores usage after reinstall)
           try {
