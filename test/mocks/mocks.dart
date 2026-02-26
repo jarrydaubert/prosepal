@@ -1,4 +1,5 @@
 // Export all mock implementations for easy importing in tests
+export 'mock_ai_service.dart';
 export 'mock_apple_auth_provider.dart';
 export 'mock_auth_service.dart';
 export 'mock_biometric_service.dart';

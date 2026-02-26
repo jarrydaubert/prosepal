@@ -71,17 +71,47 @@ integration_test/
 
 ## Integration Test Coverage
 
-| Flow | Tests | Mocked |
-|------|:-----:|:------:|
-| App launch (logged in/out) | ✅ | Yes |
-| Onboarding flow | ✅ | Yes |
-| All 10 occasions | ✅ | Yes |
-| All 5 relationships | ✅ | Yes |
-| All 4 tones | ✅ | Yes |
-| Free user → upgrade prompt | ✅ | Yes |
-| Pro user → generate button | ✅ | Yes |
-| Settings navigation | ✅ | Yes |
-| RevenueCat SDK | ✅ | No (device_only) |
+### Mocked Tests (`app_test.dart`)
+
+| Flow | Status |
+|------|:------:|
+| App launch (logged in/out) | ✅ |
+| Onboarding flow | ✅ |
+| All 10 occasions | ✅ |
+| All 5 relationships | ✅ |
+| All 4 tones | ✅ |
+| Free user → upgrade prompt | ✅ |
+| Pro user → generate button | ✅ |
+| **Generation → results screen** | ✅ |
+| **Network error handling** | ✅ |
+| **Rate limit error handling** | ✅ |
+| **Content blocked error** | ✅ |
+| **Error dismiss and retry** | ✅ |
+| Pro user settings | ✅ |
+| Upgrade flow to paywall | ✅ |
+| Settings navigation | ✅ |
+
+### Device-Only Tests (`device_only/revenuecat_test.dart`)
+
+| Test | Verifies |
+|------|----------|
+| SDK initialization | `isConfigured == true` |
+| Store type reporting | Test Store vs Production |
+| Offerings endpoint | Returns current offering |
+| Package availability | At least one package exists |
+| Product identifiers | Valid IDs and prices |
+| Monthly package | Expected package type |
+| User identity | App User ID assigned |
+| Entitlements structure | Object accessible |
+| Restore purchases | Completes without error |
+| User ID consistency | Same after restore |
+| isPro status | Matches entitlement |
+| Paywall loads offerings | Real price displays |
+| Restore option visible | UI element present |
+| Settings status | Shows Free/Pro correctly |
+| Network resilience | Handles repeated calls |
+| Product configuration | All required products |
+| Entitlement ID | Matches expected "pro" |
 
 ---
 
