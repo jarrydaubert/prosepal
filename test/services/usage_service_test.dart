@@ -56,5 +56,35 @@ void main() {
       }
       expect(usageService.getRemainingFree(), equals(0));
     });
+
+    test('should track monthly count separately', () async {
+      await usageService.recordGeneration();
+      expect(usageService.getMonthlyCount(), equals(1));
+      expect(usageService.getTotalCount(), equals(1));
+    });
+
+    test('should reset monthly usage', () async {
+      await usageService.recordGeneration();
+      await usageService.recordGeneration();
+      expect(usageService.getMonthlyCount(), equals(2));
+
+      await usageService.resetMonthlyUsage();
+      expect(usageService.getMonthlyCount(), equals(0));
+      // Total should remain
+      expect(usageService.getTotalCount(), equals(2));
+    });
+
+    test('should return correct remaining pro monthly', () async {
+      expect(usageService.getRemainingProMonthly(), equals(500));
+
+      await usageService.recordGeneration();
+      expect(usageService.getRemainingProMonthly(), equals(499));
+    });
+
+    test('constants should have correct values', () {
+      expect(UsageService.freeLifetimeLimit, equals(3));
+      expect(UsageService.proDailyLimit, equals(50));
+      expect(UsageService.proMonthlyLimit, equals(500));
+    });
   });
 }

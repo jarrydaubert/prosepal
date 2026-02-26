@@ -1,6 +1,6 @@
 # Test Audit
 
-> **503 tests passing** | Run: `flutter test`
+> **528 tests passing** | Run: `flutter test`
 
 ---
 
@@ -58,7 +58,7 @@ Tests should catch real issues, not pad metrics. Every test must answer: **"What
 | `auth_service_compliance_test.dart` | 15 | ✅ Full | App Store requirements |
 | `error_log_service_test.dart` | 15 | ✅ Full | Error logging |
 | `review_service_test.dart` | 20 | ✅ Full | In-app review |
-| `usage_service_test.dart` | 8 | ⚠️ Partial | Needs error paths |
+| `usage_service_test.dart` | 12 | ✅ Full | Monthly, reset, limits |
 
 ### Models (`test/models/`)
 
@@ -78,8 +78,8 @@ Tests should catch real issues, not pad metrics. Every test must answer: **"What
 |--------|-------|-------|
 | `home_screen_test.dart` | 30 | Occasions grid, navigation |
 | `generate_screen_test.dart` | 50 | Full wizard flow, errors |
-| `results_screen_test.dart` | - | ❌ Missing |
-| `settings_screen_test.dart` | - | ❌ Missing |
+| `results_screen_test.dart` | 21 | Display, navigation, accessibility |
+| `settings_screen_test.dart` | - | ❌ Needs DI refactoring |
 
 ### App (`test/app/`)
 
@@ -119,9 +119,8 @@ Run on device only: `flutter test integration_test/`
 | Priority | Task | Status |
 |----------|------|--------|
 | P1 | Run integration tests on iOS device | ⬜ |
-| P2 | Add `results_screen_test.dart` | ⬜ |
+| P2 | Refactor SettingsScreen for DI (enable testing) | ⬜ |
 | P2 | Add `settings_screen_test.dart` | ⬜ |
-| P3 | Add error paths to `usage_service_test.dart` | ⬜ |
 
 ---
 
