@@ -63,5 +63,4 @@ class AppleAuthProvider implements IAppleAuthProvider {
       state: state,
     );
   }
-
 }

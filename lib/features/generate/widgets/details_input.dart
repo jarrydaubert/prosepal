@@ -165,12 +165,14 @@ class _DetailsInputState extends State<DetailsInput> {
                           const Gap(AppSpacing.xs),
                           Text(
                             length.label,
-                            style: isSelected
-                                ? const TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    color: AppColors.primary,
-                                  )
-                                : null,
+                            style: TextStyle(
+                              fontWeight: isSelected
+                                  ? FontWeight.w600
+                                  : FontWeight.w500,
+                              color: isSelected
+                                  ? AppColors.primary
+                                  : AppColors.textPrimary,
+                            ),
                           ),
                         ],
                       ),

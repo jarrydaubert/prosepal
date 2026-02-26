@@ -52,6 +52,22 @@ class MockSubscriptionService implements ISubscriptionService {
   bool restoreResult = false;
   bool paywallResult = false;
 
+  /// Alias for paywallResult - controls showPaywall() return value
+  set showPaywallResult(bool value) => paywallResult = value;
+  bool get showPaywallResult => paywallResult;
+
+  /// Delay before showPaywall completes (for testing loading states)
+  Duration? showPaywallDelay;
+
+  /// Error to throw specifically for restore (shorthand for methodErrors)
+  set restoreError(Exception? e) {
+    if (e != null) {
+      methodErrors['restorePurchases'] = e;
+    } else {
+      methodErrors.remove('restorePurchases');
+    }
+  }
+
   // Error simulation
   Exception? errorToThrow;
 
@@ -95,6 +111,7 @@ class MockSubscriptionService implements ISubscriptionService {
     purchaseResult = true;
     restoreResult = false;
     paywallResult = false;
+    showPaywallDelay = null;
     errorToThrow = null;
     methodErrors.clear();
   }
@@ -164,6 +181,9 @@ class MockSubscriptionService implements ISubscriptionService {
   @override
   Future<bool> showPaywall() async {
     showPaywallCallCount++;
+    if (showPaywallDelay != null) {
+      await Future<void>.delayed(showPaywallDelay!);
+    }
     if (!_isConfigured) return false;
     final error = _getError('showPaywall');
     if (error != null) throw error;

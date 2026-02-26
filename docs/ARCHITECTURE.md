@@ -44,6 +44,9 @@ prosepal/
 │   │   └── router.dart           # GoRouter config, route definitions, guards
 │   │
 │   ├── core/
+│   │   ├── config/
+│   │   │   └── ai_config.dart    # Centralized AI model parameters
+│   │   │
 │   │   ├── errors/
 │   │   │   └── auth_errors.dart  # AuthErrorHandler - user-friendly error messages
 │   │   │
@@ -51,7 +54,10 @@ prosepal/
 │   │   │   ├── interfaces.dart       # Barrel export
 │   │   │   ├── auth_interface.dart   # IAuthService contract
 │   │   │   ├── biometric_interface.dart  # IBiometricService contract
-│   │   │   └── subscription_interface.dart  # ISubscriptionService contract
+│   │   │   ├── subscription_interface.dart  # ISubscriptionService contract
+│   │   │   ├── apple_auth_provider.dart    # IAppleAuthProvider contract
+│   │   │   ├── google_auth_provider.dart   # IGoogleAuthProvider contract
+│   │   │   └── supabase_auth_provider.dart # ISupabaseAuthProvider contract
 │   │   │
 │   │   ├── models/
 │   │   │   ├── models.dart           # Barrel export
@@ -59,15 +65,20 @@ prosepal/
 │   │   │   ├── relationship.dart     # Relationship enum (Friend, Parent, etc.)
 │   │   │   ├── tone.dart             # Tone enum (Heartfelt, Funny, etc.)
 │   │   │   ├── message_length.dart   # MessageLength enum (Brief, Standard, etc.)
-│   │   │   └── generated_message.dart  # GeneratedMessage data class
+│   │   │   ├── generated_message.dart      # freezed source (GeneratedMessage, GenerationResult)
+│   │   │   ├── generated_message.freezed.dart  # freezed generated (copyWith, equality)
+│   │   │   └── generated_message.g.dart    # json_serializable generated (toJson/fromJson)
 │   │   │
 │   │   ├── providers/
 │   │   │   └── providers.dart    # Riverpod providers for all services
 │   │   │
 │   │   └── services/
 │   │       ├── services.dart         # Barrel export
-│   │       ├── ai_service.dart       # Firebase AI / Gemini message generation
+│   │       ├── ai_service.dart       # Gemini structured output, Dart 3 pattern matching
 │   │       ├── auth_service.dart     # Apple, Google, Email auth via Supabase
+│   │       ├── apple_auth_provider.dart    # Sign in with Apple implementation
+│   │       ├── google_auth_provider.dart   # Google Sign-In SDK implementation
+│   │       ├── supabase_auth_provider.dart # Supabase auth wrapper
 │   │       ├── biometric_service.dart  # Face ID / Touch ID for app lock
 │   │       ├── subscription_service.dart  # RevenueCat subscriptions
 │   │       ├── usage_service.dart    # Free tier usage tracking
@@ -254,6 +265,20 @@ AppColors.backgroundGradient   // Subtle coral fade (screens)
 - Implementations in `core/services/`
 - Provided via Riverpod in `core/providers/providers.dart`
 - Tests inject mocks from `test/mocks/`
+- OAuth providers initialized at startup for faster UX
+
+### Code Generation (freezed 3.x)
+- Data classes use `@freezed` for immutability
+- Auto-generated: `copyWith`, `==`, `hashCode`, `toString`
+- JSON serialization via `@JsonSerializable` with custom enum converters
+- Regenerate: `dart run build_runner build --delete-conflicting-outputs`
+- Generated files: `*.freezed.dart`, `*.g.dart`
+
+### AI Service Architecture
+- Gemini structured output with JSON schema (`Schema.object`)
+- Dart 3 pattern matching for type-safe response parsing
+- Centralized config in `core/config/ai_config.dart`
+- Custom exceptions: `AiNetworkException`, `AiParseException`, etc.
 
 ### Feature Organization
 - Each feature has its own folder under `features/`
@@ -269,3 +294,21 @@ AppColors.backgroundGradient   // Subtle coral fade (screens)
 - Mirror `lib/` structure in `test/`
 - Mocks are self-tested (`*_test.dart` for mocks)
 - Integration tests in separate `integration_test/` folder
+
+---
+
+## Commands
+
+```bash
+# Development
+flutter run                       # Run app
+flutter test                      # Unit/widget tests (365)
+flutter test integration_test/    # Integration tests (59)
+
+# Code generation
+dart run build_runner build --delete-conflicting-outputs  # Regenerate freezed
+
+# Analysis
+flutter analyze                   # Static analysis
+dart format .                     # Format code
+```

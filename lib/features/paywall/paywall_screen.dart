@@ -37,7 +37,10 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
       final subscriptionService = ref.read(subscriptionServiceProvider);
       final success = await subscriptionService.showPaywall();
 
-      if (success && mounted) {
+      if (!mounted) return;
+
+      if (success) {
+        // User purchased - update state and show success
         ref.read(isProProvider.notifier).state = true;
         context.pop();
         ScaffoldMessenger.of(context).showSnackBar(
@@ -53,25 +56,14 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
             behavior: SnackBarBehavior.floating,
           ),
         );
-      } else if (mounted) {
-        // User dismissed paywall or it failed to load - show fallback
-        setState(() => _isLoading = false);
+      } else {
+        // User dismissed paywall - just go back
+        context.pop();
       }
     } catch (e) {
-      // RevenueCat UI failed - show fallback
+      // RevenueCat UI failed to load - show fallback
       if (mounted) setState(() => _isLoading = false);
     }
-  }
-
-  Future<void> _activateDemoMode() async {
-    ref.read(isProProvider.notifier).state = true;
-    context.pop();
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Pro activated! (Demo mode)'),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
   }
 
   Future<void> _restorePurchases() async {
@@ -168,10 +160,9 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                 child: Column(
                   children: [
                     // Header
-                    const Text('✨', style: TextStyle(fontSize: 48)).animate().scale(
-                      duration: 500.ms,
-                      curve: Curves.elasticOut,
-                    ),
+                    const Text('✨', style: TextStyle(fontSize: 48))
+                        .animate()
+                        .scale(duration: 500.ms, curve: Curves.elasticOut),
                     const Gap(AppSpacing.lg),
                     Text(
                       'Unlock Prosepal Pro',
@@ -208,35 +199,35 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
 
                     const Gap(AppSpacing.xxl),
 
-                    // Info card
+                    // Error message
                     Container(
                       padding: const EdgeInsets.all(AppSpacing.lg),
                       decoration: BoxDecoration(
-                        color: AppColors.info.withValues(alpha: 0.1),
+                        color: AppColors.warning.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(
                           AppSpacing.radiusMedium,
                         ),
                         border: Border.all(
-                          color: AppColors.info.withValues(alpha: 0.3),
+                          color: AppColors.warning.withValues(alpha: 0.3),
                         ),
                       ),
                       child: Column(
                         children: [
                           const Icon(
-                            Icons.info_outline,
-                            color: AppColors.info,
+                            Icons.wifi_off,
+                            color: AppColors.warning,
                             size: 32,
                           ),
                           const Gap(AppSpacing.md),
                           Text(
-                            'Subscription Setup Required',
+                            'Unable to Load',
                             style: Theme.of(context).textTheme.titleMedium
                                 ?.copyWith(fontWeight: FontWeight.bold),
                             textAlign: TextAlign.center,
                           ),
                           const Gap(AppSpacing.sm),
                           Text(
-                            'Configure your RevenueCat products in the dashboard to enable in-app purchases.',
+                            'Please check your internet connection and try again.',
                             style: Theme.of(context).textTheme.bodySmall
                                 ?.copyWith(color: AppColors.textSecondary),
                             textAlign: TextAlign.center,
@@ -247,21 +238,11 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
 
                     const Gap(AppSpacing.xl),
 
-                    // Retry RevenueCat button
+                    // Retry button
                     AppButton(
-                      label: 'Retry Loading Subscriptions',
+                      label: 'Try Again',
                       icon: Icons.refresh,
                       onPressed: _showRevenueCatPaywall,
-                    ),
-
-                    const Gap(AppSpacing.md),
-
-                    // Demo mode button (for testing)
-                    AppButton(
-                      label: 'Activate Demo Mode',
-                      icon: Icons.science_outlined,
-                      style: AppButtonStyle.secondary,
-                      onPressed: _activateDemoMode,
                     ),
 
                     const Gap(AppSpacing.lg),
@@ -274,12 +255,18 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                           onPressed: () => context.pushNamed('privacy'),
                           child: const Text('Privacy'),
                         ),
-                        const Text('•', style: TextStyle(color: AppColors.textHint)),
+                        const Text(
+                          '•',
+                          style: TextStyle(color: AppColors.textHint),
+                        ),
                         TextButton(
                           onPressed: () => context.pushNamed('terms'),
                           child: const Text('Terms'),
                         ),
-                        const Text('•', style: TextStyle(color: AppColors.textHint)),
+                        const Text(
+                          '•',
+                          style: TextStyle(color: AppColors.textHint),
+                        ),
                         TextButton(
                           onPressed: _restorePurchases,
                           child: const Text('Restore'),

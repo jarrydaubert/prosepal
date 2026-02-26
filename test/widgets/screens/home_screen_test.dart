@@ -24,36 +24,32 @@ void main() {
     int remaining = 3,
     GoRouter? router,
   }) {
-    final testRouter = router ?? GoRouter(
-      initialLocation: '/',
-      routes: [
-        GoRoute(
-          path: '/',
-          builder: (context, state) => const HomeScreen(),
-        ),
-        GoRoute(
-          path: '/generate',
-          name: 'generate',
-          builder: (context, state) => const Scaffold(
-            body: Text('Generate Screen'),
-          ),
-        ),
-        GoRoute(
-          path: '/settings',
-          name: 'settings',
-          builder: (context, state) => const Scaffold(
-            body: Text('Settings Screen'),
-          ),
-        ),
-        GoRoute(
-          path: '/paywall',
-          name: 'paywall',
-          builder: (context, state) => const Scaffold(
-            body: Text('Paywall Screen'),
-          ),
-        ),
-      ],
-    );
+    final testRouter =
+        router ??
+        GoRouter(
+          initialLocation: '/',
+          routes: [
+            GoRoute(path: '/', builder: (context, state) => const HomeScreen()),
+            GoRoute(
+              path: '/generate',
+              name: 'generate',
+              builder: (context, state) =>
+                  const Scaffold(body: Text('Generate Screen')),
+            ),
+            GoRoute(
+              path: '/settings',
+              name: 'settings',
+              builder: (context, state) =>
+                  const Scaffold(body: Text('Settings Screen')),
+            ),
+            GoRoute(
+              path: '/paywall',
+              name: 'paywall',
+              builder: (context, state) =>
+                  const Scaffold(body: Text('Paywall Screen')),
+            ),
+          ],
+        );
 
     return ProviderScope(
       overrides: [
@@ -61,9 +57,7 @@ void main() {
         isProProvider.overrideWith((ref) => isPro),
         remainingGenerationsProvider.overrideWith((ref) => remaining),
       ],
-      child: MaterialApp.router(
-        routerConfig: testRouter,
-      ),
+      child: MaterialApp.router(routerConfig: testRouter),
     );
   }
 
@@ -83,7 +77,9 @@ void main() {
       expect(find.byIcon(Icons.settings_outlined), findsOneWidget);
     });
 
-    testWidgets('should display "What\'s the occasion?" section', (tester) async {
+    testWidgets('should display "What\'s the occasion?" section', (
+      tester,
+    ) async {
       await tester.pumpWidget(createTestableHomeScreen());
       await tester.pumpAndSettle();
 
@@ -116,7 +112,9 @@ void main() {
   });
 
   group('HomeScreen Usage Indicator', () {
-    testWidgets('free user sees remaining count and upgrade prompt', (tester) async {
+    testWidgets('free user sees remaining count and upgrade prompt', (
+      tester,
+    ) async {
       await tester.pumpWidget(createTestableHomeScreen(remaining: 3));
       await tester.pumpAndSettle();
 
@@ -134,7 +132,9 @@ void main() {
       expect(find.text('Upgrade for unlimited'), findsOneWidget);
     });
 
-    testWidgets('pro user sees PRO badge instead of usage card', (tester) async {
+    testWidgets('pro user sees PRO badge instead of usage card', (
+      tester,
+    ) async {
       await tester.pumpWidget(createTestableHomeScreen(isPro: true));
       await tester.pumpAndSettle();
 
@@ -157,7 +157,9 @@ void main() {
   });
 
   group('HomeScreen Navigation', () {
-    testWidgets('should navigate to settings when settings button tapped', (tester) async {
+    testWidgets('should navigate to settings when settings button tapped', (
+      tester,
+    ) async {
       await tester.pumpWidget(createTestableHomeScreen());
       await tester.pumpAndSettle();
 
@@ -167,7 +169,9 @@ void main() {
       expect(find.text('Settings Screen'), findsOneWidget);
     });
 
-    testWidgets('should navigate to generate when occasion tapped', (tester) async {
+    testWidgets('should navigate to generate when occasion tapped', (
+      tester,
+    ) async {
       await tester.pumpWidget(createTestableHomeScreen());
       await tester.pumpAndSettle();
 
@@ -178,7 +182,9 @@ void main() {
       expect(find.text('Generate Screen'), findsOneWidget);
     });
 
-    testWidgets('should navigate to generate for each occasion type', (tester) async {
+    testWidgets('should navigate to generate for each occasion type', (
+      tester,
+    ) async {
       for (final occasion in Occasion.values) {
         // Reset for each occasion
         await tester.pumpWidget(createTestableHomeScreen());
@@ -210,10 +216,7 @@ void main() {
 
       // Button should be tappable
       final buttonWidget = tester.widget<IconButton>(
-        find.ancestor(
-          of: settingsButton,
-          matching: find.byType(IconButton),
-        ),
+        find.ancestor(of: settingsButton, matching: find.byType(IconButton)),
       );
       expect(buttonWidget.onPressed, isNotNull);
     });
@@ -226,5 +229,4 @@ void main() {
       expect(find.byType(CustomScrollView), findsOneWidget);
     });
   });
-
 }

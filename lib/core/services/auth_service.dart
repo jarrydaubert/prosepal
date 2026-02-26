@@ -24,12 +24,8 @@ import '../interfaces/supabase_auth_provider.dart';
 //
 // Pass via dart-define: --dart-define=GOOGLE_WEB_CLIENT_ID=xxx
 // ===========================================================================
-const _googleWebClientId = String.fromEnvironment(
-  'GOOGLE_WEB_CLIENT_ID',
-);
-const _googleIosClientId = String.fromEnvironment(
-  'GOOGLE_IOS_CLIENT_ID',
-);
+const _googleWebClientId = String.fromEnvironment('GOOGLE_WEB_CLIENT_ID');
+const _googleIosClientId = String.fromEnvironment('GOOGLE_IOS_CLIENT_ID');
 
 /// Authentication service using dependency injection for testability
 ///
@@ -73,7 +69,7 @@ class AuthService implements IAuthService {
   // ===========================================================================
 
   /// Initialize OAuth providers at app startup
-  /// 
+  ///
   /// Call once during app initialization for faster sign-in UX.
   /// Initializes Google Sign-In SDK with client IDs - subsequent
   /// sign-in attempts will be faster as SDK is pre-warmed.
@@ -157,7 +153,9 @@ class AuthService implements IAuthService {
   Future<AuthResponse> signInWithApple() async {
     // Check platform availability first
     if (!await _apple.isAvailable()) {
-      throw const AuthException('Apple Sign In is not available on this platform');
+      throw const AuthException(
+        'Apple Sign In is not available on this platform',
+      );
     }
 
     try {
@@ -196,7 +194,9 @@ class AuthService implements IAuthService {
   Future<AuthResponse> signInWithGoogle() async {
     // Check platform availability first
     if (!await _google.isAvailable()) {
-      throw const AuthException('Google Sign In is not available on this platform');
+      throw const AuthException(
+        'Google Sign In is not available on this platform',
+      );
     }
 
     // Ensure initialized (no-op if already done at startup)

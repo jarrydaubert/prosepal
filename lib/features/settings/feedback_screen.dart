@@ -79,9 +79,9 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
       if (mounted) Navigator.pop(context);
     } else {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Could not open email app')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not open email app')),
+        );
       }
     }
 

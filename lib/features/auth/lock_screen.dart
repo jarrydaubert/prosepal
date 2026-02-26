@@ -212,7 +212,10 @@ class _LockScreenState extends State<LockScreen> {
                     _isAuthenticating
                         ? 'Authenticating...'
                         : 'Unlock with $_biometricType',
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ).animate().fadeIn(delay: 300.ms),

@@ -91,7 +91,8 @@ enum Occasion {
   Color get color => AppColors.primary;
 
   /// Get background color - explicit per-variant opacity (reorder-safe)
-  Color get backgroundColor => AppColors.primary.withValues(alpha: opacity.value);
+  Color get backgroundColor =>
+      AppColors.primary.withValues(alpha: opacity.value);
 
   /// Get border color
   Color get borderColor => AppColors.primary.withValues(alpha: 0.25);

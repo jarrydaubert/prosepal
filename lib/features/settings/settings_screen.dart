@@ -140,7 +140,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Sign Out', style: TextStyle(color: AppColors.error)),
+            child: const Text(
+              'Sign Out',
+              style: TextStyle(color: AppColors.error),
+            ),
           ),
         ],
       ),
@@ -170,7 +173,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Continue', style: TextStyle(color: AppColors.error)),
+            child: const Text(
+              'Continue',
+              style: TextStyle(color: AppColors.error),
+            ),
           ),
         ],
       ),
@@ -289,7 +295,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       height: 24,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Icon(Icons.refresh_rounded, color: AppColors.textSecondary),
+                  : const Icon(
+                      Icons.refresh_rounded,
+                      color: AppColors.textSecondary,
+                    ),
               title: 'Restore Purchases',
               subtitle: 'Reinstalled? Restore your Pro subscription',
               onTap: _isRestoringPurchases ? null : _restorePurchases,
@@ -316,7 +325,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           // Stats section
           const SectionHeader('Your Stats'),
           SettingsTile(
-            leading: const Icon(Icons.auto_awesome_rounded, color: AppColors.primary),
+            leading: const Icon(
+              Icons.auto_awesome_rounded,
+              color: AppColors.primary,
+            ),
             title: '$totalGenerated messages generated',
             subtitle: 'All time',
           ),
@@ -387,7 +399,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             onTap: _signOut,
           ),
           SettingsTile(
-            leading: const Icon(Icons.delete_forever_rounded, color: AppColors.error),
+            leading: const Icon(
+              Icons.delete_forever_rounded,
+              color: AppColors.error,
+            ),
             title: 'Delete Account',
             titleColor: AppColors.error,
             subtitle: 'Permanently delete your account and data',
