@@ -4,7 +4,8 @@ import 'package:flutter/foundation.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:purchases_ui_flutter/purchases_ui_flutter.dart';
 
-import 'package:prosepal/core/interfaces/subscription_interface.dart';
+import 'log_service.dart';
+import '../interfaces/subscription_interface.dart';
 
 /// RevenueCat subscription service implementation
 ///
@@ -100,11 +101,7 @@ class SubscriptionService implements ISubscriptionService {
     final apiKey = _activeApiKey;
 
     if (apiKey.isEmpty) {
-      debugPrint(
-        'WARNING: RevenueCat API key not provided. '
-        'Run with --dart-define=REVENUECAT_IOS_KEY=your_key '
-        'or --dart-define=REVENUECAT_TEST_STORE_KEY=your_test_key',
-      );
+      Log.warning('RevenueCat API key not provided');
       return;
     }
 
@@ -118,16 +115,10 @@ class SubscriptionService implements ISubscriptionService {
 
     _isInitialized = true;
 
-    // Log which environment we're using
-    if (isUsingTestStore) {
-      debugPrint(
-        '⚠️ RevenueCat initialized with TEST STORE (not for production!)',
-      );
-    } else {
-      debugPrint(
-        'RevenueCat initialized with ${Platform.isIOS ? 'iOS' : 'Android'} production key',
-      );
-    }
+    Log.info('RevenueCat initialized', {
+      'platform': Platform.isIOS ? 'iOS' : 'Android',
+      'testStore': isUsingTestStore,
+    });
   }
 
   @override
@@ -137,7 +128,7 @@ class SubscriptionService implements ISubscriptionService {
       final customerInfo = await Purchases.getCustomerInfo();
       return customerInfo.entitlements.active.containsKey(_entitlementId);
     } catch (e) {
-      debugPrint('Error checking pro status: $e');
+      Log.error('Error checking pro status', e);
       return false;
     }
   }
@@ -148,7 +139,7 @@ class SubscriptionService implements ISubscriptionService {
     try {
       return await Purchases.getCustomerInfo();
     } catch (e) {
-      debugPrint('Error getting customer info: $e');
+      Log.error('Error getting customer info', e);
       return null;
     }
   }
@@ -159,7 +150,7 @@ class SubscriptionService implements ISubscriptionService {
     try {
       return await Purchases.getOfferings();
     } catch (e) {
-      debugPrint('Error getting offerings: $e');
+      Log.error('Error getting offerings', e);
       return null;
     }
   }
@@ -168,18 +159,20 @@ class SubscriptionService implements ISubscriptionService {
   Future<bool> purchasePackage(Package package) async {
     try {
       final result = await Purchases.purchase(PurchaseParams.package(package));
-      return result.customerInfo.entitlements.active.containsKey(
+      final hasPro = result.customerInfo.entitlements.active.containsKey(
         _entitlementId,
       );
+      Log.info('Purchase completed', {'hasPro': hasPro});
+      return hasPro;
     } on PurchasesErrorCode catch (e) {
       if (e == PurchasesErrorCode.purchaseCancelledError) {
-        debugPrint('User cancelled purchase');
+        Log.info('Purchase cancelled by user');
       } else {
-        debugPrint('Purchase error: $e');
+        Log.error('Purchase error', e);
       }
       return false;
     } catch (e) {
-      debugPrint('Purchase error: $e');
+      Log.error('Purchase error', e);
       return false;
     }
   }
@@ -187,14 +180,18 @@ class SubscriptionService implements ISubscriptionService {
   @override
   Future<bool> restorePurchases() async {
     if (!_isInitialized) {
-      debugPrint('RevenueCat not initialized - cannot restore purchases');
+      Log.warning('RevenueCat not initialized - cannot restore');
       return false;
     }
     try {
       final customerInfo = await Purchases.restorePurchases();
-      return customerInfo.entitlements.active.containsKey(_entitlementId);
+      final hasPro = customerInfo.entitlements.active.containsKey(
+        _entitlementId,
+      );
+      Log.info('Restore completed', {'hasPro': hasPro});
+      return hasPro;
     } catch (e) {
-      debugPrint('Error restoring purchases: $e');
+      Log.error('Error restoring purchases', e);
       return false;
     }
   }
@@ -202,27 +199,28 @@ class SubscriptionService implements ISubscriptionService {
   @override
   Future<bool> showPaywall() async {
     if (!_isInitialized) {
-      debugPrint('RevenueCat not initialized - cannot show paywall');
+      Log.warning('RevenueCat not initialized - cannot show paywall');
       return false;
     }
 
     try {
-      // First check if we can get offerings
       final offerings = await Purchases.getOfferings();
-      debugPrint(
-        'Offerings: ${offerings.current?.availablePackages.length ?? 0} packages',
-      );
+      final packageCount = offerings.current?.availablePackages.length ?? 0;
+      Log.info('Paywall offerings loaded', {'packages': packageCount});
+
       if (offerings.current == null ||
           offerings.current!.availablePackages.isEmpty) {
-        debugPrint('No offerings available - check RevenueCat dashboard');
+        Log.warning('No offerings available');
         return false;
       }
 
       final result = await RevenueCatUI.presentPaywall();
-      return result == PaywallResult.purchased ||
-          result == PaywallResult.restored;
+      final success =
+          result == PaywallResult.purchased || result == PaywallResult.restored;
+      Log.info('Paywall result', {'result': result.name, 'success': success});
+      return success;
     } catch (e) {
-      debugPrint('Error showing paywall: $e');
+      Log.error('Error showing paywall', e);
       return false;
     }
   }
@@ -230,16 +228,21 @@ class SubscriptionService implements ISubscriptionService {
   @override
   Future<bool> showPaywallIfNeeded() async {
     if (!_isInitialized) {
-      debugPrint('RevenueCat not initialized - cannot show paywall');
+      Log.warning('RevenueCat not initialized - cannot show paywall');
       return false;
     }
 
     try {
       final result = await RevenueCatUI.presentPaywallIfNeeded(_entitlementId);
-      return result == PaywallResult.purchased ||
-          result == PaywallResult.restored;
+      final success =
+          result == PaywallResult.purchased || result == PaywallResult.restored;
+      Log.info('PaywallIfNeeded result', {
+        'result': result.name,
+        'success': success,
+      });
+      return success;
     } catch (e) {
-      debugPrint('Error showing paywall: $e');
+      Log.error('Error showing paywall', e);
       return false;
     }
   }
@@ -247,13 +250,13 @@ class SubscriptionService implements ISubscriptionService {
   @override
   Future<void> showCustomerCenter() async {
     if (!_isInitialized) {
-      debugPrint('RevenueCat not initialized - cannot show customer center');
+      Log.warning('RevenueCat not initialized - cannot show customer center');
       return;
     }
     try {
       await RevenueCatUI.presentCustomerCenter();
     } catch (e) {
-      debugPrint('Error showing customer center: $e');
+      Log.error('Error showing customer center', e);
     }
   }
 
@@ -270,33 +273,29 @@ class SubscriptionService implements ISubscriptionService {
   @override
   Future<void> identifyUser(String userId) async {
     if (!_isInitialized) {
-      debugPrint('RevenueCat not initialized, skipping identify');
+      Log.warning('RevenueCat not initialized, skipping identify');
       return;
     }
     try {
-      // Get current app user ID before login
       final currentAppUserId = await Purchases.appUserID;
-      debugPrint('RevenueCat: Current ID before logIn: $currentAppUserId');
-
       final result = await Purchases.logIn(userId);
-      debugPrint('RevenueCat logIn result:');
-      debugPrint('  - Target userId: $userId');
-      debugPrint('  - Created new customer: ${result.created}');
-      debugPrint(
-        '  - Active entitlements: ${result.customerInfo.entitlements.active.keys}',
+      final newAppUserId = await Purchases.appUserID;
+      final hasPro = result.customerInfo.entitlements.active.containsKey(
+        _entitlementId,
       );
 
-      // Log the new app user ID after login
-      final newAppUserId = await Purchases.appUserID;
-      debugPrint('  - App User ID after logIn: $newAppUserId');
+      Log.info('RevenueCat user identified', {
+        'previousId': _truncateId(currentAppUserId),
+        'targetId': _truncateId(userId),
+        'newId': _truncateId(newAppUserId),
+        'created': result.created,
+        'hasPro': hasPro,
+      });
 
-      if (result.customerInfo.entitlements.active.containsKey(_entitlementId)) {
-        debugPrint('  - Pro entitlement ACTIVE');
-      } else {
-        debugPrint('  - No pro entitlement');
-      }
+      // Set user ID in Crashlytics for crash correlation
+      await Log.setUserId(userId);
     } catch (e) {
-      debugPrint('Error identifying user: $e');
+      Log.error('Error identifying user', e);
     }
   }
 
@@ -304,8 +303,16 @@ class SubscriptionService implements ISubscriptionService {
   Future<void> logOut() async {
     try {
       await Purchases.logOut();
+      await Log.clearUserId();
+      Log.info('RevenueCat user logged out');
     } catch (e) {
-      debugPrint('Error logging out: $e');
+      Log.error('Error logging out', e);
     }
+  }
+
+  /// Truncate ID for logging (privacy)
+  static String _truncateId(String id) {
+    if (id.length <= 12) return id;
+    return '${id.substring(0, 8)}...${id.substring(id.length - 4)}';
   }
 }
