@@ -280,7 +280,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                           width: 24,
                           height: 24,
                         ),
-                        label: 'Continue with Google',
+                        label: 'Sign in with Google',
                       ),
                       const SizedBox(height: 12),
 
@@ -290,7 +290,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                         isLoading: _isLoading,
                         style: _AuthButtonStyle.outlined,
                         icon: const Icon(Icons.email_outlined, size: 24),
-                        label: 'Continue with Email',
+                        label: 'Sign in with Email',
                       ),
                     ],
                   )

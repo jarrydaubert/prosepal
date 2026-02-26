@@ -293,11 +293,13 @@ class SubscriptionService implements ISubscriptionService {
 
   @override
   void addCustomerInfoListener(void Function(CustomerInfo) listener) {
+    if (!_isInitialized) return;
     Purchases.addCustomerInfoUpdateListener(listener);
   }
 
   @override
   void removeCustomerInfoListener(void Function(CustomerInfo) listener) {
+    if (!_isInitialized) return;
     Purchases.removeCustomerInfoUpdateListener(listener);
   }
 
