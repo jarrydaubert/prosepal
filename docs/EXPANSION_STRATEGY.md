@@ -44,11 +44,14 @@ Solves the "episodic retention" problem - gives users reasons to return.
 | Component | Details |
 |-----------|---------|
 | **Save from Generation** | After copy, prompt "Save to Calendar?" with date picker |
+| **Export to Native Calendar** | Option to add event to iOS/Google Calendar (user's responsibility to name correctly) |
+| **Share Prompt** | After copy, show "Know someone who hates blank cards? Share Prosepal" |
 | **Manual Add** | Calendar screen has [+ Add Occasion] button |
-| **Calendar View** | Month view + upcoming list (next 30 days) |
+| **Upcoming List** | Show next 5 occasions sorted by date (or fewer if less saved) |
 | **Edit/Delete** | Manage saved occasions |
 | **Reminders** | Local push notification 7 days before |
 | **Deep Link** | Tap notification → pre-filled generation screen |
+| **Rating Prompt** | Trigger App Store rating request after first successful copy |
 
 **Recurring vs One-Time:**
 
@@ -63,16 +66,16 @@ Solves the "episodic retention" problem - gives users reasons to return.
 - Person field is freeform: "Mom & Dad", "Sam & Joe", "The Smiths"
 - One message for the couple
 
-**Effort:** 3-4 days
+**Effort:** 4-5 days
 
 ### Onboarding Updates
 
-Two new screens to add:
+| Screen | When | Elements |
+|--------|------|----------|
+| **Spelling** | During onboarding | Flag icons, "Mom vs Mum" choice, no permission needed |
+| **Notifications** | After first occasion save OR second copy (NOT onboarding) | Bell icon, "Never miss an important date", Allow/Maybe Later |
 
-| Screen | Purpose | Elements |
-|--------|---------|----------|
-| **Notifications** | Permission request | Bell icon, "Never miss an important date", Allow/Maybe Later buttons |
-| **Spelling** | UK/US preference | Flag icons, "Mom vs Mum" choice, no permission needed |
+**Why delay notifications?** Users haven't felt the value yet during onboarding. Asking after they save an occasion means they understand WHY reminders matter → higher opt-in rates.
 
 ---
 
@@ -110,6 +113,8 @@ Two new screens to add:
 | API-as-a-service | High | Medium | Month 12+ |
 
 **Trigger to pivot:** If MRR plateaus below $2K for 3+ months after Month 6.
+
+**Trigger for paid ads:** MRR > $1K OR organic installs plateau <30/day for 6+ weeks despite SEO/Pinterest efforts.
 
 ---
 
@@ -175,12 +180,14 @@ Don't build until you have 10+ paying business users asking for these:
 | Priority | Focus |
 |----------|-------|
 | **#1** | Consumer growth (current) |
-| **#2** | UK market (spelling + dates) |
-| **#3** | Retention (Calendar + Reminders) |
-| **#4** | SEO pages (20 high-intent) |
+| **#2** | UK market (spelling) |
+| **#3** | Retention (Calendar + Reminders + Share hook) |
+| **#4** | SEO pages (top 10 in weeks 1-2, remaining 10 in weeks 3-4) |
 | **#5** | EA inbound capture |
 
 **Everything else is killed or deferred until $5K+ MRR.**
+
+See `MARKETING.md` for full channel strategy and execution details.
 
 ---
 
