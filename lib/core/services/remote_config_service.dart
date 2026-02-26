@@ -13,15 +13,17 @@ import 'log_service.dart';
 /// - Force update version requirements
 /// - Feature flags
 ///
-/// ## Firebase Remote Config Setup
-/// 1. Go to Firebase Console > Remote Config
-/// 2. Add parameters:
-///    - `ai_model`: "gemini-3-flash-preview" (string)
-///    - `ai_model_fallback`: "gemini-2.5-flash" (string)
-///    - `min_app_version_ios`: "1.0.0" (string)
-///    - `min_app_version_android`: "1.0.0" (string)
-///    - `force_update_enabled`: true (boolean)
-/// 3. Publish changes
+/// ## Firebase Remote Config Setup (CONFIGURED - Jan 2026)
+/// Parameters are configured in Firebase Console > Remote Config (Client):
+///    - `ai_model`: "gemini-2.5-flash" (stable model)
+///    - `ai_model_fallback`: "gemini-2.5-flash-lite" (fallback if primary fails)
+///    - `min_app_version_ios`: "1.0.0" (force update threshold)
+///    - `min_app_version_android`: "1.0.0" (force update threshold)
+///
+/// To update AI model (e.g., when Gemini 3 SDK support is released):
+/// 1. Go to Firebase Console > Prosepal > Run > Remote Config
+/// 2. Edit `ai_model` value
+/// 3. Publish changes - app will use new model on next launch
 class RemoteConfigService {
   // Singleton for app-wide access
   static final RemoteConfigService _instance = RemoteConfigService._();

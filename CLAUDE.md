@@ -65,6 +65,24 @@ lib/
 | Free | 1 total (lifetime) |
 | Pro | 500/month |
 
+## Firebase Remote Config (CONFIGURED)
+
+AI model and force update controlled via Firebase Console > Remote Config (Client):
+
+| Parameter | Current Value | Purpose |
+|-----------|---------------|---------|
+| `ai_model` | `gemini-2.5-flash` | Primary Gemini model |
+| `ai_model_fallback` | `gemini-2.5-flash-lite` | Fallback if primary fails |
+| `min_app_version_ios` | `1.0.0` | Force update threshold |
+| `min_app_version_android` | `1.0.0` | Force update threshold |
+
+To switch AI models (e.g., when Gemini 3 SDK support arrives):
+1. Firebase Console > Prosepal > Run > Remote Config
+2. Edit `ai_model` → `gemini-3-flash-preview`
+3. Publish changes
+
+See: `lib/core/services/remote_config_service.dart`
+
 ## Security
 
 - HTTPS only (Android network_security_config, iOS ATS)
