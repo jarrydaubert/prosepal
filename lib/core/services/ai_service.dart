@@ -267,7 +267,8 @@ class AiService {
     );
   }
 
-  /// JSON schema for structured output - 3 message strings
+  /// JSON schema for structured output - exactly 3 message strings
+  /// Note: All properties required by default (no optionalProperties specified)
   static final _responseSchema = Schema.object(
     properties: {
       'messages': Schema.array(
@@ -343,7 +344,9 @@ class AiService {
 
     return _executeWithRetry(() async {
       Log.info('AI calling generateContent...');
-      final response = await model.generateContent([Content.text(prompt)]);
+      final response = await model
+          .generateContent([Content.text(prompt)])
+          .timeout(const Duration(seconds: 30));
       Log.info('AI response received');
 
       // Log comprehensive response details for debugging
