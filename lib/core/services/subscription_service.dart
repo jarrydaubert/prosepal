@@ -146,6 +146,17 @@ class SubscriptionService implements ISubscriptionService {
 
     _isInitialized = true;
 
+    // Sync purchases to transfer any subscriptions to the current RC user.
+    // This prevents orphaned anonymous users and inflated customer counts.
+    // - Android: Google Play subscriptions follow the Google account
+    // - iOS: App Store receipts are device-bound but still need sync after reinstall
+    try {
+      await Purchases.syncPurchases();
+      Log.info('RevenueCat: Purchases synced');
+    } catch (e) {
+      Log.warning('RevenueCat: Sync failed', {'error': '$e'});
+    }
+
     Log.info('RevenueCat initialized', {
       'platform': Platform.isIOS ? 'iOS' : 'Android',
       'testStore': isUsingTestStore,
