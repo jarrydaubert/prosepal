@@ -1,11 +1,24 @@
 /// AI model configuration
 ///
 /// Centralized configuration for Gemini model settings.
-/// Update model name here when new versions are released.
+/// Model name is fetched from Firebase Remote Config at runtime.
+/// These defaults are used if Remote Config is unavailable.
+///
+/// To change models without app update:
+/// 1. Go to Firebase Console > Remote Config
+/// 2. Update `ai_model` parameter
+/// 3. Publish changes
 abstract final class AiConfig {
-  /// Current Gemini model identifier
+  /// Default Gemini model (used if Remote Config unavailable)
   /// See: https://firebase.google.com/docs/ai-logic/models
-  static const String model = 'gemini-2.5-flash';
+  static const String defaultModel = 'gemini-2.0-flash';
+
+  /// Fallback model if primary fails (404, deprecated, etc.)
+  static const String defaultFallbackModel = 'gemini-2.0-flash-lite';
+
+  /// @deprecated Use RemoteConfigService.instance.aiModel instead
+  /// Kept for backward compatibility during migration
+  static const String model = defaultModel;
 
   /// Generation parameters
   static const double temperature = 0.85;
