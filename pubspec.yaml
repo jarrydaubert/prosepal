@@ -58,6 +58,7 @@ dependencies:
   screen_secure: ^1.0.3  # Screenshot/screen recording prevention
   flutter_secure_storage: ^10.0.0
   firebase_remote_config: ^6.1.3
+  flutter_jailbreak_detection: ^1.10.0
 
 dev_dependencies:
   flutter_test:
