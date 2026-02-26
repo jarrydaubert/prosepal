@@ -47,6 +47,7 @@ dependencies:
   crypto: ^3.0.7
   local_auth: ^3.0.0
   supabase_auth_ui: ^0.4.1  # Pinned - newer versions have dep conflicts
+  sign_in_button: ^4.0.1
 
 dev_dependencies:
   flutter_test:

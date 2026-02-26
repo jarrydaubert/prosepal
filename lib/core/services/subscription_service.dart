@@ -134,6 +134,10 @@ class SubscriptionService {
 
   /// Identify user (for when they sign in with Supabase later)
   Future<void> identifyUser(String userId) async {
+    if (!_isInitialized) {
+      debugPrint('RevenueCat not initialized, skipping identify');
+      return;
+    }
     try {
       await Purchases.logIn(userId);
     } catch (e) {
