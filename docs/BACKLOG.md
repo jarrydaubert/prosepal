@@ -259,7 +259,6 @@ Target: Zero analyzer warnings for squeaky clean codebase.
 
 | Initiative | Reference |
 |------------|-----------|
-| B2B Corporate Programs | `docs/EXPANSION_STRATEGY.md` |
-| Retail/Brand Partnerships | `docs/EXPANSION_STRATEGY.md` |
+| B2B (EA inbound capture) | `docs/EXPANSION_STRATEGY.md` |
 | Server-side AI generation | Move Gemini calls to Supabase Edge Function for: centralized logging, response caching, A/B test prompts without app updates, additional rate limiting. Current Firebase AI SDK is secure and fast - this is a v2 optimization. |
 | Platform Cloning | `docs/CLONING_PLAYBOOK.md` |
