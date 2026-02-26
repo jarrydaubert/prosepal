@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/services/biometric_service.dart';
 import '../../core/services/log_service.dart';
+import '../../shared/atoms/app_logo.dart';
 import '../../shared/theme/app_colors.dart';
 import '../../shared/theme/app_spacing.dart';
 
@@ -158,11 +159,7 @@ class _LockScreenState extends State<LockScreen> {
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(24),
-                    child: Image.asset(
-                      'assets/images/logo.png',
-                      width: 100,
-                      height: 100,
-                    ),
+                    child: const AppLogo(size: 100),
                   ),
                 ),
               ).animate().fadeIn().scale(begin: const Offset(0.9, 0.9)),

@@ -21,6 +21,7 @@ import '../features/history/history_screen.dart';
 import '../features/settings/feedback_screen.dart';
 import '../features/settings/legal_screen.dart';
 import '../features/settings/settings_screen.dart';
+import '../shared/atoms/app_logo.dart';
 import '../shared/theme/app_colors.dart';
 
 final appRouter = GoRouter(
@@ -198,7 +199,7 @@ class _SplashScreenState extends ConsumerState<_SplashScreen> {
       body: Center(
         child: ClipRRect(
           borderRadius: BorderRadius.circular(20),
-          child: Image.asset('assets/images/logo.png', width: 80, height: 80),
+          child: const AppLogo(size: 80),
         ),
       ),
     );
