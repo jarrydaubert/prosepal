@@ -52,16 +52,18 @@ Future<AuthResponse> signInWithApple() async {
   );
 }
 
-// Google Sign In - Native SDK + Supabase
+// Google Sign In - Native SDK + Supabase (7.x API)
 Future<AuthResponse> signInWithGoogle() async {
-  // 1. Get credential from native SDK
-  final googleUser = await GoogleSignIn().signIn();
-  final googleAuth = await googleUser!.authentication;
+  // 1. Initialize and authenticate with native SDK
+  final googleSignIn = GoogleSignIn.instance;
+  await googleSignIn.initialize(serverClientId: webClientId);
+  final googleUser = await googleSignIn.authenticate();
   
   // 2. Pass ID token to Supabase for validation & session
   return await supabase.auth.signInWithIdToken(
     provider: OAuthProvider.google,
-    idToken: googleAuth.idToken!,
+    idToken: googleUser.authentication.idToken!,
+    accessToken: (await googleUser.authorizationClient.authorizeScopes(['email'])).accessToken,
   );
 }
 
@@ -123,8 +125,8 @@ ElevatedButton.icon(
 | Package | Version | Purpose | Notes |
 |---------|---------|---------|-------|
 | `supabase_flutter` | ^2.12.0 | Auth session management | Core dependency |
-| `sign_in_with_apple` | ^7.0.1 | Native Apple credential + button | iOS only |
-| `google_sign_in` | ^7.2.0 | Native Google credential | 7.x with new API |
+| `sign_in_with_apple` | ^7.0.1 | Native Apple credential + button | iOS/macOS only, provides `generateNonce()` |
+| `google_sign_in` | ^7.2.0 | Native Google credential | 7.x singleton API, requires dart-defines |
 
 ---
 
@@ -175,29 +177,35 @@ ElevatedButton.icon(
 
 ## 2. Sign In With Apple (Native)
 
-**Package:** `sign_in_with_apple: ^6.1.4`  
-**Used for:** Native Apple Sign In credential  
-**File:** `auth_service.dart`  
+**Package:** `sign_in_with_apple: ^7.0.1`  
+**Used for:** Native Apple Sign In credential + official button  
+**File:** `auth_service.dart`, `auth_screen.dart`  
 **Docs:** https://pub.dev/packages/sign_in_with_apple
 
 ### SDK Methods Used
 
 | SDK Method | Service Method | Location | Unit | Integration |
 |------------|---------------|----------|:----:|:-----------:|
-| `SignInWithApple.getAppleIDCredential()` | `signInWithApple()` | auth_service.dart:71 | ⚠️ | ⚠️ |
+| `generateNonce()` | `signInWithApple()` | auth_service.dart:65 | ✅ | ⚠️ |
+| `SignInWithApple.getAppleIDCredential()` | `signInWithApple()` | auth_service.dart:68 | ⚠️ | ⚠️ |
+| `SignInWithAppleButton` | (UI widget) | auth_screen.dart:205 | ✅ | ✅ |
 
-**Unit: 0/1 (device only)** | **Integration: 0/1 (device only)**
+**Unit: 1/3 (nonce tested)** | **Integration: 1/3 (button only, device needed for credential)**
 
-### Implementation ✅ Best Practice
+### Implementation ✅ Best Practice (7.x API)
 
 ```dart
 Future<AuthResponse> signInWithApple() async {
-  final rawNonce = _generateNonce();
+  // Use generateNonce from sign_in_with_apple 7.x (not custom)
+  final rawNonce = generateNonce();
   final hashedNonce = _sha256ofString(rawNonce);
 
   // 1. Native SDK gets Apple credential
   final credential = await SignInWithApple.getAppleIDCredential(
-    scopes: [AppleIDAuthorizationScopes.email, AppleIDAuthorizationScopes.fullName],
+    scopes: [
+      AppleIDAuthorizationScopes.email,
+      AppleIDAuthorizationScopes.fullName,
+    ],
     nonce: hashedNonce,
   );
 
@@ -210,61 +218,109 @@ Future<AuthResponse> signInWithApple() async {
 }
 ```
 
+### UI Button (Official)
+```dart
+SignInWithAppleButton(
+  text: 'Continue with Apple',
+  onPressed: _signInWithApple,
+  style: SignInWithAppleButtonStyle.black,
+  borderRadius: BorderRadius.all(Radius.circular(12)),
+)
+```
+
 ### Notes
-- Cannot be unit tested - requires real device with Apple ID
-- iOS only - no Android equivalent
+- Cannot fully unit test `getAppleIDCredential()` - requires real device with Apple ID
+- iOS/macOS only - Platform.isIOS || Platform.isMacOS check in UI
 - Nonce prevents replay attacks (hashed for Apple, raw for Supabase)
+- 7.x provides `generateNonce()` - no custom implementation needed
 
 ---
 
 ## 3. Google Sign In (Native)
 
-**Package:** `google_sign_in: ^6.2.2`  
+**Package:** `google_sign_in: ^7.2.0`  
 **Used for:** Native Google Sign In credential  
-**File:** `auth_service.dart`  
-**Docs:** https://supabase.com/docs/guides/auth/social-login/auth-google
+**File:** `auth_service.dart`, `auth_screen.dart`  
+**Docs:** https://pub.dev/packages/google_sign_in
 
 ### SDK Methods Used
 
 | SDK Method | Service Method | Location | Unit | Integration |
 |------------|---------------|----------|:----:|:-----------:|
-| `GoogleSignIn().signIn()` | `signInWithGoogle()` | auth_service.dart | ⚠️ | ⚠️ |
-| `GoogleSignInAccount.authentication` | `signInWithGoogle()` | auth_service.dart | ⚠️ | ⚠️ |
+| `GoogleSignIn.instance` | `signInWithGoogle()` | auth_service.dart:91 | ✅ | ⚠️ |
+| `googleSignIn.initialize()` | `signInWithGoogle()` | auth_service.dart:93 | ✅ | ⚠️ |
+| `googleSignIn.attemptLightweightAuthentication()` | `signInWithGoogle()` | auth_service.dart:99 | ✅ | ⚠️ |
+| `googleSignIn.authenticate()` | `signInWithGoogle()` | auth_service.dart:102 | ⚠️ | ⚠️ |
+| `googleUser.authorizationClient.authorizeScopes()` | `signInWithGoogle()` | auth_service.dart:110 | ⚠️ | ⚠️ |
 
-**Unit: 0/2 (device only)** | **Integration: 0/2 (device only)**
+**Unit: 3/5 (mock tests)** | **Integration: 0/5 (device only)**
 
-### Implementation ✅ Best Practice
+### Implementation ✅ Best Practice (7.x API - Singleton Pattern)
 
 ```dart
 Future<AuthResponse> signInWithGoogle() async {
-  // 1. Native SDK gets Google credential
-  final googleSignIn = GoogleSignIn(
-    // iOS client ID from Google Cloud Console
-    clientId: 'YOUR_IOS_CLIENT_ID.apps.googleusercontent.com',
-    serverClientId: 'YOUR_WEB_CLIENT_ID.apps.googleusercontent.com',
+  // Initialize Google Sign In (7.x API - singleton pattern)
+  final googleSignIn = GoogleSignIn.instance;
+
+  await googleSignIn.initialize(
+    serverClientId: _googleWebClientId,
+    clientId: Platform.isIOS ? _googleIosClientId : null,
   );
-  
-  final googleUser = await googleSignIn.signIn();
-  if (googleUser == null) {
-    throw AuthException('Google Sign In cancelled');
-  }
-  
-  final googleAuth = await googleUser.authentication;
-  final idToken = googleAuth.idToken;
-  
+
+  // Try lightweight auth first (silent sign-in if previously authenticated)
+  var googleUser = await googleSignIn.attemptLightweightAuthentication();
+
+  // If no existing session, prompt user to sign in
+  googleUser ??= await googleSignIn.authenticate();
+
+  final idToken = googleUser.authentication.idToken;
   if (idToken == null) {
-    throw AuthException('No ID Token from Google');
+    throw AuthException('Google Sign In failed: No ID token');
   }
 
-  // 2. Pass ID token to Supabase for validation & session
+  // Get access token for Supabase (requires email/profile scopes)
+  final authorization = await googleUser.authorizationClient
+          .authorizationForScopes(['email', 'profile']) ??
+      await googleUser.authorizationClient
+          .authorizeScopes(['email', 'profile']);
+
   return await _client.auth.signInWithIdToken(
     provider: OAuthProvider.google,
     idToken: idToken,
+    accessToken: authorization.accessToken,
   );
 }
 ```
 
+### UI Button (Custom - No Official Widget)
+```dart
+// Google branding: white bg, Google logo, dark text
+ElevatedButton(
+  onPressed: _signInWithGoogle,
+  style: ElevatedButton.styleFrom(
+    backgroundColor: Colors.white,
+    foregroundColor: Colors.black87,
+    side: BorderSide(color: Colors.grey.shade300),
+  ),
+  child: Row(
+    mainAxisAlignment: MainAxisAlignment.center,
+    children: [
+      CustomPaint(painter: _GoogleLogoPainter()), // Official "G" colors
+      SizedBox(width: 8),
+      Text('Continue with Google'),
+    ],
+  ),
+)
+```
+
 ### Setup Requirements
+
+**Dart Defines (required):**
+```bash
+flutter run \
+  --dart-define=GOOGLE_WEB_CLIENT_ID=xxx.apps.googleusercontent.com \
+  --dart-define=GOOGLE_IOS_CLIENT_ID=xxx.apps.googleusercontent.com
+```
 
 **Google Cloud Console:**
 1. Create OAuth 2.0 Client IDs for iOS and Web
@@ -285,10 +341,11 @@ Future<AuthResponse> signInWithGoogle() async {
 ```
 
 ### Notes
-- Cannot be unit tested - requires real device with Google account
+- 7.x uses singleton `GoogleSignIn.instance` (not `GoogleSignIn()`)
+- `attemptLightweightAuthentication()` enables silent re-auth
+- Cannot fully test `authenticate()` - requires device with Google account
 - Works on iOS and Android
 - Consistent UX with Apple Sign In (native popup, no browser)
-- Supports One Tap / automatic sign-in
 
 ---
 
@@ -296,14 +353,16 @@ Future<AuthResponse> signInWithGoogle() async {
 
 **Package:** `supabase_flutter: ^2.12.0`  
 **Used for:** Passwordless email authentication  
-**File:** `auth_service.dart`  
+**File:** `auth_service.dart`, `email_auth_screen.dart`  
 **Docs:** https://supabase.com/docs/guides/auth/auth-email-passwordless
 
 ### SDK Methods Used
 
 | SDK Method | Service Method | Location | Unit | Integration |
 |------------|---------------|----------|:----:|:-----------:|
-| `auth.signInWithOtp()` | `signInWithMagicLink()` | auth_service.dart | ✅ | ✅ |
+| `auth.signInWithOtp()` | `signInWithMagicLink()` | auth_service.dart:147 | ✅ | ✅ |
+
+**Unit: 1/1** | **Integration: 1/1**
 
 ### Implementation ✅ Best Practice
 
@@ -316,19 +375,23 @@ Future<void> signInWithMagicLink(String email) async {
 }
 ```
 
+### UI (Custom - email_auth_screen.dart)
+- Email TextField with validation
+- "Send Magic Link" button
+- Success state with resend cooldown (60s)
+- "Use a different email" option
+- Spam folder reminder
+
 ### Notes
 - Supabase handles the entire flow (send email, verify token, create session)
 - No native SDK needed - Supabase is the provider
-- Deep link handling required for mobile apps
+- Deep link handling required for mobile apps (`com.prosepal.prosepal://login-callback`)
 - Email template customizable in Supabase Dashboard
-
-### UI
-
-Custom UI - TextField + Button calling `signInWithMagicLink()`.
+- 60-second cooldown between resend attempts (client-side)
 
 ---
 
-## 4. RevenueCat (Subscriptions)
+## 5. RevenueCat (Subscriptions)
 
 **Package:** `purchases_flutter: ^9.10.2`, `purchases_ui_flutter: ^9.10.2`  
 **Used for:** In-app subscriptions  
@@ -368,37 +431,59 @@ Custom `MockSubscriptionService` implementing `ISubscriptionService` interface.
 
 ---
 
-## 5. Google AI (Gemini)
+## 6. Firebase AI Logic (Gemini)
 
-**Package:** `google_generative_ai: ^0.4.7` ⚠️ **DEPRECATED**  
+**Package:** `firebase_ai: ^3.6.1`  
+**Model:** `gemini-3-flash-preview`  
 **Used for:** Message generation  
 **File:** `ai_service.dart`  
-**Docs:** https://ai.google.dev/gemini-api/docs
+**Docs:** https://firebase.google.com/docs/ai-logic
 
 ### SDK Methods Used
 
 | SDK Method | Service Method | Location | Unit | Integration |
 |------------|---------------|----------|:----:|:-----------:|
-| `GenerativeModel()` | `model` getter | ai_service.dart:41 | ✅ | ❌ |
-| `model.generateContent()` | `generateMessages()` | ai_service.dart:80 | ✅ | ❌ |
+| `FirebaseAI.googleAI()` | `model` getter | ai_service.dart:40 | ✅ | ⚠️ |
+| `generativeModel()` | `model` getter | ai_service.dart:40 | ✅ | ⚠️ |
+| `model.generateContent()` | `generateMessages()` | ai_service.dart:77 | ✅ | ⚠️ |
 
-**Unit: 2/2** | **Integration: 0/2**
+**Unit: 3/3** | **Integration: 0/3 (requires Firebase setup)**
 
 ### Test Files
-- `test/services/ai_service_test.dart` (35 tests)
+- `test/services/ai_service_test.dart` (16 tests)
 - `test/services/ai_service_http_test.dart` (30 tests)
 - `test/services/ai_service_generation_test.dart` (33 tests)
 
 ### Mock Strategy
-`MockClient` from `http` package to intercept HTTP requests.
+- Unit tests: Mock parsing/error logic directly (no network)
+- Widget tests: `MockAiService` extends `AiService` and overrides `generateMessages()`
+- Integration tests: Requires Firebase project with AI Logic enabled
 
-### Important Note
-> **Package is deprecated.** Google recommends migrating to Firebase Vertex AI SDK.
-> See: https://firebase.google.com/docs/vertex-ai
+### Configuration
+```dart
+FirebaseAI.googleAI().generativeModel(
+  model: 'gemini-3-flash-preview',
+  generationConfig: GenerationConfig(
+    temperature: 0.85,
+    topK: 40,
+    topP: 0.95,
+    maxOutputTokens: 1024,
+  ),
+  safetySettings: [
+    SafetySetting(HarmCategory.harassment, HarmBlockThreshold.medium, HarmBlockMethod.probability),
+    // ... other categories
+  ],
+)
+```
+
+### Setup Required
+1. Firebase Console > AI Logic > Get Started
+2. Select "Gemini Developer API" (free tier)
+3. API key managed server-side automatically (no dart-define needed)
 
 ---
 
-## 6. Local Auth (Biometrics)
+## 7. Local Auth (Biometrics)
 
 **Package:** `local_auth: ^3.0.0`  
 **Used for:** App lock screen (Face ID / Touch ID)  
@@ -425,7 +510,7 @@ Custom `MockBiometricService` implementing `IBiometricService` interface.
 
 ---
 
-## 7. Firebase (Crashlytics Only)
+## 8. Firebase (Crashlytics Only)
 
 **Package:** `firebase_core`, `firebase_crashlytics`  
 **Used for:** Crash reporting only (NO Analytics in code)  
@@ -456,14 +541,15 @@ Custom `MockBiometricService` implementing `IBiometricService` interface.
 
 | Service | SDK Methods | Unit | Integration | Notes |
 |---------|:-----------:|:----:|:-----------:|-------|
-| **Supabase Auth** | 14 | 13/14 ✅ | 13/14 ✅ | Includes Google OAuth |
-| **Sign In With Apple** | 1 | 0/1 ⚠️ | 0/1 ⚠️ | Device only |
-| **Google Sign In** | 0 | - | - | Uses Supabase OAuth (not native SDK) |
+| **Supabase Auth** | 14 | 13/14 ✅ | 13/14 ✅ | Core auth + session management |
+| **Sign In With Apple** | 3 | 1/3 ✅ | 1/3 ⚠️ | 7.x with generateNonce(), device needed |
+| **Google Sign In** | 5 | 3/5 ✅ | 0/5 ⚠️ | 7.x singleton API, device needed |
+| **Magic Link** | 1 | 1/1 ✅ | 1/1 ✅ | Supabase OTP flow |
 | **RevenueCat** | 12 | 12/12 ✅ | 9/12 ✅ | |
-| **Google AI** | 2 | 2/2 ✅ | 0/2 ❌ | Package deprecated |
+| **Firebase AI** | 3 | 3/3 ✅ | 0/3 ⚠️ | Requires Firebase setup |
 | **Biometrics** | 4 | 4/4 ✅ | 0/4 ⚠️ | Device only |
 | **Firebase** | 3 | 0/3 ⚠️ | 0/3 ⚠️ | Manual verification |
-| **TOTAL** | **36** | **31/36** | **22/36** | |
+| **TOTAL** | **45** | **37/45** | **24/45** | |
 
 ### Test Counts
 
@@ -479,20 +565,18 @@ Custom `MockBiometricService` implementing `IBiometricService` interface.
 ## Gaps & Recommendations
 
 ### High Priority
-1. **Google AI integration tests** - Add E2E generation flow test
+1. **Firebase AI integration tests** - Add E2E generation flow test (requires Firebase Console setup)
 2. **Firebase unit tests** - Mock initialization for coverage
 
 ### Medium Priority
 3. **Biometrics integration** - Device-only, accept ⚠️ status
 4. **Sign In With Apple** - Device-only, accept ⚠️ status
+5. **Google Sign In integration** - Requires device with Google Play Services
 
 ### Low Priority (UI-specific)
-5. `RevenueCatUI.presentPaywallIfNeeded()` - Requires specific entitlement state
-6. `RevenueCatUI.presentCustomerCenter()` - UI presentation test
-7. `Purchases.logOut()` - Requires logged-in RevenueCat user
-
-### Migration Needed
-- **google_generative_ai is DEPRECATED** - Migrate to Firebase Vertex AI SDK
+6. `RevenueCatUI.presentPaywallIfNeeded()` - Requires specific entitlement state
+7. `RevenueCatUI.presentCustomerCenter()` - UI presentation test
+8. `Purchases.logOut()` - Requires logged-in RevenueCat user
 
 ---
 
@@ -504,7 +588,8 @@ Custom `MockBiometricService` implementing `IBiometricService` interface.
 | RevenueCat | [Testing Guide](https://www.revenuecat.com/docs/test-and-launch/testing) |
 | RevenueCat | [Test Store](https://www.revenuecat.com/docs/test-and-launch/sandbox/test-store) |
 | Firebase | [Crashlytics Testing](https://firebase.google.com/docs/crashlytics/test-implementation) |
-| Google AI | [Gemini API](https://ai.google.dev/gemini-api/docs) |
+| Firebase AI | [AI Logic Docs](https://firebase.google.com/docs/ai-logic) |
 | local_auth | [pub.dev](https://pub.dev/packages/local_auth) |
 | sign_in_with_apple | [pub.dev](https://pub.dev/packages/sign_in_with_apple) |
+| google_sign_in | [pub.dev](https://pub.dev/packages/google_sign_in) |
 | mock_supabase_http_client | [pub.dev](https://pub.dev/packages/mock_supabase_http_client) |

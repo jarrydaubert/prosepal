@@ -26,13 +26,9 @@ final usageServiceProvider = Provider<UsageService>((ref) {
   return UsageService(prefs);
 });
 
-/// AI generation service
+/// AI generation service (Firebase AI - no API key needed in client code)
 final aiServiceProvider = Provider<AiService>((ref) {
-  const apiKey = String.fromEnvironment('GEMINI_API_KEY', defaultValue: '');
-  if (apiKey.isEmpty) {
-    throw Exception('GEMINI_API_KEY not set. Pass via --dart-define=GEMINI_API_KEY=xxx');
-  }
-  return AiService(apiKey: apiKey);
+  return AiService();
 });
 
 /// Subscription/payment service

@@ -19,8 +19,8 @@ dependencies:
   # Navigation
   go_router: ^17.0.1
 
-  # AI - Direct Gemini API (latest stable)
-  google_generative_ai: ^0.4.7
+  # AI - Firebase AI Logic (Gemini via Firebase - secure, no exposed API key)
+  firebase_ai: ^3.6.1
 
   # Payments
   purchases_flutter: ^9.10.2
