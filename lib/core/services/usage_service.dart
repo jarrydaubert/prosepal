@@ -119,10 +119,9 @@ class UsageService {
     final supabase = _supabase;
 
     if (userId == null || supabase == null) {
-      Log.warning(
-        'Cannot sync usage to server: user not authenticated',
-        {'totalCount': totalCount},
-      );
+      Log.warning('Cannot sync usage to server: user not authenticated', {
+        'totalCount': totalCount,
+      });
       return;
     }
 
@@ -135,10 +134,10 @@ class UsageService {
         'updated_at': DateTime.now().toUtc().toIso8601String(),
       });
 
-      Log.info(
-        'Usage synced to server',
-        {'totalCount': totalCount, 'monthlyCount': monthlyCount},
-      );
+      Log.info('Usage synced to server', {
+        'totalCount': totalCount,
+        'monthlyCount': monthlyCount,
+      });
     } catch (e) {
       // Log but don't fail - local cache is still accurate
       Log.error('Failed to sync usage to server', e);
@@ -170,12 +169,11 @@ class UsageService {
     }
 
     try {
-      final response =
-          await supabase
-              .from(_table)
-              .select()
-              .eq('user_id', userId)
-              .maybeSingle();
+      final response = await supabase
+          .from(_table)
+          .select()
+          .eq('user_id', userId)
+          .maybeSingle();
 
       if (response != null) {
         // User has existing usage - restore it
@@ -185,8 +183,7 @@ class UsageService {
 
         // Take the HIGHER of local vs server (prevents gaming by reinstall)
         final localTotal = _prefs.getInt(_keyTotalCount) ?? 0;
-        final finalTotal =
-            serverTotal > localTotal ? serverTotal : localTotal;
+        final finalTotal = serverTotal > localTotal ? serverTotal : localTotal;
 
         await _prefs.setInt(_keyTotalCount, finalTotal);
 
@@ -194,20 +191,18 @@ class UsageService {
         final thisMonth = _monthString();
         if (serverMonthKey == thisMonth) {
           final localMonthly = getMonthlyCount();
-          final finalMonthly =
-              serverMonthly > localMonthly ? serverMonthly : localMonthly;
+          final finalMonthly = serverMonthly > localMonthly
+              ? serverMonthly
+              : localMonthly;
           await _prefs.setInt(_keyMonthlyCount, finalMonthly);
           await _prefs.setString(_keyMonthlyDate, thisMonth);
         }
 
-        Log.info(
-          'Usage restored from server',
-          {
-            'serverTotal': serverTotal,
-            'localTotal': localTotal,
-            'finalTotal': finalTotal,
-          },
-        );
+        Log.info('Usage restored from server', {
+          'serverTotal': serverTotal,
+          'localTotal': localTotal,
+          'finalTotal': finalTotal,
+        });
 
         // If local was higher, sync back to server
         if (localTotal > serverTotal) {
@@ -218,10 +213,9 @@ class UsageService {
         final localTotal = _prefs.getInt(_keyTotalCount) ?? 0;
         if (localTotal > 0) {
           await _syncToServer(localTotal, getMonthlyCount(), _monthString());
-          Log.info(
-            'Existing local usage pushed to server for new user',
-            {'localTotal': localTotal},
-          );
+          Log.info('Existing local usage pushed to server for new user', {
+            'localTotal': localTotal,
+          });
         }
       }
 
