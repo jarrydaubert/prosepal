@@ -150,16 +150,16 @@ void main() {
 
     test('returns configured AI model', () {
       // Bug: Wrong model used for generation
-      mockService.mockAiModel = 'gemini-3-flash-preview';
+      mockService.mockAiModel = 'gemini-2.5-flash';
 
-      expect(mockService.aiModel, equals('gemini-3-flash-preview'));
+      expect(mockService.aiModel, equals('gemini-2.5-flash'));
     });
 
     test('returns configured fallback model', () {
       // Bug: Wrong fallback used when primary fails
-      mockService.mockAiModelFallback = 'gemini-2.5-flash';
+      mockService.mockAiModelFallback = 'gemini-2.5-flash-lite';
 
-      expect(mockService.aiModelFallback, equals('gemini-2.5-flash'));
+      expect(mockService.aiModelFallback, equals('gemini-2.5-flash-lite'));
     });
 
     test('aiModel and aiModelFallback are independent', () {
@@ -282,6 +282,26 @@ void main() {
       final fallback = service.aiModelFallback;
       expect(fallback, isNotEmpty);
       expect(fallback, equals(AiConfig.defaultFallbackModel));
+    });
+
+    test('sanitizeModelId rejects unknown model IDs', () {
+      final service = RemoteConfigService.instance;
+      final sanitized = service.sanitizeModelId(
+        'gemini-3-flash-preview',
+        fallbackValue: AiConfig.defaultModel,
+        configKey: 'ai_model',
+      );
+      expect(sanitized, equals(AiConfig.defaultModel));
+    });
+
+    test('sanitizeModelId accepts allowlisted model IDs', () {
+      final service = RemoteConfigService.instance;
+      final sanitized = service.sanitizeModelId(
+        AiConfig.defaultFallbackModel,
+        fallbackValue: AiConfig.defaultModel,
+        configKey: 'ai_model',
+      );
+      expect(sanitized, equals(AiConfig.defaultFallbackModel));
     });
 
     test('minAppVersion returns safe default when uninitialized', () {

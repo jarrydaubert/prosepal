@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:firebase_remote_config/firebase_remote_config.dart';
+import 'package:flutter/foundation.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 import '../config/ai_config.dart';
@@ -16,9 +17,9 @@ import 'log_service.dart';
 ///
 /// ## Firebase Remote Config Setup (CONFIGURED - Jan 2026)
 /// Parameters are configured in Firebase Console > Remote Config (Client):
-///    - `ai_model`: "gemini-3-flash-preview" (current model)
-///    - `ai_model_fallback`: "gemini-2.5-flash" (fallback if primary fails)
-/// When gemini-3-flash goes stable, update `ai_model` via Remote Config.
+///    - `ai_model`: stable primary model ID
+///    - `ai_model_fallback`: stable fallback model ID
+///    - both values must be in [AiConfig.allowedModelIds]
 ///    - `min_app_version_ios`: "1.0.0" (force update threshold)
 ///    - `min_app_version_android`: "1.0.0" (force update threshold)
 ///
@@ -96,20 +97,52 @@ class RemoteConfigService implements IRemoteConfigService {
   @override
   String get aiModel {
     if (_remoteConfig == null) return AiConfig.defaultModel;
-    final value = _remoteConfig!.getString(_aiModelKey);
-    return value.isNotEmpty ? value : AiConfig.defaultModel;
+    return sanitizeModelId(
+      _remoteConfig!.getString(_aiModelKey),
+      fallbackValue: AiConfig.defaultModel,
+      configKey: _aiModelKey,
+    );
   }
 
   @override
   String get aiModelFallback {
     if (_remoteConfig == null) return AiConfig.defaultFallbackModel;
-    final value = _remoteConfig!.getString(_aiModelFallbackKey);
-    return value.isNotEmpty ? value : AiConfig.defaultFallbackModel;
+    return sanitizeModelId(
+      _remoteConfig!.getString(_aiModelFallbackKey),
+      fallbackValue: AiConfig.defaultFallbackModel,
+      configKey: _aiModelFallbackKey,
+    );
   }
 
   @override
   bool get useLimitedUseAppCheckTokens =>
       _remoteConfig?.getBool(_aiLimitedUseAppCheckTokensKey) ?? false;
+
+  /// Validate/sanitize model IDs sourced from Remote Config.
+  ///
+  /// If value is empty or not in allowlist, returns [fallbackValue].
+  @visibleForTesting
+  String sanitizeModelId(
+    String value, {
+    required String fallbackValue,
+    required String configKey,
+  }) {
+    final normalized = value.trim();
+    if (normalized.isEmpty) {
+      return fallbackValue;
+    }
+
+    if (!AiConfig.allowedModelIds.contains(normalized)) {
+      Log.warning('Remote Config model rejected by allowlist', {
+        'key': configKey,
+        'value': normalized,
+        'fallback': fallbackValue,
+      });
+      return fallbackValue;
+    }
+
+    return normalized;
+  }
 
   // ===== Force Update Config =====
 

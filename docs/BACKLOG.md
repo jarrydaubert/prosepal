@@ -24,7 +24,6 @@
 |----|------|--------------------|
 | `VNEXT-01` | Dependency upgrades (staged batches) | Batch A/B/C executed in separate PRs; each batch passes `flutter analyze`, unit/widget suite, smoke integration suite; release notes capture package/version deltas and risks. |
 | `VNEXT-02` | App Check operational hardening | AI-critical paths validated with App Check enabled; iOS + Android provider behavior verified; enforcement posture explicitly documented; fallback behavior documented if provider fails. |
-| `VNEXT-03` | AI model lifecycle hardening | Production default switched to pinned stable non-preview model; fallback pinned stable and verified; RC model allowlist enforced and tested with invalid value case. |
 | `VNEXT-04` | Remote Config safety controls | `config_schema_version`, `ai_enabled`, `paywall_enabled`, `premium_enabled` keys implemented; RC defaults/template committed; explicit "no secrets in RC" rule documented in release process. |
 | `VNEXT-05` | RevenueCat restore policy finalization | Project restore behavior setting documented; expected outcomes written for anonymous->login, same-device user switch, reinstall+restore; entitlement refresh points defined for premium-critical screens. |
 | `VNEXT-06` | Account deletion subscription UX | Deletion flow copy reviewed for active-subscription guidance; "Manage Subscription" path is accessible in deletion context; user-facing timing/expectation copy finalized and tested. |
@@ -200,11 +199,11 @@
 
 ### Gemini Model
 
-Using `gemini-3-flash-preview` (primary) + `gemini-2.5-flash` (fallback) as of v1.1.0.
+Using pinned stable models: `gemini-2.5-flash` (primary) + `gemini-2.5-flash-lite` (fallback).
 
 | Item | Action |
 |------|--------|
-| Model version monitoring | When gemini-3-flash goes stable (non-preview), update to stable version |
+| Model version monitoring | Review new stable model releases and update allowlist/defaults deliberately |
 
 ### Supabase - Monitor 2026
 
