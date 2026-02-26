@@ -12,6 +12,7 @@ import '../features/auth/email_auth_screen.dart';
 import '../features/auth/lock_screen.dart';
 import '../features/error/force_update_screen.dart';
 import '../features/generate/generate_screen.dart';
+import '../features/calendar/calendar_screen.dart';
 import '../features/history/history_screen.dart';
 import '../features/home/home_screen.dart';
 import '../features/onboarding/onboarding_screen.dart';
@@ -149,6 +150,11 @@ final _routes = <RouteBase>[
     path: '/history',
     name: 'history',
     builder: (context, state) => const HistoryScreen(),
+  ),
+  GoRoute(
+    path: '/calendar',
+    name: 'calendar',
+    builder: (context, state) => const CalendarScreen(),
   ),
   GoRoute(
     path: '/feedback',

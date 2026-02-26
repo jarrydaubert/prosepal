@@ -10,6 +10,7 @@ import '../../core/providers/providers.dart';
 import '../../core/services/log_service.dart';
 import '../../shared/components/app_button.dart';
 import '../../shared/theme/app_colors.dart';
+import 'save_to_calendar_dialog.dart';
 
 class ResultsScreen extends ConsumerStatefulWidget {
   const ResultsScreen({super.key});
@@ -154,6 +155,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
   }
 
   Future<void> _copyMessage(String text, int index) async {
+    final result = ref.read(generationResultProvider);
     Log.info('Message copied', {'option': index + 1});
     await Clipboard.setData(ClipboardData(text: text));
     setState(() => _copiedIndex = index);
@@ -193,7 +195,23 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
     await Future.delayed(const Duration(seconds: 2));
     if (mounted) {
       setState(() => _copiedIndex = null);
+
+      // Show save to calendar dialog after copy
+      if (result != null) {
+        _showSaveToCalendarDialog(result);
+      }
     }
+  }
+
+  void _showSaveToCalendarDialog(GenerationResult result) {
+    showDialog<bool>(
+      context: context,
+      builder: (context) => SaveToCalendarDialog(result: result),
+    ).then((saved) {
+      if (saved == true) {
+        ref.invalidate(upcomingOccasionsProvider);
+      }
+    });
   }
 
   Future<void> _shareMessage(String text, int index) async {

@@ -90,4 +90,15 @@ abstract class PreferenceKeys {
   /// Auto-detected from device locale, user can override in settings
   static const spellingPreference = 'spelling_preference';
   static const spellingPreferenceDefault = 'us';
+
+  // ===========================================================================
+  // Notifications
+  // ===========================================================================
+
+  /// Whether push notifications are enabled
+  static const notificationsEnabled = 'notifications_enabled';
+  static const notificationsEnabledDefault = false;
+
+  /// Whether we've asked for notification permission
+  static const notificationsAsked = 'notifications_asked';
 }
