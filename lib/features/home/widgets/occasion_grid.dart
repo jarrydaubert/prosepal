@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gap/gap.dart';
 
 import '../../../core/models/occasion.dart';
+import '../../../shared/theme/app_colors.dart';
 import '../../../shared/theme/app_spacing.dart';
 
 class OccasionGrid extends StatelessWidget {
@@ -62,9 +63,9 @@ class OccasionTile extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
           child: Container(
             decoration: BoxDecoration(
-              color: occasion.color.withValues(alpha: 0.1),
+              color: occasion.backgroundColor,
               borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
-              border: Border.all(color: occasion.color.withValues(alpha: 0.3)),
+              border: Border.all(color: occasion.borderColor),
             ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -74,7 +75,8 @@ class OccasionTile extends StatelessWidget {
                 Text(
                   occasion.label,
                   style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    color: occasion.color,
+                    // Use textPrimary for better contrast instead of primary
+                    color: AppColors.textPrimary,
                     fontWeight: FontWeight.w600,
                   ),
                   textAlign: TextAlign.center,
