@@ -63,49 +63,16 @@ Solves the "episodic retention" problem - gives users reasons to return.
 - Person field is freeform: "Mom & Dad", "Sam & Joe", "The Smiths"
 - One message for the couple
 
-**Data Model:**
-```dart
-class SavedOccasion {
-  String id;
-  String personName;      // "Mom", "Mom & Dad"
-  OccasionType type;
-  DateTime date;
-  int? year;              // Birth year OR start year
-  bool isRecurring;
-  bool reminderEnabled;
-}
-```
-
 **Effort:** 3-4 days
 
 ### Onboarding Updates
 
-Two new screens:
+Two new screens to add:
 
-**Screen 1: Notifications Permission**
-```
-[Bell icon]
-
-Never miss an important date
-
-Get reminders 1 week before birthdays 
-and anniversaries you save.
-
-[Allow Notifications]  ← System prompt
-[Maybe Later]
-```
-
-**Screen 2: Spelling Preference (No Permission)**
-```
-[UK/US flags]
-
-How do you spell it?
-
-We'll use the right spelling in your messages.
-
-[Mom, favorite, color]     ← American
-[Mum, favourite, colour]   ← British
-```
+| Screen | Purpose | Elements |
+|--------|---------|----------|
+| **Notifications** | Permission request | Bell icon, "Never miss an important date", Allow/Maybe Later buttons |
+| **Spelling** | UK/US preference | Flag icons, "Mom vs Mum" choice, no permission needed |
 
 ---
 
@@ -143,35 +110,6 @@ We'll use the right spelling in your messages.
 | API-as-a-service | High | Medium | Month 12+ |
 
 **Trigger to pivot:** If MRR plateaus below $2K for 3+ months after Month 6.
-
----
-
-## Inbound Capture (Start Now)
-
-Don't wait until Month 12 to learn about B2B demand. Capture interest early with zero dev effort.
-
-### Phase 0: Passive Capture (Now)
-
-| Action | Effort | Purpose |
-|--------|--------|---------|
-| Add "For Teams" link in app Settings | 1 hour | Route to Typeform/Google Form |
-| Add "Business Inquiries" on website footer | 30 min | Email capture |
-| Track "business" or "team" in support emails | 0 | Signal detection |
-
-**Form Questions:**
-1. Company name
-2. Team size
-3. Primary use case (HR, Sales, EA, Other)
-4. Email
-5. "What would make Prosepal useful for your team?"
-
-### What This Tells You
-
-| Signal | Action |
-|--------|--------|
-| 0 submissions in 3 months | B2B demand is weak - stay consumer |
-| 5-10 submissions | Warm interest - schedule discovery calls |
-| 20+ submissions | Strong demand - accelerate Team Plan |
 
 ---
 
@@ -229,54 +167,6 @@ Don't build until you have 10+ paying business users asking for these:
 | Team billing | 3+ companies asking |
 
 **Rule:** Validate with inbound demand before writing code.
-
----
-
-## Marketing Strategy (Updated)
-
-See `MARKETING.md` for full details. Key changes:
-
-### Channels
-
-| Channel | Old Plan | New Plan |
-|---------|----------|----------|
-| **TikTok** | 3x/week grind | Monthly batch (8-12 AI clips) |
-| **SEO** | 1 blog/2 weeks | 20 programmatic pages |
-| **Pinterest** | Secondary | Amplify SEO pages |
-| **ASO** | Broad keywords | Niche: "condolence message", "funeral card" |
-
-### Programmatic SEO Structure
-
-20 high-intent pages at `prosepal.app/messages/[occasion]/[relationship]`:
-
-```
-/messages/sympathy/coworker
-/messages/sympathy/friend
-/messages/birthday/mom
-/messages/birthday/dad
-/messages/wedding/friend
-/messages/thank-you/boss
-... etc
-```
-
-**Page structure (to avoid thin content penalties):**
-1. "3 Tips for writing a [X] card" (unique per page)
-2. "10 Example Messages" (static)
-3. "Want something personal? Generate yours →" (App Store link)
-
-### AI Content Factory (Dimitri-Style)
-
-Use AI pipeline to batch-create video content:
-
-```
-Claude (script) → Nano Banana Pro (image) → ElevenLabs (voice) 
-→ InfiniteTalk (lip-sync) → CapCut (captions)
-```
-
-- **Time:** ~8 min/video
-- **Cost:** ~$0
-- **Output:** 8-12 clips per monthly session
-- **Purpose:** Creative testing + ad assets
 
 ---
 
