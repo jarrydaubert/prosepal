@@ -142,6 +142,15 @@ final biometricServiceProvider = Provider<IBiometricService>((ref) {
   return BiometricService();
 });
 
+/// Re-authentication service for sensitive operations
+final reauthServiceProvider = Provider<ReauthService>((ref) {
+  final biometricService = ref.watch(biometricServiceProvider);
+  return ReauthService(
+    biometricService: biometricService,
+    supabaseAuth: Supabase.instance.client.auth,
+  );
+});
+
 // ============================================================
 // RevenueCat CustomerInfo (Reactive via StateNotifier + Listener)
 // ============================================================
