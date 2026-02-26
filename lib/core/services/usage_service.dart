@@ -137,7 +137,13 @@ class UsageService {
   }
 
   /// Get remaining free generations (lifetime)
+  /// Checks device flag first (survives sign out), then falls back to count.
   int getRemainingFree() {
+    // Device flag takes priority - survives sign out and account changes
+    final deviceUsed = _prefs.getBool(_keyDeviceUsedFreeTier) == true;
+    if (deviceUsed) {
+      return 0;
+    }
     final used = getTotalCount();
     return (freeLifetimeLimit - used).clamp(0, freeLifetimeLimit);
   }
