@@ -259,6 +259,48 @@ AppColors.backgroundGradient   // Subtle coral fade (screens)
 
 ---
 
+## Security Architecture
+
+### Transport Security (Data in Transit)
+| Platform | Implementation |
+|----------|----------------|
+| **Android** | `network_security_config.xml` - blocks all cleartext (HTTP) traffic |
+| **iOS** | App Transport Security (ATS) - HTTPS enforced by default |
+| **All APIs** | HTTPS only (Supabase, RevenueCat, Firebase) |
+
+### Authentication Security
+| Feature | Implementation |
+|---------|----------------|
+| Password hashing | Supabase (bcrypt, server-side) |
+| OAuth tokens | ID tokens validated by Supabase |
+| Session management | JWT with refresh tokens |
+| Email verification | Enabled in Supabase |
+| Biometric unlock | Face ID / Touch ID via LocalAuthentication |
+
+### Payment Security
+| Feature | Implementation |
+|---------|----------------|
+| Payment processing | RevenueCat → App Store / Play Store (never touches our servers) |
+| Receipt validation | RevenueCat handles server-side |
+| PCI compliance | Apple/Google handle all card data |
+
+### Code Protection (Android)
+| Feature | Implementation |
+|---------|----------------|
+| R8/ProGuard | Enabled for release builds |
+| Code obfuscation | Class/method name obfuscation |
+| Log stripping | Debug logs removed in release |
+| Minification | Dead code elimination |
+
+### Platform Files
+```
+android/app/src/main/res/xml/network_security_config.xml  # Block HTTP
+android/app/proguard-rules.pro                            # Obfuscation rules
+ios/Runner/Info.plist                                     # ATS (default secure)
+```
+
+---
+
 ## Key Patterns
 
 ### Dependency Injection
@@ -303,7 +345,7 @@ AppColors.backgroundGradient   // Subtle coral fade (screens)
 ```bash
 # Development
 flutter run                       # Run app
-flutter test                      # Unit/widget tests (365)
+flutter test                      # Unit/widget tests (376)
 flutter test integration_test/    # Integration tests (59)
 
 # Code generation

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Network Security Configuration
+  
+  Security features:
+  - Blocks all cleartext (HTTP) traffic
+  - Only allows HTTPS connections
+  - Trusts system CA certificates
+  
+  This prevents:
+  - Man-in-the-middle attacks via HTTP downgrade
+  - Accidental insecure connections
+  - Data interception on untrusted networks
+-->
+<network-security-config>
+    <!-- Block all cleartext (HTTP) traffic by default -->
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <!-- Trust system CA certificates only -->
+            <certificates src="system"/>
+        </trust-anchors>
+    </base-config>
+</network-security-config>
