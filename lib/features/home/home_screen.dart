@@ -77,6 +77,10 @@ class HomeScreen extends ConsumerWidget {
                         remaining: remaining,
                         isPro: isPro,
                         onUpgrade: () => context.pushNamed('paywall'),
+                        onProTap: () async {
+                          final subscriptionService = ref.read(subscriptionServiceProvider);
+                          await subscriptionService.showCustomerCenter();
+                        },
                       ),
                     ],
                   ),
