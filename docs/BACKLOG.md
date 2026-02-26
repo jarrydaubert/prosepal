@@ -31,8 +31,10 @@
 ### Test Files
 | File | Purpose |
 |------|---------|
-| `scenario_tests.dart` | Mocked Patrol tests (auth, AI errors) |
-| `golden_path_test.dart` | Firebase Test Lab (60+ real device tests) |
+| `app_test.dart` | Mocked Patrol tests (auth, AI errors, 52 tests) |
+| `e2e_test.dart` | Firebase Test Lab entry point |
+| `journeys/` | Modular journey tests (j1-j10, 75 tests) |
+| `coverage/` | Exhaustive option coverage (66 tests) |
 
 ### Log Coverage (Complete ✅)
 | Service/Screen | Logs Added |
