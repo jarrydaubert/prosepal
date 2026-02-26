@@ -98,14 +98,14 @@ patrol:
 
 # Native splash screen configuration
 flutter_native_splash:
-  color: "#FAFAFA"
+  color: "#1A1A1A"
   image: assets/images/logo.png
   color_dark: "#1A1A1A"
   image_dark: assets/images/logo.png
   
   android_12:
-    color: "#FAFAFA"
-    icon_background_color: "#FAFAFA"
+    color: "#1A1A1A"
+    icon_background_color: "#1A1A1A"
     image: assets/images/logo.png
     color_dark: "#1A1A1A"
     icon_background_color_dark: "#1A1A1A"
