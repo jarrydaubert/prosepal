@@ -1,36 +1,40 @@
 # Service Endpoints Map
 
-> Exact SDK methods used by Prosepal with test coverage status.
+> Complete map of all third-party SDK methods used by Prosepal with test coverage status.
 
-**Legend:** ✅ Tested | ❌ Not tested | ⚠️ Manual only
+**Legend:** ✅ Tested | ❌ Not tested | ⚠️ Manual/Device only
+
+**Last verified:** December 2025
 
 ---
 
-## 1. Supabase (Auth Only)
+## 1. Supabase Auth
 
 **Package:** `supabase_flutter: ^2.12.0`  
 **Used for:** Authentication only (NO database)  
-**Files:** `auth_service.dart`, `main.dart`, `app.dart`
+**Files:** `auth_service.dart`, `main.dart`, `app.dart`  
+**Docs:** https://supabase.com/docs/guides/auth/testing
 
-### Endpoints & Coverage
+### SDK Methods Used
 
-| Method | Location | Unit | Integration |
-|--------|----------|:----:|:-----------:|
-| `Supabase.initialize()` | main.dart:39 | ⚠️ | ✅ |
-| `auth.currentUser` | auth_service.dart:18 | ✅ | ✅ |
-| `auth.onAuthStateChange` | auth_service.dart:24 | ✅ | ✅ |
-| `auth.signInWithIdToken()` | auth_service.dart:82 | ✅ | ✅ |
-| `auth.signInWithOAuth()` | auth_service.dart:91 | ✅ | ✅ |
-| `auth.signInWithPassword()` | auth_service.dart:102 | ✅ | ✅ |
-| `auth.signUp()` | auth_service.dart:113 | ✅ | ✅ |
-| `auth.resetPasswordForEmail()` | auth_service.dart:119 | ✅ | ✅ |
-| `auth.signInWithOtp()` | auth_service.dart:125 | ✅ | ✅ |
-| `auth.updateUser()` (email) | auth_service.dart:134 | ✅ | ✅ |
-| `auth.updateUser()` (password) | auth_service.dart:139 | ✅ | ✅ |
-| `auth.signOut()` | auth_service.dart:144 | ✅ | ✅ |
-| `functions.invoke()` | auth_service.dart:158 | ✅ | ✅ |
+| SDK Method | Service Method | Location | Unit | Integration |
+|------------|---------------|----------|:----:|:-----------:|
+| `Supabase.instance.client` | (getter) | auth_service.dart:17 | ⚠️ | ✅ |
+| `auth.currentUser` | `currentUser` | auth_service.dart:20 | ✅ | ✅ |
+| `auth.onAuthStateChange` | `authStateChanges` | auth_service.dart:26 | ✅ | ✅ |
+| `auth.signInWithIdToken()` | `signInWithApple()` | auth_service.dart:84 | ✅ | ✅ |
+| `auth.signInWithOAuth()` | `signInWithGoogle()` | auth_service.dart:93 | ✅ | ✅ |
+| `auth.signInWithPassword()` | `signInWithEmail()` | auth_service.dart:104 | ✅ | ✅ |
+| `auth.signUp()` | `signUpWithEmail()` | auth_service.dart:115 | ✅ | ✅ |
+| `auth.resetPasswordForEmail()` | `resetPassword()` | auth_service.dart:121 | ✅ | ✅ |
+| `auth.signInWithOtp()` | `signInWithMagicLink()` | auth_service.dart:127 | ✅ | ✅ |
+| `auth.updateUser()` (email) | `updateEmail()` | auth_service.dart:136 | ✅ | ✅ |
+| `auth.updateUser()` (password) | `updatePassword()` | auth_service.dart:141 | ✅ | ✅ |
+| `auth.signOut()` | `signOut()` | auth_service.dart:146 | ✅ | ✅ |
+| `auth.currentSession` | `deleteAccount()` | auth_service.dart:163 | ✅ | ✅ |
+| `functions.invoke()` | `deleteAccount()` | auth_service.dart:160 | ✅ | ✅ |
 
-**Unit: 12/13** | **Integration: 13/13**
+**Unit: 13/14** | **Integration: 13/14**
 
 ### Test Files
 - `test/services/auth_service_with_mock_test.dart` (55 tests)
@@ -38,84 +42,92 @@
 - `test/services/auth_service_compliance_test.dart` (13 tests)
 - `integration_test/auth_test.dart` (20 tests)
 
-### Mock: `MockAuthService`
+### Mock Strategy
+**`mock_supabase_http_client` does NOT support auth** - only database CRUD operations.
+
+**Our approach:** Custom `MockAuthService` implementing `IAuthService` interface.
 - `createFakeUser()` / `createFakeSession()` - Rich fixtures
 - `autoEmitAuthState` - Auto-emits auth events
 - `methodErrors` map - Per-method error simulation
-
-### Provider: `authServiceProvider`
-- Added to `lib/core/providers/providers.dart`
-- Overridable for integration tests
-- Used by: `auth_screen.dart`, `settings_screen.dart`, `feedback_screen.dart`, `router.dart`
+- Provider: `authServiceProvider` (overridable for tests)
 
 ---
 
-## 2. RevenueCat (Subscriptions)
+## 2. Sign In With Apple (Native)
+
+**Package:** `sign_in_with_apple: ^6.1.4`  
+**Used for:** Native Apple Sign In credential  
+**File:** `auth_service.dart`  
+**Docs:** https://pub.dev/packages/sign_in_with_apple
+
+### SDK Methods Used
+
+| SDK Method | Service Method | Location | Unit | Integration |
+|------------|---------------|----------|:----:|:-----------:|
+| `SignInWithApple.getAppleIDCredential()` | `signInWithApple()` | auth_service.dart:71 | ⚠️ | ⚠️ |
+
+**Unit: 0/1 (device only)** | **Integration: 0/1 (device only)**
+
+### Notes
+- Cannot be unit tested - requires real device with Apple ID
+- iOS only - no Android equivalent
+- Credential is passed to Supabase `signInWithIdToken()`
+
+---
+
+## 3. RevenueCat (Subscriptions)
 
 **Package:** `purchases_flutter: ^9.10.2`, `purchases_ui_flutter: ^9.10.2`  
 **Used for:** In-app subscriptions  
-**File:** `subscription_service.dart`
+**File:** `subscription_service.dart`  
+**Docs:** https://www.revenuecat.com/docs/test-and-launch/testing
 
-### Endpoints & Coverage
+### SDK Methods Used
 
-| Method | Location | Unit | Integration |
-|--------|----------|:----:|:-----------:|
-| `Purchases.configure()` | subscription_service.dart:97 | ✅ | ❌ |
-| `Purchases.getCustomerInfo()` | subscription_service.dart:113 | ✅ | ❌ |
-| `Purchases.getOfferings()` | subscription_service.dart:136 | ✅ | ❌ |
-| `Purchases.purchase()` | subscription_service.dart:146 | ✅ | ❌ |
-| `Purchases.restorePurchases()` | subscription_service.dart:170 | ✅ | ❌ |
-| `RevenueCatUI.presentPaywall()` | subscription_service.dart:187 | ✅ | ❌ |
-| `RevenueCatUI.presentPaywallIfNeeded()` | subscription_service.dart:204 | ✅ | ❌ |
-| `RevenueCatUI.presentCustomerCenter()` | subscription_service.dart:220 | ✅ | ❌ |
-| `Purchases.addCustomerInfoUpdateListener()` | subscription_service.dart:228 | ✅ | ❌ |
-| `Purchases.logIn()` | subscription_service.dart:238 | ✅ | ❌ |
-| `Purchases.logOut()` | subscription_service.dart:247 | ✅ | ❌ |
+| SDK Method | Service Method | Location | Unit | Integration |
+|------------|---------------|----------|:----:|:-----------:|
+| `Purchases.setLogLevel()` | `initialize()` | subscription_service.dart:93 | ✅ | ✅ |
+| `Purchases.configure()` | `initialize()` | subscription_service.dart:97 | ✅ | ✅ |
+| `Purchases.getCustomerInfo()` | `isPro()`, `getCustomerInfo()` | subscription_service.dart:113,125 | ✅ | ✅ |
+| `Purchases.getOfferings()` | `getOfferings()` | subscription_service.dart:136 | ✅ | ✅ |
+| `Purchases.purchase()` | `purchasePackage()` | subscription_service.dart:146 | ✅ | ✅ |
+| `Purchases.restorePurchases()` | `restorePurchases()` | subscription_service.dart:170 | ✅ | ✅ |
+| `RevenueCatUI.presentPaywall()` | `showPaywall()` | subscription_service.dart:187 | ✅ | ✅ |
+| `RevenueCatUI.presentPaywallIfNeeded()` | `showPaywallIfNeeded()` | subscription_service.dart:204 | ✅ | ⚠️ |
+| `RevenueCatUI.presentCustomerCenter()` | `showCustomerCenter()` | subscription_service.dart:220 | ✅ | ⚠️ |
+| `Purchases.addCustomerInfoUpdateListener()` | `addCustomerInfoListener()` | subscription_service.dart:228 | ✅ | ✅ |
+| `Purchases.logIn()` | `identifyUser()` | subscription_service.dart:238 | ✅ | ✅ |
+| `Purchases.logOut()` | `logOut()` | subscription_service.dart:247 | ✅ | ⚠️ |
 
-**Unit: 11/11** | **Integration: 0/11**
+**Unit: 12/12** | **Integration: 9/12**
 
-### Test File
+### Test Files
 - `test/services/subscription_service_with_mock_test.dart` (74 tests)
+- `integration_test/revenuecat_test.dart` (12 tests)
 
-### Mock: `MockSubscriptionService`
-- Sandbox testing: iOS (Settings → Developer) / Android (Play Console)
+### Mock Strategy
+Custom `MockSubscriptionService` implementing `ISubscriptionService` interface.
 
----
-
-## 3. Firebase (Crashlytics Only)
-
-**Package:** `firebase_core`, `firebase_crashlytics`  
-**Used for:** Crash reporting only  
-**File:** `main.dart`
-
-### Endpoints & Coverage
-
-| Method | Location | Unit | Integration |
-|--------|----------|:----:|:-----------:|
-| `Firebase.initializeApp()` | main.dart:20 | ⚠️ | ⚠️ |
-| `FirebaseCrashlytics.instance.recordFlutterFatalError` | main.dart:27 | ⚠️ | ⚠️ |
-| `FirebaseCrashlytics.instance.recordError()` | main.dart:29 | ⚠️ | ⚠️ |
-
-**Unit: 0/3 (manual)** | **Integration: 0/3 (manual)**
-
-### Notes
-- Requires manual verification in Firebase console
-- Use `firebase_core_platform_interface` for initialization mocking if needed
+### Testing Environments
+1. **Test Store** (current): Instant purchases, no sandbox accounts needed
+2. **Apple Sandbox**: Real store simulation, requires sandbox tester account
+3. **TestFlight**: Production-like, renewals every 24 hours
 
 ---
 
 ## 4. Google AI (Gemini)
 
-**Package:** `google_generative_ai: ^0.4.7`  
+**Package:** `google_generative_ai: ^0.4.7` ⚠️ **DEPRECATED**  
 **Used for:** Message generation  
-**File:** `ai_service.dart`
+**File:** `ai_service.dart`  
+**Docs:** https://ai.google.dev/gemini-api/docs
 
-### Endpoints & Coverage
+### SDK Methods Used
 
-| Method | Location | Unit | Integration |
-|--------|----------|:----:|:-----------:|
-| `GenerativeModel()` | ai_service.dart:41 | ✅ | ❌ |
-| `model.generateContent()` | ai_service.dart | ✅ | ❌ |
+| SDK Method | Service Method | Location | Unit | Integration |
+|------------|---------------|----------|:----:|:-----------:|
+| `GenerativeModel()` | `model` getter | ai_service.dart:41 | ✅ | ❌ |
+| `model.generateContent()` | `generateMessages()` | ai_service.dart:80 | ✅ | ❌ |
 
 **Unit: 2/2** | **Integration: 0/2**
 
@@ -124,116 +136,121 @@
 - `test/services/ai_service_http_test.dart` (30 tests)
 - `test/services/ai_service_generation_test.dart` (33 tests)
 
-### Mock: `MockClient` (http package)
-- Tests all occasions, relationships, tones
-- Error handling: rate limit, network, safety block
+### Mock Strategy
+`MockClient` from `http` package to intercept HTTP requests.
+
+### Important Note
+> **Package is deprecated.** Google recommends migrating to Firebase Vertex AI SDK.
+> See: https://firebase.google.com/docs/vertex-ai
 
 ---
 
 ## 5. Local Auth (Biometrics)
 
 **Package:** `local_auth: ^3.0.0`  
-**Used for:** App lock screen  
-**File:** `biometric_service.dart`
+**Used for:** App lock screen (Face ID / Touch ID)  
+**File:** `biometric_service.dart`  
+**Docs:** https://pub.dev/packages/local_auth
 
-### Endpoints & Coverage
+### SDK Methods Used
 
-| Method | Location | Unit | Integration |
-|--------|----------|:----:|:-----------:|
-| `LocalAuthentication().canCheckBiometrics` | biometric_service.dart:36 | ✅ | ⚠️ |
-| `LocalAuthentication().isDeviceSupported()` | biometric_service.dart:36 | ✅ | ⚠️ |
-| `LocalAuthentication().getAvailableBiometrics()` | biometric_service.dart:45 | ✅ | ⚠️ |
-| `LocalAuthentication().authenticate()` | biometric_service.dart:86 | ✅ | ⚠️ |
+| SDK Method | Service Method | Location | Unit | Integration |
+|------------|---------------|----------|:----:|:-----------:|
+| `LocalAuthentication().canCheckBiometrics` | `isSupported` | biometric_service.dart:36 | ✅ | ⚠️ |
+| `LocalAuthentication().isDeviceSupported()` | `isSupported` | biometric_service.dart:36 | ✅ | ⚠️ |
+| `LocalAuthentication().getAvailableBiometrics()` | `availableBiometrics` | biometric_service.dart:45 | ✅ | ⚠️ |
+| `LocalAuthentication().authenticate()` | `authenticate()` | biometric_service.dart:89 | ✅ | ⚠️ |
 
 **Unit: 4/4** | **Integration: 0/4 (device only)**
 
 ### Test File
 - `test/services/biometric_service_mock_test.dart` (35 tests)
 
-### Mock: `MockBiometricService`
+### Mock Strategy
+Custom `MockBiometricService` implementing `IBiometricService` interface.
+- Simulator cannot authenticate - device required
 
 ---
 
-## 6. Sign In With Apple
+## 6. Firebase (Crashlytics Only)
 
-**Package:** `sign_in_with_apple`  
-**Used for:** Native Apple Sign In  
-**File:** `auth_service.dart`
+**Package:** `firebase_core`, `firebase_crashlytics`  
+**Used for:** Crash reporting only (NO Analytics in code)  
+**File:** `main.dart`  
+**Docs:** https://firebase.google.com/docs/crashlytics/test-implementation
 
-### Endpoints & Coverage
+### SDK Methods Used
 
-| Method | Location | Unit | Integration |
-|--------|----------|:----:|:-----------:|
-| `SignInWithApple.getAppleIDCredential()` | auth_service.dart:63 | ⚠️ | ⚠️ |
+| SDK Method | Location | Unit | Integration |
+|------------|----------|:----:|:-----------:|
+| `Firebase.initializeApp()` | main.dart:20 | ⚠️ | ⚠️ |
+| `FirebaseCrashlytics.instance.recordFlutterFatalError` | main.dart:27 | ⚠️ | ⚠️ |
+| `FirebaseCrashlytics.instance.recordError()` | main.dart:29 | ⚠️ | ⚠️ |
 
-**Unit: 0/1 (device only)** | **Integration: 0/1 (device only)**
+**Unit: 0/3 (manual)** | **Integration: 0/3 (manual)**
+
+### Test File
+- `integration_test/firebase_test.dart` (informational tests)
 
 ### Notes
-- Cannot be unit tested - requires real device with Apple ID
-- iOS only - no Android equivalent
+- Requires manual verification in Firebase console
+- Use `firebase_core_platform_interface` for initialization mocking if needed
+- Force a test crash: `FirebaseCrashlytics.instance.crash()`
 
 ---
 
 ## Summary
 
-| Service | Endpoints | Unit | Integration |
-|---------|:---------:|:----:|:-----------:|
-| **Supabase Auth** | 13 | 12/13 ✅ | 13/13 ✅ |
-| **RevenueCat** | 11 | 11/11 ✅ | 0/11 ❌ |
+| Service | SDK Methods | Unit | Integration |
+|---------|:-----------:|:----:|:-----------:|
+| **Supabase Auth** | 14 | 13/14 ✅ | 13/14 ✅ |
+| **Sign In With Apple** | 1 | 0/1 ⚠️ | 0/1 ⚠️ |
+| **RevenueCat** | 12 | 12/12 ✅ | 9/12 ✅ |
 | **Google AI** | 2 | 2/2 ✅ | 0/2 ❌ |
 | **Biometrics** | 4 | 4/4 ✅ | 0/4 ⚠️ |
 | **Firebase** | 3 | 0/3 ⚠️ | 0/3 ⚠️ |
-| **Apple Sign In** | 1 | 0/1 ⚠️ | 0/1 ⚠️ |
-| **TOTAL** | **34** | **29/34** | **13/34** |
+| **TOTAL** | **36** | **31/36** | **22/36** |
 
 ### Test Counts
+
 | Type | Count |
 |------|------:|
 | Unit tests (services) | 287 |
 | Integration tests (auth) | 20 |
+| Integration tests (revenuecat) | 12 |
+| Integration tests (firebase) | 6 |
 
 ---
 
-## Integration Test Gaps
+## Gaps & Recommendations
 
-Priority items to add in `integration_test/`:
+### High Priority
+1. **Google AI integration tests** - Add E2E generation flow test
+2. **Firebase unit tests** - Mock initialization for coverage
 
-### Supabase Auth (13/13 done) ✅
-- [x] Sign in with email flow
-- [x] Sign up flow  
-- [x] Sign out flow
-- [x] Auth state persistence
-- [x] Sign in with Apple
-- [x] Sign in with Google
-- [x] Error handling
-- [x] Auth state changes (signedIn/signedOut)
-- [x] Password reset flow
-- [x] Magic link flow
-- [x] Update email
-- [x] Update password
-- [x] Delete account
+### Medium Priority
+3. **Biometrics integration** - Device-only, accept ⚠️ status
+4. **Sign In With Apple** - Device-only, accept ⚠️ status
 
-### RevenueCat
-- [ ] Paywall display
-- [ ] Purchase flow (sandbox)
-- [ ] Restore purchases
-- [ ] Pro status affects UI
+### Low Priority (UI-specific)
+5. `RevenueCatUI.presentPaywallIfNeeded()` - Requires specific entitlement state
+6. `RevenueCatUI.presentCustomerCenter()` - UI presentation test
+7. `Purchases.logOut()` - Requires logged-in RevenueCat user
 
-### Google AI
-- [ ] Full generation flow
-- [ ] Error states in UI
+### Migration Needed
+- **google_generative_ai is DEPRECATED** - Migrate to Firebase Vertex AI SDK
 
 ---
 
-## Official Docs
+## Official Testing Docs
 
-| Service | Testing Documentation |
-|---------|----------------------|
+| Service | Documentation |
+|---------|--------------|
 | Supabase | [Auth Testing](https://supabase.com/docs/guides/auth/testing) |
 | RevenueCat | [Testing Guide](https://www.revenuecat.com/docs/test-and-launch/testing) |
+| RevenueCat | [Test Store](https://www.revenuecat.com/docs/test-and-launch/sandbox/test-store) |
 | Firebase | [Crashlytics Testing](https://firebase.google.com/docs/crashlytics/test-implementation) |
 | Google AI | [Gemini API](https://ai.google.dev/gemini-api/docs) |
 | local_auth | [pub.dev](https://pub.dev/packages/local_auth) |
 | sign_in_with_apple | [pub.dev](https://pub.dev/packages/sign_in_with_apple) |
-
-*Last verified: December 2025*
+| mock_supabase_http_client | [pub.dev](https://pub.dev/packages/mock_supabase_http_client) |
