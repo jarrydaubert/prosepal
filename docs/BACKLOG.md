@@ -62,55 +62,101 @@
 
 ## Architecture Audit (Gold Standard Fixes)
 
-> Deep audit findings for making this codebase the template for future apps.
+> Combined deep audit findings. Fix before cloning as template.
 
-### P0 - Critical (Fix Before Cloning)
+### CRITICAL - Must Fix Before Launch
 
-| Issue | Location | Fix |
-|-------|----------|-----|
-| Supabase URL/key hardcoded | `main.dart:67-68` | Use dart-define like RevenueCat (consistency) |
+| # | Issue | Location | Fix |
+|---|-------|----------|-----|
+| 1 | **API keys hardcoded** | `main.dart:67-68`, `firebase_options.dart` | Use `--dart-define` for Supabase URL/key (RevenueCat already does this) |
+| 2 | **Usage tracking bypass** | `usage_service.dart` | SharedPreferences unencrypted - rooted devices can reset. Use `flutter_secure_storage` |
+| 3 | **Rate limit fails open** | `rate_limit_service.dart:102-109` | Returns `allowed: true` on server error. Fix: fail closed (deny) + local fallback |
+| 4 | **No route guards** | `router.dart:24-102` | /generate, /paywall, /settings accessible via deep link without auth. Add redirect guard |
+| 5 | **Missing error boundary** | `app.dart` | No `ErrorWidget.builder` override - unhandled exceptions crash app |
+| 6 | **Non-blocking init failures** | `main.dart:38-84` | Firebase/Supabase/RC failures caught but app continues broken. Show error screen |
+| 7 | **RevenueCat listener leak** | `subscription_service.dart:307-316` | Listeners not tracked - memory grows unbounded. Track in Set for cleanup |
+| 8 | **Double-identify bug** | `app.dart:116`, `paywall`, `settings` | `identifyUser()` called in 4 places. Only call once on initial sign-in |
+| 9 | **Deep link scheme hijackable** | `auth_service.dart:18`, `AndroidManifest.xml` | Custom scheme can be intercepted. Migrate to HTTPS app links with domain verification |
+| 10 | **Apple token exchange race** | `auth_service.dart:221-238` | `unawaited()` - if app crashes, tokens can't be revoked on delete. Await or retry on resume |
 
-### P1 - Important (Should Fix)
+### HIGH - Fix Week 1 Post-Launch
 
-| Issue | Location | Fix |
-|-------|----------|-----|
-| SignOut scope is local-only | `supabase_auth_provider.dart:270` | Use `SignOutScope.global` to invalidate all sessions |
-| Generic catch blocks (22 files) | Throughout `/lib` | Add specific exception types (AuthException, PurchasesErrorCode, etc.) |
-| CustomerInfo listener lifecycle | `providers.dart:164-199` | Track listener refs to prevent potential leaks |
-| No provider pre-initialization | `main.dart` | Call `authService.initializeProviders()` for faster first sign-in |
+| # | Issue | Location | Fix |
+|---|-------|----------|-----|
+| 11 | **SignOut scope local-only** | `supabase_auth_provider.dart:270` | Use `SignOutScope.global` to invalidate all sessions |
+| 12 | **RC init race condition** | `subscription_service.dart:148` | `_isInitialized` set before sync completes. Pro status false during sync |
+| 13 | **Wrong exception catch** | `subscription_service.dart:210` | Catches `PurchasesErrorCode` not `PurchasesException`. User cancels logged as errors |
+| 14 | **Provider init race** | `providers.dart:167-174` | Listener can overwrite newer CustomerInfo data |
+| 15 | **Offline pro check = false** | `providers.dart:205` | Offline users locked out. Cache last known pro status |
+| 16 | **Missing Google nonce** | `auth_service.dart:253-301` | Replay attack vulnerability. Add nonce like Apple flow |
+| 17 | **Session refresh silent fail** | `supabase_auth_provider.dart:284-291` | Delete may not complete server-side. Fail explicitly |
+| 18 | **Missing CAPTCHA** | `email_auth_screen.dart:87-156` | Bot/email enumeration attacks on magic link/signup |
+| 19 | **Biometric PIN fallback** | `biometric_service.dart:114-118` | Weak PIN bypasses Face ID. Disable device credential fallback |
+| 20 | **Unencrypted biometric pref** | `biometric_service.dart:96-105` | Can toggle off via backup manipulation. Use secure storage |
+| 21 | **Deep link redirect unvalidated** | `router.dart:42-44` | Malicious redirects possible. Whitelist allowed routes |
+| 22 | **Auth listener silent failure** | `app.dart:96-162` | Supabase down = silent failure. Add error handling |
+| 23 | **Navigation race condition** | `app.dart:136-144` | `currentPath` could be null. Add null check |
 
-### P2 - Nice to Have (Post-Launch)
+### MEDIUM - Fix Weeks 2-3
 
-| Issue | Location | Fix |
-|-------|----------|-----|
-| No StoreKit2 configuration | `subscription_service.dart` | Add `usesStoreKit2IfAvailable: true` for modern iOS |
-| No deferred purchase handling | `subscription_service.dart` | Handle iOS parental controls (PurchasesErrorCode.productNotAvailableForPurchaseError) |
-| StateNotifier/StateProvider legacy API | `providers.dart` | Migrate to Notifier/AsyncNotifier (Riverpod 3.x modern) |
-| Auth listener magic link race | `app.dart:97-142` | Debounce or use single navigation source |
-| No environment config abstraction | Various | Create AppConfig class with all dart-defines |
-| No offline detection | AI service | Check connectivity before generation |
+| # | Issue | Location | Fix |
+|---|-------|----------|-----|
+| 24 | **Prompt injection** | `ai_service.dart:514-519` | User input not sanitized. Add input filtering |
+| 25 | **No input length validation** | `ai_service.dart` | Token waste, malformed prompts. Validate before API call |
+| 26 | **Concurrent generation race** | `generate_screen.dart:276-312` | Multiple API calls possible. Add mutex/debounce |
+| 27 | **Raw JSON in logs** | `ai_service.dart:389` | Privacy - sensitive data in Crashlytics. Truncate/redact |
+| 28 | **Truncation retry infinite loop** | `ai_service.dart:378-385` | Doesn't increase maxTokens. Add attempt limit |
+| 29 | **Generic catch blocks (22 files)** | Throughout `/lib` | Loses exception type. Add specific catches |
+| 30 | **Missing autoDispose** | `providers.dart:251-279` | Memory leak on navigation. Add `.autoDispose` |
+| 31 | **Watch/read misuse** | `settings_screen.dart:425-430` | Unnecessary rebuilds. Use `read` for one-off |
+| 32 | **Incorrect invalidation** | `generate_screen.dart:320-321` | Invalidates derived, not source provider |
+| 33 | **Weak ProGuard rules** | `proguard-rules.pro` | Easy reverse engineering. Strengthen obfuscation |
+| 34 | **Log parameter disclosure** | `log_service.dart:154-156` | User data in Crashlytics. Add PII filter |
+| 35 | **Device fingerprint in logs** | `rate_limit_service.dart:72-79` | Identifier exposure. Redact |
+| 36 | **String-based error detection** | `auth_errors.dart:46-53` | Fragile to SDK changes. Use error codes |
+| 37 | **Error auto-dismiss race** | `generate_screen.dart:36-42` | Provider access after unmount. Check mounted |
+| 38 | **No provider pre-init** | `main.dart` | Call `authService.initializeProviders()` for faster first sign-in |
 
-### P3 - Low Priority
+### LOW - Post-Launch Polish
 
-| Issue | Location | Notes |
-|-------|----------|-------|
-| Form state spread across 6 providers | `providers.dart:251-279` | Could consolidate to single NotifierProvider<FormState> |
-| No autoDispose on form providers | `providers.dart` | Add .autoDispose for memory optimization |
-| unawaited token exchange | `auth_service.dart:206-214` | Fire-and-forget could fail silently (acceptable trade-off) |
+| # | Issue | Location | Fix |
+|---|-------|----------|-----|
+| 39 | **No StoreKit2 config** | `subscription_service.dart` | Add `usesStoreKit2IfAvailable: true` for modern iOS |
+| 40 | **No deferred purchase handling** | `subscription_service.dart` | Handle iOS parental controls |
+| 41 | **StateNotifier legacy API** | `providers.dart` | Migrate to Notifier/AsyncNotifier (Riverpod 3.x modern) |
+| 42 | **Form state in 6 providers** | `providers.dart:251-279` | Consolidate to single NotifierProvider<FormState> |
+| 43 | **No environment config class** | Various | Create AppConfig with all dart-defines |
+| 44 | **No offline detection** | AI service | Check connectivity before generation |
+| 45 | **Re-auth creates new session** | `reauth_service.dart:151-163` | May disrupt sensitive ops. Preserve session |
+| 46 | **Device fingerprint spoofable** | `device_fingerprint_service.dart:61-86` | Rooted devices can impersonate. Accept as limitation |
+| 47 | **AI model not singleton** | `ai_service.dart:101-314` | Multiple instances possible. Enforce singleton |
 
-### What's Already Good (Keep These Patterns)
+### What's Already Good (Preserve These!)
 
-| Pattern | Location | Why It's Good |
-|---------|----------|---------------|
-| AI error classification + retry | `ai_service.dart` | Comprehensive typed exceptions, exponential backoff with jitter |
-| Server-side usage enforcement | `usage_service.dart` | Atomic RPC prevents client tampering |
-| Device fingerprinting | `device_fingerprint_service.dart` | Prevents free tier abuse via reinstall |
-| Service/Interface pattern | `core/interfaces/` | Clean DI, easy to mock in tests |
-| Privacy screen on background | `app.dart` | Prevents screenshots in app switcher |
+| Pattern | Location | Why |
+|---------|----------|-----|
+| Server-side usage enforcement | `usage_service.dart` | RPC with RLS prevents client tampering |
+| AI error classification + retry | `ai_service.dart` | Typed exceptions, exponential backoff with jitter |
+| Service/Interface pattern | `core/interfaces/` | Clean DI, testable via overrides |
+| Device fingerprinting | `device_fingerprint_service.dart` | Prevents free tier reinstall abuse |
+| Privacy screen on background | `app.dart` | Prevents app switcher screenshots |
 | Biometric lock with timeout | `app.dart`, `reauth_service.dart` | Security without annoying users |
 | Apple token exchange | `supabase_auth_provider.dart` | Required for account deletion compliance |
-| Test Store blocked in release | `subscription_service.dart` | Prevents accidental production crash |
+| Test Store blocked in release | `subscription_service.dart` | Prevents production crash |
 | syncPurchases on init | `subscription_service.dart` | Restores subscriptions after reinstall |
+| App Check enabled | `main.dart` | Firebase attestation |
+| HTTPS-only enforced | Network config | Both platforms |
+| Centralized logging | `log_service.dart` | Crashlytics integration |
+
+### Testing Gaps to Address
+
+- Listener memory leak scenarios
+- Prompt injection attempts
+- Route guard bypass via deep links
+- Network failure recovery paths
+- Concurrent generation attempts
+- Auth state transitions during sensitive ops
+- Offline behavior with cached data
 
 ---
 
