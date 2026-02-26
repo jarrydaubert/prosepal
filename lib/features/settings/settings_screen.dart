@@ -46,10 +46,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   Future<void> _toggleBiometrics(bool value) async {
     if (value) {
-      final authenticated = await BiometricService.instance.authenticate(
+      final result = await BiometricService.instance.authenticate(
         reason: 'Authenticate to enable $_biometricType',
       );
-      if (!authenticated) return;
+      if (!result.success) return;
     }
 
     await BiometricService.instance.setEnabled(value);

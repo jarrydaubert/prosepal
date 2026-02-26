@@ -2,6 +2,30 @@ import 'package:flutter/services.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+/// Result of biometric authentication attempt
+class BiometricResult {
+  final bool success;
+  final BiometricError? error;
+  final String? message;
+
+  const BiometricResult({
+    required this.success,
+    this.error,
+    this.message,
+  });
+}
+
+/// Types of biometric errors
+enum BiometricError {
+  notAvailable,
+  notEnrolled,
+  lockedOut,
+  permanentlyLockedOut,
+  passcodeNotSet,
+  cancelled,
+  unknown,
+}
+
 class BiometricService {
   BiometricService._();
   static final instance = BiometricService._();
@@ -60,37 +84,81 @@ class BiometricService {
   }
 
   /// Authenticate with biometrics
-  /// Set [biometricOnly] to true to prevent PIN/passcode fallback
-  Future<bool> authenticate({
+  /// Returns [BiometricResult] with success status and optional error
+  Future<BiometricResult> authenticate({
     String? reason,
-    bool biometricOnly = false,
   }) async {
     try {
-      return await _auth.authenticate(
+      final success = await _auth.authenticate(
         localizedReason: reason ?? 'Authenticate to access Prosepal',
-        biometricOnly: biometricOnly,
-        // Keep auth valid if app goes to background briefly
-        persistAcrossBackgrounding: true,
+        biometricOnly: false, // Allow PIN/passcode fallback for accessibility
+        persistAcrossBackgrounding: true, // Resume prompt if app backgrounds
       );
-    } on PlatformException catch (e) {
-      // Handle specific errors
-      if (e.code == 'NotAvailable') {
-        return false;
+      return BiometricResult(success: success);
+    } on LocalAuthException catch (e) {
+      // Handle specific errors with user-friendly messages
+      switch (e.code) {
+        case LocalAuthExceptionCode.noBiometricHardware:
+        case LocalAuthExceptionCode.biometricHardwareTemporarilyUnavailable:
+          return BiometricResult(
+            success: false,
+            error: BiometricError.notAvailable,
+            message: 'Biometrics not available on this device.',
+          );
+        case LocalAuthExceptionCode.noBiometricsEnrolled:
+          return BiometricResult(
+            success: false,
+            error: BiometricError.notEnrolled,
+            message: 'No biometrics enrolled. Set up in device settings.',
+          );
+        case LocalAuthExceptionCode.temporaryLockout:
+          return BiometricResult(
+            success: false,
+            error: BiometricError.lockedOut,
+            message: 'Too many attempts. Try again later.',
+          );
+        case LocalAuthExceptionCode.biometricLockout:
+          return BiometricResult(
+            success: false,
+            error: BiometricError.permanentlyLockedOut,
+            message: 'Biometrics locked. Use device passcode to unlock.',
+          );
+        case LocalAuthExceptionCode.noCredentialsSet:
+          return BiometricResult(
+            success: false,
+            error: BiometricError.passcodeNotSet,
+            message: 'Set up a device passcode first.',
+          );
+        case LocalAuthExceptionCode.userCanceled:
+          return BiometricResult(
+            success: false,
+            error: BiometricError.cancelled,
+          );
+        default:
+          return BiometricResult(
+            success: false,
+            error: BiometricError.unknown,
+            message: e.description ?? 'Authentication failed. Please try again.',
+          );
       }
-      if (e.code == 'NotEnrolled') {
-        return false;
-      }
-      if (e.code == 'LockedOut' || e.code == 'PermanentlyLockedOut') {
-        return false;
-      }
-      return false;
+    } on PlatformException {
+      return BiometricResult(
+        success: false,
+        error: BiometricError.unknown,
+        message: 'Authentication failed. Please try again.',
+      );
     }
   }
 
   /// Authenticate if biometrics are enabled
-  Future<bool> authenticateIfEnabled() async {
-    if (!await isEnabled) return true; // Not enabled, allow access
-    if (!await isSupported) return true; // Not supported, allow access
+  /// Returns [BiometricResult] - success is true if auth passed OR biometrics not enabled
+  Future<BiometricResult> authenticateIfEnabled() async {
+    if (!await isEnabled) {
+      return BiometricResult(success: true); // Not enabled, allow access
+    }
+    if (!await isSupported) {
+      return BiometricResult(success: true); // Not supported, allow access
+    }
     return await authenticate();
   }
 }
