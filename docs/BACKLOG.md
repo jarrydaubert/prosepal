@@ -37,6 +37,17 @@
 
 ## P5 - v1.1 Features
 
+### UX Improvements (from flow analysis)
+
+| Item | Rationale |
+|------|-----------|
+| Skip biometric prompt after sign-in | Only offer after purchase - feels contradictory right after authenticating |
+| A/B test paywall after onboarding | Capture Day 0 conversion window: "Start trial OR Try 1 free" |
+| Configurable lock timeout | Settings: Immediate / 1 min / 5 min / Never (if users ask) |
+| Restore Pro "continue as guest" option | Don't gate access for reinstalls - let them use Pro while prompting sign-in |
+
+### Core Features
+
 - Regeneration option ("Generate More")
 - Message history / favorites
 - Feedback (thumbs up/down per message)
@@ -44,6 +55,17 @@
 - More tones (Sarcastic, Nostalgic, Poetic)
 - Multi-language (Spanish, French)
 - Birthday reminders + push notifications
+
+---
+
+## P7 - MRR-Gated Experiments
+
+> Only explore these once revenue justifies the increased server costs.
+
+| Item | Trigger | Notes |
+|------|---------|-------|
+| Increase free tier to 3 lifetime | MRR > $5k | More engagement opportunities, better retention for users not ready to pay. Trade-off: slower conversion, higher Gemini API costs |
+| 1 free/month for churned users | MRR > $10k | Win-back campaign - let lapsed users try again |
 
 ---
 
