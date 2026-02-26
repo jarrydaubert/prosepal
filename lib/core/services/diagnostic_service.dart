@@ -111,7 +111,7 @@ abstract final class DiagnosticService {
       } else {
         buffer.writeln('Signed In: No');
       }
-    } on Exception catch (e) {
+    } on Object catch (e) {
       Log.warning('Auth status retrieval failed', {'error': '$e'});
       buffer.writeln('Auth Status: Unable to retrieve');
     }
