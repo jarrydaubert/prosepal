@@ -19,6 +19,11 @@ if [ -z "$REVENUECAT_ANDROID_KEY" ]; then
     exit 1
 fi
 
+if [ -z "$GOOGLE_WEB_CLIENT_ID" ]; then
+    echo "Error: GOOGLE_WEB_CLIENT_ID not set in .env.local"
+    exit 1
+fi
+
 cd "$PROJECT_DIR"
 
 # Find Android device
@@ -31,4 +36,7 @@ if [ -z "$DEVICE" ]; then
 fi
 
 echo "Running on Android device: $DEVICE"
-flutter run -d "$DEVICE" --dart-define=REVENUECAT_ANDROID_KEY=$REVENUECAT_ANDROID_KEY "$@"
+flutter run -d "$DEVICE" \
+    --dart-define=REVENUECAT_ANDROID_KEY=$REVENUECAT_ANDROID_KEY \
+    --dart-define=GOOGLE_WEB_CLIENT_ID=$GOOGLE_WEB_CLIENT_ID \
+    "$@"
