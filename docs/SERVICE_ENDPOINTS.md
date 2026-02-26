@@ -6,6 +6,20 @@
 
 ---
 
+## SDKs Overview
+
+| SDK | Package | Purpose |
+|-----|---------|---------|
+| **Supabase Auth** | `supabase_flutter: ^2.12.0` | User authentication, session management, edge functions |
+| **Sign In With Apple** | `sign_in_with_apple: ^7.0.1` | Native Apple OAuth on iOS/macOS |
+| **Google Sign In** | `google_sign_in: ^7.2.0` | Native Google OAuth on iOS/Android |
+| **RevenueCat** | `purchases_flutter: ^9.10.2` | In-app subscriptions, paywall UI, entitlements |
+| **Firebase AI** | `firebase_ai: ^3.6.1` | Gemini AI message generation |
+| **Local Auth** | `local_auth: ^3.0.0` | Biometric authentication (Face ID/Touch ID) |
+| **Firebase Core** | `firebase_core`, `firebase_crashlytics` | App initialization, crash reporting |
+
+---
+
 ## 1. Supabase Auth
 
 | SDK Method | Unit | Integration |
