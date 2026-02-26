@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
@@ -48,6 +49,7 @@ abstract final class DiagnosticService {
       buffer.writeln('Build: ${packageInfo.buildNumber}');
       buffer.writeln('Package: ${packageInfo.packageName}');
     } catch (e) {
+      Log.warning('App info retrieval failed', {'error': '$e'});
       buffer.writeln('Version: Unable to retrieve');
     }
     buffer.writeln();
@@ -57,6 +59,21 @@ abstract final class DiagnosticService {
     buffer.writeln('Platform: ${Platform.operatingSystem}');
     buffer.writeln('OS Version: ${Platform.operatingSystemVersion}');
     buffer.writeln('Locale: ${Platform.localeName}');
+    try {
+      final deviceInfo = DeviceInfoPlugin();
+      if (Platform.isIOS) {
+        final ios = await deviceInfo.iosInfo;
+        buffer.writeln('Model: ${ios.model}');
+        buffer.writeln('Device: ${ios.utsname.machine}');
+      } else if (Platform.isAndroid) {
+        final android = await deviceInfo.androidInfo;
+        buffer.writeln('Model: ${android.model}');
+        buffer.writeln('Manufacturer: ${android.manufacturer}');
+        buffer.writeln('Device: ${android.device}');
+      }
+    } catch (e) {
+      Log.warning('Device info retrieval failed', {'error': '$e'});
+    }
     if (kDebugMode) {
       buffer.writeln('Build Mode: Debug');
     } else if (kProfileMode) {
@@ -81,6 +98,7 @@ abstract final class DiagnosticService {
         buffer.writeln('Signed In: No');
       }
     } catch (e) {
+      Log.warning('Auth status retrieval failed', {'error': '$e'});
       buffer.writeln('Auth Status: Unable to retrieve');
     }
     buffer.writeln();
@@ -108,6 +126,7 @@ abstract final class DiagnosticService {
 
       buffer.writeln('RC User ID: ${_truncateId(customerInfo.originalAppUserId)}');
     } catch (e) {
+      Log.warning('Subscription status retrieval failed', {'error': '$e'});
       buffer.writeln('Subscription: Unable to retrieve');
     }
     buffer.writeln();

@@ -20,6 +20,9 @@ class _LockScreenState extends State<LockScreen> {
   String? _errorMessage;
   int _failedAttempts = 0;
 
+  bool get _reduceMotion =>
+      MediaQuery.of(context).disableAnimations;
+
   @override
   void initState() {
     super.initState();
@@ -94,6 +97,39 @@ class _LockScreenState extends State<LockScreen> {
     );
   }
 
+  Widget _buildErrorMessage() {
+    final errorContainer = Semantics(
+      liveRegion: true,
+      label: 'Error: $_errorMessage',
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        decoration: BoxDecoration(
+          color: AppColors.error.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
+          border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.error_outline, color: AppColors.error, size: 20),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: Text(
+                _errorMessage!,
+                style: const TextStyle(color: AppColors.error),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    // Skip shake animation if user prefers reduced motion
+    if (_reduceMotion) {
+      return errorContainer.animate().fadeIn();
+    }
+    return errorContainer.animate().fadeIn().shake();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -107,23 +143,27 @@ class _LockScreenState extends State<LockScreen> {
               const Spacer(),
 
               // App logo with shadow
-              DecoratedBox(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(24),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.primary.withValues(alpha: 0.2),
-                      blurRadius: 20,
-                      offset: const Offset(0, 8),
+              Semantics(
+                label: 'Prosepal logo',
+                image: true,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.primary.withValues(alpha: 0.2),
+                        blurRadius: 20,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(24),
+                    child: Image.asset(
+                      'assets/images/logo.png',
+                      width: 100,
+                      height: 100,
                     ),
-                  ],
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(24),
-                  child: Image.asset(
-                    'assets/images/logo.png',
-                    width: 100,
-                    height: 100,
                   ),
                 ),
               ).animate().fadeIn().scale(begin: const Offset(0.9, 0.9)),
@@ -150,34 +190,7 @@ class _LockScreenState extends State<LockScreen> {
 
               // Error message
               if (_errorMessage != null) ...[
-                Container(
-                  padding: const EdgeInsets.all(AppSpacing.md),
-                  decoration: BoxDecoration(
-                    color: AppColors.error.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(
-                      AppSpacing.radiusMedium,
-                    ),
-                    border: Border.all(
-                      color: AppColors.error.withValues(alpha: 0.3),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.error_outline,
-                        color: AppColors.error,
-                        size: 20,
-                      ),
-                      const SizedBox(width: AppSpacing.sm),
-                      Expanded(
-                        child: Text(
-                          _errorMessage!,
-                          style: const TextStyle(color: AppColors.error),
-                        ),
-                      ),
-                    ],
-                  ),
-                ).animate().fadeIn().shake(),
+                _buildErrorMessage(),
                 const SizedBox(height: AppSpacing.lg),
               ],
 

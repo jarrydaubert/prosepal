@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../core/providers/providers.dart';
+import '../core/services/log_service.dart';
 import '../shared/theme/app_colors.dart';
 import '../shared/theme/app_theme.dart';
 import 'router.dart';
@@ -33,6 +34,7 @@ class _ProsepalAppState extends ConsumerState<ProsepalApp>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    final wasInBackground = _isInBackground;
     setState(() {
       // Flutter 3.13+ added 'hidden' for brief non-visible transitions
       _isInBackground =
@@ -40,6 +42,13 @@ class _ProsepalAppState extends ConsumerState<ProsepalApp>
           state == AppLifecycleState.paused ||
           state == AppLifecycleState.hidden;
     });
+
+    // Log lifecycle transitions
+    if (_isInBackground && !wasInBackground) {
+      Log.info('App backgrounded');
+    } else if (!_isInBackground && wasInBackground) {
+      Log.info('App resumed');
+    }
   }
 
   void _setupAuthListener() {

@@ -54,6 +54,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
 
+  bool get _reduceMotion =>
+      MediaQuery.of(context).disableAnimations;
+
   @override
   void initState() {
     super.initState();
@@ -106,39 +109,48 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 children: [
                   // Progress indicator
                   Expanded(
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(4),
-                      child: TweenAnimationBuilder<double>(
-                        tween: Tween(
-                          begin: 0,
-                          end: (_currentPage + 1) / _onboardingPages.length,
-                        ),
-                        duration: const Duration(milliseconds: 400),
-                        curve: Curves.easeOutCubic,
-                        builder: (context, value, _) => LinearProgressIndicator(
-                          value: value,
-                          backgroundColor: AppColors.primaryLight,
-                          valueColor:
-                              const AlwaysStoppedAnimation(AppColors.primary),
-                          minHeight: 4,
+                    child: Semantics(
+                      label: 'Onboarding progress: step ${_currentPage + 1} of ${_onboardingPages.length}',
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(4),
+                        child: TweenAnimationBuilder<double>(
+                          tween: Tween(
+                            begin: 0,
+                            end: (_currentPage + 1) / _onboardingPages.length,
+                          ),
+                          duration: _reduceMotion 
+                              ? Duration.zero 
+                              : const Duration(milliseconds: 400),
+                          curve: Curves.easeOutCubic,
+                          builder: (context, value, _) => LinearProgressIndicator(
+                            value: value,
+                            backgroundColor: AppColors.primaryLight,
+                            valueColor:
+                                const AlwaysStoppedAnimation(AppColors.primary),
+                            minHeight: 4,
+                          ),
                         ),
                       ),
                     ),
                   ),
                   const SizedBox(width: 16),
                   // Skip button
-                  TextButton(
-                    onPressed: _completeOnboarding,
-                    style: TextButton.styleFrom(
-                      foregroundColor: AppColors.textSecondary,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
+                  Semantics(
+                    label: 'Skip onboarding',
+                    button: true,
+                    child: TextButton(
+                      onPressed: _completeOnboarding,
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppColors.textSecondary,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
                       ),
-                    ),
-                    child: const Text(
-                      'Skip',
-                      style: TextStyle(fontWeight: FontWeight.w500),
+                      child: const Text(
+                        'Skip',
+                        style: TextStyle(fontWeight: FontWeight.w500),
+                      ),
                     ),
                   ),
                 ],
@@ -157,6 +169,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   return _OnboardingPageWidget(
                     key: ValueKey('page_$index'),
                     page: page,
+                    pageNumber: index + 1,
+                    totalPages: _onboardingPages.length,
+                    reduceMotion: _reduceMotion,
                   );
                 },
               ),
@@ -257,9 +272,15 @@ class _OnboardingPageWidget extends StatelessWidget {
   const _OnboardingPageWidget({
     super.key,
     required this.page,
+    required this.pageNumber,
+    required this.totalPages,
+    required this.reduceMotion,
   });
 
   final OnboardingPageData page;
+  final int pageNumber;
+  final int totalPages;
+  final bool reduceMotion;
 
   @override
   Widget build(BuildContext context) {
@@ -272,61 +293,87 @@ class _OnboardingPageWidget extends StatelessWidget {
     final titleSize = isSmallScreen ? 24.0 : 28.0;
     final subtitleSize = isSmallScreen ? 15.0 : 16.0;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 40),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          // Large emoji with bold border container
-          Container(
-            width: emojiContainerSize,
-            height: emojiContainerSize,
-            decoration: BoxDecoration(
-              color: AppColors.primaryLight,
-              borderRadius: BorderRadius.circular(32),
-              border: Border.all(color: AppColors.primary, width: 4),
-            ),
-            child: Center(
-              child: Text(
-                page.emoji,
-                style: TextStyle(fontSize: emojiSize),
-              ),
-            ),
-          )
-              .animate(key: ValueKey('emoji_${page.emoji}'))
-              .fadeIn(duration: 400.ms)
-              .scale(delay: 100.ms, curve: Curves.easeOutBack),
+    return Semantics(
+      label: 'Onboarding page $pageNumber of $totalPages: ${page.title.replaceAll('\n', ' ')}',
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 40),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Large emoji with bold border container
+            _buildEmojiContainer(emojiContainerSize, emojiSize),
 
-          const SizedBox(height: 48),
+            const SizedBox(height: 48),
 
-          // Title
-          Text(
-            page.title,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: titleSize,
-              fontWeight: FontWeight.bold,
-              color: AppColors.primary,
-            ),
-          )
-              .animate(key: ValueKey('title_${page.title}'))
-              .fadeIn(delay: 300.ms)
-              .slideY(begin: 0.2, end: 0),
+            // Title
+            _buildTitle(titleSize),
 
-          const SizedBox(height: 16),
+            const SizedBox(height: 16),
 
-          // Description
-          Text(
-            page.subtitle,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: subtitleSize,
-              color: Colors.grey[700],
-              height: 1.5,
-            ),
-          ).animate(key: ValueKey('desc_${page.subtitle}')).fadeIn(delay: 500.ms),
-        ],
+            // Description
+            _buildSubtitle(subtitleSize),
+          ],
+        ),
       ),
     );
+  }
+
+  Widget _buildEmojiContainer(double containerSize, double emojiSize) {
+    final container = Container(
+      width: containerSize,
+      height: containerSize,
+      decoration: BoxDecoration(
+        color: AppColors.primaryLight,
+        borderRadius: BorderRadius.circular(32),
+        border: Border.all(color: AppColors.primary, width: 4),
+      ),
+      child: Center(
+        child: Text(
+          page.emoji,
+          style: TextStyle(fontSize: emojiSize),
+        ),
+      ),
+    );
+
+    if (reduceMotion) return container;
+    return container
+        .animate(key: ValueKey('emoji_${page.emoji}'))
+        .fadeIn(duration: 400.ms)
+        .scale(delay: 100.ms, curve: Curves.easeOutBack);
+  }
+
+  Widget _buildTitle(double titleSize) {
+    final title = Text(
+      page.title,
+      textAlign: TextAlign.center,
+      style: TextStyle(
+        fontSize: titleSize,
+        fontWeight: FontWeight.bold,
+        color: AppColors.primary,
+      ),
+    );
+
+    if (reduceMotion) return title;
+    return title
+        .animate(key: ValueKey('title_${page.title}'))
+        .fadeIn(delay: 300.ms)
+        .slideY(begin: 0.2, end: 0);
+  }
+
+  Widget _buildSubtitle(double subtitleSize) {
+    final subtitle = Text(
+      page.subtitle,
+      textAlign: TextAlign.center,
+      style: TextStyle(
+        fontSize: subtitleSize,
+        color: Colors.grey[700],
+        height: 1.5,
+      ),
+    );
+
+    if (reduceMotion) return subtitle;
+    return subtitle
+        .animate(key: ValueKey('desc_${page.subtitle}'))
+        .fadeIn(delay: 500.ms);
   }
 }

@@ -34,15 +34,17 @@
 | `scenario_tests.dart` | Mocked Patrol tests (auth, AI errors) |
 | `golden_path_test.dart` | Firebase Test Lab (60+ real device tests) |
 
-### Log Coverage Gaps (P1)
-| Service/Screen | Missing Logs |
-|----------------|--------------|
-| biometric_service | enable/disable/auth events |
-| auth_service | sign in/out/delete events |
-| onboarding_screen | started/completed |
-| lock_screen | shown/auth events |
-| generate_screen | wizard started |
-| results_screen | copy/share events |
+### Log Coverage (Complete ✅)
+| Service/Screen | Logs Added |
+|----------------|------------|
+| biometric_service | enable/disable/auth events ✅ |
+| auth_service | sign in/out/delete events ✅ |
+| onboarding_screen | started/completed ✅ |
+| lock_screen | shown ✅ |
+| home_screen | wizard started + occasion ✅ |
+| results_screen | copy/share with option # ✅ |
+| app.dart | backgrounded/resumed ✅ |
+| diagnostic_service | internal warning logs ✅ |
 
 ### Known Issues
 
@@ -55,6 +57,48 @@
 ---
 
 ## v1.1 Post-Launch Features
+
+### Results Screen Enhancements
+- **Regeneration option** - "Generate More" or "Tweak Prompt" button for iteration
+- **Pro differentiation** - Additional message options, longer formats for Pro users
+- **Message history** - Save favorites, view past generations
+- **Feedback integration** - Thumbs up/down per message for AI improvement
+- **In-app rating prompt** - Trigger after successful copy (use existing `in_app_review`)
+
+### Home Screen Enhancements
+- **Pull-to-refresh** - Sync usage/subscription state on pull gesture
+- **Occasion search/filter** - Search bar or categories for 41+ occasions
+- **Recent activity** - Show last generated messages or popular occasions
+- **Tablet/landscape layout** - Responsive grid columns for larger screens
+
+### Lock Screen Enhancements
+- **Lifecycle re-auth** - Re-prompt biometrics on resume from background
+- **Passcode fallback** - In-app PIN/passcode if biometrics unavailable
+- **Attempt throttling** - Add delays after failed attempts
+
+### Auth Service Enhancements
+- **MFA support** - TOTP or recovery codes via Supabase MFA
+- **Rate limiting** - Exponential backoff for transient network errors
+- **Apple token revocation** - Call Apple revocation endpoint on delete
+- **Deep link config** - Extract scheme to constants/config provider
+
+### Biometric Service Enhancements
+- **Strong biometrics** - Enforce BiometricType.strong (Class 3) for sensitive ops
+- **Capability caching** - Memoize availableBiometrics results
+- **Reactive state** - Expose enabled state via Riverpod notifier
+
+### Log Service Enhancements
+- **Structured keys** - Use setCustomKey() for frequently logged params
+- **Debug verbosity** - Add configurable filter for debug output
+- **Analytics linkage** - Optional Firebase Analytics event with logs
+- **Rate limiting** - Sampling in release for high-volume scenarios
+
+### Testing Enhancements
+- **Custom Patrol finders** - Key-based semantics for pivotal elements
+- **Native dialog handling** - Use Patrol native interactions for dialogs
+- **Pro-specific tests** - Validate Pro user behaviors and unlimited generation
+- **Restore purchase outcomes** - Mock and verify success/failure flows
+- **Platform-specific tests** - iOS/Android variations (Apple sign-in, biometrics)
 
 ### Birthday Reminders + Push Notifications
 - Supabase `contacts` table (name, birthday, relationship)
