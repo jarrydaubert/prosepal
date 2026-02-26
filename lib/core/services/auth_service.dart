@@ -368,17 +368,8 @@ class AuthService implements IAuthService {
       throw const AuthException('No user signed in');
     }
 
-    // Refresh session to ensure valid JWT for edge function
-    try {
-      await _supabase.refreshSession();
-      Log.info('Session refreshed for account deletion');
-    } catch (e) {
-      Log.warning('Session refresh failed, attempting delete anyway', {
-        'error': '$e',
-      });
-    }
-
     // Call edge function to delete user (requires admin/service role)
+    // Note: deleteUser() internally refreshes the session for fresh JWT
     // This MUST succeed before we proceed - do not sign out on failure
     try {
       await _supabase.deleteUser();
