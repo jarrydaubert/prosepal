@@ -1,295 +1,65 @@
 # Backlog
 
-> **Burn-down list: Outstanding TODO items only.**
-> Completed work is removed from this doc and tracked in git history.
-> Do NOT mark items as "DONE" - just delete them when complete.
-
----
+> Burn-down list of outstanding TODO items only.
+> Completed work is removed from this file and tracked in git history.
 
 ## P0 - Launch Blockers
 
 | Item | Action |
 |------|--------|
-| Move Google setup to business account (not personal) | Migrate all Google/Play Console setup to a business account so we can bypass the personal-account 14 tester requirement and ship Android. |
-| Set up `prosepal-web` on GitHub | Create/push `prosepal-web` repo to GitHub, wire default branch protections, and connect CI so web changes are trackable and deploy-ready. |
-| Keep redesign out of vNext scope | Freeze major redesign delivery until vNext infra/reliability gates pass; only live-style parity fixes are in vNext scope. |
+| Move Google setup to business account | Migrate Google/Play Console setup to business ownership so Android release is not blocked by personal-account tester constraints. |
+| Set up `prosepal-web` on GitHub | Create/push `prosepal-web`, configure branch protections, and connect CI. |
+| Keep redesign out of vNext scope | Freeze major redesign work until infra/reliability gates pass; vNext only ships live-style parity adjustments. |
 
----
-
-## P0 - vNext Execution Plan (Primary Goal)
-
-> Source of truth: `docs/NEXT_RELEASE_BRIEF.md`
+## P0 - vNext Execution Plan
 
 | ID | Item | Definition of Done |
 |----|------|--------------------|
-| `VNEXT-01` | Dependency upgrades (staged batches) | Batch A/B/C executed in separate PRs; each batch passes `flutter analyze`, unit/widget suite, smoke integration suite; release notes capture package/version deltas and risks; tests are added/updated for changed behavior before closure. |
-| `VNEXT-02` | App Check operational hardening | AI-critical paths validated with App Check enabled; iOS + Android provider behavior verified; enforcement posture explicitly documented; fallback behavior documented if provider fails; tests are added/updated for changed behavior before closure. |
-| `VNEXT-06` | Account deletion subscription UX | Deletion flow copy reviewed for active-subscription guidance; "Manage Subscription" path is accessible in deletion context; user-facing timing/expectation copy finalized and tested; tests are added/updated for changed behavior before closure. |
-| `VNEXT-07` | Integration determinism hardening | Flaky tests repaired or quarantined from blocking gate; trusted critical-smoke suite is the blocking gate; repeated-run flake audit passes at agreed threshold; tests are added/updated for changed behavior before closure. |
-| `VNEXT-08` | Device and FTL validation gates | Critical suite passes on one wired iOS and one wired Android physical device; selected Android FTL matrix passes; results attached to release candidate evidence; tests are added/updated for changed behavior before closure. |
-| `VNEXT-09` | Release config preflight automation | CI/release preflight fails when required `dart-define` values are missing; iOS script-only archive path enforcement documented and validated in runbook; tests are added/updated for changed behavior before closure. |
-| `VNEXT-10` | AI cost/abuse controls | API/app restrictions verified; per-user rate-limit thresholds documented; budget alert configured; cost-spike kill-switch response runbook added; tests are added/updated for changed behavior before closure. |
-| `VNEXT-11` | Canonical identity mapping | Single mapping document added for Supabase user ID, RevenueCat app user ID, Analytics user ID, and Crashlytics user ID usage; sign-in/sign-out transitions validated in QA checklist; tests are added/updated for changed behavior before closure. |
-| `VNEXT-12` | UI parity with live baseline | Baseline screenshots from live app captured for core screens (auth/home/generate/results/paywall/settings); styling deltas cataloged; either matched to live style or explicitly approved as intentional deltas before release; tests are added/updated for changed behavior before closure. |
-| `VNEXT-13` | Device abuse-control compliance decision | iOS/Android approach documented and approved (current fingerprinting with compliance rationale OR migration plan to native attestation APIs); release checklist updated with the chosen path and validation evidence; tests are added/updated for changed behavior before closure. |
+| `VNEXT-06` | Account deletion subscription UX | Deletion flow includes active-subscription guidance, an accessible "Manage Subscription" path, and clear timing expectations. Tests are added/updated for changed behavior before closure. |
+| `VNEXT-07` | Integration determinism hardening | Flaky tests are repaired or quarantined from blocking gates; trusted critical-smoke suite is the blocking gate; flake audit passes agreed threshold. Tests are added/updated for changed behavior before closure. |
+| `VNEXT-08` | Device + Test Lab validation gates | Critical suite passes on one wired iOS and one wired Android physical device; selected Android Firebase Test Lab matrix passes; release evidence is captured. Tests are added/updated for changed behavior before closure. |
+| `VNEXT-09` | Release config preflight automation | CI/release preflight fails when required `dart-define` values are missing; iOS script-only archive enforcement is validated. Tests are added/updated for changed behavior before closure. |
+| `VNEXT-10` | AI cost/abuse controls | API/app restrictions verified, per-user limits documented, budget alerts configured, and cost-spike kill-switch runbook finalized. Tests are added/updated for changed behavior before closure. |
+| `VNEXT-11` | Canonical identity mapping | Single mapping for Supabase ID, RevenueCat App User ID, Analytics ID, and Crashlytics ID is documented and QA-validated across sign-in/sign-out transitions. Tests are added/updated for changed behavior before closure. |
+| `VNEXT-12` | UI parity with live baseline | Baseline screenshots captured for core screens; styling deltas are either matched to live style or explicitly approved before release. Tests are added/updated for changed behavior before closure. |
+| `VNEXT-13` | Device abuse-control compliance decision | iOS/Android abuse-control approach is documented and approved (existing strategy with rationale or migration to native attestation APIs), and release checklist is updated accordingly. Tests are added/updated for changed behavior before closure. |
 
----
-
-## P0 - Known Issues (Not Hard Blockers)
+## P0 - Product / Infra Issues
 
 | Item | Action |
 |------|--------|
-| Supabase leaked password protection | Enable toggle in Dashboard > Auth. Requires Pro plan ($25/mo) - upgrade once revenue justifies it |
-| Auth loading spinner missing | Show loading overlay after Apple/Google sheet closes while waiting for sign-in completion (noticeable pause currently) |
+| Supabase leaked-password protection | Enable leaked password protection in Supabase Auth when plan supports it. |
+| Auth loading spinner after OAuth sheet | Show loading overlay after Apple/Google sheet closes until auth completion resolves. |
 
----
-
-## P1 - Audit Test Coverage Gaps
+## P1 - Testing Gaps
 
 | ID | Gap | Location | Action |
 |----|-----|----------|--------|
-| `AUDIT-10` | No end-to-end tests for auth race + stale entitlement edge cases | `integration_test/` | Add E2E coverage for sign-in routing, restore flow ordering, and stale local entitlement vs server truth. |
+| `AUDIT-10` | Missing E2E for auth race + stale entitlement edge cases | `integration_test/` | Add E2E coverage for sign-in routing, restore ordering, and stale local entitlement vs server truth. |
+| `AUDIT-11` | Missing tests for diagnostic report redaction levels | `test/services/` | Add tests for standard vs advanced diagnostic payload redaction behavior. |
+| `AUDIT-12` | Missing visual regression guard for critical screens | `test/` | Add golden/visual regression tests for auth/home/generate/results/paywall/settings core states. |
 
----
+## P1 - Engineering Tasks
 
-## Recurring Maintenance (Calendar Reminders)
+| Item | Location | Action |
+|------|----------|--------|
+| Password reset deep link UX | `router.dart`, auth screens | Build dedicated `/auth/reset-password` flow that consumes reset token directly. |
+| Auto-purchase race after email auth | `email_auth_screen.dart` | Remove navigate-then-purchase race with deterministic purchase trigger sequencing. |
+| Document service configuration runbooks | `docs/` | Add reproducible Firebase/Supabase/RevenueCat configuration runbook (`docs/SERVICE_CONFIG.md`). |
+| Paywall decomposition | `paywall_sheet.dart` | Split large widget into maintainable sections/components. |
+| Paywall accessibility improvements | `paywall_sheet.dart` | Add full semantics labels and verify screen-reader navigation. |
+| Connectivity monitoring | app-wide | Add connection state monitoring and graceful degraded UX. |
+| Health monitoring runbook | ops/docs | Add Supabase/Firebase AI health monitoring and escalation runbook. |
+| CAPTCHA on email auth | `email_auth_screen.dart` | Add Turnstile/hCaptcha path and Supabase-side validation. |
+| Release key scan guard | CI/release docs | Add automated pre-release binary/config key scan step. |
 
-| Item | Frequency | Next Due | Action |
-|------|-----------|----------|--------|
-| **iOS Release Build** | Every release | Always | **MUST use `./scripts/build_ios.sh`** - never plain `flutter build ios` or Xcode directly. Keys are baked at compile time. See `docs/LAUNCH_CHECKLIST.md`. |
-| Apple OAuth secret | 6 months | ~July 2026 | Regenerate in Apple Developer Console, update in Supabase Auth > Apple provider. **No notification - app breaks silently!** |
-| **Cost vs Usage Analysis** | Monthly | Feb 2026 | Review Firebase billing vs active users. Track: avg generations/user, % super users (>300/mo), cost/user. Alert if >30% super users or cost/user exceeds $3/mo. Break-even at ~42% super users @ $29.99/yr. |
+## P2 - Lower Priority
 
----
-
-## MEDIUM
-
-| Issue | Location | Fix |
-|-------|----------|-----|
-| OG image uses logo only | `prosepal-web/public/index.html:15,25` | Create proper 1200x630 OG preview image showing app mockup + "The right words for any card" headline + App Store badge. Update `og:image` and `twitter:image` meta tags to new path. |
-| DataExportService untested | `data_export_service.dart` | GDPR compliance - add JSON structure validity tests |
-| Paywall sync button sizing consistency | `paywall_sheet.dart:964-1008` | Google/Email buttons use 14pt font, Apple official widget uses ~17pt. Increase custom `_AuthButton` compact font from 14 to 16 to match Apple's visual weight |
-| Password reset deep link UX | `router.dart:121` | Create dedicated `/auth/reset-password` screen that extracts token from deep link instead of redirecting to generic `/auth` |
-| Auto-purchase race after email auth | `email_auth_screen.dart:238-241` | Navigate-then-purchase pattern may fail; show dialog before navigation or use deferred callback |
-| Document service configurations | Firebase/Supabase/RevenueCat | Screen-by-screen audit of what's enabled/configured in each dashboard. Create `docs/SERVICE_CONFIG.md` with screenshots or detailed notes for reproducibility. |
-| Mockito exploration | `test/mocks/` | Evaluate migrating simple mocks to Mockito for reduced boilerplate. Current manual mocks excel at state tracking and error simulation. Consider Mockito for new simple interface mocks. |
-| Paywall component decomposition | `paywall_sheet.dart` | 890 lines - extract PaywallHeader, BenefitsSection, PackageSelector, AuthSection for maintainability |
-| Paywall trial messaging | `paywall_sheet.dart` | Show trial duration per package dynamically (e.g., "7-day free trial, then $4.99/mo") using `storeProduct.introductoryPrice`. Clearer than "no payment due now" and App Store compliant. |
-| Paywall accessibility | `paywall_sheet.dart` | Add Semantics labels for screen readers throughout |
-| Paywall branding extraction | `paywall_sheet.dart` | Hard-coded "Prosepal Pro", benefits - extract to config for blueprint cloning |
-| Auth/lock logic in root widget | `app.dart` | Extract to `AppLifecycleManager` service for testability |
-| Imperative biometric lock navigation | `app.dart` | Move to router redirect + Riverpod notifier pattern |
-| Skip Remote Config fetch | `main.dart` | Use cached/defaults on startup, fetch async (~200-500ms saved) |
-| Remove OAuth pre-warm | `main.dart` | Warm on auth screen instead of startup (~100-200ms saved) |
-| Swift Package Manager | `ios/` | Enable SPM for faster iOS builds (Flutter 3.38+ feature) |
-
-| Missing CAPTCHA | `email_auth_screen.dart` | Add Turnstile/hCaptcha + Supabase config |
-| Dependency update automation | `.github/` | Enable Dependabot for Flutter/Dart - 33 packages currently outdated |
-| Pre-release key scan | `LAUNCH_CHECKLIST.md` | Add step to scan bundle/APK for leaked keys before each release |
-
-| String-based error detection | `auth_errors.dart:46-179` | Message matching as fallback |
-| No connectivity monitoring | App | No `connectivity_plus` - just error messages |
-| No circuit breakers | Network | Repeated failures don't trigger fallback |
-| No Remote Config | App | Can't toggle features or kill switches remotely |
-| No health monitoring | Operations | No uptime monitoring for Supabase/Gemini |
-| Magic link custom scheme fallback | `supabase_auth_provider.dart:332` | Deprecate, use HTTPS universal links only |
-| RevenueCat in dart-define | Build system | Visible in logs - use --dart-define-from-file |
-| Email typo detection | `email_auth_screen.dart` | Detect common typos (gmial.com, gamil.com) and show suggestion modal before submit |
-| Password strength indicator | `email_auth_screen.dart` | Show visual strength meter (weak/medium/strong) as user types password |
-| Explain forced password mode | `email_auth_screen.dart:54` | When autoPurchase/showPaywallAfterAuth forces password mode, show info text explaining why |
-| Password mode benefits section | `email_auth_screen.dart:693-709` | Add benefits for password mode matching magic link (e.g., "Sign in anytime", "Works offline") |
-| Auth button text A/B test | `auth_screen.dart:435-442` | Test "Sign in with Email" vs "Continue with Email" for clarity |
-
----
-
-## LOW
-
-| Issue | Location | Fix |
-|-------|----------|-----|
-| DiagnosticService untested | `diagnostic_service.dart` | Support feature - add basic report generation tests |
-| Settings restore missing usage sync | `settings_screen.dart:143-153` | Add `usageService.syncFromServer()` call after restore for UI consistency |
-| Device fingerprint resets on reinstall | `device_fingerprint_service.dart` | `identifierForVendor` resets when app deleted. Fix: Use Keychain persistence or Apple DeviceCheck API for persistent device ID |
-| Audit autoDispose usage | `providers.dart` | Review all StateProviders - autoDispose only for single-screen state, not cross-screen navigation state. Fixed: selectedOccasionProvider, generationResultProvider |
-| No timeout on splash Pro check | `router.dart:244` | Add timeout with fallback to prevent hang on slow network |
-| No notification on bio auto-disable | `router.dart:200` | Show toast when biometrics unavailable and auto-disabled |
-| AI config not env-configurable | `ai_config.dart` | Consider Remote Config for model/params (see Gemini section) |
-| Missing Google nonce | `auth_service.dart` | Native SDK has built-in protections |
-| Generic catch blocks | Throughout `/lib` | ~65 remaining, core services done |
-| No SSL certificate pinning | Network | Consider for banking-level security |
-| No visual regression tests | Testing | Add golden tests |
-| Type-safe env with envied | `app_config.dart` | Replace manual dart-define with `envied` package for type-safe .env |
-| URL format validation | `app_config.dart` | Add regex validation for SUPABASE_URL in validate() |
-| Auth error localization | `auth_errors.dart` | Integrate `intl` package for multi-language error messages |
-| Auth error enums | `auth_errors.dart` | Replace string matching with typed error enums for safety |
-| Apple web runtime check | `apple_auth_provider.dart` | Add `kIsWeb` check to require webAuthenticationOptions |
-| Token revocation docs | Auth providers | Document server-side revocation webhook integration |
-| OAuth scope parameters | `IAuthService` | Add optional scopes/redirectUri to signInWithApple/Google |
-| User metadata methods | `IAuthService` | Add updateMetadata/getMetadata for custom user claims |
-| MFA/2FA support | `IAuthService` | Add enableMFA/verifyMFA when Supabase supports it |
-| Biometric reason localization | `IBiometricService` | Integrate with intl for localized reason messages |
-| Google auth state stream | `IGoogleAuthProvider` | Add Stream<GoogleAuthState> for reactive UI updates |
-| No performance tests | Testing | Add load/stress tests |
-| No history pagination | `history_service.dart` | 200-item cap fine, add lazy loading v1.1 |
-| No accessibility test suite | Testing | Add a11y automation |
-
----
-
-## Theoretical / Cloning Concerns
-
-> Items that are "best practice" but don't affect production. Revisit when cloning.
-
-| Issue | Location | Reality |
-|-------|----------|---------|
-| Supabase singleton direct access | `usage_service.dart:60-66` | Tests pass, works fine |
-| AI system instruction hardcoded | `ai_service.dart:22-52` | Only matters if cloning |
-| Domain models hidden coupling | `core/models/*.dart` | Just how Dart works |
-| App-specific code undocumented | `features/`, `core/models/` | Cloning concern only |
-| Device fingerprint spoofable | `device_fingerprint_service.dart` | Documented limitation |
-| AI model not singleton | `ai_service.dart` | Works fine via Provider |
-| Navigation string path comparison | `app.dart` | Works, minor smell |
-| Legacy appRouter variable | `router.dart` | Cleanup task |
-| StateNotifier legacy API | `providers.dart` | Preference, not broken |
-| Form state in 6 providers | `providers.dart:251-279` | Preference, works fine |
-
----
-
-## Compliance (v1.1)
-
-| Item | Notes |
-|------|-------|
-| Apple Privacy Labels | Fill in App Store Connect |
-| Cross-platform subscription docs | Add FAQ note: subscriptions are per-store |
-
----
-
-## Localization
-
-| Item | Location |
-|------|----------|
-| Results screen | `results_screen.dart` - Extract to .arb |
-| Auth screens | `auth_screen.dart`, `email_auth_screen.dart` |
-| Paywall | `paywall_sheet.dart` |
-| Settings | `settings_screen.dart` |
-| Accessibility | Add Semantics widgets throughout |
-
----
-
-## v1.1 Features (Quick Wins)
-
-| Feature | Notes |
-|---------|-------|
-| History multi-select + batch delete | QoL improvement, reduce churn friction |
-
----
-
-## v1.2 Features (Infrastructure)
-
-| Feature | Notes |
-|---------|-------|
-| Feedback (thumbs up/down) | Needs backend table + analytics pipeline for prompt improvement |
-| Multi-language (Spanish, French) | Full localization pass, .arb files |
-| Birthday reminders + push | Notification infra, permissions, local scheduling |
-| **Font styling for results** | Display messages in elegant fonts (Script, Handwritten, Classic, System). Font picker button next to copy/share. Copy = plain text, Share = option to share as styled image with font baked in. Fonts: `Dancing Script` (script), `Caveat` (handwritten), `Libre Baskerville` (serif), System (default). |
-
----
-
-## External Dependencies
-
-### Gemini Model
-
-Using pinned stable models: `gemini-2.5-flash` (primary) + `gemini-2.5-flash-lite` (fallback).
-
-| Item | Action |
-|------|--------|
-| Model version monitoring | Review new stable model releases and update allowlist/defaults deliberately |
-
-### Supabase - Monitor 2026
-
-| Item | Action |
-|------|--------|
-| Key rotation alerts | Subscribe to supabase.com/changelog |
-| Graceful auth failure | Show "maintenance" screen, not crash |
-
----
-
-## MRR-Gated Experiments
-
-| Item | Trigger | Notes |
-|------|---------|-------|
-| Increase free tier to 3 lifetime | MRR > $5k | Better retention, higher API costs |
-| 1 free/month for churned users | MRR > $10k | Win-back campaign |
-
----
-
-## Tech Debt
-
-| Item | Notes |
-|------|-------|
-| Simplify auth navigation | Remove `redirectTo` params - just `pop()` on dismiss |
-
-### Lint Cleanup (357 info-level warnings)
-
-Target: Zero analyzer warnings for squeaky clean codebase.
-
-| Rule | Count | Fix | Priority |
-|------|-------|-----|----------|
-| `prefer_expression_function_bodies` | 117 | Convert `{ return x; }` to `=> x` | Low |
-| `avoid_catches_without_on_clauses` | 58 | Add specific exception types to catch blocks | Medium |
-| `prefer_const_constructors` | 48 | Add `const` keyword where possible | Low |
-| `cascade_invocations` | 34 | Use `..` cascade notation | Low |
-| `avoid_redundant_argument_values` | 15 | Remove args matching defaults | Low |
-| `use_if_null_to_convert_nulls_to_bools` | 11 | Use `?? false` pattern | Low |
-| `unnecessary_lambdas` | 8 | Use tearoffs instead of `() => fn()` | Low |
-| `prefer_const_literals_to_create_immutables` | 6 | Add `const` to list/map literals | Low |
-| `avoid_dynamic_calls` | 6 | Add type annotations | Medium |
-| `unawaited_futures` | 5 | Wrap with `unawaited()` or await | Medium |
-| `directives_ordering` | 5 | Sort imports alphabetically | Low |
-| `deprecated_member_use` | 4 | Update to non-deprecated APIs | Medium |
-| `unnecessary_import` | 2 | Remove redundant imports | Low |
-| Misc (10 other rules) | ~20 | Various minor fixes | Low |
-
-**Approach:** Fix in batches by rule type during low-priority sprints.
-
----
-
-## Known Issues
-
-| Issue | Severity |
-|-------|----------|
-| Supabase session persists in Keychain | Low |
-| Android: OnBackInvokedCallback not enabled | Low |
-
----
-
-## What's Already Good (Preserve)
-
-| Pattern | Location |
-|---------|----------|
-| Server-side usage enforcement (RPC + RLS) | `usage_service.dart` |
-| Server-side Pro verification (RevenueCat webhook) | `supabase/functions/revenuecat-webhook/`, `user_entitlements` table |
-| AI error classification + retry | `ai_service.dart` |
-| Service/Interface pattern | `core/interfaces/` |
-| Device fingerprinting | `device_fingerprint_service.dart` |
-| Biometric lock with timeout | `app.dart`, `reauth_service.dart` |
-| Apple token exchange | `supabase_auth_provider.dart` |
-| Test Store blocked in release | `subscription_service.dart` |
-| syncPurchases on init | `subscription_service.dart` |
-| App Check enabled | `main.dart` |
-| HTTPS-only enforced | Network config |
-| Centralized logging | `log_service.dart` |
-| 30s timeout on network calls | Auth/Supabase services |
-| Encrypted secure storage | Biometric pref, history |
-| HTTPS Universal/App Links | Deep link security |
-| Global sign-out | All sessions invalidated |
-| Rate limiting (fail-closed) | Client + server |
-| Security documentation | `docs/SECURITY.md` |
-
----
-
-## Future Expansion
-
-| Initiative | Reference |
-|------------|-----------|
-| B2B (EA inbound capture) | `docs/EXPANSION_STRATEGY.md` |
-| Server-side AI generation | Move Gemini calls to Supabase Edge Function for: centralized logging, response caching, A/B test prompts without app updates, additional rate limiting. Current Firebase AI SDK is secure and fast - this is a v2 optimization. |
-| Platform Cloning | `docs/CLONING_PLAYBOOK.md` |
+| Item | Location | Action |
+|------|----------|--------|
+| Auth/lock logic extraction | `app.dart` | Move root auth/lock routing logic to dedicated lifecycle service/notifier. |
+| Biometric lock navigation cleanup | routing | Move imperative lock navigation to declarative redirect flow. |
+| No timeout on splash Pro check | `router.dart` | Add timeout/fallback to avoid startup hangs on slow networks. |
+| Biometric auto-disable notice | `router.dart` | Add user-visible notification when biometrics are auto-disabled. |
+| History pagination | `history_service.dart` | Introduce paginated/lazy history loading. |
+| Accessibility automation suite | test tooling | Add automated accessibility checks in CI. |
