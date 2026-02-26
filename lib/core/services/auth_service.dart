@@ -13,6 +13,11 @@ import '../interfaces/supabase_auth_provider.dart';
 import 'log_service.dart';
 
 // ===========================================================================
+// Deep Link Scheme - must match iOS/Android URL scheme configuration
+// ===========================================================================
+const _deepLinkScheme = 'com.prosepal.prosepal';
+
+// ===========================================================================
 // Google OAuth Client IDs - configured in Google Cloud Console
 // ===========================================================================
 // GOOGLE_WEB_CLIENT_ID: Web client ID, required for:
@@ -320,7 +325,7 @@ class AuthService implements IAuthService {
     // Use deep link to handle password reset in app
     await _supabase.resetPasswordForEmail(
       email,
-      redirectTo: kIsWeb ? null : 'com.prosepal.prosepal://reset-callback',
+      redirectTo: kIsWeb ? null : '$_deepLinkScheme://reset-callback',
     );
   }
 
@@ -333,7 +338,7 @@ class AuthService implements IAuthService {
     // Deep link required for mobile to capture auth callback
     await _supabase.signInWithOtp(
       email: email,
-      emailRedirectTo: kIsWeb ? null : 'com.prosepal.prosepal://login-callback',
+      emailRedirectTo: kIsWeb ? null : '$_deepLinkScheme://login-callback',
     );
   }
 
