@@ -130,24 +130,24 @@ lib/
 ```
 test/
 ├── mocks/                        # Test doubles
+│   ├── mock_ai_service.dart
 │   ├── mock_auth_service.dart
 │   ├── mock_biometric_service.dart
-│   └── mock_subscription_service.dart
+│   ├── mock_subscription_service.dart
+│   └── mocks.dart                # Barrel export
 ├── models/                       # Model tests
 ├── services/                     # Service tests
 ├── theme/                        # Theme tests
 └── widgets/screens/              # Widget tests
 ```
 
-### integration_test/ - E2E Tests
+### integration_test/ - E2E Tests (Patrol)
 
 ```
 integration_test/
-├── app_test.dart
-├── e2e_subscription_test.dart
-├── e2e_user_journey_test.dart
+├── app_test.dart                 # Mocked Patrol tests
 └── device_only/                  # Real device only
-    └── revenuecat_test.dart
+    └── revenuecat_test.dart      # Real RevenueCat SDK tests
 ```
 
 ### Platform Code
@@ -187,11 +187,12 @@ supabase/
 docs/
 ├── ARCHITECTURE.md               # This file
 ├── BACKLOG.md                    # Feature backlog
-├── TEST_AUDIT.md                 # Test coverage details
 ├── LAUNCH_CHECKLIST.md           # Release checklist
 ├── PRODUCT_SPEC.md               # Product requirements
-├── SERVICE_ENDPOINTS.md          # API documentation
-└── STACK_TEMPLATE.md             # Tech stack reference
+├── SERVICE_ENDPOINTS.md          # SDK method coverage
+├── STACK_TEMPLATE.md             # Tech stack blueprint
+├── SUBSCRIPTION_TESTING.md       # RevenueCat manual testing
+└── TEST_AUDIT.md                 # Test coverage details
 ```
 
 ### Assets
