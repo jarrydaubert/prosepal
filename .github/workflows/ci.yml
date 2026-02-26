@@ -1,6 +1,24 @@
-# Prosepal CI - Optimized for GitHub Free Tier (private repos)
-# Budget: 2,000 mins/month | macOS = 10x multiplier, Linux = 1x
-# Strategy: Use Linux for fast checks, macOS only for iOS builds
+# =============================================================================
+# Prosepal CI - MINIMAL (GitHub Free Tier)
+# =============================================================================
+# FREE TIER LIMITS (private repos):
+#   - 2,000 mins/month total
+#   - Linux = 1x multiplier
+#   - macOS = 10x multiplier (8 mins = 80 "minutes"!)
+#   - $0 spending limit by default = CI won't run until you set limit
+#
+# TO ENABLE CI:
+#   GitHub → Settings → Billing → Actions → Set spending limit > $0
+#   (You won't be charged if you stay under 2,000 mins)
+#
+# CURRENT STRATEGY:
+#   - Analyze only (Linux, ~2 mins) - catches errors fast
+#   - iOS/Android builds DISABLED - do locally, saves 80+ mins/run
+#   - Run tests locally: flutter test
+#
+# TO RE-ENABLE BUILDS:
+#   Uncomment build-ios job below when you need CI builds
+# =============================================================================
 
 name: CI
 
@@ -10,14 +28,13 @@ on:
   pull_request:
     branches: [main]
 
-# Cancel in-progress runs on same branch (saves minutes!)
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   # ============================================
-  # FAST CHECKS (Linux - 1x multiplier, ~2 mins)
+  # ANALYZE ONLY (~2 mins Linux = 2 "minutes")
   # ============================================
   analyze:
     name: Analyze & Test
@@ -39,100 +56,25 @@ jobs:
       - name: Analyze
         run: flutter analyze lib/ --no-fatal-infos
       
-      - name: Run tests with coverage
-        run: |
-          flutter test --coverage
-          # Check coverage meets threshold (70%)
-          if command -v lcov &> /dev/null; then
-            COVERAGE=$(lcov --summary coverage/lcov.info 2>/dev/null | grep "lines" | grep -oP '\d+\.\d+' | head -1)
-            echo "Coverage: $COVERAGE%"
-          fi
-      
-      - name: Check formatting
-        run: dart format --set-exit-if-changed lib/ test/
+      - name: Run tests
+        run: flutter test
 
   # ============================================
-  # iOS BUILD (macOS - 10x multiplier, ~8 mins = 80 "minutes")
-  # Only on main branch pushes to save budget
+  # iOS BUILD - DISABLED (saves 80 "minutes" per run)
+  # Uncomment when needed, but prefer local builds:
+  #   ./scripts/build_release.local.sh ios
   # ============================================
-  build-ios:
-    name: Build iOS
-    runs-on: macos-latest
-    timeout-minutes: 30
-    needs: analyze  # Only run if analyze passes
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          channel: 'stable'
-          cache: true
-      
-      - name: Get dependencies
-        run: flutter pub get
-      
-      - name: Build iOS (no codesign)
-        run: flutter build ios --release --no-codesign
-      
-      - name: Upload iOS build
-        uses: actions/upload-artifact@v4
-        with:
-          name: ios-build
-          path: build/ios/iphoneos/Runner.app
-          retention-days: 7
-
-  # ============================================
-  # ANDROID BUILD (Linux - 1x multiplier)
-  # DISABLED: Takes 50+ min on free tier runners, exceeds timeout
-  # Android needs 14-day closed testing anyway - build locally for releases
-  # Re-enable when: upgrading runners OR launching Android
-  # ============================================
-  build-android:
-    name: Build Android
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
-    needs: analyze
-    if: false  # DISABLED - see comment above
-    
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-      
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          channel: 'stable'
-          cache: true
-      
-      - name: Cache Gradle
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-            android/.gradle
-          key: gradle-${{ hashFiles('android/build.gradle', 'android/app/build.gradle', 'pubspec.lock') }}
-          restore-keys: gradle-
-      
-      - name: Get dependencies
-        run: flutter pub get
-      
-      - name: Build APK
-        run: flutter build apk --release
-        env:
-          GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.caching=true"
-      
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: android-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
-          retention-days: 7
+  # build-ios:
+  #   name: Build iOS
+  #   runs-on: macos-latest
+  #   timeout-minutes: 30
+  #   needs: analyze
+  #   if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: subosito/flutter-action@v2
+  #       with:
+  #         channel: 'stable'
+  #         cache: true
+  #     - run: flutter pub get
+  #     - run: flutter build ios --release --no-codesign
