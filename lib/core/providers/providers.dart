@@ -273,11 +273,11 @@ final remainingGenerationsProvider = Provider<int>((ref) {
 // ============================================================
 // Generation Form State
 // ============================================================
-// Form providers with autoDispose - cleans up when generate screen is disposed.
-// This prevents memory leaks and stale state when navigating away.
+// Form providers - selectedOccasion must NOT autoDispose as it's set before
+// navigation and needs to survive the route transition. Other form fields
+// autoDispose when GenerateScreen is disposed to prevent memory leaks.
 
-final selectedOccasionProvider =
-    StateProvider.autoDispose<Occasion?>((ref) => null);
+final selectedOccasionProvider = StateProvider<Occasion?>((ref) => null);
 
 final selectedRelationshipProvider =
     StateProvider.autoDispose<Relationship?>((ref) => null);
