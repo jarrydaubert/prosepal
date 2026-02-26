@@ -30,10 +30,10 @@
 | Fire-and-forget sync loses data | `usage_service.dart:309-310` | Add retry queue, persist pending syncs |
 
 | OAuth re-auth weak | `reauth_service.dart:133-140` | Require password/re-OAuth for sensitive ops |
-| No root/jailbreak detection | App startup | Add SafetyNet/freeRASP for fraud prevention |
+| ~~No root/jailbreak detection~~ | ~~App startup~~ | DONE - DeviceSecurityService added |
 | No E2E tests in CI | `.github/workflows/` | Tests exist in `integration_test/` but not in CI |
 | No app state restoration | Forms | Add RestorationMixin - form data lost on process death |
-| Privacy policy accuracy | Legal | Verify policy matches actual data practices |
+| ~~Privacy policy accuracy~~ | ~~Legal~~ | DONE - Updated Jan 9, 2026 |
 
 ---
 
