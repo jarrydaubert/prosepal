@@ -16,16 +16,16 @@ class AuthService implements IAuthService {
 
   SupabaseClient get _client => Supabase.instance.client;
 
-  /// Current user (null if not logged in)
+  @override
   User? get currentUser => _client.auth.currentUser;
 
-  /// Whether user is logged in
+  @override
   bool get isLoggedIn => currentUser != null;
 
-  /// Auth state stream
+  @override
   Stream<AuthState> get authStateChanges => _client.auth.onAuthStateChange;
 
-  /// User's display name (from metadata or email)
+  @override
   String? get displayName {
     final user = currentUser;
     if (user == null) return null;
@@ -42,7 +42,7 @@ class AuthService implements IAuthService {
     return name;
   }
 
-  /// User's email
+  @override
   String? get email => currentUser?.email;
 
   /// Generate a random nonce for Apple Sign In
@@ -63,7 +63,7 @@ class AuthService implements IAuthService {
     return digest.toString();
   }
 
-  /// Sign in with Apple (native)
+  @override
   Future<AuthResponse> signInWithApple() async {
     final rawNonce = _generateNonce();
     final hashedNonce = _sha256ofString(rawNonce);
@@ -88,7 +88,7 @@ class AuthService implements IAuthService {
     );
   }
 
-  /// Sign in with Google (OAuth - opens browser)
+  @override
   Future<void> signInWithGoogle() async {
     await _client.auth.signInWithOAuth(
       OAuthProvider.google,
@@ -96,7 +96,7 @@ class AuthService implements IAuthService {
     );
   }
 
-  /// Sign in with Email and Password
+  @override
   Future<AuthResponse> signInWithEmail({
     required String email,
     required String password,
@@ -107,7 +107,7 @@ class AuthService implements IAuthService {
     );
   }
 
-  /// Sign up with Email and Password
+  @override
   Future<AuthResponse> signUpWithEmail({
     required String email,
     required String password,
@@ -115,14 +115,12 @@ class AuthService implements IAuthService {
     return await _client.auth.signUp(email: email, password: password);
   }
 
-  /// Send password reset email
-  /// Triggers "Reset password" email template
+  @override
   Future<void> resetPassword(String email) async {
     await _client.auth.resetPasswordForEmail(email);
   }
 
-  /// Sign in with magic link (passwordless)
-  /// Triggers "Magic link" email template
+  @override
   Future<void> signInWithMagicLink(String email) async {
     await _client.auth.signInWithOtp(
       email: email,
@@ -130,27 +128,22 @@ class AuthService implements IAuthService {
     );
   }
 
-  /// Update user's email address
-  /// Triggers "Change email address" email template
+  @override
   Future<void> updateEmail(String newEmail) async {
     await _client.auth.updateUser(UserAttributes(email: newEmail));
   }
 
-  /// Update user's password (when logged in)
+  @override
   Future<void> updatePassword(String newPassword) async {
     await _client.auth.updateUser(UserAttributes(password: newPassword));
   }
 
-  /// Sign out
+  @override
   Future<void> signOut() async {
     await _client.auth.signOut();
   }
 
-  /// Delete account permanently
-  /// Calls Supabase Edge Function 'delete-user' which requires service role
-  /// to delete from auth.users table
-  ///
-  /// App Store requires account deletion - this satisfies that requirement
+  @override
   Future<void> deleteAccount() async {
     final user = currentUser;
     if (user == null) return;

@@ -4,12 +4,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:sign_in_button/sign_in_button.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 import '../../core/errors/auth_errors.dart';
 import '../../core/providers/providers.dart';
 import '../../shared/theme/app_colors.dart';
 import '../../shared/theme/app_spacing.dart';
+
+/// Consistent button height for all auth buttons
+const double _kAuthButtonHeight = 50.0;
+
+/// Consistent border radius for all auth buttons
+final BorderRadius _kAuthButtonRadius = BorderRadius.circular(
+  AppSpacing.radiusMedium,
+);
 
 class AuthScreen extends ConsumerStatefulWidget {
   const AuthScreen({super.key});
@@ -186,44 +194,33 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                 ).animate().fadeIn().shake(),
                 SizedBox(height: AppSpacing.lg),
               ],
-              // Auth buttons
+              // Auth buttons - Using official branded buttons with consistent sizing
               Column(
                     children: [
                       // Apple Sign In (iOS/macOS only, first per Apple guidelines)
+                      // Uses official SignInWithAppleButton from sign_in_with_apple package
                       if (Platform.isIOS || Platform.isMacOS) ...[
-                        _AuthButton(
-                          onPressed: _isLoading ? null : _signInWithApple,
-                          icon: Icons.apple,
-                          label: 'Continue with Apple',
-                          backgroundColor: Colors.black,
-                          foregroundColor: Colors.white,
+                        SizedBox(
+                          width: double.infinity,
+                          height: _kAuthButtonHeight,
+                          child: SignInWithAppleButton(
+                            text: 'Continue with Apple',
+                            onPressed: _isLoading ? () {} : _signInWithApple,
+                            style: SignInWithAppleButtonStyle.black,
+                            borderRadius: _kAuthButtonRadius,
+                          ),
                         ),
                         SizedBox(height: AppSpacing.md),
                       ],
-                      // Google Sign In (official branded button)
-                      SizedBox(
-                        width: double.infinity,
-                        height: AppSpacing.buttonHeight,
-                        child: SignInButton(
-                          Buttons.google,
-                          text: 'Continue with Google',
-                          onPressed: _isLoading ? () {} : _signInWithGoogle,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(
-                              AppSpacing.radiusMedium,
-                            ),
-                          ),
-                          elevation: 2,
-                        ),
+                      // Google Sign In - Custom button matching Apple style
+                      // (Google branding: white bg, Google logo, dark text)
+                      _GoogleSignInButton(
+                        onPressed: _isLoading ? null : _signInWithGoogle,
                       ),
                       SizedBox(height: AppSpacing.md),
-                      // Email Sign In
-                      _AuthButton(
+                      // Email Sign In - Custom button matching the same style
+                      _EmailSignInButton(
                         onPressed: _isLoading ? null : _signInWithEmail,
-                        icon: Icons.email_outlined,
-                        label: 'Continue with Email',
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: Colors.white,
                       ),
                     ],
                   )
@@ -281,49 +278,165 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   }
 }
 
-class _AuthButton extends StatelessWidget {
-  const _AuthButton({
-    required this.onPressed,
-    required this.label,
-    required this.backgroundColor,
-    required this.foregroundColor,
-    this.icon,
-  });
+/// Google Sign In button matching Apple button style
+/// Uses official Google colors and logo per branding guidelines
+class _GoogleSignInButton extends StatelessWidget {
+  const _GoogleSignInButton({required this.onPressed});
 
   final VoidCallback? onPressed;
-  final IconData? icon;
-  final String label;
-  final Color backgroundColor;
-  final Color foregroundColor;
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
       width: double.infinity,
-      height: AppSpacing.buttonHeight,
+      height: _kAuthButtonHeight,
       child: ElevatedButton(
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor: backgroundColor,
-          foregroundColor: foregroundColor,
-          elevation: 2,
-          shadowColor: backgroundColor.withValues(alpha: 0.5),
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.black87,
+          elevation: 1,
+          shadowColor: Colors.black26,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
+            borderRadius: _kAuthButtonRadius,
+            side: BorderSide(color: Colors.grey.shade300),
           ),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            if (icon != null) Icon(icon, size: 24),
-            SizedBox(width: AppSpacing.md),
+            // Official Google "G" logo colors
+            SizedBox(
+              width: 20,
+              height: 20,
+              child: CustomPaint(painter: _GoogleLogoPainter()),
+            ),
+            SizedBox(width: AppSpacing.sm),
             Text(
-              label,
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              'Continue with Google',
+              style: TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w500,
+                letterSpacing: -0.4,
+              ),
             ),
           ],
         ),
       ),
     );
   }
+}
+
+/// Email Sign In button matching the same style
+class _EmailSignInButton extends StatelessWidget {
+  const _EmailSignInButton({required this.onPressed});
+
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      height: _kAuthButtonHeight,
+      child: ElevatedButton(
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.primary,
+          foregroundColor: Colors.white,
+          elevation: 1,
+          shadowColor: AppColors.primary.withValues(alpha: 0.3),
+          shape: RoundedRectangleBorder(borderRadius: _kAuthButtonRadius),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.email_outlined, size: 20),
+            SizedBox(width: AppSpacing.sm),
+            Text(
+              'Continue with Email',
+              style: TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w500,
+                letterSpacing: -0.4,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Custom painter for Google "G" logo with official colors
+class _GoogleLogoPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final double w = size.width;
+    final double h = size.height;
+
+    // Google logo colors
+    const blue = Color(0xFF4285F4);
+    const red = Color(0xFFEA4335);
+    const yellow = Color(0xFFFBBC05);
+    const green = Color(0xFF34A853);
+
+    final paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = w * 0.18
+      ..strokeCap = StrokeCap.butt;
+
+    final center = Offset(w / 2, h / 2);
+    final radius = w * 0.4;
+
+    // Blue arc (right side)
+    paint.color = blue;
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      -0.4,
+      1.2,
+      false,
+      paint,
+    );
+
+    // Green arc (bottom right)
+    paint.color = green;
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      0.8,
+      1.0,
+      false,
+      paint,
+    );
+
+    // Yellow arc (bottom left)
+    paint.color = yellow;
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      1.8,
+      0.9,
+      false,
+      paint,
+    );
+
+    // Red arc (top)
+    paint.color = red;
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      2.7,
+      1.0,
+      false,
+      paint,
+    );
+
+    // Blue horizontal bar
+    paint.color = blue;
+    paint.style = PaintingStyle.fill;
+    canvas.drawRect(
+      Rect.fromLTWH(w * 0.5, h * 0.42, w * 0.45, h * 0.16),
+      paint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
