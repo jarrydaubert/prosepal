@@ -93,17 +93,14 @@ void main() {
 
     test('isUpdateRequired returns true when current < minimum', () async {
       // Bug: User not prompted to update when they should be
-      mockService.simulateForceUpdateRequired(
-        currentVersion: '1.0.0',
-        minVersion: '2.0.0',
-      );
+      mockService.simulateForceUpdateRequired();
 
       expect(await mockService.isUpdateRequired(), isTrue);
     });
 
     test('isUpdateRequired returns false when current >= minimum', () async {
       // Bug: User incorrectly prompted to update
-      mockService.simulateNoUpdateRequired(currentVersion: '2.0.0');
+      mockService.simulateNoUpdateRequired();
 
       expect(await mockService.isUpdateRequired(), isFalse);
     });

@@ -22,24 +22,24 @@ class OnboardingPageData {
   final String subtitle;
 }
 
-/// Onboarding content - concise, value-focused copy
+/// Onboarding content - value-focused copy with emotional benefits
 const _onboardingPages = [
   OnboardingPageData(
     emoji: '✍️',
     title: 'The Right Words,\nRight Now',
     subtitle:
-        'AI-powered messages for birthdays, thank yous, sympathy, and 40+ occasions.',
+        'Stop staring at blank cards. Get the perfect message in 30 seconds.',
   ),
   OnboardingPageData(
     emoji: '⚡',
     title: 'Pick. Tap.\nDone.',
     subtitle:
-        'Choose the occasion and tone. Get 3 personalized options instantly.',
+        'Choose your occasion, add a personal touch, and get 3 heartfelt messages instantly.',
   ),
   OnboardingPageData(
     emoji: '🎁',
-    title: 'Your First One\nis Free',
-    subtitle: 'No sign-up required. Try it now.',
+    title: 'Try it Free',
+    subtitle: 'No sign-up, no credit card. Just great messages.',
   ),
 ];
 
@@ -53,11 +53,15 @@ class OnboardingScreen extends ConsumerStatefulWidget {
 class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
+  late final DateTime _startTime;
 
   @override
   void initState() {
     super.initState();
+    _startTime = DateTime.now();
     Log.info('Onboarding started');
+    Log.event('onboarding_started');
+    Log.event('onboarding_slide_viewed', {'slide': 1});
   }
 
   void _nextPage() {
@@ -72,7 +76,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   }
 
   Future<void> _completeOnboarding() async {
+    final durationSec = DateTime.now().difference(_startTime).inSeconds;
     Log.info('Onboarding completed');
+    Log.event('onboarding_completed', {'duration_sec': durationSec});
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(PreferenceKeys.hasCompletedOnboarding, true);
 
@@ -150,6 +156,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 itemCount: _onboardingPages.length,
                 onPageChanged: (index) {
                   setState(() => _currentPage = index);
+                  Log.event('onboarding_slide_viewed', {'slide': index + 1});
                 },
                 itemBuilder: (context, index) {
                   final page = _onboardingPages[index];
@@ -253,7 +260,7 @@ class _GetStartedButton extends ConsumerWidget {
               ),
               const SizedBox(width: 12),
               const Text(
-                'Loading...',
+                'Preparing...',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,

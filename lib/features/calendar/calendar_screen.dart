@@ -41,7 +41,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         ),
       ),
       body: occasionsAsync.when(
-        data: (occasions) => _buildContent(occasions),
+        data: _buildContent,
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Error loading occasions: $e')),
       ),
@@ -200,7 +200,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       ),
     );
 
-    if (confirmed == true) {
+    if (confirmed ?? false) {
       await ref.read(calendarServiceProvider).deleteOccasion(occasion.id);
       await ref.read(notificationServiceProvider).cancelReminder(occasion.id);
       ref.invalidate(upcomingOccasionsProvider);
@@ -280,7 +280,7 @@ class _OccasionCard extends StatelessWidget {
 
     return GestureDetector(
       onTap: onTap,
-      child: Container(
+      child: DecoratedBox(
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),

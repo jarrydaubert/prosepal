@@ -88,6 +88,12 @@ Future<void> _initializeApp() async {
   // Get SharedPreferences first (fast, local) - needed for router
   final prefs = await SharedPreferences.getInstance();
 
+  // Clear legacy generate form restoration data (prevents crash on new schema)
+  if (prefs.containsKey('form_restoration_generate')) {
+    await prefs.remove('form_restoration_generate');
+    Log.info('Cleared legacy form restoration data');
+  }
+
   // Auto-detect spelling preference from device locale if not already set
   if (!prefs.containsKey(PreferenceKeys.spellingPreference)) {
     final locale = WidgetsBinding.instance.platformDispatcher.locale;

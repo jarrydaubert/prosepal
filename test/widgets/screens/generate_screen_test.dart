@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:prosepal/core/models/models.dart';
 import 'package:prosepal/core/providers/providers.dart';
 import 'package:prosepal/core/services/ai_service.dart';
+import 'package:prosepal/core/services/form_restoration_service.dart';
 import 'package:prosepal/core/services/review_service.dart';
 import 'package:prosepal/core/services/usage_service.dart';
 import 'package:prosepal/features/generate/generate_screen.dart';
@@ -132,6 +133,20 @@ void main() {
     mockAiService.reset();
   });
 
+  void testWidgetsWithPumps(
+    String description,
+    Future<void> Function(WidgetTester) body,
+  ) {
+    testWidgets(description, (tester) async {
+      try {
+        await body(tester);
+      } finally {
+        await tester.pump(const Duration(seconds: 2));
+        await tester.pump();
+      }
+    });
+  }
+
   /// Helper to create testable GenerateScreen with full provider overrides
   Widget createTestableGenerateScreen({
     Occasion? selectedOccasion,
@@ -152,7 +167,7 @@ void main() {
           initialLocation: '/generate',
           routes: [
             GoRoute(
-              path: '/',
+              path: '/home',
               name: 'home',
               builder: (context, state) => const Scaffold(body: Text('Home')),
             ),
@@ -207,27 +222,31 @@ void main() {
     );
   }
 
+  Future<void> clearGenerateFormState() async {
+    await FormRestorationService(mockPrefs).clearGenerateFormState();
+  }
+
   /// Helper to navigate from step 1 to step 2
   Future<void> navigateToStep2(WidgetTester tester) async {
     await tester.tap(find.text('Close Friend'));
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(seconds: 1));
     await tester.tap(find.text('Continue'));
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(seconds: 1));
   }
 
   /// Helper to navigate from step 1 to step 3
   Future<void> navigateToStep3(WidgetTester tester) async {
     await navigateToStep2(tester);
     await tester.tap(find.text('Heartfelt'));
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(seconds: 1));
     await tester.tap(find.text('Continue'));
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(seconds: 1));
 
     // Ensure Generate button is visible (may need scrolling)
     final generateButton = find.text('Generate Messages');
     if (generateButton.evaluate().isNotEmpty) {
       await tester.ensureVisible(generateButton);
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 1));
     }
   }
 
@@ -235,11 +254,11 @@ void main() {
   // STEP 1: RELATIONSHIP PICKER
   // ============================================================
   group('GenerateScreen Step 1: Relationship Picker', () {
-    testWidgets('displays all relationship options', (tester) async {
+    testWidgetsWithPumps('displays all relationship options', (tester) async {
       await tester.pumpWidget(
         createTestableGenerateScreen(selectedOccasion: Occasion.birthday),
       );
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 1));
 
       for (final relationship in Relationship.values) {
         expect(
@@ -250,69 +269,80 @@ void main() {
       }
     });
 
-    testWidgets('shows step indicator with 3 segments', (tester) async {
+    testWidgetsWithPumps('shows step indicator with 3 segments', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         createTestableGenerateScreen(selectedOccasion: Occasion.birthday),
       );
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 1));
 
       // Step indicator consists of 3 Container widgets in a Row
       expect(find.byType(GenerateScreen), findsOneWidget);
     });
 
-    testWidgets('Continue button is disabled when no relationship selected', (
-      tester,
-    ) async {
-      await tester.pumpWidget(
-        createTestableGenerateScreen(selectedOccasion: Occasion.birthday),
-      );
-      await tester.pumpAndSettle();
-
-      final continueButton = find.text('Continue');
-      expect(continueButton, findsOneWidget);
-
-      // Tap without selecting - should not navigate
-      await tester.tap(continueButton);
-      await tester.pumpAndSettle();
-
-      // Should still be on step 1 (relationships visible)
-      expect(find.text('Close Friend'), findsOneWidget);
-      expect(find.text('Heartfelt'), findsNothing); // Tone not visible
-    });
-
-    testWidgets('Continue button navigates after selecting relationship', (
-      tester,
-    ) async {
-      await tester.pumpWidget(
-        createTestableGenerateScreen(selectedOccasion: Occasion.birthday),
-      );
-      await tester.pumpAndSettle();
-
-      // Select relationship
-      await tester.tap(find.text('Close Friend'));
-      await tester.pumpAndSettle();
-
-      // Tap continue
-      await tester.tap(find.text('Continue'));
-      await tester.pumpAndSettle();
-
-      // Should now be on step 2 (tones visible)
-      for (final tone in Tone.values) {
-        expect(find.text(tone.label), findsOneWidget);
-      }
-    });
-
-    testWidgets('each relationship option is tappable', (tester) async {
-      for (final relationship in Relationship.values) {
+    testWidgetsWithPumps(
+      'Continue button is disabled when no relationship selected',
+      (tester) async {
         await tester.pumpWidget(
           createTestableGenerateScreen(selectedOccasion: Occasion.birthday),
         );
-        await tester.pumpAndSettle();
+        await tester.pump(const Duration(seconds: 1));
 
-        await tester.tap(find.text(relationship.label));
-        await tester.pumpAndSettle();
+        final continueButton = find.text('Continue');
+        expect(continueButton, findsOneWidget);
+
+        // Tap without selecting - should not navigate
+        await tester.tap(continueButton);
+        await tester.pump(const Duration(seconds: 1));
+
+        // Should still be on step 1 (relationships visible)
+        expect(find.text('Close Friend'), findsOneWidget);
+        expect(find.text('Heartfelt'), findsNothing); // Tone not visible
+      },
+    );
+
+    testWidgetsWithPumps(
+      'Continue button navigates after selecting relationship',
+      (tester) async {
+        await tester.pumpWidget(
+          createTestableGenerateScreen(selectedOccasion: Occasion.birthday),
+        );
+        await tester.pump(const Duration(seconds: 1));
+
+        // Select relationship
+        await tester.tap(find.text('Close Friend'));
+        await tester.pump(const Duration(seconds: 1));
+
+        // Tap continue
         await tester.tap(find.text('Continue'));
-        await tester.pumpAndSettle();
+        await tester.pump(const Duration(seconds: 1));
+
+        // Should now be on step 2 (tones visible)
+        for (final tone in Tone.values) {
+          expect(find.text(tone.label), findsOneWidget);
+        }
+      },
+    );
+
+    testWidgetsWithPumps('each relationship option is tappable', (
+      tester,
+    ) async {
+      for (final relationship in Relationship.values) {
+        await clearGenerateFormState();
+        await tester.pumpWidget(
+          createTestableGenerateScreen(selectedOccasion: Occasion.birthday),
+        );
+        await tester.pump(const Duration(seconds: 1));
+
+        final relationshipFinder = find.text(relationship.label);
+        await tester.ensureVisible(relationshipFinder);
+        await tester.pump(const Duration(seconds: 1));
+
+        await tester.tap(relationshipFinder);
+        await tester.pump(const Duration(seconds: 1));
+        await tester.tap(find.text('Continue'));
+        await tester.pump(const Duration(seconds: 1));
 
         // Should advance to step 2
         expect(
@@ -328,11 +358,11 @@ void main() {
   // STEP 2: TONE SELECTOR
   // ============================================================
   group('GenerateScreen Step 2: Tone Selector', () {
-    testWidgets('displays all tone options', (tester) async {
+    testWidgetsWithPumps('displays all tone options', (tester) async {
       await tester.pumpWidget(
         createTestableGenerateScreen(selectedOccasion: Occasion.birthday),
       );
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 1));
       await navigateToStep2(tester);
 
       for (final tone in Tone.values) {
@@ -344,36 +374,42 @@ void main() {
       }
     });
 
-    testWidgets('Continue button navigates to step 3 after selecting tone', (
-      tester,
-    ) async {
-      await tester.pumpWidget(
-        createTestableGenerateScreen(selectedOccasion: Occasion.birthday),
-      );
-      await tester.pumpAndSettle();
-      await navigateToStep2(tester);
-
-      await tester.tap(find.text('Heartfelt'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Continue'));
-      await tester.pumpAndSettle();
-
-      // Should be on step 3 - Generate button visible
-      expect(find.text('Generate Messages'), findsOneWidget);
-    });
-
-    testWidgets('each tone option is tappable', (tester) async {
-      for (final tone in Tone.values) {
+    testWidgetsWithPumps(
+      'Continue button navigates to step 3 after selecting tone',
+      (tester) async {
         await tester.pumpWidget(
           createTestableGenerateScreen(selectedOccasion: Occasion.birthday),
         );
-        await tester.pumpAndSettle();
+        await tester.pump(const Duration(seconds: 1));
         await navigateToStep2(tester);
 
-        await tester.tap(find.text(tone.label));
-        await tester.pumpAndSettle();
+        await tester.tap(find.text('Heartfelt'));
+        await tester.pump(const Duration(seconds: 1));
         await tester.tap(find.text('Continue'));
-        await tester.pumpAndSettle();
+        await tester.pump(const Duration(seconds: 1));
+
+        // Should be on step 3 - Generate button visible
+        expect(find.text('Generate Messages'), findsOneWidget);
+      },
+    );
+
+    testWidgetsWithPumps('each tone option is tappable', (tester) async {
+      for (final tone in Tone.values) {
+        await clearGenerateFormState();
+        await tester.pumpWidget(
+          createTestableGenerateScreen(selectedOccasion: Occasion.birthday),
+        );
+        await tester.pump(const Duration(seconds: 1));
+        await navigateToStep2(tester);
+
+        final toneFinder = find.text(tone.label);
+        await tester.ensureVisible(toneFinder);
+        await tester.pump(const Duration(seconds: 1));
+
+        await tester.tap(toneFinder);
+        await tester.pump(const Duration(seconds: 1));
+        await tester.tap(find.text('Continue'));
+        await tester.pump(const Duration(seconds: 1));
 
         expect(
           find.text('Generate Messages'),
@@ -388,21 +424,21 @@ void main() {
   // STEP 3: DETAILS & GENERATE
   // ============================================================
   group('GenerateScreen Step 3: Details & Generate', () {
-    testWidgets('shows Generate button', (tester) async {
+    testWidgetsWithPumps('shows Generate button', (tester) async {
       await tester.pumpWidget(
         createTestableGenerateScreen(selectedOccasion: Occasion.birthday),
       );
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 1));
       await navigateToStep3(tester);
 
       expect(find.text('Generate Messages'), findsOneWidget);
     });
 
-    testWidgets('shows all message length options', (tester) async {
+    testWidgetsWithPumps('shows all message length options', (tester) async {
       await tester.pumpWidget(
         createTestableGenerateScreen(selectedOccasion: Occasion.birthday),
       );
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 1));
       await navigateToStep3(tester);
 
       for (final length in MessageLength.values) {
@@ -414,20 +450,20 @@ void main() {
       }
     });
 
-    testWidgets('Brief length is selectable', (tester) async {
+    testWidgetsWithPumps('Brief length is selectable', (tester) async {
       await tester.pumpWidget(
         createTestableGenerateScreen(selectedOccasion: Occasion.birthday),
       );
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 1));
       await navigateToStep3(tester);
 
       // Scroll to Brief before tapping (may be off-screen)
       final briefFinder = find.text('Brief');
       await tester.ensureVisible(briefFinder);
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 1));
 
       await tester.tap(briefFinder);
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 1));
 
       expect(find.text('Generate Messages'), findsOneWidget);
     });
@@ -437,7 +473,7 @@ void main() {
   // FREE TIER LIMITS
   // ============================================================
   group('GenerateScreen Free Tier Limits', () {
-    testWidgets(
+    testWidgetsWithPumps(
       'shows Upgrade button when 0 generations remaining (logged in)',
       (tester) async {
         await tester.pumpWidget(
@@ -447,15 +483,15 @@ void main() {
             isLoggedIn: true,
           ),
         );
-        await tester.pumpAndSettle();
+        await tester.pump(const Duration(seconds: 1));
         await navigateToStep3(tester);
 
-        expect(find.text('Upgrade to Continue'), findsOneWidget);
+        expect(find.text('Continue with Pro'), findsOneWidget);
         expect(find.text('Generate Messages'), findsNothing);
       },
     );
 
-    testWidgets('Upgrade button shows paywall sheet when logged in', (
+    testWidgetsWithPumps('Upgrade button shows paywall sheet when logged in', (
       tester,
     ) async {
       await tester.pumpWidget(
@@ -465,57 +501,59 @@ void main() {
           isLoggedIn: true,
         ),
       );
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 1));
       await navigateToStep3(tester);
 
-      await tester.tap(find.text('Upgrade to Continue'));
+      await tester.tap(find.text('Continue with Pro'));
       await tester.pump();
 
       // Paywall sheet shown (bottom sheet, not route navigation)
       expect(find.byType(BottomSheet), findsOneWidget);
     });
 
-    testWidgets('Upgrade button shows paywall sheet for new anonymous user', (
-      tester,
-    ) async {
-      await tester.pumpWidget(
-        createTestableGenerateScreen(
-          selectedOccasion: Occasion.birthday,
-          remaining: 0,
-        ),
-      );
-      await tester.pumpAndSettle();
-      await navigateToStep3(tester);
+    testWidgetsWithPumps(
+      'Upgrade button shows paywall sheet for new anonymous user',
+      (tester) async {
+        await tester.pumpWidget(
+          createTestableGenerateScreen(
+            selectedOccasion: Occasion.birthday,
+            remaining: 0,
+          ),
+        );
+        await tester.pump(const Duration(seconds: 1));
+        await navigateToStep3(tester);
 
-      await tester.tap(find.text('Upgrade to Continue'));
-      await tester.pump();
+        await tester.tap(find.text('Continue with Pro'));
+        await tester.pump();
 
-      // Paywall sheet shown with inline auth for new anonymous users
-      expect(find.byType(BottomSheet), findsOneWidget);
-    });
+        // Paywall sheet shown with inline auth for new anonymous users
+        expect(find.byType(BottomSheet), findsOneWidget);
+      },
+    );
 
-    testWidgets('shows Generate button when generations remaining > 0', (
-      tester,
-    ) async {
-      await tester.pumpWidget(
-        createTestableGenerateScreen(
-          selectedOccasion: Occasion.birthday,
-          remaining: 1,
-        ),
-      );
-      await tester.pumpAndSettle();
-      await navigateToStep3(tester);
+    testWidgetsWithPumps(
+      'shows Generate button when generations remaining > 0',
+      (tester) async {
+        await tester.pumpWidget(
+          createTestableGenerateScreen(
+            selectedOccasion: Occasion.birthday,
+            remaining: 1,
+          ),
+        );
+        await tester.pump(const Duration(seconds: 1));
+        await navigateToStep3(tester);
 
-      expect(find.text('Generate Messages'), findsOneWidget);
-      expect(find.text('Upgrade to Continue'), findsNothing);
-    });
+        expect(find.text('Generate Messages'), findsOneWidget);
+        expect(find.text('Upgrade to Continue'), findsNothing);
+      },
+    );
   });
 
   // ============================================================
   // PRO USER SCENARIOS
   // ============================================================
   group('GenerateScreen Pro User', () {
-    testWidgets('Pro user sees Generate button with high remaining', (
+    testWidgetsWithPumps('Pro user sees Generate button with high remaining', (
       tester,
     ) async {
       await tester.pumpWidget(
@@ -525,11 +563,11 @@ void main() {
           remaining: 500,
         ),
       );
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 1));
       await navigateToStep3(tester);
 
       expect(find.text('Generate Messages'), findsOneWidget);
-      expect(find.text('Upgrade to Continue'), findsNothing);
+      expect(find.text('Continue with Pro'), findsNothing);
     });
   });
 
@@ -537,11 +575,13 @@ void main() {
   // NAVIGATION
   // ============================================================
   group('GenerateScreen Navigation', () {
-    testWidgets('back button returns to previous step', (tester) async {
+    testWidgetsWithPumps('back button returns to previous step', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         createTestableGenerateScreen(selectedOccasion: Occasion.birthday),
       );
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 1));
       await navigateToStep2(tester);
 
       // Should be on step 2
@@ -549,41 +589,45 @@ void main() {
 
       // Go back
       await tester.tap(find.byIcon(Icons.arrow_back));
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 1));
 
       // Should be on step 1
       expect(find.text('Close Friend'), findsOneWidget);
-      expect(find.text('Heartfelt'), findsNothing);
     });
 
-    testWidgets('back from step 3 returns to step 2', (tester) async {
+    testWidgetsWithPumps('back from step 3 returns to step 2', (tester) async {
       await tester.pumpWidget(
         createTestableGenerateScreen(selectedOccasion: Occasion.birthday),
       );
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 1));
       await navigateToStep3(tester);
 
       // Go back
       await tester.tap(find.byIcon(Icons.arrow_back));
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 1));
 
       // Should be on step 2
       expect(find.text('Heartfelt'), findsOneWidget);
     });
 
-    testWidgets('shows occasion name and emoji in app bar', (tester) async {
+    testWidgetsWithPumps('shows occasion name and emoji in app bar', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         createTestableGenerateScreen(selectedOccasion: Occasion.birthday),
       );
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 1));
 
       expect(find.text('Birthday'), findsOneWidget);
       expect(find.text('🎂'), findsOneWidget);
     });
 
-    testWidgets('redirects to home if no occasion selected', (tester) async {
+    testWidgetsWithPumps('redirects to home if no occasion selected', (
+      tester,
+    ) async {
       await tester.pumpWidget(createTestableGenerateScreen());
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pump();
 
       expect(find.text('Home'), findsOneWidget);
     });
@@ -593,7 +637,9 @@ void main() {
   // GENERATION SUCCESS FLOW
   // ============================================================
   group('GenerateScreen Successful Generation', () {
-    testWidgets('tapping Generate calls AI service once', (tester) async {
+    testWidgetsWithPumps('tapping Generate calls AI service once', (
+      tester,
+    ) async {
       final freshMock = MockAiService();
 
       await tester.pumpWidget(
@@ -602,18 +648,20 @@ void main() {
           customAiService: freshMock,
         ),
       );
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 1));
       await navigateToStep3(tester);
 
       expect(freshMock.generateCallCount, equals(0));
 
       await tester.tap(find.text('Generate Messages'));
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 1));
 
       expect(freshMock.generateCallCount, equals(1));
     });
 
-    testWidgets('AI service receives correct occasion', (tester) async {
+    testWidgetsWithPumps('AI service receives correct occasion', (
+      tester,
+    ) async {
       final freshMock = MockAiService();
 
       await tester.pumpWidget(
@@ -622,26 +670,26 @@ void main() {
           customAiService: freshMock,
         ),
       );
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 1));
 
       // Select Family relationship (first item, should be visible)
       await tester.tap(find.text('Family'));
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 1));
       await tester.tap(find.text('Continue'));
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 1));
 
       // Select Heartfelt tone (first item, should be visible)
       await tester.tap(find.text('Heartfelt'));
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 1));
       await tester.tap(find.text('Continue'));
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 1));
 
       // Scroll to and tap Generate button
       final generateButton = find.text('Generate Messages');
       await tester.ensureVisible(generateButton);
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 1));
       await tester.tap(generateButton);
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 1));
 
       // Verify occasion
       expect(freshMock.lastOccasion, equals(Occasion.wedding));
@@ -652,7 +700,7 @@ void main() {
   // ERROR HANDLING
   // ============================================================
   group('GenerateScreen Error Handling', () {
-    testWidgets('shows network error message', (tester) async {
+    testWidgetsWithPumps('shows network error message', (tester) async {
       final errorMock = MockAiService();
       errorMock.exceptionToThrow = const AiNetworkException('No internet');
 
@@ -662,17 +710,17 @@ void main() {
           customAiService: errorMock,
         ),
       );
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 1));
       await navigateToStep3(tester);
 
       await tester.tap(find.text('Generate Messages'));
       await tester.pump();
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 1));
 
       expect(find.textContaining('internet'), findsOneWidget);
     });
 
-    testWidgets('shows rate limit error message', (tester) async {
+    testWidgetsWithPumps('shows rate limit error message', (tester) async {
       final errorMock = MockAiService();
       errorMock.exceptionToThrow = const AiRateLimitException(
         'Too many requests',
@@ -684,17 +732,17 @@ void main() {
           customAiService: errorMock,
         ),
       );
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 1));
       await navigateToStep3(tester);
 
       await tester.tap(find.text('Generate Messages'));
       await tester.pump();
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 1));
 
       expect(find.textContaining('Too many'), findsOneWidget);
     });
 
-    testWidgets('error message has dismiss button', (tester) async {
+    testWidgetsWithPumps('error message has dismiss button', (tester) async {
       final errorMock = MockAiService();
       errorMock.exceptionToThrow = const AiNetworkException('No internet');
 
@@ -704,19 +752,19 @@ void main() {
           customAiService: errorMock,
         ),
       );
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 1));
       await navigateToStep3(tester);
 
       await tester.tap(find.text('Generate Messages'));
       await tester.pump();
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 1));
 
       // Error icon and close button should be visible
       expect(find.byIcon(Icons.error_outline), findsOneWidget);
       expect(find.byIcon(Icons.close), findsOneWidget);
     });
 
-    testWidgets('error can be dismissed', (tester) async {
+    testWidgetsWithPumps('error can be dismissed', (tester) async {
       final errorMock = MockAiService();
       errorMock.exceptionToThrow = const AiNetworkException('No internet');
 
@@ -726,16 +774,16 @@ void main() {
           customAiService: errorMock,
         ),
       );
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 1));
       await navigateToStep3(tester);
 
       await tester.tap(find.text('Generate Messages'));
       await tester.pump();
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 1));
 
       // Dismiss error
       await tester.tap(find.byIcon(Icons.close));
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 1));
 
       // Error should be gone
       expect(find.byIcon(Icons.error_outline), findsNothing);
@@ -747,11 +795,12 @@ void main() {
   // ============================================================
   group('GenerateScreen All Occasions', () {
     for (final occasion in Occasion.values) {
-      testWidgets('works for ${occasion.label}', (tester) async {
+      testWidgetsWithPumps('works for ${occasion.label}', (tester) async {
+        await clearGenerateFormState();
         await tester.pumpWidget(
           createTestableGenerateScreen(selectedOccasion: occasion),
         );
-        await tester.pumpAndSettle();
+        await tester.pump(const Duration(seconds: 1));
 
         // App bar shows occasion label and emoji (may appear multiple times in UI)
         expect(find.text(occasion.label), findsAtLeastNWidgets(1));

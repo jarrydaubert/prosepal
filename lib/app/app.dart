@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../core/config/preference_keys.dart';
 import '../core/providers/providers.dart';
 import '../core/services/log_service.dart';
 
@@ -50,8 +51,15 @@ class _ProsepalAppState extends ConsumerState<ProsepalApp>
       // Log to Crashlytics (already configured in main.dart)
       Log.error('Widget build error', details.exception, details.stack);
 
+      final brightness =
+          WidgetsBinding.instance.platformDispatcher.platformBrightness;
+      final scheme = ColorScheme.fromSeed(
+        seedColor: AppColors.primary,
+        brightness: brightness,
+      );
+
       return Container(
-        color: AppColors.background,
+        color: scheme.surface,
         padding: const EdgeInsets.all(24),
         child: Center(
           child: Column(
@@ -63,19 +71,19 @@ class _ProsepalAppState extends ConsumerState<ProsepalApp>
                 color: Colors.orange[700],
               ),
               const SizedBox(height: 16),
-              const Text(
+              Text(
                 'Something went wrong',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
+                  color: scheme.onSurface,
                 ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 8),
               Text(
                 'Please restart the app',
-                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                style: TextStyle(fontSize: 14, color: scheme.onSurfaceVariant),
                 textAlign: TextAlign.center,
               ),
             ],
@@ -171,6 +179,12 @@ class _ProsepalAppState extends ConsumerState<ProsepalApp>
       });
 
       if (event == AuthChangeEvent.signedIn && session != null) {
+        final prefs = ref.read(sharedPreferencesProvider);
+        if (prefs.getBool(PreferenceKeys.pendingMagicLinkAuth) ?? false) {
+          await prefs.setBool(PreferenceKeys.pendingMagicLinkAuth, false);
+          Log.event('auth_completed', {'method': 'magic_link'});
+        }
+
         // Identify with RevenueCat to restore Pro entitlements
         try {
           await ref
@@ -219,6 +233,7 @@ class _ProsepalAppState extends ConsumerState<ProsepalApp>
     title: 'Prosepal',
     debugShowCheckedModeBanner: false,
     theme: AppTheme.light,
+    darkTheme: AppTheme.dark,
     routerConfig: _router,
   );
 }

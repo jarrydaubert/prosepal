@@ -175,7 +175,6 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
           child: ConfettiWidget(
             confettiController: _confettiController,
             blastDirectionality: BlastDirectionality.explosive,
-            shouldLoop: false,
             colors: const [
               AppColors.primary,
               AppColors.success,
@@ -207,6 +206,10 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
       // Mark first message as done
       await prefs.setBool(PreferenceKeys.hasGeneratedFirstMessage, true);
       Log.info('First message activation', {'option': index + 1});
+      Log.event('first_message_activated', {
+        'occasion': result?.occasion.name ?? 'unknown',
+        'option': index + 1,
+      });
 
       // Celebration: confetti + special snackbar
       if (!_reduceMotion) {
@@ -303,7 +306,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
       context: context,
       builder: (context) => SaveToCalendarDialog(result: result),
     ).then((saved) {
-      if (saved == true) {
+      if (saved ?? false) {
         ref.invalidate(upcomingOccasionsProvider);
       }
     });

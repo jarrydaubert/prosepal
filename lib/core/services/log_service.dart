@@ -1,10 +1,11 @@
 import 'dart:collection';
 
+import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 
-/// Production-grade logging service using Firebase Crashlytics
+/// Production-grade logging service using Firebase Crashlytics + Analytics
 ///
 /// Logs are:
 /// - Visible in Firebase Console under Crashlytics > Logs
@@ -12,15 +13,21 @@ import 'package:flutter/foundation.dart';
 /// - Available in both debug and release builds
 /// - Stored in local buffer for export (last 200 entries)
 ///
+/// Analytics events are:
+/// - Queryable in Firebase Console under Analytics > Events
+/// - Used for funnel analysis and user segmentation
+///
 /// Usage:
 /// ```dart
 /// Log.info('User signed in', {'provider': 'google'});
 /// Log.warning('Paywall dismissed');
 /// Log.error('Purchase failed', error, stackTrace);
+/// Log.event('first_message_activated', {'occasion': 'birthday'}); // Analytics only
 /// Log.getExportableLog(); // Get last 200 entries for user support
 /// ```
 abstract final class Log {
   static FirebaseCrashlytics? _crashlytics;
+  static FirebaseAnalytics? _analytics;
 
   /// In-memory buffer of recent logs for export (privacy-safe)
   static final Queue<LogEntry> _buffer = Queue<LogEntry>();
@@ -36,6 +43,35 @@ abstract final class Log {
     } on Exception catch (_) {
       // Firebase not initialized (e.g., in tests)
       return null;
+    }
+  }
+
+  /// Get Analytics instance, or null if Firebase not initialized
+  static FirebaseAnalytics? get _analyticsInstance {
+    if (_analytics != null) return _analytics;
+    try {
+      Firebase.app();
+      return _analytics = FirebaseAnalytics.instance;
+    } on Exception catch (_) {
+      return null;
+    }
+  }
+
+  /// Log analytics event (queryable in Firebase Console)
+  /// Use for funnel tracking, activation events, and user segmentation
+  static Future<void> event(String name, [Map<String, Object>? params]) async {
+    try {
+      await _analyticsInstance?.logEvent(name: name, parameters: params);
+      if (kDebugMode) {
+        final formatted = _format(
+          'EVENT',
+          name,
+          params?.cast<String, dynamic>(),
+        );
+        debugPrint(formatted);
+      }
+    } on Exception catch (e) {
+      if (kDebugMode) debugPrint('[EVENT ERROR] $name: $e');
     }
   }
 

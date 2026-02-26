@@ -39,11 +39,27 @@ class AuthScreen extends ConsumerStatefulWidget {
 class _AuthScreenState extends ConsumerState<AuthScreen> {
   bool _isLoading = false;
   String? _error;
+  String? _authMethod;
+
+  @override
+  void initState() {
+    super.initState();
+    Log.event('auth_started', {
+      'source': widget.redirectTo ?? 'default',
+      'auto_restore': widget.autoRestore,
+      'is_pro_restore': widget.isProRestore,
+    });
+  }
 
   void _showError(String message) {
     setState(() => _error = message);
-    // Auto-dismiss after 6 seconds (longer for readability)
-    Future.delayed(const Duration(seconds: 6), () {
+    Log.event('auth_error_shown', {
+      'method': _authMethod ?? 'unknown',
+      'message': message,
+      'source': widget.redirectTo ?? 'default',
+    });
+    // Auto-dismiss after 10 seconds (accessibility: give time to read)
+    Future.delayed(const Duration(seconds: 10), () {
       if (mounted && _error == message) {
         setState(() => _error = null);
       }
@@ -56,6 +72,12 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
 
   Future<void> _navigateAfterAuth() async {
     if (!mounted) return;
+
+    Log.event('auth_completed', {
+      'method': _authMethod ?? 'social',
+      'auto_restore': widget.autoRestore,
+      'redirect': widget.redirectTo ?? 'none',
+    });
 
     // Auto-restore for returning users (device has used app before)
     // Try to restore purchases first, then navigate based on Pro status
@@ -88,7 +110,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
           Log.info('Auth success: No Pro found, showing paywall sheet');
           context.go('/home');
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) showPaywall(context, source: 'auth');
+            if (mounted) {
+              showPaywall(context, source: 'auth', force: true);
+            }
           });
           return;
         }
@@ -100,7 +124,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
         // On error, go home and show paywall sheet
         context.go('/home');
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) showPaywall(context, source: 'auth');
+          if (mounted) {
+            showPaywall(context, source: 'auth', force: true);
+          }
         });
         return;
       }
@@ -115,7 +141,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
         // Paywall is now a bottom sheet - go home and show it
         context.go('/home');
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) showPaywall(context, source: 'auth');
+          if (mounted) {
+            showPaywall(context, source: 'auth', force: true);
+          }
         });
       } else {
         // Other redirects (e.g., home) - navigate normally
@@ -137,10 +165,33 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     // (feels contradictory to prompt for security right after authenticating)
     Log.info('Auth success: navigating to home');
     context.go('/home');
+    // Show welcome toast after navigation
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _showWelcomeToast();
+    });
+  }
+
+  void _showWelcomeToast() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Row(
+          children: [
+            Icon(Icons.check_circle, color: Colors.white, size: 20),
+            SizedBox(width: 8),
+            Text("You're all set! Start creating messages."),
+          ],
+        ),
+        duration: Duration(seconds: 2),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: AppColors.success,
+      ),
+    );
   }
 
   Future<void> _signInWithApple() async {
     if (_isLoading) return; // Prevent double-tap race condition
+    _authMethod = 'apple';
+    Log.event('auth_method_selected', {'method': 'apple'});
     setState(() {
       _isLoading = true;
       _error = null;
@@ -178,6 +229,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
 
   Future<void> _signInWithGoogle() async {
     if (_isLoading) return; // Prevent double-tap race condition
+    _authMethod = 'google';
+    Log.event('auth_method_selected', {'method': 'google'});
     setState(() {
       _isLoading = true;
       _error = null;
@@ -214,6 +267,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   }
 
   void _signInWithEmail() {
+    _authMethod = 'email';
+    Log.event('auth_method_selected', {'method': 'email'});
     context.push('/auth/email');
   }
 

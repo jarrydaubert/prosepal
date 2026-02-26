@@ -92,7 +92,7 @@ class _AddOccasionSheetState extends ConsumerState<AddOccasionSheet> {
             const SizedBox(height: 24),
 
             // Occasion picker
-            _SectionLabel('Occasion'),
+            const _SectionLabel('Occasion'),
             const SizedBox(height: 8),
             _OccasionPicker(
               selected: _selectedOccasion,
@@ -101,7 +101,7 @@ class _AddOccasionSheetState extends ConsumerState<AddOccasionSheet> {
             const SizedBox(height: 20),
 
             // Date picker
-            _SectionLabel('Date'),
+            const _SectionLabel('Date'),
             const SizedBox(height: 8),
             _DatePicker(
               selected: _selectedDate,
@@ -110,7 +110,7 @@ class _AddOccasionSheetState extends ConsumerState<AddOccasionSheet> {
             const SizedBox(height: 20),
 
             // Recipient name
-            _SectionLabel('Recipient Name (optional)'),
+            const _SectionLabel('Recipient Name (optional)'),
             const SizedBox(height: 8),
             TextField(
               controller: _nameController,
@@ -134,7 +134,7 @@ class _AddOccasionSheetState extends ConsumerState<AddOccasionSheet> {
             const SizedBox(height: 20),
 
             // Relationship (optional)
-            _SectionLabel('Relationship (optional)'),
+            const _SectionLabel('Relationship (optional)'),
             const SizedBox(height: 8),
             _RelationshipPicker(
               selected: _selectedRelationship,
@@ -143,7 +143,7 @@ class _AddOccasionSheetState extends ConsumerState<AddOccasionSheet> {
             const SizedBox(height: 20),
 
             // Notes
-            _SectionLabel('Notes (optional)'),
+            const _SectionLabel('Notes (optional)'),
             const SizedBox(height: 8),
             TextField(
               controller: _notesController,
@@ -388,10 +388,7 @@ class _DatePicker extends StatelessWidget {
           lastDate: DateTime.now().add(const Duration(days: 365 * 2)),
           builder: (context, child) => Theme(
             data: Theme.of(context).copyWith(
-              colorScheme: const ColorScheme.light(
-                primary: AppColors.primary,
-                onPrimary: Colors.white,
-              ),
+              colorScheme: const ColorScheme.light(primary: AppColors.primary),
             ),
             child: child!,
           ),

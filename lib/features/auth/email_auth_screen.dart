@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../core/config/preference_keys.dart';
 import '../../core/providers/providers.dart';
 import '../../core/services/log_service.dart';
 import '../../shared/components/components.dart';
@@ -45,10 +46,15 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
   String? _sentToEmail;
   int _resendCooldown = 0;
   Timer? _cooldownTimer;
+  String? _authMethod;
 
   @override
   void initState() {
     super.initState();
+    Log.event('auth_started', {
+      'source': widget.showPaywallAfterAuth ? 'paywall' : 'email',
+      'auto_purchase': widget.autoPurchase,
+    });
     // Force password mode for auto-purchase or paywall sync flow
     // (magic link breaks these flows because auth completes outside the app)
     _usePassword = widget.autoPurchase || widget.showPaywallAfterAuth;
@@ -112,12 +118,18 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
   Future<void> _sendMagicLink() async {
     if (!_formKey.currentState!.validate()) return;
 
+    _authMethod = 'magic_link';
+    Log.event('auth_method_selected', {'method': 'magic_link'});
+
     setState(() => _isLoading = true);
 
     try {
       final email = _emailController.text.trim();
       final authService = ref.read(authServiceProvider);
       await authService.signInWithMagicLink(email);
+
+      final prefs = ref.read(sharedPreferencesProvider);
+      await prefs.setBool(PreferenceKeys.pendingMagicLinkAuth, true);
 
       setState(() {
         _emailSent = true;
@@ -133,6 +145,9 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
 
   Future<void> _signInWithPassword() async {
     if (!_formKey.currentState!.validate()) return;
+
+    _authMethod = 'password';
+    Log.event('auth_method_selected', {'method': 'password'});
 
     final email = _emailController.text.trim();
     final throttle = ref.read(authThrottleServiceProvider);
@@ -163,6 +178,8 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
       if (response.user != null) {
         await ref.read(usageServiceProvider).syncFromServer();
       }
+
+      Log.event('auth_completed', {'method': 'password'});
 
       // Navigate after successful auth
       if (mounted) {
@@ -333,8 +350,56 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
     }
   }
 
+  Future<void> _forgotPassword() async {
+    final email = _emailController.text.trim();
+    if (email.isEmpty) {
+      _showError('Please enter your email first');
+      return;
+    }
+    if (_validateEmail(email) != null) {
+      _showError('Please enter a valid email');
+      return;
+    }
+
+    setState(() => _isLoading = true);
+    try {
+      final authService = ref.read(authServiceProvider);
+      await authService.resetPassword(email);
+      Log.info('Password reset email sent', {'email': email});
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.white, size: 20),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text('Password reset link sent! Check your email.'),
+                ),
+              ],
+            ),
+            backgroundColor: AppColors.success,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        );
+      }
+    } on Exception catch (e) {
+      Log.warning('Password reset failed', {'error': '$e'});
+      _showError('Failed to send reset email. Please try again.');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
   void _showError(String message) {
     if (mounted) {
+      Log.event('auth_error_shown', {
+        'method': _authMethod ?? 'email',
+        'message': message,
+      });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Row(
@@ -406,6 +471,7 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
                     _usePassword = !_usePassword;
                     _passwordController.clear();
                   }),
+                  onForgotPassword: _forgotPassword,
                   validateEmail: _validateEmail,
                 ),
         ),
@@ -567,6 +633,7 @@ class _EmailInputView extends StatelessWidget {
     required this.showPaywallAfterAuth,
     required this.onSubmit,
     required this.onToggleMode,
+    required this.onForgotPassword,
     required this.validateEmail,
   });
 
@@ -579,6 +646,7 @@ class _EmailInputView extends StatelessWidget {
   final bool showPaywallAfterAuth;
   final VoidCallback onSubmit;
   final VoidCallback onToggleMode;
+  final VoidCallback onForgotPassword;
   final String? Function(String?) validateEmail;
 
   @override
@@ -650,6 +718,19 @@ class _EmailInputView extends StatelessWidget {
               validator: validateEmail,
               onSubmitted: usePassword ? null : (_) => onSubmit(),
             ),
+            Padding(
+              padding: const EdgeInsets.only(top: 6, left: 4),
+              child: Row(
+                children: [
+                  Icon(Icons.lock_outline, size: 12, color: Colors.grey[500]),
+                  const SizedBox(width: 4),
+                  Text(
+                    "We'll never share your email",
+                    style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                  ),
+                ],
+              ),
+            ),
             if (usePassword) ...[
               const SizedBox(height: 16),
               _StyledTextField(
@@ -666,8 +747,23 @@ class _EmailInputView extends StatelessWidget {
                 },
                 onSubmitted: (_) => onSubmit(),
               ),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: onForgotPassword,
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  child: Text(
+                    'Forgot password?',
+                    style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                  ),
+                ),
+              ),
             ],
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
             _PrimaryButton(
               label: usePassword ? 'Sign In' : 'Send Magic Link',
               isLoading: isLoading,

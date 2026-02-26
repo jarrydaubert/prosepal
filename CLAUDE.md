@@ -70,7 +70,7 @@ lib/
 | Tier | Limit |
 |------|-------|
 | Free | 1 total (lifetime) |
-| Pro | 500/month |
+| Pro | Unlimited (fair use: 500/month) |
 
 ## Firebase Remote Config (CONFIGURED)
 

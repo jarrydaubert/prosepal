@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:prosepal/core/services/rate_limit_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../mocks/mock_device_fingerprint_service.dart';
 
@@ -11,6 +12,12 @@ import '../mocks/mock_device_fingerprint_service.dart';
 /// - BUG-003: Confusing error messages when rate limited
 /// - BUG-004: App crash when Supabase not initialized
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
+  });
+
   group('RateLimitService', () {
     group('RateLimitResult', () {
       test('allowed result has empty error message', () {
