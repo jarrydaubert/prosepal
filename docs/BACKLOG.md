@@ -8,8 +8,6 @@
 
 | Item | Action Required |
 |------|-----------------|
-| **RevenueCat offerings empty** | Go to https://app.revenuecat.com → Products → Offerings → Add packages to 'default' |
-| **Test on real device** | Connect device, run `flutter run`, test Apple Sign In + paywall |
 | **App Store ID for reviews** | Add to `_rateApp()` in settings_screen.dart after app goes live |
 
 ---
@@ -18,9 +16,7 @@
 
 | Priority | Item | Effort | Impact |
 |----------|------|--------|--------|
-| **P0** | **RevenueCat offerings config** | Low | BLOCKER |
-| **P0** | **Real device testing** | Low | BLOCKER |
-| **P0** | **App Store ID for reviews** | Low | BLOCKER |
+| **P0** | **App Store ID for reviews** | Low | Post-approval |
 | P4 | Dark mode support | High | Medium |
 
 ---

@@ -83,7 +83,8 @@ prosepal/
 │   │       ├── subscription_service.dart  # RevenueCat subscriptions
 │   │       ├── usage_service.dart    # Free tier usage tracking
 │   │       ├── review_service.dart   # App Store review prompts
-│   │       └── error_log_service.dart  # Crashlytics error logging
+│   │       ├── log_service.dart      # Production logging via Crashlytics
+│   │       └── error_log_service.dart  # In-memory error log for feedback
 │   │
 │   ├── features/                 # Feature modules (screens + widgets)
 │   │   ├── auth/
