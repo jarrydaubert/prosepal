@@ -162,11 +162,14 @@ lib/
 
 ## Monetization & Usage Limits
 
-| Tier | Daily Limit | Monthly Limit | Price |
-|------|-------------|---------------|-------|
-| Free | 3/day | ~90/mo | $0 |
-| Pro Monthly | 50/day | 500/mo | $4.99/mo |
-| Pro Yearly | 50/day | 500/mo | $29.99/yr |
+| Tier | Limit | Price |
+|------|-------|-------|
+| Free | 3 total (lifetime) | $0 |
+| Pro Weekly | 500/mo | $2.99/wk |
+| Pro Monthly | 500/mo | $4.99/mo |
+| Pro Yearly | 500/mo | $29.99/yr |
+
+**Free tier = 3 generations EVER (not daily). Limits your cost to $0.00012 per free user.**
 
 **Usage tracked locally (SharedPreferences), subscription via RevenueCat.**
 
