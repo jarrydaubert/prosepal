@@ -120,6 +120,7 @@ class _DetailsInputState extends State<DetailsInput> {
               hintText: 'e.g., She loves gardening, Just got promoted',
               icon: Icons.notes_outlined,
               maxLines: 4,
+              maxLength: 300,
               onChanged: widget.onPersonalDetailsChanged,
             ),
             const SizedBox(height: 24),
@@ -165,6 +166,7 @@ class _StyledTextField extends StatelessWidget {
     required this.icon,
     required this.onChanged,
     this.maxLines = 1,
+    this.maxLength,
   });
 
   final TextEditingController controller;
@@ -172,6 +174,7 @@ class _StyledTextField extends StatelessWidget {
   final IconData icon;
   final void Function(String) onChanged;
   final int maxLines;
+  final int? maxLength;
 
   @override
   Widget build(BuildContext context) {
@@ -184,6 +187,7 @@ class _StyledTextField extends StatelessWidget {
       child: TextField(
         controller: controller,
         maxLines: maxLines,
+        maxLength: maxLength,
         textCapitalization: maxLines > 1
             ? TextCapitalization.sentences
             : TextCapitalization.words,
@@ -200,6 +204,7 @@ class _StyledTextField extends StatelessWidget {
           border: InputBorder.none,
           contentPadding:
               const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          counterStyle: TextStyle(color: Colors.grey[500], fontSize: 12),
         ),
       ),
     );

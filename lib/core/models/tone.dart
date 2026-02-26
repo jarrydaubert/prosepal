@@ -22,6 +22,18 @@ enum Tone {
     emoji: '📝',
     prompt: 'professional, respectful, and polished',
     description: 'Professional and polished',
+  ),
+  inspirational(
+    label: 'Inspirational',
+    emoji: '✨',
+    prompt: 'uplifting, motivational, and encouraging',
+    description: 'Uplifting and motivational',
+  ),
+  playful(
+    label: 'Playful',
+    emoji: '😜',
+    prompt: 'cheeky, teasing, and fun with gentle sarcasm',
+    description: 'Cheeky and teasing',
   );
 
   const Tone({

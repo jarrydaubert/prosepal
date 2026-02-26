@@ -13,10 +13,13 @@ import '../../core/services/biometric_service.dart';
 import '../../shared/theme/app_colors.dart';
 
 class AuthScreen extends ConsumerStatefulWidget {
-  const AuthScreen({super.key, this.redirectTo});
+  const AuthScreen({super.key, this.redirectTo, this.isProRestore = false});
   
   /// Optional route to navigate to after successful auth (e.g., 'paywall')
   final String? redirectTo;
+  
+  /// True if user has Pro from App Store but needs to sign in to claim it
+  final bool isProRestore;
 
   @override
   ConsumerState<AuthScreen> createState() => _AuthScreenState();
@@ -185,6 +188,46 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                   height: 1.5,
                 ),
               ).animate(key: const ValueKey('tagline')).fadeIn(delay: 500.ms),
+
+              // Pro restore banner
+              if (widget.isProRestore) ...[
+                const SizedBox(height: 24),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppColors.success.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.success),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.star, color: AppColors.success, size: 24),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Pro subscription found!',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.success,
+                              ),
+                            ),
+                            Text(
+                              'Sign in to restore your Pro access',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.grey[700],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ).animate().fadeIn(delay: 600.ms).slideY(begin: 0.2),
+              ],
 
               const Spacer(flex: 2),
 
