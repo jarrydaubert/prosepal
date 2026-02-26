@@ -167,17 +167,19 @@ Recommendation for next release:
 - Customer info invalidation/refetch paths exist.
 - RevenueCat anonymous identity now uses a persisted app-specific anonymous ID (instead of random SDK logout IDs) to reduce synthetic "new users" inflation in dashboard metrics.
 
-### Restore behavior policy (must be explicit for vNext)
+### Restore behavior policy
 - Anonymous purchase remains allowed.
 - Canonical identity:
   - authenticated: Supabase user ID
   - signed-out: persisted app-specific anonymous ID
 - On auth, RevenueCat identity is switched via `logIn(userId)` to reconcile entitlements.
-- Before vNext release, the project-level RevenueCat "Restore Behavior" setting and expected support outcomes must be documented in release docs:
+- RevenueCat project restore behavior target: `Transfer to new App User ID`.
+- Expected outcomes are documented for:
   - anonymous purchase -> login
   - user switch on same device
   - reinstall + restore
-- Premium-critical surfaces must explicitly refresh customer info before showing entitlement-dependent actions.
+- Premium-critical surfaces refresh customer info before showing entitlement-dependent actions.
+- Source of truth: `docs/REVENUECAT_POLICY.md`.
 
 ### Paywall controls
 - Paywall shown as bottom sheet, not route page.

@@ -19,6 +19,7 @@ import '../../shared/theme/app_colors.dart';
 import '../../shared/theme/app_spacing.dart';
 
 const _paywallCooldown = Duration(hours: 24);
+const _proEntitlementId = 'pro';
 
 /// Shows the paywall as a modal bottom sheet with inline auth.
 ///
@@ -45,9 +46,23 @@ Future<bool> showPaywall(
     return false;
   }
 
-  final prefs = ProviderScope.containerOf(
-    context,
-  ).read(sharedPreferencesProvider);
+  final container = ProviderScope.containerOf(context);
+  final prefs = container.read(sharedPreferencesProvider);
+
+  // Refresh entitlement state before showing paywall to avoid stale unlock UX.
+  final subscriptionService = container.read(subscriptionServiceProvider);
+  if (subscriptionService.isConfigured) {
+    final customerInfo = await subscriptionService.getCustomerInfo();
+    final hasPro =
+        customerInfo?.entitlements.active.containsKey(_proEntitlementId) ??
+        false;
+    if (hasPro && !force) {
+      Log.info('Paywall skipped: active entitlement after refresh', {
+        'source': source,
+      });
+      return false;
+    }
+  }
 
   if (!force) {
     final lastDismissed = prefs.getString(PreferenceKeys.paywallLastDismissed);

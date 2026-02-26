@@ -20,5 +20,6 @@ flutter test
 - `docs/BACKLOG.md` - Only open work tracker
 - `docs/TEST_STRATEGY.md` - Testing framework and gates
 - `docs/REMOTE_CONFIG.md` - Remote Config keys and safety rules
+- `docs/REVENUECAT_POLICY.md` - Subscription identity and restore policy
 - `docs/SUPABASE_TESTS.md` - Supabase verification runbook
 - `docs/DOCS_POLICY.md` - Evergreen documentation rules
