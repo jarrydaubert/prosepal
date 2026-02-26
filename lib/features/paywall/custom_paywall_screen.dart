@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -7,7 +8,6 @@ import 'package:go_router/go_router.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 
 import '../../core/providers/providers.dart';
-import '../../core/services/biometric_service.dart';
 import '../../core/services/log_service.dart';
 import '../../shared/theme/app_colors.dart';
 import '../../shared/theme/app_spacing.dart';
@@ -43,12 +43,14 @@ class _CustomPaywallScreenState extends ConsumerState<CustomPaywallScreen> {
   Future<void> _loadOfferings() async {
     try {
       final offerings = await Purchases.getOfferings();
-      // Debug: Log currency info
-      for (final pkg in offerings.current?.availablePackages ?? []) {
-        debugPrint(
-          'RevenueCat: ${pkg.storeProduct.identifier} - '
-          '${pkg.storeProduct.currencyCode} - ${pkg.storeProduct.priceString}',
-        );
+      // Debug: Log currency info (only in debug builds)
+      if (kDebugMode) {
+        for (final pkg in offerings.current?.availablePackages ?? []) {
+          debugPrint(
+            'RevenueCat: ${pkg.storeProduct.identifier} - '
+            '${pkg.storeProduct.currencyCode} - ${pkg.storeProduct.priceString}',
+          );
+        }
       }
       if (mounted) {
         setState(() {
@@ -113,8 +115,10 @@ class _CustomPaywallScreenState extends ConsumerState<CustomPaywallScreen> {
         bool biometricsAvailable = false;
         bool biometricsEnabled = false;
         try {
-          biometricsAvailable = await BiometricService.instance.isSupported;
-          biometricsEnabled = await BiometricService.instance.isEnabled;
+          // Use provider for consistency and testability
+          final biometricService = ref.read(biometricServiceProvider);
+          biometricsAvailable = await biometricService.isSupported;
+          biometricsEnabled = await biometricService.isEnabled;
           Log.info('Purchase: Biometrics check', {
             'available': biometricsAvailable,
             'enabled': biometricsEnabled,
@@ -642,10 +646,14 @@ class _CustomPaywallScreenState extends ConsumerState<CustomPaywallScreen> {
     );
   }
 
-  /// Calculate weekly equivalent price for comparison
+  /// Calculate weekly equivalent price for comparison.
+  /// Returns empty string on error or if price is invalid/zero.
   String _getWeeklyEquivalent(Package package) {
     try {
       final price = package.storeProduct.price;
+      // Guard against zero/negative prices (e.g., free trials)
+      if (price <= 0) return '';
+
       final currencySymbol = package.storeProduct.currencyCode == 'USD'
           ? '\$'
           : package.storeProduct.priceString

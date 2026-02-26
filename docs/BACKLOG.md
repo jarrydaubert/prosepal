@@ -110,6 +110,11 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 | Email auth localization | `email_auth_screen.dart` | Extract strings to .arb files |
 | Email auth accessibility | `email_auth_screen.dart` | Add Semantics widgets, verify contrast ratios |
 | Sign-up integration | `email_auth_screen.dart` | Link to sign-up screen or auto-detect new users |
+| Paywall localization | `custom_paywall_screen.dart` | Extract strings, use NumberFormat for currencies |
+| Paywall accessibility | `custom_paywall_screen.dart` | Add Semantics, increase legal text size, verify contrast |
+| Paywall analytics | `custom_paywall_screen.dart` | Track impressions, package views, conversions |
+| Intro/promo offers | `custom_paywall_screen.dart` | Support RevenueCat promotional offers and trials |
+| Offering retry | `custom_paywall_screen.dart` | Add retry button on load failure, cache last-known |
 
 ---
 
