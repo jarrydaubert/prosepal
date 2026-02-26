@@ -140,16 +140,34 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     final titleSize = isSmallScreen ? 24.0 : 28.0;
     final subtitleSize = isSmallScreen ? 15.0 : 16.0;
 
+    // Can dismiss if user came from another screen (has redirectTo)
+    final canDismiss = widget.redirectTo != null;
+    final isPaywallRedirect = widget.redirectTo == 'paywall';
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 40),
-          child: Column(
-            children: [
-              const Spacer(flex: 2),
+        child: Stack(
+          children: [
+            // Close button (top-right) when user can dismiss
+            if (canDismiss)
+              Positioned(
+                top: 8,
+                right: 8,
+                child: IconButton(
+                  onPressed: () => context.pop(),
+                  icon: const Icon(Icons.close, size: 28),
+                  color: AppColors.textSecondary,
+                  tooltip: 'Close',
+                ),
+              ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 40),
+              child: Column(
+                children: [
+                  const Spacer(flex: 2),
 
-              // App Logo with bold border container
+                  // App Logo with bold border container
               Container(
                     width: logoSize,
                     height: logoSize,
@@ -195,6 +213,41 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                   height: 1.5,
                 ),
               ).animate(key: const ValueKey('tagline')).fadeIn(delay: 500.ms),
+
+              // Subscription sign-in prompt (when coming from paywall)
+              if (isPaywallRedirect) ...[
+                const SizedBox(height: 24),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: AppColors.primary.withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.account_circle_outlined,
+                        color: AppColors.primary,
+                        size: 24,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'Create an account to purchase a subscription',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[700],
+                            height: 1.4,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ).animate().fadeIn(delay: 600.ms).slideY(begin: 0.2),
+              ],
 
               // Pro restore banner
               if (widget.isProRestore) ...[
@@ -316,9 +369,11 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                   onPrivacyTap: () => context.pushNamed('privacy'),
                 ).animate().fadeIn(delay: 800.ms),
 
-              const SizedBox(height: 20),
-            ],
-          ),
+                  const SizedBox(height: 20),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
