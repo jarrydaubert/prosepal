@@ -201,12 +201,12 @@ Google requires closed testing before production release:
 - Resubscribe: Allow ✅
 - Product IDs match RevenueCat ✅
 
-### Manual Testing (Before Submission) ⏳ PENDING
+### Manual Testing ✅ DONE
 
-- [ ] TestFlight: Fresh install → Onboard → Generate → Purchase → Restore
-- [ ] TestFlight: Sign out clears everything
-- [ ] TestFlight: Delete account works
-- [ ] Play Store Internal: Same flows as above
+Tested via TestFlight before submission:
+- Fresh install → Onboard → Generate → Purchase → Restore
+- Sign out clears everything
+- Delete account works
 
 ---
 
@@ -216,10 +216,9 @@ Google requires closed testing before production release:
 
 - [x] Apple ID `6757088726` added to `review_service.dart` and `settings_screen.dart`
 - [ ] Verify in-app review prompt works in production
-- [ ] **Add App Store badge to landing page** (prosepal-web)
-  - Use official Apple badge: https://developer.apple.com/app-store/marketing/guidelines/
-  - Link to: `https://apps.apple.com/app/prosepal/id6757088726`
-  - Add "Android Coming Soon" placeholder badge
+- [ ] **Deploy landing page with App Store badge** (prosepal-web)
+  - Ready locally with official Apple badge + "Android coming soon"
+  - Deploy after approval: `cd prosepal-web && git add . && git commit -m "Add App Store badge" && git push`
 
 ### After Play Store Approval
 
