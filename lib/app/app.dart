@@ -77,12 +77,19 @@ class _ProsepalAppState extends ConsumerState<ProsepalApp>
           // Sync usage from server (restores usage after reinstall)
           await ref.read(usageServiceProvider).syncFromServer();
           Log.info('Auth listener: Usage synced from server');
-          // Note: Navigation is handled by AuthScreen._navigateAfterAuth()
-          // This listener handles deep link / magic link callbacks when app is backgrounded
+
+          // Navigate after sign-in
+          // - Magic links: user returns to app, listener must navigate
+          // - Apple/Google/Email buttons: AuthScreen navigates directly
+          // - To avoid race conditions, only navigate if on auth screens
+          //   (Apple/Google navigate immediately, won't be on /auth anymore)
           final currentPath =
               appRouter.routerDelegate.currentConfiguration.fullPath;
-          if (!currentPath.startsWith('/auth')) {
-            Log.info('Auth listener: Navigating to /home (from $currentPath)');
+          if (currentPath.startsWith('/auth')) {
+            // Still on auth screen = magic link callback, navigate away
+            Log.info(
+              'Auth listener: Magic link sign-in, navigating to /home (from $currentPath)',
+            );
             appRouter.go('/home');
           }
         } else if (event == AuthChangeEvent.signedOut) {
