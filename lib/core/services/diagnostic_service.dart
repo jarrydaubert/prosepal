@@ -138,7 +138,7 @@ abstract final class DiagnosticService {
         buffer.writeln('Subscription: Unable to retrieve');
       }
     } else {
-      buffer.writeln('Pro Status: Not configured (debug build)');
+      buffer.writeln('Pro Status: Not configured');
     }
     buffer.writeln();
 
