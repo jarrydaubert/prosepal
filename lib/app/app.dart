@@ -62,24 +62,33 @@ class _ProsepalAppState extends ConsumerState<ProsepalApp>
       supabase.client.auth.onAuthStateChange.listen((data) async {
         final event = data.event;
         final session = data.session;
+        Log.info('Auth state changed', {
+          'event': event.name,
+          'hasSession': session != null,
+          'userId': session?.user.id.substring(0, 8),
+        });
 
         if (event == AuthChangeEvent.signedIn && session != null) {
           // Link RevenueCat to user for purchase restoration
           await ref
               .read(subscriptionServiceProvider)
               .identifyUser(session.user.id);
+          Log.info('Auth listener: RevenueCat identified');
           // Sync usage from server (restores usage after reinstall)
           await ref.read(usageServiceProvider).syncFromServer();
+          Log.info('Auth listener: Usage synced from server');
           // Note: Navigation is handled by AuthScreen._navigateAfterAuth()
           // This listener handles deep link / magic link callbacks when app is backgrounded
           final currentPath =
               appRouter.routerDelegate.currentConfiguration.fullPath;
           if (!currentPath.startsWith('/auth')) {
+            Log.info('Auth listener: Navigating to /home (from $currentPath)');
             appRouter.go('/home');
           }
         } else if (event == AuthChangeEvent.signedOut) {
           // Clear sync marker so next user gets fresh sync
           await ref.read(usageServiceProvider).clearSyncMarker();
+          Log.info('Auth listener: Sync marker cleared (signedOut)');
           // Note: Navigation is handled by caller (settings_screen)
           // Sign out → /home, Delete account → /onboarding
         }
