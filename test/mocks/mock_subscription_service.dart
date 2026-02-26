@@ -1,55 +1,139 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show visibleForTesting;
+import 'package:flutter/services.dart' show PlatformException;
 import 'package:prosepal/core/interfaces/subscription_interface.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 
 /// Mock implementation of ISubscriptionService for testing
 ///
-/// Supports:
+/// Designed for purchases_flutter 7.x (tested with v7.2.0).
+///
+/// ## Features
 /// - Configurable state (isPro, offerings, customerInfo)
 /// - Call tracking and parameter capture
 /// - Global and per-method error simulation
+/// - RevenueCat-specific error helpers (cancelled, network, store errors)
 /// - CustomerInfo listener stream for state-management tests
+/// - Multi-tier entitlement support
 ///
-/// ## Usage
+/// ## Basic Usage
 /// ```dart
 /// final mockSub = MockSubscriptionService();
 /// mockSub.setIsPro(true);
 /// mockSub.purchaseResult = true;
-/// mockSub.methodErrors['restorePurchases'] = Exception('Network error');
+/// ```
+///
+/// ## Error Simulation
+/// ```dart
+/// // User cancelled purchase:
+/// mockSub.simulatePurchaseCancelled();
+///
+/// // Network error:
+/// mockSub.simulateNetworkError();
+///
+/// // Per-method error:
+/// mockSub.methodErrors['restorePurchases'] = Exception('Store error');
+/// ```
+///
+/// ## Multi-tier Entitlements
+/// ```dart
+/// mockSub.setEntitlement('premium', true);
+/// mockSub.setEntitlement('pro', false);
+/// expect(await mockSub.hasEntitlement('premium'), true);
 /// ```
 class MockSubscriptionService implements ISubscriptionService {
-  // Configurable state for tests
+  // ---------------------------------------------------------------------------
+  // Configuration
+  // ---------------------------------------------------------------------------
+
   bool _isConfigured = true;
   bool _isPro = false;
   CustomerInfo? _customerInfo;
   Offerings? _offerings;
 
-  // Configuration methods for tests
+  /// Set the configured state
   void setConfigured(bool value) => _isConfigured = value;
+
+  /// Set the pro subscription state
   void setIsPro(bool value) => _isPro = value;
+
+  /// Set the CustomerInfo to return
   void setCustomerInfo(CustomerInfo? value) => _customerInfo = value;
+
+  /// Set the Offerings to return
   void setOfferings(Offerings? value) => _offerings = value;
 
-  // Tracking for test verification
+  // ---------------------------------------------------------------------------
+  // Call Tracking
+  // ---------------------------------------------------------------------------
+
+  /// Number of times initialize() was called
+  @visibleForTesting
   int initializeCallCount = 0;
+
+  /// Number of times isPro() was called
+  @visibleForTesting
   int isProCallCount = 0;
+
+  /// Number of times getCustomerInfo() was called
+  @visibleForTesting
   int getCustomerInfoCallCount = 0;
+
+  /// Number of times getOfferings() was called
+  @visibleForTesting
   int getOfferingsCallCount = 0;
+
+  /// Number of times purchasePackage() was called
+  @visibleForTesting
   int purchasePackageCallCount = 0;
+
+  /// Number of times restorePurchases() was called
+  @visibleForTesting
   int restorePurchasesCallCount = 0;
+
+  /// Number of times showPaywall() was called
+  @visibleForTesting
   int showPaywallCallCount = 0;
+
+  /// Number of times showPaywallIfNeeded() was called
+  @visibleForTesting
   int showPaywallIfNeededCallCount = 0;
+
+  /// Number of times showCustomerCenter() was called
+  @visibleForTesting
   int showCustomerCenterCallCount = 0;
+
+  /// Number of times identifyUser() was called
+  @visibleForTesting
   int identifyUserCallCount = 0;
+
+  /// Number of times logOut() was called
+  @visibleForTesting
   int logOutCallCount = 0;
 
+  /// Last userId passed to identifyUser()
+  @visibleForTesting
   String? lastIdentifiedUserId;
+
+  /// Last package passed to purchasePackage()
+  @visibleForTesting
   Package? lastPurchasedPackage;
 
-  // Results to return
+  // ---------------------------------------------------------------------------
+  // Result Configuration
+  // ---------------------------------------------------------------------------
+
+  /// Result to return from purchasePackage()
+  @visibleForTesting
   bool purchaseResult = true;
+
+  /// Result to return from restorePurchases()
+  @visibleForTesting
   bool restoreResult = false;
+
+  /// Result to return from showPaywall() and showPaywallIfNeeded()
+  @visibleForTesting
   bool paywallResult = false;
 
   /// Alias for paywallResult - controls showPaywall() return value
@@ -57,6 +141,7 @@ class MockSubscriptionService implements ISubscriptionService {
   bool get showPaywallResult => paywallResult;
 
   /// Delay before showPaywall completes (for testing loading states)
+  @visibleForTesting
   Duration? showPaywallDelay;
 
   /// Error to throw specifically for restore (shorthand for methodErrors)
@@ -68,20 +153,100 @@ class MockSubscriptionService implements ISubscriptionService {
     }
   }
 
-  // Error simulation
+  // ---------------------------------------------------------------------------
+  // Error Simulation
+  // ---------------------------------------------------------------------------
+
+  /// Global error - thrown by any method if set
+  @visibleForTesting
   Exception? errorToThrow;
 
   /// Per-method errors - takes precedence over [errorToThrow]
+  ///
   /// Keys: 'initialize', 'isPro', 'getCustomerInfo', 'getOfferings',
   /// 'purchasePackage', 'restorePurchases', 'showPaywall', 'showPaywallIfNeeded',
-  /// 'showCustomerCenter', 'identifyUser', 'logOut'
+  /// 'showCustomerCenter', 'identifyUser', 'logOut', 'hasEntitlement'
+  @visibleForTesting
   final Map<String, Exception> methodErrors = {};
 
   Exception? _getError(String method) {
     return methodErrors[method] ?? errorToThrow;
   }
 
-  // CustomerInfo listener stream
+  /// Create a PlatformException matching RevenueCat error format
+  ///
+  /// Use with PurchasesErrorHelper.getErrorCode() in production code.
+  static PlatformException createRevenueCatError(
+    PurchasesErrorCode code, [
+    String? message,
+  ]) {
+    return PlatformException(
+      code: code.index.toString(),
+      message: message ?? code.name,
+      details: {'code': code.index, 'readableErrorCode': code.name},
+    );
+  }
+
+  /// Simulate purchase cancelled by user (PurchasesErrorCode.purchaseCancelledError)
+  void simulatePurchaseCancelled() {
+    errorToThrow = createRevenueCatError(
+      PurchasesErrorCode.purchaseCancelledError,
+      'Purchase was cancelled',
+    );
+  }
+
+  /// Simulate payment pending (iOS Ask to Buy) (PurchasesErrorCode.paymentPendingError)
+  void simulatePaymentPending() {
+    errorToThrow = createRevenueCatError(
+      PurchasesErrorCode.paymentPendingError,
+      'Payment pending parental approval',
+    );
+  }
+
+  /// Simulate store problem (PurchasesErrorCode.storeProblemError)
+  void simulateStoreProblem([String message = 'App Store error']) {
+    errorToThrow = createRevenueCatError(
+      PurchasesErrorCode.storeProblemError,
+      message,
+    );
+  }
+
+  /// Simulate network error (PurchasesErrorCode.networkError)
+  void simulateNetworkError([String message = 'Network error']) {
+    errorToThrow = createRevenueCatError(
+      PurchasesErrorCode.networkError,
+      message,
+    );
+  }
+
+  /// Simulate purchase not allowed (PurchasesErrorCode.purchaseNotAllowedError)
+  void simulatePurchaseNotAllowed([String message = 'Purchases not allowed']) {
+    errorToThrow = createRevenueCatError(
+      PurchasesErrorCode.purchaseNotAllowedError,
+      message,
+    );
+  }
+
+  /// Simulate product not available (PurchasesErrorCode.productNotAvailableForPurchaseError)
+  void simulateProductNotAvailable([String message = 'Product not available']) {
+    errorToThrow = createRevenueCatError(
+      PurchasesErrorCode.productNotAvailableForPurchaseError,
+      message,
+    );
+  }
+
+  /// Simulate configuration error (PurchasesErrorCode.configurationError)
+  void simulateConfigurationError([String message = 'Configuration error']) {
+    errorToThrow = createRevenueCatError(
+      PurchasesErrorCode.configurationError,
+      message,
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // CustomerInfo Stream
+  // ---------------------------------------------------------------------------
+
   final _customerInfoController = StreamController<CustomerInfo>.broadcast();
 
   /// Emit a CustomerInfo update to all registered listeners
@@ -90,6 +255,11 @@ class MockSubscriptionService implements ISubscriptionService {
     _customerInfo = info;
   }
 
+  // ---------------------------------------------------------------------------
+  // Reset & Dispose
+  // ---------------------------------------------------------------------------
+
+  /// Reset all state and counters to defaults
   void reset() {
     _isConfigured = true;
     _isPro = false;
@@ -119,9 +289,14 @@ class MockSubscriptionService implements ISubscriptionService {
     methodErrors.clear();
   }
 
+  /// Dispose the stream controller to prevent leaks
   void dispose() {
     _customerInfoController.close();
   }
+
+  // ---------------------------------------------------------------------------
+  // ISubscriptionService Implementation
+  // ---------------------------------------------------------------------------
 
   @override
   bool get isConfigured => _isConfigured;
@@ -145,6 +320,10 @@ class MockSubscriptionService implements ISubscriptionService {
     return hasEntitlement('pro');
   }
 
+  // ---------------------------------------------------------------------------
+  // Multi-tier Entitlements
+  // ---------------------------------------------------------------------------
+
   /// Map of entitlement IDs to their active status
   /// Default: only 'pro' is checked, controlled by _isPro
   final Map<String, bool> _entitlements = {};
@@ -154,7 +333,12 @@ class MockSubscriptionService implements ISubscriptionService {
     _entitlements[entitlementId] = active;
   }
 
+  /// Number of times hasEntitlement() was called
+  @visibleForTesting
   int hasEntitlementCallCount = 0;
+
+  /// Last entitlement ID passed to hasEntitlement()
+  @visibleForTesting
   String? lastCheckedEntitlement;
 
   @override
