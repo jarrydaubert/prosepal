@@ -21,30 +21,11 @@
 | **P0** | **RevenueCat offerings config** | Low | BLOCKER |
 | **P0** | **Real device testing** | Low | BLOCKER |
 | **P0** | **App Store ID for reviews** | Low | BLOCKER |
-| P4 | Performance optimizations | Medium | Medium |
 | P4 | Dark mode support | High | Medium |
 
 ---
 
-## 1. Performance Optimizations
-
-### Lazy Loading
-
-| Screen | Optimization |
-|--------|--------------|
-| Home | Lazy load occasion cards below fold |
-| Settings | Lazy load sections |
-| Results | Virtualize message list if > 10 |
-
-### Image Optimization
-
-| Asset | Current | Target |
-|-------|---------|--------|
-| App icon | Standard | Adaptive icon (Android) |
-
----
-
-## 2. SettingsScreen Polish
+## 1. SettingsScreen Polish
 
 ### Missing Features
 
@@ -62,7 +43,7 @@
 
 ---
 
-## 3. Dark Mode Support
+## 2. Dark Mode Support
 
 **Priority:** P4
 
@@ -73,7 +54,7 @@
 
 ---
 
-## 4. App Store Optimization (ASO) Metadata
+## 3. App Store Optimization (ASO) Metadata
 
 > Use when submitting to App Store Connect.
 
