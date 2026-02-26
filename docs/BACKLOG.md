@@ -134,7 +134,7 @@
 |------|--------|
 | ~~Model name hardcoded~~ | DONE - RemoteConfigService fetches `ai_model` from Remote Config |
 | Wire up model 404 fallback | `ai_service.dart:339` - Call `switchToFallback()` when model returns 404 |
-| `gemini-2.0-flash` deprecation | Monitor Google announcements, update Remote Config when needed |
+| Model version monitoring | Currently using gemini-2.5-flash; set Remote Config to gemini-3-flash-preview for latest |
 
 ### Supabase - Monitor 2026
 
