@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../core/providers/providers.dart';
@@ -10,7 +11,11 @@ import '../shared/theme/app_theme.dart';
 import 'router.dart';
 
 class ProsepalApp extends ConsumerStatefulWidget {
-  const ProsepalApp({super.key});
+  const ProsepalApp({super.key, this.router});
+
+  /// Optional custom router (used for route guards with SharedPreferences).
+  /// If not provided, falls back to default appRouter without guards.
+  final GoRouter? router;
 
   @override
   ConsumerState<ProsepalApp> createState() => _ProsepalAppState();
@@ -24,6 +29,9 @@ class _ProsepalAppState extends ConsumerState<ProsepalApp>
   // Require re-auth if backgrounded for more than this duration
   // 60s is reasonable for a content app (not banking-level security)
   static const _lockTimeout = Duration(seconds: 60);
+
+  /// Get the router to use (custom or default)
+  GoRouter get _router => widget.router ?? appRouter;
 
   @override
   void initState() {
@@ -72,7 +80,7 @@ class _ProsepalAppState extends ConsumerState<ProsepalApp>
     }
 
     // Skip if already on lock screen or splash
-    final currentPath = appRouter.routerDelegate.currentConfiguration.fullPath;
+    final currentPath = _router.routerDelegate.currentConfiguration.fullPath;
     if (currentPath == '/lock' || currentPath == '/splash') {
       return;
     }
@@ -86,7 +94,7 @@ class _ProsepalAppState extends ConsumerState<ProsepalApp>
 
       if (isEnabled && isAvailable) {
         Log.info('Biometric lock on resume - redirecting to /lock');
-        appRouter.go('/lock');
+        _router.go('/lock');
       }
     } catch (e) {
       Log.warning('Failed to check biometric lock on resume', {'error': '$e'});
@@ -113,10 +121,14 @@ class _ProsepalAppState extends ConsumerState<ProsepalApp>
           // Identify with RevenueCat to restore Pro entitlements
           // This is safe - "New Customers" metric tracks first purchase, not identification
           try {
-            await ref.read(subscriptionServiceProvider).identifyUser(session.user.id);
+            await ref
+                .read(subscriptionServiceProvider)
+                .identifyUser(session.user.id);
             Log.info('Auth listener: RevenueCat identified');
           } catch (e) {
-            Log.warning('Auth listener: RevenueCat identify failed', {'error': '$e'});
+            Log.warning('Auth listener: RevenueCat identify failed', {
+              'error': '$e',
+            });
           }
 
           // Sync usage from server (restores usage after reinstall)
@@ -134,13 +146,13 @@ class _ProsepalAppState extends ConsumerState<ProsepalApp>
           //   (Apple/Google navigate immediately, won't be on /auth anymore)
           // Note: fullPath check is simple but sufficient for current routes
           final currentPath =
-              appRouter.routerDelegate.currentConfiguration.fullPath;
+              _router.routerDelegate.currentConfiguration.fullPath;
           if (currentPath.startsWith('/auth')) {
             // Still on auth screen = magic link callback, navigate away
             Log.info(
               'Auth listener: Magic link sign-in, navigating to /home (from $currentPath)',
             );
-            appRouter.go('/home');
+            _router.go('/home');
           }
         } else if (event == AuthChangeEvent.signedOut) {
           // Clear sync marker so next user gets fresh sync
@@ -167,7 +179,7 @@ class _ProsepalAppState extends ConsumerState<ProsepalApp>
       title: 'Prosepal',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
-      routerConfig: appRouter,
+      routerConfig: _router,
       builder: (context, child) {
         return Stack(
           children: [
