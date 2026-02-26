@@ -11,8 +11,10 @@ import { createClient } from "npm:@supabase/supabase-js@2"
 // Apple token revocation endpoint
 const APPLE_REVOKE_URL = 'https://appleid.apple.com/auth/revoke'
 
+// CORS restricted - only called from mobile app (native HTTP, not browser)
+// Empty origin blocks browser-based attacks while allowing mobile requests
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': '', // Mobile apps don't send Origin header
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
