@@ -6,3 +6,4 @@ Jarryd's doc of requests and current focus:
 4. we need to ensure strictest lint setup
 5. we need to ensure we are using and maximising our service integrations correctly
 6. CI/CD needs optimising for free tier
+7. check this: https://supabase.com/docs/reference/dart/upgrade-guide 

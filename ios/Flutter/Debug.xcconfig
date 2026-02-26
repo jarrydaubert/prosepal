@@ -1,2 +1,7 @@
 #include? "Pods/Target Support Files/Pods-Runner/Pods-Runner.debug.xcconfig"
 #include "Generated.xcconfig"
+
+// Google Sign In - Replace with your iOS client ID's reversed format
+// Format: com.googleusercontent.apps.{numbers}
+// Example: com.googleusercontent.apps.530026851718-xxxxxxxxxxxx
+GOOGLE_REVERSED_CLIENT_ID=com.googleusercontent.apps.YOUR_IOS_CLIENT_ID

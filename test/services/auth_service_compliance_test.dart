@@ -1,5 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:prosepal/core/interfaces/auth_interface.dart';
 import 'package:prosepal/core/services/auth_service.dart';
+
+import '../mocks/mock_apple_auth_provider.dart';
+import '../mocks/mock_google_auth_provider.dart';
+import '../mocks/mock_supabase_auth_provider.dart';
 
 /// Contract & Compliance Tests for AuthService
 ///
@@ -9,32 +14,46 @@ void main() {
   // Constants
   const bundleId = 'com.prosepal.prosepal';
   const redirectUrl = '$bundleId://login-callback';
-  
+
   final uuidRegex = RegExp(
     r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
     caseSensitive: false,
   );
 
-  group('AuthService Singleton', () {
-    test('returns same instance', () {
-      final instance1 = AuthService.instance;
-      final instance2 = AuthService.instance;
-      expect(identical(instance1, instance2), isTrue);
+  late AuthService authService;
+
+  setUp(() {
+    authService = AuthService(
+      supabaseAuth: MockSupabaseAuthProvider(),
+      appleAuth: MockAppleAuthProvider(),
+      googleAuth: MockGoogleAuthProvider(),
+    );
+  });
+
+  group('AuthService Interface Compliance', () {
+    test('implements IAuthService', () {
+      expect(authService, isA<IAuthService>());
     });
 
     test('has all required auth methods', () {
-      final service = AuthService.instance;
+      expect(authService.signInWithApple, isA<Function>());
+      expect(authService.signInWithGoogle, isA<Function>());
+      expect(authService.signInWithEmail, isA<Function>());
+      expect(authService.signUpWithEmail, isA<Function>());
+      expect(authService.signInWithMagicLink, isA<Function>());
+      expect(authService.resetPassword, isA<Function>());
+      expect(authService.updateEmail, isA<Function>());
+      expect(authService.updatePassword, isA<Function>());
+      expect(authService.signOut, isA<Function>());
+      expect(authService.deleteAccount, isA<Function>());
+    });
 
-      expect(service.signInWithApple, isA<Function>());
-      expect(service.signInWithGoogle, isA<Function>());
-      expect(service.signInWithEmail, isA<Function>());
-      expect(service.signUpWithEmail, isA<Function>());
-      expect(service.signInWithMagicLink, isA<Function>());
-      expect(service.resetPassword, isA<Function>());
-      expect(service.updateEmail, isA<Function>());
-      expect(service.updatePassword, isA<Function>());
-      expect(service.signOut, isA<Function>());
-      expect(service.deleteAccount, isA<Function>());
+    test('has all required properties', () {
+      expect(() => authService.currentUser, returnsNormally);
+      expect(() => authService.isLoggedIn, returnsNormally);
+      expect(() => authService.email, returnsNormally);
+      expect(() => authService.displayName, returnsNormally);
+      expect(() => authService.authStateChanges, returnsNormally);
     });
   });
 
@@ -144,17 +163,56 @@ void main() {
 
   group('App Store Compliance', () {
     test('provides account deletion (Guideline 5.1.1(v))', () {
-      expect(AuthService.instance.deleteAccount, isA<Function>());
+      expect(authService.deleteAccount, isA<Function>());
     });
 
     test('supports Sign in with Apple', () {
-      expect(AuthService.instance.signInWithApple, isA<Function>());
+      expect(authService.signInWithApple, isA<Function>());
     });
 
     test('redirect URL uses valid iOS URL scheme', () {
       final uri = Uri.parse(redirectUrl);
       expect(uri.scheme, equals(bundleId));
       expect(uri.isAbsolute, isTrue);
+    });
+  });
+
+  group('Dependency Injection', () {
+    test('accepts mock providers', () {
+      final mockSupabase = MockSupabaseAuthProvider();
+      final mockApple = MockAppleAuthProvider();
+      final mockGoogle = MockGoogleAuthProvider();
+
+      final service = AuthService(
+        supabaseAuth: mockSupabase,
+        appleAuth: mockApple,
+        googleAuth: mockGoogle,
+      );
+
+      expect(service, isA<AuthService>());
+    });
+
+    test('different instances can have different providers', () {
+      final mockSupabase1 = MockSupabaseAuthProvider();
+      final mockSupabase2 = MockSupabaseAuthProvider();
+
+      mockSupabase1.setLoggedIn(true, email: 'user1@test.com');
+      mockSupabase2.setLoggedIn(true, email: 'user2@test.com');
+
+      final service1 = AuthService(
+        supabaseAuth: mockSupabase1,
+        appleAuth: MockAppleAuthProvider(),
+        googleAuth: MockGoogleAuthProvider(),
+      );
+
+      final service2 = AuthService(
+        supabaseAuth: mockSupabase2,
+        appleAuth: MockAppleAuthProvider(),
+        googleAuth: MockGoogleAuthProvider(),
+      );
+
+      expect(service1.email, 'user1@test.com');
+      expect(service2.email, 'user2@test.com');
     });
   });
 }

@@ -2,17 +2,40 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../interfaces/auth_interface.dart';
+import '../interfaces/interfaces.dart';
 import '../models/models.dart';
 import '../services/services.dart';
+
+// ============================================================
+// Auth Provider Dependencies (for dependency injection)
+// ============================================================
+
+/// Apple auth provider - can be overridden in tests
+final appleAuthProvider = Provider<IAppleAuthProvider>((ref) {
+  return AppleAuthProvider();
+});
+
+/// Google auth provider - can be overridden in tests
+final googleAuthProvider = Provider<IGoogleAuthProvider>((ref) {
+  return GoogleAuthProvider();
+});
+
+/// Supabase auth provider - can be overridden in tests
+final supabaseAuthProvider = Provider<ISupabaseAuthProvider>((ref) {
+  return SupabaseAuthProvider();
+});
 
 // ============================================================
 // Service Providers (singletons, testable via overrides)
 // ============================================================
 
-/// Auth service provider - can be overridden in tests
+/// Auth service provider - uses injected dependencies
 final authServiceProvider = Provider<IAuthService>((ref) {
-  return AuthService.instance;
+  return AuthService(
+    supabaseAuth: ref.watch(supabaseAuthProvider),
+    appleAuth: ref.watch(appleAuthProvider),
+    googleAuth: ref.watch(googleAuthProvider),
+  );
 });
 
 /// SharedPreferences provider - must be initialized in main.dart
