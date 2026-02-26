@@ -133,6 +133,9 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 | Resume-time lock enforcement | `router.dart` | Re-evaluate biometric lock on app resume |
 | Error/404 route | `router.dart` | Add fallback route for unknown paths |
 | Typed route generation | `router.dart` | Use go_router_builder for type-safe routes |
+| Edge function rate limiting | `delete-user/index.ts` | Add request throttling for abuse prevention |
+| RevenueCat cleanup on delete | `delete-user/index.ts` | Revoke RC identifiers via webhook |
+| Structured logging | `delete-user/index.ts` | JSON output for Supabase Logs integration |
 
 ---
 
