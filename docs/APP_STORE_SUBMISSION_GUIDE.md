@@ -38,8 +38,6 @@ Apple reviews apps based on **5 key areas**:
 
 #### SDK Requirements (Effective April 2026)
 - iOS/iPadOS apps: Built with iOS 26 SDK or later
-- watchOS apps: Built with watchOS 26 SDK or later
-- visionOS apps: Built with visionOS 26 SDK or later
 
 #### Account Deletion (Mandatory)
 - If app allows account creation, must allow account deletion within the app
