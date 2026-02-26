@@ -437,4 +437,62 @@ class SupabaseAuthProvider implements ISupabaseAuthProvider {
 
     return results;
   }
+
+  // ===========================================================================
+  // Multi-Factor Authentication (MFA)
+  // ===========================================================================
+
+  /// Enroll a new TOTP factor
+  ///
+  /// Returns QR code and secret for user to scan/enter in authenticator app.
+  @override
+  Future<AuthMFAEnrollResponse> mfaEnroll({String? friendlyName}) {
+    return _withTimeout(_auth.mfa.enroll(
+      factorType: FactorType.totp,
+      friendlyName: friendlyName,
+    ));
+  }
+
+  /// Create challenge for MFA verification
+  @override
+  Future<AuthMFAChallengeResponse> mfaChallenge(String factorId) {
+    return _withTimeout(_auth.mfa.challenge(factorId: factorId));
+  }
+
+  /// Verify TOTP code
+  ///
+  /// Activates factor on first verification, upgrades session to aal2 on login.
+  @override
+  Future<AuthMFAVerifyResponse> mfaVerify({
+    required String factorId,
+    required String challengeId,
+    required String code,
+  }) {
+    return _withTimeout(_auth.mfa.verify(
+      factorId: factorId,
+      challengeId: challengeId,
+      code: code,
+    ));
+  }
+
+  /// Remove an MFA factor
+  @override
+  Future<AuthMFAUnenrollResponse> mfaUnenroll(String factorId) {
+    return _withTimeout(_auth.mfa.unenroll(factorId));
+  }
+
+  /// List all enrolled MFA factors
+  @override
+  Future<AuthMFAListFactorsResponse> mfaListFactors() async {
+    return _auth.mfa.listFactors();
+  }
+
+  /// Get current AAL status
+  ///
+  /// Check if user needs to complete MFA challenge.
+  @override
+  Future<AuthMFAGetAuthenticatorAssuranceLevelResponse>
+      mfaGetAuthenticatorAssuranceLevel() async {
+    return _auth.mfa.getAuthenticatorAssuranceLevel();
+  }
 }
