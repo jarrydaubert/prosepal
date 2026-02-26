@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:gap/gap.dart';
+import 'package:flutter/services.dart';
 
 import '../../../core/models/message_length.dart';
 import '../../../shared/theme/app_colors.dart';
-import '../../../shared/theme/app_spacing.dart';
 
 class DetailsInput extends StatefulWidget {
   const DetailsInput({
@@ -41,11 +40,9 @@ class _DetailsInputState extends State<DetailsInput> {
   @override
   void didUpdateWidget(DetailsInput oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Update controllers if external state changes (e.g., form reset)
     if (oldWidget.recipientName != widget.recipientName &&
         _nameController.text != widget.recipientName) {
       _nameController.text = widget.recipientName;
-      // Place cursor at end after external update
       _nameController.selection = TextSelection.collapsed(
         offset: _nameController.text.length,
       );
@@ -71,171 +68,262 @@ class _DetailsInputState extends State<DetailsInput> {
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
       child: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppSpacing.screenPadding),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
+            const Text(
               'Add personal touches',
-              style: Theme.of(context).textTheme.headlineSmall,
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
             ),
-            const Gap(AppSpacing.sm),
+            const SizedBox(height: 8),
             Text(
               'Optional details to make your message more personal',
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
+              style: TextStyle(fontSize: 15, color: Colors.grey[600]),
             ),
-            const Gap(AppSpacing.xl),
+            const SizedBox(height: 24),
 
             // Recipient name
-            Text(
+            const Text(
               "Recipient's name",
-              style: Theme.of(context).textTheme.titleSmall,
-            ),
-            const Gap(AppSpacing.sm),
-            TextField(
-              controller: _nameController,
-              decoration: const InputDecoration(
-                hintText: 'e.g., Sarah, Mom, John',
-                prefixIcon: Icon(Icons.person_outline),
-                labelText: "Recipient's name", // For accessibility
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
               ),
-              textCapitalization: TextCapitalization.words,
-              textInputAction: TextInputAction.next,
+            ),
+            const SizedBox(height: 10),
+            _StyledTextField(
+              controller: _nameController,
+              hintText: 'e.g., Sarah, Mom, John',
+              icon: Icons.person_outline,
               onChanged: widget.onRecipientNameChanged,
             ),
-            const Gap(AppSpacing.xl),
+            const SizedBox(height: 24),
 
             // Personal details
-            Text(
+            const Text(
               'Personal details or context',
-              style: Theme.of(context).textTheme.titleSmall,
-            ),
-            const Gap(AppSpacing.sm),
-            TextField(
-              controller: _detailsController,
-              decoration: const InputDecoration(
-                hintText:
-                    'e.g., She loves gardening, Just got promoted, We met in college',
-                prefixIcon: Padding(
-                  padding: EdgeInsets.only(
-                    bottom: 48,
-                  ), // Align to top for multiline
-                  child: Icon(Icons.notes_outlined),
-                ),
-                alignLabelWithHint: true,
-                labelText: 'Personal details', // For accessibility
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
               ),
-              maxLines: 4,
-              textCapitalization: TextCapitalization.sentences,
-              textInputAction: TextInputAction.done,
-              onChanged: widget.onPersonalDetailsChanged,
-              onEditingComplete: () => FocusScope.of(context).unfocus(),
             ),
-            const Gap(AppSpacing.xl),
+            const SizedBox(height: 10),
+            _StyledTextField(
+              controller: _detailsController,
+              hintText: 'e.g., She loves gardening, Just got promoted',
+              icon: Icons.notes_outlined,
+              maxLines: 4,
+              onChanged: widget.onPersonalDetailsChanged,
+            ),
+            const SizedBox(height: 24),
 
             // Message length
-            Text(
+            const Text(
               'Message length',
-              style: Theme.of(context).textTheme.titleSmall,
-            ),
-            const Gap(AppSpacing.sm),
-            Semantics(
-              label: 'Message length selector',
-              child: Wrap(
-                spacing: AppSpacing.sm,
-                runSpacing: AppSpacing.sm,
-                children: MessageLength.values.map((length) {
-                  final isSelected = widget.selectedLength == length;
-                  return Semantics(
-                    label: '${length.label}: ${length.description}',
-                    selected: isSelected,
-                    child: ChoiceChip(
-                      label: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (isSelected)
-                            const Padding(
-                              padding: EdgeInsets.only(right: AppSpacing.xs),
-                              child: Icon(
-                                Icons.check,
-                                size: 16,
-                                color: AppColors.primary,
-                              ),
-                            ),
-                          Text(length.emoji),
-                          const Gap(AppSpacing.xs),
-                          Text(
-                            length.label,
-                            style: TextStyle(
-                              fontWeight: isSelected
-                                  ? FontWeight.w600
-                                  : FontWeight.w500,
-                              color: isSelected
-                                  ? AppColors.primary
-                                  : AppColors.textPrimary,
-                            ),
-                          ),
-                        ],
-                      ),
-                      selected: isSelected,
-                      onSelected: (_) => widget.onLengthChanged(length),
-                      selectedColor: AppColors.primary.withValues(alpha: 0.15),
-                      backgroundColor: AppColors.surface,
-                      side: BorderSide(
-                        color: isSelected
-                            ? AppColors.primary
-                            : AppColors.surfaceVariant,
-                        width: isSelected ? 1.5 : 1,
-                      ),
-                      showCheckmark: false,
-                    ),
-                  );
-                }).toList(),
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
               ),
             ),
-            const Gap(AppSpacing.sm),
+            const SizedBox(height: 10),
+            _LengthSelector(
+              selectedLength: widget.selectedLength,
+              onChanged: widget.onLengthChanged,
+            ),
+            const SizedBox(height: 8),
             Text(
               widget.selectedLength.description,
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+              style: TextStyle(fontSize: 13, color: Colors.grey[600]),
             ),
-            const Gap(AppSpacing.lg),
+            const SizedBox(height: 20),
 
             // Tip card
-            Container(
-              padding: const EdgeInsets.all(AppSpacing.md),
-              decoration: BoxDecoration(
-                color: AppColors.info.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
-                border: Border.all(
-                  color: AppColors.info.withValues(alpha: 0.3),
-                ),
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Icon(
-                    Icons.lightbulb_outline,
-                    color: AppColors.info,
-                    size: 20,
-                  ),
-                  const Gap(AppSpacing.sm),
-                  Expanded(
-                    child: Text(
-                      'The more details you provide, the more personalized your message will be!',
-                      style: Theme.of(
-                        context,
-                      ).textTheme.bodySmall?.copyWith(color: AppColors.info),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            _TipCard(),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// =============================================================================
+// COMPONENTS
+// =============================================================================
+
+class _StyledTextField extends StatelessWidget {
+  const _StyledTextField({
+    required this.controller,
+    required this.hintText,
+    required this.icon,
+    required this.onChanged,
+    this.maxLines = 1,
+  });
+
+  final TextEditingController controller;
+  final String hintText;
+  final IconData icon;
+  final void Function(String) onChanged;
+  final int maxLines;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.grey[300]!, width: 2),
+      ),
+      child: TextField(
+        controller: controller,
+        maxLines: maxLines,
+        textCapitalization: maxLines > 1
+            ? TextCapitalization.sentences
+            : TextCapitalization.words,
+        textInputAction:
+            maxLines > 1 ? TextInputAction.done : TextInputAction.next,
+        onChanged: onChanged,
+        decoration: InputDecoration(
+          hintText: hintText,
+          hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
+          prefixIcon: Padding(
+            padding: EdgeInsets.only(bottom: maxLines > 1 ? 60 : 0),
+            child: Icon(icon, color: AppColors.primary, size: 22),
+          ),
+          border: InputBorder.none,
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        ),
+      ),
+    );
+  }
+}
+
+class _LengthSelector extends StatelessWidget {
+  const _LengthSelector({
+    required this.selectedLength,
+    required this.onChanged,
+  });
+
+  final MessageLength selectedLength;
+  final void Function(MessageLength) onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: 'Message length selector',
+      child: Wrap(
+        spacing: 10,
+        runSpacing: 10,
+        children: MessageLength.values.map((length) {
+          final isSelected = selectedLength == length;
+          return Semantics(
+            label: '${length.label}: ${length.description}',
+            selected: isSelected,
+            child: GestureDetector(
+              onTap: () {
+                HapticFeedback.lightImpact();
+                onChanged(length);
+              },
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: isSelected ? AppColors.primaryLight : Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isSelected ? AppColors.primary : Colors.grey[300]!,
+                    width: isSelected ? 2 : 2,
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (isSelected)
+                      Container(
+                        width: 18,
+                        height: 18,
+                        margin: const EdgeInsets.only(right: 6),
+                        decoration: const BoxDecoration(
+                          color: AppColors.primary,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.check,
+                          size: 12,
+                          color: Colors.white,
+                        ),
+                      ),
+                    Text(length.emoji, style: const TextStyle(fontSize: 16)),
+                    const SizedBox(width: 6),
+                    Text(
+                      length.label,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight:
+                            isSelected ? FontWeight.w600 : FontWeight.w500,
+                        color: isSelected
+                            ? AppColors.primary
+                            : AppColors.textPrimary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+}
+
+class _TipCard extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.info.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.info, width: 2),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: AppColors.info.withValues(alpha: 0.2),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.lightbulb_outline,
+              color: AppColors.info,
+              size: 18,
+            ),
+          ),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Text(
+              'The more details you provide, the more personalized your message will be!',
+              style: TextStyle(
+                fontSize: 13,
+                color: AppColors.info,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

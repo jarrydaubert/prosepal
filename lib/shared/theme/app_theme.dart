@@ -43,6 +43,8 @@ class AppTheme {
           backgroundColor: AppColors.primary,
           foregroundColor: AppColors.textOnPrimary,
           minimumSize: const Size.fromHeight(AppSpacing.buttonHeight),
+          elevation: 2,
+          shadowColor: AppColors.primary.withValues(alpha: 0.4),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
           ),
@@ -88,7 +90,7 @@ class AppTheme {
       ),
       chipTheme: ChipThemeData(
         backgroundColor: AppColors.surfaceVariant,
-        selectedColor: AppColors.primary.withValues(alpha: 0.2),
+        selectedColor: AppColors.primaryLight,
         labelStyle: AppTypography.textTheme.labelMedium,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppSpacing.radiusFull),

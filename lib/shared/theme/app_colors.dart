@@ -95,11 +95,23 @@ class AppColors {
     colors: [primary, Color(0xFFEF9A9A)],
   );
 
-  /// Subtle background gradient - for screen backgrounds
+  /// Bold background gradient - for screen backgrounds
   static LinearGradient get backgroundGradient => LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
-    colors: [primary.withValues(alpha: 0.05), background],
+    colors: [primary.withValues(alpha: 0.15), background],
+  );
+
+  /// Hero section gradient - bolder for key screens
+  static LinearGradient get heroGradient => const LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [
+      Color(0xFFFFEBEE), // primaryLight tint
+      Color(0xFFFFF8F8),
+      Color(0xFFFFFFFF),
+    ],
+    stops: [0.0, 0.5, 1.0],
   );
 
   // ===========================================================================

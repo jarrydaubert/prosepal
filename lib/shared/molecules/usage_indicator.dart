@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:gap/gap.dart';
+import 'package:flutter/services.dart';
 
 import '../theme/app_colors.dart';
-import '../theme/app_spacing.dart';
 
-/// Shows remaining generations or Pro status
 class UsageIndicator extends StatelessWidget {
   const UsageIndicator({
     super.key,
@@ -29,6 +27,10 @@ class UsageIndicator extends StatelessWidget {
   }
 }
 
+// =============================================================================
+// COMPONENTS
+// =============================================================================
+
 class _ProBadge extends StatelessWidget {
   const _ProBadge({this.onTap});
 
@@ -37,30 +39,50 @@ class _ProBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: () {
+        HapticFeedback.lightImpact();
+        onTap?.call();
+      },
       child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.md,
-          vertical: AppSpacing.sm,
-        ),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
-          gradient: AppColors.primaryGradient,
-          borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
+          color: AppColors.primaryLight,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: AppColors.primary, width: 3),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.star, size: 16, color: AppColors.textPrimary),
-            const Gap(AppSpacing.xs),
-            Text(
+            Container(
+              width: 24,
+              height: 24,
+              decoration: BoxDecoration(
+                color: AppColors.primary,
+                shape: BoxShape.circle,
+                border: Border.all(color: AppColors.primary, width: 2),
+              ),
+              child: const Icon(
+                Icons.star_rounded,
+                size: 14,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(width: 8),
+            const Text(
               'PRO',
-              style: Theme.of(
-                context,
-              ).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: AppColors.primary,
+              ),
             ),
             if (onTap != null) ...[
-              const Gap(AppSpacing.xs),
-              const Icon(Icons.chevron_right, size: 16, color: AppColors.textPrimary),
+              const SizedBox(width: 4),
+              const Icon(
+                Icons.chevron_right,
+                size: 18,
+                color: AppColors.primary,
+              ),
             ],
           ],
         ),
@@ -75,36 +97,44 @@ class _FreeUsageCard extends StatelessWidget {
   final int remaining;
   final VoidCallback? onUpgrade;
 
+  Color get _statusColor => remaining > 0 ? AppColors.success : AppColors.error;
+
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onUpgrade,
-      borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.lightImpact();
+        onUpgrade?.call();
+      },
       child: Container(
-        padding: const EdgeInsets.all(AppSpacing.md),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppColors.surfaceVariant,
-          borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: _statusColor, width: 3),
         ),
         child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(AppSpacing.sm),
+              width: 48,
+              height: 48,
               decoration: BoxDecoration(
-                color: remaining > 0
-                    ? AppColors.success.withValues(alpha: 0.2)
-                    : AppColors.error.withValues(alpha: 0.2),
+                color: _statusColor.withValues(alpha: 0.15),
                 shape: BoxShape.circle,
+                border: Border.all(color: _statusColor, width: 2),
               ),
-              child: Text(
-                '$remaining',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: remaining > 0 ? AppColors.success : AppColors.error,
-                  fontWeight: FontWeight.bold,
+              child: Center(
+                child: Text(
+                  '$remaining',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: _statusColor,
+                  ),
                 ),
               ),
             ),
-            const Gap(AppSpacing.md),
+            const SizedBox(width: 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -113,23 +143,35 @@ class _FreeUsageCard extends StatelessWidget {
                     remaining > 0
                         ? 'Free messages remaining'
                         : 'Free trial ended',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    style: const TextStyle(
+                      fontSize: 15,
                       fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
                     ),
                   ),
-                  Text(
+                  const SizedBox(height: 2),
+                  const Text(
                     'Upgrade for unlimited',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    style: TextStyle(
+                      fontSize: 13,
                       color: AppColors.textSecondary,
                     ),
                   ),
                 ],
               ),
             ),
-            const Icon(
-              Icons.arrow_forward_ios,
-              size: 16,
-              color: AppColors.textSecondary,
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: _statusColor.withValues(alpha: 0.15),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.arrow_forward_ios,
+                size: 14,
+                color: _statusColor,
+              ),
             ),
           ],
         ),

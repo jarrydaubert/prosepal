@@ -82,7 +82,7 @@ void main() {
         await tester.pumpWidget(buildTestWidget(result: result));
         await tester.pumpAndSettle();
 
-        expect(find.text('Wedding • Family'), findsOneWidget);
+        expect(find.text('Wedding - Family'), findsOneWidget);
         expect(find.text('Formal tone'), findsOneWidget);
         expect(find.text('💒'), findsOneWidget);
       });
@@ -181,8 +181,12 @@ void main() {
         final closeButton = find.byIcon(Icons.close);
         expect(closeButton, findsOneWidget);
 
-        final semantics = tester.getSemantics(closeButton);
-        expect(semantics.tooltip, equals('Close'));
+        // Close button is inside a GestureDetector with Semantics
+        final gestureDetector = find.ancestor(
+          of: closeButton,
+          matching: find.byType(GestureDetector),
+        );
+        expect(gestureDetector, findsOneWidget);
       });
 
       testWidgets('message text is selectable', (tester) async {

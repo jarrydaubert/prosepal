@@ -1,8 +1,8 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:gap/gap.dart';
 import 'package:go_router/go_router.dart';
 import 'package:in_app_review/in_app_review.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -12,7 +12,6 @@ import '../../core/interfaces/biometric_interface.dart';
 import '../../core/providers/providers.dart';
 import '../../shared/molecules/molecules.dart';
 import '../../shared/theme/app_colors.dart';
-import '../../shared/theme/app_spacing.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -194,11 +193,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('You will lose:'),
-            Gap(AppSpacing.sm),
+            SizedBox(height: 8),
             Text('• All your generated messages'),
             Text('• Your account and preferences'),
             Text('• Any remaining subscription time'),
-            Gap(AppSpacing.md),
+            SizedBox(height: 16),
             Text(
               'Type "DELETE" to confirm',
               style: TextStyle(fontWeight: FontWeight.bold),
@@ -238,23 +237,29 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final userName = authService.displayName;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Settings'),
         backgroundColor: Colors.transparent,
         elevation: 0,
+        title: const Text(
+          'Settings',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        leading: _BackButton(onPressed: () => context.pop()),
       ),
       body: ListView(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 20),
         children: [
-          const Gap(AppSpacing.sm),
+          const SizedBox(height: 8),
+
           // Account section
           const SectionHeader('Account'),
-          _buildModernCard(
-            context,
-            child: _buildAccountHeader(context, userName, userEmail, isPro),
-          ),
-          const Gap(AppSpacing.lg),
+          _AccountCard(userName: userName, userEmail: userEmail, isPro: isPro),
+          const SizedBox(height: 20),
 
           // Subscription section
           const SectionHeader('Subscription'),
@@ -269,10 +274,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 : '${usageService.getRemainingFree()} free messages remaining',
             trailing: isPro
                 ? null
-                : TextButton(
-                    onPressed: () => context.pushNamed('paywall'),
-                    child: const Text('Upgrade'),
-                  ),
+                : _UpgradeButton(onPressed: () => context.pushNamed('paywall')),
           ),
           if (isPro)
             SettingsTile(
@@ -324,14 +326,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
           // Stats section
           const SectionHeader('Your Stats'),
-          SettingsTile(
-            leading: const Icon(
-              Icons.auto_awesome_rounded,
-              color: AppColors.primary,
-            ),
-            title: '$totalGenerated messages generated',
-            subtitle: 'All time',
-          ),
+          _StatsCard(totalGenerated: totalGenerated),
 
           // Support section
           const SectionHeader('Support'),
@@ -390,7 +385,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             onTap: () => context.pushNamed('privacy'),
           ),
 
-          // Account actions (destructive actions at bottom per Apple HIG)
+          // Account actions
           const SectionHeader('Account Actions'),
           SettingsTile(
             leading: const Icon(Icons.logout_rounded, color: AppColors.error),
@@ -410,73 +405,104 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
 
           // App info footer
-          const Gap(AppSpacing.xl),
+          const SizedBox(height: 32),
           Center(
             child: Text(
               'Prosepal ${_appVersion.isNotEmpty ? _appVersion : ""}',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: AppColors.textHint.withValues(alpha: 0.6),
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey[400],
               ),
             ),
           ),
-          const Gap(AppSpacing.xxl),
+          const SizedBox(height: 40),
         ],
       ),
     );
   }
+}
 
-  /// Modern card with subtle shadow and rounded corners
-  Widget _buildModernCard(BuildContext context, {required Widget child}) {
-    return DecoratedBox(
+// =============================================================================
+// COMPONENTS
+// =============================================================================
+
+class _BackButton extends StatelessWidget {
+  const _BackButton({required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 8),
+      child: GestureDetector(
+        onTap: () {
+          HapticFeedback.lightImpact();
+          onPressed();
+        },
+        child: Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: AppColors.primaryLight,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.primary, width: 2),
+          ),
+          child: const Icon(
+            Icons.arrow_back,
+            color: AppColors.primary,
+            size: 20,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _AccountCard extends StatelessWidget {
+  const _AccountCard({
+    required this.userName,
+    required this.userEmail,
+    required this.isPro,
+  });
+
+  final String? userName;
+  final String? userEmail;
+  final bool isPro;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        border: Border.all(
+          color: isPro ? Colors.amber : AppColors.primary,
+          width: 3,
+        ),
       ),
-      child: child,
-    );
-  }
-
-  /// Account header with avatar and pro badge
-  Widget _buildAccountHeader(
-    BuildContext context,
-    String? userName,
-    String? userEmail,
-    bool isPro,
-  ) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
       child: Row(
         children: [
-          // Avatar with glow effect for Pro users
-          DecoratedBox(
+          // Avatar
+          Container(
+            width: 56,
+            height: 56,
             decoration: BoxDecoration(
+              color: isPro
+                  ? Colors.amber.withValues(alpha: 0.15)
+                  : AppColors.primaryLight,
               shape: BoxShape.circle,
-              boxShadow: isPro
-                  ? [
-                      BoxShadow(
-                        color: Colors.amber.withValues(alpha: 0.3),
-                        blurRadius: 12,
-                        spreadRadius: 2,
-                      ),
-                    ]
-                  : null,
+              border: Border.all(
+                color: isPro ? Colors.amber : AppColors.primary,
+                width: 2,
+              ),
             ),
-            child: CircleAvatar(
-              radius: 28,
-              backgroundColor: isPro
-                  ? Colors.amber.shade100
-                  : AppColors.primary.withValues(alpha: 0.1),
+            child: Center(
               child: Text(
                 (userName ?? userEmail ?? 'U')[0].toUpperCase(),
                 style: TextStyle(
-                  fontSize: 20,
+                  fontSize: 22,
                   color: isPro ? Colors.amber.shade800 : AppColors.primary,
                   fontWeight: FontWeight.bold,
                 ),
@@ -494,8 +520,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     Flexible(
                       child: Text(
                         userName ?? 'User',
-                        style: Theme.of(context).textTheme.titleMedium
-                            ?.copyWith(fontWeight: FontWeight.w600),
+                        style: const TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                        ),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
@@ -503,22 +532,23 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       const SizedBox(width: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 2,
+                          horizontal: 10,
+                          vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
+                          color: Colors.amber,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: Colors.amber.shade700,
+                            width: 2,
                           ),
-                          borderRadius: BorderRadius.circular(12),
                         ),
                         child: const Text(
                           'PRO',
                           style: TextStyle(
                             color: Colors.white,
-                            fontSize: 10,
+                            fontSize: 11,
                             fontWeight: FontWeight.bold,
-                            letterSpacing: 0.5,
                           ),
                         ),
                       ),
@@ -528,15 +558,100 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 if (userEmail != null) ...[
                   const SizedBox(height: 4),
                   Text(
-                    userEmail,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
+                    userEmail!,
+                    style: TextStyle(fontSize: 13, color: Colors.grey[600]),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ],
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _UpgradeButton extends StatelessWidget {
+  const _UpgradeButton({required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.lightImpact();
+        onPressed();
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: AppColors.primaryLight,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: AppColors.primary, width: 2),
+        ),
+        child: const Text(
+          'Upgrade',
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.bold,
+            color: AppColors.primary,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _StatsCard extends StatelessWidget {
+  const _StatsCard({required this.totalGenerated});
+
+  final int totalGenerated;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.primaryLight,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.primary, width: 3),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              border: Border.all(color: AppColors.primary, width: 2),
+            ),
+            child: const Icon(
+              Icons.auto_awesome_rounded,
+              color: AppColors.primary,
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '$totalGenerated messages generated',
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                'All time',
+                style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+              ),
+            ],
           ),
         ],
       ),

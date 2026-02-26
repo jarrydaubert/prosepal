@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:gap/gap.dart';
 
 import '../../../core/models/relationship.dart';
 import '../../../shared/theme/app_colors.dart';
-import '../../../shared/theme/app_spacing.dart';
 
 class RelationshipPicker extends StatelessWidget {
   const RelationshipPicker({
@@ -19,47 +18,49 @@ class RelationshipPicker extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(AppSpacing.screenPadding),
+      padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
+          const Text(
             'Who is it for?',
-            style: Theme.of(context).textTheme.headlineSmall,
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            ),
           ),
-          const Gap(AppSpacing.sm),
+          const SizedBox(height: 8),
           Text(
             'Select your relationship with the recipient',
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
+            style: TextStyle(fontSize: 15, color: Colors.grey[600]),
           ),
-          const Gap(AppSpacing.xl),
+          const SizedBox(height: 24),
           ...Relationship.values.asMap().entries.map((entry) {
             final index = entry.key;
             final relationship = entry.value;
             final isSelected = selectedRelationship == relationship;
 
             return Padding(
-              padding: const EdgeInsets.only(bottom: AppSpacing.md),
-              child:
-                  _RelationshipTile(
-                        relationship: relationship,
-                        isSelected: isSelected,
-                        onTap: () => onSelected(relationship),
-                      )
-                      .animate()
-                      .fadeIn(
-                        delay: Duration(milliseconds: index * 50),
-                        duration: 200.ms,
-                      )
-                      .slideX(
-                        begin: 0.1,
-                        end: 0,
-                        delay: Duration(milliseconds: index * 50),
-                        duration: 200.ms,
-                        curve: Curves.easeOut,
-                      ),
+              padding: const EdgeInsets.only(bottom: 12),
+              child: _RelationshipTile(
+                key: ValueKey('relationship_${relationship.name}'),
+                relationship: relationship,
+                isSelected: isSelected,
+                onTap: () => onSelected(relationship),
+              )
+                  .animate(key: ValueKey('rel_anim_$index'))
+                  .fadeIn(
+                    delay: Duration(milliseconds: index * 40),
+                    duration: 250.ms,
+                  )
+                  .slideX(
+                    begin: 0.08,
+                    end: 0,
+                    delay: Duration(milliseconds: index * 40),
+                    duration: 250.ms,
+                    curve: Curves.easeOut,
+                  ),
             );
           }),
         ],
@@ -68,8 +69,13 @@ class RelationshipPicker extends StatelessWidget {
   }
 }
 
+// =============================================================================
+// COMPONENTS
+// =============================================================================
+
 class _RelationshipTile extends StatelessWidget {
   const _RelationshipTile({
+    super.key,
     required this.relationship,
     required this.isSelected,
     required this.onTap,
@@ -86,45 +92,70 @@ class _RelationshipTile extends StatelessWidget {
           '${relationship.label}, ${isSelected ? 'selected' : 'not selected'}',
       button: true,
       selected: isSelected,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            padding: const EdgeInsets.all(AppSpacing.lg),
-            decoration: BoxDecoration(
-              color: isSelected
-                  ? AppColors.primary.withValues(alpha: 0.1)
-                  : AppColors.surface,
-              borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
-              border: Border.all(
-                color: isSelected
-                    ? AppColors.primary
-                    : AppColors.surfaceVariant,
-                width: isSelected ? 2 : 1,
-              ),
+      child: GestureDetector(
+        onTap: () {
+          HapticFeedback.lightImpact();
+          onTap();
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: isSelected ? AppColors.primaryLight : Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isSelected ? AppColors.primary : Colors.grey[300]!,
+              width: isSelected ? 3 : 2,
             ),
-            child: Row(
-              children: [
-                Text(relationship.emoji, style: const TextStyle(fontSize: 28)),
-                const Gap(AppSpacing.lg),
-                Expanded(
-                  child: Text(
-                    relationship.label,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: isSelected
-                          ? FontWeight.bold
-                          : FontWeight.w500,
-                      color: isSelected ? AppColors.primary : null,
-                    ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? AppColors.primary.withValues(alpha: 0.15)
+                      : Colors.grey[100],
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: isSelected ? AppColors.primary : Colors.grey[300]!,
+                    width: 2,
                   ),
                 ),
-                if (isSelected)
-                  const Icon(Icons.check_circle, color: AppColors.primary),
-              ],
-            ),
+                child: Center(
+                  child: Text(
+                    relationship.emoji,
+                    style: const TextStyle(fontSize: 22),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Text(
+                  relationship.label,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                    color: isSelected ? AppColors.primary : AppColors.textPrimary,
+                  ),
+                ),
+              ),
+              if (isSelected)
+                Container(
+                  width: 28,
+                  height: 28,
+                  decoration: const BoxDecoration(
+                    color: AppColors.primary,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.check,
+                    color: Colors.white,
+                    size: 16,
+                  ),
+                ),
+            ],
           ),
         ),
       ),

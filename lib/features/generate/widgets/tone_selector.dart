@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:gap/gap.dart';
 
 import '../../../core/models/tone.dart';
 import '../../../shared/theme/app_colors.dart';
-import '../../../shared/theme/app_spacing.dart';
 
 class ToneSelector extends StatelessWidget {
   const ToneSelector({
@@ -19,30 +18,32 @@ class ToneSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(AppSpacing.screenPadding),
+      padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
+          const Text(
             'Set the tone',
-            style: Theme.of(context).textTheme.headlineSmall,
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            ),
           ),
-          const Gap(AppSpacing.sm),
+          const SizedBox(height: 8),
           Text(
             'How do you want the message to feel?',
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
+            style: TextStyle(fontSize: 15, color: Colors.grey[600]),
           ),
-          const Gap(AppSpacing.xl),
+          const SizedBox(height: 24),
           GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
-              mainAxisSpacing: AppSpacing.md,
-              crossAxisSpacing: AppSpacing.md,
-              childAspectRatio: 1.2,
+              mainAxisSpacing: 12,
+              crossAxisSpacing: 12,
+              childAspectRatio: 1.1,
             ),
             itemCount: Tone.values.length,
             itemBuilder: (context, index) {
@@ -50,20 +51,21 @@ class ToneSelector extends StatelessWidget {
               final isSelected = selectedTone == tone;
 
               return _ToneTile(
-                    tone: tone,
-                    isSelected: isSelected,
-                    onTap: () => onSelected(tone),
-                  )
-                  .animate()
+                key: ValueKey('tone_${tone.name}'),
+                tone: tone,
+                isSelected: isSelected,
+                onTap: () => onSelected(tone),
+              )
+                  .animate(key: ValueKey('tone_anim_$index'))
                   .fadeIn(
-                    delay: Duration(milliseconds: index * 50),
-                    duration: 200.ms,
+                    delay: Duration(milliseconds: index * 40),
+                    duration: 250.ms,
                   )
                   .scale(
-                    begin: const Offset(0.9, 0.9),
+                    begin: const Offset(0.92, 0.92),
                     end: const Offset(1, 1),
-                    delay: Duration(milliseconds: index * 50),
-                    duration: 200.ms,
+                    delay: Duration(milliseconds: index * 40),
+                    duration: 250.ms,
                     curve: Curves.easeOut,
                   );
             },
@@ -74,8 +76,13 @@ class ToneSelector extends StatelessWidget {
   }
 }
 
+// =============================================================================
+// COMPONENTS
+// =============================================================================
+
 class _ToneTile extends StatelessWidget {
   const _ToneTile({
+    super.key,
     required this.tone,
     required this.isSelected,
     required this.onTap,
@@ -92,49 +99,74 @@ class _ToneTile extends StatelessWidget {
           '${tone.label} tone: ${tone.description}, ${isSelected ? 'selected' : 'not selected'}',
       button: true,
       selected: isSelected,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            padding: const EdgeInsets.all(AppSpacing.lg),
-            decoration: BoxDecoration(
-              color: isSelected
-                  ? AppColors.primary.withValues(alpha: 0.1)
-                  : AppColors.surface,
-              borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
-              border: Border.all(
-                color: isSelected
-                    ? AppColors.primary
-                    : AppColors.surfaceVariant,
-                width: isSelected ? 2 : 1,
-              ),
+      child: GestureDetector(
+        onTap: () {
+          HapticFeedback.lightImpact();
+          onTap();
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: isSelected ? AppColors.primaryLight : Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isSelected ? AppColors.primary : Colors.grey[300]!,
+              width: isSelected ? 3 : 2,
             ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(tone.emoji, style: const TextStyle(fontSize: 32)),
-                const Gap(AppSpacing.sm),
-                Text(
-                  tone.label,
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                    color: isSelected ? AppColors.primary : null,
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? AppColors.primary.withValues(alpha: 0.15)
+                      : Colors.grey[100],
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: isSelected ? AppColors.primary : Colors.grey[300]!,
+                    width: 2,
                   ),
-                  textAlign: TextAlign.center,
                 ),
-                const Gap(AppSpacing.xs),
-                Text(
-                  tone.description,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: AppColors.textSecondary,
+                child: Center(
+                  child: Text(tone.emoji, style: const TextStyle(fontSize: 20)),
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                tone.label,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                  color: isSelected ? AppColors.primary : AppColors.textPrimary,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 2),
+              Text(
+                tone.description,
+                style: TextStyle(
+                  fontSize: 11,
+                  color: Colors.grey[600],
+                ),
+                textAlign: TextAlign.center,
+              ),
+              if (isSelected) ...[
+                const SizedBox(height: 6),
+                Container(
+                  width: 20,
+                  height: 20,
+                  decoration: const BoxDecoration(
+                    color: AppColors.primary,
+                    shape: BoxShape.circle,
                   ),
-                  textAlign: TextAlign.center,
+                  child: const Icon(Icons.check, color: Colors.white, size: 12),
                 ),
               ],
-            ),
+            ],
           ),
         ),
       ),
