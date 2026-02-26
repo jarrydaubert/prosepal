@@ -157,7 +157,7 @@ class _DetailsInputState extends State<DetailsInput> {
 // COMPONENTS
 // =============================================================================
 
-class _StyledTextField extends StatelessWidget {
+class _StyledTextField extends StatefulWidget {
   const _StyledTextField({
     required this.controller,
     required this.hintText,
@@ -175,37 +175,56 @@ class _StyledTextField extends StatelessWidget {
   final int? maxLength;
 
   @override
+  State<_StyledTextField> createState() => _StyledTextFieldState();
+}
+
+class _StyledTextFieldState extends State<_StyledTextField> {
+  bool _isFocused = false;
+
+  @override
   Widget build(BuildContext context) {
-    return Container(
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 150),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.grey[300]!, width: 2),
+        border: Border.all(
+          color: _isFocused ? AppColors.primary : Colors.grey[300]!,
+          width: 2,
+        ),
       ),
-      child: TextField(
-        controller: controller,
-        maxLines: maxLines,
-        maxLength: maxLength,
-        textCapitalization: maxLines > 1
-            ? TextCapitalization.sentences
-            : TextCapitalization.words,
-        textInputAction: maxLines > 1
-            ? TextInputAction.done
-            : TextInputAction.next,
-        onChanged: onChanged,
-        decoration: InputDecoration(
-          hintText: hintText,
-          hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
-          prefixIcon: Padding(
-            padding: EdgeInsets.only(bottom: maxLines > 1 ? 60 : 0),
-            child: Icon(icon, color: AppColors.primary, size: 22),
+      child: Focus(
+        onFocusChange: (focused) => setState(() => _isFocused = focused),
+        child: TextField(
+          controller: widget.controller,
+          maxLines: widget.maxLines,
+          maxLength: widget.maxLength,
+          textCapitalization: widget.maxLines > 1
+              ? TextCapitalization.sentences
+              : TextCapitalization.words,
+          textInputAction: widget.maxLines > 1
+              ? TextInputAction.done
+              : TextInputAction.next,
+          onChanged: widget.onChanged,
+          decoration: InputDecoration(
+            hintText: widget.hintText,
+            hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
+            prefixIcon: Padding(
+              padding: EdgeInsets.only(bottom: widget.maxLines > 1 ? 60 : 0),
+              child: Icon(widget.icon, color: AppColors.primary, size: 22),
+            ),
+            // Remove all TextField borders - Container handles the border
+            border: InputBorder.none,
+            enabledBorder: InputBorder.none,
+            focusedBorder: InputBorder.none,
+            errorBorder: InputBorder.none,
+            disabledBorder: InputBorder.none,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 14,
+            ),
+            counterStyle: TextStyle(color: Colors.grey[500], fontSize: 12),
           ),
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 14,
-          ),
-          counterStyle: TextStyle(color: Colors.grey[500], fontSize: 12),
         ),
       ),
     );
