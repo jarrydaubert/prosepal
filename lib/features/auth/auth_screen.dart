@@ -114,6 +114,15 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                 ),
                 SizedBox(height: AppSpacing.lg),
               ],
+              // Sign in with Email (primary option)
+              _AuthButton(
+                onPressed: _isLoading ? null : _signInWithEmail,
+                icon: Icons.email_outlined,
+                label: 'Continue with Email',
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+              ),
+              SizedBox(height: AppSpacing.md),
               // Sign in with Apple
               _AuthButton(
                 onPressed: _isLoading ? null : _signInWithApple,
@@ -136,16 +145,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                 label: 'Continue with Google',
                 backgroundColor: Colors.white,
                 foregroundColor: Colors.black87,
-                borderColor: AppColors.textHint,
-              ),
-              SizedBox(height: AppSpacing.md),
-              // Sign in with Email
-              _AuthButton(
-                onPressed: _isLoading ? null : _signInWithEmail,
-                icon: Icons.email_outlined,
-                label: 'Continue with Email',
-                backgroundColor: AppColors.surfaceVariant,
-                foregroundColor: AppColors.textPrimary,
+                borderColor: AppColors.textSecondary,
               ),
               SizedBox(height: AppSpacing.xl),
               if (_isLoading)
