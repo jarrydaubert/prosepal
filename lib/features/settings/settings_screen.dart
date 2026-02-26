@@ -584,18 +584,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 ? null
                 : _UpgradeButton(
                     onPressed: () {
-                      final isLoggedIn = ref
-                          .read(authServiceProvider)
-                          .isLoggedIn;
-                      final isReturningUser = usageService
-                          .hasDeviceUsedFreeTier();
-                      if (isReturningUser && !isLoggedIn) {
-                        // Returning user: try auto-restore first
-                        context.push('/auth?autorestore=true');
-                      } else {
-                        // Show paywall sheet (has inline auth)
-                        showPaywall(context, source: 'settings');
-                      }
+                      // Always show paywall - it has inline auth
+                      showPaywall(context, source: 'settings');
                     },
                   ),
           ),

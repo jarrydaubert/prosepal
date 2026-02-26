@@ -167,8 +167,18 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
           Navigator.of(context).pop(true);
           return;
         }
+
+        // No Pro restored - auto-trigger purchase with selected package
+        if (mounted) {
+          Log.info('PaywallSheet: Apple sign-in success, auto-purchasing');
+          setState(() => _isAuthenticating = false);
+          final packages = _offering?.availablePackages ?? [];
+          if (packages.isNotEmpty) {
+            await _purchasePackage(packages[_selectedPackageIndex]);
+          }
+          return;
+        }
       }
-      Log.info('PaywallSheet: Apple sign-in success');
     } catch (e) {
       if (!AuthErrorHandler.isCancellation(e)) {
         _showError(AuthErrorHandler.getMessage(e));
@@ -211,8 +221,18 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
           Navigator.of(context).pop(true);
           return;
         }
+
+        // No Pro restored - auto-trigger purchase with selected package
+        if (mounted) {
+          Log.info('PaywallSheet: Google sign-in success, auto-purchasing');
+          setState(() => _isAuthenticating = false);
+          final packages = _offering?.availablePackages ?? [];
+          if (packages.isNotEmpty) {
+            await _purchasePackage(packages[_selectedPackageIndex]);
+          }
+          return;
+        }
       }
-      Log.info('PaywallSheet: Google sign-in success');
     } catch (e) {
       if (!AuthErrorHandler.isCancellation(e)) {
         _showError(AuthErrorHandler.getMessage(e));

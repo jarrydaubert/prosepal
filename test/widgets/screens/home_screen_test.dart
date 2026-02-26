@@ -174,22 +174,9 @@ void main() {
       expect(find.text('Tap to unlock 500/month'), findsNothing);
     });
 
-    testWidgets(
-      'tapping usage card navigates to auth for returning anonymous user',
-      (tester) async {
-        // Set device as returning user (has used free tier before)
-        await mockPrefs.setBool('device_used_free_tier', true);
-
-        await tester.pumpWidget(createTestableHomeScreen(remaining: 0));
-        await tester.pumpAndSettle();
-
-        await tester.tap(find.text('Tap to unlock 500/month'));
-        await tester.pumpAndSettle();
-
-        // Returning anonymous users go to auth first for auto-restore
-        expect(find.text('Auth Screen'), findsOneWidget);
-      },
-    );
+    // NOTE: "returning user -> auth" flow removed - paywall now handles all
+    // upgrade flows with inline auth. Testing paywall modal requires more
+    // complex setup, covered by paywall_sheet_test.dart
   });
 
   group('HomeScreen Navigation', () {
