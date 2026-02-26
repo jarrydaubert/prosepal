@@ -90,10 +90,10 @@ void main() {
       late RateLimitService service;
       late MockDeviceFingerprintService mockFingerprint;
 
-      setUp(() {
+      setUp(() async {
         mockFingerprint = MockDeviceFingerprintService();
         service = RateLimitService(mockFingerprint);
-        service.clearLocalHistory(); // Reset for each test
+        await service.clearLocalHistory(); // Reset for each test
       });
 
       test(
@@ -120,10 +120,10 @@ void main() {
       late RateLimitService service;
       late MockDeviceFingerprintService mockFingerprint;
 
-      setUp(() {
+      setUp(() async {
         mockFingerprint = MockDeviceFingerprintService();
         service = RateLimitService(mockFingerprint);
-        service.clearLocalHistory();
+        await service.clearLocalHistory();
       });
 
       test('allows first 10 requests in local fallback mode', () async {
@@ -177,7 +177,7 @@ void main() {
         expect(result.allowed, isFalse);
 
         // Clear history
-        service.clearLocalHistory();
+        await service.clearLocalHistory();
 
         // Should be allowed again
         result = await service.checkRateLimit();
