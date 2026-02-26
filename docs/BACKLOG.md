@@ -61,3 +61,13 @@
 |-------|----------|
 | Supabase session persists in Keychain | Low |
 | No offline banner | Low |
+
+---
+
+## P6 - Future Expansion
+
+| Initiative | Reference |
+|------------|-----------|
+| B2B Corporate Programs | `docs/EXPANSION_STRATEGY.md` |
+| Retail/Brand Partnerships | `docs/EXPANSION_STRATEGY.md` |
+| Platform Cloning | `docs/CLONING_PLAYBOOK.md` |
