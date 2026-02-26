@@ -54,6 +54,7 @@ class RateLimitService {
             .toList();
       }
     } catch (e) {
+      // Catches Exception + Error (binding not initialized in tests)
       Log.warning('Failed to load rate limit history', {'error': '$e'});
     }
     _initialized = true;
@@ -66,6 +67,7 @@ class RateLimitService {
       final strings = _localRequestTimestamps.map((ts) => ts.toIso8601String()).toList();
       await prefs.setStringList(_prefsKey, strings);
     } catch (e) {
+      // Catches Exception + Error (binding not initialized in tests)
       Log.warning('Failed to persist rate limit history', {'error': '$e'});
     }
   }
@@ -144,7 +146,7 @@ class RateLimitService {
       }
 
       return const RateLimitResult(allowed: true);
-    } catch (e) {
+    } on PostgrestException catch (e) {
       Log.error('Rate limit check failed, using local fallback', e);
       // Fail closed with local fallback - don't allow unlimited on server error
       return _checkLocalRateLimit();

@@ -79,7 +79,7 @@ class DeviceFingerprintService {
       }
 
       return _cachedFingerprint;
-    } catch (e) {
+    } on Exception catch (e) {
       Log.error('Failed to get device fingerprint', e);
       return null;
     }
@@ -152,7 +152,7 @@ class DeviceFingerprintService {
                   : DeviceCheckReason.notUsedYet)
             : DeviceCheckReason.alreadyUsed,
       );
-    } catch (e) {
+    } on PostgrestException catch (e) {
       Log.error('Device free tier check failed', e);
       // Graceful degradation - allow on server error
       return const DeviceCheckResult(
@@ -197,7 +197,7 @@ class DeviceFingerprintService {
       Log.info('Device marked as used free tier', {'success': allowed});
 
       return allowed;
-    } catch (e) {
+    } on PostgrestException catch (e) {
       Log.error('Failed to mark device as used', e);
       return false;
     }
