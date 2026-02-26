@@ -168,14 +168,23 @@ class CustomerInfoNotifier extends StateNotifier<CustomerInfo?> {
   final ISubscriptionService _subscriptionService;
   final SharedPreferences _prefs;
 
-  CustomerInfoNotifier(this._subscriptionService, this._prefs) : super(null) {
-    // Add listener for live updates
-    _subscriptionService.addCustomerInfoListener(_updateCustomerInfo);
+  bool _hasReceivedListenerUpdate = false;
 
-    // Initial fetch
+  CustomerInfoNotifier(this._subscriptionService, this._prefs) : super(null) {
+    // Add listener for live updates (may fire immediately)
+    _subscriptionService.addCustomerInfoListener(_onListenerUpdate);
+
+    // Initial fetch - only use if listener hasn't already provided data
     _subscriptionService.getCustomerInfo().then((info) {
-      if (info != null) _updateCustomerInfo(info);
+      if (info != null && !_hasReceivedListenerUpdate) {
+        _updateCustomerInfo(info);
+      }
     });
+  }
+
+  void _onListenerUpdate(CustomerInfo info) {
+    _hasReceivedListenerUpdate = true;
+    _updateCustomerInfo(info);
   }
 
   void _updateCustomerInfo(CustomerInfo info) {
@@ -193,7 +202,7 @@ class CustomerInfoNotifier extends StateNotifier<CustomerInfo?> {
 
   @override
   void dispose() {
-    _subscriptionService.removeCustomerInfoListener(_updateCustomerInfo);
+    _subscriptionService.removeCustomerInfoListener(_onListenerUpdate);
     super.dispose();
   }
 }
