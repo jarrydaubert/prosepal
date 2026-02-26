@@ -77,6 +77,13 @@ class SubscriptionService implements ISubscriptionService {
 
   static const String _entitlementId = 'pro';
 
+  /// Check if current platform supports RevenueCat
+  static bool get _isPlatformSupported {
+    // RevenueCat Flutter SDK supports iOS and Android
+    // Web and desktop require different payment solutions
+    return Platform.isIOS || Platform.isAndroid;
+  }
+
   /// Get the appropriate API key based on platform and environment
   static String get _activeApiKey {
     // If Test Store is explicitly enabled and key is provided, use it
@@ -98,6 +105,27 @@ class SubscriptionService implements ISubscriptionService {
   @override
   Future<void> initialize() async {
     if (_isInitialized) return;
+
+    // Check platform support first
+    if (!_isPlatformSupported) {
+      Log.warning('RevenueCat not supported on this platform', {
+        'platform': Platform.operatingSystem,
+      });
+      return;
+    }
+
+    // CRITICAL: Block Test Store in release builds
+    // Test Store will crash in production - this prevents accidental submission
+    if (isUsingTestStore && kReleaseMode) {
+      Log.error(
+        'FATAL: Test Store cannot be used in release builds',
+        'Configuration error',
+      );
+      throw StateError(
+        'RevenueCat Test Store is enabled in release mode. '
+        'This will crash in production. Remove REVENUECAT_USE_TEST_STORE flag.',
+      );
+    }
 
     final apiKey = _activeApiKey;
 
@@ -292,6 +320,18 @@ class SubscriptionService implements ISubscriptionService {
         'created': result.created,
         'hasPro': hasPro,
       });
+
+      // Sync purchases to ensure entitlements are fresh after login
+      // This is especially important on Android for purchase restoration
+      try {
+        await Purchases.syncPurchases();
+        Log.info('RevenueCat purchases synced after identify');
+      } catch (syncError) {
+        // Non-fatal: sync may fail if no purchases exist
+        Log.warning('Purchase sync after identify failed', {
+          'error': '$syncError',
+        });
+      }
 
       // Set user ID in Crashlytics for crash correlation
       await Log.setUserId(userId);
