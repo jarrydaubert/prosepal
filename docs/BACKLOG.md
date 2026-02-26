@@ -53,4 +53,3 @@
 |-------|----------|
 | Supabase session persists in Keychain | Low |
 | No offline banner | Low |
-| HomeScreen usage indicator tests failing (3) | Low |
