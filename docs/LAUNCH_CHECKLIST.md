@@ -143,11 +143,11 @@
 
 ### After App Store Approval
 
-**Apple ID: `6757088726`**
+**Apple ID: `6757088726`** - Already added to code ✅
 
-- [ ] Update `review_service.dart` line ~15: `static const String appStoreId = '6757088726';`
-- [ ] Update `settings_screen.dart` Rate App link (uses review_service)
-- [ ] Rebuild and submit update (or wait for next release)
+- [x] Update `review_service.dart` - DONE
+- [x] Update `settings_screen.dart` - DONE
+- [ ] No rebuild needed - ID already in code
 
 ### After Play Store Approval
 

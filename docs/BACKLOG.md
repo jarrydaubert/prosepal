@@ -8,7 +8,6 @@
 
 | Item | Action |
 |------|--------|
-| App Store ID | Add to `review_service.dart` and `settings_screen.dart` after approval |
 | Supabase leaked password protection | Enable toggle in Dashboard > Auth (requires paid plan) |
 
 ---
