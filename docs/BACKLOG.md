@@ -68,6 +68,9 @@
 | Message card height bounds | `results_screen.dart` | Constrain SelectableText height for long messages on small screens |
 | "Use this message" action | `results_screen.dart` | Button to pre-fill form for iteration on specific message |
 | Shareable message image | `results_screen.dart` | Export message as image with app watermark for viral sharing |
+| Subscription test logging | `subscription_service_test.dart` | Mock LogService to verify warnings during degradation |
+| Subscription init tests | `subscription_service_test.dart` | Add tests for initialize() behavior and isConfigured state |
+| Subscription integration tests | `integration_test/` | Device-based tests for purchase, restore, paywall flows |
 | UsageService race condition | `usage_service.dart` | Atomic increment via Supabase RPC |
 | Hardcoded usage limits | `usage_service.dart` | Move to remote config |
 | Supabase singleton | `usage_service.dart` | Inject client for testability |
