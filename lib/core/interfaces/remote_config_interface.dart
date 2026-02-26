@@ -35,6 +35,12 @@ abstract class IRemoteConfigService {
   /// Fallback AI model if primary fails (404, deprecated, etc.).
   String get aiModelFallback;
 
+  /// Whether Firebase AI should request limited-use App Check tokens.
+  ///
+  /// When true, AI requests use `FirebaseAppCheck.getLimitedUseToken()`
+  /// for stronger replay resistance at the cost of stricter token behavior.
+  bool get useLimitedUseAppCheckTokens;
+
   // ===== Force Update Config =====
 
   /// Whether force update checking is enabled.

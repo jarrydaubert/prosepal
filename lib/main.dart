@@ -220,9 +220,21 @@ Future<void> _initializeApp() async {
 /// Initialize Firebase App Check
 Future<void> _initAppCheck() async {
   try {
+    const providerAndroid = kDebugMode
+        ? AndroidDebugProvider()
+        : AndroidPlayIntegrityProvider();
+    const providerApple = kDebugMode
+        ? AppleDebugProvider()
+        : AppleAppAttestWithDeviceCheckFallbackProvider();
+
     await FirebaseAppCheck.instance.activate(
-      providerApple: const AppleAppAttestProvider(),
+      providerAndroid: providerAndroid,
+      providerApple: providerApple,
     );
+    Log.info('Firebase App Check activated', {
+      'androidProvider': providerAndroid.runtimeType.toString(),
+      'appleProvider': providerApple.runtimeType.toString(),
+    });
   } on Exception catch (e) {
     Log.warning('Firebase App Check activation failed', {'error': '$e'});
   }
