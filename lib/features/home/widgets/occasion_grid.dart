@@ -5,13 +5,33 @@ import '../../../core/models/occasion.dart';
 import '../../../shared/theme/app_colors.dart';
 
 class OccasionGrid extends StatelessWidget {
-  const OccasionGrid({super.key, required this.onOccasionSelected});
+  const OccasionGrid({
+    super.key,
+    required this.occasions,
+    required this.onOccasionSelected,
+  });
 
+  final List<Occasion> occasions;
   final void Function(Occasion) onOccasionSelected;
 
   @override
   Widget build(BuildContext context) {
     final reduceMotion = MediaQuery.of(context).disableAnimations;
+
+    // Show empty state if no matches
+    if (occasions.isEmpty) {
+      return SliverToBoxAdapter(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 40),
+          child: Center(
+            child: Text(
+              'No occasions found',
+              style: TextStyle(fontSize: 16, color: Colors.grey[500]),
+            ),
+          ),
+        ),
+      );
+    }
 
     return SliverGrid(
       gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
@@ -21,7 +41,7 @@ class OccasionGrid extends StatelessWidget {
         childAspectRatio: 1.3,
       ),
       delegate: SliverChildBuilderDelegate((context, index) {
-        final occasion = Occasion.values[index];
+        final occasion = occasions[index];
         final tile = _OccasionTile(
           key: ValueKey('occasion_${occasion.name}'),
           occasion: occasion,
@@ -29,22 +49,27 @@ class OccasionGrid extends StatelessWidget {
         );
 
         // Skip staggered animations if user prefers reduced motion
-        if (reduceMotion) return tile;
+        // Also skip if filtered (search active) - feels snappier
+        if (reduceMotion || occasions.length != Occasion.values.length) {
+          return tile;
+        }
 
+        // Cap stagger delay at 8 items (2 rows) to prevent blank screen on fast scroll
+        final staggerDelay = index < 8 ? index * 25 : 200;
         return tile
             .animate(key: ValueKey('occasion_anim_$index'))
             .fadeIn(
-              delay: Duration(milliseconds: 100 + index * 40),
-              duration: 350.ms,
+              delay: Duration(milliseconds: staggerDelay),
+              duration: 150.ms,
             )
             .scale(
-              begin: const Offset(0.92, 0.92),
+              begin: const Offset(0.95, 0.95),
               end: const Offset(1, 1),
-              delay: Duration(milliseconds: 100 + index * 40),
-              duration: 350.ms,
+              delay: Duration(milliseconds: staggerDelay),
+              duration: 150.ms,
               curve: Curves.easeOut,
             );
-      }, childCount: Occasion.values.length),
+      }, childCount: occasions.length),
     );
   }
 }

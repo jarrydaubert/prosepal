@@ -194,6 +194,18 @@ class AiService {
       );
     }
 
+    // Model not found (404) - triggers fallback to alternate model
+    if (message.contains('404') ||
+        message.contains('not found') ||
+        message.contains('model') && message.contains('does not exist')) {
+      return const AiErrorClassification(
+        exceptionType: AiServiceException,
+        message: 'The AI model is temporarily unavailable. Please try again.',
+        errorCode: 'MODEL_NOT_FOUND',
+        isRetryable: true,
+      );
+    }
+
     // Timeout
     if (message.contains('timeout')) {
       return AiErrorClassification(
@@ -228,6 +240,17 @@ class AiService {
   @visibleForTesting
   static AiErrorClassification classifyGeneralError(String errorString) {
     final errorStr = errorString.toLowerCase();
+
+    // Firebase AI SDK parsing errors (Gemini 3 preview sometimes returns empty content)
+    if (errorStr.contains('unhandled format') ||
+        errorStr.contains('content: {}')) {
+      return const AiErrorClassification(
+        exceptionType: AiServiceException,
+        message: 'The AI returned an unexpected response. Please try again.',
+        errorCode: 'SDK_PARSE_ERROR',
+        isRetryable: true,
+      );
+    }
 
     // Network errors
     if (errorStr.contains('network') ||
@@ -342,19 +365,29 @@ class AiService {
     );
   }
 
-  /// Switch to fallback model (call after primary model fails with 404)
-  /// TODO: Wire up in error handling when model 404 is detected
+  /// Track if we've already tried the fallback model this session
+  bool _triedFallback = false;
+
+  /// Switch to fallback model (called after primary model fails persistently)
+  /// Returns true if switched, false if already on fallback
   @visibleForTesting
-  void switchToFallback() {
+  bool switchToFallback() {
+    if (_triedFallback) return false;
+
     final fallback = _fallbackModelName;
-    if (_currentModelName != fallback) {
-      Log.warning('Switching to fallback AI model', {
-        'from': _currentModelName,
-        'to': fallback,
-      });
-      _currentModelName = fallback;
-      _model = _createModel(fallback);
+    if (_currentModelName == fallback) {
+      _triedFallback = true;
+      return false;
     }
+
+    Log.warning('Switching to fallback AI model', {
+      'from': _currentModelName,
+      'to': fallback,
+    });
+    _triedFallback = true;
+    _currentModelName = fallback;
+    _model = _createModel(fallback);
+    return true;
   }
 
   /// Generate messages with proper error handling and retry logic
@@ -497,6 +530,7 @@ class AiService {
         occasion: occasion,
         relationship: relationship,
         tone: tone,
+        length: length,
         recipientName: recipientName,
         personalDetails: personalDetails,
       );
@@ -522,6 +556,17 @@ class AiService {
             'delayMs': delayMs + jitter,
           });
           await Future<void>.delayed(Duration(milliseconds: delayMs + jitter));
+          continue;
+        }
+
+        // If model not found (404) or unavailable, try fallback model
+        if ((classification.errorCode == 'MODEL_NOT_FOUND' ||
+                classification.errorCode == 'SERVICE_UNAVAILABLE') &&
+            switchToFallback()) {
+          Log.info('Retrying with fallback model after Firebase AI error', {
+            'errorCode': classification.errorCode,
+          });
+          attempt = 0; // Reset attempts for fallback model
           continue;
         }
 
@@ -558,6 +603,14 @@ class AiService {
           final delayMs = AiConfig.initialDelayMs * (1 << attempt);
           final jitter = (delayMs * 0.2 * _random.nextDouble()).toInt();
           await Future.delayed(Duration(milliseconds: delayMs + jitter));
+          continue;
+        }
+
+        // If SDK parse error and we haven't tried fallback, switch and retry
+        if (classification.errorCode == 'SDK_PARSE_ERROR' &&
+            switchToFallback()) {
+          Log.info('Retrying with fallback model after SDK parse error');
+          attempt = 0; // Reset attempts for fallback model
           continue;
         }
 

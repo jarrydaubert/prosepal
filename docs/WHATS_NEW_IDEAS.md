@@ -226,6 +226,22 @@ This update makes yours even better:
 • Bug fixes and performance improvements
 ```
 
+### v1.1.0 (January 2026)
+**Selected:** Option A (Quote-Forward)
+```
+"The difference between the right word and the almost right word is the difference between lightning and a lightning bug." — Mark Twain
+
+This update helps you find the lightning:
+
+- Regenerate: Not quite right? Generate 3 more with one tap
+- 3 new tones: Sarcastic, Nostalgic, and Poetic
+- Occasion search: Find any occasion instantly
+- Smarter AI: Upgraded for better messages
+- Polished design throughout
+
+Happy writing!
+```
+
 ---
 
 ## Ideas Parking Lot

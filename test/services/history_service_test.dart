@@ -19,6 +19,7 @@ void main() {
     Occasion occasion = Occasion.birthday,
     Relationship relationship = Relationship.closeFriend,
     Tone tone = Tone.heartfelt,
+    MessageLength length = MessageLength.standard,
   }) {
     return GenerationResult(
       messages: [
@@ -42,6 +43,7 @@ void main() {
       occasion: occasion,
       relationship: relationship,
       tone: tone,
+      length: length,
     );
   }
 
@@ -102,6 +104,7 @@ void main() {
         occasion: Occasion.sympathy,
         relationship: Relationship.boss,
         tone: Tone.formal,
+        length: MessageLength.standard,
         recipientName: 'John Doe',
         personalDetails: 'Lost a parent recently',
       );

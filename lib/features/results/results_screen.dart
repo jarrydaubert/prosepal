@@ -20,6 +20,7 @@ class ResultsScreen extends ConsumerStatefulWidget {
 
 class _ResultsScreenState extends ConsumerState<ResultsScreen> {
   int? _copiedIndex;
+  bool _isRegenerating = false;
 
   bool get _reduceMotion => MediaQuery.of(context).disableAnimations;
 
@@ -123,11 +124,23 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                         child: AppButton(
                           label: 'Start Over',
                           style: AppButtonStyle.outline,
-                          icon: Icons.refresh,
+                          icon: Icons.home_outlined,
                           onPressed: () {
                             resetGenerationForm(ref);
                             context.go('/home');
                           },
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: AppButton(
+                          label: 'Regenerate',
+                          style: AppButtonStyle.primary,
+                          icon: Icons.auto_awesome,
+                          isLoading: _isRegenerating,
+                          onPressed: _isRegenerating
+                              ? null
+                              : () => _regenerate(result),
                         ),
                       ),
                     ],
@@ -192,6 +205,61 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
         subject: 'Message from Prosepal',
       ),
     );
+  }
+
+  Future<void> _regenerate(GenerationResult currentResult) async {
+    Log.info('Regenerate requested', {'occasion': currentResult.occasion.name});
+
+    setState(() => _isRegenerating = true);
+
+    try {
+      final aiService = ref.read(aiServiceProvider);
+      final usageService = ref.read(usageServiceProvider);
+      final historyService = ref.read(historyServiceProvider);
+
+      final result = await aiService.generateMessages(
+        occasion: currentResult.occasion,
+        relationship: currentResult.relationship,
+        tone: currentResult.tone,
+        length: currentResult.length,
+        recipientName: currentResult.recipientName,
+        personalDetails: currentResult.personalDetails,
+      );
+
+      // Save to history
+      await historyService.saveGeneration(result);
+
+      // Force Riverpod to re-read usage
+      ref.invalidate(remainingGenerationsProvider);
+      ref.invalidate(totalUsageProvider);
+
+      // Check for review prompt
+      final reviewService = ref.read(reviewServiceProvider);
+      final totalGenerations = usageService.getTotalCount();
+      await reviewService.checkAndRequestReview(totalGenerations);
+
+      // Update results
+      ref.read(generationResultProvider.notifier).state = result;
+
+      Log.info('Regeneration success', {
+        'messageCount': result.messages.length,
+      });
+    } on Exception catch (e) {
+      Log.warning('Regeneration failed', {'error': '$e'});
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Failed to generate. Please try again.'),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isRegenerating = false);
+      }
+    }
   }
 }
 

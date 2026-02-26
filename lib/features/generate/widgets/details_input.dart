@@ -29,12 +29,16 @@ class DetailsInput extends StatefulWidget {
 class _DetailsInputState extends State<DetailsInput> {
   late final TextEditingController _nameController;
   late final TextEditingController _detailsController;
+  late final FocusNode _nameFocusNode;
+  late final FocusNode _detailsFocusNode;
 
   @override
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.recipientName);
     _detailsController = TextEditingController(text: widget.personalDetails);
+    _nameFocusNode = FocusNode();
+    _detailsFocusNode = FocusNode();
   }
 
   @override
@@ -60,6 +64,8 @@ class _DetailsInputState extends State<DetailsInput> {
   void dispose() {
     _nameController.dispose();
     _detailsController.dispose();
+    _nameFocusNode.dispose();
+    _detailsFocusNode.dispose();
     super.dispose();
   }
 
@@ -99,6 +105,8 @@ class _DetailsInputState extends State<DetailsInput> {
             const SizedBox(height: 10),
             _StyledTextField(
               controller: _nameController,
+              focusNode: _nameFocusNode,
+              nextFocusNode: _detailsFocusNode,
               hintText: 'e.g., Sarah, Mom, John',
               icon: Icons.person_outline,
               maxLength: 50,
@@ -118,6 +126,7 @@ class _DetailsInputState extends State<DetailsInput> {
             const SizedBox(height: 10),
             _StyledTextField(
               controller: _detailsController,
+              focusNode: _detailsFocusNode,
               hintText:
                   'Add as much detail as possible for a more personalized message...',
               icon: Icons.notes_outlined,
@@ -163,6 +172,8 @@ class _StyledTextField extends StatefulWidget {
     required this.hintText,
     required this.icon,
     required this.onChanged,
+    this.focusNode,
+    this.nextFocusNode,
     this.maxLines = 1,
     this.maxLength,
   });
@@ -171,6 +182,8 @@ class _StyledTextField extends StatefulWidget {
   final String hintText;
   final IconData icon;
   final void Function(String) onChanged;
+  final FocusNode? focusNode;
+  final FocusNode? nextFocusNode;
   final int maxLines;
   final int? maxLength;
 
@@ -198,6 +211,7 @@ class _StyledTextFieldState extends State<_StyledTextField> {
         onFocusChange: (focused) => setState(() => _isFocused = focused),
         child: TextField(
           controller: widget.controller,
+          focusNode: widget.focusNode,
           maxLines: widget.maxLines,
           maxLength: widget.maxLength,
           textCapitalization: widget.maxLines > 1
@@ -207,6 +221,13 @@ class _StyledTextFieldState extends State<_StyledTextField> {
               ? TextInputAction.done
               : TextInputAction.next,
           onChanged: widget.onChanged,
+          onEditingComplete: () {
+            if (widget.nextFocusNode != null) {
+              widget.nextFocusNode!.requestFocus();
+            } else {
+              FocusScope.of(context).unfocus();
+            }
+          },
           decoration: InputDecoration(
             hintText: widget.hintText,
             hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),

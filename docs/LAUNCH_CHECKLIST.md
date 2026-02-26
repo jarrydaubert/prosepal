@@ -1,6 +1,6 @@
 # Launch Checklist
 
-> Last verified: 2026-01-16
+> Last verified: 2026-01-17
 
 ---
 
@@ -8,7 +8,8 @@
 
 | Platform | Status | Details |
 |----------|--------|---------|
-| iOS | **LIVE** | Build 29 - https://apps.apple.com/app/id6757088726 |
+| iOS | **LIVE** | v1.0.1 Build 29 - https://apps.apple.com/app/id6757088726 |
+| iOS | **PENDING** | v1.1.0 Build 31 - Ready for submission |
 | Android | Blocked | Requires 14-day closed testing with 12+ testers |
 
 ---

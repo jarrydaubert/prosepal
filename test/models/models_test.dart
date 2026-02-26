@@ -212,6 +212,7 @@ void main() {
         occasion: Occasion.birthday,
         relationship: Relationship.family,
         tone: Tone.heartfelt,
+        length: MessageLength.standard,
       );
 
       expect(result.messages.length, equals(2));
@@ -224,6 +225,7 @@ void main() {
         occasion: Occasion.birthday,
         relationship: Relationship.family,
         tone: Tone.heartfelt,
+        length: MessageLength.standard,
         recipientName: 'Mom',
         personalDetails: 'Turning 50',
       );
@@ -238,6 +240,7 @@ void main() {
         occasion: Occasion.birthday,
         relationship: Relationship.family,
         tone: Tone.heartfelt,
+        length: MessageLength.standard,
         recipientName: 'Test',
       );
 
@@ -266,6 +269,7 @@ void main() {
         'occasion': 'thankYou',
         'relationship': 'acquaintance',
         'tone': 'formal',
+        'length': 'standard',
         'recipientName': null,
         'personalDetails': null,
       };
@@ -277,12 +281,45 @@ void main() {
       expect(result.occasion, equals(Occasion.thankYou));
     });
 
+    test(
+      'fromJson should handle missing length field (backward compatibility)',
+      () {
+        // Old history entries don't have length field
+        final json = {
+          'messages': [
+            {
+              'id': 'old-1',
+              'text': 'Old message',
+              'occasion': 'birthday',
+              'relationship': 'family',
+              'tone': 'heartfelt',
+              'createdAt': '2025-01-01T12:00:00.000Z',
+              'recipientName': null,
+              'personalDetails': null,
+            },
+          ],
+          'occasion': 'birthday',
+          'relationship': 'family',
+          'tone': 'heartfelt',
+          // No 'length' field - simulating old history entry
+          'recipientName': null,
+          'personalDetails': null,
+        };
+
+        final result = GenerationResult.fromJson(json);
+
+        expect(result.messages.length, equals(1));
+        expect(result.length, equals(MessageLength.standard)); // Default
+      },
+    );
+
     test('toJson and fromJson should be reversible', () {
       final original = GenerationResult(
         messages: testMessages,
         occasion: Occasion.birthday,
         relationship: Relationship.family,
         tone: Tone.heartfelt,
+        length: MessageLength.standard,
         recipientName: 'Test',
         personalDetails: 'Details',
       );
@@ -299,6 +336,7 @@ void main() {
         occasion: Occasion.birthday,
         relationship: Relationship.family,
         tone: Tone.heartfelt,
+        length: MessageLength.standard,
       );
 
       final result2 = GenerationResult(
@@ -306,6 +344,7 @@ void main() {
         occasion: Occasion.birthday,
         relationship: Relationship.family,
         tone: Tone.heartfelt,
+        length: MessageLength.standard,
       );
 
       expect(result1, equals(result2));
@@ -317,6 +356,7 @@ void main() {
         occasion: Occasion.birthday,
         relationship: Relationship.family,
         tone: Tone.heartfelt,
+        length: MessageLength.standard,
       );
 
       final result2 = GenerationResult(
@@ -324,6 +364,7 @@ void main() {
         occasion: Occasion.birthday,
         relationship: Relationship.family,
         tone: Tone.heartfelt,
+        length: MessageLength.standard,
       );
 
       expect(result1, isNot(equals(result2)));
@@ -335,6 +376,7 @@ void main() {
         occasion: Occasion.birthday,
         relationship: Relationship.family,
         tone: Tone.heartfelt,
+        length: MessageLength.standard,
       );
 
       final str = result.toString();

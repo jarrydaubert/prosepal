@@ -167,8 +167,8 @@ void main() {
       await tester.pumpWidget(createTestableHomeScreen(isPro: true));
       await tester.pumpAndSettle();
 
+      // PRO badge shown as compact amber pill next to title
       expect(find.text('PRO'), findsOneWidget);
-      expect(find.byIcon(Icons.star_rounded), findsOneWidget);
       // Should NOT show free user elements
       expect(find.text('Free messages remaining'), findsNothing);
       expect(find.text('Tap to unlock 500/month'), findsNothing);
@@ -245,11 +245,12 @@ void main() {
       expect(settingsButton, findsOneWidget);
 
       // Button should be tappable (wrapped in GestureDetector)
+      // Note: May find multiple GestureDetectors (button wrapper + root keyboard dismiss)
       final gestureDetector = find.ancestor(
         of: settingsButton,
         matching: find.byType(GestureDetector),
       );
-      expect(gestureDetector, findsOneWidget);
+      expect(gestureDetector, findsWidgets);
     });
 
     testWidgets('should have scrollable content', (tester) async {

@@ -46,47 +46,19 @@ class _ProBadge extends StatelessWidget {
           onTap?.call();
         },
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(
-            color: AppColors.primaryLight,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: AppColors.primary, width: 3),
+            color: Colors.amber,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.amber.shade700, width: 2),
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 24,
-                height: 24,
-                decoration: BoxDecoration(
-                  color: AppColors.primary,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: AppColors.primary, width: 2),
-                ),
-                child: const Icon(
-                  Icons.star_rounded,
-                  size: 14,
-                  color: Colors.white,
-                ),
-              ),
-              const SizedBox(width: 8),
-              const Text(
-                'PRO',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.primary,
-                ),
-              ),
-              if (onTap != null) ...[
-                const SizedBox(width: 4),
-                const Icon(
-                  Icons.chevron_right,
-                  size: 18,
-                  color: AppColors.primary,
-                ),
-              ],
-            ],
+          child: const Text(
+            'PRO',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
           ),
         ),
       ),

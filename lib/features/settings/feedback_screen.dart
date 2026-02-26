@@ -9,7 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/providers/providers.dart';
 import '../../core/services/diagnostic_service.dart';
-import '../../shared/components/app_button.dart';
+import '../../shared/components/components.dart';
 import '../../shared/theme/app_colors.dart';
 import '../../shared/theme/app_spacing.dart';
 
@@ -129,7 +129,20 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
-        appBar: AppBar(title: const Text('Send Feedback')),
+        backgroundColor: AppColors.background,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          title: const Text(
+            'Send Feedback',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          leading: AppBackButton(onPressed: () => Navigator.pop(context)),
+        ),
         body: Padding(
           padding: const EdgeInsets.all(AppSpacing.screenPadding),
           child: Column(

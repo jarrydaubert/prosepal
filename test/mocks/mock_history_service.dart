@@ -108,6 +108,7 @@ class TestHistoryFactory {
         occasion: occasion,
         relationship: relationship,
         tone: tone,
+        length: MessageLength.standard,
         recipientName: recipientName,
       ),
       savedAt: savedAt ?? now,

@@ -15,7 +15,15 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$GeneratedMessage {
 
- String get id; String get text;@OccasionConverter() Occasion get occasion;@RelationshipConverter() Relationship get relationship;@ToneConverter() Tone get tone; DateTime get createdAt; String? get recipientName; String? get personalDetails;
+/// Unique identifier for this message
+ String get id;/// The generated message text
+ String get text;/// The occasion this message was generated for
+@OccasionConverter() Occasion get occasion;/// The relationship to the recipient
+@RelationshipConverter() Relationship get relationship;/// The tone/style of the message
+@ToneConverter() Tone get tone;/// When this message was generated
+ DateTime get createdAt;/// Optional recipient name used in generation
+ String? get recipientName;/// Optional personal details used in generation
+ String? get personalDetails;
 /// Create a copy of GeneratedMessage
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -219,13 +227,21 @@ class _GeneratedMessage extends GeneratedMessage {
   const _GeneratedMessage({required this.id, required this.text, @OccasionConverter() required this.occasion, @RelationshipConverter() required this.relationship, @ToneConverter() required this.tone, required this.createdAt, this.recipientName, this.personalDetails}): super._();
   factory _GeneratedMessage.fromJson(Map<String, dynamic> json) => _$GeneratedMessageFromJson(json);
 
+/// Unique identifier for this message
 @override final  String id;
+/// The generated message text
 @override final  String text;
+/// The occasion this message was generated for
 @override@OccasionConverter() final  Occasion occasion;
+/// The relationship to the recipient
 @override@RelationshipConverter() final  Relationship relationship;
+/// The tone/style of the message
 @override@ToneConverter() final  Tone tone;
+/// When this message was generated
 @override final  DateTime createdAt;
+/// Optional recipient name used in generation
 @override final  String? recipientName;
+/// Optional personal details used in generation
 @override final  String? personalDetails;
 
 /// Create a copy of GeneratedMessage
@@ -299,7 +315,14 @@ as String?,
 /// @nodoc
 mixin _$GenerationResult {
 
- List<GeneratedMessage> get messages;@OccasionConverter() Occasion get occasion;@RelationshipConverter() Relationship get relationship;@ToneConverter() Tone get tone; String? get recipientName; String? get personalDetails;
+/// List of generated messages from this session
+ List<GeneratedMessage> get messages;/// The occasion used for generation
+@OccasionConverter() Occasion get occasion;/// The relationship used for generation
+@RelationshipConverter() Relationship get relationship;/// The tone used for generation
+@ToneConverter() Tone get tone;/// The message length used for generation
+@MessageLengthConverter() MessageLength get length;/// Optional recipient name used in generation
+ String? get recipientName;/// Optional personal details used in generation
+ String? get personalDetails;
 /// Create a copy of GenerationResult
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -312,16 +335,16 @@ $GenerationResultCopyWith<GenerationResult> get copyWith => _$GenerationResultCo
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is GenerationResult&&const DeepCollectionEquality().equals(other.messages, messages)&&(identical(other.occasion, occasion) || other.occasion == occasion)&&(identical(other.relationship, relationship) || other.relationship == relationship)&&(identical(other.tone, tone) || other.tone == tone)&&(identical(other.recipientName, recipientName) || other.recipientName == recipientName)&&(identical(other.personalDetails, personalDetails) || other.personalDetails == personalDetails));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is GenerationResult&&const DeepCollectionEquality().equals(other.messages, messages)&&(identical(other.occasion, occasion) || other.occasion == occasion)&&(identical(other.relationship, relationship) || other.relationship == relationship)&&(identical(other.tone, tone) || other.tone == tone)&&(identical(other.length, length) || other.length == length)&&(identical(other.recipientName, recipientName) || other.recipientName == recipientName)&&(identical(other.personalDetails, personalDetails) || other.personalDetails == personalDetails));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(messages),occasion,relationship,tone,recipientName,personalDetails);
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(messages),occasion,relationship,tone,length,recipientName,personalDetails);
 
 @override
 String toString() {
-  return 'GenerationResult(messages: $messages, occasion: $occasion, relationship: $relationship, tone: $tone, recipientName: $recipientName, personalDetails: $personalDetails)';
+  return 'GenerationResult(messages: $messages, occasion: $occasion, relationship: $relationship, tone: $tone, length: $length, recipientName: $recipientName, personalDetails: $personalDetails)';
 }
 
 
@@ -332,7 +355,7 @@ abstract mixin class $GenerationResultCopyWith<$Res>  {
   factory $GenerationResultCopyWith(GenerationResult value, $Res Function(GenerationResult) _then) = _$GenerationResultCopyWithImpl;
 @useResult
 $Res call({
- List<GeneratedMessage> messages,@OccasionConverter() Occasion occasion,@RelationshipConverter() Relationship relationship,@ToneConverter() Tone tone, String? recipientName, String? personalDetails
+ List<GeneratedMessage> messages,@OccasionConverter() Occasion occasion,@RelationshipConverter() Relationship relationship,@ToneConverter() Tone tone,@MessageLengthConverter() MessageLength length, String? recipientName, String? personalDetails
 });
 
 
@@ -349,13 +372,14 @@ class _$GenerationResultCopyWithImpl<$Res>
 
 /// Create a copy of GenerationResult
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? messages = null,Object? occasion = null,Object? relationship = null,Object? tone = null,Object? recipientName = freezed,Object? personalDetails = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? messages = null,Object? occasion = null,Object? relationship = null,Object? tone = null,Object? length = null,Object? recipientName = freezed,Object? personalDetails = freezed,}) {
   return _then(_self.copyWith(
 messages: null == messages ? _self.messages : messages // ignore: cast_nullable_to_non_nullable
 as List<GeneratedMessage>,occasion: null == occasion ? _self.occasion : occasion // ignore: cast_nullable_to_non_nullable
 as Occasion,relationship: null == relationship ? _self.relationship : relationship // ignore: cast_nullable_to_non_nullable
 as Relationship,tone: null == tone ? _self.tone : tone // ignore: cast_nullable_to_non_nullable
-as Tone,recipientName: freezed == recipientName ? _self.recipientName : recipientName // ignore: cast_nullable_to_non_nullable
+as Tone,length: null == length ? _self.length : length // ignore: cast_nullable_to_non_nullable
+as MessageLength,recipientName: freezed == recipientName ? _self.recipientName : recipientName // ignore: cast_nullable_to_non_nullable
 as String?,personalDetails: freezed == personalDetails ? _self.personalDetails : personalDetails // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
@@ -442,10 +466,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( List<GeneratedMessage> messages, @OccasionConverter()  Occasion occasion, @RelationshipConverter()  Relationship relationship, @ToneConverter()  Tone tone,  String? recipientName,  String? personalDetails)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( List<GeneratedMessage> messages, @OccasionConverter()  Occasion occasion, @RelationshipConverter()  Relationship relationship, @ToneConverter()  Tone tone, @MessageLengthConverter()  MessageLength length,  String? recipientName,  String? personalDetails)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _GenerationResult() when $default != null:
-return $default(_that.messages,_that.occasion,_that.relationship,_that.tone,_that.recipientName,_that.personalDetails);case _:
+return $default(_that.messages,_that.occasion,_that.relationship,_that.tone,_that.length,_that.recipientName,_that.personalDetails);case _:
   return orElse();
 
 }
@@ -463,10 +487,10 @@ return $default(_that.messages,_that.occasion,_that.relationship,_that.tone,_tha
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( List<GeneratedMessage> messages, @OccasionConverter()  Occasion occasion, @RelationshipConverter()  Relationship relationship, @ToneConverter()  Tone tone,  String? recipientName,  String? personalDetails)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( List<GeneratedMessage> messages, @OccasionConverter()  Occasion occasion, @RelationshipConverter()  Relationship relationship, @ToneConverter()  Tone tone, @MessageLengthConverter()  MessageLength length,  String? recipientName,  String? personalDetails)  $default,) {final _that = this;
 switch (_that) {
 case _GenerationResult():
-return $default(_that.messages,_that.occasion,_that.relationship,_that.tone,_that.recipientName,_that.personalDetails);case _:
+return $default(_that.messages,_that.occasion,_that.relationship,_that.tone,_that.length,_that.recipientName,_that.personalDetails);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -483,10 +507,10 @@ return $default(_that.messages,_that.occasion,_that.relationship,_that.tone,_tha
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( List<GeneratedMessage> messages, @OccasionConverter()  Occasion occasion, @RelationshipConverter()  Relationship relationship, @ToneConverter()  Tone tone,  String? recipientName,  String? personalDetails)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( List<GeneratedMessage> messages, @OccasionConverter()  Occasion occasion, @RelationshipConverter()  Relationship relationship, @ToneConverter()  Tone tone, @MessageLengthConverter()  MessageLength length,  String? recipientName,  String? personalDetails)?  $default,) {final _that = this;
 switch (_that) {
 case _GenerationResult() when $default != null:
-return $default(_that.messages,_that.occasion,_that.relationship,_that.tone,_that.recipientName,_that.personalDetails);case _:
+return $default(_that.messages,_that.occasion,_that.relationship,_that.tone,_that.length,_that.recipientName,_that.personalDetails);case _:
   return null;
 
 }
@@ -498,20 +522,29 @@ return $default(_that.messages,_that.occasion,_that.relationship,_that.tone,_tha
 
 @JsonSerializable(explicitToJson: true)
 class _GenerationResult extends GenerationResult {
-  const _GenerationResult({required final  List<GeneratedMessage> messages, @OccasionConverter() required this.occasion, @RelationshipConverter() required this.relationship, @ToneConverter() required this.tone, this.recipientName, this.personalDetails}): _messages = messages,super._();
+  const _GenerationResult({required final  List<GeneratedMessage> messages, @OccasionConverter() required this.occasion, @RelationshipConverter() required this.relationship, @ToneConverter() required this.tone, @MessageLengthConverter() required this.length, this.recipientName, this.personalDetails}): _messages = messages,super._();
   factory _GenerationResult.fromJson(Map<String, dynamic> json) => _$GenerationResultFromJson(json);
 
+/// List of generated messages from this session
  final  List<GeneratedMessage> _messages;
+/// List of generated messages from this session
 @override List<GeneratedMessage> get messages {
   if (_messages is EqualUnmodifiableListView) return _messages;
   // ignore: implicit_dynamic_type
   return EqualUnmodifiableListView(_messages);
 }
 
+/// The occasion used for generation
 @override@OccasionConverter() final  Occasion occasion;
+/// The relationship used for generation
 @override@RelationshipConverter() final  Relationship relationship;
+/// The tone used for generation
 @override@ToneConverter() final  Tone tone;
+/// The message length used for generation
+@override@MessageLengthConverter() final  MessageLength length;
+/// Optional recipient name used in generation
 @override final  String? recipientName;
+/// Optional personal details used in generation
 @override final  String? personalDetails;
 
 /// Create a copy of GenerationResult
@@ -527,16 +560,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _GenerationResult&&const DeepCollectionEquality().equals(other._messages, _messages)&&(identical(other.occasion, occasion) || other.occasion == occasion)&&(identical(other.relationship, relationship) || other.relationship == relationship)&&(identical(other.tone, tone) || other.tone == tone)&&(identical(other.recipientName, recipientName) || other.recipientName == recipientName)&&(identical(other.personalDetails, personalDetails) || other.personalDetails == personalDetails));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _GenerationResult&&const DeepCollectionEquality().equals(other._messages, _messages)&&(identical(other.occasion, occasion) || other.occasion == occasion)&&(identical(other.relationship, relationship) || other.relationship == relationship)&&(identical(other.tone, tone) || other.tone == tone)&&(identical(other.length, length) || other.length == length)&&(identical(other.recipientName, recipientName) || other.recipientName == recipientName)&&(identical(other.personalDetails, personalDetails) || other.personalDetails == personalDetails));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_messages),occasion,relationship,tone,recipientName,personalDetails);
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_messages),occasion,relationship,tone,length,recipientName,personalDetails);
 
 @override
 String toString() {
-  return 'GenerationResult(messages: $messages, occasion: $occasion, relationship: $relationship, tone: $tone, recipientName: $recipientName, personalDetails: $personalDetails)';
+  return 'GenerationResult(messages: $messages, occasion: $occasion, relationship: $relationship, tone: $tone, length: $length, recipientName: $recipientName, personalDetails: $personalDetails)';
 }
 
 
@@ -547,7 +580,7 @@ abstract mixin class _$GenerationResultCopyWith<$Res> implements $GenerationResu
   factory _$GenerationResultCopyWith(_GenerationResult value, $Res Function(_GenerationResult) _then) = __$GenerationResultCopyWithImpl;
 @override @useResult
 $Res call({
- List<GeneratedMessage> messages,@OccasionConverter() Occasion occasion,@RelationshipConverter() Relationship relationship,@ToneConverter() Tone tone, String? recipientName, String? personalDetails
+ List<GeneratedMessage> messages,@OccasionConverter() Occasion occasion,@RelationshipConverter() Relationship relationship,@ToneConverter() Tone tone,@MessageLengthConverter() MessageLength length, String? recipientName, String? personalDetails
 });
 
 
@@ -564,13 +597,14 @@ class __$GenerationResultCopyWithImpl<$Res>
 
 /// Create a copy of GenerationResult
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? messages = null,Object? occasion = null,Object? relationship = null,Object? tone = null,Object? recipientName = freezed,Object? personalDetails = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? messages = null,Object? occasion = null,Object? relationship = null,Object? tone = null,Object? length = null,Object? recipientName = freezed,Object? personalDetails = freezed,}) {
   return _then(_GenerationResult(
 messages: null == messages ? _self._messages : messages // ignore: cast_nullable_to_non_nullable
 as List<GeneratedMessage>,occasion: null == occasion ? _self.occasion : occasion // ignore: cast_nullable_to_non_nullable
 as Occasion,relationship: null == relationship ? _self.relationship : relationship // ignore: cast_nullable_to_non_nullable
 as Relationship,tone: null == tone ? _self.tone : tone // ignore: cast_nullable_to_non_nullable
-as Tone,recipientName: freezed == recipientName ? _self.recipientName : recipientName // ignore: cast_nullable_to_non_nullable
+as Tone,length: null == length ? _self.length : length // ignore: cast_nullable_to_non_nullable
+as MessageLength,recipientName: freezed == recipientName ? _self.recipientName : recipientName // ignore: cast_nullable_to_non_nullable
 as String?,personalDetails: freezed == personalDetails ? _self.personalDetails : personalDetails // ignore: cast_nullable_to_non_nullable
 as String?,
   ));

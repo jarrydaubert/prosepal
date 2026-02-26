@@ -27,6 +27,7 @@ void main() {
       occasion: occasion,
       relationship: relationship,
       tone: tone,
+      length: MessageLength.standard,
       messages: List.generate(
         messageCount,
         (i) => GeneratedMessage(
@@ -106,7 +107,9 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.text('Start Over'), findsOneWidget);
-        expect(find.byIcon(Icons.refresh), findsOneWidget);
+        expect(find.byIcon(Icons.home_outlined), findsOneWidget);
+        expect(find.text('Regenerate'), findsOneWidget);
+        expect(find.byIcon(Icons.auto_awesome), findsOneWidget);
       });
     });
 
