@@ -182,9 +182,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       // Fallback: open store listing directly
       // iOS requires appStoreId, Android uses package name automatically
       if (Platform.isIOS) {
-        // TODO(release): Add App Store ID after first iOS release
-        // Get from App Store Connect: https://appstoreconnect.apple.com
-        // Format: numeric ID like '1234567890'
+        // RELEASE BLOCKER: Set after Apple approval
+        // App Store Connect > App Information > Apple ID (numeric, e.g., '1234567890')
         await _inAppReview.openStoreListing(appStoreId: '');
       } else {
         await _inAppReview.openStoreListing();

@@ -23,8 +23,8 @@ class ReviewService {
   static const _minGenerationsForReview = 3;
   static const _minDaysBeforeReview = 2;
 
-  // TODO: Add your App Store ID after app submission
-  // Find it in App Store Connect > App Information > Apple ID
+  // RELEASE BLOCKER: Set after Apple approval
+  // App Store Connect > App Information > Apple ID (numeric, e.g., '1234567890')
   static const _appStoreId = '';
 
   /// Records the first launch timestamp if not already set.
