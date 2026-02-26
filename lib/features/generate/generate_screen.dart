@@ -9,6 +9,7 @@ import '../../core/models/models.dart';
 import '../../core/providers/providers.dart';
 import '../../core/services/ai_service.dart';
 import '../../shared/atoms/app_button.dart';
+import '../../shared/atoms/shimmer_button.dart';
 import '../../shared/molecules/generation_loading_overlay.dart';
 import '../../shared/theme/app_colors.dart';
 import '../../shared/theme/app_spacing.dart';
@@ -213,11 +214,11 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
         );
       }
 
-      return AppGradientButton(
+      return ShimmerButton(
         label: isGenerating ? 'Generating...' : 'Generate Messages',
         icon: Icons.auto_awesome,
         isLoading: isGenerating,
-        onPressed: canGenerate ? () => _generate(context) : null,
+        onPressed: canGenerate && !isGenerating ? () => _generate(context) : null,
       );
     }
 
