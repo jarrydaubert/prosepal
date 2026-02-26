@@ -497,18 +497,168 @@ Features:
 <a name="content"></a>
 ## 8. Content Marketing
 
-### Platform Strategy
+> **UPDATED January 2026:** Strategy shifted from TikTok grind to Search-first (SEO + Pinterest). 
+> TikTok reduced to monthly AI-generated batches. See rationale in `EXPANSION_STRATEGY.md`.
+
+### Platform Strategy (Revised)
 
 | Platform | Content Type | Goal | Frequency |
 |----------|--------------|------|-----------|
-| TikTok | Demo videos, relatable moments | Awareness, virality | 3x/week |
-| Instagram Reels | Cross-post from TikTok | Awareness | 3x/week |
-| Pinterest | Message idea pins, occasion boards | Discovery, SEO | 5-10 pins/week |
+| **Programmatic SEO** | 20 occasion/relationship pages | Capture high-intent Google traffic | One-time build |
+| Pinterest | Pins linking to SEO pages | Amplify SEO, visual search | 5-10 pins/week |
+| TikTok | AI-generated clips (Dimitri-style) | Creative testing, ad assets | Monthly batch (8-12 clips) |
 | Reddit | Genuine help, not promotion | Trust, long-tail | As relevant |
 
-**Time Budget**: ~4-5 hours/week total (sustainable for solo founder)
+**Time Budget**: ~2-3 hours/week (reduced from 4-5)
 
-### TikTok/Reels Strategy (Primary)
+### Programmatic SEO (Primary - NEW)
+
+Build 20 high-intent landing pages at `prosepal.app/messages/[occasion]/[relationship]`.
+
+**Why SEO over TikTok:**
+- Catches users WITH pen in hand (high intent)
+- Compounds over time (TikToks die in hours)
+- No burnout risk
+- Google traffic = free forever
+
+**Page Structure (Avoid Thin Content):**
+```
+/messages/sympathy/coworker
+
+# What to Write in a Sympathy Card for a Coworker
+
+## 3 Tips for Sympathy Messages at Work (UNIQUE per page)
+1. Keep it professional but warm
+2. Acknowledge without oversharing  
+3. Offer specific help if appropriate
+
+## 10 Example Messages (Static)
+[Pre-written examples]
+
+## Want Something Personal?
+Generate a message that sounds like you →
+[App Store button]
+```
+
+**20 Priority Pages:**
+1. `/messages/sympathy/coworker`
+2. `/messages/sympathy/friend`
+3. `/messages/sympathy/parent`
+4. `/messages/birthday/mom`
+5. `/messages/birthday/dad`
+6. `/messages/birthday/friend`
+7. `/messages/thank-you/boss`
+8. `/messages/thank-you/teacher`
+9. `/messages/wedding/friend`
+10. `/messages/wedding/sibling`
+11. `/messages/baby/friend`
+12. `/messages/get-well/coworker`
+13. `/messages/retirement/boss`
+14. `/messages/graduation/child`
+15. `/messages/anniversary/parents`
+16. `/messages/condolence/loss-of-parent`
+17. `/messages/condolence/loss-of-spouse`
+18. `/messages/apology/friend`
+19. `/messages/encouragement/friend`
+20. `/messages/farewell/coworker`
+
+### AI Content Factory (Replaces TikTok Grind)
+
+Use Dimitri-style AI pipeline to batch-create video content monthly:
+
+```
+Claude (script) → Nano Banana Pro (image) → ElevenLabs (voice) 
+→ InfiniteTalk (lip-sync) → CapCut (captions)
+```
+
+**Process:**
+- **Once/month:** 2-hour session
+- **Output:** 8-12 clips
+- **Schedule:** 2-3 posts/week via Buffer/Later
+- **Purpose:** Creative testing + ad asset generation (NOT primary growth)
+
+**Why this works:**
+- ~8 min/video at ~$0 cost
+- No burnout (not filming yourself)
+- Consistent character = brand recognition
+- Test messaging before spending on ads
+
+### Video Ad Creative (For Paid + Organic)
+
+Formats that work for a software app (not physical product):
+
+**Platform Limits:**
+
+| Platform | Max Length | Optimal |
+|----------|------------|---------|
+| YouTube Shorts | 60 sec | 30-45 sec |
+| Instagram Reels | 90 sec | 15-30 sec |
+| TikTok | 10 min | 15-45 sec |
+| YouTube Ads | No limit | 15-30 sec |
+
+**Best Formats for Prosepal:**
+
+**1. The Blank Card Moment (POV) - 15-30 sec**
+```
+[0-3s] Camera looking down at blank card + pen
+[3-8s] Hand reaches for phone, opens Prosepal
+[8-18s] Quick app demo: occasion → relationship → tone → generate
+[18-25s] Hand writes message on card
+[25-30s] Card closes. Text: "Done in 30 seconds"
+```
+
+**2. The Transformation (Split Screen) - 15-20 sec**
+```
+[Left side] "What I would have written:"
+           "Happy Birthday! Hope it's a good one!"
+
+[Right side] "What Prosepal wrote:"
+            [Beautiful personalized message with details]
+
+[End] "Which one would YOU rather receive?"
+```
+
+**3. The Reaction (UGC-style) - 30-60 sec**
+```
+[0-5s] "I used AI to write my mom's birthday card"
+[5-10s] Show app generating message
+[10-15s] "Here's her reaction..."
+[15-50s] Film mom reading, getting emotional
+[50-60s] "Link in bio" / App Store badge
+```
+
+**4. Problem-Agitate-Solve - 30-45 sec**
+```
+[0-10s] "Every time I buy a card, I stand there for 10 minutes 
+        trying to think of what to write..."
+[10-20s] "I always end up with something generic like 
+         'Thinking of you' and I hate it"
+[20-35s] "Then I found this app..." [show demo]
+[35-45s] "Now it takes 30 seconds and actually sounds like me"
+```
+
+**5. The Hook Test (Multiple 15-sec variations)**
+
+Test different hooks with same demo footage:
+- "POV: Your coworker's dad just died"
+- "The app that writes your card messages"
+- "Why your greeting cards sound so generic"
+- "I spent $4 to never stare at a blank card again"
+
+**Production Tips:**
+- Screen record at 60fps for smooth scrolling
+- Use iPhone screen recording (shows gestures)
+- Add captions (85% watch muted)
+- First 3 seconds = hook or scroll
+- End with clear CTA (App Store badge)
+
+**Workflow:**
+1. Create 5 variations with different hooks
+2. Post organically to test engagement
+3. Top performer → boost with paid ads
+4. Repeat monthly
+
+### TikTok/Reels Strategy (Secondary - Legacy)
 
 **Why TikTok**:
 - 766M+ daily active users

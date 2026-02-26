@@ -1,6 +1,111 @@
 # Expansion Strategy
 
-> Future revenue opportunities beyond consumer subscriptions.
+> Future plans: app features, marketing pivots, and B2B opportunities.
+> **Last Updated**: January 20, 2026
+
+---
+
+## Kill List (Removed from Plans)
+
+These items sounded good but would waste time/resources for a solo dev:
+
+| Item | Why Killed |
+|------|------------|
+| **Partner SDK / Moonpig Integration** | 0% Year 1 success. They'll build internally or use OpenAI. |
+| **Retail QR Code Pilots** | Insane user friction. People Google in the aisle, not download apps. |
+| **TikTok 3x/Week Grind** | Burnout risk. Low intent-to-install for utility apps. |
+| **RevenueCat Team Plans** | Support nightmare. Promo codes don't scale for seat management. |
+| **Complex B2B Features** | Defer until validated demand from inbound. |
+
+---
+
+## App Roadmap
+
+### P0: UK Spelling Localization
+
+Critical for the UK market (7x more valuable per capita than US).
+
+| Task | Details |
+|------|---------|
+| **Detection** | Read device locale (en-GB, en-US) - NO location permission needed |
+| **Fallback** | Ask in onboarding: "Mom or Mum?" with flag icons |
+| **Application** | Inject spelling preference into AI prompt |
+| **Settings** | Toggle to override in Settings |
+
+**Spelling differences:**
+- Mom/Mum, favorite/favourite, color/colour, organize/organise
+
+**Effort:** 2-4 hours
+
+### P1: Occasion Calendar + Reminders
+
+Solves the "episodic retention" problem - gives users reasons to return.
+
+| Component | Details |
+|-----------|---------|
+| **Save from Generation** | After copy, prompt "Save to Calendar?" with date picker |
+| **Manual Add** | Calendar screen has [+ Add Occasion] button |
+| **Calendar View** | Month view + upcoming list (next 30 days) |
+| **Edit/Delete** | Manage saved occasions |
+| **Reminders** | Local push notification 7 days before |
+| **Deep Link** | Tap notification → pre-filled generation screen |
+
+**Recurring vs One-Time:**
+
+| Occasion | Recurring? | Extra Field |
+|----------|------------|-------------|
+| Birthday | ✅ Yearly | Birth year (optional) → "Mom's 65th Birthday" |
+| Anniversary | ✅ Yearly | Start year (optional) → "40th Anniversary" |
+| Wedding, Baby Shower, Graduation, Retirement | ❌ One-time | None |
+| Sympathy, Thank You, Get Well | ❌ No date | Immediate use |
+
+**Anniversary = Joint by Default:**
+- Person field is freeform: "Mom & Dad", "Sam & Joe", "The Smiths"
+- One message for the couple
+
+**Data Model:**
+```dart
+class SavedOccasion {
+  String id;
+  String personName;      // "Mom", "Mom & Dad"
+  OccasionType type;
+  DateTime date;
+  int? year;              // Birth year OR start year
+  bool isRecurring;
+  bool reminderEnabled;
+}
+```
+
+**Effort:** 3-4 days
+
+### Onboarding Updates
+
+Two new screens:
+
+**Screen 1: Notifications Permission**
+```
+[Bell icon]
+
+Never miss an important date
+
+Get reminders 1 week before birthdays 
+and anniversaries you save.
+
+[Allow Notifications]  ← System prompt
+[Maybe Later]
+```
+
+**Screen 2: Spelling Preference (No Permission)**
+```
+[UK/US flags]
+
+How do you spell it?
+
+We'll use the right spelling in your messages.
+
+[Mom, favorite, color]     ← American
+[Mum, favourite, colour]   ← British
+```
 
 ---
 
@@ -70,217 +175,123 @@ Don't wait until Month 12 to learn about B2B demand. Capture interest early with
 
 ---
 
-## MVP Team Plan (RevenueCat-Based)
+## B2B Strategy (Simplified)
 
-Skip Stripe complexity initially. RevenueCat supports "family sharing" which can proxy team billing.
+### Target: Executive Assistants (Not HR Teams)
 
-### MVP Features (2-Week Build)
+**Why EAs, not HR:**
+- Single-user buyer (no seat management needed)
+- Have corporate cards (easy purchase)
+- Clear recurring need (CEO's cards all year)
+- Don't need "Team Plans" - just Pro subscription
 
-| Feature | Implementation | Effort |
-|---------|----------------|--------|
-| **Team subscription** | RevenueCat family sharing or promo codes | Low |
-| **Shared billing** | Admin purchases, shares access codes | Low |
-| **Corporate tones** | Add "Professional Warm", "Corporate Formal" to existing tone picker | Low |
-| **Custom occasions** | Add "Client Thank You", "Employee Anniversary" to occasion list | Low |
+**Their Pain:**
+- CEO needs 200 holiday cards signed
+- 50+ birthday cards per month
+- Client thank-yous that don't sound templated
 
-### MVP Pricing
+**How to Reach Them:**
+- "For Teams/EA" landing page capturing inbound interest
+- Target keywords: "executive assistant tools", "write cards for boss"
+- No complex features needed - just market the Pro plan to them
 
-| Plan | Price | Seats | Distribution |
-|------|-------|-------|--------------|
-| **Team Starter** | $29.99/month | Up to 5 | Promo codes to team members |
-| **Team Pro** | $79.99/month | Up to 15 | Promo codes to team members |
+### Inbound Capture (Now)
 
-### MVP Limitations (Acceptable for V1)
+| Action | Effort | Purpose |
+|--------|--------|---------|
+| Add "For Teams" link in app Settings | 1 hour | Route to Typeform |
+| Add "Business Inquiries" on website footer | 30 min | Email capture |
+| Track "business", "team", "assistant" in support | 0 | Signal detection |
 
-- No admin dashboard (use RevenueCat dashboard)
-- No SSO (individual logins with shared subscription)
-- No usage analytics per user
-- No approval workflows
+**Form Questions:**
+1. Company name
+2. Your role (EA, HR, Sales, Other)
+3. How many cards do you write per month?
+4. Email
+5. "What would make Prosepal useful for your work?"
 
-### Upgrade Path
+**What Signals Tell You:**
+
+| Signal | Action |
+|--------|--------|
+| 0 submissions in 3 months | B2B demand weak - stay consumer |
+| 5-10 submissions | Schedule discovery calls |
+| 20+ submissions | Consider bulk features |
+
+### Future B2B Features (Only If Validated)
+
+Don't build until you have 10+ paying business users asking for these:
+
+| Feature | Trigger |
+|---------|---------|
+| CSV Bulk Import | Multiple EAs requesting |
+| Corporate tones | Demand from enterprise |
+| Team billing | 3+ companies asking |
+
+**Rule:** Validate with inbound demand before writing code.
+
+---
+
+## Marketing Strategy (Updated)
+
+See `MARKETING.md` for full details. Key changes:
+
+### Channels
+
+| Channel | Old Plan | New Plan |
+|---------|----------|----------|
+| **TikTok** | 3x/week grind | Monthly batch (8-12 AI clips) |
+| **SEO** | 1 blog/2 weeks | 20 programmatic pages |
+| **Pinterest** | Secondary | Amplify SEO pages |
+| **ASO** | Broad keywords | Niche: "condolence message", "funeral card" |
+
+### Programmatic SEO Structure
+
+20 high-intent pages at `prosepal.app/messages/[occasion]/[relationship]`:
 
 ```
-MVP Team Plan (RevenueCat)
-    ↓ Validated demand (10+ teams)
-Stripe Billing + Admin Dashboard
-    ↓ Enterprise requests
-SSO + Custom Integrations
+/messages/sympathy/coworker
+/messages/sympathy/friend
+/messages/birthday/mom
+/messages/birthday/dad
+/messages/wedding/friend
+/messages/thank-you/boss
+... etc
 ```
 
----
+**Page structure (to avoid thin content penalties):**
+1. "3 Tips for writing a [X] card" (unique per page)
+2. "10 Example Messages" (static)
+3. "Want something personal? Generate yours →" (App Store link)
 
-## B2B Corporate Programs
+### AI Content Factory (Dimitri-Style)
 
-### The Opportunity
+Use AI pipeline to batch-create video content:
 
-Companies send millions of cards annually - employee birthdays, client thank-yous, condolences, work anniversaries, retirements, holidays. Most are painfully generic ("Best wishes from the team!") or outsourced to services that feel impersonal.
+```
+Claude (script) → Nano Banana Pro (image) → ElevenLabs (voice) 
+→ InfiniteTalk (lip-sync) → CapCut (captions)
+```
 
-### Use Cases
-
-| Use Case | Pain Point | Prosepal Solution |
-|----------|------------|-------------------|
-| **HR/People Teams** | Writing 50+ birthday cards/month | Bulk generation with employee context |
-| **Sales Teams** | Client thank-you cards feel templated | Relationship-aware personalization |
-| **Executive Assistants** | CEO needs 200 holiday cards signed | Generate options, maintain voice consistency |
-| **Customer Success** | Milestone cards (renewals, anniversaries) | Occasion-specific, business-appropriate tones |
-| **Bereavement Support** | Employee loss situations are delicate | Sympathy messages with professional boundaries |
-
-### B2B Product Features
-
-**Team/Admin Dashboard:**
-- Centralized billing (one invoice vs individual subscriptions)
-- Usage analytics per department/user
-- Custom occasion types ("Client Onboarding", "Project Completion")
-- Brand voice guidelines fed to AI
-- Approval workflows for sensitive occasions
-
-**Enterprise Tier Pricing (Hypothetical):**
-
-| Tier | Seats | Price | Features |
-|------|-------|-------|----------|
-| Team | 5-25 | $15/user/month | Shared billing, basic analytics |
-| Business | 25-100 | $12/user/month | Custom occasions, admin dashboard |
-| Enterprise | 100+ | Custom | SSO, API access, dedicated support |
-
-**Revenue Math:**
-- 50-person company at $12/user = $600/month ($7,200/year)
-- 10 enterprise accounts = $72K ARR
-- Equivalent to ~500 individual Pro subscribers
-
-### Implementation Requirements
-
-| Aspect | Current State | B2B Requirement |
-|--------|---------------|-----------------|
-| **Auth** | Individual Supabase accounts | Team/org structure, SSO (Okta, Azure AD) |
-| **Billing** | RevenueCat (consumer IAP) | Stripe for B2B invoicing, annual contracts |
-| **Admin** | None | Dashboard, user management, usage reports |
-| **Tones** | 6 consumer tones | "Professional", "Corporate Warm", custom brand voice |
-| **Data** | Individual history | Team-shared templates, company-wide favorites |
-
-### Risks
-
-1. **Different sales motion** - B2B requires outbound sales, demos, contracts
-2. **Support burden** - Enterprise expects dedicated support, SLAs
-3. **Feature creep** - "Add Slack integration", "Salesforce sync"
-4. **Distraction risk** - Diverts from consumer growth
-
-### Recommendation
-
-**Wait until Month 12+ and $5K+ MRR from consumer.** Then:
-1. Test with inbound interest (companies reaching out)
-2. Start with simple "Team Plan" (shared billing only)
-3. Validate demand before building enterprise features
+- **Time:** ~8 min/video
+- **Cost:** ~$0
+- **Output:** 8-12 clips per monthly session
+- **Purpose:** Creative testing + ad assets
 
 ---
 
-## Partnerships with Card Brands & Retailers
+## Prioritization Summary
 
-### The Landscape
+| Priority | Focus |
+|----------|-------|
+| **#1** | Consumer growth (current) |
+| **#2** | UK market (spelling + dates) |
+| **#3** | Retention (Calendar + Reminders) |
+| **#4** | SEO pages (20 high-intent) |
+| **#5** | EA inbound capture |
 
-| Partner Type | Examples | What They Have | What They Lack |
-|--------------|----------|----------------|----------------|
-| **Card Publishers** | Hallmark, American Greetings, Papyrus | Distribution, brand trust | AI message generation |
-| **Online Platforms** | Moonpig, Thortful, Postable | Digital card creation | Personalized message suggestions |
-| **Retailers** | Target, Walmart, CVS | Card aisle traffic | In-store digital assistance |
-| **Stationery Stores** | Paper Source, local boutiques | Premium customers | Tech integration |
-
-### Partnership Models
-
-#### Model A: White-Label / Embedded SDK
-
-License Prosepal's AI to card platforms.
-
-**Example Flow (Moonpig):**
-1. User designs card on Moonpig
-2. Clicks "Need message help?"
-3. Prosepal-powered widget appears
-4. User selects occasion/relationship/tone
-5. 3 messages generated, user picks one
-6. Message auto-fills into card
-
-**Revenue Model:**
-- Per-API-call pricing ($0.01-0.05 per generation)
-- Monthly licensing fee ($5K-50K/month based on volume)
-- Revenue share (% of card sales with AI messages)
-
-**Technical Requirements:**
-- Expose Prosepal AI as REST API
-- Partner SDK (React, Swift, Kotlin)
-- Multi-tenant architecture
-- Usage metering and billing
-
-#### Model B: Retail In-Store Integration
-
-QR codes in card aisles that open Prosepal.
-
-**Example Flow (Target card aisle):**
-1. Customer picks up sympathy card
-2. Scans QR code on shelf tag
-3. Opens Prosepal (or web version)
-4. Generates message while standing in aisle
-5. Writes message, buys card
-
-**Revenue Model:**
-- Retailer pays for QR placement ($X per store/month)
-- Co-marketing (retailer promotes app)
-- Affiliate revenue
-
-**Benefits:**
-- Captures users at highest-intent moment
-- Retailer differentiates card aisle
-- Low technical integration
-
-#### Model C: Co-Branded Experience
-
-Partner with Hallmark on co-branded feature.
-
-**Example:**
-- "Hallmark Message Helper - Powered by Prosepal"
-- Lives within Hallmark's app
-- Hallmark gets AI capability
-- Prosepal gets distribution + credibility
-
-**Revenue Model:**
-- Licensing fee + revenue share
-- Potential acquisition path
-
-### Partnership Pitch Angles
-
-| Partner | Their Problem | Prosepal's Value |
-|---------|---------------|------------------|
-| **Moonpig/Thortful** | Users abandon at message step | Reduce abandonment |
-| **Hallmark** | Ecards feel impersonal | AI personalization differentiator |
-| **Target/Walmart** | Card aisle is passive | Mobile engagement at POS |
-| **Paper Source** | Premium customers expect more | "Concierge" message service |
-
-### Risks
-
-1. **Long sales cycles** - 6-18 months for enterprise partnerships
-2. **Integration complexity** - Each partner different stack
-3. **Brand dilution** - White-label = invisible brand
-4. **Dependency** - One big partner = concentration risk
-5. **Competition** - Hallmark could build their own
-
-### Recommended Sequence
-
-| Phase | Timeline | Action |
-|-------|----------|--------|
-| **Now** | Month 1-6 | 100% consumer focus |
-| **Soft Signal** | Month 6-9 | Add "For Business" link (capture inbound) |
-| **Retail Test** | Month 9-12 | Pilot QR codes with local stationery store |
-| **Platform Outreach** | Month 12+ | Approach Moonpig/Thortful with traction data |
-| **Big Brand** | Month 18+ | Hallmark only with leverage (downloads, revenue) |
+**Everything else is killed or deferred until $5K+ MRR.**
 
 ---
 
-## Prioritization Framework
-
-| Opportunity | Revenue Potential | Effort | Timeline | Priority |
-|-------------|-------------------|--------|----------|----------|
-| Consumer Growth | High (scalable) | Done | Now | **#1** |
-| Simple Team Plan | Medium | Low | Month 9+ | #2 |
-| Retail QR Pilot | Low-Medium | Low | Month 9+ | #3 |
-| Enterprise B2B | High | Very High | Month 12+ | #4 |
-| Platform SDK | Very High | Very High | Month 18+ | #5 |
-
-**Key Insight:** Both B2B and partnerships require consumer traction as leverage. A partner meeting goes differently with "50K active users" vs "just launched."
+*Last updated: January 20, 2026*
