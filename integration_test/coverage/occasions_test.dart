@@ -1,4 +1,4 @@
-/// Coverage: All 41 Occasions
+/// Coverage: All 40 Occasions
 ///
 /// Smoke tests that each occasion loads the wizard correctly.
 /// Groups: Core, Holidays, Cultural, Career, Appreciation, Pets
