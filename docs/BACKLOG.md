@@ -11,71 +11,30 @@
 | App Store ID | Add to `_rateApp()` and `review_service.dart` after approval |
 | IAP Products | Submit in App Store Connect |
 
-## Security - Server-Side Enforcement (P0)
+## Security - Server-Side Enforcement (P0) - IMPLEMENTED
 
-> **CRITICAL:** Current usage enforcement is client-side only and can be bypassed.
-> Must implement server-side validation before production monetization.
+> Server-side usage enforcement has been implemented.
+
+| Item | Status |
+|------|--------|
+| **Atomic usage increment RPC** | Done - `002_create_usage_rpc.sql` |
+| **Server-side limit check** | Done - `checkAndIncrementServerSide()` in `usage_service.dart` |
+| **Resume-time biometric lock** | Done - `_checkBiometricLockOnResume()` in `app.dart` |
+| **404 error route** | Done - `_ErrorScreen` in `router.dart` |
+
+### Deployment Required
+
+```bash
+# Run in Supabase SQL Editor (Dashboard > SQL Editor)
+# File: supabase/migrations/002_create_usage_rpc.sql
+```
+
+### Remaining P0 Items
 
 | Item | Location | Action |
 |------|----------|--------|
-| **Atomic usage increment RPC** | Supabase | Create `check_and_increment_usage` function that validates limits atomically |
-| **Server-side limit check** | `usage_service.dart` | Call RPC before generation; fail if server rejects |
 | **Device fingerprinting** | `usage_service.dart` | Replace SharedPreferences device flag with server-side tracking |
 | **Rate limiting** | Supabase | Add IP/user rate limiting to prevent abuse |
-
-### Supabase RPC Implementation (Reference)
-
-```sql
--- Create atomic usage check + increment function
-CREATE OR REPLACE FUNCTION check_and_increment_usage(
-  p_user_id UUID,
-  p_is_pro BOOLEAN,
-  p_month_key TEXT
-) RETURNS JSONB AS $$
-DECLARE
-  v_total_count INT;
-  v_monthly_count INT;
-  v_allowed BOOLEAN := FALSE;
-BEGIN
-  -- Get current usage with row lock
-  SELECT total_count, monthly_count INTO v_total_count, v_monthly_count
-  FROM user_usage
-  WHERE user_id = p_user_id
-  FOR UPDATE;
-  
-  -- Initialize if new user
-  IF NOT FOUND THEN
-    v_total_count := 0;
-    v_monthly_count := 0;
-  END IF;
-  
-  -- Check limits
-  IF p_is_pro THEN
-    v_allowed := v_monthly_count < 500; -- Pro monthly limit
-  ELSE
-    v_allowed := v_total_count < 1; -- Free lifetime limit
-  END IF;
-  
-  -- Increment if allowed
-  IF v_allowed THEN
-    INSERT INTO user_usage (user_id, total_count, monthly_count, month_key, updated_at)
-    VALUES (p_user_id, v_total_count + 1, v_monthly_count + 1, p_month_key, NOW())
-    ON CONFLICT (user_id) DO UPDATE SET
-      total_count = EXCLUDED.total_count,
-      monthly_count = CASE WHEN user_usage.month_key = p_month_key 
-                      THEN EXCLUDED.monthly_count ELSE 1 END,
-      month_key = EXCLUDED.month_key,
-      updated_at = NOW();
-  END IF;
-  
-  RETURN jsonb_build_object(
-    'allowed', v_allowed,
-    'total_count', v_total_count + (CASE WHEN v_allowed THEN 1 ELSE 0 END),
-    'monthly_count', v_monthly_count + (CASE WHEN v_allowed THEN 1 ELSE 0 END)
-  );
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-```
 
 ---
 
@@ -125,13 +84,8 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 | Biometric setup accessibility | `biometric_setup_screen.dart` | Add Semantics for benefits/icon |
 | Skip preference tracking | `biometric_setup_screen.dart` | Store skip for deferred re-prompt |
 | Strong biometric preference | `biometric_setup_screen.dart` | Prefer Class 3 biometrics when available |
-| Biometric re-auth on resume | `app.dart` | Prompt biometric when resuming if enabled |
 | Screenshot prevention | `app.dart` | Platform-specific screenshot blocking (FlutterWindowManager) |
 | Additional auth events | `app.dart` | Handle tokenRefreshed, passwordRecovery events |
-| Router redirect guards | `app.dart` | Use GoRouter redirects instead of fullPath check |
-| GoRouter redirect guards | `router.dart` | Add global redirect for auth/biometric protection |
-| Resume-time lock enforcement | `router.dart` | Re-evaluate biometric lock on app resume |
-| Error/404 route | `router.dart` | Add fallback route for unknown paths |
 | Typed route generation | `router.dart` | Use go_router_builder for type-safe routes |
 | Edge function rate limiting | `delete-user/index.ts` | Add request throttling for abuse prevention |
 | RevenueCat cleanup on delete | `delete-user/index.ts` | Revoke RC identifiers via webhook |
