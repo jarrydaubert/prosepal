@@ -211,10 +211,11 @@ class _CustomPaywallScreenState extends ConsumerState<CustomPaywallScreen> {
   Future<void> _restorePurchases() async {
     if (_isRestoring) return;
 
-    // Check if already Pro - no need to restore (use async check for accuracy)
+    // Check if already Pro - no need to restore, just navigate away
     final currentPro = await ref.read(subscriptionServiceProvider).isPro();
     if (currentPro) {
-      Log.info('Restore: Already has Pro subscription');
+      Log.info('Restore: Already has Pro subscription, navigating to home');
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Row(
@@ -228,6 +229,12 @@ class _CustomPaywallScreenState extends ConsumerState<CustomPaywallScreen> {
           behavior: SnackBarBehavior.floating,
         ),
       );
+      // Navigate away from paywall since user is Pro
+      if (context.canPop()) {
+        context.pop();
+      } else {
+        context.go('/home');
+      }
       return;
     }
 

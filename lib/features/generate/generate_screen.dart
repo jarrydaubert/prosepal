@@ -211,9 +211,10 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
       if (!canGenerate) {
         // Check if user is logged in - require auth before paywall
         final isLoggedIn = ref.read(authServiceProvider).isLoggedIn;
-        // Check if returning user (has used app before) - they get auto-restore flow
+        // Check if returning user (device has used free tier) - they get auto-restore flow
+        // Uses device flag that survives sign out, not local count
         final usageService = ref.read(usageServiceProvider);
-        final isReturningUser = usageService.getTotalCount() > 0;
+        final isReturningUser = usageService.hasDeviceUsedFreeTier();
 
         return Column(
           mainAxisSize: MainAxisSize.min,

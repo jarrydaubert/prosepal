@@ -151,6 +151,13 @@ class UsageService {
     return (freeLifetimeLimit - used).clamp(0, freeLifetimeLimit);
   }
 
+  /// Check if this device has used the free tier before.
+  /// Survives sign out, app reinstalls (server-side), and account deletion.
+  /// Use this to detect returning users for auto-restore flow.
+  bool hasDeviceUsedFreeTier() {
+    return _prefs.getBool(_keyDeviceUsedFreeTier) == true;
+  }
+
   /// Get remaining pro generations this month
   int getRemainingProMonthly() {
     final used = getMonthlyCount();
