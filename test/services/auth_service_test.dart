@@ -1,6 +1,4 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:google_sign_in_platform_interface/google_sign_in_platform_interface.dart'
-    show GoogleSignInExceptionCode;
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 

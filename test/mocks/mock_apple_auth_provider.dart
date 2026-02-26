@@ -196,6 +196,7 @@ AuthorizationCredentialAppleID createFakeAppleCredentialFirstSignIn({
   String email = 'john.doe@privaterelay.appleid.com',
   String authorizationCode = 'auth-code-xyz',
   String identityToken = 'valid-id-token-abc123',
+  String? state,
 }) {
   return AuthorizationCredentialAppleID(
     userIdentifier: userIdentifier,
@@ -204,5 +205,6 @@ AuthorizationCredentialAppleID createFakeAppleCredentialFirstSignIn({
     email: email,
     authorizationCode: authorizationCode,
     identityToken: identityToken,
+    state: state,
   );
 }
