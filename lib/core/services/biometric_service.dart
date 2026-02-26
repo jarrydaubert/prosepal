@@ -61,6 +61,12 @@ class BiometricService implements IBiometricService {
     }
   }
 
+  @override
+  Future<bool> get hasEnrolledBiometrics async {
+    final biometrics = await availableBiometrics;
+    return biometrics.isNotEmpty;
+  }
+
   /// Check if device has strong (Class 3) biometrics available.
   /// Strong biometrics are cryptographically secure (e.g., Face ID, secure fingerprint).
   /// Weak biometrics (e.g., basic face unlock on some Android) are less secure.
