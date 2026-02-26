@@ -13,6 +13,7 @@ import '../features/onboarding/onboarding_screen.dart';
 import '../features/paywall/paywall_screen.dart';
 import '../features/results/results_screen.dart';
 import '../features/settings/feedback_screen.dart';
+import '../features/settings/legal_screen.dart';
 import '../features/settings/settings_screen.dart';
 
 final appRouter = GoRouter(
@@ -71,6 +72,16 @@ final appRouter = GoRouter(
       path: '/feedback',
       name: 'feedback',
       builder: (context, state) => const FeedbackScreen(),
+    ),
+    GoRoute(
+      path: '/terms',
+      name: 'terms',
+      builder: (context, state) => const TermsScreen(),
+    ),
+    GoRoute(
+      path: '/privacy',
+      name: 'privacy',
+      builder: (context, state) => const PrivacyScreen(),
     ),
   ],
 );
