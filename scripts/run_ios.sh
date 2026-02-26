@@ -14,18 +14,32 @@ fi
 
 source "$ENV_FILE"
 
+# Validate required environment variables
+MISSING=""
+
+if [ -z "$SUPABASE_URL" ]; then
+    MISSING="$MISSING SUPABASE_URL"
+fi
+
+if [ -z "$SUPABASE_ANON_KEY" ]; then
+    MISSING="$MISSING SUPABASE_ANON_KEY"
+fi
+
 if [ -z "$REVENUECAT_IOS_KEY" ]; then
-    echo "Error: REVENUECAT_IOS_KEY not set in .env.local"
-    exit 1
+    MISSING="$MISSING REVENUECAT_IOS_KEY"
 fi
 
 if [ -z "$GOOGLE_WEB_CLIENT_ID" ]; then
-    echo "Error: GOOGLE_WEB_CLIENT_ID not set in .env.local"
-    exit 1
+    MISSING="$MISSING GOOGLE_WEB_CLIENT_ID"
 fi
 
 if [ -z "$GOOGLE_IOS_CLIENT_ID" ]; then
-    echo "Error: GOOGLE_IOS_CLIENT_ID not set in .env.local"
+    MISSING="$MISSING GOOGLE_IOS_CLIENT_ID"
+fi
+
+if [ -n "$MISSING" ]; then
+    echo "Error: Missing required variables in .env.local:$MISSING"
+    echo "Copy .env.example to .env.local and fill in all values."
     exit 1
 fi
 
@@ -42,7 +56,9 @@ fi
 
 echo "Running on iOS device: $DEVICE"
 flutter run -d "$DEVICE" \
-    --dart-define=REVENUECAT_IOS_KEY=$REVENUECAT_IOS_KEY \
-    --dart-define=GOOGLE_WEB_CLIENT_ID=$GOOGLE_WEB_CLIENT_ID \
-    --dart-define=GOOGLE_IOS_CLIENT_ID=$GOOGLE_IOS_CLIENT_ID \
+    --dart-define=SUPABASE_URL="$SUPABASE_URL" \
+    --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY" \
+    --dart-define=REVENUECAT_IOS_KEY="$REVENUECAT_IOS_KEY" \
+    --dart-define=GOOGLE_WEB_CLIENT_ID="$GOOGLE_WEB_CLIENT_ID" \
+    --dart-define=GOOGLE_IOS_CLIENT_ID="$GOOGLE_IOS_CLIENT_ID" \
     "$@"

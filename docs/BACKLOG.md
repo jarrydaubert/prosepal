@@ -111,7 +111,7 @@
 
 | # | Issue | Location | Status | Fix |
 |---|-------|----------|--------|-----|
-| 1 | **Supabase URL/key hardcoded** | `main.dart:67-68` | **CONFIRMED** | Use `--dart-define` like RevenueCat. Note: These ARE public keys by design, but consistency matters. |
+| 1 | ~~Supabase URL/key hardcoded~~ | `main.dart`, `AppConfig` | **FIXED** | Created centralized `AppConfig` class with dart-define. Updated run scripts. |
 | 2 | **Rate limit fails open** | `rate_limit_service.dart:104` | **CONFIRMED** | Returns `allowed: true` on server error. Fix: fail closed + local fallback |
 | 3 | **No route guards** | `router.dart:24-102` | **CONFIRMED** | Deep links bypass auth. Add `redirect` guard to GoRouter |
 | 4 | **Non-blocking init failures** | `main.dart:38-84` | **CONFIRMED** | Firebase/Supabase/RC catch-and-continue. Show error screen if critical services fail |
