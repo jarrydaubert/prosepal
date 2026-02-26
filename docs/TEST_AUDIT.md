@@ -1,6 +1,20 @@
 # Test Audit
 
-> Unit/widget tests: `flutter test` | Integration tests: `patrol test`
+> **376 unit/widget tests** | **52 Patrol integration tests**
+
+```bash
+# Unit/widget tests
+flutter test
+
+# Integration tests (Patrol - see note below)
+patrol test -t integration_test/app_test.dart
+```
+
+### Patrol Status (Jan 2026)
+Patrol tests are properly configured but currently blocked by a **known AppAuth framework embedding issue** affecting apps with OAuth plugins (Google Sign-In, Apple Sign-In). Tests will execute once:
+- Running on CI with proper framework embedding
+- Upstream Patrol fix is released
+- Or using `flutter drive` for basic flows
 
 ---
 
@@ -131,17 +145,17 @@ integration_test/
 ## Commands
 
 ```bash
-# Unit/widget tests
+# Unit/widget tests (376 tests)
 flutter test
 
-# Integration tests (Patrol)
+# Integration tests via flutter drive (works with OAuth plugins)
+flutter drive --driver=test_driver/integration_test.dart --target=integration_test/simple_test.dart
+
+# Patrol tests (blocked by AppAuth issue - see status note above)
 patrol test -t integration_test/app_test.dart
 
 # Device-only tests (real RevenueCat)
 patrol test -t integration_test/device_only/revenuecat_test.dart
-
-# Run with hot reload during development
-patrol develop -t integration_test/app_test.dart
 ```
 
 ---
