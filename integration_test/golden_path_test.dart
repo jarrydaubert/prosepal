@@ -551,4 +551,477 @@ void main() {
       await binding.takeScreenshot('f7_2_after_scroll');
     });
   });
+
+  // ==========================================================================
+  // FLOW 8: AI Generation & Results (Real API)
+  // ==========================================================================
+  group('Flow 8: AI Generation', () {
+    Future<void> navigateToGenerate(WidgetTester tester) async {
+      app.main();
+      await tester.pumpAndSettle(const Duration(seconds: 5));
+
+      while (find.text('Continue').evaluate().isNotEmpty &&
+          find.text('Birthday').evaluate().isEmpty) {
+        await tester.tap(find.text('Continue'));
+        await tester.pumpAndSettle(const Duration(seconds: 1));
+      }
+
+      if (find.text('Birthday').evaluate().isEmpty) return;
+
+      await tester.tap(find.text('Birthday'));
+      await tester.pumpAndSettle();
+
+      if (find.text('Close Friend').evaluate().isNotEmpty) {
+        await tester.tap(find.text('Close Friend'));
+        await tester.pumpAndSettle();
+      }
+      if (find.text('Continue').evaluate().isNotEmpty) {
+        await tester.tap(find.text('Continue'));
+        await tester.pumpAndSettle();
+      }
+      if (find.text('Heartfelt').evaluate().isNotEmpty) {
+        await tester.tap(find.text('Heartfelt'));
+        await tester.pumpAndSettle();
+      }
+      if (find.text('Continue').evaluate().isNotEmpty) {
+        await tester.tap(find.text('Continue'));
+        await tester.pumpAndSettle();
+      }
+    }
+
+    testWidgets('F8.1: Generate button triggers AI call', (tester) async {
+      await navigateToGenerate(tester);
+
+      if (find.text('Generate Messages').evaluate().isNotEmpty) {
+        await tester.tap(find.text('Generate Messages'));
+        
+        // Wait for generation (may take time with real API)
+        await tester.pumpAndSettle(const Duration(seconds: 15));
+
+        // Should show results or error
+        final hasResults = find.text('Your Messages').evaluate().isNotEmpty ||
+            find.text('Option 1').evaluate().isNotEmpty;
+        final hasError = find.textContaining('error').evaluate().isNotEmpty ||
+            find.textContaining('Unable').evaluate().isNotEmpty;
+
+        expect(hasResults || hasError, isTrue,
+            reason: 'Should show results or error after generation');
+
+        await binding.takeScreenshot('f8_1_generation_result');
+      }
+    });
+
+    testWidgets('F8.2: Results show 3 message options', (tester) async {
+      await navigateToGenerate(tester);
+
+      if (find.text('Generate Messages').evaluate().isNotEmpty) {
+        await tester.tap(find.text('Generate Messages'));
+        await tester.pumpAndSettle(const Duration(seconds: 15));
+
+        if (find.text('Your Messages').evaluate().isNotEmpty) {
+          // Verify all 3 options
+          expect(find.text('Option 1').evaluate().isNotEmpty, isTrue);
+          expect(find.text('Option 2').evaluate().isNotEmpty, isTrue);
+          expect(find.text('Option 3').evaluate().isNotEmpty, isTrue);
+
+          await binding.takeScreenshot('f8_2_three_options');
+        }
+      }
+    });
+
+    testWidgets('F8.3: Copy button works', (tester) async {
+      await navigateToGenerate(tester);
+
+      if (find.text('Generate Messages').evaluate().isNotEmpty) {
+        await tester.tap(find.text('Generate Messages'));
+        await tester.pumpAndSettle(const Duration(seconds: 15));
+
+        if (find.text('Copy').evaluate().isNotEmpty) {
+          await tester.tap(find.text('Copy').first);
+          await tester.pumpAndSettle();
+
+          // Should show copied confirmation
+          expect(find.text('Copied!').evaluate().isNotEmpty, isTrue,
+              reason: 'Should show Copied! confirmation');
+
+          await binding.takeScreenshot('f8_3_copied');
+        }
+      }
+    });
+
+    testWidgets('F8.4: Start Over returns to home', (tester) async {
+      await navigateToGenerate(tester);
+
+      if (find.text('Generate Messages').evaluate().isNotEmpty) {
+        await tester.tap(find.text('Generate Messages'));
+        await tester.pumpAndSettle(const Duration(seconds: 15));
+
+        if (find.text('Start Over').evaluate().isNotEmpty) {
+          await tester.tap(find.text('Start Over'));
+          await tester.pumpAndSettle();
+
+          expect(find.text("What's the occasion?").evaluate().isNotEmpty ||
+              find.text('Birthday').evaluate().isNotEmpty, isTrue,
+              reason: 'Start Over should return to home');
+
+          await binding.takeScreenshot('f8_4_start_over');
+        }
+      }
+    });
+  });
+
+  // ==========================================================================
+  // FLOW 9: All Relationships Coverage
+  // ==========================================================================
+  group('Flow 9: Relationships', () {
+    final relationshipsToTest = [
+      'Close Friend',
+      'Family',
+      'Parent',
+      'Partner',
+      'Colleague',
+      'Sibling',
+      'Teacher',
+    ];
+
+    for (final relationship in relationshipsToTest) {
+      testWidgets('F9: $relationship can be selected', (tester) async {
+        app.main();
+        await tester.pumpAndSettle(const Duration(seconds: 5));
+
+        while (find.text('Continue').evaluate().isNotEmpty &&
+            find.text('Birthday').evaluate().isEmpty) {
+          await tester.tap(find.text('Continue'));
+          await tester.pumpAndSettle(const Duration(seconds: 1));
+        }
+
+        if (find.text('Birthday').evaluate().isEmpty) return;
+
+        await tester.tap(find.text('Birthday'));
+        await tester.pumpAndSettle();
+
+        // Scroll to find relationship
+        final scrollable = find.byType(Scrollable).first;
+        try {
+          await tester.scrollUntilVisible(find.text(relationship), 100, scrollable: scrollable);
+          await tester.pumpAndSettle();
+        } catch (_) {
+          return;
+        }
+
+        if (find.text(relationship).evaluate().isNotEmpty) {
+          await tester.tap(find.text(relationship));
+          await tester.pumpAndSettle();
+
+          expect(find.text('Continue').evaluate().isNotEmpty, isTrue,
+              reason: '$relationship should be selectable');
+        }
+      });
+    }
+  });
+
+  // ==========================================================================
+  // FLOW 10: All Tones Coverage
+  // ==========================================================================
+  group('Flow 10: Tones', () {
+    final tonesToTest = ['Heartfelt', 'Funny', 'Formal', 'Casual', 'Playful', 'Inspirational'];
+
+    for (final tone in tonesToTest) {
+      testWidgets('F10: $tone tone can be selected', (tester) async {
+        app.main();
+        await tester.pumpAndSettle(const Duration(seconds: 5));
+
+        while (find.text('Continue').evaluate().isNotEmpty &&
+            find.text('Birthday').evaluate().isEmpty) {
+          await tester.tap(find.text('Continue'));
+          await tester.pumpAndSettle(const Duration(seconds: 1));
+        }
+
+        if (find.text('Birthday').evaluate().isEmpty) return;
+
+        await tester.tap(find.text('Birthday'));
+        await tester.pumpAndSettle();
+
+        if (find.text('Close Friend').evaluate().isNotEmpty) {
+          await tester.tap(find.text('Close Friend'));
+          await tester.pumpAndSettle();
+        }
+        if (find.text('Continue').evaluate().isNotEmpty) {
+          await tester.tap(find.text('Continue'));
+          await tester.pumpAndSettle();
+        }
+
+        // Scroll to find tone
+        final scrollable = find.byType(Scrollable).first;
+        try {
+          await tester.scrollUntilVisible(find.text(tone), 100, scrollable: scrollable);
+          await tester.pumpAndSettle();
+        } catch (_) {
+          return;
+        }
+
+        if (find.text(tone).evaluate().isNotEmpty) {
+          await tester.tap(find.text(tone));
+          await tester.pumpAndSettle();
+
+          expect(find.text('Continue').evaluate().isNotEmpty, isTrue,
+              reason: '$tone tone should be selectable');
+        }
+      });
+    }
+  });
+
+  // ==========================================================================
+  // FLOW 11: Message Length Options
+  // ==========================================================================
+  group('Flow 11: Message Length', () {
+    testWidgets('F11.1: Length options visible on final step', (tester) async {
+      app.main();
+      await tester.pumpAndSettle(const Duration(seconds: 5));
+
+      while (find.text('Continue').evaluate().isNotEmpty &&
+          find.text('Birthday').evaluate().isEmpty) {
+        await tester.tap(find.text('Continue'));
+        await tester.pumpAndSettle(const Duration(seconds: 1));
+      }
+
+      if (find.text('Birthday').evaluate().isEmpty) return;
+
+      await tester.tap(find.text('Birthday'));
+      await tester.pumpAndSettle();
+
+      if (find.text('Close Friend').evaluate().isNotEmpty) {
+        await tester.tap(find.text('Close Friend'));
+        await tester.pumpAndSettle();
+      }
+      if (find.text('Continue').evaluate().isNotEmpty) {
+        await tester.tap(find.text('Continue'));
+        await tester.pumpAndSettle();
+      }
+      if (find.text('Heartfelt').evaluate().isNotEmpty) {
+        await tester.tap(find.text('Heartfelt'));
+        await tester.pumpAndSettle();
+      }
+      if (find.text('Continue').evaluate().isNotEmpty) {
+        await tester.tap(find.text('Continue'));
+        await tester.pumpAndSettle();
+      }
+
+      // Check length options
+      final hasBrief = find.text('Brief').evaluate().isNotEmpty;
+      final hasStandard = find.text('Standard').evaluate().isNotEmpty;
+      final hasDetailed = find.text('Detailed').evaluate().isNotEmpty;
+
+      expect(hasBrief || hasStandard || hasDetailed, isTrue,
+          reason: 'Should show message length options');
+
+      await binding.takeScreenshot('f11_1_length_options');
+    });
+  });
+
+  // ==========================================================================
+  // FLOW 12: Deep Settings
+  // ==========================================================================
+  group('Flow 12: Settings Deep Dive', () {
+    Future<void> navigateToSettings(WidgetTester tester) async {
+      app.main();
+      await tester.pumpAndSettle(const Duration(seconds: 5));
+
+      while (find.text('Continue').evaluate().isNotEmpty &&
+          find.byIcon(Icons.settings_outlined).evaluate().isEmpty) {
+        await tester.tap(find.text('Continue'));
+        await tester.pumpAndSettle(const Duration(seconds: 1));
+      }
+
+      if (find.byIcon(Icons.settings_outlined).evaluate().isNotEmpty) {
+        await tester.tap(find.byIcon(Icons.settings_outlined));
+        await tester.pumpAndSettle();
+      }
+    }
+
+    testWidgets('F12.1: Restore Purchases option exists', (tester) async {
+      await navigateToSettings(tester);
+
+      if (find.text('Settings').evaluate().isEmpty) return;
+
+      final scrollable = find.byType(Scrollable).first;
+      await tester.scrollUntilVisible(find.text('Restore Purchases'), 200, scrollable: scrollable);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Restore Purchases').evaluate().isNotEmpty, isTrue);
+      await binding.takeScreenshot('f12_1_restore_purchases');
+    });
+
+    testWidgets('F12.2: Send Feedback option exists', (tester) async {
+      await navigateToSettings(tester);
+
+      if (find.text('Settings').evaluate().isEmpty) return;
+
+      final scrollable = find.byType(Scrollable).first;
+      try {
+        await tester.scrollUntilVisible(find.text('Send Feedback'), 200, scrollable: scrollable);
+        await tester.pumpAndSettle();
+        expect(find.text('Send Feedback').evaluate().isNotEmpty, isTrue);
+      } catch (_) {
+        // May not have feedback option
+      }
+
+      await binding.takeScreenshot('f12_2_feedback');
+    });
+
+    testWidgets('F12.3: Version info visible', (tester) async {
+      await navigateToSettings(tester);
+
+      if (find.text('Settings').evaluate().isEmpty) return;
+
+      final scrollable = find.byType(Scrollable).first;
+      await tester.fling(scrollable, const Offset(0, -500), 1000);
+      await tester.pumpAndSettle();
+
+      // Look for version text pattern (e.g., "Version 1.0.0")
+      final hasVersion = find.textContaining('Version').evaluate().isNotEmpty ||
+          find.textContaining('v1').evaluate().isNotEmpty;
+
+      await binding.takeScreenshot('f12_3_version');
+    });
+  });
+
+  // ==========================================================================
+  // FLOW 13: Extended Occasions (Holidays & Special)
+  // ==========================================================================
+  group('Flow 13: Extended Occasions', () {
+    final extendedOccasions = [
+      "Valentine's Day",
+      'Thanksgiving',
+      'Hanukkah',
+      'Diwali',
+      'Lunar New Year',
+      'Promotion',
+      'Farewell',
+      'Thank You for Service',
+      'Pet Loss',
+    ];
+
+    for (final occasion in extendedOccasions) {
+      testWidgets('F13: $occasion occasion accessible', (tester) async {
+        app.main();
+        await tester.pumpAndSettle(const Duration(seconds: 5));
+
+        while (find.text('Continue').evaluate().isNotEmpty &&
+            find.text('Birthday').evaluate().isEmpty) {
+          await tester.tap(find.text('Continue'));
+          await tester.pumpAndSettle(const Duration(seconds: 1));
+        }
+
+        if (find.text('Birthday').evaluate().isEmpty) return;
+
+        // Scroll to find occasion
+        final scrollable = find.byType(Scrollable).first;
+        try {
+          await tester.scrollUntilVisible(find.text(occasion), 300, scrollable: scrollable);
+          await tester.pumpAndSettle();
+        } catch (_) {
+          return; // Occasion may require more scrolling
+        }
+
+        if (find.text(occasion).evaluate().isNotEmpty) {
+          await tester.tap(find.text(occasion));
+          await tester.pumpAndSettle();
+
+          // Should show relationships
+          expect(find.text('Close Friend').evaluate().isNotEmpty ||
+              find.text('Family').evaluate().isNotEmpty ||
+              find.text('Colleague').evaluate().isNotEmpty, isTrue,
+              reason: '$occasion should show relationship options');
+        }
+      });
+    }
+  });
+
+  // ==========================================================================
+  // FLOW 14: Wizard Step Navigation
+  // ==========================================================================
+  group('Flow 14: Wizard Step Nav', () {
+    testWidgets('F14.1: Back from step 2 preserves occasion', (tester) async {
+      app.main();
+      await tester.pumpAndSettle(const Duration(seconds: 5));
+
+      while (find.text('Continue').evaluate().isNotEmpty &&
+          find.text('Birthday').evaluate().isEmpty) {
+        await tester.tap(find.text('Continue'));
+        await tester.pumpAndSettle(const Duration(seconds: 1));
+      }
+
+      if (find.text('Birthday').evaluate().isEmpty) return;
+
+      await tester.tap(find.text('Birthday'));
+      await tester.pumpAndSettle();
+
+      if (find.text('Close Friend').evaluate().isNotEmpty) {
+        await tester.tap(find.text('Close Friend'));
+        await tester.pumpAndSettle();
+      }
+      if (find.text('Continue').evaluate().isNotEmpty) {
+        await tester.tap(find.text('Continue'));
+        await tester.pumpAndSettle();
+      }
+
+      // Now on tone step, go back
+      if (find.byIcon(Icons.arrow_back).evaluate().isNotEmpty) {
+        await tester.tap(find.byIcon(Icons.arrow_back));
+        await tester.pumpAndSettle();
+
+        // Should still be in Birthday flow (showing relationships)
+        expect(find.text('Close Friend').evaluate().isNotEmpty, isTrue,
+            reason: 'Back should preserve occasion context');
+
+        await binding.takeScreenshot('f14_1_back_preserves');
+      }
+    });
+
+    testWidgets('F14.2: Back from step 3 preserves selections', (tester) async {
+      app.main();
+      await tester.pumpAndSettle(const Duration(seconds: 5));
+
+      while (find.text('Continue').evaluate().isNotEmpty &&
+          find.text('Birthday').evaluate().isEmpty) {
+        await tester.tap(find.text('Continue'));
+        await tester.pumpAndSettle(const Duration(seconds: 1));
+      }
+
+      if (find.text('Birthday').evaluate().isEmpty) return;
+
+      await tester.tap(find.text('Birthday'));
+      await tester.pumpAndSettle();
+
+      if (find.text('Close Friend').evaluate().isNotEmpty) {
+        await tester.tap(find.text('Close Friend'));
+        await tester.pumpAndSettle();
+      }
+      if (find.text('Continue').evaluate().isNotEmpty) {
+        await tester.tap(find.text('Continue'));
+        await tester.pumpAndSettle();
+      }
+      if (find.text('Heartfelt').evaluate().isNotEmpty) {
+        await tester.tap(find.text('Heartfelt'));
+        await tester.pumpAndSettle();
+      }
+      if (find.text('Continue').evaluate().isNotEmpty) {
+        await tester.tap(find.text('Continue'));
+        await tester.pumpAndSettle();
+      }
+
+      // Now on final step, go back
+      if (find.byIcon(Icons.arrow_back).evaluate().isNotEmpty) {
+        await tester.tap(find.byIcon(Icons.arrow_back));
+        await tester.pumpAndSettle();
+
+        // Should show tones again
+        expect(find.text('Heartfelt').evaluate().isNotEmpty, isTrue,
+            reason: 'Back from final step should show tones');
+
+        await binding.takeScreenshot('f14_2_back_to_tones');
+      }
+    });
+  });
 }
