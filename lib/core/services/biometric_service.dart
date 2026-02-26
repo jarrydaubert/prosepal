@@ -56,6 +56,22 @@ class BiometricService implements IBiometricService {
     }
   }
 
+  /// Check if device has strong (Class 3) biometrics available.
+  /// Strong biometrics are cryptographically secure (e.g., Face ID, secure fingerprint).
+  /// Weak biometrics (e.g., basic face unlock on some Android) are less secure.
+  Future<bool> get hasStrongBiometrics async {
+    final biometrics = await availableBiometrics;
+    return biometrics.contains(BiometricType.strong);
+  }
+
+  /// Check if only weak biometrics are available (no strong option).
+  /// Consider warning users if only weak biometrics protect sensitive data.
+  Future<bool> get hasOnlyWeakBiometrics async {
+    final biometrics = await availableBiometrics;
+    return biometrics.contains(BiometricType.weak) &&
+        !biometrics.contains(BiometricType.strong);
+  }
+
   @override
   Future<bool> get hasFaceId async {
     final biometrics = await availableBiometrics;
@@ -89,11 +105,15 @@ class BiometricService implements IBiometricService {
   }
 
   @override
-  Future<BiometricResult> authenticate({String? reason}) async {
-    Log.info('Biometric auth started');
+  Future<BiometricResult> authenticate({
+    String? reason,
+    bool biometricOnly = false,
+  }) async {
+    Log.info('Biometric auth started', {'biometricOnly': biometricOnly});
     try {
       final success = await _auth.authenticate(
         localizedReason: reason ?? 'Authenticate to access Prosepal',
+        biometricOnly: biometricOnly,
         persistAcrossBackgrounding: true, // Resume prompt if app backgrounds
       );
       if (success) {

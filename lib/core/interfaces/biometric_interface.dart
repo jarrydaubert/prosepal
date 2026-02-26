@@ -27,7 +27,14 @@ abstract class IBiometricService {
   Future<void> setEnabled(bool enabled);
 
   /// Authenticate with biometrics
-  Future<BiometricResult> authenticate({String? reason});
+  ///
+  /// [reason] - The message shown to the user explaining why authentication is needed.
+  /// [biometricOnly] - If true, only biometrics are allowed (no PIN/pattern fallback).
+  ///                   Use for high-security scenarios like protecting sensitive data.
+  Future<BiometricResult> authenticate({
+    String? reason,
+    bool biometricOnly = false,
+  });
 
   /// Authenticate only if biometrics are enabled
   Future<BiometricResult> authenticateIfEnabled();

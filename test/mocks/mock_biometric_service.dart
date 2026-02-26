@@ -65,6 +65,7 @@ class MockBiometricService implements IBiometricService {
   int authenticateCallCount = 0;
   int setEnabledCallCount = 0;
   String? lastAuthenticateReason;
+  bool? lastBiometricOnly;
 
   void reset() {
     _isSupported = true;
@@ -77,6 +78,7 @@ class MockBiometricService implements IBiometricService {
     authenticateCallCount = 0;
     setEnabledCallCount = 0;
     lastAuthenticateReason = null;
+    lastBiometricOnly = null;
   }
 
   @override
@@ -116,9 +118,13 @@ class MockBiometricService implements IBiometricService {
   }
 
   @override
-  Future<BiometricResult> authenticate({String? reason}) async {
+  Future<BiometricResult> authenticate({
+    String? reason,
+    bool biometricOnly = false,
+  }) async {
     authenticateCallCount++;
     lastAuthenticateReason = reason;
+    lastBiometricOnly = biometricOnly;
     if (errorToThrow != null) {
       throw errorToThrow!;
     }
