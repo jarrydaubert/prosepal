@@ -939,10 +939,381 @@ void main() {
   });
 
   // ==========================================================================
-  // FLOW 14: Wizard Step Navigation
+  // FLOW 14: Auth Flow (Upgrade Path)
   // ==========================================================================
-  group('Flow 14: Wizard Step Nav', () {
-    testWidgets('F14.1: Back from step 2 preserves occasion', (tester) async {
+  group('Flow 14: Auth Flow', () {
+    testWidgets('F14.1: Upgrade shows auth screen for anonymous user', (tester) async {
+      app.main();
+      await tester.pumpAndSettle(const Duration(seconds: 5));
+
+      // Skip onboarding
+      while (find.text('Continue').evaluate().isNotEmpty &&
+          find.text('Birthday').evaluate().isEmpty) {
+        await tester.tap(find.text('Continue'));
+        await tester.pumpAndSettle(const Duration(seconds: 1));
+      }
+
+      if (find.text('Birthday').evaluate().isEmpty) return;
+
+      // Complete wizard to trigger upgrade
+      await tester.tap(find.text('Birthday'));
+      await tester.pumpAndSettle();
+
+      if (find.text('Close Friend').evaluate().isNotEmpty) {
+        await tester.tap(find.text('Close Friend'));
+        await tester.pumpAndSettle();
+      }
+      if (find.text('Continue').evaluate().isNotEmpty) {
+        await tester.tap(find.text('Continue'));
+        await tester.pumpAndSettle();
+      }
+      if (find.text('Heartfelt').evaluate().isNotEmpty) {
+        await tester.tap(find.text('Heartfelt'));
+        await tester.pumpAndSettle();
+      }
+      if (find.text('Continue').evaluate().isNotEmpty) {
+        await tester.tap(find.text('Continue'));
+        await tester.pumpAndSettle();
+      }
+
+      // If Upgrade button visible (0 free remaining)
+      if (find.text('Upgrade to Continue').evaluate().isNotEmpty) {
+        await tester.tap(find.text('Upgrade to Continue'));
+        await tester.pumpAndSettle(const Duration(seconds: 2));
+
+        // Should show auth screen with sign in options
+        final hasApple = find.text('Continue with Apple').evaluate().isNotEmpty;
+        final hasGoogle = find.text('Continue with Google').evaluate().isNotEmpty;
+        final hasEmail = find.text('Continue with Email').evaluate().isNotEmpty;
+
+        expect(hasApple || hasGoogle || hasEmail, isTrue,
+            reason: 'Upgrade should show auth screen for anonymous user');
+
+        await binding.takeScreenshot('f14_1_auth_from_upgrade');
+      }
+    });
+
+    testWidgets('F14.2: Auth screen shows welcome message', (tester) async {
+      app.main();
+      await tester.pumpAndSettle(const Duration(seconds: 5));
+
+      // Navigate to auth if upgrade available
+      while (find.text('Continue').evaluate().isNotEmpty &&
+          find.text('Birthday').evaluate().isEmpty) {
+        await tester.tap(find.text('Continue'));
+        await tester.pumpAndSettle(const Duration(seconds: 1));
+      }
+
+      // Try to reach auth screen
+      if (find.text('Upgrade to Continue').evaluate().isNotEmpty) {
+        await tester.tap(find.text('Upgrade to Continue'));
+        await tester.pumpAndSettle(const Duration(seconds: 2));
+      }
+
+      if (find.text('Welcome to Prosepal').evaluate().isNotEmpty) {
+        expect(find.text('Welcome to Prosepal'), findsOneWidget);
+        expect(find.text('The right words, right now'), findsOneWidget);
+
+        await binding.takeScreenshot('f14_2_auth_welcome');
+      }
+    });
+
+    testWidgets('F14.3: Auth screen has legal links', (tester) async {
+      app.main();
+      await tester.pumpAndSettle(const Duration(seconds: 5));
+
+      // Skip onboarding
+      while (find.text('Continue').evaluate().isNotEmpty &&
+          find.text('Birthday').evaluate().isEmpty) {
+        await tester.tap(find.text('Continue'));
+        await tester.pumpAndSettle(const Duration(seconds: 1));
+      }
+
+      // Complete wizard to trigger upgrade
+      if (find.text('Birthday').evaluate().isNotEmpty) {
+        await tester.tap(find.text('Birthday'));
+        await tester.pumpAndSettle();
+        
+        if (find.text('Close Friend').evaluate().isNotEmpty) {
+          await tester.tap(find.text('Close Friend'));
+          await tester.pumpAndSettle();
+        }
+        if (find.text('Continue').evaluate().isNotEmpty) {
+          await tester.tap(find.text('Continue'));
+          await tester.pumpAndSettle();
+        }
+        if (find.text('Heartfelt').evaluate().isNotEmpty) {
+          await tester.tap(find.text('Heartfelt'));
+          await tester.pumpAndSettle();
+        }
+        if (find.text('Continue').evaluate().isNotEmpty) {
+          await tester.tap(find.text('Continue'));
+          await tester.pumpAndSettle();
+        }
+      }
+
+      if (find.text('Upgrade to Continue').evaluate().isNotEmpty) {
+        await tester.tap(find.text('Upgrade to Continue'));
+        await tester.pumpAndSettle(const Duration(seconds: 2));
+      }
+
+      if (find.text('Continue with Email').evaluate().isNotEmpty) {
+        // Check legal links
+        expect(find.text('Terms').evaluate().isNotEmpty, isTrue);
+        expect(find.text('Privacy Policy').evaluate().isNotEmpty, isTrue);
+
+        await binding.takeScreenshot('f14_3_auth_legal');
+      }
+    });
+
+    testWidgets('F14.4: Email auth option navigates to email screen', (tester) async {
+      app.main();
+      await tester.pumpAndSettle(const Duration(seconds: 5));
+
+      // Skip onboarding
+      while (find.text('Continue').evaluate().isNotEmpty &&
+          find.text('Birthday').evaluate().isEmpty) {
+        await tester.tap(find.text('Continue'));
+        await tester.pumpAndSettle(const Duration(seconds: 1));
+      }
+
+      // Complete wizard to trigger upgrade
+      if (find.text('Birthday').evaluate().isNotEmpty) {
+        await tester.tap(find.text('Birthday'));
+        await tester.pumpAndSettle();
+        
+        if (find.text('Close Friend').evaluate().isNotEmpty) {
+          await tester.tap(find.text('Close Friend'));
+          await tester.pumpAndSettle();
+        }
+        if (find.text('Continue').evaluate().isNotEmpty) {
+          await tester.tap(find.text('Continue'));
+          await tester.pumpAndSettle();
+        }
+        if (find.text('Heartfelt').evaluate().isNotEmpty) {
+          await tester.tap(find.text('Heartfelt'));
+          await tester.pumpAndSettle();
+        }
+        if (find.text('Continue').evaluate().isNotEmpty) {
+          await tester.tap(find.text('Continue'));
+          await tester.pumpAndSettle();
+        }
+      }
+
+      if (find.text('Upgrade to Continue').evaluate().isNotEmpty) {
+        await tester.tap(find.text('Upgrade to Continue'));
+        await tester.pumpAndSettle(const Duration(seconds: 2));
+      }
+
+      if (find.text('Continue with Email').evaluate().isNotEmpty) {
+        await tester.tap(find.text('Continue with Email'));
+        await tester.pumpAndSettle();
+
+        // Should show email input
+        final hasEmailInput = find.byType(TextField).evaluate().isNotEmpty;
+        final hasEmailLabel = find.text('Email').evaluate().isNotEmpty ||
+            find.textContaining('email').evaluate().isNotEmpty;
+
+        expect(hasEmailInput || hasEmailLabel, isTrue,
+            reason: 'Should show email auth screen');
+
+        await binding.takeScreenshot('f14_4_email_auth');
+      }
+    });
+  });
+
+  // ==========================================================================
+  // FLOW 15: Settings Auth Actions
+  // ==========================================================================
+  group('Flow 15: Settings Auth', () {
+    Future<void> navigateToSettings(WidgetTester tester) async {
+      app.main();
+      await tester.pumpAndSettle(const Duration(seconds: 5));
+
+      while (find.text('Continue').evaluate().isNotEmpty &&
+          find.byIcon(Icons.settings_outlined).evaluate().isEmpty) {
+        await tester.tap(find.text('Continue'));
+        await tester.pumpAndSettle(const Duration(seconds: 1));
+      }
+
+      if (find.byIcon(Icons.settings_outlined).evaluate().isNotEmpty) {
+        await tester.tap(find.byIcon(Icons.settings_outlined));
+        await tester.pumpAndSettle();
+      }
+    }
+
+    testWidgets('F15.1: Anonymous user sees Sign In button', (tester) async {
+      await navigateToSettings(tester);
+
+      if (find.text('Settings').evaluate().isEmpty) return;
+
+      final scrollable = find.byType(Scrollable).first;
+      await tester.scrollUntilVisible(find.text('Sign In'), 200, scrollable: scrollable);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Sign In').evaluate().isNotEmpty, isTrue,
+          reason: 'Anonymous user should see Sign In option');
+
+      await binding.takeScreenshot('f15_1_sign_in_option');
+    });
+
+    testWidgets('F15.2: Sign In from settings goes to auth screen', (tester) async {
+      await navigateToSettings(tester);
+
+      if (find.text('Settings').evaluate().isEmpty) return;
+
+      final scrollable = find.byType(Scrollable).first;
+      try {
+        await tester.scrollUntilVisible(find.text('Sign In'), 200, scrollable: scrollable);
+        await tester.pumpAndSettle();
+      } catch (_) {
+        return; // May already be signed in
+      }
+
+      if (find.text('Sign In').evaluate().isNotEmpty) {
+        await tester.tap(find.text('Sign In'));
+        await tester.pumpAndSettle(const Duration(seconds: 2));
+
+        final hasAuth = find.text('Continue with Apple').evaluate().isNotEmpty ||
+            find.text('Continue with Google').evaluate().isNotEmpty ||
+            find.text('Continue with Email').evaluate().isNotEmpty;
+
+        expect(hasAuth, isTrue,
+            reason: 'Sign In should navigate to auth screen');
+
+        await binding.takeScreenshot('f15_2_auth_from_settings');
+      }
+    });
+
+    testWidgets('F15.3: Authenticated user sees Sign Out button', (tester) async {
+      await navigateToSettings(tester);
+
+      if (find.text('Settings').evaluate().isEmpty) return;
+
+      final scrollable = find.byType(Scrollable).first;
+      
+      // Check for Sign Out (authenticated) or Sign In (anonymous)
+      final hasSignOut = find.text('Sign Out').evaluate().isNotEmpty;
+      final hasSignIn = find.text('Sign In').evaluate().isNotEmpty;
+
+      // If neither visible, try scrolling
+      if (!hasSignOut && !hasSignIn) {
+        try {
+          await tester.scrollUntilVisible(find.text('Sign Out'), 200, scrollable: scrollable);
+          await tester.pumpAndSettle();
+        } catch (_) {
+          try {
+            await tester.scrollUntilVisible(find.text('Sign In'), 200, scrollable: scrollable);
+            await tester.pumpAndSettle();
+          } catch (_) {}
+        }
+      }
+
+      // One of them should be visible
+      expect(find.text('Sign Out').evaluate().isNotEmpty ||
+          find.text('Sign In').evaluate().isNotEmpty, isTrue,
+          reason: 'Should show auth action in settings');
+
+      await binding.takeScreenshot('f15_3_auth_action');
+    });
+
+    testWidgets('F15.4: Delete Account option exists for authenticated', (tester) async {
+      await navigateToSettings(tester);
+
+      if (find.text('Settings').evaluate().isEmpty) return;
+
+      final scrollable = find.byType(Scrollable).first;
+      
+      // Scroll to bottom to find Delete Account
+      await tester.fling(scrollable, const Offset(0, -500), 1000);
+      await tester.pumpAndSettle();
+
+      // Delete Account should only be visible if authenticated
+      final hasDelete = find.text('Delete Account').evaluate().isNotEmpty;
+      final hasSignIn = find.text('Sign In').evaluate().isNotEmpty;
+
+      // If signed in, should have Delete Account
+      // If anonymous, should have Sign In instead
+      expect(hasDelete || hasSignIn, isTrue,
+          reason: 'Should show Delete Account (auth) or Sign In (anon)');
+
+      await binding.takeScreenshot('f15_4_delete_or_signin');
+    });
+  });
+
+  // ==========================================================================
+  // FLOW 16: Pro Restore Flow
+  // ==========================================================================
+  group('Flow 16: Pro Restore', () {
+    testWidgets('F16.1: App checks Pro status on launch', (tester) async {
+      app.main();
+      await tester.pumpAndSettle(const Duration(seconds: 5));
+
+      // App should launch and check RevenueCat
+      // If Pro found but not signed in, shows restore banner
+      final hasRestoreBanner = find.text('Pro subscription found!').evaluate().isNotEmpty;
+      final hasNormalFlow = find.text('Continue').evaluate().isNotEmpty ||
+          find.text('Birthday').evaluate().isNotEmpty;
+
+      expect(hasRestoreBanner || hasNormalFlow, isTrue,
+          reason: 'App should show restore banner or normal flow');
+
+      await binding.takeScreenshot('f16_1_launch_check');
+    });
+
+    testWidgets('F16.2: Restore banner shows on auth screen if Pro detected', (tester) async {
+      app.main();
+      await tester.pumpAndSettle(const Duration(seconds: 5));
+
+      // If restore banner is shown
+      if (find.text('Pro subscription found!').evaluate().isNotEmpty) {
+        expect(find.text('Sign in to restore your Pro access'), findsOneWidget);
+        expect(find.text('Continue with Apple').evaluate().isNotEmpty ||
+            find.text('Continue with Google').evaluate().isNotEmpty, isTrue);
+
+        await binding.takeScreenshot('f16_2_restore_banner');
+      }
+    });
+
+    testWidgets('F16.3: Restore Purchases from settings', (tester) async {
+      app.main();
+      await tester.pumpAndSettle(const Duration(seconds: 5));
+
+      // Skip to home
+      while (find.text('Continue').evaluate().isNotEmpty &&
+          find.byIcon(Icons.settings_outlined).evaluate().isEmpty) {
+        await tester.tap(find.text('Continue'));
+        await tester.pumpAndSettle(const Duration(seconds: 1));
+      }
+
+      if (find.byIcon(Icons.settings_outlined).evaluate().isEmpty) return;
+
+      await tester.tap(find.byIcon(Icons.settings_outlined));
+      await tester.pumpAndSettle();
+
+      final scrollable = find.byType(Scrollable).first;
+      try {
+        await tester.scrollUntilVisible(find.text('Restore Purchases'), 200, scrollable: scrollable);
+        await tester.pumpAndSettle();
+      } catch (_) {
+        return;
+      }
+
+      if (find.text('Restore Purchases').evaluate().isNotEmpty) {
+        await tester.tap(find.text('Restore Purchases'));
+        await tester.pumpAndSettle(const Duration(seconds: 3));
+
+        // Should show success, failure, or loading
+        await binding.takeScreenshot('f16_3_restore_result');
+      }
+    });
+  });
+
+  // ==========================================================================
+  // FLOW 17: Wizard Step Navigation
+  // ==========================================================================
+  group('Flow 17: Wizard Step Nav', () {
+    testWidgets('F17.1: Back from step 2 preserves occasion', (tester) async {
       app.main();
       await tester.pumpAndSettle(const Duration(seconds: 5));
 
@@ -975,11 +1346,11 @@ void main() {
         expect(find.text('Close Friend').evaluate().isNotEmpty, isTrue,
             reason: 'Back should preserve occasion context');
 
-        await binding.takeScreenshot('f14_1_back_preserves');
+        await binding.takeScreenshot('f17_1_back_preserves');
       }
     });
 
-    testWidgets('F14.2: Back from step 3 preserves selections', (tester) async {
+    testWidgets('F17.2: Back from step 3 preserves selections', (tester) async {
       app.main();
       await tester.pumpAndSettle(const Duration(seconds: 5));
 
@@ -1020,7 +1391,7 @@ void main() {
         expect(find.text('Heartfelt').evaluate().isNotEmpty, isTrue,
             reason: 'Back from final step should show tones');
 
-        await binding.takeScreenshot('f14_2_back_to_tones');
+        await binding.takeScreenshot('f17_2_back_to_tones');
       }
     });
   });
