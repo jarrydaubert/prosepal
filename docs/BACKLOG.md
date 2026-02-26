@@ -8,7 +8,7 @@
 
 | Item | Action |
 |------|--------|
-| App Store ID | Add to `review_service.dart` after App Store approval |
+| App Store ID | Add to `review_service.dart` and `settings_screen.dart` after App Store approval. Find in App Store Connect > App Information > Apple ID (numeric). |
 
 ---
 
