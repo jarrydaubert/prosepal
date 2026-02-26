@@ -98,7 +98,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       context.go('/home');
       // Show paywall sheet after navigation completes
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) showPaywall(context);
+        if (mounted) showPaywall(context, source: 'onboarding');
       });
     }
   }

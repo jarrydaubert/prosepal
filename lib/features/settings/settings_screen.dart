@@ -466,8 +466,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           Log.warning('Delete account: History clear failed', {'error': '$e'});
         }
 
+        // 4. Mark device as used BEFORE clearing usage (prevents "1 free" after delete)
+        final usageService = ref.read(usageServiceProvider);
+        if (usageService.getTotalCount() > 0) {
+          try {
+            await usageService.markDeviceUsedFreeTier();
+            Log.info('Delete account: Device marked as used');
+          } catch (e) {
+            Log.warning('Delete account: Device marking failed', {
+              'error': '$e',
+            });
+          }
+        }
+
         try {
-          await ref.read(usageServiceProvider).clearAllUsage();
+          await usageService.clearAllUsage();
           Log.info('Delete account: Usage cleared');
         } catch (e) {
           Log.warning('Delete account: Usage clear failed', {'error': '$e'});
@@ -578,7 +591,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         context.push('/auth?autorestore=true');
                       } else {
                         // Show paywall sheet (has inline auth)
-                        showPaywall(context);
+                        showPaywall(context, source: 'settings');
                       }
                     },
                   ),

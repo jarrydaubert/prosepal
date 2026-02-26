@@ -88,7 +88,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
           Log.info('Auth success: No Pro found, showing paywall sheet');
           context.go('/home');
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) showPaywall(context);
+            if (mounted) showPaywall(context, source: 'auth');
           });
           return;
         }
@@ -100,7 +100,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
         // On error, go home and show paywall sheet
         context.go('/home');
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) showPaywall(context);
+          if (mounted) showPaywall(context, source: 'auth');
         });
         return;
       }
@@ -115,7 +115,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
         // Paywall is now a bottom sheet - go home and show it
         context.go('/home');
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) showPaywall(context);
+          if (mounted) showPaywall(context, source: 'auth');
         });
       } else {
         // Other redirects (e.g., home) - navigate normally

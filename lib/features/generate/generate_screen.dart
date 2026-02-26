@@ -235,7 +235,7 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
                   context.push('/auth?autorestore=true');
                 } else {
                   // Show paywall sheet (has inline auth for fresh users)
-                  showPaywall(context);
+                  showPaywall(context, source: 'generate');
                 }
               },
             ),

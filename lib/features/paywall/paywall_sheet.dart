@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -17,14 +16,15 @@ import '../../shared/theme/app_spacing.dart';
 
 /// Shows the paywall as a modal bottom sheet with inline auth.
 ///
+/// [source] identifies where the paywall was triggered from for analytics.
 /// Returns `true` if user successfully subscribed, `false` otherwise.
-Future<bool> showPaywall(BuildContext context) async {
+Future<bool> showPaywall(BuildContext context, {String? source}) async {
   return await showModalBottomSheet<bool>(
         context: context,
         isScrollControlled: true,
         backgroundColor: Colors.transparent,
         enableDrag: true,
-        builder: (context) => const PaywallSheet(),
+        builder: (context) => PaywallSheet(source: source),
       ) ??
       false;
 }
@@ -33,7 +33,10 @@ Future<bool> showPaywall(BuildContext context) async {
 ///
 /// Pattern: Sign in → Purchase (single surface, no navigation)
 class PaywallSheet extends ConsumerStatefulWidget {
-  const PaywallSheet({super.key});
+  const PaywallSheet({super.key, this.source});
+
+  /// Analytics: where the paywall was triggered from (home, generate, settings, etc.)
+  final String? source;
 
   @override
   ConsumerState<PaywallSheet> createState() => _PaywallSheetState();
@@ -49,12 +52,20 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
   bool _navigatedToEmailAuth = false;
   int _selectedPackageIndex = 0;
   String? _error;
+  late final DateTime _openedAt;
 
   @override
   void dispose() {
-    // Analytics: track dismiss if no purchase (skip if navigating to email auth)
+    // Analytics: enriched dismiss tracking (skip if navigating to email auth)
     if (!_purchaseCompleted && !_navigatedToEmailAuth) {
-      Log.info('Paywall dismissed', {'reason': 'no_purchase'});
+      Log.info('Paywall dismissed', {
+        'reason': 'no_purchase',
+        'source': widget.source,
+        'viewDurationSec': DateTime.now().difference(_openedAt).inSeconds,
+        'hadAuthAttempt': _isAuthenticating,
+        'selectedPackage': _selectedPackageIndex,
+        'hadError': _error != null,
+      });
     }
     super.dispose();
   }
@@ -62,10 +73,14 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
   @override
   void initState() {
     super.initState();
+    _openedAt = DateTime.now();
     _loadOfferings();
-    // Analytics: track paywall impression
+    // Analytics: track paywall impression with source
     final isLoggedIn = ref.read(authServiceProvider).isLoggedIn;
-    Log.info('Paywall shown', {'isLoggedIn': isLoggedIn});
+    Log.info('Paywall shown', {
+      'source': widget.source,
+      'isLoggedIn': isLoggedIn,
+    });
   }
 
   Future<void> _loadOfferings() async {
@@ -83,13 +98,13 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
 
     try {
       final offerings = await Purchases.getOfferings();
-      if (kDebugMode) {
-        for (final pkg in offerings.current?.availablePackages ?? []) {
-          debugPrint(
-            'RevenueCat: ${pkg.storeProduct.identifier} - '
-            '${pkg.storeProduct.currencyCode} - ${pkg.storeProduct.priceString}',
-          );
-        }
+      // Log currency info (visible in diagnostics)
+      for (final pkg in offerings.current?.availablePackages ?? []) {
+        Log.info('RevenueCat package', {
+          'id': pkg.storeProduct.identifier,
+          'currency': pkg.storeProduct.currencyCode,
+          'price': pkg.storeProduct.priceString,
+        });
       }
       if (mounted) {
         setState(() {
@@ -139,10 +154,19 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
         } catch (e) {
           Log.warning('Usage sync failed after auth', {'error': '$e'});
         }
-        // Identify with RevenueCat
+        // Identify with RevenueCat (may restore existing subscription)
         await ref
             .read(subscriptionServiceProvider)
             .identifyUser(response.user!.id);
+
+        // Check if user already has Pro from restored subscription
+        final hasPro = ref.read(isProProvider);
+        if (hasPro && mounted) {
+          Log.info('PaywallSheet: Apple sign-in restored Pro, closing');
+          _purchaseCompleted = true;
+          Navigator.of(context).pop(true);
+          return;
+        }
       }
       Log.info('PaywallSheet: Apple sign-in success');
     } catch (e) {
@@ -174,10 +198,19 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
         } catch (e) {
           Log.warning('Usage sync failed after auth', {'error': '$e'});
         }
-        // Identify with RevenueCat
+        // Identify with RevenueCat (may restore existing subscription)
         await ref
             .read(subscriptionServiceProvider)
             .identifyUser(response.user!.id);
+
+        // Check if user already has Pro from restored subscription
+        final hasPro = ref.read(isProProvider);
+        if (hasPro && mounted) {
+          Log.info('PaywallSheet: Google sign-in restored Pro, closing');
+          _purchaseCompleted = true;
+          Navigator.of(context).pop(true);
+          return;
+        }
       }
       Log.info('PaywallSheet: Google sign-in success');
     } catch (e) {
@@ -190,6 +223,7 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
   }
 
   void _signInWithEmail() {
+    Log.info('Paywall: Email auth selected');
     // Close sheet and navigate to email auth, then re-show sheet after
     _navigatedToEmailAuth = true; // Prevent false dismiss analytics
     Navigator.of(context).pop(false);
@@ -490,12 +524,12 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
         ),
         const Gap(16),
         const Text(
-          'Unlimited messages',
+          'Never lost for words',
           style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
         ),
         const Gap(4),
         Text(
-          'Perfect words for every occasion',
+          'Heartfelt messages, whenever you need them',
           style: TextStyle(fontSize: 14, color: Colors.grey[600]),
         ),
       ],
@@ -504,36 +538,31 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
 
   Widget _buildBenefits() {
     const benefits = [
-      ('500 messages/month', Icons.all_inclusive),
-      ('All 40 occasions', Icons.celebration),
-      ('Priority responses', Icons.bolt),
+      ('500/month', Icons.message_outlined),
+      ('All occasions', Icons.celebration_outlined),
+      ('Priority AI', Icons.bolt_outlined),
     ];
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: AppColors.primary.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: benefits
-            .map(
-              (b) => Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(b.$2, color: AppColors.primary, size: 20),
-                  const Gap(4),
-                  Text(
-                    b.$1,
-                    style: const TextStyle(fontSize: 12),
-                    textAlign: TextAlign.center,
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: benefits
+          .map(
+            (b) => Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(b.$2, color: AppColors.primary, size: 24),
+                const Gap(4),
+                Text(
+                  b.$1,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
                   ),
-                ],
-              ),
-            )
-            .toList(),
-      ),
+                ),
+              ],
+            ),
+          )
+          .toList(),
     );
   }
 
@@ -545,7 +574,12 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
         final isAnnual = pkg.packageType == PackageType.annual;
 
         return GestureDetector(
-          onTap: () => setState(() => _selectedPackageIndex = index),
+          onTap: () {
+            if (_selectedPackageIndex != index) {
+              Log.info('Package selected', {'package': pkg.identifier});
+            }
+            setState(() => _selectedPackageIndex = index);
+          },
           child: Container(
             margin: const EdgeInsets.only(bottom: 12),
             padding: const EdgeInsets.all(16),
@@ -614,9 +648,9 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
                                 color: AppColors.success,
                                 borderRadius: BorderRadius.circular(4),
                               ),
-                              child: const Text(
-                                'BEST VALUE',
-                                style: TextStyle(
+                              child: Text(
+                                _savingsText(packages),
+                                style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 10,
                                   fontWeight: FontWeight.bold,
@@ -672,17 +706,42 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
       '',
     );
 
+    // Show per-week cost for all plans to enable easy comparison
     switch (type) {
       case PackageType.annual:
-        final monthly = price / 12;
-        return 'Just $currencySymbol${monthly.toStringAsFixed(2)}/month';
+        final weekly = price / 52;
+        return 'Just $currencySymbol${weekly.toStringAsFixed(2)}/week';
       case PackageType.monthly:
-        return 'Billed monthly';
+        final weekly = price / 4.33; // avg weeks per month
+        return '$currencySymbol${weekly.toStringAsFixed(2)}/week';
       case PackageType.weekly:
-        return 'Billed weekly';
+        return '$currencySymbol${price.toStringAsFixed(2)}/week';
       default:
         return '';
     }
+  }
+
+  String _savingsText(List<Package> packages) {
+    final monthly = packages.firstWhere(
+      (p) => p.packageType == PackageType.monthly,
+      orElse: () => packages.first,
+    );
+    final annual = packages.firstWhere(
+      (p) => p.packageType == PackageType.annual,
+      orElse: () => packages.first,
+    );
+
+    if (monthly.packageType != PackageType.monthly ||
+        annual.packageType != PackageType.annual) {
+      return 'BEST VALUE';
+    }
+
+    final monthlyYearCost = monthly.storeProduct.price * 12;
+    final annualCost = annual.storeProduct.price;
+    final savings = ((monthlyYearCost - annualCost) / monthlyYearCost * 100)
+        .round();
+
+    return savings > 0 ? 'SAVE $savings%' : 'BEST VALUE';
   }
 
   Widget _buildErrorBanner() {
@@ -802,9 +861,17 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
                   ),
                 )
               : const Text(
-                  'Subscribe',
+                  'Continue',
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                 ),
+        ),
+        const Gap(8),
+
+        // Legal compliance: cancel/renewal disclosure (Apple requirement)
+        Text(
+          'Auto-renews. Cancel anytime in App Store settings.',
+          style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+          textAlign: TextAlign.center,
         ),
         const Gap(12),
 
