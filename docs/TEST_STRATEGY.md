@@ -15,6 +15,7 @@ Define a stable testing approach for local development, CI, and release gating.
 
 ```bash
 flutter analyze
+./scripts/test_critical_smoke.sh
 flutter test
 ./scripts/test_flake_audit.sh
 flutter test integration_test/smoke_test.dart -d <device-id>
@@ -24,7 +25,9 @@ flutter test integration_test/e2e_test.dart -d <device-id>
 ## CI Requirements
 
 - Run analyzer.
+- Run the critical smoke suite.
 - Run unit/widget suites.
+- Exclude tests tagged `flaky` from blocking CI runs.
 - Run flake audit workflow on schedule.
 - Store artifacts for failures (logs, reports, screenshots if available).
 

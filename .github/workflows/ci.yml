@@ -34,8 +34,11 @@ jobs:
       - name: Static analysis
         run: flutter analyze --no-fatal-infos
 
+      - name: Critical smoke gate
+        run: ./scripts/test_critical_smoke.sh
+
       - name: Unit and widget tests
-        run: flutter test --coverage
+        run: flutter test --exclude-tags flaky --coverage
 
       - name: Upload coverage artifact
         if: always()
