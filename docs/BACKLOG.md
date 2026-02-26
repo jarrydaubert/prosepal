@@ -71,6 +71,10 @@
 | Subscription test logging | `subscription_service_test.dart` | Mock LogService to verify warnings during degradation |
 | Subscription init tests | `subscription_service_test.dart` | Add tests for initialize() behavior and isConfigured state |
 | Subscription integration tests | `integration_test/` | Device-based tests for purchase, restore, paywall flows |
+| Auth stream test reliability | `auth_service_test.dart` | Replace Future.delayed with emitsInOrder for deterministic stream tests |
+| Auth re-auth simulation | `auth_service_test.dart` | Mock "requires recent login" errors for updateEmail/updatePassword/delete |
+| Auth config decoupling | `auth_service_test.dart` | Inject client ID validation for deterministic Google availability tests |
+| Auth integration tests | `integration_test/` | Device-based tests for Apple/Google native flows, deep links |
 | UsageService race condition | `usage_service.dart` | Atomic increment via Supabase RPC |
 | Hardcoded usage limits | `usage_service.dart` | Move to remote config |
 | Supabase singleton | `usage_service.dart` | Inject client for testability |
