@@ -1,25 +1,34 @@
-// delete-user: Secure self-deletion edge function
-// Deploy: supabase functions deploy delete-user
-//
-// Security model:
-// 1. User's JWT verifies identity (anon key + bearer token)
-// 2. Service role key used only for privileged deletion
-// 3. Apple tokens revoked before auth record removal (compliance)
-// 4. All user data deleted before auth record removal
+/**
+ * Secure self-deletion edge function.
+ *
+ * Deploy with:
+ * `supabase functions deploy delete-user`
+ *
+ * Security model:
+ * 1. User JWT verifies caller identity.
+ * 2. Service-role key is used only for privileged deletion paths.
+ * 3. Apple refresh tokens are revoked before auth record removal.
+ * 4. App data cleanup runs before auth user deletion.
+ */
 import { createClient } from "npm:@supabase/supabase-js@2.95.3"
 
-// Apple token revocation endpoint
+/** Apple token revocation endpoint. */
 const APPLE_REVOKE_URL = 'https://appleid.apple.com/auth/revoke'
 
-// CORS restricted - only called from mobile app (native HTTP, not browser)
-// Empty origin blocks browser-based attacks while allowing mobile requests
+/**
+ * CORS policy for native mobile calls.
+ * Empty `Access-Control-Allow-Origin` blocks browser access while allowing
+ * native clients that do not send browser origin headers.
+ */
 const corsHeaders = {
   'Access-Control-Allow-Origin': '', // Mobile apps don't send Origin header
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
-// Sanitize error messages for client responses (don't leak internal details)
+/**
+ * Sanitizes internal errors into safe client-facing messages.
+ */
 function getSafeErrorMessage(error: Error | unknown): string {
   if (error instanceof Error) {
     const msg = error.message.toLowerCase()
@@ -33,8 +42,11 @@ function getSafeErrorMessage(error: Error | unknown): string {
   return 'An error occurred. Please try again.'
 }
 
-// Generate Apple client secret JWT
-// Required for Apple token revocation API
+/**
+ * Creates a short-lived Apple client-secret JWT used for token revocation.
+ *
+ * @returns Signed JWT string when Apple credentials exist; otherwise `null`.
+ */
 async function generateAppleClientSecret(): Promise<string | null> {
   const teamId = Deno.env.get('APPLE_TEAM_ID')
   const clientId = Deno.env.get('APPLE_CLIENT_ID') // Service ID (com.prosepal.prosepal)
@@ -106,7 +118,13 @@ async function generateAppleClientSecret(): Promise<string | null> {
   }
 }
 
-// Revoke Apple refresh token
+/**
+ * Revokes an Apple refresh token.
+ *
+ * @param refreshToken Refresh token previously issued by Apple.
+ * @param clientSecret Signed Apple client-secret JWT.
+ * @returns `true` when Apple returns a success response; otherwise `false`.
+ */
 async function revokeAppleToken(refreshToken: string, clientSecret: string): Promise<boolean> {
   const clientId = Deno.env.get('APPLE_CLIENT_ID')
   if (!clientId) return false
@@ -139,6 +157,11 @@ async function revokeAppleToken(refreshToken: string, clientSecret: string): Pro
   }
 }
 
+/**
+ * Edge-function entrypoint.
+ * Handles authenticated self-deletion with best-effort upstream token revocation
+ * and deterministic cleanup of app-owned rows.
+ */
 Deno.serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {

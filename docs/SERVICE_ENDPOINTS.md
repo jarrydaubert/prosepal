@@ -78,7 +78,5 @@ For open gaps, flaky behavior, or pending improvements, use `docs/BACKLOG.md` on
 
 ## Verification References
 
-- Local and CI test workflow: `docs/TEST_STRATEGY.md`
-- Supabase verification runbook: `docs/SUPABASE_TESTS.md`
-- AI cost/abuse verification runbook: `docs/AI_COST_ABUSE_RUNBOOK.md`
+- Local/CI/device/FTL workflow and operational runbooks: `docs/DEVOPS.md`
 - Test command quick reference: `test/README.md`

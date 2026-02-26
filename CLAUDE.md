@@ -20,8 +20,7 @@ dart format .
 - `docs/NEXT_RELEASE_BRIEF.md`
 - `docs/BACKLOG.md`
 - `docs/DOCS_POLICY.md`
-- `docs/TEST_STRATEGY.md`
-- `docs/SUPABASE_TESTS.md`
+- `docs/DEVOPS.md`
 
 ## Claude Commands
 

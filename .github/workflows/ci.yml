@@ -20,42 +20,119 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          fetch-depth: 0
+
+      - name: Detect docs-only change scope
+        id: scope
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          else
+            BASE_SHA="${{ github.event.before }}"
+            if [[ -z "$BASE_SHA" || "$BASE_SHA" == "0000000000000000000000000000000000000000" ]]; then
+              BASE_SHA="$(git rev-parse HEAD^)"
+            fi
+          fi
+
+          git diff --name-only "$BASE_SHA" "${{ github.sha }}" > /tmp/changed_files.txt
+
+          docs_only=true
+          while IFS= read -r file; do
+            if [[ -z "$file" ]]; then
+              continue
+            fi
+
+            if [[ "$file" =~ ^docs/ ]]; then
+              continue
+            fi
+
+            if [[ "$file" =~ \.md$ ]]; then
+              continue
+            fi
+
+            if [[ "$file" == "LICENSE" ]]; then
+              continue
+            fi
+
+            docs_only=false
+            break
+          done < /tmp/changed_files.txt
+
+          echo "docs_only=$docs_only" >> "$GITHUB_OUTPUT"
+
+      - name: Docs-only fast path
+        if: steps.scope.outputs.docs_only == 'true'
+        run: |
+          echo "Docs-only change detected."
+          echo "Skipping Flutter install/build/test to save CI minutes."
 
       - name: Release config preflight tests
+        if: steps.scope.outputs.docs_only != 'true'
         run: ./scripts/test_release_preflight.sh
 
+      - name: Install Deno
+        if: steps.scope.outputs.docs_only != 'true'
+        shell: bash
+        run: |
+          curl -fsSL https://deno.land/install.sh | sh -s -- -q
+          echo "$HOME/.deno/bin" >> "$GITHUB_PATH"
+
+      - name: Validate Supabase edge-function TypeScript
+        if: steps.scope.outputs.docs_only != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t TS_FILES < <(find supabase/functions -name '*.ts' | sort)
+          if [[ "${#TS_FILES[@]}" -eq 0 ]]; then
+            echo "No Supabase TypeScript files found."
+            exit 0
+          fi
+          deno check "${TS_FILES[@]}"
+
       - name: Install Flutter SDK
+        if: steps.scope.outputs.docs_only != 'true'
         run: |
           git clone https://github.com/flutter/flutter.git --depth 1 --branch 3.38.6 "$HOME/flutter"
           echo "$HOME/flutter/bin" >> "$GITHUB_PATH"
           "$HOME/flutter/bin/flutter" --version
 
       - name: Install dependencies
+        if: steps.scope.outputs.docs_only != 'true'
         run: flutter pub get
 
       - name: Static analysis
+        if: steps.scope.outputs.docs_only != 'true'
         run: flutter analyze --no-fatal-infos
 
       - name: Critical smoke gate
+        if: steps.scope.outputs.docs_only != 'true'
         run: ./scripts/test_critical_smoke.sh
 
       - name: Unit and widget tests (non-golden)
+        if: steps.scope.outputs.docs_only != 'true'
         run: |
           mapfile -t TEST_FILES < <(find test -name '*_test.dart' ! -path 'test/widgets/goldens/*' | sort)
           flutter test --exclude-tags flaky --coverage "${TEST_FILES[@]}"
 
       - name: Service coverage gate
+        if: steps.scope.outputs.docs_only != 'true'
         env:
           MIN_COVERAGE: '35'
         run: ./scripts/check_service_coverage.sh coverage/lcov.info
 
       - name: Flutter debug bundle build
+        if: steps.scope.outputs.docs_only != 'true'
         run: flutter build bundle --debug
 
       - name: Upload coverage artifact
-        if: always()
+        if: always() && steps.scope.outputs.docs_only != 'true'
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
         with:
           name: coverage-lcov
           path: coverage/lcov.info
           if-no-files-found: warn
+          retention-days: 14

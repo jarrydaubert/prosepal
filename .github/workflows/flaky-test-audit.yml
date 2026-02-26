@@ -44,3 +44,4 @@ jobs:
           name: flaky-test-audit-logs
           path: /tmp/prosepal-flake-audit
           if-no-files-found: warn
+          retention-days: 14
