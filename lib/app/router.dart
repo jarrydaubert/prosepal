@@ -14,7 +14,6 @@ import '../features/auth/lock_screen.dart';
 import '../features/generate/generate_screen.dart';
 import '../features/home/home_screen.dart';
 import '../features/onboarding/onboarding_screen.dart';
-import '../features/paywall/custom_paywall_screen.dart';
 import '../features/results/results_screen.dart';
 import '../features/history/history_screen.dart';
 import '../features/settings/feedback_screen.dart';
@@ -110,7 +109,9 @@ final _routes = <RouteBase>[
   GoRoute(
     path: '/auth/email',
     name: 'emailAuth',
-    builder: (context, state) => const EmailAuthScreen(),
+    builder: (context, state) => EmailAuthScreen(
+      returnToPaywall: state.uri.queryParameters['returnToPaywall'] == 'true',
+    ),
   ),
   // Auth callback routes - Supabase SDK handles the auth, these just redirect
   // The deep link is processed by supabase_flutter before reaching the router,
@@ -137,11 +138,7 @@ final _routes = <RouteBase>[
     name: 'results',
     builder: (context, state) => const ResultsScreen(),
   ),
-  GoRoute(
-    path: '/paywall',
-    name: 'paywall',
-    builder: (context, state) => const CustomPaywallScreen(),
-  ),
+  // /paywall route removed - now using showPaywall() bottom sheet
   GoRoute(
     path: '/settings',
     name: 'settings',

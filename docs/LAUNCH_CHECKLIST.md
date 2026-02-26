@@ -110,7 +110,7 @@
 | Review notes | App Review | ✅ | Step-by-step testing instructions |
 | RevenueCat webhooks | App Information | ✅ | Production + Sandbox URLs configured |
 | Copyright | Version 1.0 | ✅ | 2026 |
-| Screenshots | Version 1.0 | ✅ | 5 screenshots uploaded (6.5", 6.7", iPad) |
+| Screenshots | Version 1.0 | ⚠️ | 5 screenshots uploaded - **UPDATE: Paywall changed to bottom sheet** |
 | Build | Version 1.0 | ❌ | Not uploaded - run `./scripts/build_ios.sh` |
 | IAPs linked to version | Version 1.0 | ✅ | All 3 subscriptions linked |
 | Submit for Review | Version 1.0 | ⏳ | After above items complete |
@@ -126,7 +126,7 @@
 | Pro Monthly (`com.prosepal.pro.monthly`) | ✅ | 1 month, matches RevenueCat |
 | Pro Yearly (`com.prosepal.pro.yearly`) | ✅ | 1 year, matches RevenueCat |
 | Availability | ✅ | All countries |
-| IAP Review Screenshots | ✅ | Updated with new paywall design |
+| IAP Review Screenshots | ⚠️ | **UPDATE: Paywall changed to bottom sheet with inline auth** |
 | Localization description | ✅ | Says "500 messages per month" - correct (Pro limit is 500/month) |
 | Subscription Group Display Name | ✅ | Changed to "Pro" (was "Pro Weekly") |
 | Family Sharing | ➖ | OFF - enable post-revenue |

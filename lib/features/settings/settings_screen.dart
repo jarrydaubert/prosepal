@@ -18,6 +18,7 @@ import '../../core/interfaces/biometric_interface.dart';
 import '../../core/providers/providers.dart';
 import '../../core/services/log_service.dart';
 import '../../shared/components/components.dart';
+import '../paywall/paywall_sheet.dart';
 import '../../shared/theme/app_colors.dart';
 
 // ===========================================================================
@@ -572,12 +573,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           .isLoggedIn;
                       final isReturningUser = usageService
                           .hasDeviceUsedFreeTier();
-                      if (isLoggedIn) {
-                        context.pushNamed('paywall');
-                      } else if (isReturningUser) {
+                      if (isReturningUser && !isLoggedIn) {
+                        // Returning user: try auto-restore first
                         context.push('/auth?autorestore=true');
                       } else {
-                        context.push('/auth?redirect=paywall');
+                        // Show paywall sheet (has inline auth)
+                        showPaywall(context);
                       }
                     },
                   ),

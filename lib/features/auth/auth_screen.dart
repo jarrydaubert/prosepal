@@ -12,6 +12,7 @@ import '../../core/providers/providers.dart';
 import '../../core/services/log_service.dart';
 import '../../shared/components/app_logo.dart';
 import '../../shared/theme/app_colors.dart';
+import '../paywall/paywall_sheet.dart';
 
 class AuthScreen extends ConsumerStatefulWidget {
   const AuthScreen({
@@ -83,29 +84,43 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
           context.go('/home');
           return;
         } else {
-          // No Pro found - show paywall
-          Log.info('Auth success: No Pro found, navigating to paywall');
-          context.replace('/paywall');
+          // No Pro found - go home and show paywall sheet
+          Log.info('Auth success: No Pro found, showing paywall sheet');
+          context.go('/home');
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) showPaywall(context);
+          });
           return;
         }
       } catch (e) {
-        Log.warning('Auto-restore failed, falling back to paywall', {
+        Log.warning('Auto-restore failed, showing paywall sheet', {
           'error': '$e',
         });
         if (!mounted) return;
-        // On error, fall back to paywall
-        context.replace('/paywall');
+        // On error, go home and show paywall sheet
+        context.go('/home');
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) showPaywall(context);
+        });
         return;
       }
     }
 
-    // If we have a redirect destination (e.g., from upgrade flow),
-    // replace auth screen with destination (preserves back stack)
+    // If we have a redirect destination, handle it
     if (widget.redirectTo != null) {
-      Log.info('Auth success: navigating to redirect', {
+      Log.info('Auth success: handling redirect', {
         'redirect': widget.redirectTo,
       });
-      context.replace('/${widget.redirectTo}');
+      if (widget.redirectTo == 'paywall') {
+        // Paywall is now a bottom sheet - go home and show it
+        context.go('/home');
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) showPaywall(context);
+        });
+      } else {
+        // Other redirects (e.g., home) - navigate normally
+        context.replace('/${widget.redirectTo}');
+      }
       return;
     }
 

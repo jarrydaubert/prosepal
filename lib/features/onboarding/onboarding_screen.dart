@@ -8,6 +8,7 @@ import '../../core/providers/providers.dart';
 import '../../core/services/log_service.dart';
 import '../../shared/theme/app_colors.dart';
 import '../../shared/theme/app_spacing.dart';
+import '../paywall/paywall_sheet.dart';
 
 /// Data model for onboarding pages - clean separation of concerns
 class OnboardingPageData {
@@ -91,10 +92,14 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       Log.info('Onboarding: -> /home (has Pro, signed in)');
       context.go('/home');
     } else {
-      // No Pro - show paywall to capture Day 0 conversions
+      // No Pro - go to home and show paywall sheet for Day 0 conversions
       // User can dismiss to try their 1 free message first
-      Log.info('Onboarding: -> /paywall (no Pro)');
-      context.go('/paywall');
+      Log.info('Onboarding: -> /home + paywall sheet (no Pro)');
+      context.go('/home');
+      // Show paywall sheet after navigation completes
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) showPaywall(context);
+      });
     }
   }
 

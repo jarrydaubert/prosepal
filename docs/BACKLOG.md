@@ -36,7 +36,7 @@
 
 | Issue | Location | Fix |
 |-------|----------|-----|
-| Paywall bypasses service interface | `custom_paywall_screen.dart` | Calls SDK directly - can't mock/test purchase flow |
+| Paywall bypasses service interface | `paywall_sheet.dart` | Route getOfferings(), purchasePackage(), restorePurchases() through ISubscriptionService for testability |
 | Subscription service 21% coverage | `subscription_service.dart` | Revenue-critical, needs more tests |
 | Auth providers 0% coverage | `*_auth_provider.dart` | 86 lines untested auth flow |
 | Reauth service 1% coverage | `reauth_service.dart` | Security-critical, nearly untested |
@@ -53,6 +53,9 @@
 |-------|----------|-----|
 | Document service configurations | Firebase/Supabase/RevenueCat | Screen-by-screen audit of what's enabled/configured in each dashboard. Create `docs/SERVICE_CONFIG.md` with screenshots or detailed notes for reproducibility. |
 | Mockito exploration | `test/mocks/` | Evaluate migrating simple mocks to Mockito for reduced boilerplate. Current manual mocks excel at state tracking and error simulation. Consider Mockito for new simple interface mocks. |
+| Paywall component decomposition | `paywall_sheet.dart` | 890 lines - extract PaywallHeader, BenefitsSection, PackageSelector, AuthSection for maintainability |
+| Paywall accessibility | `paywall_sheet.dart` | Add Semantics labels for screen readers throughout |
+| Paywall branding extraction | `paywall_sheet.dart` | Hard-coded "Prosepal Pro", benefits - extract to config for blueprint cloning |
 | Auth/lock logic in root widget | `app.dart` | Extract to `AppLifecycleManager` service for testability |
 | Imperative biometric lock navigation | `app.dart` | Move to router redirect + Riverpod notifier pattern |
 | **Startup performance** | `main.dart` | Parallelize Firebase + Supabase init (~300-500ms saved) |
@@ -60,7 +63,7 @@
 | Skip Remote Config fetch | `main.dart` | Use cached/defaults on startup, fetch async (~200-500ms saved) |
 | Remove OAuth pre-warm | `main.dart` | Warm on auth screen instead of startup (~100-200ms saved) |
 | Swift Package Manager | `ios/` | Enable SPM for faster iOS builds (Flutter 3.38+ feature) |
-| **Bottom sheet paywall** | `custom_paywall_screen.dart` | Modern UX: modal sheet instead of full screen. Less intrusive, better conversion. See Calm/Headspace patterns. |
+| ~~Bottom sheet paywall~~ | `paywall_sheet.dart` | ✅ DONE - Modal sheet with inline auth implemented |
 | Auth navigation race conditions | `app.dart` | Use GoRouter `refreshListenable` + global redirect |
 | Missing CAPTCHA | `email_auth_screen.dart` | Add Turnstile/hCaptcha + Supabase config |
 | Device fingerprint 7% coverage | `device_fingerprint_service.dart` | Free tier abuse prevention undertested |
@@ -138,7 +141,7 @@
 |------|----------|
 | Results screen | `results_screen.dart` - Extract to .arb |
 | Auth screens | `auth_screen.dart`, `email_auth_screen.dart` |
-| Paywall | `custom_paywall_screen.dart` |
+| Paywall | `paywall_sheet.dart` |
 | Settings | `settings_screen.dart` |
 | Accessibility | Add Semantics widgets throughout |
 

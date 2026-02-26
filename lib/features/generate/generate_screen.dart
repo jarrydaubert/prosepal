@@ -12,6 +12,7 @@ import '../../core/services/usage_service.dart' show UsageCheckException;
 import '../../shared/components/app_button.dart';
 import '../../shared/components/generation_loading_overlay.dart';
 import '../../shared/theme/app_colors.dart';
+import '../paywall/paywall_sheet.dart';
 import 'widgets/details_input.dart';
 import 'widgets/relationship_picker.dart';
 import 'widgets/tone_selector.dart';
@@ -229,14 +230,12 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
                   'isLoggedIn': isLoggedIn,
                   'isReturningUser': isReturningUser,
                 });
-                if (isLoggedIn) {
-                  context.pushNamed('paywall');
-                } else if (isReturningUser) {
-                  // Returning user: auth → auto-restore → home (if Pro) or paywall
+                if (isReturningUser && !isLoggedIn) {
+                  // Returning user: try auto-restore first (may already have Pro)
                   context.push('/auth?autorestore=true');
                 } else {
-                  // Fresh user: auth → paywall (can explore pricing)
-                  context.push('/auth?redirect=paywall');
+                  // Show paywall sheet (has inline auth for fresh users)
+                  showPaywall(context);
                 }
               },
             ),

@@ -28,7 +28,7 @@ Onboarding [Get Started]
   │
   ├─ hasPro && !loggedIn → /auth (link orphaned Pro)
   ├─ hasPro && loggedIn → /home
-  └─ !hasPro → /paywall (dismissable)
+  └─ !hasPro → /home + showPaywall() sheet (dismissable)
                   │
                   ├─ [X Dismiss] → /home (1 free generation)
                   ├─ [Subscribe] → AUTH REQUIRED (see below)
@@ -49,7 +49,7 @@ Onboarding [Get Started]
                     └─────────────────────────────┘
 
 TARGET FLOW:
-[Subscribe] → /auth (NO X) → Sign in → /paywall → Purchase → /home
+[Subscribe] → Paywall Sheet (inline auth) → Sign in → Purchase → Sheet closes
                                                       │
                                               RevenueCat.identify(userId)
                                               Pro linked to account ✓
@@ -79,7 +79,7 @@ TARGET FLOW (all restore buttons):
 ```
 Generate Screen (remaining=0)
   │
-  └─ [Upgrade] → /auth (NO X) → Sign in → /paywall → Purchase → /home
+  └─ [Upgrade] → Paywall Sheet (inline auth) → Sign in → Purchase → Sheet closes
 
 CURRENT BUG: Auth has X, user can dismiss and is stuck in loop
 TARGET: No X on auth when in payment flow
@@ -184,7 +184,7 @@ AuthScreen({
 | `/onboarding` | Fresh install | No |
 | `/home` | Default | No |
 | `/auth` | Payment flows, settings | N/A (is auth) |
-| `/paywall` | After auth for payment | Yes |
+| `showPaywall()` sheet | Inline auth in sheet | Yes (swipe to dismiss) |
 | `/generate` | Occasion tap | No |
 | `/results` | Generation complete | No |
 | `/settings` | Settings icon | No |

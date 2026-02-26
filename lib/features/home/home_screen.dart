@@ -7,6 +7,7 @@ import '../../core/providers/providers.dart';
 import '../../core/services/log_service.dart';
 import '../../shared/components/components.dart';
 import '../../shared/theme/app_colors.dart';
+import '../paywall/paywall_sheet.dart';
 import 'widgets/occasion_grid.dart';
 
 class HomeScreen extends ConsumerWidget {
@@ -92,14 +93,12 @@ class HomeScreen extends ConsumerWidget {
                           'isLoggedIn': isLoggedIn,
                           'isReturningUser': isReturningUser,
                         });
-                        if (isLoggedIn) {
-                          context.pushNamed('paywall');
-                        } else if (isReturningUser) {
-                          // Returning user: auth → auto-restore → home or paywall
+                        if (isReturningUser && !isLoggedIn) {
+                          // Returning user: try auto-restore first
                           context.push('/auth?autorestore=true');
                         } else {
-                          // Fresh user: auth → paywall
-                          context.push('/auth?redirect=paywall');
+                          // Show paywall sheet (has inline auth)
+                          showPaywall(context);
                         }
                       },
                       onProTap: () async {
