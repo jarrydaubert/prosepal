@@ -2,6 +2,7 @@
 export 'ai_service.dart';
 export 'apple_auth_provider.dart';
 export 'auth_service.dart';
+export 'auth_throttle_service.dart';
 export 'biometric_service.dart';
 export 'device_fingerprint_service.dart';
 export 'diagnostic_service.dart';
