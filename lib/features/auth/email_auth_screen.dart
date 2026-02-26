@@ -5,18 +5,21 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/providers/providers.dart';
 import '../../core/services/log_service.dart';
 import '../../shared/theme/app_colors.dart';
-import '../paywall/paywall_sheet.dart';
 
 class EmailAuthScreen extends ConsumerStatefulWidget {
-  const EmailAuthScreen({super.key, this.returnToPaywall = false});
+  const EmailAuthScreen({super.key, this.autoPurchase = false, this.packageId});
 
-  /// If true, show paywall sheet after successful auth
-  final bool returnToPaywall;
+  /// If true, auto-purchase the selected package after auth (no second paywall)
+  final bool autoPurchase;
+
+  /// Package identifier to purchase after auth (e.g., '$rc_annual')
+  final String? packageId;
 
   @override
   ConsumerState<EmailAuthScreen> createState() => _EmailAuthScreenState();
@@ -146,13 +149,11 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
 
       // Navigate after successful auth
       if (mounted) {
-        context.go('/home');
-        // Show paywall if coming from paywall flow
-        if (widget.returnToPaywall) {
-          Log.info('Email auth: Returning to paywall');
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) showPaywall(context, source: 'email_auth');
-          });
+        // Auto-purchase if coming from paywall with package selection
+        if (widget.autoPurchase && widget.packageId != null) {
+          await _autoPurchasePackage(widget.packageId!);
+        } else {
+          context.go('/home');
         }
       }
     } on AuthException catch (e) {
@@ -164,6 +165,82 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
       _showError(_getErrorMessage(e));
     } finally {
       if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  /// Auto-purchase the selected package after email auth (butter-smooth UX)
+  Future<void> _autoPurchasePackage(String packageId) async {
+    Log.info('Email auth: Auto-purchasing', {'package': packageId});
+
+    try {
+      // Identify user with RevenueCat first
+      final authService = ref.read(authServiceProvider);
+      if (authService.currentUser?.id != null) {
+        await ref
+            .read(subscriptionServiceProvider)
+            .identifyUser(authService.currentUser!.id);
+      }
+
+      // Get offerings and find the selected package
+      final offerings = await Purchases.getOfferings();
+      final packages = offerings.current?.availablePackages ?? [];
+      final package = packages.firstWhere(
+        (p) => p.identifier == packageId,
+        orElse: () => packages.first,
+      );
+
+      // Execute purchase
+      final result = await Purchases.purchase(PurchaseParams.package(package));
+      final hasPro = result.customerInfo.entitlements.active.containsKey('pro');
+
+      Log.info('Email auth: Purchase completed', {
+        'package': packageId,
+        'hasPro': hasPro,
+      });
+
+      // Refresh pro status
+      ref.invalidate(customerInfoProvider);
+
+      if (mounted) {
+        context.go('/home');
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.white, size: 20),
+                SizedBox(width: 8),
+                Text('Welcome to Pro! Enjoy unlimited messages.'),
+              ],
+            ),
+            backgroundColor: AppColors.success,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        );
+      }
+    } on PlatformException catch (e) {
+      // Handle purchase cancellation gracefully
+      if (e.code == 'PURCHASE_CANCELLED' ||
+          e.message?.contains('cancelled') == true ||
+          e.message?.contains('canceled') == true) {
+        Log.info('Email auth: Purchase cancelled');
+        if (mounted) context.go('/home');
+        return;
+      }
+      Log.warning('Email auth: Purchase failed', {'error': '$e'});
+      if (mounted) {
+        context.go('/home');
+        _showError('Purchase failed. You can try again from Settings.');
+      }
+    } catch (e) {
+      Log.error('Email auth: Purchase error', {'error': '$e'});
+      if (mounted) {
+        context.go('/home');
+        _showError('Something went wrong. You can try again from Settings.');
+      }
     }
   }
 
