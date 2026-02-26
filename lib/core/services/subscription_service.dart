@@ -71,6 +71,7 @@ class SubscriptionService implements ISubscriptionService {
   );
   static const String _androidApiKey = String.fromEnvironment(
     'REVENUECAT_ANDROID_KEY',
+    defaultValue: _androidProductionKey,
   );
 
   static const String _entitlementId = 'pro';

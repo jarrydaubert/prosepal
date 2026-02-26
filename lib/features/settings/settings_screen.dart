@@ -84,6 +84,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   Future<void> _restorePurchases() async {
+    // Require sign-in for proper account linking
+    final isLoggedIn = ref.read(authServiceProvider).isLoggedIn;
+    if (!isLoggedIn) {
+      context.push('/auth?redirect=settings');
+      return;
+    }
+
     setState(() => _isRestoringPurchases = true);
     try {
       final restored = await ref
@@ -105,11 +112,29 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
         );
       }
+    } on PlatformException catch (e) {
+      Log.warning('Restore purchases failed', {'error': '$e'});
+      if (mounted) {
+        final isNetworkError = e.code == 'NETWORK_ERROR' ||
+            e.message?.toLowerCase().contains('network') == true ||
+            e.message?.toLowerCase().contains('internet') == true ||
+            e.message?.toLowerCase().contains('offline') == true;
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              isNetworkError
+                  ? 'Check your internet connection and try again'
+                  : 'Unable to restore purchases. Please try again.',
+            ),
+          ),
+        );
+      }
     } catch (e) {
       Log.warning('Restore purchases failed', {'error': '$e'});
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to restore purchases')),
+          const SnackBar(content: Text('Unable to restore purchases. Please try again.')),
         );
       }
     } finally {
@@ -135,9 +160,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   Future<void> _rateApp() async {
     // Opens the app store listing for rating
-    await _inAppReview.openStoreListing(
-      appStoreId: '', // Add App Store ID when available
-    );
+    // iOS requires appStoreId, Android uses package name automatically
+    if (Platform.isIOS) {
+      // TODO: Add App Store ID after first iOS release
+      await _inAppReview.openStoreListing(appStoreId: '');
+    } else {
+      await _inAppReview.openStoreListing();
+    }
   }
 
   Future<void> _exportDebugLog() async {
@@ -177,17 +206,31 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
 
     if (confirm ?? false) {
-      // Only log out of RevenueCat if user is authenticated (not anonymous)
+      // Clear all user-specific data (internet cafe test: leave no trace)
       final authService = ref.read(authServiceProvider);
+      
+      // 1. Log out of RevenueCat (unlink user)
       if (authService.currentUser != null) {
         try {
           await ref.read(subscriptionServiceProvider).logOut();
         } catch (e) {
-          // Ignore RevenueCat logout errors for anonymous users
-          Log.warning('RevenueCat logout skipped', {'reason': 'anonymous user'});
+          Log.warning('RevenueCat logout skipped', {'error': '$e'});
         }
       }
+      
+      // 2. Clear history (personal messages)
+      await ref.read(historyServiceProvider).clearHistory();
+      
+      // 3. Clear usage counts (user-specific)
+      await ref.read(usageServiceProvider).clearAllUsage();
+      
+      // 4. Disable biometrics (security setting tied to user)
+      await _biometricService.setEnabled(false);
+      setState(() => _biometricsEnabled = false);
+      
+      // 5. Sign out (clears tokens, Google session, logs)
       await authService.signOut();
+      
       if (mounted) context.go('/home');
     }
   }
@@ -220,46 +263,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
     if (firstConfirm != true) return;
 
-    // Second confirmation with explicit action
+    // Second confirmation with typed confirmation (Apple HIG)
     final finalConfirm = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Are you absolutely sure?'),
-        content: const Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('You will lose:'),
-            SizedBox(height: 8),
-            Text('• All your generated messages'),
-            Text('• Your account and preferences'),
-            Text('• Any remaining subscription time'),
-            SizedBox(height: 16),
-            Text(
-              'Type "DELETE" to confirm',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text(
-              'Delete My Account',
-              style: TextStyle(color: AppColors.error),
-            ),
-          ),
-        ],
-      ),
+      builder: (context) => _DeleteConfirmationDialog(),
     );
 
     if (finalConfirm ?? false) {
-      // Only log out of RevenueCat if user is authenticated
+      // Clear all user-specific data (same as sign out)
       final authService = ref.read(authServiceProvider);
+      
+      // 1. Log out of RevenueCat
       if (authService.currentUser != null) {
         try {
           await ref.read(subscriptionServiceProvider).logOut();
@@ -267,7 +281,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           Log.warning('RevenueCat logout skipped during delete', {'error': '$e'});
         }
       }
+      
+      // 2. Clear history (personal messages)
+      await ref.read(historyServiceProvider).clearHistory();
+      
+      // 3. Clear usage counts
+      await ref.read(usageServiceProvider).clearAllUsage();
+      
+      // 4. Disable biometrics
+      await _biometricService.setEnabled(false);
+      
+      // 5. Delete account (also signs out)
       await authService.deleteAccount();
+      
       if (mounted) context.go('/home');
     }
   }
@@ -732,6 +758,84 @@ class _StatsCard extends StatelessWidget {
         ],
       ),
       ),
+    );
+  }
+}
+
+/// Stateful dialog for delete confirmation with typed input
+class _DeleteConfirmationDialog extends StatefulWidget {
+  @override
+  State<_DeleteConfirmationDialog> createState() =>
+      _DeleteConfirmationDialogState();
+}
+
+class _DeleteConfirmationDialogState extends State<_DeleteConfirmationDialog> {
+  final _controller = TextEditingController();
+  bool _canDelete = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller.addListener(() {
+      final matches = _controller.text.trim().toUpperCase() == 'DELETE';
+      if (matches != _canDelete) {
+        setState(() => _canDelete = matches);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Are you absolutely sure?'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('You will lose:'),
+          const SizedBox(height: 8),
+          const Text('• All your generated messages'),
+          const Text('• Your account and preferences'),
+          const Text('• Any remaining subscription time'),
+          const SizedBox(height: 16),
+          const Text(
+            'Type DELETE to confirm:',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _controller,
+            autofocus: true,
+            textCapitalization: TextCapitalization.characters,
+            decoration: const InputDecoration(
+              hintText: 'DELETE',
+              border: OutlineInputBorder(),
+              isDense: true,
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, false),
+          child: const Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: _canDelete ? () => Navigator.pop(context, true) : null,
+          child: Text(
+            'Delete My Account',
+            style: TextStyle(
+              color: _canDelete ? AppColors.error : Colors.grey,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

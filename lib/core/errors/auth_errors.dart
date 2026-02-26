@@ -4,6 +4,8 @@ import 'package:flutter/foundation.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../services/error_log_service.dart';
+
 /// Structured result for richer UI handling
 class AuthErrorResult {
   const AuthErrorResult({
@@ -50,7 +52,8 @@ class AuthErrorHandler {
       );
     }
 
-    // Log unknown errors in debug mode
+    // Log unknown errors for monitoring
+    ErrorLogService.instance.log(error, StackTrace.current);
     if (kDebugMode) {
       debugPrint('Unhandled auth error: $error');
     }
@@ -197,7 +200,8 @@ class AuthErrorHandler {
       );
     }
 
-    // Log unknown Supabase errors in debug mode
+    // Log unknown Supabase errors for monitoring
+    ErrorLogService.instance.log(error, StackTrace.current);
     if (kDebugMode) {
       debugPrint(
         'Unhandled Supabase auth error: ${error.message} (status: $statusCode)',

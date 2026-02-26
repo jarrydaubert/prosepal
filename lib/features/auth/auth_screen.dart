@@ -71,7 +71,11 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
 
     try {
       final authService = ref.read(authServiceProvider);
-      final response = await authService.signInWithApple();
+      // Timeout prevents stuck spinner if OAuth window killed externally
+      final response = await authService.signInWithApple().timeout(
+        const Duration(minutes: 2),
+        onTimeout: () => throw Exception('Sign in timed out. Please try again.'),
+      );
       if (response.user != null) {
         await ref
             .read(subscriptionServiceProvider)
@@ -97,7 +101,11 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
 
     try {
       final authService = ref.read(authServiceProvider);
-      final response = await authService.signInWithGoogle();
+      // Timeout prevents stuck spinner if OAuth window killed externally
+      final response = await authService.signInWithGoogle().timeout(
+        const Duration(minutes: 2),
+        onTimeout: () => throw Exception('Sign in timed out. Please try again.'),
+      );
       if (response.user != null) {
         await ref
             .read(subscriptionServiceProvider)

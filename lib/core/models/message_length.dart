@@ -1,20 +1,23 @@
+/// Message length options for generation
+/// Ordered shortest to longest for UI progression
+/// Provides clear guidance to Gemini on output length
 enum MessageLength {
   brief(
     label: 'Brief',
     emoji: '⚡',
-    prompt: '1-2 sentences, concise and impactful',
+    prompt: '1-2 sentences maximum - concise, impactful, gets straight to the point',
     description: 'Short & sweet',
   ),
   standard(
     label: 'Standard',
     emoji: '✨',
-    prompt: '2-4 sentences, balanced and complete',
+    prompt: '2-4 sentences - balanced length with room to express the sentiment fully',
     description: 'Just right',
   ),
-  heartfelt(
-    label: 'Heartfelt',
+  detailed(
+    label: 'Detailed',
     emoji: '💝',
-    prompt: '4-6 sentences, detailed and deeply personal',
+    prompt: '4-6 sentences - longer format with space for personal details and deeper expression',
     description: 'Longer & personal',
   );
 

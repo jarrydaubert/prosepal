@@ -35,7 +35,7 @@ void main() {
           reason: 'Should return to home',
         );
 
-        await screenshot('j5_1_back_to_home');
+        await screenshot(tester, 'j5_1_back_to_home');
       }
     });
 
@@ -67,7 +67,7 @@ void main() {
           reason: 'Back should preserve occasion context',
         );
 
-        await screenshot('j5_2_back_preserves');
+        await screenshot(tester, 'j5_2_back_preserves');
       }
     });
 
@@ -88,7 +88,7 @@ void main() {
           reason: 'Should show tone selection',
         );
 
-        await screenshot('j5_3_back_to_tones');
+        await screenshot(tester, 'j5_3_back_to_tones');
       }
     });
 
@@ -112,7 +112,7 @@ void main() {
           reason: 'Should show relationships for new occasion',
         );
 
-        await screenshot('j5_4_reenter');
+        await screenshot(tester, 'j5_4_reenter');
       }
     });
 
@@ -134,7 +134,7 @@ void main() {
       expect(find.byType(MaterialApp), findsOneWidget,
           reason: 'App should remain stable');
 
-      await screenshot('j5_5_rapid_back');
+      await screenshot(tester, 'j5_5_rapid_back');
     });
 
     testWidgets('J5.6: Settings then back preserves home state', (tester) async {
@@ -151,7 +151,7 @@ void main() {
       expect(find.text('Birthday'), findsOneWidget,
           reason: 'Home should show occasions');
 
-      await screenshot('j5_6_settings_back');
+      await screenshot(tester, 'j5_6_settings_back');
     });
 
     testWidgets('J5.7: Deep navigation and return', (tester) async {
@@ -181,7 +181,7 @@ void main() {
           isTrue,
         );
 
-        await screenshot('j5_7_deep_nav');
+        await screenshot(tester, 'j5_7_deep_nav');
       }
     });
   });

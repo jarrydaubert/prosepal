@@ -14,8 +14,10 @@ void initBinding() {
   binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 }
 
-/// Take a screenshot with the given name
-Future<void> screenshot(String name) async {
+/// Take a screenshot with the given name (Android requires convertFlutterSurfaceToImage first)
+Future<void> screenshot(WidgetTester tester, String name) async {
+  await binding.convertFlutterSurfaceToImage();
+  await tester.pump();
   await binding.takeScreenshot(name);
 }
 
@@ -28,12 +30,28 @@ Future<void> launchApp(WidgetTester tester) async {
 /// Skip onboarding screens until home is visible
 Future<void> skipOnboarding(WidgetTester tester) async {
   int attempts = 0;
-  while (find.text('Continue').evaluate().isNotEmpty &&
-      find.text('Birthday').evaluate().isEmpty &&
-      attempts < 5) {
-    await tester.tap(find.text('Continue'));
-    await tester.pumpAndSettle(const Duration(seconds: 1));
-    attempts++;
+  while (attempts < 10) {
+    // Check if we've reached home
+    if (find.text('Birthday').evaluate().isNotEmpty ||
+        find.text("What's the occasion?").evaluate().isNotEmpty) {
+      break;
+    }
+    
+    // Tap "Get Started" to complete onboarding (final carousel page)
+    if (find.text('Get Started').evaluate().isNotEmpty) {
+      await tester.tap(find.text('Get Started'));
+      await tester.pumpAndSettle(const Duration(seconds: 2));
+      break;
+    }
+    
+    // Tap "Continue" to advance carousel
+    if (find.text('Continue').evaluate().isNotEmpty) {
+      await tester.tap(find.text('Continue'));
+      await tester.pumpAndSettle(const Duration(seconds: 1));
+      attempts++;
+    } else {
+      break;
+    }
   }
 }
 

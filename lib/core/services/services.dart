@@ -6,6 +6,7 @@ export 'biometric_service.dart';
 export 'diagnostic_service.dart';
 export 'error_log_service.dart';
 export 'google_auth_provider.dart';
+export 'history_service.dart';
 export 'log_service.dart';
 export 'review_service.dart';
 export 'supabase_auth_provider.dart';

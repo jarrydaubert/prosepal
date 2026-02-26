@@ -7,6 +7,8 @@ import 'package:go_router/go_router.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 
 import '../../core/providers/providers.dart';
+import '../../core/services/biometric_service.dart';
+import '../../core/services/log_service.dart';
 import '../../shared/theme/app_colors.dart';
 import '../../shared/theme/app_spacing.dart';
 
@@ -74,9 +76,42 @@ class _CustomPaywallScreenState extends ConsumerState<CustomPaywallScreen> {
       if (hasPro && mounted) {
         await HapticFeedback.mediumImpact();
         ref.invalidate(customerInfoProvider);
+        Log.info('Purchase completed', {'hasPro': true});
 
         await Future<void>.delayed(const Duration(milliseconds: 200));
         if (!mounted) return;
+
+        // Check if biometrics available but not enabled - offer setup
+        final biometricsAvailable = await BiometricService.instance.isSupported;
+        final biometricsEnabled = await BiometricService.instance.isEnabled;
+        
+        if (biometricsAvailable && !biometricsEnabled && mounted) {
+          final enableBiometrics = await showDialog<bool>(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('Protect your account'),
+              content: const Text(
+                'Enable biometric lock to keep your Pro account secure?',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text('Maybe Later'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  child: const Text('Enable'),
+                ),
+              ],
+            ),
+          );
+
+          if (enableBiometrics == true && mounted) {
+            context.pop();
+            context.push('/biometric-setup');
+            return;
+          }
+        }
 
         context.pop();
         ScaffoldMessenger.of(context).showSnackBar(
@@ -115,17 +150,18 @@ class _CustomPaywallScreenState extends ConsumerState<CustomPaywallScreen> {
     if (_isRestoring) return;
 
     setState(() => _isRestoring = true);
+    Log.info('Restore purchases started');
 
     try {
       final customerInfo = await Purchases.restorePurchases();
       final hasPro = customerInfo.entitlements.active.containsKey('pro');
+      Log.info('Restore purchases completed', {'hasPro': hasPro});
 
       if (!mounted) return;
 
       if (hasPro) {
         await HapticFeedback.mediumImpact();
         ref.invalidate(customerInfoProvider);
-        context.pop();
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Row(
@@ -139,6 +175,8 @@ class _CustomPaywallScreenState extends ConsumerState<CustomPaywallScreen> {
             behavior: SnackBarBehavior.floating,
           ),
         );
+        // Pop after snackbar to ensure context is valid
+        context.pop();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -147,11 +185,31 @@ class _CustomPaywallScreenState extends ConsumerState<CustomPaywallScreen> {
           ),
         );
       }
-    } on Exception {
+    } on PlatformException catch (e) {
+      Log.warning('Restore purchases failed', {'error': '$e'});
+      if (mounted) {
+        final isNetworkError = e.code == 'NETWORK_ERROR' ||
+            e.message?.toLowerCase().contains('network') == true ||
+            e.message?.toLowerCase().contains('internet') == true ||
+            e.message?.toLowerCase().contains('offline') == true;
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              isNetworkError
+                  ? 'Check your internet connection and try again'
+                  : 'Unable to restore purchases. Please try again.',
+            ),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } on Exception catch (e) {
+      Log.warning('Restore purchases failed', {'error': '$e'});
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Unable to restore purchases'),
+            content: Text('Unable to restore purchases. Please try again.'),
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -219,19 +277,20 @@ class _CustomPaywallScreenState extends ConsumerState<CustomPaywallScreen> {
               ),
             ),
 
-            // Scrollable content
+            // Scrollable content - prices first, features below
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
                 child: Column(
                   children: [
                     _buildHero(context),
+                    const Gap(AppSpacing.md),
+                    // Prices immediately visible
+                    _buildPackageSelector(packages),
                     const Gap(AppSpacing.lg),
                     _buildFeatures(),
-                    const Gap(AppSpacing.lg),
+                    const Gap(AppSpacing.md),
                     _buildSocialProof(context),
-                    const Gap(AppSpacing.xl),
-                    _buildPackageSelector(packages),
                     const Gap(AppSpacing.md),
                   ],
                 ),
@@ -247,70 +306,67 @@ class _CustomPaywallScreenState extends ConsumerState<CustomPaywallScreen> {
   }
 
   Widget _buildHero(BuildContext context) {
-    final size = MediaQuery.of(context).size;
     return Column(
       children: [
-        Container(
-          width: size.width * 0.25,
-          height: size.width * 0.25,
-          decoration: BoxDecoration(
-            color: AppColors.primaryLight,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(
-              color: AppColors.primary.withValues(alpha: 0.3),
-              width: 3,
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Text('✨', style: TextStyle(fontSize: 28)),
+            const Gap(AppSpacing.sm),
+            Text(
+              'Go Pro',
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
             ),
-          ),
-          child: const Center(
-            child: Text('✨', style: TextStyle(fontSize: 44)),
-          ),
-        )
-            .animate()
-            .fadeIn(duration: 400.ms)
-            .scale(begin: const Offset(0.8, 0.8)),
-        const Gap(AppSpacing.md),
-        Text(
-          'Unlock Pro',
-          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
-              ),
-        ).animate().fadeIn(delay: 100.ms),
+          ],
+        ).animate().fadeIn(duration: 300.ms),
         const Gap(AppSpacing.xs),
         Text(
-          'The perfect words for every occasion',
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+          'Unlimited messages for every occasion',
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: AppColors.textSecondary,
               ),
           textAlign: TextAlign.center,
-        ).animate().fadeIn(delay: 200.ms),
+        ).animate().fadeIn(delay: 100.ms),
       ],
     );
   }
 
   Widget _buildFeatures() {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        Text(
+          'What you get:',
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textSecondary,
+          ),
+        ),
+        const Gap(AppSpacing.sm),
         _buildFeatureRow(
           Icons.auto_awesome,
-          '500 generations/month',
-          '1,500 message options!',
-        ).animate().fadeIn(delay: 300.ms).slideX(begin: -0.1),
+          '500 messages/month',
+          '3 options each = 1,500 ideas',
+        ).animate().fadeIn(delay: 200.ms),
         _buildFeatureRow(
-          Icons.palette_outlined,
-          'All occasions & tones',
-          'Birthday, thanks, sympathy...',
-        ).animate().fadeIn(delay: 400.ms).slideX(begin: -0.1),
+          Icons.celebration_outlined,
+          '40 occasions',
+          'Birthday, wedding, sympathy & more',
+        ).animate().fadeIn(delay: 250.ms),
         _buildFeatureRow(
           Icons.sync,
           'Sync across devices',
-          'Your usage, everywhere',
-        ).animate().fadeIn(delay: 500.ms).slideX(begin: -0.1),
+          'iPhone, iPad, Android',
+        ).animate().fadeIn(delay: 300.ms),
         _buildFeatureRow(
-          Icons.security,
+          Icons.fingerprint,
           'Biometric lock',
           'Keep messages private',
-        ).animate().fadeIn(delay: 600.ms).slideX(begin: -0.1),
+        ).animate().fadeIn(delay: 350.ms),
       ],
     );
   }
@@ -385,6 +441,7 @@ class _CustomPaywallScreenState extends ConsumerState<CustomPaywallScreen> {
         final package = packages[index];
         final isSelected = _selectedPackageIndex == index;
         final isAnnual = package.packageType == PackageType.annual;
+        final weeklyEquivalent = _getWeeklyEquivalent(package);
 
         return GestureDetector(
           onTap: () => setState(() => _selectedPackageIndex = index),
@@ -470,6 +527,7 @@ class _CustomPaywallScreenState extends ConsumerState<CustomPaywallScreen> {
                           ],
                         ],
                       ),
+                      const Gap(2),
                       Text(
                         _getPackageSubtitle(package),
                         style: TextStyle(
@@ -480,16 +538,29 @@ class _CustomPaywallScreenState extends ConsumerState<CustomPaywallScreen> {
                     ],
                   ),
                 ),
-                // Price
-                Text(
-                  package.storeProduct.priceString,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    color: isSelected
-                        ? AppColors.primary
-                        : AppColors.textPrimary,
-                  ),
+                // Price column - shows both total and per-week
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      package.storeProduct.priceString,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: isSelected
+                            ? AppColors.primary
+                            : AppColors.textPrimary,
+                      ),
+                    ),
+                    Text(
+                      weeklyEquivalent,
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: isAnnual ? AppColors.success : Colors.grey[500],
+                        fontWeight: isAnnual ? FontWeight.w600 : FontWeight.normal,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -497,6 +568,31 @@ class _CustomPaywallScreenState extends ConsumerState<CustomPaywallScreen> {
         );
       }),
     );
+  }
+
+  /// Calculate weekly equivalent price for comparison
+  String _getWeeklyEquivalent(Package package) {
+    try {
+      final price = package.storeProduct.price;
+      final currencySymbol = package.storeProduct.currencyCode == 'USD' 
+          ? '\$' 
+          : package.storeProduct.priceString.replaceAll(RegExp(r'[0-9.,]'), '').trim();
+      
+      switch (package.packageType) {
+        case PackageType.weekly:
+          return 'per week';
+        case PackageType.monthly:
+          final weekly = price / 4.33;
+          return '$currencySymbol${weekly.toStringAsFixed(2)}/wk';
+        case PackageType.annual:
+          final weekly = price / 52;
+          return '$currencySymbol${weekly.toStringAsFixed(2)}/wk';
+        default:
+          return '';
+      }
+    } catch (_) {
+      return '';
+    }
   }
 
   Widget _buildBottomSection(List<Package> packages) {
@@ -545,7 +641,7 @@ class _CustomPaywallScreenState extends ConsumerState<CustomPaywallScreen> {
                         ),
                       )
                     : const Text(
-                        'Subscribe now',
+                        'Continue',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
@@ -554,7 +650,7 @@ class _CustomPaywallScreenState extends ConsumerState<CustomPaywallScreen> {
               ),
             ),
             const Gap(AppSpacing.sm),
-            // Restore + Terms
+            // Restore + Terms + Privacy
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -567,12 +663,28 @@ class _CustomPaywallScreenState extends ConsumerState<CustomPaywallScreen> {
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : Text(
-                          'Restore Purchases',
+                          'Restore',
                           style: TextStyle(
                             fontSize: 13,
                             color: Colors.grey[600],
                           ),
                         ),
+                ),
+                Text('•', style: TextStyle(color: Colors.grey[400])),
+                TextButton(
+                  onPressed: () => context.push('/terms'),
+                  child: Text(
+                    'Terms',
+                    style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                  ),
+                ),
+                Text('•', style: TextStyle(color: Colors.grey[400])),
+                TextButton(
+                  onPressed: () => context.push('/privacy'),
+                  child: Text(
+                    'Privacy',
+                    style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                  ),
                 ),
               ],
             ),

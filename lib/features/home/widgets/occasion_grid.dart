@@ -12,6 +12,8 @@ class OccasionGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final reduceMotion = MediaQuery.of(context).disableAnimations;
+    
     return SliverGrid(
       gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
         maxCrossAxisExtent: 200,
@@ -21,11 +23,16 @@ class OccasionGrid extends StatelessWidget {
       ),
       delegate: SliverChildBuilderDelegate((context, index) {
         final occasion = Occasion.values[index];
-        return _OccasionTile(
+        final tile = _OccasionTile(
           key: ValueKey('occasion_${occasion.name}'),
           occasion: occasion,
           onTap: () => onOccasionSelected(occasion),
-        )
+        );
+        
+        // Skip staggered animations if user prefers reduced motion
+        if (reduceMotion) return tile;
+        
+        return tile
             .animate(key: ValueKey('occasion_anim_$index'))
             .fadeIn(
               delay: Duration(milliseconds: 100 + index * 40),

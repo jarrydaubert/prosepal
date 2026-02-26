@@ -62,7 +62,7 @@ lib/
 
 | Tier | Limit |
 |------|-------|
-| Free | 3 total (lifetime) |
+| Free | 1 total (lifetime) |
 | Pro | 500/month |
 
 ## Security

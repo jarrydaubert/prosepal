@@ -36,7 +36,7 @@ void main() {
       expect(canGenerate || mustUpgrade, isTrue,
           reason: 'Should show Generate or Upgrade');
 
-      await screenshot('j2_1_generate_or_upgrade');
+      await screenshot(tester, 'j2_1_generate_or_upgrade');
     });
 
     testWidgets('J2.2: Upgrade navigates to auth for anonymous user', (tester) async {
@@ -61,7 +61,7 @@ void main() {
         expect(hasAuth || hasPaywall, isTrue,
             reason: 'Should show auth or paywall');
 
-        await screenshot('j2_2_upgrade_destination');
+        await screenshot(tester, 'j2_2_upgrade_destination');
       }
     });
 
@@ -72,7 +72,7 @@ void main() {
       expect(find.text('Welcome to Prosepal'), findsOneWidget);
       expect(find.text('The right words, right now'), findsOneWidget);
 
-      await screenshot('j2_3_auth_welcome');
+      await screenshot(tester, 'j2_3_auth_welcome');
     });
 
     testWidgets('J2.4: Auth screen has all sign-in options', (tester) async {
@@ -86,7 +86,7 @@ void main() {
       expect(hasGoogle, isTrue, reason: 'Should have Google sign-in');
       expect(hasEmail, isTrue, reason: 'Should have Email sign-in');
 
-      await screenshot('j2_4_auth_options');
+      await screenshot(tester, 'j2_4_auth_options');
     });
 
     testWidgets('J2.5: Auth screen has legal links', (tester) async {
@@ -96,7 +96,7 @@ void main() {
       expect(exists(find.text('Terms')), isTrue);
       expect(exists(find.text('Privacy Policy')), isTrue);
 
-      await screenshot('j2_5_auth_legal');
+      await screenshot(tester, 'j2_5_auth_legal');
     });
 
     testWidgets('J2.6: Email auth option opens email screen', (tester) async {
@@ -114,7 +114,7 @@ void main() {
       expect(hasTextField || hasEmailText, isTrue,
           reason: 'Should show email input screen');
 
-      await screenshot('j2_6_email_auth');
+      await screenshot(tester, 'j2_6_email_auth');
     });
 
     testWidgets('J2.7: Sub-text shows correct message for anonymous', (tester) async {
@@ -130,7 +130,7 @@ void main() {
         expect(hasSignInPrompt, isTrue,
             reason: 'Anonymous user should see "Sign in to go Pro"');
 
-        await screenshot('j2_7_upgrade_subtext');
+        await screenshot(tester, 'j2_7_upgrade_subtext');
       }
     });
   });

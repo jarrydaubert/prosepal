@@ -30,6 +30,9 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
   }
 
   Future<void> _send() async {
+    // Dismiss keyboard
+    FocusScope.of(context).unfocus();
+
     final message = _controller.text.trim();
     if (message.isEmpty) {
       ScaffoldMessenger.of(
@@ -42,9 +45,10 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
     unawaited(HapticFeedback.lightImpact());
 
     final diagnosticReport = await DiagnosticService.generateReport();
+    final fullMessage = '$message\n\n$diagnosticReport';
 
     final subject = Uri.encodeComponent('Prosepal Feedback');
-    final body = Uri.encodeComponent('$message\n\n$diagnosticReport');
+    final body = Uri.encodeComponent(fullMessage);
 
     final uri = Uri.parse(
       'mailto:support@prosepal.app?subject=$subject&body=$body',
@@ -54,10 +58,36 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
       await launchUrl(uri);
       if (mounted) Navigator.pop(context);
     } else {
+      // Fallback: offer to copy email content
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not open email app')),
+        final shouldCopy = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('No email app found'),
+            content: const Text(
+              'Copy feedback to clipboard? You can paste it into your email app and send to support@prosepal.app',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Copy'),
+              ),
+            ],
+          ),
         );
+
+        if (shouldCopy == true && mounted) {
+          await Clipboard.setData(ClipboardData(
+            text: 'To: support@prosepal.app\nSubject: Prosepal Feedback\n\n$fullMessage',
+          ));
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Copied! Paste into your email app')),
+          );
+        }
       }
     }
 

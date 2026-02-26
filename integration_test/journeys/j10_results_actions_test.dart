@@ -42,7 +42,7 @@ void main() {
       expect(exists(find.text('Option 2')), isTrue);
       expect(exists(find.text('Option 3')), isTrue);
 
-      await screenshot('j10_1_three_options');
+      await screenshot(tester, 'j10_1_three_options');
     });
 
     testWidgets('J10.2: Copy button on each option', (tester) async {
@@ -54,7 +54,7 @@ void main() {
       expect(copyButtons.evaluate().isNotEmpty, isTrue,
           reason: 'Should have Copy buttons');
 
-      await screenshot('j10_2_copy_buttons');
+      await screenshot(tester, 'j10_2_copy_buttons');
     });
 
     testWidgets('J10.3: Copy first option shows confirmation', (tester) async {
@@ -68,7 +68,7 @@ void main() {
         expect(exists(find.text('Copied!')), isTrue,
             reason: 'Should show Copied! confirmation');
 
-        await screenshot('j10_3_copied_confirmation');
+        await screenshot(tester, 'j10_3_copied_confirmation');
       }
     });
 
@@ -82,7 +82,7 @@ void main() {
         await tester.tap(copyButtons.at(1));
         await tester.pumpAndSettle();
 
-        await screenshot('j10_4_second_option_copied');
+        await screenshot(tester, 'j10_4_second_option_copied');
       }
     });
 
@@ -95,7 +95,7 @@ void main() {
           exists(find.byIcon(Icons.share)) ||
           exists(find.byIcon(Icons.share_outlined));
 
-      await screenshot('j10_5_share_button');
+      await screenshot(tester, 'j10_5_share_button');
     });
 
     testWidgets('J10.6: Start Over button returns to home', (tester) async {
@@ -112,7 +112,7 @@ void main() {
           reason: 'Should return to home',
         );
 
-        await screenshot('j10_6_start_over');
+        await screenshot(tester, 'j10_6_start_over');
       }
     });
 
@@ -121,7 +121,7 @@ void main() {
       if (!atResults) return;
 
       // Just verify we can see content
-      await screenshot('j10_7_message_content');
+      await screenshot(tester, 'j10_7_message_content');
     });
   });
 }

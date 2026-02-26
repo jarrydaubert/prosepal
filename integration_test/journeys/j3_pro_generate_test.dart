@@ -37,7 +37,7 @@ void main() {
       expect(hasPro || hasFree, isTrue,
           reason: 'Should show Pro badge or free count');
 
-      await screenshot('j3_1_pro_or_free');
+      await screenshot(tester, 'j3_1_pro_or_free');
     });
 
     testWidgets('J3.2: Pro user can generate without upgrade prompt', (tester) async {
@@ -51,7 +51,7 @@ void main() {
         expect(find.text('Generate Messages'), findsOneWidget);
         expect(find.text('Upgrade to Continue'), findsNothing);
 
-        await screenshot('j3_2_pro_generate');
+        await screenshot(tester, 'j3_2_pro_generate');
       }
     });
 
@@ -66,7 +66,7 @@ void main() {
       expect(hasProPlan || hasFreePlan, isTrue,
           reason: 'Should show subscription status');
 
-      await screenshot('j3_3_subscription_status');
+      await screenshot(tester, 'j3_3_subscription_status');
     });
 
     testWidgets('J3.4: Settings shows Sign Out for authenticated user', (tester) async {
@@ -83,7 +83,7 @@ void main() {
       expect(hasSignOut || hasSignIn, isTrue,
           reason: 'Should show Sign Out or Sign In');
 
-      await screenshot('j3_4_auth_action');
+      await screenshot(tester, 'j3_4_auth_action');
     });
 
     testWidgets('J3.5: Sign Out shows confirmation dialog', (tester) async {
@@ -103,7 +103,7 @@ void main() {
         expect(hasConfirm || atAuth, isTrue,
             reason: 'Should show confirmation or go to auth');
 
-        await screenshot('j3_5_sign_out');
+        await screenshot(tester, 'j3_5_sign_out');
       }
     });
 
@@ -126,7 +126,7 @@ void main() {
           reason: 'Pro user should get generation results',
         );
 
-        await screenshot('j3_6_pro_generation');
+        await screenshot(tester, 'j3_6_pro_generation');
       }
     });
 
@@ -153,7 +153,7 @@ void main() {
             isTrue,
           );
 
-          await screenshot('j3_7_multiple_gens');
+          await screenshot(tester, 'j3_7_multiple_gens');
         }
       }
     });

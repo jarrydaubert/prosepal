@@ -2,6 +2,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:prosepal/core/services/usage_service.dart';
 
+/// UsageService Unit Tests
+///
+/// Tests REAL UsageService with mocked SharedPreferences.
+/// Each test answers: "What bug does this catch?"
 void main() {
   group('UsageService', () {
     late UsageService usageService;
@@ -71,15 +75,70 @@ void main() {
     });
 
     test('should return correct remaining pro monthly', () async {
+      // Bug: Pro user sees wrong remaining count
       expect(usageService.getRemainingProMonthly(), equals(500));
 
       await usageService.recordGeneration();
       expect(usageService.getRemainingProMonthly(), equals(499));
     });
 
-    test('constants should have correct values', () {
-      expect(UsageService.freeLifetimeLimit, equals(1));
-      expect(UsageService.proMonthlyLimit, equals(500));
+    test('canGenerateFree returns true when under limit', () {
+      // Bug: Free user incorrectly blocked
+      expect(usageService.canGenerateFree(), isTrue);
+    });
+
+    test('canGeneratePro returns true initially', () {
+      // Bug: New Pro user blocked immediately
+      expect(usageService.canGeneratePro(), isTrue);
+    });
+
+    test('getRemainingFree clamps to zero, not negative', () async {
+      // Bug: Negative remaining count shown in UI
+      for (var i = 0; i < 100; i++) {
+        await usageService.recordGeneration();
+      }
+      expect(usageService.getRemainingFree(), equals(0));
+      expect(usageService.getRemainingFree(), greaterThanOrEqualTo(0));
+    });
+
+    test('getRemainingProMonthly clamps to zero', () async {
+      // Bug: Negative remaining shown after heavy usage
+      for (var i = 0; i < 510; i++) {
+        await usageService.recordGeneration();
+      }
+      expect(usageService.getRemainingProMonthly(), equals(0));
+      expect(usageService.getRemainingProMonthly(), greaterThanOrEqualTo(0));
+    });
+
+    test('monthly count resets when month changes', () async {
+      // Set up previous month data
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('monthly_generation_month', '2023-01');
+      await prefs.setInt('monthly_generation_count', 50);
+
+      // Create new service to read from prefs
+      final newService = UsageService(prefs);
+
+      // Should return 0 because current month doesn't match stored month
+      expect(newService.getMonthlyCount(), equals(0));
+    });
+
+    test('clearSyncMarker removes sync user id', () async {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('last_sync_user_id', 'test-user-123');
+
+      await usageService.clearSyncMarker();
+
+      expect(prefs.getString('last_sync_user_id'), isNull);
+    });
+
+    test('multiple generations increment correctly', () async {
+      // Bug: Counter skips numbers or double-counts
+      for (var i = 1; i <= 5; i++) {
+        await usageService.recordGeneration();
+        expect(usageService.getTotalCount(), equals(i));
+        expect(usageService.getMonthlyCount(), equals(i));
+      }
     });
   });
 }

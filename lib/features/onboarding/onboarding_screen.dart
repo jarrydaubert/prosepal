@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -21,25 +20,22 @@ class OnboardingPageData {
   final String subtitle;
 }
 
-/// Onboarding content - easy to modify without touching widget code
+/// Onboarding content - concise, value-focused copy
 const _onboardingPages = [
   OnboardingPageData(
-    emoji: '💬',
-    title: 'Perfect Words,\nEvery Time',
-    subtitle:
-        'Struggling to find the right words? Prosepal uses AI to craft heartfelt messages for any occasion.',
+    emoji: '✍️',
+    title: 'The Right Words,\nRight Now',
+    subtitle: 'AI-powered messages for birthdays, thank yous, sympathy, and 40+ occasions.',
   ),
   OnboardingPageData(
-    emoji: '✨',
-    title: 'Magical\nCustomization',
-    subtitle:
-        "Tell us who it's for and the vibe you want. We'll generate a personalized greeting in seconds.",
+    emoji: '⚡',
+    title: 'Pick. Tap.\nDone.',
+    subtitle: 'Choose the occasion and tone. Get 3 personalized options instantly.',
   ),
   OnboardingPageData(
-    emoji: '🎉',
-    title: 'Try 1 Free\nMessage',
-    subtitle:
-        "No account needed to start. Standing in the card aisle? We've got you.",
+    emoji: '🎁',
+    title: 'Your First One\nis Free',
+    subtitle: 'No sign-up required. Try it now.',
   ),
 ];
 
@@ -54,9 +50,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
 
-  bool get _reduceMotion =>
-      MediaQuery.of(context).disableAnimations;
-
   @override
   void initState() {
     super.initState();
@@ -67,8 +60,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     HapticFeedback.lightImpact();
     if (_currentPage < _onboardingPages.length - 1) {
       _pageController.nextPage(
-        duration: const Duration(milliseconds: 400),
-        curve: Curves.easeInOut,
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOut,
       );
     } else {
       _completeOnboarding();
@@ -118,10 +111,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             begin: 0,
                             end: (_currentPage + 1) / _onboardingPages.length,
                           ),
-                          duration: _reduceMotion 
-                              ? Duration.zero 
-                              : const Duration(milliseconds: 400),
-                          curve: Curves.easeOutCubic,
+                          duration: const Duration(milliseconds: 200),
+                          curve: Curves.easeOut,
                           builder: (context, value, _) => LinearProgressIndicator(
                             value: value,
                             backgroundColor: AppColors.primaryLight,
@@ -171,7 +162,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     page: page,
                     pageNumber: index + 1,
                     totalPages: _onboardingPages.length,
-                    reduceMotion: _reduceMotion,
                   );
                 },
               ),
@@ -182,24 +172,27 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               child: Column(
                 children: [
                   // Animated page indicators
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(
-                      _onboardingPages.length,
-                      (index) => AnimatedContainer(
-                        duration: const Duration(milliseconds: 300),
-                        margin: const EdgeInsets.symmetric(horizontal: 4),
-                        width: _currentPage == index ? 30 : 10,
-                        height: 10,
-                        decoration: BoxDecoration(
-                          color: _currentPage == index
-                              ? AppColors.primary
-                              : AppColors.primaryLight,
-                          borderRadius: BorderRadius.circular(5),
+                  Builder(builder: (context) {
+                    final reduceMotion = MediaQuery.of(context).disableAnimations;
+                    return Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(
+                        _onboardingPages.length,
+                        (index) => AnimatedContainer(
+                          duration: reduceMotion ? Duration.zero : const Duration(milliseconds: 300),
+                          margin: const EdgeInsets.symmetric(horizontal: 4),
+                          width: _currentPage == index ? 30 : 10,
+                          height: 10,
+                          decoration: BoxDecoration(
+                            color: _currentPage == index
+                                ? AppColors.primary
+                                : AppColors.primaryLight,
+                            borderRadius: BorderRadius.circular(5),
+                          ),
                         ),
                       ),
-                    ),
-                  ),
+                    );
+                  }),
                   const SizedBox(height: AppSpacing.xl),
                   // Action button with scale animation
                   _AnimatedButton(
@@ -243,6 +236,8 @@ class _AnimatedButtonState extends State<_AnimatedButton> {
 
   @override
   Widget build(BuildContext context) {
+    final reduceMotion = MediaQuery.of(context).disableAnimations;
+    
     return GestureDetector(
       onTapDown: (_) => setState(() => _isPressed = true),
       onTapUp: (_) {
@@ -251,8 +246,8 @@ class _AnimatedButtonState extends State<_AnimatedButton> {
       },
       onTapCancel: () => setState(() => _isPressed = false),
       child: AnimatedScale(
-        scale: _isPressed ? 0.96 : 1.0,
-        duration: const Duration(milliseconds: 100),
+        scale: _isPressed && !reduceMotion ? 0.96 : 1.0,
+        duration: reduceMotion ? Duration.zero : const Duration(milliseconds: 100),
         curve: Curves.easeInOut,
         child: Container(
           width: double.infinity,
@@ -274,13 +269,11 @@ class _OnboardingPageWidget extends StatelessWidget {
     required this.page,
     required this.pageNumber,
     required this.totalPages,
-    required this.reduceMotion,
   });
 
   final OnboardingPageData page;
   final int pageNumber;
   final int totalPages;
-  final bool reduceMotion;
 
   @override
   Widget build(BuildContext context) {
@@ -292,6 +285,8 @@ class _OnboardingPageWidget extends StatelessWidget {
     final emojiSize = emojiContainerSize * 0.4;
     final titleSize = isSmallScreen ? 24.0 : 28.0;
     final subtitleSize = isSmallScreen ? 15.0 : 16.0;
+
+    final isLastPage = pageNumber == totalPages;
 
     return Semantics(
       label: 'Onboarding page $pageNumber of $totalPages: ${page.title.replaceAll('\n', ' ')}',
@@ -312,14 +307,51 @@ class _OnboardingPageWidget extends StatelessWidget {
 
             // Description
             _buildSubtitle(subtitleSize),
+
+            // Pro teaser on last slide
+            if (isLastPage) ...[
+              const SizedBox(height: 24),
+              _buildProTeaser(),
+            ],
           ],
         ),
       ),
     );
   }
 
+  Widget _buildProTeaser() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        color: AppColors.primaryLight.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.star_rounded,
+            size: 16,
+            color: AppColors.primary.withValues(alpha: 0.8),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            'Go Pro for 500/month',
+            style: TextStyle(
+              fontSize: 13,
+              color: AppColors.primary.withValues(alpha: 0.8),
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildEmojiContainer(double containerSize, double emojiSize) {
-    final container = Container(
+    // No animation - instant display for snappy feel
+    return Container(
       width: containerSize,
       height: containerSize,
       decoration: BoxDecoration(
@@ -334,16 +366,11 @@ class _OnboardingPageWidget extends StatelessWidget {
         ),
       ),
     );
-
-    if (reduceMotion) return container;
-    return container
-        .animate(key: ValueKey('emoji_${page.emoji}'))
-        .fadeIn(duration: 400.ms)
-        .scale(delay: 100.ms, curve: Curves.easeOutBack);
   }
 
   Widget _buildTitle(double titleSize) {
-    final title = Text(
+    // No animation - instant display
+    return Text(
       page.title,
       textAlign: TextAlign.center,
       style: TextStyle(
@@ -352,16 +379,11 @@ class _OnboardingPageWidget extends StatelessWidget {
         color: AppColors.primary,
       ),
     );
-
-    if (reduceMotion) return title;
-    return title
-        .animate(key: ValueKey('title_${page.title}'))
-        .fadeIn(delay: 300.ms)
-        .slideY(begin: 0.2, end: 0);
   }
 
   Widget _buildSubtitle(double subtitleSize) {
-    final subtitle = Text(
+    // No animation - instant display
+    return Text(
       page.subtitle,
       textAlign: TextAlign.center,
       style: TextStyle(
@@ -370,10 +392,5 @@ class _OnboardingPageWidget extends StatelessWidget {
         height: 1.5,
       ),
     );
-
-    if (reduceMotion) return subtitle;
-    return subtitle
-        .animate(key: ValueKey('desc_${page.subtitle}'))
-        .fadeIn(delay: 500.ms);
   }
 }

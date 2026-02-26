@@ -6,6 +6,7 @@ import 'package:firebase_app_check/firebase_app_check.dart'; // Required for App
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -15,13 +16,16 @@ import 'core/providers/providers.dart';
 import 'core/services/apple_auth_provider.dart';
 import 'core/services/auth_service.dart';
 import 'core/services/google_auth_provider.dart';
+import 'core/services/log_service.dart';
 import 'core/services/review_service.dart';
 import 'core/services/subscription_service.dart';
 import 'core/services/supabase_auth_provider.dart';
 import 'firebase_options.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  // Preserve native splash until we're ready
+  final widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
+  FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
 
   // Lock to portrait orientation only
   await SystemChrome.setPreferredOrientations([
@@ -45,7 +49,7 @@ void main() async {
       };
     }
   } catch (e) {
-    debugPrint('Firebase initialization failed: $e');
+    Log.error('Firebase initialization failed', e);
   }
 
   // Activate Firebase App Check
@@ -63,7 +67,7 @@ void main() async {
       anonKey: 'sb_publishable_DJB3MvvHJRl-vuqrkn1-6w_hwTLnOaS',
     );
   } catch (e) {
-    debugPrint('Supabase initialization failed: $e');
+    Log.error('Supabase initialization failed', e);
   }
 
   // Initialize RevenueCat
@@ -73,9 +77,9 @@ void main() async {
     await subscriptionService.initialize();
     // Check pro status on startup
     initialProStatus = await subscriptionService.isPro();
-    debugPrint('Initial pro status: $initialProStatus');
+    Log.info('App launched', {'initialProStatus': initialProStatus});
   } catch (e) {
-    debugPrint('RevenueCat initialization failed: $e');
+    Log.error('RevenueCat initialization failed', e);
   }
 
   // Initialize SharedPreferences

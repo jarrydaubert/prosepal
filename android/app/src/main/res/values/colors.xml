@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Matches AppColors.background (0xFFFAFAFA) -->
+    <color name="splash_background">#FAFAFA</color>
+    <!-- Adaptive icon background - dark to match icon -->
+    <color name="ic_launcher_background">#2D2D2D</color>
+</resources>

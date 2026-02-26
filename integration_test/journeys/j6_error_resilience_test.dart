@@ -33,7 +33,7 @@ void main() {
       expect(find.byType(MaterialApp), findsOneWidget,
           reason: 'App should remain stable');
 
-      await screenshot('j6_1_rapid_taps');
+      await screenshot(tester, 'j6_1_rapid_taps');
     });
 
     testWidgets('J6.2: App survives rapid onboarding skips', (tester) async {
@@ -51,7 +51,7 @@ void main() {
       expect(find.byType(MaterialApp), findsOneWidget,
           reason: 'App should remain stable');
 
-      await screenshot('j6_2_rapid_skip');
+      await screenshot(tester, 'j6_2_rapid_skip');
     });
 
     testWidgets('J6.3: Scroll to bottom and back', (tester) async {
@@ -71,7 +71,7 @@ void main() {
       expect(find.text('Birthday'), findsOneWidget,
           reason: 'Should scroll back to show Birthday');
 
-      await screenshot('j6_3_scroll_recovery');
+      await screenshot(tester, 'j6_3_scroll_recovery');
     });
 
     testWidgets('J6.4: Settings scroll to bottom and back', (tester) async {
@@ -88,7 +88,7 @@ void main() {
 
       expect(find.byType(MaterialApp), findsOneWidget);
 
-      await screenshot('j6_4_settings_scroll');
+      await screenshot(tester, 'j6_4_settings_scroll');
     });
 
     testWidgets('J6.5: Tap during loading (if visible)', (tester) async {
@@ -112,7 +112,7 @@ void main() {
         expect(find.byType(MaterialApp), findsOneWidget,
             reason: 'App should handle taps during loading');
 
-        await screenshot('j6_5_tap_during_load');
+        await screenshot(tester, 'j6_5_tap_during_load');
       }
     });
 
@@ -140,7 +140,7 @@ void main() {
       expect(find.byType(MaterialApp), findsOneWidget,
           reason: 'App should handle repeated wizard entries');
 
-      await screenshot('j6_6_repeated_wizard');
+      await screenshot(tester, 'j6_6_repeated_wizard');
     });
 
     testWidgets('J6.7: Error banner dismisses correctly', (tester) async {
@@ -158,7 +158,7 @@ void main() {
           await tester.tap(find.byIcon(Icons.close).first);
           await tester.pumpAndSettle();
 
-          await screenshot('j6_7_error_dismissed');
+          await screenshot(tester, 'j6_7_error_dismissed');
         }
       }
     });
@@ -178,7 +178,7 @@ void main() {
           await tester.tap(find.text('Generate Messages'));
           await tester.pumpAndSettle(const Duration(seconds: 15));
 
-          await screenshot('j6_8_retry');
+          await screenshot(tester, 'j6_8_retry');
         }
       }
     });
