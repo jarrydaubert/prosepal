@@ -31,8 +31,8 @@ fi
 
 cd "$PROJECT_DIR"
 
-# Find iOS device
-DEVICE=$(flutter devices | grep -i "iphone\|ipad" | head -1 | awk '{print $NF}' | tr -d '()')
+# Find iOS device - extract device ID (second field separated by •)
+DEVICE=$(flutter devices | grep -i "iphone\|ipad" | head -1 | awk -F'•' '{print $2}' | xargs)
 
 if [ -z "$DEVICE" ]; then
     echo "No iOS device found. Connect your device and try again."
