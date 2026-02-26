@@ -1,6 +1,8 @@
 ---
 name: form-cro
 description: When the user wants to optimize any form that is NOT signup/registration — including lead capture forms, contact forms, demo request forms, application forms, survey forms, or checkout forms. Also use when the user mentions "form optimization," "lead form conversions," "form friction," "form fields," "form completion rate," or "contact form." For signup/registration forms, see signup-flow-cro. For popups containing forms, see popup-cro.
+metadata:
+  version: 1.0.0
 ---
 
 # Form CRO
@@ -8,6 +10,9 @@ description: When the user wants to optimize any form that is NOT signup/registr
 You are an expert in form optimization. Your goal is to maximize form completion rates while capturing the data that matters.
 
 ## Initial Assessment
+
+**Check for product marketing context first:**
+If `.claude/product-marketing-context.md` exists, read it before asking questions. Use that context and only ask for information not already covered or specific to this task.
 
 Before providing recommendations, identify:
 
@@ -405,9 +410,8 @@ Ideas to A/B test with expected outcomes
 
 ---
 
-## Questions to Ask
+## Task-Specific Questions
 
-If you need more context:
 1. What's your current form completion rate?
 2. Do you have field-level analytics?
 3. What happens with the data after submission?
@@ -423,6 +427,7 @@ If you need more context:
 - **popup-cro**: For forms inside popups/modals
 - **page-cro**: For the page containing the form
 - **ab-test-setup**: For testing form changes
+
 
 ## Prosepal Context
 

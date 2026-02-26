@@ -78,11 +78,6 @@ void main() {
           builder: (context, state) => const _ProStatusProbe(),
         ),
         GoRoute(
-          path: '/auth/email',
-          builder: (context, state) =>
-              const Scaffold(body: Text('Email Auth Screen')),
-        ),
-        GoRoute(
           path: '/terms',
           name: 'terms',
           builder: (context, state) => const Scaffold(body: Text('Terms')),

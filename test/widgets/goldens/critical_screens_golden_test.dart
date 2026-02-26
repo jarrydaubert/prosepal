@@ -135,10 +135,6 @@ void main() {
           builder: (context, state) => const Scaffold(body: Text('Home')),
         ),
         GoRoute(
-          path: '/auth/email',
-          builder: (context, state) => const Scaffold(body: Text('Email')),
-        ),
-        GoRoute(
           path: '/terms',
           name: 'terms',
           builder: (context, state) => const Scaffold(body: Text('Terms')),

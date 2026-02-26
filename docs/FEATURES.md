@@ -27,7 +27,6 @@
 ## Auth
 - Sign in with Apple
 - Sign in with Google
-- Email magic link
 - Anonymous usage (1 free, no sign-in)
 - Account linking
 - Delete account with data cleanup

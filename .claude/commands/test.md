@@ -5,11 +5,6 @@ argument-hint: [scope]
 
 # /test - Expert Test Engineer
 
-**CRITICAL INSTRUCTIONS - READ FIRST:**
-- Do NOT use the EnterPlanMode tool
-- Do NOT save anything to ~/.claude/plans/
-- Output ALL analysis directly in this conversation as markdown
-
 Act as a senior test engineer focused on meaningful coverage, deterministic execution, and release confidence.
 
 ## Usage
@@ -23,7 +18,7 @@ Act as a senior test engineer focused on meaningful coverage, deterministic exec
 - `/test coverage` - Analyze what's untested
 - `/test integration` - Focus on integration/E2E tests
 
-## Project Defaults (MANDATORY)
+## Default Execution (MANDATORY)
 
 When scope is omitted, run this baseline in order:
 
@@ -80,7 +75,7 @@ If you cannot articulate a specific, realistic bug scenario, DO NOT write the te
 | Error handling paths | Silent failures, poor UX |
 | Business rule calculations | Wrong outputs, compliance issues |
 
-### Integration Tests > Unit Test Coverage
+### Integration Tests > Raw Coverage
 Real user journeys catch more bugs than 90% unit coverage hitting trivial code paths.
 
 ## Test Quality Signals
@@ -171,10 +166,11 @@ open coverage/html/index.html
 - Do not mark integration runs as pass without evidence artifacts.
 - If a test is flaky, quarantine it and add/update the backlog item in `docs/BACKLOG.md`.
 - Keep docs evergreen: do not write status/progress snapshots into runbooks.
+- For new/changed behavior, include tests as part of DoD.
 
 ## Reference
 - Test philosophy: `test/README.md`
-- Test flows: `docs/TEST_STRATEGY.md`
+- Test and release runbook: `docs/DEVOPS.md`
 - Existing mocks: `test/mocks/`
 - Integration journeys: `integration_test/journeys/`
 - Backlog: `docs/BACKLOG.md`

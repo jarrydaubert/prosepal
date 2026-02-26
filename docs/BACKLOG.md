@@ -19,7 +19,8 @@ Rules:
 | `VNEXT-11` | Canonical identity mapping | Supabase ID, RevenueCat App User ID, Analytics ID, and Crashlytics ID mapping is validated across sign-in/sign-out transitions and documented in `docs/IDENTITY_MAPPING.md`. |
 | `VNEXT-12` | UI parity with live baseline | Baseline screenshots exist for core screens and any styling delta is either matched to live or explicitly approved before release. |
 | `VNEXT-13` | Device abuse-control compliance decision | iOS/Android abuse-control approach is approved, documented, and reflected in release checklist and runtime configuration. |
-| `P0-03` | Supabase leaked-password protection | Leaked-password protection is enabled (or explicitly documented as unavailable on current plan) and auth behavior is validated in test flows. |
+| `P0-03` | Supabase social-only auth policy | Supabase Email provider is disabled for production (or explicitly blocked at app level), Apple/Google providers remain healthy, and auth behavior is validated in test flows. |
+| `P0-06` | Supabase manual console actions (owner-run) | Owner completes Supabase Dashboard checks: (1) Auth > Providers confirms Email disabled and Apple/Google enabled, (2) OAuth redirect URLs validated for production callbacks, (3) Apple/Google provider credentials validated, and (4) completion evidence recorded in `docs/LAUNCH_CHECKLIST.md`. |
 | `P0-04` | Auth loading spinner after OAuth sheet | After Apple/Google auth sheet closes, UI shows deterministic loading state until auth completion resolves or fails with user-visible error. |
 | `P0-05` | Billing budget alert controls | Budget thresholds and notification channels are configured and verified through a dry-run alert path. |
 
@@ -27,14 +28,14 @@ Rules:
 
 | ID | Item | Definition of Done |
 |----|------|--------------------|
-| `P1-01` | Password reset deep-link UX | Dedicated `/auth/reset-password` flow consumes reset token directly and is covered by widget/integration tests. |
-| `P1-02` | Auto-purchase race after email auth | Email auth purchase path is deterministic, race condition is removed, and integration coverage proves correct sequence. |
+| `P1-01` | Social-auth fallback UX | Social sign-in failures show deterministic user guidance, retry actions, and support path coverage in widget/integration tests. |
+| `P1-02` | Auth-provider telemetry quality | Auth analytics/crash logs include stable provider + outcome fields with no invalid parameter types and test coverage for key event paths. |
 | `P1-03` | Service configuration runbook | `docs/SERVICE_CONFIG.md` exists and includes reproducible Firebase/Supabase/RevenueCat configuration steps with pass criteria. |
 | `P1-04` | Paywall decomposition | Paywall widget is split into maintainable sections/components with unchanged behavior and passing tests. |
 | `P1-05` | Paywall accessibility improvements | Paywall has complete semantics labels and screen-reader navigation validation passes on iOS and Android. |
 | `P1-06` | Connectivity monitoring | App-level connection state monitoring is implemented with graceful degraded UX and tested offline/restore scenarios. |
 | `P1-07` | Health monitoring runbook | Health monitoring and escalation process is documented in `docs/DEVOPS.md` with clear alert/response steps. |
-| `P1-08` | CAPTCHA on email auth | CAPTCHA path is integrated for email auth, server-side validation is enforced, and failure UX is deterministic. |
+| `P1-08` | Auth abuse controls for social flows | App Check and provider-side abuse controls are validated for Apple/Google auth flows with documented thresholds and escalation steps. |
 | `P1-09` | Release key scan guard | Automated pre-release key scan step exists in CI/release workflow and blocks on secret-pattern hits. |
 
 ## P2 - Lower Priority

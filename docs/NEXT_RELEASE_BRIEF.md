@@ -38,10 +38,6 @@ Recommendation for next release:
 - Anonymous usage supported for first use.
 - Apple Sign-In.
 - Google Sign-In.
-- Email auth:
-  - password mode
-  - magic-link mode
-  - password reset flow
 - Account deletion flow exists.
 
 ### Monetization
@@ -96,15 +92,11 @@ Recommendation for next release:
 - 24h cooldown after explicit dismiss (except forced contexts like explicit upgrade).
 
 ### Auth flow and post-auth behavior
-- Auth screen logs auth-started events and supports Apple/Google/email paths.
+- Auth screen logs auth-started events and supports Apple/Google paths.
 - Post-auth navigation behavior varies by context:
   - plain login -> home
   - paywall redirect context -> returns to home + paywall behavior
   - restore context -> restore logic and entitlement reconciliation
-- Email auth supports:
-  - password login/signup
-  - magic link
-  - optional auto-purchase behavior for specific paywall flows
 
 ### Restore/sync behavior
 - RevenueCat user identify is executed after auth for account linking.
@@ -131,11 +123,10 @@ Recommendation for next release:
 - Lightweight auth attempt first, then interactive auth.
 - Supabase sign-in with ID token (and access token when present).
 
-### Email-specific implementation
-- Password sign-in/sign-up supported.
-- Magic-link sign-in supported.
-- Password reset deep-link flow supported.
-- Throttling service used for repeated password attempt protection.
+### Auth policy
+- New sign-in is social-only (Apple/Google).
+- Supabase remains authoritative auth backend.
+- Email auth routes are removed from app navigation.
 
 ### Account deletion
 - Calls Supabase edge function for user deletion path.
@@ -197,8 +188,8 @@ Recommendation for next release:
   - primary: `gemini-2.5-flash`
   - fallback: `gemini-2.5-flash-lite`
 - vNext production target:
-  - production default should be a pinned stable (non-preview) model ID
-  - preview models only behind explicit internal/controlled flag
+  - production default remains pinned by explicit stable model ID (no alias)
+  - preview models only for controlled/internal experiments
   - fallback remains a pinned stable model
 
 ### Runtime model control
@@ -206,6 +197,7 @@ Recommendation for next release:
   - `ai_model`
   - `ai_model_fallback`
 - vNext guardrails required:
+  - pinned model IDs only (never `latest` aliases)
   - allowlist validation for model IDs
   - `config_schema_version` key
   - kill switches for `ai_enabled`, `paywall_enabled`, and `premium_enabled`
@@ -354,7 +346,7 @@ This lowers release risk and gives a trusted baseline for measuring redesign imp
   - Flutter AI SDK App Check integration path verified
   - limited-use token strategy validated (or explicitly deferred with rationale)
 - AI model lifecycle hardening:
-  - production default model moved to pinned stable non-preview
+  - production default model pinned to stable `gemini-2.5-flash`
   - fallback model confirmed active/supported
   - RC allowlist validation live and tested
 - Remote Config guardrails shipped as hard requirements:
@@ -428,7 +420,7 @@ Please comment directly on these points:
 1. Yes, align on infra-first for immediate release.
 2. No mandatory new user-facing features for vNext beyond reliability and safety hardening.
 3. Hard release gates should include:
-   - auth: Apple, Google, email/password, magic-link, password reset
+   - auth: Apple and Google sign-in success/cancellation/error paths
    - generation: free-limit path, Pro path, error/retry path
    - monetization: paywall display, purchase, restore, entitlement reconciliation
    - settings: restore, delete-account orchestration, legal/support links

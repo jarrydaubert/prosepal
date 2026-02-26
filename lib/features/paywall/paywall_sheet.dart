@@ -110,7 +110,6 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
   bool _isPurchasing = false;
   bool _isRestoring = false;
   bool _purchaseCompleted = false;
-  bool _navigatedToEmailAuth = false;
   int _selectedPackageIndex = 0;
   String? _error;
   late final DateTime _openedAt;
@@ -118,8 +117,8 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
 
   @override
   void dispose() {
-    // Analytics: enriched dismiss tracking (skip if navigating to email auth)
-    if (!_purchaseCompleted && !_navigatedToEmailAuth) {
+    // Analytics: enriched dismiss tracking
+    if (!_purchaseCompleted) {
       final viewDurationSec = DateTime.now().difference(_openedAt).inSeconds;
       unawaited(
         _prefs.setString(
@@ -342,16 +341,6 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
     } finally {
       if (mounted) setState(() => _isAuthenticating = false);
     }
-  }
-
-  /// Sign in with Email for sync purposes only.
-  /// Uses autoPurchase=false so email auth will re-show paywall after sign-in.
-  void _signInWithEmailForSync() {
-    Log.info('Paywall: Email auth for sync selected');
-    _navigatedToEmailAuth = true;
-    Navigator.of(context).pop(false);
-    // showPaywallAfterAuth=true will reopen paywall if user doesn't have Pro
-    context.push('/auth/email?showPaywallAfterAuth=true');
   }
 
   // ===========================================================================
@@ -976,16 +965,6 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
           height: 20,
         ),
         label: 'Sign in with Google',
-        compact: true,
-      ),
-      const Gap(10),
-
-      // Email Sign In
-      _AuthButton(
-        onPressed: _isAuthenticating ? null : _signInWithEmailForSync,
-        isLoading: false,
-        icon: const Icon(Icons.email_outlined, size: 20),
-        label: 'Sign in with Email',
         compact: true,
       ),
     ],

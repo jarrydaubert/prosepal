@@ -172,7 +172,7 @@ class _ProsepalAppState extends ConsumerState<ProsepalApp>
       return;
     }
 
-    // Listen for auth state changes (magic link, OAuth callback, etc.)
+    // Listen for auth state changes (OAuth callback, sign-in/out, etc.)
     _authSubscription = supabase.client.auth.onAuthStateChange.listen((
       data,
     ) async {
@@ -203,13 +203,6 @@ class _ProsepalAppState extends ConsumerState<ProsepalApp>
           );
         }
 
-        final wasPendingMagicLink =
-            prefs.getBool(PreferenceKeys.pendingMagicLinkAuth) ?? false;
-        if (wasPendingMagicLink) {
-          await prefs.setBool(PreferenceKeys.pendingMagicLinkAuth, false);
-          Log.event('auth_completed', {'method': 'magic_link'});
-        }
-
         // Identify with RevenueCat to restore Pro entitlements
         try {
           await ref
@@ -231,16 +224,8 @@ class _ProsepalAppState extends ConsumerState<ProsepalApp>
           Log.warning('Auth listener: Usage sync failed', {'error': '$e'});
         }
 
-        // Navigate after sign-in only for pending magic link flows.
-        // OAuth/email flows perform their own post-auth routing and paywall logic.
-        final currentPath =
-            _router.routerDelegate.currentConfiguration.fullPath;
-        if (wasPendingMagicLink && currentPath.startsWith('/auth')) {
-          Log.info(
-            'Auth listener: Magic link sign-in, navigating to /home (from $currentPath)',
-          );
-          _router.go('/home');
-        }
+        // Auth screens own post-auth routing. Listener only synchronizes
+        // identity, entitlement cache, and usage state.
       } else if (event == AuthChangeEvent.signedOut) {
         try {
           await Log.clearUserId();

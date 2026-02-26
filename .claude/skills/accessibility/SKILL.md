@@ -1,6 +1,6 @@
 ---
 name: accessibility
-description: "When the user wants to audit, improve, or implement accessibility in a Flutter app. Also use when the user mentions 'a11y,' 'accessibility,' 'screen reader,' 'VoiceOver,' 'TalkBack,' 'Semantics,' 'touch targets,' 'contrast ratio,' 'WCAG,' or 'inclusive design.' For web accessibility on prosepal-web, see the /web command."
+description: "When the user wants to audit, improve, or implement accessibility in a Flutter app. Also use when the user mentions 'a11y,' 'accessibility,' 'screen reader,' 'VoiceOver,' 'TalkBack,' 'Semantics,' 'touch targets,' 'contrast ratio,' 'WCAG,' or 'inclusive design.'"
 metadata:
   version: "1.0"
   origin: prosepal-only
@@ -207,6 +207,6 @@ Present findings as:
 - `lib/app/router.dart` — Navigation flow order
 
 ### Testing Reference
-- See `docs/TEST_STRATEGY.md` for test pyramid
+- See `docs/DEVOPS.md` for test pyramid and validation flow
 - Accessibility tests belong in `test/accessibility/` or tagged `@Tags(['accessibility'])`
 - Backlog item for accessibility automation: `docs/BACKLOG.md` P2

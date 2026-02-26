@@ -9,9 +9,9 @@
 /// 2. Update `ai_model` parameter
 /// 3. Publish changes
 abstract final class AiConfig {
-  /// Default Gemini model (used if Remote Config unavailable)
-  /// See: https://firebase.google.com/docs/ai-logic/models
-  /// Keep this pinned to a stable, non-preview model for production safety.
+  /// Default Gemini model (used if Remote Config unavailable).
+  ///
+  /// Keep production defaults pinned to stable non-alias model IDs.
   static const String defaultModel = 'gemini-2.5-flash';
 
   /// Fallback model if primary fails (404, deprecated, etc.)

@@ -5,20 +5,14 @@ argument-hint: [target]
 
 # /audit - Deep Code Audit
 
-**CRITICAL INSTRUCTIONS - READ FIRST:**
-- Do NOT use the EnterPlanMode tool
-- Do NOT save anything to ~/.claude/plans/
-- Do NOT create any files
-- Output ALL audit findings directly in this conversation as markdown
-
 Run a comprehensive audit of the specified system or file.
 
-**Rules:**
-- DO NOT write or modify code
-- OUTPUT directly in the chat response
-- DO identify issues, anti-patterns, and improvements
-- DO reference file locations and line numbers
-- LEAVE implementation to the builder session
+Rules:
+- Do not write or modify code in this mode.
+- Output findings directly in chat.
+- Prioritize bug/regression/risk findings over style opinions.
+- Reference file locations and lines.
+- Cross-check against `docs/BACKLOG.md` and only raise new or regressed issues.
 
 ## Usage
 ```
@@ -30,14 +24,14 @@ Run a comprehensive audit of the specified system or file.
 - `/audit payments` - Audit subscription/RevenueCat integration
 - `/audit lib/core/services/ai_service.dart` - Audit specific file
 
-## Audit Checklist
+## Audit Checklist (Risk First)
 
-When auditing, check for:
+When auditing, focus on:
 
 ### Security
 - [ ] Input validation and sanitization
 - [ ] Auth state verified before sensitive operations
-- [ ] No hardcoded secrets (use dart-define)
+- [ ] No hardcoded secrets
 - [ ] Error messages don't leak internal details
 - [ ] Rate limiting in place
 
@@ -52,6 +46,7 @@ When auditing, check for:
 - [ ] Proper error typing (not generic catch)
 - [ ] Resources disposed properly
 - [ ] Tests exist for critical paths
+- [ ] Behavior changes include updated tests
 
 ### Database/Backend (Supabase)
 - [ ] RLS policies match intended access patterns
@@ -60,17 +55,24 @@ When auditing, check for:
 - [ ] Edge functions validate auth before operations
 - [ ] No service_role key in client code
 
-### Blueprint Impact
-- [ ] Would this change be good for all future apps?
-- [ ] Is it documented if non-obvious?
-- [ ] Does it match `docs/ARCHITECTURE.md` patterns?
+### Release Readiness
+- [ ] Change aligns with release constraints in `docs/NEXT_RELEASE_BRIEF.md`
+- [ ] Operational implications align with `docs/DEVOPS.md`
 
 ## Output Format
 
-Provide findings as:
+Use this structure:
 
-| Issue | Severity | Location | Recommendation |
-|-------|----------|----------|----------------|
-| ... | CRITICAL/HIGH/MEDIUM/LOW | file:line | ... |
+```markdown
+## Findings
+1. [CRITICAL/HIGH/MEDIUM] [Issue title]
+   - Location: path:line
+   - Why it matters: ...
+   - Suggested fix: ...
 
-Cross-reference against `docs/BACKLOG.md` - don't re-report known issues unless they've regressed.
+## Open Questions
+- ...
+
+## Backlog Additions (only if new)
+- [item + one-line DoD]
+```

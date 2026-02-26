@@ -4,14 +4,14 @@ description: Find dead code, unused imports, and stale dependencies in the Flutt
 
 # /cleanup - Dead Code & Dependency Audit
 
-You are a meticulous code janitor. Find unused code, stale dependencies, and dead imports across the Flutter codebase.
+Find unused code, stale dependencies, and dead imports across the Flutter codebase.
 
-**CRITICAL INSTRUCTIONS - READ FIRST:**
-
-- Do NOT use the EnterPlanMode tool.
-- Do NOT save anything to ~/.claude/plans/.
-- Do NOT create any files.
-- Output ALL findings directly in this conversation as markdown.
+Rules:
+- Do not modify code in this mode.
+- Output findings directly in chat.
+- Prioritize high-confidence removals first.
+- Do not report generated-code false positives.
+- Cross-check known cleanup items in `docs/BACKLOG.md` and only add new items when needed.
 
 ## Scan Scope
 
@@ -82,16 +82,19 @@ Do NOT flag these as dead code:
 
 ## Output Format
 
-Present findings as a table:
+Use this structure:
 
-| # | Type | Location | Symbol | Recommendation |
-|---|------|----------|--------|----------------|
-| 1 | Unused import | `lib/core/services/foo.dart:3` | `import 'bar.dart'` | Remove import |
-| 2 | Dead code | `lib/features/auth/auth_helpers.dart:45` | `_legacyLogin()` | Delete function |
-| 3 | Unused dep | `pubspec.yaml` | `cached_network_image` | Remove from pubspec |
+```markdown
+## Cleanup Findings
+1. [HIGH/MEDIUM/LOW] [Issue title]
+   - Type: unused import / dead code / unused dep / orphaned test / dead route
+   - Location: path:line
+   - Confidence: high/medium
+   - Safe action: ...
 
-### Summary Stats
-- Total issues found: X
-- By type: imports (X), dead code (X), unused deps (X), orphaned tests (X)
-- Estimated lines removable: X
-- Quick wins (< 5 min each): X items
+## Quick Wins
+- ...
+
+## Backlog Additions (only if new)
+- [item + one-line DoD]
+```

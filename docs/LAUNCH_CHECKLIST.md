@@ -107,14 +107,14 @@ open ios/Runner.xcworkspace
 | Item | Location | Status | Details |
 |------|----------|--------|---------|
 | Security Advisor | Database > Tools > Security Advisor | ✅ | 0 errors, 0 warnings |
-| Email provider | Authentication > Sign In / Providers > Email | ✅ | Enabled, 8 char min, lowercase+uppercase+digits+symbols required |
+| Email provider | Authentication > Sign In / Providers > Email | ⚠️ | Should be Disabled for social-only auth policy (owner action pending) |
 | Apple provider | Authentication > Sign In / Providers > Apple | ✅ | Client IDs: `com.prosepal.prosepal,com.prosepal.auth`, Secret key set |
 | Google provider | Authentication > Sign In / Providers > Google | ✅ | Client ID: `530092651798-n8u4cl643qkj8dhhkl496gd5elbmlk.apps.googleusercontent.com` |
 | Site URL | Authentication > URL Configuration | ✅ | `https://www.prosepal.app/` |
-| Redirect URLs | Authentication > URL Configuration | ✅ | `https://prosepal.app/auth/login-callback`, `https://prosepal.app/auth/reset-callback` |
+| Redirect URLs | Authentication > URL Configuration | ⚠️ | Verify social-only callback URL remains: `https://prosepal.app/auth/login-callback` |
 | Edge Function: delete-user | Edge Functions | ✅ | `https://mwoxtqxzunsjmbdqezif.supabase.co/functions/v1/delete-user` (6 deployments) |
 | Edge Function: exchange-apple-token | Edge Functions | ✅ | `https://mwoxtqxzunsjmbdqezif.supabase.co/functions/v1/exchange-apple-token` (3 deployments) |
-| Leaked password protection | Authentication > Sign In / Providers > Email | ⚠️ | OFF - Requires Pro plan, not blocking |
+| Leaked password protection | Authentication > Sign In / Providers > Email | N/A | Not applicable once email auth is disabled |
 
 ### RevenueCat ✅ VERIFIED 2026-01-10
 
@@ -169,7 +169,7 @@ open ios/Runner.xcworkspace
 - 5.1.1 fix: Paywall restructure (purchase without sign-in)
 - Server-side Pro verification (RevenueCat webhook)
 - iPad paywall optimization
-- Email auth UX improvements
+- Auth/paywall UX improvements
 
 **Metadata Updates:**
 - Terms of Use link added to description

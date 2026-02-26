@@ -8,7 +8,6 @@ import '../core/config/preference_keys.dart';
 import '../core/providers/providers.dart';
 import '../core/services/log_service.dart';
 import '../features/auth/auth_screen.dart';
-import '../features/auth/email_auth_screen.dart';
 import '../features/auth/lock_screen.dart';
 import '../features/calendar/calendar_screen.dart';
 import '../features/error/force_update_screen.dart';
@@ -27,7 +26,7 @@ import '../shared/theme/app_colors.dart';
 const _publicRoutes = {'/splash', '/onboarding', '/terms', '/privacy'};
 
 /// Routes that are part of the auth flow
-const _authRoutes = {'/auth', '/auth/email', '/lock'};
+const _authRoutes = {'/auth', '/lock'};
 
 /// Create router with route guards
 ///
@@ -105,21 +104,10 @@ final _routes = <RouteBase>[
       );
     },
   ),
-  GoRoute(
-    path: '/auth/email',
-    name: 'emailAuth',
-    builder: (context, state) => EmailAuthScreen(
-      autoPurchase: state.uri.queryParameters['autoPurchase'] == 'true',
-      packageId: state.uri.queryParameters['package'],
-      showPaywallAfterAuth:
-          state.uri.queryParameters['showPaywallAfterAuth'] == 'true',
-    ),
-  ),
   // Auth callback routes - Supabase SDK handles the auth, these just redirect
   // The deep link is processed by supabase_flutter before reaching the router,
   // but go_router still tries to match the path, so we need placeholder routes.
   GoRoute(path: '/auth/login-callback', redirect: (context, state) => '/home'),
-  GoRoute(path: '/auth/reset-callback', redirect: (context, state) => '/auth'),
   GoRoute(
     path: '/lock',
     name: 'lock',
@@ -182,19 +170,35 @@ class _SplashScreen extends ConsumerStatefulWidget {
 }
 
 class _SplashScreenState extends ConsumerState<_SplashScreen> {
+  static const _pollInterval = Duration(milliseconds: 120);
+  static const _maxWaitForInit = Duration(seconds: 12);
+  static const _minVisibleDuration = Duration(milliseconds: 500);
+
   bool _hasNavigated = false;
   bool _hasProFromRestore = false;
+  late final DateTime _shownAt;
 
   @override
   void initState() {
     super.initState();
+    _shownAt = DateTime.now();
     _waitForInitAndNavigate();
   }
 
   Future<void> _waitForInitAndNavigate() async {
+    final startedAt = DateTime.now();
+
     // Wait for Supabase to be ready (required for auth)
     // RevenueCat can timeout - we'll proceed without it if needed
     while (mounted) {
+      final elapsed = DateTime.now().difference(startedAt);
+      if (elapsed >= _maxWaitForInit) {
+        Log.warning('Splash init wait timeout reached', {
+          'timeoutMs': _maxWaitForInit.inMilliseconds,
+        });
+        break;
+      }
+
       final status = ref.read(initStatusProvider);
 
       // Check for force update first (highest priority)
@@ -227,10 +231,14 @@ class _SplashScreenState extends ConsumerState<_SplashScreen> {
       }
 
       // Wait a bit before checking again
-      await Future<void>.delayed(const Duration(milliseconds: 50));
+      await Future<void>.delayed(_pollInterval);
     }
 
     if (mounted && !_hasNavigated) {
+      final visibleFor = DateTime.now().difference(_shownAt);
+      if (visibleFor < _minVisibleDuration) {
+        await Future<void>.delayed(_minVisibleDuration - visibleFor);
+      }
       _hasNavigated = true;
       await _determineInitialRoute();
     }
@@ -309,44 +317,59 @@ class _SplashScreenState extends ConsumerState<_SplashScreen> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    backgroundColor: AppColors.splash,
-    body: Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const AppLogoStyled(),
-          const SizedBox(height: 24),
-          Text(
-            'Prosepal',
-            style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: Colors.white.withValues(alpha: 0.9),
-              letterSpacing: 1.2,
+  Widget build(BuildContext context) {
+    final status = ref.watch(initStatusProvider);
+    final loadingLabel = switch (status) {
+      InitStatus(forceUpdateRequired: true) => 'Update required',
+      InitStatus(supabaseReady: false) => 'Securing sign-in...',
+      InitStatus(
+        supabaseReady: true,
+        revenueCatReady: false,
+        timedOut: false,
+      ) =>
+        'Syncing subscriptions...',
+      _ => 'Preparing your workspace...',
+    };
+
+    return Scaffold(
+      backgroundColor: AppColors.splash,
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const AppLogoSplash(),
+            const SizedBox(height: 24),
+            Text(
+              'Prosepal',
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: Colors.white.withValues(alpha: 0.9),
+                letterSpacing: 1.2,
+              ),
             ),
-          ),
-          const SizedBox(height: 32),
-          const SizedBox(
-            width: 24,
-            height: 24,
-            child: CircularProgressIndicator(
-              strokeWidth: 2.5,
-              valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+            const SizedBox(height: 30),
+            const SizedBox(
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator(
+                strokeWidth: 2.5,
+                valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+              ),
             ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Loading...',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.white.withValues(alpha: 0.6),
+            const SizedBox(height: 14),
+            Text(
+              loadingLabel,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.white.withValues(alpha: 0.65),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 /// Error screen for unknown routes (404)

@@ -1,77 +1,45 @@
-# Skills — Version Tracking
+# Skills Version Tracking
 
-Tracks where each skill came from and how to maintain it.
+Canonical source for upstream skill provenance and inclusion policy.
 
-## Upstream: coreyhaines31/marketingskills (21 skills)
+## Upstream Reference
 
-These skills are adapted from the upstream marketing skills repository. Keep the upstream methodology intact; customization goes in the `## Prosepal Context` section appended to each file.
+- Repository: https://github.com/coreyhaines31/marketingskills
+- Version tag: `v1.2.0`
+- Commit: `ea8df8290a515a85b1b59f3374d9a225962bb340`
 
-| Skill | Status |
-|-------|--------|
-| ab-test-setup | ✅ + Prosepal Context |
-| competitor-alternatives | ✅ + Prosepal Context |
-| copy-editing | ✅ + Prosepal Context |
-| copywriting | ✅ + Prosepal Context |
-| email-sequence | ✅ + Prosepal Context |
-| form-cro | ✅ + Prosepal Context |
-| launch-strategy | ✅ + Prosepal Context |
-| marketing-ideas | ✅ + Prosepal Context |
-| marketing-psychology | ✅ + Prosepal Context |
-| onboarding-cro | ✅ + Prosepal Context |
-| page-cro | ✅ + Prosepal Context |
-| paid-ads | ✅ + Prosepal Context |
-| paywall-upgrade-cro | ✅ + Prosepal Context |
-| popup-cro | ✅ + Prosepal Context |
-| pricing-strategy | ✅ + Prosepal Context |
-| programmatic-seo | ✅ + Prosepal Context |
-| referral-program | ✅ + Prosepal Context |
-| schema-markup | ✅ + Prosepal Context |
-| seo-audit | ✅ + Prosepal Context |
-| signup-flow-cro | ✅ + Prosepal Context |
-| social-content | ✅ + Prosepal Context |
+## Freshness Check (2026-02-26)
 
-## Upstream + Heavy Adaptation (4 skills)
+- `main` head at check time: `0c24410a0b757b557c385aaaa218048a40405069`
+- Upstream skill directories on `main`: unchanged (29 total)
+- `SKILL.md` diff from `v1.2.0...main`: none
+- Result: `v1.2.0` skill content is current for this repo at check time
 
-New skills created from upstream templates with significant Prosepal-specific content.
+## Upstream Skills Included (27/29)
 
-| Skill | Based On | Adaptation |
-|-------|----------|------------|
-| churn-prevention | Upstream template | RevenueCat subscriptions, mobile app retention |
-| content-strategy | Upstream template | B2C mobile app content pillars, ASO focus |
-| ad-creative | Upstream template | Apple Search Ads, warm emotional tone |
-| product-marketing-context | Upstream template | Prosepal positioning, B2C mobile |
+These upstream skills are present locally and adapted with `## Prosepal Context`.
 
-## External-Adapted (2 skills)
+`ab-test-setup`, `ad-creative`, `ai-seo`, `analytics-tracking`, `churn-prevention`, `competitor-alternatives`, `content-strategy`, `copy-editing`, `copywriting`, `email-sequence`, `form-cro`, `launch-strategy`, `marketing-ideas`, `marketing-psychology`, `onboarding-cro`, `page-cro`, `paid-ads`, `paywall-upgrade-cro`, `popup-cro`, `pricing-strategy`, `product-marketing-context`, `programmatic-seo`, `referral-program`, `schema-markup`, `seo-audit`, `signup-flow-cro`, `social-content`.
 
-Adapted from mattpocock/skills for Flutter/Dart workflow.
+## Upstream Skills Excluded (NA)
 
-| Skill | Source | Adaptation |
-|-------|--------|------------|
-| tdd | mattpocock/skills | flutter test, ProviderContainer, integration_test/ |
-| prd-to-issues | mattpocock/skills | GitHub Issues (not Linear), flutter commands |
+These are intentionally not installed for this project.
 
-## Prosepal-Only (2 skills)
+- `cold-email` (B2B outbound focus; not aligned to Prosepal app priorities)
+- `free-tool-strategy` (web-SaaS acquisition model; not aligned to current product model)
 
-Written specifically for Prosepal with no upstream equivalent.
+## Non-Upstream Skills Kept
 
-| Skill | Purpose |
-|-------|---------|
-| accessibility | Flutter Semantics, VoiceOver/TalkBack, 48dp touch targets |
-| analytics-tracking | Firebase Analytics + Crashlytics, mobile event taxonomy |
-| ai-seo | prosepal-web SEO, App Store listing optimization |
+- `tdd` (adapted from `mattpocock/skills`)
+- `prd-to-issues` (adapted from `mattpocock/skills`)
+- `accessibility` (Prosepal-specific Flutter accessibility skill)
 
-## Deliberately Excluded
+## Optimization Policy
 
-Skills from upstream that don't apply to Prosepal:
-
-| Skill | Reason |
-|-------|--------|
-| engineering | Next.js/web stack — Prosepal is Flutter |
-| cold-email | B2B outbound — Prosepal is B2C mobile |
-| free-tool-strategy | Web SaaS model — Prosepal is native mobile app |
-
-## Editing Rules
-
-1. **Upstream skills:** Do NOT modify the upstream methodology sections. Add Prosepal-specific guidance only in the `## Prosepal Context` section at the bottom of each file.
-2. **New skills:** Full creative control, but follow the same YAML frontmatter format.
-3. **All skills:** Must have YAML frontmatter (name, description) and a `## Prosepal Context` section.
+- Keep upstream methodology intact where possible.
+- Put project-specific behavior in `## Prosepal Context`.
+- Keep references aligned to active docs:
+  - `docs/DEVOPS.md`
+  - `docs/BACKLOG.md`
+  - `docs/NEXT_RELEASE_BRIEF.md`
+- Remove references to disabled slash commands.

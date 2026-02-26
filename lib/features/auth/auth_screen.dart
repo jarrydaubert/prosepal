@@ -266,12 +266,6 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     }
   }
 
-  void _signInWithEmail() {
-    _authMethod = 'email';
-    Log.event('auth_method_selected', {'method': 'email'});
-    context.push('/auth/email');
-  }
-
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
@@ -484,16 +478,6 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                               height: 24,
                             ),
                             label: 'Sign in with Google',
-                          ),
-                          const SizedBox(height: 12),
-
-                          // Email Sign In
-                          _AuthButton(
-                            onPressed: _isLoading ? null : _signInWithEmail,
-                            isLoading: _isLoading,
-                            style: _AuthButtonStyle.outlined,
-                            icon: const Icon(Icons.email_outlined, size: 24),
-                            label: 'Sign in with Email',
                           ),
                         ],
                       )

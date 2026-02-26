@@ -5,21 +5,14 @@ argument-hint: [scope]
 
 # /security - Security Review
 
-**CRITICAL INSTRUCTIONS - READ FIRST:**
-- Do NOT use the EnterPlanMode tool
-- Do NOT save anything to ~/.claude/plans/
-- Do NOT create any files
-- Output ALL findings directly in this conversation as markdown
-
 Run a security-focused review of the codebase or specific area.
 
-**Rules:**
-- DO NOT write or modify code
-- OUTPUT directly in the chat response
-- DO identify vulnerabilities and risks
-- DO recommend fixes with specific guidance
-- DO reference file locations and line numbers
-- LEAVE implementation to the builder session
+Rules:
+- Do not write or modify code in this mode.
+- Output findings directly in chat.
+- Findings must be prioritized by exploitability and impact.
+- Reference file locations and lines.
+- Cross-check known items in `docs/BACKLOG.md` and report only new/regressed risks.
 
 ## Usage
 ```
@@ -46,7 +39,8 @@ Run a security-focused review of the codebase or specific area.
 - [ ] Input sanitized before use in queries/prompts
 
 ### API Security
-- [ ] API keys not hardcoded (use dart-define or Remote Config)
+- [ ] API keys not hardcoded in repo
+- [ ] Public keys have API/app restrictions (bundle/package/SHA/referrer as applicable)
 - [ ] Rate limiting implemented
 - [ ] Request/response validation
 - [ ] Timeouts prevent hanging
@@ -74,7 +68,7 @@ Run a security-focused review of the codebase or specific area.
 - [ ] Sensitive logic server-side (pricing, credits, usage counting)
 - [ ] Scan release bundles/APKs for leaked keys before publish
 - [ ] Dependencies up to date (check `flutter pub outdated`)
-- [ ] Consider second AI audit for critical flows
+- [ ] App Check / abuse controls aligned with `docs/DEVOPS.md`
 
 ### OWASP Mobile Top 10
 1. Improper Platform Usage
@@ -90,17 +84,16 @@ Run a security-focused review of the codebase or specific area.
 
 ## Output Format
 
-```
+```markdown
 ## Security Findings
+1. [CRITICAL/HIGH/MEDIUM] [Issue title]
+   - Location: path:line
+   - Impact: ...
+   - Fix: ...
 
-### Critical
-- [Issue]: [Location] - [Impact] - [Fix]
+## Residual Risk
+- ...
 
-### High
-...
-
-### Recommendations
-...
+## Backlog Additions (only if new)
+- [item + one-line DoD]
 ```
-
-Reference: `docs/BACKLOG.md` Architecture Audit section for known issues.
