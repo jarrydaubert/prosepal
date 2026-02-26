@@ -68,6 +68,13 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
       if (message.contains('invalid') && message.contains('email')) {
         return 'Please enter a valid email address.';
       }
+      if (message.contains('invalid') && message.contains('credentials')) {
+        return 'Invalid email or password. Please try again.';
+      }
+      if (message.contains('user not found') ||
+          message.contains('no user found')) {
+        return 'No account found with this email.';
+      }
       if (message.contains('network') || message.contains('connection')) {
         return 'Connection error. Check your internet.';
       }
@@ -504,7 +511,7 @@ class _EmailInputView extends StatelessWidget {
 // REUSABLE COMPONENTS
 // =============================================================================
 
-class _StyledTextField extends StatelessWidget {
+class _StyledTextField extends StatefulWidget {
   const _StyledTextField({
     required this.controller,
     required this.label,
@@ -528,19 +535,39 @@ class _StyledTextField extends StatelessWidget {
   final void Function(String)? onSubmitted;
 
   @override
+  State<_StyledTextField> createState() => _StyledTextFieldState();
+}
+
+class _StyledTextFieldState extends State<_StyledTextField> {
+  bool _isObscured = true;
+
+  @override
   Widget build(BuildContext context) {
+    // Only obscure if obscureText is true AND user hasn't toggled visibility
+    final shouldObscure = widget.obscureText && _isObscured;
+
     return TextFormField(
-      controller: controller,
-      keyboardType: keyboardType,
-      textInputAction: textInputAction,
-      obscureText: obscureText,
+      controller: widget.controller,
+      keyboardType: widget.keyboardType,
+      textInputAction: widget.textInputAction,
+      obscureText: shouldObscure,
       autocorrect: false,
-      validator: validator,
-      onFieldSubmitted: onSubmitted,
+      validator: widget.validator,
+      onFieldSubmitted: widget.onSubmitted,
       decoration: InputDecoration(
-        labelText: label,
-        hintText: hint,
-        prefixIcon: Icon(icon),
+        labelText: widget.label,
+        hintText: widget.hint,
+        prefixIcon: Icon(widget.icon),
+        // Show visibility toggle for password fields
+        suffixIcon: widget.obscureText
+            ? IconButton(
+                icon: Icon(
+                  _isObscured ? Icons.visibility_off : Icons.visibility,
+                  color: Colors.grey[600],
+                ),
+                onPressed: () => setState(() => _isObscured = !_isObscured),
+              )
+            : null,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
