@@ -441,7 +441,7 @@ class _CustomPaywallScreenState extends ConsumerState<CustomPaywallScreen> {
         ).animate().fadeIn(duration: 300.ms),
         const Gap(AppSpacing.xs),
         Text(
-          'Unlimited messages for every occasion',
+          '500 messages/month for every occasion',
           style: Theme.of(
             context,
           ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
