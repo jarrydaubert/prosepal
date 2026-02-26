@@ -37,7 +37,7 @@ jobs:
         run: flutter pub get
       
       - name: Analyze
-        run: flutter analyze || true
+        run: flutter analyze --no-fatal-infos
       
       - name: Run tests with coverage
         run: |
@@ -49,7 +49,7 @@ jobs:
           fi
       
       - name: Check formatting
-        run: dart format --set-exit-if-changed lib/
+        run: dart format --set-exit-if-changed lib/ test/
 
   # ============================================
   # iOS BUILD (macOS - 10x multiplier, ~8 mins = 80 "minutes")
