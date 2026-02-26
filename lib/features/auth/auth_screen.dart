@@ -64,18 +64,11 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       return;
     }
 
-    // Fresh login flow (no back stack) - go to biometric setup or home
-    final biometricService = ref.read(biometricServiceProvider);
-    final isSupported = await biometricService.isSupported;
-    final isAlreadyEnabled = await biometricService.isEnabled;
-
-    if (isSupported && !isAlreadyEnabled) {
-      Log.info('Auth success: navigating to biometric setup');
-      context.go('/biometric-setup');
-    } else {
-      Log.info('Auth success: navigating to home');
-      context.go('/home');
-    }
+    // Fresh login flow - go straight to home
+    // Biometric setup is offered after purchase, not after sign-in
+    // (feels contradictory to prompt for security right after authenticating)
+    Log.info('Auth success: navigating to home');
+    context.go('/home');
   }
 
   Future<void> _signInWithApple() async {

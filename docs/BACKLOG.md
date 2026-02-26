@@ -36,12 +36,6 @@
 
 ## P5 - v1.1 Features
 
-### UX Improvements (from flow analysis)
-
-| Item | Rationale |
-|------|-----------|
-| Skip biometric prompt after sign-in | Only offer after purchase - feels contradictory right after authenticating |
-
 ### Core Features
 
 - Regeneration option ("Generate More")
