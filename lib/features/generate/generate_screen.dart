@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
@@ -266,7 +268,7 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
       ref.read(isGeneratingProvider.notifier).state = false;
 
       if (!mounted) return;
-      context.pushNamed('results');
+      unawaited(context.pushNamed('results'));
     } on AiNetworkException {
       ref.read(isGeneratingProvider.notifier).state = false;
       ref.read(generationErrorProvider.notifier).state =

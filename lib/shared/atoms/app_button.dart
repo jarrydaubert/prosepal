@@ -64,7 +64,7 @@ class AppButton extends StatelessWidget {
         minimumSize: Size(isFullWidth ? double.infinity : 0, height),
       ),
       AppButtonStyle.secondary => ElevatedButton.styleFrom(
-        backgroundColor: AppColors.secondary,
+        backgroundColor: AppColors.primary,
         minimumSize: Size(isFullWidth ? double.infinity : 0, height),
       ),
       AppButtonStyle.outline => OutlinedButton.styleFrom(

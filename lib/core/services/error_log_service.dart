@@ -32,8 +32,8 @@ class ErrorLogService {
   String getFormattedLog() {
     if (_errors.isEmpty) return 'No recent errors';
 
-    final buffer = StringBuffer();
-    buffer.writeln('--- Recent Errors (${_errors.length}) ---');
+    final buffer = StringBuffer()
+      ..writeln('--- Recent Errors (${_errors.length}) ---');
 
     for (final entry in _errors.reversed.take(5)) {
       buffer.writeln('[${entry.timestamp.toIso8601String()}]');

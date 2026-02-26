@@ -31,12 +31,12 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
 
   /// Collect device info for bug reports
   Future<String> _getDeviceInfo() async {
-    final buffer = StringBuffer();
-    buffer.writeln('--- Device Info ---');
-    buffer.writeln('Platform: ${Platform.operatingSystem}');
-    buffer.writeln('OS Version: ${Platform.operatingSystemVersion}');
-    buffer.writeln('Dart: ${Platform.version.split(' ').first}');
-    buffer.writeln('Locale: ${Platform.localeName}');
+    final buffer = StringBuffer()
+      ..writeln('--- Device Info ---')
+      ..writeln('Platform: ${Platform.operatingSystem}')
+      ..writeln('OS Version: ${Platform.operatingSystemVersion}')
+      ..writeln('Dart: ${Platform.version.split(' ').first}')
+      ..writeln('Locale: ${Platform.localeName}');
 
     try {
       final packageInfo = await PackageInfo.fromPlatform();

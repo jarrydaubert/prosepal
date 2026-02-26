@@ -12,7 +12,7 @@ import 'package:prosepal/core/providers/providers.dart';
 ///
 /// These tests simulate real user scenarios from start to finish.
 ///
-/// Run with: flutter test integration_test/e2e_user_journey_test.dart -d <device_id>
+/// Run with: flutter test integration_test/e2e_user_journey_test.dart -d [device_id]
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 

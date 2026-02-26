@@ -13,7 +13,7 @@ import 'package:prosepal/core/models/models.dart';
 ///
 /// These tests launch the full application and simulate real user flows.
 ///
-/// Run with: flutter test integration_test/app_test.dart -d <device_id>
+/// Run with: flutter test integration_test/app_test.dart -d [device_id]
 ///
 /// Requirements:
 /// - Real device or simulator
