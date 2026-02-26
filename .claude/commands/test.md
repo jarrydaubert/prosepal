@@ -10,7 +10,7 @@ argument-hint: [scope]
 - Do NOT save anything to ~/.claude/plans/
 - Output ALL analysis directly in this conversation as markdown
 
-Act as a senior test engineer focused on comprehensive test coverage and quality.
+Act as a senior test engineer focused on meaningful coverage, deterministic execution, and release confidence.
 
 ## Usage
 ```
@@ -22,6 +22,35 @@ Act as a senior test engineer focused on comprehensive test coverage and quality
 - `/test auth_service` - Write/review tests for auth service
 - `/test coverage` - Analyze what's untested
 - `/test integration` - Focus on integration/E2E tests
+
+## Project Defaults (MANDATORY)
+
+When scope is omitted, run this baseline in order:
+
+```bash
+flutter analyze
+./scripts/test_release_preflight.sh
+./scripts/test_critical_smoke.sh
+flutter test
+./scripts/test_flake_audit.sh
+```
+
+When scope is `integration`, prefer wired devices and evidence artifacts:
+
+```bash
+./scripts/run_wired_evidence.sh --suite smoke
+./scripts/run_wired_evidence.sh --suite full
+```
+
+For Android matrix verification:
+
+```bash
+flutter build apk --debug -t integration_test/ftl_test.dart
+cd android && JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ./gradlew app:assembleAndroidTest -Ptarget=../integration_test/ftl_test.dart
+gcloud firebase test android run --type instrumentation --app build/app/outputs/flutter-apk/app-debug.apk --test build/app/outputs/apk/androidTest/debug/app-debug-androidTest.apk --device model=oriole,version=33,locale=en,orientation=portrait --timeout 12m --no-use-orchestrator
+```
+
+Prefer tethered physical devices for local integration validation. Avoid wireless-only test claims.
 
 ## Test Philosophy (MANDATORY)
 
@@ -36,7 +65,7 @@ If you cannot articulate a specific, realistic bug scenario, DO NOT write the te
 
 ### When NOT to Write Tests
 - **SDK pass-through code** - `signInWithGoogle() => _sdk.signIn()` is untestable and that's fine
-- **Pure UI with no logic** - Static layouts don't need tests
+- **Pure static UI with no logic** - but keep visual regression checks for critical screens
 - **Code that can't fail meaningfully** - Simple getters, trivial mappings
 - **When mocking would mock everything** - You'd be testing your mocks, not code
 
@@ -97,7 +126,7 @@ void main() {
   });
 
   group('fetchUser', () {
-    test('when API returns valid user should parse correctly', () {
+    test('when API returns valid user should parse correctly', () async {
       // Arrange
       when(() => mockApi.get('/user')).thenAnswer((_) async => {'id': '123', 'name': 'Test'});
 
@@ -110,7 +139,7 @@ void main() {
       // NO verify().called(1) - we don't care about call count
     });
 
-    test('when API returns null name should use fallback', () {
+    test('when API returns null name should use fallback', () async {
       // Bug: NullPointerException when name missing
       when(() => mockApi.get('/user')).thenAnswer((_) async => {'id': '123', 'name': null});
 
@@ -135,8 +164,17 @@ open coverage/html/index.html
 
 **Note:** Coverage % is a vanity metric. 50% meaningful tests > 90% bloat tests.
 
+## Output Requirements
+
+- Start with findings ordered by severity.
+- For each failing check include: command, failure summary, and artifact/log path.
+- Do not mark integration runs as pass without evidence artifacts.
+- If a test is flaky, quarantine it and add/update the backlog item in `docs/BACKLOG.md`.
+- Keep docs evergreen: do not write status/progress snapshots into runbooks.
+
 ## Reference
 - Test philosophy: `test/README.md`
-- Test flows: `docs/TESTING.md`
+- Test flows: `docs/TEST_STRATEGY.md`
 - Existing mocks: `test/mocks/`
 - Integration journeys: `integration_test/journeys/`
+- Backlog: `docs/BACKLOG.md`
