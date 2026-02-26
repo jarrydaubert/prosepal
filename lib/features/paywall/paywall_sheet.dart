@@ -143,8 +143,12 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
       _error = null;
     });
 
+    // Capture services before async to avoid ref access after unmount
+    final authService = ref.read(authServiceProvider);
+    final usageService = ref.read(usageServiceProvider);
+    final subscriptionService = ref.read(subscriptionServiceProvider);
+
     try {
-      final authService = ref.read(authServiceProvider);
       final response = await authService.signInWithApple().timeout(
         const Duration(minutes: 2),
         onTimeout: () =>
@@ -152,14 +156,12 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
       );
       if (response.user != null) {
         try {
-          await ref.read(usageServiceProvider).syncFromServer();
+          await usageService.syncFromServer();
         } catch (e) {
           Log.warning('Usage sync failed after auth', {'error': '$e'});
         }
         // Identify with RevenueCat (may restore existing subscription)
-        await ref
-            .read(subscriptionServiceProvider)
-            .identifyUser(response.user!.id);
+        await subscriptionService.identifyUser(response.user!.id);
 
         // Force fetch fresh CustomerInfo
         ref.invalidate(customerInfoProvider);
@@ -202,8 +204,12 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
       _error = null;
     });
 
+    // Capture services before async to avoid ref access after unmount
+    final authService = ref.read(authServiceProvider);
+    final usageService = ref.read(usageServiceProvider);
+    final subscriptionService = ref.read(subscriptionServiceProvider);
+
     try {
-      final authService = ref.read(authServiceProvider);
       final response = await authService.signInWithGoogle().timeout(
         const Duration(minutes: 2),
         onTimeout: () =>
@@ -211,13 +217,11 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
       );
       if (response.user != null) {
         try {
-          await ref.read(usageServiceProvider).syncFromServer();
+          await usageService.syncFromServer();
         } catch (e) {
           Log.warning('Usage sync failed after auth', {'error': '$e'});
         }
-        await ref
-            .read(subscriptionServiceProvider)
-            .identifyUser(response.user!.id);
+        await subscriptionService.identifyUser(response.user!.id);
 
         ref.invalidate(customerInfoProvider);
         final hasPro = await ref

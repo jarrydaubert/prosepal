@@ -89,6 +89,23 @@ Future<void> _initializeApp() async {
 
   // Get SharedPreferences first (fast, local) - needed for router
   final prefs = await SharedPreferences.getInstance();
+
+  // Auto-detect spelling preference from device locale if not already set
+  if (!prefs.containsKey(PreferenceKeys.spellingPreference)) {
+    final locale = WidgetsBinding.instance.platformDispatcher.locale;
+    final isUkLocale =
+        locale.countryCode == 'GB' ||
+        locale.countryCode == 'AU' ||
+        locale.countryCode == 'NZ' ||
+        locale.countryCode == 'IE';
+    final spelling = isUkLocale ? 'uk' : 'us';
+    await prefs.setString(PreferenceKeys.spellingPreference, spelling);
+    Log.info('Spelling auto-detected', {
+      'locale': locale.toString(),
+      'spelling': spelling,
+    });
+  }
+
   Log.info('Phase 2 complete', {'ms': stopwatch.elapsedMilliseconds});
 
   // =========================================================================

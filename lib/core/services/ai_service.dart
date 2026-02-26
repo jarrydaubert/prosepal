@@ -399,6 +399,7 @@ class AiService {
     MessageLength length = MessageLength.standard,
     String? recipientName,
     String? personalDetails,
+    bool useUkSpelling = false,
   }) async {
     Log.info('AI generation started', {
       'occasion': occasion.label,
@@ -433,6 +434,7 @@ class AiService {
       length: length,
       recipientName: sanitizedName,
       personalDetails: sanitizedDetails,
+      useUkSpelling: useUkSpelling,
     );
 
     // Log prompt metadata only (no PII - personalDetails excluded)
@@ -675,6 +677,7 @@ class AiService {
     required MessageLength length,
     String? recipientName,
     String? personalDetails,
+    bool useUkSpelling = false,
   }) {
     final context = StringBuffer()
       ..writeln('Occasion: ${occasion.prompt}')
@@ -687,6 +690,11 @@ class AiService {
     }
     if (personalDetails case final details? when details.isNotEmpty) {
       context.writeln('Personal context: ${sanitizeInput(details)}');
+    }
+    if (useUkSpelling) {
+      context.writeln(
+        'Spelling: Use British English spelling (Mum not Mom, favourite not favorite, colour not color).',
+      );
     }
 
     // System instruction contains static guidelines

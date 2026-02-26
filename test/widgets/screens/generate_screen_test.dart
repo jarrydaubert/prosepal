@@ -54,6 +54,7 @@ class MockAiService extends AiService {
     MessageLength length = MessageLength.standard,
     String? recipientName,
     String? personalDetails,
+    bool useUkSpelling = false,
   }) async {
     generateCallCount++;
 
