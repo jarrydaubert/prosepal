@@ -91,7 +91,7 @@ jobs:
   build-android:
     name: Build Android
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     needs: analyze
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     
@@ -116,6 +116,7 @@ jobs:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
+            android/.gradle
           key: gradle-${{ hashFiles('android/build.gradle', 'android/app/build.gradle', 'pubspec.lock') }}
           restore-keys: gradle-
       
@@ -124,6 +125,8 @@ jobs:
       
       - name: Build APK
         run: flutter build apk --release
+        env:
+          GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.caching=true"
       
       - name: Upload APK
         uses: actions/upload-artifact@v4
