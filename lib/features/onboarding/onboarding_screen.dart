@@ -343,7 +343,7 @@ class _OnboardingPageWidget extends StatelessWidget {
           ),
           const SizedBox(width: 6),
           Text(
-            'Go Pro for 500/month',
+            'Go Pro for 500 messages/month',
             style: TextStyle(
               fontSize: 13,
               color: AppColors.primary.withValues(alpha: 0.8),
