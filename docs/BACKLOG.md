@@ -29,6 +29,9 @@
 | `settings_screen_test.dart` | 26 comprehensive widget tests |
 | Model test consolidation | Deleted duplicate test files |
 | CI coverage reporting | Added to GitHub Actions |
+| E2E subscription tests | 29 tests for subscription flows |
+| E2E user journey tests | Complete user flow testing |
+| Integration tests | 12 tests on iOS simulator |
 
 ### 0.4 Supabase v2 Upgrade Check ✅
 
@@ -46,34 +49,74 @@
 
 **Conclusion:** No migration needed. App is already v2 compliant.
 
+### 0.5 Brand System Unification ✅
+
+**Simplified 3-color palette for consistency:**
+
+| Role | Color | Hex | Usage |
+|------|-------|-----|-------|
+| **Primary** | Coral | `#E57373` | CTAs, links, selection states, brand identity |
+| **Text** | Charcoal | `#2D3436` | All text for maximum readability |
+| **Background** | Warm White | `#FAFAFA` | Clean, warm canvas |
+
+**WCAG AA Contrast Compliance:**
+- textPrimary on background: 12.6:1 ✓
+- textSecondary on background: 4.6:1 ✓
+
+**Changes Made:**
+- Removed 10+ individual occasion colors → unified primary with opacity
+- Single brand gradient throughout onboarding (no more color chaos)
+- Occasion cards now use `occasionBackground(index)` and `occasionBorder(index)`
+- Legacy colors marked `@Deprecated` for gradual migration
+
+### 0.6 Onboarding Reduction (4 → 3 pages) ✅
+
+| Before | After |
+|--------|-------|
+| Page 1: Welcome | Page 1: "Stuck on What to Write?" (pain point) |
+| Page 2: Features | Page 2: "AI-Crafted Messages" (solution) |
+| Page 3: Personalization | Page 3: "Try 3 Free Messages" (value) |
+| Page 4: Get Started | *(merged into Page 3)* |
+
+### 0.7 Launch Checklist ✅
+
+Added `docs/LAUNCH_CHECKLIST.md` based on RevenueCat best practices covering:
+- RevenueCat configuration verification
+- Sandbox testing procedures
+- User identity testing
+- App Store submission requirements
+
 ---
 
 ## 1. Onboarding Improvements
 
-**Current:** 4-page PageView with emoji icons, gradient backgrounds, flutter_animate
+**Status:** ✅ COMPLETED
 
-**Target:** Modern 2025 onboarding - shorter, value-first, immersive
+**What was done:**
+- Reduced from 4 pages to 3 (more concise, value-focused)
+- Unified brand gradient throughout (single coral theme)
+- Glassmorphism emoji containers with BackdropFilter
+- Haptic feedback on interactions
+- Animated CTA button with scale effect
 
-**Status:** Partially complete - glassmorphism and haptics added, page reduction still pending
+### 1.1 Page Reduction (4 → 3) ✅
 
-### 1.1 Page Reduction (4 → 3)
+| Before | After |
+|--------|-------|
+| Page 1: Welcome | Page 1: "Stuck on What to Write?" (pain point) |
+| Page 2: Features | Page 2: "AI-Crafted Messages" (solution) |
+| Page 3: Personalization | Page 3: "Try 3 Free Messages" (value) |
+| Page 4: Get Started | *(merged into Page 3)* |
 
-| Current | Proposed |
-|---------|----------|
-| Page 1: Welcome | Page 1: Pain point - "Struggling with the right words?" |
-| Page 2: Feature overview | Page 2: Solution - "AI-crafted messages in seconds" |
-| Page 3: Personalization | Page 3: Instant value - Quick input + "Try It Now" |
-| Page 4: Get started | (merged into Page 3) |
+### 1.2 Visual Upgrades ✅
 
-### 1.2 Visual Upgrades
-
-| Enhancement | Description | Package/Approach |
-|-------------|-------------|------------------|
-| Lottie animations | Replace emoji with animated illustrations | `lottie` |
-| Glassmorphism | Frosted blur effects on cards | `BackdropFilter` |
-| Animated gradients | Slow-shifting background colors | `AnimatedContainer` or shaders |
-| Parallax on swipe | Depth effect between layers | Custom `PageView` transform |
-| Morphing indicators | Animated dot shapes | Custom `AnimatedContainer` |
+| Enhancement | Status | Notes |
+|-------------|--------|-------|
+| ~~Lottie animations~~ | ❌ Skipped | Decided to keep emojis for simplicity |
+| Glassmorphism | ✅ Done | BackdropFilter on emoji containers |
+| Animated gradients | ✅ Done | Single brand gradient, AnimatedContainer |
+| ~~Parallax on swipe~~ | ❌ Skipped | Not needed with simplified design |
+| Morphing indicators | ✅ Done | Animated dot width on page change |
 
 ### 1.3 Instant Value Demo
 
@@ -435,10 +478,12 @@ final supported = await biometricService.isSupported;
 | **P0** | **Test on real device** | Low | **BLOCKER** | ❌ Apple Sign In, paywall |
 | **P0** | **App Store ID for reviews** | Low | **BLOCKER** | ❌ Add after app is live |
 | P1 | Run integration tests on device | Medium | High | ❌ Pending |
+| ~~P2~~ | ~~Onboarding page reduction (4→3)~~ | ~~Medium~~ | ~~Medium~~ | ✅ **DONE** |
+| ~~P2~~ | ~~Brand system unification~~ | ~~Medium~~ | ~~High~~ | ✅ **DONE** |
+| ~~P2~~ | ~~E2E subscription tests~~ | ~~Medium~~ | ~~High~~ | ✅ **DONE** (29 tests) |
 | P1 | Fix 674 lint suggestions | Medium | Medium | ❌ Pending |
-| P2 | Onboarding page reduction (4→3) | Medium | Medium | ❌ Pending |
 | P3 | Subscription mock enhancements | Medium | Low | ❌ Pending |
-| P3 | Lottie animations | Medium | Medium | ❌ Pending |
+| ~~P3~~ | ~~Lottie animations~~ | ~~Medium~~ | ~~Medium~~ | ❌ Skipped (keeping emojis) |
 | P4 | Performance optimizations | Medium | Medium | ❌ Pending |
 | P4 | Dark mode support | High | Medium | ❌ Pending |
 
@@ -459,8 +504,9 @@ final supported = await biometricService.isSupported;
 - ✅ **Firebase AI migration COMPLETED** - now using firebase_ai 3.6.1
 - ✅ **Supabase v2 COMPLIANT** - already using 2.12.0 with correct patterns
 - ✅ **UI Modernization COMPLETED** - 2025 trends applied to all major screens
-- ✅ **Test coverage improved** - 554 tests passing, settings screen tested
-- Onboarding page reduction is UX polish, not blocking release
+- ✅ **Brand System UNIFIED** - 3-color palette, WCAG AA contrast compliant
+- ✅ **Onboarding REDUCED** - 4 pages → 3 pages, value-focused
+- ✅ **Test coverage improved** - 554 unit/widget + 41 integration/E2E tests
 - 674 lint issues are info-level (suggestions), not errors
 
 ---
