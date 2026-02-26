@@ -111,17 +111,13 @@
 
 | Issue | Location | Fix |
 |-------|----------|-----|
-| Supabase function search_path mutable | `check_and_increment_usage` SQL function | Add `SET search_path = ''` to function definition |
-| Supabase leaked password protection | Supabase Dashboard > Auth | Enable "Leaked password protection" toggle |
+| Supabase leaked password protection | Supabase Dashboard > Auth | Enable "Leaked password protection" toggle (requires paid plan) |
 
 ### HIGH - Fix Week 1 Post-Launch
 
 | Issue | Location | Fix |
 |-------|----------|-----|
-| SignOut scope local-only | `supabase_auth_provider.dart:270` | Use `SignOutScope.global` to invalidate all sessions |
-| Wrong exception catch | `subscription_service.dart:210` | `PurchasesErrorCode` is enum not exception. Use `PlatformException` |
 | Provider init race | `providers.dart:167-174` | Async fetch could overwrite fresher listener data |
-| Offline pro check = false | `providers.dart:205` | No local cache of pro status. Add SharedPreferences fallback |
 | Missing Google nonce | `auth_service.dart:253-301` | Apple has nonce, Google doesn't. Add for replay protection |
 | Missing CAPTCHA | `email_auth_screen.dart` | Interface supports captchaToken but not implemented |
 | Unencrypted biometric pref | `biometric_service.dart:96-105` | SharedPreferences can be modified. Use flutter_secure_storage |

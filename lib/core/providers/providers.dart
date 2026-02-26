@@ -160,11 +160,15 @@ final reauthServiceProvider = Provider<ReauthService>((ref) {
 // RevenueCat CustomerInfo (Reactive via StateNotifier + Listener)
 // ============================================================
 
+/// Key for caching pro status in SharedPreferences
+const _proStatusCacheKey = 'cached_pro_status';
+
 /// Notifier that holds the latest CustomerInfo and listens for updates
 class CustomerInfoNotifier extends StateNotifier<CustomerInfo?> {
   final ISubscriptionService _subscriptionService;
+  final SharedPreferences _prefs;
 
-  CustomerInfoNotifier(this._subscriptionService) : super(null) {
+  CustomerInfoNotifier(this._subscriptionService, this._prefs) : super(null) {
     // Add listener for live updates
     _subscriptionService.addCustomerInfoListener(_updateCustomerInfo);
 
@@ -182,6 +186,9 @@ class CustomerInfoNotifier extends StateNotifier<CustomerInfo?> {
       'activeEntitlements': activeEntitlements,
     });
     state = info;
+
+    // Cache pro status for offline fallback
+    _prefs.setBool(_proStatusCacheKey, hasPro);
   }
 
   @override
@@ -195,14 +202,20 @@ class CustomerInfoNotifier extends StateNotifier<CustomerInfo?> {
 final customerInfoProvider =
     StateNotifierProvider<CustomerInfoNotifier, CustomerInfo?>((ref) {
       final subscriptionService = ref.watch(subscriptionServiceProvider);
-      return CustomerInfoNotifier(subscriptionService);
+      final prefs = ref.watch(sharedPreferencesProvider);
+      return CustomerInfoNotifier(subscriptionService, prefs);
     });
 
 /// Reactive pro subscription status (live from RevenueCat)
-/// False while loading or if no pro entitlement
+/// Uses cached value as fallback when offline or loading
 final isProProvider = Provider<bool>((ref) {
   final customerInfo = ref.watch(customerInfoProvider);
-  return customerInfo?.entitlements.active.containsKey('pro') ?? false;
+  if (customerInfo != null) {
+    return customerInfo.entitlements.active.containsKey('pro');
+  }
+  // Fallback to cached value when offline/loading
+  final prefs = ref.watch(sharedPreferencesProvider);
+  return prefs.getBool(_proStatusCacheKey) ?? false;
 });
 
 /// Async manual check with error handling
