@@ -98,18 +98,19 @@ patrol:
     bundle_id: com.prosepal.prosepal
 
 # Native splash screen configuration
+# Color #2D2D37 matches logo background (dark charcoal)
 flutter_native_splash:
-  color: "#FAFAFA"
+  color: "#2D2D37"
   image: assets/images/logo.png
-  color_dark: "#FAFAFA"
+  color_dark: "#2D2D37"
   image_dark: assets/images/logo.png
   
   android_12:
-    color: "#FAFAFA"
-    icon_background_color: "#FAFAFA"
+    color: "#2D2D37"
+    icon_background_color: "#2D2D37"
     image: assets/images/logo.png
-    color_dark: "#FAFAFA"
-    icon_background_color_dark: "#FAFAFA"
+    color_dark: "#2D2D37"
+    icon_background_color_dark: "#2D2D37"
     image_dark: assets/images/logo.png
 
   web: false

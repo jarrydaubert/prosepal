@@ -175,14 +175,14 @@ class _ProsepalAppState extends ConsumerState<ProsepalApp>
           children: [
             child!,
             // Privacy screen when app is backgrounded
-            // AnimatedOpacity provides smooth transition
+            // Uses dark splash color to match native splash
             AnimatedOpacity(
               opacity: _isInBackground ? 1.0 : 0.0,
               duration: const Duration(milliseconds: 150),
               child: IgnorePointer(
                 ignoring: !_isInBackground,
                 child: ColoredBox(
-                  color: AppColors.background,
+                  color: AppColors.splash,
                   child: Center(
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(24),
