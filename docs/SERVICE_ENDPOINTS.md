@@ -541,22 +541,23 @@ Custom `MockBiometricService` implementing `IBiometricService` interface.
 
 | Service | SDK Methods | Unit | Integration | Notes |
 |---------|:-----------:|:----:|:-----------:|-------|
-| **Supabase Auth** | 14 | 13/14 ✅ | 13/14 ✅ | Core auth + session management |
-| **Sign In With Apple** | 3 | 1/3 ✅ | 1/3 ⚠️ | 7.x with generateNonce(), device needed |
-| **Google Sign In** | 5 | 3/5 ✅ | 0/5 ⚠️ | 7.x singleton API, device needed |
+| **Supabase Auth** | 14 | 14/14 ✅ | 14/14 ✅ | Core auth + session management |
+| **Sign In With Apple** | 4 | 4/4 ✅ | 1/4 ⚠️ | 7.x with DI, device needed for native |
+| **Google Sign In** | 6 | 5/6 ✅ | 0/6 ⚠️ | 7.x singleton API, device needed |
 | **Magic Link** | 1 | 1/1 ✅ | 1/1 ✅ | Supabase OTP flow |
 | **RevenueCat** | 12 | 12/12 ✅ | 9/12 ✅ | |
 | **Firebase AI** | 3 | 3/3 ✅ | 0/3 ⚠️ | Requires Firebase setup |
 | **Biometrics** | 4 | 4/4 ✅ | 0/4 ⚠️ | Device only |
 | **Firebase** | 3 | 0/3 ⚠️ | 0/3 ⚠️ | Manual verification |
-| **TOTAL** | **45** | **37/45** | **24/45** | |
+| **TOTAL** | **47** | **43/47** | **25/47** | |
 
 ### Test Counts
 
 | Type | Count |
 |------|------:|
-| Unit tests (services) | 287 |
-| Integration tests (auth) | 20 |
+| Unit tests (total) | 782 |
+| Auth service tests | 53 |
+| Integration tests (auth) | 38 |
 | Integration tests (revenuecat) | 12 |
 | Integration tests (firebase) | 6 |
 
@@ -564,19 +565,21 @@ Custom `MockBiometricService` implementing `IBiometricService` interface.
 
 ## Gaps & Recommendations
 
-### High Priority
-1. **Firebase AI integration tests** - Add E2E generation flow test (requires Firebase Console setup)
-2. **Firebase unit tests** - Mock initialization for coverage
+### Completed ✅
+1. **Auth service dependency injection** - Full DI with interfaces for Apple, Google, Supabase providers
+2. **Auth service unit tests** - 53 tests covering all flows
+3. **Mock providers** - Comprehensive mocks with error simulation, call tracking
 
-### Medium Priority
-3. **Biometrics integration** - Device-only, accept ⚠️ status
-4. **Sign In With Apple** - Device-only, accept ⚠️ status
-5. **Google Sign In integration** - Requires device with Google Play Services
+### Remaining (Device-Only)
+4. **Sign In With Apple native** - Requires iOS device with Apple ID
+5. **Google Sign In native** - Requires device with Google Play Services
+6. **Biometrics** - Requires device with Face ID/Touch ID
+7. **Firebase AI E2E** - Requires Firebase Console setup
 
 ### Low Priority (UI-specific)
-6. `RevenueCatUI.presentPaywallIfNeeded()` - Requires specific entitlement state
-7. `RevenueCatUI.presentCustomerCenter()` - UI presentation test
-8. `Purchases.logOut()` - Requires logged-in RevenueCat user
+8. `RevenueCatUI.presentPaywallIfNeeded()` - Requires specific entitlement state
+9. `RevenueCatUI.presentCustomerCenter()` - UI presentation test
+10. `Purchases.logOut()` - Requires logged-in RevenueCat user
 
 ---
 

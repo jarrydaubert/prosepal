@@ -4,4 +4,4 @@
 // Google Sign In - Replace with your iOS client ID's reversed format
 // Format: com.googleusercontent.apps.{numbers}
 // Example: com.googleusercontent.apps.530026851718-xxxxxxxxxxxx
-GOOGLE_REVERSED_CLIENT_ID=com.googleusercontent.apps.YOUR_IOS_CLIENT_ID
+GOOGLE_REVERSED_CLIENT_ID=com.googleusercontent.apps.530026851718-616k0qdnqhs2ffiu4qmp9h332joq6nq8
