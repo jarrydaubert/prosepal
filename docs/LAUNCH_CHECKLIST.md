@@ -14,10 +14,13 @@
 # 1. Ensure .env.local exists with all keys
 cat .env.local  # Should have SUPABASE_URL, SUPABASE_ANON_KEY, REVENUECAT_IOS_KEY, etc.
 
-# 2. Run the build script (passes dart-defines)
+# 2. Validate release config preflight (fails on missing/placeholders)
+./scripts/release_preflight.sh ios
+
+# 3. Run the build script (passes dart-defines)
 ./scripts/build_ios.sh
 
-# 3. THEN open Xcode to archive
+# 4. THEN open Xcode to archive
 open ios/Runner.xcworkspace
 # Product → Archive → Distribute App
 ```

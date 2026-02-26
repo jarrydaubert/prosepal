@@ -1,28 +1,17 @@
 #!/bin/bash
-# Build Android release with RevenueCat key from .env.local
+# Build Android release with required dart-defines from .env.local
 
-set -e
+set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 ENV_FILE="$PROJECT_DIR/.env.local"
+PREFLIGHT_SCRIPT="$PROJECT_DIR/scripts/release_preflight.sh"
 
-if [ ! -f "$ENV_FILE" ]; then
-    echo "Error: .env.local not found. Copy .env.example to .env.local and add your keys."
-    exit 1
-fi
+"$PREFLIGHT_SCRIPT" android --env-file "$ENV_FILE"
 
+# shellcheck disable=SC1090
 source "$ENV_FILE"
-
-if [ -z "$REVENUECAT_ANDROID_KEY" ]; then
-    echo "Error: REVENUECAT_ANDROID_KEY not set in .env.local"
-    exit 1
-fi
-
-if [ -z "$GOOGLE_WEB_CLIENT_ID" ]; then
-    echo "Error: GOOGLE_WEB_CLIENT_ID not set in .env.local"
-    exit 1
-fi
 
 # Create debug symbols directory
 DEBUG_INFO_DIR="$PROJECT_DIR/build/debug-info/android"
