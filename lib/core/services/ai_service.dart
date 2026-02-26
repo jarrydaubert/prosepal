@@ -339,8 +339,16 @@ class AiService {
       personalDetails: personalDetails,
     );
 
-    // Log the prompt for debugging
-    Log.info('AI prompt', {'prompt': prompt});
+    // Log prompt metadata only (no PII - personalDetails excluded)
+    Log.info('AI prompt', {
+      'occasion': occasion.name,
+      'relationship': relationship.name,
+      'tone': tone.name,
+      'length': length.name,
+      'hasRecipientName': recipientName != null,
+      'hasPersonalDetails': personalDetails != null,
+      'promptLength': prompt.length,
+    });
 
     return _executeWithRetry(() async {
       Log.info('AI calling generateContent...');
@@ -385,8 +393,8 @@ class AiService {
       }
 
       final jsonText = response.text;
-      Log.info('AI raw response length: ${jsonText?.length ?? 0}');
-      Log.info('AI raw response: $jsonText');
+      // Log response metadata only (no user content - GDPR compliance)
+      Log.info('AI response received', {'length': jsonText?.length ?? 0});
       if (jsonText == null || jsonText.isEmpty) {
         throw const AiEmptyResponseException(
           'The AI model returned an empty response. Please try again.',
