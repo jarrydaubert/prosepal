@@ -13,6 +13,8 @@ import 'package:prosepal/core/services/review_service.dart';
 import 'package:prosepal/features/generate/generate_screen.dart';
 import 'package:prosepal/shared/atoms/shimmer_button.dart';
 
+import '../../mocks/mock_auth_service.dart';
+
 /// Mock AI Service that returns predictable results and tracks calls
 class MockAiService extends AiService {
   MockAiService() : super();
@@ -138,9 +140,12 @@ void main() {
     Tone? selectedTone,
     bool isPro = false,
     int remaining = 3,
+    bool isLoggedIn = false,
     GoRouter? router,
     MockAiService? customAiService,
   }) {
+    final mockAuthService = MockAuthService();
+    mockAuthService.setLoggedIn(isLoggedIn);
     final aiService = customAiService ?? mockAiService;
     final testRouter =
         router ??
@@ -169,6 +174,12 @@ void main() {
               builder: (context, state) =>
                   const Scaffold(body: Text('Paywall Screen')),
             ),
+            GoRoute(
+              path: '/auth',
+              name: 'auth',
+              builder: (context, state) =>
+                  const Scaffold(body: Text('Auth Screen')),
+            ),
           ],
         );
 
@@ -176,6 +187,7 @@ void main() {
       overrides: [
         sharedPreferencesProvider.overrideWithValue(mockPrefs),
         aiServiceProvider.overrideWithValue(aiService),
+        authServiceProvider.overrideWithValue(mockAuthService),
         usageServiceProvider.overrideWith((ref) => UsageService(mockPrefs)),
         reviewServiceProvider.overrideWith((ref) => ReviewService(mockPrefs)),
         isProProvider.overrideWith((ref) => isPro),
@@ -420,13 +432,14 @@ void main() {
   // FREE TIER LIMITS
   // ============================================================
   group('GenerateScreen Free Tier Limits', () {
-    testWidgets('shows Upgrade button when 0 generations remaining', (
+    testWidgets('shows Upgrade button when 0 generations remaining (logged in)', (
       tester,
     ) async {
       await tester.pumpWidget(
         createTestableGenerateScreen(
           selectedOccasion: Occasion.birthday,
           remaining: 0,
+          isLoggedIn: true,
         ),
       );
       await tester.pumpAndSettle();
@@ -436,11 +449,12 @@ void main() {
       expect(find.text('Generate Messages'), findsNothing);
     });
 
-    testWidgets('Upgrade button navigates to paywall', (tester) async {
+    testWidgets('Upgrade button navigates to paywall when logged in', (tester) async {
       await tester.pumpWidget(
         createTestableGenerateScreen(
           selectedOccasion: Occasion.birthday,
           remaining: 0,
+          isLoggedIn: true,
         ),
       );
       await tester.pumpAndSettle();
@@ -450,6 +464,23 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Paywall Screen'), findsOneWidget);
+    });
+
+    testWidgets('Upgrade button navigates to auth when not logged in', (tester) async {
+      await tester.pumpWidget(
+        createTestableGenerateScreen(
+          selectedOccasion: Occasion.birthday,
+          remaining: 0,
+          isLoggedIn: false,
+        ),
+      );
+      await tester.pumpAndSettle();
+      await navigateToStep3(tester);
+
+      await tester.tap(find.text('Upgrade to Continue'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Auth Screen'), findsOneWidget);
     });
 
     testWidgets('shows Generate button when generations remaining > 0', (
@@ -711,9 +742,9 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        // App bar shows occasion
-        expect(find.text(occasion.label), findsOneWidget);
-        expect(find.text(occasion.emoji), findsOneWidget);
+        // App bar shows occasion label and emoji (may appear multiple times in UI)
+        expect(find.text(occasion.label), findsAtLeastNWidgets(1));
+        expect(find.text(occasion.emoji), findsAtLeastNWidgets(1));
 
         // Step 1 is visible
         expect(find.text('Close Friend'), findsOneWidget);

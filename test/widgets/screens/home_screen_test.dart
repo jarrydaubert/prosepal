@@ -86,14 +86,22 @@ void main() {
       expect(find.text("What's the occasion?"), findsOneWidget);
     });
 
-    testWidgets('should display all 10 occasions', (tester) async {
+    testWidgets('should display all occasions', (tester) async {
       await tester.pumpWidget(createTestableHomeScreen());
       await tester.pumpAndSettle();
 
-      // Check each occasion is displayed
+      // Check each occasion is displayed (13 total: 10 original + 3 new)
+      // Need to scroll to find items that may be off-screen
       for (final occasion in Occasion.values) {
+        final finder = find.text(occasion.label);
+        await tester.scrollUntilVisible(
+          finder,
+          100,
+          scrollable: find.byType(Scrollable).first,
+        );
+        await tester.pumpAndSettle();
         expect(
-          find.text(occasion.label),
+          finder,
           findsOneWidget,
           reason: 'Should find ${occasion.label} occasion',
         );
@@ -192,10 +200,13 @@ void main() {
 
         // Find and tap the occasion (scroll if needed)
         final occasionFinder = find.text(occasion.label);
-        expect(occasionFinder, findsOneWidget);
 
         // Scroll to make sure the occasion is visible
-        await tester.ensureVisible(occasionFinder);
+        await tester.scrollUntilVisible(
+          occasionFinder,
+          100,
+          scrollable: find.byType(Scrollable).first,
+        );
         await tester.pumpAndSettle();
 
         await tester.tap(occasionFinder);

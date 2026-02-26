@@ -317,8 +317,9 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
     } on AiServiceException catch (e) {
       ref.read(isGeneratingProvider.notifier).state = false;
       ref.read(generationErrorProvider.notifier).state = e.message;
-    } catch (e) {
+    } catch (e, stackTrace) {
       debugPrint('Unexpected generation error: $e');
+      debugPrint('Stack trace: $stackTrace');
       ref.read(isGeneratingProvider.notifier).state = false;
       ref.read(generationErrorProvider.notifier).state =
           'An unexpected error occurred. Please try again.';

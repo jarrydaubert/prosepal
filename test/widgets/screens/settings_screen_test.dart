@@ -332,8 +332,9 @@ void main() {
     });
 
     group('Account Actions', () {
-      testWidgets('shows account action options', (tester) async {
-        await tester.pumpWidget(buildTestWidget());
+      testWidgets('shows account action options for signed-in user', (tester) async {
+        // Account actions only show for signed-in users
+        await tester.pumpWidget(buildTestWidget(email: 'test@example.com'));
         await tester.pumpAndSettle();
 
         await tester.scrollUntilVisible(
@@ -346,6 +347,16 @@ void main() {
         expect(find.text('ACCOUNT ACTIONS'), findsOneWidget);
         expect(find.text('Sign Out'), findsOneWidget);
         expect(find.text('Delete Account'), findsOneWidget);
+      });
+
+      testWidgets('hides account actions for anonymous user', (tester) async {
+        await tester.pumpWidget(buildTestWidget());
+        await tester.pumpAndSettle();
+
+        // Account actions should NOT show for anonymous users
+        expect(find.text('ACCOUNT ACTIONS'), findsNothing);
+        expect(find.text('Sign Out'), findsNothing);
+        expect(find.text('Delete Account'), findsNothing);
       });
 
       testWidgets('Sign Out shows confirmation dialog', (tester) async {
