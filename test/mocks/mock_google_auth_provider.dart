@@ -122,6 +122,26 @@ class MockGoogleAuthProvider implements IGoogleAuthProvider {
     disconnectCalls++;
   }
 
+  /// Result to return from requestAdditionalScopes()
+  GoogleAuthResult? additionalScopesResult;
+
+  /// Track requestAdditionalScopes calls
+  int requestAdditionalScopesCalls = 0;
+  List<String>? lastAdditionalScopes;
+
+  @override
+  Future<GoogleAuthResult?> requestAdditionalScopes(List<String> scopes) async {
+    requestAdditionalScopesCalls++;
+    lastAdditionalScopes = scopes;
+
+    if (errorToThrow != null) {
+      throw errorToThrow!;
+    }
+
+    // If no specific result set, return the authenticate result with updated scopes
+    return additionalScopesResult ?? authenticateResult;
+  }
+
   /// Simulate a GoogleSignInException with specific error code
   ///
   /// Available codes (google_sign_in_platform_interface 3.x):
@@ -153,6 +173,7 @@ class MockGoogleAuthProvider implements IGoogleAuthProvider {
   void reset() {
     lightweightResult = null;
     authenticateResult = null;
+    additionalScopesResult = null;
     simulateCancellation = false;
     isAvailableResult = true;
     errorToThrow = null;
@@ -163,9 +184,11 @@ class MockGoogleAuthProvider implements IGoogleAuthProvider {
     authenticateCalls = 0;
     signOutCalls = 0;
     disconnectCalls = 0;
+    requestAdditionalScopesCalls = 0;
     lastServerClientId = null;
     lastClientId = null;
     lastScopes = null;
+    lastAdditionalScopes = null;
   }
 }
 

@@ -112,6 +112,35 @@ class GoogleAuthProvider implements IGoogleAuthProvider {
     }
   }
 
+  /// Request additional OAuth scopes for incremental authorization.
+  ///
+  /// Use for "just-in-time" authorization when user needs new API access.
+  /// Returns null if user declines. Throws if not signed in.
+  @override
+  Future<GoogleAuthResult?> requestAdditionalScopes(List<String> scopes) async {
+    final user = await _googleSignIn.attemptLightweightAuthentication();
+    if (user == null) {
+      throw GoogleSignInException(
+        code: GoogleSignInExceptionCode.unknownError,
+        description: 'User not signed in',
+      );
+    }
+
+    // Request incremental authorization
+    final authorization =
+        await user.authorizationClient.authorizeScopes(scopes);
+
+    // Combine with existing scopes
+    _scopes = {..._scopes, ...scopes}.toList();
+
+    return GoogleAuthResult(
+      idToken: user.authentication.idToken,
+      accessToken: authorization.accessToken,
+      email: user.email,
+      displayName: user.displayName,
+    );
+  }
+
   /// Sign out from Google (clears cached credentials)
   ///
   /// After sign out, [attemptLightweightAuthentication] will return null.

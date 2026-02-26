@@ -78,6 +78,7 @@
 | User metadata methods | `IAuthService` | Add updateMetadata/getMetadata for custom user claims |
 | MFA/2FA support | `IAuthService` | Add enableMFA/verifyMFA when Supabase supports it |
 | Biometric reason localization | `IBiometricService` | Integrate with intl for localized reason messages |
+| Google auth state stream | `IGoogleAuthProvider` | Add Stream<GoogleAuthState> for reactive UI updates |
 | No performance tests | Testing | Add load/stress tests |
 | No history pagination | `history_service.dart` | 200-item cap fine, add lazy loading v1.1 |
 | No accessibility test suite | Testing | Add a11y automation |
