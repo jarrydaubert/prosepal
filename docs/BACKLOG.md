@@ -20,6 +20,7 @@
 | Session refresh silently fails | `supabase_auth_provider.dart:297-301` | Add retry with backoff, fail operation if 3x fails |
 | Edge function not verified | `supabase_auth_provider.dart:375` | Add health check for delete-user/exchange-apple-token on init |
 | Account deletion orphan data | Edge function | Verify cleanup of usage, fingerprints, history tables |
+| Supabase singleton direct access | `usage_service.dart:60-66` | Inject via interface for testability |
 | No data export | Settings | GDPR/CCPA right to portability - add export button |
 | No analytics consent toggle | Settings | Privacy policy mentions opt-out but no toggle exists |
 | No force update mechanism | App startup | Can't force users off broken versions - add Remote Config |
@@ -36,6 +37,8 @@
 | Fire-and-forget sync loses data | `usage_service.dart:309-310` | Add retry queue, persist pending syncs |
 | Rate limit state lost on restart | `rate_limit_service.dart` | Persist timestamps to SharedPreferences |
 | OAuth re-auth weak | `reauth_service.dart:133-140` | Require password/re-OAuth for sensitive ops |
+| AI system instruction hardcoded | `ai_service.dart:22-52` | Extract to config for cloning portability |
+| Domain models hidden coupling | `core/models/*.dart` | Changes cascade to 15+ files - document in CLONING_PLAYBOOK |
 | No root/jailbreak detection | App startup | Add SafetyNet/freeRASP for fraud prevention |
 | No E2E tests in CI | `.github/workflows/` | Tests exist in `integration_test/` but not in CI |
 | No app state restoration | Forms | Add RestorationMixin - form data lost on process death |
@@ -61,6 +64,7 @@
 | Magic link custom scheme fallback | `supabase_auth_provider.dart:332` | Deprecate, use HTTPS universal links only |
 | RevenueCat in dart-define | Build system | Visible in logs - use --dart-define-from-file |
 | Device fingerprint spoofable | `device_fingerprint_service.dart` | Document as deterrent, jailbreak detection is real fix |
+| App-specific code undocumented | `features/`, `core/models/` | ~60% needs rewrite for cloning - document in CLONING_PLAYBOOK |
 
 ---
 
