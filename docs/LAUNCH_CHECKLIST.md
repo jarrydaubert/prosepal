@@ -165,6 +165,19 @@
 | Financial features | ✅ |
 | Health | ✅ |
 
+**Data Safety Details (verified matches app):**
+
+| Category | Declared | Source |
+|----------|----------|--------|
+| Name, Email, User IDs | ✅ | Supabase auth |
+| Purchase history | ✅ | RevenueCat |
+| App interactions | ✅ | Firebase Analytics |
+| Crash logs, Diagnostics | ✅ | Firebase Crashlytics |
+| Device IDs | ✅ | Fingerprinting (fraud prevention) |
+| Location | ❌ None | Correct - not collected |
+| Data encrypted in transit | ✅ | HTTPS everywhere |
+| Delete account URL | ✅ | `https://www.prosepal.app/support.html` |
+
 **Testing & Release:**
 
 | Item | Status | Details |
