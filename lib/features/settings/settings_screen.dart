@@ -311,7 +311,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final isPro = ref.watch(isProProvider);
     final usageService = ref.watch(usageServiceProvider);
     final totalGenerated = usageService.getTotalCount();
+
+    // Watch auth state to rebuild when sign in/out occurs
+    ref.watch(authStateProvider);
     final authService = ref.watch(authServiceProvider);
+    final isLoggedIn = authService.isLoggedIn;
     final userEmail = authService.email;
     final userName = authService.displayName;
 
@@ -337,7 +341,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
           // Account section
           const SectionHeader('Account'),
-          if (userEmail != null)
+          if (isLoggedIn)
             _AccountCard(userName: userName, userEmail: userEmail, isPro: isPro)
           else
             SettingsTile(
@@ -413,7 +417,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
 
           // Security section (only for signed-in users to prevent lockout)
-          if (_biometricsSupported && userEmail != null) ...[
+          if (_biometricsSupported && isLoggedIn) ...[
             const SectionHeader('Security'),
             SettingsTile(
               leading: Icon(
@@ -500,7 +504,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
 
           // Account actions (only show if signed in)
-          if (userEmail != null) ...[
+          if (isLoggedIn) ...[
             const SectionHeader('Account Actions'),
             SettingsTile(
               leading: const Icon(Icons.logout_rounded, color: AppColors.error),
