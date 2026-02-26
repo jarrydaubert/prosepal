@@ -513,6 +513,33 @@ class AiService {
     }
   }
 
+  /// Sanitize user input to prevent prompt injection
+  /// Removes patterns that could manipulate AI behavior
+  @visibleForTesting
+  String sanitizeInput(String input) {
+    // Patterns that could be used for prompt injection
+    final injectionPatterns = RegExp(
+      r'(ignore\s+(previous|above|all)\s+instructions?|'
+      r'system\s*:|'
+      r'assistant\s*:|'
+      r'user\s*:|'
+      r'\[INST\]|'
+      r'\[/INST\]|'
+      r'<\|im_start\|>|'
+      r'<\|im_end\|>|'
+      r'<<SYS>>|'
+      r'<</SYS>>|'
+      r'###\s*(instruction|system|human|assistant)|'
+      r'you\s+are\s+now\s+|'
+      r'pretend\s+to\s+be\s+|'
+      r'act\s+as\s+if\s+|'
+      r'disregard\s+|'
+      r'forget\s+(everything|all|previous))',
+      caseSensitive: false,
+    );
+    return input.replaceAll(injectionPatterns, '[filtered]');
+  }
+
   /// Build prompt for structured JSON output
   @visibleForTesting
   String buildPrompt({
@@ -530,10 +557,10 @@ class AiService {
       ..writeln('Length: ${length.prompt}');
 
     if (recipientName case final name? when name.isNotEmpty) {
-      context.writeln("Recipient's name: $name");
+      context.writeln("Recipient's name: ${sanitizeInput(name)}");
     }
     if (personalDetails case final details? when details.isNotEmpty) {
-      context.writeln('Personal context: $details');
+      context.writeln('Personal context: ${sanitizeInput(details)}');
     }
 
     // System instruction contains static guidelines
