@@ -805,3 +805,34 @@ If you need more context:
 - **launch-strategy**: For coordinating social with launches
 - **email-sequence**: For nurturing social audience via email
 - **marketing-psychology**: For understanding what drives engagement
+
+## Prosepal Context
+
+### Primary Social Channels
+1. **TikTok** — Short-form video, highest organic reach, "The Struggle" and "Speed Run" pillars work best
+2. **Pinterest** — Visual discovery, high intent for "card message ideas," evergreen content
+3. **Instagram** — Reels + Stories, beautiful card imagery, behind-the-scenes
+4. **X (Twitter)** — Launch announcements, tech/indie community engagement
+
+### Content Pillars (from docs/MARKETING.md)
+1. **The Struggle** — Relatable "staring at a blank card" content
+2. **The Speed Run** — "Watch me write the perfect message in 30 seconds"
+3. **The Transformation** — Before (generic) vs. after (personalized) messages
+4. **The Niche** — Deep-dive into specific occasions (sympathy, congratulations)
+5. **The Reaction** — Emotional moments when recipients read the message
+
+### Visual Content Style
+- Warm, cozy aesthetic (not clinical or tech-forward)
+- Card imagery: real greeting cards, handwritten-feel fonts
+- Lifestyle context: giving cards in real moments
+- App screenshots: clean, showing the magic moment of message generation
+
+### Brand Voice on Social
+- Casual, warm, relatable
+- Self-aware humor about the card struggle
+- NOT influencer-speak, NOT corporate
+
+### Reference
+- `/marketing tiktok` — Generate TikTok scripts
+- `/marketing pinterest` — Generate Pinterest pins
+- `docs/MARKETING.md` Section 13 — AI execution playbook

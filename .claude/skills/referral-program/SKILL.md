@@ -600,3 +600,29 @@ If you need more context:
 - **marketing-psychology**: For understanding referral motivation
 - **analytics-tracking**: For tracking referral attribution
 - **pricing-strategy**: For structuring rewards relative to LTV
+
+## Prosepal Context
+
+### Natural Viral Loop: Share-a-Card
+Prosepal has a built-in viral mechanic: when users copy a message and write it in a card, the recipient may ask "Where did you find that?" This word-of-mouth is the primary referral channel.
+
+### Potential Referral Mechanics
+1. **Shareable message cards** — "Share this message" with subtle Prosepal branding/attribution
+2. **"Powered by Prosepal"** — Optional watermark on shared/exported messages
+3. **Gift a subscription** — "Send a friend a free month" (via App Store gifting or promo codes)
+4. **In-app referral code** — Give X, get X (e.g., refer a friend, both get bonus messages)
+
+### Attribution Challenges
+- Mobile deep linking is fragile across iOS/Android
+- App Store doesn't pass referral params easily
+- Attribution best handled by deferred deep links (Branch, Firebase Dynamic Links)
+- For now, focus on organic word-of-mouth over tracked referrals
+
+### What NOT to Do
+- Don't make sharing feel spammy or forced
+- Don't add referral prompts before the user has experienced value
+- Don't over-invest in referral infrastructure before product-market fit
+
+### Reference
+- `docs/MARKETING.md` — Viral and growth strategy
+- `social-content` skill — Social sharing content

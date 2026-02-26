@@ -563,3 +563,29 @@ When recommending ideas:
 - **free-tool-strategy**: For engineering as marketing (#30)
 - **page-cro**: For landing page optimization
 - **ab-test-setup**: For testing marketing experiments
+
+## Prosepal Context
+
+### Filter for Mobile B2C
+Many marketing ideas in this skill are designed for web SaaS. When applying to Prosepal, filter through these lenses:
+- **Distribution = app stores + social**, not SEO + content marketing alone
+- **Conversion = app install**, not signup or trial start
+- **Engagement = seasonal/occasion-driven**, not daily habit
+- **Virality = shared messages**, not referral links
+
+### High-Impact Ideas for Prosepal
+- **Seasonal marketing campaigns** — Align with greeting card holidays (Valentine's, Mother's Day, Christmas)
+- **User-generated content** — "Share your card moment" on TikTok/Instagram
+- **Occasion-specific landing pages** — SEO pages for "birthday message ideas," "sympathy card wording"
+- **App Store review campaigns** — Prompt happy users after successful message generation
+- **Share-a-card viral loop** — Include subtle Prosepal branding in shared/copied messages
+
+### Ideas to Skip (Not Applicable)
+- B2B outbound (cold email, LinkedIn outreach)
+- Webinars, whitepapers, lead magnets
+- Freemium feature-gating (already handled by paywall-upgrade-cro)
+- Enterprise sales motions
+
+### Reference
+- `docs/MARKETING.md` — Full strategy with 13 sections
+- `/marketing` command — Generate specific marketing content

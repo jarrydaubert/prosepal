@@ -36,7 +36,6 @@ import 'package:prosepal/main.dart' as app;
 late IntegrationTestWidgetsFlutterBinding binding;
 const captureIntegrationScreenshots = bool.fromEnvironment(
   'INTEGRATION_CAPTURE_SCREENSHOTS',
-  defaultValue: false,
 );
 
 void main() {

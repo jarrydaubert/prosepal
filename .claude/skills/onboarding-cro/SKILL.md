@@ -431,3 +431,33 @@ If you need more context:
 - **email-sequence**: For onboarding email series
 - **paywall-upgrade-cro**: For converting to paid during/after onboarding
 - **ab-test-setup**: For testing onboarding changes
+
+## Prosepal Context
+
+### Onboarding Philosophy
+- **Deferred auth:** No login/signup required before first use — user can generate their first message immediately
+- **First message = aha moment:** The fastest path to value is generating a message, not touring features
+- **Progressive disclosure:** Show only what's needed at each step
+
+### Onboarding Flow
+1. App opens → minimal welcome (1-2 screens max)
+2. User selects occasion → relationship → tone
+3. AI generates message → user sees the value
+4. After free message used → paywall (conversion point)
+5. Auth prompted only when needed (save messages, sync across devices)
+
+### Key Metrics
+- Time to first message generation
+- Onboarding completion rate
+- Drop-off at each step
+- Free-to-paid conversion rate
+
+### Key Files
+- `lib/features/` — Onboarding and message generation screens
+- `lib/app/router.dart` — Navigation flow
+- `docs/NEXT_RELEASE_BRIEF.md` — Current user flows documented
+
+### What NOT to Do
+- Don't require account creation before value delivery
+- Don't add unnecessary onboarding steps (feature tours, permission requests)
+- Don't block the first experience with loading or setup

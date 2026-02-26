@@ -342,3 +342,34 @@ If you need more context:
 - **page-cro**: For optimizing launch landing pages
 - **marketing-psychology**: For psychology behind waitlists and exclusivity
 - **programmatic-seo**: For comparison pages mentioned in post-launch
+
+## Prosepal Context
+
+### Launch Type: App Store Launch
+Prosepal is a native mobile app — launch strategy centers on App Store and Play Store, not a typical web/SaaS launch.
+
+### Launch Channels (Prioritized)
+1. **App Store Optimization (ASO)** — Keywords, screenshots, description, ratings
+2. **Product Hunt** — One-day launch event for visibility and backlinks
+3. **Social media** — TikTok (organic reach), Pinterest (discovery), Instagram (visual)
+4. **Apple Search Ads** — Paid installs from high-intent searchers
+5. **Press/bloggers** — Greeting card, productivity, and AI tool blogs
+6. **Reddit/forums** — r/greetingcards, r/sideproject, card-making communities
+
+### Phased Approach
+- **Phase 1: Soft launch** — Limited market (e.g., UK only), fix issues, collect reviews
+- **Phase 2: Full launch** — All markets, Product Hunt, PR push
+- **Phase 3: Seasonal push** — Ramp up before Valentine's Day / Mother's Day / Christmas
+
+### Pre-Launch Checklist
+- See `/pre-launch` command for full store readiness checklist
+- See `docs/LAUNCH_CHECKLIST.md` for detailed launch steps
+
+### Key Dates for Launch Timing
+- Best launch window: 4-6 weeks before a major greeting card holiday
+- Worst: mid-summer (low card-sending activity, except weddings)
+
+### Reference
+- `docs/MARKETING.md` — Full marketing and launch strategy
+- `docs/LAUNCH_CHECKLIST.md` — Pre-launch checklist
+- `/marketing launch` — Generate Product Hunt and launch assets

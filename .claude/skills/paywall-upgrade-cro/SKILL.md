@@ -568,3 +568,34 @@ If you need more context:
 - **onboarding-cro**: For driving to aha moment before upgrade
 - **ab-test-setup**: For testing paywall variations
 - **analytics-tracking**: For measuring upgrade funnel
+
+## Prosepal Context
+
+### Paywall Model
+- **Free tier:** 1 message lifetime (no account needed)
+- **Trigger:** After the free message is used, any subsequent generation shows the paywall
+- **Plans:** Weekly, monthly, yearly — managed by RevenueCat
+- **Apple/Google take:** 15-30% commission on all subscriptions
+
+### Paywall Implementation
+- **Location:** `lib/features/paywall/` — paywall screen and logic
+- **Entitlements:** `lib/core/services/subscription_service.dart` — source of truth
+- **State:** RevenueCat SDK handles purchase flow, restore, and entitlement checks
+
+### CRO Principles for Prosepal Paywall
+1. **Show value first** — User has already seen their free message, so they know the quality
+2. **Anchor on yearly** — Best value for user, best LTV for business
+3. **Social proof on paywall** — "Join X card writers" or star ratings
+4. **Easy dismiss** — Apple/Google reject apps that make dismissing the paywall hard
+5. **Restore purchases prominent** — Required by App Store guidelines
+
+### What NOT to Do
+- Don't use dark patterns (hard-to-find close button, confusing pricing)
+- Don't auto-start trials without clear disclosure
+- Don't show paywall before the user has experienced value
+- Don't A/B test pricing without RevenueCat Offerings (store compliance)
+
+### Key Files
+- `lib/features/paywall/` — Paywall UI
+- `lib/core/services/subscription_service.dart` — Purchase logic
+- `docs/NEXT_RELEASE_BRIEF.md` — Entitlement model details

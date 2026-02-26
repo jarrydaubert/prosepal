@@ -332,3 +332,35 @@ If you need more context, ask:
 - **popup-cro**: If considering popups as part of the conversion strategy
 - **copywriting**: If the page needs a complete copy rewrite rather than CRO tweaks
 - **ab-test-setup**: To properly test recommended changes
+
+## Prosepal Context
+
+### Scope: prosepal-web Landing Page Only
+Page CRO for Prosepal applies to the **prosepal-web** Vercel landing page, not the Flutter app itself. The in-app experience is handled by `onboarding-cro` and `paywall-upgrade-cro`.
+
+### Primary Conversion Goal
+**Click "Download on App Store" / "Get it on Google Play"** — the landing page exists to drive app installs, not signups or purchases.
+
+### Secondary Goals
+- Email capture for pre-launch / waitlist
+- Social proof collection (testimonials)
+- SEO traffic for greeting-card-related queries
+
+### Landing Page Structure
+- Hero with value prop and store badges
+- Problem statement (blank card moment)
+- How it works (3 steps)
+- Social proof / testimonials
+- Pricing transparency
+- FAQ
+- Final CTA with store badges
+
+### Key Metrics
+- Store badge click-through rate
+- Time on page / scroll depth
+- Bounce rate by traffic source
+
+### Reference
+- prosepal-web repo (separate from this Flutter repo)
+- `docs/MARKETING.md` — Marketing strategy
+- `/web` command — For implementing landing page changes

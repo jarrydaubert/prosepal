@@ -382,3 +382,34 @@ If you need more context:
 - **schema-markup**: For implementing structured data
 - **page-cro**: For optimizing pages for conversion (not just ranking)
 - **analytics-tracking**: For measuring SEO performance
+
+## Prosepal Context
+
+### Scope: prosepal-web + App Store Listings
+SEO auditing for Prosepal covers two surfaces:
+1. **prosepal-web** (Vercel landing page) — Traditional web SEO
+2. **App Store / Play Store listings** — App Store Optimization (ASO)
+
+### prosepal-web SEO Priorities
+- Target keywords: "greeting card message generator," "AI card message," "what to write in a card"
+- SoftwareApplication schema markup (see `schema-markup` skill)
+- Fast Core Web Vitals (Vercel hosting helps)
+- Mobile-first design (most traffic will be mobile)
+
+### ASO Priorities (Not Traditional SEO)
+- App Store title and subtitle keyword optimization
+- Screenshot and preview video optimization
+- Review count and rating management
+- Keyword field optimization (Apple) / description keywords (Google)
+
+### Common SEO Issues for Prosepal
+- Thin content on landing page (need substantive, helpful content)
+- Missing structured data
+- No blog/content hub yet (future opportunity)
+- Competing with high-authority sites for greeting card keywords
+
+### Reference
+- `ai-seo` skill — AI search optimization
+- `schema-markup` skill — Structured data for prosepal-web
+- `programmatic-seo` skill — Scalable SEO pages
+- `/web` command — For implementing web changes

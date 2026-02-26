@@ -549,3 +549,39 @@ If you need more context:
 - **analytics-tracking**: For proper conversion tracking setup
 - **ab-test-setup**: For landing page testing to improve ROAS
 - **page-cro**: For optimizing post-click conversion rates
+
+## Prosepal Context
+
+### Primary Channel: Apple Search Ads
+- Users searching in App Store have highest install intent
+- Target keywords: "greeting card app," "card message writer," "birthday message help"
+- Start with Search Results campaigns, expand to Today Tab
+- Custom Product Pages for different keyword themes
+
+### Secondary: Meta App Install Campaigns
+- Facebook + Instagram app install objective
+- Target: Gift buyers, greeting card enthusiasts, holiday shoppers
+- Video creative showing the generation flow works best
+- Seasonal campaigns 2-3 weeks before major holidays
+
+### Tertiary: TikTok Ads (Future)
+- Spark Ads (boost organic content that performs well)
+- Native-looking creative, not polished ads
+
+### NOT Recommended (Yet)
+- Google App Campaigns (broad targeting, hard to optimize for quality)
+- LinkedIn (B2B platform, Prosepal is B2C)
+- Programmatic display (low intent, low quality)
+
+### Budget Guidance
+- Start small: $10-20/day on Apple Search Ads
+- Scale what works; pause what doesn't within 7 days
+- Seasonal spikes: 2-3x budget before Valentine's Day, Mother's Day, Christmas
+
+### Ad Tone
+- Warm and empathetic, not salesy
+- See `ad-creative` skill for specific copy guidelines
+
+### Reference
+- `ad-creative` skill — Ad copy and creative concepts
+- `docs/MARKETING.md` — Marketing budget and strategy

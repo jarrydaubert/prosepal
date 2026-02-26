@@ -16,6 +16,7 @@
 | `/new-app [name]` | Project Scaffolder | Create app from blueprint | **Yes - scaffolds** |
 | `/marketing [task]` | Growth Marketer | Content generation, ASO, analytics | No - generates content |
 | `/web [task]` | Web Developer | Landing pages, SEO, performance | **Yes - writes HTML/CSS** |
+| `/cleanup` | Code Janitor | Dead code, unused imports, stale deps | No - reports findings |
 
 **Analysis roles** (`/plan`, `/audit`, `/security`) advise only. Take their recommendations to a **builder session** for implementation.
 
@@ -153,6 +154,30 @@ Use `/rename` to label sessions:
 - Use `/continue` to resume named sessions later
 - All sessions share the same CLAUDE.md context
 - Each session maintains its own conversation history
+
+## Skills Reference
+
+30 specialized skills live in `.claude/skills/{name}/SKILL.md`. They provide deep domain expertise that Claude draws on automatically based on context. See `.claude/skills/VERSIONS.md` for origin tracking.
+
+### By Category
+
+**CRO & Conversion (7):** page-cro, paywall-upgrade-cro, onboarding-cro, signup-flow-cro, popup-cro, form-cro, churn-prevention
+
+**Content & Copy (4):** copywriting, copy-editing, social-content, ad-creative
+
+**SEO & Discovery (4):** seo-audit, schema-markup, programmatic-seo, ai-seo
+
+**Marketing Strategy (5):** marketing-ideas, marketing-psychology, launch-strategy, email-sequence, product-marketing-context
+
+**Growth & Analytics (4):** referral-program, ab-test-setup, analytics-tracking, paid-ads
+
+**Pricing & Monetization (2):** pricing-strategy, competitor-alternatives
+
+**Engineering (2):** tdd, prd-to-issues
+
+**Content Strategy (1):** content-strategy
+
+**Accessibility (1):** accessibility
 
 ## Command Ideas (Not Yet Created)
 

@@ -32,6 +32,7 @@
 ///     j8_paywall_test.dart       - Paywall display
 ///     j9_wizard_details_test.dart - Name/details customization
 ///     j10_results_actions_test.dart - Copy/share/regenerate
+///     j11_auth_entitlement_edges_test.dart - Auth race + stale entitlement
 ///   coverage/
 ///     occasions_test.dart        - All 40 occasions load
 ///     relationships_test.dart    - All 14 relationships work
@@ -43,6 +44,7 @@ import 'coverage/occasions_test.dart' as occasions;
 import 'coverage/relationships_test.dart' as relationships;
 import 'coverage/tones_test.dart' as tones;
 import 'journeys/j10_results_actions_test.dart' as j10;
+import 'journeys/j11_auth_entitlement_edges_test.dart' as j11;
 // User journey tests (critical paths)
 import 'journeys/j1_fresh_install_test.dart' as j1;
 import 'journeys/j2_upgrade_flow_test.dart' as j2;
@@ -104,6 +106,10 @@ void main() {
   // J10: Results actions (copy, share, regenerate)
   // Bug: Users can't use generated messages
   j10.main();
+
+  // J11: Auth race + stale entitlement edges
+  // Bug: duplicate auth calls or stale Pro state grants incorrect access
+  j11.main();
 
   // === COVERAGE TESTS ===
   // Bug: Specific option causes crash (edge cases)

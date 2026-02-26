@@ -353,3 +353,32 @@ If you need more context:
 - **form-cro**: For non-signup forms (lead capture, contact)
 - **page-cro**: For the landing page leading to signup
 - **ab-test-setup**: For testing signup flow changes
+
+## Prosepal Context
+
+### Auth Architecture
+- **Provider:** Supabase Auth
+- **Methods:** Apple Sign-In, Google Sign-In, Email/Password
+- **Deferred auth pattern:** Users do NOT need to sign up before using the app. Auth is prompted only when needed (save messages, sync, account features).
+
+### Signup Flow
+1. User triggers auth-required action
+2. Bottom sheet or screen with Apple/Google/Email options
+3. Apple and Google are one-tap (minimal friction)
+4. Email requires verification step
+
+### CRO Principles for Prosepal Signup
+- **Delay auth as long as possible** — Value first, account second
+- **Apple/Google prominent** — One-tap options above email
+- **Explain why** — "Sign in to save your messages" (clear value for auth)
+- **No mandatory fields** beyond what the auth provider gives
+
+### What NOT to Do
+- Don't require signup before first message generation
+- Don't add profile completion steps after signup
+- Don't ask for information you don't need (name, phone, etc.)
+- Don't block app usage if auth fails — graceful degradation
+
+### Key Files
+- `lib/core/services/supabase_auth_provider.dart` — Auth implementation
+- `docs/NEXT_RELEASE_BRIEF.md` — Auth integration details

@@ -748,3 +748,27 @@ If you need more context:
 - **copywriting**: For writing compelling comparison copy
 - **seo-audit**: For optimizing competitor pages
 - **schema-markup**: For FAQ and comparison schema
+
+## Prosepal Context
+
+### Competitive Landscape
+| Competitor | Category | Prosepal's Advantage |
+|-----------|----------|---------------------|
+| ChatGPT / generic AI | General AI | Purpose-built for cards; no prompt engineering needed |
+| Google search "birthday messages" | Template sites | Personalized, not copy-paste-same-as-everyone |
+| Hallmark (pre-printed cards) | Physical retail | Cheaper, more personal, fits any card |
+| Writing it yourself | DIY | Faster, reduces anxiety, better quality for non-writers |
+
+### "Alternatives to" Content Opportunities
+- "Best greeting card message apps" (category page)
+- "Prosepal vs ChatGPT for card messages" (comparison)
+- "AI greeting card tools compared" (roundup)
+
+### Positioning Against AI Competitors
+- Don't position against "AI" — position against "the blank card"
+- Users don't compare Prosepal to ChatGPT; they compare it to staring at the card
+- The real competitor is inaction (leaving the card blank or writing something generic)
+
+### Reference
+- `product-marketing-context` skill — Full positioning framework
+- `docs/MARKETING.md` — Competitive analysis section

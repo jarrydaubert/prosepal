@@ -594,3 +594,34 @@ If you need more context:
 - **seo-audit**: For overall SEO including schema review
 - **programmatic-seo**: For templated schema at scale
 - **analytics-tracking**: For measuring rich result impact
+
+## Prosepal Context
+
+### Scope: prosepal-web Only
+Schema markup applies to the **prosepal-web** Vercel landing page. The Flutter app has no web markup.
+
+### Priority Schema Types
+1. **SoftwareApplication** — App listing with name, operating system, price, rating, download URL
+2. **FAQPage** — FAQ section on landing page (common greeting card questions)
+3. **Organization** — Prosepal brand entity
+4. **BreadcrumbList** — If/when blog or sub-pages are added
+
+### SoftwareApplication Example
+```json
+{
+  "@type": "SoftwareApplication",
+  "name": "Prosepal",
+  "operatingSystem": "iOS, Android",
+  "applicationCategory": "UtilitiesApplication",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD"
+  }
+}
+```
+
+### Reference
+- prosepal-web repo (separate from this Flutter repo)
+- `seo-audit` skill — Overall SEO for prosepal-web
+- `/web` command — For implementing web changes

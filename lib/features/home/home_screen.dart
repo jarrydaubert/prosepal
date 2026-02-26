@@ -47,59 +47,67 @@ class HomeScreen extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      const Text(
-                                        'Prosepal',
-                                        style: TextStyle(
-                                          fontSize: 32,
-                                          fontWeight: FontWeight.bold,
-                                          color: AppColors.primary,
-                                        ),
-                                      ),
-                                      if (isPro) ...[
-                                        const SizedBox(width: 10),
-                                        _ProPill(
-                                          onTap: () async {
-                                            final isLoggedIn = ref
-                                                .read(authServiceProvider)
-                                                .isLoggedIn;
-                                            if (!isLoggedIn) {
-                                              Log.info(
-                                                'Pro badge tapped (anonymous)',
-                                                {'source': 'home'},
-                                              );
-                                              context.push(
-                                                '/auth?restore=true',
-                                              );
-                                            } else {
-                                              final subscriptionService = ref
-                                                  .read(
-                                                    subscriptionServiceProvider,
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    FittedBox(
+                                      fit: BoxFit.scaleDown,
+                                      alignment: Alignment.centerLeft,
+                                      child: Row(
+                                        children: [
+                                          const Text(
+                                            'Prosepal',
+                                            style: TextStyle(
+                                              fontSize: 32,
+                                              fontWeight: FontWeight.bold,
+                                              color: AppColors.primary,
+                                            ),
+                                          ),
+                                          if (isPro) ...[
+                                            const SizedBox(width: 10),
+                                            _ProPill(
+                                              onTap: () async {
+                                                final isLoggedIn = ref
+                                                    .read(authServiceProvider)
+                                                    .isLoggedIn;
+                                                if (!isLoggedIn) {
+                                                  Log.info(
+                                                    'Pro badge tapped (anonymous)',
+                                                    {'source': 'home'},
                                                   );
-                                              await subscriptionService
-                                                  .showCustomerCenter();
-                                            }
-                                          },
-                                        ),
-                                      ],
-                                    ],
-                                  ),
-                                  Text(
-                                    'The right words, right now',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: Colors.grey[600],
+                                                  context.push(
+                                                    '/auth?restore=true',
+                                                  );
+                                                } else {
+                                                  final subscriptionService =
+                                                      ref.read(
+                                                        subscriptionServiceProvider,
+                                                      );
+                                                  await subscriptionService
+                                                      .showCustomerCenter();
+                                                }
+                                              },
+                                            ),
+                                          ],
+                                        ],
+                                      ),
                                     ),
-                                  ),
-                                ],
+                                    Text(
+                                      'The right words, right now',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: Colors.grey[600],
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
+                              const SizedBox(width: 8),
                               Row(
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
                                   _IconButton(
                                     icon: Icons.calendar_month_outlined,

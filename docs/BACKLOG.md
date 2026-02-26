@@ -33,10 +33,10 @@
 
 ## P1 - Testing Gaps
 
-| ID | Gap | Location | Action |
-|----|-----|----------|--------|
-| `AUDIT-10` | Missing E2E for auth race + stale entitlement edge cases | `integration_test/` | Add E2E coverage for sign-in routing, restore ordering, and stale local entitlement vs server truth. |
-| `AUDIT-12` | Missing visual regression guard for critical screens | `test/` | Add golden/visual regression tests for auth/home/generate/results/paywall/settings core states. |
+| ID | Gap | Location | Definition of Done |
+|----|-----|----------|--------------------|
+| `AUDIT-18` | Critical widget coverage depth is still thin on auth/onboarding/lock | `test/widgets/screens/` | Each listed screen has deterministic widget tests for primary state, interaction state, and at least one boundary/empty state. New tests run in `./scripts/test_critical_smoke.sh` without flakes. |
+| `AUDIT-19` | Critical widget error states are under-tested | `test/widgets/screens/`, `test/mocks/` | Widget tests explicitly assert user-visible error behavior for auth failure, generation failure/rate-limit, and subscription restore/paywall failure using existing mock error injection. |
 
 ## P1 - Engineering Tasks
 

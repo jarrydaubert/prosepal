@@ -453,3 +453,31 @@ Maintain consistency throughout, but adjust intensity:
 - **email-sequence**: For email copywriting
 - **popup-cro**: For popup and modal copy
 - **ab-test-setup**: To test copy variations properly
+
+## Prosepal Context
+
+### Voice & Tone
+- **Brand voice:** Warm, helpful, slightly playful — never corporate or cold
+- **"You've got this" energy** — empathetic about the blank-card struggle
+- **Tagline:** "The right words, right now."
+- **CTA style:** "Write Your First Message Free" / "Try It — Your First Card's On Us"
+
+### Copy Surfaces
+1. **App Store listing** — Title, subtitle, description, keyword field, screenshot captions
+2. **Play Store listing** — Short description (80 chars), full description, feature graphic text
+3. **prosepal-web landing page** — Hero, features, social proof, pricing, FAQ
+4. **In-app strings** — Onboarding, empty states, paywall, error messages, success states
+5. **Push notifications** — Seasonal reminders, re-engagement
+6. **Social media bios** — TikTok, Instagram, Pinterest
+
+### Product Copy Rules
+- First message is free (lifetime), no account needed — always communicate this clearly
+- Never promise "unlimited" — fair use limit is ~500/month
+- Emphasize personalization over AI — users want to sound like themselves
+- Card occasions include sensitive topics (sympathy, loss) — copy must be empathetic
+- Apple and Google review guidelines constrain certain claims — no "best," no health claims
+
+### Key References
+- `docs/MARKETING.md` — Brand voice matrix, content pillars
+- `lib/core/services/ai_service.dart` — How AI generation works (for accurate copy)
+- `product-marketing-context` skill — Full positioning and messaging framework

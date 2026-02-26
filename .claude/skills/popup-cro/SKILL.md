@@ -447,3 +447,31 @@ If you need more context:
 - **page-cro**: For the page context around popups
 - **email-sequence**: For what happens after popup conversion
 - **ab-test-setup**: For testing popup variations
+
+## Prosepal Context
+
+### In-App Modals (Not Web Popups)
+Prosepal is a mobile app — "popups" are Flutter dialogs, bottom sheets, and modal screens. There are no browser popups.
+
+### Key Modal Moments
+1. **Rate app prompt** — After successful message generation (positive moment)
+2. **Upgrade prompt** — After free message used (see `paywall-upgrade-cro` for dedicated guidance)
+3. **Seasonal nudge** — "Valentine's Day is coming — need help with messages?"
+4. **Error recovery** — AI generation failed, network error, purchase error
+
+### Flutter Implementation
+- Use `showModalBottomSheet()` for bottom-up modals (preferred on mobile)
+- Use `showDialog()` for centered alerts/confirmations
+- Always include clear dismiss action (X button or swipe down)
+- Respect system back button on Android
+
+### CRO Rules for Mobile Modals
+- Don't show modals before the user has done anything meaningful
+- Don't stack modals (never show two in sequence)
+- Don't show the same modal twice in one session
+- Time modals to positive moments (after success, not during loading)
+- Apple and Google reject apps with aggressive modal patterns
+
+### Key Files
+- `lib/shared/` — Shared dialog/modal widgets
+- `lib/features/paywall/` — Paywall modal (dedicated)
