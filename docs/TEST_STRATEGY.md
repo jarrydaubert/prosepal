@@ -20,6 +20,8 @@ flutter test
 ./scripts/test_flake_audit.sh
 flutter test integration_test/smoke_test.dart -d <device-id>
 flutter test integration_test/e2e_test.dart -d <device-id>
+./scripts/run_wired_evidence.sh --suite smoke
+./scripts/run_wired_evidence.sh --suite full
 flutter build apk --debug -t integration_test/ftl_test.dart
 cd android && JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ./gradlew app:assembleAndroidTest -Ptarget=../integration_test/ftl_test.dart
 gcloud firebase test android run --type instrumentation --app build/app/outputs/flutter-apk/app-debug.apk --test build/app/outputs/apk/androidTest/debug/app-debug-androidTest.apk --device model=oriole,version=33,locale=en,orientation=portrait --timeout 12m --no-use-orchestrator
@@ -41,6 +43,9 @@ gcloud firebase test android run --type instrumentation --app build/app/outputs/
 
 - Integration smoke on iOS simulator and Android emulator.
 - Critical integration suite on one wired iOS physical device and one wired Android physical device.
+- Capture wired evidence artifacts via `./scripts/run_wired_evidence.sh` and attach `artifacts/wired/<run-id>/SUMMARY.md`.
+- Keep integration-framework screenshots disabled by default (`INTEGRATION_CAPTURE_SCREENSHOTS=false`) to avoid platform screenshot flake; use wired artifact screenshots/logs as release evidence.
+- iOS external screenshot capture in wired evidence is best-effort and may be unavailable if `idevicescreenshot` cannot pair with the connected device.
 - Android Firebase Test Lab critical suite run.
 - Supabase verification runbook execution.
 - AI cost/abuse runbook execution (`docs/AI_COST_ABUSE_RUNBOOK.md`).

@@ -54,3 +54,4 @@ key.properties
 .env.local
 custom_lint.log
 .crashlytics/
+artifacts/

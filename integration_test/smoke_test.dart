@@ -28,18 +28,32 @@ import '../test/mocks/mock_subscription_service.dart';
 
 void main() {
   final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+  const captureIntegrationScreenshots = bool.fromEnvironment(
+    'INTEGRATION_CAPTURE_SCREENSHOTS',
+    defaultValue: false,
+  );
 
   Future<void> maybeCaptureScreenshot(WidgetTester tester, String name) async {
-    // iOS can hang on convertFlutterSurfaceToImage/takeScreenshot in local runs.
+    // Keep smoke deterministic by default; wired evidence script captures device
+    // screenshots externally even when this is disabled.
+    if (!captureIntegrationScreenshots) {
+      return;
+    }
+
     if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) {
       return;
     }
 
-    await binding.convertFlutterSurfaceToImage().timeout(
-      const Duration(seconds: 8),
-    );
-    await tester.pump();
-    await binding.takeScreenshot(name).timeout(const Duration(seconds: 8));
+    try {
+      await binding.convertFlutterSurfaceToImage().timeout(
+        const Duration(seconds: 8),
+      );
+      await tester.pump();
+      await binding.takeScreenshot(name).timeout(const Duration(seconds: 8));
+    } on Exception catch (error) {
+      // Screenshot capture is diagnostic only; do not fail smoke assertions.
+      debugPrint('[WARN] Screenshot skipped for $name: $error');
+    }
   }
 
   group('Smoke Tests', () {

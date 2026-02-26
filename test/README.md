@@ -26,6 +26,8 @@ flutter test
 # Integration smoke/e2e
 flutter test integration_test/smoke_test.dart -d <device-id>
 flutter test integration_test/e2e_test.dart -d <device-id>
+./scripts/run_wired_evidence.sh --suite smoke
+./scripts/run_wired_evidence.sh --suite full
 
 # Firebase Test Lab critical suite
 flutter build apk --debug -t integration_test/ftl_test.dart
@@ -36,4 +38,7 @@ gcloud firebase test android run --type instrumentation --app build/app/outputs/
 ## Notes
 
 - Prefer simulator/emulator or wired devices for integration runs.
+- Use `./scripts/run_wired_evidence.sh` when you need a single artifact bundle with logs and screenshots from wired devices.
+- In-test integration screenshots are off by default for stability (`INTEGRATION_CAPTURE_SCREENSHOTS=false`); rely on wired evidence artifacts unless debugging screenshot APIs specifically.
+- iOS external screenshot capture is best-effort and depends on local `idevicescreenshot` pairing support.
 - Keep unstable tests out of blocking gates until fixed.
