@@ -76,7 +76,31 @@
 
 ---
 
-## P6 - Future Expansion
+## P6 - SEO Content Strategy (Post-Launch)
+
+> Wait until app is live and has reviews. Focus on App Store ASO first.
+
+### Tier 1 - Low Difficulty, High Volume
+| Keyword | Volume | Difficulty | Action |
+|---------|--------|------------|--------|
+| sympathy messages | 135K | 27% | Create `/messages/sympathy` landing page |
+| condolence messages | 60K | 23% | Bundle with sympathy page |
+
+### Tier 2 - Medium Difficulty
+| Keyword | Volume | Difficulty | Action |
+|---------|--------|------------|--------|
+| happy birthday wishes | 368K | 57% | Create `/messages/birthday` page |
+| congratulations messages | 135K | 48% | Create `/messages/congratulations` page |
+| thank you notes | 110K | 45% | Create `/messages/thank-you` page |
+
+### Content Ideas
+- "50 Sympathy Card Messages That Actually Help"
+- "What to Write in a Wedding Card (With Examples)"
+- "Birthday Wishes for Every Relationship"
+
+---
+
+## P8 - Future Expansion
 
 | Initiative | Reference |
 |------------|-----------|
