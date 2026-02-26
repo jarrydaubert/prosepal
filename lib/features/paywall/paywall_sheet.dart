@@ -397,48 +397,61 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
   @override
   Widget build(BuildContext context) {
     final isLoggedIn = ref.watch(authServiceProvider).isLoggedIn;
-    final screenHeight = MediaQuery.of(context).size.height;
+    final screenSize = MediaQuery.of(context).size;
+    final isTablet = screenSize.shortestSide >= 600;
 
-    return Container(
-      constraints: BoxConstraints(maxHeight: screenHeight * 0.92),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Drag handle
-          Padding(
-            padding: const EdgeInsets.only(top: 12, bottom: 8),
-            child: Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(2),
+    return Center(
+      child: Container(
+        constraints: BoxConstraints(
+          maxHeight: isTablet
+              ? screenSize.height * 0.75
+              : screenSize.height * 0.92,
+          maxWidth: isTablet ? 500 : double.infinity,
+        ),
+        margin: isTablet ? const EdgeInsets.only(bottom: 40) : EdgeInsets.zero,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(
+            top: const Radius.circular(24),
+            bottom: isTablet ? const Radius.circular(24) : Radius.zero,
+          ),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Drag handle
+            Padding(
+              padding: const EdgeInsets.only(top: 12, bottom: 8),
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
             ),
-          ),
 
-          // Content
-          Flexible(
-            child: _isLoadingOfferings
-                ? const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(48),
-                      child: CircularProgressIndicator(),
-                    ),
-                  )
-                : _buildContent(isLoggedIn),
-          ),
-        ],
+            // Content
+            Flexible(
+              child: _isLoadingOfferings
+                  ? const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(48),
+                        child: CircularProgressIndicator(),
+                      ),
+                    )
+                  : _buildContent(isLoggedIn, isTablet),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildContent(bool isLoggedIn) {
+  Widget _buildContent(bool isLoggedIn, bool isTablet) {
     final packages = _offering?.availablePackages ?? [];
+    final spacing = isTablet ? AppSpacing.sm : AppSpacing.md;
     if (packages.isEmpty) {
       return Padding(
         padding: const EdgeInsets.all(24),
@@ -483,21 +496,23 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
     }
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+      padding: EdgeInsets.symmetric(
+        horizontal: isTablet ? AppSpacing.lg : AppSpacing.md,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // Header
           _buildHeader(),
-          const Gap(AppSpacing.md),
+          Gap(spacing),
 
           // Benefits
           _buildBenefits(),
-          const Gap(AppSpacing.md),
+          Gap(spacing),
 
           // Package selection
           _buildPackageSelector(packages),
-          const Gap(AppSpacing.md),
+          Gap(spacing),
 
           // Error message
           if (_error != null) ...[
@@ -507,14 +522,14 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
 
           // Purchase section - available to ALL users (Apple 5.1.1 compliance)
           _buildPurchaseSection(packages),
-          const Gap(AppSpacing.md),
+          Gap(spacing),
 
           // Optional: Sign in to sync across devices (only show if not logged in)
-          if (!isLoggedIn) ...[_buildSyncSection(), const Gap(AppSpacing.md)],
+          if (!isLoggedIn) ...[_buildSyncSection(), Gap(spacing)],
 
-          // Footer links
+          // Footer links (Terms & Privacy - Apple 3.1.2 compliance)
           _buildFooter(),
-          const Gap(AppSpacing.md),
+          Gap(spacing),
         ],
       ),
     );
