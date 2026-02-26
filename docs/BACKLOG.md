@@ -86,9 +86,24 @@
 - Scheduling ("Send me this on Dec 25 at 9am")
 - Address book sync (pull birthdays from contacts)
 
-### New Apps (Post-Prosepal)
-- AI Content Generator (Jasper clone) - messages, captions, marketing copy
-- AI Audio Messages - text-to-audio voiceovers for cards
+### Portfolio Expansion (Clone Strategy)
+
+**Approach:** Use Droid CLI for rapid market intel → JSON → code gen. Inspire heavily but differentiate with unique UX (animations, mobile-first).
+
+| Target | Clone From | Our Differentiator |
+|--------|------------|-------------------|
+| EmailPal | Writesonic/Copy.ai | Mobile-first, occasion templates |
+| CaptionPal | Copy.ai social | One-tap copy, trending hooks |
+| BioWriter | Rytr | Dating/LinkedIn presets, swipe UI |
+| ToastMaster | Generic AI | Speech pacing, teleprompter mode |
+
+**Safe Line:** Features/logic ok to clone. Avoid exact UI/copy/branding (trademark risk).
+
+**Workflow:**
+1. Scrape competitor (public pages) → structured JSON
+2. Prompt Droid: "Inspire from [JSON] but build unique mobile app with [our animations/polish]"
+3. Same Flutter stack, different prompts/UI skin
+4. Undercut pricing ($4.99 vs $20+)
 
 ---
 
