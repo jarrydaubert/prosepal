@@ -20,13 +20,20 @@
 | Edge Function: exchange-apple-token | Edge Functions | ✅ | `https://mwoxtqxzunsjmbdqezif.supabase.co/functions/v1/exchange-apple-token` (3 deployments) |
 | Leaked password protection | Authentication > Sign In / Providers > Email | ⚠️ | OFF - Requires Pro plan, not blocking |
 
-### RevenueCat ⏳ PENDING
+### RevenueCat ✅ VERIFIED 2026-01-10
 
-- [ ] iOS app configured
-- [ ] Android app configured
-- [ ] Products set up (Weekly, Monthly, Yearly)
-- [ ] `pro` entitlement exists
-- [ ] Production API keys verified
+**Dashboard:** https://app.revenuecat.com/projects/a8bf92d5/apps
+
+| Item | Location | Status | Details |
+|------|----------|--------|---------|
+| iOS app | Apps & Projects | ✅ | Prosepal (App Store) configured |
+| Android app | Apps & Projects | ✅ | Prosepal (Play Store) configured |
+| iOS Products | Product catalog > Products | ⚠️ | `com.prosepal.pro.weekly`, `.monthly`, `.yearly` - "Ready to Submit" in App Store Connect |
+| Android Products | Product catalog > Products | ✅ | `com.prosepal.pro.weekly:weekly`, `.monthly:monthly`, `.yearly:yearly` - Published |
+| Entitlement | Product catalog > Entitlements | ✅ | `pro` entitlement with 2 products |
+| Offering | Product catalog > Offerings | ✅ | `default` offering with 3 packages |
+| SDK API Keys | API Keys | ✅ | Keys for App Store + Play Store |
+| Test Store | Apps & Projects | ✅ | Sandbox testing configured |
 
 ### Firebase ⏳ PENDING
 
