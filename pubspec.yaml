@@ -55,10 +55,10 @@ dev_dependencies:
     sdk: flutter
 
   flutter_lints: ^6.0.0
-  riverpod_generator: ^4.0.0+1  # Fixed retracted version, compatible with riverpod_annotation 3.0.3
+  riverpod_generator: ^4.0.0+1
+  riverpod_lint: ^3.0.3
   build_runner: ^2.10.4
   custom_lint: ^0.8.1
-  # riverpod_lint removed temporarily due to lack of 3.x release; re-add when available
 
   # Testing packages
   mocktail: ^1.0.4  # Mocking without code generation
