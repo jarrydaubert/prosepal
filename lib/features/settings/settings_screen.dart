@@ -329,8 +329,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               color: AppColors.textSecondary,
             ),
             title: 'Help & FAQ',
-            onTap: () {
-              // TODO: Open help
+            onTap: () async {
+              final uri = Uri.parse('https://www.prosepal.app/support.html');
+              if (await canLaunchUrl(uri)) {
+                await launchUrl(uri, mode: LaunchMode.externalApplication);
+              }
             },
           ),
           SettingsTile(

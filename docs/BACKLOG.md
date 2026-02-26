@@ -25,25 +25,9 @@
 
 ---
 
-## 1. SettingsScreen Polish
-
-### Missing Features
-
-| Feature | Priority |
-|---------|----------|
-| Help & FAQ navigation | P2 |
-| Loading states for async | P3 |
-
-### Accessibility
-
-| Improvement | Current | Target |
-|-------------|---------|--------|
-| Semantics | Rating tile only | All interactive elements |
-| VoiceOver | Partial | Full support |
-
 ---
 
-## 2. Dark Mode Support
+## 1. Dark Mode Support
 
 **Priority:** P4
 
@@ -54,7 +38,7 @@
 
 ---
 
-## 3. App Store Optimization (ASO) Metadata
+## 2. App Store Optimization (ASO) Metadata
 
 > Use when submitting to App Store Connect.
 
