@@ -111,13 +111,6 @@ Download now and never struggle with "what to write" again.
 
 ## 3. Code Quality Improvements
 
-
-
-### Google Sign-In Early Initialization
-- Currently initializes during `signInWithGoogle` call
-- Consider initializing at app startup for silent session restoration
-- Would enable faster re-authentication for returning users
-
 ### BiometricService Dependency Injection
 - Singleton pattern limits full test isolation
 - Add injectable constructor for `LocalAuthentication` and `SharedPreferences`

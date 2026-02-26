@@ -66,6 +66,37 @@ class AuthService implements IAuthService {
   final IAppleAuthProvider _apple;
   final IGoogleAuthProvider _google;
 
+  bool _providersInitialized = false;
+
+  // ===========================================================================
+  // Provider Initialization
+  // ===========================================================================
+
+  /// Initialize OAuth providers at app startup
+  /// 
+  /// Call once during app initialization for faster sign-in UX.
+  /// Initializes Google Sign-In SDK with client IDs - subsequent
+  /// sign-in attempts will be faster as SDK is pre-warmed.
+  @override
+  Future<void> initializeProviders() async {
+    if (_providersInitialized) return;
+
+    // Initialize Google Sign-In if available
+    if (await _google.isAvailable()) {
+      try {
+        await _google.initialize(
+          serverClientId: _googleWebClientId,
+          clientId: _googleIosClientId,
+        );
+      } catch (e) {
+        // Non-fatal: sign-in will still work, just slower on first attempt
+        debugPrint('Google Sign-In pre-initialization failed: $e');
+      }
+    }
+
+    _providersInitialized = true;
+  }
+
   // ===========================================================================
   // Platform Availability
   // ===========================================================================
@@ -168,13 +199,13 @@ class AuthService implements IAuthService {
       throw const AuthException('Google Sign In is not available on this platform');
     }
 
-    // Initialize with platform-appropriate client IDs
-    // serverClientId: Required for Android ID token retrieval and backend validation
-    // clientId: Required for iOS native SDK
-    await _google.initialize(
-      serverClientId: _googleWebClientId,
-      clientId: _googleIosClientId,
-    );
+    // Ensure initialized (no-op if already done at startup)
+    if (!_providersInitialized) {
+      await _google.initialize(
+        serverClientId: _googleWebClientId,
+        clientId: _googleIosClientId,
+      );
+    }
 
     // Try silent re-auth first (better UX for returning users)
     var result = await _google.attemptLightweightAuthentication();

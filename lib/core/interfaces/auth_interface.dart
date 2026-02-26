@@ -3,6 +3,10 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 /// Abstract interface for authentication services
 /// Allows mocking in tests without Supabase dependency
 abstract class IAuthService {
+  /// Initialize OAuth providers at app startup for faster sign-in
+  /// Call once during app initialization, before showing auth UI
+  Future<void> initializeProviders();
+
   /// Current user (null if not logged in)
   User? get currentUser;
 
