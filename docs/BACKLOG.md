@@ -62,6 +62,7 @@
 
 | Issue | Location | Fix |
 |-------|----------|-----|
+| Audit autoDispose usage | `providers.dart` | Review all StateProviders - autoDispose only for single-screen state, not cross-screen navigation state. Fixed: selectedOccasionProvider, generationResultProvider |
 | No timeout on splash Pro check | `router.dart:244` | Add timeout with fallback to prevent hang on slow network |
 | No notification on bio auto-disable | `router.dart:200` | Show toast when biometrics unavailable and auto-disabled |
 | AI config not env-configurable | `ai_config.dart` | Consider Remote Config for model/params (see Gemini section) |

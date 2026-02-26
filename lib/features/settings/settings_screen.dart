@@ -565,8 +565,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       final isLoggedIn = ref
                           .read(authServiceProvider)
                           .isLoggedIn;
+                      final isReturningUser = totalGenerated > 0;
                       if (isLoggedIn) {
                         context.pushNamed('paywall');
+                      } else if (isReturningUser) {
+                        context.push('/auth?autorestore=true');
                       } else {
                         context.push('/auth?redirect=paywall');
                       }

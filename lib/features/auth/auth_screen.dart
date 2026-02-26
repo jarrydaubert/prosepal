@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 import '../../core/errors/auth_errors.dart';
@@ -13,13 +14,22 @@ import '../../shared/components/app_logo.dart';
 import '../../shared/theme/app_colors.dart';
 
 class AuthScreen extends ConsumerStatefulWidget {
-  const AuthScreen({super.key, this.redirectTo, this.isProRestore = false});
+  const AuthScreen({
+    super.key,
+    this.redirectTo,
+    this.isProRestore = false,
+    this.autoRestore = false,
+  });
 
   /// Optional route to navigate to after successful auth (e.g., 'paywall')
   final String? redirectTo;
 
   /// True if user has Pro from App Store but needs to sign in to claim it
   final bool isProRestore;
+
+  /// True to auto-restore purchases after auth (for returning users)
+  /// If restore finds Pro, navigates to home. Otherwise, navigates to paywall.
+  final bool autoRestore;
 
   @override
   ConsumerState<AuthScreen> createState() => _AuthScreenState();
@@ -45,6 +55,49 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
 
   Future<void> _navigateAfterAuth() async {
     if (!mounted) return;
+
+    // Auto-restore for returning users (device has used app before)
+    // Try to restore purchases first, then navigate based on Pro status
+    if (widget.autoRestore) {
+      Log.info('Auth success: auto-restoring purchases for returning user');
+      try {
+        // Identify with RevenueCat first
+        final authService = ref.read(authServiceProvider);
+        if (authService.currentUser?.id != null) {
+          await ref
+              .read(subscriptionServiceProvider)
+              .identifyUser(authService.currentUser!.id);
+        }
+
+        // Restore purchases from App Store
+        final customerInfo = await Purchases.restorePurchases();
+        final hasPro = customerInfo.entitlements.active.containsKey('pro');
+        Log.info('Auto-restore completed', {'hasPro': hasPro});
+
+        if (!mounted) return;
+
+        if (hasPro) {
+          // User has Pro - go to home, they can generate
+          ref.invalidate(customerInfoProvider);
+          Log.info('Auth success: Pro restored, navigating to home');
+          context.go('/home');
+          return;
+        } else {
+          // No Pro found - show paywall
+          Log.info('Auth success: No Pro found, navigating to paywall');
+          context.replace('/paywall');
+          return;
+        }
+      } catch (e) {
+        Log.warning('Auto-restore failed, falling back to paywall', {
+          'error': '$e',
+        });
+        if (!mounted) return;
+        // On error, fall back to paywall
+        context.replace('/paywall');
+        return;
+      }
+    }
 
     // If we have a redirect destination (e.g., from upgrade flow),
     // replace auth screen with destination (preserves back stack)

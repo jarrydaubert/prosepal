@@ -99,7 +99,12 @@ final _routes = <RouteBase>[
     builder: (context, state) {
       final redirectTo = state.uri.queryParameters['redirect'];
       final isRestore = state.uri.queryParameters['restore'] == 'true';
-      return AuthScreen(redirectTo: redirectTo, isProRestore: isRestore);
+      final autoRestore = state.uri.queryParameters['autorestore'] == 'true';
+      return AuthScreen(
+        redirectTo: redirectTo,
+        isProRestore: isRestore,
+        autoRestore: autoRestore,
+      );
     },
   ),
   GoRoute(
