@@ -16,8 +16,8 @@ import 'log_service.dart';
 /// ## Firebase Remote Config Setup
 /// 1. Go to Firebase Console > Remote Config
 /// 2. Add parameters:
-///    - `ai_model`: "gemini-2.5-flash" (string) - or "gemini-3-flash-preview" for latest
-///    - `ai_model_fallback`: "gemini-2.0-flash" (string)
+///    - `ai_model`: "gemini-3-flash-preview" (string)
+///    - `ai_model_fallback`: "gemini-2.5-flash" (string)
 ///    - `min_app_version_ios`: "1.0.0" (string)
 ///    - `min_app_version_android`: "1.0.0" (string)
 ///    - `force_update_enabled`: true (boolean)
