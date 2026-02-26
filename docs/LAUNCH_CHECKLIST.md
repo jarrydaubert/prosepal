@@ -132,18 +132,55 @@
 | Localization description | ✅ | Says "500 messages per month" - correct (Pro limit is 500/month) |
 | Family Sharing | ⚠️ | Currently OFF - consider enabling |
 
-### Google Play Console ⏳ PENDING
+### Google Play Console ⏳ IN PROGRESS
 
 **Console:** https://play.google.com/console
 
-| Item | Location | Status |
-|------|----------|--------|
-| AAB uploaded | Internal Testing | ⏳ |
-| Store listing complete | Store presence | ⏳ |
-| Screenshots | Store listing | ⏳ |
-| Privacy policy URL | App content | ⏳ `https://prosepal.app/privacy` |
-| Data safety form | App content | ⏳ |
-| Promote to Production | Release | ⏳ |
+**Setup Progress:** 10 of 14 complete
+
+**Store Listing:**
+
+| Item | Status | Details |
+|------|--------|---------|
+| App name | ✅ | "Prosepal - Card Message Writer" (30/30 chars) |
+| Short description | ✅ | "AI greeting card messages. Birthday, wedding, sympathy & more" (61/80) |
+| Full description | ✅ | Complete with features, "500 generations per month" |
+| App icon | ✅ | 512x512 uploaded |
+| Feature graphic | ❌ | **Missing - REQUIRED (1024x500 px)** |
+| Phone screenshots | ❌ | **Missing - REQUIRED (2-8 images)** |
+| 7-inch tablet screenshots | ❌ | **Missing - REQUIRED** |
+| 10-inch tablet screenshots | ❌ | **Missing - REQUIRED** |
+
+**App Content (Policy > App content):**
+
+| Item | Status |
+|------|--------|
+| Privacy policy | ✅ |
+| App access | ✅ |
+| Ads declaration | ✅ |
+| Content rating | ✅ |
+| Target audience | ✅ |
+| Data safety | ✅ |
+| Government apps | ✅ |
+| Financial features | ✅ |
+| Health | ✅ |
+
+**Testing & Release:**
+
+| Item | Status | Details |
+|------|--------|---------|
+| Internal testing | ✅ | Active |
+| Closed testing | ❌ | Not started |
+| Production access | ⏳ | Blocked until closed test complete |
+
+**⚠️ IMPORTANT: Production Access Requirements**
+
+Google requires closed testing before production release:
+1. Publish a closed testing release
+2. Have **12+ testers opted-in** (currently 0)
+3. Run closed test for **14+ days**
+
+**Subscriptions:** ⏳ Pending verification
 
 ### Manual Testing (Before Submission) ⏳ PENDING
 
