@@ -141,7 +141,7 @@ class GoogleAuthProvider implements IGoogleAuthProvider {
     // Try silent authorization first, fall back to interactive
     final authorization =
         await user.authorizationClient.authorizationForScopes(_scopes) ??
-            await user.authorizationClient.authorizeScopes(_scopes);
+        await user.authorizationClient.authorizeScopes(_scopes);
 
     return GoogleAuthResult(
       idToken: idToken,

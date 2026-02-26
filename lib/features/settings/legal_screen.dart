@@ -69,17 +69,13 @@ class TermsScreen extends StatelessWidget {
             content:
                 'Prosepal is provided "as is" without warranties of any kind. We do not guarantee uninterrupted or error-free service.',
           ),
-          _LegalSection(
-            title: 'Contact',
-            content: 'support@prosepal.app',
-          ),
+          _LegalSection(title: 'Contact', content: 'support@prosepal.app'),
           Gap(AppSpacing.lg),
           Text(
             'Last updated: December 28, 2025',
-            style: Theme.of(context)
-                .textTheme
-                .bodySmall
-                ?.copyWith(color: AppColors.textHint),
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: AppColors.textHint),
             textAlign: TextAlign.center,
           ),
           Gap(AppSpacing.md),
@@ -161,17 +157,13 @@ class PrivacyScreen extends StatelessWidget {
                 '• Opt out of analytics\n\n'
                 'Delete your account anytime from Settings.',
           ),
-          _LegalSection(
-            title: 'Contact',
-            content: 'support@prosepal.app',
-          ),
+          _LegalSection(title: 'Contact', content: 'support@prosepal.app'),
           Gap(AppSpacing.lg),
           Text(
             'Last updated: December 28, 2025',
-            style: Theme.of(context)
-                .textTheme
-                .bodySmall
-                ?.copyWith(color: AppColors.textHint),
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: AppColors.textHint),
             textAlign: TextAlign.center,
           ),
           Gap(AppSpacing.md),

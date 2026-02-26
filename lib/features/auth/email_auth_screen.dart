@@ -172,18 +172,16 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
         SizedBox(height: AppSpacing.xl),
         Text(
           'Check your email',
-          style: Theme.of(context)
-              .textTheme
-              .headlineSmall
-              ?.copyWith(fontWeight: FontWeight.bold),
+          style: Theme.of(
+            context,
+          ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
         ).animate().fadeIn(delay: 200.ms),
         SizedBox(height: AppSpacing.sm),
         Text(
           'We sent a magic link to',
-          style: Theme.of(context)
-              .textTheme
-              .bodyLarge
-              ?.copyWith(color: AppColors.textSecondary),
+          style: Theme.of(
+            context,
+          ).textTheme.bodyLarge?.copyWith(color: AppColors.textSecondary),
           textAlign: TextAlign.center,
         ).animate().fadeIn(delay: 300.ms),
         if (_sentToEmail != null) ...[
@@ -191,29 +189,27 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
           Text(
             _sentToEmail!,
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.primary,
-                ),
+              fontWeight: FontWeight.w600,
+              color: AppColors.primary,
+            ),
             textAlign: TextAlign.center,
           ).animate().fadeIn(delay: 400.ms),
         ],
         SizedBox(height: AppSpacing.md),
         Text(
           'Tap the link in your email to sign in instantly.\nNo password needed!',
-          style: Theme.of(context)
-              .textTheme
-              .bodyMedium
-              ?.copyWith(color: AppColors.textSecondary),
+          style: Theme.of(
+            context,
+          ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
           textAlign: TextAlign.center,
         ).animate().fadeIn(delay: 500.ms),
         SizedBox(height: AppSpacing.xxl),
         if (_resendCooldown > 0)
           Text(
             'Resend available in ${_resendCooldown}s',
-            style: Theme.of(context)
-                .textTheme
-                .bodySmall
-                ?.copyWith(color: AppColors.textHint),
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: AppColors.textHint),
           ).animate().fadeIn()
         else
           TextButton.icon(
@@ -243,10 +239,9 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
               Expanded(
                 child: Text(
                   "Didn't get the email? Check your spam folder.",
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodySmall
-                      ?.copyWith(color: AppColors.info),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(color: AppColors.info),
                 ),
               ),
             ],
@@ -271,18 +266,16 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
         SizedBox(height: AppSpacing.lg),
         Text(
           'Passwordless sign in',
-          style: Theme.of(context)
-              .textTheme
-              .titleLarge
-              ?.copyWith(fontWeight: FontWeight.bold),
+          style: Theme.of(
+            context,
+          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
         ).animate().fadeIn(delay: 100.ms),
         SizedBox(height: AppSpacing.sm),
         Text(
           "Enter your email and we'll send you\na magic link to sign in instantly.",
-          style: Theme.of(context)
-              .textTheme
-              .bodyMedium
-              ?.copyWith(color: AppColors.textSecondary),
+          style: Theme.of(
+            context,
+          ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
           textAlign: TextAlign.center,
         ).animate().fadeIn(delay: 200.ms),
         SizedBox(height: AppSpacing.xl),
@@ -302,22 +295,26 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
                   hintText: 'you@example.com',
                   prefixIcon: Icon(Icons.email_outlined),
                   border: OutlineInputBorder(
-                    borderRadius:
-                        BorderRadius.circular(AppSpacing.radiusMedium),
+                    borderRadius: BorderRadius.circular(
+                      AppSpacing.radiusMedium,
+                    ),
                   ),
                   enabledBorder: OutlineInputBorder(
-                    borderRadius:
-                        BorderRadius.circular(AppSpacing.radiusMedium),
+                    borderRadius: BorderRadius.circular(
+                      AppSpacing.radiusMedium,
+                    ),
                     borderSide: BorderSide(color: Colors.grey.shade300),
                   ),
                   focusedBorder: OutlineInputBorder(
-                    borderRadius:
-                        BorderRadius.circular(AppSpacing.radiusMedium),
+                    borderRadius: BorderRadius.circular(
+                      AppSpacing.radiusMedium,
+                    ),
                     borderSide: BorderSide(color: AppColors.primary, width: 2),
                   ),
                   errorBorder: OutlineInputBorder(
-                    borderRadius:
-                        BorderRadius.circular(AppSpacing.radiusMedium),
+                    borderRadius: BorderRadius.circular(
+                      AppSpacing.radiusMedium,
+                    ),
                     borderSide: BorderSide(color: AppColors.error),
                   ),
                 ),
@@ -332,8 +329,9 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
                     backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
-                      borderRadius:
-                          BorderRadius.circular(AppSpacing.radiusMedium),
+                      borderRadius: BorderRadius.circular(
+                        AppSpacing.radiusMedium,
+                      ),
                     ),
                   ),
                   child: _isLoading
@@ -403,14 +401,14 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
                   Text(
                     title,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   Text(
                     subtitle,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppColors.textSecondary,
-                        ),
+                      color: AppColors.textSecondary,
+                    ),
                   ),
                 ],
               ),

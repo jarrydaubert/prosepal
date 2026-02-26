@@ -115,7 +115,9 @@ final remainingGenerationsProvider = Provider<int>((ref) {
 final selectedOccasionProvider = StateProvider<Occasion?>((ref) => null);
 
 /// Selected relationship for generation
-final selectedRelationshipProvider = StateProvider<Relationship?>((ref) => null);
+final selectedRelationshipProvider = StateProvider<Relationship?>(
+  (ref) => null,
+);
 
 /// Selected tone for generation
 final selectedToneProvider = StateProvider<Tone?>((ref) => null);
@@ -136,7 +138,9 @@ final personalDetailsProvider = StateProvider<String>((ref) => '');
 // ============================================================
 
 /// Result of AI generation
-final generationResultProvider = StateProvider<GenerationResult?>((ref) => null);
+final generationResultProvider = StateProvider<GenerationResult?>(
+  (ref) => null,
+);
 
 /// Whether generation is in progress
 final isGeneratingProvider = StateProvider<bool>((ref) => false);

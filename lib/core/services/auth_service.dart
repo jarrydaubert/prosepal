@@ -60,9 +60,9 @@ class AuthService implements IAuthService {
     required ISupabaseAuthProvider supabaseAuth,
     required IAppleAuthProvider appleAuth,
     required IGoogleAuthProvider googleAuth,
-  })  : _supabase = supabaseAuth,
-        _apple = appleAuth,
-        _google = googleAuth;
+  }) : _supabase = supabaseAuth,
+       _apple = appleAuth,
+       _google = googleAuth;
 
   final ISupabaseAuthProvider _supabase;
   final IAppleAuthProvider _apple;
@@ -128,9 +128,7 @@ class AuthService implements IAuthService {
   Future<AuthResponse> signInWithApple() async {
     // Check platform availability first
     if (!await _apple.isAvailable()) {
-      throw AuthException(
-        'Apple Sign In is not available on this platform',
-      );
+      throw AuthException('Apple Sign In is not available on this platform');
     }
 
     try {
@@ -169,9 +167,7 @@ class AuthService implements IAuthService {
   Future<AuthResponse> signInWithGoogle() async {
     // Check platform availability first
     if (!await _google.isAvailable()) {
-      throw AuthException(
-        'Google Sign In is not available on this platform',
-      );
+      throw AuthException('Google Sign In is not available on this platform');
     }
 
     // Initialize with platform-appropriate client IDs
@@ -215,10 +211,7 @@ class AuthService implements IAuthService {
     required String email,
     required String password,
   }) async {
-    return await _supabase.signInWithPassword(
-      email: email,
-      password: password,
-    );
+    return await _supabase.signInWithPassword(email: email, password: password);
   }
 
   @override

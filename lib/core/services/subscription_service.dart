@@ -45,14 +45,16 @@ class SubscriptionService implements ISubscriptionService {
 
   // Production API Keys (defaults for release builds)
   static const String _iosProductionKey = 'appl_dWOaTNoefQCZUxqvQfsTPuMqYuk';
-  static const String _androidProductionKey = ''; // TODO: Add before Play Store release
+  static const String _androidProductionKey =
+      ''; // TODO: Add before Play Store release
 
   // Test Store Key (for automated testing only - get from RevenueCat Dashboard)
   // Dashboard: Project Settings > Apps > Test Store
   // WARNING: Using Test Store in production will crash the app!
   static const String _testStoreKey = String.fromEnvironment(
     'REVENUECAT_TEST_STORE_KEY',
-    defaultValue: 'test_iCdJYZJvbduyqGECAsUtDJKYClX', // Test Store key for development
+    defaultValue:
+        'test_iCdJYZJvbduyqGECAsUtDJKYClX', // Test Store key for development
   );
 
   // Environment flags
@@ -119,9 +121,13 @@ class SubscriptionService implements ISubscriptionService {
 
     // Log which environment we're using
     if (isUsingTestStore) {
-      debugPrint('⚠️ RevenueCat initialized with TEST STORE (not for production!)');
+      debugPrint(
+        '⚠️ RevenueCat initialized with TEST STORE (not for production!)',
+      );
     } else {
-      debugPrint('RevenueCat initialized with ${Platform.isIOS ? 'iOS' : 'Android'} production key');
+      debugPrint(
+        'RevenueCat initialized with ${Platform.isIOS ? 'iOS' : 'Android'} production key',
+      );
     }
   }
 
