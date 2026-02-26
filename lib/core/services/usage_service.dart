@@ -163,7 +163,17 @@ class UsageService {
   /// This ensures accurate state is shown immediately after reinstall.
   Future<void> syncDeviceStateFromServer() async {
     try {
-      final result = await checkDeviceFreeTierServerSide();
+      final result = await checkDeviceFreeTierServerSide().timeout(
+        const Duration(seconds: 5),
+        onTimeout: () {
+          Log.warning('Device state sync timed out after 5s');
+          // Return "allowed" on timeout - graceful degradation
+          return const DeviceCheckResult(
+            allowed: true,
+            reason: DeviceCheckReason.serverUnavailable,
+          );
+        },
+      );
       Log.info('Device state synced from server', {
         'allowed': result.allowed,
         'reason': result.reason.toString(),
