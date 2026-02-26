@@ -1,6 +1,6 @@
 # Launch Checklist
 
-> Last verified: 2026-01-15
+> Last verified: 2026-01-16
 
 ---
 
@@ -8,7 +8,7 @@
 
 | Platform | Status | Details |
 |----------|--------|---------|
-| iOS | **RESUBMITTED** | Build 29 submitted 2026-01-15, all 3 rejection issues fixed |
+| iOS | **LIVE** | Build 29 - https://apps.apple.com/app/id6757088726 |
 | Android | Blocked | Requires 14-day closed testing with 12+ testers |
 
 ---
@@ -271,13 +271,14 @@ Tested via TestFlight before submission:
 
 ## Phase 3: Post-Approval
 
-### After App Store Approval
+### iOS - LIVE 2026-01-16
+
+**App Store**: https://apps.apple.com/app/id6757088726
+**Landing Page**: https://www.prosepal.app
 
 - [x] Apple ID `6757088726` added to `review_service.dart` and `settings_screen.dart`
 - [ ] Verify in-app review prompt works in production
-- [ ] **Deploy landing page with App Store badge** (prosepal-web)
-  - Ready locally with official Apple badge + "Android coming soon"
-  - Deploy after approval: `cd prosepal-web && git add . && git commit -m "Add App Store badge" && git push`
+- [x] **Deploy landing page with App Store badge** (prosepal-web) - Deployed 2026-01-16
 
 ### After Play Store Approval
 

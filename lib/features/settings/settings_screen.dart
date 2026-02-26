@@ -155,6 +155,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       // Force refresh customer info to update pro status across all screens
       ref.invalidate(customerInfoProvider);
 
+      // Sync usage from server for UI consistency
+      await ref.read(usageServiceProvider).syncFromServer();
+
       if (mounted) {
         String message;
         Color? backgroundColor;

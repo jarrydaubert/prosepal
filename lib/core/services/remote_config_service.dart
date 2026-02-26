@@ -15,8 +15,9 @@ import 'log_service.dart';
 ///
 /// ## Firebase Remote Config Setup (CONFIGURED - Jan 2026)
 /// Parameters are configured in Firebase Console > Remote Config (Client):
-///    - `ai_model`: "gemini-2.5-flash" (stable model)
-///    - `ai_model_fallback`: "gemini-2.5-flash-lite" (fallback if primary fails)
+///    - `ai_model`: "gemini-3-flash-preview" (current model)
+///    - `ai_model_fallback`: "gemini-2.5-flash" (fallback if primary fails)
+/// When gemini-3-flash goes stable, update `ai_model` via Remote Config.
 ///    - `min_app_version_ios`: "1.0.0" (force update threshold)
 ///    - `min_app_version_android`: "1.0.0" (force update threshold)
 ///

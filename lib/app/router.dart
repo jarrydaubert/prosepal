@@ -10,6 +10,7 @@ import '../core/services/log_service.dart';
 import '../features/auth/auth_screen.dart';
 import '../features/auth/email_auth_screen.dart';
 import '../features/auth/lock_screen.dart';
+import '../features/error/force_update_screen.dart';
 import '../features/generate/generate_screen.dart';
 import '../features/home/home_screen.dart';
 import '../features/onboarding/onboarding_screen.dart';
@@ -192,6 +193,20 @@ class _SplashScreenState extends ConsumerState<_SplashScreen> {
     while (mounted) {
       final status = ref.read(initStatusProvider);
 
+      // Check for force update first (highest priority)
+      if (status.forceUpdateRequired && status.forceUpdateStoreUrl != null) {
+        Log.warning('Force update required - showing update screen');
+        if (mounted) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute<void>(
+              builder: (_) =>
+                  ForceUpdateScreen(storeUrl: status.forceUpdateStoreUrl!),
+            ),
+          );
+        }
+        return;
+      }
+
       // Check for critical error
       if (status.hasError) {
         Log.error('Init failed', {'error': status.error});
@@ -201,6 +216,7 @@ class _SplashScreenState extends ConsumerState<_SplashScreen> {
 
       // Supabase ready = we can proceed
       // (RevenueCat ready OR timed out = we can check Pro status)
+      // (RemoteConfig ready OR debug mode = force update check complete)
       if (status.isSupabaseReady &&
           (status.isRevenueCatReady || status.isTimedOut)) {
         break;
