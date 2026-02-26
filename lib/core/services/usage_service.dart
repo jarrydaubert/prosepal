@@ -63,7 +63,7 @@ class UsageService {
 
     // Increment monthly count (for Pro fair use)
     final savedMonth = _prefs.getString(_keyMonthlyDate);
-    int monthlyCount = 0;
+    var monthlyCount = 0;
     if (savedMonth == thisMonth) {
       monthlyCount = _prefs.getInt(_keyMonthlyCount) ?? 0;
     }

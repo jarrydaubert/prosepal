@@ -19,7 +19,7 @@ class ToneSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: EdgeInsets.all(AppSpacing.screenPadding),
+      padding: const EdgeInsets.all(AppSpacing.screenPadding),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -27,18 +27,18 @@ class ToneSelector extends StatelessWidget {
             'Set the tone',
             style: Theme.of(context).textTheme.headlineSmall,
           ),
-          Gap(AppSpacing.sm),
+          const Gap(AppSpacing.sm),
           Text(
             'How do you want the message to feel?',
             style: Theme.of(
               context,
             ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
           ),
-          Gap(AppSpacing.xl),
+          const Gap(AppSpacing.xl),
           GridView.builder(
             shrinkWrap: true,
-            physics: NeverScrollableScrollPhysics(),
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
               mainAxisSpacing: AppSpacing.md,
               crossAxisSpacing: AppSpacing.md,
@@ -60,8 +60,8 @@ class ToneSelector extends StatelessWidget {
                     duration: 200.ms,
                   )
                   .scale(
-                    begin: Offset(0.9, 0.9),
-                    end: Offset(1, 1),
+                    begin: const Offset(0.9, 0.9),
+                    end: const Offset(1, 1),
                     delay: Duration(milliseconds: index * 50),
                     duration: 200.ms,
                     curve: Curves.easeOut,
@@ -98,8 +98,8 @@ class _ToneTile extends StatelessWidget {
           onTap: onTap,
           borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
           child: AnimatedContainer(
-            duration: Duration(milliseconds: 200),
-            padding: EdgeInsets.all(AppSpacing.lg),
+            duration: const Duration(milliseconds: 200),
+            padding: const EdgeInsets.all(AppSpacing.lg),
             decoration: BoxDecoration(
               color: isSelected
                   ? AppColors.primary.withValues(alpha: 0.1)
@@ -115,8 +115,8 @@ class _ToneTile extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(tone.emoji, style: TextStyle(fontSize: 32)),
-                Gap(AppSpacing.sm),
+                Text(tone.emoji, style: const TextStyle(fontSize: 32)),
+                const Gap(AppSpacing.sm),
                 Text(
                   tone.label,
                   style: Theme.of(context).textTheme.titleSmall?.copyWith(
@@ -125,7 +125,7 @@ class _ToneTile extends StatelessWidget {
                   ),
                   textAlign: TextAlign.center,
                 ),
-                Gap(AppSpacing.xs),
+                const Gap(AppSpacing.xs),
                 Text(
                   tone.description,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(

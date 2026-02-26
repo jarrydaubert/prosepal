@@ -305,7 +305,7 @@ void main() {
         debugPrint('');
       } on PlatformException catch (e) {
         if (e.code == 'PURCHASE_CANCELLED' ||
-            e.message?.contains('cancelled') == true) {
+            (e.message?.contains('cancelled') ?? false)) {
           debugPrint('ℹ️ Purchase cancelled by user (expected in test)');
         } else {
           debugPrint('❌ Purchase error: ${e.code} - ${e.message}');

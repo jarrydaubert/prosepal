@@ -79,9 +79,9 @@ class PaywallCard extends StatelessWidget {
                 ],
               ),
               if (savings != null) ...[
-                Gap(AppSpacing.sm),
+                const Gap(AppSpacing.sm),
                 Container(
-                  padding: EdgeInsets.symmetric(
+                  padding: const EdgeInsets.symmetric(
                     horizontal: AppSpacing.sm,
                     vertical: AppSpacing.xs,
                   ),
@@ -106,7 +106,7 @@ class PaywallCard extends StatelessWidget {
             top: -10,
             right: 16,
             child: Container(
-              padding: EdgeInsets.symmetric(
+              padding: const EdgeInsets.symmetric(
                 horizontal: AppSpacing.sm,
                 vertical: AppSpacing.xs,
               ),

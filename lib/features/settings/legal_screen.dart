@@ -14,34 +14,34 @@ class TermsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Terms of Use'),
+        title: const Text('Terms of Use'),
         actions: [
           IconButton(
-            icon: Icon(Icons.open_in_new),
+            icon: const Icon(Icons.open_in_new),
             tooltip: 'Open in browser',
             onPressed: () => launchUrl(Uri.parse(_webUrl)),
           ),
         ],
       ),
       body: ListView(
-        padding: EdgeInsets.all(AppSpacing.screenPadding),
+        padding: const EdgeInsets.all(AppSpacing.screenPadding),
         children: [
-          _LegalSection(
+          const _LegalSection(
             title: 'Agreement to Terms',
             content:
                 'By downloading or using Prosepal, you agree to be bound by these Terms of Use. If you do not agree to these terms, please do not use the app.',
           ),
-          _LegalSection(
+          const _LegalSection(
             title: 'Description of Service',
             content:
                 'Prosepal is an AI-powered message generation service that helps users create personalized messages for various occasions including birthdays, thank yous, congratulations, and more.',
           ),
-          _LegalSection(
+          const _LegalSection(
             title: 'User Accounts',
             content:
                 'To use Prosepal, you must create an account using Apple Sign In, Google Sign In, or email/password. You are responsible for maintaining the confidentiality of your account credentials.',
           ),
-          _LegalSection(
+          const _LegalSection(
             title: 'Subscriptions & Payments',
             content:
                 '• Free users receive 3 message generations\n'
@@ -50,7 +50,7 @@ class TermsScreen extends StatelessWidget {
                 '• Auto-renews unless cancelled 24 hours before period ends\n'
                 '• Manage subscriptions in Apple ID Account Settings',
           ),
-          _LegalSection(
+          const _LegalSection(
             title: 'Acceptable Use',
             content:
                 'You agree not to use Prosepal to:\n'
@@ -59,18 +59,18 @@ class TermsScreen extends StatelessWidget {
                 '• Violate any applicable laws\n'
                 '• Infringe on the rights of others',
           ),
-          _LegalSection(
+          const _LegalSection(
             title: 'AI-Generated Content',
             content:
                 'Messages are created using artificial intelligence. We do not guarantee that generated content will be error-free or appropriate for all situations. You are responsible for reviewing messages before use.',
           ),
-          _LegalSection(
+          const _LegalSection(
             title: 'Disclaimer',
             content:
                 'Prosepal is provided "as is" without warranties of any kind. We do not guarantee uninterrupted or error-free service.',
           ),
-          _LegalSection(title: 'Contact', content: 'support@prosepal.app'),
-          Gap(AppSpacing.lg),
+          const _LegalSection(title: 'Contact', content: 'support@prosepal.app'),
+          const Gap(AppSpacing.lg),
           Text(
             'Last updated: December 28, 2025',
             style: Theme.of(
@@ -78,11 +78,11 @@ class TermsScreen extends StatelessWidget {
             ).textTheme.bodySmall?.copyWith(color: AppColors.textHint),
             textAlign: TextAlign.center,
           ),
-          Gap(AppSpacing.md),
+          const Gap(AppSpacing.md),
           Center(
             child: TextButton(
               onPressed: () => launchUrl(Uri.parse(_webUrl)),
-              child: Text('View full terms on web'),
+              child: const Text('View full terms on web'),
             ),
           ),
         ],
@@ -100,24 +100,24 @@ class PrivacyScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Privacy Policy'),
+        title: const Text('Privacy Policy'),
         actions: [
           IconButton(
-            icon: Icon(Icons.open_in_new),
+            icon: const Icon(Icons.open_in_new),
             tooltip: 'Open in browser',
             onPressed: () => launchUrl(Uri.parse(_webUrl)),
           ),
         ],
       ),
       body: ListView(
-        padding: EdgeInsets.all(AppSpacing.screenPadding),
+        padding: const EdgeInsets.all(AppSpacing.screenPadding),
         children: [
-          _LegalSection(
+          const _LegalSection(
             title: 'Overview',
             content:
                 'Prosepal is committed to protecting your privacy. This policy explains how we collect, use, and safeguard your information.',
           ),
-          _LegalSection(
+          const _LegalSection(
             title: 'Information We Collect',
             content:
                 '• Account info: Email address and authentication credentials\n'
@@ -125,7 +125,7 @@ class PrivacyScreen extends StatelessWidget {
                 '• Usage data: Anonymous statistics to improve our service\n'
                 '• Diagnostics: Crash logs to fix bugs',
           ),
-          _LegalSection(
+          const _LegalSection(
             title: 'How We Use Your Information',
             content:
                 '• To provide and maintain our service\n'
@@ -133,7 +133,7 @@ class PrivacyScreen extends StatelessWidget {
                 '• To process subscription payments\n'
                 '• To improve our app and user experience',
           ),
-          _LegalSection(
+          const _LegalSection(
             title: 'Third-Party Services',
             content:
                 '• Supabase - Authentication\n'
@@ -141,15 +141,15 @@ class PrivacyScreen extends StatelessWidget {
                 '• RevenueCat - Subscription management\n'
                 '• Firebase - Analytics and crash reporting',
           ),
-          _LegalSection(
-            title: 'What We Don\'t Do',
+          const _LegalSection(
+            title: "What We Don't Do",
             content:
-                '• We don\'t sell your data\n'
-                '• We don\'t store generated messages\n'
-                '• We don\'t share data for advertising\n'
-                '• We don\'t use your data for AI training',
+                "• We don't sell your data\n"
+                "• We don't store generated messages\n"
+                "• We don't share data for advertising\n"
+                "• We don't use your data for AI training",
           ),
-          _LegalSection(
+          const _LegalSection(
             title: 'Your Rights',
             content:
                 '• Access your personal data\n'
@@ -157,8 +157,8 @@ class PrivacyScreen extends StatelessWidget {
                 '• Opt out of analytics\n\n'
                 'Delete your account anytime from Settings.',
           ),
-          _LegalSection(title: 'Contact', content: 'support@prosepal.app'),
-          Gap(AppSpacing.lg),
+          const _LegalSection(title: 'Contact', content: 'support@prosepal.app'),
+          const Gap(AppSpacing.lg),
           Text(
             'Last updated: December 28, 2025',
             style: Theme.of(
@@ -166,11 +166,11 @@ class PrivacyScreen extends StatelessWidget {
             ).textTheme.bodySmall?.copyWith(color: AppColors.textHint),
             textAlign: TextAlign.center,
           ),
-          Gap(AppSpacing.md),
+          const Gap(AppSpacing.md),
           Center(
             child: TextButton(
               onPressed: () => launchUrl(Uri.parse(_webUrl)),
-              child: Text('View full policy on web'),
+              child: const Text('View full policy on web'),
             ),
           ),
         ],
@@ -188,8 +188,8 @@ class _LegalSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: EdgeInsets.only(bottom: AppSpacing.md),
-      padding: EdgeInsets.all(AppSpacing.md),
+      margin: const EdgeInsets.only(bottom: AppSpacing.md),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: AppColors.surfaceVariant,
         borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
@@ -203,7 +203,7 @@ class _LegalSection extends StatelessWidget {
               context,
             ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
           ),
-          Gap(AppSpacing.sm),
+          const Gap(AppSpacing.sm),
           Text(
             content,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(

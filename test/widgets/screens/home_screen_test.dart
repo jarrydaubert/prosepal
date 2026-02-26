@@ -118,8 +118,7 @@ void main() {
   group('HomeScreen Usage Indicator', () {
     testWidgets('should show free user remaining count', (tester) async {
       await tester.pumpWidget(createTestableHomeScreen(
-        isPro: false,
-        remaining: 3,
+        
       ));
       await tester.pumpAndSettle();
 
@@ -129,7 +128,6 @@ void main() {
 
     testWidgets('should show 0 remaining when exhausted', (tester) async {
       await tester.pumpWidget(createTestableHomeScreen(
-        isPro: false,
         remaining: 0,
       ));
       await tester.pumpAndSettle();
@@ -224,7 +222,6 @@ void main() {
   group('HomeScreen State', () {
     testWidgets('should show upgrade option when free generations exhausted', (tester) async {
       await tester.pumpWidget(createTestableHomeScreen(
-        isPro: false,
         remaining: 0,
       ));
       await tester.pumpAndSettle();

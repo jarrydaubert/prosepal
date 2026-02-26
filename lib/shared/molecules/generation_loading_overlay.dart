@@ -24,13 +24,13 @@ class _GenerationLoadingOverlayState extends State<GenerationLoadingOverlay> {
     _Tip(emoji: '💭', text: '"Prose" means natural, heartfelt language'),
     _Tip(emoji: '🎯', text: 'Each message is uniquely tailored for you'),
     _Tip(emoji: '💡', text: 'Tip: Add personal details for better results'),
-    _Tip(emoji: '📝', text: 'You\'ll get 3 options to choose from'),
+    _Tip(emoji: '📝', text: "You'll get 3 options to choose from"),
   ];
 
   @override
   void initState() {
     super.initState();
-    _timer = Timer.periodic(Duration(seconds: 3), (_) {
+    _timer = Timer.periodic(const Duration(seconds: 3), (_) {
       if (mounted) {
         setState(() {
           _currentTipIndex = (_currentTipIndex + 1) % _tips.length;
@@ -49,12 +49,12 @@ class _GenerationLoadingOverlayState extends State<GenerationLoadingOverlay> {
   Widget build(BuildContext context) {
     final tip = _tips[_currentTipIndex];
 
-    return Container(
+    return ColoredBox(
       color: Colors.black.withValues(alpha: 0.7),
       child: Center(
         child: Container(
-          margin: EdgeInsets.all(AppSpacing.screenPadding * 2),
-          padding: EdgeInsets.all(AppSpacing.xl),
+          margin: const EdgeInsets.all(AppSpacing.screenPadding * 2),
+          padding: const EdgeInsets.all(AppSpacing.xl),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(AppSpacing.radiusLarge),
@@ -62,7 +62,7 @@ class _GenerationLoadingOverlayState extends State<GenerationLoadingOverlay> {
               BoxShadow(
                 color: AppColors.primary.withValues(alpha: 0.2),
                 blurRadius: 30,
-                offset: Offset(0, 10),
+                offset: const Offset(0, 10),
               ),
             ],
           ),
@@ -77,7 +77,7 @@ class _GenerationLoadingOverlayState extends State<GenerationLoadingOverlay> {
                       gradient: AppColors.primaryGradient,
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    child: Icon(
+                    child: const Icon(
                       Icons.auto_awesome,
                       size: 40,
                       color: Colors.white,
@@ -87,30 +87,30 @@ class _GenerationLoadingOverlayState extends State<GenerationLoadingOverlay> {
                   .shimmer(duration: 1500.ms, color: Colors.white30)
                   .then()
                   .scale(
-                    begin: Offset(1, 1),
-                    end: Offset(1.05, 1.05),
+                    begin: const Offset(1, 1),
+                    end: const Offset(1.05, 1.05),
                     duration: 800.ms,
                   )
                   .then()
                   .scale(
-                    begin: Offset(1.05, 1.05),
-                    end: Offset(1, 1),
+                    begin: const Offset(1.05, 1.05),
+                    end: const Offset(1, 1),
                     duration: 800.ms,
                   ),
-              SizedBox(height: AppSpacing.xl),
+              const SizedBox(height: AppSpacing.xl),
               // Tip emoji
               AnimatedSwitcher(
-                duration: Duration(milliseconds: 300),
+                duration: const Duration(milliseconds: 300),
                 child: Text(
                   tip.emoji,
                   key: ValueKey(_currentTipIndex),
-                  style: TextStyle(fontSize: 32),
+                  style: const TextStyle(fontSize: 32),
                 ),
               ),
-              SizedBox(height: AppSpacing.md),
+              const SizedBox(height: AppSpacing.md),
               // Tip text
               AnimatedSwitcher(
-                duration: Duration(milliseconds: 300),
+                duration: const Duration(milliseconds: 300),
                 child: Text(
                   tip.text,
                   key: ValueKey('text_$_currentTipIndex'),
@@ -121,15 +121,15 @@ class _GenerationLoadingOverlayState extends State<GenerationLoadingOverlay> {
                   textAlign: TextAlign.center,
                 ),
               ),
-              SizedBox(height: AppSpacing.xl),
+              const SizedBox(height: AppSpacing.xl),
               // Progress dots
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: List.generate(
                   _tips.length,
                   (index) => AnimatedContainer(
-                    duration: Duration(milliseconds: 300),
-                    margin: EdgeInsets.symmetric(horizontal: 4),
+                    duration: const Duration(milliseconds: 300),
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
                     width: index == _currentTipIndex ? 20 : 8,
                     height: 8,
                     decoration: BoxDecoration(

@@ -104,10 +104,10 @@ Second message here with enough content.
 
     group('Gemini API Request Structure', () {
       test('should build correct prompt for birthday occasion', () {
-        final occasion = Occasion.birthday;
-        final relationship = Relationship.closeFriend;
-        final tone = Tone.heartfelt;
-        final length = MessageLength.standard;
+        const occasion = Occasion.birthday;
+        const relationship = Relationship.closeFriend;
+        const tone = Tone.heartfelt;
+        const length = MessageLength.standard;
 
         final prompt = _buildTestPrompt(
           occasion: occasion,
@@ -387,9 +387,9 @@ Second message here with enough content.
       test('should calculate exponential backoff correctly', () {
         const initialDelayMs = 500;
 
-        final attempt1Delay = initialDelayMs * (1 << 1);
-        final attempt2Delay = initialDelayMs * (1 << 2);
-        final attempt3Delay = initialDelayMs * (1 << 3);
+        const attempt1Delay = initialDelayMs * (1 << 1);
+        const attempt2Delay = initialDelayMs * (1 << 2);
+        const attempt3Delay = initialDelayMs * (1 << 3);
 
         expect(attempt1Delay, equals(1000));
         expect(attempt2Delay, equals(2000));
@@ -399,10 +399,10 @@ Second message here with enough content.
       test('should apply jitter to backoff', () {
         const initialDelayMs = 500;
         const attempt = 1;
-        final delayMs = initialDelayMs * (1 << attempt);
+        const delayMs = initialDelayMs * (1 << attempt);
 
         // Jitter is 0-20% of delay
-        final minJitter = 0;
+        const minJitter = 0;
         final maxJitter = (delayMs * 0.2).toInt();
 
         expect(minJitter, equals(0));

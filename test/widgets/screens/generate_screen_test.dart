@@ -398,7 +398,6 @@ void main() {
     testWidgets('shows Upgrade button when 0 generations remaining', (tester) async {
       await tester.pumpWidget(createTestableGenerateScreen(
         selectedOccasion: Occasion.birthday,
-        isPro: false,
         remaining: 0,
       ));
       await tester.pumpAndSettle();
@@ -411,7 +410,6 @@ void main() {
     testWidgets('Upgrade button navigates to paywall', (tester) async {
       await tester.pumpWidget(createTestableGenerateScreen(
         selectedOccasion: Occasion.birthday,
-        isPro: false,
         remaining: 0,
       ));
       await tester.pumpAndSettle();
@@ -426,7 +424,6 @@ void main() {
     testWidgets('shows Generate button when generations remaining > 0', (tester) async {
       await tester.pumpWidget(createTestableGenerateScreen(
         selectedOccasion: Occasion.birthday,
-        isPro: false,
         remaining: 1,
       ));
       await tester.pumpAndSettle();
@@ -505,7 +502,7 @@ void main() {
 
     testWidgets('redirects to home if no occasion selected', (tester) async {
       await tester.pumpWidget(createTestableGenerateScreen(
-        selectedOccasion: null,
+        
       ));
       await tester.pumpAndSettle();
 

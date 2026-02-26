@@ -37,7 +37,6 @@ class AuthErrorHandler {
     if (error is TimeoutException) {
       return const AuthErrorResult(
         message: 'Request timed out. Please try again.',
-        shouldRetry: true,
       );
     }
 
@@ -48,7 +47,6 @@ class AuthErrorHandler {
         errorStr.contains('socket')) {
       return const AuthErrorResult(
         message: 'Please check your internet connection and try again.',
-        shouldRetry: true,
       );
     }
 
@@ -59,7 +57,6 @@ class AuthErrorHandler {
 
     return const AuthErrorResult(
       message: 'Something went wrong. Please try again.',
-      shouldRetry: true,
     );
   }
 
@@ -77,7 +74,6 @@ class AuthErrorHandler {
         message.contains('invalid email or password')) {
       return const AuthErrorResult(
         message: 'Invalid email or password. Please try again.',
-        shouldRetry: true,
       );
     }
 
@@ -86,7 +82,6 @@ class AuthErrorHandler {
     if (message.contains('invalid email')) {
       return const AuthErrorResult(
         message: 'Please enter a valid email address.',
-        shouldRetry: true,
       );
     }
 
@@ -128,7 +123,6 @@ class AuthErrorHandler {
     if (message.contains('password') && message.contains('weak')) {
       return const AuthErrorResult(
         message: 'Password is too weak. Use at least 6 characters.',
-        shouldRetry: true,
       );
     }
 
@@ -137,7 +131,6 @@ class AuthErrorHandler {
     if (message.contains('expired')) {
       return const AuthErrorResult(
         message: 'Your session has expired. Please sign in again.',
-        shouldRetry: true,
       );
     }
 
@@ -156,7 +149,6 @@ class AuthErrorHandler {
     if (message.contains('oauth') || message.contains('provider')) {
       return const AuthErrorResult(
         message: 'Sign in failed. Please try again.',
-        shouldRetry: true,
       );
     }
 
@@ -169,7 +161,6 @@ class AuthErrorHandler {
 
     return const AuthErrorResult(
       message: 'Authentication failed. Please try again.',
-      shouldRetry: true,
     );
   }
 
@@ -200,14 +191,12 @@ class AuthErrorHandler {
     if (error.code == AuthorizationErrorCode.notInteractive) {
       return const AuthErrorResult(
         message: 'Apple Sign In requires interaction. Please try again.',
-        shouldRetry: true,
       );
     }
 
     // All other cases (failed, invalidResponse, unknown, credentialExport, credentialImport, etc.)
     return const AuthErrorResult(
       message: 'Apple Sign In failed. Please try again.',
-      shouldRetry: true,
     );
   }
 

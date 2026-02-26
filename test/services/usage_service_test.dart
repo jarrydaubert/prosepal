@@ -51,7 +51,7 @@ void main() {
     );
 
     test('should not go below 0 remaining', () async {
-      for (int i = 0; i < 10; i++) {
+      for (var i = 0; i < 10; i++) {
         await usageService.recordGeneration();
       }
       expect(usageService.getRemainingFree(), equals(0));

@@ -125,7 +125,6 @@ void main() {
           Exception('Integration test: non-fatal error'),
           StackTrace.current,
           reason: 'Testing Crashlytics integration',
-          fatal: false,
         );
 
         // Assert: No exception thrown

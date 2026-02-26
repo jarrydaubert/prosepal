@@ -199,7 +199,7 @@ void main() {
     late GeneratedMessage testMessage;
 
     setUp(() {
-      testTime = DateTime.utc(2025, 1, 1, 12, 0, 0);
+      testTime = DateTime.utc(2025, 1, 1, 12);
       testMessage = GeneratedMessage(
         id: 'test-id',
         text: 'Happy birthday!',
@@ -359,7 +359,7 @@ void main() {
     late List<GeneratedMessage> testMessages;
 
     setUp(() {
-      testTime = DateTime.utc(2025, 1, 1, 12, 0, 0);
+      testTime = DateTime.utc(2025, 1, 1, 12);
       testMessages = [
         GeneratedMessage(
           id: '1',

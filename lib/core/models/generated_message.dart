@@ -4,6 +4,20 @@ import 'tone.dart';
 
 /// Represents a single AI-generated message
 class GeneratedMessage {
+
+  /// Create from JSON
+  factory GeneratedMessage.fromJson(Map<String, dynamic> json) {
+    return GeneratedMessage(
+      id: json['id'] as String,
+      text: json['text'] as String,
+      occasion: Occasion.values.byName(json['occasion'] as String),
+      relationship: Relationship.values.byName(json['relationship'] as String),
+      tone: Tone.values.byName(json['tone'] as String),
+      createdAt: DateTime.parse(json['createdAt'] as String),
+      recipientName: json['recipientName'] as String?,
+      personalDetails: json['personalDetails'] as String?,
+    );
+  }
   const GeneratedMessage({
     required this.id,
     required this.text,
@@ -61,20 +75,6 @@ class GeneratedMessage {
     };
   }
 
-  /// Create from JSON
-  factory GeneratedMessage.fromJson(Map<String, dynamic> json) {
-    return GeneratedMessage(
-      id: json['id'] as String,
-      text: json['text'] as String,
-      occasion: Occasion.values.byName(json['occasion'] as String),
-      relationship: Relationship.values.byName(json['relationship'] as String),
-      tone: Tone.values.byName(json['tone'] as String),
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      recipientName: json['recipientName'] as String?,
-      personalDetails: json['personalDetails'] as String?,
-    );
-  }
-
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
@@ -112,6 +112,20 @@ class GeneratedMessage {
 
 /// Container for a generation session's outputs
 class GenerationResult {
+
+  /// Create from JSON
+  factory GenerationResult.fromJson(Map<String, dynamic> json) {
+    return GenerationResult(
+      messages: (json['messages'] as List)
+          .map((m) => GeneratedMessage.fromJson(m as Map<String, dynamic>))
+          .toList(),
+      occasion: Occasion.values.byName(json['occasion'] as String),
+      relationship: Relationship.values.byName(json['relationship'] as String),
+      tone: Tone.values.byName(json['tone'] as String),
+      recipientName: json['recipientName'] as String?,
+      personalDetails: json['personalDetails'] as String?,
+    );
+  }
   const GenerationResult({
     required this.messages,
     required this.occasion,
@@ -140,26 +154,12 @@ class GenerationResult {
     };
   }
 
-  /// Create from JSON
-  factory GenerationResult.fromJson(Map<String, dynamic> json) {
-    return GenerationResult(
-      messages: (json['messages'] as List)
-          .map((m) => GeneratedMessage.fromJson(m as Map<String, dynamic>))
-          .toList(),
-      occasion: Occasion.values.byName(json['occasion'] as String),
-      relationship: Relationship.values.byName(json['relationship'] as String),
-      tone: Tone.values.byName(json['tone'] as String),
-      recipientName: json['recipientName'] as String?,
-      personalDetails: json['personalDetails'] as String?,
-    );
-  }
-
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     if (other is! GenerationResult) return false;
     if (messages.length != other.messages.length) return false;
-    for (int i = 0; i < messages.length; i++) {
+    for (var i = 0; i < messages.length; i++) {
       if (messages[i] != other.messages[i]) return false;
     }
     return other.occasion == occasion &&

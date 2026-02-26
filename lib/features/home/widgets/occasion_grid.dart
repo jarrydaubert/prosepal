@@ -15,7 +15,7 @@ class OccasionGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     return SliverGrid(
       // Responsive grid: adapts columns based on screen width
-      gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
         maxCrossAxisExtent: 200, // Each tile max 200px wide
         mainAxisSpacing: AppSpacing.md,
         crossAxisSpacing: AppSpacing.md,
@@ -33,8 +33,8 @@ class OccasionGrid extends StatelessWidget {
               duration: 300.ms,
             )
             .scale(
-              begin: Offset(0.9, 0.9),
-              end: Offset(1, 1),
+              begin: const Offset(0.9, 0.9),
+              end: const Offset(1, 1),
               delay: Duration(milliseconds: index * 50),
               duration: 300.ms,
               curve: Curves.easeOut,
@@ -61,7 +61,7 @@ class OccasionTile extends StatelessWidget {
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
-          child: Container(
+          child: DecoratedBox(
             decoration: BoxDecoration(
               color: occasion.backgroundColor,
               borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
@@ -70,8 +70,8 @@ class OccasionTile extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(occasion.emoji, style: TextStyle(fontSize: 32)),
-                Gap(AppSpacing.sm),
+                Text(occasion.emoji, style: const TextStyle(fontSize: 32)),
+                const Gap(AppSpacing.sm),
                 Text(
                   occasion.label,
                   style: Theme.of(context).textTheme.titleSmall?.copyWith(

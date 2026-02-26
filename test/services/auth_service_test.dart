@@ -157,7 +157,7 @@ void main() {
     });
 
     test('converts cancellation to AuthException', () async {
-      mockApple.errorToThrow = SignInWithAppleAuthorizationException(
+      mockApple.errorToThrow = const SignInWithAppleAuthorizationException(
         code: AuthorizationErrorCode.canceled,
         message: 'User cancelled',
       );
@@ -173,7 +173,7 @@ void main() {
     });
 
     test('converts other Apple errors to AuthException', () async {
-      mockApple.errorToThrow = SignInWithAppleAuthorizationException(
+      mockApple.errorToThrow = const SignInWithAppleAuthorizationException(
         code: AuthorizationErrorCode.failed,
         message: 'Some failure',
       );
@@ -191,7 +191,7 @@ void main() {
     test('propagates supabase errors', () async {
       mockApple.credentialToReturn = createFakeAppleCredential();
       mockSupabase.methodErrors['signInWithIdToken'] =
-          AuthException('Invalid token');
+          const AuthException('Invalid token');
 
       expect(
         () => authService.signInWithApple(),
@@ -352,7 +352,7 @@ void main() {
 
     test('propagates auth errors', () async {
       mockSupabase.methodErrors['signInWithPassword'] =
-          AuthException('Invalid credentials');
+          const AuthException('Invalid credentials');
 
       expect(
         () => authService.signInWithEmail(
@@ -509,7 +509,7 @@ void main() {
 
   group('properties', () {
     test('currentUser delegates to supabase', () {
-      mockSupabase.setLoggedIn(true, email: 'test@example.com');
+      mockSupabase.setLoggedIn(true);
 
       expect(authService.currentUser, isNotNull);
       expect(authService.currentUser?.email, 'test@example.com');
@@ -552,7 +552,7 @@ void main() {
     test('returns full_name from metadata if present', () {
       // This would require setting up user metadata in the mock
       // For now, we test that it returns something reasonable
-      mockSupabase.setLoggedIn(true, email: 'test@example.com');
+      mockSupabase.setLoggedIn(true);
 
       // With default mock, displayName comes from email prefix
       expect(authService.displayName, isNotNull);
@@ -582,7 +582,7 @@ void main() {
         AuthChangeEvent.signedIn,
         createFakeSession(),
       ));
-      mockSupabase.emitAuthState(AuthState(
+      mockSupabase.emitAuthState(const AuthState(
         AuthChangeEvent.signedOut,
         null,
       ));

@@ -55,7 +55,7 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
     if (message.isEmpty) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Please enter a message')));
+      ).showSnackBar(const SnackBar(content: Text('Please enter a message')));
       return;
     }
 
@@ -81,7 +81,7 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Could not open email app')));
+        ).showSnackBar(const SnackBar(content: Text('Could not open email app')));
       }
     }
 
@@ -95,17 +95,17 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
       child: Scaffold(
         appBar: AppBar(title: const Text('Send Feedback')),
         body: Padding(
-          padding: EdgeInsets.all(AppSpacing.screenPadding),
+          padding: const EdgeInsets.all(AppSpacing.screenPadding),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'Questions, bugs, or feature requests? We\'d love to hear from you.',
+                "Questions, bugs, or feature requests? We'd love to hear from you.",
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: AppColors.textSecondary,
                 ),
               ),
-              Gap(AppSpacing.lg),
+              const Gap(AppSpacing.lg),
               Expanded(
                 child: Semantics(
                   label: 'Feedback message input',
@@ -129,14 +129,14 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
                   ),
                 ),
               ),
-              Gap(AppSpacing.sm),
+              const Gap(AppSpacing.sm),
               Text(
                 'Device info will be attached to help us debug issues.',
                 style: Theme.of(
                   context,
                 ).textTheme.bodySmall?.copyWith(color: AppColors.textHint),
               ),
-              Gap(AppSpacing.lg),
+              const Gap(AppSpacing.lg),
               AppButton(
                 label: 'Send',
                 onPressed: _isSending ? null : _send,

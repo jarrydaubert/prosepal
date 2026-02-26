@@ -30,7 +30,7 @@ class SettingsTile extends StatelessWidget {
       trailing:
           trailing ??
           (onTap != null
-              ? Icon(Icons.chevron_right, color: AppColors.textHint)
+              ? const Icon(Icons.chevron_right, color: AppColors.textHint)
               : null),
       onTap: onTap,
     );

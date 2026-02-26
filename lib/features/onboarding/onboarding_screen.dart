@@ -28,25 +28,25 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   // Reduced from 4 to 3 pages - more concise, value-focused
   final List<_OnboardingPage> _pages = [
-    _OnboardingPage(
+    const _OnboardingPage(
       emoji: '💬',
       title: 'Stuck on What\nto Write?',
       subtitle:
           'Birthday, wedding, sympathy — finding the right words is hard. We make it easy.',
       gradientColors: _brandGradient,
     ),
-    _OnboardingPage(
+    const _OnboardingPage(
       emoji: '✨',
       title: 'AI-Crafted\nMessages',
       subtitle:
           'Tell us the occasion and relationship. Get 3 unique, heartfelt messages in seconds.',
       gradientColors: _brandGradient,
     ),
-    _OnboardingPage(
+    const _OnboardingPage(
       emoji: '🎉',
       title: 'Try 3 Free\nMessages',
       subtitle:
-          'No account needed to start. Standing in the card aisle? We\'ve got you.',
+          "No account needed to start. Standing in the card aisle? We've got you.",
       gradientColors: _brandGradient,
     ),
   ];
@@ -102,7 +102,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             children: [
               // Top bar with progress and skip
               Padding(
-                padding: EdgeInsets.symmetric(
+                padding: const EdgeInsets.symmetric(
                   horizontal: AppSpacing.screenPadding,
                   vertical: AppSpacing.sm,
                 ),
@@ -176,7 +176,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               ),
               // Page indicators and button
               Padding(
-                padding: EdgeInsets.all(AppSpacing.screenPadding),
+                padding: const EdgeInsets.all(AppSpacing.screenPadding),
                 child: Column(
                   children: [
                     // Dots with improved styling
@@ -204,7 +204,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         ),
                       ),
                     ),
-                    SizedBox(height: AppSpacing.xl),
+                    const SizedBox(height: AppSpacing.xl),
                     // Button with gradient and scale animation
                     _AnimatedButton(
                       onPressed: _nextPage,
@@ -235,7 +235,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         ],
                       ),
                     ),
-                    SizedBox(height: AppSpacing.md),
+                    const SizedBox(height: AppSpacing.md),
                   ],
                 ),
               ),
@@ -316,12 +316,12 @@ class _OnboardingPageWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: AppSpacing.screenPadding * 1.5),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screenPadding * 1.5),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           // Large emoji with glassmorphism container
-          Container(
+          DecoratedBox(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(44),
                   boxShadow: [
@@ -372,7 +372,7 @@ class _OnboardingPageWidget extends StatelessWidget {
                 duration: 600.ms,
                 curve: Curves.easeOutBack,
               ),
-          SizedBox(height: AppSpacing.xxl + 8),
+          const SizedBox(height: AppSpacing.xxl + 8),
           // Title with gradient text
           ShaderMask(
                 shaderCallback: (bounds) => LinearGradient(
@@ -397,7 +397,7 @@ class _OnboardingPageWidget extends StatelessWidget {
                 duration: 500.ms,
                 curve: Curves.easeOutCubic,
               ),
-          SizedBox(height: AppSpacing.lg + 4),
+          const SizedBox(height: AppSpacing.lg + 4),
           // Subtitle with improved styling
           Text(
                 page.subtitle,

@@ -34,7 +34,7 @@ class MessageCard extends StatelessWidget {
           Row(
             children: [
               Container(
-                padding: EdgeInsets.symmetric(
+                padding: const EdgeInsets.symmetric(
                   horizontal: AppSpacing.sm,
                   vertical: AppSpacing.xs,
                 ),
@@ -50,14 +50,14 @@ class MessageCard extends StatelessWidget {
                   ),
                 ),
               ),
-              Spacer(),
+              const Spacer(),
               IconButton(
-                icon: Icon(Icons.copy, size: 20),
+                icon: const Icon(Icons.copy, size: 20),
                 onPressed: () {
                   Clipboard.setData(ClipboardData(text: message));
                   onCopy?.call();
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
+                    const SnackBar(
                       content: Text('Copied to clipboard'),
                       duration: Duration(seconds: 2),
                     ),
@@ -67,7 +67,7 @@ class MessageCard extends StatelessWidget {
               ),
             ],
           ),
-          Gap(AppSpacing.md),
+          const Gap(AppSpacing.md),
           Text(message, style: Theme.of(context).textTheme.bodyLarge),
         ],
       ),

@@ -91,7 +91,7 @@ class MockSupabaseAuthProvider implements ISupabaseAuthProvider {
   void setLoggedIn(bool value, {String email = 'test@example.com'}) {
     if (value) {
       _currentUser = createFakeUser(email: email);
-      _currentSession = createFakeSession(user: _currentUser!);
+      _currentSession = createFakeSession(user: _currentUser);
     } else {
       _currentUser = null;
       _currentSession = null;
@@ -187,7 +187,7 @@ class MockSupabaseAuthProvider implements ISupabaseAuthProvider {
     final user = createFakeUser(email: email, emailConfirmed: false);
     _currentUser = user;
     // No session until email confirmed
-    return AuthResponse(session: null, user: user);
+    return AuthResponse(user: user);
   }
 
   @override
@@ -358,7 +358,6 @@ User createFakeUser({
     emailConfirmedAt: emailConfirmed ? now : null,
     role: 'authenticated',
     updatedAt: now,
-    isAnonymous: false,
   );
 }
 

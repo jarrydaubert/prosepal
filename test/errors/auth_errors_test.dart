@@ -33,13 +33,13 @@ void main() {
   group('AuthErrorHandler', () {
     group('getMessage', () {
       test('should return friendly message for invalid credentials', () {
-        final error = AuthException('Invalid login credentials');
+        const error = AuthException('Invalid login credentials');
         final message = AuthErrorHandler.getMessage(error);
         expect(message, equals('Invalid email or password. Please try again.'));
       });
 
       test('should return friendly message for email not confirmed', () {
-        final error = AuthException('Email not confirmed');
+        const error = AuthException('Email not confirmed');
         final message = AuthErrorHandler.getMessage(error);
         expect(
           message,
@@ -48,7 +48,7 @@ void main() {
       });
 
       test('should return friendly message for user already exists', () {
-        final error = AuthException('User already registered');
+        const error = AuthException('User already registered');
         final message = AuthErrorHandler.getMessage(error);
         expect(
           message,
@@ -59,7 +59,7 @@ void main() {
       });
 
       test('should return friendly message for rate limit', () {
-        final error = AuthException('Rate limit exceeded');
+        const error = AuthException('Rate limit exceeded');
         final message = AuthErrorHandler.getMessage(error);
         expect(
           message,
@@ -68,7 +68,7 @@ void main() {
       });
 
       test('should return friendly message for too many requests', () {
-        final error = AuthException('Too many requests');
+        const error = AuthException('Too many requests');
         final message = AuthErrorHandler.getMessage(error);
         expect(
           message,
@@ -77,7 +77,7 @@ void main() {
       });
 
       test('should return friendly message for email rate limit', () {
-        final error = AuthException('Email rate limit exceeded');
+        const error = AuthException('Email rate limit exceeded');
         final message = AuthErrorHandler.getMessage(error);
         expect(
           message,
@@ -86,7 +86,7 @@ void main() {
       });
 
       test('should return friendly message for security rate limit', () {
-        final error = AuthException(
+        const error = AuthException(
           'For security purposes, you can only request this once every 60 seconds',
         );
         final message = AuthErrorHandler.getMessage(error);
@@ -136,7 +136,7 @@ void main() {
       });
 
       test('should return friendly message for weak password', () {
-        final error = AuthException('Password is too weak');
+        const error = AuthException('Password is too weak');
         final message = AuthErrorHandler.getMessage(error);
         expect(
           message,
@@ -145,13 +145,13 @@ void main() {
       });
 
       test('should return friendly message for invalid email', () {
-        final error = AuthException('Invalid email format');
+        const error = AuthException('Invalid email format');
         final message = AuthErrorHandler.getMessage(error);
         expect(message, equals('Please enter a valid email address.'));
       });
 
       test('should return friendly message for expired session', () {
-        final error = AuthException('Session expired');
+        const error = AuthException('Session expired');
         final message = AuthErrorHandler.getMessage(error);
         expect(
           message,
@@ -160,13 +160,13 @@ void main() {
       });
 
       test('should return friendly message for oauth errors', () {
-        final error = AuthException('OAuth provider error');
+        const error = AuthException('OAuth provider error');
         final message = AuthErrorHandler.getMessage(error);
         expect(message, equals('Sign in failed. Please try again.'));
       });
 
       test('should return cancellation message for cancelled auth', () {
-        final error = AuthException('User cancelled the operation');
+        const error = AuthException('User cancelled the operation');
         final message = AuthErrorHandler.getMessage(error);
         expect(message, equals('Sign in was cancelled.'));
       });
@@ -174,7 +174,7 @@ void main() {
 
     group('getResult', () {
       test('should return structured result for invalid credentials', () {
-        final error = AuthException('Invalid login credentials');
+        const error = AuthException('Invalid login credentials');
         final result = AuthErrorHandler.getResult(error);
         expect(
           result.message,
@@ -185,25 +185,25 @@ void main() {
       });
 
       test('should mark rate limit as not retryable', () {
-        final error = AuthException('Rate limit exceeded');
+        const error = AuthException('Rate limit exceeded');
         final result = AuthErrorHandler.getResult(error);
         expect(result.shouldRetry, isFalse);
       });
 
       test('should mark email not confirmed as not retryable', () {
-        final error = AuthException('Email not confirmed');
+        const error = AuthException('Email not confirmed');
         final result = AuthErrorHandler.getResult(error);
         expect(result.shouldRetry, isFalse);
       });
 
       test('should mark user exists as not retryable', () {
-        final error = AuthException('User already registered');
+        const error = AuthException('User already registered');
         final result = AuthErrorHandler.getResult(error);
         expect(result.shouldRetry, isFalse);
       });
 
       test('should mark cancellation correctly', () {
-        final error = AuthException('User cancelled');
+        const error = AuthException('User cancelled');
         final result = AuthErrorHandler.getResult(error);
         expect(result.isCancellation, isTrue);
         expect(result.shouldRetry, isFalse);
@@ -218,12 +218,12 @@ void main() {
 
     group('isCancellation', () {
       test('should return false for non-cancellation errors', () {
-        final error = AuthException('Invalid login credentials');
+        const error = AuthException('Invalid login credentials');
         expect(AuthErrorHandler.isCancellation(error), isFalse);
       });
 
       test('should return true for cancel in message', () {
-        final error = AuthException('User cancelled the operation');
+        const error = AuthException('User cancelled the operation');
         expect(AuthErrorHandler.isCancellation(error), isTrue);
       });
 
@@ -235,17 +235,17 @@ void main() {
 
     group('shouldRetry', () {
       test('should return true for retryable errors', () {
-        final error = AuthException('Invalid login credentials');
+        const error = AuthException('Invalid login credentials');
         expect(AuthErrorHandler.shouldRetry(error), isTrue);
       });
 
       test('should return false for rate limit', () {
-        final error = AuthException('Rate limit exceeded');
+        const error = AuthException('Rate limit exceeded');
         expect(AuthErrorHandler.shouldRetry(error), isFalse);
       });
 
       test('should return false for cancellation', () {
-        final error = AuthException('User cancelled');
+        const error = AuthException('User cancelled');
         expect(AuthErrorHandler.shouldRetry(error), isFalse);
       });
 

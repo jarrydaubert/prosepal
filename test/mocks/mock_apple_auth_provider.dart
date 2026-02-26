@@ -121,7 +121,7 @@ class MockAppleAuthProvider implements IAppleAuthProvider {
 
   /// Simulate user cancellation (convenience method)
   void simulateCancellation() {
-    errorToThrow = SignInWithAppleAuthorizationException(
+    errorToThrow = const SignInWithAppleAuthorizationException(
       code: AuthorizationErrorCode.canceled,
       message: 'User cancelled',
     );

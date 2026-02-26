@@ -19,7 +19,7 @@ class LoadingIndicator extends StatelessWidget {
         children: [
           CircularProgressIndicator(color: color ?? AppColors.primary),
           if (message != null) ...[
-            Gap(AppSpacing.lg),
+            const Gap(AppSpacing.lg),
             Text(
               message!,
               style: Theme.of(
@@ -53,7 +53,7 @@ class LoadingOverlay extends StatelessWidget {
       children: [
         child,
         if (isLoading)
-          Container(
+          ColoredBox(
             color: Colors.black54,
             child: LoadingIndicator(message: message, color: Colors.white),
           ),

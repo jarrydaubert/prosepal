@@ -39,7 +39,7 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
   void _startResendCooldown() {
     _resendCooldown = 60;
     _cooldownTimer?.cancel();
-    _cooldownTimer = Timer.periodic(Duration(seconds: 1), (timer) {
+    _cooldownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_resendCooldown > 0) {
         setState(() => _resendCooldown--);
       } else {
@@ -122,8 +122,8 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
         SnackBar(
           content: Row(
             children: [
-              Icon(Icons.error_outline, color: Colors.white, size: 20),
-              SizedBox(width: AppSpacing.sm),
+              const Icon(Icons.error_outline, color: Colors.white, size: 20),
+              const SizedBox(width: AppSpacing.sm),
               Expanded(child: Text(message)),
             ],
           ),
@@ -161,10 +161,10 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
         ),
         body: SafeArea(
           child: SingleChildScrollView(
-            padding: EdgeInsets.all(AppSpacing.screenPadding),
+            padding: const EdgeInsets.all(AppSpacing.screenPadding),
             child: Column(
               children: [
-                SizedBox(height: AppSpacing.xl),
+                const SizedBox(height: AppSpacing.xl),
                 if (_emailSent) ...[
                   _buildSuccessState(context),
                 ] else ...[
@@ -188,7 +188,7 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
                 color: AppColors.success.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
-              child: Icon(
+              child: const Icon(
                 Icons.mark_email_read_outlined,
                 size: 48,
                 color: AppColors.success,
@@ -196,15 +196,15 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
             )
             .animate()
             .fadeIn(duration: 400.ms)
-            .scale(begin: Offset(0.8, 0.8), curve: Curves.easeOutBack),
-        SizedBox(height: AppSpacing.xl),
+            .scale(begin: const Offset(0.8, 0.8), curve: Curves.easeOutBack),
+        const SizedBox(height: AppSpacing.xl),
         Text(
           'Check your email',
           style: Theme.of(
             context,
           ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
         ).animate().fadeIn(delay: 200.ms),
-        SizedBox(height: AppSpacing.sm),
+        const SizedBox(height: AppSpacing.sm),
         Text(
           'We sent a magic link to',
           style: Theme.of(
@@ -213,7 +213,7 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
           textAlign: TextAlign.center,
         ).animate().fadeIn(delay: 300.ms),
         if (_sentToEmail != null) ...[
-          SizedBox(height: AppSpacing.xs),
+          const SizedBox(height: AppSpacing.xs),
           Text(
             _sentToEmail!,
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
@@ -223,7 +223,7 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
             textAlign: TextAlign.center,
           ).animate().fadeIn(delay: 400.ms),
         ],
-        SizedBox(height: AppSpacing.md),
+        const SizedBox(height: AppSpacing.md),
         Text(
           'Tap the link in your email to sign in instantly.\nNo password needed!',
           style: Theme.of(
@@ -231,7 +231,7 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
           ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
           textAlign: TextAlign.center,
         ).animate().fadeIn(delay: 500.ms),
-        SizedBox(height: AppSpacing.xxl),
+        const SizedBox(height: AppSpacing.xxl),
         if (_resendCooldown > 0)
           Text(
             'Resend available in ${_resendCooldown}s',
@@ -242,28 +242,28 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
         else
           TextButton.icon(
             onPressed: _resetToEmailInput,
-            icon: Icon(Icons.refresh, size: 18),
-            label: Text('Resend magic link'),
+            icon: const Icon(Icons.refresh, size: 18),
+            label: const Text('Resend magic link'),
           ).animate().fadeIn(),
-        SizedBox(height: AppSpacing.md),
+        const SizedBox(height: AppSpacing.md),
         TextButton(
           onPressed: _resetToEmailInput,
-          child: Text(
+          child: const Text(
             'Use a different email',
             style: TextStyle(color: AppColors.textSecondary),
           ),
         ),
-        SizedBox(height: AppSpacing.xxl),
+        const SizedBox(height: AppSpacing.xxl),
         Container(
-          padding: EdgeInsets.all(AppSpacing.md),
+          padding: const EdgeInsets.all(AppSpacing.md),
           decoration: BoxDecoration(
             color: AppColors.info.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
           ),
           child: Row(
             children: [
-              Icon(Icons.info_outline, color: AppColors.info, size: 20),
-              SizedBox(width: AppSpacing.sm),
+              const Icon(Icons.info_outline, color: AppColors.info, size: 20),
+              const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: Text(
                   "Didn't get the email? Check your spam folder.",
@@ -294,15 +294,15 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
             size: 36,
             color: AppColors.primary,
           ),
-        ).animate().fadeIn().scale(begin: Offset(0.9, 0.9)),
-        SizedBox(height: AppSpacing.lg),
+        ).animate().fadeIn().scale(begin: const Offset(0.9, 0.9)),
+        const SizedBox(height: AppSpacing.lg),
         Text(
           _usePassword ? 'Sign in with password' : 'Passwordless sign in',
           style: Theme.of(
             context,
           ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
         ).animate().fadeIn(delay: 100.ms),
-        SizedBox(height: AppSpacing.sm),
+        const SizedBox(height: AppSpacing.sm),
         Text(
           _usePassword
               ? 'Enter your email and password to sign in.'
@@ -312,7 +312,7 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
           ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
           textAlign: TextAlign.center,
         ).animate().fadeIn(delay: 200.ms),
-        SizedBox(height: AppSpacing.xl),
+        const SizedBox(height: AppSpacing.xl),
         Form(
           key: _formKey,
           child: Column(
@@ -329,7 +329,7 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
                 decoration: InputDecoration(
                   labelText: 'Email address',
                   hintText: 'you@example.com',
-                  prefixIcon: Icon(Icons.email_outlined),
+                  prefixIcon: const Icon(Icons.email_outlined),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(
                       AppSpacing.radiusMedium,
@@ -345,18 +345,18 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
                     borderRadius: BorderRadius.circular(
                       AppSpacing.radiusMedium,
                     ),
-                    borderSide: BorderSide(color: AppColors.primary, width: 2),
+                    borderSide: const BorderSide(color: AppColors.primary, width: 2),
                   ),
                   errorBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(
                       AppSpacing.radiusMedium,
                     ),
-                    borderSide: BorderSide(color: AppColors.error),
+                    borderSide: const BorderSide(color: AppColors.error),
                   ),
                 ),
               ),
               if (_usePassword) ...[
-                SizedBox(height: AppSpacing.md),
+                const SizedBox(height: AppSpacing.md),
                 TextFormField(
                   controller: _passwordController,
                   obscureText: true,
@@ -370,7 +370,7 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
                   onFieldSubmitted: (_) => _signInWithPassword(),
                   decoration: InputDecoration(
                     labelText: 'Password',
-                    prefixIcon: Icon(Icons.lock_outline),
+                    prefixIcon: const Icon(Icons.lock_outline),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(
                         AppSpacing.radiusMedium,
@@ -386,7 +386,7 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
                       borderRadius: BorderRadius.circular(
                         AppSpacing.radiusMedium,
                       ),
-                      borderSide: BorderSide(
+                      borderSide: const BorderSide(
                         color: AppColors.primary,
                         width: 2,
                       ),
@@ -395,12 +395,12 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
                       borderRadius: BorderRadius.circular(
                         AppSpacing.radiusMedium,
                       ),
-                      borderSide: BorderSide(color: AppColors.error),
+                      borderSide: const BorderSide(color: AppColors.error),
                     ),
                   ),
                 ),
               ],
-              SizedBox(height: AppSpacing.lg),
+              const SizedBox(height: AppSpacing.lg),
               SizedBox(
                 width: double.infinity,
                 height: 50,
@@ -418,7 +418,7 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
                     ),
                   ),
                   child: _isLoading
-                      ? SizedBox(
+                      ? const SizedBox(
                           width: 24,
                           height: 24,
                           child: CircularProgressIndicator(
@@ -428,7 +428,7 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
                         )
                       : Text(
                           _usePassword ? 'Sign In' : 'Send Magic Link',
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 17,
                             fontWeight: FontWeight.w500,
                           ),
@@ -438,7 +438,7 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
             ],
           ),
         ).animate().fadeIn(delay: 300.ms),
-        SizedBox(height: AppSpacing.lg),
+        const SizedBox(height: AppSpacing.lg),
         TextButton(
           onPressed: () => setState(() {
             _usePassword = !_usePassword;
@@ -446,11 +446,11 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
           }),
           child: Text(
             _usePassword ? 'Use magic link instead' : 'Sign in with password',
-            style: TextStyle(color: AppColors.textSecondary),
+            style: const TextStyle(color: AppColors.textSecondary),
           ),
         ),
         if (!_usePassword) ...[
-          SizedBox(height: AppSpacing.md),
+          const SizedBox(height: AppSpacing.md),
           _buildBenefitItem(
             context,
             Icons.lock_outline,
@@ -458,7 +458,7 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
             'No password to remember or steal',
             400,
           ),
-          SizedBox(height: AppSpacing.md),
+          const SizedBox(height: AppSpacing.md),
           _buildBenefitItem(
             context,
             Icons.flash_on,
@@ -489,7 +489,7 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
               ),
               child: Icon(icon, color: AppColors.primary, size: 20),
             ),
-            SizedBox(width: AppSpacing.md),
+            const SizedBox(width: AppSpacing.md),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

@@ -3,10 +3,7 @@ import 'package:prosepal/core/services/error_log_service.dart';
 
 void main() {
   group('ErrorLogService', () {
-    setUp(() {
-      // Clear errors before each test
-      ErrorLogService.instance.clear();
-    });
+    setUp(ErrorLogService.instance.clear);
 
     test('should return singleton instance', () {
       final instance1 = ErrorLogService.instance;
@@ -91,7 +88,7 @@ void main() {
 
     test('should handle various error types', () {
       ErrorLogService.instance.log(Exception('Exception type'));
-      ErrorLogService.instance.log(FormatException('Format error'));
+      ErrorLogService.instance.log(const FormatException('Format error'));
       ErrorLogService.instance.log('String error');
       ErrorLogService.instance.log(42); // Even numbers
 
