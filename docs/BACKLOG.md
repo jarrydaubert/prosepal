@@ -20,7 +20,6 @@
 | Session refresh silently fails | `supabase_auth_provider.dart:297-301` | Add retry with backoff, fail operation if 3x fails |
 | Edge function not verified | `supabase_auth_provider.dart:375` | Add health check for delete-user/exchange-apple-token on init |
 | Account deletion orphan data | Edge function | Verify cleanup of usage, fingerprints, history tables |
-| Supabase singleton direct access | `usage_service.dart:60-66` | Inject via interface for testability |
 | No data export | Settings | GDPR/CCPA right to portability - add export button |
 | No analytics consent toggle | Settings | Privacy policy mentions opt-out but no toggle exists |
 | No force update mechanism | App startup | Can't force users off broken versions - add Remote Config |
@@ -34,11 +33,13 @@
 | Full prompt logged with PII | `ai_service.dart:343` | Mask personalDetails before logging |
 | Raw AI response in logs | `ai_service.dart:388-389` | Log status only, not content |
 | Log parameter disclosure | `log_service.dart` | No PII filtering - raw data to Crashlytics |
+| Paywall bypasses service interface | `custom_paywall_screen.dart` | Calls SDK directly - can't mock/test purchase flow |
+| Subscription service 21% coverage | `subscription_service.dart` | Revenue-critical, needs more tests |
+| Auth providers 0% coverage | `*_auth_provider.dart` | 86 lines untested auth flow |
+| Reauth service 1% coverage | `reauth_service.dart` | Security-critical, nearly untested |
 | Fire-and-forget sync loses data | `usage_service.dart:309-310` | Add retry queue, persist pending syncs |
 | Rate limit state lost on restart | `rate_limit_service.dart` | Persist timestamps to SharedPreferences |
 | OAuth re-auth weak | `reauth_service.dart:133-140` | Require password/re-OAuth for sensitive ops |
-| AI system instruction hardcoded | `ai_service.dart:22-52` | Extract to config for cloning portability |
-| Domain models hidden coupling | `core/models/*.dart` | Changes cascade to 15+ files - document in CLONING_PLAYBOOK |
 | No root/jailbreak detection | App startup | Add SafetyNet/freeRASP for fraud prevention |
 | No E2E tests in CI | `.github/workflows/` | Tests exist in `integration_test/` but not in CI |
 | No app state restoration | Forms | Add RestorationMixin - form data lost on process death |
@@ -53,6 +54,8 @@
 | Prompt injection | `ai_service.dart:514-519` | User input directly in prompt - add sanitization |
 | No input length validation | `ai_service.dart` | No character limit on recipientName/personalDetails |
 | Missing CAPTCHA | `email_auth_screen.dart` | Add Turnstile/hCaptcha + Supabase config |
+| Device fingerprint 7% coverage | `device_fingerprint_service.dart` | Free tier abuse prevention undertested |
+| AI service 37% coverage | `ai_service.dart` | Retry logic branches untested |
 | String-based error detection | `auth_errors.dart:46-179` | Message matching as fallback |
 | No connectivity monitoring | App | No `connectivity_plus` - just error messages |
 | No circuit breakers | Network | Repeated failures don't trigger fallback |
@@ -63,8 +66,6 @@
 | No health monitoring | Operations | No uptime monitoring for Supabase/Gemini |
 | Magic link custom scheme fallback | `supabase_auth_provider.dart:332` | Deprecate, use HTTPS universal links only |
 | RevenueCat in dart-define | Build system | Visible in logs - use --dart-define-from-file |
-| Device fingerprint spoofable | `device_fingerprint_service.dart` | Document as deterrent, jailbreak detection is real fix |
-| App-specific code undocumented | `features/`, `core/models/` | ~60% needs rewrite for cloning - document in CLONING_PLAYBOOK |
 
 ---
 
@@ -75,17 +76,31 @@
 | Missing Google nonce | `auth_service.dart` | Native SDK has built-in protections |
 | No StoreKit2 config | `subscription_service.dart` | Add `usesStoreKit2IfAvailable: true` |
 | No deferred purchase handling | `subscription_service.dart` | Handle iOS parental controls |
-| StateNotifier legacy API | `providers.dart` | Migrate to Notifier/AsyncNotifier |
-| Form state in 6 providers | `providers.dart:251-279` | Consolidate to single NotifierProvider |
 | No offline detection | AI service | Check connectivity before generation |
-| AI model not singleton | `ai_service.dart` | Enforce singleton pattern |
 | No SSL certificate pinning | Network | Consider for banking-level security |
 | No visual regression tests | Testing | Add golden tests |
 | No performance tests | Testing | Add load/stress tests |
-| Navigation string path comparison | `app.dart` | Use route names for robustness |
-| Legacy appRouter variable | `router.dart` | Remove after migration (marked TODO) |
 | No history pagination | `history_service.dart` | 200-item cap fine, add lazy loading v1.1 |
 | No accessibility test suite | Testing | Add a11y automation |
+
+---
+
+## Theoretical / Cloning Concerns
+
+> Items that are "best practice" but don't affect production. Revisit when cloning.
+
+| Issue | Location | Reality |
+|-------|----------|---------|
+| Supabase singleton direct access | `usage_service.dart:60-66` | Tests pass, works fine |
+| AI system instruction hardcoded | `ai_service.dart:22-52` | Only matters if cloning |
+| Domain models hidden coupling | `core/models/*.dart` | Just how Dart works |
+| App-specific code undocumented | `features/`, `core/models/` | Cloning concern only |
+| Device fingerprint spoofable | `device_fingerprint_service.dart` | Documented limitation |
+| AI model not singleton | `ai_service.dart` | Works fine via Provider |
+| Navigation string path comparison | `app.dart` | Works, minor smell |
+| Legacy appRouter variable | `router.dart` | Cleanup task |
+| StateNotifier legacy API | `providers.dart` | Preference, not broken |
+| Form state in 6 providers | `providers.dart:251-279` | Preference, works fine |
 
 ---
 
