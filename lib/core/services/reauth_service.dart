@@ -104,9 +104,19 @@ class ReauthService {
       return const ReauthResult(success: false, errorMessage: 'Not signed in');
     }
 
-    // Check provider - OAuth users may not have a password
+    // Check provider - OAuth users (Apple/Google) don't have a password
     final identities = user.identities ?? [];
-    final hasPasswordAuth = identities.any((i) => i.provider == 'email');
+    final hasOAuthProvider = identities.any(
+      (i) => i.provider == 'apple' || i.provider == 'google',
+    );
+    final hasPasswordAuth =
+        identities.any((i) => i.provider == 'email') && !hasOAuthProvider;
+
+    Log.info('Re-auth provider check', {
+      'identities': identities.map((i) => i.provider).toList(),
+      'hasOAuth': hasOAuthProvider,
+      'hasPassword': hasPasswordAuth,
+    });
 
     if (!hasPasswordAuth) {
       // OAuth-only user without biometrics - show confirmation dialog
