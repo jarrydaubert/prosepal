@@ -41,6 +41,26 @@ class _CustomPaywallScreenState extends ConsumerState<CustomPaywallScreen> {
   }
 
   Future<void> _loadOfferings() async {
+    // Check if RevenueCat is configured before calling SDK
+    final subscriptionService = ref.read(subscriptionServiceProvider);
+    if (!subscriptionService.isConfigured) {
+      Log.warning('Paywall: RevenueCat not configured, dismissing');
+      if (mounted) {
+        setState(() => _isLoading = false);
+        // Navigate away gracefully
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/home');
+            }
+          }
+        });
+      }
+      return;
+    }
+
     try {
       final offerings = await Purchases.getOfferings();
       // Debug: Log currency info (only in debug builds)
@@ -66,7 +86,8 @@ class _CustomPaywallScreenState extends ConsumerState<CustomPaywallScreen> {
           }
         });
       }
-    } on Exception {
+    } on Exception catch (e) {
+      Log.error('Paywall: Failed to load offerings', {'error': '$e'});
       if (mounted) {
         setState(() => _isLoading = false);
       }
