@@ -133,6 +133,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     showModalBottomSheet<SavedOccasion?>(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
       backgroundColor: Colors.transparent,
       builder: (context) => const AddOccasionSheet(),
     ).then((result) {
@@ -147,6 +148,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     showModalBottomSheet<SavedOccasion?>(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
       backgroundColor: Colors.transparent,
       builder: (context) => AddOccasionSheet(existingOccasion: occasion),
     ).then((result) {
