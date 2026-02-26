@@ -43,6 +43,7 @@ flutter test
 - `SECURITY.md` - Vulnerability reporting process
 - `docs/NEXT_RELEASE_BRIEF.md` - vNext scope and release gates
 - `docs/BACKLOG.md` - Only open work tracker
+- `docs/README.md` - Docs index and canonical-document map
 - `docs/DEVOPS.md` - Canonical DevOps runbook (CI/CD, testing gates, release, ops)
 - `docs/REMOTE_CONFIG.md` - Remote Config keys and safety rules
 - `docs/REVENUECAT_POLICY.md` - Subscription identity and restore policy

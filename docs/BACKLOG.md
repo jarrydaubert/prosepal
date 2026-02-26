@@ -37,6 +37,7 @@ Rules:
 | `P1-07` | Health monitoring runbook | Health monitoring and escalation process is documented in `docs/DEVOPS.md` with clear alert/response steps. |
 | `P1-08` | Auth abuse controls for social flows | App Check and provider-side abuse controls are validated for Apple/Google auth flows with documented thresholds and escalation steps. |
 | `P1-09` | Release key scan guard | Automated pre-release key scan step exists in CI/release workflow and blocks on secret-pattern hits. |
+| `P1-10` | Monthly governance audit automation | Scheduled/manual GitHub workflow validates ruleset drift and CI usage budget against defined thresholds, and produces machine-readable evidence artifacts. |
 
 ## P2 - Lower Priority
 

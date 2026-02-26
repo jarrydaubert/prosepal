@@ -17,6 +17,23 @@ This runbook covers:
 - AI abuse/cost controls and kill-switch handling
 - Incident response for leaked keys or suspicious activity
 
+## Operational Baseline
+
+1. Default branch: `main` (protected).
+2. Merge model: pull-request only.
+3. Required checks on `main`: `Flutter Quality Gate`, `CodeQL`.
+4. Primary local quality gate:
+
+```bash
+flutter analyze
+./scripts/test_release_preflight.sh
+./scripts/test_critical_smoke.sh
+flutter test --exclude-tags flaky --coverage
+./scripts/check_service_coverage.sh coverage/lcov.info
+```
+
+5. Canonical operations source: this file (`docs/DEVOPS.md`).
+
 ## Repository Security Baseline
 
 Apply and keep the `main` branch policy:
@@ -52,6 +69,14 @@ Ruleset verification command:
 ```bash
 gh api repos/jarrydaubert/prosepal/rulesets/13237026
 ```
+
+## Daily Developer Flow
+
+1. Branch from `main`.
+2. Implement changes.
+3. Run local quality gate.
+4. Open PR and wait for required checks.
+5. Merge only through PR.
 
 ## Public Repo Secret Safety
 
@@ -261,6 +286,22 @@ Create production release via `Release` workflow:
 - Input `version` without leading `v`.
 - Workflow creates annotated `vX.Y.Z` tag.
 - Workflow publishes GitHub Release notes with category mapping from `.github/release.yml`.
+
+## Monthly Governance Review
+
+Run once per month (or after major GitHub-policy changes):
+
+```bash
+gh api repos/jarrydaubert/prosepal/rulesets/13237026
+gh run list --workflow "CI" --branch main --limit 10
+gh run list --workflow "CodeQL" --branch main --limit 10
+```
+
+Verify:
+- Required check names still match repository rules.
+- Ruleset still enforces PR-only, no force-push, no branch deletion, and linear history.
+- Actions security posture is unchanged (selected actions, pinned SHAs, read-only token default, external contributor approval).
+- Dependabot remains enabled for `pub` and `github-actions` with bounded open PR counts.
 
 ## Definition Of Done For DevOps Changes
 
