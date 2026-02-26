@@ -1,5 +1,3 @@
-import 'package:flutter/foundation.dart';
-
 /// Tracks initialization status of critical services.
 ///
 /// Used to show error screen if critical services fail to initialize.
@@ -76,8 +74,7 @@ class InitService {
       _supabaseError != null ||
       _revenueCatError != null;
 
-  /// Reset for testing
-  @visibleForTesting
+  /// Reset state for retry logic (also used in tests)
   void reset() {
     _firebaseInitialized = false;
     _supabaseInitialized = false;

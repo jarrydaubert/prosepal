@@ -86,7 +86,9 @@ void main() {
   }
 
   group('AuthScreen', () {
-    testWidgets('email fallback visible for users without social accounts', (tester) async {
+    testWidgets('email fallback visible for users without social accounts', (
+      tester,
+    ) async {
       // BUG: User with no Apple/Google account has no way to sign in
       tester.view.physicalSize = const Size(1080, 1920);
       tester.view.devicePixelRatio = 1.0;

@@ -20,7 +20,14 @@ flutter test                   # All tests
 flutter analyze                # Lint
 dart format .                  # Format
 dart run build_runner build --delete-conflicting-outputs  # Regenerate freezed
+./scripts/setup-hooks.sh       # Install pre-commit hook (format + analyze)
 ```
+
+## Pre-commit Hook (RECOMMENDED)
+
+Run `./scripts/setup-hooks.sh` to install. Auto-runs before each commit:
+- `dart format --set-exit-if-changed lib/ test/`
+- `flutter analyze --no-fatal-infos`
 
 ## Key Services
 

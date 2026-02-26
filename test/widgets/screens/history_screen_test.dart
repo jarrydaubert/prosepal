@@ -95,7 +95,10 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('No messages yet'), findsOneWidget);
-      expect(find.text('Your generated messages will appear here'), findsOneWidget);
+      expect(
+        find.text('Your generated messages will appear here'),
+        findsOneWidget,
+      );
       expect(find.byIcon(Icons.history), findsOneWidget);
     });
 
@@ -150,9 +153,7 @@ void main() {
     });
 
     testWidgets('shows search bar when history exists', (tester) async {
-      mockHistory.setHistory([
-        TestHistoryFactory.createItem(id: 'item-1'),
-      ]);
+      mockHistory.setHistory([TestHistoryFactory.createItem(id: 'item-1')]);
 
       await tester.pumpWidget(createTestableHistoryScreen());
       await tester.pumpAndSettle();
@@ -162,9 +163,7 @@ void main() {
     });
 
     testWidgets('shows clear all button when history exists', (tester) async {
-      mockHistory.setHistory([
-        TestHistoryFactory.createItem(id: 'item-1'),
-      ]);
+      mockHistory.setHistory([TestHistoryFactory.createItem(id: 'item-1')]);
 
       await tester.pumpWidget(createTestableHistoryScreen());
       await tester.pumpAndSettle();
@@ -269,10 +268,10 @@ void main() {
       expect(find.text('John'), findsNothing);
     });
 
-    testWidgets('shows no results state when search finds nothing', (tester) async {
-      mockHistory.setHistory([
-        TestHistoryFactory.createItem(id: 'item-1'),
-      ]);
+    testWidgets('shows no results state when search finds nothing', (
+      tester,
+    ) async {
+      mockHistory.setHistory([TestHistoryFactory.createItem(id: 'item-1')]);
 
       await tester.pumpWidget(createTestableHistoryScreen());
       await tester.pumpAndSettle();
@@ -287,9 +286,7 @@ void main() {
     });
 
     testWidgets('clear search icon works', (tester) async {
-      mockHistory.setHistory([
-        TestHistoryFactory.createItem(id: 'item-1'),
-      ]);
+      mockHistory.setHistory([TestHistoryFactory.createItem(id: 'item-1')]);
 
       await tester.pumpWidget(createTestableHistoryScreen());
       await tester.pumpAndSettle();
@@ -314,11 +311,19 @@ void main() {
   });
 
   group('HistoryScreen Filter Chips', () {
-    testWidgets('shows filter chips when multiple occasions exist', (tester) async {
+    testWidgets('shows filter chips when multiple occasions exist', (
+      tester,
+    ) async {
       // BUG-006: Filter chips should appear with multiple occasions
       mockHistory.setHistory([
-        TestHistoryFactory.createItem(id: 'item-1', occasion: Occasion.birthday),
-        TestHistoryFactory.createItem(id: 'item-2', occasion: Occasion.sympathy),
+        TestHistoryFactory.createItem(
+          id: 'item-1',
+          occasion: Occasion.birthday,
+        ),
+        TestHistoryFactory.createItem(
+          id: 'item-2',
+          occasion: Occasion.sympathy,
+        ),
       ]);
 
       await tester.pumpWidget(createTestableHistoryScreen());
@@ -328,10 +333,18 @@ void main() {
       expect(find.widgetWithText(FilterChip, 'All (2)'), findsOneWidget);
     });
 
-    testWidgets('hides filter chips when only one occasion type', (tester) async {
+    testWidgets('hides filter chips when only one occasion type', (
+      tester,
+    ) async {
       mockHistory.setHistory([
-        TestHistoryFactory.createItem(id: 'item-1', occasion: Occasion.birthday),
-        TestHistoryFactory.createItem(id: 'item-2', occasion: Occasion.birthday),
+        TestHistoryFactory.createItem(
+          id: 'item-1',
+          occasion: Occasion.birthday,
+        ),
+        TestHistoryFactory.createItem(
+          id: 'item-2',
+          occasion: Occasion.birthday,
+        ),
       ]);
 
       await tester.pumpWidget(createTestableHistoryScreen());
@@ -345,9 +358,7 @@ void main() {
   group('HistoryScreen Clear All', () {
     testWidgets('shows confirmation dialog on clear all', (tester) async {
       // BUG-004: Clear all should show confirmation
-      mockHistory.setHistory([
-        TestHistoryFactory.createItem(id: 'item-1'),
-      ]);
+      mockHistory.setHistory([TestHistoryFactory.createItem(id: 'item-1')]);
 
       await tester.pumpWidget(createTestableHistoryScreen());
       await tester.pumpAndSettle();
@@ -358,15 +369,16 @@ void main() {
 
       // Confirmation dialog should appear
       expect(find.text('Clear History'), findsOneWidget);
-      expect(find.text('Delete all saved messages? This cannot be undone.'), findsOneWidget);
+      expect(
+        find.text('Delete all saved messages? This cannot be undone.'),
+        findsOneWidget,
+      );
       expect(find.text('Cancel'), findsOneWidget);
       expect(find.text('Clear All'), findsOneWidget);
     });
 
     testWidgets('cancel dismisses dialog without clearing', (tester) async {
-      mockHistory.setHistory([
-        TestHistoryFactory.createItem(id: 'item-1'),
-      ]);
+      mockHistory.setHistory([TestHistoryFactory.createItem(id: 'item-1')]);
 
       await tester.pumpWidget(createTestableHistoryScreen());
       await tester.pumpAndSettle();
@@ -387,9 +399,7 @@ void main() {
     });
 
     testWidgets('confirm clears all history', (tester) async {
-      mockHistory.setHistory([
-        TestHistoryFactory.createItem(id: 'item-1'),
-      ]);
+      mockHistory.setHistory([TestHistoryFactory.createItem(id: 'item-1')]);
 
       await tester.pumpWidget(createTestableHistoryScreen());
       await tester.pumpAndSettle();

@@ -90,7 +90,6 @@ void main() {
       expect(find.byType(MaterialApp), findsOneWidget);
       expect(find.byType(Scaffold), findsWidgets);
     });
-
   });
 
   group('PaywallScreen Error States', () {
@@ -104,7 +103,9 @@ void main() {
       expect(find.byType(MaterialApp), findsOneWidget);
     });
 
-    testWidgets('navigates away when RevenueCat not configured', (tester) async {
+    testWidgets('navigates away when RevenueCat not configured', (
+      tester,
+    ) async {
       // BUG: User stuck on paywall that never loads when SDK not configured
       mockSubscription.setConfigured(false);
 
@@ -118,7 +119,9 @@ void main() {
       expect(find.byType(MaterialApp), findsOneWidget);
     });
 
-    testWidgets('does not crash when SDK fails to load offerings', (tester) async {
+    testWidgets('does not crash when SDK fails to load offerings', (
+      tester,
+    ) async {
       // BUG-005: App should handle SDK failures gracefully
       // Note: In test environment, Purchases.getOfferings() may behave
       // unpredictably - this test verifies the app doesn't crash

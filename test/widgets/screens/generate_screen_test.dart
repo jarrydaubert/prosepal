@@ -120,8 +120,6 @@ void main() {
   late SharedPreferences mockPrefs;
   late MockAiService mockAiService;
 
-
-
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
     FlutterSecureStorage.setMockInitialValues({});

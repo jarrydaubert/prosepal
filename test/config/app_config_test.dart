@@ -66,11 +66,7 @@ String? validateGoogleClientId(String clientId) {
 
 /// Valid format test cases: (value, validatorFn, description)
 final _validFormatCases = <(String, String? Function(String), String)>[
-  (
-    'https://abc123.supabase.co',
-    validateSupabaseUrl,
-    'valid Supabase URL',
-  ),
+  ('https://abc123.supabase.co', validateSupabaseUrl, 'valid Supabase URL'),
   (
     'appl_abcdefghijklmnop',
     validateRevenueCatIosKey,
@@ -91,45 +87,50 @@ final _validFormatCases = <(String, String? Function(String), String)>[
 /// Invalid format test cases: (value, validatorFn, expectedError, description)
 final _invalidFormatCases =
     <(String, String? Function(String), String, String)>[
-  // Supabase URL
-  ('', validateSupabaseUrl, 'URL is required', 'empty Supabase URL'),
-  (
-    'http://abc.supabase.co',
-    validateSupabaseUrl,
-    'URL must use HTTPS',
-    'HTTP Supabase URL',
-  ),
-  (
-    'https://example.com',
-    validateSupabaseUrl,
-    'URL should contain supabase domain',
-    'non-Supabase URL',
-  ),
-  // RevenueCat iOS
-  ('', validateRevenueCatIosKey, 'Key is required', 'empty iOS key'),
-  (
-    'goog_wrong',
-    validateRevenueCatIosKey,
-    'iOS key must start with appl_',
-    'wrong prefix iOS key',
-  ),
-  // RevenueCat Android
-  ('', validateRevenueCatAndroidKey, 'Key is required', 'empty Android key'),
-  (
-    'appl_wrong',
-    validateRevenueCatAndroidKey,
-    'Android key must start with goog_',
-    'wrong prefix Android key',
-  ),
-  // Google Client ID
-  ('', validateGoogleClientId, 'Client ID is required', 'empty client ID'),
-  (
-    'invalid-client-id',
-    validateGoogleClientId,
-    'Client ID must end with .apps.googleusercontent.com',
-    'malformed client ID',
-  ),
-];
+      // Supabase URL
+      ('', validateSupabaseUrl, 'URL is required', 'empty Supabase URL'),
+      (
+        'http://abc.supabase.co',
+        validateSupabaseUrl,
+        'URL must use HTTPS',
+        'HTTP Supabase URL',
+      ),
+      (
+        'https://example.com',
+        validateSupabaseUrl,
+        'URL should contain supabase domain',
+        'non-Supabase URL',
+      ),
+      // RevenueCat iOS
+      ('', validateRevenueCatIosKey, 'Key is required', 'empty iOS key'),
+      (
+        'goog_wrong',
+        validateRevenueCatIosKey,
+        'iOS key must start with appl_',
+        'wrong prefix iOS key',
+      ),
+      // RevenueCat Android
+      (
+        '',
+        validateRevenueCatAndroidKey,
+        'Key is required',
+        'empty Android key',
+      ),
+      (
+        'appl_wrong',
+        validateRevenueCatAndroidKey,
+        'Android key must start with goog_',
+        'wrong prefix Android key',
+      ),
+      // Google Client ID
+      ('', validateGoogleClientId, 'Client ID is required', 'empty client ID'),
+      (
+        'invalid-client-id',
+        validateGoogleClientId,
+        'Client ID must end with .apps.googleusercontent.com',
+        'malformed client ID',
+      ),
+    ];
 
 // =============================================================================
 // Tests
