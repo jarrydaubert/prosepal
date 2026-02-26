@@ -4,6 +4,111 @@
 
 ---
 
+## Risk Mitigation: Lessons from Failed Startups
+
+### Similar Failed Companies
+
+| Company | Model | Why They Failed |
+|---------|-------|-----------------|
+| **Chirply** | On-demand greeting cards | No sustainable revenue, relied on hype |
+| **YourQuote** | Content sharing for writers | Couldn't monetize community, platform dissolved |
+| **WriteWith** | Collaborative writing | Lost to free alternatives (Google Docs) |
+
+### Risk Factors That Apply to Prosepal
+
+| Risk | Severity | Mitigation |
+|------|----------|------------|
+| **Free tool competition** | High | ChatGPT could add greeting card templates. Our moat is UX convenience, not capability. |
+| **Standalone app fragility** | Medium | Single app rejection = 0 revenue. Diversify to web, B2B. |
+| **Thin defensibility** | Medium | Low barrier to entry. Build brand + distribution before copycats. |
+| **No revenue path** | Low | ✅ Already addressed - paywall after 1 free gen |
+
+### What NOT to Copy
+
+1. **Chase disruption without revenue** - Always have paying customers, not just users
+2. **Ignore free alternatives** - Monitor ChatGPT capabilities monthly
+3. **Over-rely on community** - We're utility-first, not social platform
+
+### Safer Pivot Options (If Consumer Stalls)
+
+| Pivot | Effort | Revenue Potential | Timeline |
+|-------|--------|-------------------|----------|
+| B2B team plans | Low | Medium | Month 6+ |
+| E-commerce integration (Moonpig plugin) | Medium | High | Month 9+ |
+| API-as-a-service | High | Medium | Month 12+ |
+
+**Trigger to pivot:** If MRR plateaus below $2K for 3+ months after Month 6.
+
+---
+
+## Inbound Capture (Start Now)
+
+Don't wait until Month 12 to learn about B2B demand. Capture interest early with zero dev effort.
+
+### Phase 0: Passive Capture (Now)
+
+| Action | Effort | Purpose |
+|--------|--------|---------|
+| Add "For Teams" link in app Settings | 1 hour | Route to Typeform/Google Form |
+| Add "Business Inquiries" on website footer | 30 min | Email capture |
+| Track "business" or "team" in support emails | 0 | Signal detection |
+
+**Form Questions:**
+1. Company name
+2. Team size
+3. Primary use case (HR, Sales, EA, Other)
+4. Email
+5. "What would make Prosepal useful for your team?"
+
+### What This Tells You
+
+| Signal | Action |
+|--------|--------|
+| 0 submissions in 3 months | B2B demand is weak - stay consumer |
+| 5-10 submissions | Warm interest - schedule discovery calls |
+| 20+ submissions | Strong demand - accelerate Team Plan |
+
+---
+
+## MVP Team Plan (RevenueCat-Based)
+
+Skip Stripe complexity initially. RevenueCat supports "family sharing" which can proxy team billing.
+
+### MVP Features (2-Week Build)
+
+| Feature | Implementation | Effort |
+|---------|----------------|--------|
+| **Team subscription** | RevenueCat family sharing or promo codes | Low |
+| **Shared billing** | Admin purchases, shares access codes | Low |
+| **Corporate tones** | Add "Professional Warm", "Corporate Formal" to existing tone picker | Low |
+| **Custom occasions** | Add "Client Thank You", "Employee Anniversary" to occasion list | Low |
+
+### MVP Pricing
+
+| Plan | Price | Seats | Distribution |
+|------|-------|-------|--------------|
+| **Team Starter** | $29.99/month | Up to 5 | Promo codes to team members |
+| **Team Pro** | $79.99/month | Up to 15 | Promo codes to team members |
+
+### MVP Limitations (Acceptable for V1)
+
+- No admin dashboard (use RevenueCat dashboard)
+- No SSO (individual logins with shared subscription)
+- No usage analytics per user
+- No approval workflows
+
+### Upgrade Path
+
+```
+MVP Team Plan (RevenueCat)
+    ↓ Validated demand (10+ teams)
+Stripe Billing + Admin Dashboard
+    ↓ Enterprise requests
+SSO + Custom Integrations
+```
+
+---
+
 ## B2B Corporate Programs
 
 ### The Opportunity
