@@ -215,6 +215,8 @@ Deno.serve(async (req) => {
 
     // Step 2: Delete user's data from custom tables BEFORE deleting auth record
     // This ensures data cleanup even if auth deletion fails
+    
+    // 2a. Delete user_usage
     try {
       const { error: usageError } = await adminClient
         .from('user_usage')
@@ -222,13 +224,45 @@ Deno.serve(async (req) => {
         .eq('user_id', user.id)
 
       if (usageError) {
-        // Log but continue - user may not have usage data
         console.warn(`Failed to delete user_usage for ${userIdPrefix}:`, usageError.message)
       } else {
         console.log(`Deleted user_usage for ${userIdPrefix}`)
       }
     } catch (e) {
       console.warn(`Error deleting user_usage for ${userIdPrefix}:`, e)
+    }
+
+    // 2b. Delete rate limit logs for this user
+    try {
+      const { error: rateLimitError } = await adminClient
+        .from('rate_limit_log')
+        .delete()
+        .eq('identifier', user.id)
+        .eq('identifier_type', 'user')
+
+      if (rateLimitError) {
+        console.warn(`Failed to delete rate_limit_log for ${userIdPrefix}:`, rateLimitError.message)
+      } else {
+        console.log(`Deleted rate_limit_log for ${userIdPrefix}`)
+      }
+    } catch (e) {
+      console.warn(`Error deleting rate_limit_log for ${userIdPrefix}:`, e)
+    }
+
+    // 2c. Remove user_id from device_usage.associated_user_ids (GDPR erasure)
+    // This uses array_remove to clean up the user reference from any devices
+    try {
+      const { error: deviceError } = await adminClient.rpc('remove_user_from_devices', {
+        p_user_id: user.id
+      })
+
+      if (deviceError) {
+        console.warn(`Failed to remove user from device_usage for ${userIdPrefix}:`, deviceError.message)
+      } else {
+        console.log(`Removed user from device associations for ${userIdPrefix}`)
+      }
+    } catch (e) {
+      console.warn(`Error removing user from device_usage for ${userIdPrefix}:`, e)
     }
 
     // Step 3: Delete the user from auth.users

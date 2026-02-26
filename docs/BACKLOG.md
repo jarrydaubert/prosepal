@@ -17,7 +17,6 @@
 
 | Issue | Location | Fix |
 |-------|----------|-----|
-| Edge function not verified | `supabase_auth_provider.dart:375` | Add health check for delete-user/exchange-apple-token on init |
 | Account deletion orphan data | Edge function | Verify cleanup of usage, fingerprints, history tables |
 | No data export | Settings | GDPR/CCPA right to portability - add export button |
 | No analytics consent toggle | Settings | Privacy policy mentions opt-out but no toggle exists |
