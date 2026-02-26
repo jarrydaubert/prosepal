@@ -30,15 +30,15 @@ All P1 security items implemented:
 
 ---
 
-## P2 - Technical Debt
+## P2 - Technical Debt (REVIEWED)
 
-| Item | Location |
-|------|----------|
-| Consolidate ErrorLogService | `error_log_service.dart` - Merge into LogService |
-| Form state consolidation | `providers.dart` - Single NotifierProvider |
-| AutoDispose for transient state | `providers.dart` |
-| Supabase singleton injection | `usage_service.dart` - For testability |
-| Hardcoded usage limits | `usage_service.dart` - Move to remote config |
+| Item | Status |
+|------|--------|
+| Consolidate ErrorLogService | ✅ Merged into LogService |
+| Form state consolidation | SKIPPED - No validation logic needed, current pattern works well |
+| AutoDispose for transient state | SKIPPED - Explicit reset pattern is more predictable |
+| Supabase singleton injection | SKIPPED - Try/catch pattern already handles testability |
+| Hardcoded usage limits | SKIPPED - Server RPC already overrides limits, client values are just fallbacks |
 
 ---
 
