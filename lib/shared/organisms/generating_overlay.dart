@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -10,26 +9,28 @@ import '../theme/app_spacing.dart';
 /// Immersive full-screen overlay shown during AI message generation.
 ///
 /// Features:
-/// - Full-screen gradient background
-/// - Floating orbs/particles animation
+/// - Gradient background with subtle animation
+/// - Floating orbs/particles effect
 /// - Rotating inspirational messages
 /// - Smooth 60fps animations
-class GenerationLoadingOverlay extends StatefulWidget {
-  const GenerationLoadingOverlay({super.key, this.accentColor});
+class GeneratingOverlay extends StatefulWidget {
+  const GeneratingOverlay({
+    super.key,
+    this.occasionColor,
+  });
 
   /// Optional accent color based on selected occasion
-  final Color? accentColor;
+  final Color? occasionColor;
 
   @override
-  State<GenerationLoadingOverlay> createState() =>
-      _GenerationLoadingOverlayState();
+  State<GeneratingOverlay> createState() => _GeneratingOverlayState();
 }
 
-class _GenerationLoadingOverlayState extends State<GenerationLoadingOverlay>
+class _GeneratingOverlayState extends State<GeneratingOverlay>
     with TickerProviderStateMixin {
-  int _messageIndex = 0;
-  Timer? _messageTimer;
   late final AnimationController _pulseController;
+  late final AnimationController _rotateController;
+  int _messageIndex = 0;
 
   static const _messages = [
     'Finding the perfect words...',
@@ -46,31 +47,40 @@ class _GenerationLoadingOverlayState extends State<GenerationLoadingOverlay>
       duration: const Duration(milliseconds: 2000),
     )..repeat(reverse: true);
 
-    _messageTimer = Timer.periodic(const Duration(milliseconds: 2500), (_) {
+    _rotateController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 20),
+    )..repeat();
+
+    // Cycle through messages
+    _cycleMessages();
+  }
+
+  void _cycleMessages() {
+    Future.delayed(const Duration(milliseconds: 2500), () {
       if (mounted) {
         setState(() {
           _messageIndex = (_messageIndex + 1) % _messages.length;
         });
+        _cycleMessages();
       }
     });
   }
 
   @override
   void dispose() {
-    _messageTimer?.cancel();
     _pulseController.dispose();
+    _rotateController.dispose();
     super.dispose();
   }
 
-  Color get _accentColor => widget.accentColor ?? AppColors.primary;
+  Color get _accentColor => widget.occasionColor ?? AppColors.primary;
 
   @override
   Widget build(BuildContext context) {
-    return Semantics(
-      label: 'Generating messages, please wait',
-      child: Material(
-        color: Colors.transparent,
-        child: Container(
+    return Material(
+      color: Colors.transparent,
+      child: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
@@ -93,8 +103,8 @@ class _GenerationLoadingOverlayState extends State<GenerationLoadingOverlay>
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // Animated sparkle icon
-                    _buildAnimatedIcon(),
+                    // Animated icon/visual
+                    _buildAnimatedVisual(),
                     const SizedBox(height: AppSpacing.xxl),
 
                     // Rotating message
@@ -107,29 +117,30 @@ class _GenerationLoadingOverlayState extends State<GenerationLoadingOverlay>
                 ),
               ),
             ),
-            ],
-          ),
+          ],
         ),
       ),
-    ).animate().fadeIn(duration: 300.ms, curve: Curves.easeOut);
+    )
+        .animate()
+        .fadeIn(duration: 300.ms, curve: Curves.easeOut);
   }
 
   List<Widget> _buildFloatingOrbs() {
     final random = math.Random(42); // Fixed seed for consistent positions
     return List.generate(8, (index) {
       final size = 60.0 + random.nextDouble() * 100;
-      final left = random.nextDouble() * MediaQuery.of(context).size.width;
-      final top = random.nextDouble() * MediaQuery.of(context).size.height;
+      final left = random.nextDouble() * 400 - 50;
+      final top = random.nextDouble() * 800 - 100;
       final delay = random.nextInt(2000);
 
       return Positioned(
-        left: left - size / 2,
-        top: top - size / 2,
+        left: left,
+        top: top,
         child: AnimatedBuilder(
           animation: _pulseController,
           builder: (context, child) {
             final scale = 0.8 + _pulseController.value * 0.4;
-            final opacity = 0.08 + _pulseController.value * 0.12;
+            final opacity = 0.1 + _pulseController.value * 0.15;
             return Transform.scale(
               scale: scale,
               child: Container(
@@ -142,75 +153,89 @@ class _GenerationLoadingOverlayState extends State<GenerationLoadingOverlay>
               ),
             );
           },
-        ).animate(delay: Duration(milliseconds: delay)).fadeIn(duration: 1000.ms),
-      );
+        ),
+      )
+          .animate(delay: Duration(milliseconds: delay))
+          .fadeIn(duration: 1000.ms)
+          .then()
+          .animate(onComplete: (c) => c.repeat(reverse: true))
+          .moveY(begin: 0, end: -20, duration: 3000.ms, curve: Curves.easeInOut);
     });
   }
 
-  Widget _buildAnimatedIcon() {
-    return Container(
-          width: 120,
-          height: 120,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: Colors.white.withValues(alpha: 0.15),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.3),
-              width: 2,
+  Widget _buildAnimatedVisual() {
+    return AnimatedBuilder(
+      animation: _rotateController,
+      builder: (context, child) {
+        return Transform.rotate(
+          angle: _rotateController.value * 2 * math.pi * 0.1,
+          child: child,
+        );
+      },
+      child: Container(
+        width: 120,
+        height: 120,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: Colors.white.withValues(alpha: 0.15),
+          border: Border.all(
+            color: Colors.white.withValues(alpha: 0.3),
+            width: 2,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.white.withValues(alpha: 0.2),
+              blurRadius: 30,
+              spreadRadius: 5,
             ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.white.withValues(alpha: 0.2),
-                blurRadius: 30,
-                spreadRadius: 5,
-              ),
-            ],
-          ),
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              // Outer pulsing ring
-              AnimatedBuilder(
-                animation: _pulseController,
-                builder: (context, _) {
-                  return Container(
-                    width: 100 + _pulseController.value * 15,
-                    height: 100 + _pulseController.value * 15,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: Colors.white.withValues(
-                          alpha: 0.3 - _pulseController.value * 0.2,
-                        ),
-                        width: 1.5,
+          ],
+        ),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            // Outer ring
+            AnimatedBuilder(
+              animation: _pulseController,
+              builder: (context, _) {
+                return Container(
+                  width: 100 + _pulseController.value * 15,
+                  height: 100 + _pulseController.value * 15,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: Colors.white.withValues(
+                        alpha: 0.3 - _pulseController.value * 0.2,
                       ),
+                      width: 1.5,
                     ),
-                  );
-                },
-              ),
-              // Inner sparkle icon
-              const Icon(
-                Icons.auto_awesome,
-                color: Colors.white,
-                size: 48,
-              )
-                  .animate(onComplete: (c) => c.repeat())
-                  .scale(
-                    begin: const Offset(1, 1),
-                    end: const Offset(1.1, 1.1),
-                    duration: 1000.ms,
-                    curve: Curves.easeInOut,
-                  )
-                  .then()
-                  .scale(
-                    begin: const Offset(1.1, 1.1),
-                    end: const Offset(1, 1),
-                    duration: 1000.ms,
-                    curve: Curves.easeInOut,
                   ),
-            ],
-          ),
-        )
+                );
+              },
+            ),
+            // Inner sparkle icon
+            const Icon(
+              Icons.auto_awesome,
+              color: Colors.white,
+              size: 48,
+            )
+                .animate(onComplete: (c) => c.repeat())
+                .scale(
+                  begin: const Offset(1, 1),
+                  end: const Offset(1.1, 1.1),
+                  duration: 1000.ms,
+                  curve: Curves.easeInOut,
+                )
+                .then()
+                .scale(
+                  begin: const Offset(1.1, 1.1),
+                  end: const Offset(1, 1),
+                  duration: 1000.ms,
+                  curve: Curves.easeInOut,
+                ),
+          ],
+        ),
+      ),
+    )
         .animate()
         .scale(
           begin: const Offset(0.8, 0.8),
@@ -281,6 +306,46 @@ class _GenerationLoadingOverlayState extends State<GenerationLoadingOverlay>
               duration: 600.ms,
             );
       }),
+    );
+  }
+}
+
+/// Shows the generating overlay as a modal
+Future<void> showGeneratingOverlay(
+  BuildContext context, {
+  Color? occasionColor,
+}) {
+  return showDialog(
+    context: context,
+    barrierDismissible: false,
+    barrierColor: Colors.transparent,
+    builder: (context) => GeneratingOverlay(occasionColor: occasionColor),
+  );
+}
+
+/// Wrapper to show/hide overlay based on loading state
+class GeneratingOverlayWrapper extends StatelessWidget {
+  const GeneratingOverlayWrapper({
+    super.key,
+    required this.isGenerating,
+    required this.child,
+    this.occasionColor,
+  });
+
+  final bool isGenerating;
+  final Widget child;
+  final Color? occasionColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        child,
+        if (isGenerating)
+          Positioned.fill(
+            child: GeneratingOverlay(occasionColor: occasionColor),
+          ),
+      ],
     );
   }
 }

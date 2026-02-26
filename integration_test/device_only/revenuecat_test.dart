@@ -30,15 +30,18 @@ void main() {
     subscriptionService = SubscriptionService();
   }
 
-  Future<void> pumpApp(PatrolIntegrationTester $, {
-    List<Override> additionalOverrides = const [],
+  Future<void> pumpApp(
+    PatrolIntegrationTester $, {
+    bool? overrideIsPro,
+    int? overrideRemaining,
   }) async {
     await $.pumpWidgetAndSettle(
       ProviderScope(
         overrides: [
           sharedPreferencesProvider.overrideWithValue(prefs),
           subscriptionServiceProvider.overrideWithValue(subscriptionService),
-          ...additionalOverrides,
+          if (overrideIsPro != null) isProProvider.overrideWith((ref) => overrideIsPro),
+          if (overrideRemaining != null) remainingGenerationsProvider.overrideWith((ref) => overrideRemaining),
         ],
         child: const ProsepalApp(),
       ),
@@ -230,7 +233,7 @@ void main() {
       await pumpApp($);
 
       await subscriptionService.initialize();
-      final isPro = await subscriptionService.checkProStatus();
+      final isPro = await subscriptionService.isPro();
 
       // isPro should match whether "pro" entitlement is active
       final customerInfo = await Purchases.getCustomerInfo();
@@ -249,10 +252,7 @@ void main() {
     'paywall screen loads offerings',
     ($) async {
       await initTest();
-      await pumpApp($, additionalOverrides: [
-        remainingGenerationsProvider.overrideWith((ref) => 0),
-        isProProvider.overrideWith((ref) => false),
-      ]);
+      await pumpApp($, overrideRemaining: 0, overrideIsPro: false);
 
       // Navigate to paywall via upgrade button
       await $('Birthday').tap();
@@ -272,10 +272,7 @@ void main() {
     'paywall shows restore purchases option',
     ($) async {
       await initTest();
-      await pumpApp($, additionalOverrides: [
-        remainingGenerationsProvider.overrideWith((ref) => 0),
-        isProProvider.overrideWith((ref) => false),
-      ]);
+      await pumpApp($, overrideRemaining: 0, overrideIsPro: false);
 
       await $('Birthday').tap();
       await $('Close Friend').tap();
@@ -296,11 +293,9 @@ void main() {
     ($) async {
       await initTest();
       await subscriptionService.initialize();
-      final isPro = await subscriptionService.checkProStatus();
+      final isPro = await subscriptionService.isPro();
 
-      await pumpApp($, additionalOverrides: [
-        isProProvider.overrideWith((ref) => isPro),
-      ]);
+      await pumpApp($, overrideIsPro: isPro);
 
       await $(Icons.settings_outlined).tap();
       await $('Settings').waitUntilVisible();

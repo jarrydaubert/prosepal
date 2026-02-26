@@ -48,7 +48,7 @@ void main() {
   }) async {
     await prefs.setBool('hasCompletedOnboarding', hasCompletedOnboarding);
     mockAuth.setLoggedIn(isLoggedIn, email: 'test@example.com');
-    mockSubscription.setProStatus(isPro);
+    mockSubscription.setIsPro(isPro);
 
     await $.pumpWidgetAndSettle(
       ProviderScope(

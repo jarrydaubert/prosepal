@@ -1,3 +1,4 @@
+import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -21,6 +22,21 @@ class ResultsScreen extends ConsumerStatefulWidget {
 
 class _ResultsScreenState extends ConsumerState<ResultsScreen> {
   int? _copiedIndex;
+  late final ConfettiController _confettiController;
+
+  @override
+  void initState() {
+    super.initState();
+    _confettiController = ConfettiController(
+      duration: const Duration(milliseconds: 300),
+    );
+  }
+
+  @override
+  void dispose() {
+    _confettiController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -33,23 +49,25 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
       return const SizedBox.shrink();
     }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Your Messages'),
-        leading: Semantics(
-          label: 'Close and return home',
-          button: true,
-          child: IconButton(
-            icon: const Icon(Icons.close),
-            tooltip: 'Close',
-            onPressed: () {
-              resetGenerationForm(ref);
-              context.go('/');
-            },
+    return Stack(
+      children: [
+        Scaffold(
+          appBar: AppBar(
+            title: const Text('Your Messages'),
+            leading: Semantics(
+              label: 'Close and return home',
+              button: true,
+              child: IconButton(
+                icon: const Icon(Icons.close),
+                tooltip: 'Close',
+                onPressed: () {
+                  resetGenerationForm(ref);
+                  context.go('/');
+                },
+              ),
+            ),
           ),
-        ),
-      ),
-      body: Column(
+          body: Column(
         children: [
           // Context header
           Semantics(
@@ -121,35 +139,62 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
             ),
           ),
 
-          // Bottom actions
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(AppSpacing.screenPadding),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: AppButton(
-                      label: 'Start Over',
-                      style: AppButtonStyle.outline,
-                      icon: Icons.refresh,
-                      onPressed: () {
-                        resetGenerationForm(ref);
-                        context.go('/');
-                      },
+            // Bottom actions
+            SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.screenPadding),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: AppButton(
+                        label: 'Start Over',
+                        style: AppButtonStyle.outline,
+                        icon: Icons.refresh,
+                        onPressed: () {
+                          resetGenerationForm(ref);
+                          context.go('/');
+                        },
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
-    );
+      // Confetti overlay - centered at top
+      Align(
+        alignment: Alignment.topCenter,
+        child: ConfettiWidget(
+          confettiController: _confettiController,
+          blastDirectionality: BlastDirectionality.explosive,
+          shouldLoop: false,
+          numberOfParticles: 20,
+          maxBlastForce: 30,
+          minBlastForce: 10,
+          emissionFrequency: 0.05,
+          gravity: 0.2,
+          colors: const [
+            AppColors.primary,
+            AppColors.primaryLight,
+            Color(0xFFFFA726), // Gold
+            Color(0xFF66BB6A), // Green
+            Color(0xFFB47CFF), // Purple
+          ],
+        ),
+      ),
+    ],
+  );
   }
 
   Future<void> _copyMessage(String text, int index) async {
     await Clipboard.setData(ClipboardData(text: text));
+    HapticFeedback.mediumImpact();
     setState(() => _copiedIndex = index);
+
+    // Trigger confetti celebration!
+    _confettiController.play();
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(

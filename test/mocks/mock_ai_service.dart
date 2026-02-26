@@ -69,7 +69,13 @@ class MockAiService extends AiService {
 
     final messages = messagesToReturn.map((text) => GeneratedMessage(
       id: 'mock-${DateTime.now().millisecondsSinceEpoch}',
-      content: text,
+      text: text,
+      occasion: occasion,
+      relationship: relationship,
+      tone: tone,
+      createdAt: DateTime.now(),
+      recipientName: recipientName,
+      personalDetails: personalDetails,
     )).toList();
 
     return GenerationResult(
