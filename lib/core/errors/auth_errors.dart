@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../services/error_log_service.dart';
+import '../services/log_service.dart';
 
 /// Structured result for richer UI handling
 class AuthErrorResult {
@@ -53,10 +53,7 @@ class AuthErrorHandler {
     }
 
     // Log unknown errors for monitoring
-    ErrorLogService.instance.log(error, StackTrace.current);
-    if (kDebugMode) {
-      debugPrint('Unhandled auth error: $error');
-    }
+    Log.warning('Unhandled auth error', {'error': '$error'});
 
     return const AuthErrorResult(
       message: 'Something went wrong. Please try again.',
@@ -201,12 +198,10 @@ class AuthErrorHandler {
     }
 
     // Log unknown Supabase errors for monitoring
-    ErrorLogService.instance.log(error, StackTrace.current);
-    if (kDebugMode) {
-      debugPrint(
-        'Unhandled Supabase auth error: ${error.message} (status: $statusCode)',
-      );
-    }
+    Log.warning('Unhandled Supabase auth error', {
+      'message': error.message,
+      'statusCode': statusCode ?? 'null',
+    });
 
     return const AuthErrorResult(
       message: 'Authentication failed. Please try again.',

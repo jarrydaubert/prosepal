@@ -7,7 +7,6 @@ import 'package:uuid/uuid.dart';
 
 import '../config/ai_config.dart';
 import '../models/models.dart';
-import 'error_log_service.dart';
 import 'log_service.dart';
 
 /// Exception types for AI service errors
@@ -450,7 +449,6 @@ class AiService {
         }
 
         // Log and throw classified exception
-        ErrorLogService.instance.log(e, stackTrace);
         Log.error('Firebase AI error', e, stackTrace, {'attempt': attempt});
         throw _createException(classification, e);
       } on AiTruncationException catch (e, stackTrace) {
@@ -467,7 +465,6 @@ class AiService {
           continue;
         }
         // Max retries reached - throw user-friendly error
-        ErrorLogService.instance.log(e, stackTrace);
         Log.error('AI truncation persisted after retries', e, stackTrace);
         throw const AiServiceException(
           'The AI response was incomplete. Please try again.',
@@ -488,7 +485,6 @@ class AiService {
         }
 
         // Log and throw classified exception
-        ErrorLogService.instance.log(e, stackTrace);
         Log.error('Unexpected AI error', e, stackTrace, {'attempt': attempt});
         throw _createException(classification, e);
       }

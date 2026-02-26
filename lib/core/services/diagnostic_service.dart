@@ -6,7 +6,6 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'error_log_service.dart';
 import 'log_service.dart';
 
 /// Diagnostic service for generating user-shareable support reports
@@ -133,22 +132,9 @@ abstract final class DiagnosticService {
     }
     buffer.writeln();
 
-    // Recent errors
-    buffer.writeln('--- Recent Errors ---');
-    final errorLog = ErrorLogService.instance.getFormattedLog();
-    buffer.writeln(errorLog);
-    buffer.writeln();
-
-    // User action breadcrumbs (last 50 actions)
-    buffer.writeln('--- Recent Actions ---');
-    final breadcrumbs = Log.getRecentBreadcrumbs(count: 50);
-    if (breadcrumbs.isEmpty) {
-      buffer.writeln('No actions recorded');
-    } else {
-      for (final crumb in breadcrumbs) {
-        buffer.writeln(crumb);
-      }
-    }
+    // Recent logs (includes errors, warnings, and actions)
+    buffer.writeln('--- Recent Activity Log ---');
+    buffer.writeln(Log.getExportableLog());
     buffer.writeln();
 
     // Footer
