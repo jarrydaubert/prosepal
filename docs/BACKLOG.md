@@ -21,45 +21,12 @@
 | **P0** | **RevenueCat offerings config** | Low | BLOCKER |
 | **P0** | **Real device testing** | Low | BLOCKER |
 | **P0** | **App Store ID for reviews** | Low | BLOCKER |
-| P3 | Subscription mock enhancements | Medium | Low |
 | P4 | Performance optimizations | Medium | Medium |
 | P4 | Dark mode support | High | Medium |
 
 ---
 
-## 1. Subscription Mock Enhancements
-
-**Current:** Basic mock with `setIsPro()` and simple booleans
-
-**Target:** Rich mock with fake RevenueCat types for detailed assertions
-
-### Fake Offerings
-
-```dart
-class FakeOffering {
-  final String identifier;
-  final List<FakePackage> availablePackages;
-}
-
-class FakePackage {
-  final String identifier;
-  final String productId;
-  final double price;
-  final String priceString;
-  final PackageType packageType;
-}
-```
-
-### Files to Modify
-
-| File | Changes |
-|------|---------|
-| `test/mocks/mock_subscription_service.dart` | Add fake types |
-| `test/services/subscription_service_with_mock_test.dart` | Use fake types |
-
----
-
-## 2. Performance Optimizations
+## 1. Performance Optimizations
 
 ### Lazy Loading
 
@@ -77,7 +44,7 @@ class FakePackage {
 
 ---
 
-## 3. SettingsScreen Polish
+## 2. SettingsScreen Polish
 
 ### Missing Features
 
@@ -95,7 +62,7 @@ class FakePackage {
 
 ---
 
-## 4. Dark Mode Support
+## 3. Dark Mode Support
 
 **Priority:** P4
 
@@ -106,7 +73,7 @@ class FakePackage {
 
 ---
 
-## 5. App Store Optimization (ASO) Metadata
+## 4. App Store Optimization (ASO) Metadata
 
 > Use when submitting to App Store Connect.
 
