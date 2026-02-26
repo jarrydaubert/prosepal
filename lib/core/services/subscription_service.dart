@@ -182,6 +182,10 @@ class SubscriptionService implements ISubscriptionService {
       final errorCode = PurchasesErrorHelper.getErrorCode(e);
       if (errorCode == PurchasesErrorCode.purchaseCancelledError) {
         Log.info('Purchase cancelled by user');
+      } else if (errorCode == PurchasesErrorCode.paymentPendingError) {
+        // iOS Ask to Buy: purchase pending parental approval
+        Log.info('Purchase pending approval (Ask to Buy)');
+        // Return false but don't log as error - this is expected for children
       } else {
         Log.error('Purchase error', e, null, {'errorCode': errorCode.name});
       }
