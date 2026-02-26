@@ -6,11 +6,11 @@
 
 ---
 
-## P0 - Release Blockers
+## P0 - Known Issues (Not Hard Blockers)
 
 | Item | Action |
 |------|--------|
-| Supabase leaked password protection | Enable toggle in Dashboard > Auth (requires paid plan) |
+| Supabase leaked password protection | Enable toggle in Dashboard > Auth. Requires Pro plan ($25/mo) - upgrade once revenue justifies it |
 | Auth loading spinner missing | Show loading overlay after Apple/Google sheet closes while waiting for sign-in completion (noticeable pause currently) |
 
 ---
