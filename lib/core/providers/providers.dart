@@ -55,7 +55,7 @@ final aiServiceProvider = Provider<AiService>((ref) {
 });
 
 /// Subscription/payment service
-final subscriptionServiceProvider = Provider<SubscriptionService>((ref) {
+final subscriptionServiceProvider = Provider<ISubscriptionService>((ref) {
   return SubscriptionService();
 });
 
