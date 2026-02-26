@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../interfaces/supabase_auth_provider.dart';
+import 'log_service.dart';
 
 /// Real implementation using Supabase Flutter SDK (supabase_flutter 2.x)
 ///
@@ -278,22 +279,41 @@ class SupabaseAuthProvider implements ISupabaseAuthProvider {
   /// Caller should handle failure gracefully and sign out regardless.
   @override
   Future<void> deleteUser() async {
-    // Refresh session to ensure fresh JWT
-    await _auth.refreshSession();
+    Log.info('deleteUser: Starting');
     
+    // 1. Refresh session to ensure fresh JWT
+    try {
+      await _auth.refreshSession();
+      Log.info('deleteUser: Session refreshed');
+    } catch (e) {
+      Log.warning('deleteUser: Session refresh failed', {'error': '$e'});
+      // Continue anyway - current session might still be valid
+    }
+    
+    // 2. Verify we have a session
     final session = _auth.currentSession;
     if (session == null) {
+      Log.error('deleteUser: No session after refresh');
       throw const AuthException('No active session for user deletion');
     }
+    Log.info('deleteUser: Session valid', {
+      'userId': session.user.id.substring(0, 8),
+      'expiresAt': session.expiresAt?.toString() ?? 'unknown',
+    });
 
-    // Get auth headers from client (includes refreshed JWT)
+    // 3. Get auth headers from client (best practice per Supabase docs)
     final authHeaders = Supabase.instance.client.auth.headers;
+    Log.info('deleteUser: Got auth headers', {
+      'hasAuth': authHeaders.containsKey('Authorization'),
+    });
     
-    // Pass explicitly - SDK auto-header may not work reliably
+    // 4. Call edge function with explicit headers
+    Log.info('deleteUser: Invoking edge function');
     await _functions.invoke(
       'delete-user',
       headers: authHeaders,
     );
+    Log.info('deleteUser: Edge function completed');
   }
 
   /// Exchange Apple authorization code for refresh token
@@ -307,10 +327,12 @@ class SupabaseAuthProvider implements ISupabaseAuthProvider {
       throw const AuthException('No active session for Apple token exchange');
     }
 
-    // Explicitly pass JWT - SDK auto-header may not work in all cases
+    // Get auth headers from client (best practice per Supabase docs)
+    final authHeaders = Supabase.instance.client.auth.headers;
+    
     await _functions.invoke(
       'exchange-apple-token',
-      headers: {'Authorization': 'Bearer ${session.accessToken}'},
+      headers: authHeaders,
       body: {'authorization_code': authorizationCode},
     );
   }
