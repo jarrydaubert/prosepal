@@ -72,9 +72,20 @@ dev_dependencies:
   google_sign_in_platform_interface: any
   freezed: ^3.2.3
   json_serializable: ^6.11.2
+  patrol: ^4.1.0
+  patrol_finders: ^3.0.0
 flutter:
   uses-material-design: true
   
   assets:
     - assets/images/
     - assets/images/icons/
+
+# Patrol integration testing configuration
+patrol:
+  app_name: Prosepal
+  test_directory: integration_test
+  android:
+    package_name: com.prosepal.prosepal
+  ios:
+    bundle_id: com.prosepal.prosepal
