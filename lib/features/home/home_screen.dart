@@ -80,7 +80,16 @@ class HomeScreen extends ConsumerWidget {
                     UsageIndicator(
                       remaining: remaining,
                       isPro: isPro,
-                      onUpgrade: () => context.pushNamed('paywall'),
+                      onUpgrade: () {
+                        final isLoggedIn = ref
+                            .read(authServiceProvider)
+                            .isLoggedIn;
+                        if (isLoggedIn) {
+                          context.pushNamed('paywall');
+                        } else {
+                          context.push('/auth?redirect=paywall');
+                        }
+                      },
                       onProTap: () async {
                         final subscriptionService = ref.read(
                           subscriptionServiceProvider,

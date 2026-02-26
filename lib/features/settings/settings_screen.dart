@@ -362,7 +362,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 : '${usageService.getRemainingFree()} free messages remaining',
             trailing: isPro
                 ? null
-                : _UpgradeButton(onPressed: () => context.pushNamed('paywall')),
+                : _UpgradeButton(
+                    onPressed: () {
+                      final isLoggedIn = ref
+                          .read(authServiceProvider)
+                          .isLoggedIn;
+                      if (isLoggedIn) {
+                        context.pushNamed('paywall');
+                      } else {
+                        context.push('/auth?redirect=paywall');
+                      }
+                    },
+                  ),
           ),
           if (isPro)
             SettingsTile(
