@@ -98,6 +98,9 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 | Biometric timeout | `biometric_service.dart` | Expose authTimeout option for time-limited prompts |
 | Biometric config validation | `biometric_service.dart` | Runtime checks for Info.plist/manifest setup |
 | Secure storage integration | `biometric_service.dart` | Combine with flutter_secure_storage for sensitive data |
+| History server sync | `history_service.dart` | Supabase sync for cross-device persistence (like UsageService) |
+| History storage migration | `history_service.dart` | Migrate to hive/sqflite for larger data support |
+| History export/share | `history_service.dart` | Allow users to export history as JSON |
 
 ---
 

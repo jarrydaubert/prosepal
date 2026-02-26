@@ -6,6 +6,9 @@ import 'package:uuid/uuid.dart';
 import '../models/models.dart';
 import 'log_service.dart';
 
+/// Model version for future migration support
+const int _historyModelVersion = 1;
+
 /// Saved generation with metadata
 class SavedGeneration {
   SavedGeneration({
@@ -34,12 +37,26 @@ class SavedGeneration {
 }
 
 /// Service for saving and retrieving generation history
+///
+/// Stores history locally via SharedPreferences with a 200-item cap.
+/// History is cleared on sign-out for privacy (see settings_screen.dart).
+///
+/// ## Limitations (LOCAL-ONLY STORAGE)
+/// - Data is lost on app uninstall or device change
+/// - No cross-device sync
+/// - Consider server sync for production (similar to UsageService)
+///
+/// ## Future Improvements (see BACKLOG.md)
+/// - Supabase sync for cross-device persistence
+/// - Migration to hive/sqflite for larger data
+/// - Export/share functionality
 class HistoryService {
   HistoryService(this._prefs);
 
   final SharedPreferences _prefs;
   final _uuid = const Uuid();
   static const _key = 'generation_history';
+  static const _versionKey = 'generation_history_version';
 
   /// Maximum history items stored locally
   /// 200 items ≈ 2 weeks of heavy Pro usage (500/month)
@@ -47,7 +64,9 @@ class HistoryService {
   static const int maxHistoryItems = 200;
 
   /// Get all saved generations (newest first)
-  List<SavedGeneration> getHistory() {
+  ///
+  /// Returns empty list on parse failure and clears corrupted data.
+  Future<List<SavedGeneration>> getHistory() async {
     final jsonString = _prefs.getString(_key);
     if (jsonString == null || jsonString.isEmpty) {
       return [];
@@ -59,14 +78,16 @@ class HistoryService {
           .map((json) => SavedGeneration.fromJson(json as Map<String, dynamic>))
           .toList();
     } on Exception catch (e) {
-      Log.error('Failed to load history', e);
+      Log.error('Failed to load history - clearing corrupted data', e);
+      // Clear corrupted data to allow recovery
+      await _prefs.remove(_key);
       return [];
     }
   }
 
   /// Save a new generation to history
   Future<void> saveGeneration(GenerationResult result) async {
-    final history = getHistory();
+    final history = await getHistory();
 
     final saved = SavedGeneration(
       id: _uuid.v4(),
@@ -86,7 +107,7 @@ class HistoryService {
 
   /// Delete a specific generation
   Future<void> deleteGeneration(String id) async {
-    final history = getHistory();
+    final history = await getHistory();
     history.removeWhere((item) => item.id == id);
     await _saveHistory(history);
   }
