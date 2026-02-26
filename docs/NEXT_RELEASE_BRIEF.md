@@ -320,6 +320,9 @@ Recommendation for next release:
 - Release config preflight is centralized in `scripts/release_preflight.sh`,
   and CI now runs `scripts/test_release_preflight.sh` to assert missing/placeholder
   release config fails deterministically.
+- AI cost/abuse verification runbook exists:
+  - `docs/AI_COST_ABUSE_RUNBOOK.md`
+  - audit command: `./scripts/audit_ai_cost_controls.sh`
 - Telemetry identity mapping is aligned across auth events:
   - authenticated user ID is applied to Crashlytics and Firebase Analytics on sign-in
   - user ID is cleared from Crashlytics and Firebase Analytics on sign-out
@@ -333,6 +336,10 @@ Recommendation for next release:
 - Integration smoke on iOS simulator is mostly working but currently has a flaky/failing settings interaction test path.
 - Wired physical-device validation gates (iOS + Android) are still pending final evidence capture.
 - Script-only iOS archive enforcement still needs final release-lane validation evidence.
+- AI cost controls are only partially verified from CLI evidence:
+  - Firebase services required for AI/App Check/RC are enabled.
+  - API key audit (2026-02-24) indicates missing app-level restrictions on Firebase auto-created platform keys.
+  - Billing budget alert verification (2026-02-24) is blocked until `billingbudgets.googleapis.com` and billing-account access are enabled for this project/account.
 
 ### Dependencies
 - Dependencies are not fully up-to-date yet.

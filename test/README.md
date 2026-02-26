@@ -20,6 +20,9 @@ flutter test
 # Flake audit
 ./scripts/test_flake_audit.sh
 
+# AI cost/abuse control audit (ops verification)
+./scripts/audit_ai_cost_controls.sh
+
 # Integration smoke/e2e
 flutter test integration_test/smoke_test.dart -d <device-id>
 flutter test integration_test/e2e_test.dart -d <device-id>
