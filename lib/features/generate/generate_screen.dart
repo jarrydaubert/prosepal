@@ -7,6 +7,7 @@ import '../../core/models/models.dart';
 import '../../core/providers/providers.dart';
 import '../../core/services/ai_service.dart';
 import '../../shared/atoms/app_button.dart';
+import '../../shared/molecules/generation_loading_overlay.dart';
 import '../../shared/theme/app_colors.dart';
 import '../../shared/theme/app_spacing.dart';
 import 'widgets/details_input.dart';
@@ -40,85 +41,93 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
       return SizedBox.shrink();
     }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(occasion.emoji),
-            Gap(AppSpacing.sm),
-            Text(occasion.label),
-          ],
-        ),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back),
-          onPressed: () {
-            if (_currentStep > 0) {
-              setState(() => _currentStep--);
-            } else {
-              resetGenerationForm(ref);
-              context.pop();
-            }
-          },
-        ),
-      ),
-      body: Column(
-        children: [
-          // Progress indicator
-          _StepIndicator(currentStep: _currentStep),
-
-          // Content
-          Expanded(
-            child: AnimatedSwitcher(
-              duration: Duration(milliseconds: 300),
-              child: _buildStep(context),
+    return Stack(
+      children: [
+        Scaffold(
+          appBar: AppBar(
+            title: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(occasion.emoji),
+                Gap(AppSpacing.sm),
+                Text(occasion.label),
+              ],
+            ),
+            leading: IconButton(
+              icon: Icon(Icons.arrow_back),
+              onPressed: () {
+                if (_currentStep > 0) {
+                  setState(() => _currentStep--);
+                } else {
+                  resetGenerationForm(ref);
+                  context.pop();
+                }
+              },
             ),
           ),
+          body: Column(
+            children: [
+              // Progress indicator
+              _StepIndicator(currentStep: _currentStep),
 
-          // Error message
-          if (error != null)
-            Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: AppSpacing.screenPadding,
-              ),
-              child: Container(
-                padding: EdgeInsets.all(AppSpacing.md),
-                decoration: BoxDecoration(
-                  color: AppColors.error.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
+              // Content
+              Expanded(
+                child: AnimatedSwitcher(
+                  duration: Duration(milliseconds: 300),
+                  child: _buildStep(context),
                 ),
-                child: Row(
-                  children: [
-                    Icon(Icons.error_outline, color: AppColors.error),
-                    Gap(AppSpacing.sm),
-                    Expanded(
-                      child: Text(
-                        error,
-                        style: TextStyle(color: AppColors.error),
+              ),
+
+              // Error message
+              if (error != null)
+                Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: AppSpacing.screenPadding,
+                  ),
+                  child: Container(
+                    padding: EdgeInsets.all(AppSpacing.md),
+                    decoration: BoxDecoration(
+                      color: AppColors.error.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(
+                        AppSpacing.radiusMedium,
                       ),
                     ),
-                  ],
+                    child: Row(
+                      children: [
+                        Icon(Icons.error_outline, color: AppColors.error),
+                        Gap(AppSpacing.sm),
+                        Expanded(
+                          child: Text(
+                            error,
+                            style: TextStyle(color: AppColors.error),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+              // Bottom button
+              SafeArea(
+                child: Padding(
+                  padding: EdgeInsets.all(AppSpacing.screenPadding),
+                  child: _buildBottomButton(
+                    context,
+                    occasion: occasion,
+                    relationship: relationship,
+                    tone: tone,
+                    isGenerating: isGenerating,
+                    remaining: remaining,
+                    isPro: isPro,
+                  ),
                 ),
               ),
-            ),
-
-          // Bottom button
-          SafeArea(
-            child: Padding(
-              padding: EdgeInsets.all(AppSpacing.screenPadding),
-              child: _buildBottomButton(
-                context,
-                occasion: occasion,
-                relationship: relationship,
-                tone: tone,
-                isGenerating: isGenerating,
-                remaining: remaining,
-                isPro: isPro,
-              ),
-            ),
+            ],
           ),
-        ],
-      ),
+        ),
+        // Loading overlay
+        if (isGenerating) const GenerationLoadingOverlay(),
+      ],
     );
   }
 

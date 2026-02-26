@@ -1,6 +1,7 @@
 import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -29,7 +30,6 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
 
     try {
       final response = await AuthService.instance.signInWithApple();
-      // Link RevenueCat to user for purchase restoration across devices
       if (response.user != null) {
         await ref
             .read(subscriptionServiceProvider)
@@ -55,13 +55,11 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
 
     try {
       await AuthService.instance.signInWithGoogle();
-      // OAuth redirects via browser, loading state cleared by auth listener
     } catch (e) {
       if (!AuthErrorHandler.isCancellation(e)) {
         setState(() => _error = AuthErrorHandler.getMessage(e));
       }
     } finally {
-      // Always clear loading state - OAuth redirect or cancellation
       if (mounted) setState(() => _isLoading = false);
     }
   }
@@ -73,139 +71,196 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.all(AppSpacing.screenPadding),
-          child: Column(
-            children: [
-              const Spacer(),
-              // App Logo
-              ClipRRect(
-                borderRadius: BorderRadius.circular(24),
-                child: Image.asset(
-                  'assets/images/logo.png',
-                  width: 120,
-                  height: 120,
-                ),
-              ),
-              SizedBox(height: AppSpacing.xl),
-              Text(
-                'Welcome to Prosepal',
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              SizedBox(height: AppSpacing.sm),
-              Text(
-                'The right words, right now',
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyLarge?.copyWith(color: AppColors.textSecondary),
-                textAlign: TextAlign.center,
-              ),
-              const Spacer(),
-              if (_error != null) ...[
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              AppColors.primary.withValues(alpha: 0.08),
+              Colors.white,
+              Colors.white,
+            ],
+            stops: [0.0, 0.3, 1.0],
+          ),
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: EdgeInsets.all(AppSpacing.screenPadding),
+            child: Column(
+              children: [
+                const Spacer(flex: 2),
+                // App Logo with shadow
                 Container(
-                  padding: EdgeInsets.all(AppSpacing.md),
-                  decoration: BoxDecoration(
-                    color: AppColors.error.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(
-                      AppSpacing.radiusMedium,
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.error_outline,
-                        color: AppColors.error,
-                        size: 20,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(28),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.primary.withValues(alpha: 0.3),
+                            blurRadius: 30,
+                            offset: Offset(0, 10),
+                          ),
+                        ],
                       ),
-                      SizedBox(width: AppSpacing.sm),
-                      Expanded(
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(28),
+                        child: Image.asset(
+                          'assets/images/logo.png',
+                          width: 120,
+                          height: 120,
+                        ),
+                      ),
+                    )
+                    .animate()
+                    .fadeIn(duration: 600.ms)
+                    .scale(
+                      begin: Offset(0.8, 0.8),
+                      duration: 600.ms,
+                      curve: Curves.easeOutBack,
+                    ),
+                SizedBox(height: AppSpacing.xl),
+                // Title
+                Text(
+                      'Welcome to Prosepal',
+                      style: Theme.of(context).textTheme.headlineMedium
+                          ?.copyWith(fontWeight: FontWeight.bold),
+                      textAlign: TextAlign.center,
+                    )
+                    .animate()
+                    .fadeIn(delay: 200.ms, duration: 500.ms)
+                    .slideY(begin: 0.3, duration: 500.ms),
+                SizedBox(height: AppSpacing.sm),
+                // Tagline
+                Text(
+                      'The right words, right now',
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                      textAlign: TextAlign.center,
+                    )
+                    .animate()
+                    .fadeIn(delay: 400.ms, duration: 500.ms)
+                    .slideY(begin: 0.3, duration: 500.ms),
+                const Spacer(flex: 2),
+                // Error message
+                if (_error != null) ...[
+                  Container(
+                    padding: EdgeInsets.all(AppSpacing.md),
+                    decoration: BoxDecoration(
+                      color: AppColors.error.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(
+                        AppSpacing.radiusMedium,
+                      ),
+                      border: Border.all(
+                        color: AppColors.error.withValues(alpha: 0.3),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.error_outline,
+                          color: AppColors.error,
+                          size: 20,
+                        ),
+                        SizedBox(width: AppSpacing.sm),
+                        Expanded(
+                          child: Text(
+                            _error!,
+                            style: TextStyle(color: AppColors.error),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ).animate().fadeIn().shake(),
+                  SizedBox(height: AppSpacing.lg),
+                ],
+                // Auth buttons
+                Column(
+                      children: [
+                        // Apple Sign In (iOS/macOS only, first per Apple guidelines)
+                        if (Platform.isIOS || Platform.isMacOS) ...[
+                          _AuthButton(
+                            onPressed: _isLoading ? null : _signInWithApple,
+                            icon: Icons.apple,
+                            label: 'Continue with Apple',
+                            backgroundColor: Colors.black,
+                            foregroundColor: Colors.white,
+                          ),
+                          SizedBox(height: AppSpacing.md),
+                        ],
+                        // Google Sign In
+                        _AuthButton(
+                          onPressed: _isLoading ? null : _signInWithGoogle,
+                          icon: null,
+                          customIcon: _GoogleLogo(),
+                          label: 'Continue with Google',
+                          backgroundColor: Colors.white,
+                          foregroundColor: Colors.black87,
+                          borderColor: AppColors.textHint,
+                        ),
+                        SizedBox(height: AppSpacing.md),
+                        // Email Sign In
+                        _AuthButton(
+                          onPressed: _isLoading ? null : _signInWithEmail,
+                          icon: Icons.email_outlined,
+                          label: 'Continue with Email',
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: Colors.white,
+                        ),
+                      ],
+                    )
+                    .animate()
+                    .fadeIn(delay: 600.ms, duration: 500.ms)
+                    .slideY(begin: 0.2, duration: 500.ms),
+                SizedBox(height: AppSpacing.xl),
+                // Loading or legal
+                if (_isLoading)
+                  CircularProgressIndicator(color: AppColors.primary)
+                      .animate(onPlay: (c) => c.repeat())
+                      .rotate(duration: 1.seconds)
+                else
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    children: [
+                      Text(
+                        'By continuing, you agree to our ',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () => context.pushNamed('terms'),
                         child: Text(
-                          _error!,
-                          style: TextStyle(color: AppColors.error),
+                          'Terms',
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.w600,
+                              ),
+                        ),
+                      ),
+                      Text(
+                        ' and ',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () => context.pushNamed('privacy'),
+                        child: Text(
+                          'Privacy Policy',
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.w600,
+                              ),
                         ),
                       ),
                     ],
-                  ),
-                ),
+                  ).animate().fadeIn(delay: 800.ms, duration: 400.ms),
                 SizedBox(height: AppSpacing.lg),
               ],
-              // Sign in with Apple (iOS/macOS only, shown first per Apple guidelines)
-              if (Platform.isIOS || Platform.isMacOS) ...[
-                _AuthButton(
-                  onPressed: _isLoading ? null : _signInWithApple,
-                  icon: Icons.apple,
-                  label: 'Continue with Apple',
-                  backgroundColor: Colors.black,
-                  foregroundColor: Colors.white,
-                ),
-                SizedBox(height: AppSpacing.md),
-              ],
-              // Sign in with Google
-              _AuthButton(
-                onPressed: _isLoading ? null : _signInWithGoogle,
-                icon: null,
-                customIcon: _GoogleLogo(),
-                label: 'Continue with Google',
-                backgroundColor: Colors.white,
-                foregroundColor: Colors.black87,
-                borderColor: AppColors.textSecondary,
-              ),
-              SizedBox(height: AppSpacing.md),
-              // Sign in with Email
-              _AuthButton(
-                onPressed: _isLoading ? null : _signInWithEmail,
-                icon: Icons.email_outlined,
-                label: 'Continue with Email',
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-              ),
-              SizedBox(height: AppSpacing.xl),
-              if (_isLoading)
-                CircularProgressIndicator(color: AppColors.primary)
-              else
-                Wrap(
-                  alignment: WrapAlignment.center,
-                  children: [
-                    Text(
-                      'By continuing, you agree to our ',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                    GestureDetector(
-                      onTap: () => context.pushNamed('terms'),
-                      child: Text(
-                        'Terms',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppColors.primary,
-                          decoration: TextDecoration.underline,
-                        ),
-                      ),
-                    ),
-                    Text(
-                      ' and ',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                    GestureDetector(
-                      onTap: () => context.pushNamed('privacy'),
-                      child: Text(
-                        'Privacy Policy',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppColors.primary,
-                          decoration: TextDecoration.underline,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              SizedBox(height: AppSpacing.lg),
-            ],
+            ),
           ),
         ),
       ),
@@ -242,7 +297,8 @@ class _AuthButton extends StatelessWidget {
         style: ElevatedButton.styleFrom(
           backgroundColor: backgroundColor,
           foregroundColor: foregroundColor,
-          elevation: 0,
+          elevation: borderColor != null ? 0 : 2,
+          shadowColor: backgroundColor.withValues(alpha: 0.5),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
             side: borderColor != null
@@ -289,7 +345,6 @@ class _GoogleLogoPainter extends CustomPainter {
     final double w = size.width;
     final double h = size.height;
 
-    // Google brand colors
     const blue = Color(0xFF4285F4);
     const red = Color(0xFFEA4335);
     const yellow = Color(0xFFFBBC05);
@@ -299,7 +354,6 @@ class _GoogleLogoPainter extends CustomPainter {
       ..style = PaintingStyle.fill
       ..isAntiAlias = true;
 
-    // Draw simplified 'G' shape using arcs
     final center = Offset(w / 2, h / 2);
     final radius = w / 2;
     final strokeWidth = w * 0.22;
@@ -308,17 +362,17 @@ class _GoogleLogoPainter extends CustomPainter {
     paint.strokeWidth = strokeWidth;
     paint.strokeCap = StrokeCap.butt;
 
-    // Blue arc (right side, top portion)
+    // Blue arc
     paint.color = blue;
     canvas.drawArc(
       Rect.fromCircle(center: center, radius: radius - strokeWidth / 2),
-      -0.4, // start angle
-      1.2, // sweep angle
+      -0.4,
+      1.2,
       false,
       paint,
     );
 
-    // Green arc (bottom right)
+    // Green arc
     paint.color = green;
     canvas.drawArc(
       Rect.fromCircle(center: center, radius: radius - strokeWidth / 2),
@@ -328,7 +382,7 @@ class _GoogleLogoPainter extends CustomPainter {
       paint,
     );
 
-    // Yellow arc (bottom left)
+    // Yellow arc
     paint.color = yellow;
     canvas.drawArc(
       Rect.fromCircle(center: center, radius: radius - strokeWidth / 2),
@@ -338,7 +392,7 @@ class _GoogleLogoPainter extends CustomPainter {
       paint,
     );
 
-    // Red arc (top left)
+    // Red arc
     paint.color = red;
     canvas.drawArc(
       Rect.fromCircle(center: center, radius: radius - strokeWidth / 2),
