@@ -2,7 +2,9 @@
 
 > Last verified: 2026-01-10
 
-## Pre-Launch
+---
+
+## Phase 1: Pre-Submission (Backend & Code)
 
 ### Supabase ✅ VERIFIED 2026-01-10
 
@@ -49,23 +51,6 @@
 | Crashlytics | Run > Crashlytics | ✅ | Enabled, 100% crash-free |
 | Analytics | Analytics Dashboard | ✅ | Enabled, collecting data |
 
-**Post-build:** Upload dSYM files to Crashlytics for crash symbolication (see `build/debug-info/`)
-
-### App Store Connect ⏳ PENDING
-
-- [ ] IAP products submitted for review
-- [ ] App privacy nutrition labels filled
-- [ ] Screenshots uploaded
-- [ ] Privacy policy URL: `prosepal.app/privacy`
-- [ ] App Store ID added to code (after approval)
-
-### Google Play Console ⏳ PENDING
-
-- [ ] AAB uploaded to Internal Testing
-- [ ] Store listing complete
-- [ ] Privacy policy URL set
-- [ ] Submit for review
-
 ### Code ✅ VERIFIED 2026-01-10
 
 | Item | Status | Notes |
@@ -75,60 +60,156 @@
 | 0 warnings in lib/ | ✅ | Only info-level items |
 | Pre-commit hook | ✅ | Auto format + analyze |
 
-### Code ⏳ PENDING
+---
 
-- [ ] Version/build number incremented
-- [ ] iOS Archive built (`./scripts/build_ios.sh`)
-- [ ] Android AAB built (`./scripts/build_android.sh`)
+## Phase 2: Store Submission
 
-### Manual Testing ⏳ PENDING
+### Pre-Build ⏳ PENDING
 
-- [ ] TestFlight: Sign in → Generate → Purchase → Restore
-- [ ] Play Store Internal: Same flow
-- [ ] Sign out clears everything
-- [ ] Delete account works
+- [ ] Increment version/build in `pubspec.yaml`
+- [ ] Final `flutter test` pass
+- [ ] Final `flutter analyze lib/` pass
+
+### iOS Build & Upload ⏳ PENDING
+
+```bash
+./scripts/build_ios.sh
+```
+
+- [ ] iOS Archive built successfully
+- [ ] dSYM files saved from `build/debug-info/`
+- [ ] Upload to App Store Connect via Xcode or Transporter
+- [ ] Upload dSYMs to Firebase Crashlytics
+
+### Android Build & Upload ⏳ PENDING
+
+```bash
+./scripts/build_android.sh
+```
+
+- [ ] Android AAB built successfully
+- [ ] Upload to Google Play Console > Internal Testing
+
+### App Store Connect ⏳ PENDING
+
+**Console:** https://appstoreconnect.apple.com
+
+| Item | Location | Status |
+|------|----------|--------|
+| App uploaded | TestFlight | ⏳ |
+| IAP products submitted | In-App Purchases | ⏳ |
+| Privacy nutrition labels | App Privacy | ⏳ |
+| Screenshots (6.7", 6.5", 5.5") | App Store | ⏳ |
+| App description | App Store | ⏳ |
+| Privacy policy URL | App Information | ⏳ `https://prosepal.app/privacy` |
+| Support URL | App Information | ⏳ `https://prosepal.app/support` |
+| Submit for Review | App Store | ⏳ |
+
+### Google Play Console ⏳ PENDING
+
+**Console:** https://play.google.com/console
+
+| Item | Location | Status |
+|------|----------|--------|
+| AAB uploaded | Internal Testing | ⏳ |
+| Store listing complete | Store presence | ⏳ |
+| Screenshots | Store listing | ⏳ |
+| Privacy policy URL | App content | ⏳ `https://prosepal.app/privacy` |
+| Data safety form | App content | ⏳ |
+| Promote to Production | Release | ⏳ |
+
+### Manual Testing (Before Submission) ⏳ PENDING
+
+- [ ] TestFlight: Fresh install → Onboard → Generate → Purchase → Restore
+- [ ] TestFlight: Sign out clears everything
+- [ ] TestFlight: Delete account works
+- [ ] Play Store Internal: Same flows as above
 
 ---
 
-## Launch Day
+## Phase 3: Post-Approval
 
-1. Monitor Crashlytics for crash spikes
-2. Monitor RevenueCat for purchases
-3. Check store reviews
+### After App Store Approval
+
+- [ ] Get App Store ID from App Store Connect
+- [ ] Update `review_service.dart` with App Store ID
+- [ ] Update `settings_screen.dart` Rate App link
+- [ ] Rebuild and submit update (or wait for next release)
+
+### After Play Store Approval
+
+- [ ] Verify production app works
+- [ ] Check RevenueCat shows real purchases
+
+### Firebase App Check (Optional)
+
+- [ ] Switch from "Monitoring" to "Enforced" after 1 week of clean data
+- [ ] Location: Firebase Console > App Check > Firebase AI Logic > Enforce
 
 ---
 
-## Post-Launch Monitoring
+## Phase 4: Launch Day
 
-### Daily
+### Monitoring
+
+1. **Crashlytics** - Watch for crash spikes (target: >99% crash-free)
+2. **RevenueCat** - Verify purchases flowing through
+3. **Supabase** - Check for auth errors in logs
+4. **Store Reviews** - Respond to early reviews quickly
+
+### If Issues Arise
+
+| Issue | Action |
+|-------|--------|
+| Crash spike | Check Crashlytics, hotfix if critical |
+| Purchases failing | Check RevenueCat webhook logs |
+| Auth errors | Check Supabase logs, verify providers |
+| AI not working | Check Firebase AI quotas, verify API key |
+
+---
+
+## Phase 5: Post-Launch (Ongoing)
+
+### Daily Checks (First Week)
+
 - RevenueCat: Revenue, new subs, churn
 - Crashlytics: Crash-free rate, new issues
 - Store: Downloads, ratings, reviews
 
 ### Health Thresholds
-| Metric | Healthy | Warning |
-|--------|---------|---------|
-| Crash-free rate | >99% | <98% |
-| Trial → Paid | >5% | <2% |
-| Day 1 retention | >40% | <20% |
-| Reviews | 4.5+ | <4.0 |
+
+| Metric | Healthy | Warning | Action |
+|--------|---------|---------|--------|
+| Crash-free rate | >99% | <98% | Hotfix |
+| Trial → Paid | >5% | <2% | Review paywall |
+| Day 1 retention | >40% | <20% | Review onboarding |
+| Reviews | 4.5+ | <4.0 | Address feedback |
+
+### Weekly
+
+- Review user feedback
+- Check for pending Apple/Google policy updates
+- Monitor API costs
 
 ---
 
-## Cost Reference
+## Reference
 
-### Revenue (Per User)
-| Plan | Price | Apple Cut | Net |
-|------|-------|-----------|-----|
+### Cost (Per User)
+
+| Plan | Price | Apple/Google Cut | Net |
+|------|-------|------------------|-----|
 | Weekly | $2.99/wk | $0.90 | $2.09 |
 | Monthly | $4.99/mo | $1.50 | $3.49 |
 | Yearly | $29.99/yr | $9.00 | $20.99 |
 
 ### API Cost
+
 - Gemini: ~$0.0004 per generation
 - 10K generations = $4
 
 ### Free Tier Limits
+
 | Service | Limit |
 |---------|-------|
 | Firebase AI | ~1,500 RPD |
@@ -139,8 +220,10 @@
 
 ## Emergency Playbook
 
-| Issue | Action |
-|-------|--------|
-| Gemini rate limited (429) | Check quotas, enable billing |
-| Supabase paused | Restore in dashboard |
-| RevenueCat issues | Check webhook failures, verify keys |
+| Issue | Immediate Action |
+|-------|------------------|
+| Gemini 429 (rate limited) | Firebase Console > Quotas > Increase or enable billing |
+| Supabase paused | Dashboard > Restore project |
+| RevenueCat purchases failing | Check webhook logs, verify API keys |
+| Auth completely broken | Check Supabase status page, verify provider config |
+| Force update needed | Update `min_app_version_*` in Remote Config, publish |
