@@ -1,7 +1,7 @@
 # Prosepal Marketing Strategy
 
-> **Version**: 2.2 | AI execution playbook edition
-> **Last Updated**: January 10, 2026
+> **Version**: 3.1 | Bootstrapped organic-first plan
+> **Last Updated**: January 12, 2026
 > **Markets**: USA, UK, Canada, Australia, New Zealand, Ireland
 
 ---
@@ -117,16 +117,9 @@ The physical card market is shrinking 2-3% annually. But online greeting service
 | Millennials buying MORE cards | 63% of 18-35 plan to send more cards this year |
 | Digital fatigue driving physical | Younger generations returning to handwritten for authenticity |
 
-### Why Millennials Saved The Industry
+### Key Insight: Millennials Are The Target
 
-Contrary to predictions, millennials are the **largest card-buying generation**:
-
-- Value authenticity and personal connection
-- Experience "digital fatigue" - physical cards feel special
-- Grew up both writing notes AND using digital tools
-- Want convenience of digital with meaning of physical
-
-**The gap**: They want to send meaningful cards but struggle with the message. They're digitally native enough to use AI but want it to feel personal.
+Millennials are the **largest card-buying generation** - they value authenticity but struggle with the message. Digitally native enough to use AI, but want it to feel personal.
 
 ---
 
@@ -420,6 +413,21 @@ Contrary to predictions, millennials are the **largest card-buying generation**:
 
 **Subtitle** (30 chars): `AI Greeting Card Writer`
 
+### First Boost Strategy (Launch Week)
+
+Use [Main Keyword] + [Unique App Name] to trigger App Store auto-suggestions:
+
+**Prosepal Implementation**:
+- Title: `Prosepal - Card Messages`
+- Users searching "card message" may see Prosepal suggested
+- Can yield 34-50 trials in first 1-2 weeks
+
+**Checklist**:
+- [x] Verify app name is unique (done)
+- [x] Main keyword in title (done: "Card Messages")
+- [ ] Launch ASO metadata 1-2 days before app goes live
+- [ ] Monitor Search Ads keyword reports for suggestion triggers
+
 ### Screenshot Strategy
 
 Research shows the first 3 screenshots are critical - users rarely scroll.
@@ -493,10 +501,12 @@ Features:
 
 | Platform | Content Type | Goal | Frequency |
 |----------|--------------|------|-----------|
-| TikTok | Demo videos, relatable moments | Awareness, virality | 5-7x/week |
-| Instagram Reels | Same as TikTok, cross-post | Awareness | 5-7x/week |
-| Pinterest | Message idea pins, occasion boards | Discovery, SEO | 10-15 pins/week |
+| TikTok | Demo videos, relatable moments | Awareness, virality | 3x/week |
+| Instagram Reels | Cross-post from TikTok | Awareness | 3x/week |
+| Pinterest | Message idea pins, occasion boards | Discovery, SEO | 5-10 pins/week |
 | Reddit | Genuine help, not promotion | Trust, long-tail | As relevant |
+
+**Time Budget**: ~4-5 hours/week total (sustainable for solo founder)
 
 ### TikTok/Reels Strategy (Primary)
 
@@ -556,6 +566,23 @@ Features:
 |------|---------|--------------|
 | **Sorry Culture** | "Canadian problem: your sympathy card is 90% apologising" | National stereotype, humorous |
 | **Bilingual** | "When you need both English and French versions" | Quebec market opportunity |
+
+### UGC-to-Paid Funnel
+
+Build organic content first, then scale winners via paid ads:
+
+**Step 1: Organic Library (Weeks 1-8)**
+- Post 5-7 TikToks/Reels per week
+- Track: views, watch time, saves, shares
+- Goal: 20+ videos with 5K+ views each
+
+**Step 2: Identify Winners (Week 8+)**
+- Select top 3-5 performers (highest engagement)
+- Note patterns: hook style, length, CTA format
+
+**Step 3: Scale via Paid (Month 4+)**
+- Use winning organic content as ad creative
+- Double spend on videos that maintain ROI
 
 ### Pinterest Strategy
 
@@ -651,12 +678,38 @@ Features:
 - Create custom product pages for top keywords
 - Test different screenshot sets
 
-### Meta Ads (Month 4+)
+### Google Ads (Month 4+)
 
-**When to Start**:
-- After organic proves product-market fit
-- When you have 50+ reviews (social proof)
-- Budget: $100+/day for learning phase
+**Why Google Ads First**:
+- Best ROI among paid channels per indie dev consensus
+- Lower learning curve than Meta
+- AI features automate optimization
+- Master one channel before expanding
+
+**Campaign Structure**:
+
+| Campaign Type | Targeting | Budget | Goal |
+|---------------|-----------|--------|------|
+| US campaigns | USA only | $50/day | Higher LTV, better monetization |
+| Worldwide campaigns | All English markets | $30/day | Volume, cheaper installs |
+
+**Best Practices**:
+- Test patiently - algorithms need 2-4 weeks learning
+- Use AI-powered features (Performance Max, Smart Bidding)
+- Connect Firebase events for conversion signals
+- Start at $50-80/day, scale winners to $150+/day
+
+**Tracking**:
+- Connect Google Ads to Firebase Analytics
+- Track: install → trial → paid events
+- No complex MMPs needed - Firebase + RevenueCat sufficient
+
+### Meta Ads (Month 6+)
+
+**Prerequisites** (don't start until these are met):
+- Google Ads profitable (positive ROAS)
+- 100+ App Store reviews
+- UGC library of 20+ videos with engagement data
 
 **Audience Targeting**:
 
@@ -664,14 +717,13 @@ Features:
 |----------|-----------|
 | Core | Interests: Hallmark, Papyrus, American Greetings |
 | Behavioral | Recently engaged, new parents, recent move |
-| Lookalike | 1% of converters |
+| Lookalike | 1% of Google Ads converters |
 | Retargeting | Installed but not purchased |
 
 **Creative Approach**:
-- UGC-style videos perform best
-- "POV" format
-- Problem-solution structure
-- Authentic, not polished
+- Use proven organic UGC as ad creative
+- "POV" format performs best
+- Budget: $100+/day for learning phase
 
 ### Influencer Marketing (Month 6+)
 
@@ -688,6 +740,20 @@ Features:
 | Nano | 1K-10K | Free product | Volume |
 | Micro | 10K-100K | $100-500 | Authenticity |
 | Mid | 100K-500K | $500-2K | Reach |
+
+### Channels to Skip or Delay
+
+Based on indie dev experience, avoid these initially:
+
+| Channel | Why Skip | When to Reconsider |
+|---------|----------|-------------------|
+| **Meta/Facebook Ads** | Higher learning curve than Google Ads; master one paid channel first | After Google Ads profitable |
+| **Micro-influencers (paid)** | 2-3x pricing inflation in 2025-26; mixed ROI results | Only if hyper-targeted to card/stationery niche |
+| **Complex tracking (Adjust/AppsFlyer)** | Overkill for indie scale; Firebase + RevenueCat sufficient | Never for single-app portfolio |
+| **LinkedIn/Twitter Ads** | Wrong audience, high CPM | Skip unless B2B pivot |
+| **Web SEO without AI assist** | Traditional SEO takes 6-12 months with no guarantee | Viable with AI batch content (your current approach) |
+
+**Mindset**: Master one channel before expanding. Better to own 100% of one channel than 20% of five.
 
 ---
 
@@ -761,23 +827,21 @@ This captures:
 - User success (they liked it enough to copy)
 - User value (they'll actually use it)
 
-### KPI Dashboard
+### KPI Dashboard (Realistic for Organic-First)
 
-| Category | Metric | Month 1 Target | Month 6 Target | Month 12 Target |
-|----------|--------|----------------|----------------|-----------------|
-| **Acquisition** | Daily Installs | 50 | 500 | 1,500 |
-| | Cost per Install (Paid) | - | <$2.50 | <$2.00 |
-| | Organic/Paid Split | 100/0 | 60/40 | 50/50 |
-| **Activation** | Install → First Gen | 60% | 70% | 75% |
-| | First Gen → Copy | 80% | 85% | 85% |
-| **Retention** | Day 1 Retention | 20% | 25% | 30% |
-| | Day 7 Retention | 10% | 15% | 20% |
-| | Day 30 Retention | 5% | 8% | 12% |
-| **Revenue** | Free → Pro Conversion | 2% | 4% | 5% |
-| | Monthly Recurring Revenue | $150 | $2,500 | $8,000 |
-| | Lifetime Value (LTV) | $3 | $8 | $12 |
-| **Engagement** | Messages/User/Month | 1.5 | 2.5 | 3.0 |
-| | App Store Rating | 4.5 | 4.7 | 4.8 |
+| Category | Metric | Month 1 | Month 4 | Month 12 |
+|----------|--------|---------|---------|----------|
+| **Acquisition** | Daily Installs | 10-20 | 30-50 | 100+ |
+| | Cost per Install | $0 (organic) | $0 (organic) | <$2.00 (if paid) |
+| | Organic % | 100% | 100% | 70%+ |
+| **Activation** | Install → First Gen | 50% | 60% | 70% |
+| | First Gen → Copy | 75% | 80% | 85% |
+| **Retention** | Day 1 Retention | 15% | 20% | 25% |
+| | Day 7 Retention | 8% | 12% | 15% |
+| **Revenue** | Free → Pro Conversion | 2% | 3% | 4% |
+| | Monthly Recurring Revenue | $50-100 | $300-500 | $1,500+ |
+| | Lifetime Value (LTV) | $3 | $5 | $8 |
+| **Engagement** | App Store Rating | 4.3+ | 4.5+ | 4.7+ |
 
 ### Benchmark Comparisons
 
@@ -793,112 +857,143 @@ This captures:
 <a name="roadmap"></a>
 ## 12. Launch Roadmap
 
-### Phase 0: Pre-Approval Prep (Now)
+> **This is the authoritative timeline.** Organic-first, paid when revenue supports it.
+
+---
+
+### Phase 0: Pre-Launch (Now)
 
 **Goal**: Be launch-ready the moment App Store approves.
 
-| Task | Owner | Status |
-|------|-------|--------|
-| App Store listing complete | Dev | ✅ |
-| Screenshots designed | Design | ✅ |
-| Keywords researched | Marketing | ✅ |
-| Review prompt implemented | Dev | ✅ |
-| Analytics configured | Dev | ✅ |
-| Mum/Mom localization in AI output | Dev | ⬜ |
-| Optional share watermark on copy | Dev | ⬜ |
-| 30 TikTok scripts generated | Marketing | ⬜ |
-| 50 Pinterest pins generated | Marketing | ⬜ |
-| Product Hunt assets drafted | Marketing | ⬜ |
-| 3 SEO blog posts for prosepal.app | Marketing | ⬜ |
-| Launch tweet thread drafted | Marketing | ⬜ |
-| IndieHackers post drafted | Marketing | ⬜ |
+| Category | Task | Status |
+|----------|------|--------|
+| **App Store** | Listing complete | ✅ |
+| | Screenshots designed | ✅ |
+| | Keywords researched | ✅ |
+| **Product** | Review prompt implemented | ✅ |
+| | Analytics configured | ✅ |
+| | Mum/Mom localization | ⬜ |
+| **Content** | 10 TikTok scripts | ⬜ |
+| | 20 Pinterest pins | ⬜ |
+| **SEO** | 1 blog post for prosepal.app | ⬜ |
+| **Launch Assets** | Product Hunt assets | ⬜ |
+| | Launch tweet thread | ⬜ |
 
-### Day-1 Launch Checklist
+---
 
-**Hour 0-1** (Approval notification):
-- [ ] Verify app is live and downloadable
+### Launch Day Checklist
+
+**Hour 0-1**:
+- [ ] Verify app live and downloadable
 - [ ] Test purchase flow end-to-end
 - [ ] Post launch tweet thread
-- [ ] Share in personal networks (WhatsApp, Discord, etc.)
-- [ ] Post on IndieHackers
+- [ ] Share in personal networks
 
 **Hour 1-4**:
 - [ ] Post first TikTok video
 - [ ] Seed first 10 Pinterest pins
+- [ ] Post on IndieHackers
 - [ ] Post in r/FlutterDev, r/SideProject
-- [ ] Monitor for first reviews, respond immediately
 
 **Day 1 Evening**:
 - [ ] Check App Store Connect metrics
 - [ ] Respond to all comments/mentions
-- [ ] Schedule Product Hunt for next Tuesday
 
-**Day 2-7**:
-- [ ] Post TikTok daily
-- [ ] Respond to every review (especially negative)
-- [ ] A/B test screenshot variants if possible
-- [ ] Prepare Product Hunt assets if not done
+**Days 2-7**:
+- [ ] Post 1 TikTok every other day
+- [ ] Respond to every review
+- [ ] Schedule Product Hunt for Week 2
 
-### Phase 1: Foundation (Weeks 1-4)
+---
 
-**Goal**: Prove product-market fit organically
+### Phase 1: Foundation (Weeks 1-4) - $0 Budget
+
+**Goal**: Prove product-market fit organically.
 
 | Week | Focus | Actions |
 |------|-------|---------|
-| 1 | Soft launch | Limited marketing, gather feedback |
-| 2 | ASO optimization | A/B test screenshots, refine keywords |
-| 3 | Rating push | Prompt optimization, respond to all reviews |
-| 4 | Content seeding | Begin TikTok/Pinterest posting |
+| 1 | Soft launch | Gather feedback, fix critical bugs |
+| 2 | Product Hunt | Launch on PH (Tuesday), engage all day |
+| 3 | Ratings push | Respond to all reviews, optimize prompt timing |
+| 4 | ASO refinement | Update keywords based on Search Ads data (free reports) |
+
+**Sustainable Content Cadence** (4-5 hrs/week total):
+- TikTok/Reels: 3 posts/week (batch film on weekends)
+- Pinterest: 5-10 pins/week (AI-generated, quick to post)
+- Blog: 1 post every 2 weeks
+- Reddit: Genuine participation when relevant
+
+**Success Criteria**:
+- 20+ organic installs/day
+- 4.5+ App Store rating
+- 50%+ install→first-gen rate
+- 2%+ conversion rate
+
+---
+
+### Phase 2: Organic Scale (Weeks 5-16) - $0 Budget
+
+**Goal**: Build organic flywheel before spending any money.
+
+| Week | Focus | Actions |
+|------|-------|---------|
+| 5-8 | TikTok consistency | Post 3x/week, test content pillars |
+| 9-12 | Pinterest SEO | 50+ pins seeded, boards optimized for search |
+| 13-16 | Identify winners | Note which content drives installs, double down |
+
+**SEO Ongoing**:
+- Publish 1 blog post every 2 weeks
+- By Week 16: 4-6 posts live
 
 **Success Criteria**:
 - 50+ organic installs/day
-- 4.5+ App Store rating
-- 60%+ install→first-gen rate
-- 2%+ conversion rate
+- 1 TikTok with 50K+ views
+- 30+ 5-star reviews
+- $500+ MRR
+- Know which content pillars work
 
-### Phase 2: Content Scale (Weeks 5-12)
+---
 
-**Goal**: Build organic flywheel
+### Phase 3: Revenue-Funded Paid (When MRR > $1,000)
 
-| Week | Focus | Actions |
-|------|-------|---------|
-| 5-6 | TikTok ramp | Post 5x/week, test content pillars |
-| 7-8 | Pinterest launch | Seed 50+ pins, build boards |
-| 9-10 | Community | Reddit participation, respond to every mention |
-| 11-12 | Seasonal prep | Valentine's Day keyword/content push |
+**Trigger**: Only start paid ads when MRR exceeds $1,000/month.
 
-**Success Criteria**:
-- 500+ organic installs/day
-- 1 viral TikTok (100K+ views)
-- 100+ 5-star reviews
-- 3%+ conversion rate
+**Rule**: Spend max 30% of MRR on ads (not 70%!).
 
-### Phase 3: Paid Acquisition (Weeks 13-24)
+| MRR | Max Ad Spend | Channel |
+|-----|--------------|---------|
+| $1,000 | $300/month ($10/day) | Apple Search Ads only |
+| $2,000 | $600/month ($20/day) | ASA, test Google Ads |
+| $3,000 | $900/month ($30/day) | ASA + Google Ads |
+| $5,000+ | $1,500/month ($50/day) | Add Meta if others profitable |
 
-**Goal**: Scalable, profitable growth
-
-| Week | Focus | Actions |
-|------|-------|---------|
-| 13-14 | Apple Search Ads launch | $50/day, test keywords |
-| 15-16 | Optimize ASA | Cut losers, scale winners |
-| 17-20 | Meta testing | $100/day, test audiences/creatives |
-| 21-24 | Scale what works | Increase budget on positive ROAS channels |
+**Paid Channel Sequence**:
+1. **Apple Search Ads first** - Highest intent, cleanest attribution
+2. **Google Ads second** - After ASA profitable for 4+ weeks
+3. **Meta Ads last** - Only with proven UGC and $3K+ MRR
 
 **Success Criteria**:
-- 1,500+ installs/day (mixed)
+- Positive ROAS on each channel before adding next
 - CPI < $2.00
 - LTV/CAC > 2:1
-- MRR > $5,000
 
-### Phase 4: Expansion (Month 7+)
+---
 
-| Initiative | Description |
-|------------|-------------|
-| Localization | Spanish, French, German |
-| New occasions | Cultural holidays, niche occasions |
-| Partnerships | Card brands, stationary stores |
-| B2B | Corporate card programs |
-| Platform expansion | Android optimization, web app |
+### Phase 4: Expansion (When MRR > $5,000)
+
+**Goal**: Diversify when profitable.
+
+| Initiative | Trigger | Description |
+|------------|---------|-------------|
+| UK-specific campaigns | Organic UK installs > 20% | Higher card culture, strong LTV |
+| Influencer outreach | Proven content pillars | Nano influencers, free product first |
+| Localization | Strong English markets | Spanish, French if demand signals |
+| Android optimization | iOS profitable | Play Store ASO |
+
+**Success Criteria**:
+- MRR > $8,000
+- Multiple markets contributing
+- Sustainable 70%+ profit margin
 
 ---
 
@@ -1064,29 +1159,26 @@ For each, identify:
 Also check: What are people complaining about in their 1-3 star reviews?
 ```
 
-### Weekly Execution Cadence
+### Weekly Execution Cadence (Sustainable)
 
 | Day | Task | Time | AI-Assisted |
 |-----|------|------|-------------|
-| **Monday** | Batch generate week's content | 1-2 hrs | ✅ |
-| **Tuesday** | Post TikTok #1, schedule pins | 30 min | - |
-| **Wednesday** | Post TikTok #2, engage comments | 30 min | - |
-| **Thursday** | Post TikTok #3, Reddit participation | 45 min | ✅ (draft replies) |
-| **Friday** | Post TikTok #4, review mid-week data | 30 min | - |
-| **Saturday** | Post TikTok #5, seed Pinterest | 30 min | - |
-| **Sunday** | Analytics review, plan next week | 1 hr | ✅ |
+| **Sunday** | Batch film 3 TikToks, generate week's pins | 1.5-2 hrs | ✅ |
+| **Monday** | Post TikTok #1, schedule 3 pins | 20 min | - |
+| **Wednesday** | Post TikTok #2, engage comments | 20 min | - |
+| **Friday** | Post TikTok #3, schedule 3 pins | 20 min | - |
+| **Saturday** | Analytics review (bi-weekly), Reddit if relevant | 30 min | ✅ |
 
-**Total time**: ~5-6 hours/week on marketing
+**Total time**: ~4-5 hours/week on marketing
 
-### Content Volume Targets
+### Content Volume Targets (Realistic)
 
 | Channel | Weekly Volume | Monthly Volume |
 |---------|---------------|----------------|
-| TikTok/Reels | 5-7 posts | 20-28 posts |
-| Pinterest | 10-15 pins | 40-60 pins |
-| Reddit | 2-3 genuine comments | 8-12 comments |
-| Blog (prosepal.app) | 1 post | 4 posts |
-| X/Twitter | 3-5 posts | 12-20 posts |
+| TikTok/Reels | 3 posts | 12 posts |
+| Pinterest | 5-10 pins | 20-40 pins |
+| Reddit | As relevant | When genuine |
+| Blog (prosepal.app) | 1 post/2 weeks | 2 posts |
 
 ### SEO Content Strategy (prosepal.app)
 
@@ -1194,17 +1286,6 @@ Generate next week's content strategy adjustments.
 | Link tracking | Bitly (free tier) | - |
 | Email capture | Carrd form + Google Sheets | ConvertKit (free to 1K) |
 
-### Quick Wins Before Launch
-
-| Task | Effort | Impact |
-|------|--------|--------|
-| Add "Mum/Mom" localization to AI output | Medium | High (UK market) |
-| Add optional share watermark to copied messages | Low | Medium (viral loop) |
-| Publish 3 SEO blog posts to prosepal.app | Medium | High (long-term traffic) |
-| Prepare 30 TikTok scripts | Medium | High (content runway) |
-| Draft Product Hunt assets | Low | Medium (launch spike) |
-| Generate 50 Pinterest pins | Low | Medium (evergreen traffic) |
-
 ---
 
 ## Appendix: Quick Reference
@@ -1231,47 +1312,21 @@ Generate next week's content strategy adjustments.
 | Humor | Self-aware, relatable | Cheesy, forced |
 | Empathy | "Cards are hard" | "You're doing it wrong" |
 
----
+### Reinvestment Philosophy (Realistic)
 
-## Appendix: Future Considerations
+**Rule**: Don't spend money you don't have. Max 30% of MRR on paid acquisition.
 
-*From January 2026 strategy review + AI execution playbook integration*
+| MRR | Max Ad Spend | Keep (70%+) |
+|-----|--------------|-------------|
+| $500 | $0 (stay organic) | $500 |
+| $1,000 | $300/mo | $700 |
+| $2,000 | $600/mo | $1,400 |
+| $5,000 | $1,500/mo | $3,500 |
 
-### Growth Acceleration
-
-| Item | Rationale | Status |
-|------|-----------|--------|
-| **Viral loop via share watermark** | No viral loop currently - add optional "✍️ Written with Prosepal" when copying | Phase 0 task |
-| **Referral program** | Incentivize sharing with free generations or Pro trial extension | Post-launch |
-| **Increase paid test budgets** | $50-100/day may be too conservative for statistically significant ROAS data in 2026 market | Phase 3 |
-| **Platform diversification** | Heavy TikTok/Instagram reliance risks algorithm changes - add YouTube Shorts, expand Pinterest | Phase 2+ |
-
-### Market Expansion
-
-| Item | Rationale | Status |
-|------|-----------|--------|
-| ~~Global data earlier~~ | ~~Current stats are U.S.-centric~~ | ✅ Done - UK/CA/AU/NZ/IE data added |
-| **Balance occasion messaging** | Sympathy emphasis may narrow perceived utility - highlight high-volume occasions (birthday, thank you) equally | Pending |
-| **Quarterly competitor refresh** | AI landscape evolving fast - schedule updates to track Thankbox, Venngage, emerging tools | Pending |
-| **UK-first paid acquisition** | UK has 94% card penetration, highest per-capita - prioritise UK Apple Search Ads | Phase 3 |
-| **Localisation (Mum vs Mom)** | AI output should adapt spelling to user's locale (colour/color, Mum/Mom) | Phase 0 task |
-
-### Retention Depth
-
-| Item | Rationale | Status |
-|------|-----------|--------|
-| **Email/SMS re-engagement** | No flows defined beyond push notifications | Post-launch |
-| **Seasonal campaigns** | Tie push notifications to major holidays with countdown messaging | Phase 2 |
-| **Cohort-specific targets** | Add Pro conversion benchmarks by persona (Last-Minute Carer vs. Thoughtful Giver) | Month 3+ |
-
-### Content & SEO
-
-| Item | Rationale | Status |
-|------|-----------|--------|
-| **prosepal.app/blog** | Landing page should drive organic traffic via SEO content | Phase 0 task |
-| **AI batch content workflow** | Operationalize weekly content generation with Claude | See Section 13 |
-| **Product Hunt launch** | One-time visibility spike, good for early social proof | Week 2 |
-| **Pinterest as evergreen channel** | Long content lifespan (60%+ saves are 1+ year old) | Phase 1-2 |
+**Bootstrapped reality**:
+- First $1,000 MRR should come from organic (proves product-market fit)
+- Paid ads amplify what's already working, they don't create demand
+- Keep 70%+ margin until you have 6+ months runway in the bank
 
 ---
 
@@ -1291,4 +1346,4 @@ Generate next week's content strategy adjustments.
 
 ---
 
-*Document maintained by Marketing. Last update: January 10, 2026. v2.2 AI execution playbook edition.*
+*Last update: January 12, 2026. v3.1 - Bootstrapped organic-first plan.*

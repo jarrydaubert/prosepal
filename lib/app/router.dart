@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
@@ -167,7 +166,7 @@ final _routes = <RouteBase>[
   ),
 ];
 
-/// Splash screen that determines initial route
+/// Splash screen that shows during init and determines initial route
 class _SplashScreen extends ConsumerStatefulWidget {
   const _SplashScreen();
 
@@ -176,19 +175,46 @@ class _SplashScreen extends ConsumerStatefulWidget {
 }
 
 class _SplashScreenState extends ConsumerState<_SplashScreen> {
+  bool _hasNavigated = false;
   bool _hasProFromRestore = false;
 
   @override
   void initState() {
     super.initState();
-    _determineInitialRoute();
+    _waitForInitAndNavigate();
+  }
+
+  Future<void> _waitForInitAndNavigate() async {
+    // Wait for Supabase to be ready (required for auth)
+    // RevenueCat can timeout - we'll proceed without it if needed
+    while (mounted) {
+      final status = ref.read(initStatusProvider);
+
+      // Check for critical error
+      if (status.hasError) {
+        Log.error('Init failed', {'error': status.error});
+        // Could show error screen, for now just navigate
+        break;
+      }
+
+      // Supabase ready = we can proceed
+      // (RevenueCat ready OR timed out = we can check Pro status)
+      if (status.isSupabaseReady &&
+          (status.isRevenueCatReady || status.isTimedOut)) {
+        break;
+      }
+
+      // Wait a bit before checking again
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+    }
+
+    if (mounted && !_hasNavigated) {
+      _hasNavigated = true;
+      await _determineInitialRoute();
+    }
   }
 
   Future<void> _determineInitialRoute() async {
-    // No artificial delay - determine route as fast as possible
-    // Native splash stays visible until we call FlutterNativeSplash.remove()
-
-    // Use providers for consistency and testability
     final prefs = ref.read(sharedPreferencesProvider);
     final hasCompletedOnboarding =
         prefs.getBool(PreferenceKeys.hasCompletedOnboarding) ??
@@ -198,29 +224,21 @@ class _SplashScreenState extends ConsumerState<_SplashScreen> {
     final biometricService = ref.read(biometricServiceProvider);
     final biometricsEnabled = await biometricService.isEnabled;
 
-    // Check if biometrics are actually available on device
-    // User may have enabled in app but later disabled in device settings
     var biometricsAvailable = false;
     if (biometricsEnabled) {
       final available = await biometricService.availableBiometrics;
       biometricsAvailable = available.isNotEmpty;
       if (!biometricsAvailable) {
-        // Biometrics were enabled but are no longer available - auto-disable
         Log.warning('Biometrics enabled but unavailable - auto-disabling');
         await biometricService.setEnabled(false);
       }
     }
 
-    // Auto-restore: Check if anonymous user has Pro from previous purchase
-    // This catches reinstalls where user purchased but isn't signed in yet
     if (!isLoggedIn) {
       _hasProFromRestore = await _checkAnonymousProStatus();
     }
 
     if (!mounted) return;
-
-    // Remove native splash right before navigation
-    FlutterNativeSplash.remove();
 
     Log.info('Router: Initial navigation', {
       'onboarded': hasCompletedOnboarding,
@@ -234,12 +252,9 @@ class _SplashScreenState extends ConsumerState<_SplashScreen> {
       Log.info('Router: -> /onboarding (not onboarded)');
       context.go('/onboarding');
     } else if (biometricsEnabled && biometricsAvailable) {
-      // Biometric lock applies to all users (logged in or anonymous)
-      // User explicitly enabled it, so respect their choice
       Log.info('Router: -> /lock (biometrics enabled)');
       context.go('/lock');
     } else if (_hasProFromRestore) {
-      // Has Pro but not signed in - prompt to claim it
       Log.info('Router: -> /auth?restore=true (has Pro, not signed in)');
       context.go('/auth?restore=true');
     } else {
@@ -248,11 +263,8 @@ class _SplashScreenState extends ConsumerState<_SplashScreen> {
     }
   }
 
-  /// Check RevenueCat for Pro status without being logged in.
-  /// Returns true if user has active Pro entitlement (from App Store receipt).
   Future<bool> _checkAnonymousProStatus() async {
     try {
-      // Use subscription service to check if RevenueCat is configured
       final subscriptionService = ref.read(subscriptionServiceProvider);
       if (!subscriptionService.isConfigured) {
         Log.warning('RevenueCat not configured - skipping anonymous Pro check');
@@ -272,21 +284,38 @@ class _SplashScreenState extends ConsumerState<_SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Matches native splash: styled logo on dark charcoal background
-    return const Scaffold(
+    return Scaffold(
       backgroundColor: AppColors.splash,
       body: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            AppLogoStyled(size: 100),
-            SizedBox(height: 32),
-            SizedBox(
+            const AppLogoStyled(size: 100),
+            const SizedBox(height: 24),
+            Text(
+              'Prosepal',
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: Colors.white.withValues(alpha: 0.9),
+                letterSpacing: 1.2,
+              ),
+            ),
+            const SizedBox(height: 32),
+            const SizedBox(
               width: 24,
               height: 24,
               child: CircularProgressIndicator(
                 strokeWidth: 2.5,
                 valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Loading...',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.white.withValues(alpha: 0.6),
               ),
             ),
           ],

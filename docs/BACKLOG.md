@@ -20,14 +20,6 @@
 
 ---
 
-## CRITICAL
-
-| Issue | Location | Fix |
-|-------|----------|-----|
-| Auth screen X button logic | `auth_screen.dart:210` | `redirectTo='paywall'` → `canDismiss=false` |
-
----
-
 ## HIGH
 
 | Issue | Location | Fix |
@@ -54,8 +46,6 @@
 | Paywall branding extraction | `paywall_sheet.dart` | Hard-coded "Prosepal Pro", benefits - extract to config for blueprint cloning |
 | Auth/lock logic in root widget | `app.dart` | Extract to `AppLifecycleManager` service for testability |
 | Imperative biometric lock navigation | `app.dart` | Move to router redirect + Riverpod notifier pattern |
-| **Startup performance** | `main.dart` | Parallelize Firebase + Supabase init (~300-500ms saved) |
-| Defer RevenueCat init | `main.dart` | Init after first screen, check pro status lazily (~200-400ms saved) |
 | Skip Remote Config fetch | `main.dart` | Use cached/defaults on startup, fetch async (~200-500ms saved) |
 | Remove OAuth pre-warm | `main.dart` | Warm on auth screen instead of startup (~100-200ms saved) |
 | Swift Package Manager | `ios/` | Enable SPM for faster iOS builds (Flutter 3.38+ feature) |
