@@ -70,7 +70,7 @@
 |-------|----------|-----|
 | Missing Google nonce | `auth_service.dart` | Native SDK has built-in protections |
 
-| No deferred purchase handling | `subscription_service.dart` | Handle iOS parental controls |
+
 
 | No SSL certificate pinning | Network | Consider for banking-level security |
 | No visual regression tests | Testing | Add golden tests |

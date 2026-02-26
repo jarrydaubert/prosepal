@@ -125,7 +125,7 @@ class SubscriptionService implements ISubscriptionService {
     try {
       await Purchases.syncPurchases();
       Log.info('RevenueCat: Purchases synced');
-    } catch (e) {
+    } on PlatformException catch (e) {
       Log.warning('RevenueCat: Sync failed', {'error': '$e'});
     }
 
@@ -141,7 +141,7 @@ class SubscriptionService implements ISubscriptionService {
     try {
       final customerInfo = await Purchases.getCustomerInfo();
       return customerInfo.entitlements.active.containsKey(_entitlementId);
-    } catch (e) {
+    } on PlatformException catch (e) {
       Log.error('Error checking pro status', e);
       return false;
     }
@@ -152,7 +152,7 @@ class SubscriptionService implements ISubscriptionService {
     if (!_isInitialized) return null;
     try {
       return await Purchases.getCustomerInfo();
-    } catch (e) {
+    } on PlatformException catch (e) {
       Log.error('Error getting customer info', e);
       return null;
     }
@@ -163,7 +163,7 @@ class SubscriptionService implements ISubscriptionService {
     if (!_isInitialized) return null;
     try {
       return await Purchases.getOfferings();
-    } catch (e) {
+    } on PlatformException catch (e) {
       Log.error('Error getting offerings', e);
       return null;
     }
@@ -206,7 +206,7 @@ class SubscriptionService implements ISubscriptionService {
       );
       Log.info('Restore completed', {'hasPro': hasPro});
       return hasPro;
-    } catch (e) {
+    } on PlatformException catch (e) {
       Log.error('Error restoring purchases', e);
       return false;
     }
@@ -235,7 +235,7 @@ class SubscriptionService implements ISubscriptionService {
           result == PaywallResult.purchased || result == PaywallResult.restored;
       Log.info('Paywall result', {'result': result.name, 'success': success});
       return success;
-    } catch (e) {
+    } on PlatformException catch (e) {
       Log.error('Error showing paywall', e);
       return false;
     }
@@ -257,7 +257,7 @@ class SubscriptionService implements ISubscriptionService {
         'success': success,
       });
       return success;
-    } catch (e) {
+    } on PlatformException catch (e) {
       Log.error('Error showing paywall', e);
       return false;
     }
@@ -271,7 +271,7 @@ class SubscriptionService implements ISubscriptionService {
     }
     try {
       await RevenueCatUI.presentCustomerCenter();
-    } catch (e) {
+    } on PlatformException catch (e) {
       Log.error('Error showing customer center', e);
     }
   }
@@ -315,7 +315,7 @@ class SubscriptionService implements ISubscriptionService {
       try {
         await Purchases.syncPurchases();
         Log.info('RevenueCat purchases synced after identify');
-      } catch (syncError) {
+      } on PlatformException catch (syncError) {
         // Non-fatal: sync may fail if no purchases exist
         Log.warning('Purchase sync after identify failed', {
           'error': '$syncError',
@@ -324,7 +324,7 @@ class SubscriptionService implements ISubscriptionService {
 
       // Set user ID in Crashlytics for crash correlation
       await Log.setUserId(userId);
-    } catch (e) {
+    } on PlatformException catch (e) {
       Log.error('Error identifying user', e);
     }
   }
@@ -344,8 +344,8 @@ class SubscriptionService implements ISubscriptionService {
       } else {
         Log.error('Error logging out', e);
       }
-    } catch (e) {
-      Log.error('Error logging out', e);
+    } on AssertionError {
+      // SDK not initialized - ignore (happens in tests)
     }
   }
 

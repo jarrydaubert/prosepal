@@ -91,7 +91,7 @@ class AuthService implements IAuthService {
           serverClientId: AppConfig.googleWebClientId,
           clientId: AppConfig.googleIosClientId,
         );
-      } catch (e) {
+      } on Exception catch (e) {
         // Non-fatal: sign-in will still work, just slower on first attempt
         Log.warning('Google Sign-In pre-initialization failed', {
           'error': '$e',
@@ -218,7 +218,7 @@ class AuthService implements IAuthService {
             accessToken: accessToken,
           );
           Log.info('Apple token exchange successful');
-        } catch (e) {
+        } on AuthException catch (e) {
           // Log but don't fail sign-in - user can still use app
           // Account deletion will fail, but that's a rare edge case
           Log.error(
