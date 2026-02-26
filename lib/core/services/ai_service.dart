@@ -2,29 +2,50 @@ import 'package:firebase_ai/firebase_ai.dart';
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 
+import '../config/ai_config.dart';
 import '../models/models.dart';
 import 'error_log_service.dart';
 
 /// Exception types for AI service errors
+/// Base exception for AI service errors
 class AiServiceException implements Exception {
-  const AiServiceException(this.message, {this.originalError});
+  const AiServiceException(this.message, {this.originalError, this.errorCode});
   final String message;
   final Object? originalError;
+  final String? errorCode;
 
   @override
   String toString() => 'AiServiceException: $message';
 }
 
+/// Network connectivity issues
 class AiNetworkException extends AiServiceException {
-  const AiNetworkException(super.message, {super.originalError});
+  const AiNetworkException(super.message, {super.originalError, super.errorCode});
 }
 
+/// Content blocked by safety filters
 class AiContentBlockedException extends AiServiceException {
-  const AiContentBlockedException(super.message, {super.originalError});
+  const AiContentBlockedException(super.message, {super.originalError, super.errorCode});
 }
 
+/// Rate limiting or quota exceeded
 class AiRateLimitException extends AiServiceException {
-  const AiRateLimitException(super.message, {super.originalError});
+  const AiRateLimitException(super.message, {super.originalError, super.errorCode});
+}
+
+/// Model or service temporarily unavailable
+class AiUnavailableException extends AiServiceException {
+  const AiUnavailableException(super.message, {super.originalError, super.errorCode});
+}
+
+/// Invalid or empty response from model
+class AiEmptyResponseException extends AiServiceException {
+  const AiEmptyResponseException(super.message, {super.originalError, super.errorCode});
+}
+
+/// Response parsing failed
+class AiParseException extends AiServiceException {
+  const AiParseException(super.message, {super.originalError, super.errorCode});
 }
 
 class AiService {
@@ -33,17 +54,14 @@ class AiService {
   GenerativeModel? _model;
   final _uuid = const Uuid();
 
-  static const _maxRetries = 3;
-  static const _initialDelayMs = 500;
-
   GenerativeModel get model {
     _model ??= FirebaseAI.googleAI().generativeModel(
-      model: 'gemini-3-flash-preview',
+      model: AiConfig.model,
       generationConfig: GenerationConfig(
-        temperature: 0.85,
-        topK: 40,
-        topP: 0.95,
-        maxOutputTokens: 1024,
+        temperature: AiConfig.temperature,
+        topK: AiConfig.topK,
+        topP: AiConfig.topP,
+        maxOutputTokens: AiConfig.maxOutputTokens,
       ),
       safetySettings: [
         SafetySetting(
@@ -103,7 +121,10 @@ class AiService {
       final text = response.text ?? '';
 
       if (text.isEmpty) {
-        throw const AiServiceException('Empty response from AI model');
+        throw const AiEmptyResponseException(
+          'The AI model returned an empty response. Please try again.',
+          errorCode: 'EMPTY_RESPONSE',
+        );
       }
 
       final messages = _parseMessages(
@@ -141,9 +162,9 @@ class AiService {
             message.contains('unavailable') ||
             message.contains('timeout');
 
-        if (isRetryable && attempt < _maxRetries) {
+        if (isRetryable && attempt < AiConfig.maxRetries) {
           // Exponential backoff with jitter
-          final delayMs = _initialDelayMs * (1 << attempt);
+          final delayMs = AiConfig.initialDelayMs * (1 << attempt);
           final jitter =
               (delayMs * 0.2 * (DateTime.now().millisecond % 10) / 10).toInt();
           if (kDebugMode) {
@@ -159,28 +180,56 @@ class AiService {
           debugPrint('Firebase AI error: $e');
         }
 
+        // Categorize Firebase AI errors with specific messages
         if (message.contains('rate') || message.contains('quota')) {
           throw AiRateLimitException(
-            'Too many requests. Please try again later.',
+            'Our servers are busy right now. Please wait a moment and try again.',
             originalError: e,
+            errorCode: 'RATE_LIMIT',
           );
         }
         if (message.contains('network') || message.contains('connection')) {
           throw AiNetworkException(
-            'Network error. Please check your connection.',
+            'Unable to connect. Please check your internet connection.',
             originalError: e,
+            errorCode: 'NETWORK_ERROR',
           );
         }
         if (message.contains('blocked') || message.contains('safety')) {
           throw AiContentBlockedException(
-            'Content was blocked by safety filters.',
+            'Your message details triggered our safety filters. '
+            'Try removing any sensitive words or phrases.',
             originalError: e,
+            errorCode: 'CONTENT_BLOCKED',
+          );
+        }
+        if (message.contains('unavailable') || message.contains('503')) {
+          throw AiUnavailableException(
+            'The AI service is temporarily unavailable. Please try again in a few minutes.',
+            originalError: e,
+            errorCode: 'SERVICE_UNAVAILABLE',
+          );
+        }
+        if (message.contains('timeout')) {
+          throw AiNetworkException(
+            'The request timed out. Please check your connection and try again.',
+            originalError: e,
+            errorCode: 'TIMEOUT',
+          );
+        }
+        if (message.contains('invalid') || message.contains('malformed')) {
+          throw AiServiceException(
+            'There was an issue with the request. Please try again.',
+            originalError: e,
+            errorCode: 'INVALID_REQUEST',
           );
         }
 
+        // Generic Firebase AI error - provide context
         throw AiServiceException(
-          'Failed to generate messages. Please try again.',
+          'Unable to generate messages right now. Please try again.',
           originalError: e,
+          errorCode: 'FIREBASE_AI_ERROR',
         );
       } catch (e, stackTrace) {
         if (e is AiServiceException) rethrow;
@@ -190,8 +239,8 @@ class AiService {
         final isRetryable =
             errorStr.contains('timeout') || errorStr.contains('unavailable');
 
-        if (isRetryable && attempt < _maxRetries) {
-          final delayMs = _initialDelayMs * (1 << attempt);
+        if (isRetryable && attempt < AiConfig.maxRetries) {
+          final delayMs = AiConfig.initialDelayMs * (1 << attempt);
           await Future.delayed(Duration(milliseconds: delayMs));
           continue;
         }
@@ -202,19 +251,37 @@ class AiService {
           debugPrint('Unexpected AI error: $e');
         }
 
-        // Network-related errors
+        // Categorize general errors
         if (errorStr.contains('network') ||
             errorStr.contains('socket') ||
-            errorStr.contains('connection')) {
+            errorStr.contains('connection') ||
+            errorStr.contains('host')) {
           throw AiNetworkException(
-            'Network error. Please check your connection.',
+            'Unable to connect. Please check your internet connection.',
             originalError: e,
+            errorCode: 'NETWORK_ERROR',
+          );
+        }
+        if (errorStr.contains('timeout')) {
+          throw AiNetworkException(
+            'The request timed out. Please try again.',
+            originalError: e,
+            errorCode: 'TIMEOUT',
+          );
+        }
+        if (errorStr.contains('permission') || errorStr.contains('denied')) {
+          throw AiServiceException(
+            'Permission error. Please restart the app and try again.',
+            originalError: e,
+            errorCode: 'PERMISSION_DENIED',
           );
         }
 
+        // Fallback with more context
         throw AiServiceException(
-          'Something went wrong. Please try again.',
+          'Something unexpected happened. Please try again.',
           originalError: e,
+          errorCode: 'UNKNOWN_ERROR',
         );
       }
     }

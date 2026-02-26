@@ -269,18 +269,26 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
 
       if (!mounted) return;
       unawaited(context.pushNamed('results'));
-    } on AiNetworkException {
+    } on AiNetworkException catch (e) {
+      ref.read(isGeneratingProvider.notifier).state = false;
+      ref.read(generationErrorProvider.notifier).state = e.message;
+    } on AiRateLimitException catch (e) {
+      ref.read(isGeneratingProvider.notifier).state = false;
+      ref.read(generationErrorProvider.notifier).state = e.message;
+    } on AiContentBlockedException catch (e) {
+      ref.read(isGeneratingProvider.notifier).state = false;
+      ref.read(generationErrorProvider.notifier).state = e.message;
+    } on AiUnavailableException catch (e) {
+      ref.read(isGeneratingProvider.notifier).state = false;
+      ref.read(generationErrorProvider.notifier).state = e.message;
+    } on AiEmptyResponseException {
       ref.read(isGeneratingProvider.notifier).state = false;
       ref.read(generationErrorProvider.notifier).state =
-          'Please check your internet connection and try again.';
-    } on AiRateLimitException {
+          'No messages were generated. Please try again.';
+    } on AiParseException {
       ref.read(isGeneratingProvider.notifier).state = false;
       ref.read(generationErrorProvider.notifier).state =
-          'Too many requests. Please wait a moment and try again.';
-    } on AiContentBlockedException {
-      ref.read(isGeneratingProvider.notifier).state = false;
-      ref.read(generationErrorProvider.notifier).state =
-          'Unable to generate this message. Please try different wording.';
+          'There was an issue processing the response. Please try again.';
     } on AiServiceException catch (e) {
       ref.read(isGeneratingProvider.notifier).state = false;
       ref.read(generationErrorProvider.notifier).state = e.message;
@@ -288,7 +296,7 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
       debugPrint('Unexpected generation error: $e');
       ref.read(isGeneratingProvider.notifier).state = false;
       ref.read(generationErrorProvider.notifier).state =
-          'Something went wrong. Please try again.';
+          'An unexpected error occurred. Please try again.';
     }
   }
 }

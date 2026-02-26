@@ -2,17 +2,45 @@ import 'occasion.dart';
 import 'relationship.dart';
 import 'tone.dart';
 
+/// Extension for safe enum lookup by name (returns null instead of throwing)
+extension EnumByNameOrNull<T extends Enum> on Iterable<T> {
+  /// Returns the enum value with [name], or null if not found.
+  /// Unlike [byName], this doesn't throw [ArgumentError] for invalid names.
+  T? byNameOrNull(String? name) {
+    if (name == null) return null;
+    for (final value in this) {
+      if (value.name == name) return value;
+    }
+    return null;
+  }
+}
+
 /// Represents a single AI-generated message
 class GeneratedMessage {
 
   /// Create from JSON
+  /// Throws [FormatException] if required enum values are invalid
   factory GeneratedMessage.fromJson(Map<String, dynamic> json) {
+    final occasion = Occasion.values.byNameOrNull(json['occasion'] as String?);
+    final relationship = Relationship.values.byNameOrNull(
+      json['relationship'] as String?,
+    );
+    final tone = Tone.values.byNameOrNull(json['tone'] as String?);
+
+    if (occasion == null || relationship == null || tone == null) {
+      throw FormatException(
+        'Invalid enum value in GeneratedMessage JSON: '
+        'occasion=${json['occasion']}, relationship=${json['relationship']}, '
+        'tone=${json['tone']}',
+      );
+    }
+
     return GeneratedMessage(
       id: json['id'] as String,
       text: json['text'] as String,
-      occasion: Occasion.values.byName(json['occasion'] as String),
-      relationship: Relationship.values.byName(json['relationship'] as String),
-      tone: Tone.values.byName(json['tone'] as String),
+      occasion: occasion,
+      relationship: relationship,
+      tone: tone,
       createdAt: DateTime.parse(json['createdAt'] as String),
       recipientName: json['recipientName'] as String?,
       personalDetails: json['personalDetails'] as String?,
@@ -114,14 +142,29 @@ class GeneratedMessage {
 class GenerationResult {
 
   /// Create from JSON
+  /// Throws [FormatException] if required enum values are invalid
   factory GenerationResult.fromJson(Map<String, dynamic> json) {
+    final occasion = Occasion.values.byNameOrNull(json['occasion'] as String?);
+    final relationship = Relationship.values.byNameOrNull(
+      json['relationship'] as String?,
+    );
+    final tone = Tone.values.byNameOrNull(json['tone'] as String?);
+
+    if (occasion == null || relationship == null || tone == null) {
+      throw FormatException(
+        'Invalid enum value in GenerationResult JSON: '
+        'occasion=${json['occasion']}, relationship=${json['relationship']}, '
+        'tone=${json['tone']}',
+      );
+    }
+
     return GenerationResult(
       messages: (json['messages'] as List)
           .map((m) => GeneratedMessage.fromJson(m as Map<String, dynamic>))
           .toList(),
-      occasion: Occasion.values.byName(json['occasion'] as String),
-      relationship: Relationship.values.byName(json['relationship'] as String),
-      tone: Tone.values.byName(json['tone'] as String),
+      occasion: occasion,
+      relationship: relationship,
+      tone: tone,
       recipientName: json['recipientName'] as String?,
       personalDetails: json['personalDetails'] as String?,
     );

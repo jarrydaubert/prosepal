@@ -116,17 +116,10 @@ Download now and never struggle with "what to write" again.
 - Migrate to Gemini's JSON schema / structured generation
 - Eliminates fragile text parsing
 
-### AI Model Configuration
-- Hardcoded `gemini-3-flash-preview` model name may become outdated
-- Externalize via configuration or provider for easier updates
-- Consider environment-based model selection (dev vs prod)
-
 ### Model Code Generation
 - Consider `freezed` + `json_serializable` for `GeneratedMessage`, `GenerationResult`
 - Auto-generates `copyWith`, equality, `toString`, JSON serialization
 - Reduces boilerplate and potential errors
-- Current `Occasion.values.byName` in `fromJson` throws on invalid data
-- Use safe lookup (`firstWhereOrNull`) or generated converters for graceful degradation
 
 ### Google Sign-In Early Initialization
 - Currently initializes during `signInWithGoogle` call
