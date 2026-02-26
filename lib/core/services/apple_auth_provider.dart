@@ -32,8 +32,11 @@ import '../interfaces/apple_auth_provider.dart';
 class AppleAuthProvider implements IAppleAuthProvider {
   /// Generate cryptographically secure random nonce
   ///
-  /// Returns URL-safe random string. Caller must SHA-256 hash this value
-  /// before passing to [getCredential], while sending raw value to Supabase.
+  /// Uses `Random.secure()` internally (via sign_in_with_apple package) for
+  /// OWASP-compliant cryptographic randomness. Returns URL-safe string.
+  ///
+  /// Caller must SHA-256 hash this value before passing to [getCredential],
+  /// while sending the raw value to Supabase for token validation.
   @override
   String generateRawNonce([int length = 32]) =>
       apple.generateNonce(length: length);
