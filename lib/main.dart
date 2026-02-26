@@ -73,10 +73,12 @@ Future<void> _initializeApp() async {
         final prefs = await SharedPreferences.getInstance();
         final analyticsEnabled =
             prefs.getBool(PreferenceKeys.analyticsEnabled) ?? true;
-        await FirebaseAnalytics.instance
-            .setAnalyticsCollectionEnabled(analyticsEnabled);
-        await FirebaseCrashlytics.instance
-            .setCrashlyticsCollectionEnabled(analyticsEnabled);
+        await FirebaseAnalytics.instance.setAnalyticsCollectionEnabled(
+          analyticsEnabled,
+        );
+        await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(
+          analyticsEnabled,
+        );
       } catch (_) {
         // Default to enabled if prefs not available
       }

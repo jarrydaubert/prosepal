@@ -127,8 +127,9 @@ class GoogleAuthProvider implements IGoogleAuthProvider {
     }
 
     // Request incremental authorization
-    final authorization =
-        await user.authorizationClient.authorizeScopes(scopes);
+    final authorization = await user.authorizationClient.authorizeScopes(
+      scopes,
+    );
 
     // Combine with existing scopes
     _scopes = {..._scopes, ...scopes}.toList();

@@ -77,7 +77,9 @@ class RemoteConfigService {
         'forceUpdateEnabled': isForceUpdateEnabled,
       });
     } catch (e) {
-      Log.warning('Remote Config init failed - using defaults', {'error': '$e'});
+      Log.warning('Remote Config init failed - using defaults', {
+        'error': '$e',
+      });
       // Don't throw - app should work with defaults
       _initialized = true; // Mark as initialized to use defaults
     }

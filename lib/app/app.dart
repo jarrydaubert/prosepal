@@ -154,7 +154,9 @@ class _ProsepalAppState extends ConsumerState<ProsepalApp>
       if (!supabase.isInitialized) return;
 
       // Listen for auth state changes (magic link, OAuth callback, etc.)
-      _authSubscription = supabase.client.auth.onAuthStateChange.listen((data) async {
+      _authSubscription = supabase.client.auth.onAuthStateChange.listen((
+        data,
+      ) async {
         final event = data.event;
         final session = data.session;
         Log.info('Auth state changed', {

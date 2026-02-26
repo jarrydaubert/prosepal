@@ -81,8 +81,7 @@ class _TappableCardState extends State<TappableCard>
 
   void _handleTapUp(TapUpDetails details) {
     _controller.reverse();
-    if (widget.enableHaptic) {
-    }
+    if (widget.enableHaptic) {}
     widget.onTap();
   }
 

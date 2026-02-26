@@ -382,13 +382,13 @@ class AiService {
     // Input length validation (defense-in-depth, limits from AiConfig)
     final sanitizedName =
         recipientName != null && recipientName.length > AiConfig.maxNameLength
-            ? recipientName.substring(0, AiConfig.maxNameLength)
-            : recipientName;
+        ? recipientName.substring(0, AiConfig.maxNameLength)
+        : recipientName;
     final sanitizedDetails =
         personalDetails != null &&
-                personalDetails.length > AiConfig.maxDetailsLength
-            ? personalDetails.substring(0, AiConfig.maxDetailsLength)
-            : personalDetails;
+            personalDetails.length > AiConfig.maxDetailsLength
+        ? personalDetails.substring(0, AiConfig.maxDetailsLength)
+        : personalDetails;
 
     final prompt = buildPrompt(
       occasion: occasion,
@@ -427,9 +427,10 @@ class AiService {
         'responseTokens': usage?.candidatesTokenCount,
         'totalTokens': usage?.totalTokenCount,
         'promptBlockReason': response.promptFeedback?.blockReason?.name,
-        'safetyRatings': candidate?.safetyRatings
-            ?.map((r) => '${r.category.name}:${r.probability.name}')
-            .join(', ') ??
+        'safetyRatings':
+            candidate?.safetyRatings
+                ?.map((r) => '${r.category.name}:${r.probability.name}')
+                .join(', ') ??
             'none',
       });
 
@@ -567,8 +568,9 @@ class AiService {
   /// Returns false if device is offline
   Future<bool> _hasConnectivity() async {
     try {
-      final result = await InternetAddress.lookup('google.com')
-          .timeout(const Duration(seconds: 3));
+      final result = await InternetAddress.lookup(
+        'google.com',
+      ).timeout(const Duration(seconds: 3));
       return result.isNotEmpty && result[0].rawAddress.isNotEmpty;
     } on SocketException {
       return false;

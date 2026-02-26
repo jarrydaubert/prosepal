@@ -39,7 +39,8 @@ class ReviewService {
   /// Returns true if review was requested.
   Future<bool> checkAndRequestReview(int totalGenerations) async {
     // Already requested once - don't ask again
-    final hasRequested = _prefs.getBool(PreferenceKeys.reviewHasRequested) ??
+    final hasRequested =
+        _prefs.getBool(PreferenceKeys.reviewHasRequested) ??
         PreferenceKeys.reviewHasRequestedDefault;
     if (hasRequested) return false;
 

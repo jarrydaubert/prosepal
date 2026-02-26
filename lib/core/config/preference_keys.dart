@@ -6,7 +6,7 @@
 ///
 /// ## Usage
 /// ```dart
-/// final enabled = prefs.getBool(PreferenceKeys.Analytics.enabled) 
+/// final enabled = prefs.getBool(PreferenceKeys.Analytics.enabled)
 ///     ?? PreferenceKeys.Analytics.enabledDefault;
 /// ```
 ///

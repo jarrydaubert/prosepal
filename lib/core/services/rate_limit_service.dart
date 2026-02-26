@@ -64,7 +64,9 @@ class RateLimitService {
   Future<void> _persistTimestamps() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final strings = _localRequestTimestamps.map((ts) => ts.toIso8601String()).toList();
+      final strings = _localRequestTimestamps
+          .map((ts) => ts.toIso8601String())
+          .toList();
       await prefs.setStringList(_prefsKey, strings);
     } catch (e) {
       // Catches Exception + Error (binding not initialized in tests)

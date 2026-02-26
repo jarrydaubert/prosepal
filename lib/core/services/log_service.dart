@@ -187,7 +187,8 @@ abstract final class Log {
       final sanitized = _sanitize(params);
       buffer.write(' | ');
       buffer.write(
-          sanitized.entries.map((e) => '${e.key}=${e.value}').join(', '));
+        sanitized.entries.map((e) => '${e.key}=${e.value}').join(', '),
+      );
     }
     return buffer.toString();
   }
