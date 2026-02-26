@@ -91,7 +91,7 @@ jobs:
   build-android:
     name: Build Android
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     needs: analyze
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     
@@ -109,6 +109,15 @@ jobs:
         with:
           channel: 'stable'
           cache: true
+      
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ hashFiles('android/build.gradle', 'android/app/build.gradle', 'pubspec.lock') }}
+          restore-keys: gradle-
       
       - name: Get dependencies
         run: flutter pub get
