@@ -246,6 +246,9 @@ void main() {
       await mockService.initialize();
       mockService.mockAiModel = 'custom-model';
       mockService.mockMinAppVersion = '5.0.0';
+      mockService.mockAiEnabled = false;
+      mockService.mockPaywallEnabled = false;
+      mockService.mockPremiumEnabled = false;
       mockService.mockForceUpdateEnabled = false;
       await mockService.refresh();
 
@@ -256,6 +259,9 @@ void main() {
       expect(mockService.isInitialized, isFalse);
       expect(mockService.mockAiModel, equals('gemini-2.5-flash'));
       expect(mockService.mockMinAppVersion, equals('1.0.0'));
+      expect(mockService.mockAiEnabled, isTrue);
+      expect(mockService.mockPaywallEnabled, isTrue);
+      expect(mockService.mockPremiumEnabled, isTrue);
       expect(mockService.mockForceUpdateEnabled, isTrue);
       expect(mockService.initializeCallCount, equals(0));
       expect(mockService.refreshCallCount, equals(0));
@@ -323,6 +329,20 @@ void main() {
       final service = RemoteConfigService.instance;
 
       expect(service.useLimitedUseAppCheckTokens, isFalse);
+    });
+
+    test('configSchemaVersion defaults to 1', () {
+      final service = RemoteConfigService.instance;
+
+      expect(service.configSchemaVersion, equals(1));
+    });
+
+    test('kill switches default to enabled', () {
+      final service = RemoteConfigService.instance;
+
+      expect(service.isAiEnabled, isTrue);
+      expect(service.isPaywallEnabled, isTrue);
+      expect(service.isPremiumEnabled, isTrue);
     });
 
     test('storeUrl returns valid URL', () {

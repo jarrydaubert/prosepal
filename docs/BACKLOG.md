@@ -24,7 +24,6 @@
 |----|------|--------------------|
 | `VNEXT-01` | Dependency upgrades (staged batches) | Batch A/B/C executed in separate PRs; each batch passes `flutter analyze`, unit/widget suite, smoke integration suite; release notes capture package/version deltas and risks. |
 | `VNEXT-02` | App Check operational hardening | AI-critical paths validated with App Check enabled; iOS + Android provider behavior verified; enforcement posture explicitly documented; fallback behavior documented if provider fails. |
-| `VNEXT-04` | Remote Config safety controls | `config_schema_version`, `ai_enabled`, `paywall_enabled`, `premium_enabled` keys implemented; RC defaults/template committed; explicit "no secrets in RC" rule documented in release process. |
 | `VNEXT-05` | RevenueCat restore policy finalization | Project restore behavior setting documented; expected outcomes written for anonymous->login, same-device user switch, reinstall+restore; entitlement refresh points defined for premium-critical screens. |
 | `VNEXT-06` | Account deletion subscription UX | Deletion flow copy reviewed for active-subscription guidance; "Manage Subscription" path is accessible in deletion context; user-facing timing/expectation copy finalized and tested. |
 | `VNEXT-07` | Integration determinism hardening | Flaky tests repaired or quarantined from blocking gate; trusted critical-smoke suite is the blocking gate; repeated-run flake audit passes at agreed threshold. |

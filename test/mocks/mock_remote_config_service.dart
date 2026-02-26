@@ -35,6 +35,18 @@ class MockRemoteConfigService implements IRemoteConfigService {
   /// Mock value for [useLimitedUseAppCheckTokens]. Defaults to false.
   bool mockUseLimitedUseAppCheckTokens = false;
 
+  /// Mock value for [configSchemaVersion]. Defaults to 1.
+  int mockConfigSchemaVersion = 1;
+
+  /// Mock value for [isAiEnabled]. Defaults to true.
+  bool mockAiEnabled = true;
+
+  /// Mock value for [isPaywallEnabled]. Defaults to true.
+  bool mockPaywallEnabled = true;
+
+  /// Mock value for [isPremiumEnabled]. Defaults to true.
+  bool mockPremiumEnabled = true;
+
   /// Mock value for [isForceUpdateEnabled]. Defaults to true.
   bool mockForceUpdateEnabled = true;
 
@@ -82,6 +94,18 @@ class MockRemoteConfigService implements IRemoteConfigService {
 
   @override
   bool get useLimitedUseAppCheckTokens => mockUseLimitedUseAppCheckTokens;
+
+  @override
+  int get configSchemaVersion => mockConfigSchemaVersion;
+
+  @override
+  bool get isAiEnabled => mockAiEnabled;
+
+  @override
+  bool get isPaywallEnabled => mockPaywallEnabled;
+
+  @override
+  bool get isPremiumEnabled => mockPremiumEnabled;
 
   @override
   bool get isForceUpdateEnabled => mockForceUpdateEnabled;
@@ -139,6 +163,10 @@ class MockRemoteConfigService implements IRemoteConfigService {
     mockAiModel = 'gemini-2.5-flash';
     mockAiModelFallback = 'gemini-2.5-flash-lite';
     mockUseLimitedUseAppCheckTokens = false;
+    mockConfigSchemaVersion = 1;
+    mockAiEnabled = true;
+    mockPaywallEnabled = true;
+    mockPremiumEnabled = true;
     mockForceUpdateEnabled = true;
     mockMinAppVersion = '1.0.0';
     mockCurrentAppVersion = '1.0.0';

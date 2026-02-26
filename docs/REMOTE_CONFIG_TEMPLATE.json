@@ -1,0 +1,12 @@
+{
+  "config_schema_version": 1,
+  "ai_enabled": true,
+  "paywall_enabled": true,
+  "premium_enabled": true,
+  "ai_model": "gemini-2.5-flash",
+  "ai_model_fallback": "gemini-2.5-flash-lite",
+  "ai_use_limited_app_check_tokens": false,
+  "force_update_enabled": true,
+  "min_app_version_ios": "1.0.0",
+  "min_app_version_android": "1.0.0"
+}

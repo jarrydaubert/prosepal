@@ -396,6 +396,14 @@ class AiService {
     String? personalDetails,
     bool useUkSpelling = false,
   }) async {
+    if (!RemoteConfigService.instance.isAiEnabled) {
+      Log.warning('AI generation blocked by Remote Config kill switch');
+      throw const AiUnavailableException(
+        'Message generation is temporarily unavailable. Please try again later.',
+        errorCode: 'AI_DISABLED',
+      );
+    }
+
     Log.info('AI generation started', {
       'occasion': occasion.label,
       'relationship': relationship.label,

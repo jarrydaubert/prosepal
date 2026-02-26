@@ -208,7 +208,7 @@ Recommendation for next release:
   - `config_schema_version` key
   - kill switches for `ai_enabled`, `paywall_enabled`, and `premium_enabled`
   - no secrets in Remote Config
-  - Remote Config defaults/template versioned in repo
+  - Remote Config defaults/template versioned in repo (`docs/REMOTE_CONFIG_TEMPLATE.json`)
 
 ### Generation behavior
 - Structured JSON schema expected from model response.
