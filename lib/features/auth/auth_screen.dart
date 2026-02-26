@@ -415,11 +415,11 @@ class _GoogleSignInButton extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Official Google "G" logo colors
-            SizedBox(
+            // Official Google "G" logo from branding assets
+            Image.asset(
+              'assets/images/icons/google_g.png',
               width: 20,
               height: 20,
-              child: CustomPaint(painter: _GoogleLogoPainter()),
             ),
             SizedBox(width: AppSpacing.sm),
             Text(
@@ -475,78 +475,4 @@ class _EmailSignInButton extends StatelessWidget {
       ),
     );
   }
-}
-
-/// Custom painter for Google "G" logo with official colors
-class _GoogleLogoPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final double w = size.width;
-    final double h = size.height;
-
-    // Google logo colors
-    const blue = Color(0xFF4285F4);
-    const red = Color(0xFFEA4335);
-    const yellow = Color(0xFFFBBC05);
-    const green = Color(0xFF34A853);
-
-    final paint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = w * 0.18
-      ..strokeCap = StrokeCap.butt;
-
-    final center = Offset(w / 2, h / 2);
-    final radius = w * 0.4;
-
-    // Blue arc (right side)
-    paint.color = blue;
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius),
-      -0.4,
-      1.2,
-      false,
-      paint,
-    );
-
-    // Green arc (bottom right)
-    paint.color = green;
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius),
-      0.8,
-      1.0,
-      false,
-      paint,
-    );
-
-    // Yellow arc (bottom left)
-    paint.color = yellow;
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius),
-      1.8,
-      0.9,
-      false,
-      paint,
-    );
-
-    // Red arc (top)
-    paint.color = red;
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius),
-      2.7,
-      1.0,
-      false,
-      paint,
-    );
-
-    // Blue horizontal bar
-    paint.color = blue;
-    paint.style = PaintingStyle.fill;
-    canvas.drawRect(
-      Rect.fromLTWH(w * 0.5, h * 0.42, w * 0.45, h * 0.16),
-      paint,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
