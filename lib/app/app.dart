@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -25,6 +27,7 @@ class _ProsepalAppState extends ConsumerState<ProsepalApp>
     with WidgetsBindingObserver {
   bool _isInBackground = false;
   DateTime? _backgroundedAt;
+  StreamSubscription<AuthState>? _authSubscription;
 
   // Require re-auth if backgrounded for more than this duration
   // 60s is reasonable for a content app (not banking-level security)
@@ -84,6 +87,7 @@ class _ProsepalAppState extends ConsumerState<ProsepalApp>
 
   @override
   void dispose() {
+    _authSubscription?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -150,7 +154,7 @@ class _ProsepalAppState extends ConsumerState<ProsepalApp>
       if (!supabase.isInitialized) return;
 
       // Listen for auth state changes (magic link, OAuth callback, etc.)
-      supabase.client.auth.onAuthStateChange.listen((data) async {
+      _authSubscription = supabase.client.auth.onAuthStateChange.listen((data) async {
         final event = data.event;
         final session = data.session;
         Log.info('Auth state changed', {

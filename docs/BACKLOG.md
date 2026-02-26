@@ -41,7 +41,9 @@
 
 | Issue | Location | Fix |
 |-------|----------|-----|
-
+| Auth/lock logic in root widget | `app.dart` | Extract to `AppLifecycleManager` service for testability |
+| Imperative biometric lock navigation | `app.dart` | Move to router redirect + Riverpod notifier pattern |
+| Auth navigation race conditions | `app.dart` | Use GoRouter `refreshListenable` + global redirect |
 | Missing CAPTCHA | `email_auth_screen.dart` | Add Turnstile/hCaptcha + Supabase config |
 | Device fingerprint 7% coverage | `device_fingerprint_service.dart` | Free tier abuse prevention undertested |
 | AI service 37% coverage | `ai_service.dart` | Retry logic branches untested |
