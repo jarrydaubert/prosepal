@@ -223,7 +223,11 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
         orElse: () => packages.first,
       );
 
-      // Execute purchase
+      // Navigate to home first, then show purchase dialog over it
+      Log.info('Email auth: Navigating to home for purchase');
+      if (mounted) context.go('/home');
+
+      // Execute purchase (dialog appears over home screen)
       final result = await Purchases.purchase(PurchaseParams.package(package));
       final purchasedPro = result.customerInfo.entitlements.active.containsKey(
         'pro',
@@ -236,27 +240,6 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
 
       // Refresh pro status
       ref.invalidate(customerInfoProvider);
-
-      if (mounted) {
-        context.go('/home');
-        // Show success message
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Row(
-              children: [
-                Icon(Icons.check_circle, color: Colors.white, size: 20),
-                SizedBox(width: 8),
-                Text('Welcome to Pro! Enjoy unlimited messages.'),
-              ],
-            ),
-            backgroundColor: AppColors.success,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-        );
-      }
     } on PlatformException catch (e) {
       // Handle purchase cancellation gracefully
       if (e.code == 'PURCHASE_CANCELLED' ||
