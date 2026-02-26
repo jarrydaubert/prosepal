@@ -75,7 +75,33 @@
 
 ---
 
-## 3. RevenueCat (Subscriptions)
+## 3. Google Sign In
+
+**Package:** `google_sign_in: ^7.2.0` (in pubspec.yaml but **NOT USED**)  
+**Actual implementation:** Supabase OAuth (`auth.signInWithOAuth()`)  
+**File:** `auth_service.dart`  
+**Docs:** https://supabase.com/docs/guides/auth/social-login/auth-google
+
+### Implementation Note
+Google Sign In uses **Supabase OAuth flow** which opens a browser/webview to Google's login page, then redirects back to the app. This is NOT the native `google_sign_in` SDK (Google-branded popup).
+
+**Current flow:**
+1. User taps "Sign in with Google"
+2. `auth.signInWithOAuth(OAuthProvider.google)` called
+3. Browser opens → Google login page displayed
+4. User authenticates with Google
+5. Redirect to `com.prosepal.prosepal://login-callback`
+6. Supabase creates session
+
+**SDK method:** `auth.signInWithOAuth()` - Listed in Supabase Auth section above
+
+**Note:** The `google_sign_in` package in pubspec.yaml is unused and can be removed.
+
+**Testing:** Covered via Supabase `signInWithGoogle()` mock in `MockAuthService`
+
+---
+
+## 4. RevenueCat (Subscriptions)
 
 **Package:** `purchases_flutter: ^9.10.2`, `purchases_ui_flutter: ^9.10.2`  
 **Used for:** In-app subscriptions  
@@ -115,7 +141,7 @@ Custom `MockSubscriptionService` implementing `ISubscriptionService` interface.
 
 ---
 
-## 4. Google AI (Gemini)
+## 5. Google AI (Gemini)
 
 **Package:** `google_generative_ai: ^0.4.7` ⚠️ **DEPRECATED**  
 **Used for:** Message generation  
@@ -145,7 +171,7 @@ Custom `MockSubscriptionService` implementing `ISubscriptionService` interface.
 
 ---
 
-## 5. Local Auth (Biometrics)
+## 6. Local Auth (Biometrics)
 
 **Package:** `local_auth: ^3.0.0`  
 **Used for:** App lock screen (Face ID / Touch ID)  
@@ -172,7 +198,7 @@ Custom `MockBiometricService` implementing `IBiometricService` interface.
 
 ---
 
-## 6. Firebase (Crashlytics Only)
+## 7. Firebase (Crashlytics Only)
 
 **Package:** `firebase_core`, `firebase_crashlytics`  
 **Used for:** Crash reporting only (NO Analytics in code)  
@@ -201,15 +227,16 @@ Custom `MockBiometricService` implementing `IBiometricService` interface.
 
 ## Summary
 
-| Service | SDK Methods | Unit | Integration |
-|---------|:-----------:|:----:|:-----------:|
-| **Supabase Auth** | 14 | 13/14 ✅ | 13/14 ✅ |
-| **Sign In With Apple** | 1 | 0/1 ⚠️ | 0/1 ⚠️ |
-| **RevenueCat** | 12 | 12/12 ✅ | 9/12 ✅ |
-| **Google AI** | 2 | 2/2 ✅ | 0/2 ❌ |
-| **Biometrics** | 4 | 4/4 ✅ | 0/4 ⚠️ |
-| **Firebase** | 3 | 0/3 ⚠️ | 0/3 ⚠️ |
-| **TOTAL** | **36** | **31/36** | **22/36** |
+| Service | SDK Methods | Unit | Integration | Notes |
+|---------|:-----------:|:----:|:-----------:|-------|
+| **Supabase Auth** | 14 | 13/14 ✅ | 13/14 ✅ | Includes Google OAuth |
+| **Sign In With Apple** | 1 | 0/1 ⚠️ | 0/1 ⚠️ | Device only |
+| **Google Sign In** | 0 | - | - | Uses Supabase OAuth (not native SDK) |
+| **RevenueCat** | 12 | 12/12 ✅ | 9/12 ✅ | |
+| **Google AI** | 2 | 2/2 ✅ | 0/2 ❌ | Package deprecated |
+| **Biometrics** | 4 | 4/4 ✅ | 0/4 ⚠️ | Device only |
+| **Firebase** | 3 | 0/3 ⚠️ | 0/3 ⚠️ | Manual verification |
+| **TOTAL** | **36** | **31/36** | **22/36** | |
 
 ### Test Counts
 
