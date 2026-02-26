@@ -233,21 +233,21 @@ PODS:
   - PromisesObjC (2.4.0)
   - PromisesSwift (2.4.0):
     - PromisesObjC (= 2.4.0)
-  - purchases_flutter (9.10.3):
+  - purchases_flutter (9.12.2):
     - Flutter
-    - PurchasesHybridCommon (= 17.26.0)
-  - purchases_ui_flutter (9.10.3):
+    - PurchasesHybridCommon (= 17.41.0)
+  - purchases_ui_flutter (9.12.2):
     - Flutter
-    - PurchasesHybridCommonUI (= 17.26.0)
-  - PurchasesHybridCommon (17.26.0):
-    - RevenueCat (= 5.52.0)
-  - PurchasesHybridCommonUI (17.26.0):
-    - PurchasesHybridCommon (= 17.26.0)
-    - RevenueCatUI (= 5.52.0)
+    - PurchasesHybridCommonUI (= 17.41.0)
+  - PurchasesHybridCommon (17.41.0):
+    - RevenueCat (= 5.59.2)
+  - PurchasesHybridCommonUI (17.41.0):
+    - PurchasesHybridCommon (= 17.41.0)
+    - RevenueCatUI (= 5.59.2)
   - RecaptchaInterop (101.0.0)
-  - RevenueCat (5.52.0)
-  - RevenueCatUI (5.52.0):
-    - RevenueCat (= 5.52.0)
+  - RevenueCat (5.59.2)
+  - RevenueCatUI (5.59.2):
+    - RevenueCat (= 5.59.2)
   - share_plus (0.0.1):
     - Flutter
   - shared_preferences_foundation (0.0.1):
@@ -423,13 +423,13 @@ SPEC CHECKSUMS:
   patrol: cea8074f183a2a4232d0ebd10569ae05149ada42
   PromisesObjC: f5707f49cb48b9636751c5b2e7d227e43fba9f47
   PromisesSwift: 9d77319bbe72ebf6d872900551f7eeba9bce2851
-  purchases_flutter: 5727d7312e3a565aee127fe69af0b1d9b5544f2d
-  purchases_ui_flutter: 8413f7693193409b65cb79d4f58437aaee09252c
-  PurchasesHybridCommon: 93399cb2ba29164dbab79d6398e79f7723b41653
-  PurchasesHybridCommonUI: ebbb750fc4592418a15a16c88061dd8734a509db
+  purchases_flutter: 4d1eb4df39dc92f573069226fc6e2bafcfe3e929
+  purchases_ui_flutter: 2fad6c28a3adbaf45aa0b9b7cd69026dc9a0feec
+  PurchasesHybridCommon: 0fc10b0328a4dca5c607f845130e59f7427f4b69
+  PurchasesHybridCommonUI: b75fac3473827c68f7c3456919e5a0e18d81e5f1
   RecaptchaInterop: 11e0b637842dfb48308d242afc3f448062325aba
-  RevenueCat: 946aceaf97c1eee083dd7fad65a0e0d0c64c837e
-  RevenueCatUI: 9e4a7e2ccff6b4fc9becd72b7efc9476c458e936
+  RevenueCat: f352b3661288080bd8bf30bbb96e331940e73c88
+  RevenueCatUI: 5f7b3496a7fd7a16a254a6b78de2e221c117d9d2
   share_plus: 50da8cb520a8f0f65671c6c6a99b3617ed10a58a
   shared_preferences_foundation: 7036424c3d8ec98dfe75ff1667cb0cd531ec82bb
   sign_in_with_apple: c5dcc141574c8c54d5ac99dd2163c0c72ad22418
