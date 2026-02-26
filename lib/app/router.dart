@@ -3,10 +3,8 @@ import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/providers/providers.dart';
-import '../core/services/biometric_service.dart';
 import '../core/services/log_service.dart';
 import '../features/auth/auth_screen.dart';
 import '../features/auth/email_auth_screen.dart';
@@ -129,23 +127,25 @@ class _SplashScreenState extends ConsumerState<_SplashScreen> {
     // No artificial delay - determine route as fast as possible
     // Native splash stays visible until we call FlutterNativeSplash.remove()
 
-    final prefs = await SharedPreferences.getInstance();
+    // Use providers for consistency and testability
+    final prefs = ref.read(sharedPreferencesProvider);
     final hasCompletedOnboarding =
         prefs.getBool('hasCompletedOnboarding') ?? false;
     final authService = ref.read(authServiceProvider);
     final isLoggedIn = authService.isLoggedIn;
-    final biometricsEnabled = await BiometricService.instance.isEnabled;
+    final biometricService = ref.read(biometricServiceProvider);
+    final biometricsEnabled = await biometricService.isEnabled;
 
-    // Fix L5: Check if biometrics are actually available on device
+    // Check if biometrics are actually available on device
     // User may have enabled in app but later disabled in device settings
     var biometricsAvailable = false;
     if (biometricsEnabled) {
-      final available = await BiometricService.instance.availableBiometrics;
+      final available = await biometricService.availableBiometrics;
       biometricsAvailable = available.isNotEmpty;
       if (!biometricsAvailable) {
         // Biometrics were enabled but are no longer available - auto-disable
         Log.warning('Biometrics enabled but unavailable - auto-disabling');
-        await BiometricService.instance.setEnabled(false);
+        await biometricService.setEnabled(false);
       }
     }
 

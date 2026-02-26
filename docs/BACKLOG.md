@@ -129,6 +129,10 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 | Screenshot prevention | `app.dart` | Platform-specific screenshot blocking (FlutterWindowManager) |
 | Additional auth events | `app.dart` | Handle tokenRefreshed, passwordRecovery events |
 | Router redirect guards | `app.dart` | Use GoRouter redirects instead of fullPath check |
+| GoRouter redirect guards | `router.dart` | Add global redirect for auth/biometric protection |
+| Resume-time lock enforcement | `router.dart` | Re-evaluate biometric lock on app resume |
+| Error/404 route | `router.dart` | Add fallback route for unknown paths |
+| Typed route generation | `router.dart` | Use go_router_builder for type-safe routes |
 
 ---
 
