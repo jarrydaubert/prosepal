@@ -15,6 +15,7 @@ class HomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final initStatus = ref.watch(initStatusProvider);
     final remaining = ref.watch(remainingGenerationsProvider);
     final isPro = ref.watch(isProProvider);
 
@@ -77,37 +78,40 @@ class HomeScreen extends ConsumerWidget {
 
                     const SizedBox(height: 20),
 
-                    // Usage indicator
-                    UsageIndicator(
-                      remaining: remaining,
-                      isPro: isPro,
-                      onUpgrade: () {
-                        final isLoggedIn = ref
-                            .read(authServiceProvider)
-                            .isLoggedIn;
-                        final usageService = ref.read(usageServiceProvider);
-                        final isReturningUser = usageService
-                            .hasDeviceUsedFreeTier();
-                        Log.info('Upgrade tapped', {
-                          'source': 'home',
-                          'isLoggedIn': isLoggedIn,
-                          'isReturningUser': isReturningUser,
-                        });
-                        if (isReturningUser && !isLoggedIn) {
-                          // Returning user: try auto-restore first
-                          context.push('/auth?autorestore=true');
-                        } else {
-                          // Show paywall sheet (has inline auth)
-                          showPaywall(context, source: 'home');
-                        }
-                      },
-                      onProTap: () async {
-                        final subscriptionService = ref.read(
-                          subscriptionServiceProvider,
-                        );
-                        await subscriptionService.showCustomerCenter();
-                      },
-                    ).animate().fadeIn(delay: 200.ms),
+                    // Usage indicator (shimmer while RevenueCat loads)
+                    if (!initStatus.revenueCatReady)
+                      const _UsageIndicatorShimmer()
+                    else
+                      UsageIndicator(
+                        remaining: remaining,
+                        isPro: isPro,
+                        onUpgrade: () {
+                          final isLoggedIn = ref
+                              .read(authServiceProvider)
+                              .isLoggedIn;
+                          final usageService = ref.read(usageServiceProvider);
+                          final isReturningUser = usageService
+                              .hasDeviceUsedFreeTier();
+                          Log.info('Upgrade tapped', {
+                            'source': 'home',
+                            'isLoggedIn': isLoggedIn,
+                            'isReturningUser': isReturningUser,
+                          });
+                          if (isReturningUser && !isLoggedIn) {
+                            // Returning user: try auto-restore first
+                            context.push('/auth?autorestore=true');
+                          } else {
+                            // Show paywall sheet (has inline auth)
+                            showPaywall(context, source: 'home');
+                          }
+                        },
+                        onProTap: () async {
+                          final subscriptionService = ref.read(
+                            subscriptionServiceProvider,
+                          );
+                          await subscriptionService.showCustomerCenter();
+                        },
+                      ).animate().fadeIn(delay: 200.ms),
                   ],
                 ),
               ),
@@ -184,5 +188,63 @@ class _IconButton extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+/// Shimmer placeholder for UsageIndicator while RevenueCat loads.
+class _UsageIndicatorShimmer extends StatelessWidget {
+  const _UsageIndicatorShimmer();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.grey[300]!, width: 2),
+          ),
+          child: Row(
+            children: [
+              // Circle placeholder
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: Colors.grey[200],
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 16),
+              // Text placeholders
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 140,
+                      height: 16,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200],
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      width: 100,
+                      height: 12,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200],
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        )
+        .animate(onPlay: (controller) => controller.repeat())
+        .shimmer(duration: 1200.ms, color: Colors.grey[100]);
   }
 }
