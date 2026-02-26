@@ -88,9 +88,13 @@ class MockSupabaseAuthProvider implements ISupabaseAuthProvider {
   Stream<AuthState> get onAuthStateChange => _authStateController.stream;
 
   /// Set logged in state with fake user/session
-  void setLoggedIn(bool value, {String email = 'test@example.com'}) {
+  void setLoggedIn(
+    bool value, {
+    String email = 'test@example.com',
+    String? displayName,
+  }) {
     if (value) {
-      _currentUser = createFakeUser(email: email);
+      _currentUser = createFakeUser(email: email, displayName: displayName);
       _currentSession = createFakeSession(user: _currentUser);
     } else {
       _currentUser = null;
@@ -124,6 +128,10 @@ class MockSupabaseAuthProvider implements ISupabaseAuthProvider {
     final user = createFakeUser(email: 'oauth@example.com');
     _currentUser = user;
     _currentSession = createFakeSession(user: user);
+
+    if (emitStateOnSuccess) {
+      emitAuthState(AuthState(AuthChangeEvent.signedIn, _currentSession));
+    }
 
     return AuthResponse(session: _currentSession, user: user);
   }
@@ -164,6 +172,10 @@ class MockSupabaseAuthProvider implements ISupabaseAuthProvider {
     final user = createFakeUser(email: email);
     _currentUser = user;
     _currentSession = createFakeSession(user: user);
+
+    if (emitStateOnSuccess) {
+      emitAuthState(AuthState(AuthChangeEvent.signedIn, _currentSession));
+    }
 
     return AuthResponse(session: _currentSession, user: user);
   }
@@ -286,6 +298,10 @@ class MockSupabaseAuthProvider implements ISupabaseAuthProvider {
 
     _currentUser = null;
     _currentSession = null;
+
+    if (emitStateOnSuccess) {
+      emitAuthState(const AuthState(AuthChangeEvent.signedOut, null));
+    }
   }
 
   @override

@@ -116,35 +116,43 @@ void main() {
   });
 
   group('HomeScreen Usage Indicator', () {
-    testWidgets('should show free user remaining count', (tester) async {
-      await tester.pumpWidget(createTestableHomeScreen(
-        
-      ));
+    testWidgets('free user sees remaining count and upgrade prompt', (tester) async {
+      await tester.pumpWidget(createTestableHomeScreen(remaining: 3));
       await tester.pumpAndSettle();
 
-      // Should show remaining generations
-      expect(find.textContaining('3'), findsWidgets);
+      expect(find.text('3'), findsOneWidget);
+      expect(find.text('Free messages remaining'), findsOneWidget);
+      expect(find.text('Upgrade for unlimited'), findsOneWidget);
     });
 
-    testWidgets('should show 0 remaining when exhausted', (tester) async {
-      await tester.pumpWidget(createTestableHomeScreen(
-        remaining: 0,
-      ));
+    testWidgets('exhausted user sees trial ended message', (tester) async {
+      await tester.pumpWidget(createTestableHomeScreen(remaining: 0));
       await tester.pumpAndSettle();
 
-      // Should indicate no generations left
-      expect(find.textContaining('0'), findsWidgets);
+      expect(find.text('0'), findsOneWidget);
+      expect(find.text('Free trial ended'), findsOneWidget);
+      expect(find.text('Upgrade for unlimited'), findsOneWidget);
     });
 
-    testWidgets('should show pro status for subscribers', (tester) async {
-      await tester.pumpWidget(createTestableHomeScreen(
-        isPro: true,
-        remaining: 500,
-      ));
+    testWidgets('pro user sees PRO badge instead of usage card', (tester) async {
+      await tester.pumpWidget(createTestableHomeScreen(isPro: true));
       await tester.pumpAndSettle();
 
-      // Pro users should see their remaining count
-      expect(find.byType(HomeScreen), findsOneWidget);
+      expect(find.text('PRO'), findsOneWidget);
+      expect(find.byIcon(Icons.star), findsOneWidget);
+      // Should NOT show free user elements
+      expect(find.text('Free messages remaining'), findsNothing);
+      expect(find.text('Upgrade for unlimited'), findsNothing);
+    });
+
+    testWidgets('tapping usage card navigates to paywall', (tester) async {
+      await tester.pumpWidget(createTestableHomeScreen(remaining: 2));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Upgrade for unlimited'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Paywall Screen'), findsOneWidget);
     });
   });
 
@@ -219,16 +227,4 @@ void main() {
     });
   });
 
-  group('HomeScreen State', () {
-    testWidgets('should show upgrade option when free generations exhausted', (tester) async {
-      await tester.pumpWidget(createTestableHomeScreen(
-        remaining: 0,
-      ));
-      await tester.pumpAndSettle();
-
-      // The usage indicator should show upgrade option
-      // Look for upgrade-related text or button
-      expect(find.byType(HomeScreen), findsOneWidget);
-    });
-  });
 }

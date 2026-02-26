@@ -170,6 +170,24 @@ void main() {
         final message = AuthErrorHandler.getMessage(error);
         expect(message, equals('Sign in was cancelled.'));
       });
+
+      test('should return expired message for expired magic link', () {
+        const error = AuthException('Email link is invalid or has expired');
+        final message = AuthErrorHandler.getMessage(error);
+        expect(
+          message,
+          equals('Your session has expired. Please sign in again.'),
+        );
+      });
+
+      test('should return expired message for token expired', () {
+        const error = AuthException('Token has expired');
+        final message = AuthErrorHandler.getMessage(error);
+        expect(
+          message,
+          equals('Your session has expired. Please sign in again.'),
+        );
+      });
     });
 
     group('getResult', () {

@@ -10,9 +10,20 @@ import 'package:prosepal/core/providers/providers.dart';
 
 /// E2E Tests for Complete User Journeys
 ///
-/// These tests simulate real user scenarios from start to finish.
+/// Simulates real user scenarios from app launch to generation completion.
 ///
 /// Run with: flutter test integration_test/e2e_user_journey_test.dart -d [device_id]
+///
+/// Coverage:
+/// - New user: onboarding → auth routing
+/// - Returning user: direct home access
+/// - Generation wizard: all occasions, relationships, tones
+/// - Pro user: unlimited generation flow
+///
+/// Limitations:
+/// - Auth state depends on prior sessions (tests handle gracefully)
+/// - AI generation requires network (skipped in CI, run on device)
+/// - Real purchases require RevenueCat sandbox on device
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
@@ -26,6 +37,11 @@ void main() {
 
     SharedPreferences.setMockInitialValues({});
     prefs = await SharedPreferences.getInstance();
+  });
+
+  tearDown(() async {
+    // Reset to known state between tests
+    await prefs.setBool('hasCompletedOnboarding', true);
   });
 
   group('New User Journey', () {

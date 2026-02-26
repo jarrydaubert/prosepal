@@ -109,6 +109,80 @@ Download now and never struggle with "what to write" again.
 
 ---
 
+## 3. Code Quality Improvements
+
+> From Dec 2025 test audit evaluations
+
+### Auth Error Handling
+- Prioritize `AuthException.statusCode` (400, 429) over message string matching
+- Retain string matching as fallback for edge cases
+- More resilient to Supabase SDK message changes
+
+### Gemini Structured Output
+- Current AI parsing uses regex on MESSAGE 1/2/3 format
+- Migrate to Gemini's JSON schema / structured generation
+- Eliminates fragile text parsing
+
+### AI Model Configuration
+- Hardcoded `gemini-3-flash-preview` model name may become outdated
+- Externalize via configuration or provider for easier updates
+- Consider environment-based model selection (dev vs prod)
+
+### Model Code Generation
+- Consider `freezed` + `json_serializable` for `GeneratedMessage`, `GenerationResult`
+- Auto-generates `copyWith`, equality, `toString`, JSON serialization
+- Reduces boilerplate and potential errors
+- Current `Occasion.values.byName` in `fromJson` throws on invalid data
+- Use safe lookup (`firstWhereOrNull`) or generated converters for graceful degradation
+
+### Linter Rules to Add
+- `require_trailing_commas` - Improves git diff readability
+- `avoid_dynamic_calls` - Enhances type safety
+- `prefer_relative_imports` - Consistent import style
+
+### Apple Auth Provider Cleanup
+- `onCredentialRevoked` stream in `IAppleAuthProvider` may be obsolete
+- Recent `sign_in_with_apple` versions don't expose client-side revocation
+- Apple recommends server-side validation via refresh token or webhooks
+- Consider removing or documenting as non-functional placeholder
+
+### Subscription Interface Enhancement
+- `addCustomerInfoListener` returns `void` but should return removal callback
+- Change to `VoidCallback addCustomerInfoListener(...)` for proper unsubscribe
+- Aligns with RevenueCat SDK pattern and prevents memory leaks
+
+### Occasion Enum Color Safety
+- `backgroundColor` and `borderColor` rely on `index` (enum ordinal position)
+- If occasions are reordered or new ones inserted mid-list, colors shift unexpectedly
+- Consider explicit per-variant color assignment or a theme map
+
+### Provider Auto-Dispose
+- Generation providers (`generationResultProvider`, etc.) could use `.autoDispose`
+- Clears state on widget disposal, prevents memory leaks on navigation
+- Apply if memory or navigation resets warrant it
+
+### Google Sign-In Early Initialization
+- Currently initializes during `signInWithGoogle` call
+- Consider initializing at app startup for silent session restoration
+- Would enable faster re-authentication for returning users
+
+### BiometricService Dependency Injection
+- Singleton pattern limits full test isolation
+- Add injectable constructor for `LocalAuthentication` and `SharedPreferences`
+- Would enable pure unit testing without global overrides
+
+### UsageService Daily Limit
+- `proDailyLimit = 50` constant defined but not tracked or enforced
+- Either implement daily count storage/reset logic, or remove unused constant
+- Add `getRemainingProDaily` if daily capping is required
+
+### Auth Screen Button States
+- OAuth buttons remain enabled during loading state
+- Disable all buttons when `_isLoading` to prevent duplicate submissions
+- Minor UX improvement for production polish
+
+---
+
 ## Notes
 
 - 77 lint issues remain (down from 674) - all acceptable/intentional

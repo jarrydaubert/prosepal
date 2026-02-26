@@ -183,11 +183,12 @@ class MockAuthService implements IAuthService {
     _currentUser = user;
     _isLoggedIn = true;
     _email = user.email;
+    final session = createFakeSession(user: user);
     if (autoEmitAuthState) {
-      emitAuthState(const AuthState(AuthChangeEvent.signedIn, null));
+      emitAuthState(AuthState(AuthChangeEvent.signedIn, session));
     }
     return AuthResponse(
-      session: createFakeSession(user: user),
+      session: session,
       user: user,
     );
   }
@@ -205,11 +206,12 @@ class MockAuthService implements IAuthService {
     _currentUser = user;
     _isLoggedIn = true;
     _email = user.email;
+    final session = createFakeSession(user: user);
     if (autoEmitAuthState) {
-      emitAuthState(const AuthState(AuthChangeEvent.signedIn, null));
+      emitAuthState(AuthState(AuthChangeEvent.signedIn, session));
     }
     return AuthResponse(
-      session: createFakeSession(user: user),
+      session: session,
       user: user,
     );
   }
@@ -229,11 +231,12 @@ class MockAuthService implements IAuthService {
     _currentUser = user;
     _isLoggedIn = true;
     _email = email;
+    final session = createFakeSession(user: user);
     if (autoEmitAuthState) {
-      emitAuthState(const AuthState(AuthChangeEvent.signedIn, null));
+      emitAuthState(AuthState(AuthChangeEvent.signedIn, session));
     }
     return AuthResponse(
-      session: createFakeSession(user: user),
+      session: session,
       user: user,
     );
   }

@@ -3,6 +3,18 @@ import 'package:prosepal/core/interfaces/biometric_interface.dart';
 import 'package:prosepal/core/services/biometric_service.dart';
 
 /// Mock implementation of IBiometricService for testing
+///
+/// Supports:
+/// - Configurable device support, enabled state, biometric types
+/// - Error simulation via [errorToThrow]
+/// - Call tracking for verification
+///
+/// ## BiometricType support (local_auth 2.x)
+/// - face: Face ID (iOS) or face unlock (Android)
+/// - fingerprint: Touch ID (iOS) or fingerprint (Android)
+/// - strong: Android strong biometric (face/fingerprint)
+/// - weak: Android weak biometric
+/// - iris: Iris scanner (rare)
 class MockBiometricService implements IBiometricService {
   // Configurable state for tests
   bool _isSupported = true;
@@ -11,6 +23,9 @@ class MockBiometricService implements IBiometricService {
   bool _hasTouchId = false;
   List<BiometricType> _availableBiometrics = [BiometricType.face];
   BiometricResult _authenticateResult = const BiometricResult(success: true);
+
+  /// Error to throw on authenticate (simulates PlatformException, lockout, etc.)
+  Exception? errorToThrow;
 
   // Configuration methods for tests
   void setSupported(bool value) => _isSupported = value;
@@ -21,6 +36,30 @@ class MockBiometricService implements IBiometricService {
       _availableBiometrics = value;
   void setAuthenticateResult(BiometricResult result) =>
       _authenticateResult = result;
+
+  /// Simulate user cancellation
+  void simulateCancellation() {
+    _authenticateResult = const BiometricResult(
+      success: false,
+      message: 'User cancelled',
+    );
+  }
+
+  /// Simulate lockout (too many failed attempts)
+  void simulateLockout() {
+    _authenticateResult = const BiometricResult(
+      success: false,
+      error: BiometricError.lockedOut,
+      message: 'Too many attempts. Try again later.',
+    );
+  }
+
+  /// Simulate no biometrics enrolled
+  void simulateNotEnrolled() {
+    _availableBiometrics = [];
+    _hasFaceId = false;
+    _hasTouchId = false;
+  }
 
   // Tracking for test verification
   int authenticateCallCount = 0;
@@ -34,6 +73,7 @@ class MockBiometricService implements IBiometricService {
     _hasTouchId = false;
     _availableBiometrics = [BiometricType.face];
     _authenticateResult = const BiometricResult(success: true);
+    errorToThrow = null;
     authenticateCallCount = 0;
     setEnabledCallCount = 0;
     lastAuthenticateReason = null;
@@ -56,6 +96,13 @@ class MockBiometricService implements IBiometricService {
   Future<String> get biometricTypeName async {
     if (_hasFaceId) return 'Face ID';
     if (_hasTouchId) return 'Touch ID';
+    // Handle Android biometric types
+    if (_availableBiometrics.contains(BiometricType.fingerprint)) {
+      return 'Fingerprint';
+    }
+    if (_availableBiometrics.contains(BiometricType.strong)) {
+      return 'Biometrics';
+    }
     return 'Biometrics';
   }
 
@@ -72,6 +119,9 @@ class MockBiometricService implements IBiometricService {
   Future<BiometricResult> authenticate({String? reason}) async {
     authenticateCallCount++;
     lastAuthenticateReason = reason;
+    if (errorToThrow != null) {
+      throw errorToThrow!;
+    }
     return _authenticateResult;
   }
 

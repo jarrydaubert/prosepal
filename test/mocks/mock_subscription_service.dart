@@ -1,7 +1,23 @@
+import 'dart:async';
+
 import 'package:prosepal/core/interfaces/subscription_interface.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 
 /// Mock implementation of ISubscriptionService for testing
+///
+/// Supports:
+/// - Configurable state (isPro, offerings, customerInfo)
+/// - Call tracking and parameter capture
+/// - Global and per-method error simulation
+/// - CustomerInfo listener stream for state-management tests
+///
+/// ## Usage
+/// ```dart
+/// final mockSub = MockSubscriptionService();
+/// mockSub.setIsPro(true);
+/// mockSub.purchaseResult = true;
+/// mockSub.methodErrors['restorePurchases'] = Exception('Network error');
+/// ```
 class MockSubscriptionService implements ISubscriptionService {
   // Configurable state for tests
   bool _isConfigured = true;
@@ -39,6 +55,25 @@ class MockSubscriptionService implements ISubscriptionService {
   // Error simulation
   Exception? errorToThrow;
 
+  /// Per-method errors - takes precedence over [errorToThrow]
+  /// Keys: 'initialize', 'isPro', 'getCustomerInfo', 'getOfferings',
+  /// 'purchasePackage', 'restorePurchases', 'showPaywall', 'showPaywallIfNeeded',
+  /// 'showCustomerCenter', 'identifyUser', 'logOut'
+  final Map<String, Exception> methodErrors = {};
+
+  Exception? _getError(String method) {
+    return methodErrors[method] ?? errorToThrow;
+  }
+
+  // CustomerInfo listener stream
+  final _customerInfoController = StreamController<CustomerInfo>.broadcast();
+
+  /// Emit a CustomerInfo update to all registered listeners
+  void emitCustomerInfo(CustomerInfo info) {
+    _customerInfoController.add(info);
+    _customerInfo = info;
+  }
+
   void reset() {
     _isConfigured = true;
     _isPro = false;
@@ -61,6 +96,11 @@ class MockSubscriptionService implements ISubscriptionService {
     restoreResult = false;
     paywallResult = false;
     errorToThrow = null;
+    methodErrors.clear();
+  }
+
+  void dispose() {
+    _customerInfoController.close();
   }
 
   @override
@@ -69,7 +109,8 @@ class MockSubscriptionService implements ISubscriptionService {
   @override
   Future<void> initialize() async {
     initializeCallCount++;
-    if (errorToThrow != null) throw errorToThrow!;
+    final error = _getError('initialize');
+    if (error != null) throw error;
     _isConfigured = true;
   }
 
@@ -77,7 +118,8 @@ class MockSubscriptionService implements ISubscriptionService {
   Future<bool> isPro() async {
     isProCallCount++;
     if (!_isConfigured) return false;
-    if (errorToThrow != null) throw errorToThrow!;
+    final error = _getError('isPro');
+    if (error != null) throw error;
     return _isPro;
   }
 
@@ -85,7 +127,8 @@ class MockSubscriptionService implements ISubscriptionService {
   Future<CustomerInfo?> getCustomerInfo() async {
     getCustomerInfoCallCount++;
     if (!_isConfigured) return null;
-    if (errorToThrow != null) throw errorToThrow!;
+    final error = _getError('getCustomerInfo');
+    if (error != null) throw error;
     return _customerInfo;
   }
 
@@ -93,7 +136,8 @@ class MockSubscriptionService implements ISubscriptionService {
   Future<Offerings?> getOfferings() async {
     getOfferingsCallCount++;
     if (!_isConfigured) return null;
-    if (errorToThrow != null) throw errorToThrow!;
+    final error = _getError('getOfferings');
+    if (error != null) throw error;
     return _offerings;
   }
 
@@ -101,7 +145,8 @@ class MockSubscriptionService implements ISubscriptionService {
   Future<bool> purchasePackage(Package package) async {
     purchasePackageCallCount++;
     lastPurchasedPackage = package;
-    if (errorToThrow != null) throw errorToThrow!;
+    final error = _getError('purchasePackage');
+    if (error != null) throw error;
     if (purchaseResult) _isPro = true;
     return purchaseResult;
   }
@@ -110,7 +155,8 @@ class MockSubscriptionService implements ISubscriptionService {
   Future<bool> restorePurchases() async {
     restorePurchasesCallCount++;
     if (!_isConfigured) return false;
-    if (errorToThrow != null) throw errorToThrow!;
+    final error = _getError('restorePurchases');
+    if (error != null) throw error;
     if (restoreResult) _isPro = true;
     return restoreResult;
   }
@@ -119,7 +165,8 @@ class MockSubscriptionService implements ISubscriptionService {
   Future<bool> showPaywall() async {
     showPaywallCallCount++;
     if (!_isConfigured) return false;
-    if (errorToThrow != null) throw errorToThrow!;
+    final error = _getError('showPaywall');
+    if (error != null) throw error;
     if (paywallResult) _isPro = true;
     return paywallResult;
   }
@@ -129,7 +176,8 @@ class MockSubscriptionService implements ISubscriptionService {
     showPaywallIfNeededCallCount++;
     if (!_isConfigured) return false;
     if (_isPro) return true; // Already pro, no paywall needed
-    if (errorToThrow != null) throw errorToThrow!;
+    final error = _getError('showPaywallIfNeeded');
+    if (error != null) throw error;
     if (paywallResult) _isPro = true;
     return paywallResult;
   }
@@ -138,12 +186,13 @@ class MockSubscriptionService implements ISubscriptionService {
   Future<void> showCustomerCenter() async {
     showCustomerCenterCallCount++;
     if (!_isConfigured) return;
-    if (errorToThrow != null) throw errorToThrow!;
+    final error = _getError('showCustomerCenter');
+    if (error != null) throw error;
   }
 
   @override
   void addCustomerInfoListener(void Function(CustomerInfo) listener) {
-    // No-op in mock, but could track if needed
+    _customerInfoController.stream.listen(listener);
   }
 
   @override
@@ -151,13 +200,15 @@ class MockSubscriptionService implements ISubscriptionService {
     identifyUserCallCount++;
     lastIdentifiedUserId = userId;
     if (!_isConfigured) return;
-    if (errorToThrow != null) throw errorToThrow!;
+    final error = _getError('identifyUser');
+    if (error != null) throw error;
   }
 
   @override
   Future<void> logOut() async {
     logOutCallCount++;
-    if (errorToThrow != null) throw errorToThrow!;
+    final error = _getError('logOut');
+    if (error != null) throw error;
     _isPro = false;
   }
 }

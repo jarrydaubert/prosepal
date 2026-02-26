@@ -11,10 +11,17 @@ import 'package:prosepal/core/models/models.dart';
 
 /// E2E Tests for Subscription Flows
 ///
-/// These tests verify the subscription-related UI flows work correctly.
-/// They use mocked subscription state since real purchases require device testing.
+/// Tests verify subscription-related UI flows using provider overrides.
+/// Real purchases require device testing with RevenueCat sandbox.
 ///
 /// Run with: flutter test integration_test/e2e_subscription_test.dart -d [device_id]
+///
+/// Coverage:
+/// - Free user: remaining count display, exhaustion → upgrade prompt
+/// - Pro user: unlimited access, PRO badge
+/// - Paywall navigation from home and settings
+///
+/// Note: Tests handle variable auth state gracefully via conditional assertions.
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
@@ -30,6 +37,10 @@ void main() {
       'hasCompletedOnboarding': true,
     });
     prefs = await SharedPreferences.getInstance();
+  });
+
+  tearDown(() async {
+    await prefs.setBool('hasCompletedOnboarding', true);
   });
 
   group('Free User Experience', () {

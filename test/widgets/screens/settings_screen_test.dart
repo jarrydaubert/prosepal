@@ -205,6 +205,22 @@ void main() {
 
         expect(find.byType(Switch), findsOneWidget);
       });
+
+      testWidgets('switch reflects enabled state', (tester) async {
+        await tester.pumpWidget(buildTestWidget(biometricsEnabled: true));
+        await tester.pumpAndSettle();
+
+        final switchWidget = tester.widget<Switch>(find.byType(Switch));
+        expect(switchWidget.value, isTrue);
+      });
+
+      testWidgets('switch reflects disabled state', (tester) async {
+        await tester.pumpWidget(buildTestWidget(biometricsEnabled: false));
+        await tester.pumpAndSettle();
+
+        final switchWidget = tester.widget<Switch>(find.byType(Switch));
+        expect(switchWidget.value, isFalse);
+      });
     });
 
     group('Stats Section', () {

@@ -34,9 +34,11 @@ class _ProsepalAppState extends ConsumerState<ProsepalApp>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     setState(() {
+      // Flutter 3.13+ added 'hidden' for brief non-visible transitions
       _isInBackground =
           state == AppLifecycleState.inactive ||
-          state == AppLifecycleState.paused;
+          state == AppLifecycleState.paused ||
+          state == AppLifecycleState.hidden;
     });
   }
 

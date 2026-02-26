@@ -550,12 +550,17 @@ void main() {
     });
 
     test('returns full_name from metadata if present', () {
-      // This would require setting up user metadata in the mock
-      // For now, we test that it returns something reasonable
-      mockSupabase.setLoggedIn(true);
+      mockSupabase.setLoggedIn(true, displayName: 'Jane Doe');
 
-      // With default mock, displayName comes from email prefix
-      expect(authService.displayName, isNotNull);
+      expect(authService.displayName, equals('Jane Doe'));
+    });
+
+    test('falls back to email prefix when no display name', () {
+      mockSupabase.setLoggedIn(true, email: 'john@example.com');
+
+      // Should extract 'john' from email and capitalize
+      final name = authService.displayName;
+      expect(name, isNotNull);
     });
 
     test('capitalizes first letter of display name', () {

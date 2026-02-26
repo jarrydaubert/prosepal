@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 // Helper to determine if privacy screen should show
+// Includes hidden state (Flutter 3.13+) for brief transition periods
 bool isBackgroundState(AppLifecycleState state) {
   return state == AppLifecycleState.inactive ||
-      state == AppLifecycleState.paused;
+      state == AppLifecycleState.paused ||
+      state == AppLifecycleState.hidden;
 }
 
 // Helper to determine initial route
@@ -34,6 +36,10 @@ void main() {
 
     test('should show privacy screen for paused state', () {
       expect(isBackgroundState(AppLifecycleState.paused), isTrue);
+    });
+
+    test('should show privacy screen for hidden state', () {
+      expect(isBackgroundState(AppLifecycleState.hidden), isTrue);
     });
 
     test('should not show privacy screen for resumed state', () {
