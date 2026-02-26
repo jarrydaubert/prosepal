@@ -1,15 +1,37 @@
+/// Tests for app lifecycle management, biometric locking, and auth transitions.
+///
+/// These tests validate the core routing and privacy logic that determines:
+/// - When to show the privacy overlay (app backgrounded)
+/// - Which screen to show on app launch (onboarding, auth, lock, home)
+/// - How to respond to authentication state changes
+library;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-// Helper to determine if privacy screen should show
-// Includes hidden state (Flutter 3.13+) for brief transition periods
+// =============================================================================
+// Helper Functions Under Test
+// =============================================================================
+
+/// Determines if the privacy overlay should show based on app lifecycle state.
+///
+/// Returns true for states where the app is not actively visible:
+/// - [AppLifecycleState.inactive]: App losing focus (e.g., phone call overlay)
+/// - [AppLifecycleState.paused]: App fully backgrounded
+/// - [AppLifecycleState.hidden]: Brief transition state (Flutter 3.13+)
 bool isBackgroundState(AppLifecycleState state) {
   return state == AppLifecycleState.inactive ||
       state == AppLifecycleState.paused ||
       state == AppLifecycleState.hidden;
 }
 
-// Helper to determine initial route
+/// Determines the initial route based on app state.
+///
+/// Priority order (highest first):
+/// 1. Onboarding - first-time users must complete setup
+/// 2. Auth - logged-out users must authenticate
+/// 3. Lock - biometric verification before accessing content
+/// 4. Home - default destination for authenticated users
 String determineRoute({
   required bool hasCompletedOnboarding,
   required bool isLoggedIn,
@@ -21,142 +43,184 @@ String determineRoute({
   return '/home';
 }
 
-// Helper to determine navigation on auth event
+/// Determines navigation action for auth state changes.
+///
+/// Returns the route to navigate to, or null if no navigation needed.
+/// Only signedIn (with session) and signedOut trigger navigation.
 String? determineNavigation({required String event, required bool hasSession}) {
   if (event == 'signedIn' && hasSession) return '/home';
   if (event == 'signedOut') return '/auth';
   return null;
 }
 
+// =============================================================================
+// Test Data
+// =============================================================================
+
+/// Test cases for lifecycle state -> privacy screen visibility.
+const _lifecyclePrivacyCases = <(AppLifecycleState, bool, String)>[
+  (AppLifecycleState.inactive, true, 'inactive - app losing focus'),
+  (AppLifecycleState.paused, true, 'paused - app backgrounded'),
+  (AppLifecycleState.hidden, true, 'hidden - transition state'),
+  (AppLifecycleState.resumed, false, 'resumed - app in foreground'),
+  (AppLifecycleState.detached, false, 'detached - engine detached'),
+];
+
+/// Test cases for route determination based on app state.
+/// Format: (onboarding, loggedIn, biometrics, expectedRoute, description)
+const _routeCases = <(bool, bool, bool, String, String)>[
+  // Priority 1: Onboarding
+  (false, false, false, '/onboarding', 'first launch - no state'),
+  (false, true, true, '/onboarding', 'onboarding takes priority over auth/bio'),
+  // Priority 2: Auth
+  (true, false, false, '/auth', 'logged out user'),
+  (true, false, true, '/auth', 'auth takes priority over biometrics'),
+  // Priority 3: Biometrics
+  (true, true, true, '/lock', 'biometrics enabled'),
+  // Priority 4: Home
+  (true, true, false, '/home', 'authenticated without biometrics'),
+];
+
+/// Test cases for auth event navigation.
+/// Format: (event, hasSession, expectedRoute, description)
+const _authNavigationCases = <(String, bool, String?, String)>[
+  ('signedIn', true, '/home', 'sign in with valid session'),
+  ('signedIn', false, null, 'sign in without session (edge case)'),
+  ('signedOut', false, '/auth', 'sign out'),
+  ('signedOut', true, '/auth', 'sign out even with stale session'),
+  ('tokenRefreshed', true, null, 'token refresh - no navigation'),
+  ('passwordRecovery', false, null, 'password recovery - no navigation'),
+  ('userUpdated', true, null, 'user update - no navigation'),
+];
+
+// =============================================================================
+// Tests
+// =============================================================================
+
 void main() {
   group('App Lifecycle Privacy', () {
-    test('should show privacy screen for inactive state', () {
-      expect(isBackgroundState(AppLifecycleState.inactive), isTrue);
+    group('should correctly determine privacy screen visibility', () {
+      for (final (state, shouldShow, description) in _lifecyclePrivacyCases) {
+        test('for $description', () {
+          expect(
+            isBackgroundState(state),
+            shouldShow,
+            reason: 'Privacy screen should ${shouldShow ? "" : "not "}show '
+                'when app is $description',
+          );
+        });
+      }
     });
 
-    test('should show privacy screen for paused state', () {
-      expect(isBackgroundState(AppLifecycleState.paused), isTrue);
-    });
+    group('lifecycle transition sequences', () {
+      test('background transition: resumed -> inactive -> paused', () {
+        const transition = [
+          AppLifecycleState.resumed,
+          AppLifecycleState.inactive,
+          AppLifecycleState.paused,
+        ];
 
-    test('should show privacy screen for hidden state', () {
-      expect(isBackgroundState(AppLifecycleState.hidden), isTrue);
-    });
+        // Privacy should show after first transition (inactive)
+        expect(isBackgroundState(transition[0]), isFalse);
+        expect(isBackgroundState(transition[1]), isTrue);
+        expect(isBackgroundState(transition[2]), isTrue);
+      });
 
-    test('should not show privacy screen for resumed state', () {
-      expect(isBackgroundState(AppLifecycleState.resumed), isFalse);
-    });
+      test('foreground transition: paused -> inactive -> resumed', () {
+        const transition = [
+          AppLifecycleState.paused,
+          AppLifecycleState.inactive,
+          AppLifecycleState.resumed,
+        ];
 
-    test('should not show privacy screen for detached state', () {
-      expect(isBackgroundState(AppLifecycleState.detached), isFalse);
-    });
+        // Privacy should hide on final transition (resumed)
+        expect(isBackgroundState(transition[0]), isTrue);
+        expect(isBackgroundState(transition[1]), isTrue);
+        expect(isBackgroundState(transition[2]), isFalse);
+      });
 
-    test('background transition ends with paused', () {
-      // App going to background: resumed -> inactive -> paused
-      const backgroundTransition = [
-        AppLifecycleState.resumed,
-        AppLifecycleState.inactive,
-        AppLifecycleState.paused,
-      ];
-      expect(backgroundTransition.last, equals(AppLifecycleState.paused));
-    });
+      test('iOS multitasking: resumed -> inactive -> resumed (no paused)', () {
+        // iOS may not reach paused state for quick app switches
+        const transition = [
+          AppLifecycleState.resumed,
+          AppLifecycleState.inactive,
+          AppLifecycleState.resumed,
+        ];
 
-    test('foreground transition ends with resumed', () {
-      // App coming to foreground: paused -> inactive -> resumed
-      const foregroundTransition = [
-        AppLifecycleState.paused,
-        AppLifecycleState.inactive,
-        AppLifecycleState.resumed,
-      ];
-      expect(foregroundTransition.last, equals(AppLifecycleState.resumed));
+        expect(isBackgroundState(transition[0]), isFalse);
+        expect(isBackgroundState(transition[1]), isTrue);
+        expect(isBackgroundState(transition[2]), isFalse);
+      });
     });
   });
 
-  group('Biometric Lock Flow', () {
-    test('should require biometrics when enabled and logged in', () {
-      final route = determineRoute(
-        hasCompletedOnboarding: true,
-        isLoggedIn: true,
-        biometricsEnabled: true,
-      );
-      expect(route, equals('/lock'));
+  group('Initial Route Determination', () {
+    group('should route based on app state priority', () {
+      for (final (onboarding, loggedIn, bio, route, desc) in _routeCases) {
+        test(desc, () {
+          final result = determineRoute(
+            hasCompletedOnboarding: onboarding,
+            isLoggedIn: loggedIn,
+            biometricsEnabled: bio,
+          );
+          expect(
+            result,
+            route,
+            reason: 'Expected $route for: onboarding=$onboarding, '
+                'loggedIn=$loggedIn, biometrics=$bio',
+          );
+        });
+      }
     });
 
-    test('should skip lock when biometrics disabled', () {
-      final route = determineRoute(
-        hasCompletedOnboarding: true,
-        isLoggedIn: true,
-        biometricsEnabled: false,
-      );
-      expect(route, equals('/home'));
-    });
+    test('all route combinations produce valid routes', () {
+      final validRoutes = {'/onboarding', '/auth', '/lock', '/home'};
 
-    test('should show auth when not logged in', () {
-      final route = determineRoute(
-        hasCompletedOnboarding: true,
-        isLoggedIn: false,
-        biometricsEnabled: true,
-      );
-      expect(route, equals('/auth'));
-    });
-
-    test('should show onboarding for first launch', () {
-      final route = determineRoute(
-        hasCompletedOnboarding: false,
-        isLoggedIn: false,
-        biometricsEnabled: false,
-      );
-      expect(route, equals('/onboarding'));
-    });
-
-    test('onboarding takes priority over auth', () {
-      final route = determineRoute(
-        hasCompletedOnboarding: false,
-        isLoggedIn: true,
-        biometricsEnabled: true,
-      );
-      expect(route, equals('/onboarding'));
-    });
-
-    test('auth takes priority over biometrics when not logged in', () {
-      final route = determineRoute(
-        hasCompletedOnboarding: true,
-        isLoggedIn: false,
-        biometricsEnabled: true,
-      );
-      expect(route, equals('/auth'));
+      for (final onboarding in [true, false]) {
+        for (final loggedIn in [true, false]) {
+          for (final bio in [true, false]) {
+            final route = determineRoute(
+              hasCompletedOnboarding: onboarding,
+              isLoggedIn: loggedIn,
+              biometricsEnabled: bio,
+            );
+            expect(
+              validRoutes.contains(route),
+              isTrue,
+              reason: 'Route $route should be valid',
+            );
+          }
+        }
+      }
     });
   });
 
   group('Auth State Transitions', () {
-    test('should navigate to home on sign in with session', () {
-      final nav = determineNavigation(event: 'signedIn', hasSession: true);
-      expect(nav, equals('/home'));
+    group('should determine correct navigation for auth events', () {
+      for (final (event, session, route, desc) in _authNavigationCases) {
+        test(desc, () {
+          final result = determineNavigation(event: event, hasSession: session);
+          expect(
+            result,
+            route,
+            reason: 'Event $event with session=$session should navigate to '
+                '${route ?? "nowhere"}',
+          );
+        });
+      }
     });
 
-    test('should not navigate on sign in without session', () {
-      final nav = determineNavigation(event: 'signedIn', hasSession: false);
-      expect(nav, isNull);
-    });
+    test('unknown events should not trigger navigation', () {
+      final unknownEvents = ['mfaChallenge', 'userDeleted', 'unknown', ''];
 
-    test('should navigate to auth on sign out', () {
-      final nav = determineNavigation(event: 'signedOut', hasSession: false);
-      expect(nav, equals('/auth'));
-    });
-
-    test('should not navigate for token refresh', () {
-      final nav = determineNavigation(
-        event: 'tokenRefreshed',
-        hasSession: true,
-      );
-      expect(nav, isNull);
-    });
-
-    test('should not navigate for password recovery', () {
-      final nav = determineNavigation(
-        event: 'passwordRecovery',
-        hasSession: false,
-      );
-      expect(nav, isNull);
+      for (final event in unknownEvents) {
+        final result = determineNavigation(event: event, hasSession: true);
+        expect(
+          result,
+          isNull,
+          reason: 'Unknown event "$event" should not navigate',
+        );
+      }
     });
   });
 }
