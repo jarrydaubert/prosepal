@@ -124,6 +124,11 @@ Future<void> _initializeApp() async {
     return;
   }
 
+  // Verify edge functions are deployed (non-blocking, just logs warnings)
+  if (init.isSupabaseReady) {
+    unawaited(SupabaseAuthProvider().verifyEdgeFunctions());
+  }
+
   // Initialize RevenueCat (non-critical - app works without subscriptions)
   final subscriptionService = SubscriptionService();
   try {

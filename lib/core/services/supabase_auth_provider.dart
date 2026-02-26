@@ -1,5 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'dart:async';
+
 import '../interfaces/supabase_auth_provider.dart';
 import 'log_service.dart';
 
@@ -379,5 +381,60 @@ class SupabaseAuthProvider implements ISupabaseAuthProvider {
       headers: {'Authorization': 'Bearer $token'},
       body: {'authorization_code': authorizationCode},
     ));
+  }
+
+  /// Verify edge functions are deployed and responding
+  ///
+  /// Calls each function without auth - expects 401 Unauthorized (function exists)
+  /// vs FunctionException with 'not found' (function not deployed).
+  @override
+  Future<Map<String, bool>> verifyEdgeFunctions() async {
+    final functions = ['delete-user', 'exchange-apple-token'];
+    final results = <String, bool>{};
+
+    for (final name in functions) {
+      try {
+        // Call without auth - should return 401 if deployed
+        await _functions.invoke(name).timeout(const Duration(seconds: 10));
+        // If we get here without error, function exists (unexpected but ok)
+        results[name] = true;
+        Log.info('Edge function verified', {'function': name});
+      } on FunctionException catch (e) {
+        // 401/403 = function exists but auth required (expected)
+        // 404 or 'not found' = function not deployed
+        final reason = e.reasonPhrase?.toLowerCase() ?? '';
+        final isDeployed = e.status == 401 ||
+            e.status == 403 ||
+            (e.status != 404 && !reason.contains('not found'));
+        results[name] = isDeployed;
+
+        if (isDeployed) {
+          Log.info('Edge function verified', {'function': name});
+        } else {
+          Log.error('Edge function not deployed: $name (status: ${e.status})', e);
+        }
+      } on TimeoutException {
+        // Timeout could mean function is slow but exists
+        results[name] = false;
+        Log.warning('Edge function timeout', {'function': name});
+      } catch (e) {
+        // Network error or other issue
+        results[name] = false;
+        Log.warning('Edge function check failed', {
+          'function': name,
+          'error': '$e',
+        });
+      }
+    }
+
+    // Log summary
+    final allDeployed = results.values.every((v) => v);
+    if (!allDeployed) {
+      final missing =
+          results.entries.where((e) => !e.value).map((e) => e.key).join(', ');
+      Log.error('Missing edge functions: $missing - account deletion will fail');
+    }
+
+    return results;
   }
 }

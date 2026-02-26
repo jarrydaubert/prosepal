@@ -54,9 +54,6 @@
 | String-based error detection | `auth_errors.dart:46-179` | Message matching as fallback |
 | No connectivity monitoring | App | No `connectivity_plus` - just error messages |
 | No circuit breakers | Network | Repeated failures don't trigger fallback |
-
-| Generic catch blocks | Throughout `/lib` | Many `catch (e)` lose exception type info |
-
 | No Remote Config | App | Can't toggle features or kill switches remotely |
 | No health monitoring | Operations | No uptime monitoring for Supabase/Gemini |
 | Magic link custom scheme fallback | `supabase_auth_provider.dart:332` | Deprecate, use HTTPS universal links only |
@@ -69,9 +66,7 @@
 | Issue | Location | Fix |
 |-------|----------|-----|
 | Missing Google nonce | `auth_service.dart` | Native SDK has built-in protections |
-
-
-
+| Generic catch blocks | Throughout `/lib` | ~65 remaining, core services done |
 | No SSL certificate pinning | Network | Consider for banking-level security |
 | No visual regression tests | Testing | Add golden tests |
 | No performance tests | Testing | Add load/stress tests |

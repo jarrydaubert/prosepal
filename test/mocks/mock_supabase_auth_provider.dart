@@ -323,6 +323,15 @@ class MockSupabaseAuthProvider implements ISupabaseAuthProvider {
     // No-op in mock - just track if needed
   }
 
+  @override
+  Future<Map<String, bool>> verifyEdgeFunctions() async {
+    // Mock always returns success
+    return {
+      'delete-user': true,
+      'exchange-apple-token': true,
+    };
+  }
+
   /// Reset all state
   void reset() {
     _currentUser = null;
