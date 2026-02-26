@@ -1,12 +1,24 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:prosepal/core/interfaces/supabase_auth_provider.dart';
 
-/// Mock implementation of ISupabaseAuthProvider for testing (supabase_flutter 2.x)
+/// Mock implementation of ISupabaseAuthProvider for testing
 ///
-/// ## Usage
+/// Designed for supabase_flutter 2.x (tested with v2.12.0).
+///
+/// ## Features
+/// - Configurable state (user, session)
+/// - Per-method error simulation via [methodErrors]
+/// - Supabase-specific error helpers (rate limit, invalid credentials, etc.)
+/// - Automatic auth state emission via [emitStateOnSuccess]
+/// - Comprehensive call tracking with parameter capture
+/// - Full MFA support (enroll, challenge, verify, unenroll)
+/// - Configurable network delay simulation
+///
+/// ## Basic Usage
 /// ```dart
 /// final mockSupabase = MockSupabaseAuthProvider();
 /// mockSupabase.setLoggedIn(true, email: 'user@test.com');
@@ -18,12 +30,14 @@ import 'package:prosepal/core/interfaces/supabase_auth_provider.dart';
 /// ```
 ///
 /// ## Error Simulation
-/// Use [methodErrors] for per-method AuthException injection:
 /// ```dart
-/// mockSupabase.methodErrors['signInWithPassword'] =
-///     AuthException('Invalid login credentials');
+/// // Using convenience methods:
+/// mockSupabase.simulateInvalidCredentials();
+/// mockSupabase.simulateRateLimit();
+///
+/// // Or per-method errors:
 /// mockSupabase.methodErrors['signUp'] =
-///     AuthException('User already registered');
+///     AuthException('User already registered', statusCode: '422');
 /// ```
 ///
 /// ## v2.x Behavior Notes
@@ -32,51 +46,226 @@ import 'package:prosepal/core/interfaces/supabase_auth_provider.dart';
 /// - [refreshSession] throws if no current session exists
 /// - Use [emitAuthState] to test listener reactions
 class MockSupabaseAuthProvider implements ISupabaseAuthProvider {
+  // ---------------------------------------------------------------------------
+  // State Management
+  // ---------------------------------------------------------------------------
+
   User? _currentUser;
   Session? _currentSession;
 
   final _authStateController = StreamController<AuthState>.broadcast();
 
+  // ---------------------------------------------------------------------------
+  // Configuration
+  // ---------------------------------------------------------------------------
+
   /// Per-method errors (key: method name, value: exception to throw)
   ///
-  /// Common AuthException messages:
-  /// - 'Invalid login credentials' (wrong email/password)
-  /// - 'User already registered' (signup with existing email)
-  /// - 'Email not confirmed' (login before verification)
-  /// - 'Token has expired or is invalid' (expired session)
-  /// - 'For security purposes, you can only request this after X seconds'
+  /// Keys: 'signInWithIdToken', 'signInWithOAuth', 'signInWithPassword',
+  /// 'signUp', 'resetPasswordForEmail', 'signInWithOtp', 'refreshSession',
+  /// 'setSession', 'updateUser', 'signOut', 'deleteUser', 'mfaEnroll',
+  /// 'mfaChallenge', 'mfaVerify', 'mfaUnenroll', 'mfaListFactors',
+  /// 'mfaGetAuthenticatorAssuranceLevel'
+  @visibleForTesting
   final Map<String, Exception> methodErrors = {};
 
   /// Whether to emit auth state changes on successful auth operations
+  @visibleForTesting
   bool emitStateOnSuccess = false;
 
-  /// Track calls for verification
+  /// Simulated network delay for async operations
+  /// Useful for testing loading indicators and timeouts
+  @visibleForTesting
+  Duration? simulateDelay;
+
+  Future<void> _maybeDelay() async {
+    if (simulateDelay != null) {
+      await Future.delayed(simulateDelay!);
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Call Tracking
+  // ---------------------------------------------------------------------------
+
+  /// Number of times signInWithIdToken() was called
+  @visibleForTesting
   int signInWithIdTokenCalls = 0;
+
+  /// Number of times signInWithOAuth() was called
+  @visibleForTesting
   int signInWithOAuthCalls = 0;
+
+  /// Number of times signInWithPassword() was called
+  @visibleForTesting
   int signInWithPasswordCalls = 0;
+
+  /// Number of times signUp() was called
+  @visibleForTesting
   int signUpCalls = 0;
+
+  /// Number of times resetPasswordForEmail() was called
+  @visibleForTesting
   int resetPasswordCalls = 0;
+
+  /// Number of times signInWithOtp() was called
+  @visibleForTesting
   int signInWithOtpCalls = 0;
+
+  /// Number of times refreshSession() was called
+  @visibleForTesting
   int refreshSessionCalls = 0;
+
+  /// Number of times setSession() was called
+  @visibleForTesting
   int setSessionCalls = 0;
+
+  /// Number of times updateUser() was called
+  @visibleForTesting
   int updateUserCalls = 0;
+
+  /// Number of times signOut() was called
+  @visibleForTesting
   int signOutCalls = 0;
+
+  /// Number of times deleteUser() was called
+  @visibleForTesting
   int deleteUserCalls = 0;
 
-  /// Last parameters passed
+  // ---------------------------------------------------------------------------
+  // Parameter Tracking
+  // ---------------------------------------------------------------------------
+
+  /// Last OAuth provider used
+  @visibleForTesting
   OAuthProvider? lastProvider;
+
+  /// Last ID token passed to signInWithIdToken()
+  @visibleForTesting
   String? lastIdToken;
+
+  /// Last nonce passed to signInWithIdToken()
+  @visibleForTesting
   String? lastNonce;
+
+  /// Last access token passed
+  @visibleForTesting
   String? lastAccessToken;
+
+  /// Last email used in any email method
+  @visibleForTesting
   String? lastEmail;
+
+  /// Last password used
+  @visibleForTesting
   String? lastPassword;
+
+  /// Last redirect URL used
+  @visibleForTesting
   String? lastRedirectTo;
+
+  /// Last OAuth scopes requested
+  @visibleForTesting
   String? lastScopes;
+
+  /// Last captcha token passed
+  @visibleForTesting
   String? lastCaptchaToken;
+
+  /// Last data payload passed to signUp()
+  @visibleForTesting
   Map<String, dynamic>? lastData;
+
+  /// Last query params passed to signInWithOAuth()
+  @visibleForTesting
   Map<String, String>? lastQueryParams;
+
+  /// Last user attributes passed to updateUser()
+  @visibleForTesting
   UserAttributes? lastUserAttributes;
+
+  /// Last refresh token passed to setSession()
+  @visibleForTesting
   String? lastRefreshToken;
+
+  // ---------------------------------------------------------------------------
+  // Error Simulation Helpers
+  // ---------------------------------------------------------------------------
+
+  Exception? _getError(String method) => methodErrors[method];
+
+  /// Simulate invalid login credentials (400)
+  void simulateInvalidCredentials([
+    String message = 'Invalid login credentials',
+  ]) {
+    methodErrors['signInWithPassword'] = AuthException(
+      message,
+      statusCode: '400',
+    );
+  }
+
+  /// Simulate user already registered (422)
+  void simulateUserAlreadyRegistered([
+    String message = 'User already registered',
+  ]) {
+    methodErrors['signUp'] = AuthException(message, statusCode: '422');
+  }
+
+  /// Simulate email not confirmed (400)
+  void simulateEmailNotConfirmed([String message = 'Email not confirmed']) {
+    methodErrors['signInWithPassword'] = AuthException(
+      message,
+      statusCode: '400',
+    );
+  }
+
+  /// Simulate rate limiting (429)
+  void simulateRateLimit([
+    String message = 'For security purposes, you can only request this after 60 seconds',
+  ]) {
+    methodErrors['signInWithPassword'] = AuthException(
+      message,
+      statusCode: '429',
+    );
+    methodErrors['signUp'] = AuthException(message, statusCode: '429');
+    methodErrors['resetPasswordForEmail'] = AuthException(
+      message,
+      statusCode: '429',
+    );
+    methodErrors['signInWithOtp'] = AuthException(message, statusCode: '429');
+  }
+
+  /// Simulate session expired (401)
+  void simulateSessionExpired([
+    String message = 'Token has expired or is invalid',
+  ]) {
+    methodErrors['refreshSession'] = AuthException(message, statusCode: '401');
+  }
+
+  /// Simulate weak password (422)
+  void simulateWeakPassword([
+    String message = 'Password should be at least 6 characters',
+  ]) {
+    methodErrors['signUp'] = AuthException(message, statusCode: '422');
+    methodErrors['updateUser'] = AuthException(message, statusCode: '422');
+  }
+
+  /// Simulate network error
+  void simulateNetworkError([String message = 'Network error']) {
+    final error = AuthException(message, statusCode: '0');
+    methodErrors['signInWithPassword'] = error;
+    methodErrors['signUp'] = error;
+    methodErrors['refreshSession'] = error;
+  }
+
+  /// Clear all error simulations
+  void clearErrors() {
+    methodErrors.clear();
+  }
+
+  // ---------------------------------------------------------------------------
+  // ISupabaseAuthProvider Implementation
+  // ---------------------------------------------------------------------------
 
   @override
   User? get currentUser => _currentUser;
@@ -102,12 +291,10 @@ class MockSupabaseAuthProvider implements ISupabaseAuthProvider {
     }
   }
 
-  /// Emit an auth state event
+  /// Emit an auth state event for testing listener reactions
   void emitAuthState(AuthState state) {
     _authStateController.add(state);
   }
-
-  Exception? _getError(String method) => methodErrors[method];
 
   @override
   Future<AuthResponse> signInWithIdToken({
@@ -121,6 +308,7 @@ class MockSupabaseAuthProvider implements ISupabaseAuthProvider {
     lastIdToken = idToken;
     lastNonce = nonce;
     lastAccessToken = accessToken;
+    await _maybeDelay();
 
     final error = _getError('signInWithIdToken');
     if (error != null) throw error;
@@ -148,6 +336,7 @@ class MockSupabaseAuthProvider implements ISupabaseAuthProvider {
     lastRedirectTo = redirectTo;
     lastScopes = scopes;
     lastQueryParams = queryParams;
+    await _maybeDelay();
 
     final error = _getError('signInWithOAuth');
     if (error != null) throw error;
@@ -165,6 +354,7 @@ class MockSupabaseAuthProvider implements ISupabaseAuthProvider {
     lastEmail = email;
     lastPassword = password;
     lastCaptchaToken = captchaToken;
+    await _maybeDelay();
 
     final error = _getError('signInWithPassword');
     if (error != null) throw error;
@@ -192,6 +382,7 @@ class MockSupabaseAuthProvider implements ISupabaseAuthProvider {
     lastPassword = password;
     lastData = data;
     lastCaptchaToken = captchaToken;
+    await _maybeDelay();
 
     final error = _getError('signUp');
     if (error != null) throw error;
@@ -212,6 +403,7 @@ class MockSupabaseAuthProvider implements ISupabaseAuthProvider {
     lastEmail = email;
     lastRedirectTo = redirectTo;
     lastCaptchaToken = captchaToken;
+    await _maybeDelay();
 
     final error = _getError('resetPasswordForEmail');
     if (error != null) throw error;
@@ -227,6 +419,7 @@ class MockSupabaseAuthProvider implements ISupabaseAuthProvider {
     lastEmail = email;
     lastRedirectTo = emailRedirectTo;
     lastCaptchaToken = captchaToken;
+    await _maybeDelay();
 
     final error = _getError('signInWithOtp');
     if (error != null) throw error;
@@ -235,6 +428,7 @@ class MockSupabaseAuthProvider implements ISupabaseAuthProvider {
   @override
   Future<AuthResponse> refreshSession() async {
     refreshSessionCalls++;
+    await _maybeDelay();
 
     final error = _getError('refreshSession');
     if (error != null) throw error;
@@ -251,6 +445,7 @@ class MockSupabaseAuthProvider implements ISupabaseAuthProvider {
   Future<AuthResponse> setSession(String refreshToken) async {
     setSessionCalls++;
     lastRefreshToken = refreshToken;
+    await _maybeDelay();
 
     final error = _getError('setSession');
     if (error != null) throw error;
@@ -266,6 +461,7 @@ class MockSupabaseAuthProvider implements ISupabaseAuthProvider {
   Future<UserResponse> updateUser(UserAttributes attributes) async {
     updateUserCalls++;
     lastUserAttributes = attributes;
+    await _maybeDelay();
 
     final error = _getError('updateUser');
     if (error != null) throw error;
@@ -292,6 +488,7 @@ class MockSupabaseAuthProvider implements ISupabaseAuthProvider {
   @override
   Future<void> signOut() async {
     signOutCalls++;
+    await _maybeDelay();
 
     final error = _getError('signOut');
     if (error != null) throw error;
@@ -307,6 +504,7 @@ class MockSupabaseAuthProvider implements ISupabaseAuthProvider {
   @override
   Future<void> deleteUser() async {
     deleteUserCalls++;
+    await _maybeDelay();
 
     final error = _getError('deleteUser');
     if (error != null) throw error;
@@ -332,33 +530,75 @@ class MockSupabaseAuthProvider implements ISupabaseAuthProvider {
     };
   }
 
-  // ===========================================================================
-  // MFA Methods (mock implementations)
-  // ===========================================================================
+  // ---------------------------------------------------------------------------
+  // MFA Call Tracking
+  // ---------------------------------------------------------------------------
 
+  /// Number of times mfaEnroll() was called
+  @visibleForTesting
   int mfaEnrollCalls = 0;
+
+  /// Number of times mfaChallenge() was called
+  @visibleForTesting
   int mfaChallengeCalls = 0;
+
+  /// Number of times mfaVerify() was called
+  @visibleForTesting
   int mfaVerifyCalls = 0;
+
+  /// Number of times mfaUnenroll() was called
+  @visibleForTesting
   int mfaUnenrollCalls = 0;
+
+  /// Number of times mfaListFactors() was called
+  @visibleForTesting
   int mfaListFactorsCalls = 0;
+
+  /// Number of times mfaGetAuthenticatorAssuranceLevel() was called
+  @visibleForTesting
   int mfaGetAALCalls = 0;
 
+  /// Last factor ID passed to MFA methods
+  @visibleForTesting
   String? lastMfaFactorId;
+
+  /// Last challenge ID passed to mfaVerify()
+  @visibleForTesting
   String? lastMfaChallengeId;
+
+  /// Last TOTP code passed to mfaVerify()
+  @visibleForTesting
   String? lastMfaCode;
+
+  /// Last friendly name passed to mfaEnroll()
+  @visibleForTesting
   String? lastMfaFriendlyName;
 
+  // ---------------------------------------------------------------------------
+  // MFA Configuration
+  // ---------------------------------------------------------------------------
+
   /// Mock MFA factors for testing
+  @visibleForTesting
   List<Factor> mockFactors = [];
 
-  /// Mock AAL level ('aal1' or 'aal2')
+  /// Mock current AAL level ('aal1' or 'aal2')
+  @visibleForTesting
   AuthenticatorAssuranceLevels mockCurrentAAL = AuthenticatorAssuranceLevels.aal1;
+
+  /// Mock next AAL level ('aal1' or 'aal2')
+  @visibleForTesting
   AuthenticatorAssuranceLevels mockNextAAL = AuthenticatorAssuranceLevels.aal1;
+
+  // ---------------------------------------------------------------------------
+  // MFA Implementation
+  // ---------------------------------------------------------------------------
 
   @override
   Future<AuthMFAEnrollResponse> mfaEnroll({String? friendlyName}) async {
     mfaEnrollCalls++;
     lastMfaFriendlyName = friendlyName;
+    await _maybeDelay();
 
     final error = _getError('mfaEnroll');
     if (error != null) throw error;
@@ -379,6 +619,7 @@ class MockSupabaseAuthProvider implements ISupabaseAuthProvider {
   Future<AuthMFAChallengeResponse> mfaChallenge(String factorId) async {
     mfaChallengeCalls++;
     lastMfaFactorId = factorId;
+    await _maybeDelay();
 
     final error = _getError('mfaChallenge');
     if (error != null) throw error;
@@ -399,6 +640,7 @@ class MockSupabaseAuthProvider implements ISupabaseAuthProvider {
     lastMfaFactorId = factorId;
     lastMfaChallengeId = challengeId;
     lastMfaCode = code;
+    await _maybeDelay();
 
     final error = _getError('mfaVerify');
     if (error != null) throw error;
@@ -426,6 +668,7 @@ class MockSupabaseAuthProvider implements ISupabaseAuthProvider {
   Future<AuthMFAUnenrollResponse> mfaUnenroll(String factorId) async {
     mfaUnenrollCalls++;
     lastMfaFactorId = factorId;
+    await _maybeDelay();
 
     final error = _getError('mfaUnenroll');
     if (error != null) throw error;
@@ -439,6 +682,7 @@ class MockSupabaseAuthProvider implements ISupabaseAuthProvider {
   @override
   Future<AuthMFAListFactorsResponse> mfaListFactors() async {
     mfaListFactorsCalls++;
+    await _maybeDelay();
 
     final error = _getError('mfaListFactors');
     if (error != null) throw error;
@@ -454,6 +698,7 @@ class MockSupabaseAuthProvider implements ISupabaseAuthProvider {
   Future<AuthMFAGetAuthenticatorAssuranceLevelResponse>
       mfaGetAuthenticatorAssuranceLevel() async {
     mfaGetAALCalls++;
+    await _maybeDelay();
 
     final error = _getError('mfaGetAuthenticatorAssuranceLevel');
     if (error != null) throw error;
@@ -465,10 +710,16 @@ class MockSupabaseAuthProvider implements ISupabaseAuthProvider {
     );
   }
 
-  /// Reset all state
+  // ---------------------------------------------------------------------------
+  // Reset & Dispose
+  // ---------------------------------------------------------------------------
+
+  /// Reset all state and counters to defaults
   void reset() {
     _currentUser = null;
     _currentSession = null;
+    emitStateOnSuccess = false;
+    simulateDelay = null;
     methodErrors.clear();
     signInWithIdTokenCalls = 0;
     signInWithOAuthCalls = 0;
@@ -510,12 +761,32 @@ class MockSupabaseAuthProvider implements ISupabaseAuthProvider {
     mockNextAAL = AuthenticatorAssuranceLevels.aal1;
   }
 
+  /// Dispose the stream controller to prevent leaks
   void dispose() {
     _authStateController.close();
   }
 }
 
+// =============================================================================
+// Test Data Factories
+// =============================================================================
+
 /// Creates a fake User for testing
+///
+/// Designed for supabase_flutter 2.x (tested with v2.12.0).
+///
+/// ## Example
+/// ```dart
+/// // Basic user:
+/// final user = createFakeUser(email: 'test@example.com');
+///
+/// // Unconfirmed email (sign-up scenario):
+/// final unconfirmed = createFakeUser(emailConfirmed: false);
+///
+/// // User with display name:
+/// final named = createFakeUser(displayName: 'John Doe');
+/// ```
+@visibleForTesting
 User createFakeUser({
   String id = 'test-user-id-123',
   String email = 'test@example.com',
@@ -546,6 +817,15 @@ User createFakeUser({
 }
 
 /// Creates a fake Session for testing
+///
+/// ## Example
+/// ```dart
+/// final session = createFakeSession(
+///   user: createFakeUser(email: 'test@example.com'),
+///   expiresIn: 7200,
+/// );
+/// ```
+@visibleForTesting
 Session createFakeSession({
   String accessToken = 'fake-access-token-xyz',
   String refreshToken = 'fake-refresh-token-abc',
