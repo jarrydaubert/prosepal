@@ -27,8 +27,8 @@ import '../interfaces/apple_auth_provider.dart';
 ///
 /// ## Credential Revocation
 /// Apple recommends server-side token validation for detecting revocations.
-/// The [onCredentialRevoked] stream is not exposed by the current package;
-/// implement server-side checks or native AppDelegate integration if needed.
+/// The sign_in_with_apple package does not expose client-side revocation.
+/// Implement server-side checks via Apple webhooks if needed.
 class AppleAuthProvider implements IAppleAuthProvider {
   /// Generate cryptographically secure random nonce
   ///
@@ -64,15 +64,4 @@ class AppleAuthProvider implements IAppleAuthProvider {
     );
   }
 
-  /// Stream of credential revocation events
-  ///
-  /// Note: The sign_in_with_apple package (7.x) does not expose a client-side
-  /// revocation listener. This returns an empty stream as a safe default.
-  ///
-  /// For production apps requiring revocation detection:
-  /// 1. Implement server-side token validation (recommended by Apple)
-  /// 2. Check token validity on app resume/foreground
-  /// 3. For iOS-only: integrate via native AppDelegate if critical
-  @override
-  Stream<void> get onCredentialRevoked => const Stream.empty();
 }

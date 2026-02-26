@@ -83,7 +83,6 @@ void main() {
 
     test('constants should have correct values', () {
       expect(UsageService.freeLifetimeLimit, equals(3));
-      expect(UsageService.proDailyLimit, equals(50));
       expect(UsageService.proMonthlyLimit, equals(500));
     });
   });

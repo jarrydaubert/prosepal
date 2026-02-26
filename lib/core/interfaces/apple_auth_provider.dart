@@ -31,9 +31,7 @@ abstract class IAppleAuthProvider {
     String? state,
   });
 
-  /// Stream of credential revocation events (iOS/macOS only)
-  ///
-  /// Fires when user revokes app access in Apple ID settings.
-  /// Listen to this and sign out user when event received.
-  Stream<void> get onCredentialRevoked;
+  // Note: Credential revocation is handled server-side via Apple's webhooks
+  // or by checking token validity on each auth. The sign_in_with_apple package
+  // does not expose client-side revocation detection.
 }

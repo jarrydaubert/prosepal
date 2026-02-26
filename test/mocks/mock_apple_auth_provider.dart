@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 import 'package:prosepal/core/interfaces/apple_auth_provider.dart';
@@ -25,11 +23,6 @@ import 'package:prosepal/core/interfaces/apple_auth_provider.dart';
 ///   message: 'User cancelled',
 /// );
 /// ```
-///
-/// ## Revocation Testing
-/// The [onCredentialRevoked] stream is controllable via [emitCredentialRevoked].
-/// Note: The real package (7.x) does not expose client-side revocation events.
-/// Apple recommends server-side token validation for production revocation detection.
 class MockAppleAuthProvider implements IAppleAuthProvider {
   /// Nonce to return from generateRawNonce()
   /// Default is 32 characters (recommended length for security)
@@ -50,9 +43,6 @@ class MockAppleAuthProvider implements IAppleAuthProvider {
   /// - AuthorizationErrorCode.notHandled: Not handled
   /// - AuthorizationErrorCode.unknown: Unknown error
   Exception? errorToThrow;
-
-  /// Controller for credential revocation events
-  final _revocationController = StreamController<void>.broadcast();
 
   /// Track calls for verification
   int generateNonceCalls = 0;
@@ -108,17 +98,6 @@ class MockAppleAuthProvider implements IAppleAuthProvider {
     return credentialToReturn!;
   }
 
-  @override
-  Stream<void> get onCredentialRevoked => _revocationController.stream;
-
-  /// Emit a credential revocation event (for testing revocation handling)
-  ///
-  /// Note: Real sign_in_with_apple 7.x does not expose this stream.
-  /// Use for testing theoretical revocation handling only.
-  void emitCredentialRevoked() {
-    _revocationController.add(null);
-  }
-
   /// Simulate user cancellation (convenience method)
   void simulateCancellation() {
     errorToThrow = const SignInWithAppleAuthorizationException(
@@ -149,10 +128,6 @@ class MockAppleAuthProvider implements IAppleAuthProvider {
     lastWebAuthOptions = null;
     lastState = null;
     lastNonceLength = null;
-  }
-
-  void dispose() {
-    _revocationController.close();
   }
 }
 

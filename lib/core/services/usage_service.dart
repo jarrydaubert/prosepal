@@ -11,7 +11,6 @@ class UsageService {
 
   // Limits
   static const int freeLifetimeLimit = 3; // 3 total ever, then paywall
-  static const int proDailyLimit = 50;
   static const int proMonthlyLimit = 500;
 
   /// Get total all-time generation count

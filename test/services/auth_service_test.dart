@@ -41,7 +41,6 @@ void main() {
 
   tearDown(() {
     mockSupabase.dispose();
-    mockApple.dispose();
   });
 
   // ============================================================
