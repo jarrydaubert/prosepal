@@ -46,6 +46,9 @@
 | Deserialization resilience | `generated_message.dart` | Wrap history loading in try-catch with graceful degradation for corrupted data |
 | Model utilities | `generated_message.dart` | Add extensions for formatted preview text, shareable string, character count |
 | Serialization tests | `test/models/` | Add unit tests for JSON round-trip serialization of GeneratedMessage/GenerationResult |
+| Enum localization | `message_length.dart`, `occasion.dart`, `relationship.dart`, `tone.dart` | Extract labels/descriptions to .arb files for i18n |
+| Enum utilities | `message_length.dart` | Add extension for `fromLabel()`, `next()` cycling if needed |
+| Prompt word counts | `message_length.dart` | Add approximate word counts alongside sentences for multilingual consistency |
 | UsageService race condition | `usage_service.dart` | Atomic increment via Supabase RPC |
 | Hardcoded usage limits | `usage_service.dart` | Move to remote config |
 | Supabase singleton | `usage_service.dart` | Inject client for testability |
