@@ -72,12 +72,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   Future<void> _toggleBiometrics(bool value) async {
-    if (value) {
-      final result = await _biometricService.authenticate(
-        reason: 'Authenticate to enable $_biometricType',
-      );
-      if (!result.success) return;
-    }
+    // Require auth for BOTH enable and disable (symmetric security)
+    // Prevents unauthorized deactivation on shared/stolen devices
+    final reason = value
+        ? 'Authenticate to enable $_biometricType'
+        : 'Authenticate to disable $_biometricType';
+    final result = await _biometricService.authenticate(reason: reason);
+    if (!result.success) return;
 
     await _biometricService.setEnabled(value);
     setState(() => _biometricsEnabled = value);
@@ -162,13 +163,23 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   Future<void> _rateApp() async {
-    // Opens the app store listing for rating
-    // iOS requires appStoreId, Android uses package name automatically
-    if (Platform.isIOS) {
-      // TODO: Add App Store ID after first iOS release
-      await _inAppReview.openStoreListing(appStoreId: '');
+    // Check if in-app review is available (may not be on some devices/builds)
+    final isAvailable = await _inAppReview.isAvailable();
+
+    if (isAvailable) {
+      // Request in-app review (native prompt, best UX)
+      await _inAppReview.requestReview();
     } else {
-      await _inAppReview.openStoreListing();
+      // Fallback: open store listing directly
+      // iOS requires appStoreId, Android uses package name automatically
+      if (Platform.isIOS) {
+        // TODO(release): Add App Store ID after first iOS release
+        // Get from App Store Connect: https://appstoreconnect.apple.com
+        // Format: numeric ID like '1234567890'
+        await _inAppReview.openStoreListing(appStoreId: '');
+      } else {
+        await _inAppReview.openStoreListing();
+      }
     }
   }
 
