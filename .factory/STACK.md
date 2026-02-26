@@ -269,13 +269,13 @@ npx vercel ls
 
 ### Unit Tests
 - **Location**: `test/`
-- **Count**: 458 tests
+- **Count**: Run `flutter test` to see current count
 - **Coverage**: ~65%
 - **Command**: `flutter test`
 
 ### Integration Tests (Firebase Test Lab)
 - **Location**: `integration_test/`
-- **Count**: 91 tests
+- **Count**: Run integration tests to see current count
 - **APK Path**: `build/app/outputs/flutter-apk/app-debug.apk`
 - **Test APK**: `build/app/outputs/apk/androidTest/debug/app-debug-androidTest.apk`
 - **Build Requires**: Java 17 (`JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home`)

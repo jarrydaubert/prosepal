@@ -53,7 +53,7 @@ lib/
 See `docs/` for detailed documentation:
 - `ARCHITECTURE.md` - Project structure
 - `LAUNCH_CHECKLIST.md` - Release checklist
-- `TEST_AUDIT.md` - Test coverage
+- `TESTING.md` - Test coverage
 
 ## Environment Setup
 

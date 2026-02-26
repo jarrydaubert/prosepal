@@ -75,8 +75,8 @@ Sign in on Device B → identifyUser() → Pro synced
 
 | File | Purpose |
 |------|---------|
-| `test/**` | Unit/widget tests (427 tests, mocked) |
-| `integration_test/app_test.dart` | Mocked Patrol tests (52 tests) |
+| `test/**` | Unit/widget tests (mocked) |
+| `integration_test/app_test.dart` | Mocked Patrol tests |
 | `integration_test/e2e_test.dart` | Firebase Test Lab entry point |
-| `integration_test/journeys/` | Modular journey tests (j1-j10, 75 tests) |
-| `integration_test/coverage/` | Exhaustive option coverage (66 tests) |
+| `integration_test/journeys/` | Modular journey tests (j1-j10) |
+| `integration_test/coverage/` | Exhaustive option coverage |

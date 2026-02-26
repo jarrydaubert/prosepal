@@ -5,7 +5,7 @@
 ## Quick Reference
 
 ```bash
-# Unit & Widget tests (427 tests, ~7 seconds)
+# Unit & Widget tests (~7 seconds)
 flutter test
 
 # Single test file
@@ -77,7 +77,7 @@ integration_test/                  # Integration (device required)
 │   ├── j9_wizard_details_test.dart        # Customization
 │   └── j10_results_actions_test.dart      # Copy, share, regenerate
 └── coverage/                      # All options work
-    ├── occasions_test.dart                # All 41 occasions
+    ├── occasions_test.dart                # All 40 occasions
     ├── relationships_test.dart            # All 14 relationships
     └── tones_test.dart                    # All 6 tones
 ```
