@@ -343,7 +343,7 @@ class _OccasionCard extends StatelessWidget {
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
-                            color: AppColors.textPrimary,
+                            color: AppColors.textOnLight,
                           ),
                         ),
                         if (occasion.recipientName != null) ...[
@@ -439,29 +439,26 @@ class _OccasionCard extends StatelessWidget {
                   const SizedBox(height: 12),
 
                   // Action buttons
-                  Row(
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
                     children: [
-                      Expanded(
-                        child: _ActionChip(
-                          icon: Icons.auto_awesome,
-                          label: 'Generate',
-                          onTap: onTap,
-                          isPrimary: true,
-                        ),
+                      _ActionChip(
+                        icon: Icons.auto_awesome,
+                        label: 'Generate',
+                        onTap: onTap,
+                        isPrimary: true,
                       ),
-                      const SizedBox(width: 8),
                       _ActionChip(
                         icon: Icons.event,
                         label: 'Export',
                         onTap: onExport,
                       ),
-                      const SizedBox(width: 8),
                       _ActionChip(
                         icon: Icons.edit_outlined,
                         label: 'Edit',
                         onTap: onEdit,
                       ),
-                      const SizedBox(width: 8),
                       _ActionChip(
                         icon: Icons.delete_outline,
                         label: 'Delete',
@@ -526,6 +523,9 @@ class _ActionChip extends StatelessWidget {
                 fontWeight: FontWeight.w600,
                 color: color,
               ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              softWrap: false,
             ),
           ],
         ),

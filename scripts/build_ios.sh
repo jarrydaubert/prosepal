@@ -16,6 +16,15 @@ source "$ENV_FILE"
 # Create debug symbols directory
 DEBUG_INFO_DIR="$PROJECT_DIR/build/debug-info/ios"
 mkdir -p "$DEBUG_INFO_DIR"
+SDK_ROOT="$(xcrun --sdk iphoneos --show-sdk-path 2>/dev/null || true)"
+EXTRA_DEFINES=()
+
+if [ -n "$SDK_ROOT" ]; then
+    echo "Using iOS SDK root: $SDK_ROOT"
+    EXTRA_DEFINES+=(--dart-define=SdkRoot="$SDK_ROOT")
+else
+    echo "Warning: Could not resolve iOS SDK path via xcrun; continuing without SdkRoot define."
+fi
 
 echo "Building iOS release with obfuscation..."
 cd "$PROJECT_DIR"
@@ -26,7 +35,8 @@ flutter build ios --release \
     --dart-define=SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY \
     --dart-define=REVENUECAT_IOS_KEY=$REVENUECAT_IOS_KEY \
     --dart-define=GOOGLE_WEB_CLIENT_ID=$GOOGLE_WEB_CLIENT_ID \
-    --dart-define=GOOGLE_IOS_CLIENT_ID=$GOOGLE_IOS_CLIENT_ID
+    --dart-define=GOOGLE_IOS_CLIENT_ID=$GOOGLE_IOS_CLIENT_ID \
+    "${EXTRA_DEFINES[@]}"
 
 echo "Done! Open Xcode to archive and submit."
 echo "Debug symbols saved to: $DEBUG_INFO_DIR"

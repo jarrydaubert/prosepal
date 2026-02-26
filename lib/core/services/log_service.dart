@@ -62,19 +62,42 @@ abstract final class Log {
   /// Log analytics event (queryable in Firebase Console)
   /// Use for funnel tracking, activation events, and user segmentation
   static Future<void> event(String name, [Map<String, Object>? params]) async {
+    final analyticsParams = normalizeAnalyticsParams(params);
     try {
-      await _analyticsInstance?.logEvent(name: name, parameters: params);
+      await _analyticsInstance?.logEvent(
+        name: name,
+        parameters: analyticsParams,
+      );
       if (kDebugMode) {
         final formatted = _format(
           'EVENT',
           name,
-          params?.cast<String, dynamic>(),
+          analyticsParams?.cast<String, dynamic>(),
         );
         debugPrint(formatted);
       }
     } on Exception catch (e) {
       if (kDebugMode) debugPrint('[EVENT ERROR] $name: $e');
     }
+  }
+
+  /// Firebase Analytics only accepts String/num event parameter values.
+  ///
+  /// We normalize booleans to `0/1` and stringify other non-supported values
+  /// to prevent runtime assertion crashes in debug and release runs.
+  @visibleForTesting
+  static Map<String, Object>? normalizeAnalyticsParams(
+    Map<String, Object>? params,
+  ) {
+    if (params == null || params.isEmpty) return params;
+    final normalized = <String, Object>{};
+    for (final entry in params.entries) {
+      final value = _normalizeAnalyticsValue(entry.value);
+      if (value != null) {
+        normalized[entry.key] = value;
+      }
+    }
+    return normalized.isEmpty ? null : normalized;
   }
 
   /// Log informational message (appears in Crashlytics logs)
@@ -305,6 +328,17 @@ abstract final class Log {
     sanitized = sanitized.replaceAll(_jwtPattern, '[REDACTED_TOKEN]');
     sanitized = sanitized.replaceAll(_secretLikePattern, '[REDACTED_SECRET]');
     return sanitized;
+  }
+
+  static Object? _normalizeAnalyticsValue(Object? value) {
+    if (value == null) return null;
+    if (value is String || value is num) return value;
+    if (value is bool) return value ? 1 : 0;
+    if (value is DateTime) return value.toUtc().toIso8601String();
+    if (value is Duration) return value.inMilliseconds;
+    final textValue = value.toString();
+    if (textValue.isEmpty) return null;
+    return _truncate(textValue, 100);
   }
 
   static String _format(

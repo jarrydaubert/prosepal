@@ -108,54 +108,65 @@ class _ToneTile extends StatelessWidget {
             width: isSelected ? 3 : 2,
           ),
         ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+        child: Stack(
           children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: isSelected
-                    ? AppColors.primary.withValues(alpha: 0.15)
-                    : Colors.grey[100],
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: isSelected ? AppColors.primary : Colors.grey[300]!,
-                  width: 2,
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? AppColors.primary.withValues(alpha: 0.15)
+                        : Colors.grey[100],
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: isSelected ? AppColors.primary : Colors.grey[300]!,
+                      width: 2,
+                    ),
+                  ),
+                  child: Center(
+                    child: Text(
+                      tone.emoji,
+                      style: const TextStyle(fontSize: 20),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  tone.label,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                    color: isSelected
+                        ? AppColors.primary
+                        : AppColors.textOnLight,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  tone.description,
+                  style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+            if (isSelected)
+              Positioned(
+                top: 0,
+                right: 0,
+                child: Container(
+                  width: 20,
+                  height: 20,
+                  decoration: const BoxDecoration(
+                    color: AppColors.primary,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.check, color: Colors.white, size: 12),
                 ),
               ),
-              child: Center(
-                child: Text(tone.emoji, style: const TextStyle(fontSize: 20)),
-              ),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              tone.label,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                color: isSelected ? AppColors.primary : AppColors.textPrimary,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 2),
-            Text(
-              tone.description,
-              style: TextStyle(fontSize: 11, color: Colors.grey[600]),
-              textAlign: TextAlign.center,
-            ),
-            if (isSelected) ...[
-              const SizedBox(height: 6),
-              Container(
-                width: 20,
-                height: 20,
-                decoration: const BoxDecoration(
-                  color: AppColors.primary,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.check, color: Colors.white, size: 12),
-              ),
-            ],
           ],
         ),
       ),

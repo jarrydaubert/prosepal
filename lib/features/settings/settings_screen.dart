@@ -918,7 +918,7 @@ class _AccountCard extends StatelessWidget {
                         style: const TextStyle(
                           fontSize: 17,
                           fontWeight: FontWeight.bold,
-                          color: AppColors.textPrimary,
+                          color: AppColors.textOnLight,
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -1034,7 +1034,7 @@ class _StatsCard extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
+                  color: AppColors.textOnLight,
                 ),
               ),
               const SizedBox(height: 2),
@@ -1223,7 +1223,7 @@ class _PickerOption extends StatelessWidget {
         style: TextStyle(
           fontSize: 13,
           fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-          color: isSelected ? AppColors.textPrimary : AppColors.textSecondary,
+          color: isSelected ? AppColors.textOnLight : AppColors.textSecondary,
         ),
       ),
     ),
