@@ -1,3 +1,5 @@
+import 'dart:io' show Platform;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -131,24 +133,17 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                 ),
                 SizedBox(height: AppSpacing.lg),
               ],
-              // Sign in with Email (primary option)
-              _AuthButton(
-                onPressed: _isLoading ? null : _signInWithEmail,
-                icon: Icons.email_outlined,
-                label: 'Continue with Email',
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-              ),
-              SizedBox(height: AppSpacing.md),
-              // Sign in with Apple
-              _AuthButton(
-                onPressed: _isLoading ? null : _signInWithApple,
-                icon: Icons.apple,
-                label: 'Continue with Apple',
-                backgroundColor: Colors.black,
-                foregroundColor: Colors.white,
-              ),
-              SizedBox(height: AppSpacing.md),
+              // Sign in with Apple (iOS/macOS only, shown first per Apple guidelines)
+              if (Platform.isIOS || Platform.isMacOS) ...[
+                _AuthButton(
+                  onPressed: _isLoading ? null : _signInWithApple,
+                  icon: Icons.apple,
+                  label: 'Continue with Apple',
+                  backgroundColor: Colors.black,
+                  foregroundColor: Colors.white,
+                ),
+                SizedBox(height: AppSpacing.md),
+              ],
               // Sign in with Google
               _AuthButton(
                 onPressed: _isLoading ? null : _signInWithGoogle,
@@ -158,6 +153,15 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                 backgroundColor: Colors.white,
                 foregroundColor: Colors.black87,
                 borderColor: AppColors.textSecondary,
+              ),
+              SizedBox(height: AppSpacing.md),
+              // Sign in with Email
+              _AuthButton(
+                onPressed: _isLoading ? null : _signInWithEmail,
+                icon: Icons.email_outlined,
+                label: 'Continue with Email',
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
               ),
               SizedBox(height: AppSpacing.xl),
               if (_isLoading)

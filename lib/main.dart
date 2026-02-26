@@ -14,27 +14,42 @@ import 'firebase_options.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Firebase
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  // Initialize Firebase first for error reporting
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
 
-  // Initialize Crashlytics (only in release mode)
-  if (!kDebugMode) {
-    FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
-    PlatformDispatcher.instance.onError = (error, stack) {
-      FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
-      return true;
-    };
+    // Initialize Crashlytics (only in release mode)
+    if (!kDebugMode) {
+      FlutterError.onError =
+          FirebaseCrashlytics.instance.recordFlutterFatalError;
+      PlatformDispatcher.instance.onError = (error, stack) {
+        FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+        return true;
+      };
+    }
+  } catch (e) {
+    debugPrint('Firebase initialization failed: $e');
   }
 
   // Initialize Supabase
-  await Supabase.initialize(
-    url: 'https://mwoxtqxzunsjmbdqezif.supabase.co',
-    anonKey: 'sb_publishable_DJB3MvvHJRl-vuqrkn1-6w_hwTLnOaS',
-  );
+  try {
+    await Supabase.initialize(
+      url: 'https://mwoxtqxzunsjmbdqezif.supabase.co',
+      anonKey: 'sb_publishable_DJB3MvvHJRl-vuqrkn1-6w_hwTLnOaS',
+    );
+  } catch (e) {
+    debugPrint('Supabase initialization failed: $e');
+  }
 
   // Initialize RevenueCat
   final subscriptionService = SubscriptionService();
-  await subscriptionService.initialize();
+  try {
+    await subscriptionService.initialize();
+  } catch (e) {
+    debugPrint('RevenueCat initialization failed: $e');
+  }
 
   // Initialize SharedPreferences
   final prefs = await SharedPreferences.getInstance();
