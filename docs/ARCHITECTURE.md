@@ -5,11 +5,11 @@
 
 | Field | Value |
 |-------|-------|
-| Version | 1.0.0 |
+| Version | 1.1.0 |
 | Classification | Internal |
 | Owner | Development Team |
-| Last Reviewed | 2026-01-11 |
-| Next Review | 2026-07-11 |
+| Last Reviewed | 2026-01-17 |
+| Next Review | 2026-07-17 |
 
 ---
 
@@ -45,7 +45,7 @@ Prosepal is a production-grade Flutter application for AI-powered greeting card 
 | Framework | Flutter 3.38+ / Dart 3.10+ | Cross-platform mobile |
 | State | Riverpod 3.x | Reactive state management |
 | Navigation | GoRouter | Declarative routing with guards |
-| AI | Firebase AI (Gemini 2.5 Flash) | Message generation |
+| AI | Firebase AI (Gemini 3 Flash) | Message generation |
 | Auth | Supabase | Multi-provider authentication |
 | Database | Supabase PostgreSQL | User data, usage tracking |
 | Payments | RevenueCat | Subscription management |

@@ -470,7 +470,7 @@ Try it free. See the magic in 30 seconds.
 Features:
 ✓ 40 occasions from birthdays to sympathy
 ✓ 14 relationship types for perfect tone
-✓ 6 tones from heartfelt to humorous
+✓ 9 tones from heartfelt to humorous
 ✓ Personal details for authentic messages
 ✓ Copy to clipboard with one tap
 

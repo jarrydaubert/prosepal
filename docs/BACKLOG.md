@@ -33,7 +33,7 @@
 | Subscription service 21% coverage | `subscription_service.dart` | Revenue-critical, needs more tests |
 | Auth providers 0% coverage | `*_auth_provider.dart` | 86 lines untested auth flow |
 | Reauth service 1% coverage | `reauth_service.dart` | Security-critical, nearly untested |
-| Fire-and-forget sync loses data | `usage_service.dart:309-310` | Add retry queue, persist pending syncs |
+| Fire-and-forget sync loses data | `usage_service.dart:351` | Add retry queue, persist pending syncs |
 | OAuth re-auth for sensitive ops | `reauth_service.dart:121-135` | Redirect to OAuth provider for account deletion (not just dialog) |
 | No E2E tests in CI | `.github/workflows/` | Tests exist in `integration_test/` but not in CI |
 | No app state restoration | Forms | Add RestorationMixin - form data lost on process death |
