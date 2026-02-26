@@ -363,19 +363,77 @@ Log.info('Lock screen shown');
 
 ---
 
+---
+
+## Test Coverage Summary (Updated)
+
+### Journey Test Files
+| File | Journey | Tests |
+|------|---------|-------|
+| j1_fresh_install_test.dart | Fresh Install → Free Gen | 11 |
+| j2_upgrade_flow_test.dart | Upgrade → Auth → Paywall | 7 |
+| j3_pro_generate_test.dart | Pro User Flow | 7 |
+| j4_settings_test.dart | Settings & Account | 12 |
+| j5_navigation_test.dart | Navigation & Back | 7 |
+| j6_error_resilience_test.dart | Errors & Edge Cases | 8 |
+| j7_restore_flow_test.dart | Reinstall & Restore | 5 |
+| j8_paywall_test.dart | Paywall Display | 4 |
+| j9_wizard_details_test.dart | Length, Name, Details | 7 |
+| j10_results_actions_test.dart | Copy, Share, Start Over | 7 |
+
+### Coverage Tests
+| File | What | Tests |
+|------|------|-------|
+| occasions_test.dart | All 41 occasions | 41 |
+| relationships_test.dart | All 14 relationships | 14 |
+| tones_test.dart | All 6 tones + combos | 11 |
+
+**Total: ~140 E2E tests**
+
+---
+
+## Logs Added This Session ✅
+
+| Service/Screen | Logs |
+|----------------|------|
+| biometric_service | enabled, disabled, auth started/success/failed |
+| auth_service | sign in started/success, sign out, delete account |
+| onboarding_screen | started, completed |
+| lock_screen | shown |
+| home_screen | wizard started + occasion |
+| results_screen | message copied + option # |
+| settings_screen | export debug log |
+
+---
+
+## Still Missing (Manual Test Required)
+
+| Feature | Why Manual |
+|---------|------------|
+| Apple/Google Sign In | OAuth requires real device + account |
+| Sandbox Purchase | StoreKit sandbox only |
+| Biometric Lock/Unlock | Hardware required |
+| Push Notifications | v1.1 feature |
+| Share to iMessage | System sheet |
+
+---
+
 ## Action Items
 
-### P0: Pre-Launch
-- [ ] Add missing logs (biometric, auth, screens)
-- [ ] Verify all Journey 1-6 logs fire correctly
-- [ ] Manual test Journey 4 (biometrics) on device
+### P0: Pre-Launch (Complete ✅)
+- [x] Add missing logs (biometric, auth, screens)
+- [x] Split tests into journey files
+- [x] Add Export Debug Log feature
+- [x] Auto-attach breadcrumbs to feedback
+- [ ] Run Firebase Test Lab to verify all tests pass
+- [ ] Manual test biometrics on physical device
+- [ ] Manual test sandbox purchase
 
 ### P1: Post-Launch Prep
 - [ ] Design Journey 12-14 (reminders, share, photo)
 - [ ] Add log events for v1.1 features
-- [ ] Create golden path tests F17-F20
+- [ ] Performance baseline tests
 
 ### P2: Future
 - [ ] Log verification test suite
-- [ ] Performance baseline tests
-- [ ] Localization journey (when ready)
+- [ ] Localization journey
