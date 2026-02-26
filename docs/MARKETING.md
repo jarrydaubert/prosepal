@@ -785,4 +785,34 @@ This captures:
 
 ---
 
+## Appendix: Future Considerations
+
+*From January 2026 strategy review*
+
+### Growth Acceleration
+
+| Item | Rationale |
+|------|-----------|
+| **Referral program** | No viral loop currently - add shareable outputs with app watermark, referral incentives |
+| **Increase paid test budgets** | $50-100/day may be too conservative for statistically significant ROAS data in 2026 market |
+| **Platform diversification** | Heavy TikTok/Instagram reliance risks algorithm changes - add YouTube Shorts, expand Pinterest |
+
+### Market Expansion
+
+| Item | Rationale |
+|------|-----------|
+| **Global data earlier** | Current stats are U.S.-centric - incorporate UK/EU/APAC market data before Month 7 |
+| **Balance occasion messaging** | Sympathy emphasis may narrow perceived utility - highlight high-volume occasions (birthday, thank you) equally |
+| **Quarterly competitor refresh** | AI landscape evolving fast - schedule updates to track Thankbox, Venngage, emerging tools |
+
+### Retention Depth
+
+| Item | Rationale |
+|------|-----------|
+| **Email/SMS re-engagement** | No flows defined beyond push notifications |
+| **Seasonal campaigns** | Tie push notifications to major holidays with countdown messaging |
+| **Cohort-specific targets** | Add Pro conversion benchmarks by persona (Last-Minute Carer vs. Thoughtful Giver) |
+
+---
+
 *Document maintained by Marketing. Last research update: January 2026.*
