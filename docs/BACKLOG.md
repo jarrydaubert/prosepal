@@ -55,6 +55,10 @@
 | Log export filtering | `log_service.dart` | Support timestamp range and level-based filtering in exports |
 | Consolidate ErrorLogService | `error_log_service.dart` | Merge into LogService or deprecate - duplicates buffer/export functionality |
 | Error export enhancement | `log_service.dart` | Add device metadata (OS, app version) to exports after consolidation |
+| Device info abstraction | `diagnostic_service.dart` | Extract Platform.isIOS/isAndroid to testable service, support web/desktop |
+| Diagnostic runtime flags | `diagnostic_service.dart` | Add Firebase init status, connectivity, Flutter version to report |
+| Diagnostic export formats | `diagnostic_service.dart` | Add JSON/markdown alternatives for programmatic support parsing |
+| Diagnostic service tests | `test/services/` | Unit tests for report generation with mocked failures |
 | UsageService race condition | `usage_service.dart` | Atomic increment via Supabase RPC |
 | Hardcoded usage limits | `usage_service.dart` | Move to remote config |
 | Supabase singleton | `usage_service.dart` | Inject client for testability |
