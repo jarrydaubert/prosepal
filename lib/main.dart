@@ -49,17 +49,27 @@ void main() async {
 
 /// Initialize all services and launch app.
 /// Shows error screen if critical services fail.
+///
+/// Optimized startup flow:
+/// 1. Firebase first (required for crash reporting + remote config)
+/// 2. App Check + Remote Config in parallel (both need Firebase)
+/// 3. Force update check (blocking - must happen before any user interaction)
+/// 4. Supabase + RevenueCat + SharedPrefs in parallel (independent services)
 Future<void> _initializeApp() async {
   final init = InitService.instance;
+  final stopwatch = Stopwatch()..start();
 
-  // Initialize Firebase first for error reporting
+  // =========================================================================
+  // PHASE 1: Firebase (required for crash reporting and remote config)
+  // =========================================================================
   try {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
     init.firebaseReady();
+    Log.info('Firebase initialized', {'ms': stopwatch.elapsedMilliseconds});
 
-    // Initialize Crashlytics (only in release mode)
+    // Setup Crashlytics error handlers (sync, no await needed)
     if (!kDebugMode) {
       FlutterError.onError =
           FirebaseCrashlytics.instance.recordFlutterFatalError;
@@ -67,78 +77,53 @@ Future<void> _initializeApp() async {
         FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
         return true;
       };
-
-      // Apply user's analytics preference (GDPR consent)
-      try {
-        final prefs = await SharedPreferences.getInstance();
-        final analyticsEnabled =
-            prefs.getBool(PreferenceKeys.analyticsEnabled) ?? true;
-        await FirebaseAnalytics.instance.setAnalyticsCollectionEnabled(
-          analyticsEnabled,
-        );
-        await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(
-          analyticsEnabled,
-        );
-      } catch (_) {
-        // Default to enabled if prefs not available
-      }
     }
   } catch (e) {
     Log.error('Firebase initialization failed', e);
     init.firebaseFailed('$e');
   }
 
-  // Activate Firebase App Check (only if Firebase initialized)
+  // =========================================================================
+  // PHASE 2: App Check + Remote Config in PARALLEL (both need Firebase)
+  // =========================================================================
   if (init.isFirebaseReady) {
-    try {
-      await FirebaseAppCheck.instance.activate(
-        providerAndroid: const AndroidPlayIntegrityProvider(),
-        providerApple: const AppleAppAttestProvider(),
-      );
-    } catch (e) {
-      Log.warning('Firebase App Check activation failed', {'error': '$e'});
-    }
+    await Future.wait([
+      // App Check activation
+      _initAppCheck(),
+      // Remote Config (includes force update check in release)
+      if (!kDebugMode) _initRemoteConfigAndCheckForceUpdate(init),
+    ]);
+    Log.info('Phase 2 complete', {'ms': stopwatch.elapsedMilliseconds});
 
-    // Initialize Remote Config (for AI model, force update, feature flags)
-    if (!kDebugMode) {
-      try {
-        final remoteConfig = RemoteConfigService.instance;
-        await remoteConfig.initialize();
-
-        // Check for force update
-        if (await remoteConfig.isUpdateRequired()) {
-          Log.warning('Force update required - blocking app');
-          FlutterNativeSplash.remove();
-          runApp(ForceUpdateScreen(storeUrl: remoteConfig.storeUrl));
-          return;
-        }
-      } catch (e) {
-        Log.warning('Remote Config init failed', {'error': '$e'});
-        // Continue - fail open
-      }
+    // Check if force update was triggered (returns early from _initializeApp)
+    if (_forceUpdateRequired) {
+      FlutterNativeSplash.remove();
+      runApp(ForceUpdateScreen(storeUrl: _forceUpdateStoreUrl));
+      return;
     }
   }
 
-  // Validate configuration early (throws in release if missing)
+  // =========================================================================
+  // PHASE 3: Config validation (sync, fast)
+  // =========================================================================
   AppConfig.validate();
   AppConfig.assertNoTestStoreInRelease();
 
-  // Initialize Supabase (critical for auth and data)
-  if (AppConfig.hasSupabaseConfig) {
-    try {
-      await Supabase.initialize(
-        url: AppConfig.supabaseUrl,
-        anonKey: AppConfig.supabaseAnonKey,
-      );
-      init.supabaseReady();
-    } catch (e) {
-      Log.error('Supabase initialization failed', e);
-      init.supabaseFailed('$e');
-    }
-  } else {
-    Log.warning('Supabase skipped: configuration not provided');
-    init.supabaseFailed('Configuration not provided');
-  }
+  // =========================================================================
+  // PHASE 4: Supabase + RevenueCat + SharedPrefs in PARALLEL
+  // =========================================================================
+  late final SharedPreferences prefs;
+  final subscriptionService = SubscriptionService();
+
+  await Future.wait([
+    // Supabase (critical for auth and data)
+    _initSupabase(init),
+    // RevenueCat (non-critical - app works without subscriptions)
+    _initRevenueCat(subscriptionService, init),
+    // SharedPreferences (fast, local)
+    SharedPreferences.getInstance().then((p) => prefs = p),
+  ]);
+  Log.info('Phase 4 complete', {'ms': stopwatch.elapsedMilliseconds});
 
   // Check for critical failures before continuing
   if (!init.isCriticalReady) {
@@ -148,15 +133,13 @@ Future<void> _initializeApp() async {
       'error': init.criticalError,
     });
 
-    // Remove splash and show error screen
     FlutterNativeSplash.remove();
-
     runApp(
       InitErrorScreen(
         errorMessage: init.criticalError ?? 'Unknown error',
         onRetry: () async {
-          // Reset and retry initialization
           init.reset();
+          _forceUpdateRequired = false;
           await _initializeApp();
         },
       ),
@@ -164,30 +147,30 @@ Future<void> _initializeApp() async {
     return;
   }
 
-  // Verify edge functions are deployed (non-blocking, just logs warnings)
-  // Disabled: causing auth_unavailable errors in release builds
-  // if (init.isSupabaseReady) {
-  //   unawaited(SupabaseAuthProvider().verifyEdgeFunctions());
-  // }
-
-  // Initialize RevenueCat (non-critical - app works without subscriptions)
-  final subscriptionService = SubscriptionService();
-  try {
-    await subscriptionService.initialize();
-    init.revenueCatReady();
-    final isPro = await subscriptionService.isPro();
-    Log.info('App launched', {'initialProStatus': isPro});
-  } catch (e) {
-    Log.error('RevenueCat initialization failed', e);
-    init.revenueCatFailed('$e');
-  }
-
-  // Initialize SharedPreferences
-  final prefs = await SharedPreferences.getInstance();
+  // =========================================================================
+  // PHASE 5: Post-init setup (non-blocking where possible)
+  // =========================================================================
 
   // Record first launch for review timing
   final reviewService = ReviewService(prefs);
-  await reviewService.recordFirstLaunchIfNeeded();
+  unawaited(reviewService.recordFirstLaunchIfNeeded());
+
+  // Apply GDPR analytics preference (non-blocking)
+  unawaited(_applyAnalyticsPreference(prefs));
+
+  // Log final Pro status
+  if (init.isRevenueCatReady) {
+    final isPro = await subscriptionService.isPro();
+    Log.info('App launched', {
+      'initialProStatus': isPro,
+      'totalInitMs': stopwatch.elapsedMilliseconds,
+    });
+  } else {
+    Log.info('App launched', {
+      'initialProStatus': 'unknown (RevenueCat failed)',
+      'totalInitMs': stopwatch.elapsedMilliseconds,
+    });
+  }
 
   // Pre-initialize OAuth providers for faster sign-in UX
   final authService = AuthService(
@@ -210,4 +193,92 @@ Future<void> _initializeApp() async {
       child: ProsepalApp(router: router),
     ),
   );
+}
+
+// =============================================================================
+// Helper functions for parallel initialization
+// =============================================================================
+
+/// Force update state (set by _initRemoteConfigAndCheckForceUpdate)
+bool _forceUpdateRequired = false;
+String _forceUpdateStoreUrl = '';
+
+/// Initialize Firebase App Check
+Future<void> _initAppCheck() async {
+  try {
+    await FirebaseAppCheck.instance.activate(
+      providerAndroid: const AndroidPlayIntegrityProvider(),
+      providerApple: const AppleAppAttestProvider(),
+    );
+  } catch (e) {
+    Log.warning('Firebase App Check activation failed', {'error': '$e'});
+  }
+}
+
+/// Initialize Remote Config and check for force update
+/// Sets _forceUpdateRequired if update is needed
+Future<void> _initRemoteConfigAndCheckForceUpdate(InitService init) async {
+  try {
+    final remoteConfig = RemoteConfigService.instance;
+    await remoteConfig.initialize();
+
+    if (await remoteConfig.isUpdateRequired()) {
+      Log.warning('Force update required - blocking app');
+      _forceUpdateRequired = true;
+      _forceUpdateStoreUrl = remoteConfig.storeUrl;
+    }
+  } catch (e) {
+    Log.warning('Remote Config init failed', {'error': '$e'});
+    // Continue - fail open (don't require update if we can't check)
+  }
+}
+
+/// Initialize Supabase
+Future<void> _initSupabase(InitService init) async {
+  if (!AppConfig.hasSupabaseConfig) {
+    Log.warning('Supabase skipped: configuration not provided');
+    init.supabaseFailed('Configuration not provided');
+    return;
+  }
+
+  try {
+    await Supabase.initialize(
+      url: AppConfig.supabaseUrl,
+      anonKey: AppConfig.supabaseAnonKey,
+    );
+    init.supabaseReady();
+  } catch (e) {
+    Log.error('Supabase initialization failed', e);
+    init.supabaseFailed('$e');
+  }
+}
+
+/// Initialize RevenueCat
+Future<void> _initRevenueCat(
+  SubscriptionService subscriptionService,
+  InitService init,
+) async {
+  try {
+    await subscriptionService.initialize();
+    init.revenueCatReady();
+  } catch (e) {
+    Log.error('RevenueCat initialization failed', e);
+    init.revenueCatFailed('$e');
+  }
+}
+
+/// Apply GDPR analytics preference
+Future<void> _applyAnalyticsPreference(SharedPreferences prefs) async {
+  try {
+    final analyticsEnabled =
+        prefs.getBool(PreferenceKeys.analyticsEnabled) ?? true;
+    await FirebaseAnalytics.instance.setAnalyticsCollectionEnabled(
+      analyticsEnabled,
+    );
+    await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(
+      analyticsEnabled,
+    );
+  } catch (e) {
+    Log.warning('Failed to apply analytics preference', {'error': '$e'});
+  }
 }
