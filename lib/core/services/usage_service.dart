@@ -212,11 +212,14 @@ class UsageService {
     final monthKey = _monthString();
 
     try {
-      final response = await supabase.rpc('check_and_increment_usage', params: {
-        'p_user_id': userId,
-        'p_is_pro': isPro,
-        'p_month_key': monthKey,
-      });
+      final response = await supabase.rpc(
+        'check_and_increment_usage',
+        params: {
+          'p_user_id': userId,
+          'p_is_pro': isPro,
+          'p_month_key': monthKey,
+        },
+      );
 
       final result = response as Map<String, dynamic>;
       final allowed = result['allowed'] as bool? ?? false;
@@ -224,7 +227,8 @@ class UsageService {
       final monthlyCount = result['monthly_count'] as int? ?? 0;
       final remaining = result['remaining'] as int? ?? 0;
       final limit =
-          result['limit'] as int? ?? (isPro ? proMonthlyLimit : freeLifetimeLimit);
+          result['limit'] as int? ??
+          (isPro ? proMonthlyLimit : freeLifetimeLimit);
 
       Log.info('Server-side usage check', {
         'allowed': allowed,
@@ -255,10 +259,7 @@ class UsageService {
         );
       }
 
-      return UsageCheckResult(
-        allowed: true,
-        remaining: remaining,
-      );
+      return UsageCheckResult(allowed: true, remaining: remaining);
     } catch (e) {
       Log.error('Server-side usage check failed', e);
       throw UsageCheckException(

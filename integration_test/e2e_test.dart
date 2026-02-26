@@ -13,7 +13,7 @@
 ///   flutter build apk --debug -t integration_test/e2e_test.dart
 ///   cd android && ./gradlew app:assembleAndroidTest
 ///
-///   # iOS  
+///   # iOS
 ///   flutter build ios integration_test/e2e_test.dart --release
 ///
 /// Run locally:

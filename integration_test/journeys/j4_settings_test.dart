@@ -1,5 +1,5 @@
 /// Journey 4 & 5: Settings, Biometrics, Account Management
-/// 
+///
 /// Tests settings functionality:
 /// 1. Settings screen access
 /// 2. Biometric toggle (if supported)
@@ -7,7 +7,7 @@
 /// 4. Delete account (authenticated only)
 /// 5. Legal links
 /// 6. Feedback
-/// 
+///
 /// Expected logs:
 /// - [INFO] Biometrics enable requested
 /// - [INFO] Biometrics enabled/disabled
@@ -26,7 +26,7 @@ void main() {
   group('Journey 4: Settings & Account', () {
     testWidgets('J4.1: Settings screen accessible from home', (tester) async {
       final atSettings = await navigateToSettings(tester);
-      
+
       expect(atSettings, isTrue, reason: 'Should reach settings');
       expect(find.text('Settings'), findsOneWidget);
 
@@ -40,8 +40,11 @@ void main() {
       final hasProPlan = exists(find.text('Pro Plan'));
       final hasFreePlan = exists(find.text('Free Plan'));
 
-      expect(hasProPlan || hasFreePlan, isTrue,
-          reason: 'Should show subscription status');
+      expect(
+        hasProPlan || hasFreePlan,
+        isTrue,
+        reason: 'Should show subscription status',
+      );
 
       await screenshot(tester, 'j4_2_subscription');
     });
@@ -51,7 +54,8 @@ void main() {
       if (!atSettings) return;
 
       // Look for biometric option
-      final hasBiometric = exists(find.text('Face ID')) ||
+      final hasBiometric =
+          exists(find.text('Face ID')) ||
           exists(find.text('Touch ID')) ||
           exists(find.textContaining('Biometric'));
 
@@ -64,7 +68,7 @@ void main() {
       if (!atSettings) return;
 
       final found = await scrollToText(tester, 'Restore Purchases');
-      
+
       expect(found, isTrue, reason: 'Should have Restore Purchases option');
 
       await screenshot(tester, 'j4_4_restore');
@@ -113,7 +117,7 @@ void main() {
       if (!atSettings) return;
 
       final found = await scrollToText(tester, 'Send Feedback');
-      
+
       // Feedback may or may not exist
       await screenshot(tester, 'j4_8_feedback_option');
     });
@@ -131,8 +135,11 @@ void main() {
       final hasDelete = exists(find.text('Delete Account'));
       final hasSignIn = exists(find.text('Sign In'));
 
-      expect(hasDelete || hasSignIn, isTrue,
-          reason: 'Should show Delete Account (auth) or Sign In (anon)');
+      expect(
+        hasDelete || hasSignIn,
+        isTrue,
+        reason: 'Should show Delete Account (auth) or Sign In (anon)',
+      );
 
       await screenshot(tester, 'j4_9_delete_or_signin');
     });
@@ -146,13 +153,13 @@ void main() {
         await tester.pumpAndSettle();
 
         // Should show warning dialog
-        final hasWarning = exists(find.text('Delete')) ||
+        final hasWarning =
+            exists(find.text('Delete')) ||
             exists(find.text('Cancel')) ||
             exists(find.textContaining('permanent')) ||
             exists(find.textContaining('sure'));
 
-        expect(hasWarning, isTrue,
-            reason: 'Should show delete confirmation');
+        expect(hasWarning, isTrue, reason: 'Should show delete confirmation');
 
         await screenshot(tester, 'j4_10_delete_warning');
       }
@@ -168,7 +175,8 @@ void main() {
       await tester.pumpAndSettle();
 
       // Look for version text
-      final hasVersion = find.textContaining('Version').evaluate().isNotEmpty ||
+      final hasVersion =
+          find.textContaining('Version').evaluate().isNotEmpty ||
           find.textContaining('v1.').evaluate().isNotEmpty ||
           find.textContaining('1.0').evaluate().isNotEmpty;
 
@@ -180,7 +188,7 @@ void main() {
       if (!atSettings) return;
 
       final wentBack = await tapBack(tester);
-      
+
       if (wentBack) {
         expect(
           anyTextExists(["What's the occasion?", 'Birthday']),

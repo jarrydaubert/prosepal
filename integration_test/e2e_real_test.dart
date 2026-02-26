@@ -76,7 +76,7 @@ void main() {
       await tester.tap(find.text('Birthday'));
       await tester.pumpAndSettle();
     }
-    
+
     // Select relationship
     if (exists(find.text('Close Friend'))) {
       await tester.tap(find.text('Close Friend'));
@@ -86,7 +86,7 @@ void main() {
       await tester.tap(find.text('Continue'));
       await tester.pumpAndSettle();
     }
-    
+
     // Select tone
     if (exists(find.text('Heartfelt'))) {
       await tester.tap(find.text('Heartfelt'));
@@ -102,7 +102,7 @@ void main() {
     testWidgets('1. App launches and initializes services', (tester) async {
       app.main();
       await tester.pumpAndSettle(const Duration(seconds: 5));
-      
+
       expect(find.byType(MaterialApp), findsOneWidget);
       await screenshot(tester, 'real_01_launch');
     });
@@ -110,12 +110,15 @@ void main() {
     testWidgets('2. Fresh user sees onboarding or home', (tester) async {
       app.main();
       await tester.pumpAndSettle(const Duration(seconds: 5));
-      
+
       final hasOnboarding = anyTextExists(['Continue', 'Skip', 'Get Started']);
       final hasHome = exists(find.text('Birthday'));
-      
-      expect(hasOnboarding || hasHome, isTrue,
-          reason: 'Should show onboarding or home');
+
+      expect(
+        hasOnboarding || hasHome,
+        isTrue,
+        reason: 'Should show onboarding or home',
+      );
       await screenshot(tester, 'real_02_initial_screen');
     });
 
@@ -124,9 +127,12 @@ void main() {
       await tester.pumpAndSettle(const Duration(seconds: 5));
       await skipOnboarding(tester);
       await tester.pumpAndSettle(const Duration(seconds: 2));
-      
-      expect(exists(find.text('Birthday')), isTrue,
-          reason: 'Should reach home with occasions');
+
+      expect(
+        exists(find.text('Birthday')),
+        isTrue,
+        reason: 'Should reach home with occasions',
+      );
       await screenshot(tester, 'real_03_home');
     });
 
@@ -135,9 +141,9 @@ void main() {
       await tester.pumpAndSettle(const Duration(seconds: 5));
       await skipOnboarding(tester);
       await tester.pumpAndSettle();
-      
+
       await completeWizard(tester);
-      
+
       expect(
         anyTextExists(['Generate Messages', 'Upgrade to Continue']),
         isTrue,
@@ -151,19 +157,22 @@ void main() {
       await tester.pumpAndSettle(const Duration(seconds: 5));
       await skipOnboarding(tester);
       await tester.pumpAndSettle();
-      
+
       await completeWizard(tester);
-      
+
       if (exists(find.text('Generate Messages'))) {
         await tester.tap(find.text('Generate Messages'));
         // Wait for AI generation (real API call)
         await tester.pumpAndSettle(const Duration(seconds: 20));
-        
+
         final hasResults = anyTextExists(['Your Messages', 'Option 1']);
         final hasError = anyTextExists(['error', 'Error', 'Unable']);
-        
-        expect(hasResults || hasError, isTrue,
-            reason: 'Should show results or error');
+
+        expect(
+          hasResults || hasError,
+          isTrue,
+          reason: 'Should show results or error',
+        );
         await screenshot(tester, 'real_05_generation_result');
       }
     });
@@ -173,16 +182,16 @@ void main() {
       await tester.pumpAndSettle(const Duration(seconds: 5));
       await skipOnboarding(tester);
       await tester.pumpAndSettle();
-      
+
       // Navigate to paywall via settings upgrade
       await tester.tap(find.byIcon(Icons.settings_outlined));
       await tester.pumpAndSettle();
-      
+
       // Look for upgrade option
       final scrollable = find.byType(Scrollable).first;
       await tester.fling(scrollable, const Offset(0, -200), 500);
       await tester.pumpAndSettle();
-      
+
       // Try to find and tap upgrade
       if (exists(find.text('Upgrade'))) {
         await tester.tap(find.text('Upgrade'));
@@ -191,7 +200,7 @@ void main() {
         await tester.tap(find.text('Free Plan'));
         await tester.pumpAndSettle(const Duration(seconds: 3));
       }
-      
+
       await screenshot(tester, 'real_06_paywall');
     });
 
@@ -200,33 +209,33 @@ void main() {
       await tester.pumpAndSettle(const Duration(seconds: 5));
       await skipOnboarding(tester);
       await tester.pumpAndSettle();
-      
+
       await completeWizard(tester);
-      
+
       // If upgrade needed, tap it
       if (exists(find.text('Upgrade to Continue'))) {
         await tester.tap(find.text('Upgrade to Continue'));
         await tester.pumpAndSettle(const Duration(seconds: 3));
-        
+
         // If auth required first, skip this test
         if (anyTextExists(['Continue with Apple', 'Continue with Email'])) {
           await screenshot(tester, 'real_07_auth_required');
           return;
         }
-        
+
         // Look for weekly option and purchase
         // Test Store purchases are instant - no confirmation dialogs
         if (exists(find.text('Weekly'))) {
           await tester.tap(find.text('Weekly'));
           await tester.pumpAndSettle(const Duration(seconds: 3));
         }
-        
+
         // Or tap any purchase button
         if (exists(find.text('Subscribe'))) {
           await tester.tap(find.text('Subscribe').first);
           await tester.pumpAndSettle(const Duration(seconds: 5));
         }
-        
+
         await screenshot(tester, 'real_07_after_purchase');
       }
     });
@@ -236,24 +245,28 @@ void main() {
       await tester.pumpAndSettle(const Duration(seconds: 5));
       await skipOnboarding(tester);
       await tester.pumpAndSettle();
-      
+
       // Check if Pro badge visible
-      final hasPro = exists(find.text('PRO')) || 
+      final hasPro =
+          exists(find.text('PRO')) ||
           exists(find.textContaining('unlimited')) ||
           exists(find.textContaining('Pro'));
-      
+
       // Go to settings to verify subscription status
       await tester.tap(find.byIcon(Icons.settings_outlined));
       await tester.pumpAndSettle();
-      
+
       await screenshot(tester, 'real_08_verify_pro');
-      
+
       // Check settings shows Pro Plan (if purchased in previous test)
       final hasProPlan = exists(find.text('Pro Plan'));
       final hasFreePlan = exists(find.text('Free Plan'));
-      
-      expect(hasProPlan || hasFreePlan, isTrue,
-          reason: 'Should show subscription status');
+
+      expect(
+        hasProPlan || hasFreePlan,
+        isTrue,
+        reason: 'Should show subscription status',
+      );
     });
 
     testWidgets('9. Pro user: Unlimited generations', (tester) async {
@@ -261,22 +274,25 @@ void main() {
       await tester.pumpAndSettle(const Duration(seconds: 5));
       await skipOnboarding(tester);
       await tester.pumpAndSettle();
-      
+
       // Only run if Pro (from previous purchase test)
-      final isPro = exists(find.text('PRO')) || 
-          exists(find.textContaining('unlimited'));
-      
+      final isPro =
+          exists(find.text('PRO')) || exists(find.textContaining('unlimited'));
+
       if (!isPro) {
         await screenshot(tester, 'real_09_not_pro');
         return;
       }
-      
+
       await completeWizard(tester);
-      
+
       // Pro should see Generate, not Upgrade
-      expect(exists(find.text('Generate Messages')), isTrue,
-          reason: 'Pro user should see Generate button');
-      
+      expect(
+        exists(find.text('Generate Messages')),
+        isTrue,
+        reason: 'Pro user should see Generate button',
+      );
+
       await screenshot(tester, 'real_09_pro_generate');
     });
 
@@ -285,20 +301,20 @@ void main() {
       await tester.pumpAndSettle(const Duration(seconds: 5));
       await skipOnboarding(tester);
       await tester.pumpAndSettle();
-      
+
       // Go to settings
       await tester.tap(find.byIcon(Icons.settings_outlined));
       await tester.pumpAndSettle();
-      
+
       // Scroll to Restore
       final scrollable = find.byType(Scrollable).first;
       await tester.fling(scrollable, const Offset(0, -200), 500);
       await tester.pumpAndSettle();
-      
+
       if (exists(find.text('Restore Purchases'))) {
         await tester.tap(find.text('Restore Purchases'));
         await tester.pumpAndSettle(const Duration(seconds: 5));
-        
+
         await screenshot(tester, 'real_10_restore_result');
       }
     });

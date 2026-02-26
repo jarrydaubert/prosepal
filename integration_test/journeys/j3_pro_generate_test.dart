@@ -1,11 +1,11 @@
 /// Journey 3: Pro User → Generate → Sign Out
-/// 
+///
 /// Tests the authenticated Pro user experience:
 /// 1. PRO badge visible
 /// 2. Unlimited generations
 /// 3. Settings shows Pro Plan
 /// 4. Sign out flow
-/// 
+///
 /// Expected logs:
 /// - [INFO] App launched | isPro=true
 /// - [INFO] AI generation started
@@ -28,19 +28,25 @@ void main() {
       if (!atHome) return;
 
       // Check for Pro indicator
-      final hasPro = exists(find.text('PRO')) || 
+      final hasPro =
+          exists(find.text('PRO')) ||
           exists(find.text('Pro')) ||
           exists(find.textContaining('unlimited'));
       final hasFree = find.textContaining('free').evaluate().isNotEmpty;
 
       // One of these should be true
-      expect(hasPro || hasFree, isTrue,
-          reason: 'Should show Pro badge or free count');
+      expect(
+        hasPro || hasFree,
+        isTrue,
+        reason: 'Should show Pro badge or free count',
+      );
 
       await screenshot(tester, 'j3_1_pro_or_free');
     });
 
-    testWidgets('J3.2: Pro user can generate without upgrade prompt', (tester) async {
+    testWidgets('J3.2: Pro user can generate without upgrade prompt', (
+      tester,
+    ) async {
       final atHome = await navigateToHome(tester);
       if (!atHome) return;
 
@@ -63,13 +69,18 @@ void main() {
       final hasProPlan = exists(find.text('Pro Plan'));
       final hasFreePlan = exists(find.text('Free Plan'));
 
-      expect(hasProPlan || hasFreePlan, isTrue,
-          reason: 'Should show subscription status');
+      expect(
+        hasProPlan || hasFreePlan,
+        isTrue,
+        reason: 'Should show subscription status',
+      );
 
       await screenshot(tester, 'j3_3_subscription_status');
     });
 
-    testWidgets('J3.4: Settings shows Sign Out for authenticated user', (tester) async {
+    testWidgets('J3.4: Settings shows Sign Out for authenticated user', (
+      tester,
+    ) async {
       final atSettings = await navigateToSettings(tester);
       if (!atSettings) return;
 
@@ -80,8 +91,11 @@ void main() {
       final hasSignOut = exists(find.text('Sign Out'));
       final hasSignIn = exists(find.text('Sign In'));
 
-      expect(hasSignOut || hasSignIn, isTrue,
-          reason: 'Should show Sign Out or Sign In');
+      expect(
+        hasSignOut || hasSignIn,
+        isTrue,
+        reason: 'Should show Sign Out or Sign In',
+      );
 
       await screenshot(tester, 'j3_4_auth_action');
     });
@@ -95,13 +109,17 @@ void main() {
         await tester.pumpAndSettle();
 
         // Should show confirmation or navigate to auth
-        final hasConfirm = exists(find.text('Confirm')) ||
+        final hasConfirm =
+            exists(find.text('Confirm')) ||
             exists(find.text('Cancel')) ||
             exists(find.text('Are you sure'));
         final atAuth = exists(find.text('Continue with Email'));
 
-        expect(hasConfirm || atAuth, isTrue,
-            reason: 'Should show confirmation or go to auth');
+        expect(
+          hasConfirm || atAuth,
+          isTrue,
+          reason: 'Should show confirmation or go to auth',
+        );
 
         await screenshot(tester, 'j3_5_sign_out');
       }
@@ -130,7 +148,9 @@ void main() {
       }
     });
 
-    testWidgets('J3.7: Multiple generations work (Pro unlimited)', (tester) async {
+    testWidgets('J3.7: Multiple generations work (Pro unlimited)', (
+      tester,
+    ) async {
       final atHome = await navigateToHome(tester);
       if (!atHome) return;
 

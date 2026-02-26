@@ -255,10 +255,7 @@ class _ErrorScreen extends StatelessWidget {
                 Text(
                   'The page you\'re looking for doesn\'t exist.',
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey[600],
-                  ),
+                  style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                 ),
                 const SizedBox(height: 32),
                 ElevatedButton(

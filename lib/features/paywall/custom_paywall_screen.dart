@@ -104,7 +104,9 @@ class _CustomPaywallScreenState extends ConsumerState<CustomPaywallScreen> {
           context.go('/auth');
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Create an account to secure your Pro subscription'),
+              content: Text(
+                'Create an account to secure your Pro subscription',
+              ),
               behavior: SnackBarBehavior.floating,
             ),
           );
@@ -184,7 +186,9 @@ class _CustomPaywallScreenState extends ConsumerState<CustomPaywallScreen> {
         Log.warning('Purchase: Completed but no pro entitlement');
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Purchase completed but subscription not active. Please contact support.'),
+            content: Text(
+              'Purchase completed but subscription not active. Please contact support.',
+            ),
             behavior: SnackBarBehavior.floating,
           ),
         );

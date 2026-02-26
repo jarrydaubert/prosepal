@@ -1,11 +1,11 @@
 /// Journey 5: Navigation & Wizard Steps
-/// 
+///
 /// Tests navigation behavior:
 /// 1. Back button from wizard
 /// 2. Wizard state preservation
 /// 3. Re-entering wizard
 /// 4. Rapid navigation handling
-/// 
+///
 /// Expected logs:
 /// - [INFO] Wizard started
 /// - [INFO] Navigation: back pressed
@@ -19,7 +19,9 @@ void main() {
   initBinding();
 
   group('Journey 5: Navigation', () {
-    testWidgets('J5.1: Back from wizard step 1 returns to home', (tester) async {
+    testWidgets('J5.1: Back from wizard step 1 returns to home', (
+      tester,
+    ) async {
       final atHome = await navigateToHome(tester);
       if (!atHome) return;
 
@@ -27,7 +29,7 @@ void main() {
       await tester.pumpAndSettle();
 
       final wentBack = await tapBack(tester);
-      
+
       if (wentBack) {
         expect(
           anyTextExists(["What's the occasion?", 'Birthday']),
@@ -58,7 +60,7 @@ void main() {
 
       // Now on tones, go back
       final wentBack = await tapBack(tester);
-      
+
       if (wentBack) {
         // Should still be in Birthday wizard (showing relationships)
         expect(
@@ -79,7 +81,7 @@ void main() {
 
       // Now on final step, go back
       final wentBack = await tapBack(tester);
-      
+
       if (wentBack) {
         // Should show tones again
         expect(
@@ -131,13 +133,18 @@ void main() {
       }
       await tester.pumpAndSettle();
 
-      expect(find.byType(MaterialApp), findsOneWidget,
-          reason: 'App should remain stable');
+      expect(
+        find.byType(MaterialApp),
+        findsOneWidget,
+        reason: 'App should remain stable',
+      );
 
       await screenshot(tester, 'j5_5_rapid_back');
     });
 
-    testWidgets('J5.6: Settings then back preserves home state', (tester) async {
+    testWidgets('J5.6: Settings then back preserves home state', (
+      tester,
+    ) async {
       final atHome = await navigateToHome(tester);
       if (!atHome) return;
 
@@ -148,8 +155,11 @@ void main() {
       // Come back
       await tapBack(tester);
 
-      expect(find.text('Birthday'), findsOneWidget,
-          reason: 'Home should show occasions');
+      expect(
+        find.text('Birthday'),
+        findsOneWidget,
+        reason: 'Home should show occasions',
+      );
 
       await screenshot(tester, 'j5_6_settings_back');
     });
@@ -176,10 +186,7 @@ void main() {
         await tapBack(tester);
         await tapBack(tester);
 
-        expect(
-          anyTextExists(["What's the occasion?", 'Birthday']),
-          isTrue,
-        );
+        expect(anyTextExists(["What's the occasion?", 'Birthday']), isTrue);
 
         await screenshot(tester, 'j5_7_deep_nav');
       }

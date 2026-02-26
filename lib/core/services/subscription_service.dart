@@ -116,7 +116,9 @@ class SubscriptionService implements ISubscriptionService {
     final apiKey = _activeApiKey;
 
     if (apiKey.isEmpty) {
-      final keyName = Platform.isIOS ? 'REVENUECAT_IOS_KEY' : 'REVENUECAT_ANDROID_KEY';
+      final keyName = Platform.isIOS
+          ? 'REVENUECAT_IOS_KEY'
+          : 'REVENUECAT_ANDROID_KEY';
       if (kReleaseMode) {
         Log.error(
           'FATAL: RevenueCat API key not provided',

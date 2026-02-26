@@ -1,11 +1,11 @@
 /// Journey 2: Return User → Upgrade → Purchase
-/// 
+///
 /// Tests the upgrade path for users who have used their free generation:
 /// 1. User with 0 free remaining
 /// 2. Upgrade button appears
 /// 3. Auth screen (must sign in before purchase)
 /// 4. Paywall with subscription options
-/// 
+///
 /// Expected logs:
 /// - [INFO] Upgrade tapped, auth required
 /// - [INFO] Sign in started | provider=xxx
@@ -23,7 +23,9 @@ void main() {
   initBinding();
 
   group('Journey 2: Upgrade Flow', () {
-    testWidgets('J2.1: Upgrade button visible when 0 free remaining', (tester) async {
+    testWidgets('J2.1: Upgrade button visible when 0 free remaining', (
+      tester,
+    ) async {
       final atHome = await navigateToHome(tester);
       if (!atHome) return;
 
@@ -33,13 +35,18 @@ void main() {
       final canGenerate = exists(find.text('Generate Messages'));
       final mustUpgrade = exists(find.text('Upgrade to Continue'));
 
-      expect(canGenerate || mustUpgrade, isTrue,
-          reason: 'Should show Generate or Upgrade');
+      expect(
+        canGenerate || mustUpgrade,
+        isTrue,
+        reason: 'Should show Generate or Upgrade',
+      );
 
       await screenshot(tester, 'j2_1_generate_or_upgrade');
     });
 
-    testWidgets('J2.2: Upgrade navigates to auth for anonymous user', (tester) async {
+    testWidgets('J2.2: Upgrade navigates to auth for anonymous user', (
+      tester,
+    ) async {
       final atHome = await navigateToHome(tester);
       if (!atHome) return;
 
@@ -55,11 +62,15 @@ void main() {
           'Continue with Google',
           'Continue with Email',
         ]);
-        final hasPaywall = find.textContaining('\$').evaluate().isNotEmpty ||
+        final hasPaywall =
+            find.textContaining('\$').evaluate().isNotEmpty ||
             exists(find.text('Subscribe'));
 
-        expect(hasAuth || hasPaywall, isTrue,
-            reason: 'Should show auth or paywall');
+        expect(
+          hasAuth || hasPaywall,
+          isTrue,
+          reason: 'Should show auth or paywall',
+        );
 
         await screenshot(tester, 'j2_2_upgrade_destination');
       }
@@ -108,16 +119,22 @@ void main() {
 
       // Should show email input field
       final hasTextField = find.byType(TextField).evaluate().isNotEmpty;
-      final hasEmailText = find.textContaining('email').evaluate().isNotEmpty ||
+      final hasEmailText =
+          find.textContaining('email').evaluate().isNotEmpty ||
           find.textContaining('Email').evaluate().isNotEmpty;
 
-      expect(hasTextField || hasEmailText, isTrue,
-          reason: 'Should show email input screen');
+      expect(
+        hasTextField || hasEmailText,
+        isTrue,
+        reason: 'Should show email input screen',
+      );
 
       await screenshot(tester, 'j2_6_email_auth');
     });
 
-    testWidgets('J2.7: Sub-text shows correct message for anonymous', (tester) async {
+    testWidgets('J2.7: Sub-text shows correct message for anonymous', (
+      tester,
+    ) async {
       final atHome = await navigateToHome(tester);
       if (!atHome) return;
 
@@ -126,9 +143,12 @@ void main() {
       if (exists(find.text('Upgrade to Continue'))) {
         // Check for sub-text
         final hasSignInPrompt = exists(find.text('Sign in to go Pro'));
-        
-        expect(hasSignInPrompt, isTrue,
-            reason: 'Anonymous user should see "Sign in to go Pro"');
+
+        expect(
+          hasSignInPrompt,
+          isTrue,
+          reason: 'Anonymous user should see "Sign in to go Pro"',
+        );
 
         await screenshot(tester, 'j2_7_upgrade_subtext');
       }

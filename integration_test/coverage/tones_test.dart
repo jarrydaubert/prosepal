@@ -1,5 +1,5 @@
 /// Coverage: All 6 Tones
-/// 
+///
 /// Tests that each tone can be selected in the wizard.
 library;
 
@@ -42,8 +42,11 @@ void main() {
           await tester.tap(find.text(tone));
           await tester.pumpAndSettle();
 
-          expect(exists(find.text('Continue')), isTrue,
-              reason: '$tone should be selectable');
+          expect(
+            exists(find.text('Continue')),
+            isTrue,
+            reason: '$tone should be selectable',
+          );
         }
       });
     }
@@ -69,8 +72,11 @@ void main() {
           tone: tone,
         );
 
-        expect(completed, isTrue,
-            reason: '$occasion with $tone should complete wizard');
+        expect(
+          completed,
+          isTrue,
+          reason: '$occasion with $tone should complete wizard',
+        );
       });
     }
   });

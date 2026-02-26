@@ -1,11 +1,11 @@
 /// Journey 9: Wizard Details & Customization
-/// 
+///
 /// Tests the wizard's customization features:
 /// 1. Message length options (Brief/Standard/Detailed)
 /// 2. Recipient name input
 /// 3. Personal details input
 /// 4. All options affect generation
-/// 
+///
 /// Expected logs:
 /// - [INFO] Wizard started
 /// - [INFO] AI generation started | length=brief/standard/detailed
@@ -19,7 +19,9 @@ void main() {
   initBinding();
 
   group('Journey 9: Wizard Details', () {
-    testWidgets('J9.1: Message length options visible on final step', (tester) async {
+    testWidgets('J9.1: Message length options visible on final step', (
+      tester,
+    ) async {
       final atHome = await navigateToHome(tester);
       if (!atHome) return;
 
@@ -30,8 +32,11 @@ void main() {
       final hasStandard = exists(find.text('Standard'));
       final hasDetailed = exists(find.text('Detailed'));
 
-      expect(hasBrief || hasStandard || hasDetailed, isTrue,
-          reason: 'Should show message length options');
+      expect(
+        hasBrief || hasStandard || hasDetailed,
+        isTrue,
+        reason: 'Should show message length options',
+      );
 
       await screenshot(tester, 'j9_1_length_options');
     });
@@ -72,7 +77,8 @@ void main() {
 
       // Look for name input field
       final hasNameField = find.byType(TextField).evaluate().isNotEmpty;
-      final hasNameHint = find.textContaining('name').evaluate().isNotEmpty ||
+      final hasNameHint =
+          find.textContaining('name').evaluate().isNotEmpty ||
           find.textContaining('Name').evaluate().isNotEmpty ||
           find.textContaining('recipient').evaluate().isNotEmpty;
 
@@ -103,7 +109,8 @@ void main() {
       await completeWizard(tester);
 
       // Look for details/personal input
-      final hasDetails = find.textContaining('detail').evaluate().isNotEmpty ||
+      final hasDetails =
+          find.textContaining('detail').evaluate().isNotEmpty ||
           find.textContaining('Detail').evaluate().isNotEmpty ||
           find.textContaining('personal').evaluate().isNotEmpty ||
           find.textContaining('Personal').evaluate().isNotEmpty;

@@ -375,12 +375,9 @@ class AuthService implements IAuthService {
       await _supabase.deleteUser();
       Log.info('Account deleted from server');
     } catch (e, stackTrace) {
-      Log.error(
-        'Account deletion failed',
-        e,
-        stackTrace,
-        {'hint': 'Ensure delete-user Edge Function is deployed in Supabase'},
-      );
+      Log.error('Account deletion failed', e, stackTrace, {
+        'hint': 'Ensure delete-user Edge Function is deployed in Supabase',
+      });
       // Rethrow - caller must handle this and inform user
       throw AuthException(
         'Failed to delete account. Please try again or contact support.',
