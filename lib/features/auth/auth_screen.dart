@@ -53,11 +53,13 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
 
     try {
       await AuthService.instance.signInWithGoogle();
-      // OAuth redirects, so we don't navigate here
+      // OAuth redirects via browser, loading state cleared by auth listener
     } catch (e) {
       if (!AuthErrorHandler.isCancellation(e)) {
         setState(() => _error = AuthErrorHandler.getMessage(e));
       }
+    } finally {
+      // Always clear loading state - OAuth redirect or cancellation
       if (mounted) setState(() => _isLoading = false);
     }
   }
@@ -151,13 +153,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
               _AuthButton(
                 onPressed: _isLoading ? null : _signInWithGoogle,
                 icon: null,
-                customIcon: Image.network(
-                  'https://www.google.com/favicon.ico',
-                  width: 20,
-                  height: 20,
-                  errorBuilder: (context, error, stackTrace) =>
-                      Icon(Icons.g_mobiledata, size: 24),
-                ),
+                customIcon: _GoogleLogo(),
                 label: 'Continue with Google',
                 backgroundColor: Colors.white,
                 foregroundColor: Colors.black87,
@@ -267,4 +263,96 @@ class _AuthButton extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Google 'G' logo with official brand colors
+class _GoogleLogo extends StatelessWidget {
+  const _GoogleLogo();
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 20,
+      height: 20,
+      child: CustomPaint(painter: _GoogleLogoPainter()),
+    );
+  }
+}
+
+class _GoogleLogoPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final double w = size.width;
+    final double h = size.height;
+
+    // Google brand colors
+    const blue = Color(0xFF4285F4);
+    const red = Color(0xFFEA4335);
+    const yellow = Color(0xFFFBBC05);
+    const green = Color(0xFF34A853);
+
+    final paint = Paint()
+      ..style = PaintingStyle.fill
+      ..isAntiAlias = true;
+
+    // Draw simplified 'G' shape using arcs
+    final center = Offset(w / 2, h / 2);
+    final radius = w / 2;
+    final strokeWidth = w * 0.22;
+
+    paint.style = PaintingStyle.stroke;
+    paint.strokeWidth = strokeWidth;
+    paint.strokeCap = StrokeCap.butt;
+
+    // Blue arc (right side, top portion)
+    paint.color = blue;
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius - strokeWidth / 2),
+      -0.4, // start angle
+      1.2, // sweep angle
+      false,
+      paint,
+    );
+
+    // Green arc (bottom right)
+    paint.color = green;
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius - strokeWidth / 2),
+      0.8,
+      1.0,
+      false,
+      paint,
+    );
+
+    // Yellow arc (bottom left)
+    paint.color = yellow;
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius - strokeWidth / 2),
+      1.8,
+      0.9,
+      false,
+      paint,
+    );
+
+    // Red arc (top left)
+    paint.color = red;
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius - strokeWidth / 2),
+      2.7,
+      1.0,
+      false,
+      paint,
+    );
+
+    // Blue horizontal bar
+    paint.style = PaintingStyle.fill;
+    paint.color = blue;
+    canvas.drawRect(
+      Rect.fromLTWH(w * 0.5, h * 0.4, w * 0.45, strokeWidth),
+      paint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

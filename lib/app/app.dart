@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../core/providers/providers.dart';
+import '../shared/theme/app_colors.dart';
 import '../shared/theme/app_theme.dart';
 import 'router.dart';
 
@@ -13,11 +14,30 @@ class ProsepalApp extends ConsumerStatefulWidget {
   ConsumerState<ProsepalApp> createState() => _ProsepalAppState();
 }
 
-class _ProsepalAppState extends ConsumerState<ProsepalApp> {
+class _ProsepalAppState extends ConsumerState<ProsepalApp>
+    with WidgetsBindingObserver {
+  bool _isInBackground = false;
+
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _setupAuthListener();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    setState(() {
+      _isInBackground =
+          state == AppLifecycleState.inactive ||
+          state == AppLifecycleState.paused;
+    });
   }
 
   void _setupAuthListener() {
@@ -46,6 +66,28 @@ class _ProsepalAppState extends ConsumerState<ProsepalApp> {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       routerConfig: appRouter,
+      builder: (context, child) {
+        return Stack(
+          children: [
+            child!,
+            // Privacy screen when app is backgrounded
+            if (_isInBackground)
+              Container(
+                color: AppColors.background,
+                child: Center(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(24),
+                    child: Image.asset(
+                      'assets/images/logo.png',
+                      width: 100,
+                      height: 100,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
     );
   }
 }

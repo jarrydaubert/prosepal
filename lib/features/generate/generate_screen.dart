@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/models/models.dart';
 import '../../core/providers/providers.dart';
+import '../../core/services/ai_service.dart';
 import '../../shared/atoms/app_button.dart';
 import '../../shared/theme/app_colors.dart';
 import '../../shared/theme/app_spacing.dart';
@@ -232,12 +233,26 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
 
       if (!mounted) return;
       context.pushNamed('results');
-    } catch (e, stack) {
-      debugPrint('Generation error: $e');
-      debugPrint('Stack trace: $stack');
+    } on AiNetworkException {
       ref.read(isGeneratingProvider.notifier).state = false;
       ref.read(generationErrorProvider.notifier).state =
-          'Failed to generate messages: $e';
+          'Please check your internet connection and try again.';
+    } on AiRateLimitException {
+      ref.read(isGeneratingProvider.notifier).state = false;
+      ref.read(generationErrorProvider.notifier).state =
+          'Too many requests. Please wait a moment and try again.';
+    } on AiContentBlockedException {
+      ref.read(isGeneratingProvider.notifier).state = false;
+      ref.read(generationErrorProvider.notifier).state =
+          'Unable to generate this message. Please try different wording.';
+    } on AiServiceException catch (e) {
+      ref.read(isGeneratingProvider.notifier).state = false;
+      ref.read(generationErrorProvider.notifier).state = e.message;
+    } catch (e) {
+      debugPrint('Unexpected generation error: $e');
+      ref.read(isGeneratingProvider.notifier).state = false;
+      ref.read(generationErrorProvider.notifier).state =
+          'Something went wrong. Please try again.';
     }
   }
 }

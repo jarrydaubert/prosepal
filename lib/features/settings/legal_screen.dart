@@ -37,7 +37,7 @@ class TermsScreen extends StatelessWidget {
           _LegalSection(title: 'Contact', content: 'support@prosepal.app'),
           Gap(AppSpacing.lg),
           Text(
-            'Last updated: December 2024',
+            'Last updated: December 2025',
             style: Theme.of(
               context,
             ).textTheme.bodySmall?.copyWith(color: AppColors.textHint),
@@ -82,7 +82,7 @@ class PrivacyScreen extends StatelessWidget {
           _LegalSection(title: 'Contact', content: 'support@prosepal.app'),
           Gap(AppSpacing.lg),
           Text(
-            'Last updated: December 2024',
+            'Last updated: December 2025',
             style: Theme.of(
               context,
             ).textTheme.bodySmall?.copyWith(color: AppColors.textHint),
