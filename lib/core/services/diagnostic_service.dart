@@ -90,7 +90,9 @@ abstract final class DiagnosticService {
       if (user != null) {
         buffer.writeln('Signed In: Yes');
         buffer.writeln('User ID: ${_truncateId(user.id)}');
-        buffer.writeln('Provider: ${user.appMetadata['provider'] ?? 'unknown'}');
+        buffer.writeln(
+          'Provider: ${user.appMetadata['provider'] ?? 'unknown'}',
+        );
         buffer.writeln(
           'Created: ${user.createdAt.substring(0, 10)}',
         ); // Just date, not time
@@ -119,12 +121,12 @@ abstract final class DiagnosticService {
             'Expires: ${entitlement.expirationDate!.substring(0, 10)}',
           );
         }
-        buffer.writeln(
-          'Will Renew: ${entitlement.willRenew ? 'Yes' : 'No'}',
-        );
+        buffer.writeln('Will Renew: ${entitlement.willRenew ? 'Yes' : 'No'}');
       }
 
-      buffer.writeln('RC User ID: ${_truncateId(customerInfo.originalAppUserId)}');
+      buffer.writeln(
+        'RC User ID: ${_truncateId(customerInfo.originalAppUserId)}',
+      );
     } catch (e) {
       Log.warning('Subscription status retrieval failed', {'error': '$e'});
       buffer.writeln('Subscription: Unable to retrieve');

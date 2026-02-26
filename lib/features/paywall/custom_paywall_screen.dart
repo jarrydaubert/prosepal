@@ -84,7 +84,7 @@ class _CustomPaywallScreenState extends ConsumerState<CustomPaywallScreen> {
         // Check if biometrics available but not enabled - offer setup
         final biometricsAvailable = await BiometricService.instance.isSupported;
         final biometricsEnabled = await BiometricService.instance.isEnabled;
-        
+
         if (biometricsAvailable && !biometricsEnabled && mounted) {
           final enableBiometrics = await showDialog<bool>(
             context: context,
@@ -188,11 +188,12 @@ class _CustomPaywallScreenState extends ConsumerState<CustomPaywallScreen> {
     } on PlatformException catch (e) {
       Log.warning('Restore purchases failed', {'error': '$e'});
       if (mounted) {
-        final isNetworkError = e.code == 'NETWORK_ERROR' ||
+        final isNetworkError =
+            e.code == 'NETWORK_ERROR' ||
             e.message?.toLowerCase().contains('network') == true ||
             e.message?.toLowerCase().contains('internet') == true ||
             e.message?.toLowerCase().contains('offline') == true;
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -270,8 +271,10 @@ class _CustomPaywallScreenState extends ConsumerState<CustomPaywallScreen> {
                 children: [
                   IconButton(
                     onPressed: () => context.pop(),
-                    icon:
-                        const Icon(Icons.close, color: AppColors.textSecondary),
+                    icon: const Icon(
+                      Icons.close,
+                      color: AppColors.textSecondary,
+                    ),
                   ),
                 ],
               ),
@@ -316,18 +319,18 @@ class _CustomPaywallScreenState extends ConsumerState<CustomPaywallScreen> {
             Text(
               'Go Pro',
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
-                  ),
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
             ),
           ],
         ).animate().fadeIn(duration: 300.ms),
         const Gap(AppSpacing.xs),
         Text(
           'Unlimited messages for every occasion',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppColors.textSecondary,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
           textAlign: TextAlign.center,
         ).animate().fadeIn(delay: 100.ms),
       ],
@@ -425,9 +428,9 @@ class _CustomPaywallScreenState extends ConsumerState<CustomPaywallScreen> {
             child: Text(
               '"Saved me in the card aisle!"',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    fontStyle: FontStyle.italic,
-                    color: AppColors.textSecondary,
-                  ),
+                fontStyle: FontStyle.italic,
+                color: AppColors.textSecondary,
+              ),
             ),
           ),
         ],
@@ -468,8 +471,7 @@ class _CustomPaywallScreenState extends ConsumerState<CustomPaywallScreen> {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color:
-                          isSelected ? AppColors.primary : Colors.grey[400]!,
+                      color: isSelected ? AppColors.primary : Colors.grey[400]!,
                       width: 2,
                     ),
                   ),
@@ -530,10 +532,7 @@ class _CustomPaywallScreenState extends ConsumerState<CustomPaywallScreen> {
                       const Gap(2),
                       Text(
                         _getPackageSubtitle(package),
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[600],
-                        ),
+                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                       ),
                     ],
                   ),
@@ -557,7 +556,9 @@ class _CustomPaywallScreenState extends ConsumerState<CustomPaywallScreen> {
                       style: TextStyle(
                         fontSize: 11,
                         color: isAnnual ? AppColors.success : Colors.grey[500],
-                        fontWeight: isAnnual ? FontWeight.w600 : FontWeight.normal,
+                        fontWeight: isAnnual
+                            ? FontWeight.w600
+                            : FontWeight.normal,
                       ),
                     ),
                   ],
@@ -574,10 +575,12 @@ class _CustomPaywallScreenState extends ConsumerState<CustomPaywallScreen> {
   String _getWeeklyEquivalent(Package package) {
     try {
       final price = package.storeProduct.price;
-      final currencySymbol = package.storeProduct.currencyCode == 'USD' 
-          ? '\$' 
-          : package.storeProduct.priceString.replaceAll(RegExp(r'[0-9.,]'), '').trim();
-      
+      final currencySymbol = package.storeProduct.currencyCode == 'USD'
+          ? '\$'
+          : package.storeProduct.priceString
+                .replaceAll(RegExp(r'[0-9.,]'), '')
+                .trim();
+
       switch (package.packageType) {
         case PackageType.weekly:
           return 'per week';
@@ -629,7 +632,9 @@ class _CustomPaywallScreenState extends ConsumerState<CustomPaywallScreen> {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  disabledBackgroundColor: AppColors.primary.withValues(alpha: 0.6),
+                  disabledBackgroundColor: AppColors.primary.withValues(
+                    alpha: 0.6,
+                  ),
                 ),
                 child: _isPurchasing
                     ? const SizedBox(

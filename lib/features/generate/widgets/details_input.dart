@@ -191,8 +191,9 @@ class _StyledTextField extends StatelessWidget {
         textCapitalization: maxLines > 1
             ? TextCapitalization.sentences
             : TextCapitalization.words,
-        textInputAction:
-            maxLines > 1 ? TextInputAction.done : TextInputAction.next,
+        textInputAction: maxLines > 1
+            ? TextInputAction.done
+            : TextInputAction.next,
         onChanged: onChanged,
         decoration: InputDecoration(
           hintText: hintText,
@@ -202,8 +203,10 @@ class _StyledTextField extends StatelessWidget {
             child: Icon(icon, color: AppColors.primary, size: 22),
           ),
           border: InputBorder.none,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 14,
+          ),
           counterStyle: TextStyle(color: Colors.grey[500], fontSize: 12),
         ),
       ),
@@ -239,8 +242,10 @@ class _LengthSelector extends StatelessWidget {
               },
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
                   color: isSelected ? AppColors.primaryLight : Colors.white,
                   borderRadius: BorderRadius.circular(12),
@@ -273,8 +278,9 @@ class _LengthSelector extends StatelessWidget {
                       length.label,
                       style: TextStyle(
                         fontSize: 14,
-                        fontWeight:
-                            isSelected ? FontWeight.w600 : FontWeight.w500,
+                        fontWeight: isSelected
+                            ? FontWeight.w600
+                            : FontWeight.w500,
                         color: isSelected
                             ? AppColors.primary
                             : AppColors.textPrimary,

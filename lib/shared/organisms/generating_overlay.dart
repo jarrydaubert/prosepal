@@ -14,10 +14,7 @@ import '../theme/app_spacing.dart';
 /// - Rotating inspirational messages
 /// - Smooth 60fps animations
 class GeneratingOverlay extends StatefulWidget {
-  const GeneratingOverlay({
-    super.key,
-    this.occasionColor,
-  });
+  const GeneratingOverlay({super.key, this.occasionColor});
 
   /// Optional accent color based on selected occasion
   final Color? occasionColor;
@@ -120,9 +117,7 @@ class _GeneratingOverlayState extends State<GeneratingOverlay>
           ],
         ),
       ),
-    )
-        .animate()
-        .fadeIn(duration: 300.ms, curve: Curves.easeOut);
+    ).animate().fadeIn(duration: 300.ms, curve: Curves.easeOut);
   }
 
   List<Widget> _buildFloatingOrbs() {
@@ -134,32 +129,37 @@ class _GeneratingOverlayState extends State<GeneratingOverlay>
       final delay = random.nextInt(2000);
 
       return Positioned(
-        left: left,
-        top: top,
-        child: AnimatedBuilder(
-          animation: _pulseController,
-          builder: (context, child) {
-            final scale = 0.8 + _pulseController.value * 0.4;
-            final opacity = 0.1 + _pulseController.value * 0.15;
-            return Transform.scale(
-              scale: scale,
-              child: Container(
-                width: size,
-                height: size,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white.withValues(alpha: opacity),
-                ),
-              ),
-            );
-          },
-        ),
-      )
+            left: left,
+            top: top,
+            child: AnimatedBuilder(
+              animation: _pulseController,
+              builder: (context, child) {
+                final scale = 0.8 + _pulseController.value * 0.4;
+                final opacity = 0.1 + _pulseController.value * 0.15;
+                return Transform.scale(
+                  scale: scale,
+                  child: Container(
+                    width: size,
+                    height: size,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white.withValues(alpha: opacity),
+                    ),
+                  ),
+                );
+              },
+            ),
+          )
           .animate(delay: Duration(milliseconds: delay))
           .fadeIn(duration: 1000.ms)
           .then()
           .animate(onComplete: (c) => c.repeat(reverse: true))
-          .moveY(begin: 0, end: -20, duration: 3000.ms, curve: Curves.easeInOut);
+          .moveY(
+            begin: 0,
+            end: -20,
+            duration: 3000.ms,
+            curve: Curves.easeInOut,
+          );
     });
   }
 
@@ -213,11 +213,7 @@ class _GeneratingOverlayState extends State<GeneratingOverlay>
               },
             ),
             // Inner sparkle icon
-            const Icon(
-              Icons.auto_awesome,
-              color: Colors.white,
-              size: 48,
-            )
+            const Icon(Icons.auto_awesome, color: Colors.white, size: 48)
                 .animate(onComplete: (c) => c.repeat())
                 .scale(
                   begin: const Offset(1, 1),
@@ -235,14 +231,12 @@ class _GeneratingOverlayState extends State<GeneratingOverlay>
           ],
         ),
       ),
-    )
-        .animate()
-        .scale(
-          begin: const Offset(0.8, 0.8),
-          end: const Offset(1, 1),
-          duration: 600.ms,
-          curve: Curves.easeOutBack,
-        );
+    ).animate().scale(
+      begin: const Offset(0.8, 0.8),
+      end: const Offset(1, 1),
+      duration: 600.ms,
+      curve: Curves.easeOutBack,
+    );
   }
 
   Widget _buildMessage() {
@@ -252,13 +246,16 @@ class _GeneratingOverlayState extends State<GeneratingOverlay>
         return FadeTransition(
           opacity: animation,
           child: SlideTransition(
-            position: Tween<Offset>(
-              begin: const Offset(0, 0.2),
-              end: Offset.zero,
-            ).animate(CurvedAnimation(
-              parent: animation,
-              curve: Curves.easeOutCubic,
-            )),
+            position:
+                Tween<Offset>(
+                  begin: const Offset(0, 0.2),
+                  end: Offset.zero,
+                ).animate(
+                  CurvedAnimation(
+                    parent: animation,
+                    curve: Curves.easeOutCubic,
+                  ),
+                ),
             child: child,
           ),
         );
@@ -282,14 +279,14 @@ class _GeneratingOverlayState extends State<GeneratingOverlay>
       mainAxisAlignment: MainAxisAlignment.center,
       children: List.generate(3, (index) {
         return Container(
-          margin: const EdgeInsets.symmetric(horizontal: 4),
-          width: 8,
-          height: 8,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: Colors.white.withValues(alpha: 0.5),
-          ),
-        )
+              margin: const EdgeInsets.symmetric(horizontal: 4),
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withValues(alpha: 0.5),
+              ),
+            )
             .animate(
               delay: Duration(milliseconds: index * 200),
               onComplete: (c) => c.repeat(),

@@ -74,19 +74,19 @@ class _BiometricSetupScreenState extends State<BiometricSetupScreen> {
 
               // Icon with bold border
               Container(
-                width: 160,
-                height: 160,
-                decoration: BoxDecoration(
-                  color: AppColors.primaryLight,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: AppColors.primary, width: 4),
-                ),
-                child: Icon(
-                  isFaceId ? Icons.face : Icons.fingerprint,
-                  size: 80,
-                  color: AppColors.primary,
-                ),
-              )
+                    width: 160,
+                    height: 160,
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryLight,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: AppColors.primary, width: 4),
+                    ),
+                    child: Icon(
+                      isFaceId ? Icons.face : Icons.fingerprint,
+                      size: 80,
+                      color: AppColors.primary,
+                    ),
+                  )
                   .animate(key: const ValueKey('biometric_icon'))
                   .fadeIn(duration: 400.ms)
                   .scale(delay: 100.ms, curve: Curves.easeOutBack),
@@ -95,14 +95,14 @@ class _BiometricSetupScreenState extends State<BiometricSetupScreen> {
 
               // Title
               Text(
-                'Enable $_biometricName?',
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.primary,
-                ),
-              )
+                    'Enable $_biometricName?',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primary,
+                    ),
+                  )
                   .animate(key: const ValueKey('title'))
                   .fadeIn(delay: 300.ms)
                   .slideY(begin: 0.2, end: 0),
@@ -132,7 +132,8 @@ class _BiometricSetupScreenState extends State<BiometricSetupScreen> {
 
               _BenefitRow(
                 icon: Icons.flash_on,
-                text: 'Unlock instantly with ${isFaceId ? "a glance" : "your fingerprint"}',
+                text:
+                    'Unlock instantly with ${isFaceId ? "a glance" : "your fingerprint"}',
               ).animate().fadeIn(delay: 700.ms).slideX(begin: 0.1, end: 0),
 
               const Spacer(),
@@ -173,10 +174,7 @@ class _BiometricSetupScreenState extends State<BiometricSetupScreen> {
 // =============================================================================
 
 class _BenefitRow extends StatelessWidget {
-  const _BenefitRow({
-    required this.icon,
-    required this.text,
-  });
+  const _BenefitRow({required this.icon, required this.text});
 
   final IconData icon;
   final String text;

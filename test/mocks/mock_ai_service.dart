@@ -67,16 +67,20 @@ class MockAiService extends AiService {
       throw errorToThrow!;
     }
 
-    final messages = messagesToReturn.map((text) => GeneratedMessage(
-      id: 'mock-${DateTime.now().millisecondsSinceEpoch}',
-      text: text,
-      occasion: occasion,
-      relationship: relationship,
-      tone: tone,
-      createdAt: DateTime.now(),
-      recipientName: recipientName,
-      personalDetails: personalDetails,
-    )).toList();
+    final messages = messagesToReturn
+        .map(
+          (text) => GeneratedMessage(
+            id: 'mock-${DateTime.now().millisecondsSinceEpoch}',
+            text: text,
+            occasion: occasion,
+            relationship: relationship,
+            tone: tone,
+            createdAt: DateTime.now(),
+            recipientName: recipientName,
+            personalDetails: personalDetails,
+          ),
+        )
+        .toList();
 
     return GenerationResult(
       messages: messages,

@@ -43,24 +43,25 @@ class RelationshipPicker extends StatelessWidget {
 
             return Padding(
               padding: const EdgeInsets.only(bottom: 12),
-              child: _RelationshipTile(
-                key: ValueKey('relationship_${relationship.name}'),
-                relationship: relationship,
-                isSelected: isSelected,
-                onTap: () => onSelected(relationship),
-              )
-                  .animate(key: ValueKey('rel_anim_$index'))
-                  .fadeIn(
-                    delay: Duration(milliseconds: index * 40),
-                    duration: 250.ms,
-                  )
-                  .slideX(
-                    begin: 0.08,
-                    end: 0,
-                    delay: Duration(milliseconds: index * 40),
-                    duration: 250.ms,
-                    curve: Curves.easeOut,
-                  ),
+              child:
+                  _RelationshipTile(
+                        key: ValueKey('relationship_${relationship.name}'),
+                        relationship: relationship,
+                        isSelected: isSelected,
+                        onTap: () => onSelected(relationship),
+                      )
+                      .animate(key: ValueKey('rel_anim_$index'))
+                      .fadeIn(
+                        delay: Duration(milliseconds: index * 40),
+                        duration: 250.ms,
+                      )
+                      .slideX(
+                        begin: 0.08,
+                        end: 0,
+                        delay: Duration(milliseconds: index * 40),
+                        duration: 250.ms,
+                        curve: Curves.easeOut,
+                      ),
             );
           }),
         ],
@@ -137,7 +138,9 @@ class _RelationshipTile extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                    color: isSelected ? AppColors.primary : AppColors.textPrimary,
+                    color: isSelected
+                        ? AppColors.primary
+                        : AppColors.textPrimary,
                   ),
                 ),
               ),
@@ -149,11 +152,7 @@ class _RelationshipTile extends StatelessWidget {
                     color: AppColors.primary,
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(
-                    Icons.check,
-                    color: Colors.white,
-                    size: 16,
-                  ),
+                  child: const Icon(Icons.check, color: Colors.white, size: 16),
                 ),
             ],
           ),

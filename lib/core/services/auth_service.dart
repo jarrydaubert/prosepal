@@ -87,7 +87,9 @@ class AuthService implements IAuthService {
         );
       } catch (e) {
         // Non-fatal: sign-in will still work, just slower on first attempt
-        Log.warning('Google Sign-In pre-initialization failed', {'error': '$e'});
+        Log.warning('Google Sign-In pre-initialization failed', {
+          'error': '$e',
+        });
       }
     }
 
@@ -153,7 +155,7 @@ class AuthService implements IAuthService {
   @override
   Future<AuthResponse> signInWithApple() async {
     Log.info('Sign in started', {'provider': 'apple'});
-    
+
     // Check platform availability first
     if (!await _apple.isAvailable()) {
       throw const AuthException(
@@ -184,7 +186,7 @@ class AuthService implements IAuthService {
         idToken: idToken,
         nonce: rawNonce,
       );
-      
+
       Log.info('User signed in', {'provider': 'apple'});
       return response;
     } on SignInWithAppleAuthorizationException catch (e) {
@@ -201,7 +203,7 @@ class AuthService implements IAuthService {
   @override
   Future<AuthResponse> signInWithGoogle() async {
     Log.info('Sign in started', {'provider': 'google'});
-    
+
     // Check platform availability first
     if (!await _google.isAvailable()) {
       throw const AuthException(
@@ -231,7 +233,10 @@ class AuthService implements IAuthService {
 
     final idToken = result.idToken;
     if (idToken == null) {
-      Log.warning('Sign in failed', {'provider': 'google', 'error': 'No ID token'});
+      Log.warning('Sign in failed', {
+        'provider': 'google',
+        'error': 'No ID token',
+      });
       throw const AuthException('Google Sign In failed: No ID token');
     }
 
@@ -240,7 +245,7 @@ class AuthService implements IAuthService {
       idToken: idToken,
       accessToken: result.accessToken,
     );
-    
+
     Log.info('User signed in', {'provider': 'google'});
     return response;
   }
@@ -304,7 +309,7 @@ class AuthService implements IAuthService {
   @override
   Future<void> signOut() async {
     Log.info('Sign out initiated');
-    
+
     // Also sign out from Google to clear cached credentials
     try {
       await _google.signOut();
@@ -320,7 +325,7 @@ class AuthService implements IAuthService {
   @override
   Future<void> deleteAccount() async {
     Log.info('Delete account initiated');
-    
+
     final user = currentUser;
     if (user == null) return;
 

@@ -19,10 +19,10 @@ class SavedGeneration {
   final DateTime savedAt;
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'result': result.toJson(),
-        'savedAt': savedAt.toIso8601String(),
-      };
+    'id': id,
+    'result': result.toJson(),
+    'savedAt': savedAt.toIso8601String(),
+  };
 
   factory SavedGeneration.fromJson(Map<String, dynamic> json) {
     return SavedGeneration(
@@ -40,7 +40,7 @@ class HistoryService {
   final SharedPreferences _prefs;
   final _uuid = const Uuid();
   static const _key = 'generation_history';
-  
+
   /// Maximum history items stored locally
   /// 200 items ≈ 2 weeks of heavy Pro usage (500/month)
   /// Oldest items are automatically removed when limit is reached

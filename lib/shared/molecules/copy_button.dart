@@ -104,10 +104,7 @@ class _CopyButtonState extends State<CopyButton> {
           icon: AnimatedSwitcher(
             duration: const Duration(milliseconds: 200),
             transitionBuilder: (child, animation) {
-              return ScaleTransition(
-                scale: animation,
-                child: child,
-              );
+              return ScaleTransition(scale: animation, child: child);
             },
             child: _copied
                 ? Icon(
@@ -115,14 +112,12 @@ class _CopyButtonState extends State<CopyButton> {
                     key: const ValueKey('check'),
                     color: AppColors.success,
                     size: widget.size,
+                  ).animate().scale(
+                    begin: const Offset(0.5, 0.5),
+                    end: const Offset(1, 1),
+                    duration: 200.ms,
+                    curve: Curves.easeOutBack,
                   )
-                    .animate()
-                    .scale(
-                      begin: const Offset(0.5, 0.5),
-                      end: const Offset(1, 1),
-                      duration: 200.ms,
-                      curve: Curves.easeOutBack,
-                    )
                 : Icon(
                     Icons.copy_rounded,
                     key: const ValueKey('copy'),
@@ -226,19 +221,14 @@ class _CopyButtonWithLabelState extends State<CopyButtonWithLabel> {
                       key: ValueKey('check'),
                       color: AppColors.success,
                     )
-                  : const Icon(
-                      Icons.copy_rounded,
-                      key: ValueKey('copy'),
-                    ),
+                  : const Icon(Icons.copy_rounded, key: ValueKey('copy')),
             ),
             label: AnimatedSwitcher(
               duration: const Duration(milliseconds: 200),
               child: Text(
                 _copied ? widget.copiedLabel : widget.label,
                 key: ValueKey(_copied),
-                style: TextStyle(
-                  color: _copied ? AppColors.success : null,
-                ),
+                style: TextStyle(color: _copied ? AppColors.success : null),
               ),
             ),
           ),

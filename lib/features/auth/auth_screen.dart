@@ -14,10 +14,10 @@ import '../../shared/theme/app_colors.dart';
 
 class AuthScreen extends ConsumerStatefulWidget {
   const AuthScreen({super.key, this.redirectTo, this.isProRestore = false});
-  
+
   /// Optional route to navigate to after successful auth (e.g., 'paywall')
   final String? redirectTo;
-  
+
   /// True if user has Pro from App Store but needs to sign in to claim it
   final bool isProRestore;
 
@@ -45,17 +45,17 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
 
   Future<void> _navigateAfterAuth() async {
     if (!mounted) return;
-    
+
     // If we have a redirect destination (e.g., from upgrade flow), go there
     if (widget.redirectTo != null) {
       context.go('/${widget.redirectTo}');
       return;
     }
-    
+
     final biometricService = BiometricService.instance;
     final isSupported = await biometricService.isSupported;
     final isAlreadyEnabled = await biometricService.isEnabled;
-    
+
     if (isSupported && !isAlreadyEnabled) {
       context.go('/biometric-setup');
     } else {
@@ -74,7 +74,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       // Timeout prevents stuck spinner if OAuth window killed externally
       final response = await authService.signInWithApple().timeout(
         const Duration(minutes: 2),
-        onTimeout: () => throw Exception('Sign in timed out. Please try again.'),
+        onTimeout: () =>
+            throw Exception('Sign in timed out. Please try again.'),
       );
       if (response.user != null) {
         await ref
@@ -104,7 +105,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       // Timeout prevents stuck spinner if OAuth window killed externally
       final response = await authService.signInWithGoogle().timeout(
         const Duration(minutes: 2),
-        onTimeout: () => throw Exception('Sign in timed out. Please try again.'),
+        onTimeout: () =>
+            throw Exception('Sign in timed out. Please try again.'),
       );
       if (response.user != null) {
         await ref
@@ -131,7 +133,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
     final isSmallScreen = size.width < 380;
-    
+
     // Responsive sizing
     final logoSize = size.width * 0.38; // ~38% of screen width
     final titleSize = isSmallScreen ? 24.0 : 28.0;
@@ -148,22 +150,22 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
 
               // App Logo with bold border container
               Container(
-                width: logoSize,
-                height: logoSize,
-                decoration: BoxDecoration(
-                  color: AppColors.primaryLight,
-                  borderRadius: BorderRadius.circular(40),
-                  border: Border.all(color: AppColors.primary, width: 4),
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(36),
-                  child: Image.asset(
-                    'assets/images/logo.png',
-                    width: logoSize - 20,
-                    height: logoSize - 20,
-                  ),
-                ),
-              )
+                    width: logoSize,
+                    height: logoSize,
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryLight,
+                      borderRadius: BorderRadius.circular(40),
+                      border: Border.all(color: AppColors.primary, width: 4),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(36),
+                      child: Image.asset(
+                        'assets/images/logo.png',
+                        width: logoSize - 20,
+                        height: logoSize - 20,
+                      ),
+                    ),
+                  )
                   .animate(key: const ValueKey('logo'))
                   .fadeIn(duration: 400.ms)
                   .scale(delay: 100.ms, curve: Curves.easeOutBack),
@@ -172,14 +174,14 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
 
               // Title
               Text(
-                'Welcome to Prosepal',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: titleSize,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.primary,
-                ),
-              )
+                    'Welcome to Prosepal',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: titleSize,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primary,
+                    ),
+                  )
                   .animate(key: const ValueKey('title'))
                   .fadeIn(delay: 300.ms)
                   .slideY(begin: 0.2, end: 0),
@@ -209,7 +211,11 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.star, color: AppColors.success, size: 24),
+                      const Icon(
+                        Icons.star,
+                        color: AppColors.success,
+                        size: 24,
+                      ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Column(
@@ -241,55 +247,52 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
 
               // Error message
               if (_error != null) ...[
-                _ErrorBanner(
-                  message: _error!,
-                  onDismiss: _dismissError,
-                ),
+                _ErrorBanner(message: _error!, onDismiss: _dismissError),
                 const SizedBox(height: 20),
               ],
 
               // Auth buttons
               Column(
-                children: [
-                  // Apple Sign In (iOS/macOS only, first per Apple guidelines)
-                  if (Platform.isIOS || Platform.isMacOS) ...[
-                    _AuthButton(
-                      onPressed: _isLoading ? null : _signInWithApple,
-                      isLoading: _isLoading,
-                      child: SignInWithAppleButton(
-                        text: 'Continue with Apple',
-                        height: 56,
-                        onPressed: _signInWithApple,
-                        borderRadius: BorderRadius.circular(16),
+                    children: [
+                      // Apple Sign In (iOS/macOS only, first per Apple guidelines)
+                      if (Platform.isIOS || Platform.isMacOS) ...[
+                        _AuthButton(
+                          onPressed: _isLoading ? null : _signInWithApple,
+                          isLoading: _isLoading,
+                          child: SignInWithAppleButton(
+                            text: 'Continue with Apple',
+                            height: 56,
+                            onPressed: _signInWithApple,
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                      ],
+
+                      // Google Sign In (branding: 24px icon per Google guidelines)
+                      _AuthButton(
+                        onPressed: _isLoading ? null : _signInWithGoogle,
+                        isLoading: _isLoading,
+                        style: _AuthButtonStyle.outlined,
+                        icon: Image.asset(
+                          'assets/images/icons/google_g.png',
+                          width: 24,
+                          height: 24,
+                        ),
+                        label: 'Continue with Google',
                       ),
-                    ),
-                    const SizedBox(height: 12),
-                  ],
+                      const SizedBox(height: 12),
 
-                  // Google Sign In (branding: 24px icon per Google guidelines)
-                  _AuthButton(
-                    onPressed: _isLoading ? null : _signInWithGoogle,
-                    isLoading: _isLoading,
-                    style: _AuthButtonStyle.outlined,
-                    icon: Image.asset(
-                      'assets/images/icons/google_g.png',
-                      width: 24,
-                      height: 24,
-                    ),
-                    label: 'Continue with Google',
-                  ),
-                  const SizedBox(height: 12),
-
-                  // Email Sign In
-                  _AuthButton(
-                    onPressed: _isLoading ? null : _signInWithEmail,
-                    isLoading: _isLoading,
-                    style: _AuthButtonStyle.outlined,
-                    icon: const Icon(Icons.email_outlined, size: 24),
-                    label: 'Continue with Email',
-                  ),
-                ],
-              )
+                      // Email Sign In
+                      _AuthButton(
+                        onPressed: _isLoading ? null : _signInWithEmail,
+                        isLoading: _isLoading,
+                        style: _AuthButtonStyle.outlined,
+                        icon: const Icon(Icons.email_outlined, size: 24),
+                        label: 'Continue with Email',
+                      ),
+                    ],
+                  )
                   .animate(key: const ValueKey('buttons'))
                   .fadeIn(delay: 600.ms)
                   .slideY(begin: 0.1, end: 0),
@@ -439,10 +442,7 @@ class _AuthButtonState extends State<_AuthButton> {
 
 /// Error banner with dismiss button
 class _ErrorBanner extends StatelessWidget {
-  const _ErrorBanner({
-    required this.message,
-    required this.onDismiss,
-  });
+  const _ErrorBanner({required this.message, required this.onDismiss});
 
   final String message;
   final VoidCallback onDismiss;
@@ -450,29 +450,33 @@ class _ErrorBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.error.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.error, width: 2),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.error_outline_rounded, color: AppColors.error),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              message,
-              style: const TextStyle(color: AppColors.error, fontSize: 14),
-            ),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.error.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.error, width: 2),
           ),
-          GestureDetector(
-            onTap: onDismiss,
-            child: const Icon(Icons.close_rounded, color: AppColors.error, size: 20),
+          child: Row(
+            children: [
+              const Icon(Icons.error_outline_rounded, color: AppColors.error),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  message,
+                  style: const TextStyle(color: AppColors.error, fontSize: 14),
+                ),
+              ),
+              GestureDetector(
+                onTap: onDismiss,
+                child: const Icon(
+                  Icons.close_rounded,
+                  color: AppColors.error,
+                  size: 20,
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
-    )
+        )
         .animate(key: ValueKey(message))
         .fadeIn(duration: 300.ms)
         .shake(hz: 3, duration: 400.ms);
@@ -481,10 +485,7 @@ class _ErrorBanner extends StatelessWidget {
 
 /// Legal text with tappable links
 class _LegalText extends StatelessWidget {
-  const _LegalText({
-    required this.onTermsTap,
-    required this.onPrivacyTap,
-  });
+  const _LegalText({required this.onTermsTap, required this.onPrivacyTap});
 
   final VoidCallback onTermsTap;
   final VoidCallback onPrivacyTap;

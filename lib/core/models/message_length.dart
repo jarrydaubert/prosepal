@@ -5,19 +5,22 @@ enum MessageLength {
   brief(
     label: 'Brief',
     emoji: '⚡',
-    prompt: '1-2 sentences maximum - concise, impactful, gets straight to the point',
+    prompt:
+        '1-2 sentences maximum - concise, impactful, gets straight to the point',
     description: 'Short & sweet',
   ),
   standard(
     label: 'Standard',
     emoji: '✨',
-    prompt: '2-4 sentences - balanced length with room to express the sentiment fully',
+    prompt:
+        '2-4 sentences - balanced length with room to express the sentiment fully',
     description: 'Just right',
   ),
   detailed(
     label: 'Detailed',
     emoji: '💝',
-    prompt: '4-6 sentences - longer format with space for personal details and deeper expression',
+    prompt:
+        '4-6 sentences - longer format with space for personal details and deeper expression',
     description: 'Longer & personal',
   );
 

@@ -151,9 +151,13 @@ void main() {
 
     test('deletes specific item by id', () async {
       // Bug: Delete removes wrong item or crashes
-      await service.saveGeneration(createTestResult(occasion: Occasion.birthday));
+      await service.saveGeneration(
+        createTestResult(occasion: Occasion.birthday),
+      );
       await Future.delayed(const Duration(milliseconds: 5));
-      await service.saveGeneration(createTestResult(occasion: Occasion.wedding));
+      await service.saveGeneration(
+        createTestResult(occasion: Occasion.wedding),
+      );
 
       var history = service.getHistory();
       expect(history.length, equals(2)); // Verify both saved
@@ -164,7 +168,10 @@ void main() {
       history = service.getHistory();
 
       expect(history.length, equals(1));
-      expect(history[0].result.occasion, equals(Occasion.birthday)); // Oldest remains
+      expect(
+        history[0].result.occasion,
+        equals(Occasion.birthday),
+      ); // Oldest remains
     });
 
     test('delete non-existent id does not crash', () async {

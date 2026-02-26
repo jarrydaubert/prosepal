@@ -20,8 +20,7 @@ class _LockScreenState extends State<LockScreen> {
   String? _errorMessage;
   int _failedAttempts = 0;
 
-  bool get _reduceMotion =>
-      MediaQuery.of(context).disableAnimations;
+  bool get _reduceMotion => MediaQuery.of(context).disableAnimations;
 
   @override
   void initState() {

@@ -13,7 +13,7 @@ class OccasionGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final reduceMotion = MediaQuery.of(context).disableAnimations;
-    
+
     return SliverGrid(
       gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
         maxCrossAxisExtent: 200,
@@ -28,10 +28,10 @@ class OccasionGrid extends StatelessWidget {
           occasion: occasion,
           onTap: () => onOccasionSelected(occasion),
         );
-        
+
         // Skip staggered animations if user prefers reduced motion
         if (reduceMotion) return tile;
-        
+
         return tile
             .animate(key: ValueKey('occasion_anim_$index'))
             .fadeIn(
@@ -55,11 +55,7 @@ class OccasionGrid extends StatelessWidget {
 // =============================================================================
 
 class _OccasionTile extends StatefulWidget {
-  const _OccasionTile({
-    super.key,
-    required this.occasion,
-    required this.onTap,
-  });
+  const _OccasionTile({super.key, required this.occasion, required this.onTap});
 
   final Occasion occasion;
   final VoidCallback onTap;
@@ -80,9 +76,10 @@ class _OccasionTileState extends State<_OccasionTile>
       vsync: this,
       duration: const Duration(milliseconds: 100),
     );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.95).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 0.95,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
   @override
@@ -106,13 +103,12 @@ class _OccasionTileState extends State<_OccasionTile>
     return Semantics(
       label: '${widget.occasion.label} occasion',
       button: true,
-      hint: 'Double tap to create a ${widget.occasion.label.toLowerCase()} message',
+      hint:
+          'Double tap to create a ${widget.occasion.label.toLowerCase()} message',
       child: AnimatedBuilder(
         animation: _scaleAnimation,
-        builder: (context, child) => Transform.scale(
-          scale: _scaleAnimation.value,
-          child: child,
-        ),
+        builder: (context, child) =>
+            Transform.scale(scale: _scaleAnimation.value, child: child),
         child: GestureDetector(
           onTapDown: _handleTapDown,
           onTapUp: _handleTapUp,
@@ -121,10 +117,7 @@ class _OccasionTileState extends State<_OccasionTile>
             decoration: BoxDecoration(
               color: widget.occasion.backgroundColor,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: widget.occasion.borderColor,
-                width: 3,
-              ),
+              border: Border.all(color: widget.occasion.borderColor, width: 3),
             ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
