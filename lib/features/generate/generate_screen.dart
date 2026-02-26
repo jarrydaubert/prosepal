@@ -261,6 +261,9 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
   }
 
   Future<void> _generate(BuildContext context) async {
+    // Prevent concurrent generation (race condition from rapid taps)
+    if (ref.read(isGeneratingProvider)) return;
+
     // Dismiss keyboard before starting generation
     FocusScope.of(context).unfocus();
 
