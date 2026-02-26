@@ -82,8 +82,9 @@
 **File:** `auth_service.dart`  
 **Docs:** https://supabase.com/docs/guides/auth/social-login/auth-google
 
-### Implementation Note
-Google Sign In uses **Supabase OAuth flow** which opens a browser/webview to Google's login page, then redirects back to the app. This is NOT the native `google_sign_in` SDK (Google-branded popup).
+### Current Implementation (OAuth - Browser Flow)
+
+Google Sign In currently uses **Supabase OAuth flow** which opens a browser/webview to Google's login page, then redirects back to the app.
 
 **Current flow:**
 1. User taps "Sign in with Google"
@@ -95,9 +96,45 @@ Google Sign In uses **Supabase OAuth flow** which opens a browser/webview to Goo
 
 **SDK method:** `auth.signInWithOAuth()` - Listed in Supabase Auth section above
 
-**Note:** The `google_sign_in` package in pubspec.yaml is unused and can be removed.
-
 **Testing:** Covered via Supabase `signInWithGoogle()` mock in `MockAuthService`
+
+### Best Practice: Native Google Sign In
+
+> ⚠️ **Recommendation:** Supabase docs support BOTH approaches, but **native `google_sign_in`** provides better UX.
+
+| Approach | UX | Setup Complexity | Package |
+|----------|----|-----------------:|---------|
+| **OAuth (current)** | Opens browser | Simple | None (built into Supabase) |
+| **Native (recommended)** | Google popup in-app | More setup | `google_sign_in` |
+
+**Native implementation (from Supabase docs):**
+```dart
+import 'package:google_sign_in/google_sign_in.dart';
+
+Future<void> signInWithGoogle() async {
+  final googleSignIn = GoogleSignIn(
+    scopes: ['email', 'profile'],
+  );
+  final googleUser = await googleSignIn.signIn();
+  final googleAuth = await googleUser!.authentication;
+  final idToken = googleAuth.idToken;
+
+  if (idToken == null) throw Exception('No ID Token found.');
+
+  await supabase.auth.signInWithIdToken(
+    provider: OAuthProvider.google,
+    idToken: idToken,
+  );
+}
+```
+
+**Benefits of native approach:**
+- Better UX (Google popup within app, not browser redirect)
+- Consistent with Apple Sign In (both use native SDKs)
+- One Tap / automatic sign-in support
+- No context switch to browser
+
+**Note:** The `google_sign_in: ^7.2.0` package is already in pubspec.yaml but unused. Migration would use this existing dependency.
 
 ---
 
