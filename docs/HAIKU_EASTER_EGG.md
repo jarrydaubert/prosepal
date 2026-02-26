@@ -12,29 +12,10 @@ A hidden haiku generator accessible by tapping the username 5 times in Settings.
 
 **Action:** Tap username 5 times within 2 seconds
 
-**Feedback:**
+**Behavior:**
 - Taps 1-4: Subtle scale animation (0.98 → 1.0)
-- Tap 5: Brief haptic + navigate to HaikuScreen
-
-**Code pattern:**
-```dart
-int _tapCount = 0;
-DateTime? _lastTap;
-
-void _onUsernameTap() {
-  final now = DateTime.now();
-  if (_lastTap == null || now.difference(_lastTap!) > Duration(seconds: 2)) {
-    _tapCount = 0;
-  }
-  _lastTap = now;
-  _tapCount++;
-  
-  if (_tapCount >= 5) {
-    _tapCount = 0;
-    context.push('/haiku');
-  }
-}
-```
+- Tap 5 (Pro): Brief haptic + navigate to HaikuScreen
+- Tap 5 (No Pro): Nothing happens - no indication of hidden feature
 
 ---
 
@@ -56,14 +37,14 @@ void _onUsernameTap() {
 │                                     │
 ├─────────────────────────────────────┤
 │                                     │
-│     「秋の月光—                     │  Muted text
-│      虫が静かに                     │
-│      栗の中へ掘る」                 │
+│     秋の月光—                       │  Muted text
+│     虫が静かに                      │
+│     栗の中へ掘る                    │
 │                        ⎘ Copy      │
 │                                     │
 ├─────────────────────────────────────┤
 │                                     │
-│        [ ✨ New Haiku ]             │  (Coral accent button)
+│      [ ✨ Generate Haiku ]          │  (Coral accent button)
 │                                     │
 └─────────────────────────────────────┘
 ```
@@ -72,9 +53,9 @@ No usage indicator - clean, minimal interface.
 
 ### States
 
-1. **Initial** - Empty state with generate prompt
-2. **Loading** - Zen animation (ripple or breathing circle)
-3. **Result** - Haiku displayed with copy buttons
+1. **Initial** - Cherry blossom icon + "Generate Haiku" button
+2. **Loading** - Zen breathing circle animation
+3. **Result** - Haiku displayed with copy buttons, "New Haiku" button
 4. **Error** - Gentle error message, retry button
 
 ---
@@ -87,14 +68,13 @@ No usage indicator - clean, minimal interface.
 |-----------|-------------|
 | `HaikuScreen` | Main secret screen |
 | `HaikuCard` | Displays haiku with copy button |
-| `ZenLoadingIndicator` | Custom loading animation |
+| `ZenLoadingIndicator` | Custom breathing circle animation |
 
 ### Reused Components
 
 | Component | Usage |
 |-----------|-------|
 | `AppButton` | Generate button |
-| `UsageIndicator` | Show remaining Pro generations |
 
 ---
 
@@ -115,17 +95,18 @@ static const haikuGold = Color(0xFFD4AF37);         // Accent gold for icon
 ### Typography
 
 ```dart
-// English haiku - elegant serif feel
+// English haiku - elegant serif feel (system fonts)
 static const haikuEnglish = TextStyle(
-  fontFamily: 'Georgia',  // Or system serif
+  fontFamilyFallback: ['Georgia', 'Times New Roman', 'serif'],
   fontSize: 20,
   fontStyle: FontStyle.italic,
   height: 1.8,
   color: haikuText,
 );
 
-// Japanese - clean, readable
+// Japanese - ensure CJK support
 static const haikuJapanese = TextStyle(
+  fontFamilyFallback: ['Hiragino Sans', 'Noto Sans JP', 'sans-serif'],
   fontSize: 18,
   height: 1.8,
   color: haikuTextSecondary,
@@ -136,15 +117,26 @@ static const haikuJapanese = TextStyle(
 
 **Loading:** Breathing circle animation
 ```dart
-// Circle scales 1.0 → 1.1 → 1.0 over 2 seconds
-// Opacity pulses 0.6 → 1.0 → 0.6
+// Use AnimationController with TweenSequence
+AnimationController(duration: Duration(seconds: 2), vsync: this)
+  ..repeat(reverse: true);
+
+// Scale: 1.0 → 1.1 → 1.0
+// Opacity: 0.6 → 1.0 → 0.6
 ```
 
 **Reveal:** Fade in with slight upward movement
 ```dart
-// Duration: 600ms
-// Curve: easeOutCubic
-// Translation: 20px → 0px
+SlideTransition(
+  position: Tween<Offset>(
+    begin: Offset(0, 0.1),
+    end: Offset.zero,
+  ).animate(CurvedAnimation(
+    parent: controller,
+    curve: Curves.easeOutCubic,
+  )),
+  child: FadeTransition(opacity: controller, child: content),
+)
 ```
 
 ---
@@ -176,13 +168,20 @@ Respond in this exact JSON format:
 
 Use same model as main generation (Gemini 2.5 Flash via Firebase AI).
 
-### Response Parsing
+### Response Model
 
 ```dart
-class HaikuResult {
-  final String english;
-  final String japanese;
-  final String season;
+// lib/core/models/haiku_result.dart
+@freezed
+abstract class HaikuResult with _$HaikuResult {
+  const factory HaikuResult({
+    required String english,
+    required String japanese,
+    required String season,
+  }) = _HaikuResult;
+
+  factory HaikuResult.fromJson(Map<String, dynamic> json) =>
+      _$HaikuResultFromJson(json);
 }
 ```
 
@@ -193,12 +192,15 @@ class HaikuResult {
 ### Access Control
 
 - **Check:** `subscriptionService.hasPro` before allowing navigation
-- **No Pro = Nothing happens** - 5 taps just do nothing, no indication of hidden feature
+- **No Pro = Nothing happens** - 5 taps do nothing, no indication of hidden feature
 - **Usage:** Counts against Pro monthly limit (500) but not displayed on screen
 
-### Trigger Logic
+### Trigger Logic (in settings_screen.dart)
 
 ```dart
+int _tapCount = 0;
+DateTime? _lastTap;
+
 void _onUsernameTap() {
   final now = DateTime.now();
   if (_lastTap == null || now.difference(_lastTap!) > Duration(seconds: 2)) {
@@ -207,12 +209,27 @@ void _onUsernameTap() {
   _lastTap = now;
   _tapCount++;
   
-  // Only navigate if Pro subscriber
+  // Only navigate if Pro subscriber - silent fail otherwise
   if (_tapCount >= 5 && subscriptionService.hasPro) {
     _tapCount = 0;
+    HapticFeedback.mediumImpact();
     context.push('/haiku');
   }
 }
+```
+
+### Route Protection (in router.dart)
+
+```dart
+GoRoute(
+  path: '/haiku',
+  redirect: (context, state) {
+    final hasPro = ref.read(subscriptionProvider).hasPro;
+    return hasPro ? null : '/home'; // Silent redirect if not Pro
+  },
+  builder: (context, state) => const HaikuScreen(),
+),
+```
 
 ---
 
@@ -223,18 +240,48 @@ void _onUsernameTap() {
 | File | Purpose |
 |------|---------|
 | `lib/features/settings/haiku_screen.dart` | Main screen |
+| `lib/core/models/haiku_result.dart` | Freezed response model |
 | `lib/shared/components/haiku_card.dart` | Haiku display card |
 | `lib/shared/components/zen_loading.dart` | Loading animation |
-| `test/widgets/screens/haiku_screen_test.dart` | Widget tests |
+| `test/features/settings/haiku_screen_test.dart` | Widget tests |
+
+### Generated Files (after build_runner)
+
+| File | Purpose |
+|------|---------|
+| `lib/core/models/haiku_result.freezed.dart` | Freezed generated |
+| `lib/core/models/haiku_result.g.dart` | JSON serialization |
 
 ### Modified Files
 
 | File | Changes |
 |------|---------|
 | `lib/features/settings/settings_screen.dart` | Add tap counter to username |
-| `lib/app/router.dart` | Add `/haiku` route |
+| `lib/app/router.dart` | Add `/haiku` route with Pro guard |
 | `lib/core/services/ai_service.dart` | Add `generateHaiku()` method |
-| `lib/core/services/ai_service_test.dart` | Add haiku tests |
+| `test/services/ai_service_test.dart` | Add haiku generation tests |
+
+---
+
+## State Management
+
+```dart
+// Simple StateNotifier for haiku generation
+final haikuProvider = StateNotifierProvider<HaikuNotifier, AsyncValue<HaikuResult?>>(
+  (ref) => HaikuNotifier(ref.read(aiServiceProvider)),
+);
+
+class HaikuNotifier extends StateNotifier<AsyncValue<HaikuResult?>> {
+  HaikuNotifier(this._aiService) : super(const AsyncValue.data(null));
+  
+  final AiService _aiService;
+  
+  Future<void> generate() async {
+    state = const AsyncValue.loading();
+    state = await AsyncValue.guard(() => _aiService.generateHaiku());
+  }
+}
+```
 
 ---
 
@@ -247,22 +294,22 @@ Analytics.logEvent('easter_egg_discovered', {'type': 'haiku'});
 // Track haiku generation
 Analytics.logEvent('haiku_generated', {'season': result.season});
 
-// Track copy action
-Analytics.logEvent('haiku_copied', {'language': 'english' | 'japanese'});
+// Track copy action  
+Analytics.logEvent('haiku_copied', {'language': 'english'}); // or 'japanese'
 ```
 
 ---
 
 ## Copy Functionality
 
-### English Copy
+### English Copy (no formatting marks)
 ```
 Autumn moonlight—
 a worm digs silently
 into the chestnut.
 ```
 
-### Japanese Copy
+### Japanese Copy (no brackets)
 ```
 秋の月光—
 虫が静かに
@@ -271,7 +318,7 @@ into the chestnut.
 
 ### Feedback
 - Haptic feedback on copy
-- Brief "Copied!" snackbar or checkmark animation
+- Brief "Copied!" snackbar (1.5s auto-dismiss)
 
 ---
 
@@ -279,10 +326,31 @@ into the chestnut.
 
 | Error | User Message |
 |-------|--------------|
-| Network | "The muse needs internet connection" |
+| No connection | "Connect to the internet to summon the muse" |
 | Rate limit | "Too many haikus. Take a breath." |
 | AI error | "The muse is resting. Try again." |
-| No Pro | Upgrade prompt (see above) |
+| Malformed JSON | "The muse speaks in riddles. Try again." |
+
+```dart
+// In ai_service.dart generateHaiku()
+try {
+  final json = jsonDecode(response);
+  return HaikuResult.fromJson(json);
+} on FormatException catch (e) {
+  throw AiException(
+    type: AiErrorType.unknown,
+    userMessage: 'The muse speaks in riddles. Try again.',
+  );
+}
+```
+
+---
+
+## Accessibility
+
+- **Semantic labels:** Copy buttons need `Semantics(label: 'Copy English haiku')`
+- **Screen reader:** Haiku text should be readable as prose
+- **Focus order:** Generate button → English haiku → Copy → Japanese haiku → Copy
 
 ---
 
@@ -290,16 +358,18 @@ into the chestnut.
 
 ### Unit Tests
 - [ ] `generateHaiku()` returns valid HaikuResult
-- [ ] Haiku prompt includes proper format
+- [ ] Haiku prompt includes proper JSON format instruction
 - [ ] Error handling for malformed AI response
+- [ ] Error handling for network failure
 
 ### Widget Tests
 - [ ] Tap counter resets after 2 seconds
-- [ ] 5 taps navigates to HaikuScreen
-- [ ] Non-Pro sees upgrade prompt
+- [ ] 5 taps with Pro navigates to HaikuScreen
+- [ ] 5 taps without Pro does nothing (silent)
 - [ ] Copy button copies correct text
 - [ ] Loading state shows zen animation
 - [ ] Error state shows retry button
+- [ ] Accessibility labels present
 
 ### Integration Tests
 - [ ] Full flow: tap 5x → generate → copy
@@ -320,21 +390,23 @@ into the chestnut.
 
 ## Implementation Order
 
-1. Add route to router.dart
-2. Create HaikuScreen with static placeholder
-3. Add tap counter to settings_screen.dart
-4. Create AI generateHaiku() method
-5. Wire up generation to screen
-6. Add copy functionality
-7. Add zen loading animation
-8. Add error handling
-9. Write tests
-10. Polish animations
+1. Create `HaikuResult` model + run build_runner
+2. Add route to router.dart with Pro guard
+3. Create basic HaikuScreen with static placeholder
+4. Add tap counter to settings_screen.dart
+5. Add `generateHaiku()` to ai_service.dart
+6. Create `haikuProvider` StateNotifier
+7. Wire up generation to screen
+8. Add HaikuCard with copy functionality
+9. Add ZenLoadingIndicator animation
+10. Add error handling
+11. Write tests
+12. Polish animations + accessibility
 
 ---
 
 ## Notes
 
-- Keep it minimal - this is an easter egg, not a full feature
-- Don't advertise it anywhere - let users discover it
-- Consider adding a small "🌸" indicator after first discovery (optional)
+- Keep it minimal - easter egg, not a full feature
+- Don't advertise anywhere - let users discover it
+- Silent fail for non-Pro maintains secrecy

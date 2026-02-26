@@ -110,9 +110,9 @@
 | Review notes | App Review | ✅ | Step-by-step testing instructions |
 | RevenueCat webhooks | App Information | ✅ | Production + Sandbox URLs configured |
 | Copyright | Version 1.0 | ✅ | 2026 |
-| Screenshots | Version 1.0 | ❌ | 0 of 10 - NEED TO UPLOAD |
+| Screenshots | Version 1.0 | ✅ | 5 screenshots uploaded (6.5", 6.7", iPad) |
 | Build | Version 1.0 | ❌ | Not uploaded - run `./scripts/build_ios.sh` |
-| IAPs linked to version | Version 1.0 | ❌ | Click "Select In-App Purchases or Subscriptions" |
+| IAPs linked to version | Version 1.0 | ✅ | All 3 subscriptions linked |
 | Submit for Review | Version 1.0 | ⏳ | After above items complete |
 
 **Subscriptions (Monetization > Subscriptions):**
@@ -126,9 +126,10 @@
 | Pro Monthly (`com.prosepal.pro.monthly`) | ✅ | 1 month, matches RevenueCat |
 | Pro Yearly (`com.prosepal.pro.yearly`) | ✅ | 1 year, matches RevenueCat |
 | Availability | ✅ | All countries |
-| IAP Review Screenshots | ⚠️ | **OLD PAYWALL DESIGN - update before submission** |
+| IAP Review Screenshots | ✅ | Updated with new paywall design |
 | Localization description | ✅ | Says "500 messages per month" - correct (Pro limit is 500/month) |
-| Family Sharing | ⚠️ | Currently OFF - consider enabling |
+| Subscription Group Display Name | ✅ | Changed to "Pro" (was "Pro Weekly") |
+| Family Sharing | ➖ | OFF - enable post-revenue |
 
 ### Google Play Console ⏳ IN PROGRESS
 
@@ -144,10 +145,10 @@
 | Short description | ✅ | "AI greeting card messages. Birthday, wedding, sympathy & more" (61/80) |
 | Full description | ✅ | Complete with features, "500 generations per month" |
 | App icon | ✅ | 512x512 uploaded |
-| Feature graphic | ❌ | **Missing - REQUIRED (1024x500 px)** |
-| Phone screenshots | ❌ | **Missing - REQUIRED (2-8 images)** |
-| 7-inch tablet screenshots | ❌ | **Missing - REQUIRED** |
-| 10-inch tablet screenshots | ❌ | **Missing - REQUIRED** |
+| Feature graphic | ✅ | 1024x500 uploaded |
+| Phone screenshots | ✅ | 5 screenshots uploaded |
+| 7-inch tablet screenshots | ✅ | 5 screenshots uploaded |
+| 10-inch tablet screenshots | ✅ | 5 screenshots uploaded |
 
 **App Content (Policy > App content):**
 
