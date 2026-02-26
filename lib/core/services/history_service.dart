@@ -1,6 +1,5 @@
 import 'dart:convert';
-
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:uuid/uuid.dart';
 
 import '../models/models.dart';
@@ -53,9 +52,14 @@ class SavedGeneration {
 /// - Migration to hive/sqflite for larger data
 /// - Export/share functionality
 class HistoryService {
-  HistoryService(this._prefs);
+  /// Constructor - no longer requires SharedPreferences (uses secure storage)
+  HistoryService();
 
-  final SharedPreferences _prefs;
+  /// Secure storage for history (encrypts personal details in saved messages)
+  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage(
+    aOptions: AndroidOptions(encryptedSharedPreferences: true),
+  );
+
   final _uuid = const Uuid();
   static const _key = 'generation_history';
   static const _versionKey = 'generation_history_version';
@@ -69,7 +73,7 @@ class HistoryService {
   ///
   /// Returns empty list on parse failure and clears corrupted data.
   Future<List<SavedGeneration>> getHistory() async {
-    final jsonString = _prefs.getString(_key);
+    final jsonString = await _secureStorage.read(key: _key);
     if (jsonString == null || jsonString.isEmpty) {
       return [];
     }
@@ -82,7 +86,7 @@ class HistoryService {
     } on Exception catch (e) {
       Log.error('Failed to load history - clearing corrupted data', e);
       // Clear corrupted data to allow recovery
-      await _prefs.remove(_key);
+      await _secureStorage.delete(key: _key);
       return [];
     }
   }
@@ -116,12 +120,12 @@ class HistoryService {
 
   /// Clear all history
   Future<void> clearHistory() async {
-    await _prefs.remove(_key);
+    await _secureStorage.delete(key: _key);
     Log.info('History cleared');
   }
 
   Future<void> _saveHistory(List<SavedGeneration> history) async {
     final jsonList = history.map((item) => item.toJson()).toList();
-    await _prefs.setString(_key, jsonEncode(jsonList));
+    await _secureStorage.write(key: _key, value: jsonEncode(jsonList));
   }
 }

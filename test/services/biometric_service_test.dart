@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:prosepal/core/services/biometric_service.dart';
 
 /// BiometricService Unit Tests
@@ -14,7 +14,7 @@ void main() {
 
   group('BiometricService Singleton', () {
     setUp(() async {
-      SharedPreferences.setMockInitialValues({});
+      FlutterSecureStorage.setMockInitialValues({});
     });
 
     test('returns singleton instance', () {
