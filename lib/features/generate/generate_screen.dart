@@ -277,6 +277,7 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
     try {
       final aiService = ref.read(aiServiceProvider);
       final usageService = ref.read(usageServiceProvider);
+      final isPro = ref.read(isProProvider);
 
       final result = await aiService.generateMessages(
         occasion: occasion,
@@ -287,7 +288,7 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
         personalDetails: personalDetails.isNotEmpty ? personalDetails : null,
       );
 
-      await usageService.recordGeneration();
+      await usageService.recordGeneration(isPro: isPro);
 
       // Force Riverpod to re-read usage after recording
       ref.invalidate(remainingGenerationsProvider);
