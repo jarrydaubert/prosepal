@@ -145,6 +145,8 @@ lib/
     │
     └── theme/                    # Design tokens
         ├── app_colors.dart       # Brand colors, semantic colors
+        ├── app_durations.dart    # Animation timing tokens
+        ├── app_shadows.dart      # Elevation/shadow tokens
         ├── app_spacing.dart      # 8px grid system
         ├── app_theme.dart        # MaterialApp theme
         └── app_typography.dart   # Nunito font scale
