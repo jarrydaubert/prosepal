@@ -278,17 +278,12 @@ class SupabaseAuthProvider implements ISupabaseAuthProvider {
   /// Caller should handle failure gracefully and sign out regardless.
   @override
   Future<void> deleteUser() async {
-    final accessToken = _auth.currentSession?.accessToken;
-    if (accessToken == null) {
+    if (_auth.currentSession == null) {
       throw const AuthException('No active session for user deletion');
     }
 
-    // Pass access token for server-side verification
-    // Edge function validates token and extracts user ID
-    await _functions.invoke(
-      'delete-user',
-      headers: {'Authorization': 'Bearer $accessToken'},
-    );
+    // Supabase client auto-adds Authorization header from current session
+    await _functions.invoke('delete-user');
   }
 
   /// Exchange Apple authorization code for refresh token
@@ -297,14 +292,13 @@ class SupabaseAuthProvider implements ISupabaseAuthProvider {
   /// Required for Apple compliance - tokens must be revoked on account delete.
   @override
   Future<void> exchangeAppleToken(String authorizationCode) async {
-    final accessToken = _auth.currentSession?.accessToken;
-    if (accessToken == null) {
+    if (_auth.currentSession == null) {
       throw const AuthException('No active session for Apple token exchange');
     }
 
+    // Supabase client auto-adds Authorization header from current session
     await _functions.invoke(
       'exchange-apple-token',
-      headers: {'Authorization': 'Bearer $accessToken'},
       body: {'authorization_code': authorizationCode},
     );
   }
