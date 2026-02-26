@@ -323,6 +323,9 @@ class AiService {
   }
 
   /// Create a GenerativeModel with the given model name
+  ///
+  /// Note: ThinkingConfig removed - Gemini 3 uses dynamic thinking by default.
+  /// JSON schema + ThinkingConfig combination can cause SDK parsing issues.
   GenerativeModel _createModel(String modelName) {
     return FirebaseAI.googleAI().generativeModel(
       model: modelName,
@@ -425,6 +428,7 @@ class AiService {
         'candidateCount': response.candidates.length,
         'promptTokens': usage?.promptTokenCount,
         'responseTokens': usage?.candidatesTokenCount,
+        'thinkingTokens': usage?.thoughtsTokenCount,
         'totalTokens': usage?.totalTokenCount,
         'promptBlockReason': response.promptFeedback?.blockReason?.name,
         'safetyRatings':

@@ -11,7 +11,6 @@
 | Item | Action |
 |------|--------|
 | Supabase leaked password protection | Enable toggle in Dashboard > Auth (requires paid plan) |
-| Review Firebase Remote Config | Verify `ai_model` and `ai_model_fallback` match code defaults (gemini-3-flash-preview, gemini-2.5-flash). Update if you want v1.0.0 users on Gemini 3. |
 
 ---
 
@@ -20,6 +19,7 @@
 | Item | Frequency | Next Due | Action |
 |------|-----------|----------|--------|
 | Apple OAuth secret | 6 months | ~July 2026 | Regenerate in Apple Developer Console, update in Supabase Auth > Apple provider. **No notification - app breaks silently!** |
+| **Cost vs Usage Analysis** | Monthly | Feb 2026 | Review Firebase billing vs active users. Track: avg generations/user, % super users (>300/mo), cost/user. Alert if >30% super users or cost/user exceeds $3/mo. Break-even at ~42% super users @ $29.99/yr. |
 
 ---
 
@@ -43,7 +43,6 @@
 
 | Issue | Location | Fix |
 |-------|----------|-----|
-| Add paragraph breaks for longer messages | `ai_config.dart` | Normal/detailed length messages display as one block. Update AI prompt to instruct paragraph breaks (2-3 paragraphs for detailed). If inconsistent, consider structured `paragraphs: [...]` array in JSON schema |
 | Paywall sync button sizing consistency | `paywall_sheet.dart:964-1008` | Google/Email buttons use 14pt font, Apple official widget uses ~17pt. Increase custom `_AuthButton` compact font from 14 to 16 to match Apple's visual weight |
 | Password reset deep link UX | `router.dart:121` | Create dedicated `/auth/reset-password` screen that extracts token from deep link instead of redirecting to generic `/auth` |
 | Auto-purchase race after email auth | `email_auth_screen.dart:238-241` | Navigate-then-purchase pattern may fail; show dialog before navigation or use deferred callback |
@@ -144,15 +143,25 @@
 
 ---
 
-## v1.1 Features
+## v1.1 Features (Quick Wins)
 
-- Regeneration option ("Generate More")
-- History multi-select and batch delete
-- Feedback (thumbs up/down per message)
-- Occasion search/filter
-- More tones (Sarcastic, Nostalgic, Poetic)
-- Multi-language (Spanish, French)
-- Birthday reminders + push notifications
+| Feature | Notes |
+|---------|-------|
+| Regeneration ("Generate More") | #1 user request - "give me 3 more" button on results |
+| More tones | Sarcastic, Nostalgic, Poetic - just prompt tweaks |
+| History multi-select + batch delete | QoL improvement, reduce churn friction |
+| Occasion search/filter | Needed if 15+ occasions |
+
+---
+
+## v1.2 Features (Infrastructure)
+
+| Feature | Notes |
+|---------|-------|
+| Feedback (thumbs up/down) | Needs backend table + analytics pipeline for prompt improvement |
+| Multi-language (Spanish, French) | Full localization pass, .arb files |
+| Birthday reminders + push | Notification infra, permissions, local scheduling |
+| **Font styling for results** | Display messages in elegant fonts (Script, Handwritten, Classic, System). Font picker button next to copy/share. Copy = plain text, Share = option to share as styled image with font baked in. Fonts: `Dancing Script` (script), `Caveat` (handwritten), `Libre Baskerville` (serif), System (default). |
 
 ---
 
@@ -258,4 +267,5 @@ Target: Zero analyzer warnings for squeaky clean codebase.
 |------------|-----------|
 | B2B Corporate Programs | `docs/EXPANSION_STRATEGY.md` |
 | Retail/Brand Partnerships | `docs/EXPANSION_STRATEGY.md` |
+| Server-side AI generation | Move Gemini calls to Supabase Edge Function for: centralized logging, response caching, A/B test prompts without app updates, additional rate limiting. Current Firebase AI SDK is secure and fast - this is a v2 optimization. |
 | Platform Cloning | `docs/CLONING_PLAYBOOK.md` |
