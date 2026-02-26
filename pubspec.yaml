@@ -96,18 +96,13 @@ patrol:
     bundle_id: com.prosepal.prosepal
 
 # Native splash screen configuration
-# Color #454650 (RGB 69,70,80) - medium gray
+# Dark charcoal background - matches AppColors.splash
 flutter_native_splash:
-  color: "#454650"
-  image: assets/images/logo.png
-  color_dark: "#454650"
-  image_dark: assets/images/logo.png
+  color: "#2D2D37"
+  color_dark: "#2D2D37"
 
-  # Android 12+ - use playstore icon which works better with adaptive splash
   android_12:
-    color: "#454650"
-    image: assets/images/logo_android.png
-    color_dark: "#454650"
-    image_dark: assets/images/logo_android.png
+    color: "#2D2D37"
+    color_dark: "#2D2D37"
 
   web: false
