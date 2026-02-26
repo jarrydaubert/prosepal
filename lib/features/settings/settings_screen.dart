@@ -15,6 +15,14 @@ import '../../core/services/log_service.dart';
 import '../../shared/components/components.dart';
 import '../../shared/theme/app_colors.dart';
 
+// ===========================================================================
+// External URLs - centralized for easy updates
+// ===========================================================================
+const _supportUrl = 'https://www.prosepal.app/support.html';
+const _appleSubscriptionsUrl = 'https://apps.apple.com/account/subscriptions';
+const _googleSubscriptionsUrl =
+    'https://play.google.com/store/account/subscriptions';
+
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
@@ -159,10 +167,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     // Platform-specific subscription management URLs
     final String url;
     if (Platform.isIOS) {
-      url = 'https://apps.apple.com/account/subscriptions';
+      url = _appleSubscriptionsUrl;
     } else {
-      // Android Play Store subscriptions
-      url = 'https://play.google.com/store/account/subscriptions';
+      url = _googleSubscriptionsUrl;
     }
 
     final uri = Uri.parse(url);
@@ -552,7 +559,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
             title: 'Help & FAQ',
             onTap: () async {
-              final uri = Uri.parse('https://www.prosepal.app/support.html');
+              final uri = Uri.parse(_supportUrl);
               if (await canLaunchUrl(uri)) {
                 await launchUrl(uri, mode: LaunchMode.externalApplication);
               }
