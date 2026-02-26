@@ -12,7 +12,12 @@
           "package_name": "com.prosepal.prosepal"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "530026851718-n8u4cf1843qkj8dfihkl496gd5elbmik.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyAg-0XbJo0qE6cCc7V1nfnTLlez_zqjzZE"
@@ -20,7 +25,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "530026851718-n8u4cf1843qkj8dfihkl496gd5elbmik.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "530026851718-616k0qdnqhs2ffiu4qmp9h332joq6nq8.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.prosepal.prosepal"
+              }
+            }
+          ]
         }
       }
     }
