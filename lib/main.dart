@@ -9,7 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:screen_secure/screen_secure.dart';
+
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -24,7 +24,7 @@ import 'core/services/google_auth_provider.dart';
 import 'core/services/init_service.dart';
 import 'core/services/log_service.dart';
 import 'core/services/review_service.dart';
-import 'core/services/device_security_service.dart';
+
 import 'core/services/remote_config_service.dart';
 import 'core/services/subscription_service.dart';
 import 'core/services/supabase_auth_provider.dart';
@@ -100,7 +100,6 @@ Future<void> _initializeApp() async {
     }
 
     // Initialize Remote Config (for AI model, force update, feature flags)
-    // Also handles force update check in release mode
     if (!kDebugMode) {
       try {
         final remoteConfig = RemoteConfigService.instance;
@@ -116,19 +115,6 @@ Future<void> _initializeApp() async {
       } catch (e) {
         Log.warning('Remote Config init failed', {'error': '$e'});
         // Continue - fail open
-      }
-
-      // Check device security (root/jailbreak detection)
-      try {
-        final securityService = DeviceSecurityService();
-        final status = await securityService.checkDeviceSecurity();
-        if (status == DeviceSecurityStatus.compromised) {
-          // Log for analytics but don't block (soft enforcement)
-          // Can be changed to hard block if abuse is detected
-          Log.warning('Compromised device detected - allowing with warning');
-        }
-      } catch (e) {
-        Log.warning('Device security check failed', {'error': '$e'});
       }
     }
   }
@@ -179,9 +165,10 @@ Future<void> _initializeApp() async {
   }
 
   // Verify edge functions are deployed (non-blocking, just logs warnings)
-  if (init.isSupabaseReady) {
-    unawaited(SupabaseAuthProvider().verifyEdgeFunctions());
-  }
+  // Disabled: causing auth_unavailable errors in release builds
+  // if (init.isSupabaseReady) {
+  //   unawaited(SupabaseAuthProvider().verifyEdgeFunctions());
+  // }
 
   // Initialize RevenueCat (non-critical - app works without subscriptions)
   final subscriptionService = SubscriptionService();
@@ -193,16 +180,6 @@ Future<void> _initializeApp() async {
   } catch (e) {
     Log.error('RevenueCat initialization failed', e);
     init.revenueCatFailed('$e');
-  }
-
-  // Enable screenshot prevention in release builds
-  if (!kDebugMode) {
-    try {
-      await ScreenSecure.init(screenshotBlock: true, screenRecordBlock: true);
-      Log.info('Screen security enabled');
-    } catch (e) {
-      Log.warning('Screen security init failed', {'error': '$e'});
-    }
   }
 
   // Initialize SharedPreferences

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/config/preference_keys.dart';
+import '../../core/providers/providers.dart';
 import '../../core/services/log_service.dart';
 import '../../shared/theme/app_colors.dart';
 import '../../shared/theme/app_spacing.dart';
@@ -41,14 +43,14 @@ const _onboardingPages = [
   ),
 ];
 
-class OnboardingScreen extends StatefulWidget {
+class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
 
   @override
-  State<OnboardingScreen> createState() => _OnboardingScreenState();
+  ConsumerState<OnboardingScreen> createState() => _OnboardingScreenState();
 }
 
-class _OnboardingScreenState extends State<OnboardingScreen> {
+class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
 
@@ -73,9 +75,27 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     Log.info('Onboarding completed');
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(PreferenceKeys.hasCompletedOnboarding, true);
-    // Show paywall immediately to capture Day 0 conversions
-    // User can dismiss to try their 1 free message first
-    if (mounted) context.go('/paywall');
+
+    if (!mounted) return;
+
+    // Check if user already has Pro (e.g., from App Store restore on reinstall)
+    final hasPro = ref.read(isProProvider);
+    final isLoggedIn = ref.read(authServiceProvider).isLoggedIn;
+
+    if (hasPro && !isLoggedIn) {
+      // Has Pro but not signed in - prompt to claim subscription
+      Log.info('Onboarding: -> /auth?restore=true (has Pro, not signed in)');
+      context.go('/auth?restore=true&autorestore=true');
+    } else if (hasPro) {
+      // Has Pro and signed in - go home
+      Log.info('Onboarding: -> /home (has Pro, signed in)');
+      context.go('/home');
+    } else {
+      // No Pro - show paywall to capture Day 0 conversions
+      // User can dismiss to try their 1 free message first
+      Log.info('Onboarding: -> /paywall (no Pro)');
+      context.go('/paywall');
+    }
   }
 
   @override

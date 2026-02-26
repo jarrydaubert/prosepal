@@ -9,6 +9,9 @@
 | Item | Action |
 |------|--------|
 | Supabase leaked password protection | Enable toggle in Dashboard > Auth (requires paid plan) |
+| **Auth before subscribe** | `[Subscribe]` → if `!isLoggedIn` → `/auth?redirect=paywall` (no X) → then purchase |
+| **Auth before restore** | `[Restore]` → if `!isLoggedIn` → `/auth?redirect=paywall` (no X) → then restore |
+| **Anonymous free tier server check** | Add `checkDeviceFreeTierServerSide()` BEFORE generation in `generate_screen.dart` |
 
 ---
 
@@ -22,7 +25,10 @@
 
 ## CRITICAL
 
-*All CRITICAL items resolved*
+| Issue | Location | Fix |
+|-------|----------|-----|
+| Auth before upgrade (generate) | `generate_screen.dart:234` | All upgrade paths → `/auth?redirect=paywall` first |
+| Auth screen X button logic | `auth_screen.dart:210` | `redirectTo='paywall'` → `canDismiss=false` |
 
 ---
 
@@ -35,12 +41,9 @@
 | Auth providers 0% coverage | `*_auth_provider.dart` | 86 lines untested auth flow |
 | Reauth service 1% coverage | `reauth_service.dart` | Security-critical, nearly untested |
 | Fire-and-forget sync loses data | `usage_service.dart:309-310` | Add retry queue, persist pending syncs |
-
-| OAuth re-auth weak | `reauth_service.dart:133-140` | Require password/re-OAuth for sensitive ops |
-| ~~No root/jailbreak detection~~ | ~~App startup~~ | DONE - DeviceSecurityService added |
+| OAuth re-auth for sensitive ops | `reauth_service.dart:121-135` | Redirect to OAuth provider for account deletion (not just dialog) |
 | No E2E tests in CI | `.github/workflows/` | Tests exist in `integration_test/` but not in CI |
 | No app state restoration | Forms | Add RestorationMixin - form data lost on process death |
-| ~~Privacy policy accuracy~~ | ~~Legal~~ | DONE - Updated Jan 9, 2026 |
 
 ---
 
@@ -48,9 +51,16 @@
 
 | Issue | Location | Fix |
 |-------|----------|-----|
+| Document service configurations | Firebase/Supabase/RevenueCat | Screen-by-screen audit of what's enabled/configured in each dashboard. Create `docs/SERVICE_CONFIG.md` with screenshots or detailed notes for reproducibility. |
 | Mockito exploration | `test/mocks/` | Evaluate migrating simple mocks to Mockito for reduced boilerplate. Current manual mocks excel at state tracking and error simulation. Consider Mockito for new simple interface mocks. |
 | Auth/lock logic in root widget | `app.dart` | Extract to `AppLifecycleManager` service for testability |
 | Imperative biometric lock navigation | `app.dart` | Move to router redirect + Riverpod notifier pattern |
+| **Startup performance** | `main.dart` | Parallelize Firebase + Supabase init (~300-500ms saved) |
+| Defer RevenueCat init | `main.dart` | Init after first screen, check pro status lazily (~200-400ms saved) |
+| Skip Remote Config fetch | `main.dart` | Use cached/defaults on startup, fetch async (~200-500ms saved) |
+| Remove OAuth pre-warm | `main.dart` | Warm on auth screen instead of startup (~100-200ms saved) |
+| Swift Package Manager | `ios/` | Enable SPM for faster iOS builds (Flutter 3.38+ feature) |
+| **Bottom sheet paywall** | `custom_paywall_screen.dart` | Modern UX: modal sheet instead of full screen. Less intrusive, better conversion. See Calm/Headspace patterns. |
 | Auth navigation race conditions | `app.dart` | Use GoRouter `refreshListenable` + global redirect |
 | Missing CAPTCHA | `email_auth_screen.dart` | Add Turnstile/hCaptcha + Supabase config |
 | Device fingerprint 7% coverage | `device_fingerprint_service.dart` | Free tier abuse prevention undertested |
@@ -180,6 +190,29 @@
 |------|-------|
 | Simplify auth navigation | Remove `redirectTo` params - just `pop()` on dismiss |
 
+### Lint Cleanup (357 info-level warnings)
+
+Target: Zero analyzer warnings for squeaky clean codebase.
+
+| Rule | Count | Fix | Priority |
+|------|-------|-----|----------|
+| `prefer_expression_function_bodies` | 117 | Convert `{ return x; }` to `=> x` | Low |
+| `avoid_catches_without_on_clauses` | 58 | Add specific exception types to catch blocks | Medium |
+| `prefer_const_constructors` | 48 | Add `const` keyword where possible | Low |
+| `cascade_invocations` | 34 | Use `..` cascade notation | Low |
+| `avoid_redundant_argument_values` | 15 | Remove args matching defaults | Low |
+| `use_if_null_to_convert_nulls_to_bools` | 11 | Use `?? false` pattern | Low |
+| `unnecessary_lambdas` | 8 | Use tearoffs instead of `() => fn()` | Low |
+| `prefer_const_literals_to_create_immutables` | 6 | Add `const` to list/map literals | Low |
+| `avoid_dynamic_calls` | 6 | Add type annotations | Medium |
+| `unawaited_futures` | 5 | Wrap with `unawaited()` or await | Medium |
+| `directives_ordering` | 5 | Sort imports alphabetically | Low |
+| `deprecated_member_use` | 4 | Update to non-deprecated APIs | Medium |
+| `unnecessary_import` | 2 | Remove redundant imports | Low |
+| Misc (10 other rules) | ~20 | Various minor fixes | Low |
+
+**Approach:** Fix in batches by rule type during low-priority sprints.
+
 ---
 
 ## Known Issues
@@ -199,7 +232,6 @@
 | AI error classification + retry | `ai_service.dart` |
 | Service/Interface pattern | `core/interfaces/` |
 | Device fingerprinting | `device_fingerprint_service.dart` |
-| Privacy screen on background | `app.dart` |
 | Biometric lock with timeout | `app.dart`, `reauth_service.dart` |
 | Apple token exchange | `supabase_auth_provider.dart` |
 | Test Store blocked in release | `subscription_service.dart` |
@@ -212,6 +244,7 @@
 | HTTPS Universal/App Links | Deep link security |
 | Global sign-out | All sessions invalidated |
 | Rate limiting (fail-closed) | Client + server |
+| Security documentation | `docs/SECURITY.md` |
 
 ---
 

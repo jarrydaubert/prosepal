@@ -134,6 +134,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       return;
     }
 
+    // Check if already Pro before restore
+    final hadProBefore = ref.read(isProProvider);
+
     setState(() => _isRestoringPurchases = true);
     try {
       // Identify with RevenueCat before restore to link purchases to user
@@ -152,15 +155,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       ref.invalidate(customerInfoProvider);
 
       if (mounted) {
+        String message;
+        Color? backgroundColor;
+        if (hadProBefore) {
+          message = "You're already on Pro!";
+          backgroundColor = null;
+        } else if (restored) {
+          message = 'Purchases restored successfully!';
+          backgroundColor = AppColors.success;
+        } else {
+          message = 'No purchases to restore';
+          backgroundColor = null;
+        }
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              restored
-                  ? 'Purchases restored successfully!'
-                  : 'No purchases to restore',
-            ),
-            backgroundColor: restored ? AppColors.success : null,
-          ),
+          SnackBar(content: Text(message), backgroundColor: backgroundColor),
         );
       }
     } on PlatformException catch (e) {

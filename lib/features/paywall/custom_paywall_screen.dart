@@ -123,29 +123,8 @@ class _CustomPaywallScreenState extends ConsumerState<CustomPaywallScreen> {
         await Future<void>.delayed(const Duration(milliseconds: 200));
         if (!mounted) return;
 
-        // Step 1: Check if user is signed in - prompt to create account if not
-        final isLoggedIn = ref.read(authServiceProvider).isLoggedIn;
-        Log.info('Purchase: Checking auth state', {'isLoggedIn': isLoggedIn});
-
-        if (!isLoggedIn) {
-          Log.info('Purchase: Redirecting to auth for account creation');
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text(
-                  'Create an account to secure your Pro subscription',
-                ),
-                behavior: SnackBarBehavior.floating,
-              ),
-            );
-            // Use push so user can dismiss with X and return to paywall
-            context.push('/auth?redirect=home');
-          }
-          return;
-        }
-
-        // Biometrics can be enabled from settings - keep purchase flow simple
-        // Step 3: Go home after purchase
+        // User is already authenticated (auth required before purchase)
+        // Navigate to home
         Log.info('Purchase: Navigating to home');
         if (context.canPop()) {
           context.pop();
@@ -208,8 +187,27 @@ class _CustomPaywallScreenState extends ConsumerState<CustomPaywallScreen> {
     }
   }
 
+  /// Handle subscribe button - requires auth first
+  void _handleSubscribe(Package package) {
+    final authService = ref.read(authServiceProvider);
+    if (!authService.isLoggedIn) {
+      Log.info('Subscribe: User not logged in, redirecting to auth');
+      context.push('/auth?redirect=paywall');
+      return;
+    }
+    _purchasePackage(package);
+  }
+
   Future<void> _restorePurchases() async {
     if (_isRestoring) return;
+
+    // Require auth before restore
+    final authService = ref.read(authServiceProvider);
+    if (!authService.isLoggedIn) {
+      Log.info('Restore: User not logged in, redirecting to auth');
+      context.push('/auth?redirect=paywall');
+      return;
+    }
 
     // Check if already Pro - no need to restore, just navigate away
     final currentPro = await ref.read(subscriptionServiceProvider).isPro();
@@ -741,7 +739,7 @@ class _CustomPaywallScreenState extends ConsumerState<CustomPaywallScreen> {
               child: ElevatedButton(
                 onPressed: _isPurchasing
                     ? null
-                    : () => _purchasePackage(selectedPackage),
+                    : () => _handleSubscribe(selectedPackage),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
