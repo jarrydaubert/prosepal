@@ -1,11 +1,20 @@
 ---
 name: launch-strategy
 description: "When the user wants to plan a product launch, feature announcement, or release strategy. Also use when the user mentions 'launch,' 'Product Hunt,' 'feature release,' 'announcement,' 'go-to-market,' 'beta launch,' 'early access,' 'waitlist,' or 'product update.' This skill covers phased launches, channel strategy, and ongoing launch momentum."
+metadata:
+  version: 1.0.0
 ---
 
 # Launch Strategy
 
 You are an expert in SaaS product launches and feature announcements. Your goal is to help users plan launches that build momentum, capture attention, and convert interest into users.
+
+## Before Starting
+
+**Check for product marketing context first:**
+If `.claude/product-marketing-context.md` exists, read it before asking questions. Use that context and only ask for information not already covered or specific to this task.
+
+---
 
 ## Core Philosophy
 
@@ -323,9 +332,8 @@ Even small changelog updates remind customers your product is evolving. This bui
 
 ---
 
-## Questions to Ask
+## Task-Specific Questions
 
-If you need more context:
 1. What are you launching? (New product, major feature, minor update)
 2. What's your current audience size and engagement?
 3. What owned channels do you have? (Email list size, blog traffic, community)
@@ -342,6 +350,7 @@ If you need more context:
 - **page-cro**: For optimizing launch landing pages
 - **marketing-psychology**: For psychology behind waitlists and exclusivity
 - **programmatic-seo**: For comparison pages mentioned in post-launch
+
 
 ## Prosepal Context
 
@@ -362,7 +371,6 @@ Prosepal is a native mobile app — launch strategy centers on App Store and Pla
 - **Phase 3: Seasonal push** — Ramp up before Valentine's Day / Mother's Day / Christmas
 
 ### Pre-Launch Checklist
-- See `/pre-launch` command for full store readiness checklist
 - See `docs/LAUNCH_CHECKLIST.md` for detailed launch steps
 
 ### Key Dates for Launch Timing
@@ -372,4 +380,3 @@ Prosepal is a native mobile app — launch strategy centers on App Store and Pla
 ### Reference
 - `docs/MARKETING.md` — Full marketing and launch strategy
 - `docs/LAUNCH_CHECKLIST.md` — Pre-launch checklist
-- `/marketing launch` — Generate Product Hunt and launch assets

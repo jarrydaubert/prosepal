@@ -1,6 +1,6 @@
 ---
 name: prd-to-issues
-description: "When the user wants to break down a product requirement, feature spec, or PRD into actionable issues. Also use when the user mentions 'break this down,' 'create issues,' 'task breakdown,' 'feature spec to tasks,' 'implementation plan,' or 'work breakdown.' For architecture planning, see the /plan command."
+description: "When the user wants to break down a product requirement, feature spec, or PRD into actionable issues. Also use when the user mentions 'break this down,' 'create issues,' 'task breakdown,' 'feature spec to tasks,' 'implementation plan,' or 'work breakdown.'"
 metadata:
   version: "1.0"
   origin: mattpocock-adapted

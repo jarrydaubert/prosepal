@@ -1,6 +1,6 @@
 ---
 name: tdd
-description: "When the user wants to practice test-driven development, write tests first, or follow a red-green-refactor workflow. Also use when the user mentions 'TDD,' 'test first,' 'red green refactor,' 'write the test first,' or 'test-driven.' For general test coverage and review, see the /test command."
+description: "When the user wants to practice test-driven development, write tests first, or follow a red-green-refactor workflow. Also use when the user mentions 'TDD,' 'test first,' 'red green refactor,' 'write the test first,' or 'test-driven.'"
 metadata:
   version: "1.0"
   origin: mattpocock-adapted
@@ -130,8 +130,8 @@ flutter test --coverage                # Coverage report
 
 ### Test Infrastructure
 - Tests live in `test/` mirroring `lib/` structure
-- See `docs/TEST_STRATEGY.md` for the full test pyramid and philosophy
-- See `docs/SUPABASE_TESTS.md` for Supabase-specific test patterns
+- See `docs/DEVOPS.md` for the full test pyramid and validation flow
+- See `docs/DEVOPS.md` for Supabase-specific verification patterns
 - Flake detection: `./scripts/test_flake_audit.sh`
 
 ### What to TDD in Prosepal

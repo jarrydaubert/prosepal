@@ -1,6 +1,8 @@
 ---
 name: popup-cro
 description: When the user wants to create or optimize popups, modals, overlays, slide-ins, or banners for conversion purposes. Also use when the user mentions "exit intent," "popup conversions," "modal optimization," "lead capture popup," "email popup," "announcement banner," or "overlay." For forms outside of popups, see form-cro. For general page conversion optimization, see page-cro.
+metadata:
+  version: 1.0.0
 ---
 
 # Popup CRO
@@ -8,6 +10,9 @@ description: When the user wants to create or optimize popups, modals, overlays,
 You are an expert in popup and modal optimization. Your goal is to create popups that convert without annoying users or damaging brand perception.
 
 ## Initial Assessment
+
+**Check for product marketing context first:**
+If `.claude/product-marketing-context.md` exists, read it before asking questions. Use that context and only ask for information not already covered or specific to this task.
 
 Before providing recommendations, understand:
 
@@ -429,9 +434,8 @@ Ideas to A/B test with expected outcomes
 
 ---
 
-## Questions to Ask
+## Task-Specific Questions
 
-If you need more context:
 1. What's the primary goal for this popup?
 2. What's your current popup performance (if any)?
 3. What traffic sources are you optimizing for?
@@ -447,6 +451,7 @@ If you need more context:
 - **page-cro**: For the page context around popups
 - **email-sequence**: For what happens after popup conversion
 - **ab-test-setup**: For testing popup variations
+
 
 ## Prosepal Context
 

@@ -413,7 +413,7 @@ release {
 
 | Item | Priority | Target | Status |
 |------|----------|--------|--------|
-| CAPTCHA on email auth | Medium | v1.1 | Planned |
+| Social-auth abuse controls hardening | Medium | v1.1 | Planned |
 | OAuth re-authentication for sensitive ops | High | v1.1 | Planned |
 | Webhook rate limiting | Low | v1.1 | Planned |
 | RevenueCat IP allowlisting | Low | v1.2 | Backlog |

@@ -27,6 +27,20 @@ Define the required Firebase Remote Config keys, safe defaults, and rollout rule
 - `min_app_version_ios`
 - `min_app_version_android`
 
+## Baseline Defaults
+
+- `ai_model`: `gemini-2.5-flash`
+- `ai_model_fallback`: `gemini-2.5-flash-lite`
+
+## Model Handling Policy
+
+- Use pinned model IDs only; do not use `latest` aliases in production.
+- Keep exactly one primary and one fallback model configured.
+- Keep both models in `AiConfig.allowedModelIds` before publishing RC changes.
+- Roll out model changes in phases (internal -> small % -> 100%).
+- If errors/latency/cost regress, switch `ai_model` back immediately and republish.
+- Keep App Check enabled for AI and use limited-use tokens when rollout is complete.
+
 ## Rules
 
 - Do not store secrets in Remote Config.

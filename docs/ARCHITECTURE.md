@@ -155,7 +155,7 @@ lib/
 │   ├── providers/               Riverpod providers
 │   └── services/                Business logic (20 services)
 ├── features/                     Feature modules (9 modules)
-│   ├── auth/                    Sign-in, email auth, lock screen
+│   ├── auth/                    Sign-in, lock screen
 │   ├── error/                   Error display screens
 │   ├── generate/                Multi-step generation wizard
 │   ├── history/                 Past generations
@@ -257,11 +257,11 @@ AiException (abstract)
 
 ```
 ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│    Apple    │     │   Google    │     │   Email     │
-│   Sign-In   │     │   Sign-In   │     │ Magic Link  │
-└──────┬──────┘     └──────┬──────┘     └──────┬──────┘
-       │                   │                   │
-       ▼                   ▼                   ▼
+│    Apple    │     │   Google    │
+│   Sign-In   │     │   Sign-In   │
+└──────┬──────┘     └──────┬──────┘
+       │                   │
+       ▼                   ▼
 ┌──────────────────────────────────────────────────────┐
 │                    AuthService                        │
 │  • SHA-256 nonce generation (replay prevention)      │
@@ -273,7 +273,6 @@ AiException (abstract)
 ┌──────────────────────────────────────────────────────┐
 │              SupabaseAuthProvider                     │
 │  • signInWithIdToken() - OAuth token exchange        │
-│  • signInWithOtp() - Magic link                      │
 │  • Session management (JWT, auto-refresh)            │
 └──────────────────────────┬───────────────────────────┘
                            │
@@ -290,8 +289,7 @@ AiException (abstract)
 
 | Type | URL Pattern | Handler |
 |------|-------------|---------|
-| Magic Link | `https://prosepal.app/auth/login-callback` | Supabase SDK |
-| Password Reset | `https://prosepal.app/auth/reset-callback` | Supabase SDK |
+| OAuth Callback | `https://prosepal.app/auth/login-callback` | Supabase SDK |
 
 ---
 
@@ -350,7 +348,7 @@ User Input
                            │
                            ▼
 ┌─────────────────────────────────────────────────────┐
-│              Firebase AI (Gemini 2.5)               │
+│             Firebase AI (Gemini 2.5)                │
 │  • Model: gemini-2.5-flash (via Remote Config)      │
 │  • Safety: harassment, hate, explicit filters       │
 │  • Timeout: 30 seconds                              │

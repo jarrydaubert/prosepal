@@ -17,7 +17,7 @@ import '../../mocks/mock_subscription_service.dart';
 /// - BUG-002: Error messages not shown after failed auth
 /// - BUG-003: Loading state stuck after auth attempt
 /// - BUG-004: Close/back button missing (user trapped)
-/// - BUG-005: Email auth option not accessible
+/// - BUG-005: Unexpected auth method shown in simplified onboarding
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -61,11 +61,6 @@ void main() {
                   const Scaffold(body: Text('Home Screen')),
             ),
             GoRoute(
-              path: '/email-auth',
-              builder: (context, state) =>
-                  const Scaffold(body: Text('Email Auth')),
-            ),
-            GoRoute(
               path: '/biometric-setup',
               builder: (context, state) =>
                   const Scaffold(body: Text('Biometric Setup')),
@@ -85,10 +80,9 @@ void main() {
   }
 
   group('AuthScreen', () {
-    testWidgets('email fallback visible for users without social accounts', (
+    testWidgets('shows only social sign-in options on onboarding auth', (
       tester,
     ) async {
-      // BUG: User with no Apple/Google account has no way to sign in
       tester.view.physicalSize = const Size(1080, 1920);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(() => tester.view.resetPhysicalSize());
@@ -96,11 +90,8 @@ void main() {
       await tester.pumpWidget(createTestableAuthScreen());
       await tester.pump(const Duration(milliseconds: 500));
 
-      final hasEmailOption =
-          find.textContaining('email').evaluate().isNotEmpty ||
-          find.textContaining('Email').evaluate().isNotEmpty;
-
-      expect(hasEmailOption, isTrue);
+      expect(find.text('Sign in with Google'), findsOneWidget);
+      expect(find.textContaining('Email'), findsNothing);
     });
 
     testWidgets('redirect flow has dismiss button (non-paywall)', (

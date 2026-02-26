@@ -17,13 +17,13 @@ import 'log_service.dart';
 ///
 /// ## Firebase Remote Config Setup (CONFIGURED - Jan 2026)
 /// Parameters are configured in Firebase Console > Remote Config (Client):
-///    - `ai_model`: stable primary model ID
+///    - `ai_model`: primary model ID
 ///    - `ai_model_fallback`: stable fallback model ID
 ///    - both values must be in [AiConfig.allowedModelIds]
 ///    - `min_app_version_ios`: "1.0.0" (force update threshold)
 ///    - `min_app_version_android`: "1.0.0" (force update threshold)
 ///
-/// To update AI model (e.g., when Gemini 3 SDK support is released):
+/// To update AI model:
 /// 1. Go to Firebase Console > Prosepal > Run > Remote Config
 /// 2. Edit `ai_model` value
 /// 3. Publish changes - app will use new model on next launch
