@@ -271,7 +271,11 @@ class AiService {
     );
   }
 
-  /// JSON schema for structured output - exactly 3 message strings
+  /// JSON schema for structured output
+  ///
+  /// The schema defines an array of message objects with text fields.
+  /// The count (3 messages) is enforced via systemInstruction, not schema,
+  /// as JSON Schema's minItems/maxItems are not supported by Firebase AI.
   /// Note: All properties required by default (no optionalProperties specified)
   static final _responseSchema = Schema.object(
     properties: {
@@ -375,15 +379,16 @@ class AiService {
       );
     }
 
-    // Input length validation (defense-in-depth)
-    const maxNameLength = 50;
-    const maxDetailsLength = 500; // Allow slightly more than UI for edge cases
-    final sanitizedName = recipientName != null && recipientName.length > maxNameLength
-        ? recipientName.substring(0, maxNameLength)
-        : recipientName;
-    final sanitizedDetails = personalDetails != null && personalDetails.length > maxDetailsLength
-        ? personalDetails.substring(0, maxDetailsLength)
-        : personalDetails;
+    // Input length validation (defense-in-depth, limits from AiConfig)
+    final sanitizedName =
+        recipientName != null && recipientName.length > AiConfig.maxNameLength
+            ? recipientName.substring(0, AiConfig.maxNameLength)
+            : recipientName;
+    final sanitizedDetails =
+        personalDetails != null &&
+                personalDetails.length > AiConfig.maxDetailsLength
+            ? personalDetails.substring(0, AiConfig.maxDetailsLength)
+            : personalDetails;
 
     final prompt = buildPrompt(
       occasion: occasion,

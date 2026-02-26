@@ -30,6 +30,10 @@ abstract final class AiConfig {
   static const int maxRetries = 3;
   static const int initialDelayMs = 500;
 
+  /// Input validation limits (defense-in-depth)
+  static const int maxNameLength = 50;
+  static const int maxDetailsLength = 500;
+
   /// System instruction (set once per model, saves tokens per call)
   /// Optimized for Gemini - clear, specific guidance
   static const String systemInstruction = '''
