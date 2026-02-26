@@ -86,6 +86,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       final restored = await ref
           .read(subscriptionServiceProvider)
           .restorePurchases();
+      
+      // Force refresh customer info to update pro status across all screens
+      ref.invalidate(customerInfoProvider);
+      
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

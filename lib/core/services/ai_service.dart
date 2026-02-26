@@ -7,6 +7,7 @@ import 'package:uuid/uuid.dart';
 import '../config/ai_config.dart';
 import '../models/models.dart';
 import 'error_log_service.dart';
+import 'log_service.dart';
 
 /// Exception types for AI service errors
 /// Base exception for AI service errors
@@ -92,26 +93,27 @@ class AiService {
   );
 
   /// Safety settings for content generation
+  /// Note: HarmBlockMethod must be null for Google AI (only supported by Vertex AI)
   static final _safetySettings = [
     SafetySetting(
       HarmCategory.harassment,
       HarmBlockThreshold.medium,
-      HarmBlockMethod.probability,
+      null,
     ),
     SafetySetting(
       HarmCategory.hateSpeech,
       HarmBlockThreshold.medium,
-      HarmBlockMethod.probability,
+      null,
     ),
     SafetySetting(
       HarmCategory.sexuallyExplicit,
       HarmBlockThreshold.high,
-      HarmBlockMethod.probability,
+      null,
     ),
     SafetySetting(
       HarmCategory.dangerousContent,
       HarmBlockThreshold.medium,
-      HarmBlockMethod.probability,
+      null,
     ),
   ];
 
@@ -127,6 +129,7 @@ class AiService {
         responseSchema: _responseSchema,
       ),
       safetySettings: _safetySettings,
+      systemInstruction: Content.system(AiConfig.systemInstruction),
     );
     return _model!;
   }
@@ -141,6 +144,13 @@ class AiService {
     String? recipientName,
     String? personalDetails,
   }) async {
+    Log.info('AI generation started', {
+      'occasion': occasion.label,
+      'relationship': relationship.label,
+      'tone': tone.label,
+      'length': length.name,
+    });
+
     final prompt = _buildPrompt(
       occasion: occasion,
       relationship: relationship,
@@ -182,11 +192,22 @@ class AiService {
       );
 
       if (messages.isEmpty) {
+        Log.warning('AI returned no messages');
         throw const AiEmptyResponseException(
           'No messages were generated. Please try again.',
           errorCode: 'NO_MESSAGES',
         );
       }
+
+      // Log token usage for cost tracking
+      final usage = response.usageMetadata;
+      Log.info('AI generation success', {
+        'messageCount': messages.length,
+        'model': AiConfig.model,
+        'promptTokens': usage?.promptTokenCount,
+        'responseTokens': usage?.candidatesTokenCount,
+        'totalTokens': usage?.totalTokenCount,
+      });
 
       return GenerationResult(
         messages: messages,
@@ -228,9 +249,7 @@ class AiService {
 
         // Log and categorize error
         ErrorLogService.instance.log(e, stackTrace);
-        if (kDebugMode) {
-          debugPrint('Firebase AI error: $e');
-        }
+        Log.error('Firebase AI error', e, stackTrace, {'attempt': attempt});
 
         // Categorize Firebase AI errors with specific messages
         if (message.contains('rate') || message.contains('quota')) {
@@ -299,9 +318,7 @@ class AiService {
 
         // Log error for feedback reports
         ErrorLogService.instance.log(e, stackTrace);
-        if (kDebugMode) {
-          debugPrint('Unexpected AI error: $e');
-        }
+        Log.error('Unexpected AI error', e, stackTrace, {'attempt': attempt});
 
         // Categorize general errors
         if (errorStr.contains('network') ||
@@ -361,26 +378,10 @@ class AiService {
       context.writeln('Personal context: $details');
     }
 
+    // System instruction contains static guidelines
+    // Prompt only needs dynamic context (saves ~100-150 tokens per call)
     return '''
-You are an expert at crafting heartfelt, memorable greeting card messages.
-
-Write exactly 3 unique message options for a greeting card.
-
-Context:
 $context
-
-Guidelines:
-- Respect the requested length: ${length.prompt}
-- Make each message personal and specific, never generic
-- Each option should take a distinctly different emotional angle
-- If a name is provided, incorporate it naturally
-- If personal details are given, weave them in authentically
-- Use emotionally resonant language appropriate to the tone
-
-Format rules:
-- NO greetings (no "Dear...", "Hi...", etc.)
-- NO sign-offs (no "Love,", "Best wishes,", "Sincerely,", etc.)
-- Just the message body itself
 ''';
   }
 

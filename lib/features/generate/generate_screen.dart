@@ -202,14 +202,39 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
 
     if (isLastStep) {
       // Check if can generate
-      final canGenerate = isPro || remaining > 0;
+      // remaining already accounts for Pro monthly limit (500) or free limit (1)
+      final canGenerate = remaining > 0;
 
       if (!canGenerate) {
-        return AppButton(
-          label: 'Upgrade to Continue',
-          icon: Icons.star,
-          style: AppButtonStyle.secondary,
-          onPressed: () => context.pushNamed('paywall'),
+        // Check if user is logged in - require auth before paywall
+        final isLoggedIn = ref.read(authServiceProvider).isLoggedIn;
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AppButton(
+              label: 'Upgrade to Continue',
+              icon: Icons.star,
+              style: AppButtonStyle.secondary,
+              onPressed: () {
+                if (isLoggedIn) {
+                  context.pushNamed('paywall');
+                } else {
+                  // Require sign-in first, then redirect to paywall
+                  context.push('/auth?redirect=paywall');
+                }
+              },
+            ),
+            const SizedBox(height: 8),
+            Text(
+              isLoggedIn 
+                  ? 'Go Pro for more messages'
+                  : 'Sign in to go Pro',
+              style: TextStyle(
+                fontSize: 13,
+                color: Colors.grey[600],
+              ),
+            ),
+          ],
         );
       }
 

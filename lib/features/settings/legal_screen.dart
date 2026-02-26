@@ -44,7 +44,7 @@ class TermsScreen extends StatelessWidget {
           const _LegalSection(
             title: 'Subscriptions & Payments',
             content:
-                '• Free users receive 3 message generations\n'
+                '• Free users receive 1 message generation\n'
                 '• Pro subscriptions: weekly, monthly, or yearly plans\n'
                 '• Payment charged to your Apple ID at purchase\n'
                 '• Auto-renews unless cancelled 24 hours before period ends\n'

@@ -1,5 +1,7 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod/legacy.dart';
+import 'package:flutter_riverpod/legacy.dart'; // Required for legacy StateProvider (your existing form providers)
+import 'package:purchases_flutter/purchases_flutter.dart'; // Required for CustomerInfo
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../interfaces/interfaces.dart';
@@ -71,13 +73,51 @@ final biometricServiceProvider = Provider<IBiometricService>((ref) {
 });
 
 // ============================================================
-// Pro Status
+// RevenueCat CustomerInfo (Reactive via StateNotifier + Listener)
 // ============================================================
 
-/// Pro subscription status - updated by RevenueCat listener
-final isProProvider = StateProvider<bool>((ref) => false);
+/// Notifier that holds the latest CustomerInfo and listens for updates
+class CustomerInfoNotifier extends StateNotifier<CustomerInfo?> {
+  final ISubscriptionService _subscriptionService;
 
-/// Async check of pro status from RevenueCat
+  CustomerInfoNotifier(this._subscriptionService) : super(null) {
+    // Add listener for live updates
+    _subscriptionService.addCustomerInfoListener(_updateCustomerInfo);
+
+    // Initial fetch
+    _subscriptionService.getCustomerInfo().then((info) {
+      if (info != null) _updateCustomerInfo(info);
+    });
+  }
+
+  void _updateCustomerInfo(CustomerInfo info) {
+    final hasPro = info.entitlements.active.containsKey('pro');
+    debugPrint('CustomerInfoNotifier: updated, hasPro=$hasPro');
+    state = info;
+  }
+
+  @override
+  void dispose() {
+    _subscriptionService.removeCustomerInfoListener(_updateCustomerInfo);
+    super.dispose();
+  }
+}
+
+/// Provider for the live CustomerInfo (null while loading/initial)
+final customerInfoProvider =
+    StateNotifierProvider<CustomerInfoNotifier, CustomerInfo?>((ref) {
+      final subscriptionService = ref.watch(subscriptionServiceProvider);
+      return CustomerInfoNotifier(subscriptionService);
+    });
+
+/// Reactive pro subscription status (live from RevenueCat)
+/// False while loading or if no pro entitlement
+final isProProvider = Provider<bool>((ref) {
+  final customerInfo = ref.watch(customerInfoProvider);
+  return customerInfo?.entitlements.active.containsKey('pro') ?? false;
+});
+
+/// Async manual check (kept for backward compatibility if any code uses it)
 final checkProStatusProvider = FutureProvider<bool>((ref) async {
   final subscriptionService = ref.watch(subscriptionServiceProvider);
   return subscriptionService.isPro();
@@ -93,7 +133,7 @@ final totalUsageProvider = Provider<int>((ref) {
   return usageService.getTotalCount();
 });
 
-/// Remaining generations (considers pro status)
+/// Remaining generations (considers live pro status)
 final remainingGenerationsProvider = Provider<int>((ref) {
   final usageService = ref.watch(usageServiceProvider);
   final isPro = ref.watch(isProProvider);
@@ -105,54 +145,41 @@ final remainingGenerationsProvider = Provider<int>((ref) {
 });
 
 // ============================================================
-// Generation Form State (Legacy StateProvider - for compatibility)
+// Generation Form State (Legacy StateProvider - kept for compatibility)
 // ============================================================
-// Note: These use legacy StateProvider for backward compatibility with
-// existing screens that use `.notifier.state = value` pattern.
-// Future migration: Replace with Notifier pattern when updating screens.
 
-/// Selected occasion for generation
 final selectedOccasionProvider = StateProvider<Occasion?>((ref) => null);
 
-/// Selected relationship for generation
 final selectedRelationshipProvider = StateProvider<Relationship?>(
   (ref) => null,
 );
 
-/// Selected tone for generation
 final selectedToneProvider = StateProvider<Tone?>((ref) => null);
 
-/// Selected message length
 final selectedLengthProvider = StateProvider<MessageLength>(
   (ref) => MessageLength.standard,
 );
 
-/// Recipient name (optional)
 final recipientNameProvider = StateProvider<String>((ref) => '');
 
-/// Personal details (optional)
 final personalDetailsProvider = StateProvider<String>((ref) => '');
 
 // ============================================================
-// Generation Results State (Legacy StateProvider - for compatibility)
+// Generation Results State (Legacy StateProvider - kept for compatibility)
 // ============================================================
 
-/// Result of AI generation
 final generationResultProvider = StateProvider<GenerationResult?>(
   (ref) => null,
 );
 
-/// Whether generation is in progress
 final isGeneratingProvider = StateProvider<bool>((ref) => false);
 
-/// Error message from generation
 final generationErrorProvider = StateProvider<String?>((ref) => null);
 
 // ============================================================
 // Form Reset Utility
 // ============================================================
 
-/// Reset all generation form state
 void resetGenerationForm(WidgetRef ref) {
   ref.read(selectedOccasionProvider.notifier).state = null;
   ref.read(selectedRelationshipProvider.notifier).state = null;

@@ -1,13 +1,13 @@
-import 'dart:io';
+import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
-import 'package:package_info_plus/package_info_plus.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../core/providers/providers.dart';
-import '../../core/services/error_log_service.dart';
+import '../../core/services/diagnostic_service.dart';
 import '../../shared/atoms/app_button.dart';
 import '../../shared/theme/app_colors.dart';
 import '../../shared/theme/app_spacing.dart';
@@ -29,27 +29,6 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
     super.dispose();
   }
 
-  /// Collect device info for bug reports
-  Future<String> _getDeviceInfo() async {
-    final buffer = StringBuffer()
-      ..writeln('--- Device Info ---')
-      ..writeln('Platform: ${Platform.operatingSystem}')
-      ..writeln('OS Version: ${Platform.operatingSystemVersion}')
-      ..writeln('Dart: ${Platform.version.split(' ').first}')
-      ..writeln('Locale: ${Platform.localeName}');
-
-    try {
-      final packageInfo = await PackageInfo.fromPlatform();
-      buffer.writeln(
-        'App: Prosepal v${packageInfo.version} (${packageInfo.buildNumber})',
-      );
-    } catch (_) {
-      buffer.writeln('App: Prosepal');
-    }
-
-    return buffer.toString();
-  }
-
   Future<void> _send() async {
     final message = _controller.text.trim();
     if (message.isEmpty) {
@@ -60,15 +39,12 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
     }
 
     setState(() => _isSending = true);
+    unawaited(HapticFeedback.lightImpact());
 
-    final email = ref.read(authServiceProvider).email ?? 'Unknown';
-    final deviceInfo = await _getDeviceInfo();
-    final errorLog = ErrorLogService.instance.getFormattedLog();
+    final diagnosticReport = await DiagnosticService.generateReport();
 
     final subject = Uri.encodeComponent('Prosepal Feedback');
-    final body = Uri.encodeComponent(
-      '$message\n\n$deviceInfo\nUser: $email\n\n$errorLog',
-    );
+    final body = Uri.encodeComponent('$message\n\n$diagnosticReport');
 
     final uri = Uri.parse(
       'mailto:support@prosepal.app?subject=$subject&body=$body',
@@ -86,6 +62,24 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
     }
 
     if (mounted) setState(() => _isSending = false);
+  }
+
+  Future<void> _shareDiagnostics() async {
+    unawaited(HapticFeedback.lightImpact());
+    final report = await DiagnosticService.generateReport();
+
+    if (!mounted) return;
+
+    // Show the report to user first, then let them share
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => _DiagnosticReportSheet(report: report),
+    );
   }
 
   @override
@@ -130,15 +124,30 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
                 ),
               ),
               const Gap(AppSpacing.sm),
-              Text(
-                'Device info will be attached to help us debug issues.',
-                style: Theme.of(
-                  context,
-                ).textTheme.bodySmall?.copyWith(color: AppColors.textHint),
+              GestureDetector(
+                onTap: _shareDiagnostics,
+                child: Text.rich(
+                  TextSpan(
+                    text: 'Diagnostic info will be attached. ',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: AppColors.textHint,
+                    ),
+                    children: [
+                      TextSpan(
+                        text: 'View report',
+                        style: TextStyle(
+                          color: AppColors.primary,
+                          decoration: TextDecoration.underline,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
               const Gap(AppSpacing.lg),
               AppButton(
-                label: 'Send',
+                label: 'Send Feedback',
                 onPressed: _isSending ? null : _send,
                 isLoading: _isSending,
                 icon: Icons.send_rounded,
@@ -147,6 +156,131 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
           ),
         ),
       ),
+    );
+  }
+}
+
+// === COMPONENTS ===
+
+class _DiagnosticReportSheet extends StatelessWidget {
+  const _DiagnosticReportSheet({required this.report});
+
+  final String report;
+
+  @override
+  Widget build(BuildContext context) {
+    return DraggableScrollableSheet(
+      initialChildSize: 0.7,
+      minChildSize: 0.5,
+      maxChildSize: 0.95,
+      expand: false,
+      builder: (context, scrollController) {
+        return Column(
+          children: [
+            // Handle bar
+            Container(
+              margin: const EdgeInsets.symmetric(vertical: 12),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.textHint.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            // Title
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Diagnostic Report',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.copy_rounded),
+                        onPressed: () {
+                          unawaited(HapticFeedback.lightImpact());
+                          unawaited(
+                            Clipboard.setData(ClipboardData(text: report)),
+                          );
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Copied to clipboard'),
+                              duration: Duration(seconds: 2),
+                            ),
+                          );
+                        },
+                        tooltip: 'Copy',
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.share_rounded),
+                        onPressed: () {
+                          unawaited(HapticFeedback.lightImpact());
+                          unawaited(SharePlus.instance.share(
+                            ShareParams(
+                              text: report,
+                              subject: 'Prosepal Diagnostic Report',
+                            ),
+                          ));
+                        },
+                        tooltip: 'Share',
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const Divider(),
+            // Report content
+            Expanded(
+              child: SingleChildScrollView(
+                controller: scrollController,
+                padding: const EdgeInsets.all(20),
+                child: SelectableText(
+                  report,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontFamily: 'monospace',
+                    color: AppColors.textSecondary,
+                    height: 1.5,
+                  ),
+                ),
+              ),
+            ),
+            // Privacy notice
+            Container(
+              padding: const EdgeInsets.all(16),
+              color: AppColors.primaryLight.withValues(alpha: 0.3),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.shield_outlined,
+                    size: 20,
+                    color: AppColors.primary,
+                  ),
+                  const Gap(12),
+                  Expanded(
+                    child: Text(
+                      'No personal messages, passwords, or payment details included.',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }
