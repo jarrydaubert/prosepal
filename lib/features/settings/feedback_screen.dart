@@ -87,7 +87,7 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
           ),
         );
 
-        if (shouldCopy == true && mounted) {
+        if ((shouldCopy ?? false) && mounted) {
           await Clipboard.setData(
             ClipboardData(
               text:
@@ -206,7 +206,7 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
                       value: _includeLogs,
                       onChanged: (value) =>
                           setState(() => _includeLogs = value),
-                      activeColor: AppColors.primary,
+                      activeTrackColor: AppColors.primary,
                     ),
                   ],
                 ),
