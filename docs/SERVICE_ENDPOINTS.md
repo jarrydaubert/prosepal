@@ -17,6 +17,8 @@
 | **Firebase AI** | `firebase_ai: ^3.6.1` | Gemini AI message generation |
 | **Local Auth** | `local_auth: ^3.0.0` | Biometric authentication (Face ID/Touch ID) |
 | **Firebase Core** | `firebase_core`, `firebase_crashlytics` | App initialization, crash reporting |
+| **Vercel** | Hosting | Landing page, privacy policy, terms, support |
+| **GitHub** | Repository | Source control, CI/CD |
 
 ---
 
