@@ -57,7 +57,15 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       return;
     }
 
-    // No redirect - this is initial login, use go() to reset to root flow
+    // No redirect specified - check if we were pushed onto an existing stack
+    // (e.g., from settings restore purchases). If so, just pop back.
+    if (context.canPop()) {
+      Log.info('Auth success: popping back to previous screen');
+      context.pop();
+      return;
+    }
+
+    // Fresh login flow (no back stack) - go to biometric setup or home
     final biometricService = ref.read(biometricServiceProvider);
     final isSupported = await biometricService.isSupported;
     final isAlreadyEnabled = await biometricService.isEnabled;

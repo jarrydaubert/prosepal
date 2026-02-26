@@ -88,7 +88,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     // Require sign-in for proper account linking
     final isLoggedIn = ref.read(authServiceProvider).isLoggedIn;
     if (!isLoggedIn) {
-      context.push('/auth?redirect=settings');
+      // Push auth without redirect - it will pop back here on success
+      context.push('/auth');
       return;
     }
 
