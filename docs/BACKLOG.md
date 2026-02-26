@@ -9,9 +9,6 @@
 | Item | Action |
 |------|--------|
 | Supabase leaked password protection | Enable toggle in Dashboard > Auth (requires paid plan) |
-| **Auth before subscribe** | `[Subscribe]` → if `!isLoggedIn` → `/auth?redirect=paywall` (no X) → then purchase |
-| **Auth before restore** | `[Restore]` → if `!isLoggedIn` → `/auth?redirect=paywall` (no X) → then restore |
-| **Anonymous free tier server check** | Add `checkDeviceFreeTierServerSide()` BEFORE generation in `generate_screen.dart` |
 
 ---
 
@@ -27,7 +24,6 @@
 
 | Issue | Location | Fix |
 |-------|----------|-----|
-| Auth before upgrade (generate) | `generate_screen.dart:234` | All upgrade paths → `/auth?redirect=paywall` first |
 | Auth screen X button logic | `auth_screen.dart:210` | `redirectTo='paywall'` → `canDismiss=false` |
 
 ---
