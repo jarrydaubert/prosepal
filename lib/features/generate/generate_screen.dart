@@ -230,10 +230,12 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
 
       if (!mounted) return;
       context.pushNamed('results');
-    } catch (e) {
+    } catch (e, stack) {
+      debugPrint('Generation error: $e');
+      debugPrint('Stack trace: $stack');
       ref.read(isGeneratingProvider.notifier).state = false;
       ref.read(generationErrorProvider.notifier).state =
-          'Failed to generate messages. Please try again.';
+          'Failed to generate messages: $e';
     }
   }
 }
