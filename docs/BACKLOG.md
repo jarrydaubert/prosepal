@@ -63,6 +63,10 @@
 | Auth method documentation | `auth_interface.dart` | Add Dart docs specifying exceptions, preconditions, postconditions |
 | Re-auth for sensitive ops | `auth_interface.dart` | Add `reauthenticate()` or require recent auth for updateEmail/updatePassword/delete |
 | Provider availability checks | `auth_interface.dart` | Add `isAppleSignInAvailable()` for conditional UI rendering |
+| Results screen localization | `results_screen.dart` | Extract "Your Messages", "Copied!", button labels to .arb files |
+| Confetti preference | `results_screen.dart` | Add user toggle or limit to first copy per session |
+| Message card height bounds | `results_screen.dart` | Constrain SelectableText height for long messages on small screens |
+| "Use this message" action | `results_screen.dart` | Button to pre-fill form for iteration on specific message |
 | UsageService race condition | `usage_service.dart` | Atomic increment via Supabase RPC |
 | Hardcoded usage limits | `usage_service.dart` | Move to remote config |
 | Supabase singleton | `usage_service.dart` | Inject client for testability |
