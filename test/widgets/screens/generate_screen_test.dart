@@ -454,7 +454,7 @@ void main() {
       },
     );
 
-    testWidgets('Upgrade button navigates to paywall when logged in', (
+    testWidgets('Upgrade button shows paywall sheet when logged in', (
       tester,
     ) async {
       await tester.pumpWidget(
@@ -468,12 +468,13 @@ void main() {
       await navigateToStep3(tester);
 
       await tester.tap(find.text('Upgrade to Continue'));
-      await tester.pumpAndSettle();
+      await tester.pump();
 
-      expect(find.text('Paywall Screen'), findsOneWidget);
+      // Paywall sheet shown (bottom sheet, not route navigation)
+      expect(find.byType(BottomSheet), findsOneWidget);
     });
 
-    testWidgets('Upgrade button navigates to auth when not logged in', (
+    testWidgets('Upgrade button shows paywall sheet for new anonymous user', (
       tester,
     ) async {
       await tester.pumpWidget(
@@ -487,9 +488,10 @@ void main() {
       await navigateToStep3(tester);
 
       await tester.tap(find.text('Upgrade to Continue'));
-      await tester.pumpAndSettle();
+      await tester.pump();
 
-      expect(find.text('Auth Screen'), findsOneWidget);
+      // Paywall sheet shown with inline auth for new anonymous users
+      expect(find.byType(BottomSheet), findsOneWidget);
     });
 
     testWidgets('shows Generate button when generations remaining > 0', (
