@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:screen_secure/screen_secure.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -80,6 +81,20 @@ void main() async {
     Log.info('App launched', {'initialProStatus': initialProStatus});
   } catch (e) {
     Log.error('RevenueCat initialization failed', e);
+  }
+
+  // Enable screenshot prevention in release builds
+  // Protects user-generated messages from being captured
+  if (!kDebugMode) {
+    try {
+      await ScreenSecure.init(
+        screenshotBlock: true,
+        screenRecordBlock: true,
+      );
+      Log.info('Screen security enabled');
+    } catch (e) {
+      Log.warning('Screen security init failed', {'error': '$e'});
+    }
   }
 
   // Initialize SharedPreferences

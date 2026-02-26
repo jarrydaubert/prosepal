@@ -1271,6 +1271,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.28.0"
+  screen_secure:
+    dependency: "direct main"
+    description:
+      name: screen_secure
+      sha256: "9660d0a285f7e27d482333779153e3cb17c5fd929e15373e51abad63810df7b4"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.3"
   share_plus:
     dependency: "direct main"
     description:
