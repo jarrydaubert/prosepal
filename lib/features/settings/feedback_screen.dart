@@ -21,9 +21,11 @@ class FeedbackScreen extends ConsumerStatefulWidget {
 }
 
 class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
+  static const _maxMailtoUriLength = 8000;
   final _controller = TextEditingController();
   bool _isSending = false;
-  bool _includeLogs = true; // Default ON to help troubleshooting
+  bool _includeLogs = false;
+  bool _includeSensitiveLogs = false;
 
   @override
   void dispose() {
@@ -50,64 +52,81 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
       final isRcConfigured = ref.read(subscriptionServiceProvider).isConfigured;
       final diagnosticReport = await DiagnosticService.generateReport(
         isRevenueCatConfigured: isRcConfigured,
+        includeSensitiveLogs: _includeSensitiveLogs,
       );
       fullMessage = '$message\n\n$diagnosticReport';
     }
 
     final subject = Uri.encodeComponent('Prosepal Feedback');
     final body = Uri.encodeComponent(fullMessage);
-
     final uri = Uri.parse(
       'mailto:support@prosepal.app?subject=$subject&body=$body',
     );
 
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
-      if (mounted) Navigator.pop(context);
-    } else {
-      // Fallback: offer to copy email content
-      if (mounted) {
-        final shouldCopy = await showDialog<bool>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('No email app found'),
-            content: const Text(
-              'Copy feedback to clipboard? You can paste it into your email app and send to support@prosepal.app',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('Cancel'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: const Text('Copy'),
-              ),
-            ],
-          ),
+    try {
+      final uriTooLong = uri.toString().length > _maxMailtoUriLength;
+      if (!uriTooLong && await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+        if (mounted) Navigator.pop(context);
+      } else {
+        await _showCopyFallback(
+          fullMessage,
+          reason: uriTooLong
+              ? 'Diagnostics are too long for mailto on this device.'
+              : null,
         );
-
-        if ((shouldCopy ?? false) && mounted) {
-          await Clipboard.setData(
-            ClipboardData(
-              text:
-                  'To: support@prosepal.app\nSubject: Prosepal Feedback\n\n$fullMessage',
-            ),
-          );
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Copied! Paste into your email app')),
-          );
-        }
       }
+    } on Exception {
+      await _showCopyFallback(fullMessage);
+    } finally {
+      if (mounted) setState(() => _isSending = false);
     }
+  }
 
-    if (mounted) setState(() => _isSending = false);
+  Future<void> _showCopyFallback(String fullMessage, {String? reason}) async {
+    if (!mounted) return;
+
+    final shouldCopy = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Send manually'),
+        content: Text(
+          '${reason != null ? '$reason\n\n' : ''}'
+          'Copy feedback to clipboard? You can paste it into your email app '
+          'and send to support@prosepal.app.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Copy'),
+          ),
+        ],
+      ),
+    );
+
+    if ((shouldCopy ?? false) && mounted) {
+      await Clipboard.setData(
+        ClipboardData(
+          text:
+              'To: support@prosepal.app\nSubject: Prosepal Feedback\n\n'
+              '$fullMessage',
+        ),
+      );
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Copied! Paste into your email app')),
+      );
+    }
   }
 
   Future<void> _shareDiagnostics() async {
     final isRcConfigured = ref.read(subscriptionServiceProvider).isConfigured;
     final report = await DiagnosticService.generateReport(
       isRevenueCatConfigured: isRcConfigured,
+      includeSensitiveLogs: _includeSensitiveLogs,
     );
 
     if (!mounted) return;
@@ -120,8 +139,43 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (context) => _DiagnosticReportSheet(report: report),
+      builder: (context) => _DiagnosticReportSheet(
+        report: report,
+        includeSensitiveLogs: _includeSensitiveLogs,
+      ),
     );
+  }
+
+  Future<void> _toggleSensitiveLogs(bool enabled) async {
+    if (!enabled) {
+      setState(() => _includeSensitiveLogs = false);
+      return;
+    }
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Include Full Technical Details?'),
+        content: const Text(
+          'This may include message/prompt context and identifiers. '
+          'Only enable when support asks. Passwords and tokens remain redacted.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Enable'),
+          ),
+        ],
+      ),
+    );
+
+    if ((confirm ?? false) && mounted) {
+      setState(() => _includeSensitiveLogs = true);
+    }
   }
 
   @override
@@ -205,7 +259,7 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
                         ),
                         Gap(2),
                         Text(
-                          'Helps us troubleshoot issues faster',
+                          'Optional: app/version diagnostics for troubleshooting',
                           style: TextStyle(
                             fontSize: 13,
                             color: AppColors.textSecondary,
@@ -216,12 +270,49 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
                   ),
                   Switch.adaptive(
                     value: _includeLogs,
-                    onChanged: (value) => setState(() => _includeLogs = value),
+                    onChanged: (value) {
+                      setState(() {
+                        _includeLogs = value;
+                        if (!value) _includeSensitiveLogs = false;
+                      });
+                    },
                     activeTrackColor: AppColors.primary,
                   ),
                 ],
               ),
             ),
+            if (_includeLogs) ...[
+              const Gap(AppSpacing.sm),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
+                  border: Border.all(
+                    color: _includeSensitiveLogs
+                        ? AppColors.error.withValues(alpha: 0.25)
+                        : AppColors.textHint.withValues(alpha: 0.2),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    const Expanded(
+                      child: Text(
+                        'Include full technical details (advanced)',
+                        style: TextStyle(fontSize: 13),
+                      ),
+                    ),
+                    Switch.adaptive(
+                      value: _includeSensitiveLogs,
+                      onChanged: _toggleSensitiveLogs,
+                    ),
+                  ],
+                ),
+              ),
+            ],
             // View report link (only when logs enabled)
             if (_includeLogs) ...[
               const Gap(AppSpacing.sm),
@@ -261,9 +352,13 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
 // === COMPONENTS ===
 
 class _DiagnosticReportSheet extends StatelessWidget {
-  const _DiagnosticReportSheet({required this.report});
+  const _DiagnosticReportSheet({
+    required this.report,
+    required this.includeSensitiveLogs,
+  });
 
   final String report;
+  final bool includeSensitiveLogs;
 
   @override
   Widget build(BuildContext context) => DraggableScrollableSheet(
@@ -352,14 +447,20 @@ class _DiagnosticReportSheet extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(16),
           color: AppColors.primaryLight.withValues(alpha: 0.3),
-          child: const Row(
+          child: Row(
             children: [
-              Icon(Icons.shield_outlined, size: 20, color: AppColors.primary),
-              Gap(12),
+              const Icon(
+                Icons.shield_outlined,
+                size: 20,
+                color: AppColors.primary,
+              ),
+              const Gap(12),
               Expanded(
                 child: Text(
-                  'No personal messages, passwords, or payment details included.',
-                  style: TextStyle(
+                  includeSensitiveLogs
+                      ? 'Includes expanded technical details. Share only with trusted support.'
+                      : 'No personal messages, passwords, or payment details included.',
+                  style: const TextStyle(
                     fontSize: 12,
                     color: AppColors.textSecondary,
                   ),

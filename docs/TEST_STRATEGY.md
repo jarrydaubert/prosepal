@@ -1,0 +1,54 @@
+# Test Strategy
+
+## Purpose
+
+Define a stable testing approach for local development, CI, and release gating.
+
+## Layers
+
+- Unit tests: service, model, and pure logic verification.
+- Widget tests: screen/component behavior verification without device dependency.
+- Integration tests: end-to-end journeys on simulator/emulator and physical devices.
+- Backend verification: Supabase SQL/RPC/RLS and edge-function checks.
+
+## Local Commands
+
+```bash
+flutter analyze
+flutter test
+./scripts/test_flake_audit.sh
+flutter test integration_test/smoke_test.dart -d <device-id>
+flutter test integration_test/e2e_test.dart -d <device-id>
+```
+
+## CI Requirements
+
+- Run analyzer.
+- Run unit/widget suites.
+- Run flake audit workflow on schedule.
+- Store artifacts for failures (logs, reports, screenshots if available).
+
+## Release Validation Requirements
+
+- Integration smoke on iOS simulator and Android emulator.
+- Critical integration suite on one wired iOS physical device and one wired Android physical device.
+- Android Firebase Test Lab critical suite run.
+- Supabase verification runbook execution.
+
+## Flaky Test Policy
+
+- A flaky test is non-blocking only after quarantine.
+- Quarantined tests must have a backlog item with an owner and clear fix criteria.
+- Blocking gate uses the trusted critical-smoke suite only.
+
+## Failure Handling
+
+- Repro locally with the same command and target device class.
+- Capture logs and attach to backlog item.
+- If gate fails in release candidate stage, stop release promotion until resolved or explicitly waived.
+
+## References
+
+- [BACKLOG.md](./BACKLOG.md)
+- [SUPABASE_TESTS.md](./SUPABASE_TESTS.md)
+- [NEXT_RELEASE_BRIEF.md](./NEXT_RELEASE_BRIEF.md)

@@ -5,6 +5,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:purchases_ui_flutter/purchases_ui_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:uuid/uuid.dart';
 
 import '../config/app_config.dart';
 import '../interfaces/subscription_interface.dart';
@@ -29,6 +32,8 @@ import 'log_service.dart';
 /// ```
 class SubscriptionService implements ISubscriptionService {
   static const String _entitlementId = 'pro';
+  static const String _anonymousAppUserIdKey =
+      'revenuecat_anonymous_app_user_id';
 
   /// Check if current platform supports RevenueCat
   /// RevenueCat Flutter SDK supports iOS and Android
@@ -54,6 +59,7 @@ class SubscriptionService implements ISubscriptionService {
       AppConfig.revenueCatTestStoreKey.isNotEmpty;
 
   bool _isInitialized = false;
+  final _uuid = const Uuid();
 
   /// Stream controller for customer info updates
   StreamController<CustomerInfo>? _customerInfoController;
@@ -136,11 +142,31 @@ class SubscriptionService implements ISubscriptionService {
       await Purchases.setLogLevel(LogLevel.warn);
     }
 
+    // Use a stable App User ID at configure time:
+    // - signed-in Supabase user ID when available
+    // - otherwise a persisted anonymous ID (prevents synthetic "new users" on logout)
+    final signedInUserId = _currentSupabaseUserId();
+    final initialAppUserId =
+        signedInUserId ?? await _getOrCreateAnonymousAppUserId();
+
     // StoreKit2 is the default in purchases_flutter 9.x
-    final config = PurchasesConfiguration(apiKey);
+    final config = PurchasesConfiguration(apiKey)..appUserID = initialAppUserId;
     await Purchases.configure(config);
 
     _isInitialized = true;
+
+    try {
+      final configuredAppUserId = await Purchases.appUserID;
+      final isAnonymous = await Purchases.isAnonymous;
+      Log.info('RevenueCat configured identity', {
+        'appUserId': _truncateId(configuredAppUserId),
+        'isAnonymous': isAnonymous,
+      });
+    } on PlatformException catch (e) {
+      Log.warning('RevenueCat identity check failed after configure', {
+        'error': '$e',
+      });
+    }
 
     // Sync purchases to transfer any subscriptions to the current RC user.
     // This prevents orphaned anonymous users and inflated customer counts.
@@ -156,6 +182,7 @@ class SubscriptionService implements ISubscriptionService {
     Log.info('RevenueCat initialized', {
       'platform': Platform.isIOS ? 'iOS' : 'Android',
       'testStore': isUsingTestStore,
+      'configuredAs': signedInUserId == null ? 'anonymous' : 'authenticated',
     });
   }
 
@@ -325,6 +352,14 @@ class SubscriptionService implements ISubscriptionService {
     }
     try {
       final currentAppUserId = await Purchases.appUserID;
+      if (currentAppUserId == userId) {
+        Log.info('RevenueCat user already identified', {
+          'userId': _truncateId(userId),
+        });
+        await Log.setUserId(userId);
+        return;
+      }
+
       final result = await Purchases.logIn(userId);
       final newAppUserId = await Purchases.appUserID;
       final hasPro = result.customerInfo.entitlements.active.containsKey(
@@ -361,14 +396,33 @@ class SubscriptionService implements ISubscriptionService {
   @override
   Future<void> logOut() async {
     try {
-      await Purchases.logOut();
+      // Avoid Purchases.logOut() random-user generation. It creates a fresh
+      // anonymous ID each time, inflating RevenueCat "new users" metrics.
+      final previousAppUserId = await Purchases.appUserID;
+      final anonymousId = await _getOrCreateAnonymousAppUserId();
+
+      if (previousAppUserId != anonymousId) {
+        final result = await Purchases.logIn(anonymousId);
+        Log.info('RevenueCat switched to anonymous app user', {
+          'previousId': _truncateId(previousAppUserId),
+          'newId': _truncateId(anonymousId),
+          'created': result.created,
+        });
+      } else {
+        Log.info('RevenueCat already on anonymous app user', {
+          'appUserId': _truncateId(anonymousId),
+        });
+      }
+
       await Log.clearUserId();
       Log.info('RevenueCat user logged out');
     } on PlatformException catch (e) {
-      // LOGOUT_CALLED_WITH_ANONYMOUS_USER is expected during delete account
-      // flow where user may already be anonymous - not an error
+      // Some SDK states can reject identity changes when already anonymous.
+      // Treat as non-fatal during sign-out/delete flows.
       if (e.code == '22' || (e.message?.contains('anonymous') ?? false)) {
-        Log.info('RevenueCat: User already anonymous, skipping logout');
+        Log.info(
+          'RevenueCat: User already anonymous, skipping identity switch',
+        );
         await Log.clearUserId();
       } else {
         Log.error('Error logging out', e);
@@ -384,5 +438,25 @@ class SubscriptionService implements ISubscriptionService {
   static String _truncateId(String id) {
     if (id.length <= 12) return id;
     return '${id.substring(0, 8)}...${id.substring(id.length - 4)}';
+  }
+
+  String? _currentSupabaseUserId() {
+    try {
+      return Supabase.instance.client.auth.currentUser?.id;
+    } on Exception {
+      return null;
+    }
+  }
+
+  Future<String> _getOrCreateAnonymousAppUserId() async {
+    final prefs = await SharedPreferences.getInstance();
+    final existing = prefs.getString(_anonymousAppUserIdKey);
+    if (existing != null && existing.isNotEmpty) {
+      return existing;
+    }
+
+    final generated = 'anon_${_uuid.v4()}';
+    await prefs.setString(_anonymousAppUserIdKey, generated);
+    return generated;
   }
 }

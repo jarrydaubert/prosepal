@@ -12,7 +12,7 @@ dependencies:
 
   cupertino_icons: ^1.0.8
 
-  # State Management (Riverpod 3.1.0 with matching annotation 4.0.0)
+  # State Management (Riverpod 3.1.x with matching annotation 4.0.x)
   flutter_riverpod: ^3.1.0
   riverpod_annotation: ^4.0.0
 
@@ -20,25 +20,25 @@ dependencies:
   go_router: ^17.0.1
 
   # AI - Firebase AI Logic (Gemini via Firebase - secure, no exposed API key)
-  firebase_ai: ^3.6.1
+  firebase_ai: ^3.8.0
 
   # Payments
-  purchases_flutter: ^9.10.3
-  purchases_ui_flutter: ^9.10.3
+  purchases_flutter: 9.10.3
+  purchases_ui_flutter: 9.10.3
 
   # Firebase (updated to latest)
   firebase_core: ^4.3.0
-  firebase_analytics: ^12.1.0
+  firebase_analytics: ^12.1.2
   firebase_crashlytics: ^5.0.6
 
   # UI
-  google_fonts: ^8.0.1
+  google_fonts: ^8.0.2
   flutter_animate: ^4.5.2
   gap: ^3.0.1
 
   # Utils
   shared_preferences: ^2.5.3
-  uuid: ^4.5.1
+  uuid: ^4.5.3
   intl: ^0.20.2
   url_launcher: ^6.3.1
   supabase_flutter: ^2.12.0
@@ -51,7 +51,7 @@ dependencies:
   path_provider: ^2.1.5
   device_info_plus: ^12.3.0
   in_app_review: ^2.0.11
-  flutter_local_notifications: ^20.0.0
+  flutter_local_notifications: ^20.1.0
   add_2_calendar: ^3.0.1
   timezone: ^0.10.0
   freezed_annotation: ^3.1.0
@@ -70,7 +70,7 @@ dev_dependencies:
   flutter_lints: ^6.0.0
   riverpod_generator: ^4.0.0+1
   riverpod_lint: ^3.1.0
-  build_runner: ^2.10.4
+  build_runner: ^2.11.1
   custom_lint: ^0.8.1
 
   # Testing packages
@@ -83,8 +83,8 @@ dev_dependencies:
   google_sign_in_platform_interface: any
   freezed: ^3.2.3
   json_serializable: ^6.11.2
-  patrol: ^4.1.0
-  patrol_finders: ^3.0.0
+  patrol: ^4.1.1
+  patrol_finders: ^3.1.0
 flutter:
   uses-material-design: true
   

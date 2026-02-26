@@ -244,12 +244,33 @@ void main() {
     });
   });
 
-  // TODO: flutter_animate creates persistent timers that break this test.
-  // The test passes functionally but fails on timer cleanup.
-  // Fix requires either mocking flutter_animate or using integration tests.
-  // group('EmailAuthScreen Loading State', () {
-  //   testWidgets('submit button triggers form submission', ...)
-  // });
+  group('EmailAuthScreen Loading State', () {
+    testWidgets('shows loading spinner while sending magic link', (
+      tester,
+    ) async {
+      mockAuth.simulateDelay = const Duration(milliseconds: 600);
+
+      await tester.pumpWidget(createTestableEmailAuthScreen());
+      await tester.pumpAndSettle();
+
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Email address'),
+        'test@example.com',
+      );
+
+      await tester.tap(find.text('Send Magic Link'));
+      await tester.pump(); // Start async request and render loading state.
+
+      expect(mockAuth.signInWithMagicLinkCallCount, 1);
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+
+      // Complete request and allow delayed flutter_animate transitions to finish.
+      await tester.pump(const Duration(milliseconds: 600));
+      await tester.pump(const Duration(milliseconds: 1200));
+
+      expect(find.text('Check your email'), findsOneWidget);
+    });
+  });
 
   group('EmailAuthScreen UI Elements', () {
     testWidgets('email field has correct placeholder', (tester) async {

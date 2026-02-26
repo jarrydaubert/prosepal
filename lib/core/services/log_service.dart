@@ -29,7 +29,8 @@ abstract final class Log {
   static FirebaseCrashlytics? _crashlytics;
   static FirebaseAnalytics? _analytics;
 
-  /// In-memory buffer of recent logs for export (privacy-safe)
+  /// In-memory buffer of recent logs for export (raw values retained for
+  /// optional user-controlled verbose diagnostics).
   static final Queue<LogEntry> _buffer = Queue<LogEntry>();
   static const int _maxBufferSize = 200;
 
@@ -133,7 +134,7 @@ abstract final class Log {
 
   /// Get recent logs as exportable string (for user support)
   /// Privacy-safe: Only contains app actions, no PII
-  static String getExportableLog() {
+  static String getExportableLog({bool includeSensitive = false}) {
     final now = DateTime.now();
     final buffer = StringBuffer();
     buffer.writeln('=== Prosepal Debug Log ===');
@@ -145,7 +146,14 @@ abstract final class Log {
     buffer.writeln();
 
     for (final entry in _buffer) {
-      buffer.writeln(entry.toExportString());
+      buffer.writeln(
+        entry.toExportString(
+          paramsOverride: _sanitizeForExport(
+            entry.params,
+            includeSensitive: includeSensitive,
+          ),
+        ),
+      );
     }
 
     return buffer.toString();
@@ -166,12 +174,14 @@ abstract final class Log {
   /// Set user identifier for crash reports
   static Future<void> setUserId(String userId) async {
     await _instance?.setUserIdentifier(userId);
+    await _analyticsInstance?.setUserId(id: userId);
     info('User identified', {'userId': _truncate(userId, 8)});
   }
 
   /// Clear user identifier on logout
   static Future<void> clearUserId() async {
     await _instance?.setUserIdentifier('');
+    await _analyticsInstance?.setUserId();
   }
 
   /// Set custom key-value for crash context
@@ -179,14 +189,18 @@ abstract final class Log {
     await _instance?.setCustomKey(key, value);
   }
 
-  /// Keys that may contain PII and should be redacted
-  static const _piiKeys = {
-    'email',
+  /// Keys that are always redacted, even in verbose exports.
+  static const _alwaysRedactKeys = {
     'password',
     'token',
     'accessToken',
     'refreshToken',
     'idToken',
+  };
+
+  /// Keys redacted in standard (non-verbose) exports.
+  static const _privacyRedactKeys = {
+    'email',
     'personalDetails',
     'recipientName',
     'prompt',
@@ -200,21 +214,86 @@ abstract final class Log {
     'address',
   };
 
-  /// Sanitize params by redacting PII values (release mode only)
-  ///
-  /// In debug mode, full values are shown for easier debugging.
-  /// In release mode, PII is redacted to protect user privacy in crash logs.
-  static Map<String, dynamic> _sanitize(Map<String, dynamic> params) {
-    // Allow full debugging in debug mode - redact only in release
-    if (kDebugMode) return params;
+  static final RegExp _emailPattern = RegExp(
+    r'\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b',
+    caseSensitive: false,
+  );
+  static final RegExp _jwtPattern = RegExp(
+    r'\b[A-Za-z0-9\-_]{8,}\.[A-Za-z0-9\-_]{8,}\.[A-Za-z0-9\-_]{8,}\b',
+  );
+  static final RegExp _secretLikePattern = RegExp(
+    r'\b(sk_(live|test)_[A-Za-z0-9]+|AIza[0-9A-Za-z\-_]+)\b',
+  );
 
+  /// Sanitize params for user-exportable logs.
+  ///
+  /// `includeSensitive=true` keeps non-secret values for deeper troubleshooting.
+  static Map<String, dynamic>? _sanitizeForExport(
+    Map<String, dynamic>? params, {
+    required bool includeSensitive,
+  }) {
+    if (params == null) return null;
     return params.map((key, value) {
       final lowerKey = key.toLowerCase();
-      if (_piiKeys.any((pii) => lowerKey.contains(pii.toLowerCase()))) {
+      if (_alwaysRedactKeys.any((k) => lowerKey.contains(k.toLowerCase()))) {
         return MapEntry(key, '[REDACTED]');
       }
-      return MapEntry(key, value);
+      if (!includeSensitive &&
+          _privacyRedactKeys.any((k) => lowerKey.contains(k.toLowerCase()))) {
+        return MapEntry(key, '[REDACTED]');
+      }
+      return MapEntry(
+        key,
+        _sanitizeValue(value, includeSensitive: includeSensitive),
+      );
     });
+  }
+
+  /// Sanitize params for Crashlytics logs.
+  ///
+  /// Keep debug-mode values visible for local debugging. Release builds are
+  /// redacted for privacy.
+  static Map<String, dynamic> _sanitizeForCrashLog(
+    Map<String, dynamic> params,
+  ) {
+    if (kDebugMode) return params;
+    return _sanitizeForExport(params, includeSensitive: false) ?? const {};
+  }
+
+  static dynamic _sanitizeValue(
+    dynamic value, {
+    required bool includeSensitive,
+  }) {
+    if (value is String) {
+      return _sanitizeString(value, includeSensitive: includeSensitive);
+    }
+    if (value is Map) {
+      return value.map(
+        (k, v) =>
+            MapEntry(k, _sanitizeValue(v, includeSensitive: includeSensitive)),
+      );
+    }
+    if (value is Iterable) {
+      return value
+          .map(
+            (item) => _sanitizeValue(item, includeSensitive: includeSensitive),
+          )
+          .toList(growable: false);
+    }
+    return value;
+  }
+
+  static String _sanitizeString(
+    String value, {
+    required bool includeSensitive,
+  }) {
+    var sanitized = value;
+    if (!includeSensitive) {
+      sanitized = sanitized.replaceAll(_emailPattern, '[REDACTED_EMAIL]');
+    }
+    sanitized = sanitized.replaceAll(_jwtPattern, '[REDACTED_TOKEN]');
+    sanitized = sanitized.replaceAll(_secretLikePattern, '[REDACTED_SECRET]');
+    return sanitized;
   }
 
   static String _format(
@@ -224,7 +303,7 @@ abstract final class Log {
   ) {
     final buffer = StringBuffer('[$level] $message');
     if (params != null && params.isNotEmpty) {
-      final sanitized = _sanitize(params);
+      final sanitized = _sanitizeForCrashLog(params);
       buffer.write(' | ');
       buffer.write(
         sanitized.entries.map((e) => '${e.key}=${e.value}').join(', '),
@@ -266,13 +345,14 @@ class LogEntry {
   }
 
   /// Full format for export
-  String toExportString() {
+  String toExportString({Map<String, dynamic>? paramsOverride}) {
     final time = timestamp.toIso8601String().substring(11, 23); // HH:mm:ss.SSS
     final buffer = StringBuffer('$time [$_levelPrefix] $message');
-    if (params != null && params!.isNotEmpty) {
+    final effectiveParams = paramsOverride ?? params;
+    if (effectiveParams != null && effectiveParams.isNotEmpty) {
       buffer.write(' | ');
       buffer.write(
-        params!.entries.map((e) => '${e.key}=${e.value}').join(', '),
+        effectiveParams.entries.map((e) => '${e.key}=${e.value}').join(', '),
       );
     }
     return buffer.toString();

@@ -6,6 +6,38 @@
 
 ---
 
+## P0 - Launch Blockers
+
+| Item | Action |
+|------|--------|
+| Move Google setup to business account (not personal) | Migrate all Google/Play Console setup to a business account so we can bypass the personal-account 14 tester requirement and ship Android. |
+| Set up `prosepal-web` on GitHub | Create/push `prosepal-web` repo to GitHub, wire default branch protections, and connect CI so web changes are trackable and deploy-ready. |
+| Keep redesign out of vNext scope | Freeze major redesign delivery until vNext infra/reliability gates pass; only live-style parity fixes are in vNext scope. |
+
+---
+
+## P0 - vNext Execution Plan (Primary Goal)
+
+> Source of truth: `docs/NEXT_RELEASE_BRIEF.md`
+
+| ID | Item | Definition of Done |
+|----|------|--------------------|
+| `VNEXT-01` | Dependency upgrades (staged batches) | Batch A/B/C executed in separate PRs; each batch passes `flutter analyze`, unit/widget suite, smoke integration suite; release notes capture package/version deltas and risks. |
+| `VNEXT-02` | App Check operational hardening | AI-critical paths validated with App Check enabled; iOS + Android provider behavior verified; enforcement posture explicitly documented; fallback behavior documented if provider fails. |
+| `VNEXT-03` | AI model lifecycle hardening | Production default switched to pinned stable non-preview model; fallback pinned stable and verified; RC model allowlist enforced and tested with invalid value case. |
+| `VNEXT-04` | Remote Config safety controls | `config_schema_version`, `ai_enabled`, `paywall_enabled`, `premium_enabled` keys implemented; RC defaults/template committed; explicit "no secrets in RC" rule documented in release process. |
+| `VNEXT-05` | RevenueCat restore policy finalization | Project restore behavior setting documented; expected outcomes written for anonymous->login, same-device user switch, reinstall+restore; entitlement refresh points defined for premium-critical screens. |
+| `VNEXT-06` | Account deletion subscription UX | Deletion flow copy reviewed for active-subscription guidance; "Manage Subscription" path is accessible in deletion context; user-facing timing/expectation copy finalized and tested. |
+| `VNEXT-07` | Integration determinism hardening | Flaky tests repaired or quarantined from blocking gate; trusted critical-smoke suite is the blocking gate; repeated-run flake audit passes at agreed threshold. |
+| `VNEXT-08` | Device and FTL validation gates | Critical suite passes on one wired iOS and one wired Android physical device; selected Android FTL matrix passes; results attached to release candidate evidence. |
+| `VNEXT-09` | Release config preflight automation | CI/release preflight fails when required `dart-define` values are missing; iOS script-only archive path enforcement documented and validated in runbook. |
+| `VNEXT-10` | AI cost/abuse controls | API/app restrictions verified; per-user rate-limit thresholds documented; budget alert configured; cost-spike kill-switch response runbook added. |
+| `VNEXT-11` | Canonical identity mapping | Single mapping document added for Supabase user ID, RevenueCat app user ID, Analytics user ID, and Crashlytics user ID usage; sign-in/sign-out transitions validated in QA checklist. |
+| `VNEXT-12` | UI parity with live baseline | Baseline screenshots from live app captured for core screens (auth/home/generate/results/paywall/settings); styling deltas cataloged; either matched to live style or explicitly approved as intentional deltas before release. |
+| `VNEXT-13` | Device abuse-control compliance decision | iOS/Android approach documented and approved (current fingerprinting with compliance rationale OR migration plan to native attestation APIs); release checklist updated with the chosen path and validation evidence. |
+
+---
+
 ## P0 - Known Issues (Not Hard Blockers)
 
 | Item | Action |

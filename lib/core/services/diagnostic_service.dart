@@ -29,16 +29,20 @@ abstract final class DiagnosticService {
   /// - App version and device info
   /// - Subscription status (no payment details) - only if RevenueCat configured
   /// - Auth status (no credentials)
-  /// - Recent error log
+  /// - Recent activity log (redacted by default)
   /// - Session info
   ///
-  /// Does NOT include:
-  /// - Personal messages or content
+  /// Standard report does NOT include:
+  /// - Personal message/prompt content
   /// - Payment card info
   /// - Passwords or tokens
   /// - Location data
+  ///
+  /// Advanced full-details report (explicit user opt-in) may include
+  /// message/prompt context and identifiers, but still redacts passwords/tokens.
   static Future<String> generateReport({
     bool isRevenueCatConfigured = false,
+    bool includeSensitiveLogs = false,
   }) async {
     final buffer = StringBuffer();
 
@@ -145,15 +149,24 @@ abstract final class DiagnosticService {
 
     // Recent logs (includes errors, warnings, and actions)
     buffer.writeln('--- Recent Activity Log ---');
-    buffer.writeln(Log.getExportableLog());
+    buffer.writeln(
+      Log.getExportableLog(includeSensitive: includeSensitiveLogs),
+    );
     buffer.writeln();
 
     // Footer
     buffer.writeln('=== End of Report ===');
     buffer.writeln();
-    buffer.writeln(
-      'This report contains no personal messages, payment details, or passwords.',
-    );
+    if (includeSensitiveLogs) {
+      buffer.writeln(
+        'This report may include app content context and identifiers. '
+        'Passwords/tokens are redacted.',
+      );
+    } else {
+      buffer.writeln(
+        'This report contains no personal messages, payment details, or passwords.',
+      );
+    }
     buffer.writeln(
       'Share this with support@prosepal.app to help troubleshoot issues.',
     );

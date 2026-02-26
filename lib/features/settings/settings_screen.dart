@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -92,7 +93,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   Future<void> _loadAnalyticsSetting() async {
     final prefs = ref.read(sharedPreferencesProvider);
-    final enabled = prefs.getBool(PreferenceKeys.analyticsEnabled) ?? true;
+    final enabled =
+        prefs.getBool(PreferenceKeys.analyticsEnabled) ?? !kDebugMode;
     if (mounted) {
       setState(() => _analyticsEnabled = enabled);
     }
