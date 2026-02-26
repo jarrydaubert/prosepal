@@ -53,3 +53,4 @@ key.properties
 *.local.sh
 .env.local
 custom_lint.log
+.crashlytics/
