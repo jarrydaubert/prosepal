@@ -90,20 +90,32 @@
 - [ ] Android AAB built successfully
 - [ ] Upload to Google Play Console > Internal Testing
 
-### App Store Connect ⏳ PENDING
+### App Store Connect ⏳ PARTIALLY VERIFIED 2026-01-10
 
 **Console:** https://appstoreconnect.apple.com
 
-| Item | Location | Status |
-|------|----------|--------|
-| App uploaded | TestFlight | ⏳ |
-| IAP products submitted | In-App Purchases | ⏳ |
-| Privacy nutrition labels | App Privacy | ⏳ |
-| Screenshots (6.7", 6.5", 5.5") | App Store | ⏳ |
-| App description | App Store | ⏳ |
-| Privacy policy URL | App Information | ⏳ `https://prosepal.app/privacy` |
-| Support URL | App Information | ⏳ `https://prosepal.app/support` |
-| Submit for Review | App Store | ⏳ |
+**Apple ID: `6757088726`** (add to code in Phase 3)
+
+| Item | Location | Status | Details |
+|------|----------|--------|---------|
+| Bundle ID | App Information | ✅ | `com.prosepal.prosepal` |
+| App name & subtitle | App Information | ✅ | Prosepal / The right words, right now |
+| Category | App Information | ✅ | Lifestyle / Utilities |
+| Age Rating | App Information | ✅ | 4+ |
+| Privacy policy URL | App Privacy | ✅ | `https://www.prosepal.app/privacy.html` |
+| Privacy nutrition labels | App Privacy | ✅ | 5 data types declared, published 13 days ago |
+| Support URL | Version 1.0 | ✅ | `https://www.prosepal.app/support.html` |
+| Marketing URL | Version 1.0 | ✅ | `https://www.prosepal.app` |
+| App description | Version 1.0 | ✅ | Complete with subscription disclosure |
+| Keywords | Version 1.0 | ✅ | greeting card, message, AI writer, etc. |
+| Test account | App Review | ✅ | appreview@prosepal.app |
+| Review notes | App Review | ✅ | Step-by-step testing instructions |
+| RevenueCat webhooks | App Information | ✅ | Production + Sandbox URLs configured |
+| Copyright | Version 1.0 | ⚠️ | Shows 2025, should be 2026 |
+| Screenshots | Version 1.0 | ❌ | 0 of 10 - NEED TO UPLOAD |
+| Build | Version 1.0 | ❌ | Not uploaded - run `./scripts/build_ios.sh` |
+| IAPs linked to version | Version 1.0 | ❌ | Click "Select In-App Purchases or Subscriptions" |
+| Submit for Review | Version 1.0 | ⏳ | After above items complete |
 
 ### Google Play Console ⏳ PENDING
 
@@ -131,9 +143,10 @@
 
 ### After App Store Approval
 
-- [ ] Get App Store ID from App Store Connect
-- [ ] Update `review_service.dart` with App Store ID
-- [ ] Update `settings_screen.dart` Rate App link
+**Apple ID: `6757088726`**
+
+- [ ] Update `review_service.dart` line ~15: `static const String appStoreId = '6757088726';`
+- [ ] Update `settings_screen.dart` Rate App link (uses review_service)
 - [ ] Rebuild and submit update (or wait for next release)
 
 ### After Play Store Approval
