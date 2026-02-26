@@ -19,7 +19,7 @@ import '../features/history/history_screen.dart';
 import '../features/settings/feedback_screen.dart';
 import '../features/settings/legal_screen.dart';
 import '../features/settings/settings_screen.dart';
-import '../shared/atoms/app_logo.dart';
+import '../shared/components/app_logo.dart';
 import '../shared/theme/app_colors.dart';
 
 final appRouter = GoRouter(

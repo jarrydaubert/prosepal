@@ -131,17 +131,15 @@ lib/
 │       ├── feedback_screen.dart  # Support with diagnostic logs
 │       └── legal_screen.dart     # Privacy policy, terms of service
 │
-└── shared/                       # Reusable UI (Atomic Design)
-    ├── atoms/                    # Basic components
+└── shared/                       # Reusable UI
+    ├── components/               # All shared widgets (flat structure)
     │   ├── app_button.dart
     │   ├── app_logo.dart
-    │   └── tappable_card.dart
-    │
-    ├── molecules/                # Compound components
-    │   ├── generation_loading_overlay.dart  # Full-screen loading animation
-    │   ├── section_header.dart   # Settings section headers
-    │   ├── settings_tile.dart    # Settings row items
-    │   └── usage_indicator.dart  # Free/Pro usage display
+    │   ├── generation_loading_overlay.dart
+    │   ├── section_header.dart
+    │   ├── settings_tile.dart
+    │   ├── tappable_card.dart
+    │   └── usage_indicator.dart
     │
     └── theme/                    # Design tokens
         ├── app_colors.dart       # Brand colors, semantic colors
@@ -328,7 +326,7 @@ CLAUDE.md                         # AI assistant context
 | Dependency Injection | `core/interfaces/` + `core/providers/` |
 | Immutable Models | Freezed in `core/models/` |
 | Feature Modules | `features/{name}/` with screen + widgets |
-| Atomic Design | `shared/atoms/`, `molecules/`, `organisms/` |
+| Shared Components | `shared/components/` (flat structure) |
 | Service Layer | `core/services/` implements `core/interfaces/` |
 | State Management | Riverpod providers in `core/providers/` |
 

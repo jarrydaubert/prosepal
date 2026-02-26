@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/services/biometric_service.dart';
 import '../../core/services/log_service.dart';
-import '../../shared/atoms/app_logo.dart';
+import '../../shared/components/app_logo.dart';
 import '../../shared/theme/app_colors.dart';
 import '../../shared/theme/app_spacing.dart';
 

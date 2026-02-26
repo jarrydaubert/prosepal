@@ -9,7 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/providers/providers.dart';
 import '../../core/services/diagnostic_service.dart';
-import '../../shared/atoms/app_button.dart';
+import '../../shared/components/app_button.dart';
 import '../../shared/theme/app_colors.dart';
 import '../../shared/theme/app_spacing.dart';
 

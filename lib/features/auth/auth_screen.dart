@@ -9,7 +9,7 @@ import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import '../../core/errors/auth_errors.dart';
 import '../../core/providers/providers.dart';
 import '../../core/services/log_service.dart';
-import '../../shared/atoms/app_logo.dart';
+import '../../shared/components/app_logo.dart';
 import '../../shared/theme/app_colors.dart';
 
 class AuthScreen extends ConsumerStatefulWidget {
