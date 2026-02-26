@@ -35,12 +35,21 @@
 | SDK API Keys | API Keys | ✅ | Keys for App Store + Play Store |
 | Test Store | Apps & Projects | ✅ | Sandbox testing configured |
 
-### Firebase ⏳ PENDING
+### Firebase ✅ VERIFIED 2026-01-10
 
-- [ ] App Check enabled (iOS + Android)
-- [ ] Remote Config parameters set
-- [ ] Crashlytics enabled
-- [ ] Analytics enabled
+**Console:** https://console.firebase.google.com/project/prosepal-cda84
+
+| Item | Location | Status | Details |
+|------|----------|--------|---------|
+| App Check | Build > App Check | ✅ | Firebase AI Logic in Monitoring mode (enforce after launch) |
+| Remote Config: `ai_model` | Run > Remote Config | ✅ | `gemini-2.5-flash` |
+| Remote Config: `ai_model_fallback` | Run > Remote Config | ✅ | `gemini-2.5-flash-lite` |
+| Remote Config: `min_app_version_ios` | Run > Remote Config | ✅ | `1.0.0` |
+| Remote Config: `min_app_version_android` | Run > Remote Config | ✅ | `1.0.0` |
+| Crashlytics | Run > Crashlytics | ✅ | Enabled, 100% crash-free |
+| Analytics | Analytics Dashboard | ✅ | Enabled, collecting data |
+
+**Post-build:** Upload dSYM files to Crashlytics for crash symbolication (see `build/debug-info/`)
 
 ### App Store Connect ⏳ PENDING
 
