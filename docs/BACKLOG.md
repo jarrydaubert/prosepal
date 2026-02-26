@@ -31,13 +31,6 @@
 | Firebase API key app restrictions | Add platform application restrictions for Firebase auto-created Android/iOS/browser keys and verify with `./scripts/audit_ai_cost_controls.sh`. |
 | Billing budget alert controls | Enable budget alert verification path (permissions/API) and configure release budget thresholds + notifications for AI cost monitoring. |
 
-## P1 - Testing Gaps
-
-| ID | Gap | Location | Definition of Done |
-|----|-----|----------|--------------------|
-| `AUDIT-18` | Critical widget coverage depth is still thin on auth/onboarding/lock | `test/widgets/screens/` | Each listed screen has deterministic widget tests for primary state, interaction state, and at least one boundary/empty state. New tests run in `./scripts/test_critical_smoke.sh` without flakes. |
-| `AUDIT-19` | Critical widget error states are under-tested | `test/widgets/screens/`, `test/mocks/` | Widget tests explicitly assert user-visible error behavior for auth failure, generation failure/rate-limit, and subscription restore/paywall failure using existing mock error injection. |
-
 ## P1 - Engineering Tasks
 
 | Item | Location | Action |
