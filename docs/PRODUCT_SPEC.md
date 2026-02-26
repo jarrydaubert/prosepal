@@ -89,6 +89,61 @@ Prosepal: Card Message Writer - AI Birthday & Thank You Notes
 - [ ] If > 50 trials → Double down, add Apple Search Ads
 - [ ] Cross-promote future apps subtly
 
+### Soft Launch & Promotion Plan
+
+| Channel | Action | Timing |
+|---------|--------|--------|
+| **Product Hunt** | Launch post | Week 1 |
+| **Reddit** | r/greetingcards, r/wedding, r/SideProject | Week 1-2 |
+| **Twitter/X** | Build in public thread | Ongoing |
+| **TikTok** | "POV: You need to write a card" slideshows | If traction |
+
+### Countering Free Web Tools
+
+Free web tools (greetingcardwriter.com, etc.) exist but lack mobile advantages:
+
+| Our Advantage | Why It Matters |
+|---------------|----------------|
+| **Mobile-first** | Write while standing in card aisle |
+| **Offline capable** | No WiFi needed at store |
+| **Quick copy/share** | One tap to clipboard |
+| **Saved history** (V1.1) | Reuse for same person next year |
+| **3 variations** | Choice, not just one output |
+
+**ASO Screenshot Strategy:**
+1. "Standing in the card aisle? We've got you."
+2. "3 personalized options in seconds"
+3. "Birthday, Wedding, Sympathy & more"
+4. "Copy. Paste. Done."
+
+### Conversion Optimization
+
+**Risk:** Generous free tier (3/day) may reduce conversions.
+
+**Mitigation - A/B Test These:**
+
+| Variant | Free Tier | Hypothesis |
+|---------|-----------|------------|
+| A (Default) | 3/day | Hooks users, converts power users |
+| B (Tight) | 1/day | Forces conversion faster |
+| C (Occasion-limited) | 3/day, but only 2 occasions free | Upsells variety seekers |
+
+**Pro Value-Adds to Test:**
+- More tones (Poetic, Inspirational, Religious)
+- Longer messages option
+- "Remember this person" feature
+- No "Powered by Prosepal" watermark on share
+
+### Risk Monitoring
+
+| Risk | Monitor | Action Trigger |
+|------|---------|----------------|
+| Gemini API cost spike | Monthly bill | If >$50/mo, add caching |
+| Gemini rate limits | Error logs | Implement queue/retry |
+| Low conversion | RevenueCat | If <2% trial→paid, tighten free |
+| ASO keyword shifts | Sensor Tower (monthly) | Update metadata quarterly |
+| Negative reviews | App Store Connect | Respond within 24h |
+
 ### Portfolio Expansion Ideas
 
 If Prosepal works, clone the pattern for other text-generation niches:
