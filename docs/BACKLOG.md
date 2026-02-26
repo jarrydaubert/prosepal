@@ -115,15 +115,13 @@
 
 ### HIGH - Fix Week 1 Post-Launch
 
-| Issue | Location | Fix |
-|-------|----------|-----|
-| Missing CAPTCHA | `email_auth_screen.dart` | Add Turnstile/hCaptcha widget + Supabase config |
-| Missing Google nonce | `auth_service.dart` | Native SDK has built-in protections; lower priority |
+*No HIGH items remaining*
 
 ### MEDIUM - Fix Weeks 2-3
 
 | Issue | Location | Fix |
 |-------|----------|-----|
+| Missing CAPTCHA | `email_auth_screen.dart` | Add Turnstile/hCaptcha widget + Supabase config (defense-in-depth) |
 | Prompt injection | `ai_service.dart:514-519` | User input directly in prompt. Low impact for greeting cards |
 | No input length validation | `ai_service.dart` | No character limit on recipientName/personalDetails |
 | Concurrent generation race | `generate_screen.dart:276` | UI disables button, but rapid taps before state update possible |
@@ -137,6 +135,7 @@
 
 | Issue | Location | Fix |
 |-------|----------|-----|
+| Missing Google nonce | `auth_service.dart` | Native SDK has built-in replay protections |
 | No StoreKit2 config | `subscription_service.dart` | Add `usesStoreKit2IfAvailable: true` for modern iOS |
 | No deferred purchase handling | `subscription_service.dart` | Handle iOS parental controls |
 | StateNotifier legacy API | `providers.dart` | Migrate to Notifier/AsyncNotifier (Riverpod 3.x modern) |
