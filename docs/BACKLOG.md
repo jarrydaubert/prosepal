@@ -63,6 +63,7 @@
 |-------|----------|-----|
 | No timeout on splash Pro check | `router.dart:244` | Add timeout with fallback to prevent hang on slow network |
 | No notification on bio auto-disable | `router.dart:200` | Show toast when biometrics unavailable and auto-disabled |
+| AI config not env-configurable | `ai_config.dart` | Consider Remote Config for model/params (see Gemini section) |
 | Missing Google nonce | `auth_service.dart` | Native SDK has built-in protections |
 | Generic catch blocks | Throughout `/lib` | ~65 remaining, core services done |
 | No SSL certificate pinning | Network | Consider for banking-level security |
@@ -131,8 +132,9 @@
 
 | Item | Action |
 |------|--------|
-| `gemini-2.5-flash` shutdown June 2026 | Add model fallback list in `ai_config.dart` |
-| No fallback on model 404 | Catch error, try `gemini-2.5-flash-lite` then `gemini-3-flash` |
+| Model name hardcoded | Fetch from Firebase Remote Config - allows switching models without app update |
+| No fallback on model 404 | Catch error, try fallback models from Remote Config list |
+| `gemini-2.5-flash` deprecation | Monitor Google announcements, update Remote Config when needed |
 
 ### Supabase - Monitor 2026
 
