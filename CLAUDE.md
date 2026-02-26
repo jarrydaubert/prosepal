@@ -6,16 +6,23 @@ Prosepal is an AI-powered message helper app that generates personalized message
 
 **Tagline:** "The right words, right now"
 
-## Tech Stack
+**Platforms:** iOS (App Store), Android (Google Play), Web (future)
 
-| Layer | Technology |
-|-------|------------|
-| Frontend | Flutter 3.38+ |
-| Auth + DB | Supabase (V1.1+, not MVP) |
-| AI | Gemini 2.5 Flash (via Edge Function) |
-| Payments | RevenueCat |
-| Analytics | Firebase Analytics |
-| Crashes | Firebase Crashlytics |
+## Tech Stack (Cutting-Edge 2025)
+
+| Layer | Technology | Version |
+|-------|------------|---------|
+| Frontend | Flutter | 3.38+ |
+| Language | Dart | 3.6+ |
+| State Management | Riverpod | 3.0+ |
+| Navigation | go_router | 17.0+ |
+| AI | google_generative_ai | 0.4.7+ (Direct Gemini 2.0 Flash) |
+| Payments | RevenueCat | 6.0+ |
+| Analytics | Firebase Analytics | 10.7+ |
+| Crashes | Firebase Crashlytics | 3.4+ |
+| Local Storage | SharedPreferences | 2.2+ |
+
+**Note:** No backend for MVP! Direct Gemini API + local storage. Add Supabase in V1.1 for auth/history.
 
 ## Commands
 
@@ -43,40 +50,88 @@ flutter analyze
 
 # Format code
 dart format .
+
+# Generate Riverpod code
+dart run build_runner build --delete-conflicting-outputs
 ```
 
-## Project Structure
+## Project Structure (Atomic Design + Feature-First)
 
 ```
 lib/
 ├── main.dart
 ├── app/
-│   ├── app.dart              # MaterialApp config
-│   └── router.dart           # Navigation
-├── features/
-│   ├── home/                 # Occasion selection grid
-│   ├── generate/             # Generation flow screens
-│   ├── results/              # 3 message options display
-│   ├── paywall/              # Subscription screen
-│   └── settings/             # App settings
+│   ├── app.dart                    # MaterialApp + ProviderScope
+│   └── router.dart                 # go_router configuration
+│
+├── features/                       # Feature-first organization
+│   ├── home/
+│   │   ├── home_screen.dart
+│   │   └── widgets/
+│   │       └── occasion_grid.dart
+│   ├── generate/
+│   │   ├── generate_screen.dart
+│   │   ├── generate_provider.dart  # Riverpod provider
+│   │   └── widgets/
+│   ├── results/
+│   │   ├── results_screen.dart
+│   │   └── widgets/
+│   ├── paywall/
+│   │   └── paywall_screen.dart
+│   └── settings/
+│       └── settings_screen.dart
+│
 ├── core/
 │   ├── services/
-│   │   ├── ai_service.dart   # Gemini API calls
+│   │   ├── ai_service.dart         # Gemini API wrapper
 │   │   ├── subscription_service.dart
+│   │   ├── usage_service.dart      # Daily/monthly limits
 │   │   └── analytics_service.dart
 │   ├── models/
 │   │   ├── occasion.dart
 │   │   ├── relationship.dart
 │   │   ├── tone.dart
-│   │   └── message.dart
-│   └── theme/
-│       ├── colors.dart
-│       ├── typography.dart
-│       └── spacing.dart
+│   │   └── generated_message.dart
+│   └── providers/
+│       ├── usage_provider.dart
+│       └── subscription_provider.dart
+│
 └── shared/
-    ├── widgets/
+    ├── atoms/                      # Basic UI building blocks
+    │   ├── app_button.dart
+    │   ├── app_text.dart
+    │   ├── app_icon.dart
+    │   └── app_card.dart
+    ├── molecules/                  # Combinations of atoms
+    │   ├── icon_label.dart
+    │   ├── selection_chip.dart
+    │   └── loading_indicator.dart
+    ├── organisms/                  # Complex components
+    │   ├── occasion_tile.dart
+    │   ├── message_option.dart
+    │   └── paywall_card.dart
+    ├── templates/                  # Page layouts
+    │   ├── base_screen.dart
+    │   └── scrollable_screen.dart
+    ├── theme/
+    │   ├── app_colors.dart
+    │   ├── app_typography.dart
+    │   ├── app_spacing.dart
+    │   └── app_theme.dart
     └── extensions/
+        ├── context_extensions.dart
+        └── string_extensions.dart
 ```
+
+## Atomic Design Hierarchy
+
+| Level | Description | Examples |
+|-------|-------------|----------|
+| **Atoms** | Smallest UI units | `AppButton`, `AppText`, `AppIcon` |
+| **Molecules** | Atom combinations | `IconLabel`, `SelectionChip` |
+| **Organisms** | Complex components | `OccasionTile`, `MessageOption` |
+| **Templates** | Page layouts | `BaseScreen`, `ScrollableScreen` |
+| **Pages** | Full screens | `HomeScreen`, `ResultsScreen` |
 
 ## Core Concepts
 
@@ -105,6 +160,16 @@ lib/
 - Funny
 - Formal
 
+## Monetization & Usage Limits
+
+| Tier | Daily Limit | Monthly Limit | Price |
+|------|-------------|---------------|-------|
+| Free | 3/day | ~90/mo | $0 |
+| Pro Monthly | 50/day | 500/mo | $4.99/mo |
+| Pro Yearly | 50/day | 500/mo | $29.99/yr |
+
+**Usage tracked locally (SharedPreferences), subscription via RevenueCat.**
+
 ## Generation Flow
 
 ```
@@ -117,23 +182,15 @@ Select Relationship
 Select Tone
     ↓
 Add Personal Details (optional)
-  - Recipient name
-  - Memory/context
     ↓
-Generate (API call)
+Check usage limits
+    ↓
+Generate (Gemini API)
     ↓
 Results (3 options)
-  - Copy to clipboard
-  - Regenerate
+    ↓
+Copy to clipboard
 ```
-
-## Monetization
-
-| Tier | Limit | Price |
-|------|-------|-------|
-| Free | 3/day | $0 |
-| Pro Monthly | Unlimited | $4.99/mo |
-| Pro Yearly | Unlimited | $29.99/yr |
 
 ## Key Files
 
@@ -141,26 +198,48 @@ Results (3 options)
 |------|---------|
 | `docs/PRODUCT_SPEC.md` | Full product specification |
 | `lib/core/services/ai_service.dart` | Gemini API integration |
+| `lib/core/services/usage_service.dart` | Daily/monthly limit tracking |
 | `lib/features/home/home_screen.dart` | Main occasion grid |
-| `lib/features/generate/` | Multi-step generation flow |
 
 ## Coding Conventions
 
-- Use Riverpod for state management
-- Follow Flutter style guide
+- **Riverpod 3.0** with code generation (`@riverpod` annotations)
+- **go_router** for navigation (type-safe, declarative)
+- **Atomic Design** for UI components
 - Use `const` constructors where possible
-- Keep widgets small and focused
-- Extract business logic to services
-- Use named routes for navigation
+- Keep widgets small and focused (<200 lines)
+- Extract business logic to services/providers
+- Use `Gap` widget for spacing (not `SizedBox`)
 
 ## Environment Variables
 
-Create `.env` file (DO NOT COMMIT):
+Use `envied` for compile-time security. Create `lib/env/env.dart`:
+
+```dart
+import 'package:envied/envied.dart';
+part 'env.g.dart';
+
+@Envied(path: '.env')
+abstract class Env {
+  @EnviedField(varName: 'GEMINI_API_KEY', obfuscate: true)
+  static String geminiApiKey = _Env.geminiApiKey;
+  
+  @EnviedField(varName: 'REVENUECAT_IOS_KEY', obfuscate: true)
+  static String revenueCatIosKey = _Env.revenueCatIosKey;
+  
+  @EnviedField(varName: 'REVENUECAT_ANDROID_KEY', obfuscate: true)
+  static String revenueCatAndroidKey = _Env.revenueCatAndroidKey;
+}
+```
+
+Then create `.env` file (DO NOT COMMIT):
 ```
 GEMINI_API_KEY=xxx
 REVENUECAT_IOS_KEY=xxx
 REVENUECAT_ANDROID_KEY=xxx
 ```
+
+Run `dart run build_runner build` to generate.
 
 ## Testing
 
@@ -173,4 +252,7 @@ flutter test --coverage
 
 # Run specific test
 flutter test test/features/home/home_screen_test.dart
+
+# Generate mocks (if using mockito)
+dart run build_runner build
 ```
