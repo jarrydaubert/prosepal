@@ -91,6 +91,22 @@ else
           echo "  [FAIL] $display_name missing browser restrictions"
           key_fail=1
         fi
+
+        has_localhost_referrer="$(
+          echo "$key_json" | jq -r '
+            (
+              (.restrictions.browserKeyRestrictions.allowedReferrers // [])
+              | map(test("localhost|127\\.0\\.0\\.1"))
+              | any
+            ) // false
+          '
+        )"
+        if [ "$has_localhost_referrer" = "true" ]; then
+          echo "  [FAIL] $display_name allows localhost/127.0.0.1 referrers"
+          key_fail=1
+        else
+          echo "  [PASS] $display_name excludes localhost/127.0.0.1 referrers"
+        fi
         ;;
     esac
 
@@ -101,6 +117,22 @@ else
     )"
     if [ "$uses_generative_language" = "true" ]; then
       echo "  [PASS] $display_name constrained to Generative Language API"
+
+      has_app_restriction="$(
+        echo "$key_json" | jq -r '
+          (
+            (.restrictions.androidKeyRestrictions // null) != null or
+            (.restrictions.iosKeyRestrictions // null) != null or
+            (.restrictions.browserKeyRestrictions // null) != null or
+            (.restrictions.serverKeyRestrictions // null) != null
+          )
+        '
+      )"
+
+      if [ "$display_name" != "Gemini Developer API key (auto created by Firebase)" ] && [ "$has_app_restriction" != "true" ]; then
+        echo "  [FAIL] $display_name is a non-Firebase Gemini key without app/server restrictions"
+        key_fail=1
+      fi
     fi
   done < <(jq -r '.[] | @base64' "$tmp_keys")
 fi
