@@ -2,18 +2,26 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:prosepal/core/services/usage_service.dart';
 
+import '../mocks/mock_device_fingerprint_service.dart';
+import '../mocks/mock_rate_limit_service.dart';
+
 /// UsageService Unit Tests
 ///
-/// Tests REAL UsageService with mocked SharedPreferences.
+/// Tests REAL UsageService with mocked SharedPreferences, DeviceFingerprintService,
+/// and RateLimitService.
 /// Each test answers: "What bug does this catch?"
 void main() {
   group('UsageService', () {
     late UsageService usageService;
+    late MockDeviceFingerprintService mockDeviceFingerprint;
+    late MockRateLimitService mockRateLimit;
 
     setUp(() async {
       SharedPreferences.setMockInitialValues({});
       final prefs = await SharedPreferences.getInstance();
-      usageService = UsageService(prefs);
+      mockDeviceFingerprint = MockDeviceFingerprintService();
+      mockRateLimit = MockRateLimitService();
+      usageService = UsageService(prefs, mockDeviceFingerprint, mockRateLimit);
     });
 
     test('should start with 0 total count', () {
@@ -117,7 +125,11 @@ void main() {
       await prefs.setInt('monthly_generation_count', 50);
 
       // Create new service to read from prefs
-      final newService = UsageService(prefs);
+      final newService = UsageService(
+        prefs,
+        MockDeviceFingerprintService(),
+        MockRateLimitService(),
+      );
 
       // Should return 0 because current month doesn't match stored month
       expect(newService.getMonthlyCount(), equals(0));

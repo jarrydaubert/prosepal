@@ -1,7 +1,9 @@
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'device_fingerprint_service.dart';
 import 'log_service.dart';
+import 'rate_limit_service.dart';
 
 /// Tracks generation usage with server-side persistence via Supabase.
 ///
@@ -9,27 +11,32 @@ import 'log_service.dart';
 /// Local cache (SharedPreferences) provides fast reads; server is source of truth.
 ///
 /// ## Architecture
+/// - **Rate limiting**: [RateLimitService] prevents API abuse (20 req/min/user)
 /// - **Server-side enforcement**: [checkAndIncrementServerSide] validates and
 ///   increments atomically via Supabase RPC - REQUIRED for authenticated users
+/// - **Device fingerprinting**: [DeviceFingerprintService] tracks device-level
+///   free tier usage to prevent abuse via reinstalls or account switching
 /// - **Client-side cache**: Local SharedPreferences for UI display (remaining
 ///   counts) and offline/anonymous fallback
 ///
 /// ## Flow
 /// 1. User signs in -> syncFromServer() fetches their usage
 /// 2. User generates -> checkAndIncrementServerSide() validates + increments
-/// 3. Local cache updated from RPC response
-/// 4. User reinstalls -> signs in -> gets their existing usage from server
+/// 3. Rate limit checked first -> Device fingerprint checked -> Usage incremented
+/// 4. Local cache updated from RPC response
+/// 5. User reinstalls -> signs in -> gets their existing usage from server
 ///
 /// ## Security
-/// Authenticated users MUST use [checkAndIncrementServerSide] which calls
-/// the `check_and_increment_usage` Supabase RPC function. This prevents:
-/// - SharedPreferences tampering
-/// - App data clearing exploits
-/// - Modified client attacks
+/// Authenticated users MUST use [checkAndIncrementServerSide] which:
+/// 1. Checks rate limits (prevents abuse)
+/// 2. Checks device fingerprint (prevents reinstall abuse)
+/// 3. Calls `check_and_increment_usage` Supabase RPC (prevents client tampering)
 class UsageService {
-  UsageService(this._prefs);
+  UsageService(this._prefs, this._deviceFingerprint, this._rateLimit);
 
   final SharedPreferences _prefs;
+  final DeviceFingerprintService _deviceFingerprint;
+  final RateLimitService _rateLimit;
 
   // Local cache keys
   static const _keyTotalCount = 'total_generation_count';
@@ -80,22 +87,48 @@ class UsageService {
   }
 
   /// Check if user can generate (free tier - lifetime limit)
-  /// Also checks device-level flag to prevent abuse after account deletion
+  /// This is a QUICK LOCAL CHECK for UI responsiveness.
+  /// For actual generation, use [checkDeviceFreeTierServerSide] or
+  /// [checkAndIncrementServerSide].
+  ///
+  /// Also checks local device-level flag as fallback.
   bool canGenerateFree() {
-    // Device already used free tier (survives account deletion)
+    // Local device flag (fallback if server check fails)
     final deviceUsed = _prefs.getBool(_keyDeviceUsedFreeTier) == true;
     if (deviceUsed) {
-      Log.info('Free tier blocked - device already used free tier');
+      Log.info('Free tier blocked - local device flag set');
       return false;
     }
     return getTotalCount() < freeLifetimeLimit;
   }
 
+  /// Check device free tier eligibility on server.
+  ///
+  /// This is the PRIMARY method for checking if a device can use the free tier.
+  /// It queries the server to check if the device fingerprint has been used.
+  ///
+  /// Use this for anonymous users before generation.
+  /// For authenticated users, [checkAndIncrementServerSide] handles both
+  /// user-level and device-level checks.
+  Future<DeviceCheckResult> checkDeviceFreeTierServerSide() async {
+    return _deviceFingerprint.canUseFreeTier();
+  }
+
   /// Mark device as having used free tier (fraud prevention)
-  /// This survives account deletion - not user data, device data
+  /// Updates BOTH local cache and server-side tracking.
+  ///
+  /// This survives:
+  /// - App reinstalls (server-side tracking)
+  /// - Account deletion (device tracking is separate from user data)
+  /// - Data clearing (server-side tracking)
   Future<void> markDeviceUsedFreeTier() async {
+    // Update local cache (for immediate UI feedback)
     await _prefs.setBool(_keyDeviceUsedFreeTier, true);
-    Log.info('Device marked as used free tier');
+
+    // Update server-side (survives reinstalls)
+    await _deviceFingerprint.markFreeTierUsed();
+
+    Log.info('Device marked as used free tier (local + server)');
   }
 
   /// Check if user can generate (pro tier)
@@ -121,11 +154,11 @@ class UsageService {
 
   /// Check limits and increment usage atomically on the server.
   ///
-  /// This is the PRIMARY method for usage validation. It calls the Supabase
-  /// RPC function `check_and_increment_usage` which:
-  /// 1. Checks if user is within limits (with row-level locking)
-  /// 2. Increments usage atomically if allowed
-  /// 3. Returns the result
+  /// This is the PRIMARY method for usage validation. It performs:
+  /// 1. Rate limit check (prevents API abuse)
+  /// 2. Device fingerprint check (for free tier - prevents reinstall abuse)
+  /// 3. User-level usage check via Supabase RPC (with row-level locking)
+  /// 4. Atomic increment if allowed
   ///
   /// Returns [UsageCheckResult] with:
   /// - [allowed]: true if generation can proceed
@@ -144,6 +177,38 @@ class UsageService {
       throw UsageCheckException('Please sign in to continue');
     }
 
+    // 1. Check rate limits first (prevents abuse)
+    final rateLimitResult = await _rateLimit.checkRateLimit();
+    if (!rateLimitResult.allowed) {
+      Log.info('Generation blocked by rate limit', {
+        'reason': rateLimitResult.reason?.name,
+        'retryAfter': rateLimitResult.retryAfter,
+      });
+      return UsageCheckResult(
+        allowed: false,
+        remaining: 0,
+        errorMessage: rateLimitResult.errorMessage,
+      );
+    }
+
+    // 2. For free tier users, check device fingerprint
+    // This prevents abuse via account switching or reinstalls
+    if (!isPro) {
+      final deviceCheck = await _deviceFingerprint.canUseFreeTier();
+      if (!deviceCheck.allowed) {
+        Log.info('Free tier blocked by device fingerprint', {
+          'reason': deviceCheck.reason.name,
+        });
+        return const UsageCheckResult(
+          allowed: false,
+          remaining: 0,
+          errorMessage:
+              'This device has already used its free message. '
+              'Upgrade to Pro for unlimited access!',
+        );
+      }
+    }
+
     final monthKey = _monthString();
 
     try {
@@ -158,7 +223,8 @@ class UsageService {
       final totalCount = result['total_count'] as int? ?? 0;
       final monthlyCount = result['monthly_count'] as int? ?? 0;
       final remaining = result['remaining'] as int? ?? 0;
-      final limit = result['limit'] as int? ?? (isPro ? proMonthlyLimit : freeLifetimeLimit);
+      final limit =
+          result['limit'] as int? ?? (isPro ? proMonthlyLimit : freeLifetimeLimit);
 
       Log.info('Server-side usage check', {
         'allowed': allowed,
@@ -173,7 +239,7 @@ class UsageService {
       await _prefs.setInt(_keyMonthlyCount, monthlyCount);
       await _prefs.setString(_keyMonthlyDate, monthKey);
 
-      // Mark device as having used free tier
+      // Mark device as having used free tier (both local + server)
       if (allowed && !isPro) {
         await markDeviceUsedFreeTier();
       }
