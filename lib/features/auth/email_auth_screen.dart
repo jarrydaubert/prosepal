@@ -32,10 +32,17 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
 
   bool _isLoading = false;
   bool _emailSent = false;
-  bool _usePassword = false;
+  late bool _usePassword;
   String? _sentToEmail;
   int _resendCooldown = 0;
   Timer? _cooldownTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    // Force password mode for auto-purchase flow (magic link breaks it)
+    _usePassword = widget.autoPurchase;
+  }
 
   @override
   void dispose() {
@@ -303,6 +310,7 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
                     formKey: _formKey,
                     isLoading: _isLoading,
                     usePassword: _usePassword,
+                    autoPurchase: widget.autoPurchase,
                     onSubmit: _usePassword
                         ? _signInWithPassword
                         : _sendMagicLink,
@@ -470,6 +478,7 @@ class _EmailInputView extends StatelessWidget {
     required this.formKey,
     required this.isLoading,
     required this.usePassword,
+    required this.autoPurchase,
     required this.onSubmit,
     required this.onToggleMode,
     required this.validateEmail,
@@ -480,6 +489,7 @@ class _EmailInputView extends StatelessWidget {
   final GlobalKey<FormState> formKey;
   final bool isLoading;
   final bool usePassword;
+  final bool autoPurchase;
   final VoidCallback onSubmit;
   final VoidCallback onToggleMode;
   final String? Function(String?) validateEmail;
@@ -583,14 +593,16 @@ class _EmailInputView extends StatelessWidget {
 
         const SizedBox(height: 20),
 
-        // Toggle mode
-        TextButton(
-          onPressed: onToggleMode,
-          child: Text(
-            usePassword ? 'Use magic link instead' : 'Sign in with password',
-            style: TextStyle(color: Colors.grey[600]),
+        // Toggle mode (hide during purchase flow - magic link breaks auto-purchase)
+        if (!autoPurchase) ...[
+          TextButton(
+            onPressed: onToggleMode,
+            child: Text(
+              usePassword ? 'Use magic link instead' : 'Sign in with password',
+              style: TextStyle(color: Colors.grey[600]),
+            ),
           ),
-        ),
+        ],
 
         // Benefits (only for magic link mode)
         if (!usePassword) ...[
