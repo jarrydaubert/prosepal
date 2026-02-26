@@ -1,476 +1,412 @@
-# Flutter App Stack Template (December 2025)
+# Flutter App Blueprint
 
-Reusable configuration for future Flutter apps. Copy this setup for consistent, production-ready apps.
-
----
-
-## Tech Stack
-
-| Layer | Technology | Version | Purpose |
-|-------|------------|---------|---------|
-| **Framework** | Flutter | 3.38.5 | Cross-platform UI |
-| **Language** | Dart | ^3.9.0 | Null safety, records |
-| **State** | Riverpod | 3.0.3 | Reactive state management |
-| **Navigation** | go_router | 17.0.1 | Declarative routing |
-| **AI** | google_generative_ai | 0.4.7 | Gemini 2.5 Flash |
-| **Auth** | Supabase | 2.12.0 | Auth, database, edge functions |
-| **Payments** | RevenueCat | 9.10.2 | Subscriptions & IAP |
-| **Biometrics** | local_auth | 3.0.0 | Face ID / Touch ID |
+> How to build another app exactly like Prosepal. Copy this stack, swap the content.
 
 ---
 
-## Third-Party Services
+## The Stack
 
-### Authentication: Supabase
-**Dashboard:** https://supabase.com/dashboard
-
-| Feature | Implementation |
-|---------|----------------|
-| Email/Password | `signInWithPassword()`, `signUp()` |
-| Apple Sign-In | `signInWithIdToken()` + native credential |
-| Google OAuth | `signInWithOAuth()` |
-| Magic Link | `signInWithOtp()` |
-| Password Reset | `resetPasswordForEmail()` |
-
-**Setup:**
-1. Create project at supabase.com
-2. Enable providers in Auth > Providers
-3. Add redirect URLs: `com.yourbundle.app://login-callback`
-4. Copy URL and anon key to app
-
-**Edge Functions (for account deletion - App Store requirement):**
-```bash
-supabase functions deploy delete-user --project-ref YOUR_PROJECT_REF
-```
-
-### Payments: RevenueCat
-**Dashboard:** https://app.revenuecat.com
-
-| Platform | Setup Required |
-|----------|----------------|
-| iOS | App Store Connect > In-App Purchases > Create products |
-| Android | Google Play Console > Monetization > Products |
-
-**Product ID Convention:**
-- `com.yourapp.pro.monthly` - Monthly subscription
-- `com.yourapp.pro.yearly` - Yearly subscription
-- `com.yourapp.credits.100` - Consumable
-
-**Integration:**
-1. Create app in RevenueCat
-2. Add API keys to app
-3. Create Entitlements (e.g., "pro")
-4. Create Offerings with packages
-
-### Email: Resend + Cloudflare
-**Resend Dashboard:** https://resend.com
-**Cloudflare Dashboard:** https://dash.cloudflare.com
-
-**Free Tiers:**
-- Resend: 100 emails/day, 3,000/month
-- Cloudflare: Unlimited DNS, free SSL
-
-**Setup:**
-1. Buy domain on Cloudflare ($12-15/yr for .app)
-2. Add domain in Resend
-3. Add DNS records to Cloudflare:
-   - MX record
-   - TXT (SPF)
-   - CNAME (DKIM)
-4. Use Resend's Supabase integration (auto-configures SMTP)
-
-**SMTP Settings (if manual):**
-```
-Host: smtp.resend.com
-Port: 465
-User: resend
-Password: re_xxxxxxxxxxxx (API key)
-From: noreply@yourdomain.app
-```
-
-### AI: Google Gemini
-**Console:** https://aistudio.google.com
-
-**Model Selection (Dec 2025):**
-| Model | Use Case | Cost |
-|-------|----------|------|
-| gemini-2.5-flash | Fast, cheap, most tasks | $0.0375/1M tokens |
-| gemini-2.5-pro | Complex reasoning | $1.25/1M tokens |
-
-**Safety Settings:**
-```dart
-safetySettings: [
-  SafetySetting(HarmCategory.harassment, HarmBlockThreshold.medium),
-  SafetySetting(HarmCategory.hateSpeech, HarmBlockThreshold.medium),
-  SafetySetting(HarmCategory.sexuallyExplicit, HarmBlockThreshold.high),
-  SafetySetting(HarmCategory.dangerousContent, HarmBlockThreshold.medium),
-]
-```
+| Layer | Technology | Why |
+|-------|------------|-----|
+| **Framework** | Flutter | iOS + Android from one codebase |
+| **State** | Riverpod 3.x | Compile-safe, testable, code generation |
+| **Navigation** | go_router | Official Flutter team, type-safe routes |
+| **AI** | Firebase AI (Gemini) | No API key in client, secure, cheap |
+| **Auth** | Supabase | Free tier, Apple/Google/Email built-in |
+| **Payments** | RevenueCat | Handles both stores, no server needed |
+| **Analytics** | Firebase Analytics + Crashlytics | Free, reliable |
+| **Storage** | SharedPreferences + Supabase | Local cache + server sync |
 
 ---
 
-## Project Structure (Feature-First + Atomic Design)
+## Project Structure
 
 ```
 lib/
-├── main.dart
+├── main.dart                 # Initialize Firebase, Supabase, RevenueCat
+├── firebase_options.dart     # Auto-generated
+│
 ├── app/
-│   └── router.dart
+│   ├── app.dart              # MaterialApp, theme, ProviderScope wrapper
+│   └── router.dart           # go_router with splash → auth → home flow
+│
 ├── core/
-│   ├── errors/           # Error handling
-│   ├── models/           # Data models
-│   ├── providers/        # Riverpod providers
-│   └── services/         # Business logic
-│       ├── ai_service.dart
-│       ├── auth_service.dart
-│       ├── biometric_service.dart
-│       ├── subscription_service.dart
-│       └── usage_service.dart
-├── features/
-│   ├── auth/
-│   ├── home/
-│   ├── settings/
-│   ├── onboarding/
-│   └── paywall/
-├── shared/
-│   ├── atoms/            # Buttons, cards, icons
-│   ├── molecules/        # Composed widgets
-│   ├── organisms/        # Feature sections
-│   └── theme/
-│       ├── app_colors.dart
-│       ├── app_spacing.dart
-│       └── app_typography.dart
-└── assets/
-    └── images/
-        └── logo.png
+│   ├── config/               # AI config, feature flags
+│   ├── errors/               # User-friendly error messages
+│   ├── interfaces/           # Service contracts (for DI/testing)
+│   ├── models/               # Data models (freezed for immutability)
+│   ├── providers/            # Riverpod providers (central registration)
+│   └── services/             # Business logic implementations
+│
+├── features/                 # One folder per feature
+│   ├── auth/                 # Sign in, sign up, lock screen
+│   ├── home/                 # Main screen
+│   ├── [your-feature]/       # Your app's core feature
+│   ├── paywall/              # Subscription screen
+│   ├── onboarding/           # First-run tutorial
+│   └── settings/             # Account, preferences, legal
+│
+└── shared/                   # Reusable UI (Atomic Design)
+    ├── atoms/                # Buttons, cards, icons
+    ├── molecules/            # Compound widgets
+    ├── organisms/            # Complex components
+    └── theme/                # Colors, typography, spacing
 ```
 
 ---
 
-## iOS Configuration
+## Setup Checklist
 
-### Bundle ID Convention
-`com.yourcompany.appname`
+### 1. Create Flutter Project
 
-### Info.plist Keys
+```bash
+flutter create --org com.yourcompany appname
+cd appname
+```
+
+### 2. Add Dependencies
+
+```yaml
+# pubspec.yaml
+dependencies:
+  # State
+  flutter_riverpod: ^3.1.0
+  riverpod_annotation: ^4.0.0
+  
+  # Navigation
+  go_router: ^17.0.1
+  
+  # AI
+  firebase_ai: ^3.6.1
+  
+  # Auth
+  supabase_flutter: ^2.12.0
+  google_sign_in: ^7.2.0
+  sign_in_with_apple: ^7.0.1
+  
+  # Payments
+  purchases_flutter: ^9.10.2
+  purchases_ui_flutter: ^9.10.2
+  
+  # Firebase
+  firebase_core: ^4.3.0
+  firebase_analytics: ^12.1.0
+  firebase_crashlytics: ^5.0.6
+  
+  # Utils
+  shared_preferences: ^2.5.3
+  freezed_annotation: ^3.1.0
+  json_annotation: ^4.9.0
+
+dev_dependencies:
+  riverpod_generator: ^4.0.0+1
+  build_runner: ^2.10.4
+  freezed: ^3.2.3
+  json_serializable: ^6.11.2
+  mocktail: ^1.0.4
+```
+
+### 3. Configure Firebase
+
+```bash
+# Install FlutterFire CLI
+dart pub global activate flutterfire_cli
+
+# Configure (creates firebase_options.dart)
+flutterfire configure
+```
+
+In Firebase Console:
+1. Enable Firebase AI (Gemini)
+2. Enable Analytics
+3. Enable Crashlytics
+
+### 4. Configure Supabase
+
+1. Create project at supabase.com
+2. Enable auth providers: Apple, Google, Email
+3. Add to `main.dart`:
+
+```dart
+await Supabase.initialize(
+  url: 'https://YOUR_PROJECT.supabase.co',
+  anonKey: 'YOUR_ANON_KEY',
+);
+```
+
+### 5. Configure RevenueCat
+
+1. Create app at app.revenuecat.com
+2. Add products in App Store Connect / Play Console
+3. Import products to RevenueCat
+4. Create entitlement (e.g., "pro")
+5. Add API keys to `subscription_service.dart`
+
+### 6. Platform Config
+
+**iOS (ios/Runner/Info.plist):**
 ```xml
 <!-- Face ID -->
 <key>NSFaceIDUsageDescription</key>
-<string>Use Face ID to unlock AppName</string>
+<string>Use Face ID to unlock [AppName]</string>
 
-<!-- Apple Sign-In (add capability in Xcode) -->
-<!-- Google Sign-In -->
+<!-- Google Sign In URL scheme -->
 <key>CFBundleURLTypes</key>
 <array>
   <dict>
     <key>CFBundleURLSchemes</key>
     <array>
-      <string>com.googleusercontent.apps.YOUR_CLIENT_ID</string>
-    </array>
-  </dict>
-</array>
-
-<!-- Deep Links -->
-<key>CFBundleURLTypes</key>
-<array>
-  <dict>
-    <key>CFBundleURLSchemes</key>
-    <array>
-      <string>com.yourcompany.appname</string>
+      <string>$(GOOGLE_REVERSED_CLIENT_ID)</string>
     </array>
   </dict>
 </array>
 ```
 
-### Capabilities (Xcode)
-- Sign in with Apple
-- Push Notifications (if needed)
-- Associated Domains (for universal links)
-
----
-
-## Android Configuration
-
-### build.gradle
-```gradle
+**Android (android/app/build.gradle.kts):**
+```kotlin
 android {
+    compileSdk = 36
     defaultConfig {
-        minSdk = 24
+        minSdk = 23
         targetSdk = 35
     }
 }
 ```
 
-### AndroidManifest.xml
+**Android Network Security (android/app/src/main/res/xml/network_security_config.xml):**
 ```xml
-<!-- Biometrics -->
-<uses-permission android:name="android.permission.USE_BIOMETRIC"/>
-
-<!-- Deep Links -->
-<intent-filter>
-  <action android:name="android.intent.action.VIEW" />
-  <category android:name="android.intent.category.DEFAULT" />
-  <category android:name="android.intent.category.BROWSABLE" />
-  <data android:scheme="com.yourcompany.appname" />
-</intent-filter>
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system"/>
+        </trust-anchors>
+    </base-config>
+</network-security-config>
 ```
 
 ---
 
-## CI/CD: GitHub Actions
+## Core Patterns
 
-**Budget-conscious workflow (free tier: 2,000 mins/month):**
+### main.dart Initialization
 
-| Job | Runner | Multiplier | Time |
-|-----|--------|------------|------|
-| Analyze | ubuntu-latest | 1x | ~2 min |
-| Test | ubuntu-latest | 1x | ~3 min |
-| Build Android | ubuntu-latest | 1x | ~10 min |
-| Build iOS | macos-latest | **10x** | ~15 min |
-
-**Strategy:** Run iOS builds only on `main` push, not PRs.
-
----
-
-## Email Templates (Supabase)
-
-### Confirm Sign Up
-**Subject:** `Confirm your AppName account`
-```html
-<h2>Welcome to AppName!</h2>
-<p>Thanks for signing up. Please confirm your email:</p>
-<p><a href="{{ .ConfirmationURL }}" style="display:inline-block;padding:12px 24px;background:#6366f1;color:white;text-decoration:none;border-radius:8px;">Confirm Email</a></p>
-<p style="color:#666;font-size:12px;">If you didn't create an account, ignore this email.</p>
-```
-
-### Magic Link
-**Subject:** `Sign in to AppName`
-```html
-<h2>Sign in to AppName</h2>
-<p>Click below to sign in:</p>
-<p><a href="{{ .ConfirmationURL }}" style="...">Sign In</a></p>
-<p style="color:#666;font-size:12px;">This link expires in 24 hours.</p>
-```
-
-### Reset Password
-**Subject:** `Reset your AppName password`
-```html
-<h2>Reset Your Password</h2>
-<p>We received a request to reset your password.</p>
-<p><a href="{{ .ConfirmationURL }}" style="...">Reset Password</a></p>
-<p style="color:#666;font-size:12px;">If you didn't request this, ignore this email.</p>
-```
-
----
-
-## Supabase Edge Function: Account Deletion
-
-**Required for App Store compliance.**
-
-```typescript
-// supabase/functions/delete-user/index.ts
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
-
-serve(async (req) => {
-  const authHeader = req.headers.get('Authorization')
-  if (!authHeader) return new Response('Unauthorized', { status: 401 })
-
-  const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+```dart
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   
-  // Verify user
-  const userClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY')!, {
-    global: { headers: { Authorization: authHeader } }
-  })
-  const { data: { user } } = await userClient.auth.getUser()
-  if (!user) return new Response('Invalid user', { status: 401 })
-
-  // Delete with admin privileges
-  const adminClient = createClient(supabaseUrl, supabaseServiceKey)
-  await adminClient.auth.admin.deleteUser(user.id)
-
-  return new Response(JSON.stringify({ success: true }), { status: 200 })
-})
+  // 1. Firebase (for crash reporting during init)
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  
+  // 2. Supabase
+  await Supabase.initialize(url: '...', anonKey: '...');
+  
+  // 3. RevenueCat
+  final subscriptionService = SubscriptionService();
+  await subscriptionService.initialize();
+  
+  // 4. SharedPreferences
+  final prefs = await SharedPreferences.getInstance();
+  
+  // 5. Run app with provider overrides
+  runApp(
+    ProviderScope(
+      overrides: [
+        sharedPreferencesProvider.overrideWithValue(prefs),
+        subscriptionServiceProvider.overrideWithValue(subscriptionService),
+      ],
+      child: const MyApp(),
+    ),
+  );
+}
 ```
 
-**Deploy:**
-```bash
-supabase functions deploy delete-user --project-ref YOUR_PROJECT_REF
+### Service Interface Pattern
+
+```dart
+// interfaces/subscription_interface.dart
+abstract class ISubscriptionService {
+  Future<void> initialize();
+  Future<bool> isPro();
+  Future<void> showPaywall();
+}
+
+// services/subscription_service.dart
+class SubscriptionService implements ISubscriptionService {
+  // Real implementation
+}
+
+// In tests, override with mock
+```
+
+### Riverpod Providers
+
+```dart
+// providers/providers.dart
+
+// Service providers (singletons)
+final subscriptionServiceProvider = Provider<ISubscriptionService>((ref) {
+  return SubscriptionService();
+});
+
+// State providers
+final isProProvider = StateProvider<bool>((ref) => false);
+
+// Computed providers
+final remainingGenerationsProvider = Provider<int>((ref) {
+  final isPro = ref.watch(isProProvider);
+  return isPro ? 500 : 3;
+});
+```
+
+### Router with Auth Guard
+
+```dart
+final appRouter = GoRouter(
+  initialLocation: '/splash',
+  routes: [
+    GoRoute(path: '/splash', builder: (_, __) => SplashScreen()),
+    GoRoute(path: '/onboarding', builder: (_, __) => OnboardingScreen()),
+    GoRoute(path: '/auth', builder: (_, __) => AuthScreen()),
+    GoRoute(path: '/home', builder: (_, __) => HomeScreen()),
+    // ... more routes
+  ],
+);
+
+// In SplashScreen, determine initial route:
+if (!hasCompletedOnboarding) context.go('/onboarding');
+else if (!isLoggedIn) context.go('/auth');
+else context.go('/home');
+```
+
+### AI Service with Structured Output
+
+```dart
+class AiService {
+  Future<List<String>> generate(String prompt) async {
+    final model = FirebaseAI.googleAI().generativeModel(
+      model: 'gemini-3-flash-preview',
+      generationConfig: GenerationConfig(
+        responseMimeType: 'application/json',
+        responseSchema: Schema.object(
+          properties: {
+            'items': Schema.array(items: Schema.string()),
+          },
+        ),
+      ),
+    );
+    
+    final response = await model.generateContent([Content.text(prompt)]);
+    final json = jsonDecode(response.text!);
+    return List<String>.from(json['items']);
+  }
+}
+```
+
+---
+
+## Monetization Pattern
+
+### Free Tier with Server-Side Tracking
+
+```dart
+// Prevents reinstall abuse
+class UsageService {
+  // Local cache for fast reads
+  int getLocalCount() => _prefs.getInt('usage_count') ?? 0;
+  
+  // Sync with server on sign-in
+  Future<void> syncWithServer(String userId) async {
+    final serverCount = await _fetchFromSupabase(userId);
+    final localCount = getLocalCount();
+    final maxCount = max(serverCount, localCount);
+    await _saveToSupabase(userId, maxCount);
+    await _prefs.setInt('usage_count', maxCount);
+  }
+}
+```
+
+### RevenueCat Integration
+
+```dart
+class SubscriptionService {
+  Future<bool> isPro() async {
+    final info = await Purchases.getCustomerInfo();
+    return info.entitlements.all['pro']?.isActive ?? false;
+  }
+  
+  Future<void> showPaywall() async {
+    await RevenueCatUI.presentPaywallIfNeeded('pro');
+  }
+}
 ```
 
 ---
 
 ## Testing Strategy
 
-| Test Type | Tool | Target |
-|-----------|------|--------|
-| Unit | flutter_test | Services, models, pure logic |
-| Widget | flutter_test | UI components |
-| Integration | integration_test | Full flows |
-
-**Coverage Target:** 70%+ for MVP, 80%+ for launch
-
-**Run:**
-```bash
-flutter test                          # All tests
-flutter test --coverage               # With coverage
-flutter test test/services/           # Specific folder
-flutter test integration_test/        # E2E tests on device
-```
-
----
-
-## Service & Integration Testing
-
-> See `docs/INTEGRATION_TESTING.md` for complete testing guide.
-
-### Testing Hierarchy
-
-```
-┌────────────────────────────────────────────┐
-│ E2E Integration (integration_test/)        │ ← Device required
-├────────────────────────────────────────────┤
-│ Widget Tests (test/widgets/)               │ ← CI automated
-├────────────────────────────────────────────┤
-│ Unit Tests (test/services/)                │ ← CI automated
-└────────────────────────────────────────────┘
-```
-
-### Mock Packages (Unit Tests)
-
-| Service | Mock Package | Purpose |
-|---------|--------------|---------|
-| Supabase | `mock_supabase_http_client` | Database & auth mocking |
-| Firebase | `firebase_core_platform_interface` | Core mocking |
-| RevenueCat | **Test Store API key** | Instant mock purchases |
-| Google AI | `package:http/testing.dart` | HTTP response mocking |
-
-### RevenueCat Key Usage (CRITICAL)
+### Mock Services via Provider Overrides
 
 ```dart
-// ✅ CORRECT: Test Store for ALL automated tests
-static const _testStoreKey = 'test_xxx'; // CI, unit tests, development
-
-// ✅ CORRECT: Production key for manual sandbox testing only
-static const _iosKey = 'appl_xxx'; // Apple Sandbox, TestFlight
-
-// ⚠️ NEVER use production key for automated tests!
-// ⚠️ Real charges possible, dashboard pollution
+void main() {
+  testWidgets('shows paywall when not pro', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          subscriptionServiceProvider.overrideWithValue(MockSubscriptionService()),
+        ],
+        child: MyApp(),
+      ),
+    );
+  });
+}
 ```
 
-| Environment | API Key | Use Case |
-|-------------|---------|----------|
-| **Unit Tests / CI** | Test Store (`test_xxx`) | Automated, free, instant |
-| **Manual Device Testing** | Production (`appl_xxx`) | Apple Sandbox testers |
-| **TestFlight** | Production (`appl_xxx`) | Beta users |
-| **Production** | Production (`appl_xxx`) | Live users |
+### What to Mock vs Real Device
 
-### Test Case Categories
-
-| Category | Examples |
-|----------|----------|
-| **Happy Path** | Valid input → expected result |
-| **Unhappy Path** | Invalid credentials, rate limits, network errors |
-| **Edge Cases** | Empty responses, null values, malformed data |
-| **Manual Only** | Biometrics, Apple Sign In, real purchases |
+| Mock in Tests | Real Device Only |
+|---------------|------------------|
+| Subscription status | Actual purchases |
+| Auth state | Native OAuth UI |
+| AI responses | Biometrics |
+| Usage counts | Deep links |
 
 ---
 
-## Pre-Launch Checklist
+## Security Checklist
 
-### App Store Requirements
-- [ ] Account deletion functionality
-- [ ] Privacy policy URL
-- [ ] Terms of service URL
-- [ ] App icons (all sizes)
-- [ ] Screenshots (6.5", 5.5")
-- [ ] App description & keywords
-
-### Technical
-- [ ] Production API keys (not test keys)
-- [ ] Custom SMTP configured
-- [ ] Error tracking (Crashlytics/Sentry)
-- [ ] Analytics events
-- [ ] Deep links tested
-
-### RevenueCat
-- [ ] Products created in App Store Connect
-- [ ] Products imported to RevenueCat
-- [ ] Entitlements configured
-- [ ] Offerings set up
-- [ ] Sandbox testing passed
+- [ ] HTTPS only (network_security_config.xml for Android)
+- [ ] No API keys in client code (use Firebase AI)
+- [ ] ProGuard/R8 for Android release
+- [ ] Supabase RLS for user data
+- [ ] RevenueCat handles all payment data
 
 ---
 
-## Cost Summary (Monthly)
+## Costs (Monthly)
 
-| Service | Free Tier | Paid |
-|---------|-----------|------|
-| Supabase | 500MB DB, 50K auth users | $25/mo |
-| RevenueCat | $2.5K MTR | 1% + $0.04 after |
-| Resend | 3,000 emails/mo | $20/mo (50K) |
-| Cloudflare | Unlimited DNS | Free |
-| Gemini API | $0 (free tier) | Pay per token |
-| GitHub Actions | 2,000 mins/mo | $0.008/min |
+| Service | Free Tier | Notes |
+|---------|-----------|-------|
+| Supabase | 500MB, 50K auth | More than enough for MVP |
+| RevenueCat | $2.5K MTR | 1% after limit |
+| Firebase AI | Free tier generous | Pay per token after |
+| Firebase Analytics | Free | Unlimited |
+| GitHub Actions | 2000 mins | Use Linux runners |
 
-**MVP Cost: $0-15/month** (domain renewal only)
-
----
-
-## Legal (App Store Required)
-
-### In-App Legal Screens
-Keep Terms & Privacy in-app (not external URLs) for better UX:
-
-```
-lib/features/settings/legal_screen.dart
-├── TermsScreen
-├── PrivacyScreen
-└── _LegalSection (reusable component)
-```
-
-**Content Guidelines:**
-- Keep it concise - only what's necessary
-- AI disclosure required: "Content generated by [AI Model]. Outputs may vary."
-- Link from auth screen: "By continuing, you agree to our Terms and Privacy Policy"
-
-### Age Rating
-For AI content apps without social features: **4+** is typically fine.
+**Total MVP cost: $0** (just domain ~$12/yr)
 
 ---
 
-## Quick Start for New App
+## Clone for New App
 
-```bash
-# 1. Create Flutter project
-flutter create --org com.yourcompany appname
-cd appname
+1. Copy this project structure
+2. Replace app name, bundle ID
+3. Create new Firebase project
+4. Create new Supabase project
+5. Create new RevenueCat app
+6. Swap out `features/[your-feature]/`
+7. Update models for your domain
+8. Update AI prompts
+9. Launch!
 
-# 2. Add dependencies
-flutter pub add flutter_riverpod go_router supabase_flutter purchases_flutter google_generative_ai local_auth
-
-# 3. Copy this structure
-# - lib/core/services/
-# - lib/features/
-# - lib/shared/
-
-# 4. Set up services
-# - Supabase: Create project, enable auth providers
-# - RevenueCat: Create app, add products
-# - Cloudflare: Buy domain
-# - Resend: Add domain, integrate with Supabase
-
-# 5. Configure
-# - iOS: Info.plist, capabilities
-# - Android: build.gradle, AndroidManifest.xml
-
-# 6. Deploy Edge Function
-supabase functions deploy delete-user
-
-# 7. Test & launch!
-```
-
----
-
-*Last updated: December 2025*
+The auth, payments, analytics, and infrastructure are 100% reusable.
