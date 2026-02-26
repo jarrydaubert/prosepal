@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
@@ -69,6 +70,8 @@ Future<void> _initializeApp() async {
       try {
         final prefs = await SharedPreferences.getInstance();
         final analyticsEnabled = prefs.getBool('analytics_enabled') ?? true;
+        await FirebaseAnalytics.instance
+            .setAnalyticsCollectionEnabled(analyticsEnabled);
         await FirebaseCrashlytics.instance
             .setCrashlyticsCollectionEnabled(analyticsEnabled);
       } catch (_) {
