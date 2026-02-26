@@ -6,10 +6,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:in_app_review/in_app_review.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/interfaces/biometric_interface.dart';
 import '../../core/providers/providers.dart';
+import '../../core/services/log_service.dart';
 import '../../shared/molecules/molecules.dart';
 import '../../shared/theme/app_colors.dart';
 
@@ -131,6 +133,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     // Opens the app store listing for rating
     await _inAppReview.openStoreListing(
       appStoreId: '', // Add App Store ID when available
+    );
+  }
+
+  Future<void> _exportDebugLog() async {
+    Log.info('Export debug log requested');
+    
+    final log = Log.getExportableLog();
+    
+    // Share as text (user can save or send to support)
+    await SharePlus.instance.share(
+      ShareParams(
+        text: log,
+        subject: 'Prosepal Debug Log',
+      ),
     );
   }
 
@@ -391,6 +407,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             title: 'Send Feedback',
             subtitle: 'Questions, bugs, or feature requests',
             onTap: () => context.pushNamed('feedback'),
+          ),
+          SettingsTile(
+            leading: const Icon(
+              Icons.bug_report_outlined,
+              color: AppColors.textSecondary,
+            ),
+            title: 'Export Debug Log',
+            subtitle: 'Share with support if something\'s not working',
+            onTap: _exportDebugLog,
           ),
           Semantics(
             label: 'Rate Prosepal in the app store',

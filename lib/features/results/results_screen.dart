@@ -8,6 +8,7 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../core/models/models.dart';
 import '../../core/providers/providers.dart';
+import '../../core/services/log_service.dart';
 import '../../shared/atoms/app_button.dart';
 import '../../shared/theme/app_colors.dart';
 
@@ -158,6 +159,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
   }
 
   Future<void> _copyMessage(String text, int index) async {
+    Log.info('Message copied', {'option': index + 1});
     await Clipboard.setData(ClipboardData(text: text));
     HapticFeedback.mediumImpact();
     setState(() => _copiedIndex = index);

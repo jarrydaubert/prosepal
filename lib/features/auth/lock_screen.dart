@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/services/biometric_service.dart';
+import '../../core/services/log_service.dart';
 import '../../shared/theme/app_colors.dart';
 import '../../shared/theme/app_spacing.dart';
 
@@ -22,6 +23,7 @@ class _LockScreenState extends State<LockScreen> {
   @override
   void initState() {
     super.initState();
+    Log.info('Lock screen shown');
     _loadBiometricType();
     // Auto-trigger authentication on load
     WidgetsBinding.instance.addPostFrameCallback((_) => _authenticate());

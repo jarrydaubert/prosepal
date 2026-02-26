@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/providers/providers.dart';
+import '../../core/services/log_service.dart';
 import '../../shared/molecules/molecules.dart';
 import '../../shared/theme/app_colors.dart';
 import 'widgets/occasion_grid.dart';
@@ -100,6 +101,7 @@ class HomeScreen extends ConsumerWidget {
               padding: const EdgeInsets.symmetric(horizontal: 20),
               sliver: OccasionGrid(
                 onOccasionSelected: (occasion) {
+                  Log.info('Wizard started', {'occasion': occasion.name});
                   ref.read(selectedOccasionProvider.notifier).state = occasion;
                   context.pushNamed('generate');
                 },
