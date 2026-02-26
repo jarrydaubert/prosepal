@@ -42,6 +42,10 @@
 
 | Item | Location | Notes |
 |------|----------|-------|
+| Enum fallback handling | `generated_message.dart` | Add "unknown" enum variant or return default on invalid values for forward compatibility |
+| Deserialization resilience | `generated_message.dart` | Wrap history loading in try-catch with graceful degradation for corrupted data |
+| Model utilities | `generated_message.dart` | Add extensions for formatted preview text, shareable string, character count |
+| Serialization tests | `test/models/` | Add unit tests for JSON round-trip serialization of GeneratedMessage/GenerationResult |
 | UsageService race condition | `usage_service.dart` | Atomic increment via Supabase RPC |
 | Hardcoded usage limits | `usage_service.dart` | Move to remote config |
 | Supabase singleton | `usage_service.dart` | Inject client for testability |
