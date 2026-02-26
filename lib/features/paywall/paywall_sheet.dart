@@ -131,10 +131,12 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
   }
 
   // ===========================================================================
-  // AUTH METHODS
+  // SYNC AUTH METHODS (Optional - for cross-device sync, no auto-purchase)
   // ===========================================================================
 
-  Future<void> _signInWithApple() async {
+  /// Sign in with Apple for sync purposes only.
+  /// Does NOT auto-trigger purchase - user can tap "Continue" button after.
+  Future<void> _signInForSync() async {
     if (_isAuthenticating) return;
     setState(() {
       _isAuthenticating = true;
@@ -159,11 +161,12 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
             .read(subscriptionServiceProvider)
             .identifyUser(response.user!.id);
 
-        // Force fetch fresh CustomerInfo to avoid race condition with listener
+        // Force fetch fresh CustomerInfo
         ref.invalidate(customerInfoProvider);
         final hasPro = await ref
             .read(checkProStatusProvider.future)
             .timeout(const Duration(seconds: 5), onTimeout: () => false);
+
         if (hasPro && mounted) {
           Log.info('PaywallSheet: Apple sign-in restored Pro, closing');
           _purchaseCompleted = true;
@@ -171,37 +174,15 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
           return;
         }
 
-        // No Pro restored - close paywall and trigger purchase
-        // This shows the payment dialog over home screen (not paywall)
-        final packages = _offering?.availablePackages ?? [];
-        if (packages.isNotEmpty && mounted) {
-          final selectedPackage = packages[_selectedPackageIndex];
-          Log.info('PaywallSheet: Apple sign-in success, closing for purchase');
-          Navigator.of(context).pop(); // Close paywall first
-
-          // Trigger purchase (system dialog appears over home screen)
-          try {
-            Log.info('Purchase started', {
-              'package': selectedPackage.identifier,
-            });
-            final result = await Purchases.purchase(
-              PurchaseParams.package(selectedPackage),
-            );
-            final purchasedPro = result.customerInfo.entitlements.active
-                .containsKey('pro');
-            Log.info('Purchase completed', {
-              'package': selectedPackage.identifier,
-              'hasPro': purchasedPro,
-            });
-            ref.invalidate(customerInfoProvider);
-          } on PlatformException catch (e) {
-            if (e.code != 'PURCHASE_CANCELLED' &&
-                e.message?.contains('cancelled') != true &&
-                e.message?.contains('canceled') != true) {
-              Log.warning('Purchase failed', {'error': '$e'});
-            }
-          }
-          return;
+        // No Pro restored - stay on paywall, user can tap Continue
+        Log.info('PaywallSheet: Apple sign-in for sync complete');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Signed in! Tap Continue to subscribe.'),
+              duration: Duration(seconds: 2),
+            ),
+          );
         }
       }
     } catch (e) {
@@ -213,7 +194,8 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
     }
   }
 
-  Future<void> _signInWithGoogle() async {
+  /// Sign in with Google for sync purposes only.
+  Future<void> _signInWithGoogleForSync() async {
     if (_isAuthenticating) return;
     setState(() {
       _isAuthenticating = true;
@@ -233,16 +215,15 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
         } catch (e) {
           Log.warning('Usage sync failed after auth', {'error': '$e'});
         }
-        // Identify with RevenueCat (may restore existing subscription)
         await ref
             .read(subscriptionServiceProvider)
             .identifyUser(response.user!.id);
 
-        // Force fetch fresh CustomerInfo to avoid race condition with listener
         ref.invalidate(customerInfoProvider);
         final hasPro = await ref
             .read(checkProStatusProvider.future)
             .timeout(const Duration(seconds: 5), onTimeout: () => false);
+
         if (hasPro && mounted) {
           Log.info('PaywallSheet: Google sign-in restored Pro, closing');
           _purchaseCompleted = true;
@@ -250,39 +231,14 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
           return;
         }
 
-        // No Pro restored - close paywall and trigger purchase
-        // This shows the payment dialog over home screen (not paywall)
-        final packages = _offering?.availablePackages ?? [];
-        if (packages.isNotEmpty && mounted) {
-          final selectedPackage = packages[_selectedPackageIndex];
-          Log.info(
-            'PaywallSheet: Google sign-in success, closing for purchase',
+        Log.info('PaywallSheet: Google sign-in for sync complete');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Signed in! Tap Continue to subscribe.'),
+              duration: Duration(seconds: 2),
+            ),
           );
-          Navigator.of(context).pop(); // Close paywall first
-
-          // Trigger purchase (system dialog appears over home screen)
-          try {
-            Log.info('Purchase started', {
-              'package': selectedPackage.identifier,
-            });
-            final result = await Purchases.purchase(
-              PurchaseParams.package(selectedPackage),
-            );
-            final purchasedPro = result.customerInfo.entitlements.active
-                .containsKey('pro');
-            Log.info('Purchase completed', {
-              'package': selectedPackage.identifier,
-              'hasPro': purchasedPro,
-            });
-            ref.invalidate(customerInfoProvider);
-          } on PlatformException catch (e) {
-            if (e.code != 'PURCHASE_CANCELLED' &&
-                e.message?.contains('cancelled') != true &&
-                e.message?.contains('canceled') != true) {
-              Log.warning('Purchase failed', {'error': '$e'});
-            }
-          }
-          return;
         }
       }
     } catch (e) {
@@ -294,21 +250,14 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
     }
   }
 
-  void _signInWithEmail() {
-    final packages = _offering?.availablePackages ?? [];
-    if (packages.isEmpty) return;
-
-    final selectedPackage = packages[_selectedPackageIndex];
-    Log.info('Paywall: Email auth selected', {
-      'package': selectedPackage.identifier,
-    });
-
-    // Pass selected package for auto-purchase after auth
+  /// Sign in with Email for sync purposes only.
+  /// Uses autoPurchase=false so email auth will re-show paywall after sign-in.
+  void _signInWithEmailForSync() {
+    Log.info('Paywall: Email auth for sync selected');
     _navigatedToEmailAuth = true;
     Navigator.of(context).pop(false);
-    context.push(
-      '/auth/email?autoPurchase=true&package=${Uri.encodeComponent(selectedPackage.identifier)}',
-    );
+    // showPaywallAfterAuth=true will reopen paywall if user doesn't have Pro
+    context.push('/auth/email?showPaywallAfterAuth=true');
   }
 
   // ===========================================================================
@@ -387,11 +336,8 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
   Future<void> _restorePurchases() async {
     if (_isRestoring) return;
 
-    final authService = ref.read(authServiceProvider);
-    if (!authService.isLoggedIn) {
-      _showError('Please sign in first to restore purchases');
-      return;
-    }
+    // Note: No login required - Apple ties restore to Apple ID, not app account
+    // RevenueCat handles this correctly for anonymous users
 
     setState(() => _isRestoring = true);
     Log.info('Restore purchases started');
@@ -424,7 +370,7 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
           );
         }
       } else if (mounted) {
-        _showError('No active subscription found for this account');
+        _showError('No active subscription found');
       }
     } on Exception catch (e) {
       Log.error('Restore error', {'error': '$e'});
@@ -559,13 +505,12 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
             const Gap(AppSpacing.sm),
           ],
 
-          // Auth or Purchase section
-          if (!isLoggedIn)
-            _buildAuthSection()
-          else
-            _buildPurchaseSection(packages),
-
+          // Purchase section - available to ALL users (Apple 5.1.1 compliance)
+          _buildPurchaseSection(packages),
           const Gap(AppSpacing.md),
+
+          // Optional: Sign in to sync across devices (only show if not logged in)
+          if (!isLoggedIn) ...[_buildSyncSection(), const Gap(AppSpacing.md)],
 
           // Footer links
           _buildFooter(),
@@ -852,7 +797,9 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
     );
   }
 
-  Widget _buildAuthSection() {
+  /// Optional sign-in section for syncing purchases across devices.
+  /// This is NOT required to purchase - just for cross-device sync.
+  Widget _buildSyncSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -863,7 +810,7 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Text(
-                'Sign in to continue',
+                'Sync across devices',
                 style: TextStyle(
                   color: Colors.grey[600],
                   fontSize: 13,
@@ -874,39 +821,49 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
             Expanded(child: Divider(color: Colors.grey[300])),
           ],
         ),
-        const Gap(20),
+        const Gap(12),
+
+        // Explanation text
+        Text(
+          'Sign in to access your subscription on all your devices',
+          style: TextStyle(fontSize: 13, color: Colors.grey[500]),
+          textAlign: TextAlign.center,
+        ),
+        const Gap(16),
 
         // Apple Sign In (iOS only)
         if (Platform.isIOS || Platform.isMacOS) ...[
           SizedBox(
-            height: 50,
+            height: 44,
             child: SignInWithAppleButton(
-              onPressed: _isAuthenticating ? () {} : _signInWithApple,
+              onPressed: _isAuthenticating ? () {} : _signInForSync,
               style: SignInWithAppleButtonStyle.black,
             ),
           ),
-          const Gap(12),
+          const Gap(10),
         ],
 
         // Google Sign In
         _AuthButton(
-          onPressed: _isAuthenticating ? null : _signInWithGoogle,
+          onPressed: _isAuthenticating ? null : _signInWithGoogleForSync,
           isLoading: _isAuthenticating,
           icon: Image.asset(
             'assets/images/icons/google_g.png',
-            width: 24,
-            height: 24,
+            width: 20,
+            height: 20,
           ),
-          label: 'Continue with Google',
+          label: 'Sign in with Google',
+          compact: true,
         ),
-        const Gap(12),
+        const Gap(10),
 
         // Email Sign In
         _AuthButton(
-          onPressed: _isAuthenticating ? null : _signInWithEmail,
+          onPressed: _isAuthenticating ? null : _signInWithEmailForSync,
           isLoading: false,
-          icon: const Icon(Icons.email_outlined, size: 24),
-          label: 'Continue with Email',
+          icon: const Icon(Icons.email_outlined, size: 20),
+          label: 'Sign in with Email',
+          compact: true,
         ),
       ],
     );
@@ -1010,17 +967,19 @@ class _AuthButton extends StatelessWidget {
     required this.isLoading,
     required this.icon,
     required this.label,
+    this.compact = false,
   });
 
   final VoidCallback? onPressed;
   final bool isLoading;
   final Widget icon;
   final String label;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 50,
+      height: compact ? 44 : 50,
       child: OutlinedButton(
         onPressed: onPressed,
         style: OutlinedButton.styleFrom(
@@ -1032,10 +991,13 @@ class _AuthButton extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             icon,
-            const Gap(12),
+            Gap(compact ? 8 : 12),
             Text(
               label,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+              style: TextStyle(
+                fontSize: compact ? 14 : 16,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ],
         ),

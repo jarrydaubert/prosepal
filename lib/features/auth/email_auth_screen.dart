@@ -13,13 +13,21 @@ import '../../core/services/log_service.dart';
 import '../../shared/theme/app_colors.dart';
 
 class EmailAuthScreen extends ConsumerStatefulWidget {
-  const EmailAuthScreen({super.key, this.autoPurchase = false, this.packageId});
+  const EmailAuthScreen({
+    super.key,
+    this.autoPurchase = false,
+    this.packageId,
+    this.showPaywallAfterAuth = false,
+  });
 
   /// If true, auto-purchase the selected package after auth (no second paywall)
   final bool autoPurchase;
 
   /// Package identifier to purchase after auth (e.g., '$rc_annual')
   final String? packageId;
+
+  /// If true, show paywall after auth if user doesn't have Pro (for sync flow)
+  final bool showPaywallAfterAuth;
 
   @override
   ConsumerState<EmailAuthScreen> createState() => _EmailAuthScreenState();
@@ -40,8 +48,9 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
   @override
   void initState() {
     super.initState();
-    // Force password mode for auto-purchase flow (magic link breaks it)
-    _usePassword = widget.autoPurchase;
+    // Force password mode for auto-purchase or paywall sync flow
+    // (magic link breaks these flows because auth completes outside the app)
+    _usePassword = widget.autoPurchase || widget.showPaywallAfterAuth;
   }
 
   @override
@@ -159,6 +168,9 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
         // Auto-purchase if coming from paywall with package selection
         if (widget.autoPurchase && widget.packageId != null) {
           await _autoPurchasePackage(widget.packageId!);
+        } else if (widget.showPaywallAfterAuth) {
+          // Coming from paywall sync section - check Pro and maybe show paywall
+          await _handlePaywallAfterAuth();
         } else {
           context.go('/home');
         }
@@ -263,6 +275,63 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
     }
   }
 
+  /// Handle paywall flow after email auth (for sync section sign-in).
+  /// If user has Pro (restored), go home. Otherwise, go home and show paywall.
+  Future<void> _handlePaywallAfterAuth() async {
+    Log.info('Email auth: Handling paywall after auth');
+
+    try {
+      // Identify user with RevenueCat (may restore existing subscription)
+      final authService = ref.read(authServiceProvider);
+      if (authService.currentUser?.id != null) {
+        await ref
+            .read(subscriptionServiceProvider)
+            .identifyUser(authService.currentUser!.id);
+      }
+
+      // Check if user already has Pro
+      ref.invalidate(customerInfoProvider);
+      final hasPro = await ref
+          .read(checkProStatusProvider.future)
+          .timeout(const Duration(seconds: 5), onTimeout: () => false);
+
+      if (hasPro && mounted) {
+        Log.info('Email auth: Pro restored after sign-in');
+        context.go('/home');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.white, size: 20),
+                SizedBox(width: 8),
+                Text('Welcome back! Your Pro subscription is active.'),
+              ],
+            ),
+            backgroundColor: AppColors.success,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        );
+        return;
+      }
+
+      // No Pro - go home and auto-show paywall
+      Log.info('Email auth: No Pro, showing paywall after navigation');
+      if (mounted) {
+        // Set pending paywall source - home screen will show paywall on mount
+        ref.read(pendingPaywallSourceProvider.notifier).state = 'email_sync';
+        context.go('/home');
+      }
+    } catch (e) {
+      Log.error('Email auth: Error in paywall flow', {'error': '$e'});
+      if (mounted) {
+        context.go('/home');
+      }
+    }
+  }
+
   void _showError(String message) {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -323,6 +392,7 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
                     isLoading: _isLoading,
                     usePassword: _usePassword,
                     autoPurchase: widget.autoPurchase,
+                    showPaywallAfterAuth: widget.showPaywallAfterAuth,
                     onSubmit: _usePassword
                         ? _signInWithPassword
                         : _sendMagicLink,
@@ -491,6 +561,7 @@ class _EmailInputView extends StatelessWidget {
     required this.isLoading,
     required this.usePassword,
     required this.autoPurchase,
+    required this.showPaywallAfterAuth,
     required this.onSubmit,
     required this.onToggleMode,
     required this.validateEmail,
@@ -502,6 +573,7 @@ class _EmailInputView extends StatelessWidget {
   final bool isLoading;
   final bool usePassword;
   final bool autoPurchase;
+  final bool showPaywallAfterAuth;
   final VoidCallback onSubmit;
   final VoidCallback onToggleMode;
   final String? Function(String?) validateEmail;
@@ -605,8 +677,8 @@ class _EmailInputView extends StatelessWidget {
 
         const SizedBox(height: 20),
 
-        // Toggle mode (hide during purchase flow - magic link breaks auto-purchase)
-        if (!autoPurchase) ...[
+        // Toggle mode (hide during purchase/paywall flows - magic link breaks them)
+        if (!autoPurchase && !showPaywallAfterAuth) ...[
           TextButton(
             onPressed: onToggleMode,
             child: Text(

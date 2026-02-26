@@ -1,6 +1,6 @@
 # Launch Checklist
 
-> Last verified: 2026-01-13
+> Last verified: 2026-01-14
 
 ---
 
@@ -8,8 +8,59 @@
 
 | Platform | Status | Details |
 |----------|--------|---------|
-| iOS | **Waiting for Review** | Submitted 2026-01-13 at 2:46 PM, Build 1.0 (26) |
+| iOS | **REJECTED** | Build 1.0 (26) rejected 2026-01-14, 3 issues to fix |
 | Android | Blocked | Requires 14-day closed testing with 12+ testers |
+
+---
+
+## iOS Rejection - 2026-01-14
+
+**Submission ID:** `fd10a068-12ca-4dd3-954e-f2b8efd31d5c`
+**Review Device:** iPad Air 11-inch (M3)
+
+### Issue 1: Guideline 5.1.1 - Requiring Sign-In Before Purchase ❌ CODE CHANGE
+
+**Problem:** App requires users to register/sign-in before purchasing subscriptions. Apple prohibits requiring auth for non-account-based IAP.
+
+**Current flow:** Sign in → Purchase
+**Required flow:** Purchase allowed without sign-in (auth optional for cross-device sync)
+
+**Fix (paywall_sheet.dart):**
+1. Show subscription packages immediately to all users (no auth gate)
+2. Allow anonymous purchases via RevenueCat (skip `identifyUser()` for anon users)
+3. Make sign-in optional: "Sign in to sync purchases across devices"
+4. Only call `identifyUser()` AFTER optional sign-in, not as prerequisite
+
+**RevenueCat supports this:** Anonymous users get a random `$RCAnonymousID`, purchases work fine. If they sign in later, call `logIn()` to transfer purchases to their account.
+
+### Issue 2: Guideline 3.1.2 - Missing Terms of Use ❌ METADATA
+
+**Problem:** No Terms of Use (EULA) link in App Store metadata.
+
+**Fix (App Store Connect):**
+- Option A: Add standard Apple EULA link to App Description: `https://www.apple.com/legal/internet-services/itunes/dev/stdeula/`
+- Option B: Add custom EULA in App Store Connect > App Information > EULA field
+
+### Issue 3: Guideline 2.3.2 - Paid Features Not Labeled ❌ METADATA
+
+**Problem:** Screenshots/description reference paid features without clarifying they require purchase.
+
+**Fix (App Store Connect):**
+- Add "Pro" badges to screenshots showing premium features, OR
+- Add to description: "Free: 1 message. Pro subscription: 500 messages/month."
+- Ensure screenshots showing unlimited usage are clearly marked as Pro
+
+### Resubmission Checklist
+
+| Item | Type | Status |
+|------|------|--------|
+| Allow anonymous purchases in paywall | Code | ✅ |
+| Make sign-in optional (sync benefit only) | Code | ✅ |
+| Add Terms of Use link to App Description | Metadata | ⏳ |
+| Update screenshots with Pro labels OR clarify in description | Metadata | ⏳ |
+| Increment build number | Build | ⏳ |
+| Test anonymous purchase flow in sandbox | Testing | ⏳ |
+| Resubmit for review | Submission | ⏳ |
 
 ---
 
@@ -73,14 +124,15 @@
 
 ## Phase 2: Store Submission
 
-### iOS ✅ SUBMITTED 2026-01-13
+### iOS ❌ REJECTED 2026-01-14
 
 - Build 1.0 (26) uploaded via Xcode
 - dSYMs uploaded to Firebase Crashlytics
 - Screenshots updated (paywall bottom sheet)
 - IAP screenshots updated
 - IAPs linked to version
-- Submitted for review at 2:46 PM
+- ~~Submitted for review at 2:46 PM~~
+- **REJECTED** - See "iOS Rejection - 2026-01-14" section above
 
 ### Android ⏳ BLOCKED
 
