@@ -49,7 +49,6 @@
 | Issue | Location | Fix |
 |-------|----------|-----|
 | Prompt injection | `ai_service.dart:514-519` | User input directly in prompt - add sanitization |
-| No input length validation | `ai_service.dart` | No character limit on recipientName/personalDetails |
 | Missing CAPTCHA | `email_auth_screen.dart` | Add Turnstile/hCaptcha + Supabase config |
 | Device fingerprint 7% coverage | `device_fingerprint_service.dart` | Free tier abuse prevention undertested |
 | AI service 37% coverage | `ai_service.dart` | Retry logic branches untested |

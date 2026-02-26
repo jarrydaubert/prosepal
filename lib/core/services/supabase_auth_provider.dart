@@ -89,12 +89,41 @@ class SupabaseAuthProvider implements ISupabaseAuthProvider {
   /// Network timeout for auth operations (prevents indefinite hangs)
   static const _timeout = Duration(seconds: 30);
 
+  /// Max retries for critical operations like session refresh
+  static const _maxRetries = 3;
+
   /// Wrap async operations with timeout to prevent hanging
   Future<T> _withTimeout<T>(Future<T> operation) {
     return operation.timeout(
       _timeout,
       onTimeout: () => throw const AuthException('Request timed out'),
     );
+  }
+
+  /// Retry operation with exponential backoff (1s, 2s, 4s)
+  Future<T> _withRetry<T>(
+    Future<T> Function() operation, {
+    int maxRetries = _maxRetries,
+    String? operationName,
+  }) async {
+    var lastError = const AuthException('Unknown error');
+    for (var attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        return await operation();
+      } on AuthException catch (e) {
+        lastError = e;
+        Log.warning('${operationName ?? 'Operation'} failed', {
+          'attempt': attempt,
+          'maxRetries': maxRetries,
+          'error': e.message,
+        });
+        if (attempt < maxRetries) {
+          final delay = Duration(seconds: 1 << (attempt - 1)); // 1s, 2s, 4s
+          await Future<void>.delayed(delay);
+        }
+      }
+    }
+    throw lastError;
   }
 
   @override
@@ -248,10 +277,13 @@ class SupabaseAuthProvider implements ISupabaseAuthProvider {
   /// - App returning from background
   /// - Before critical API calls
   ///
-  /// Throws [AuthException] if refresh token is invalid/expired.
+  /// Throws [AuthException] if refresh token is invalid/expired after 3 retries.
   @override
   Future<AuthResponse> refreshSession() {
-    return _auth.refreshSession();
+    return _withRetry(
+      () => _withTimeout(_auth.refreshSession()),
+      operationName: 'Session refresh',
+    );
   }
 
   /// Restore session from refresh token
