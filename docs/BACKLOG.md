@@ -17,7 +17,6 @@
 
 | Issue | Location | Fix |
 |-------|----------|-----|
-| No data export | Settings | GDPR/CCPA right to portability - add export button |
 | No analytics consent toggle | Settings | Privacy policy mentions opt-out but no toggle exists |
 | No force update mechanism | App startup | Can't force users off broken versions - add Remote Config |
 
