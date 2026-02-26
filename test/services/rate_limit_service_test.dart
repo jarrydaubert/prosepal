@@ -44,7 +44,10 @@ void main() {
           reason: RateLimitReason.userLimit,
         );
 
-        expect(result.errorMessage, 'Too many requests. Please try again later.');
+        expect(
+          result.errorMessage,
+          'Too many requests. Please try again later.',
+        );
       });
 
       test('toString provides debug info', () {
@@ -68,7 +71,7 @@ void main() {
         expect(RateLimitReason.values, contains(RateLimitReason.deviceLimit));
         expect(RateLimitReason.values, contains(RateLimitReason.ipLimit));
         expect(RateLimitReason.values, contains(RateLimitReason.globalLimit));
-        expect(RateLimitReason.values, contains(RateLimitReason.serverError));
+        expect(RateLimitReason.values, contains(RateLimitReason.localFallback));
         expect(RateLimitReason.values, contains(RateLimitReason.unknown));
       });
     });
@@ -83,28 +86,113 @@ void main() {
       });
     });
 
-    group('Graceful Degradation', () {
+    group('Graceful Degradation with Local Fallback', () {
       late RateLimitService service;
       late MockDeviceFingerprintService mockFingerprint;
 
       setUp(() {
         mockFingerprint = MockDeviceFingerprintService();
         service = RateLimitService(mockFingerprint);
+        service.clearLocalHistory(); // Reset for each test
       });
 
-      test('allows requests when Supabase not initialized', () async {
-        // BUG-004: App crashes or blocks users when Supabase unavailable
-        // Note: In unit tests, Supabase.instance throws, simulating uninitialized state
-        final result = await service.checkRateLimit();
+      test(
+        'allows requests when Supabase not initialized (uses local fallback)',
+        () async {
+          // BUG-004: App crashes or blocks users when Supabase unavailable
+          // Now uses local fallback instead of allowing unlimited
+          final result = await service.checkRateLimit();
 
-        expect(result.allowed, isTrue);
-      });
+          expect(result.allowed, isTrue);
+          expect(result.reason, RateLimitReason.localFallback);
+        },
+      );
 
       test('allows requests with custom endpoint', () async {
         // BUG-002: Different endpoints not tracked separately
         final result = await service.checkRateLimit(endpoint: 'custom_action');
 
         expect(result.allowed, isTrue);
+      });
+    });
+
+    group('Local Rate Limiting (Fail Closed)', () {
+      late RateLimitService service;
+      late MockDeviceFingerprintService mockFingerprint;
+
+      setUp(() {
+        mockFingerprint = MockDeviceFingerprintService();
+        service = RateLimitService(mockFingerprint);
+        service.clearLocalHistory();
+      });
+
+      test('allows first 10 requests in local fallback mode', () async {
+        // Local limit is 10 requests per minute (conservative)
+        for (var i = 0; i < 10; i++) {
+          final result = await service.checkRateLimit();
+          expect(
+            result.allowed,
+            isTrue,
+            reason: 'Request ${i + 1} should be allowed',
+          );
+        }
+      });
+
+      test('blocks 11th request in local fallback mode', () async {
+        // Exhaust the local limit
+        for (var i = 0; i < 10; i++) {
+          await service.checkRateLimit();
+        }
+
+        // 11th request should be blocked
+        final result = await service.checkRateLimit();
+        expect(result.allowed, isFalse);
+        expect(result.reason, RateLimitReason.localFallback);
+        expect(result.retryAfter, greaterThan(0));
+      });
+
+      test('provides retry time when locally rate limited', () async {
+        // Exhaust the local limit
+        for (var i = 0; i < 10; i++) {
+          await service.checkRateLimit();
+        }
+
+        final result = await service.checkRateLimit();
+        expect(result.allowed, isFalse);
+        expect(result.retryAfter, greaterThanOrEqualTo(1));
+        expect(
+          result.retryAfter,
+          lessThanOrEqualTo(60),
+        ); // Within 1 minute window
+      });
+
+      test('clearLocalHistory resets the rate limit', () async {
+        // Use up the limit
+        for (var i = 0; i < 10; i++) {
+          await service.checkRateLimit();
+        }
+
+        // Should be blocked
+        var result = await service.checkRateLimit();
+        expect(result.allowed, isFalse);
+
+        // Clear history
+        service.clearLocalHistory();
+
+        // Should be allowed again
+        result = await service.checkRateLimit();
+        expect(result.allowed, isTrue);
+      });
+
+      test('local fallback has user-friendly error message', () async {
+        // Exhaust the local limit
+        for (var i = 0; i < 10; i++) {
+          await service.checkRateLimit();
+        }
+
+        final result = await service.checkRateLimit();
+        expect(result.errorMessage, contains('Too many requests'));
+        expect(result.errorMessage, contains('seconds'));
       });
     });
   });

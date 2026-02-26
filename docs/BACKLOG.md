@@ -112,7 +112,7 @@
 | # | Issue | Location | Status | Fix |
 |---|-------|----------|--------|-----|
 | 1 | ~~Supabase URL/key hardcoded~~ | `main.dart`, `AppConfig` | **FIXED** | Created centralized `AppConfig` class with dart-define. Updated run scripts. |
-| 2 | **Rate limit fails open** | `rate_limit_service.dart:104` | **CONFIRMED** | Returns `allowed: true` on server error. Fix: fail closed + local fallback |
+| 2 | ~~Rate limit fails open~~ | `rate_limit_service.dart` | **FIXED** | Now uses local fallback (10 req/min) when server unavailable |
 | 3 | **No route guards** | `router.dart:24-102` | **CONFIRMED** | Deep links bypass auth. Add `redirect` guard to GoRouter |
 | 4 | **Non-blocking init failures** | `main.dart:38-84` | **CONFIRMED** | Firebase/Supabase/RC catch-and-continue. Show error screen if critical services fail |
 | 5 | **Deep link scheme hijackable** | `AndroidManifest.xml:35`, `Info.plist:73` | **CONFIRMED** | Custom scheme `com.prosepal.prosepal://` can be intercepted. Migrate to HTTPS App Links |
