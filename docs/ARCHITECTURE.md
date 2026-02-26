@@ -88,7 +88,7 @@ Prosepal is a production-grade Flutter application for AI-powered greeting card 
 ┌─────────────────────────────▼───────────────────────────────────┐
 │                     BUSINESS LOGIC LAYER                        │
 │  ┌────────────────────────────────────────────────────────────┐ │
-│  │  core/services/ (21 files)                                  │ │
+│  │  core/services/ (20 files)                                  │ │
 │  │  ├── ai_service.dart           Gemini generation           │ │
 │  │  ├── auth_service.dart         Multi-provider auth         │ │
 │  │  ├── subscription_service.dart RevenueCat integration      │ │
@@ -153,7 +153,7 @@ lib/
 │   ├── interfaces/              Service contracts for DI
 │   ├── models/                  Freezed data models
 │   ├── providers/               Riverpod providers
-│   └── services/                Business logic (21 services)
+│   └── services/                Business logic (20 services)
 ├── features/                     Feature modules (9 modules)
 │   ├── auth/                    Sign-in, email auth, lock screen
 │   ├── error/                   Error display screens
