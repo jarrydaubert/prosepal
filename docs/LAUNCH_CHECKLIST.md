@@ -22,6 +22,9 @@
 ### Supabase
 - RLS policies production-ready
 - `delete-user` Edge Function deployed
+- Database Linter: 0 errors (check Dashboard > Database > Linter)
+- Performance Advisor: Review slow queries (check Dashboard > Database > Performance)
+- Auth > Enable "Leaked password protection"
 
 ### Code
 - iOS Archive built
