@@ -68,6 +68,8 @@
 | Generic catch blocks | Throughout `/lib` | ~65 remaining, core services done |
 | No SSL certificate pinning | Network | Consider for banking-level security |
 | No visual regression tests | Testing | Add golden tests |
+| Type-safe env with envied | `app_config.dart` | Replace manual dart-define with `envied` package for type-safe .env |
+| URL format validation | `app_config.dart` | Add regex validation for SUPABASE_URL in validate() |
 | No performance tests | Testing | Add load/stress tests |
 | No history pagination | `history_service.dart` | 200-item cap fine, add lazy loading v1.1 |
 | No accessibility test suite | Testing | Add a11y automation |
