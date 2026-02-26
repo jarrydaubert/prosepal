@@ -607,8 +607,7 @@ void main() {
     ($) async {
       await initTest();
       final errorAi = MockAiService();
-      errorAi.shouldFail = true;
-      errorAi.exceptionToThrow = const AiNetworkException(
+      errorAi.errorToThrow = const AiNetworkException(
         'Unable to connect. Please check your internet connection.',
       );
       
@@ -633,8 +632,7 @@ void main() {
     ($) async {
       await initTest();
       final errorAi = MockAiService();
-      errorAi.shouldFail = true;
-      errorAi.exceptionToThrow = const AiNetworkException('Test error');
+      errorAi.errorToThrow = const AiNetworkException('Test error');
       
       await pumpApp($, isLoggedIn: true, isPro: true, aiService: errorAi);
 
@@ -893,6 +891,292 @@ void main() {
       
       // Should be back at home
       await $('Prosepal').waitUntilVisible();
+    },
+  );
+
+  // ===========================================================================
+  // Back Navigation Tests
+  // ===========================================================================
+
+  patrolTest(
+    'back button on step 2 returns to step 1',
+    ($) async {
+      await initTest();
+      await pumpApp($, isLoggedIn: true, isPro: true);
+
+      await $('Birthday').tap();
+      await $('Close Friend').tap();
+      await $('Continue').tap();
+
+      // Now on step 2 (tone selection)
+      await $('Heartfelt').waitUntilVisible();
+      
+      // Tap back
+      await $(Icons.arrow_back).tap();
+      
+      // Should be back on step 1 (relationship)
+      await $('Close Friend').waitUntilVisible();
+    },
+  );
+
+  patrolTest(
+    'back button on step 3 returns to step 2',
+    ($) async {
+      await initTest();
+      await pumpApp($, isLoggedIn: true, isPro: true);
+
+      await $('Birthday').tap();
+      await $('Close Friend').tap();
+      await $('Continue').tap();
+      await $('Heartfelt').tap();
+      await $('Continue').tap();
+
+      // Now on step 3 (details)
+      await $('Generate Messages').waitUntilVisible();
+      
+      // Tap back
+      await $(Icons.arrow_back).tap();
+      
+      // Should be back on step 2 (tone)
+      await $('Heartfelt').waitUntilVisible();
+      expect($('Generate Messages'), findsNothing);
+    },
+  );
+
+  patrolTest(
+    'back button on step 1 returns to home',
+    ($) async {
+      await initTest();
+      await pumpApp($, isLoggedIn: true, isPro: true);
+
+      await $('Birthday').tap();
+      
+      // Now on step 1 (relationship)
+      await $('Close Friend').waitUntilVisible();
+      
+      // Tap back
+      await $(Icons.arrow_back).tap();
+      
+      // Should be back at home
+      await $('Prosepal').waitUntilVisible();
+    },
+  );
+
+  // ===========================================================================
+  // Message Length Selection Tests
+  // ===========================================================================
+
+  patrolTest(
+    'message length options are all visible',
+    ($) async {
+      await initTest();
+      await pumpApp($, isLoggedIn: true, isPro: true);
+
+      await $('Birthday').tap();
+      await $('Close Friend').tap();
+      await $('Continue').tap();
+      await $('Heartfelt').tap();
+      await $('Continue').tap();
+
+      // All length options should be visible
+      expect($('Brief'), findsOneWidget);
+      expect($('Standard'), findsOneWidget);
+      expect($('Detailed'), findsOneWidget);
+    },
+  );
+
+  patrolTest(
+    'brief length can be selected',
+    ($) async {
+      await initTest();
+      await pumpApp($, isLoggedIn: true, isPro: true);
+
+      await $('Birthday').tap();
+      await $('Close Friend').tap();
+      await $('Continue').tap();
+      await $('Heartfelt').tap();
+      await $('Continue').tap();
+
+      // Tap brief
+      await $('Brief').tap();
+      
+      // Should show brief description
+      await $('1-2 sentences').waitUntilVisible();
+    },
+  );
+
+  // ===========================================================================
+  // Share Functionality Tests
+  // ===========================================================================
+
+  patrolTest(
+    'share button is visible on results screen',
+    ($) async {
+      await initTest();
+      mockAi.messagesToReturn = ['Test message'];
+      
+      await pumpApp($, isLoggedIn: true, isPro: true, aiService: mockAi);
+
+      await $('Birthday').tap();
+      await $('Close Friend').tap();
+      await $('Continue').tap();
+      await $('Heartfelt').tap();
+      await $('Continue').tap();
+      await $('Generate Messages').tap();
+
+      await $('Your Messages').waitUntilVisible();
+      
+      // Share icon should be visible
+      expect($(Icons.share_outlined), findsWidgets);
+    },
+  );
+
+  // ===========================================================================
+  // Error Type Tests
+  // ===========================================================================
+
+  patrolTest(
+    'rate limit error shows appropriate message',
+    ($) async {
+      await initTest();
+      final errorAi = MockAiService();
+      errorAi.errorToThrow = const AiRateLimitException(
+        'Our servers are busy right now. Please wait a moment and try again.',
+      );
+      
+      await pumpApp($, isLoggedIn: true, isPro: true, aiService: errorAi);
+
+      await $('Birthday').tap();
+      await $('Close Friend').tap();
+      await $('Continue').tap();
+      await $('Heartfelt').tap();
+      await $('Continue').tap();
+      await $('Generate Messages').tap();
+
+      await $('servers are busy').waitUntilVisible();
+    },
+  );
+
+  patrolTest(
+    'content blocked error shows appropriate message',
+    ($) async {
+      await initTest();
+      final errorAi = MockAiService();
+      errorAi.errorToThrow = const AiContentBlockedException(
+        'Your message details triggered our safety filters.',
+      );
+      
+      await pumpApp($, isLoggedIn: true, isPro: true, aiService: errorAi);
+
+      await $('Birthday').tap();
+      await $('Close Friend').tap();
+      await $('Continue').tap();
+      await $('Heartfelt').tap();
+      await $('Continue').tap();
+      await $('Generate Messages').tap();
+
+      await $('safety filters').waitUntilVisible();
+    },
+  );
+
+  // ===========================================================================
+  // Sign Out Flow Tests
+  // ===========================================================================
+
+  patrolTest(
+    'sign out shows confirmation dialog',
+    ($) async {
+      await initTest();
+      await pumpApp($, isLoggedIn: true, isPro: false, remainingGenerations: 3);
+
+      await $(Icons.settings_outlined).tap();
+      await $('Settings').waitUntilVisible();
+      
+      // Scroll to and tap Sign Out
+      await $('Sign Out').scrollTo().tap();
+      
+      // Confirmation dialog should appear
+      await $('Sign out of your account?').waitUntilVisible();
+      expect($('Cancel'), findsOneWidget);
+    },
+  );
+
+  patrolTest(
+    'sign out cancel dismisses dialog',
+    ($) async {
+      await initTest();
+      await pumpApp($, isLoggedIn: true, isPro: false, remainingGenerations: 3);
+
+      await $(Icons.settings_outlined).tap();
+      await $('Settings').waitUntilVisible();
+      
+      await $('Sign Out').scrollTo().tap();
+      await $('Sign out of your account?').waitUntilVisible();
+      
+      // Cancel
+      await $('Cancel').tap();
+      
+      // Dialog should be gone, still on settings
+      await $.pump(const Duration(milliseconds: 300));
+      expect($('Sign out of your account?'), findsNothing);
+      expect($('Settings'), findsOneWidget);
+    },
+  );
+
+  // ===========================================================================
+  // Delete Account Flow Tests
+  // ===========================================================================
+
+  patrolTest(
+    'delete account shows confirmation dialog',
+    ($) async {
+      await initTest();
+      await pumpApp($, isLoggedIn: true, isPro: false, remainingGenerations: 3);
+
+      await $(Icons.settings_outlined).tap();
+      await $('Settings').waitUntilVisible();
+      
+      // Scroll to and tap Delete Account
+      await $('Delete Account').scrollTo().tap();
+      
+      // Confirmation dialog should appear
+      await $('Delete your account?').waitUntilVisible();
+      expect($('This action cannot be undone'), findsOneWidget);
+    },
+  );
+
+  // ===========================================================================
+  // Onboarding Tests
+  // ===========================================================================
+
+  patrolTest(
+    'new user without onboarding sees onboarding screen',
+    ($) async {
+      await initTest();
+      await pumpApp($, isLoggedIn: false, hasCompletedOnboarding: false);
+
+      // Should see onboarding, not auth screen
+      // (depends on implementation - adjust as needed)
+      await $('Welcome').waitUntilVisible();
+    },
+  );
+
+  // ===========================================================================
+  // Restore Purchases Tests
+  // ===========================================================================
+
+  patrolTest(
+    'restore purchases option is accessible in settings',
+    ($) async {
+      await initTest();
+      await pumpApp($, isLoggedIn: true, isPro: false, remainingGenerations: 3);
+
+      await $(Icons.settings_outlined).tap();
+      await $('Settings').waitUntilVisible();
+      
+      // Restore should be visible
+      await $('Restore Purchases').scrollTo();
+      expect($('Restore Purchases'), findsOneWidget);
     },
   );
 }
