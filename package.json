@@ -1,0 +1,9 @@
+{
+  "name": "prosepal-tooling",
+  "private": true,
+  "scripts": {
+    "cleanup": "./scripts/cleanup.sh",
+    "cleanup:dry-run": "./scripts/cleanup.sh --dry-run",
+    "cleanup:deep": "./scripts/cleanup.sh --deep"
+  }
+}
