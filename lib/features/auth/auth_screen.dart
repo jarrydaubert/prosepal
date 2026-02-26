@@ -411,13 +411,12 @@ class _GoogleSignInButton extends StatelessWidget {
       child: ElevatedButton(
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.white,
-          foregroundColor: Colors.black87,
-          elevation: 1,
-          shadowColor: Colors.black26,
+          backgroundColor: const Color(0xFFF8F9FA),
+          foregroundColor: AppColors.textPrimary,
+          elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: _kAuthButtonRadius,
-            side: BorderSide(color: Colors.grey.shade300),
+            side: const BorderSide(color: Color(0xFFDDDFE1)),
           ),
         ),
         child: Row(
