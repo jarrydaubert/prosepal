@@ -1,9 +1,9 @@
-# Supabase Database Tests
+# Supabase Tests
 
-Pre-release verification tests for Supabase database integrity.
+Pre-release verification tests for Supabase database and edge functions.
 
-**Run in:** Supabase Dashboard > SQL Editor  
-**Last Verified:** 2026-01-16 (v1.0.1)
+**Run in:** Supabase Dashboard > SQL Editor (database) / Terminal (edge functions)  
+**Last Verified:** 2026-01-22 (v1.1.0)
 
 ---
 
@@ -349,3 +349,253 @@ ORDER BY tablename, indexname;
 ### RLS not blocking writes
 - Ensure running as `authenticated` role, not `postgres`
 - Use `SET ROLE authenticated;` before test
+
+---
+
+# Edge Function Tests
+
+**Run in:** Terminal with `curl` or Supabase Dashboard > Edge Functions > Logs
+
+**Project ref:** `mwoxtqxzunsjmbdqezif`
+
+---
+
+## Test 15: Verify Edge Functions Deployed
+
+```bash
+supabase functions list --project-ref mwoxtqxzunsjmbdqezif
+```
+
+**Expected (3 functions):**
+```
+┌───────────────────────┬────────┬────────────────┐
+│ NAME                  │ STATUS │ VERSION        │
+├───────────────────────┼────────┼────────────────┤
+│ delete-user           │ Active │ ...            │
+│ exchange-apple-token  │ Active │ ...            │
+│ revenuecat-webhook    │ Active │ ...            │
+└───────────────────────┴────────┴────────────────┘
+```
+
+---
+
+## Test 16: Test `delete-user` Function
+
+### 16.1: Test without auth (should fail)
+```bash
+curl -X POST \
+  'https://mwoxtqxzunsjmbdqezif.supabase.co/functions/v1/delete-user' \
+  -H 'Content-Type: application/json'
+```
+
+**Expected:** `{"error":"No authorization header"}` (401)
+
+### 16.2: Test with invalid token (should fail)
+```bash
+curl -X POST \
+  'https://mwoxtqxzunsjmbdqezif.supabase.co/functions/v1/delete-user' \
+  -H 'Authorization: Bearer invalid-token' \
+  -H 'Content-Type: application/json'
+```
+
+**Expected:** `{"error":"Invalid user"}` (401)
+
+### 16.3: Test with valid user (DESTRUCTIVE - use test account only!)
+```bash
+# Get access token for test user first, then:
+curl -X POST \
+  'https://mwoxtqxzunsjmbdqezif.supabase.co/functions/v1/delete-user' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json'
+```
+
+**Expected:** `{"success":true,"message":"Account deleted successfully"}` (200)
+
+**Verify in Dashboard:**
+- User removed from auth.users
+- user_usage row deleted
+- user_entitlements row deleted
+- apple_credentials row deleted (if Apple user)
+
+---
+
+## Test 17: Test `exchange-apple-token` Function
+
+### 17.1: Test without auth (should fail)
+```bash
+curl -X POST \
+  'https://mwoxtqxzunsjmbdqezif.supabase.co/functions/v1/exchange-apple-token' \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+```
+
+**Expected:** `{"error":"No authorization header"}` (401)
+
+### 17.2: Test without authorization_code (should fail)
+```bash
+curl -X POST \
+  'https://mwoxtqxzunsjmbdqezif.supabase.co/functions/v1/exchange-apple-token' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+```
+
+**Expected:** `{"error":"Missing authorization_code"}` (400)
+
+### 17.3: Test with invalid code (should fail gracefully)
+```bash
+curl -X POST \
+  'https://mwoxtqxzunsjmbdqezif.supabase.co/functions/v1/exchange-apple-token' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{"authorization_code":"invalid-code"}'
+```
+
+**Expected:** `{"error":"Token exchange failed"}` (500)
+
+**Note:** Full success test requires real Apple Sign In flow - verify via app testing.
+
+---
+
+## Test 18: Test `revenuecat-webhook` Function
+
+### 18.1: Test without auth (should fail)
+```bash
+curl -X POST \
+  'https://mwoxtqxzunsjmbdqezif.supabase.co/functions/v1/revenuecat-webhook' \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+```
+
+**Expected:** `{"error":"Unauthorized"}` (401)
+
+### 18.2: Test with wrong secret (should fail)
+```bash
+curl -X POST \
+  'https://mwoxtqxzunsjmbdqezif.supabase.co/functions/v1/revenuecat-webhook' \
+  -H 'Authorization: Bearer wrong-secret' \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+```
+
+**Expected:** `{"error":"Unauthorized"}` (401)
+
+### 18.3: Test with valid secret + anonymous user (should skip)
+```bash
+curl -X POST \
+  'https://mwoxtqxzunsjmbdqezif.supabase.co/functions/v1/revenuecat-webhook' \
+  -H 'Authorization: Bearer YOUR_WEBHOOK_SECRET' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "api_version": "1.0",
+    "event": {
+      "type": "INITIAL_PURCHASE",
+      "app_user_id": "$RCAnonymousID:abc123",
+      "product_id": "com.prosepal.pro.monthly",
+      "original_app_user_id": "$RCAnonymousID:abc123"
+    }
+  }'
+```
+
+**Expected:** `{"success":true,"message":"Skipped anonymous user"}` (200)
+
+### 18.4: Test with valid secret + real UUID (creates/updates entitlement)
+```bash
+curl -X POST \
+  'https://mwoxtqxzunsjmbdqezif.supabase.co/functions/v1/revenuecat-webhook' \
+  -H 'Authorization: Bearer YOUR_WEBHOOK_SECRET' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "api_version": "1.0",
+    "event": {
+      "type": "INITIAL_PURCHASE",
+      "app_user_id": "YOUR_TEST_USER_UUID",
+      "product_id": "com.prosepal.pro.monthly",
+      "expiration_at_ms": 1735689600000,
+      "original_app_user_id": "YOUR_TEST_USER_UUID"
+    }
+  }'
+```
+
+**Expected:** `{"success":true}` (200)
+
+**Verify in Dashboard:**
+```sql
+SELECT * FROM user_entitlements WHERE user_id = 'YOUR_TEST_USER_UUID';
+```
+Should show `is_pro = true`.
+
+### 18.5: Test expiration event (revokes Pro)
+```bash
+curl -X POST \
+  'https://mwoxtqxzunsjmbdqezif.supabase.co/functions/v1/revenuecat-webhook' \
+  -H 'Authorization: Bearer YOUR_WEBHOOK_SECRET' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "api_version": "1.0",
+    "event": {
+      "type": "EXPIRATION",
+      "app_user_id": "YOUR_TEST_USER_UUID",
+      "product_id": "com.prosepal.pro.monthly",
+      "original_app_user_id": "YOUR_TEST_USER_UUID"
+    }
+  }'
+```
+
+**Expected:** `{"success":true}` (200)
+
+**Verify:** `is_pro = false` in user_entitlements.
+
+---
+
+## Test 19: Verify Edge Function Logs
+
+Check recent invocations in Supabase Dashboard:
+1. Go to Edge Functions
+2. Select each function
+3. Check Logs tab for errors
+
+**What to look for:**
+- No 500 errors in normal operation
+- Auth failures logged (401s expected for bad requests)
+- Successful operations logged with redacted user IDs
+
+---
+
+## Quick Checklist (Edge Functions)
+
+| # | Test | Pass |
+|---|------|------|
+| 15 | All 3 functions deployed | ☐ |
+| 16 | `delete-user` auth works | ☐ |
+| 17 | `exchange-apple-token` validation works | ☐ |
+| 18.1 | `revenuecat-webhook` rejects no auth | ☐ |
+| 18.2 | `revenuecat-webhook` rejects wrong secret | ☐ |
+| 18.3 | `revenuecat-webhook` skips anonymous | ☐ |
+| 18.4 | `revenuecat-webhook` grants Pro | ☐ |
+| 18.5 | `revenuecat-webhook` revokes Pro | ☐ |
+| 19 | No errors in logs | ☐ |
+
+---
+
+## Deploying Edge Functions
+
+```bash
+# Deploy all functions
+cd supabase
+
+supabase functions deploy delete-user --project-ref mwoxtqxzunsjmbdqezif
+supabase functions deploy exchange-apple-token --project-ref mwoxtqxzunsjmbdqezif
+supabase functions deploy revenuecat-webhook --project-ref mwoxtqxzunsjmbdqezif
+```
+
+## Environment Variables Required
+
+Set in Supabase Dashboard > Edge Functions > Secrets:
+
+| Function | Variables |
+|----------|-----------|
+| All | `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` (auto-set) |
+| `delete-user` | `APPLE_TEAM_ID`, `APPLE_CLIENT_ID`, `APPLE_KEY_ID`, `APPLE_PRIVATE_KEY` |
+| `exchange-apple-token` | `APPLE_TEAM_ID`, `APPLE_CLIENT_ID`, `APPLE_KEY_ID`, `APPLE_PRIVATE_KEY` |
+| `revenuecat-webhook` | `REVENUECAT_WEBHOOK_SECRET` |

@@ -25,19 +25,6 @@
 
 ---
 
-## HIGH
-
-| Issue | Location | Fix |
-|-------|----------|-----|
-| RemoteConfigService untested | `remote_config_service.dart` | Force update logic, AI model switching - add version comparison tests |
-| Paywall bypasses service interface | `paywall_sheet.dart` | Route getOfferings(), purchasePackage(), restorePurchases() through ISubscriptionService for testability |
-| Fire-and-forget sync loses data | `usage_service.dart:351` | Add retry queue, persist pending syncs |
-| OAuth re-auth for sensitive ops | `reauth_service.dart:121-135` | Redirect to OAuth provider for account deletion (not just dialog) |
-| No E2E tests in CI | `.github/workflows/` | Tests exist in `integration_test/` but not in CI |
-| No app state restoration | Forms | Add RestorationMixin - form data lost on process death |
-
----
-
 ## MEDIUM
 
 | Issue | Location | Fix |
@@ -60,6 +47,8 @@
 
 | Auth navigation race conditions | `app.dart` | Use GoRouter `refreshListenable` + global redirect |
 | Missing CAPTCHA | `email_auth_screen.dart` | Add Turnstile/hCaptcha + Supabase config |
+| Dependency update automation | `.github/` | Enable Dependabot for Flutter/Dart - 33 packages currently outdated |
+| Pre-release key scan | `LAUNCH_CHECKLIST.md` | Add step to scan bundle/APK for leaked keys before each release |
 
 | String-based error detection | `auth_errors.dart:46-179` | Message matching as fallback |
 | No connectivity monitoring | App | No `connectivity_plus` - just error messages |

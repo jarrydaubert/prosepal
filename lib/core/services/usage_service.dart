@@ -1,9 +1,61 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'device_fingerprint_service.dart';
 import 'log_service.dart';
 import 'rate_limit_service.dart';
+
+/// Represents a pending sync operation that failed and needs retry.
+///
+/// Stored in SharedPreferences as JSON for persistence across app restarts.
+class PendingSync {
+  PendingSync({
+    required this.userId,
+    required this.totalCount,
+    required this.monthlyCount,
+    required this.monthKey,
+    required this.createdAt,
+    this.retryCount = 0,
+  });
+
+  factory PendingSync.fromJson(Map<String, dynamic> json) => PendingSync(
+    userId: json['userId'] as String,
+    totalCount: json['totalCount'] as int,
+    monthlyCount: json['monthlyCount'] as int,
+    monthKey: json['monthKey'] as String,
+    createdAt: DateTime.parse(json['createdAt'] as String),
+    retryCount: json['retryCount'] as int? ?? 0,
+  );
+
+  final String userId;
+  final int totalCount;
+  final int monthlyCount;
+  final String monthKey;
+  final DateTime createdAt;
+  int retryCount;
+
+  Map<String, dynamic> toJson() => {
+    'userId': userId,
+    'totalCount': totalCount,
+    'monthlyCount': monthlyCount,
+    'monthKey': monthKey,
+    'createdAt': createdAt.toIso8601String(),
+    'retryCount': retryCount,
+  };
+
+  /// Create a copy with incremented retry count.
+  PendingSync incrementRetry() => PendingSync(
+    userId: userId,
+    totalCount: totalCount,
+    monthlyCount: monthlyCount,
+    monthKey: monthKey,
+    createdAt: createdAt,
+    retryCount: retryCount + 1,
+  );
+}
 
 /// Tracks generation usage with server-side persistence via Supabase.
 ///
@@ -45,6 +97,8 @@ class UsageService {
   static const _keyLastSyncUserId = 'last_sync_user_id';
   // Device-level flag - survives account deletion (fraud prevention, not user data)
   static const _keyDeviceUsedFreeTier = 'device_used_free_tier';
+  // Pending sync queue persistence
+  static const _keyPendingSyncs = 'pending_usage_syncs';
 
   // Limits
   static const int freeLifetimeLimit = 1;
@@ -52,6 +106,19 @@ class UsageService {
 
   /// Network timeout for Supabase calls (prevents indefinite hangs)
   static const _timeout = Duration(seconds: 30);
+
+  // Retry queue configuration
+  /// Maximum number of retry attempts before giving up on a sync.
+  static const int _maxRetries = 5;
+
+  /// Base delay for exponential backoff (doubles with each retry).
+  static const Duration _baseRetryDelay = Duration(seconds: 2);
+
+  /// Maximum age for pending syncs before they're discarded.
+  static const Duration _maxPendingSyncAge = Duration(days: 7);
+
+  /// Timer for periodic retry processing.
+  Timer? _retryTimer;
 
   // Supabase table and columns
   static const _table = 'user_usage';
@@ -345,10 +412,12 @@ class UsageService {
     _syncToServer(totalCount, monthlyCount, thisMonth);
   }
 
-  /// Sync usage TO server (called after each generation)
+  /// Sync usage TO server (called after each generation).
   ///
   /// Uses RPC instead of direct upsert to prevent abuse (users can't reset counts).
   /// The RPC only allows INCREASING counts, never decreasing.
+  ///
+  /// On failure, adds to retry queue for later processing.
   Future<void> _syncToServer(
     int totalCount,
     int monthlyCount,
@@ -361,6 +430,16 @@ class UsageService {
       Log.warning('Cannot sync usage to server: user not authenticated', {
         'totalCount': totalCount,
       });
+      // Queue for retry when user signs in
+      await _addPendingSync(
+        PendingSync(
+          userId: userId ?? 'anonymous',
+          totalCount: totalCount,
+          monthlyCount: monthlyCount,
+          monthKey: monthKey,
+          createdAt: DateTime.now(),
+        ),
+      );
       return;
     }
 
@@ -380,9 +459,196 @@ class UsageService {
         'monthlyCount': monthlyCount,
       });
     } on PostgrestException catch (e) {
-      // Log but don't fail - local cache is still accurate
-      Log.error('Failed to sync usage to server', e);
+      // Network or server error - queue for retry
+      Log.warning('Failed to sync usage to server, queuing for retry', {
+        'error': e.message,
+        'totalCount': totalCount,
+      });
+      await _addPendingSync(
+        PendingSync(
+          userId: userId,
+          totalCount: totalCount,
+          monthlyCount: monthlyCount,
+          monthKey: monthKey,
+          createdAt: DateTime.now(),
+        ),
+      );
     }
+  }
+
+  // ===========================================================================
+  // RETRY QUEUE MANAGEMENT
+  // ===========================================================================
+
+  /// Add a sync operation to the pending queue.
+  Future<void> _addPendingSync(PendingSync sync) async {
+    final pending = await _getPendingSyncs();
+
+    // Deduplicate: if we have a newer sync for the same user, keep only the newest
+    pending.removeWhere((s) => s.userId == sync.userId);
+    pending.add(sync);
+
+    await _savePendingSyncs(pending);
+    Log.info('Added pending sync to queue', {
+      'queueSize': pending.length,
+      'userId': sync.userId.substring(0, 8),
+    });
+
+    // Schedule retry processing
+    _scheduleRetryProcessing();
+  }
+
+  /// Get all pending syncs from storage.
+  Future<List<PendingSync>> _getPendingSyncs() async {
+    final json = _prefs.getString(_keyPendingSyncs);
+    if (json == null || json.isEmpty) return [];
+
+    try {
+      final list = jsonDecode(json) as List;
+      return list
+          .map((e) => PendingSync.fromJson(e as Map<String, dynamic>))
+          .toList();
+    } on Exception catch (e) {
+      Log.warning('Failed to parse pending syncs', {'error': '$e'});
+      return [];
+    }
+  }
+
+  /// Save pending syncs to storage.
+  Future<void> _savePendingSyncs(List<PendingSync> syncs) async {
+    final json = jsonEncode(syncs.map((s) => s.toJson()).toList());
+    await _prefs.setString(_keyPendingSyncs, json);
+  }
+
+  /// Schedule retry processing with exponential backoff.
+  void _scheduleRetryProcessing() {
+    // Cancel existing timer to avoid duplicates
+    _retryTimer?.cancel();
+
+    // Schedule retry after base delay
+    _retryTimer = Timer(_baseRetryDelay, () {
+      processPendingSyncs();
+    });
+  }
+
+  /// Process all pending syncs with retry logic.
+  ///
+  /// Call this on app startup and when connectivity is restored.
+  /// Syncs are processed with exponential backoff and discarded after
+  /// [_maxRetries] attempts or if older than [_maxPendingSyncAge].
+  Future<void> processPendingSyncs() async {
+    final supabase = _supabase;
+    if (supabase == null) {
+      Log.info('Cannot process pending syncs: Supabase not available');
+      return;
+    }
+
+    final pending = await _getPendingSyncs();
+    if (pending.isEmpty) return;
+
+    Log.info('Processing pending syncs', {'count': pending.length});
+
+    final now = DateTime.now();
+    final stillPending = <PendingSync>[];
+    var successCount = 0;
+    var discardedCount = 0;
+
+    for (final sync in pending) {
+      // Discard stale syncs
+      if (now.difference(sync.createdAt) > _maxPendingSyncAge) {
+        Log.info('Discarding stale pending sync', {
+          'userId': sync.userId.substring(0, 8),
+          'age': now.difference(sync.createdAt).inDays,
+        });
+        discardedCount++;
+        continue;
+      }
+
+      // Discard after max retries
+      if (sync.retryCount >= _maxRetries) {
+        Log.warning('Discarding pending sync after max retries', {
+          'userId': sync.userId.substring(0, 8),
+          'retries': sync.retryCount,
+        });
+        discardedCount++;
+        continue;
+      }
+
+      // Skip syncs for other users (will process when they sign in)
+      final currentUserId = _userId;
+      if (sync.userId != currentUserId && sync.userId != 'anonymous') {
+        stillPending.add(sync);
+        continue;
+      }
+
+      // Update anonymous syncs with current user ID
+      final effectiveUserId =
+          sync.userId == 'anonymous' && currentUserId != null
+          ? currentUserId
+          : sync.userId;
+
+      if (effectiveUserId == 'anonymous') {
+        // Still no user - keep in queue
+        stillPending.add(sync);
+        continue;
+      }
+
+      // Attempt sync with exponential backoff delay
+      final delay = _baseRetryDelay * (1 << sync.retryCount);
+      await Future<void>.delayed(delay);
+
+      try {
+        await supabase.rpc(
+          'sync_user_usage',
+          params: {
+            'p_user_id': effectiveUserId,
+            'p_total_count': sync.totalCount,
+            'p_monthly_count': sync.monthlyCount,
+            'p_month_key': sync.monthKey,
+          },
+        );
+
+        successCount++;
+        Log.info('Pending sync succeeded', {
+          'userId': effectiveUserId.substring(0, 8),
+          'totalCount': sync.totalCount,
+          'retryCount': sync.retryCount,
+        });
+      } on PostgrestException catch (e) {
+        Log.warning('Pending sync retry failed', {
+          'error': e.message,
+          'retryCount': sync.retryCount,
+        });
+        stillPending.add(sync.incrementRetry());
+      }
+    }
+
+    // Save remaining pending syncs
+    await _savePendingSyncs(stillPending);
+
+    Log.info('Pending sync processing complete', {
+      'success': successCount,
+      'discarded': discardedCount,
+      'remaining': stillPending.length,
+    });
+
+    // Schedule another retry if there are still pending syncs
+    if (stillPending.isNotEmpty) {
+      _scheduleRetryProcessing();
+    }
+  }
+
+  /// Get count of pending syncs (for diagnostics).
+  Future<int> getPendingSyncCount() async {
+    final pending = await _getPendingSyncs();
+    return pending.length;
+  }
+
+  /// Clear all pending syncs (for testing or data reset).
+  Future<void> clearPendingSyncs() async {
+    _retryTimer?.cancel();
+    await _prefs.remove(_keyPendingSyncs);
+    Log.info('Pending syncs cleared');
   }
 
   // ===========================================================================
@@ -469,6 +735,9 @@ class UsageService {
 
       // Mark this user as synced
       await _prefs.setString(_keyLastSyncUserId, userId);
+
+      // Process any pending syncs that were queued while offline
+      await processPendingSyncs();
     } on PostgrestException catch (e) {
       Log.error('Failed to sync usage from server', e);
       // Continue with local cache - better than blocking

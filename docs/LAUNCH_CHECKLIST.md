@@ -43,8 +43,7 @@ open ios/Runner.xcworkspace
 
 | Platform | Status | Details |
 |----------|--------|---------|
-| iOS | **LIVE** | v1.0.1 Build 29 - https://apps.apple.com/app/id6757088726 |
-| iOS | **IN REVIEW** | v1.1.0 Build 31 - Submitted 2026-01-17, auto-release enabled |
+| iOS | **LIVE** | v1.1.0 Build 31 - https://apps.apple.com/app/id6757088726 |
 | Android | Blocked | Requires 14-day closed testing with 12+ testers |
 
 ---

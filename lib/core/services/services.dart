@@ -8,6 +8,7 @@ export 'calendar_service.dart';
 export 'data_export_service.dart';
 export 'device_fingerprint_service.dart';
 export 'diagnostic_service.dart';
+export 'form_restoration_service.dart';
 export 'google_auth_provider.dart';
 export 'history_service.dart';
 export 'log_service.dart';

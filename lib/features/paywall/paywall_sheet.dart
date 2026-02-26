@@ -95,7 +95,19 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
     }
 
     try {
-      final offerings = await Purchases.getOfferings();
+      // Route through ISubscriptionService for testability
+      final offerings = await subscriptionService.getOfferings();
+      if (offerings == null) {
+        Log.warning('PaywallSheet: No offerings returned');
+        if (mounted) {
+          setState(() {
+            _isLoadingOfferings = false;
+            _error = 'Unable to load subscriptions. Please try again later.';
+          });
+        }
+        return;
+      }
+
       // Log currency info (visible in diagnostics)
       for (final pkg in offerings.current?.availablePackages ?? []) {
         Log.info('RevenueCat package', {
@@ -272,20 +284,21 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
     setState(() => _isPurchasing = true);
     Log.info('Purchase started', {'package': package.identifier});
 
+    // Capture service references before async operations
+    final authService = ref.read(authServiceProvider);
+    final subscriptionService = ref.read(subscriptionServiceProvider);
+
     try {
-      final authService = ref.read(authServiceProvider);
+      // Identify user with RevenueCat before purchase (links purchase to account)
       if (authService.isLoggedIn && authService.currentUser?.id != null) {
-        await ref
-            .read(subscriptionServiceProvider)
-            .identifyUser(authService.currentUser!.id);
+        await subscriptionService.identifyUser(authService.currentUser!.id);
       }
 
-      final result = await Purchases.purchase(PurchaseParams.package(package));
-      final hasPro = result.customerInfo.entitlements.active.containsKey('pro');
-      Log.info('Purchase result', {
-        'hasPro': hasPro,
-        'customerId': result.customerInfo.originalAppUserId,
-      });
+      // Route through ISubscriptionService for testability
+      // Service returns true if 'pro' entitlement is now active
+      final hasPro = await subscriptionService.purchasePackage(package);
+
+      Log.info('Purchase result', {'hasPro': hasPro});
 
       if (hasPro && mounted) {
         ref.invalidate(customerInfoProvider);
@@ -313,9 +326,13 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
           );
         }
       } else if (!hasPro && mounted) {
+        // Purchase returned false - could be cancellation or failure
+        // Service already logs the specific reason, just show generic message
+        // Note: User cancellation is handled silently by the service
         _showError('Purchase did not complete. Please try again.');
       }
     } on PlatformException catch (e) {
+      // PlatformException may still bubble up from service in some edge cases
       Log.warning('Purchase platform exception', {
         'code': e.code,
         'message': e.message,
@@ -344,16 +361,15 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
     setState(() => _isRestoring = true);
     Log.info('Restore purchases started');
 
-    try {
-      final customerInfo = await Purchases.restorePurchases();
-      final hasPro = customerInfo.entitlements.active.containsKey('pro');
-      final activeEntitlements = customerInfo.entitlements.active.keys.toList();
+    // Capture service reference before async operations
+    final subscriptionService = ref.read(subscriptionServiceProvider);
 
-      Log.info('Restore completed', {
-        'hasPro': hasPro,
-        'activeEntitlements': activeEntitlements,
-        'allEntitlements': customerInfo.entitlements.all.keys.toList(),
-      });
+    try {
+      // Route through ISubscriptionService for testability
+      // Service returns true if 'pro' entitlement is now active
+      final hasPro = await subscriptionService.restorePurchases();
+
+      Log.info('Restore completed', {'hasPro': hasPro});
 
       if (hasPro && mounted) {
         ref.invalidate(customerInfoProvider);
