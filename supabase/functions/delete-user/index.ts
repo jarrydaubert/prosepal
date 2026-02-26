@@ -6,7 +6,7 @@
 // 2. Service role key used only for privileged deletion
 // 3. Apple tokens revoked before auth record removal (compliance)
 // 4. All user data deleted before auth record removal
-import { createClient } from "npm:@supabase/supabase-js@2"
+import { createClient } from "npm:@supabase/supabase-js@2.95.3"
 
 // Apple token revocation endpoint
 const APPLE_REVOKE_URL = 'https://appleid.apple.com/auth/revoke'

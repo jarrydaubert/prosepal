@@ -10,3 +10,8 @@ verify_jwt = false
 
 [functions.exchange-apple-token]
 verify_jwt = false
+
+[functions.revenuecat-webhook]
+# RevenueCat sends its own shared-secret Authorization header, not a Supabase JWT.
+# The function validates REVENUECAT_WEBHOOK_SECRET internally.
+verify_jwt = false

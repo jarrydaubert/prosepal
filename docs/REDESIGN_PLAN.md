@@ -1,7 +1,7 @@
 # Prosepal Redesign Plan
 
-> **Status:** ✅ APPROVED FOR BUILD  
-> **Last Updated:** 2026-01-24  
+> **Status:** IN PROGRESS (Phase 0 + Phase 2 foundations complete)  
+> **Last Updated:** 2026-02-05  
 > **Reviewed By:** Grok, Claude, ChatGPT, Gemini (3 rounds + stress tests)  
 > **Verdict:** All 4 reviewers say GO  
 > **Preview:** `prosepal-mobile-preview/public/index.html` | `prosepal-web-preview/public/index.html`
@@ -12,12 +12,12 @@
 
 | # | Blocker | Resolution | Owner | Source |
 |---|---------|------------|-------|--------|
-| 1 | **Analytics pipeline missing** | Implement Firebase Analytics (not just Crashlytics logs) for queryable rollout data | Eng | ChatGPT R3 |
+| 1 | **Analytics pipeline missing** | ✅ Implemented Firebase Analytics dual-write via `Log.event` | Eng | ChatGPT R3 |
 | 2 | **Chat transcript privacy** | Define retention/deletion policy, add "Clear draft" affordance | PM/Eng | ChatGPT R3 |
-| 3 | **Data migration crash risk** | Check for old `form_restoration_generate` key on startup, clear or migrate | Eng | Gemini R3 |
+| 3 | **Data migration crash risk** | ✅ Clear legacy `form_restoration_generate` on startup | Eng | Gemini R3 |
 | 4 | **History data adapter** | Create adapter to read legacy Result format - don't wipe user history | Eng | Gemini R3 |
-| 5 | **Gold CTA contrast FAILS** | White on #FBBF24 = **2.8:1** (needs 4.5:1). Use dark text or darker gold | Design | CRO Analysis |
-| 6 | **Paywall frequency capping** | Add 24h cooldown after explicit dismiss | Eng | CRO Analysis |
+| 5 | **Gold CTA contrast FAILS** | ✅ Dark text on Pro gold CTA buttons | Design | CRO Analysis |
+| 6 | **Paywall frequency capping** | ✅ 24h cooldown after explicit dismiss + force override for Upgrade | Eng | CRO Analysis |
 | 7 | **Error states UX** | Design 3 error buckets (offline, retryable, non-retryable) | Design | ChatGPT R3 |
 | 8 | **"Something Else" bottom sheet** | Design the browsable occasion list UI (not just "figure out while coding") | Design | Gemini Stress |
 | 9 | **Default tone for skippers** | If user skips tone, default to `Tone.heartfelt` implicitly | Eng | Claude Stress |
@@ -223,13 +223,13 @@ Error bubbles **do not auto-dismiss** - they stay until user acts or succeeds.
 ## Implementation Phases (Final)
 
 ### Phase 0: Foundation
-- [ ] **Analytics pipeline** - Implement Firebase Analytics dual-write
-- [ ] **Auth flow analytics** - Add `auth_started`, `auth_method_selected`, `auth_completed`, `auth_error_shown` events
+- [x] **Analytics pipeline** - Implement Firebase Analytics dual-write
+- [x] **Auth flow analytics** - Add `auth_started`, `auth_method_selected`, `auth_completed`, `auth_error_shown` events
 - [ ] **Chat privacy policy** - Document retention, add "Clear draft"
-- [ ] **Data migration handler** - Clear old `form_restoration_generate` key
+- [x] **Data migration handler** - Clear old `form_restoration_generate` key
 - [ ] **History adapter** - Read legacy format without wiping data
-- [ ] **Gold contrast fix** - Dark text on gold CTA
-- [ ] **Paywall frequency capping** - 24h cooldown after dismiss
+- [x] **Gold contrast fix** - Dark text on gold CTA
+- [x] **Paywall frequency capping** - 24h cooldown after dismiss
 - [ ] **Error UX patterns** - 3 buckets defined
 
 ### Phase 1: Ugly Prototype
@@ -247,11 +247,11 @@ Error bubbles **do not auto-dismiss** - they stay until user acts or succeeds.
 - [ ] **Validate flow feels fast before proceeding**
 
 ### Phase 2: Theme
-- [ ] `ColorScheme.fromSeed()` with #7C5DCA (light + dark)
-- [ ] Gold as tertiary - **Pro badge + Pay button ONLY**
-- [ ] Dark text on gold CTA buttons
+- [x] `ColorScheme.fromSeed()` with #7C5DCA (light + dark)
+- [x] Gold as tertiary - **Pro badge + Pay button ONLY**
+- [x] Dark text on gold CTA buttons
 - [ ] Validate all contrast ratios (including gold on elevated dark surfaces)
-- [ ] `ThemeMode.system` support
+- [x] `ThemeMode.system` support
 - [ ] **Accessibility spot-checks** (don't wait for Phase 5):
   - [ ] Test ChipSelector with VoiceOver immediately after building
   - [ ] Test ChatBubble with TalkBack immediately after building
@@ -365,7 +365,7 @@ This is the moment a user "gets it" - they've generated a message AND found it v
 
 | Check | Current | Target | Status |
 |-------|---------|--------|--------|
-| Gold CTA text | White (2.8:1) | Dark (10:1) | ⚠️ Fix in Phase 2 |
+| Gold CTA text | White (2.8:1) | Dark (10:1) | ✅ |
 | Text on primary | 21:1 | ≥ 4.5:1 | ✅ |
 | Tap targets | 44x44 | ≥ 44x44 | ✅ |
 | Dynamic type | Partial | 200% | Test |
@@ -387,8 +387,8 @@ This is the moment a user "gets it" - they've generated a message AND found it v
 
 | Gap | Priority | When |
 |-----|----------|------|
-| Frequency capping (24h cooldown) | **HIGH** | Phase 0 |
-| Gold CTA contrast | **HIGH** | Phase 2 |
+| Frequency capping (24h cooldown) | **HIGH** | ✅ Done (Phase 0) |
+| Gold CTA contrast | **HIGH** | ✅ Done (Phase 2) |
 | Social proof ("Join 1,000+ Pro users") | Low | v1.1 |
 | Trial experiment (3-day free) | Medium | v1.1 |
 
@@ -411,7 +411,7 @@ This is the moment a user "gets it" - they've generated a message AND found it v
 
 | Gap | Priority | When |
 |-----|----------|------|
-| Auth analytics events | **HIGH** | Phase 0 |
+| Auth analytics events | **HIGH** | ✅ Done (Phase 0) |
 | Email typo detection | Medium | v1.1 |
 | Password requirements upfront | Low | v1.1 |
 | Error dismiss timing (6s → 4s) | Low | v1.1 |

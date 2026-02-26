@@ -79,7 +79,7 @@ integration_test/                  # Integration (device required)
 └── coverage/                      # All options work
     ├── occasions_test.dart                # All 40 occasions
     ├── relationships_test.dart            # All 14 relationships
-    └── tones_test.dart                    # All 6 tones
+    └── tones_test.dart                    # All 9 tones
 ```
 
 ## What Bug Does Each Test Find?

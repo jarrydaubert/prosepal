@@ -8,7 +8,7 @@ AI-powered message helper for greeting cards and special occasions.
 
 - 40 occasions (Birthday, Wedding, Sympathy, Thank You, etc.)
 - 14 relationship types
-- 6 tones (Heartfelt, Casual, Funny, Formal, Inspirational, Playful)
+- 9 tones (Heartfelt, Casual, Funny, Formal, Inspirational, Playful, Sarcastic, Nostalgic, Poetic)
 - 3 message lengths (Brief, Standard, Detailed)
 - 3 AI-generated message options per request
 - Free tier (1 lifetime) with Pro subscription (unlimited, fair use policy)
@@ -53,7 +53,7 @@ lib/
 See `docs/` for detailed documentation:
 - `ARCHITECTURE.md` - Project structure
 - `LAUNCH_CHECKLIST.md` - Release checklist
-- `TESTING.md` - Test coverage
+- `test/README.md` - Test coverage
 
 ## Environment Setup
 

@@ -62,7 +62,7 @@ lib/
 | `docs/ARCHITECTURE.md` | File map |
 | `docs/BACKLOG.md` | Remaining work |
 | `docs/LAUNCH_CHECKLIST.md` | Pre-launch tasks |
-| `docs/TESTING.md` | Test coverage details |
+| `test/README.md` | Test coverage details |
 | `docs/SERVICE_ENDPOINTS.md` | SDK method coverage |
 
 ## Monetization

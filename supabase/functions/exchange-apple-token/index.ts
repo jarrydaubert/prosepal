@@ -3,7 +3,7 @@
 //
 // Called immediately after Apple Sign In to exchange the short-lived
 // authorization code for a long-lived refresh token (for revocation on delete).
-import { createClient } from "npm:@supabase/supabase-js@2"
+import { createClient } from "npm:@supabase/supabase-js@2.95.3"
 
 const APPLE_TOKEN_URL = 'https://appleid.apple.com/auth/token'
 

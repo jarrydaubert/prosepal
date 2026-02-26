@@ -90,6 +90,9 @@ abstract class PreferenceKeys {
   static const proStatusCache = 'pro_status_cache';
   static const proStatusCacheDefault = false;
 
+  /// User ID associated with cached pro status (prevents cross-account leakage)
+  static const proStatusCacheUserId = 'pro_status_cache_user_id';
+
   /// Timestamp of last explicit paywall dismissal (ISO string)
   static const paywallLastDismissed = 'paywall_last_dismissed';
 
