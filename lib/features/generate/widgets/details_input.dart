@@ -101,6 +101,7 @@ class _DetailsInputState extends State<DetailsInput> {
               controller: _nameController,
               hintText: 'e.g., Sarah, Mom, John',
               icon: Icons.person_outline,
+              maxLength: 50,
               onChanged: widget.onRecipientNameChanged,
             ),
             const SizedBox(height: 24),

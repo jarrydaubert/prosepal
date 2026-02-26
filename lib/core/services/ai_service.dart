@@ -330,13 +330,23 @@ class AiService {
       'length': length.name,
     });
 
+    // Input length validation (defense-in-depth)
+    const maxNameLength = 50;
+    const maxDetailsLength = 500; // Allow slightly more than UI for edge cases
+    final sanitizedName = recipientName != null && recipientName.length > maxNameLength
+        ? recipientName.substring(0, maxNameLength)
+        : recipientName;
+    final sanitizedDetails = personalDetails != null && personalDetails.length > maxDetailsLength
+        ? personalDetails.substring(0, maxDetailsLength)
+        : personalDetails;
+
     final prompt = buildPrompt(
       occasion: occasion,
       relationship: relationship,
       tone: tone,
       length: length,
-      recipientName: recipientName,
-      personalDetails: personalDetails,
+      recipientName: sanitizedName,
+      personalDetails: sanitizedDetails,
     );
 
     // Log prompt metadata only (no PII - personalDetails excluded)
