@@ -9,6 +9,7 @@ import '../../core/models/models.dart';
 import '../../core/providers/providers.dart';
 import '../../core/services/ai_service.dart';
 import '../../core/services/log_service.dart';
+import '../../core/services/usage_service.dart' show UsageCheckException;
 import '../../shared/atoms/app_button.dart';
 import '../../shared/atoms/shimmer_button.dart';
 import '../../shared/molecules/generation_loading_overlay.dart';
@@ -277,7 +278,28 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
     try {
       final aiService = ref.read(aiServiceProvider);
       final usageService = ref.read(usageServiceProvider);
+      final authService = ref.read(authServiceProvider);
       final isPro = ref.read(isProProvider);
+
+      // Server-side usage check for authenticated users (prevents bypass)
+      // Anonymous users fall back to client-side check (already done in canGenerate)
+      if (authService.isLoggedIn) {
+        try {
+          final usageResult = await usageService.checkAndIncrementServerSide(
+            isPro: isPro,
+          );
+          if (!usageResult.allowed) {
+            ref.read(isGeneratingProvider.notifier).state = false;
+            ref.read(generationErrorProvider.notifier).state =
+                usageResult.errorMessage ?? 'Usage limit reached';
+            return;
+          }
+        } on UsageCheckException catch (e) {
+          ref.read(isGeneratingProvider.notifier).state = false;
+          ref.read(generationErrorProvider.notifier).state = e.message;
+          return;
+        }
+      }
 
       final result = await aiService.generateMessages(
         occasion: occasion,
@@ -288,7 +310,10 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
         personalDetails: personalDetails.isNotEmpty ? personalDetails : null,
       );
 
-      await usageService.recordGeneration(isPro: isPro);
+      // For anonymous users, record generation client-side
+      if (!authService.isLoggedIn) {
+        await usageService.recordGeneration(isPro: isPro);
+      }
 
       // Force Riverpod to re-read usage after recording
       ref.invalidate(remainingGenerationsProvider);
