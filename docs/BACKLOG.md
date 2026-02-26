@@ -59,6 +59,10 @@
 | Diagnostic runtime flags | `diagnostic_service.dart` | Add Firebase init status, connectivity, Flutter version to report |
 | Diagnostic export formats | `diagnostic_service.dart` | Add JSON/markdown alternatives for programmatic support parsing |
 | Diagnostic service tests | `test/services/` | Unit tests for report generation with mocked failures |
+| Auth error types | `auth_interface.dart` | Define sealed class for auth errors (network, invalid credentials, requires re-auth) |
+| Auth method documentation | `auth_interface.dart` | Add Dart docs specifying exceptions, preconditions, postconditions |
+| Re-auth for sensitive ops | `auth_interface.dart` | Add `reauthenticate()` or require recent auth for updateEmail/updatePassword/delete |
+| Provider availability checks | `auth_interface.dart` | Add `isAppleSignInAvailable()` for conditional UI rendering |
 | UsageService race condition | `usage_service.dart` | Atomic increment via Supabase RPC |
 | Hardcoded usage limits | `usage_service.dart` | Move to remote config |
 | Supabase singleton | `usage_service.dart` | Inject client for testability |
