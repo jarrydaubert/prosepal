@@ -1,44 +1,15 @@
 # Backlog
 
-> Prioritized TODO items only.
+> **Note:** This file contains only outstanding TODO items. Completed work is tracked in git history, not here. Keep this file clean - remove items when done.
 
 ---
 
-## Release Blockers (P0)
+## P0 - Release Blockers
 
 | Item | Action |
 |------|--------|
-| App Store ID | Add to `_rateApp()` and `review_service.dart` after approval |
+| App Store ID | Add to `review_service.dart` after App Store approval |
 | IAP Products | Submit in App Store Connect |
-
-## Deployment (COMPLETED 2025-01-07)
-
-All migrations, edge functions, and secrets deployed:
-- ✅ Migrations 004-007 applied (device usage, rate limiting, Apple credentials)
-- ✅ Edge functions deployed (delete-user, exchange-apple-token)
-- ✅ Apple secrets configured (Key ID: 5UFN3MDA2Q)
-
----
-
-## P1 - Security (COMPLETED)
-
-All P1 security items implemented:
-- Re-auth for sensitive operations (deleteAccount)
-- Env vars required for RevenueCat keys (fail in release if missing)
-- Client-side auth rate limiting with exponential backoff
-- Screenshot/screen recording prevention (release builds only)
-
----
-
-## P2 - Technical Debt (REVIEWED)
-
-| Item | Status |
-|------|--------|
-| Consolidate ErrorLogService | ✅ Merged into LogService |
-| Form state consolidation | SKIPPED - No validation logic needed, current pattern works well |
-| AutoDispose for transient state | SKIPPED - Explicit reset pattern is more predictable |
-| Supabase singleton injection | SKIPPED - Try/catch pattern already handles testability |
-| Hardcoded usage limits | SKIPPED - Server RPC already overrides limits, client values are just fallbacks |
 
 ---
 
