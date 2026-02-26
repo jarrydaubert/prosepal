@@ -25,31 +25,26 @@
 
 ## Testing
 
-> See `TESTING.md` for flows, edge cases, known issues. Scenarios drive automation tests.
+> See `USER_JOURNEYS.md` for complete E2E flows with expected logs.
+> See `TESTING.md` for edge cases and known issues.
 
-### Automated Test Coverage
+### Test Files
+| File | Purpose |
+|------|---------|
+| `scenario_tests.dart` | Mocked Patrol tests (auth, AI errors) |
+| `golden_path_test.dart` | Firebase Test Lab (60+ real device tests) |
 
-| Flow | Test File | Status |
-|------|-----------|--------|
-| Fresh install (anonymous) | `scenario_tests.dart` | Covered |
-| Upgrade path | `scenario_tests.dart` | Covered |
-| Reinstall (Pro restore) | `scenario_tests.dart` | Covered |
-| Multi-device sync | `scenario_tests.dart` | Covered |
-| AI generation + truncation | `scenario_tests.dart` | Covered |
-| Payment edge cases | `scenario_tests.dart` | Covered |
-| Auth edge cases | `scenario_tests.dart` | Covered |
-| Settings screen | `scenario_tests.dart` | Covered |
+### Log Coverage Gaps (P1)
+| Service/Screen | Missing Logs |
+|----------------|--------------|
+| biometric_service | enable/disable/auth events |
+| auth_service | sign in/out/delete events |
+| onboarding_screen | started/completed |
+| lock_screen | shown/auth events |
+| generate_screen | wizard started |
+| results_screen | copy/share events |
 
-### Manual Tests Required (Real Device)
-
-| Test | Why Manual |
-|------|------------|
-| Apple/Google Sign In | OAuth requires real device |
-| Sandbox purchases | StoreKit sandbox |
-| Biometric lock/unlock | Hardware |
-| Magic link deep link | Email + URL scheme |
-
-### Known Issues to Fix
+### Known Issues
 
 | ID | Issue | Severity |
 |----|-------|----------|
