@@ -21,7 +21,6 @@
 | **P0** | **RevenueCat offerings config** | Low | BLOCKER |
 | **P0** | **Real device testing** | Low | BLOCKER |
 | **P0** | **App Store ID for reviews** | Low | BLOCKER |
-| P1 | Fix 674 lint suggestions | Medium | Medium |
 | P3 | Subscription mock enhancements | Medium | Low |
 | P4 | Performance optimizations | Medium | Medium |
 | P4 | Dark mode support | High | Medium |
@@ -60,23 +59,7 @@ class FakePackage {
 
 ---
 
-## 2. Code Quality Cleanup
-
-**Status:** 674 info-level lint suggestions
-
-| Category | Count (approx) | Example |
-|----------|----------------|---------|
-| `prefer_const_constructors` | ~200 | Add `const` to widget constructors |
-| `avoid_catches_without_on_clauses` | ~30 | Specify exception types in catch |
-| `unnecessary_await_in_return` | ~15 | Remove redundant await |
-| `cascade_invocations` | ~10 | Use `..` cascade operator |
-| Other style rules | ~400 | Various minor improvements |
-
-**Approach:** Fix incrementally by file/feature area.
-
----
-
-## 3. Performance Optimizations
+## 2. Performance Optimizations
 
 ### Lazy Loading
 
@@ -94,7 +77,7 @@ class FakePackage {
 
 ---
 
-## 4. SettingsScreen Polish
+## 3. SettingsScreen Polish
 
 ### Missing Features
 
@@ -112,7 +95,7 @@ class FakePackage {
 
 ---
 
-## 5. Dark Mode Support
+## 4. Dark Mode Support
 
 **Priority:** P4
 
@@ -123,7 +106,7 @@ class FakePackage {
 
 ---
 
-## 6. App Store Optimization (ASO) Metadata
+## 5. App Store Optimization (ASO) Metadata
 
 > Use when submitting to App Store Connect.
 
@@ -198,5 +181,5 @@ Download now and never struggle with "what to write" again.
 
 ## Notes
 
-- 674 lint issues are info-level (suggestions), not errors
+- 77 lint issues remain (down from 674) - all acceptable/intentional
 - Dark mode is nice-to-have, not blocking release
