@@ -107,15 +107,27 @@ class SubscriptionService {
   }
 
   /// Show RevenueCat's built-in paywall
+  /// Returns true if user purchased or restored, false if dismissed
+  /// Throws if RevenueCat is not initialized or paywall fails to load
   Future<bool> showPaywall() async {
-    try {
-      final result = await RevenueCatUI.presentPaywallIfNeeded(_entitlementId);
-      return result == PaywallResult.purchased ||
-          result == PaywallResult.restored;
-    } catch (e) {
-      debugPrint('Error showing paywall: $e');
-      return false;
+    if (!_isInitialized) {
+      throw Exception('RevenueCat not initialized');
     }
+
+    final result = await RevenueCatUI.presentPaywall();
+    return result == PaywallResult.purchased ||
+        result == PaywallResult.restored;
+  }
+
+  /// Show RevenueCat's built-in paywall only if user doesn't have entitlement
+  Future<bool> showPaywallIfNeeded() async {
+    if (!_isInitialized) {
+      throw Exception('RevenueCat not initialized');
+    }
+
+    final result = await RevenueCatUI.presentPaywallIfNeeded(_entitlementId);
+    return result == PaywallResult.purchased ||
+        result == PaywallResult.restored;
   }
 
   /// Show RevenueCat's Customer Center (manage subscriptions)
