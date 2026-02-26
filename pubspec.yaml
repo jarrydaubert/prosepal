@@ -1,7 +1,7 @@
 name: prosepal
 description: "AI-powered message helper for greeting cards and special occasions"
 publish_to: 'none'
-version: 1.0.0+1
+version: 1.0.0+2
 
 environment:
   sdk: ^3.9.0  # Dart 3.9+ for dot shorthands and local_auth 3.0
