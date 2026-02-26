@@ -237,15 +237,26 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           Log.warning('Sign out: History clear failed', {'error': '$e'});
         }
 
-        // 3. Clear usage counts (user-specific)
+        // 3. Mark device as used if user generated any messages (prevents misleading "1 free" after sign out)
+        final usageService = ref.read(usageServiceProvider);
+        if (usageService.getTotalCount() > 0) {
+          try {
+            await usageService.markDeviceUsedFreeTier();
+            Log.info('Sign out: Device marked as used');
+          } catch (e) {
+            Log.warning('Sign out: Device marking failed', {'error': '$e'});
+          }
+        }
+
+        // 4. Clear usage counts (user-specific)
         try {
-          await ref.read(usageServiceProvider).clearAllUsage();
+          await usageService.clearAllUsage();
           Log.info('Sign out: Usage cleared');
         } catch (e) {
           Log.warning('Sign out: Usage clear failed', {'error': '$e'});
         }
 
-        // 4. Disable biometrics (security setting tied to user)
+        // 5. Disable biometrics (security setting tied to user)
         try {
           await _biometricService.setEnabled(false);
           setState(() => _biometricsEnabled = false);
@@ -254,7 +265,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           Log.warning('Sign out: Biometrics disable failed', {'error': '$e'});
         }
 
-        // 5. Sign out (clears tokens, Google session, logs)
+        // 6. Sign out (clears tokens, Google session, logs)
         await authService.signOut();
         Log.info('Sign out completed successfully');
 
