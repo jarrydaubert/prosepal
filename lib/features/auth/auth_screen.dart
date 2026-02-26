@@ -9,6 +9,7 @@ import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 import '../../core/errors/auth_errors.dart';
 import '../../core/providers/providers.dart';
+import '../../core/services/biometric_service.dart';
 import '../../shared/theme/app_colors.dart';
 
 class AuthScreen extends ConsumerStatefulWidget {
@@ -36,6 +37,20 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     setState(() => _error = null);
   }
 
+  Future<void> _navigateAfterAuth() async {
+    if (!mounted) return;
+    
+    final biometricService = BiometricService.instance;
+    final isSupported = await biometricService.isSupported;
+    final isAlreadyEnabled = await biometricService.isEnabled;
+    
+    if (isSupported && !isAlreadyEnabled) {
+      context.go('/biometric-setup');
+    } else {
+      context.go('/home');
+    }
+  }
+
   Future<void> _signInWithApple() async {
     setState(() {
       _isLoading = true;
@@ -52,7 +67,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
         // Sync usage from server (restores usage after reinstall)
         await ref.read(usageServiceProvider).syncFromServer();
       }
-      if (mounted) context.go('/home');
+      await _navigateAfterAuth();
     } catch (e) {
       if (!AuthErrorHandler.isCancellation(e)) {
         _showError(AuthErrorHandler.getMessage(e));
@@ -78,7 +93,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
         // Sync usage from server (restores usage after reinstall)
         await ref.read(usageServiceProvider).syncFromServer();
       }
-      if (mounted) context.go('/home');
+      await _navigateAfterAuth();
     } catch (e) {
       if (!AuthErrorHandler.isCancellation(e)) {
         _showError(AuthErrorHandler.getMessage(e));
@@ -173,28 +188,25 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                     _AuthButton(
                       onPressed: _isLoading ? null : _signInWithApple,
                       isLoading: _isLoading,
-                      child: SizedBox(
-                        width: double.infinity,
+                      child: SignInWithAppleButton(
+                        text: 'Continue with Apple',
                         height: 56,
-                        child: SignInWithAppleButton(
-                          text: 'Continue with Apple',
-                          onPressed: _signInWithApple,
-                          borderRadius: BorderRadius.circular(16),
-                        ),
+                        onPressed: _signInWithApple,
+                        borderRadius: BorderRadius.circular(16),
                       ),
                     ),
                     const SizedBox(height: 12),
                   ],
 
-                  // Google Sign In
+                  // Google Sign In (branding: 24px icon per Google guidelines)
                   _AuthButton(
                     onPressed: _isLoading ? null : _signInWithGoogle,
                     isLoading: _isLoading,
                     style: _AuthButtonStyle.outlined,
                     icon: Image.asset(
                       'assets/images/icons/google_g.png',
-                      width: 20,
-                      height: 20,
+                      width: 24,
+                      height: 24,
                     ),
                     label: 'Continue with Google',
                   ),
@@ -204,7 +216,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                   _AuthButton(
                     onPressed: _isLoading ? null : _signInWithEmail,
                     isLoading: _isLoading,
-                    icon: const Icon(Icons.email_outlined, size: 20),
+                    style: _AuthButtonStyle.outlined,
+                    icon: const Icon(Icons.email_outlined, size: 24),
                     label: 'Continue with Email',
                   ),
                 ],
@@ -296,6 +309,20 @@ class _AuthButtonState extends State<_AuthButton> {
 
     final isPrimary = widget.style == _AuthButtonStyle.primary;
 
+    Color backgroundColor;
+    Color textColor;
+    Border? border;
+
+    if (isPrimary) {
+      backgroundColor = AppColors.primary;
+      textColor = Colors.white;
+    } else {
+      // Google and Email: consistent white bg with subtle border
+      backgroundColor = Colors.white;
+      textColor = const Color(0xFF1F1F1F);
+      border = Border.all(color: Colors.grey.shade300, width: 1.5);
+    }
+
     return GestureDetector(
       onTapDown: (_) => setState(() => _isPressed = true),
       onTapUp: (_) {
@@ -314,11 +341,9 @@ class _AuthButtonState extends State<_AuthButton> {
             width: double.infinity,
             height: 56,
             decoration: BoxDecoration(
-              color: isPrimary ? AppColors.primary : Colors.white,
+              color: backgroundColor,
               borderRadius: BorderRadius.circular(16),
-              border: isPrimary
-                  ? null
-                  : Border.all(color: Colors.grey.shade300, width: 1.5),
+              border: border,
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -330,9 +355,9 @@ class _AuthButtonState extends State<_AuthButton> {
                 Text(
                   widget.label ?? '',
                   style: TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w600,
-                    color: isPrimary ? Colors.white : AppColors.textPrimary,
+                    fontSize: 19,
+                    fontWeight: FontWeight.w500,
+                    color: textColor,
                   ),
                 ),
               ],
