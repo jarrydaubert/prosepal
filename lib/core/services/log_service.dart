@@ -28,6 +28,7 @@ import 'package:flutter/foundation.dart';
 abstract final class Log {
   static FirebaseCrashlytics? _crashlytics;
   static FirebaseAnalytics? _analytics;
+  static String? _currentUserId;
 
   /// In-memory buffer of recent logs for export (raw values retained for
   /// optional user-controlled verbose diagnostics).
@@ -173,6 +174,7 @@ abstract final class Log {
 
   /// Set user identifier for crash reports
   static Future<void> setUserId(String userId) async {
+    _currentUserId = userId;
     await _instance?.setUserIdentifier(userId);
     await _analyticsInstance?.setUserId(id: userId);
     info('User identified', {'userId': _truncate(userId, 8)});
@@ -180,9 +182,18 @@ abstract final class Log {
 
   /// Clear user identifier on logout
   static Future<void> clearUserId() async {
+    _currentUserId = null;
     await _instance?.setUserIdentifier('');
     await _analyticsInstance?.setUserId();
+    info('User identity cleared');
   }
+
+  /// Current app-level telemetry identity snapshot.
+  ///
+  /// This mirrors the last ID passed to [setUserId] and is cleared on
+  /// [clearUserId]. It is used for support diagnostics and identity mapping
+  /// validation.
+  static String? get currentUserId => _currentUserId;
 
   /// Set custom key-value for crash context
   static Future<void> setCustomKey(String key, Object value) async {

@@ -7,7 +7,10 @@ import 'package:prosepal/core/services/log_service.dart';
 /// Firebase Crashlytics is not available in tests, so we test the
 /// pure Dart logic (buffer, formatting, export).
 void main() {
-  setUp(Log.clearBuffer);
+  setUp(() async {
+    await Log.clearUserId();
+    Log.clearBuffer();
+  });
 
   group('Log Buffer Management', () {
     test('starts with empty buffer', () {
@@ -273,6 +276,29 @@ void main() {
       expect(log, contains('[INFO] Info message'));
       expect(log, contains('[WARN] Warn message'));
       expect(log, contains('[ERROR] Error message'));
+    });
+  });
+
+  group('User Identity', () {
+    test('setUserId stores identity and logs truncated ID', () async {
+      await Log.setUserId('1234567890abcdef');
+
+      expect(Log.currentUserId, equals('1234567890abcdef'));
+
+      final exported = Log.getExportableLog();
+      expect(exported, contains('User identified'));
+      expect(exported, contains('userId=12345678...'));
+      expect(exported, isNot(contains('1234567890abcdef')));
+    });
+
+    test('clearUserId clears identity and logs clear entry', () async {
+      await Log.setUserId('user-12345678');
+      await Log.clearUserId();
+
+      expect(Log.currentUserId, isNull);
+
+      final exported = Log.getExportableLog();
+      expect(exported, contains('User identity cleared'));
     });
   });
 }

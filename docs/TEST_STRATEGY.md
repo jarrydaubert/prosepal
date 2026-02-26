@@ -44,6 +44,7 @@ gcloud firebase test android run --type instrumentation --app build/app/outputs/
 - Android Firebase Test Lab critical suite run.
 - Supabase verification runbook execution.
 - AI cost/abuse runbook execution (`docs/AI_COST_ABUSE_RUNBOOK.md`).
+- Identity mapping QA flow execution (`docs/IDENTITY_MAPPING.md`).
 
 ## Flaky Test Policy
 
@@ -60,5 +61,6 @@ gcloud firebase test android run --type instrumentation --app build/app/outputs/
 ## References
 
 - [BACKLOG.md](./BACKLOG.md)
+- [IDENTITY_MAPPING.md](./IDENTITY_MAPPING.md)
 - [SUPABASE_TESTS.md](./SUPABASE_TESTS.md)
 - [NEXT_RELEASE_BRIEF.md](./NEXT_RELEASE_BRIEF.md)
