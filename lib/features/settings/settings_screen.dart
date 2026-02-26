@@ -7,6 +7,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:in_app_review/in_app_review.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/interfaces/biometric_interface.dart';
@@ -287,6 +289,38 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
           );
         }
+      }
+    }
+  }
+
+  Future<void> _exportData() async {
+    Log.info('Export data started');
+    try {
+      final exportService = ref.read(dataExportServiceProvider);
+      final jsonData = await exportService.exportUserData();
+      final filename = exportService.getExportFilename();
+
+      // Write to temp file
+      final tempDir = await getTemporaryDirectory();
+      final file = File('${tempDir.path}/$filename');
+      await file.writeAsString(jsonData);
+
+      // Share the file
+      await Share.shareXFiles(
+        [XFile(file.path)],
+        subject: 'Prosepal Data Export',
+      );
+
+      Log.info('Data export shared successfully');
+    } catch (e) {
+      Log.error('Data export failed', e);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to export data. Please try again.'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
       }
     }
   }
@@ -610,6 +644,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           // Account actions (only show if signed in)
           if (isLoggedIn) ...[
             const SectionHeader('Account Actions'),
+            SettingsTile(
+              leading: const Icon(
+                Icons.download_rounded,
+                color: AppColors.textSecondary,
+              ),
+              title: 'Export My Data',
+              subtitle: 'Download a copy of your data',
+              onTap: _exportData,
+            ),
             SettingsTile(
               leading: const Icon(Icons.logout_rounded, color: AppColors.error),
               title: 'Sign Out',
