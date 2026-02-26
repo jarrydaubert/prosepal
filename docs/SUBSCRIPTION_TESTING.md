@@ -1,28 +1,28 @@
 # Subscription Testing Guide
 
-> Manual verification checklist for RevenueCat subscription flows
+> Reference for testing RevenueCat subscription flows
 
 ---
 
 ## Testing Environments
 
-| Environment | Use Case | Setup Required |
-|-------------|----------|----------------|
-| **Test Store** | Development, instant purchases | None (default) |
-| **Apple Sandbox** | Pre-submission testing | Sandbox tester account |
-| **TestFlight** | Production-like testing | TestFlight build |
+| Environment | Use Case | Notes |
+|-------------|----------|-------|
+| **Test Store** | Development | Instant purchases, no Apple ID needed |
+| **Apple Sandbox** | Pre-submission | Requires sandbox tester account |
+| **TestFlight** | Production-like | Real App Store simulation |
 
 ### Test Store vs Sandbox
 
-Test Store (default during development):
-- Instant purchases, no Apple ID needed
+**Test Store** (default during development):
+- Instant purchases, no authentication
 - Cannot test real App Store flows
-- **Do NOT submit with Test Store enabled**
+- **Never submit with Test Store enabled**
 
-Apple Sandbox:
+**Apple Sandbox:**
 - Real App Store simulation
-- Requires sandbox tester account in App Store Connect
-- Subscription renewals accelerated (1 month = 5 min)
+- Requires sandbox tester in App Store Connect
+- Subscription renewals are accelerated
 
 ---
 
@@ -42,54 +42,17 @@ Max 12 renewals per day in sandbox.
 
 ---
 
-## Pre-Launch Checklist
-
-### Code Changes
-- [ ] Set `_useTestStore = false` in `subscription_service.dart`
-- [ ] Verify iOS API key is set (not Android key)
-- [ ] Remove all debug print statements
-
-### RevenueCat Dashboard
-- [ ] Products configured and approved
-- [ ] Entitlement "pro" linked to products
-- [ ] Offering "default" set as current
-- [ ] Webhook configured (if using server-side)
-
-### App Store Connect
-- [ ] In-App Purchases approved
-- [ ] Sandbox tester account created
-- [ ] Products "Cleared for Sale"
-- [ ] Wait ~24 hours after approval before release
-
-### Manual Testing (Real Device)
-- [ ] Fresh install shows free tier
-- [ ] Paywall displays correct pricing
-- [ ] Purchase completes successfully
-- [ ] Pro status updates immediately
-- [ ] Unlimited generations work
-- [ ] Restore purchases recovers entitlement
-- [ ] Reinstall + restore works
-- [ ] Transactions appear in RevenueCat dashboard
-
-### App Store Compliance
-- [ ] Subscription terms in app description
-- [ ] Privacy policy link in app
-- [ ] Terms of service link in app
-- [ ] Cancel/manage subscription link accessible
-
----
-
 ## Debug Logs
 
-RevenueCat logs are prefixed with `[Purchases]`. Key indicators:
+RevenueCat logs are prefixed with `[Purchases]`:
 
 | Emoji | Meaning |
 |-------|---------|
-| 😻 | Success from RevenueCat |
+| 😻 | Success |
 | 😻💰 | Purchase info received |
-| 💰 | Product-related messages |
-| ‼️ | Errors requiring attention |
-| ⚠️ | Implementation warnings |
+| 💰 | Product-related |
+| ‼️ | Error (requires attention) |
+| ⚠️ | Implementation warning |
 
 Enable debug logs:
 ```dart
@@ -98,35 +61,17 @@ await Purchases.setLogLevel(LogLevel.debug);
 
 ---
 
-## Automated Tests
-
-Run device-only tests (requires real device/simulator):
-```bash
-patrol test -t integration_test/device_only/revenuecat_test.dart
-```
-
-These tests verify:
-- SDK initialization
-- Offerings fetch correctly
-- Products have valid identifiers and prices
-- User identity is assigned
-- Restore purchases API works
-- Paywall navigation works
-- Pro status bypasses upgrade prompts
-
----
-
 ## Troubleshooting
 
 ### "No packages available"
 - Check RevenueCat dashboard for configured products
 - Verify offering is set as "current"
-- Wait for App Store product approval
+- Wait for App Store product approval (~24 hours)
 
 ### Purchase fails silently
 - Check debug logs for `‼️` errors
 - Verify sandbox account is configured
-- Try signing out of App Store and back in
+- Sign out of App Store and back in
 
 ### Pro status not updating
 - Check `isProProvider` subscription
@@ -137,3 +82,18 @@ These tests verify:
 - Must use same sandbox account
 - Purchases may have expired (sandbox renewals)
 - Check RevenueCat dashboard for transaction history
+
+---
+
+## Manual Test Checklist
+
+Run these on real device before submission:
+
+1. Fresh install shows free tier
+2. Paywall displays correct pricing
+3. Purchase completes successfully
+4. Pro status updates immediately
+5. Unlimited generations work
+6. Restore purchases recovers entitlement
+7. Reinstall + restore works
+8. Transactions appear in RevenueCat dashboard

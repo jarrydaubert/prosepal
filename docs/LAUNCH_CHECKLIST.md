@@ -279,6 +279,33 @@ Google requires closed testing before production release:
 
 ## Reference
 
+### Manual Test Flows
+
+| Flow | Steps |
+|------|-------|
+| Fresh Install | Launch → Onboard → Home → Generate (1 free) → Results |
+| Anon Upgrade | Upgrade → Auth → Sign In → Paywall → Purchase → Home |
+| Logged Upgrade | Upgrade → Paywall → Purchase → Home |
+| Sign Out | Settings → Confirm → Clears all → Home (anon) |
+| Delete Account | Settings → Delete → Confirm → Type DELETE → Clears all → Onboarding |
+
+### Sandbox Renewal Rates
+
+| Duration | Sandbox Time |
+|----------|--------------|
+| 1 week | 3 min |
+| 1 month | 5 min |
+| 1 year | 1 hour |
+
+Max 12 renewals per day in sandbox.
+
+### Known Limitations
+
+| Issue | Severity |
+|-------|----------|
+| 3 failed biometrics shows generic error | Medium |
+| Supabase session persists after reinstall | Low |
+
 ### Cost (Per User)
 
 | Plan | Price | Apple/Google Cut | Net |
