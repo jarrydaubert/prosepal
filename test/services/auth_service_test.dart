@@ -416,11 +416,11 @@ void main() {
     test('includes redirect URL for mobile', () async {
       await authService.signInWithMagicLink('test@example.com');
 
-      // On mobile, should have redirect URL
+      // On mobile, should have HTTPS Universal Link redirect URL
       // Note: kIsWeb is false in tests
       expect(
         mockSupabase.lastRedirectTo,
-        'com.prosepal.prosepal://login-callback',
+        'https://prosepal.app/auth/login-callback',
       );
     });
   });

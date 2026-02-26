@@ -111,7 +111,9 @@
 
 | Issue | Location | Fix |
 |-------|----------|-----|
-| Deep link scheme hijackable | `AndroidManifest.xml`, `Info.plist` | Custom scheme can be intercepted. Migrate to HTTPS App Links (requires web server config) |
+| Android App Links SHA-256 placeholder | `prosepal-web/public/.well-known/assetlinks.json` | Replace `YOUR_RELEASE_KEYSTORE_SHA256_HERE` with release keystore fingerprint. Run: `keytool -list -v -keystore your-release.keystore -alias your-alias` |
+| Deploy .well-known files | `prosepal-web` | Deploy to Vercel so Universal/App Links work |
+| Update Supabase redirect URLs | Supabase Dashboard | Add `https://prosepal.app/auth/*` to allowed redirect URLs |
 
 ### HIGH - Fix Week 1 Post-Launch
 
