@@ -117,7 +117,6 @@
 
 | Issue | Location | Fix |
 |-------|----------|-----|
-| No timeout on auth/Supabase calls | `supabase_auth_provider.dart`, `usage_service.dart` | Add 30s timeout wrapper to prevent hanging |
 | History stored unencrypted | `history_service.dart` (SharedPreferences) | Move to flutter_secure_storage |
 | Missing CAPTCHA | `email_auth_screen.dart` | Add Turnstile/hCaptcha widget + Supabase config |
 | Unencrypted biometric pref | `biometric_service.dart` | Add flutter_secure_storage dependency |
