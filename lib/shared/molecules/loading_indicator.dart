@@ -6,11 +6,7 @@ import '../theme/app_spacing.dart';
 
 /// Centered loading spinner with optional message
 class LoadingIndicator extends StatelessWidget {
-  const LoadingIndicator({
-    super.key,
-    this.message,
-    this.color,
-  });
+  const LoadingIndicator({super.key, this.message, this.color});
 
   final String? message;
   final Color? color;
@@ -21,16 +17,14 @@ class LoadingIndicator extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          CircularProgressIndicator(
-            color: color ?? AppColors.primary,
-          ),
+          CircularProgressIndicator(color: color ?? AppColors.primary),
           if (message != null) ...[
             Gap(AppSpacing.lg),
             Text(
               message!,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
               textAlign: TextAlign.center,
             ),
           ],
@@ -61,10 +55,7 @@ class LoadingOverlay extends StatelessWidget {
         if (isLoading)
           Container(
             color: Colors.black54,
-            child: LoadingIndicator(
-              message: message,
-              color: Colors.white,
-            ),
+            child: LoadingIndicator(message: message, color: Colors.white),
           ),
       ],
     );

@@ -32,7 +32,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
     try {
       final subscriptionService = ref.read(subscriptionServiceProvider);
       final offerings = await subscriptionService.getOfferings();
-      
+
       if (offerings?.current != null) {
         setState(() {
           _packages = offerings!.current!.availablePackages;
@@ -67,27 +67,23 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                 child: Column(
                   children: [
                     // Header
-                    Text(
-                      '✨',
-                      style: TextStyle(fontSize: 48),
-                    ).animate().scale(
-                          duration: 500.ms,
-                          curve: Curves.elasticOut,
-                        ),
+                    Text('✨', style: TextStyle(fontSize: 48)).animate().scale(
+                      duration: 500.ms,
+                      curve: Curves.elasticOut,
+                    ),
                     Gap(AppSpacing.lg),
                     Text(
                       'Unlock Prosepal Pro',
-                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                      style: Theme.of(context).textTheme.headlineMedium
+                          ?.copyWith(fontWeight: FontWeight.bold),
                       textAlign: TextAlign.center,
                     ),
                     Gap(AppSpacing.sm),
                     Text(
                       'Write the perfect message, every time',
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            color: AppColors.textSecondary,
-                          ),
+                        color: AppColors.textSecondary,
+                      ),
                       textAlign: TextAlign.center,
                     ),
                     Gap(AppSpacing.xxl),
@@ -95,9 +91,9 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                     // Features
                     ..._features.asMap().entries.map((entry) {
                       return _FeatureRow(
-                        icon: entry.value.icon,
-                        text: entry.value.text,
-                      )
+                            icon: entry.value.icon,
+                            text: entry.value.text,
+                          )
                           .animate()
                           .fadeIn(
                             delay: Duration(milliseconds: entry.key * 100),
@@ -122,7 +118,8 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                           child: _PackageCard(
                             package: package,
                             isSelected: _selectedPlanIndex == entry.key,
-                            onTap: () => setState(() => _selectedPlanIndex = entry.key),
+                            onTap: () =>
+                                setState(() => _selectedPlanIndex = entry.key),
                           ),
                         );
                       })
@@ -135,7 +132,8 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                           child: _PlanCard(
                             plan: plan,
                             isSelected: _selectedPlanIndex == index,
-                            onTap: () => setState(() => _selectedPlanIndex = index),
+                            onTap: () =>
+                                setState(() => _selectedPlanIndex = index),
                           ),
                         );
                       }),
@@ -157,8 +155,8 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                           ? 'Cancel anytime. Payment charged after trial.'
                           : 'Cancel anytime. ${_plans[_selectedPlanIndex].trialText}',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppColors.textSecondary,
-                          ),
+                        color: AppColors.textSecondary,
+                      ),
                       textAlign: TextAlign.center,
                     ),
                     Gap(AppSpacing.sm),
@@ -202,7 +200,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
       final success = await subscriptionService.purchasePackage(
         _packages[_selectedPlanIndex],
       );
-      
+
       if (success) {
         ref.read(isProProvider.notifier).state = true;
         if (mounted) {
@@ -231,7 +229,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
   Future<void> _restorePurchases() async {
     final subscriptionService = ref.read(subscriptionServiceProvider);
     final restored = await subscriptionService.restorePurchases();
-    
+
     if (restored) {
       ref.read(isProProvider.notifier).state = true;
       if (mounted) {
@@ -288,18 +286,11 @@ class _FeatureRow extends StatelessWidget {
               color: AppColors.success.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
-            child: Icon(
-              icon,
-              size: 20,
-              color: AppColors.success,
-            ),
+            child: Icon(icon, size: 20, color: AppColors.success),
           ),
           Gap(AppSpacing.md),
           Expanded(
-            child: Text(
-              text,
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
+            child: Text(text, style: Theme.of(context).textTheme.bodyMedium),
           ),
         ],
       ),
@@ -378,7 +369,9 @@ class _PlanCard extends StatelessWidget {
                     : AppColors.surface,
                 borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
                 border: Border.all(
-                  color: isSelected ? AppColors.primary : AppColors.surfaceVariant,
+                  color: isSelected
+                      ? AppColors.primary
+                      : AppColors.surfaceVariant,
                   width: isSelected ? 2 : 1,
                 ),
               ),
@@ -396,7 +389,9 @@ class _PlanCard extends StatelessWidget {
                             : AppColors.textSecondary,
                         width: 2,
                       ),
-                      color: isSelected ? AppColors.primary : Colors.transparent,
+                      color: isSelected
+                          ? AppColors.primary
+                          : Colors.transparent,
                     ),
                     child: isSelected
                         ? Icon(
@@ -415,14 +410,14 @@ class _PlanCard extends StatelessWidget {
                       children: [
                         Text(
                           plan.name,
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.bold),
                         ),
                         if (plan.savings != null)
                           Text(
                             plan.savings!,
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(
                                   color: AppColors.success,
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -441,15 +436,13 @@ class _PlanCard extends StatelessWidget {
                         children: [
                           Text(
                             plan.price,
-                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                ),
+                            style: Theme.of(context).textTheme.titleLarge
+                                ?.copyWith(fontWeight: FontWeight.bold),
                           ),
                           Text(
                             plan.period,
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: AppColors.textSecondary,
-                                ),
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(color: AppColors.textSecondary),
                           ),
                         ],
                       ),
@@ -477,9 +470,9 @@ class _PlanCard extends StatelessWidget {
               ),
               child: Text(
                 plan.badge!,
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.labelSmall?.copyWith(fontWeight: FontWeight.bold),
               ),
             ),
           ),
@@ -504,7 +497,7 @@ class _PackageCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final product = package.storeProduct;
     final isYearly = package.packageType == PackageType.annual;
-    
+
     return Stack(
       clipBehavior: Clip.none,
       children: [
@@ -522,7 +515,9 @@ class _PackageCard extends StatelessWidget {
                     : AppColors.surface,
                 borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
                 border: Border.all(
-                  color: isSelected ? AppColors.primary : AppColors.surfaceVariant,
+                  color: isSelected
+                      ? AppColors.primary
+                      : AppColors.surfaceVariant,
                   width: isSelected ? 2 : 1,
                 ),
               ),
@@ -540,7 +535,9 @@ class _PackageCard extends StatelessWidget {
                             : AppColors.textSecondary,
                         width: 2,
                       ),
-                      color: isSelected ? AppColors.primary : Colors.transparent,
+                      color: isSelected
+                          ? AppColors.primary
+                          : Colors.transparent,
                     ),
                     child: isSelected
                         ? Icon(
@@ -559,14 +556,14 @@ class _PackageCard extends StatelessWidget {
                       children: [
                         Text(
                           product.title.replaceAll(' (Prosepal)', ''),
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.bold),
                         ),
                         if (isYearly)
                           Text(
                             'Save 50%',
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(
                                   color: AppColors.success,
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -579,8 +576,8 @@ class _PackageCard extends StatelessWidget {
                   Text(
                     product.priceString,
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ],
               ),
@@ -604,9 +601,9 @@ class _PackageCard extends StatelessWidget {
               ),
               child: Text(
                 'BEST VALUE',
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.labelSmall?.copyWith(fontWeight: FontWeight.bold),
               ),
             ),
           ),

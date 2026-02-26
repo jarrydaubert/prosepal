@@ -42,9 +42,11 @@ void main() {
   });
 
   group('AiService message parsing', () {
-    test('parseMessages helper should extract messages from formatted response', () {
-      // This tests the parsing logic used internally
-      const response = '''
+    test(
+      'parseMessages helper should extract messages from formatted response',
+      () {
+        // This tests the parsing logic used internally
+        const response = '''
 MESSAGE 1:
 Happy birthday! Wishing you all the joy and happiness on your special day.
 
@@ -55,11 +57,12 @@ MESSAGE 3:
 Celebrating you today and always. Here's to a fantastic year ahead!
 ''';
 
-      // Verify the response format is correct
-      expect(response.contains('MESSAGE 1:'), isTrue);
-      expect(response.contains('MESSAGE 2:'), isTrue);
-      expect(response.contains('MESSAGE 3:'), isTrue);
-    });
+        // Verify the response format is correct
+        expect(response.contains('MESSAGE 1:'), isTrue);
+        expect(response.contains('MESSAGE 2:'), isTrue);
+        expect(response.contains('MESSAGE 3:'), isTrue);
+      },
+    );
 
     test('should handle response without MESSAGE markers', () {
       const response = 'Just a simple message without formatting.';

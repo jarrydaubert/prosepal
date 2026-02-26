@@ -32,10 +32,7 @@ class AppTypography {
         fontSize: 24,
         fontWeight: FontWeight.w600,
       ),
-      titleLarge: GoogleFonts.nunito(
-        fontSize: 22,
-        fontWeight: FontWeight.w600,
-      ),
+      titleLarge: GoogleFonts.nunito(fontSize: 22, fontWeight: FontWeight.w600),
       titleMedium: GoogleFonts.nunito(
         fontSize: 16,
         fontWeight: FontWeight.w600,

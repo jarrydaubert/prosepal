@@ -6,11 +6,7 @@ import '../theme/app_spacing.dart';
 
 /// Colorful occasion tile for the home screen grid
 class OccasionTile extends StatelessWidget {
-  const OccasionTile({
-    super.key,
-    required this.occasion,
-    required this.onTap,
-  });
+  const OccasionTile({super.key, required this.occasion, required this.onTap});
 
   final Occasion occasion;
   final VoidCallback onTap;
@@ -26,24 +22,19 @@ class OccasionTile extends StatelessWidget {
           decoration: BoxDecoration(
             color: occasion.color.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
-            border: Border.all(
-              color: occasion.color.withValues(alpha: 0.3),
-            ),
+            border: Border.all(color: occasion.color.withValues(alpha: 0.3)),
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(
-                occasion.emoji,
-                style: TextStyle(fontSize: 32),
-              ),
+              Text(occasion.emoji, style: TextStyle(fontSize: 32)),
               Gap(AppSpacing.sm),
               Text(
                 occasion.label,
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      color: occasion.color,
-                      fontWeight: FontWeight.w600,
-                    ),
+                  color: occasion.color,
+                  fontWeight: FontWeight.w600,
+                ),
                 textAlign: TextAlign.center,
               ),
             ],

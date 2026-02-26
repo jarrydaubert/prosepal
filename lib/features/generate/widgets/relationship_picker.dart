@@ -30,9 +30,9 @@ class RelationshipPicker extends StatelessWidget {
           Gap(AppSpacing.sm),
           Text(
             'Select your relationship with the recipient',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppColors.textSecondary,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
           ),
           Gap(AppSpacing.xl),
           ...Relationship.values.asMap().entries.map((entry) {
@@ -42,23 +42,24 @@ class RelationshipPicker extends StatelessWidget {
 
             return Padding(
               padding: EdgeInsets.only(bottom: AppSpacing.md),
-              child: _RelationshipTile(
-                relationship: relationship,
-                isSelected: isSelected,
-                onTap: () => onSelected(relationship),
-              )
-                  .animate()
-                  .fadeIn(
-                    delay: Duration(milliseconds: index * 50),
-                    duration: 200.ms,
-                  )
-                  .slideX(
-                    begin: 0.1,
-                    end: 0,
-                    delay: Duration(milliseconds: index * 50),
-                    duration: 200.ms,
-                    curve: Curves.easeOut,
-                  ),
+              child:
+                  _RelationshipTile(
+                        relationship: relationship,
+                        isSelected: isSelected,
+                        onTap: () => onSelected(relationship),
+                      )
+                      .animate()
+                      .fadeIn(
+                        delay: Duration(milliseconds: index * 50),
+                        duration: 200.ms,
+                      )
+                      .slideX(
+                        begin: 0.1,
+                        end: 0,
+                        delay: Duration(milliseconds: index * 50),
+                        duration: 200.ms,
+                        curve: Curves.easeOut,
+                      ),
             );
           }),
         ],
@@ -100,26 +101,19 @@ class _RelationshipTile extends StatelessWidget {
           ),
           child: Row(
             children: [
-              Text(
-                relationship.emoji,
-                style: TextStyle(fontSize: 28),
-              ),
+              Text(relationship.emoji, style: TextStyle(fontSize: 28)),
               Gap(AppSpacing.lg),
               Expanded(
                 child: Text(
                   relationship.label,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight:
-                            isSelected ? FontWeight.bold : FontWeight.w500,
-                        color: isSelected ? AppColors.primary : null,
-                      ),
+                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                    color: isSelected ? AppColors.primary : null,
+                  ),
                 ),
               ),
               if (isSelected)
-                Icon(
-                  Icons.check_circle,
-                  color: AppColors.primary,
-                ),
+                Icon(Icons.check_circle, color: AppColors.primary),
             ],
           ),
         ),

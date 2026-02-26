@@ -25,12 +25,10 @@ class SettingsTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListTile(
       leading: leading,
-      title: Text(
-        title,
-        style: TextStyle(color: titleColor),
-      ),
+      title: Text(title, style: TextStyle(color: titleColor)),
       subtitle: subtitle != null ? Text(subtitle!) : null,
-      trailing: trailing ??
+      trailing:
+          trailing ??
           (onTap != null
               ? Icon(Icons.chevron_right, color: AppColors.textHint)
               : null),
@@ -62,10 +60,7 @@ class SettingsToggleTile extends StatelessWidget {
       leading: leading,
       title: title,
       subtitle: subtitle,
-      trailing: Switch.adaptive(
-        value: value,
-        onChanged: onChanged,
-      ),
+      trailing: Switch.adaptive(value: value, onChanged: onChanged),
     );
   }
 }

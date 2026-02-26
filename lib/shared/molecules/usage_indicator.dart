@@ -23,10 +23,7 @@ class UsageIndicator extends StatelessWidget {
       return _ProBadge();
     }
 
-    return _FreeUsageCard(
-      remaining: remaining,
-      onUpgrade: onUpgrade,
-    );
+    return _FreeUsageCard(remaining: remaining, onUpgrade: onUpgrade);
   }
 }
 
@@ -49,9 +46,9 @@ class _ProBadge extends StatelessWidget {
           Gap(AppSpacing.xs),
           Text(
             'PRO',
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.bold),
           ),
         ],
       ),
@@ -60,10 +57,7 @@ class _ProBadge extends StatelessWidget {
 }
 
 class _FreeUsageCard extends StatelessWidget {
-  const _FreeUsageCard({
-    required this.remaining,
-    this.onUpgrade,
-  });
+  const _FreeUsageCard({required this.remaining, this.onUpgrade});
 
   final int remaining;
   final VoidCallback? onUpgrade;
@@ -92,9 +86,9 @@ class _FreeUsageCard extends StatelessWidget {
               child: Text(
                 '$remaining',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: remaining > 0 ? AppColors.success : AppColors.error,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  color: remaining > 0 ? AppColors.success : AppColors.error,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
             Gap(AppSpacing.md),
@@ -107,14 +101,14 @@ class _FreeUsageCard extends StatelessWidget {
                         ? 'Free messages remaining'
                         : 'Free trial ended',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   Text(
                     'Upgrade for unlimited',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppColors.textSecondary,
-                        ),
+                      color: AppColors.textSecondary,
+                    ),
                   ),
                 ],
               ),

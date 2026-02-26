@@ -43,9 +43,7 @@ class SelectionChip extends StatelessWidget {
                 : AppColors.surface,
             borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
             border: Border.all(
-              color: isSelected
-                  ? effectiveColor
-                  : AppColors.surfaceVariant,
+              color: isSelected ? effectiveColor : AppColors.surfaceVariant,
               width: isSelected ? 2 : 1,
             ),
           ),
@@ -66,9 +64,9 @@ class SelectionChip extends StatelessWidget {
               Text(
                 label,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: isSelected ? effectiveColor : AppColors.textPrimary,
-                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                    ),
+                  color: isSelected ? effectiveColor : AppColors.textPrimary,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                ),
               ),
             ],
           ),

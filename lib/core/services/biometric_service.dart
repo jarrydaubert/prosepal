@@ -7,7 +7,7 @@ class BiometricService {
   static final instance = BiometricService._();
 
   final LocalAuthentication _auth = LocalAuthentication();
-  
+
   static const _biometricsEnabledKey = 'biometrics_enabled';
 
   /// Check if device supports biometrics
@@ -60,10 +60,17 @@ class BiometricService {
   }
 
   /// Authenticate with biometrics
-  Future<bool> authenticate({String? reason}) async {
+  /// Set [biometricOnly] to true to prevent PIN/passcode fallback
+  Future<bool> authenticate({
+    String? reason,
+    bool biometricOnly = false,
+  }) async {
     try {
       return await _auth.authenticate(
         localizedReason: reason ?? 'Authenticate to access Prosepal',
+        biometricOnly: biometricOnly,
+        // Keep auth valid if app goes to background briefly
+        persistAcrossBackgrounding: true,
       );
     } on PlatformException catch (e) {
       // Handle specific errors

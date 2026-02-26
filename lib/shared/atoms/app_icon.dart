@@ -25,11 +25,7 @@ class AppIcon extends StatelessWidget {
       AppIconSize.large => AppSpacing.iconSizeLarge,
     };
 
-    return Icon(
-      icon,
-      size: iconSize,
-      color: color ?? AppColors.textPrimary,
-    );
+    return Icon(icon, size: iconSize, color: color ?? AppColors.textPrimary);
   }
 }
 
@@ -90,17 +86,11 @@ class AppEmojiIcon extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
         ),
         child: Center(
-          child: Text(
-            emoji,
-            style: TextStyle(fontSize: size),
-          ),
+          child: Text(emoji, style: TextStyle(fontSize: size)),
         ),
       );
     }
 
-    return Text(
-      emoji,
-      style: TextStyle(fontSize: size),
-    );
+    return Text(emoji, style: TextStyle(fontSize: size));
   }
 }

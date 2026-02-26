@@ -36,16 +36,12 @@ class HomeScreen extends ConsumerWidget {
                           children: [
                             Text(
                               'Prosepal',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .headlineMedium
+                              style: Theme.of(context).textTheme.headlineMedium
                                   ?.copyWith(fontWeight: FontWeight.bold),
                             ),
                             Text(
                               'The right words, right now',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodyMedium
+                              style: Theme.of(context).textTheme.bodyMedium
                                   ?.copyWith(color: AppColors.textSecondary),
                             ),
                           ],

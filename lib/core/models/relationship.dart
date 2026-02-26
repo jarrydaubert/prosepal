@@ -1,14 +1,6 @@
 enum Relationship {
-  closeFriend(
-    label: 'Close Friend',
-    emoji: '👯',
-    prompt: 'a close friend',
-  ),
-  family(
-    label: 'Family',
-    emoji: '👨‍👩‍👧',
-    prompt: 'a family member',
-  ),
+  closeFriend(label: 'Close Friend', emoji: '👯', prompt: 'a close friend'),
+  family(label: 'Family', emoji: '👨‍👩‍👧', prompt: 'a family member'),
   colleague(
     label: 'Colleague',
     emoji: '💼',

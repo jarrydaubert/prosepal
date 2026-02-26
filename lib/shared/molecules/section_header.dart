@@ -4,12 +4,7 @@ import '../theme/app_colors.dart';
 
 /// Section header for grouped content (settings, lists, etc.)
 class SectionHeader extends StatelessWidget {
-  const SectionHeader(
-    this.title, {
-    super.key,
-    this.action,
-    this.actionLabel,
-  });
+  const SectionHeader(this.title, {super.key, this.action, this.actionLabel});
 
   final String title;
   final VoidCallback? action;
@@ -25,15 +20,12 @@ class SectionHeader extends StatelessWidget {
           Text(
             title.toUpperCase(),
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: AppColors.textSecondary,
-                  letterSpacing: 0.5,
-                ),
+              color: AppColors.textSecondary,
+              letterSpacing: 0.5,
+            ),
           ),
           if (action != null && actionLabel != null)
-            TextButton(
-              onPressed: action,
-              child: Text(actionLabel!),
-            ),
+            TextButton(onPressed: action, child: Text(actionLabel!)),
         ],
       ),
     );

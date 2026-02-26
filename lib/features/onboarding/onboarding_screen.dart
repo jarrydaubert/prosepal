@@ -99,43 +99,41 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Container(
-                          width: 120,
-                          height: 120,
-                          decoration: BoxDecoration(
-                            color: page.iconColor.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(32),
-                          ),
-                          child: Icon(
-                            page.icon,
-                            size: 60,
-                            color: page.iconColor,
-                          ),
-                        )
+                              width: 120,
+                              height: 120,
+                              decoration: BoxDecoration(
+                                color: page.iconColor.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(32),
+                              ),
+                              child: Icon(
+                                page.icon,
+                                size: 60,
+                                color: page.iconColor,
+                              ),
+                            )
                             .animate()
                             .fadeIn(duration: 400.ms)
                             .scale(begin: Offset(0.8, 0.8), duration: 400.ms),
                         SizedBox(height: AppSpacing.xxl),
                         Text(
-                          page.title,
-                          style: Theme.of(context)
-                              .textTheme
-                              .headlineMedium
-                              ?.copyWith(fontWeight: FontWeight.bold),
-                          textAlign: TextAlign.center,
-                        )
+                              page.title,
+                              style: Theme.of(context).textTheme.headlineMedium
+                                  ?.copyWith(fontWeight: FontWeight.bold),
+                              textAlign: TextAlign.center,
+                            )
                             .animate()
                             .fadeIn(delay: 100.ms, duration: 400.ms)
                             .slideY(begin: 0.2, duration: 400.ms),
                         SizedBox(height: AppSpacing.lg),
                         Text(
-                          page.subtitle,
-                          style:
-                              Theme.of(context).textTheme.bodyLarge?.copyWith(
+                              page.subtitle,
+                              style: Theme.of(context).textTheme.bodyLarge
+                                  ?.copyWith(
                                     color: AppColors.textSecondary,
                                     height: 1.5,
                                   ),
-                          textAlign: TextAlign.center,
-                        )
+                              textAlign: TextAlign.center,
+                            )
                             .animate()
                             .fadeIn(delay: 200.ms, duration: 400.ms)
                             .slideY(begin: 0.2, duration: 400.ms),

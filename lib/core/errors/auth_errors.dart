@@ -109,7 +109,8 @@ class AuthErrorHandler {
     if (message.contains('user already registered') ||
         message.contains('already exists')) {
       return const AuthErrorResult(
-        message: 'An account with this email already exists. Try signing in instead.',
+        message:
+            'An account with this email already exists. Try signing in instead.',
         shouldRetry: false,
       );
     }
@@ -156,7 +157,9 @@ class AuthErrorHandler {
 
     // Log unknown Supabase errors in debug mode
     if (kDebugMode) {
-      debugPrint('Unhandled Supabase auth error: ${error.message} (status: $statusCode)');
+      debugPrint(
+        'Unhandled Supabase auth error: ${error.message} (status: $statusCode)',
+      );
     }
 
     return const AuthErrorResult(
@@ -165,7 +168,9 @@ class AuthErrorHandler {
     );
   }
 
-  static AuthErrorResult _handleAppleError(SignInWithAppleAuthorizationException error) {
+  static AuthErrorResult _handleAppleError(
+    SignInWithAppleAuthorizationException error,
+  ) {
     // Log unknown codes in debug mode for monitoring
     if (kDebugMode) {
       debugPrint('Apple Sign In error: ${error.code} - ${error.message}');

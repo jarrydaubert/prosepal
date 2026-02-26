@@ -89,7 +89,8 @@ class _SplashScreenState extends State<_SplashScreen> {
     if (!mounted) return;
 
     final prefs = await SharedPreferences.getInstance();
-    final hasCompletedOnboarding = prefs.getBool('hasCompletedOnboarding') ?? false;
+    final hasCompletedOnboarding =
+        prefs.getBool('hasCompletedOnboarding') ?? false;
     final isLoggedIn = Supabase.instance.client.auth.currentUser != null;
     final biometricsEnabled = await BiometricService.instance.isEnabled;
 
@@ -129,9 +130,9 @@ class _SplashScreenState extends State<_SplashScreen> {
             SizedBox(height: 24),
             Text(
               'Prosepal',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
             ),
           ],
         ),

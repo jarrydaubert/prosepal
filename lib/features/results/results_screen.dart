@@ -65,8 +65,8 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                       Text(
                         '${result.tone.label} tone',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: AppColors.textSecondary,
-                            ),
+                          color: AppColors.textSecondary,
+                        ),
                       ),
                     ],
                   ),
@@ -84,24 +84,25 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                 final message = result.messages[index];
                 return Padding(
                   padding: EdgeInsets.only(bottom: AppSpacing.lg),
-                  child: _MessageCard(
-                    message: message,
-                    index: index,
-                    isCopied: _copiedIndex == index,
-                    onCopy: () => _copyMessage(message.text, index),
-                  )
-                      .animate()
-                      .fadeIn(
-                        delay: Duration(milliseconds: index * 100),
-                        duration: 300.ms,
-                      )
-                      .slideY(
-                        begin: 0.1,
-                        end: 0,
-                        delay: Duration(milliseconds: index * 100),
-                        duration: 300.ms,
-                        curve: Curves.easeOut,
-                      ),
+                  child:
+                      _MessageCard(
+                            message: message,
+                            index: index,
+                            isCopied: _copiedIndex == index,
+                            onCopy: () => _copyMessage(message.text, index),
+                          )
+                          .animate()
+                          .fadeIn(
+                            delay: Duration(milliseconds: index * 100),
+                            duration: 300.ms,
+                          )
+                          .slideY(
+                            begin: 0.1,
+                            end: 0,
+                            delay: Duration(milliseconds: index * 100),
+                            duration: 300.ms,
+                            curve: Curves.easeOut,
+                          ),
                 );
               },
             ),
@@ -210,9 +211,9 @@ class _MessageCard extends StatelessWidget {
                     child: Text(
                       '${index + 1}',
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            color: AppColors.textOnPrimary,
-                            fontWeight: FontWeight.bold,
-                          ),
+                        color: AppColors.textOnPrimary,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ),
@@ -224,14 +225,12 @@ class _MessageCard extends StatelessWidget {
                 Spacer(),
                 TextButton.icon(
                   onPressed: onCopy,
-                  icon: Icon(
-                    isCopied ? Icons.check : Icons.copy,
-                    size: 18,
-                  ),
+                  icon: Icon(isCopied ? Icons.check : Icons.copy, size: 18),
                   label: Text(isCopied ? 'Copied!' : 'Copy'),
                   style: TextButton.styleFrom(
-                    foregroundColor:
-                        isCopied ? AppColors.success : AppColors.primary,
+                    foregroundColor: isCopied
+                        ? AppColors.success
+                        : AppColors.primary,
                   ),
                 ),
               ],
@@ -243,9 +242,9 @@ class _MessageCard extends StatelessWidget {
             padding: EdgeInsets.all(AppSpacing.lg),
             child: SelectableText(
               message.text,
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    height: 1.6,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyLarge?.copyWith(height: 1.6),
             ),
           ),
         ],

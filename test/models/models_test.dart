@@ -237,7 +237,7 @@ void main() {
 
     test('copyWith should create new instance with updated fields', () {
       final updated = testMessage.copyWith(text: 'New text');
-      
+
       expect(updated.text, equals('New text'));
       expect(updated.id, equals(testMessage.id));
       expect(updated.occasion, equals(testMessage.occasion));
@@ -246,7 +246,7 @@ void main() {
 
     test('copyWith should preserve all fields when none provided', () {
       final copy = testMessage.copyWith();
-      
+
       expect(copy, equals(testMessage));
     });
 

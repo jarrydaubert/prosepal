@@ -34,7 +34,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final supported = await BiometricService.instance.isSupported;
     final enabled = await BiometricService.instance.isEnabled;
     final type = await BiometricService.instance.biometricTypeName;
-    
+
     if (mounted) {
       setState(() {
         _biometricsSupported = supported;
@@ -51,7 +51,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       );
       if (!authenticated) return;
     }
-    
+
     await BiometricService.instance.setEnabled(value);
     setState(() => _biometricsEnabled = value);
   }
@@ -59,13 +59,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Future<void> _restorePurchases() async {
     setState(() => _isRestoringPurchases = true);
     try {
-      final restored = await ref.read(subscriptionServiceProvider).restorePurchases();
+      final restored = await ref
+          .read(subscriptionServiceProvider)
+          .restorePurchases();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(restored 
-                ? 'Purchases restored successfully!' 
-                : 'No purchases to restore'),
+            content: Text(
+              restored
+                  ? 'Purchases restored successfully!'
+                  : 'No purchases to restore',
+            ),
             backgroundColor: restored ? AppColors.success : null,
           ),
         );
@@ -101,7 +105,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ],
       ),
     );
-    
+
     if (confirm == true) {
       await ref.read(subscriptionServiceProvider).logOut();
       await AuthService.instance.signOut();
@@ -162,7 +166,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text('Delete My Account', style: TextStyle(color: AppColors.error)),
+            child: Text(
+              'Delete My Account',
+              style: TextStyle(color: AppColors.error),
+            ),
           ),
         ],
       ),
@@ -184,9 +191,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final userName = AuthService.instance.displayName;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Settings'),
-      ),
+      appBar: AppBar(title: Text('Settings')),
       body: ListView(
         children: [
           // Account section (most important - at top per Apple HIG)
@@ -215,25 +220,30 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               color: isPro ? Colors.amber : AppColors.textSecondary,
             ),
             title: isPro ? 'Prosepal Pro' : 'Free Plan',
-            subtitle: isPro 
-                ? '500 messages/month' 
+            subtitle: isPro
+                ? '500 messages/month'
                 : '${usageService.getRemainingFree()} free messages remaining',
-            trailing: isPro ? null : TextButton(
-              onPressed: () => context.pushNamed('paywall'),
-              child: Text('Upgrade'),
-            ),
+            trailing: isPro
+                ? null
+                : TextButton(
+                    onPressed: () => context.pushNamed('paywall'),
+                    child: Text('Upgrade'),
+                  ),
           ),
           if (isPro)
             SettingsTile(
-              leading: Icon(Icons.credit_card_outlined, color: AppColors.textSecondary),
+              leading: Icon(
+                Icons.credit_card_outlined,
+                color: AppColors.textSecondary,
+              ),
               title: 'Manage Subscription',
               onTap: _manageSubscription,
             ),
           SettingsTile(
-            leading: _isRestoringPurchases 
+            leading: _isRestoringPurchases
                 ? SizedBox(
-                    width: 24, 
-                    height: 24, 
+                    width: 24,
+                    height: 24,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : Icon(Icons.refresh_rounded, color: AppColors.textSecondary),
@@ -270,14 +280,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           // Support section
           SectionHeader('Support'),
           SettingsTile(
-            leading: Icon(Icons.help_outline_rounded, color: AppColors.textSecondary),
+            leading: Icon(
+              Icons.help_outline_rounded,
+              color: AppColors.textSecondary,
+            ),
             title: 'Help & FAQ',
             onTap: () {
               // TODO: Open help
             },
           ),
           SettingsTile(
-            leading: Icon(Icons.mail_outline_rounded, color: AppColors.textSecondary),
+            leading: Icon(
+              Icons.mail_outline_rounded,
+              color: AppColors.textSecondary,
+            ),
             title: 'Contact Us',
             subtitle: 'support@prosepal.app',
             onTap: () async {
@@ -288,7 +304,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             },
           ),
           SettingsTile(
-            leading: Icon(Icons.star_outline_rounded, color: AppColors.textSecondary),
+            leading: Icon(
+              Icons.star_outline_rounded,
+              color: AppColors.textSecondary,
+            ),
             title: 'Rate Prosepal',
             subtitle: 'Love the app? Leave a review!',
             onTap: () {
@@ -299,7 +318,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           // Legal section
           SectionHeader('Legal'),
           SettingsTile(
-            leading: Icon(Icons.description_outlined, color: AppColors.textSecondary),
+            leading: Icon(
+              Icons.description_outlined,
+              color: AppColors.textSecondary,
+            ),
             title: 'Terms of Service',
             onTap: () async {
               final uri = Uri.parse('https://prosepal.app/terms');
@@ -309,7 +331,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             },
           ),
           SettingsTile(
-            leading: Icon(Icons.privacy_tip_outlined, color: AppColors.textSecondary),
+            leading: Icon(
+              Icons.privacy_tip_outlined,
+              color: AppColors.textSecondary,
+            ),
             title: 'Privacy Policy',
             onTap: () async {
               final uri = Uri.parse('https://prosepal.app/privacy');
@@ -340,9 +365,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           Center(
             child: Text(
               'Prosepal v1.0.0',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: AppColors.textHint,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: AppColors.textHint),
             ),
           ),
           Gap(AppSpacing.xxl),
@@ -355,5 +380,3 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 // Now using shared molecules:
 // - SectionHeader from shared/molecules/section_header.dart
 // - SettingsTile from shared/molecules/settings_tile.dart
-
-

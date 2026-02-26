@@ -28,7 +28,9 @@ class _ProsepalAppState extends ConsumerState<ProsepalApp> {
 
       if (event == AuthChangeEvent.signedIn && session != null) {
         // Link RevenueCat to user for purchase restoration
-        await ref.read(subscriptionServiceProvider).identifyUser(session.user.id);
+        await ref
+            .read(subscriptionServiceProvider)
+            .identifyUser(session.user.id);
         // Navigate to home
         appRouter.go('/home');
       } else if (event == AuthChangeEvent.signedOut) {

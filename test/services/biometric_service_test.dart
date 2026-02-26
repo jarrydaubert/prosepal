@@ -28,7 +28,7 @@ void main() {
     test('should toggle enabled state', () async {
       await BiometricService.instance.setEnabled(true);
       expect(await BiometricService.instance.isEnabled, isTrue);
-      
+
       await BiometricService.instance.setEnabled(false);
       expect(await BiometricService.instance.isEnabled, isFalse);
     });

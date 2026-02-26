@@ -30,9 +30,9 @@ class ToneSelector extends StatelessWidget {
           Gap(AppSpacing.sm),
           Text(
             'How do you want the message to feel?',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppColors.textSecondary,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
           ),
           Gap(AppSpacing.xl),
           GridView.builder(
@@ -50,10 +50,10 @@ class ToneSelector extends StatelessWidget {
               final isSelected = selectedTone == tone;
 
               return _ToneTile(
-                tone: tone,
-                isSelected: isSelected,
-                onTap: () => onSelected(tone),
-              )
+                    tone: tone,
+                    isSelected: isSelected,
+                    onTap: () => onSelected(tone),
+                  )
                   .animate()
                   .fadeIn(
                     delay: Duration(milliseconds: index * 50),
@@ -108,26 +108,22 @@ class _ToneTile extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(
-                tone.emoji,
-                style: TextStyle(fontSize: 32),
-              ),
+              Text(tone.emoji, style: TextStyle(fontSize: 32)),
               Gap(AppSpacing.sm),
               Text(
                 tone.label,
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight:
-                          isSelected ? FontWeight.bold : FontWeight.w500,
-                      color: isSelected ? AppColors.primary : null,
-                    ),
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                  color: isSelected ? AppColors.primary : null,
+                ),
                 textAlign: TextAlign.center,
               ),
               Gap(AppSpacing.xs),
               Text(
                 tone.description,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
                 textAlign: TextAlign.center,
               ),
             ],
