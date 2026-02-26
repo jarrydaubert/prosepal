@@ -112,6 +112,11 @@ final _routes = <RouteBase>[
     name: 'emailAuth',
     builder: (context, state) => const EmailAuthScreen(),
   ),
+  // Auth callback routes - Supabase SDK handles the auth, these just redirect
+  // The deep link is processed by supabase_flutter before reaching the router,
+  // but go_router still tries to match the path, so we need placeholder routes.
+  GoRoute(path: '/auth/login-callback', redirect: (context, state) => '/home'),
+  GoRoute(path: '/auth/reset-callback', redirect: (context, state) => '/auth'),
   GoRoute(
     path: '/lock',
     name: 'lock',
