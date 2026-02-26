@@ -144,55 +144,7 @@ class _CustomPaywallScreenState extends ConsumerState<CustomPaywallScreen> {
           return;
         }
 
-        // Step 2: Check if biometrics available but not enabled - offer setup
-        bool biometricsAvailable = false;
-        bool biometricsEnabled = false;
-        try {
-          // Use provider for consistency and testability
-          final biometricService = ref.read(biometricServiceProvider);
-          biometricsAvailable = await biometricService.isSupported;
-          biometricsEnabled = await biometricService.isEnabled;
-          Log.info('Purchase: Biometrics check', {
-            'available': biometricsAvailable,
-            'enabled': biometricsEnabled,
-          });
-        } catch (e) {
-          Log.warning('Purchase: Biometrics check failed', {'error': '$e'});
-        }
-
-        if (biometricsAvailable && !biometricsEnabled && mounted) {
-          Log.info('Purchase: Showing biometrics enrollment dialog');
-          final enableBiometrics = await showDialog<bool>(
-            context: context,
-            builder: (context) => AlertDialog(
-              title: const Text('Protect your account'),
-              content: const Text(
-                'Enable biometric lock to keep your Pro account secure?',
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context, false),
-                  child: const Text('Maybe Later'),
-                ),
-                TextButton(
-                  onPressed: () => Navigator.pop(context, true),
-                  child: const Text('Enable'),
-                ),
-              ],
-            ),
-          );
-
-          Log.info('Purchase: Biometrics dialog result', {
-            'enableBiometrics': enableBiometrics,
-          });
-
-          if (enableBiometrics == true && mounted) {
-            Log.info('Purchase: Navigating to biometric setup');
-            context.go('/biometric-setup');
-            return;
-          }
-        }
-
+        // Biometrics can be enabled from settings - keep purchase flow simple
         // Step 3: Go home after purchase
         Log.info('Purchase: Navigating to home');
         if (context.canPop()) {
@@ -258,6 +210,26 @@ class _CustomPaywallScreenState extends ConsumerState<CustomPaywallScreen> {
 
   Future<void> _restorePurchases() async {
     if (_isRestoring) return;
+
+    // Check if already Pro - no need to restore
+    final currentPro = ref.read(isProProvider);
+    if (currentPro) {
+      Log.info('Restore: Already has Pro subscription');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Row(
+            children: [
+              Icon(Icons.check_circle, color: Colors.white),
+              Gap(AppSpacing.sm),
+              Text('You already have an active subscription!'),
+            ],
+          ),
+          backgroundColor: AppColors.success,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
 
     setState(() => _isRestoring = true);
     Log.info('Restore purchases started');
