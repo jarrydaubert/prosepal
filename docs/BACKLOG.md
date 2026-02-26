@@ -11,22 +11,12 @@
 | App Store ID | Add to `_rateApp()` and `review_service.dart` after approval |
 | IAP Products | Submit in App Store Connect |
 
-## Deployment Required
+## Deployment (COMPLETED 2025-01-07)
 
-```bash
-# Run in Supabase SQL Editor (Dashboard > SQL Editor)
-supabase/migrations/004_create_device_usage.sql
-supabase/migrations/005_create_device_check_rpc.sql
-supabase/migrations/006_create_rate_limiting.sql
-supabase/migrations/007_create_apple_credentials.sql
-
-# Deploy Edge Functions
-supabase functions deploy delete-user
-supabase functions deploy exchange-apple-token
-
-# Set Apple secrets (for token revocation)
-supabase secrets set APPLE_TEAM_ID=xxx APPLE_CLIENT_ID=xxx APPLE_KEY_ID=xxx APPLE_PRIVATE_KEY=xxx
-```
+All migrations, edge functions, and secrets deployed:
+- ✅ Migrations 004-007 applied (device usage, rate limiting, Apple credentials)
+- ✅ Edge functions deployed (delete-user, exchange-apple-token)
+- ✅ Apple secrets configured (Key ID: 5UFN3MDA2Q)
 
 ---
 
