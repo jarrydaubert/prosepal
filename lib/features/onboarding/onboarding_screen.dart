@@ -118,62 +118,34 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // Top bar with progress and skip
+            // Top bar with progress (skip button removed - onboarding is init cover)
             Padding(
               padding: const EdgeInsets.symmetric(
                 horizontal: AppSpacing.screenPadding,
                 vertical: AppSpacing.sm,
               ),
-              child: Row(
-                children: [
-                  // Progress indicator
-                  Expanded(
-                    child: Semantics(
-                      label:
-                          'Onboarding progress: step ${_currentPage + 1} of ${_onboardingPages.length}',
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(4),
-                        child: TweenAnimationBuilder<double>(
-                          tween: Tween(
-                            begin: 0,
-                            end: (_currentPage + 1) / _onboardingPages.length,
-                          ),
-                          duration: const Duration(milliseconds: 200),
-                          curve: Curves.easeOut,
-                          builder: (context, value, _) =>
-                              LinearProgressIndicator(
-                                value: value,
-                                backgroundColor: AppColors.primaryLight,
-                                valueColor: const AlwaysStoppedAnimation(
-                                  AppColors.primary,
-                                ),
-                                minHeight: 4,
-                              ),
-                        ),
+              child: Semantics(
+                label:
+                    'Onboarding progress: step ${_currentPage + 1} of ${_onboardingPages.length}',
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: TweenAnimationBuilder<double>(
+                    tween: Tween(
+                      begin: 0,
+                      end: (_currentPage + 1) / _onboardingPages.length,
+                    ),
+                    duration: const Duration(milliseconds: 200),
+                    curve: Curves.easeOut,
+                    builder: (context, value, _) => LinearProgressIndicator(
+                      value: value,
+                      backgroundColor: AppColors.primaryLight,
+                      valueColor: const AlwaysStoppedAnimation(
+                        AppColors.primary,
                       ),
+                      minHeight: 4,
                     ),
                   ),
-                  const SizedBox(width: 16),
-                  // Skip button
-                  Semantics(
-                    label: 'Skip onboarding',
-                    button: true,
-                    child: TextButton(
-                      onPressed: _completeOnboarding,
-                      style: TextButton.styleFrom(
-                        foregroundColor: AppColors.textSecondary,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 8,
-                        ),
-                      ),
-                      child: const Text(
-                        'Skip',
-                        style: TextStyle(fontWeight: FontWeight.w500),
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
             // Page content
@@ -230,16 +202,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   ),
                   const SizedBox(height: AppSpacing.xl),
                   // Action button with scale animation
-                  _AnimatedButton(
-                    onPressed: _nextPage,
-                    child: Text(
-                      isLastPage ? 'Get Started' : 'Continue',
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
+                  // On last page, wait for services to initialize before allowing "Get Started"
+                  _GetStartedButton(
+                    isLastPage: isLastPage,
+                    onContinue: _nextPage,
+                    onGetStarted: _completeOnboarding,
                   ),
                   const SizedBox(height: AppSpacing.md),
                 ],
@@ -252,11 +219,91 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   }
 }
 
+/// Get Started button that watches init status on last page.
+///
+/// Shows loading state if services aren't ready on the final onboarding page.
+class _GetStartedButton extends ConsumerWidget {
+  const _GetStartedButton({
+    required this.isLastPage,
+    required this.onContinue,
+    required this.onGetStarted,
+  });
+
+  final bool isLastPage;
+  final VoidCallback onContinue;
+  final VoidCallback onGetStarted;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    // On last page, check if services are ready
+    if (isLastPage) {
+      final initStatus = ref.watch(initStatusProvider);
+
+      // Show loading button if not ready
+      if (!initStatus.criticalReady) {
+        return _AnimatedButton(
+          onPressed: null, // Disabled
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation(
+                    Colors.white.withValues(alpha: 0.8),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Text(
+                'Loading...',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
+        );
+      }
+
+      // Ready - show Get Started
+      return _AnimatedButton(
+        onPressed: onGetStarted,
+        child: const Text(
+          'Get Started',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+      );
+    }
+
+    // Not last page - show Continue
+    return _AnimatedButton(
+      onPressed: onContinue,
+      child: const Text(
+        'Continue',
+        style: TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+        ),
+      ),
+    );
+  }
+}
+
 /// Animated button with scale effect on press
 class _AnimatedButton extends StatefulWidget {
   const _AnimatedButton({required this.onPressed, required this.child});
 
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed; // Nullable for disabled state
   final Widget child;
 
   @override
@@ -266,31 +313,39 @@ class _AnimatedButton extends StatefulWidget {
 class _AnimatedButtonState extends State<_AnimatedButton> {
   bool _isPressed = false;
 
+  bool get _isEnabled => widget.onPressed != null;
+
   @override
   Widget build(BuildContext context) {
     final reduceMotion = MediaQuery.of(context).disableAnimations;
 
     return GestureDetector(
-      onTapDown: (_) => setState(() => _isPressed = true),
-      onTapUp: (_) {
-        setState(() => _isPressed = false);
-        widget.onPressed();
-      },
-      onTapCancel: () => setState(() => _isPressed = false),
+      onTapDown: _isEnabled ? (_) => setState(() => _isPressed = true) : null,
+      onTapUp: _isEnabled
+          ? (_) {
+              setState(() => _isPressed = false);
+              widget.onPressed?.call();
+            }
+          : null,
+      onTapCancel: _isEnabled ? () => setState(() => _isPressed = false) : null,
       child: AnimatedScale(
         scale: _isPressed && !reduceMotion ? 0.96 : 1.0,
         duration: reduceMotion
             ? Duration.zero
             : const Duration(milliseconds: 100),
         curve: Curves.easeInOut,
-        child: Container(
-          width: double.infinity,
-          height: AppSpacing.buttonHeight,
-          decoration: BoxDecoration(
-            color: AppColors.primary,
-            borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
+        child: AnimatedOpacity(
+          duration: const Duration(milliseconds: 200),
+          opacity: _isEnabled ? 1.0 : 0.7,
+          child: Container(
+            width: double.infinity,
+            height: AppSpacing.buttonHeight,
+            decoration: BoxDecoration(
+              color: AppColors.primary,
+              borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
+            ),
+            child: Center(child: widget.child),
           ),
-          child: Center(child: widget.child),
         ),
       ),
     );
