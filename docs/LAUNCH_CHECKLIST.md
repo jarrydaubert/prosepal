@@ -220,6 +220,10 @@ Google requires closed testing before production release:
 
 - [x] Apple ID `6757088726` added to `review_service.dart` and `settings_screen.dart`
 - [ ] Verify in-app review prompt works in production
+- [ ] **Add App Store badge to landing page** (prosepal-web)
+  - Use official Apple badge: https://developer.apple.com/app-store/marketing/guidelines/
+  - Link to: `https://apps.apple.com/app/prosepal/id6757088726`
+  - Add "Android Coming Soon" placeholder badge
 
 ### After Play Store Approval
 
