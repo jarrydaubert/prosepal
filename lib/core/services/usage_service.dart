@@ -12,6 +12,20 @@ import 'log_service.dart';
 /// 1. User signs in -> syncFromServer() fetches their usage
 /// 2. User generates -> recordGeneration() updates both local + server
 /// 3. User reinstalls -> signs in -> gets their existing usage from server
+///
+/// ## SECURITY WARNING
+/// Current implementation uses CLIENT-SIDE enforcement for quota checks.
+/// This is vulnerable to bypass via:
+/// - SharedPreferences modification (rooted devices, ADB)
+/// - App data clearing
+/// - Modified clients
+///
+/// For production monetization, implement SERVER-SIDE enforcement:
+/// 1. Create Supabase RPC function `check_and_increment_usage`
+/// 2. Function validates limits atomically before allowing generation
+/// 3. Client calls RPC instead of local checks
+///
+/// See BACKLOG.md for migration plan.
 class UsageService {
   UsageService(this._prefs);
 
