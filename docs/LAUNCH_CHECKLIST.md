@@ -117,6 +117,21 @@
 | IAPs linked to version | Version 1.0 | ❌ | Click "Select In-App Purchases or Subscriptions" |
 | Submit for Review | Version 1.0 | ⏳ | After above items complete |
 
+**Subscriptions (Monetization > Subscriptions):**
+
+| Item | Status | Details |
+|------|--------|---------|
+| Subscription Group "Pro" | ✅ | ID: 21870306, 3 subscriptions |
+| Billing Grace Period | ✅ | 3 days, All Renewals |
+| Streamlined Purchasing | ✅ | Turned On |
+| Pro Weekly (`com.prosepal.pro.weekly`) | ✅ | 1 week, matches RevenueCat |
+| Pro Monthly (`com.prosepal.pro.monthly`) | ✅ | 1 month, matches RevenueCat |
+| Pro Yearly (`com.prosepal.pro.yearly`) | ✅ | 1 year, matches RevenueCat |
+| Availability | ✅ | All countries |
+| IAP Review Screenshots | ⚠️ | **OLD PAYWALL DESIGN - update before submission** |
+| Localization description | ⚠️ | Says "500 messages" but Pro is unlimited - update text |
+| Family Sharing | ⚠️ | Currently OFF - consider enabling |
+
 ### Google Play Console ⏳ PENDING
 
 **Console:** https://play.google.com/console
