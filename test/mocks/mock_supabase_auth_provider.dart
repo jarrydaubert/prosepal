@@ -316,7 +316,10 @@ class MockSupabaseAuthProvider implements ISupabaseAuthProvider {
   }
 
   @override
-  Future<void> exchangeAppleToken(String authorizationCode) async {
+  Future<void> exchangeAppleToken(
+    String authorizationCode, {
+    String? accessToken,
+  }) async {
     // No-op in mock - just track if needed
   }
 
