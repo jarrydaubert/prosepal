@@ -11,23 +11,21 @@ class SectionHeader extends StatelessWidget {
   final String? actionLabel;
 
   @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            title.toUpperCase(),
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: AppColors.textSecondary,
-              letterSpacing: 0.5,
-            ),
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          title.toUpperCase(),
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+            color: AppColors.textSecondary,
+            letterSpacing: 0.5,
           ),
-          if (action != null && actionLabel != null)
-            TextButton(onPressed: action, child: Text(actionLabel!)),
-        ],
-      ),
-    );
-  }
+        ),
+        if (action != null && actionLabel != null)
+          TextButton(onPressed: action, child: Text(actionLabel!)),
+      ],
+    ),
+  );
 }

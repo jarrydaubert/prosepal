@@ -131,123 +131,121 @@ class _LockScreenState extends State<LockScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.screenPadding),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Spacer(),
+  Widget build(BuildContext context) => Scaffold(
+    backgroundColor: Colors.white,
+    body: SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.screenPadding),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Spacer(),
 
-              // App logo with shadow
-              Semantics(
-                label: 'Prosepal logo',
-                image: true,
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(24),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.primary.withValues(alpha: 0.2),
-                        blurRadius: 20,
-                        offset: const Offset(0, 8),
+            // App logo with shadow
+            Semantics(
+              label: 'Prosepal logo',
+              image: true,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primary.withValues(alpha: 0.2),
+                      blurRadius: 20,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(24),
+                  child: const AppLogo(size: 100),
+                ),
+              ),
+            ).animate().fadeIn().scale(begin: const Offset(0.9, 0.9)),
+
+            const SizedBox(height: AppSpacing.xl),
+
+            Text(
+              'Prosepal',
+              style: Theme.of(
+                context,
+              ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
+            ).animate().fadeIn(delay: 100.ms),
+
+            const SizedBox(height: AppSpacing.sm),
+
+            Text(
+              'Tap to unlock',
+              style: Theme.of(
+                context,
+              ).textTheme.bodyLarge?.copyWith(color: AppColors.textSecondary),
+            ).animate().fadeIn(delay: 200.ms),
+
+            const Spacer(),
+
+            // Error message
+            if (_errorMessage != null) ...[
+              _buildErrorMessage(),
+              const SizedBox(height: AppSpacing.lg),
+            ],
+
+            // Unlock button
+            SizedBox(
+              width: double.infinity,
+              height: AppSpacing.buttonHeight,
+              child: ElevatedButton.icon(
+                onPressed: _isAuthenticating ? null : _authenticate,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(
+                      AppSpacing.radiusMedium,
+                    ),
+                  ),
+                ),
+                icon: _isAuthenticating
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : Icon(
+                        _biometricType == 'Face ID'
+                            ? Icons.face
+                            : Icons.fingerprint,
                       ),
-                    ],
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(24),
-                    child: const AppLogo(size: 100),
+                label: Text(
+                  _isAuthenticating
+                      ? 'Authenticating...'
+                      : 'Unlock with $_biometricType',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
-              ).animate().fadeIn().scale(begin: const Offset(0.9, 0.9)),
+              ),
+            ).animate().fadeIn(delay: 300.ms),
 
-              const SizedBox(height: AppSpacing.xl),
-
+            // Retry hint after failed attempts
+            if (_failedAttempts >= 2 && !_isAuthenticating) ...[
+              const SizedBox(height: AppSpacing.lg),
               Text(
-                'Prosepal',
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-              ).animate().fadeIn(delay: 100.ms),
-
-              const SizedBox(height: AppSpacing.sm),
-
-              Text(
-                'Tap to unlock',
+                'Having trouble? Make sure $_biometricType is set up in your device settings.',
                 style: Theme.of(
                   context,
-                ).textTheme.bodyLarge?.copyWith(color: AppColors.textSecondary),
-              ).animate().fadeIn(delay: 200.ms),
-
-              const Spacer(),
-
-              // Error message
-              if (_errorMessage != null) ...[
-                _buildErrorMessage(),
-                const SizedBox(height: AppSpacing.lg),
-              ],
-
-              // Unlock button
-              SizedBox(
-                width: double.infinity,
-                height: AppSpacing.buttonHeight,
-                child: ElevatedButton.icon(
-                  onPressed: _isAuthenticating ? null : _authenticate,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(
-                        AppSpacing.radiusMedium,
-                      ),
-                    ),
-                  ),
-                  icon: _isAuthenticating
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                      : Icon(
-                          _biometricType == 'Face ID'
-                              ? Icons.face
-                              : Icons.fingerprint,
-                        ),
-                  label: Text(
-                    _isAuthenticating
-                        ? 'Authenticating...'
-                        : 'Unlock with $_biometricType',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ).animate().fadeIn(delay: 300.ms),
-
-              // Retry hint after failed attempts
-              if (_failedAttempts >= 2 && !_isAuthenticating) ...[
-                const SizedBox(height: AppSpacing.lg),
-                Text(
-                  'Having trouble? Make sure $_biometricType is set up in your device settings.',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodySmall?.copyWith(color: AppColors.textHint),
-                  textAlign: TextAlign.center,
-                ).animate().fadeIn(),
-              ],
-
-              const SizedBox(height: AppSpacing.xxl),
+                ).textTheme.bodySmall?.copyWith(color: AppColors.textHint),
+                textAlign: TextAlign.center,
+              ).animate().fadeIn(),
             ],
-          ),
+
+            const SizedBox(height: AppSpacing.xxl),
+          ],
         ),
       ),
-    );
-  }
+    ),
+  );
 }

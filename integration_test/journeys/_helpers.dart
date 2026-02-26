@@ -29,7 +29,7 @@ Future<void> launchApp(WidgetTester tester) async {
 
 /// Skip onboarding screens until home is visible
 Future<void> skipOnboarding(WidgetTester tester) async {
-  int attempts = 0;
+  var attempts = 0;
   while (attempts < 10) {
     // Check if we've reached home
     if (find.text('Birthday').evaluate().isNotEmpty ||
@@ -91,7 +91,7 @@ Future<bool> completeWizard(
         scrollable: scrollable,
       );
       await tester.pumpAndSettle();
-    } catch (_) {
+    } on Exception catch (_) {
       return false;
     }
   }
@@ -143,9 +143,8 @@ Future<bool> navigateToAuth(WidgetTester tester) async {
 bool exists(Finder finder) => finder.evaluate().isNotEmpty;
 
 /// Check if any of the given texts exist
-bool anyTextExists(List<String> texts) {
-  return texts.any((text) => find.text(text).evaluate().isNotEmpty);
-}
+bool anyTextExists(List<String> texts) =>
+    texts.any((text) => find.text(text).evaluate().isNotEmpty);
 
 /// Scroll until text is visible, returns true if found
 Future<bool> scrollToText(
@@ -162,7 +161,7 @@ Future<bool> scrollToText(
     );
     await tester.pumpAndSettle();
     return true;
-  } catch (_) {
+  } on Exception catch (_) {
     return false;
   }
 }

@@ -21,14 +21,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-
 import 'package:prosepal/app/app.dart';
 import 'package:prosepal/core/providers/providers.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
+import '../test/mocks/mock_ai_service.dart';
 import '../test/mocks/mock_auth_service.dart';
 import '../test/mocks/mock_subscription_service.dart';
-import '../test/mocks/mock_ai_service.dart';
 
 late IntegrationTestWidgetsFlutterBinding binding;
 
@@ -160,7 +159,7 @@ void main() {
     // === STATE TESTS ===
 
     testWidgets('9. Free user shows remaining', (tester) async {
-      await tester.pumpWidget(buildApp(isPro: false, remaining: 1));
+      await tester.pumpWidget(buildApp());
       await tester.pumpAndSettle();
       expect(find.textContaining('1'), findsWidgets);
       await screenshot(tester, '09_free_user');
@@ -200,7 +199,7 @@ void main() {
     testWidgets('13. Rapid taps stable', (tester) async {
       await tester.pumpWidget(buildApp());
       await tester.pumpAndSettle();
-      for (int i = 0; i < 5; i++) {
+      for (var i = 0; i < 5; i++) {
         await tester.tap(find.text('Birthday'), warnIfMissed: false);
         await tester.pump(const Duration(milliseconds: 50));
       }
@@ -269,19 +268,17 @@ void main() {
       mockAi = MockAiService();
     });
 
-    Widget buildFreshApp() {
-      return ProviderScope(
-        overrides: [
-          sharedPreferencesProvider.overrideWithValue(prefs),
-          authServiceProvider.overrideWithValue(mockAuth),
-          subscriptionServiceProvider.overrideWithValue(mockSubscription),
-          aiServiceProvider.overrideWithValue(mockAi),
-          isProProvider.overrideWith((ref) => false),
-          remainingGenerationsProvider.overrideWith((ref) => 1),
-        ],
-        child: const ProsepalApp(),
-      );
-    }
+    Widget buildFreshApp() => ProviderScope(
+      overrides: [
+        sharedPreferencesProvider.overrideWithValue(prefs),
+        authServiceProvider.overrideWithValue(mockAuth),
+        subscriptionServiceProvider.overrideWithValue(mockSubscription),
+        aiServiceProvider.overrideWithValue(mockAi),
+        isProProvider.overrideWith((ref) => false),
+        remainingGenerationsProvider.overrideWith((ref) => 1),
+      ],
+      child: const ProsepalApp(),
+    );
 
     Future<void> screenshot(WidgetTester tester, String name) async {
       await binding.convertFlutterSurfaceToImage();
@@ -309,7 +306,7 @@ void main() {
       await tester.pumpAndSettle(const Duration(seconds: 3));
 
       // Try to skip or continue through onboarding
-      for (int i = 0; i < 5; i++) {
+      for (var i = 0; i < 5; i++) {
         if (find.text('Skip').evaluate().isNotEmpty) {
           await tester.tap(find.text('Skip'));
           await tester.pumpAndSettle();

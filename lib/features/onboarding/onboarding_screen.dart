@@ -406,75 +406,68 @@ class _OnboardingPageWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildProTeaser() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      decoration: BoxDecoration(
-        color: AppColors.primaryLight.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            Icons.star_rounded,
-            size: 16,
+  Widget _buildProTeaser() => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+    decoration: BoxDecoration(
+      color: AppColors.primaryLight.withValues(alpha: 0.5),
+      borderRadius: BorderRadius.circular(20),
+      border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+    ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(
+          Icons.star_rounded,
+          size: 16,
+          color: AppColors.primary.withValues(alpha: 0.8),
+        ),
+        const SizedBox(width: 6),
+        Text(
+          'Go Pro for 500 messages/month',
+          style: TextStyle(
+            fontSize: 13,
             color: AppColors.primary.withValues(alpha: 0.8),
+            fontWeight: FontWeight.w500,
           ),
-          const SizedBox(width: 6),
-          Text(
-            'Go Pro for 500 messages/month',
-            style: TextStyle(
-              fontSize: 13,
-              color: AppColors.primary.withValues(alpha: 0.8),
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
 
-  Widget _buildEmojiContainer(double containerSize, double emojiSize) {
-    // No animation - instant display for snappy feel
-    return Container(
-      width: containerSize,
-      height: containerSize,
-      decoration: BoxDecoration(
-        color: AppColors.primaryLight,
-        borderRadius: BorderRadius.circular(32),
-        border: Border.all(color: AppColors.primary, width: 4),
-      ),
-      child: Center(
-        child: Text(page.emoji, style: TextStyle(fontSize: emojiSize)),
-      ),
-    );
-  }
+  /// No animation - instant display for snappy feel
+  Widget _buildEmojiContainer(double containerSize, double emojiSize) =>
+      Container(
+        width: containerSize,
+        height: containerSize,
+        decoration: BoxDecoration(
+          color: AppColors.primaryLight,
+          borderRadius: BorderRadius.circular(32),
+          border: Border.all(color: AppColors.primary, width: 4),
+        ),
+        child: Center(
+          child: Text(page.emoji, style: TextStyle(fontSize: emojiSize)),
+        ),
+      );
 
-  Widget _buildTitle(double titleSize) {
-    // No animation - instant display
-    return Text(
-      page.title,
-      textAlign: TextAlign.center,
-      style: TextStyle(
-        fontSize: titleSize,
-        fontWeight: FontWeight.bold,
-        color: AppColors.primary,
-      ),
-    );
-  }
+  /// No animation - instant display
+  Widget _buildTitle(double titleSize) => Text(
+    page.title,
+    textAlign: TextAlign.center,
+    style: TextStyle(
+      fontSize: titleSize,
+      fontWeight: FontWeight.bold,
+      color: AppColors.primary,
+    ),
+  );
 
-  Widget _buildSubtitle(double subtitleSize) {
-    // No animation - instant display
-    return Text(
-      page.subtitle,
-      textAlign: TextAlign.center,
-      style: TextStyle(
-        fontSize: subtitleSize,
-        color: Colors.grey[700],
-        height: 1.5,
-      ),
-    );
-  }
+  /// No animation - instant display
+  Widget _buildSubtitle(double subtitleSize) => Text(
+    page.subtitle,
+    textAlign: TextAlign.center,
+    style: TextStyle(
+      fontSize: subtitleSize,
+      color: Colors.grey[700],
+      height: 1.5,
+    ),
+  );
 }

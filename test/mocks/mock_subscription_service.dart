@@ -145,6 +145,7 @@ class MockSubscriptionService implements ISubscriptionService {
   Duration? showPaywallDelay;
 
   /// Error to throw specifically for restore (shorthand for methodErrors)
+  // ignore: avoid_setters_without_getters
   set restoreError(Exception? e) {
     if (e != null) {
       methodErrors['restorePurchases'] = e;
@@ -169,9 +170,7 @@ class MockSubscriptionService implements ISubscriptionService {
   @visibleForTesting
   final Map<String, Exception> methodErrors = {};
 
-  Exception? _getError(String method) {
-    return methodErrors[method] ?? errorToThrow;
-  }
+  Exception? _getError(String method) => methodErrors[method] ?? errorToThrow;
 
   /// Create a PlatformException matching RevenueCat error format
   ///
@@ -179,13 +178,11 @@ class MockSubscriptionService implements ISubscriptionService {
   static PlatformException createRevenueCatError(
     PurchasesErrorCode code, [
     String? message,
-  ]) {
-    return PlatformException(
-      code: code.index.toString(),
-      message: message ?? code.name,
-      details: {'code': code.index, 'readableErrorCode': code.name},
-    );
-  }
+  ]) => PlatformException(
+    code: code.index.toString(),
+    message: message ?? code.name,
+    details: {'code': code.index, 'readableErrorCode': code.name},
+  );
 
   /// Simulate purchase cancelled by user (PurchasesErrorCode.purchaseCancelledError)
   void simulatePurchaseCancelled() {
@@ -316,9 +313,7 @@ class MockSubscriptionService implements ISubscriptionService {
   }
 
   @override
-  Future<bool> isPro() async {
-    return hasEntitlement('pro');
-  }
+  Future<bool> isPro() async => hasEntitlement('pro');
 
   // ---------------------------------------------------------------------------
   // Multi-tier Entitlements
@@ -352,7 +347,7 @@ class MockSubscriptionService implements ISubscriptionService {
     if (_entitlements.containsKey(entitlementId)) {
       return _entitlements[entitlementId]!;
     }
-    return entitlementId == 'pro' ? _isPro : false;
+    return entitlementId == 'pro' && _isPro;
   }
 
   @override

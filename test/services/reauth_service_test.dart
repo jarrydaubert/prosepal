@@ -51,7 +51,7 @@ void main() {
     // These tests verify the mock behaves correctly for widget tests
 
     test('mock returns success when reauth not required', () async {
-      final mock = _SimpleMockReauthService(shouldRequireReauth: false);
+      final mock = _SimpleMockReauthService();
 
       expect(mock.isReauthRequired, isFalse);
     });
@@ -71,7 +71,7 @@ void main() {
     test('markReauthenticated can be called without error', () {
       final mock = _SimpleMockReauthService();
 
-      expect(() => mock.markReauthenticated(), returnsNormally);
+      expect(mock.markReauthenticated, returnsNormally);
     });
   });
 }

@@ -151,7 +151,7 @@ class ReauthService {
     // Verify password by attempting sign-in
     try {
       await _supabaseAuth.signInWithPassword(
-        email: user.email!,
+        email: user.email,
         password: password,
       );
       markReauthenticated();
@@ -159,7 +159,10 @@ class ReauthService {
       return const ReauthResult(success: true);
     } on AuthException catch (e) {
       Log.warning('Re-auth failed via password', {'error': e.message});
-      return ReauthResult(success: false, errorMessage: 'Incorrect password');
+      return const ReauthResult(
+        success: false,
+        errorMessage: 'Incorrect password',
+      );
     }
   }
 
@@ -215,7 +218,7 @@ class ReauthService {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(null),
+            onPressed: () => Navigator.of(context).pop(),
             child: const Text('Cancel'),
           ),
           FilledButton(

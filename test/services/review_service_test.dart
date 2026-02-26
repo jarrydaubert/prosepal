@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:prosepal/core/config/preference_keys.dart';
 import 'package:prosepal/core/services/review_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// ReviewService Test Suite
 ///

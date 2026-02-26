@@ -113,67 +113,66 @@ class AppGradientButton extends StatelessWidget {
   final Gradient? gradient;
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-          height: AppSpacing.buttonHeight,
-          decoration: BoxDecoration(
-            gradient: gradient ?? AppColors.primaryGradient,
-            borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.primary.withValues(alpha: 0.3),
-                blurRadius: 8,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: isLoading ? null : onPressed,
+  Widget build(BuildContext context) =>
+      Container(
+            height: AppSpacing.buttonHeight,
+            decoration: BoxDecoration(
+              gradient: gradient ?? AppColors.primaryGradient,
               borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
-              child: Center(
-                child: isLoading
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: AppColors.textOnPrimary,
-                        ),
-                      )
-                    : Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          if (icon != null) ...[
-                            Icon(
-                              icon,
-                              color: AppColors.textOnPrimary,
-                              size: AppSpacing.iconSizeSmall,
-                            ),
-                            const SizedBox(width: AppSpacing.sm),
-                          ],
-                          Text(
-                            label,
-                            style: Theme.of(context).textTheme.labelLarge
-                                ?.copyWith(
-                                  color: AppColors.textOnPrimary,
-                                  fontWeight: FontWeight.bold,
-                                ),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.primary.withValues(alpha: 0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: isLoading ? null : onPressed,
+                borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
+                child: Center(
+                  child: isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: AppColors.textOnPrimary,
                           ),
-                        ],
-                      ),
+                        )
+                      : Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            if (icon != null) ...[
+                              Icon(
+                                icon,
+                                color: AppColors.textOnPrimary,
+                                size: AppSpacing.iconSizeSmall,
+                              ),
+                              const SizedBox(width: AppSpacing.sm),
+                            ],
+                            Text(
+                              label,
+                              style: Theme.of(context).textTheme.labelLarge
+                                  ?.copyWith(
+                                    color: AppColors.textOnPrimary,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                            ),
+                          ],
+                        ),
+                ),
               ),
             ),
-          ),
-        )
-        .animate()
-        .fadeIn(duration: 300.ms)
-        .scale(
-          begin: const Offset(0.95, 0.95),
-          end: const Offset(1, 1),
-          duration: 300.ms,
-          curve: Curves.easeOut,
-        );
-  }
+          )
+          .animate()
+          .fadeIn(duration: 300.ms)
+          .scale(
+            begin: const Offset(0.95, 0.95),
+            end: const Offset(1, 1),
+            duration: 300.ms,
+            curve: Curves.easeOut,
+          );
 }

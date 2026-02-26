@@ -66,8 +66,8 @@ void main() {
       }
 
       // Check for pricing elements
-      final hasPricing =
-          find.textContaining('\$').evaluate().isNotEmpty ||
+      final _ =
+          find.textContaining(r'$').evaluate().isNotEmpty ||
           find.textContaining('month').evaluate().isNotEmpty ||
           find.textContaining('year').evaluate().isNotEmpty;
 
@@ -92,7 +92,7 @@ void main() {
         }
 
         // Look for restore option on paywall
-        final hasRestore =
+        final _ =
             exists(find.text('Restore')) ||
             find.textContaining('restore').evaluate().isNotEmpty;
 
@@ -111,7 +111,7 @@ void main() {
         await tester.pumpAndSettle(const Duration(seconds: 3));
 
         // Should show benefits/features
-        final hasBenefits = anyTextExists([
+        final _ = anyTextExists([
           'Unlimited',
           'unlimited',
           '500',

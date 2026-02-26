@@ -1,5 +1,5 @@
-import 'dart:convert';
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
@@ -110,35 +110,33 @@ class AiService {
   static AiServiceException _createException(
     AiErrorClassification classification,
     Object originalError,
-  ) {
-    return switch (classification.exceptionType) {
-      const (AiNetworkException) => AiNetworkException(
-        classification.message,
-        originalError: originalError,
-        errorCode: classification.errorCode,
-      ),
-      const (AiContentBlockedException) => AiContentBlockedException(
-        classification.message,
-        originalError: originalError,
-        errorCode: classification.errorCode,
-      ),
-      const (AiRateLimitException) => AiRateLimitException(
-        classification.message,
-        originalError: originalError,
-        errorCode: classification.errorCode,
-      ),
-      const (AiUnavailableException) => AiUnavailableException(
-        classification.message,
-        originalError: originalError,
-        errorCode: classification.errorCode,
-      ),
-      _ => AiServiceException(
-        classification.message,
-        originalError: originalError,
-        errorCode: classification.errorCode,
-      ),
-    };
-  }
+  ) => switch (classification.exceptionType) {
+    const (AiNetworkException) => AiNetworkException(
+      classification.message,
+      originalError: originalError,
+      errorCode: classification.errorCode,
+    ),
+    const (AiContentBlockedException) => AiContentBlockedException(
+      classification.message,
+      originalError: originalError,
+      errorCode: classification.errorCode,
+    ),
+    const (AiRateLimitException) => AiRateLimitException(
+      classification.message,
+      originalError: originalError,
+      errorCode: classification.errorCode,
+    ),
+    const (AiUnavailableException) => AiUnavailableException(
+      classification.message,
+      originalError: originalError,
+      errorCode: classification.errorCode,
+    ),
+    _ => AiServiceException(
+      classification.message,
+      originalError: originalError,
+      errorCode: classification.errorCode,
+    ),
+  };
 
   // ============================================================
   // ERROR CLASSIFICATION - Extracted for testability
@@ -152,7 +150,7 @@ class AiService {
 
     // Rate limiting
     if (message.contains('rate') || message.contains('quota')) {
-      return AiErrorClassification(
+      return const AiErrorClassification(
         exceptionType: AiRateLimitException,
         message:
             'Our servers are busy right now. Please wait a moment and try again.',
@@ -163,29 +161,27 @@ class AiService {
 
     // Network errors
     if (message.contains('network') || message.contains('connection')) {
-      return AiErrorClassification(
+      return const AiErrorClassification(
         exceptionType: AiNetworkException,
         message: 'Unable to connect. Please check your internet connection.',
         errorCode: 'NETWORK_ERROR',
-        isRetryable: false,
       );
     }
 
     // Content blocked
     if (message.contains('blocked') || message.contains('safety')) {
-      return AiErrorClassification(
+      return const AiErrorClassification(
         exceptionType: AiContentBlockedException,
         message:
             'Your message details triggered our safety filters. '
             'Try removing any sensitive words or phrases.',
         errorCode: 'CONTENT_BLOCKED',
-        isRetryable: false,
       );
     }
 
     // Service unavailable
     if (message.contains('unavailable') || message.contains('503')) {
-      return AiErrorClassification(
+      return const AiErrorClassification(
         exceptionType: AiUnavailableException,
         message:
             'The AI service is temporarily unavailable. Please try again in a few minutes.',
@@ -208,7 +204,7 @@ class AiService {
 
     // Timeout
     if (message.contains('timeout')) {
-      return AiErrorClassification(
+      return const AiErrorClassification(
         exceptionType: AiNetworkException,
         message:
             'The request timed out. Please check your connection and try again.',
@@ -219,11 +215,10 @@ class AiService {
 
     // Invalid request
     if (message.contains('invalid') || message.contains('malformed')) {
-      return AiErrorClassification(
+      return const AiErrorClassification(
         exceptionType: AiServiceException,
         message: 'There was an issue with the request. Please try again.',
         errorCode: 'INVALID_REQUEST',
-        isRetryable: false,
       );
     }
 
@@ -232,7 +227,6 @@ class AiService {
       exceptionType: AiServiceException,
       message: 'Unable to generate messages right now. Please try again.',
       errorCode: 'FIREBASE_AI_ERROR',
-      isRetryable: false,
     );
   }
 
@@ -257,17 +251,16 @@ class AiService {
         errorStr.contains('socket') ||
         errorStr.contains('connection') ||
         errorStr.contains('host')) {
-      return AiErrorClassification(
+      return const AiErrorClassification(
         exceptionType: AiNetworkException,
         message: 'Unable to connect. Please check your internet connection.',
         errorCode: 'NETWORK_ERROR',
-        isRetryable: false,
       );
     }
 
     // Timeout
     if (errorStr.contains('timeout')) {
-      return AiErrorClassification(
+      return const AiErrorClassification(
         exceptionType: AiNetworkException,
         message: 'The request timed out. Please try again.',
         errorCode: 'TIMEOUT',
@@ -277,11 +270,10 @@ class AiService {
 
     // Permission errors
     if (errorStr.contains('permission') || errorStr.contains('denied')) {
-      return AiErrorClassification(
+      return const AiErrorClassification(
         exceptionType: AiServiceException,
         message: 'Permission error. Please restart the app and try again.',
         errorCode: 'PERMISSION_DENIED',
-        isRetryable: false,
       );
     }
 
@@ -290,7 +282,6 @@ class AiService {
       exceptionType: AiServiceException,
       message: 'Something unexpected happened. Please try again.',
       errorCode: 'UNKNOWN_ERROR',
-      isRetryable: false,
     );
   }
 
@@ -349,21 +340,20 @@ class AiService {
   ///
   /// Note: ThinkingConfig removed - Gemini 3 uses dynamic thinking by default.
   /// JSON schema + ThinkingConfig combination can cause SDK parsing issues.
-  GenerativeModel _createModel(String modelName) {
-    return FirebaseAI.googleAI().generativeModel(
-      model: modelName,
-      generationConfig: GenerationConfig(
-        temperature: AiConfig.temperature,
-        topK: AiConfig.topK,
-        topP: AiConfig.topP,
-        maxOutputTokens: AiConfig.maxOutputTokens,
-        responseMimeType: 'application/json',
-        responseSchema: _responseSchema,
-      ),
-      safetySettings: _safetySettings,
-      systemInstruction: Content.system(AiConfig.systemInstruction),
-    );
-  }
+  GenerativeModel _createModel(String modelName) =>
+      FirebaseAI.googleAI().generativeModel(
+        model: modelName,
+        generationConfig: GenerationConfig(
+          temperature: AiConfig.temperature,
+          topK: AiConfig.topK,
+          topP: AiConfig.topP,
+          maxOutputTokens: AiConfig.maxOutputTokens,
+          responseMimeType: 'application/json',
+          responseSchema: _responseSchema,
+        ),
+        safetySettings: _safetySettings,
+        systemInstruction: Content.system(AiConfig.systemInstruction),
+      );
 
   /// Track if we've already tried the fallback model this session
   bool _triedFallback = false;
@@ -594,7 +584,7 @@ class AiService {
           'The AI response was incomplete. Please try again.',
           errorCode: 'TRUNCATION_FAILED',
         );
-      } catch (e, stackTrace) {
+      } on Exception catch (e, stackTrace) {
         if (e is AiServiceException) rethrow;
 
         attempt++;
@@ -635,7 +625,7 @@ class AiService {
       return false;
     } on TimeoutException {
       return false;
-    } catch (_) {
+    } on Exception catch (_) {
       // On error, assume connected and let the actual request fail with better error
       return true;
     }
@@ -655,8 +645,8 @@ class AiService {
       r'\[/INST\]|'
       r'<\|im_start\|>|'
       r'<\|im_end\|>|'
-      r'<<SYS>>|'
-      r'<</SYS>>|'
+      '<<SYS>>|'
+      '<</SYS>>|'
       r'###\s*(instruction|system|human|assistant)|'
       r'you\s+are\s+now\s+|'
       r'pretend\s+to\s+be\s+|'

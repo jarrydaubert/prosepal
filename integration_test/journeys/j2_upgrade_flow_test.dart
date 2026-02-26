@@ -63,7 +63,7 @@ void main() {
           'Continue with Email',
         ]);
         final hasPaywall =
-            find.textContaining('\$').evaluate().isNotEmpty ||
+            find.textContaining(r'$').evaluate().isNotEmpty ||
             exists(find.text('Subscribe'));
 
         expect(

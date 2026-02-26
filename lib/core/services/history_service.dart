@@ -12,6 +12,14 @@ const int _historyModelVersion = 1;
 
 /// Saved generation with metadata
 class SavedGeneration {
+  factory SavedGeneration.fromJson(Map<String, dynamic> json) =>
+      SavedGeneration(
+        id: json['id'] as String,
+        result: GenerationResult.fromJson(
+          json['result'] as Map<String, dynamic>,
+        ),
+        savedAt: DateTime.parse(json['savedAt'] as String),
+      );
   SavedGeneration({
     required this.id,
     required this.result,
@@ -27,14 +35,6 @@ class SavedGeneration {
     'result': result.toJson(),
     'savedAt': savedAt.toIso8601String(),
   };
-
-  factory SavedGeneration.fromJson(Map<String, dynamic> json) {
-    return SavedGeneration(
-      id: json['id'] as String,
-      result: GenerationResult.fromJson(json['result'] as Map<String, dynamic>),
-      savedAt: DateTime.parse(json['savedAt'] as String),
-    );
-  }
 }
 
 /// Service for saving and retrieving generation history
@@ -56,9 +56,7 @@ class HistoryService {
   HistoryService();
 
   /// Secure storage for history (encrypts personal details in saved messages)
-  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage(
-    aOptions: AndroidOptions(encryptedSharedPreferences: true),
-  );
+  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
 
   final _uuid = const Uuid();
   static const _key = 'generation_history';

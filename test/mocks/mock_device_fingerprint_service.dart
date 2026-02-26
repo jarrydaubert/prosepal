@@ -31,14 +31,10 @@ class MockDeviceFingerprintService extends DeviceFingerprintService {
   int canUseFreeTierCallCount = 0;
 
   @override
-  Future<String?> getDeviceFingerprint() async {
-    return mockFingerprint;
-  }
+  Future<String?> getDeviceFingerprint() async => mockFingerprint;
 
   @override
-  String getPlatform() {
-    return mockPlatform;
-  }
+  String getPlatform() => mockPlatform;
 
   @override
   Future<DeviceCheckResult> canUseFreeTier() async {

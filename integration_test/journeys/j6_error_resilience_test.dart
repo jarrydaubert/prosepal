@@ -24,7 +24,7 @@ void main() {
       if (!atHome) return;
 
       // Rapid tap same occasion
-      for (int i = 0; i < 5; i++) {
+      for (var i = 0; i < 5; i++) {
         await tester.tap(find.text('Birthday'), warnIfMissed: false);
         await tester.pump(const Duration(milliseconds: 50));
       }
@@ -43,7 +43,7 @@ void main() {
       await launchApp(tester);
 
       // Rapid skip
-      for (int i = 0; i < 10; i++) {
+      for (var i = 0; i < 10; i++) {
         if (exists(find.text('Continue'))) {
           await tester.tap(find.text('Continue'), warnIfMissed: false);
           await tester.pump(const Duration(milliseconds: 100));
@@ -133,7 +133,7 @@ void main() {
       if (!atHome) return;
 
       // Complete wizard multiple times
-      for (int i = 0; i < 3; i++) {
+      for (var i = 0; i < 3; i++) {
         await tester.tap(find.text('Birthday'));
         await tester.pumpAndSettle();
 

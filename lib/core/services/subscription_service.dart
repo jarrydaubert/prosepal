@@ -31,11 +31,9 @@ class SubscriptionService implements ISubscriptionService {
   static const String _entitlementId = 'pro';
 
   /// Check if current platform supports RevenueCat
-  static bool get _isPlatformSupported {
-    // RevenueCat Flutter SDK supports iOS and Android
-    // Web and desktop require different payment solutions
-    return Platform.isIOS || Platform.isAndroid;
-  }
+  /// RevenueCat Flutter SDK supports iOS and Android
+  /// Web and desktop require different payment solutions
+  static bool get _isPlatformSupported => Platform.isIOS || Platform.isAndroid;
 
   /// Get the appropriate API key based on platform and environment
   static String get _activeApiKey {
@@ -162,9 +160,7 @@ class SubscriptionService implements ISubscriptionService {
   }
 
   @override
-  Future<bool> isPro() async {
-    return hasEntitlement(_entitlementId);
-  }
+  Future<bool> isPro() async => hasEntitlement(_entitlementId);
 
   @override
   Future<bool> hasEntitlement(String entitlementId) async {
@@ -371,14 +367,16 @@ class SubscriptionService implements ISubscriptionService {
     } on PlatformException catch (e) {
       // LOGOUT_CALLED_WITH_ANONYMOUS_USER is expected during delete account
       // flow where user may already be anonymous - not an error
-      if (e.code == '22' || e.message?.contains('anonymous') == true) {
+      if (e.code == '22' || (e.message?.contains('anonymous') ?? false)) {
         Log.info('RevenueCat: User already anonymous, skipping logout');
         await Log.clearUserId();
       } else {
         Log.error('Error logging out', e);
       }
-    } on AssertionError {
-      // SDK not initialized - ignore (happens in tests)
+    }
+    // ignore: avoid_catching_errors - SDK not initialized (expected in tests)
+    on AssertionError {
+      // Ignore
     }
   }
 

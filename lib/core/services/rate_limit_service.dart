@@ -48,12 +48,12 @@ class RateLimitService {
         final windowStart = now.subtract(_localWindowDuration);
         // Only load timestamps within the current window
         _localRequestTimestamps = stored
-            .map((s) => DateTime.tryParse(s))
+            .map(DateTime.tryParse)
             .whereType<DateTime>()
             .where((ts) => ts.isAfter(windowStart))
             .toList();
       }
-    } catch (e) {
+    } on Exception catch (e) {
       // Catches Exception + Error (binding not initialized in tests)
       Log.warning('Failed to load rate limit history', {'error': '$e'});
     }
@@ -68,7 +68,7 @@ class RateLimitService {
           .map((ts) => ts.toIso8601String())
           .toList();
       await prefs.setStringList(_prefsKey, strings);
-    } catch (e) {
+    } on Exception catch (e) {
       // Catches Exception + Error (binding not initialized in tests)
       Log.warning('Failed to persist rate limit history', {'error': '$e'});
     }
@@ -78,7 +78,7 @@ class RateLimitService {
   SupabaseClient? get _supabase {
     try {
       return Supabase.instance.client;
-    } catch (_) {
+    } on Exception catch (_) {
       return null;
     }
   }
@@ -212,7 +212,7 @@ class RateLimitService {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_prefsKey);
-    } catch (_) {}
+    } on Exception catch (_) {}
   }
 
   RateLimitReason? _parseReason(String? reason) {

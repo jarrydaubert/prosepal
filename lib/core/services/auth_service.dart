@@ -302,17 +302,13 @@ class AuthService implements IAuthService {
   Future<AuthResponse> signInWithEmail({
     required String email,
     required String password,
-  }) async {
-    return _supabase.signInWithPassword(email: email, password: password);
-  }
+  }) async => _supabase.signInWithPassword(email: email, password: password);
 
   @override
   Future<AuthResponse> signUpWithEmail({
     required String email,
     required String password,
-  }) async {
-    return _supabase.signUp(email: email, password: password);
-  }
+  }) async => _supabase.signUp(email: email, password: password);
 
   @override
   Future<void> resetPassword(String email) async {
@@ -382,12 +378,12 @@ class AuthService implements IAuthService {
     try {
       await _supabase.deleteUser();
       Log.info('Account deleted from server');
-    } catch (e, stackTrace) {
+    } on Exception catch (e, stackTrace) {
       Log.error('Account deletion failed', e, stackTrace, {
         'hint': 'Ensure delete-user Edge Function is deployed in Supabase',
       });
       // Rethrow - caller must handle this and inform user
-      throw AuthException(
+      throw const AuthException(
         'Failed to delete account. Please try again or contact support.',
       );
     }
@@ -395,7 +391,7 @@ class AuthService implements IAuthService {
     // Server deletion succeeded - now clean up local state
     try {
       await _google.disconnect(); // Revoke Google access
-    } catch (_) {
+    } on Exception catch (_) {
       // Non-fatal: may not be signed in with Google
     }
 

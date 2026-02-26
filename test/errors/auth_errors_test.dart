@@ -229,7 +229,7 @@ void main() {
 
       test('statusCode 429 takes priority over message', () {
         // Even if message doesn't mention rate limit, 429 = rate limit
-        final error = AuthException('Some random message', statusCode: '429');
+        const error = AuthException('Some random message', statusCode: '429');
         expect(
           AuthErrorHandler.getMessage(error),
           'Too many attempts. Please wait a moment and try again.',
@@ -239,7 +239,7 @@ void main() {
 
     group('Apple Sign In exceptions', () {
       test('canceled -> cancellation message', () {
-        final error = SignInWithAppleAuthorizationException(
+        const error = SignInWithAppleAuthorizationException(
           code: AuthorizationErrorCode.canceled,
           message: 'User cancelled',
         );
@@ -251,7 +251,7 @@ void main() {
       });
 
       test('notHandled -> not available message', () {
-        final error = SignInWithAppleAuthorizationException(
+        const error = SignInWithAppleAuthorizationException(
           code: AuthorizationErrorCode.notHandled,
           message: 'Not handled',
         );
@@ -262,7 +262,7 @@ void main() {
       });
 
       test('notInteractive -> try again message', () {
-        final error = SignInWithAppleAuthorizationException(
+        const error = SignInWithAppleAuthorizationException(
           code: AuthorizationErrorCode.notInteractive,
           message: 'Not interactive',
         );
@@ -273,7 +273,7 @@ void main() {
       });
 
       test('failed -> generic Apple failure', () {
-        final error = SignInWithAppleAuthorizationException(
+        const error = SignInWithAppleAuthorizationException(
           code: AuthorizationErrorCode.failed,
           message: 'Failed',
         );
@@ -284,7 +284,7 @@ void main() {
       });
 
       test('unknown -> generic Apple failure', () {
-        final error = SignInWithAppleAuthorizationException(
+        const error = SignInWithAppleAuthorizationException(
           code: AuthorizationErrorCode.unknown,
           message: 'Unknown error',
         );
@@ -426,7 +426,7 @@ void main() {
       });
 
       test('returns true for Apple cancel', () {
-        final error = SignInWithAppleAuthorizationException(
+        const error = SignInWithAppleAuthorizationException(
           code: AuthorizationErrorCode.canceled,
           message: 'Cancelled',
         );

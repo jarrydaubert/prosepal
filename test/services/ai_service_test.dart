@@ -746,8 +746,8 @@ void main() {
     });
 
     test('AiServiceException preserves original error', () {
-      final original = FormatException('Parse failed');
-      final exception = AiServiceException(
+      const original = FormatException('Parse failed');
+      const exception = AiServiceException(
         'Wrapped error',
         originalError: original,
       );

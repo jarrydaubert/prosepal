@@ -120,7 +120,7 @@ class GoogleAuthProvider implements IGoogleAuthProvider {
   Future<GoogleAuthResult?> requestAdditionalScopes(List<String> scopes) async {
     final user = await _googleSignIn.attemptLightweightAuthentication();
     if (user == null) {
-      throw GoogleSignInException(
+      throw const GoogleSignInException(
         code: GoogleSignInExceptionCode.unknownError,
         description: 'User not signed in',
       );

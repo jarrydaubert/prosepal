@@ -45,7 +45,7 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
 
     setState(() => _isSending = true);
 
-    String fullMessage = message;
+    var fullMessage = message;
     if (_includeLogs) {
       final isRcConfigured = ref.read(subscriptionServiceProvider).isConfigured;
       final diagnosticReport = await DiagnosticService.generateReport(
@@ -125,140 +125,137 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => FocusScope.of(context).unfocus(),
-      child: Scaffold(
-        backgroundColor: AppColors.background,
-        appBar: AppBar(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          title: const Text(
-            'Send Feedback',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
-            ),
+  Widget build(BuildContext context) => GestureDetector(
+    onTap: () => FocusScope.of(context).unfocus(),
+    child: Scaffold(
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        title: const Text(
+          'Send Feedback',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: AppColors.textPrimary,
           ),
-          leading: AppBackButton(onPressed: () => Navigator.pop(context)),
         ),
-        body: Padding(
-          padding: const EdgeInsets.all(AppSpacing.screenPadding),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                "Questions, bugs, or feature requests? We'd love to hear from you.",
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppColors.textSecondary,
-                ),
-              ),
-              const Gap(AppSpacing.lg),
-              Expanded(
-                child: Semantics(
-                  label: 'Feedback message input',
-                  hint: 'Enter your feedback, bug report, or feature request',
-                  child: TextField(
-                    controller: _controller,
-                    maxLines: null,
-                    expands: true,
-                    textAlignVertical: TextAlignVertical.top,
-                    textCapitalization: TextCapitalization.sentences,
-                    decoration: InputDecoration(
-                      labelText: 'Your feedback',
-                      hintText: 'Describe your issue or suggestion...',
-                      alignLabelWithHint: true,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(
-                          AppSpacing.radiusMedium,
-                        ),
+        leading: AppBackButton(onPressed: () => Navigator.pop(context)),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(AppSpacing.screenPadding),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              "Questions, bugs, or feature requests? We'd love to hear from you.",
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
+            ),
+            const Gap(AppSpacing.lg),
+            Expanded(
+              child: Semantics(
+                label: 'Feedback message input',
+                hint: 'Enter your feedback, bug report, or feature request',
+                child: TextField(
+                  controller: _controller,
+                  maxLines: null,
+                  expands: true,
+                  textAlignVertical: TextAlignVertical.top,
+                  textCapitalization: TextCapitalization.sentences,
+                  decoration: InputDecoration(
+                    labelText: 'Your feedback',
+                    hintText: 'Describe your issue or suggestion...',
+                    alignLabelWithHint: true,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(
+                        AppSpacing.radiusMedium,
                       ),
                     ),
                   ),
                 ),
               ),
-              const Gap(AppSpacing.md),
-              // Toggle for including diagnostic logs
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
-                  border: Border.all(
-                    color: _includeLogs
-                        ? AppColors.primary.withValues(alpha: 0.3)
-                        : AppColors.textHint.withValues(alpha: 0.2),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Include diagnostic logs',
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          const Gap(2),
-                          Text(
-                            'Helps us troubleshoot issues faster',
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Switch.adaptive(
-                      value: _includeLogs,
-                      onChanged: (value) =>
-                          setState(() => _includeLogs = value),
-                      activeTrackColor: AppColors.primary,
-                    ),
-                  ],
+            ),
+            const Gap(AppSpacing.md),
+            // Toggle for including diagnostic logs
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
+                border: Border.all(
+                  color: _includeLogs
+                      ? AppColors.primary.withValues(alpha: 0.3)
+                      : AppColors.textHint.withValues(alpha: 0.2),
                 ),
               ),
-              // View report link (only when logs enabled)
-              if (_includeLogs) ...[
-                const Gap(AppSpacing.sm),
-                GestureDetector(
-                  onTap: _shareDiagnostics,
-                  child: Text.rich(
-                    TextSpan(
-                      text: 'Preview: ',
-                      style: TextStyle(fontSize: 13, color: AppColors.textHint),
+              child: Row(
+                children: [
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        TextSpan(
-                          text: 'View diagnostic report',
+                        Text(
+                          'Include diagnostic logs',
                           style: TextStyle(
-                            color: AppColors.primary,
-                            decoration: TextDecoration.underline,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        Gap(2),
+                        Text(
+                          'Helps us troubleshoot issues faster',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: AppColors.textSecondary,
                           ),
                         ),
                       ],
                     ),
                   ),
+                  Switch.adaptive(
+                    value: _includeLogs,
+                    onChanged: (value) => setState(() => _includeLogs = value),
+                    activeTrackColor: AppColors.primary,
+                  ),
+                ],
+              ),
+            ),
+            // View report link (only when logs enabled)
+            if (_includeLogs) ...[
+              const Gap(AppSpacing.sm),
+              GestureDetector(
+                onTap: _shareDiagnostics,
+                child: const Text.rich(
+                  TextSpan(
+                    text: 'Preview: ',
+                    style: TextStyle(fontSize: 13, color: AppColors.textHint),
+                    children: [
+                      TextSpan(
+                        text: 'View diagnostic report',
+                        style: TextStyle(
+                          color: AppColors.primary,
+                          decoration: TextDecoration.underline,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ],
-              const Gap(AppSpacing.lg),
-              AppButton(
-                label: 'Send Feedback',
-                onPressed: _isSending ? null : _send,
-                isLoading: _isSending,
-                icon: Icons.send_rounded,
               ),
             ],
-          ),
+            const Gap(AppSpacing.lg),
+            AppButton(
+              label: 'Send Feedback',
+              onPressed: _isSending ? null : _send,
+              isLoading: _isSending,
+              icon: Icons.send_rounded,
+            ),
+          ],
         ),
       ),
-    );
-  }
+    ),
+  );
 }
 
 // === COMPONENTS ===
@@ -269,119 +266,109 @@ class _DiagnosticReportSheet extends StatelessWidget {
   final String report;
 
   @override
-  Widget build(BuildContext context) {
-    return DraggableScrollableSheet(
-      initialChildSize: 0.7,
-      minChildSize: 0.5,
-      maxChildSize: 0.95,
-      expand: false,
-      builder: (context, scrollController) {
-        return Column(
-          children: [
-            // Handle bar
-            Container(
-              margin: const EdgeInsets.symmetric(vertical: 12),
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppColors.textHint.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(2),
+  Widget build(BuildContext context) => DraggableScrollableSheet(
+    initialChildSize: 0.7,
+    minChildSize: 0.5,
+    maxChildSize: 0.95,
+    expand: false,
+    builder: (context, scrollController) => Column(
+      children: [
+        // Handle bar
+        Container(
+          margin: const EdgeInsets.symmetric(vertical: 12),
+          width: 40,
+          height: 4,
+          decoration: BoxDecoration(
+            color: AppColors.textHint.withValues(alpha: 0.3),
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        // Title
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Diagnostic Report',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
               ),
-            ),
-            // Title
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              Row(
                 children: [
-                  Text(
-                    'Diagnostic Report',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
-                    ),
+                  IconButton(
+                    icon: const Icon(Icons.copy_rounded),
+                    onPressed: () {
+                      unawaited(Clipboard.setData(ClipboardData(text: report)));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Copied to clipboard'),
+                          duration: Duration(seconds: 2),
+                        ),
+                      );
+                    },
+                    tooltip: 'Copy',
                   ),
-                  Row(
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.copy_rounded),
-                        onPressed: () {
-                          unawaited(
-                            Clipboard.setData(ClipboardData(text: report)),
-                          );
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Copied to clipboard'),
-                              duration: Duration(seconds: 2),
-                            ),
-                          );
-                        },
-                        tooltip: 'Copy',
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.share_rounded),
-                        onPressed: () {
-                          unawaited(
-                            SharePlus.instance.share(
-                              ShareParams(
-                                text: report,
-                                subject: 'Prosepal Diagnostic Report',
-                              ),
-                            ),
-                          );
-                        },
-                        tooltip: 'Share',
-                      ),
-                    ],
+                  IconButton(
+                    icon: const Icon(Icons.share_rounded),
+                    onPressed: () {
+                      unawaited(
+                        SharePlus.instance.share(
+                          ShareParams(
+                            text: report,
+                            subject: 'Prosepal Diagnostic Report',
+                          ),
+                        ),
+                      );
+                    },
+                    tooltip: 'Share',
                   ),
                 ],
               ),
+            ],
+          ),
+        ),
+        const Divider(),
+        // Report content
+        Expanded(
+          child: SingleChildScrollView(
+            controller: scrollController,
+            padding: const EdgeInsets.all(20),
+            child: SelectableText(
+              report,
+              style: const TextStyle(
+                fontSize: 12,
+                fontFamily: 'monospace',
+                color: AppColors.textSecondary,
+                height: 1.5,
+              ),
             ),
-            const Divider(),
-            // Report content
-            Expanded(
-              child: SingleChildScrollView(
-                controller: scrollController,
-                padding: const EdgeInsets.all(20),
-                child: SelectableText(
-                  report,
+          ),
+        ),
+        // Privacy notice
+        Container(
+          padding: const EdgeInsets.all(16),
+          color: AppColors.primaryLight.withValues(alpha: 0.3),
+          child: const Row(
+            children: [
+              Icon(Icons.shield_outlined, size: 20, color: AppColors.primary),
+              Gap(12),
+              Expanded(
+                child: Text(
+                  'No personal messages, passwords, or payment details included.',
                   style: TextStyle(
                     fontSize: 12,
-                    fontFamily: 'monospace',
                     color: AppColors.textSecondary,
-                    height: 1.5,
                   ),
                 ),
               ),
-            ),
-            // Privacy notice
-            Container(
-              padding: const EdgeInsets.all(16),
-              color: AppColors.primaryLight.withValues(alpha: 0.3),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.shield_outlined,
-                    size: 20,
-                    color: AppColors.primary,
-                  ),
-                  const Gap(12),
-                  Expanded(
-                    child: Text(
-                      'No personal messages, passwords, or payment details included.',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
 }

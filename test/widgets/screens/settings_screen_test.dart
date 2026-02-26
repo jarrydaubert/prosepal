@@ -2,10 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-
 import 'package:prosepal/core/providers/providers.dart';
 import 'package:prosepal/features/settings/settings_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../mocks/mock_auth_service.dart';
 import '../../mocks/mock_biometric_service.dart';
@@ -55,32 +54,35 @@ void main() {
       routes: [
         GoRoute(
           path: '/',
-          builder: (_, __) => const Scaffold(body: Text('Home')),
+          builder: (context, state) => const Scaffold(body: Text('Home')),
         ),
         GoRoute(
           path: '/auth',
-          builder: (_, __) => const Scaffold(body: Text('Auth')),
+          builder: (context, state) => const Scaffold(body: Text('Auth')),
         ),
-        GoRoute(path: '/settings', builder: (_, __) => const SettingsScreen()),
+        GoRoute(
+          path: '/settings',
+          builder: (context, state) => const SettingsScreen(),
+        ),
         GoRoute(
           path: '/paywall',
           name: 'paywall',
-          builder: (_, __) => const Scaffold(body: Text('Paywall')),
+          builder: (context, state) => const Scaffold(body: Text('Paywall')),
         ),
         GoRoute(
           path: '/feedback',
           name: 'feedback',
-          builder: (_, __) => const Scaffold(body: Text('Feedback')),
+          builder: (context, state) => const Scaffold(body: Text('Feedback')),
         ),
         GoRoute(
           path: '/terms',
           name: 'terms',
-          builder: (_, __) => const Scaffold(body: Text('Terms')),
+          builder: (context, state) => const Scaffold(body: Text('Terms')),
         ),
         GoRoute(
           path: '/privacy',
           name: 'privacy',
-          builder: (_, __) => const Scaffold(body: Text('Privacy')),
+          builder: (context, state) => const Scaffold(body: Text('Privacy')),
         ),
       ],
     );
@@ -201,7 +203,7 @@ void main() {
       });
 
       testWidgets('hides biometrics for anonymous users', (tester) async {
-        await tester.pumpWidget(buildTestWidget(biometricsSupported: true));
+        await tester.pumpWidget(buildTestWidget());
         await tester.pumpAndSettle();
 
         // Anonymous users don't see biometrics (prevents lockout)
@@ -240,9 +242,7 @@ void main() {
       });
 
       testWidgets('switch reflects disabled state', (tester) async {
-        await tester.pumpWidget(
-          buildTestWidget(email: 'test@example.com', biometricsEnabled: false),
-        );
+        await tester.pumpWidget(buildTestWidget(email: 'test@example.com'));
         await tester.pumpAndSettle();
 
         final switchWidget = tester.widget<Switch>(find.byType(Switch));

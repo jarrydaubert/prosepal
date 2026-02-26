@@ -53,8 +53,8 @@ void main() {
       final atSettings = await navigateToSettings(tester);
       if (!atSettings) return;
 
-      // Look for biometric option
-      final hasBiometric =
+      // Look for biometric option (may not exist on all devices)
+      final _ =
           exists(find.text('Face ID')) ||
           exists(find.text('Touch ID')) ||
           exists(find.textContaining('Biometric'));
@@ -116,7 +116,7 @@ void main() {
       final atSettings = await navigateToSettings(tester);
       if (!atSettings) return;
 
-      final found = await scrollToText(tester, 'Send Feedback');
+      final _ = await scrollToText(tester, 'Send Feedback');
 
       // Feedback may or may not exist
       await screenshot(tester, 'j4_8_feedback_option');
@@ -175,7 +175,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Look for version text
-      final hasVersion =
+      final _ =
           find.textContaining('Version').evaluate().isNotEmpty ||
           find.textContaining('v1.').evaluate().isNotEmpty ||
           find.textContaining('1.0').evaluate().isNotEmpty;

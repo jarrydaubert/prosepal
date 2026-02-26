@@ -60,7 +60,7 @@ class UsageService {
   SupabaseClient? get _supabase {
     try {
       return Supabase.instance.client;
-    } catch (_) {
+    } on Exception catch (_) {
       return null;
     }
   }
@@ -73,9 +73,7 @@ class UsageService {
   // ===========================================================================
 
   /// Get total all-time generation count
-  int getTotalCount() {
-    return _prefs.getInt(_keyTotalCount) ?? 0;
-  }
+  int getTotalCount() => _prefs.getInt(_keyTotalCount) ?? 0;
 
   /// Get this month's generation count (for Pro users)
   int getMonthlyCount() {
@@ -97,7 +95,7 @@ class UsageService {
   /// Also checks local device-level flag as fallback.
   bool canGenerateFree() {
     // Local device flag (fallback if server check fails)
-    final deviceUsed = _prefs.getBool(_keyDeviceUsedFreeTier) == true;
+    final deviceUsed = _prefs.getBool(_keyDeviceUsedFreeTier) ?? false;
     if (deviceUsed) {
       Log.info('Free tier blocked - local device flag set');
       return false;
@@ -113,9 +111,8 @@ class UsageService {
   /// Use this for anonymous users before generation.
   /// For authenticated users, [checkAndIncrementServerSide] handles both
   /// user-level and device-level checks.
-  Future<DeviceCheckResult> checkDeviceFreeTierServerSide() async {
-    return _deviceFingerprint.canUseFreeTier();
-  }
+  Future<DeviceCheckResult> checkDeviceFreeTierServerSide() async =>
+      _deviceFingerprint.canUseFreeTier();
 
   /// Mark device as having used free tier (fraud prevention)
   /// Updates BOTH local cache and server-side tracking.
@@ -135,15 +132,13 @@ class UsageService {
   }
 
   /// Check if user can generate (pro tier)
-  bool canGeneratePro() {
-    return getMonthlyCount() < proMonthlyLimit;
-  }
+  bool canGeneratePro() => getMonthlyCount() < proMonthlyLimit;
 
   /// Get remaining free generations (lifetime)
   /// Checks device flag first (survives sign out), then falls back to count.
   int getRemainingFree() {
     // Device flag takes priority - survives sign out and account changes
-    final deviceUsed = _prefs.getBool(_keyDeviceUsedFreeTier) == true;
+    final deviceUsed = _prefs.getBool(_keyDeviceUsedFreeTier) ?? false;
     if (deviceUsed) {
       return 0;
     }
@@ -154,9 +149,8 @@ class UsageService {
   /// Check if this device has used the free tier before.
   /// Survives sign out, app reinstalls (server-side), and account deletion.
   /// Use this to detect returning users for auto-restore flow.
-  bool hasDeviceUsedFreeTier() {
-    return _prefs.getBool(_keyDeviceUsedFreeTier) == true;
-  }
+  bool hasDeviceUsedFreeTier() =>
+      _prefs.getBool(_keyDeviceUsedFreeTier) ?? false;
 
   /// Sync device state from server during app startup.
   /// Updates local cache to match server - call this in splash screen.
@@ -184,7 +178,7 @@ class UsageService {
         await _prefs.setBool(_keyDeviceUsedFreeTier, true);
         Log.info('Local cache updated: device has used free tier');
       }
-    } catch (e) {
+    } on Exception catch (e) {
       Log.warning('Failed to sync device state from server', {'error': '$e'});
       // Continue without syncing - local cache may be stale but app still works
     }
@@ -222,7 +216,7 @@ class UsageService {
 
     if (userId == null || supabase == null) {
       Log.warning('Server-side check failed: user not authenticated');
-      throw UsageCheckException('Please sign in to continue');
+      throw const UsageCheckException('Please sign in to continue');
     }
 
     // 1. Check rate limits first (prevents abuse)
@@ -300,8 +294,8 @@ class UsageService {
 
       if (!allowed) {
         final message = isPro
-            ? 'You\'ve reached your monthly limit of $limit messages'
-            : 'You\'ve used your free message. Upgrade to Pro for more!';
+            ? "You've reached your monthly limit of $limit messages"
+            : "You've used your free message. Upgrade to Pro for more!";
         return UsageCheckResult(
           allowed: false,
           remaining: 0,
@@ -312,7 +306,7 @@ class UsageService {
       return UsageCheckResult(allowed: true, remaining: remaining);
     } on PostgrestException catch (e) {
       Log.error('Server-side usage check failed', e);
-      throw UsageCheckException(
+      throw const UsageCheckException(
         'Unable to verify usage. Please check your connection.',
       );
     }

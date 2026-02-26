@@ -124,7 +124,7 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
         _sentToEmail = email;
       });
       _startResendCooldown();
-    } catch (e) {
+    } on Exception catch (e) {
       _showError(_getErrorMessage(e));
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -180,7 +180,7 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
       // Record failure for rate limiting (only for auth failures)
       throttle.recordFailure(email);
       _showError(_getErrorMessage(e));
-    } catch (e) {
+    } on Exception catch (e) {
       // Non-auth errors don't count toward throttle
       _showError(_getErrorMessage(e));
     } finally {
@@ -256,8 +256,8 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
     } on PlatformException catch (e) {
       // Handle purchase cancellation gracefully
       if (e.code == 'PURCHASE_CANCELLED' ||
-          e.message?.contains('cancelled') == true ||
-          e.message?.contains('canceled') == true) {
+          (e.message?.contains('cancelled') ?? false) ||
+          (e.message?.contains('canceled') ?? false)) {
         Log.info('Email auth: Purchase cancelled');
         if (mounted) context.go('/home');
         return;
@@ -267,7 +267,7 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
         context.go('/home');
         _showError('Purchase failed. You can try again from Settings.');
       }
-    } catch (e) {
+    } on Exception catch (e) {
       Log.error('Email auth: Purchase error', {'error': '$e'});
       if (mounted) {
         context.go('/home');
@@ -325,7 +325,7 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
         ref.read(pendingPaywallSourceProvider.notifier).state = 'email_sync';
         context.go('/home');
       }
-    } catch (e) {
+    } on Exception catch (e) {
       Log.error('Email auth: Error in paywall flow', {'error': '$e'});
       if (mounted) {
         context.go('/home');
@@ -366,56 +366,52 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => FocusScope.of(context).unfocus(),
-      child: Scaffold(
-        backgroundColor: AppColors.background,
-        appBar: AppBar(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          title: const Text(
-            'Continue with Email',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
-            ),
+  Widget build(BuildContext context) => GestureDetector(
+    onTap: () => FocusScope.of(context).unfocus(),
+    child: Scaffold(
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        title: const Text(
+          'Continue with Email',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: AppColors.textPrimary,
           ),
-          leading: AppBackButton(onPressed: () => Navigator.pop(context)),
         ),
-        body: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
-            child: _emailSent
-                ? _EmailSentView(
-                    email: _sentToEmail!,
-                    resendCooldown: _resendCooldown,
-                    onResend: _resetToEmailInput,
-                    onChangeEmail: _resetToEmailInput,
-                  )
-                : _EmailInputView(
-                    emailController: _emailController,
-                    passwordController: _passwordController,
-                    formKey: _formKey,
-                    isLoading: _isLoading,
-                    usePassword: _usePassword,
-                    autoPurchase: widget.autoPurchase,
-                    showPaywallAfterAuth: widget.showPaywallAfterAuth,
-                    onSubmit: _usePassword
-                        ? _signInWithPassword
-                        : _sendMagicLink,
-                    onToggleMode: () => setState(() {
-                      _usePassword = !_usePassword;
-                      _passwordController.clear();
-                    }),
-                    validateEmail: _validateEmail,
-                  ),
-          ),
+        leading: AppBackButton(onPressed: () => Navigator.pop(context)),
+      ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
+          child: _emailSent
+              ? _EmailSentView(
+                  email: _sentToEmail!,
+                  resendCooldown: _resendCooldown,
+                  onResend: _resetToEmailInput,
+                  onChangeEmail: _resetToEmailInput,
+                )
+              : _EmailInputView(
+                  emailController: _emailController,
+                  passwordController: _passwordController,
+                  formKey: _formKey,
+                  isLoading: _isLoading,
+                  usePassword: _usePassword,
+                  autoPurchase: widget.autoPurchase,
+                  showPaywallAfterAuth: widget.showPaywallAfterAuth,
+                  onSubmit: _usePassword ? _signInWithPassword : _sendMagicLink,
+                  onToggleMode: () => setState(() {
+                    _usePassword = !_usePassword;
+                    _passwordController.clear();
+                  }),
+                  validateEmail: _validateEmail,
+                ),
         ),
       ),
-    );
-  }
+    ),
+  );
 }
 
 // =============================================================================
@@ -436,126 +432,124 @@ class _EmailSentView extends StatelessWidget {
   final VoidCallback onChangeEmail;
 
   @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        const SizedBox(height: 40),
+  Widget build(BuildContext context) => Column(
+    children: [
+      const SizedBox(height: 40),
 
-        // Success icon with bold border
-        Container(
-              width: 120,
-              height: 120,
-              decoration: BoxDecoration(
-                color: AppColors.success.withValues(alpha: 0.15),
-                shape: BoxShape.circle,
-                border: Border.all(color: AppColors.success, width: 4),
-              ),
-              child: const Icon(
-                Icons.mark_email_read_outlined,
-                size: 56,
-                color: AppColors.success,
-              ),
-            )
-            .animate(key: const ValueKey('success_icon'))
-            .fadeIn(duration: 400.ms)
-            .scale(delay: 100.ms, curve: Curves.easeOutBack),
-
-        const SizedBox(height: 40),
-
-        // Title
-        const Text(
-              'Check your email',
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: AppColors.primary,
-              ),
-            )
-            .animate(key: const ValueKey('success_title'))
-            .fadeIn(delay: 300.ms)
-            .slideY(begin: 0.2, end: 0),
-
-        const SizedBox(height: 12),
-
-        // Subtitle
-        Text(
-          'We sent a magic link to',
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 16, color: Colors.grey[700]),
-        ).animate().fadeIn(delay: 400.ms),
-
-        const SizedBox(height: 8),
-
-        // Email address
-        Text(
-          email,
-          textAlign: TextAlign.center,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: AppColors.primary,
-          ),
-        ).animate().fadeIn(delay: 500.ms),
-
-        const SizedBox(height: 16),
-
-        Text(
-          'Tap the link in your email to sign in instantly.\nNo password needed!',
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 14, color: Colors.grey[600], height: 1.5),
-        ).animate().fadeIn(delay: 600.ms),
-
-        const SizedBox(height: 40),
-
-        // Resend button
-        if (resendCooldown > 0)
-          Text(
-            'Resend available in ${resendCooldown}s',
-            style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+      // Success icon with bold border
+      Container(
+            width: 120,
+            height: 120,
+            decoration: BoxDecoration(
+              color: AppColors.success.withValues(alpha: 0.15),
+              shape: BoxShape.circle,
+              border: Border.all(color: AppColors.success, width: 4),
+            ),
+            child: const Icon(
+              Icons.mark_email_read_outlined,
+              size: 56,
+              color: AppColors.success,
+            ),
           )
-        else
-          TextButton.icon(
-            onPressed: onResend,
-            icon: const Icon(Icons.refresh, size: 18),
-            label: const Text('Resend magic link'),
-          ),
+          .animate(key: const ValueKey('success_icon'))
+          .fadeIn(duration: 400.ms)
+          .scale(delay: 100.ms, curve: Curves.easeOutBack),
 
-        const SizedBox(height: 12),
+      const SizedBox(height: 40),
 
-        TextButton(
-          onPressed: onChangeEmail,
-          child: Text(
-            'Use a different email',
-            style: TextStyle(color: Colors.grey[600]),
-          ),
+      // Title
+      const Text(
+            'Check your email',
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              color: AppColors.primary,
+            ),
+          )
+          .animate(key: const ValueKey('success_title'))
+          .fadeIn(delay: 300.ms)
+          .slideY(begin: 0.2, end: 0),
+
+      const SizedBox(height: 12),
+
+      // Subtitle
+      Text(
+        'We sent a magic link to',
+        textAlign: TextAlign.center,
+        style: TextStyle(fontSize: 16, color: Colors.grey[700]),
+      ).animate().fadeIn(delay: 400.ms),
+
+      const SizedBox(height: 8),
+
+      // Email address
+      Text(
+        email,
+        textAlign: TextAlign.center,
+        style: const TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
+          color: AppColors.primary,
+        ),
+      ).animate().fadeIn(delay: 500.ms),
+
+      const SizedBox(height: 16),
+
+      Text(
+        'Tap the link in your email to sign in instantly.\nNo password needed!',
+        textAlign: TextAlign.center,
+        style: TextStyle(fontSize: 14, color: Colors.grey[600], height: 1.5),
+      ).animate().fadeIn(delay: 600.ms),
+
+      const SizedBox(height: 40),
+
+      // Resend button
+      if (resendCooldown > 0)
+        Text(
+          'Resend available in ${resendCooldown}s',
+          style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+        )
+      else
+        TextButton.icon(
+          onPressed: onResend,
+          icon: const Icon(Icons.refresh, size: 18),
+          label: const Text('Resend magic link'),
         ),
 
-        const SizedBox(height: 40),
+      const SizedBox(height: 12),
 
-        // Info box with bold border
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: AppColors.info.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.info, width: 2),
-          ),
-          child: Row(
-            children: [
-              const Icon(Icons.info_outline, color: AppColors.info),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  "Didn't get the email? Check your spam folder.",
-                  style: TextStyle(fontSize: 14, color: Colors.grey[700]),
-                ),
+      TextButton(
+        onPressed: onChangeEmail,
+        child: Text(
+          'Use a different email',
+          style: TextStyle(color: Colors.grey[600]),
+        ),
+      ),
+
+      const SizedBox(height: 40),
+
+      // Info box with bold border
+      Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.info.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.info, width: 2),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.info_outline, color: AppColors.info),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                "Didn't get the email? Check your spam folder.",
+                style: TextStyle(fontSize: 14, color: Colors.grey[700]),
               ),
-            ],
-          ),
-        ).animate().fadeIn(delay: 700.ms),
-      ],
-    );
-  }
+            ),
+          ],
+        ),
+      ).animate().fadeIn(delay: 700.ms),
+    ],
+  );
 }
 
 // =============================================================================
@@ -588,135 +582,133 @@ class _EmailInputView extends StatelessWidget {
   final String? Function(String?) validateEmail;
 
   @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        const SizedBox(height: 20),
+  Widget build(BuildContext context) => Column(
+    children: [
+      const SizedBox(height: 20),
 
-        // Icon with bold border
-        Container(
-              width: 100,
-              height: 100,
-              decoration: BoxDecoration(
-                color: AppColors.primaryLight,
-                shape: BoxShape.circle,
-                border: Border.all(color: AppColors.primary, width: 4),
-              ),
-              child: Icon(
-                usePassword ? Icons.lock_outline : Icons.email_outlined,
-                size: 44,
-                color: AppColors.primary,
-              ),
-            )
-            .animate(key: ValueKey('icon_$usePassword'))
-            .fadeIn(duration: 400.ms)
-            .scale(delay: 100.ms, curve: Curves.easeOutBack),
+      // Icon with bold border
+      Container(
+            width: 100,
+            height: 100,
+            decoration: BoxDecoration(
+              color: AppColors.primaryLight,
+              shape: BoxShape.circle,
+              border: Border.all(color: AppColors.primary, width: 4),
+            ),
+            child: Icon(
+              usePassword ? Icons.lock_outline : Icons.email_outlined,
+              size: 44,
+              color: AppColors.primary,
+            ),
+          )
+          .animate(key: ValueKey('icon_$usePassword'))
+          .fadeIn(duration: 400.ms)
+          .scale(delay: 100.ms, curve: Curves.easeOutBack),
 
-        const SizedBox(height: 32),
+      const SizedBox(height: 32),
 
-        // Title
-        Text(
-              usePassword ? 'Sign in with password' : 'Passwordless sign in',
-              style: const TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: AppColors.primary,
-              ),
-            )
-            .animate(key: ValueKey('title_$usePassword'))
-            .fadeIn(delay: 300.ms)
-            .slideY(begin: 0.2, end: 0),
+      // Title
+      Text(
+            usePassword ? 'Sign in with password' : 'Passwordless sign in',
+            style: const TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              color: AppColors.primary,
+            ),
+          )
+          .animate(key: ValueKey('title_$usePassword'))
+          .fadeIn(delay: 300.ms)
+          .slideY(begin: 0.2, end: 0),
 
-        const SizedBox(height: 12),
+      const SizedBox(height: 12),
 
-        // Subtitle
-        Text(
-          usePassword
-              ? 'Enter your email and password to sign in.'
-              : "Enter your email and we'll send you\na magic link to sign in instantly.",
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 16, color: Colors.grey[700], height: 1.5),
-        ).animate().fadeIn(delay: 400.ms),
+      // Subtitle
+      Text(
+        usePassword
+            ? 'Enter your email and password to sign in.'
+            : "Enter your email and we'll send you\na magic link to sign in instantly.",
+        textAlign: TextAlign.center,
+        style: TextStyle(fontSize: 16, color: Colors.grey[700], height: 1.5),
+      ).animate().fadeIn(delay: 400.ms),
 
-        const SizedBox(height: 32),
+      const SizedBox(height: 32),
 
-        // Form
-        Form(
-          key: formKey,
-          child: Column(
-            children: [
+      // Form
+      Form(
+        key: formKey,
+        child: Column(
+          children: [
+            _StyledTextField(
+              controller: emailController,
+              label: 'Email address',
+              hint: 'you@example.com',
+              icon: Icons.email_outlined,
+              keyboardType: TextInputType.emailAddress,
+              textInputAction: usePassword
+                  ? TextInputAction.next
+                  : TextInputAction.done,
+              validator: validateEmail,
+              onSubmitted: usePassword ? null : (_) => onSubmit(),
+            ),
+            if (usePassword) ...[
+              const SizedBox(height: 16),
               _StyledTextField(
-                controller: emailController,
-                label: 'Email address',
-                hint: 'you@example.com',
-                icon: Icons.email_outlined,
-                keyboardType: TextInputType.emailAddress,
-                textInputAction: usePassword
-                    ? TextInputAction.next
-                    : TextInputAction.done,
-                validator: validateEmail,
-                onSubmitted: usePassword ? null : (_) => onSubmit(),
-              ),
-              if (usePassword) ...[
-                const SizedBox(height: 16),
-                _StyledTextField(
-                  controller: passwordController,
-                  label: 'Password',
-                  icon: Icons.lock_outline,
-                  obscureText: true,
-                  textInputAction: TextInputAction.done,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your password';
-                    }
-                    return null;
-                  },
-                  onSubmitted: (_) => onSubmit(),
-                ),
-              ],
-              const SizedBox(height: 24),
-              _PrimaryButton(
-                label: usePassword ? 'Sign In' : 'Send Magic Link',
-                isLoading: isLoading,
-                onPressed: onSubmit,
+                controller: passwordController,
+                label: 'Password',
+                icon: Icons.lock_outline,
+                obscureText: true,
+                textInputAction: TextInputAction.done,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter your password';
+                  }
+                  return null;
+                },
+                onSubmitted: (_) => onSubmit(),
               ),
             ],
-          ),
-        ).animate().fadeIn(delay: 500.ms),
-
-        const SizedBox(height: 20),
-
-        // Toggle mode (hide during purchase/paywall flows - magic link breaks them)
-        if (!autoPurchase && !showPaywallAfterAuth) ...[
-          TextButton(
-            onPressed: onToggleMode,
-            child: Text(
-              usePassword ? 'Use magic link instead' : 'Sign in with password',
-              style: TextStyle(color: Colors.grey[600]),
+            const SizedBox(height: 24),
+            _PrimaryButton(
+              label: usePassword ? 'Sign In' : 'Send Magic Link',
+              isLoading: isLoading,
+              onPressed: onSubmit,
             ),
-          ),
-        ],
+          ],
+        ),
+      ).animate().fadeIn(delay: 500.ms),
 
-        // Benefits (only for magic link mode)
-        if (!usePassword) ...[
-          const SizedBox(height: 24),
-          const _BenefitItem(
-            icon: Icons.lock_outline,
-            title: 'Secure & private',
-            subtitle: 'No password to remember or steal',
-            delay: 600,
+      const SizedBox(height: 20),
+
+      // Toggle mode (hide during purchase/paywall flows - magic link breaks them)
+      if (!autoPurchase && !showPaywallAfterAuth) ...[
+        TextButton(
+          onPressed: onToggleMode,
+          child: Text(
+            usePassword ? 'Use magic link instead' : 'Sign in with password',
+            style: TextStyle(color: Colors.grey[600]),
           ),
-          const SizedBox(height: 16),
-          const _BenefitItem(
-            icon: Icons.flash_on,
-            title: 'Quick & easy',
-            subtitle: 'One tap in your email to sign in',
-            delay: 700,
-          ),
-        ],
+        ),
       ],
-    );
-  }
+
+      // Benefits (only for magic link mode)
+      if (!usePassword) ...[
+        const SizedBox(height: 24),
+        const _BenefitItem(
+          icon: Icons.lock_outline,
+          title: 'Secure & private',
+          subtitle: 'No password to remember or steal',
+          delay: 600,
+        ),
+        const SizedBox(height: 16),
+        const _BenefitItem(
+          icon: Icons.flash_on,
+          title: 'Quick & easy',
+          subtitle: 'One tap in your email to sign in',
+          delay: 700,
+        ),
+      ],
+    ],
+  );
 }
 
 // =============================================================================
@@ -817,50 +809,48 @@ class _PrimaryButtonState extends State<_PrimaryButton> {
   bool _isPressed = false;
 
   @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: (_) => setState(() => _isPressed = true),
-      onTapUp: (_) {
-        setState(() => _isPressed = false);
-        if (!widget.isLoading) {
-          widget.onPressed();
-        }
-      },
-      onTapCancel: () => setState(() => _isPressed = false),
-      child: AnimatedScale(
-        scale: _isPressed ? 0.96 : 1.0,
-        duration: const Duration(milliseconds: 100),
-        curve: Curves.easeInOut,
-        child: Container(
-          width: double.infinity,
-          height: 56,
-          decoration: BoxDecoration(
-            color: AppColors.primary,
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Center(
-            child: widget.isLoading
-                ? const SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
-                    ),
-                  )
-                : Text(
-                    widget.label,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
+  Widget build(BuildContext context) => GestureDetector(
+    onTapDown: (_) => setState(() => _isPressed = true),
+    onTapUp: (_) {
+      setState(() => _isPressed = false);
+      if (!widget.isLoading) {
+        widget.onPressed();
+      }
+    },
+    onTapCancel: () => setState(() => _isPressed = false),
+    child: AnimatedScale(
+      scale: _isPressed ? 0.96 : 1.0,
+      duration: const Duration(milliseconds: 100),
+      curve: Curves.easeInOut,
+      child: Container(
+        width: double.infinity,
+        height: 56,
+        decoration: BoxDecoration(
+          color: AppColors.primary,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Center(
+          child: widget.isLoading
+              ? const SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
                   ),
-          ),
+                )
+              : Text(
+                  widget.label,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
         ),
       ),
-    );
-  }
+    ),
+  );
 }
 
 class _BenefitItem extends StatelessWidget {
@@ -877,43 +867,42 @@ class _BenefitItem extends StatelessWidget {
   final int delay;
 
   @override
-  Widget build(BuildContext context) {
-    return Row(
-          children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: AppColors.primaryLight,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.primary, width: 2),
+  Widget build(BuildContext context) =>
+      Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: AppColors.primaryLight,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.primary, width: 2),
+                ),
+                child: Icon(icon, color: AppColors.primary, size: 24),
               ),
-              child: Icon(icon, color: AppColors.primary, size: 24),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
                     ),
-                  ),
-                  Text(
-                    subtitle,
-                    style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                  ),
-                ],
+                    Text(
+                      subtitle,
+                      style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
-        )
-        .animate(key: ValueKey('benefit_$title'))
-        .fadeIn(delay: Duration(milliseconds: delay))
-        .slideX(begin: 0.1, end: 0);
-  }
+            ],
+          )
+          .animate(key: ValueKey('benefit_$title'))
+          .fadeIn(delay: Duration(milliseconds: delay))
+          .slideX(begin: 0.1, end: 0);
 }

@@ -1,5 +1,5 @@
-import 'package:prosepal/core/services/rate_limit_service.dart';
 import 'package:prosepal/core/services/device_fingerprint_service.dart';
+import 'package:prosepal/core/services/rate_limit_service.dart';
 
 import 'mock_device_fingerprint_service.dart';
 

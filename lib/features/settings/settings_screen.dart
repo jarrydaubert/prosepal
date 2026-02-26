@@ -18,8 +18,8 @@ import '../../core/interfaces/biometric_interface.dart';
 import '../../core/providers/providers.dart';
 import '../../core/services/log_service.dart';
 import '../../shared/components/components.dart';
-import '../paywall/paywall_sheet.dart';
 import '../../shared/theme/app_colors.dart';
+import '../paywall/paywall_sheet.dart';
 
 // ===========================================================================
 // External URLs - centralized for easy updates
@@ -81,7 +81,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           _appVersion = 'v${packageInfo.version}';
         });
       }
-    } catch (e) {
+    } on Exception catch (e) {
       Log.warning('Failed to load app version', {'error': '$e'});
       if (mounted) {
         setState(() => _appVersion = 'v1.0.0');
@@ -130,7 +130,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       await FirebaseAnalytics.instance.setAnalyticsCollectionEnabled(value);
       await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(value);
       Log.info('Analytics collection ${value ? 'enabled' : 'disabled'}');
-    } catch (e) {
+    } on Exception catch (e) {
       Log.warning('Failed to update analytics settings', {'error': '$e'});
     }
 
@@ -220,7 +220,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
         );
       }
-    } catch (e) {
+    } on Exception catch (e) {
       Log.warning('Restore purchases failed', {'error': '$e'});
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -300,7 +300,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           try {
             await ref.read(subscriptionServiceProvider).logOut();
             Log.info('Sign out: RevenueCat logged out');
-          } catch (e) {
+          } on Exception catch (e) {
             Log.warning('Sign out: RevenueCat logout failed', {'error': '$e'});
           }
         }
@@ -309,7 +309,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         try {
           await ref.read(historyServiceProvider).clearHistory();
           Log.info('Sign out: History cleared');
-        } catch (e) {
+        } on Exception catch (e) {
           Log.warning('Sign out: History clear failed', {'error': '$e'});
         }
 
@@ -319,7 +319,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           try {
             await usageService.markDeviceUsedFreeTier();
             Log.info('Sign out: Device marked as used');
-          } catch (e) {
+          } on Exception catch (e) {
             Log.warning('Sign out: Device marking failed', {'error': '$e'});
           }
         }
@@ -328,7 +328,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         try {
           await usageService.clearAllUsage();
           Log.info('Sign out: Usage cleared');
-        } catch (e) {
+        } on Exception catch (e) {
           Log.warning('Sign out: Usage clear failed', {'error': '$e'});
         }
 
@@ -337,7 +337,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           await _biometricService.setEnabled(false);
           setState(() => _biometricsEnabled = false);
           Log.info('Sign out: Biometrics disabled');
-        } catch (e) {
+        } on Exception catch (e) {
           Log.warning('Sign out: Biometrics disable failed', {'error': '$e'});
         }
 
@@ -346,7 +346,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         Log.info('Sign out completed successfully');
 
         if (mounted) context.go('/home');
-      } catch (e) {
+      } on Exception catch (e) {
         Log.error('Sign out failed', e);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -382,7 +382,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       );
 
       Log.info('Data export shared successfully');
-    } catch (e) {
+    } on Exception catch (e) {
       Log.error('Data export failed', e);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -398,7 +398,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         if (tempFile != null && await tempFile.exists()) {
           await tempFile.delete();
         }
-      } catch (_) {
+      } on Exception catch (_) {
         // Ignore cleanup errors
       }
     }
@@ -470,7 +470,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         try {
           await authService.deleteAccount();
           Log.info('Delete account: Supabase delete successful');
-        } catch (e) {
+        } on Exception catch (e) {
           Log.error('Delete account: Supabase delete failed', e);
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -487,7 +487,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         try {
           await ref.read(subscriptionServiceProvider).logOut();
           Log.info('Delete account: RevenueCat logged out');
-        } catch (e) {
+        } on Exception catch (e) {
           Log.warning('Delete account: RevenueCat logout failed', {
             'error': '$e',
           });
@@ -497,7 +497,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         try {
           await ref.read(historyServiceProvider).clearHistory();
           Log.info('Delete account: History cleared');
-        } catch (e) {
+        } on Exception catch (e) {
           Log.warning('Delete account: History clear failed', {'error': '$e'});
         }
 
@@ -507,7 +507,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           try {
             await usageService.markDeviceUsedFreeTier();
             Log.info('Delete account: Device marked as used');
-          } catch (e) {
+          } on Exception catch (e) {
             Log.warning('Delete account: Device marking failed', {
               'error': '$e',
             });
@@ -517,14 +517,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         try {
           await usageService.clearAllUsage();
           Log.info('Delete account: Usage cleared');
-        } catch (e) {
+        } on Exception catch (e) {
           Log.warning('Delete account: Usage clear failed', {'error': '$e'});
         }
 
         try {
           await _biometricService.setEnabled(false);
           Log.info('Delete account: Biometrics disabled');
-        } catch (e) {
+        } on Exception catch (e) {
           Log.warning('Delete account: Biometrics disable failed', {
             'error': '$e',
           });
@@ -534,7 +534,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
         // Navigate to onboarding for fresh start (not home)
         if (mounted) context.go('/onboarding');
-      } catch (e) {
+      } on Exception catch (e) {
         Log.error('Delete account failed unexpectedly', e);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -814,30 +814,22 @@ class _BackButton extends StatelessWidget {
   final VoidCallback onPressed;
 
   @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 8),
-      child: GestureDetector(
-        onTap: () {
-          onPressed();
-        },
-        child: Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: AppColors.primaryLight,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.primary, width: 2),
-          ),
-          child: const Icon(
-            Icons.arrow_back,
-            color: AppColors.primary,
-            size: 20,
-          ),
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(left: 8),
+    child: GestureDetector(
+      onTap: onPressed,
+      child: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: AppColors.primaryLight,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.primary, width: 2),
         ),
+        child: const Icon(Icons.arrow_back, color: AppColors.primary, size: 20),
       ),
-    );
-  }
+    ),
+  );
 }
 
 class _AccountCard extends StatelessWidget {
@@ -852,109 +844,107 @@ class _AccountCard extends StatelessWidget {
   final bool isPro;
 
   @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      label:
-          'Account: ${userName ?? userEmail ?? "User"}${isPro ? ", Pro subscriber" : ""}',
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isPro ? Colors.amber : AppColors.primary,
-            width: 3,
-          ),
-        ),
-        child: Row(
-          children: [
-            // Avatar
-            Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(
-                color: isPro
-                    ? Colors.amber.withValues(alpha: 0.15)
-                    : AppColors.primaryLight,
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: isPro ? Colors.amber : AppColors.primary,
-                  width: 2,
-                ),
-              ),
-              child: Center(
-                child: Text(
-                  (userName ?? userEmail ?? 'U')[0].toUpperCase(),
-                  style: TextStyle(
-                    fontSize: 22,
-                    color: isPro ? Colors.amber.shade800 : AppColors.primary,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 16),
-            // Name and email
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Flexible(
-                        child: Text(
-                          userName ?? 'User',
-                          style: const TextStyle(
-                            fontSize: 17,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.textPrimary,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      if (isPro) ...[
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.amber,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: Colors.amber.shade700,
-                              width: 2,
-                            ),
-                          ),
-                          child: const Text(
-                            'PRO',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                  if (userEmail != null) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      userEmail!,
-                      style: TextStyle(fontSize: 13, color: Colors.grey[600]),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ],
+  Widget build(BuildContext context) => Semantics(
+    label:
+        'Account: ${userName ?? userEmail ?? "User"}${isPro ? ", Pro subscriber" : ""}',
+    child: Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isPro ? Colors.amber : AppColors.primary,
+          width: 3,
         ),
       ),
-    );
-  }
+      child: Row(
+        children: [
+          // Avatar
+          Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              color: isPro
+                  ? Colors.amber.withValues(alpha: 0.15)
+                  : AppColors.primaryLight,
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: isPro ? Colors.amber : AppColors.primary,
+                width: 2,
+              ),
+            ),
+            child: Center(
+              child: Text(
+                (userName ?? userEmail ?? 'U')[0].toUpperCase(),
+                style: TextStyle(
+                  fontSize: 22,
+                  color: isPro ? Colors.amber.shade800 : AppColors.primary,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          // Name and email
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        userName ?? 'User',
+                        style: const TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (isPro) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.amber,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: Colors.amber.shade700,
+                            width: 2,
+                          ),
+                        ),
+                        child: const Text(
+                          'PRO',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                if (userEmail != null) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    userEmail!,
+                    style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
 }
 
 class _UpgradeButton extends StatelessWidget {
@@ -963,29 +953,25 @@ class _UpgradeButton extends StatelessWidget {
   final VoidCallback onPressed;
 
   @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        onPressed();
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(
-          color: AppColors.primaryLight,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: AppColors.primary, width: 2),
-        ),
-        child: const Text(
-          'Upgrade',
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.bold,
-            color: AppColors.primary,
-          ),
+  Widget build(BuildContext context) => GestureDetector(
+    onTap: onPressed,
+    child: Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      decoration: BoxDecoration(
+        color: AppColors.primaryLight,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.primary, width: 2),
+      ),
+      child: const Text(
+        'Upgrade',
+        style: TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.bold,
+          color: AppColors.primary,
         ),
       ),
-    );
-  }
+    ),
+  );
 }
 
 class _StatsCard extends StatelessWidget {
@@ -994,56 +980,54 @@ class _StatsCard extends StatelessWidget {
   final int totalGenerated;
 
   @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      label: '$totalGenerated messages generated all time',
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: AppColors.primaryLight,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.primary, width: 3),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
-                border: Border.all(color: AppColors.primary, width: 2),
-              ),
-              child: const Icon(
-                Icons.auto_awesome_rounded,
-                color: AppColors.primary,
-                size: 24,
-              ),
-            ),
-            const SizedBox(width: 16),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '$totalGenerated messages generated',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  'All time',
-                  style: TextStyle(fontSize: 13, color: Colors.grey[600]),
-                ),
-              ],
-            ),
-          ],
-        ),
+  Widget build(BuildContext context) => Semantics(
+    label: '$totalGenerated messages generated all time',
+    child: Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.primaryLight,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.primary, width: 3),
       ),
-    );
-  }
+      child: Row(
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              border: Border.all(color: AppColors.primary, width: 2),
+            ),
+            child: const Icon(
+              Icons.auto_awesome_rounded,
+              color: AppColors.primary,
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '$totalGenerated messages generated',
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                'All time',
+                style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+              ),
+            ],
+          ),
+        ],
+      ),
+    ),
+  );
 }
 
 /// Stateful dialog for delete confirmation with typed input
@@ -1075,74 +1059,72 @@ class _DeleteConfirmationDialogState extends State<_DeleteConfirmationDialog> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Are you absolutely sure?'),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('You will lose:'),
-            const SizedBox(height: 8),
-            const Text('• All your generated messages'),
-            const Text('• Your account and preferences'),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.amber.shade50,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.amber.shade200),
-              ),
-              child: const Row(
-                children: [
-                  Icon(Icons.info_outline, color: Colors.amber, size: 20),
-                  SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Active subscriptions are not automatically cancelled. '
-                      'Manage subscriptions in your device Settings.',
-                      style: TextStyle(fontSize: 13),
-                    ),
+  Widget build(BuildContext context) => AlertDialog(
+    title: const Text('Are you absolutely sure?'),
+    content: SingleChildScrollView(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('You will lose:'),
+          const SizedBox(height: 8),
+          const Text('• All your generated messages'),
+          const Text('• Your account and preferences'),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.amber.shade50,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.amber.shade200),
+            ),
+            child: const Row(
+              children: [
+                Icon(Icons.info_outline, color: Colors.amber, size: 20),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Active subscriptions are not automatically cancelled. '
+                    'Manage subscriptions in your device Settings.',
+                    style: TextStyle(fontSize: 13),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-            const SizedBox(height: 16),
-            const Text(
-              'Type DELETE to confirm:',
-              style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'Type DELETE to confirm:',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _controller,
+            autofocus: true,
+            textCapitalization: TextCapitalization.characters,
+            decoration: const InputDecoration(
+              hintText: 'DELETE',
+              border: OutlineInputBorder(),
+              isDense: true,
             ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _controller,
-              autofocus: true,
-              textCapitalization: TextCapitalization.characters,
-              decoration: const InputDecoration(
-                hintText: 'DELETE',
-                border: OutlineInputBorder(),
-                isDense: true,
-              ),
-            ),
-          ],
+          ),
+        ],
+      ),
+    ),
+    actions: [
+      TextButton(
+        onPressed: () => Navigator.pop(context, false),
+        child: const Text('Cancel'),
+      ),
+      TextButton(
+        onPressed: _canDelete ? () => Navigator.pop(context, true) : null,
+        child: Text(
+          'Delete My Account',
+          style: TextStyle(color: _canDelete ? AppColors.error : Colors.grey),
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context, false),
-          child: const Text('Cancel'),
-        ),
-        TextButton(
-          onPressed: _canDelete ? () => Navigator.pop(context, true) : null,
-          child: Text(
-            'Delete My Account',
-            style: TextStyle(color: _canDelete ? AppColors.error : Colors.grey),
-          ),
-        ),
-      ],
-    );
-  }
+    ],
+  );
 }
 
 /// Segmented picker for US/UK spelling preference
@@ -1153,30 +1135,28 @@ class _SpellingPicker extends StatelessWidget {
   final ValueChanged<bool> onChanged;
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.grey[200],
-        borderRadius: BorderRadius.circular(8),
-      ),
-      padding: const EdgeInsets.all(2),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _PickerOption(
-            label: '🇺🇸 US',
-            isSelected: !isUk,
-            onTap: () => onChanged(false),
-          ),
-          _PickerOption(
-            label: '🇬🇧 UK',
-            isSelected: isUk,
-            onTap: () => onChanged(true),
-          ),
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) => Container(
+    decoration: BoxDecoration(
+      color: Colors.grey[200],
+      borderRadius: BorderRadius.circular(8),
+    ),
+    padding: const EdgeInsets.all(2),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _PickerOption(
+          label: '🇺🇸 US',
+          isSelected: !isUk,
+          onTap: () => onChanged(false),
+        ),
+        _PickerOption(
+          label: '🇬🇧 UK',
+          isSelected: isUk,
+          onTap: () => onChanged(true),
+        ),
+      ],
+    ),
+  );
 }
 
 class _PickerOption extends StatelessWidget {
@@ -1191,33 +1171,31 @@ class _PickerOption extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: isSelected ? Colors.white : Colors.transparent,
-          borderRadius: BorderRadius.circular(6),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.1),
-                    blurRadius: 2,
-                    offset: const Offset(0, 1),
-                  ),
-                ]
-              : null,
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-            color: isSelected ? AppColors.textPrimary : AppColors.textSecondary,
-          ),
+  Widget build(BuildContext context) => GestureDetector(
+    onTap: onTap,
+    child: Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: isSelected ? Colors.white : Colors.transparent,
+        borderRadius: BorderRadius.circular(6),
+        boxShadow: isSelected
+            ? [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.1),
+                  blurRadius: 2,
+                  offset: const Offset(0, 1),
+                ),
+              ]
+            : null,
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 13,
+          fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+          color: isSelected ? AppColors.textPrimary : AppColors.textSecondary,
         ),
       ),
-    );
-  }
+    ),
+  );
 }

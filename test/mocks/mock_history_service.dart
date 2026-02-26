@@ -123,12 +123,13 @@ class TestHistoryFactory {
       Occasion.thankYou,
     ];
 
-    return List.generate(count, (index) {
-      return createItem(
+    return List.generate(
+      count,
+      (index) => createItem(
         id: 'item-$index',
         occasion: occasions[index % occasions.length],
         savedAt: DateTime.now().subtract(Duration(days: index)),
-      );
-    });
+      ),
+    );
   }
 }

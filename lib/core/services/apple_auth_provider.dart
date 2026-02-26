@@ -58,12 +58,10 @@ class AppleAuthProvider implements IAppleAuthProvider {
     required String nonce,
     apple.WebAuthenticationOptions? webAuthenticationOptions,
     String? state,
-  }) {
-    return apple.SignInWithApple.getAppleIDCredential(
-      scopes: scopes,
-      nonce: nonce,
-      webAuthenticationOptions: webAuthenticationOptions,
-      state: state,
-    );
-  }
+  }) => apple.SignInWithApple.getAppleIDCredential(
+    scopes: scopes,
+    nonce: nonce,
+    webAuthenticationOptions: webAuthenticationOptions,
+    state: state,
+  );
 }

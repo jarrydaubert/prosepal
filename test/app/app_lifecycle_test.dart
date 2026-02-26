@@ -19,11 +19,10 @@ import 'package:flutter_test/flutter_test.dart';
 /// - [AppLifecycleState.inactive]: App losing focus (e.g., phone call overlay)
 /// - [AppLifecycleState.paused]: App fully backgrounded
 /// - [AppLifecycleState.hidden]: Brief transition state (Flutter 3.13+)
-bool isBackgroundState(AppLifecycleState state) {
-  return state == AppLifecycleState.inactive ||
-      state == AppLifecycleState.paused ||
-      state == AppLifecycleState.hidden;
-}
+bool isBackgroundState(AppLifecycleState state) =>
+    state == AppLifecycleState.inactive ||
+    state == AppLifecycleState.paused ||
+    state == AppLifecycleState.hidden;
 
 /// Determines the initial route based on app state.
 ///

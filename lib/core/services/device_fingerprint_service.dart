@@ -36,7 +36,7 @@ class DeviceFingerprintService {
   SupabaseClient? get _supabase {
     try {
       return Supabase.instance.client;
-    } catch (_) {
+    } on Exception catch (_) {
       return null;
     }
   }

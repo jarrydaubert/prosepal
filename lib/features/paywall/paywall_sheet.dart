@@ -8,8 +8,8 @@ import 'package:go_router/go_router.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
-import '../../core/providers/providers.dart';
 import '../../core/errors/auth_errors.dart';
+import '../../core/providers/providers.dart';
 import '../../core/services/log_service.dart';
 import '../../shared/theme/app_colors.dart';
 import '../../shared/theme/app_spacing.dart';
@@ -18,16 +18,14 @@ import '../../shared/theme/app_spacing.dart';
 ///
 /// [source] identifies where the paywall was triggered from for analytics.
 /// Returns `true` if user successfully subscribed, `false` otherwise.
-Future<bool> showPaywall(BuildContext context, {String? source}) async {
-  return await showModalBottomSheet<bool>(
-        context: context,
-        isScrollControlled: true,
-        backgroundColor: Colors.transparent,
-        enableDrag: true,
-        builder: (context) => PaywallSheet(source: source),
-      ) ??
-      false;
-}
+Future<bool> showPaywall(BuildContext context, {String? source}) async =>
+    await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => PaywallSheet(source: source),
+    ) ??
+    false;
 
 /// Bottom sheet paywall with inline auth.
 ///
@@ -157,7 +155,7 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
       if (response.user != null) {
         try {
           await usageService.syncFromServer();
-        } catch (e) {
+        } on Exception catch (e) {
           Log.warning('Usage sync failed after auth', {'error': '$e'});
         }
         // Identify with RevenueCat (may restore existing subscription)
@@ -187,7 +185,7 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
           );
         }
       }
-    } catch (e) {
+    } on Exception catch (e) {
       if (!AuthErrorHandler.isCancellation(e)) {
         _showError(AuthErrorHandler.getMessage(e));
       }
@@ -218,7 +216,7 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
       if (response.user != null) {
         try {
           await usageService.syncFromServer();
-        } catch (e) {
+        } on Exception catch (e) {
           Log.warning('Usage sync failed after auth', {'error': '$e'});
         }
         await subscriptionService.identifyUser(response.user!.id);
@@ -245,7 +243,7 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
           );
         }
       }
-    } catch (e) {
+    } on Exception catch (e) {
       if (!AuthErrorHandler.isCancellation(e)) {
         _showError(AuthErrorHandler.getMessage(e));
       }
@@ -545,47 +543,45 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
     );
   }
 
-  Widget _buildHeader() {
-    return Column(
-      children: [
-        // Pro badge
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [AppColors.primary, Color(0xFFFF8A80)],
-            ),
-            borderRadius: BorderRadius.circular(20),
+  Widget _buildHeader() => Column(
+    children: [
+      // Pro badge
+      Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [AppColors.primary, Color(0xFFFF8A80)],
           ),
-          child: const Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.star, color: Colors.white, size: 20),
-              Gap(6),
-              Text(
-                'Prosepal Pro',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.star, color: Colors.white, size: 20),
+            Gap(6),
+            Text(
+              'Prosepal Pro',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
               ),
-            ],
-          ),
+            ),
+          ],
         ),
-        const Gap(16),
-        const Text(
-          'Never lost for words',
-          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-        ),
-        const Gap(4),
-        Text(
-          'Heartfelt messages, whenever you need them',
-          style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-        ),
-      ],
-    );
-  }
+      ),
+      const Gap(16),
+      const Text(
+        'Never lost for words',
+        style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+      ),
+      const Gap(4),
+      Text(
+        'Heartfelt messages, whenever you need them',
+        style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+      ),
+    ],
+  );
 
   Widget _buildBenefits() {
     const benefits = [
@@ -617,124 +613,122 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
     );
   }
 
-  Widget _buildPackageSelector(List<Package> packages) {
-    return Column(
-      children: List.generate(packages.length, (index) {
-        final pkg = packages[index];
-        final isSelected = index == _selectedPackageIndex;
-        final isAnnual = pkg.packageType == PackageType.annual;
+  Widget _buildPackageSelector(List<Package> packages) => Column(
+    children: List.generate(packages.length, (index) {
+      final pkg = packages[index];
+      final isSelected = index == _selectedPackageIndex;
+      final isAnnual = pkg.packageType == PackageType.annual;
 
-        return GestureDetector(
-          onTap: () {
-            if (_selectedPackageIndex != index) {
-              Log.info('Package selected', {'package': pkg.identifier});
-            }
-            setState(() => _selectedPackageIndex = index);
-          },
-          child: Container(
-            margin: const EdgeInsets.only(bottom: 12),
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              border: Border.all(
-                color: isSelected ? AppColors.primary : Colors.grey[300]!,
-                width: isSelected ? 2 : 1,
-              ),
-              borderRadius: BorderRadius.circular(12),
-              color: isSelected
-                  ? AppColors.primary.withValues(alpha: 0.05)
-                  : Colors.white,
+      return GestureDetector(
+        onTap: () {
+          if (_selectedPackageIndex != index) {
+            Log.info('Package selected', {'package': pkg.identifier});
+          }
+          setState(() => _selectedPackageIndex = index);
+        },
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            border: Border.all(
+              color: isSelected ? AppColors.primary : Colors.grey[300]!,
+              width: isSelected ? 2 : 1,
             ),
-            child: Row(
-              children: [
-                // Radio indicator
-                Container(
-                  width: 24,
-                  height: 24,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: isSelected ? AppColors.primary : Colors.grey[400]!,
-                      width: 2,
-                    ),
-                  ),
-                  child: isSelected
-                      ? Center(
-                          child: Container(
-                            width: 12,
-                            height: 12,
-                            decoration: const BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: AppColors.primary,
-                            ),
-                          ),
-                        )
-                      : null,
-                ),
-                const Gap(12),
-                // Package info
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Text(
-                            _packageTitle(pkg.packageType),
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 16,
-                              color: isSelected
-                                  ? AppColors.primary
-                                  : Colors.black,
-                            ),
-                          ),
-                          if (isAnnual) ...[
-                            const Gap(8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color: AppColors.success,
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Text(
-                                _savingsText(packages),
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                      const Gap(4),
-                      Text(
-                        _packageSubtitle(pkg),
-                        style: TextStyle(fontSize: 13, color: Colors.grey[600]),
-                      ),
-                    ],
-                  ),
-                ),
-                // Price
-                Text(
-                  pkg.storeProduct.priceString,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
-                    color: isSelected ? AppColors.primary : Colors.black,
-                  ),
-                ),
-              ],
-            ),
+            borderRadius: BorderRadius.circular(12),
+            color: isSelected
+                ? AppColors.primary.withValues(alpha: 0.05)
+                : Colors.white,
           ),
-        );
-      }),
-    );
-  }
+          child: Row(
+            children: [
+              // Radio indicator
+              Container(
+                width: 24,
+                height: 24,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: isSelected ? AppColors.primary : Colors.grey[400]!,
+                    width: 2,
+                  ),
+                ),
+                child: isSelected
+                    ? Center(
+                        child: Container(
+                          width: 12,
+                          height: 12,
+                          decoration: const BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      )
+                    : null,
+              ),
+              const Gap(12),
+              // Package info
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          _packageTitle(pkg.packageType),
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 16,
+                            color: isSelected
+                                ? AppColors.primary
+                                : Colors.black,
+                          ),
+                        ),
+                        if (isAnnual) ...[
+                          const Gap(8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.success,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              _savingsText(packages),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    const Gap(4),
+                    Text(
+                      _packageSubtitle(pkg),
+                      style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                    ),
+                  ],
+                ),
+              ),
+              // Price
+              Text(
+                pkg.storeProduct.priceString,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  color: isSelected ? AppColors.primary : Colors.black,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }),
+  );
 
   String _packageTitle(PackageType type) {
     switch (type) {
@@ -795,104 +789,99 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
     return savings > 0 ? 'SAVE $savings%' : 'BEST VALUE';
   }
 
-  Widget _buildErrorBanner() {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppColors.error.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.error_outline, color: AppColors.error, size: 20),
-          const Gap(8),
-          Expanded(
-            child: Text(
-              _error!,
-              style: const TextStyle(color: AppColors.error, fontSize: 13),
-            ),
+  Widget _buildErrorBanner() => Container(
+    padding: const EdgeInsets.all(12),
+    decoration: BoxDecoration(
+      color: AppColors.error.withValues(alpha: 0.1),
+      borderRadius: BorderRadius.circular(8),
+      border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
+    ),
+    child: Row(
+      children: [
+        const Icon(Icons.error_outline, color: AppColors.error, size: 20),
+        const Gap(8),
+        Expanded(
+          child: Text(
+            _error!,
+            style: const TextStyle(color: AppColors.error, fontSize: 13),
           ),
-          GestureDetector(
-            onTap: _dismissError,
-            child: const Icon(Icons.close, color: AppColors.error, size: 18),
-          ),
-        ],
-      ),
-    );
-  }
+        ),
+        GestureDetector(
+          onTap: _dismissError,
+          child: const Icon(Icons.close, color: AppColors.error, size: 18),
+        ),
+      ],
+    ),
+  );
 
   /// Optional sign-in section for syncing purchases across devices.
   /// This is NOT required to purchase - just for cross-device sync.
-  Widget _buildSyncSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        // Divider with text
-        Row(
-          children: [
-            Expanded(child: Divider(color: Colors.grey[300])),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Text(
-                'Sync across devices',
-                style: TextStyle(
-                  color: Colors.grey[600],
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                ),
+  Widget _buildSyncSection() => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      // Divider with text
+      Row(
+        children: [
+          Expanded(child: Divider(color: Colors.grey[300])),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Text(
+              'Sync across devices',
+              style: TextStyle(
+                color: Colors.grey[600],
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
               ),
             ),
-            Expanded(child: Divider(color: Colors.grey[300])),
-          ],
-        ),
-        const Gap(12),
-
-        // Explanation text
-        Text(
-          'Sign in to access your subscription on all your devices',
-          style: TextStyle(fontSize: 13, color: Colors.grey[500]),
-          textAlign: TextAlign.center,
-        ),
-        const Gap(16),
-
-        // Apple Sign In (iOS only)
-        if (Platform.isIOS || Platform.isMacOS) ...[
-          SizedBox(
-            height: 44,
-            child: SignInWithAppleButton(
-              onPressed: _isAuthenticating ? () {} : _signInForSync,
-              style: SignInWithAppleButtonStyle.black,
-            ),
           ),
-          const Gap(10),
+          Expanded(child: Divider(color: Colors.grey[300])),
         ],
+      ),
+      const Gap(12),
 
-        // Google Sign In
-        _AuthButton(
-          onPressed: _isAuthenticating ? null : _signInWithGoogleForSync,
-          isLoading: _isAuthenticating,
-          icon: Image.asset(
-            'assets/images/icons/google_g.png',
-            width: 20,
-            height: 20,
+      // Explanation text
+      Text(
+        'Sign in to access your subscription on all your devices',
+        style: TextStyle(fontSize: 13, color: Colors.grey[500]),
+        textAlign: TextAlign.center,
+      ),
+      const Gap(16),
+
+      // Apple Sign In (iOS only)
+      if (Platform.isIOS || Platform.isMacOS) ...[
+        SizedBox(
+          height: 44,
+          child: SignInWithAppleButton(
+            onPressed: _isAuthenticating ? () {} : _signInForSync,
           ),
-          label: 'Sign in with Google',
-          compact: true,
         ),
         const Gap(10),
-
-        // Email Sign In
-        _AuthButton(
-          onPressed: _isAuthenticating ? null : _signInWithEmailForSync,
-          isLoading: false,
-          icon: const Icon(Icons.email_outlined, size: 20),
-          label: 'Sign in with Email',
-          compact: true,
-        ),
       ],
-    );
-  }
+
+      // Google Sign In
+      _AuthButton(
+        onPressed: _isAuthenticating ? null : _signInWithGoogleForSync,
+        isLoading: _isAuthenticating,
+        icon: Image.asset(
+          'assets/images/icons/google_g.png',
+          width: 20,
+          height: 20,
+        ),
+        label: 'Sign in with Google',
+        compact: true,
+      ),
+      const Gap(10),
+
+      // Email Sign In
+      _AuthButton(
+        onPressed: _isAuthenticating ? null : _signInWithEmailForSync,
+        isLoading: false,
+        icon: const Icon(Icons.email_outlined, size: 20),
+        label: 'Sign in with Email',
+        compact: true,
+      ),
+    ],
+  );
 
   Widget _buildPurchaseSection(List<Package> packages) {
     final selectedPackage = packages[_selectedPackageIndex];
@@ -958,28 +947,26 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
     );
   }
 
-  Widget _buildFooter() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        TextButton(
-          onPressed: () => context.push('/terms'),
-          child: Text(
-            'Terms',
-            style: TextStyle(fontSize: 12, color: Colors.grey[500]),
-          ),
+  Widget _buildFooter() => Row(
+    mainAxisAlignment: MainAxisAlignment.center,
+    children: [
+      TextButton(
+        onPressed: () => context.push('/terms'),
+        child: Text(
+          'Terms',
+          style: TextStyle(fontSize: 12, color: Colors.grey[500]),
         ),
-        Text('•', style: TextStyle(color: Colors.grey[400])),
-        TextButton(
-          onPressed: () => context.push('/privacy'),
-          child: Text(
-            'Privacy',
-            style: TextStyle(fontSize: 12, color: Colors.grey[500]),
-          ),
+      ),
+      Text('•', style: TextStyle(color: Colors.grey[400])),
+      TextButton(
+        onPressed: () => context.push('/privacy'),
+        child: Text(
+          'Privacy',
+          style: TextStyle(fontSize: 12, color: Colors.grey[500]),
         ),
-      ],
-    );
-  }
+      ),
+    ],
+  );
 }
 
 // =============================================================================
@@ -1002,33 +989,31 @@ class _AuthButton extends StatelessWidget {
   final bool compact;
 
   @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: compact ? 44 : 50,
-      child: OutlinedButton(
-        onPressed: onPressed,
-        style: OutlinedButton.styleFrom(
-          foregroundColor: Colors.black87,
-          side: BorderSide(color: Colors.grey[300]!),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            icon,
-            Gap(compact ? 8 : 12),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: compact
-                    ? 16
-                    : 16, // Increased compact from 14 to match Apple button
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
+  Widget build(BuildContext context) => SizedBox(
+    height: compact ? 44 : 50,
+    child: OutlinedButton(
+      onPressed: onPressed,
+      style: OutlinedButton.styleFrom(
+        foregroundColor: Colors.black87,
+        side: BorderSide(color: Colors.grey[300]!),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
-    );
-  }
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          icon,
+          Gap(compact ? 8 : 12),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: compact
+                  ? 16
+                  : 16, // Increased compact from 14 to match Apple button
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
 }

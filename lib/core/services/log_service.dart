@@ -32,9 +32,8 @@ abstract final class Log {
     try {
       // Check if Firebase is initialized
       Firebase.app();
-      _crashlytics = FirebaseCrashlytics.instance;
-      return _crashlytics;
-    } catch (_) {
+      return _crashlytics = FirebaseCrashlytics.instance;
+    } on Exception catch (_) {
       // Firebase not initialized (e.g., in tests)
       return null;
     }
@@ -73,7 +72,6 @@ abstract final class Log {
         error,
         stackTrace ?? StackTrace.current,
         reason: message,
-        fatal: false,
       );
     }
   }
@@ -108,7 +106,7 @@ abstract final class Log {
       'Timezone: UTC${now.timeZoneOffset.isNegative ? "" : "+"}${now.timeZoneOffset.inHours}',
     );
     buffer.writeln('Entries: ${_buffer.length}');
-    buffer.writeln('');
+    buffer.writeln();
 
     for (final entry in _buffer) {
       buffer.writeln(entry.toExportString());
@@ -199,9 +197,8 @@ abstract final class Log {
     return buffer.toString();
   }
 
-  static String _truncate(String s, int length) {
-    return s.length > length ? '${s.substring(0, length)}...' : s;
-  }
+  static String _truncate(String s, int length) =>
+      s.length > length ? '${s.substring(0, length)}...' : s;
 }
 
 /// Log level for categorization (prefixed to avoid conflict with purchases_flutter)

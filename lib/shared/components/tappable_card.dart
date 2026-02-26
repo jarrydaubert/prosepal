@@ -59,7 +59,7 @@ class _TappableCardState extends State<TappableCard>
     );
 
     _scaleAnimation = Tween<double>(
-      begin: 1.0,
+      begin: 1,
       end: 0.97,
     ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
 
@@ -108,39 +108,37 @@ class _TappableCardState extends State<TappableCard>
       onTapCancel: _handleTapCancel,
       child: AnimatedBuilder(
         animation: _controller,
-        builder: (context, child) {
-          return Transform.scale(
-            scale: _scaleAnimation.value,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 150),
-              padding: widget.padding,
-              decoration: BoxDecoration(
-                color: widget.backgroundColor ?? AppColors.surface,
-                borderRadius: borderRadius,
-                border: effectiveBorderWidth > 0
-                    ? Border.all(
-                        color: effectiveBorderColor!,
-                        width: effectiveBorderWidth,
-                      )
-                    : null,
-                boxShadow: [
+        builder: (context, child) => Transform.scale(
+          scale: _scaleAnimation.value,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
+            padding: widget.padding,
+            decoration: BoxDecoration(
+              color: widget.backgroundColor ?? AppColors.surface,
+              borderRadius: borderRadius,
+              border: effectiveBorderWidth > 0
+                  ? Border.all(
+                      color: effectiveBorderColor!,
+                      width: effectiveBorderWidth,
+                    )
+                  : null,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: _elevationAnimation.value * 4,
+                  offset: Offset(0, _elevationAnimation.value),
+                ),
+                if (widget.selected)
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: _elevationAnimation.value * 4,
-                    offset: Offset(0, _elevationAnimation.value),
+                    color: AppColors.primary.withValues(alpha: 0.15),
+                    blurRadius: 8,
+                    spreadRadius: 1,
                   ),
-                  if (widget.selected)
-                    BoxShadow(
-                      color: AppColors.primary.withValues(alpha: 0.15),
-                      blurRadius: 8,
-                      spreadRadius: 1,
-                    ),
-                ],
-              ),
-              child: child,
+              ],
             ),
-          );
-        },
+            child: child,
+          ),
+        ),
         child: widget.child,
       ),
     );

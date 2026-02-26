@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../../../core/models/message_length.dart';
 import '../../../shared/theme/app_colors.dart';
@@ -70,96 +69,94 @@ class _DetailsInputState extends State<DetailsInput> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => FocusScope.of(context).unfocus(),
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Add personal touches',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
-              ),
+  Widget build(BuildContext context) => GestureDetector(
+    onTap: () => FocusScope.of(context).unfocus(),
+    child: SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Add personal touches',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
             ),
-            const SizedBox(height: 8),
-            Text(
-              'Optional details to make your message more personal',
-              style: TextStyle(fontSize: 15, color: Colors.grey[600]),
-            ),
-            const SizedBox(height: 24),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Optional details to make your message more personal',
+            style: TextStyle(fontSize: 15, color: Colors.grey[600]),
+          ),
+          const SizedBox(height: 24),
 
-            // Recipient name
-            const Text(
-              "Recipient's name",
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
-              ),
+          // Recipient name
+          const Text(
+            "Recipient's name",
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
             ),
-            const SizedBox(height: 10),
-            _StyledTextField(
-              controller: _nameController,
-              focusNode: _nameFocusNode,
-              nextFocusNode: _detailsFocusNode,
-              hintText: 'e.g., Sarah, Mom, John',
-              icon: Icons.person_outline,
-              maxLength: 50,
-              onChanged: widget.onRecipientNameChanged,
-            ),
-            const SizedBox(height: 24),
+          ),
+          const SizedBox(height: 10),
+          _StyledTextField(
+            controller: _nameController,
+            focusNode: _nameFocusNode,
+            nextFocusNode: _detailsFocusNode,
+            hintText: 'e.g., Sarah, Mom, John',
+            icon: Icons.person_outline,
+            maxLength: 50,
+            onChanged: widget.onRecipientNameChanged,
+          ),
+          const SizedBox(height: 24),
 
-            // Personal details
-            const Text(
-              'Personal details or context',
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
-              ),
+          // Personal details
+          const Text(
+            'Personal details or context',
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
             ),
-            const SizedBox(height: 10),
-            _StyledTextField(
-              controller: _detailsController,
-              focusNode: _detailsFocusNode,
-              hintText:
-                  'Add as much detail as possible for a more personalized message...',
-              icon: Icons.notes_outlined,
-              maxLines: 4,
-              maxLength: 300,
-              onChanged: widget.onPersonalDetailsChanged,
-            ),
-            const SizedBox(height: 24),
+          ),
+          const SizedBox(height: 10),
+          _StyledTextField(
+            controller: _detailsController,
+            focusNode: _detailsFocusNode,
+            hintText:
+                'Add as much detail as possible for a more personalized message...',
+            icon: Icons.notes_outlined,
+            maxLines: 4,
+            maxLength: 300,
+            onChanged: widget.onPersonalDetailsChanged,
+          ),
+          const SizedBox(height: 24),
 
-            // Message length
-            const Text(
-              'Message length',
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
-              ),
+          // Message length
+          const Text(
+            'Message length',
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
             ),
-            const SizedBox(height: 10),
-            _LengthSelector(
-              selectedLength: widget.selectedLength,
-              onChanged: widget.onLengthChanged,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              widget.selectedLength.description,
-              style: TextStyle(fontSize: 13, color: Colors.grey[600]),
-            ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 10),
+          _LengthSelector(
+            selectedLength: widget.selectedLength,
+            onChanged: widget.onLengthChanged,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            widget.selectedLength.description,
+            style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+          ),
+        ],
       ),
-    );
-  }
+    ),
+  );
 }
 
 // =============================================================================
@@ -195,63 +192,61 @@ class _StyledTextFieldState extends State<_StyledTextField> {
   bool _isFocused = false;
 
   @override
-  Widget build(BuildContext context) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 150),
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: _isFocused ? AppColors.primary : Colors.grey[300]!,
-          width: 2,
-        ),
+  Widget build(BuildContext context) => AnimatedContainer(
+    duration: const Duration(milliseconds: 150),
+    clipBehavior: Clip.antiAlias,
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(14),
+      border: Border.all(
+        color: _isFocused ? AppColors.primary : Colors.grey[300]!,
+        width: 2,
       ),
-      child: Focus(
-        onFocusChange: (focused) => setState(() => _isFocused = focused),
-        child: TextField(
-          controller: widget.controller,
-          focusNode: widget.focusNode,
-          maxLines: widget.maxLines,
-          maxLength: widget.maxLength,
-          textCapitalization: widget.maxLines > 1
-              ? TextCapitalization.sentences
-              : TextCapitalization.words,
-          textInputAction: widget.maxLines > 1
-              ? TextInputAction.done
-              : TextInputAction.next,
-          onChanged: widget.onChanged,
-          onEditingComplete: () {
-            if (widget.nextFocusNode != null) {
-              widget.nextFocusNode!.requestFocus();
-            } else {
-              FocusScope.of(context).unfocus();
-            }
-          },
-          decoration: InputDecoration(
-            hintText: widget.hintText,
-            hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
-            prefixIcon: Padding(
-              padding: EdgeInsets.only(bottom: widget.maxLines > 1 ? 60 : 0),
-              child: Icon(widget.icon, color: AppColors.primary, size: 22),
-            ),
-            // Remove all TextField styling - Container handles everything
-            filled: false,
-            border: InputBorder.none,
-            enabledBorder: InputBorder.none,
-            focusedBorder: InputBorder.none,
-            errorBorder: InputBorder.none,
-            disabledBorder: InputBorder.none,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 14,
-            ),
-            counterStyle: TextStyle(color: Colors.grey[500], fontSize: 12),
+    ),
+    child: Focus(
+      onFocusChange: (focused) => setState(() => _isFocused = focused),
+      child: TextField(
+        controller: widget.controller,
+        focusNode: widget.focusNode,
+        maxLines: widget.maxLines,
+        maxLength: widget.maxLength,
+        textCapitalization: widget.maxLines > 1
+            ? TextCapitalization.sentences
+            : TextCapitalization.words,
+        textInputAction: widget.maxLines > 1
+            ? TextInputAction.done
+            : TextInputAction.next,
+        onChanged: widget.onChanged,
+        onEditingComplete: () {
+          if (widget.nextFocusNode != null) {
+            widget.nextFocusNode!.requestFocus();
+          } else {
+            FocusScope.of(context).unfocus();
+          }
+        },
+        decoration: InputDecoration(
+          hintText: widget.hintText,
+          hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
+          prefixIcon: Padding(
+            padding: EdgeInsets.only(bottom: widget.maxLines > 1 ? 60 : 0),
+            child: Icon(widget.icon, color: AppColors.primary, size: 22),
           ),
+          // Remove all TextField styling - Container handles everything
+          filled: false,
+          border: InputBorder.none,
+          enabledBorder: InputBorder.none,
+          focusedBorder: InputBorder.none,
+          errorBorder: InputBorder.none,
+          disabledBorder: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 14,
+          ),
+          counterStyle: TextStyle(color: Colors.grey[500], fontSize: 12),
         ),
       ),
-    );
-  }
+    ),
+  );
 }
 
 class _LengthSelector extends StatelessWidget {
@@ -264,72 +259,67 @@ class _LengthSelector extends StatelessWidget {
   final void Function(MessageLength) onChanged;
 
   @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      label: 'Message length selector',
-      child: Wrap(
-        spacing: 10,
-        runSpacing: 10,
-        children: MessageLength.values.map((length) {
-          final isSelected = selectedLength == length;
-          return Semantics(
-            label: '${length.label}: ${length.description}',
-            selected: isSelected,
-            child: GestureDetector(
-              onTap: () {
-                onChanged(length);
-              },
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 10,
-                ),
-                decoration: BoxDecoration(
-                  color: isSelected ? AppColors.primaryLight : Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: isSelected ? AppColors.primary : Colors.grey[300]!,
-                    width: isSelected ? 2 : 2,
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (isSelected)
-                      Container(
-                        width: 18,
-                        height: 18,
-                        margin: const EdgeInsets.only(right: 6),
-                        decoration: const BoxDecoration(
-                          color: AppColors.primary,
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.check,
-                          size: 12,
-                          color: Colors.white,
-                        ),
-                      ),
-                    Text(
-                      length.label,
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: isSelected
-                            ? FontWeight.w600
-                            : FontWeight.w500,
-                        color: isSelected
-                            ? AppColors.primary
-                            : AppColors.textPrimary,
-                      ),
-                    ),
-                  ],
+  Widget build(BuildContext context) => Semantics(
+    label: 'Message length selector',
+    child: Wrap(
+      spacing: 10,
+      runSpacing: 10,
+      children: MessageLength.values.map((length) {
+        final isSelected = selectedLength == length;
+        return Semantics(
+          label: '${length.label}: ${length.description}',
+          selected: isSelected,
+          child: GestureDetector(
+            onTap: () {
+              onChanged(length);
+            },
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: isSelected ? AppColors.primaryLight : Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: isSelected ? AppColors.primary : Colors.grey[300]!,
+                  width: isSelected ? 2 : 2,
                 ),
               ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (isSelected)
+                    Container(
+                      width: 18,
+                      height: 18,
+                      margin: const EdgeInsets.only(right: 6),
+                      decoration: const BoxDecoration(
+                        color: AppColors.primary,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.check,
+                        size: 12,
+                        color: Colors.white,
+                      ),
+                    ),
+                  Text(
+                    length.label,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: isSelected
+                          ? FontWeight.w600
+                          : FontWeight.w500,
+                      color: isSelected
+                          ? AppColors.primary
+                          : AppColors.textPrimary,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          );
-        }).toList(),
-      ),
-    );
-  }
+          ),
+        );
+      }).toList(),
+    ),
+  );
 }

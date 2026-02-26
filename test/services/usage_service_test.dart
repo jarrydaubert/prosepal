@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:prosepal/core/services/usage_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../mocks/mock_device_fingerprint_service.dart';
 import '../mocks/mock_rate_limit_service.dart';

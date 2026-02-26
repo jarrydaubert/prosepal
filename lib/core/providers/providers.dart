@@ -78,17 +78,15 @@ class InitStatus {
     String? error,
     bool? forceUpdateRequired,
     String? forceUpdateStoreUrl,
-  }) {
-    return InitStatus(
-      supabaseReady: supabaseReady ?? this.supabaseReady,
-      revenueCatReady: revenueCatReady ?? this.revenueCatReady,
-      remoteConfigReady: remoteConfigReady ?? this.remoteConfigReady,
-      timedOut: timedOut ?? this.timedOut,
-      error: error ?? this.error,
-      forceUpdateRequired: forceUpdateRequired ?? this.forceUpdateRequired,
-      forceUpdateStoreUrl: forceUpdateStoreUrl ?? this.forceUpdateStoreUrl,
-    );
-  }
+  }) => InitStatus(
+    supabaseReady: supabaseReady ?? this.supabaseReady,
+    revenueCatReady: revenueCatReady ?? this.revenueCatReady,
+    remoteConfigReady: remoteConfigReady ?? this.remoteConfigReady,
+    timedOut: timedOut ?? this.timedOut,
+    error: error ?? this.error,
+    forceUpdateRequired: forceUpdateRequired ?? this.forceUpdateRequired,
+    forceUpdateStoreUrl: forceUpdateStoreUrl ?? this.forceUpdateStoreUrl,
+  );
 }
 
 /// Notifier for initialization status.
@@ -133,46 +131,46 @@ class InitStatusNotifier extends StateNotifier<InitStatus> {
 ///
 /// Watch this in UI to show loading states during startup.
 final initStatusProvider =
-    StateNotifierProvider<InitStatusNotifier, InitStatus>((ref) {
-      return InitStatusNotifier();
-    });
+    StateNotifierProvider<InitStatusNotifier, InitStatus>(
+      (ref) => InitStatusNotifier(),
+    );
 
 // ============================================================
 // Auth Provider Dependencies (for dependency injection)
 // ============================================================
 
 /// Apple auth provider - can be overridden in tests
-final appleAuthProvider = Provider<IAppleAuthProvider>((ref) {
-  return AppleAuthProvider();
-});
+final appleAuthProvider = Provider<IAppleAuthProvider>(
+  (ref) => AppleAuthProvider(),
+);
 
 /// Google auth provider - can be overridden in tests
-final googleAuthProvider = Provider<IGoogleAuthProvider>((ref) {
-  return GoogleAuthProvider();
-});
+final googleAuthProvider = Provider<IGoogleAuthProvider>(
+  (ref) => GoogleAuthProvider(),
+);
 
 /// Supabase auth provider - can be overridden in tests
-final supabaseAuthProvider = Provider<ISupabaseAuthProvider>((ref) {
-  return SupabaseAuthProvider();
-});
+final supabaseAuthProvider = Provider<ISupabaseAuthProvider>(
+  (ref) => SupabaseAuthProvider(),
+);
 
 // ============================================================
 // Service Providers (singletons, testable via overrides)
 // ============================================================
 
 /// Auth service provider - uses injected dependencies
-final authServiceProvider = Provider<IAuthService>((ref) {
-  return AuthService(
+final authServiceProvider = Provider<IAuthService>(
+  (ref) => AuthService(
     supabaseAuth: ref.watch(supabaseAuthProvider),
     appleAuth: ref.watch(appleAuthProvider),
     googleAuth: ref.watch(googleAuthProvider),
-  );
-});
+  ),
+);
 
 /// Auth throttle service - rate limiting for auth attempts
-final authThrottleServiceProvider = Provider<AuthThrottleService>((ref) {
-  return AuthThrottleService();
-});
+final authThrottleServiceProvider = Provider<AuthThrottleService>(
+  (ref) => AuthThrottleService(),
+);
 
 /// Auth state stream - widgets can watch this to react to sign in/out
 final authStateProvider = StreamProvider<AuthState>((ref) {
@@ -208,11 +206,9 @@ final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
 });
 
 /// Device fingerprint service for server-side free tier tracking
-final deviceFingerprintServiceProvider = Provider<DeviceFingerprintService>((
-  ref,
-) {
-  return DeviceFingerprintService();
-});
+final deviceFingerprintServiceProvider = Provider<DeviceFingerprintService>(
+  (ref) => DeviceFingerprintService(),
+);
 
 /// Rate limiting service to prevent API abuse
 final rateLimitServiceProvider = Provider<RateLimitService>((ref) {
@@ -229,27 +225,25 @@ final usageServiceProvider = Provider<UsageService>((ref) {
 });
 
 /// Generation history service (uses secure storage internally)
-final historyServiceProvider = Provider<HistoryService>((ref) {
-  return HistoryService();
-});
+final historyServiceProvider = Provider<HistoryService>(
+  (ref) => HistoryService(),
+);
 
 /// Data export service for GDPR/CCPA data portability
-final dataExportServiceProvider = Provider<DataExportService>((ref) {
-  return DataExportService(
+final dataExportServiceProvider = Provider<DataExportService>(
+  (ref) => DataExportService(
     usageService: ref.watch(usageServiceProvider),
     historyService: ref.watch(historyServiceProvider),
-  );
-});
+  ),
+);
 
 /// AI generation service (Firebase AI - no API key needed in client code)
-final aiServiceProvider = Provider<AiService>((ref) {
-  return AiService();
-});
+final aiServiceProvider = Provider<AiService>((ref) => AiService());
 
 /// Subscription/payment service
-final subscriptionServiceProvider = Provider<ISubscriptionService>((ref) {
-  return SubscriptionService();
-});
+final subscriptionServiceProvider = Provider<ISubscriptionService>(
+  (ref) => SubscriptionService(),
+);
 
 /// App review prompting service
 final reviewServiceProvider = Provider<ReviewService>((ref) {
@@ -258,16 +252,16 @@ final reviewServiceProvider = Provider<ReviewService>((ref) {
 });
 
 /// Biometric authentication service
-final biometricServiceProvider = Provider<IBiometricService>((ref) {
-  return BiometricService();
-});
+final biometricServiceProvider = Provider<IBiometricService>(
+  (ref) => BiometricService(),
+);
 
 /// Re-authentication service for sensitive operations
 final reauthServiceProvider = Provider<ReauthService?>((ref) {
   // Return null if Supabase isn't initialized yet
   try {
-    Supabase.instance.client;
-  } catch (_) {
+    final _ = Supabase.instance.client;
+  } on Exception catch (_) {
     return null;
   }
   final biometricService = ref.watch(biometricServiceProvider);
@@ -286,11 +280,6 @@ const _proStatusCacheKey = 'cached_pro_status';
 
 /// Notifier that holds the latest CustomerInfo and listens for updates
 class CustomerInfoNotifier extends StateNotifier<CustomerInfo?> {
-  final ISubscriptionService _subscriptionService;
-  final SharedPreferences _prefs;
-
-  bool _hasReceivedListenerUpdate = false;
-
   CustomerInfoNotifier(this._subscriptionService, this._prefs) : super(null) {
     // Add listener for live updates (may fire immediately)
     _subscriptionService.addCustomerInfoListener(_onListenerUpdate);
@@ -302,6 +291,10 @@ class CustomerInfoNotifier extends StateNotifier<CustomerInfo?> {
       }
     });
   }
+  final ISubscriptionService _subscriptionService;
+  final SharedPreferences _prefs;
+
+  bool _hasReceivedListenerUpdate = false;
 
   void _onListenerUpdate(CustomerInfo info) {
     _hasReceivedListenerUpdate = true;
@@ -355,7 +348,7 @@ final checkProStatusProvider = FutureProvider<bool>((ref) async {
   try {
     final subscriptionService = ref.watch(subscriptionServiceProvider);
     return await subscriptionService.isPro();
-  } catch (e) {
+  } on Exception catch (e) {
     Log.warning('checkProStatusProvider failed, returning false', {
       'error': '$e',
     });
@@ -376,9 +369,9 @@ final spellingPreferenceProvider = Provider<String>((ref) {
 });
 
 /// Whether UK spelling is enabled
-final isUkSpellingProvider = Provider<bool>((ref) {
-  return ref.watch(spellingPreferenceProvider) == 'uk';
-});
+final isUkSpellingProvider = Provider<bool>(
+  (ref) => ref.watch(spellingPreferenceProvider) == 'uk',
+);
 
 // ============================================================
 // Derived Usage State
