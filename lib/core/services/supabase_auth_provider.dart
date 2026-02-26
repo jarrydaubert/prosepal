@@ -85,8 +85,34 @@ import 'log_service.dart';
 /// })
 /// ```
 class SupabaseAuthProvider implements ISupabaseAuthProvider {
-  GoTrueClient get _auth => Supabase.instance.client.auth;
-  FunctionsClient get _functions => Supabase.instance.client.functions;
+  /// Check if Supabase is initialized before accessing
+  bool get _isInitialized {
+    try {
+      // Accessing .client throws if not initialized
+      Supabase.instance.client;
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  GoTrueClient get _auth {
+    if (!_isInitialized) {
+      throw StateError(
+        'Supabase not initialized. Call Supabase.initialize() first.',
+      );
+    }
+    return Supabase.instance.client.auth;
+  }
+
+  FunctionsClient get _functions {
+    if (!_isInitialized) {
+      throw StateError(
+        'Supabase not initialized. Call Supabase.initialize() first.',
+      );
+    }
+    return Supabase.instance.client.functions;
+  }
 
   /// Network timeout for auth operations (prevents indefinite hangs)
   static const _timeout = Duration(seconds: 30);
@@ -129,17 +155,23 @@ class SupabaseAuthProvider implements ISupabaseAuthProvider {
   }
 
   @override
-  User? get currentUser => _auth.currentUser;
+  User? get currentUser => _isInitialized ? _auth.currentUser : null;
 
   @override
-  Session? get currentSession => _auth.currentSession;
+  Session? get currentSession => _isInitialized ? _auth.currentSession : null;
 
   /// Stream of auth state changes
   ///
   /// Emits on: sign-in, sign-out, token refresh, user update.
   /// Listen on app startup to handle session restoration.
   @override
-  Stream<AuthState> get onAuthStateChange => _auth.onAuthStateChange;
+  Stream<AuthState> get onAuthStateChange {
+    if (!_isInitialized) {
+      // Return empty stream if Supabase not initialized
+      return const Stream.empty();
+    }
+    return _auth.onAuthStateChange;
+  }
 
   // ===========================================================================
   // OAuth / Native Sign In
