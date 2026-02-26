@@ -69,7 +69,9 @@ class UsageService {
   /// Also checks device-level flag to prevent abuse after account deletion
   bool canGenerateFree() {
     // Device already used free tier (survives account deletion)
-    if (_prefs.getBool(_keyDeviceUsedFreeTier) == true) {
+    final deviceUsed = _prefs.getBool(_keyDeviceUsedFreeTier) == true;
+    if (deviceUsed) {
+      Log.info('Free tier blocked - device already used free tier');
       return false;
     }
     return getTotalCount() < freeLifetimeLimit;
@@ -79,6 +81,7 @@ class UsageService {
   /// This survives account deletion - not user data, device data
   Future<void> markDeviceUsedFreeTier() async {
     await _prefs.setBool(_keyDeviceUsedFreeTier, true);
+    Log.info('Device marked as used free tier');
   }
 
   /// Check if user can generate (pro tier)
