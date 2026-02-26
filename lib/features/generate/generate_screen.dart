@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -11,7 +10,6 @@ import '../../core/services/ai_service.dart';
 import '../../core/services/log_service.dart';
 import '../../core/services/usage_service.dart' show UsageCheckException;
 import '../../shared/atoms/app_button.dart';
-import '../../shared/atoms/shimmer_button.dart';
 import '../../shared/molecules/generation_loading_overlay.dart';
 import '../../shared/theme/app_colors.dart';
 import 'widgets/details_input.dart';
@@ -105,7 +103,6 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
             ),
             leading: _BackButton(
               onPressed: () {
-                HapticFeedback.lightImpact();
                 if (_currentStep > 0) {
                   setState(() => _currentStep--);
                 } else {
@@ -243,7 +240,7 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
         );
       }
 
-      return ShimmerButton(
+      return AppButton(
         label: isGenerating ? 'Generating...' : 'Generate Messages',
         icon: Icons.auto_awesome,
         isLoading: isGenerating,

@@ -1,7 +1,8 @@
 # Prosepal Marketing Strategy
 
-> **Version**: 2.0 | Deep research edition
+> **Version**: 2.1 | Global markets edition
 > **Last Updated**: January 2026
+> **Markets**: USA, UK, Canada, Australia, New Zealand, Ireland
 
 ---
 
@@ -70,21 +71,41 @@ This is exactly where Prosepal shines - we remove the paralysis.
 <a name="market-analysis"></a>
 ## 2. Market Analysis
 
-### Industry Size & Trends
+### Global Industry Overview
 
 | Metric | Value | Source |
 |--------|-------|--------|
-| Global greeting card market | $6-7 billion | Intel Market Research 2025 |
-| US market share | 35% (~$2.4B) | Intel Market Research |
-| Cards purchased annually (US) | 6.5 billion | GiftLips 2026 |
+| Global greeting card market | $19-27B | Grand View Research 2025 |
 | Physical card market CAGR | -2.5% (declining) | Intel Market Research |
 | **Digital/online segment CAGR** | **+18.3%** | IBISWorld |
 | Birthday cards share | 50%+ | Industry average |
-| Hallmark + American Greetings | 85% market control | Intel Market Research |
+| Global cards purchased annually | 15B+ | Industry estimates |
+
+### Market Size by English-Speaking Country
+
+| Country | Market Value | Cards/Year | Penetration | Per Capita | GDP | Market/GDP |
+|---------|--------------|------------|-------------|------------|-----|------------|
+| **UK** | £1.5B (~$1.9B) | 800M-2B | **94%** | **30 cards** | $3.3T | 0.058% |
+| **USA** | $2.4B | 6.5B | 53% | 19 cards | $28.8T | 0.008% |
+| **Canada** | C$362M (~$265M) | ~300M | 50% | 8 cards | $2.1T | 0.013% |
+| **Australia** | A$370M (~$240M) | ~200M | 46% | 8 cards | $1.7T | 0.014% |
+| **New Zealand** | ~NZ$75M (~$45M) | ~40M | 41% | 8 cards | $250B | 0.018% |
+| **Ireland** | ~€80M (~$85M) | ~50M | ~50% | 10 cards | $500B | 0.017% |
+
+*Sources: Grand View Research, Card Factory, IBISWorld, GiftLips 2025*
+
+### Key Insight: UK Is The Most Valuable Market Per-Capita
+
+The UK spends **7x more on greeting cards relative to GDP** than the USA:
+- **94% of British adults** buy greeting cards (vs 53% in US)
+- **30 cards per person/year** (vs 19 in US)
+- UK market is **£1.5B** for 67M people; US is $2.4B for 335M people
+
+**Strategic implication:** UK users have the highest card-buying habit in the world. Target them aggressively.
 
 ### Key Insight: Physical Declining, Digital Exploding
 
-The $6B physical card market is shrinking 2-3% annually. But online greeting services grew 18%+ CAGR over 5 years. **The message is separating from the medium.**
+The physical card market is shrinking 2-3% annually. But online greeting services grew 18%+ CAGR over 5 years. **The message is separating from the medium.**
 
 ### Consumer Behavior Shifts
 
@@ -116,8 +137,17 @@ Contrary to predictions, millennials are the **largest card-buying generation**:
 **Demographics**:
 - Age 25-45, slight female skew
 - Urban/suburban professionals
-- Household income $60K-150K
 - iPhone primary (higher LTV)
+
+**Household Income by Region:**
+
+| Market | Income Range | Currency | Notes |
+|--------|--------------|----------|-------|
+| USA | $60K-150K | USD | Baseline |
+| UK | £45K-110K | GBP | Higher card culture |
+| Canada | C$75K-185K | CAD | Similar to US |
+| Australia | A$85K-200K | AUD | Higher cost of living |
+| Ireland | €50K-125K | EUR | Euro zone |
 
 **Psychographics**:
 - Cares deeply about relationships
@@ -286,6 +316,19 @@ Contrary to predictions, millennials are the **largest card-buying generation**:
 - History saved across devices
 - No ads, priority support
 
+### Regional Pricing (App Store Tiers)
+
+| Market | Monthly | Annual | Relative Value | Notes |
+|--------|---------|--------|----------------|-------|
+| **USA** | $4.99 | $29.99 | Baseline | Primary market |
+| **UK** | £3.99 | £24.99 | Good value | Highest card culture - strong conversion expected |
+| **Canada** | C$6.99 | C$39.99 | Standard | Second-tier Anglophone market |
+| **Australia** | A$7.99 | A$44.99 | Standard | Strong iOS market share |
+| **New Zealand** | NZ$8.99 | NZ$49.99 | Standard | Follows AU patterns |
+| **Ireland** | €4.99 | €29.99 | Good value | Euro pricing, UK cultural spillover |
+
+*App Store handles currency automatically via pricing tiers. These map to Tier 5 (monthly) and Tier 30 (annual).*
+
 ### Why This Model
 
 | Decision | Rationale |
@@ -337,6 +380,8 @@ Contrary to predictions, millennials are the **largest card-buying generation**:
 
 #### Seasonal Keywords (Rotate 2-3 weeks before peak)
 
+**USA Keywords:**
+
 | Season | Keywords |
 |--------|----------|
 | February | valentine message, valentine card, love message |
@@ -344,6 +389,29 @@ Contrary to predictions, millennials are the **largest card-buying generation**:
 | June | fathers day card, graduation message, wedding card message |
 | November | thanksgiving message, thank you card |
 | December | christmas card message, holiday wishes, new year message |
+
+**UK Keywords** (Note: Different dates!):
+
+| Season | Keywords |
+|--------|----------|
+| February | valentine message, valentine card |
+| **March** | **mothers day card, mum message, mothering sunday** |
+| April | easter message, easter card |
+| June | fathers day card, wedding card message |
+| November | **remembrance day message, poppy day** |
+| December | christmas card message, boxing day, new year message |
+
+**Australia/NZ Keywords:**
+
+| Season | Keywords |
+|--------|----------|
+| February | valentine message |
+| April | easter message, **anzac day message** |
+| **May** | **mothers day card** (AU/NZ) |
+| **September** | **fathers day card** (AU/NZ - different from US/UK!) |
+| December | christmas card message, boxing day |
+
+> **Critical:** UK Mother's Day is in **March** (Mothering Sunday), not May. Australia/NZ Father's Day is in **September**, not June. Plan ASO keyword rotations accordingly.
 
 ### App Title & Subtitle
 
@@ -461,6 +529,33 @@ Features:
 - Emotional moments
 - Controversial takes ("Hallmark cards are lazy")
 
+### Regional Content Hooks
+
+**UK-Specific Content** (94% card penetration - huge opportunity):
+
+| Hook | Example | Why It Works |
+|------|---------|--------------|
+| **British Problems** | "POV: You're in Tesco and the card aisle is chaos" | UK supermarket culture, relatable |
+| **Emotional Reserve** | "British struggle: writing a sympathy card without being too emotional" | Cultural stereotype, humorous |
+| **Mum vs Mom** | "When the AI knows to write 'Mum' not 'Mom'" | Localisation detail, builds trust |
+| **Card Factory Queue** | "The Card Factory queue vs writing the message" | UK-specific retailer, instant recognition |
+| **Mothering Sunday** | "Mothering Sunday is in 2 weeks and you haven't started" | UK-specific timing (March) |
+
+**Australia/NZ-Specific Content**:
+
+| Hook | Example | Why It Works |
+|------|---------|--------------|
+| **September Father's Day** | "When Americans wish you Happy Father's Day 3 months early" | AU/NZ date difference |
+| **ANZAC Day** | "Writing to a veteran for ANZAC Day" | Emotional, culturally significant |
+| **Tall Poppy** | "Writing a congratulations card without sounding like you're bragging for them" | Cultural syndrome reference |
+
+**Canada-Specific Content**:
+
+| Hook | Example | Why It Works |
+|------|---------|--------------|
+| **Sorry Culture** | "Canadian problem: your sympathy card is 90% apologising" | National stereotype, humorous |
+| **Bilingual** | "When you need both English and French versions" | Quebec market opportunity |
+
 ### Pinterest Strategy
 
 **Why Pinterest**:
@@ -518,7 +613,18 @@ Features:
 - Can start small (<$50/day)
 - Learn which keywords convert
 
-**Benchmarks (2025)**:
+**Benchmarks by Region (2025)**:
+
+| Market | Avg CPI | eCPM | Our CPI Target | Notes |
+|--------|---------|------|----------------|-------|
+| **USA** | $3.00 | $11.80 | <$2.50 | Most competitive |
+| **UK** | $2.50 | $9.20 | <$2.00 | High card culture, strong LTV |
+| **Canada** | $2.20 | $8.00 | <$1.80 | Less competitive |
+| **Australia** | $2.00 | $7.50 | <$1.60 | Smaller market, less competition |
+
+*eCPM = effective cost per thousand impressions (indicates user value)*
+
+**General Benchmarks**:
 
 | Metric | Lifestyle Apps | Our Target |
 |--------|----------------|------------|
@@ -799,11 +905,13 @@ This captures:
 
 ### Market Expansion
 
-| Item | Rationale |
-|------|-----------|
-| **Global data earlier** | Current stats are U.S.-centric - incorporate UK/EU/APAC market data before Month 7 |
-| **Balance occasion messaging** | Sympathy emphasis may narrow perceived utility - highlight high-volume occasions (birthday, thank you) equally |
-| **Quarterly competitor refresh** | AI landscape evolving fast - schedule updates to track Thankbox, Venngage, emerging tools |
+| Item | Rationale | Status |
+|------|-----------|--------|
+| ~~Global data earlier~~ | ~~Current stats are U.S.-centric~~ | ✅ Done - UK/CA/AU/NZ/IE data added |
+| **Balance occasion messaging** | Sympathy emphasis may narrow perceived utility - highlight high-volume occasions (birthday, thank you) equally | Pending |
+| **Quarterly competitor refresh** | AI landscape evolving fast - schedule updates to track Thankbox, Venngage, emerging tools | Pending |
+| **UK-first paid acquisition** | UK has 94% card penetration, highest per-capita - consider prioritising UK Apple Search Ads | New |
+| **Localisation (Mum vs Mom)** | AI output should adapt spelling to user's locale (colour/color, Mum/Mom) | New |
 
 ### Retention Depth
 
@@ -815,4 +923,20 @@ This captures:
 
 ---
 
-*Document maintained by Marketing. Last research update: January 2026.*
+## Appendix: Data Sources
+
+| Data Type | Source |
+|-----------|--------|
+| Global market size | Grand View Research 2025, Cognitive Market Research |
+| UK market data | Card Factory Investors, Greeting Card Association UK |
+| US market data | GiftLips 2026, Intel Market Research |
+| Canada market data | IBISWorld Canada 2024 |
+| Australia market data | Grand View Research, Australian Greeting Card Association |
+| Card penetration by country | Card Factory Research 2024 |
+| App Store revenue | Business of Apps 2025, Sensor Tower |
+| App Store pricing tiers | Apple Developer Documentation |
+| Subscription benchmarks | RevenueCat State of Subscription Apps 2025 |
+
+---
+
+*Document maintained by Marketing. Last research update: January 2026. v2.1 Global markets edition.*

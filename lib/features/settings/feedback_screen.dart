@@ -44,7 +44,6 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
     }
 
     setState(() => _isSending = true);
-    unawaited(HapticFeedback.lightImpact());
 
     String fullMessage = message;
     if (_includeLogs) {
@@ -106,7 +105,6 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
   }
 
   Future<void> _shareDiagnostics() async {
-    unawaited(HapticFeedback.lightImpact());
     final isRcConfigured = ref.read(subscriptionServiceProvider).isConfigured;
     final report = await DiagnosticService.generateReport(
       isRevenueCatConfigured: isRcConfigured,
@@ -206,7 +204,8 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
                     ),
                     Switch.adaptive(
                       value: _includeLogs,
-                      onChanged: (value) => setState(() => _includeLogs = value),
+                      onChanged: (value) =>
+                          setState(() => _includeLogs = value),
                       activeColor: AppColors.primary,
                     ),
                   ],
@@ -295,7 +294,6 @@ class _DiagnosticReportSheet extends StatelessWidget {
                       IconButton(
                         icon: const Icon(Icons.copy_rounded),
                         onPressed: () {
-                          unawaited(HapticFeedback.lightImpact());
                           unawaited(
                             Clipboard.setData(ClipboardData(text: report)),
                           );
@@ -311,7 +309,6 @@ class _DiagnosticReportSheet extends StatelessWidget {
                       IconButton(
                         icon: const Icon(Icons.share_rounded),
                         onPressed: () {
-                          unawaited(HapticFeedback.lightImpact());
                           unawaited(
                             SharePlus.instance.share(
                               ShareParams(

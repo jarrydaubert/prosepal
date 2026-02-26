@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../../core/models/tone.dart';
@@ -101,7 +100,6 @@ class _ToneTile extends StatelessWidget {
       selected: isSelected,
       child: GestureDetector(
         onTap: () {
-          HapticFeedback.lightImpact();
           onTap();
         },
         child: AnimatedContainer(

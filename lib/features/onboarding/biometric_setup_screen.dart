@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -35,7 +34,6 @@ class _BiometricSetupScreenState extends ConsumerState<BiometricSetupScreen> {
 
   Future<void> _enableBiometrics() async {
     setState(() => _isLoading = true);
-    await HapticFeedback.lightImpact();
 
     final biometricService = ref.read(biometricServiceProvider);
     final result = await biometricService.authenticate(
@@ -60,7 +58,6 @@ class _BiometricSetupScreenState extends ConsumerState<BiometricSetupScreen> {
   }
 
   void _skipBiometrics() {
-    HapticFeedback.lightImpact();
     context.go('/home');
   }
 

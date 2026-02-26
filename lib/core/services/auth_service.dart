@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
@@ -215,15 +216,13 @@ class AuthService implements IAuthService {
       // Exchange authorization code for refresh token (for revocation on delete)
       // Must happen immediately as code expires in 5 minutes
       final authCode = credential.authorizationCode;
-      if (authCode != null) {
-        // Fire and forget - don't block sign-in flow
-        _supabase.exchangeAppleToken(authCode).catchError((e) {
-          // Non-fatal: revocation will be skipped if exchange fails
-          Log.warning('Failed to exchange Apple authorization code', {
-            'error': '$e',
-          });
+      // Fire and forget - don't block sign-in flow
+      unawaited(_supabase.exchangeAppleToken(authCode).catchError((e) {
+        // Non-fatal: revocation will be skipped if exchange fails
+        Log.warning('Failed to exchange Apple authorization code', {
+          'error': '$e',
         });
-      }
+      }));
 
       Log.info('User signed in', {'provider': 'apple'});
       return response;

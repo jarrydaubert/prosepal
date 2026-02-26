@@ -347,18 +347,19 @@ class AiService {
       Log.info('AI response received');
 
       // Log comprehensive response details for debugging
-      final candidate = response.candidates?.firstOrNull;
+      final candidate = response.candidates.firstOrNull;
       final usage = response.usageMetadata;
       Log.info('AI response details', {
         'finishReason': candidate?.finishReason?.name ?? 'null',
-        'candidateCount': response.candidates?.length ?? 0,
+        'candidateCount': response.candidates.length,
         'promptTokens': usage?.promptTokenCount,
         'responseTokens': usage?.candidatesTokenCount,
         'totalTokens': usage?.totalTokenCount,
         'promptBlockReason': response.promptFeedback?.blockReason?.name,
         'safetyRatings': candidate?.safetyRatings
             ?.map((r) => '${r.category.name}:${r.probability.name}')
-            .join(', '),
+            .join(', ') ??
+            'none',
       });
 
       // Check for blocked content
@@ -444,7 +445,7 @@ class AiService {
             'attempt': attempt,
             'delayMs': delayMs + jitter,
           });
-          await Future.delayed(Duration(milliseconds: delayMs + jitter));
+          await Future<void>.delayed(Duration(milliseconds: delayMs + jitter));
           continue;
         }
 

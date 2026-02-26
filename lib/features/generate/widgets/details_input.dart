@@ -237,7 +237,6 @@ class _LengthSelector extends StatelessWidget {
             selected: isSelected,
             child: GestureDetector(
               onTap: () {
-                HapticFeedback.lightImpact();
                 onChanged(length);
               },
               child: AnimatedContainer(

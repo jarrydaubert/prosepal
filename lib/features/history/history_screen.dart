@@ -472,7 +472,6 @@ class _HistoryCardState extends State<_HistoryCard> {
 
   Future<void> _copyMessage(String text, int index) async {
     await Clipboard.setData(ClipboardData(text: text));
-    HapticFeedback.mediumImpact();
     setState(() => _copiedIndex = index);
 
     if (mounted) {
@@ -734,7 +733,6 @@ class _SmallButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        HapticFeedback.lightImpact();
         onPressed();
       },
       child: Container(

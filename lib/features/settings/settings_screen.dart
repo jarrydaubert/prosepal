@@ -6,7 +6,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:in_app_review/in_app_review.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/interfaces/biometric_interface.dart';
@@ -633,7 +632,6 @@ class _BackButton extends StatelessWidget {
       padding: const EdgeInsets.only(left: 8),
       child: GestureDetector(
         onTap: () {
-          HapticFeedback.lightImpact();
           onPressed();
         },
         child: Container(
@@ -781,7 +779,6 @@ class _UpgradeButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        HapticFeedback.lightImpact();
         onPressed();
       },
       child: Container(

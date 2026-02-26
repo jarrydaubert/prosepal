@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../interfaces/biometric_interface.dart';
-import 'biometric_service.dart';
 import 'log_service.dart';
 
 /// Result of a re-authentication attempt

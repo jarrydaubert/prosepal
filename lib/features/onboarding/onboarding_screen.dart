@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -59,7 +58,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   void _nextPage() {
-    HapticFeedback.lightImpact();
     if (_currentPage < _onboardingPages.length - 1) {
       _pageController.nextPage(
         duration: const Duration(milliseconds: 250),

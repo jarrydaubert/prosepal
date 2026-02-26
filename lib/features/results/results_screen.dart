@@ -1,4 +1,3 @@
-import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -21,22 +20,8 @@ class ResultsScreen extends ConsumerStatefulWidget {
 
 class _ResultsScreenState extends ConsumerState<ResultsScreen> {
   int? _copiedIndex;
-  late final ConfettiController _confettiController;
-  DateTime? _lastConfettiTime;
 
-  @override
-  void initState() {
-    super.initState();
-    _confettiController = ConfettiController(
-      duration: const Duration(milliseconds: 300),
-    );
-  }
-
-  @override
-  void dispose() {
-    _confettiController.dispose();
-    super.dispose();
-  }
+  bool get _reduceMotion => MediaQuery.of(context).disableAnimations;
 
   @override
   Widget build(BuildContext context) {
@@ -104,15 +89,11 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                       padding: const EdgeInsets.only(bottom: 16),
                       child: card
                           .animate(key: ValueKey('msg_anim_$index'))
-                          .fadeIn(
-                            delay: Duration(milliseconds: index * 100),
-                            duration: 350.ms,
-                          )
+                          .fadeIn(duration: 200.ms)
                           .slideY(
-                            begin: 0.1,
+                            begin: 0.05,
                             end: 0,
-                            delay: Duration(milliseconds: index * 100),
-                            duration: 350.ms,
+                            duration: 200.ms,
                             curve: Curves.easeOut,
                           ),
                     );
@@ -154,52 +135,14 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
             ],
           ),
         ),
-        // Confetti overlay
-        Align(
-          alignment: Alignment.topCenter,
-          child: ConfettiWidget(
-            confettiController: _confettiController,
-            blastDirectionality: BlastDirectionality.explosive,
-            shouldLoop: false,
-            numberOfParticles: 20,
-            maxBlastForce: 30,
-            minBlastForce: 10,
-            emissionFrequency: 0.05,
-            gravity: 0.2,
-            colors: const [
-              AppColors.primary,
-              AppColors.primaryLight,
-              Color(0xFFFFA726),
-              Color(0xFF66BB6A),
-              Color(0xFFB47CFF),
-            ],
-          ),
-        ),
       ],
     );
-  }
-
-  bool get _reduceMotion => MediaQuery.of(context).disableAnimations;
-
-  void _playConfetti() {
-    if (_reduceMotion) return;
-
-    final now = DateTime.now();
-    if (_lastConfettiTime != null &&
-        now.difference(_lastConfettiTime!).inMilliseconds < 1500) {
-      return; // Debounce: skip if played within last 1.5s
-    }
-    _lastConfettiTime = now;
-    _confettiController.play();
   }
 
   Future<void> _copyMessage(String text, int index) async {
     Log.info('Message copied', {'option': index + 1});
     await Clipboard.setData(ClipboardData(text: text));
-    HapticFeedback.mediumImpact();
     setState(() => _copiedIndex = index);
-
-    _playConfetti();
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -268,7 +211,6 @@ class _CloseButton extends StatelessWidget {
         button: true,
         child: GestureDetector(
           onTap: () {
-            HapticFeedback.lightImpact();
             onPressed();
           },
           child: Container(
@@ -488,7 +430,6 @@ class _ActionButton extends StatelessWidget {
       button: true,
       child: GestureDetector(
         onTap: () {
-          HapticFeedback.lightImpact();
           onPressed();
         },
         child: Container(

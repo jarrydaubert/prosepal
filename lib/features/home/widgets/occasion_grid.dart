@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../../core/models/occasion.dart';
@@ -92,7 +91,6 @@ class _OccasionTileState extends State<_OccasionTile>
 
   void _handleTapUp(TapUpDetails details) {
     _controller.reverse();
-    HapticFeedback.lightImpact();
     widget.onTap();
   }
 

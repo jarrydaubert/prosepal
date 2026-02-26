@@ -6,6 +6,8 @@ import 'package:uuid/uuid.dart';
 import '../models/models.dart';
 import 'log_service.dart';
 
+// ignore_for_file: unused_element, unused_field
+
 /// Model version for future migration support
 const int _historyModelVersion = 1;
 
