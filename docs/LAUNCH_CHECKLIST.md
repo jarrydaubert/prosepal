@@ -1,41 +1,76 @@
 # Launch Checklist
 
+> Last verified: 2026-01-10
+
 ## Pre-Launch
 
-### App Store Connect
-- Submit IAP products for review
-- App privacy nutrition labels
-- Screenshots and store listing
-- Privacy policy URL (prosepal.app/privacy)
-- Add App Store ID to code after approval
+### Supabase ✅ VERIFIED 2026-01-10
 
-### Google Play Console
-- Upload AAB to Internal Testing
-- Store listing (screenshots, description)
-- Privacy policy URL
-- Submit for review
+**Dashboard:** https://supabase.com/dashboard/project/mwoxtqxzunsjmbdqezif
 
-### RevenueCat
-- Verify production API keys
-- Webhook (optional)
+| Item | Location | Status | Details |
+|------|----------|--------|---------|
+| Security Advisor | Database > Tools > Security Advisor | ✅ | 0 errors, 0 warnings |
+| Email provider | Authentication > Sign In / Providers > Email | ✅ | Enabled, 8 char min, lowercase+uppercase+digits+symbols required |
+| Apple provider | Authentication > Sign In / Providers > Apple | ✅ | Client IDs: `com.prosepal.prosepal,com.prosepal.auth`, Secret key set |
+| Google provider | Authentication > Sign In / Providers > Google | ✅ | Client ID: `530092651798-n8u4cl643qkj8dhhkl496gd5elbmlk.apps.googleusercontent.com` |
+| Site URL | Authentication > URL Configuration | ✅ | `https://www.prosepal.app/` |
+| Redirect URLs | Authentication > URL Configuration | ✅ | `https://prosepal.app/auth/login-callback`, `https://prosepal.app/auth/reset-callback` |
+| Edge Function: delete-user | Edge Functions | ✅ | `https://mwoxtqxzunsjmbdqezif.supabase.co/functions/v1/delete-user` (6 deployments) |
+| Edge Function: exchange-apple-token | Edge Functions | ✅ | `https://mwoxtqxzunsjmbdqezif.supabase.co/functions/v1/exchange-apple-token` (3 deployments) |
+| Leaked password protection | Authentication > Sign In / Providers > Email | ⚠️ | OFF - Requires Pro plan, not blocking |
 
-### Supabase
-- RLS policies production-ready
-- `delete-user` Edge Function deployed
-- Database Linter: 0 errors (check Dashboard > Database > Linter)
-- Performance Advisor: Review slow queries (check Dashboard > Database > Performance)
-- Auth > Enable "Leaked password protection"
+### RevenueCat ⏳ PENDING
 
-### Code
-- iOS Archive built
-- Version/build incremented
+- [ ] iOS app configured
+- [ ] Android app configured
+- [ ] Products set up (Weekly, Monthly, Yearly)
+- [ ] `pro` entitlement exists
+- [ ] Production API keys verified
 
-### Testing
-- TestFlight internal testing
-- Play Store internal testing
-- Manual test: Sign in → Purchase → Restore
-- Manual test: Sign out clears everything
-- Manual test: Delete account flow
+### Firebase ⏳ PENDING
+
+- [ ] App Check enabled (iOS + Android)
+- [ ] Remote Config parameters set
+- [ ] Crashlytics enabled
+- [ ] Analytics enabled
+
+### App Store Connect ⏳ PENDING
+
+- [ ] IAP products submitted for review
+- [ ] App privacy nutrition labels filled
+- [ ] Screenshots uploaded
+- [ ] Privacy policy URL: `prosepal.app/privacy`
+- [ ] App Store ID added to code (after approval)
+
+### Google Play Console ⏳ PENDING
+
+- [ ] AAB uploaded to Internal Testing
+- [ ] Store listing complete
+- [ ] Privacy policy URL set
+- [ ] Submit for review
+
+### Code ✅ VERIFIED 2026-01-10
+
+| Item | Status | Notes |
+|------|--------|-------|
+| App Attest environment | ✅ | Changed to `production` |
+| 628 tests passing | ✅ | All pass |
+| 0 warnings in lib/ | ✅ | Only info-level items |
+| Pre-commit hook | ✅ | Auto format + analyze |
+
+### Code ⏳ PENDING
+
+- [ ] Version/build number incremented
+- [ ] iOS Archive built (`./scripts/build_ios.sh`)
+- [ ] Android AAB built (`./scripts/build_android.sh`)
+
+### Manual Testing ⏳ PENDING
+
+- [ ] TestFlight: Sign in → Generate → Purchase → Restore
+- [ ] Play Store Internal: Same flow
+- [ ] Sign out clears everything
+- [ ] Delete account works
 
 ---
 
