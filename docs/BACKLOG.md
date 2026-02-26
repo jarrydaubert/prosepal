@@ -42,6 +42,7 @@
 | Document service configurations | Firebase/Supabase/RevenueCat | Screen-by-screen audit of what's enabled/configured in each dashboard. Create `docs/SERVICE_CONFIG.md` with screenshots or detailed notes for reproducibility. |
 | Mockito exploration | `test/mocks/` | Evaluate migrating simple mocks to Mockito for reduced boilerplate. Current manual mocks excel at state tracking and error simulation. Consider Mockito for new simple interface mocks. |
 | Paywall component decomposition | `paywall_sheet.dart` | 890 lines - extract PaywallHeader, BenefitsSection, PackageSelector, AuthSection for maintainability |
+| Paywall trial messaging | `paywall_sheet.dart` | Show trial duration per package dynamically (e.g., "7-day free trial, then $4.99/mo") using `storeProduct.introductoryPrice`. Clearer than "no payment due now" and App Store compliant. |
 | Paywall accessibility | `paywall_sheet.dart` | Add Semantics labels for screen readers throughout |
 | Paywall branding extraction | `paywall_sheet.dart` | Hard-coded "Prosepal Pro", benefits - extract to config for blueprint cloning |
 | Auth/lock logic in root widget | `app.dart` | Extract to `AppLifecycleManager` service for testability |
