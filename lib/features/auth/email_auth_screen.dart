@@ -18,10 +18,12 @@ class EmailAuthScreen extends ConsumerStatefulWidget {
 
 class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
   final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
 
   bool _isLoading = false;
   bool _emailSent = false;
+  bool _usePassword = false;
   String? _sentToEmail;
   int _resendCooldown = 0;
   Timer? _cooldownTimer;
@@ -29,6 +31,7 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
   @override
   void dispose() {
     _emailController.dispose();
+    _passwordController.dispose();
     _cooldownTimer?.cancel();
     super.dispose();
   }
@@ -50,6 +53,7 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
       _emailSent = false;
       _sentToEmail = null;
       _emailController.clear();
+      _passwordController.clear();
     });
   }
 
@@ -88,27 +92,48 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
       });
       _startResendCooldown();
     } catch (e) {
-      final message = _getErrorMessage(e);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                Icon(Icons.error_outline, color: Colors.white, size: 20),
-                SizedBox(width: AppSpacing.sm),
-                Expanded(child: Text(message)),
-              ],
-            ),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppSpacing.radiusSmall),
-            ),
-          ),
-        );
-      }
+      _showError(_getErrorMessage(e));
     } finally {
       if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _signInWithPassword() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      final email = _emailController.text.trim();
+      final password = _passwordController.text;
+      final authService = ref.read(authServiceProvider);
+      await authService.signInWithEmail(email: email, password: password);
+      // Navigation handled by auth state listener
+    } catch (e) {
+      _showError(_getErrorMessage(e));
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  void _showError(String message) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(Icons.error_outline, color: Colors.white, size: 20),
+              SizedBox(width: AppSpacing.sm),
+              Expanded(child: Text(message)),
+            ],
+          ),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppSpacing.radiusSmall),
+          ),
+        ),
+      );
     }
   }
 
@@ -261,18 +286,24 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
             color: AppColors.primary.withValues(alpha: 0.1),
             shape: BoxShape.circle,
           ),
-          child: Icon(Icons.email_outlined, size: 36, color: AppColors.primary),
+          child: Icon(
+            _usePassword ? Icons.lock_outline : Icons.email_outlined,
+            size: 36,
+            color: AppColors.primary,
+          ),
         ).animate().fadeIn().scale(begin: Offset(0.9, 0.9)),
         SizedBox(height: AppSpacing.lg),
         Text(
-          'Passwordless sign in',
+          _usePassword ? 'Sign in with password' : 'Passwordless sign in',
           style: Theme.of(
             context,
           ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
         ).animate().fadeIn(delay: 100.ms),
         SizedBox(height: AppSpacing.sm),
         Text(
-          "Enter your email and we'll send you\na magic link to sign in instantly.",
+          _usePassword
+              ? 'Enter your email and password to sign in.'
+              : "Enter your email and we'll send you\na magic link to sign in instantly.",
           style: Theme.of(
             context,
           ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
@@ -287,9 +318,11 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
                 autocorrect: false,
-                textInputAction: TextInputAction.done,
+                textInputAction:
+                    _usePassword ? TextInputAction.next : TextInputAction.done,
                 validator: _validateEmail,
-                onFieldSubmitted: (_) => _sendMagicLink(),
+                onFieldSubmitted: (_) =>
+                    _usePassword ? null : _sendMagicLink(),
                 decoration: InputDecoration(
                   labelText: 'Email address',
                   hintText: 'you@example.com',
@@ -319,12 +352,57 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
                   ),
                 ),
               ),
+              if (_usePassword) ...[
+                SizedBox(height: AppSpacing.md),
+                TextFormField(
+                  controller: _passwordController,
+                  obscureText: true,
+                  textInputAction: TextInputAction.done,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter your password';
+                    }
+                    return null;
+                  },
+                  onFieldSubmitted: (_) => _signInWithPassword(),
+                  decoration: InputDecoration(
+                    labelText: 'Password',
+                    prefixIcon: Icon(Icons.lock_outline),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(
+                        AppSpacing.radiusMedium,
+                      ),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(
+                        AppSpacing.radiusMedium,
+                      ),
+                      borderSide: BorderSide(color: Colors.grey.shade300),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(
+                        AppSpacing.radiusMedium,
+                      ),
+                      borderSide:
+                          BorderSide(color: AppColors.primary, width: 2),
+                    ),
+                    errorBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(
+                        AppSpacing.radiusMedium,
+                      ),
+                      borderSide: BorderSide(color: AppColors.error),
+                    ),
+                  ),
+                ),
+              ],
               SizedBox(height: AppSpacing.lg),
               SizedBox(
                 width: double.infinity,
                 height: 50,
                 child: ElevatedButton(
-                  onPressed: _isLoading ? null : _sendMagicLink,
+                  onPressed: _isLoading
+                      ? null
+                      : (_usePassword ? _signInWithPassword : _sendMagicLink),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
@@ -344,7 +422,7 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
                           ),
                         )
                       : Text(
-                          'Send Magic Link',
+                          _usePassword ? 'Sign In' : 'Send Magic Link',
                           style: TextStyle(
                             fontSize: 17,
                             fontWeight: FontWeight.w500,
@@ -355,22 +433,37 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
             ],
           ),
         ).animate().fadeIn(delay: 300.ms),
-        SizedBox(height: AppSpacing.xl),
-        _buildBenefitItem(
-          context,
-          Icons.lock_outline,
-          'Secure & private',
-          'No password to remember or steal',
-          400,
+        SizedBox(height: AppSpacing.lg),
+        TextButton(
+          onPressed: () => setState(() {
+            _usePassword = !_usePassword;
+            _passwordController.clear();
+          }),
+          child: Text(
+            _usePassword
+                ? 'Use magic link instead'
+                : 'Sign in with password',
+            style: TextStyle(color: AppColors.textSecondary),
+          ),
         ),
-        SizedBox(height: AppSpacing.md),
-        _buildBenefitItem(
-          context,
-          Icons.flash_on,
-          'Quick & easy',
-          'One tap in your email to sign in',
-          500,
-        ),
+        if (!_usePassword) ...[
+          SizedBox(height: AppSpacing.md),
+          _buildBenefitItem(
+            context,
+            Icons.lock_outline,
+            'Secure & private',
+            'No password to remember or steal',
+            400,
+          ),
+          SizedBox(height: AppSpacing.md),
+          _buildBenefitItem(
+            context,
+            Icons.flash_on,
+            'Quick & easy',
+            'One tap in your email to sign in',
+            500,
+          ),
+        ],
       ],
     );
   }
