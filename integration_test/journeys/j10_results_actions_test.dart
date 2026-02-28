@@ -21,11 +21,15 @@ void main() {
   group('Journey 10: Results Actions', () {
     Future<bool> navigateToResults(WidgetTester tester) async {
       final atHome = await navigateToHome(tester);
-      if (!atHome) return false;
+      expect(atHome, isTrue, reason: 'Failed to navigate to home');
 
       await completeWizard(tester);
 
-      if (!exists(find.text('Generate Messages'))) return false;
+      expect(
+        exists(find.text('Generate Messages')),
+        isTrue,
+        reason: 'Generate Messages button not found',
+      );
 
       await tester.tap(find.text('Generate Messages'));
       await tester.pumpAndSettle(const Duration(seconds: 15));
@@ -36,7 +40,7 @@ void main() {
 
     testWidgets('J10.1: Results show 3 message options', (tester) async {
       final atResults = await navigateToResults(tester);
-      if (!atResults) return;
+      expect(atResults, isTrue, reason: 'Failed to navigate to results');
 
       expect(exists(find.text('Option 1')), isTrue);
       expect(exists(find.text('Option 2')), isTrue);
@@ -47,7 +51,7 @@ void main() {
 
     testWidgets('J10.2: Copy button on each option', (tester) async {
       final atResults = await navigateToResults(tester);
-      if (!atResults) return;
+      expect(atResults, isTrue, reason: 'Failed to navigate to results');
 
       // Should have at least one copy button
       final copyButtons = find.text('Copy');
@@ -62,7 +66,7 @@ void main() {
 
     testWidgets('J10.3: Copy first option shows confirmation', (tester) async {
       final atResults = await navigateToResults(tester);
-      if (!atResults) return;
+      expect(atResults, isTrue, reason: 'Failed to navigate to results');
 
       if (exists(find.text('Copy'))) {
         await tester.tap(find.text('Copy').first);
@@ -80,7 +84,7 @@ void main() {
 
     testWidgets('J10.4: Can copy different options', (tester) async {
       final atResults = await navigateToResults(tester);
-      if (!atResults) return;
+      expect(atResults, isTrue, reason: 'Failed to navigate to results');
 
       final copyButtons = find.text('Copy');
       if (copyButtons.evaluate().length >= 2) {
@@ -95,7 +99,7 @@ void main() {
     testWidgets('J10.5: Share button exists', (tester) async {
       // Bug: Share functionality missing from results screen
       final atResults = await navigateToResults(tester);
-      if (!atResults) return;
+      expect(atResults, isTrue, reason: 'Failed to navigate to results');
 
       // Look for share button/icon
       final hasShare =
@@ -109,7 +113,7 @@ void main() {
 
     testWidgets('J10.6: Start Over button returns to home', (tester) async {
       final atResults = await navigateToResults(tester);
-      if (!atResults) return;
+      expect(atResults, isTrue, reason: 'Failed to navigate to results');
 
       if (exists(find.text('Start Over'))) {
         await tester.tap(find.text('Start Over'));
@@ -128,7 +132,7 @@ void main() {
     testWidgets('J10.7: Messages have visible content', (tester) async {
       // Bug: Generated messages are empty or not displayed
       final atResults = await navigateToResults(tester);
-      if (!atResults) return;
+      expect(atResults, isTrue, reason: 'Failed to navigate to results');
 
       // Verify message cards/content are visible (not empty results)
       final hasContent =

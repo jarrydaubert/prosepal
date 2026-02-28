@@ -35,7 +35,7 @@ void main() {
 
     testWidgets('J4.2: Subscription status visible', (tester) async {
       final atSettings = await navigateToSettings(tester);
-      if (!atSettings) return;
+      expect(atSettings, isTrue, reason: 'Failed to navigate to settings');
 
       final hasProPlan = exists(find.text('Pro Plan'));
       final hasFreePlan = exists(find.text('Free Plan'));
@@ -51,7 +51,7 @@ void main() {
 
     testWidgets('J4.3: Biometric toggle exists (if supported)', (tester) async {
       final atSettings = await navigateToSettings(tester);
-      if (!atSettings) return;
+      expect(atSettings, isTrue, reason: 'Failed to navigate to settings');
 
       // Look for biometric option (may not exist on all devices)
       final _ =
@@ -65,7 +65,7 @@ void main() {
 
     testWidgets('J4.4: Restore Purchases option exists', (tester) async {
       final atSettings = await navigateToSettings(tester);
-      if (!atSettings) return;
+      expect(atSettings, isTrue, reason: 'Failed to navigate to settings');
 
       final found = await scrollToText(tester, 'Restore Purchases');
 
@@ -76,7 +76,7 @@ void main() {
 
     testWidgets('J4.5: Restore Purchases triggers restore', (tester) async {
       final atSettings = await navigateToSettings(tester);
-      if (!atSettings) return;
+      expect(atSettings, isTrue, reason: 'Failed to navigate to settings');
 
       if (await scrollToText(tester, 'Restore Purchases')) {
         await tester.tap(find.text('Restore Purchases'));
@@ -89,7 +89,7 @@ void main() {
 
     testWidgets('J4.6: Privacy Policy link works', (tester) async {
       final atSettings = await navigateToSettings(tester);
-      if (!atSettings) return;
+      expect(atSettings, isTrue, reason: 'Failed to navigate to settings');
 
       if (await scrollToText(tester, 'Privacy Policy')) {
         await tester.tap(find.text('Privacy Policy'));
@@ -102,7 +102,7 @@ void main() {
 
     testWidgets('J4.7: Terms of Service link works', (tester) async {
       final atSettings = await navigateToSettings(tester);
-      if (!atSettings) return;
+      expect(atSettings, isTrue, reason: 'Failed to navigate to settings');
 
       if (await scrollToText(tester, 'Terms of Service')) {
         await tester.tap(find.text('Terms of Service'));
@@ -114,7 +114,7 @@ void main() {
 
     testWidgets('J4.8: Send Feedback option exists', (tester) async {
       final atSettings = await navigateToSettings(tester);
-      if (!atSettings) return;
+      expect(atSettings, isTrue, reason: 'Failed to navigate to settings');
 
       final _ = await scrollToText(tester, 'Send Feedback');
 
@@ -124,7 +124,7 @@ void main() {
 
     testWidgets('J4.9: Delete Account (authenticated only)', (tester) async {
       final atSettings = await navigateToSettings(tester);
-      if (!atSettings) return;
+      expect(atSettings, isTrue, reason: 'Failed to navigate to settings');
 
       // Scroll to bottom
       final scrollable = find.byType(Scrollable).first;
@@ -146,7 +146,7 @@ void main() {
 
     testWidgets('J4.10: Delete Account shows warning', (tester) async {
       final atSettings = await navigateToSettings(tester);
-      if (!atSettings) return;
+      expect(atSettings, isTrue, reason: 'Failed to navigate to settings');
 
       if (await scrollToText(tester, 'Delete Account')) {
         await tester.tap(find.text('Delete Account'));
@@ -167,7 +167,7 @@ void main() {
 
     testWidgets('J4.11: Version info visible', (tester) async {
       final atSettings = await navigateToSettings(tester);
-      if (!atSettings) return;
+      expect(atSettings, isTrue, reason: 'Failed to navigate to settings');
 
       // Scroll to bottom
       final scrollable = find.byType(Scrollable).first;
@@ -185,7 +185,7 @@ void main() {
 
     testWidgets('J4.12: Back from settings returns to home', (tester) async {
       final atSettings = await navigateToSettings(tester);
-      if (!atSettings) return;
+      expect(atSettings, isTrue, reason: 'Failed to navigate to settings');
 
       final wentBack = await tapBack(tester);
 

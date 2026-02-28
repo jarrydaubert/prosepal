@@ -26,7 +26,7 @@ void main() {
       final hasRestoreBanner = exists(find.text('Pro subscription found!'));
       final hasOnboarding = exists(find.text('Continue'));
       final hasHome = exists(find.text('Birthday'));
-      final hasAuth = exists(find.text('Continue with Email'));
+      final hasAuth = exists(find.text('Continue with Google'));
 
       expect(
         hasRestoreBanner || hasOnboarding || hasHome || hasAuth,
@@ -47,7 +47,6 @@ void main() {
           anyTextExists([
             'Continue with Apple',
             'Continue with Google',
-            'Continue with Email',
           ]),
           isTrue,
           reason: 'Should show sign-in options',
@@ -59,7 +58,7 @@ void main() {
 
     testWidgets('J7.3: Restore Purchases from settings', (tester) async {
       final atSettings = await navigateToSettings(tester);
-      if (!atSettings) return;
+      expect(atSettings, isTrue, reason: 'Failed to navigate to settings');
 
       if (await scrollToText(tester, 'Restore Purchases')) {
         await tester.tap(find.text('Restore Purchases'));
@@ -72,7 +71,7 @@ void main() {
 
     testWidgets('J7.4: Sign In from settings for restore', (tester) async {
       final atSettings = await navigateToSettings(tester);
-      if (!atSettings) return;
+      expect(atSettings, isTrue, reason: 'Failed to navigate to settings');
 
       if (await scrollToText(tester, 'Sign In')) {
         await tester.tap(find.text('Sign In'));
@@ -82,7 +81,6 @@ void main() {
           anyTextExists([
             'Continue with Apple',
             'Continue with Google',
-            'Continue with Email',
           ]),
           isTrue,
           reason: 'Should show auth screen',
@@ -94,7 +92,7 @@ void main() {
 
     testWidgets('J7.5: Anonymous user gets fresh state', (tester) async {
       final atHome = await navigateToHome(tester);
-      if (!atHome) return;
+      expect(atHome, isTrue, reason: 'Failed to navigate to home');
 
       // Fresh install should have 1 free generation
       final hasFreeIndicator =

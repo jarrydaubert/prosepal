@@ -21,7 +21,7 @@ void main() {
   group('Journey 6: Error Resilience', () {
     testWidgets('J6.1: App survives rapid occasion taps', (tester) async {
       final atHome = await navigateToHome(tester);
-      if (!atHome) return;
+      expect(atHome, isTrue, reason: 'Failed to navigate to home');
 
       // Rapid tap same occasion
       for (var i = 0; i < 5; i++) {
@@ -62,7 +62,7 @@ void main() {
 
     testWidgets('J6.3: Scroll to bottom and back', (tester) async {
       final atHome = await navigateToHome(tester);
-      if (!atHome) return;
+      expect(atHome, isTrue, reason: 'Failed to navigate to home');
 
       final scrollable = find.byType(Scrollable).first;
 
@@ -85,7 +85,7 @@ void main() {
 
     testWidgets('J6.4: Settings scroll to bottom and back', (tester) async {
       final atSettings = await navigateToSettings(tester);
-      if (!atSettings) return;
+      expect(atSettings, isTrue, reason: 'Failed to navigate to settings');
 
       final scrollable = find.byType(Scrollable).first;
 
@@ -102,7 +102,7 @@ void main() {
 
     testWidgets('J6.5: Tap during loading (if visible)', (tester) async {
       final atHome = await navigateToHome(tester);
-      if (!atHome) return;
+      expect(atHome, isTrue, reason: 'Failed to navigate to home');
 
       await completeWizard(tester);
 
@@ -130,7 +130,7 @@ void main() {
 
     testWidgets('J6.6: Multiple wizard completions', (tester) async {
       final atHome = await navigateToHome(tester);
-      if (!atHome) return;
+      expect(atHome, isTrue, reason: 'Failed to navigate to home');
 
       // Complete wizard multiple times
       for (var i = 0; i < 3; i++) {
@@ -160,7 +160,7 @@ void main() {
 
     testWidgets('J6.7: Error banner dismisses correctly', (tester) async {
       final atHome = await navigateToHome(tester);
-      if (!atHome) return;
+      expect(atHome, isTrue, reason: 'Failed to navigate to home');
 
       await completeWizard(tester);
 
@@ -180,7 +180,7 @@ void main() {
 
     testWidgets('J6.8: Retry after error works', (tester) async {
       final atHome = await navigateToHome(tester);
-      if (!atHome) return;
+      expect(atHome, isTrue, reason: 'Failed to navigate to home');
 
       await completeWizard(tester);
 

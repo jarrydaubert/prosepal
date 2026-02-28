@@ -15,7 +15,6 @@
 /// - [INFO] Purchase completed
 library;
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import '_helpers.dart';
 
@@ -27,7 +26,7 @@ void main() {
       tester,
     ) async {
       final atHome = await navigateToHome(tester);
-      if (!atHome) return;
+      expect(atHome, isTrue, reason: 'Failed to navigate to home');
 
       await completeWizard(tester);
 
@@ -48,7 +47,7 @@ void main() {
       tester,
     ) async {
       final atHome = await navigateToHome(tester);
-      if (!atHome) return;
+      expect(atHome, isTrue, reason: 'Failed to navigate to home');
 
       await completeWizard(tester);
 
@@ -60,7 +59,6 @@ void main() {
         final hasAuth = anyTextExists([
           'Continue with Apple',
           'Continue with Google',
-          'Continue with Email',
         ]);
         final hasPaywall =
             find.textContaining(r'$').evaluate().isNotEmpty ||
@@ -78,7 +76,7 @@ void main() {
 
     testWidgets('J2.3: Auth screen shows welcome message', (tester) async {
       final atAuth = await navigateToAuth(tester);
-      if (!atAuth) return;
+      expect(atAuth, isTrue, reason: 'Failed to navigate to auth');
 
       expect(find.text('Welcome to Prosepal'), findsOneWidget);
       expect(find.text('The right words, right now'), findsOneWidget);
@@ -88,21 +86,19 @@ void main() {
 
     testWidgets('J2.4: Auth screen has all sign-in options', (tester) async {
       final atAuth = await navigateToAuth(tester);
-      if (!atAuth) return;
+      expect(atAuth, isTrue, reason: 'Failed to navigate to auth');
 
-      // iOS should have Apple, all should have Google and Email
+      // All should have Google
       final hasGoogle = exists(find.text('Continue with Google'));
-      final hasEmail = exists(find.text('Continue with Email'));
 
       expect(hasGoogle, isTrue, reason: 'Should have Google sign-in');
-      expect(hasEmail, isTrue, reason: 'Should have Email sign-in');
 
       await screenshot(tester, 'j2_4_auth_options');
     });
 
     testWidgets('J2.5: Auth screen has legal links', (tester) async {
       final atAuth = await navigateToAuth(tester);
-      if (!atAuth) return;
+      expect(atAuth, isTrue, reason: 'Failed to navigate to auth');
 
       expect(exists(find.text('Terms')), isTrue);
       expect(exists(find.text('Privacy Policy')), isTrue);
@@ -110,33 +106,11 @@ void main() {
       await screenshot(tester, 'j2_5_auth_legal');
     });
 
-    testWidgets('J2.6: Email auth option opens email screen', (tester) async {
-      final atAuth = await navigateToAuth(tester);
-      if (!atAuth) return;
-
-      await tester.tap(find.text('Continue with Email'));
-      await tester.pumpAndSettle();
-
-      // Should show email input field
-      final hasTextField = find.byType(TextField).evaluate().isNotEmpty;
-      final hasEmailText =
-          find.textContaining('email').evaluate().isNotEmpty ||
-          find.textContaining('Email').evaluate().isNotEmpty;
-
-      expect(
-        hasTextField || hasEmailText,
-        isTrue,
-        reason: 'Should show email input screen',
-      );
-
-      await screenshot(tester, 'j2_6_email_auth');
-    });
-
-    testWidgets('J2.7: Sub-text shows correct message for anonymous', (
+    testWidgets('J2.6: Sub-text shows correct message for anonymous', (
       tester,
     ) async {
       final atHome = await navigateToHome(tester);
-      if (!atHome) return;
+      expect(atHome, isTrue, reason: 'Failed to navigate to home');
 
       await completeWizard(tester);
 

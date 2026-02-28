@@ -23,7 +23,7 @@ void main() {
       tester,
     ) async {
       final atHome = await navigateToHome(tester);
-      if (!atHome) return;
+      expect(atHome, isTrue, reason: 'Failed to navigate to home');
 
       await tester.tap(find.text('Birthday'));
       await tester.pumpAndSettle();
@@ -43,7 +43,7 @@ void main() {
 
     testWidgets('J5.2: Back from step 2 preserves occasion', (tester) async {
       final atHome = await navigateToHome(tester);
-      if (!atHome) return;
+      expect(atHome, isTrue, reason: 'Failed to navigate to home');
 
       await tester.tap(find.text('Birthday'));
       await tester.pumpAndSettle();
@@ -75,7 +75,7 @@ void main() {
 
     testWidgets('J5.3: Back from step 3 preserves selections', (tester) async {
       final atHome = await navigateToHome(tester);
-      if (!atHome) return;
+      expect(atHome, isTrue, reason: 'Failed to navigate to home');
 
       await completeWizard(tester);
 
@@ -96,7 +96,7 @@ void main() {
 
     testWidgets('J5.4: Can re-enter wizard after backing out', (tester) async {
       final atHome = await navigateToHome(tester);
-      if (!atHome) return;
+      expect(atHome, isTrue, reason: 'Failed to navigate to home');
 
       // Enter and exit
       await tester.tap(find.text('Birthday'));
@@ -120,7 +120,7 @@ void main() {
 
     testWidgets('J5.5: Rapid back taps handled gracefully', (tester) async {
       final atHome = await navigateToHome(tester);
-      if (!atHome) return;
+      expect(atHome, isTrue, reason: 'Failed to navigate to home');
 
       await completeWizard(tester);
 
@@ -146,7 +146,7 @@ void main() {
       tester,
     ) async {
       final atHome = await navigateToHome(tester);
-      if (!atHome) return;
+      expect(atHome, isTrue, reason: 'Failed to navigate to home');
 
       // Go to settings
       await tester.tap(find.byIcon(Icons.settings_outlined));
@@ -166,7 +166,7 @@ void main() {
 
     testWidgets('J5.7: Deep navigation and return', (tester) async {
       final atHome = await navigateToHome(tester);
-      if (!atHome) return;
+      expect(atHome, isTrue, reason: 'Failed to navigate to home');
 
       // Go deep: Home → Wizard → Settings (via back and re-navigate)
       await tester.tap(find.text('Birthday'));
