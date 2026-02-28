@@ -1,4 +1,4 @@
-/// Coverage: All 6 Tones
+/// Coverage: All 9 Tones
 ///
 /// Tests that each tone can be selected in the wizard.
 library;
@@ -16,13 +16,16 @@ void main() {
     'Casual',
     'Playful',
     'Inspirational',
+    'Sarcastic',
+    'Nostalgic',
+    'Poetic',
   ];
 
   group('Coverage: All Tones', () {
     for (final tone in allTones) {
       testWidgets('$tone can be selected', (tester) async {
         final atHome = await navigateToHome(tester);
-        if (!atHome) return;
+        expect(atHome, isTrue, reason: 'Failed to navigate to home');
 
         // Navigate to tone step
         await tester.tap(find.text('Birthday'));
@@ -64,7 +67,7 @@ void main() {
     for (final (occasion, tone) in occasionTonePairs) {
       testWidgets('$occasion with $tone tone', (tester) async {
         final atHome = await navigateToHome(tester);
-        if (!atHome) return;
+        expect(atHome, isTrue, reason: 'Failed to navigate to home');
 
         final completed = await completeWizard(
           tester,

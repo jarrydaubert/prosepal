@@ -32,7 +32,7 @@ void main() {
       expect(
         anyTextExists([
           'Continue',
-          'Continue with Email',
+          'Continue with Google',
           "What's the occasion?",
         ]),
         isTrue,
@@ -50,7 +50,7 @@ void main() {
       while (pages < 10) {
         // Check if we've reached auth or home
         if (exists(find.text('Birthday')) ||
-            exists(find.text('Continue with Email')) ||
+            exists(find.text('Continue with Google')) ||
             exists(find.text('Continue with Apple')) ||
             exists(find.text("What's the occasion?"))) {
           break;
@@ -78,7 +78,7 @@ void main() {
 
       expect(
         anyTextExists([
-          'Continue with Email',
+          'Continue with Google',
           'Continue with Apple',
           'Birthday',
           "What's the occasion?",
@@ -92,7 +92,7 @@ void main() {
 
     testWidgets('J1.3: Home shows occasions grid', (tester) async {
       final atHome = await navigateToHome(tester);
-      if (!atHome) return;
+      expect(atHome, isTrue, reason: 'Failed to navigate to home');
 
       expect(find.text("What's the occasion?"), findsOneWidget);
       expect(find.text('Birthday'), findsOneWidget);
@@ -109,7 +109,7 @@ void main() {
 
     testWidgets('J1.4: Free user sees usage indicator', (tester) async {
       final atHome = await navigateToHome(tester);
-      if (!atHome) return;
+      expect(atHome, isTrue, reason: 'Failed to navigate to home');
 
       // Should show either free remaining count or PRO badge
       final hasFreeIndicator =
@@ -128,7 +128,7 @@ void main() {
 
     testWidgets('J1.5: Wizard step 1 - Select relationship', (tester) async {
       final atHome = await navigateToHome(tester);
-      if (!atHome) return;
+      expect(atHome, isTrue, reason: 'Failed to navigate to home');
 
       await tester.tap(find.text('Birthday'));
       await tester.pumpAndSettle();
@@ -144,7 +144,7 @@ void main() {
 
     testWidgets('J1.6: Wizard step 2 - Select tone', (tester) async {
       final atHome = await navigateToHome(tester);
-      if (!atHome) return;
+      expect(atHome, isTrue, reason: 'Failed to navigate to home');
 
       await tester.tap(find.text('Birthday'));
       await tester.pumpAndSettle();
@@ -171,7 +171,7 @@ void main() {
       tester,
     ) async {
       final atHome = await navigateToHome(tester);
-      if (!atHome) return;
+      expect(atHome, isTrue, reason: 'Failed to navigate to home');
 
       final completed = await completeWizard(tester);
       expect(completed, isTrue, reason: 'Should reach final wizard step');
@@ -187,7 +187,7 @@ void main() {
 
     testWidgets('J1.8: Generate triggers AI call', (tester) async {
       final atHome = await navigateToHome(tester);
-      if (!atHome) return;
+      expect(atHome, isTrue, reason: 'Failed to navigate to home');
 
       await completeWizard(tester);
 
@@ -207,7 +207,7 @@ void main() {
 
     testWidgets('J1.9: Results show 3 options', (tester) async {
       final atHome = await navigateToHome(tester);
-      if (!atHome) return;
+      expect(atHome, isTrue, reason: 'Failed to navigate to home');
 
       await completeWizard(tester);
 
@@ -227,7 +227,7 @@ void main() {
 
     testWidgets('J1.10: Copy button works', (tester) async {
       final atHome = await navigateToHome(tester);
-      if (!atHome) return;
+      expect(atHome, isTrue, reason: 'Failed to navigate to home');
 
       await completeWizard(tester);
 
@@ -247,7 +247,7 @@ void main() {
 
     testWidgets('J1.11: Start Over returns to home', (tester) async {
       final atHome = await navigateToHome(tester);
-      if (!atHome) return;
+      expect(atHome, isTrue, reason: 'Failed to navigate to home');
 
       await completeWizard(tester);
 

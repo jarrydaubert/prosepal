@@ -23,7 +23,7 @@ void main() {
       tester,
     ) async {
       final atHome = await navigateToHome(tester);
-      if (!atHome) return;
+      expect(atHome, isTrue, reason: 'Failed to navigate to home');
 
       await completeWizard(tester);
 
@@ -43,7 +43,7 @@ void main() {
 
     testWidgets('J9.2: Brief length selectable', (tester) async {
       final atHome = await navigateToHome(tester);
-      if (!atHome) return;
+      expect(atHome, isTrue, reason: 'Failed to navigate to home');
 
       await completeWizard(tester);
 
@@ -57,7 +57,7 @@ void main() {
 
     testWidgets('J9.3: Detailed length selectable', (tester) async {
       final atHome = await navigateToHome(tester);
-      if (!atHome) return;
+      expect(atHome, isTrue, reason: 'Failed to navigate to home');
 
       await completeWizard(tester);
 
@@ -71,7 +71,7 @@ void main() {
 
     testWidgets('J9.4: Recipient name input visible', (tester) async {
       final atHome = await navigateToHome(tester);
-      if (!atHome) return;
+      expect(atHome, isTrue, reason: 'Failed to navigate to home');
 
       await completeWizard(tester);
 
@@ -87,7 +87,7 @@ void main() {
 
     testWidgets('J9.5: Can enter recipient name', (tester) async {
       final atHome = await navigateToHome(tester);
-      if (!atHome) return;
+      expect(atHome, isTrue, reason: 'Failed to navigate to home');
 
       await completeWizard(tester);
 
@@ -104,7 +104,7 @@ void main() {
 
     testWidgets('J9.6: Personal details input visible', (tester) async {
       final atHome = await navigateToHome(tester);
-      if (!atHome) return;
+      expect(atHome, isTrue, reason: 'Failed to navigate to home');
 
       await completeWizard(tester);
 
@@ -120,7 +120,7 @@ void main() {
 
     testWidgets('J9.7: Can enter personal details', (tester) async {
       final atHome = await navigateToHome(tester);
-      if (!atHome) return;
+      expect(atHome, isTrue, reason: 'Failed to navigate to home');
 
       await completeWizard(tester);
 

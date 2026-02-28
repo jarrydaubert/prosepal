@@ -69,7 +69,7 @@ void main() {
     for (final occasion in coreOccasions) {
       testWidgets('$occasion loads wizard', (tester) async {
         final atHome = await navigateToHome(tester);
-        if (!atHome) return;
+        expect(atHome, isTrue, reason: 'Failed to navigate to home');
 
         if (await scrollToText(tester, occasion)) {
           await tester.tap(find.text(occasion));
@@ -89,7 +89,7 @@ void main() {
     for (final occasion in holidayOccasions) {
       testWidgets('$occasion loads wizard', (tester) async {
         final atHome = await navigateToHome(tester);
-        if (!atHome) return;
+        expect(atHome, isTrue, reason: 'Failed to navigate to home');
 
         if (await scrollToText(tester, occasion)) {
           await tester.tap(find.text(occasion));
@@ -109,7 +109,7 @@ void main() {
     for (final occasion in culturalOccasions) {
       testWidgets('$occasion loads wizard', (tester) async {
         final atHome = await navigateToHome(tester);
-        if (!atHome) return;
+        expect(atHome, isTrue, reason: 'Failed to navigate to home');
 
         if (await scrollToText(tester, occasion)) {
           await tester.tap(find.text(occasion));
@@ -129,7 +129,7 @@ void main() {
     for (final occasion in careerOccasions) {
       testWidgets('$occasion loads wizard', (tester) async {
         final atHome = await navigateToHome(tester);
-        if (!atHome) return;
+        expect(atHome, isTrue, reason: 'Failed to navigate to home');
 
         if (await scrollToText(tester, occasion)) {
           await tester.tap(find.text(occasion));
@@ -149,7 +149,7 @@ void main() {
     for (final occasion in appreciationOccasions) {
       testWidgets('$occasion loads wizard', (tester) async {
         final atHome = await navigateToHome(tester);
-        if (!atHome) return;
+        expect(atHome, isTrue, reason: 'Failed to navigate to home');
 
         if (await scrollToText(tester, occasion)) {
           await tester.tap(find.text(occasion));
@@ -169,7 +169,7 @@ void main() {
     for (final occasion in petOccasions) {
       testWidgets('$occasion loads wizard', (tester) async {
         final atHome = await navigateToHome(tester);
-        if (!atHome) return;
+        expect(atHome, isTrue, reason: 'Failed to navigate to home');
 
         if (await scrollToText(tester, occasion)) {
           await tester.tap(find.text(occasion));

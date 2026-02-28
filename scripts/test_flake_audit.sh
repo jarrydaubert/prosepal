@@ -8,7 +8,6 @@ TARGET_RUNS="${TARGET_RUNS:-10}"
 LOG_DIR="${LOG_DIR:-/tmp/prosepal-flake-audit}"
 
 TARGET_FILES=(
-  "test/widgets/screens/email_auth_screen_test.dart"
   "test/widgets/screens/settings_screen_test.dart"
   "test/widgets/screens/generate_screen_test.dart"
   "test/widgets/screens/history_screen_test.dart"

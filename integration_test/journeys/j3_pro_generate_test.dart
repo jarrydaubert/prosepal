@@ -24,7 +24,7 @@ void main() {
   group('Journey 3: Pro User Flow', () {
     testWidgets('J3.1: Pro badge visible on home (if Pro)', (tester) async {
       final atHome = await navigateToHome(tester);
-      if (!atHome) return;
+      expect(atHome, isTrue, reason: 'Failed to navigate to home');
 
       // Check for Pro indicator
       final hasPro =
@@ -47,7 +47,7 @@ void main() {
       tester,
     ) async {
       final atHome = await navigateToHome(tester);
-      if (!atHome) return;
+      expect(atHome, isTrue, reason: 'Failed to navigate to home');
 
       await completeWizard(tester);
 
@@ -62,7 +62,7 @@ void main() {
 
     testWidgets('J3.3: Settings shows Pro Plan for Pro user', (tester) async {
       final atSettings = await navigateToSettings(tester);
-      if (!atSettings) return;
+      expect(atSettings, isTrue, reason: 'Failed to navigate to settings');
 
       // Should show either Pro Plan or Free Plan
       final hasProPlan = exists(find.text('Pro Plan'));
@@ -81,7 +81,7 @@ void main() {
       tester,
     ) async {
       final atSettings = await navigateToSettings(tester);
-      if (!atSettings) return;
+      expect(atSettings, isTrue, reason: 'Failed to navigate to settings');
 
       // Scroll to find auth action
       await scrollToText(tester, 'Sign Out');
@@ -101,7 +101,7 @@ void main() {
 
     testWidgets('J3.5: Sign Out shows confirmation dialog', (tester) async {
       final atSettings = await navigateToSettings(tester);
-      if (!atSettings) return;
+      expect(atSettings, isTrue, reason: 'Failed to navigate to settings');
 
       if (await scrollToText(tester, 'Sign Out')) {
         await tester.tap(find.text('Sign Out'));
@@ -112,7 +112,7 @@ void main() {
             exists(find.text('Confirm')) ||
             exists(find.text('Cancel')) ||
             exists(find.text('Are you sure'));
-        final atAuth = exists(find.text('Continue with Email'));
+        final atAuth = exists(find.text('Continue with Google'));
 
         expect(
           hasConfirm || atAuth,
@@ -126,10 +126,10 @@ void main() {
 
     testWidgets('J3.6: Pro user generation flow works', (tester) async {
       final atHome = await navigateToHome(tester);
-      if (!atHome) return;
+      expect(atHome, isTrue, reason: 'Failed to navigate to home');
 
       // Only run full generation if Pro (to save API calls)
-      if (!exists(find.text('PRO'))) return;
+      expect(exists(find.text('PRO')), isTrue, reason: 'PRO badge not found');
 
       await completeWizard(tester, occasion: 'Thank You', tone: 'Formal');
 
@@ -151,9 +151,9 @@ void main() {
       tester,
     ) async {
       final atHome = await navigateToHome(tester);
-      if (!atHome) return;
+      expect(atHome, isTrue, reason: 'Failed to navigate to home');
 
-      if (!exists(find.text('PRO'))) return;
+      expect(exists(find.text('PRO')), isTrue, reason: 'PRO badge not found');
 
       // First generation
       await completeWizard(tester);

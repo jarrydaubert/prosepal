@@ -32,7 +32,7 @@ void main() {
     for (final relationship in personalRelationships) {
       testWidgets('$relationship can be selected', (tester) async {
         final atHome = await navigateToHome(tester);
-        if (!atHome) return;
+        expect(atHome, isTrue, reason: 'Failed to navigate to home');
 
         await tester.tap(find.text('Birthday'));
         await tester.pumpAndSettle();
@@ -56,7 +56,7 @@ void main() {
     for (final relationship in professionalRelationships) {
       testWidgets('$relationship can be selected', (tester) async {
         final atHome = await navigateToHome(tester);
-        if (!atHome) return;
+        expect(atHome, isTrue, reason: 'Failed to navigate to home');
 
         await tester.tap(find.text('Birthday'));
         await tester.pumpAndSettle();
@@ -79,7 +79,7 @@ void main() {
     for (final relationship in communityRelationships) {
       testWidgets('$relationship can be selected', (tester) async {
         final atHome = await navigateToHome(tester);
-        if (!atHome) return;
+        expect(atHome, isTrue, reason: 'Failed to navigate to home');
 
         await tester.tap(find.text('Birthday'));
         await tester.pumpAndSettle();

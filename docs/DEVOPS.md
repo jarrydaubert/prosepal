@@ -312,6 +312,18 @@ A DevOps change is complete only when:
 - Security impact is documented.
 - Open issues are tracked in `docs/BACKLOG.md` (not in evergreen docs).
 
+## Proposed Improvements (External Review)
+
+Planned DevOps improvements for external review are tracked in `docs/BACKLOG.md` and currently include:
+- `P1-10` Monthly governance audit automation with run-ID evidence and trend fields.
+- `P1-11` Automated semantic release flow from `main` merges.
+- `P1-12` Troubleshooting playbooks (API outage, stale evidence, token rotation, rollback).
+- `P1-13` Scoped Dependabot auto-merge pilot for low-risk updates.
+- `P1-14` Structured `GITHUB_STEP_SUMMARY` output for key workflows.
+- `P1-15` CI dependency caching optimization with measured runtime impact.
+- `P1-16` Deterministic artifact controls for reproducibility.
+- `P1-17` Deployment safety guardrails verification and rollback path validation.
+
 ## Related References
 
 - `docs/BACKLOG.md` (open work only)
