@@ -26,7 +26,7 @@ void main() {
       final hasRestoreBanner = exists(find.text('Pro subscription found!'));
       final hasOnboarding = exists(find.text('Continue'));
       final hasHome = exists(find.text('Birthday'));
-      final hasAuth = exists(find.text('Continue with Google'));
+      final hasAuth = exists(find.text('Sign in with Google'));
 
       expect(
         hasRestoreBanner || hasOnboarding || hasHome || hasAuth,
@@ -44,10 +44,7 @@ void main() {
         expect(find.text('Sign in to restore your Pro access'), findsOneWidget);
 
         expect(
-          anyTextExists([
-            'Continue with Apple',
-            'Continue with Google',
-          ]),
+          anyTextExists(['Sign in with Apple', 'Sign in with Google']),
           isTrue,
           reason: 'Should show sign-in options',
         );
@@ -78,10 +75,7 @@ void main() {
         await tester.pumpAndSettle(const Duration(seconds: 2));
 
         expect(
-          anyTextExists([
-            'Continue with Apple',
-            'Continue with Google',
-          ]),
+          anyTextExists(['Sign in with Apple', 'Sign in with Google']),
           isTrue,
           reason: 'Should show auth screen',
         );

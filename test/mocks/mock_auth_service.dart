@@ -171,22 +171,6 @@ class MockAuthService implements IAuthService {
   @visibleForTesting
   int signInWithGoogleCallCount = 0;
 
-  /// Number of times signInWithEmail() was called
-  @visibleForTesting
-  int signInWithEmailCallCount = 0;
-
-  /// Number of times signUpWithEmail() was called
-  @visibleForTesting
-  int signUpWithEmailCallCount = 0;
-
-  /// Number of times resetPassword() was called
-  @visibleForTesting
-  int resetPasswordCallCount = 0;
-
-  /// Number of times signInWithMagicLink() was called
-  @visibleForTesting
-  int signInWithMagicLinkCallCount = 0;
-
   /// Number of times updateEmail() was called
   @visibleForTesting
   int updateEmailCallCount = 0;
@@ -221,8 +205,7 @@ class MockAuthService implements IAuthService {
 
   /// Per-method errors - takes precedence over [errorToThrow]
   ///
-  /// Keys: 'signInWithEmail', 'signUpWithEmail', 'signInWithApple',
-  /// 'signInWithGoogle', 'signOut', 'resetPassword', 'signInWithMagicLink',
+  /// Keys: 'signInWithApple', 'signInWithGoogle', 'signOut',
   /// 'updateEmail', 'updatePassword', 'deleteAccount'
   @visibleForTesting
   final Map<String, Exception> methodErrors = {};
@@ -289,10 +272,6 @@ class MockAuthService implements IAuthService {
     simulateDelay = null;
     signInWithAppleCallCount = 0;
     signInWithGoogleCallCount = 0;
-    signInWithEmailCallCount = 0;
-    signUpWithEmailCallCount = 0;
-    resetPasswordCallCount = 0;
-    signInWithMagicLinkCallCount = 0;
     updateEmailCallCount = 0;
     updatePasswordCallCount = 0;
     signOutCallCount = 0;
@@ -371,62 +350,6 @@ class MockAuthService implements IAuthService {
       emitAuthState(AuthState(AuthChangeEvent.signedIn, session));
     }
     return AuthResponse(session: session, user: user);
-  }
-
-  @override
-  Future<AuthResponse> signInWithEmail({
-    required String email,
-    required String password,
-  }) async {
-    signInWithEmailCallCount++;
-    lastEmailUsed = email;
-    lastPasswordUsed = password;
-    await _maybeDelay();
-    final error = _getError('signInWithEmail');
-    if (error != null) throw error;
-    final user = createFakeUser(email: email, displayName: _displayName);
-    _currentUser = user;
-    _isLoggedIn = true;
-    _email = email;
-    final session = createFakeSession(user: user);
-    if (autoEmitAuthState) {
-      emitAuthState(AuthState(AuthChangeEvent.signedIn, session));
-    }
-    return AuthResponse(session: session, user: user);
-  }
-
-  @override
-  Future<AuthResponse> signUpWithEmail({
-    required String email,
-    required String password,
-  }) async {
-    signUpWithEmailCallCount++;
-    lastEmailUsed = email;
-    lastPasswordUsed = password;
-    final error = _getError('signUpWithEmail');
-    if (error != null) throw error;
-    // Sign up may not confirm email immediately
-    final user = createFakeUser(email: email, emailConfirmed: false);
-    _currentUser = user;
-    _email = email;
-    return AuthResponse(user: user);
-  }
-
-  @override
-  Future<void> resetPassword(String email) async {
-    resetPasswordCallCount++;
-    lastEmailUsed = email;
-    final error = _getError('resetPassword');
-    if (error != null) throw error;
-  }
-
-  @override
-  Future<void> signInWithMagicLink(String email) async {
-    signInWithMagicLinkCallCount++;
-    lastEmailUsed = email;
-    await _maybeDelay();
-    final error = _getError('signInWithMagicLink');
-    if (error != null) throw error;
   }
 
   @override

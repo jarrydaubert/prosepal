@@ -112,7 +112,7 @@ void main() {
             exists(find.text('Confirm')) ||
             exists(find.text('Cancel')) ||
             exists(find.text('Are you sure'));
-        final atAuth = exists(find.text('Continue with Google'));
+        final atAuth = exists(find.text('Sign in with Google'));
 
         expect(
           hasConfirm || atAuth,

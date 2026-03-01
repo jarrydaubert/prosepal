@@ -57,8 +57,8 @@ void main() {
 
         // Should show auth options (anonymous) or paywall (authenticated)
         final hasAuth = anyTextExists([
-          'Continue with Apple',
-          'Continue with Google',
+          'Sign in with Apple',
+          'Sign in with Google',
         ]);
         final hasPaywall =
             find.textContaining(r'$').evaluate().isNotEmpty ||
@@ -89,7 +89,7 @@ void main() {
       expect(atAuth, isTrue, reason: 'Failed to navigate to auth');
 
       // All should have Google
-      final hasGoogle = exists(find.text('Continue with Google'));
+      final hasGoogle = exists(find.text('Sign in with Google'));
 
       expect(hasGoogle, isTrue, reason: 'Should have Google sign-in');
 

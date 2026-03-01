@@ -54,37 +54,6 @@ abstract class IAuthService {
   /// Returns [AuthResponse] with session on success.
   Future<AuthResponse> signInWithGoogle();
 
-  /// Sign in with email and password.
-  ///
-  /// Throws [AuthException] with status 400 for invalid credentials.
-  /// Throws [AuthException] with status 429 for rate limiting.
-  /// Returns [AuthResponse] with session on success.
-  Future<AuthResponse> signInWithEmail({
-    required String email,
-    required String password,
-  });
-
-  /// Create new account with email and password.
-  ///
-  /// Throws [AuthException] with status 409/422 if email already exists.
-  /// Throws [AuthException] if password is too weak.
-  /// Returns [AuthResponse] (may require email confirmation depending on settings).
-  Future<AuthResponse> signUpWithEmail({
-    required String email,
-    required String password,
-  });
-
-  /// Send password reset email.
-  ///
-  /// Throws [AuthException] on failure (but not if email doesn't exist,
-  /// for security - prevents email enumeration).
-  Future<void> resetPassword(String email);
-
-  /// Send magic link for passwordless sign-in.
-  ///
-  /// Throws [AuthException] on failure (rate limit, invalid email format).
-  Future<void> signInWithMagicLink(String email);
-
   /// Update current user's email address.
   ///
   /// Requires active session. Throws [AuthException] if not logged in.

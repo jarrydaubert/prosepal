@@ -32,7 +32,7 @@ void main() {
       expect(
         anyTextExists([
           'Continue',
-          'Continue with Google',
+          'Sign in with Google',
           "What's the occasion?",
         ]),
         isTrue,
@@ -50,8 +50,8 @@ void main() {
       while (pages < 10) {
         // Check if we've reached auth or home
         if (exists(find.text('Birthday')) ||
-            exists(find.text('Continue with Google')) ||
-            exists(find.text('Continue with Apple')) ||
+            exists(find.text('Sign in with Google')) ||
+            exists(find.text('Sign in with Apple')) ||
             exists(find.text("What's the occasion?"))) {
           break;
         }
@@ -78,8 +78,8 @@ void main() {
 
       expect(
         anyTextExists([
-          'Continue with Google',
-          'Continue with Apple',
+          'Sign in with Google',
+          'Sign in with Apple',
           'Birthday',
           "What's the occasion?",
         ]),

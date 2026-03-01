@@ -49,6 +49,7 @@ Rules:
 | `P1-19` | Protected production environments | GitHub environments (`staging`/`production`) gate production-key usage with required reviewers and environment-scoped secrets/variables documented in `docs/DEVOPS.md`. |
 | `P1-20` | Post-release production pulse checks | `docs/DEVOPS.md` defines a 0-60 minute post-release check protocol (Crashlytics, Supabase, AI cost/error signals, store console sanity) with explicit rollback trigger thresholds. |
 | `P1-21` | Release evidence bundle automation | Release workflow publishes an evidence bundle artifact (checks summary, coverage/service-gate outputs, wired/FTL evidence links, Supabase/AI audit outputs, and run-ID traceability). |
+| `P1-22` | UTC consistency for server-synced timestamps | `rate_limit_service.dart` and `usage_service.dart` use `DateTime.now().toUtc()` for all server-synced timestamp calculations (rate limit windows, monthly resets, usage sync). Local time usage is restricted to local-only features (history display). Existing tests updated to validate UTC. |
 
 ## P2 - Lower Priority
 
@@ -61,3 +62,4 @@ Rules:
 | `P2-05` | History pagination | History loading is paginated/lazy with deterministic UX for empty/loading/error states. |
 | `P2-06` | Accessibility automation suite | Automated accessibility checks are part of CI with documented pass/fail criteria. |
 | `P2-07` | Drop synonym prompt tests in ai_service_test | Remove brittle synonym-matching prompt tests (lines 284-316) that assert copy phrases like "funny/humor/light" and "brief/short/1-2"; contract-style `.prompt` assertions already cover the same guarantee. Tests pass after removal with no coverage loss. |
+| `P2-08` | Database backup restore verification | Supabase backup restore procedure is documented in `docs/DEVOPS.md` with steps to verify a restore, and at least one test restore has been completed and evidenced. |

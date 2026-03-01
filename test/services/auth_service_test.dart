@@ -15,8 +15,6 @@ import '../mocks/mock_supabase_auth_provider.dart';
 /// Coverage includes:
 /// - Apple Sign In (nonce handling, scopes, error conversion)
 /// - Google Sign In (initialization, lightweight auth, cancellation)
-/// - Email/Password (sign in, sign up, error propagation)
-/// - Magic Link and Password Reset
 /// - Account management (update email/password, delete)
 /// - Property delegation (currentUser, session, auth state stream)
 /// - Display name logic (metadata priority)
@@ -327,113 +325,6 @@ void main() {
       mockGoogle.simulateInterrupted('Connection interrupted');
 
       expect(() => authService.signInWithGoogle(), throwsA(isA<Exception>()));
-    });
-  });
-
-  // ============================================================
-  // Sign In With Email
-  // ============================================================
-
-  group('signInWithEmail', () {
-    test('calls signInWithPassword on supabase', () async {
-      await authService.signInWithEmail(
-        email: 'test@example.com',
-        password: 'password123',
-      );
-
-      expect(mockSupabase.signInWithPasswordCalls, 1);
-      expect(mockSupabase.lastEmail, 'test@example.com');
-      expect(mockSupabase.lastPassword, 'password123');
-    });
-
-    test('returns AuthResponse on success', () async {
-      final result = await authService.signInWithEmail(
-        email: 'user@test.com',
-        password: 'pass',
-      );
-
-      expect(result, isA<AuthResponse>());
-    });
-
-    test('propagates auth errors', () async {
-      mockSupabase.methodErrors['signInWithPassword'] = const AuthException(
-        'Invalid credentials',
-      );
-
-      expect(
-        () => authService.signInWithEmail(
-          email: 'bad@test.com',
-          password: 'wrong',
-        ),
-        throwsA(isA<AuthException>()),
-      );
-    });
-  });
-
-  // ============================================================
-  // Sign Up With Email
-  // ============================================================
-
-  group('signUpWithEmail', () {
-    test('calls signUp on supabase', () async {
-      await authService.signUpWithEmail(
-        email: 'new@example.com',
-        password: 'newpass123',
-      );
-
-      expect(mockSupabase.signUpCalls, 1);
-      expect(mockSupabase.lastEmail, 'new@example.com');
-      expect(mockSupabase.lastPassword, 'newpass123');
-    });
-
-    test(
-      'returns AuthResponse with user but no session (email not confirmed)',
-      () async {
-        final result = await authService.signUpWithEmail(
-          email: 'new@test.com',
-          password: 'pass',
-        );
-
-        expect(result.user, isNotNull);
-        expect(result.session, isNull);
-      },
-    );
-  });
-
-  // ============================================================
-  // Magic Link
-  // ============================================================
-
-  group('signInWithMagicLink', () {
-    test('calls signInWithOtp on supabase', () async {
-      await authService.signInWithMagicLink('magic@example.com');
-
-      expect(mockSupabase.signInWithOtpCalls, 1);
-      expect(mockSupabase.lastEmail, 'magic@example.com');
-    });
-
-    test('includes redirect URL for mobile', () async {
-      await authService.signInWithMagicLink('test@example.com');
-
-      // On mobile, should have HTTPS Universal Link redirect URL
-      // Note: kIsWeb is false in tests
-      expect(
-        mockSupabase.lastRedirectTo,
-        'https://prosepal.app/auth/login-callback',
-      );
-    });
-  });
-
-  // ============================================================
-  // Password Reset
-  // ============================================================
-
-  group('resetPassword', () {
-    test('calls resetPasswordForEmail on supabase', () async {
-      await authService.resetPassword('reset@example.com');
-
-      expect(mockSupabase.resetPasswordCalls, 1);
-      expect(mockSupabase.lastEmail, 'reset@example.com');
     });
   });
 

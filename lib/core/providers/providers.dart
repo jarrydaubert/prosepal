@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-// StateNotifier and StateProvider are in legacy.dart for Riverpod 2.x
+// StateNotifier and StateProvider are in legacy.dart for Riverpod 3.x
 // These are still fully supported; "legacy" just means non-code-gen API
 // ignore: implementation_imports
 import 'package:flutter_riverpod/legacy.dart';
@@ -16,14 +16,14 @@ import '../services/services.dart';
 // Provider Architecture Notes
 // ============================================================
 //
-// This file follows Riverpod 2.x best practices:
+// This file follows Riverpod 3.x best practices (non-code-gen / "legacy" API):
 // - Services as singletons via Provider (testable via overrides)
 // - Reactive state via StateNotifierProvider (CustomerInfo)
 // - Derived state via Provider (isProProvider, remainingGenerationsProvider)
 // - Form state via StateProvider (simple, no validation logic)
 //
 // StateNotifier/StateProvider from legacy.dart are fully supported in
-// Riverpod 2.x. The "legacy" designation refers to the non-code-gen API,
+// Riverpod 3.x. The "legacy" designation refers to the non-code-gen API,
 // not deprecated functionality.
 //
 // For testing, override auth providers and sharedPreferencesProvider.
