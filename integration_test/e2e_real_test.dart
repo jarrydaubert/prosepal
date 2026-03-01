@@ -232,7 +232,7 @@ void main() {
         await tester.pumpAndSettle(const Duration(seconds: 3));
 
         // If auth required first, skip this test
-        if (anyTextExists(['Continue with Apple', 'Continue with Google'])) {
+        if (anyTextExists(['Sign in with Apple', 'Sign in with Google'])) {
           await screenshot(tester, 'real_07_auth_required');
           return;
         }

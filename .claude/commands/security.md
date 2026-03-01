@@ -43,6 +43,7 @@ Rules:
 - [ ] Public keys have API/app restrictions (bundle/package/SHA/referrer as applicable)
 - [ ] Rate limiting implemented
 - [ ] Request/response validation
+- [ ] Server-synced timestamps use UTC (rate limiting, usage tracking, session expiry)
 - [ ] Timeouts prevent hanging
 
 ### Client Security

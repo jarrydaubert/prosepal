@@ -158,8 +158,8 @@ Future<bool> navigateToAuth(WidgetTester tester) async {
   if (find.text('Upgrade to Continue').evaluate().isNotEmpty) {
     await tester.tap(find.text('Upgrade to Continue'));
     await _pumpFor(tester, const Duration(seconds: 2));
-    return find.text('Continue with Google').evaluate().isNotEmpty ||
-        find.text('Continue with Apple').evaluate().isNotEmpty;
+    return find.text('Sign in with Google').evaluate().isNotEmpty ||
+        find.text('Sign in with Apple').evaluate().isNotEmpty;
   }
 
   return false;

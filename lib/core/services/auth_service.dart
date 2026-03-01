@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -12,14 +11,6 @@ import '../interfaces/auth_interface.dart';
 import '../interfaces/google_auth_provider.dart';
 import '../interfaces/supabase_auth_provider.dart';
 import 'log_service.dart';
-
-// ===========================================================================
-// Deep Link Configuration
-// ===========================================================================
-// HTTPS Universal/App Links are preferred (verified, secure)
-// Legacy custom scheme (com.prosepal.prosepal://) kept in AndroidManifest.xml
-// and Info.plist as fallback for older OS versions
-const _httpsRedirectBase = 'https://prosepal.app/auth';
 
 /// Validates that required Google client IDs are configured.
 /// Returns true if Google Sign-In can work, false otherwise.
@@ -36,7 +27,7 @@ bool _validateGoogleClientIds() {
 
 /// Authentication service using dependency injection for testability
 ///
-/// Supports Apple Sign-In, Google OAuth, and email/magic link flows.
+/// Supports Apple Sign-In and Google OAuth (social-only).
 /// All external dependencies are injected via constructor.
 ///
 /// ## Usage
@@ -292,44 +283,6 @@ class AuthService implements IAuthService {
 
     Log.info('User signed in', {'provider': 'google'});
     return response;
-  }
-
-  // ===========================================================================
-  // Email / Password Authentication
-  // ===========================================================================
-
-  @override
-  Future<AuthResponse> signInWithEmail({
-    required String email,
-    required String password,
-  }) async => _supabase.signInWithPassword(email: email, password: password);
-
-  @override
-  Future<AuthResponse> signUpWithEmail({
-    required String email,
-    required String password,
-  }) async => _supabase.signUp(email: email, password: password);
-
-  @override
-  Future<void> resetPassword(String email) async {
-    // Use deep link to handle password reset in app
-    await _supabase.resetPasswordForEmail(
-      email,
-      redirectTo: kIsWeb ? null : '$_httpsRedirectBase/reset-callback',
-    );
-  }
-
-  // ===========================================================================
-  // Magic Link (Passwordless)
-  // ===========================================================================
-
-  @override
-  Future<void> signInWithMagicLink(String email) async {
-    // HTTPS Universal/App Links for secure auth callback (verified by domain)
-    await _supabase.signInWithOtp(
-      email: email,
-      emailRedirectTo: kIsWeb ? null : '$_httpsRedirectBase/login-callback',
-    );
   }
 
   // ===========================================================================

@@ -34,8 +34,8 @@ void main() {
 
         // Should show auth or paywall
         final atAuth = anyTextExists([
-          'Continue with Apple',
-          'Continue with Google',
+          'Sign in with Apple',
+          'Sign in with Google',
         ]);
         final atPaywall = anyTextExists(['Subscribe', 'Pro', 'month', 'year']);
 
@@ -86,7 +86,7 @@ void main() {
         await tester.pumpAndSettle(const Duration(seconds: 3));
 
         // If at auth, we can't test paywall directly
-        if (anyTextExists(['Continue with Apple', 'Continue with Google'])) {
+        if (anyTextExists(['Sign in with Apple', 'Sign in with Google'])) {
           // Skip - need to auth first
           return;
         }
