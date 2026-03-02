@@ -19,7 +19,7 @@ const captureIntegrationScreenshots = bool.fromEnvironment(
 /// Initialize the test binding
 void initBinding() {
   binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
-  binding.framePolicy = LiveTestWidgetsFlutterBindingFramePolicy.onlyPumps;
+  binding.framePolicy = LiveTestWidgetsFlutterBindingFramePolicy.benchmarkLive;
 }
 
 /// Take a screenshot with the given name (Android requires convertFlutterSurfaceToImage first)
@@ -42,21 +42,39 @@ Future<void> screenshot(WidgetTester tester, String name) async {
 }
 
 /// Launch app and wait for initial screen
-Future<void> launchApp(WidgetTester tester) async {
-  addTearDown(() async {
-    await tester.pumpWidget(const SizedBox.shrink());
-    await tester.pump(const Duration(milliseconds: 50));
-  });
-
-  await _resetPersistentState();
+Future<void> launchApp(
+  WidgetTester tester, {
+  bool seedFreeTierUsed = false,
+}) async {
+  await _resetPersistentState(seedFreeTierUsed: seedFreeTierUsed);
   app.main();
-  await _pumpFor(tester, const Duration(seconds: 3));
+  binding.scheduleWarmUpFrame();
+  final reachedReadySurface = await waitForAnyText(tester, const [
+    'Prosepal',
+    'Preparing your workspace...',
+    'Securing sign-in...',
+    'Syncing subscriptions...',
+    'Continue',
+    'Get Started',
+    'Sign in with Google',
+    'Sign in with Apple',
+    "What's the occasion?",
+    'Birthday',
+  ], timeout: const Duration(seconds: 45));
+
+  expect(
+    reachedReadySurface,
+    isTrue,
+    reason: 'App did not reach onboarding/auth/home surface after launch',
+  );
 }
 
 /// Skip onboarding screens until home is visible
 Future<void> skipOnboarding(WidgetTester tester) async {
   var attempts = 0;
-  while (attempts < 10) {
+  while (attempts < 60) {
+    await _pumpFor(tester, const Duration(milliseconds: 400));
+
     // Check if we've reached home
     if (find.text('Birthday').evaluate().isNotEmpty ||
         find.text("What's the occasion?").evaluate().isNotEmpty) {
@@ -65,39 +83,60 @@ Future<void> skipOnboarding(WidgetTester tester) async {
 
     // Tap "Get Started" to complete onboarding (final carousel page)
     if (find.text('Get Started').evaluate().isNotEmpty) {
-      await tester.tap(find.text('Get Started'));
+      await tester.tap(find.text('Get Started'), warnIfMissed: false);
       await _pumpFor(tester, const Duration(seconds: 2));
       break;
     }
 
     // Tap "Continue" to advance carousel
     if (find.text('Continue').evaluate().isNotEmpty) {
-      await tester.tap(find.text('Continue'));
-      await _pumpFor(tester, const Duration(seconds: 1));
+      await tester.tap(find.text('Continue'), warnIfMissed: false);
+      await _pumpFor(tester, const Duration(milliseconds: 800));
       attempts++;
-    } else {
-      break;
+      continue;
     }
+
+    attempts++;
   }
 }
 
 /// Navigate to home screen (launch + skip onboarding)
-Future<bool> navigateToHome(WidgetTester tester) async {
-  await launchApp(tester);
+Future<bool> navigateToHome(
+  WidgetTester tester, {
+  bool seedFreeTierUsed = false,
+}) async {
+  await launchApp(tester, seedFreeTierUsed: seedFreeTierUsed);
   await skipOnboarding(tester);
-  return find.text('Birthday').evaluate().isNotEmpty;
+  final homeSignalsVisible = await waitForAnyText(tester, const [
+    "What's the occasion?",
+    'Birthday',
+  ], timeout: const Duration(seconds: 8));
+  return homeSignalsVisible ||
+      find.byKey(const ValueKey('home_settings_button')).evaluate().isNotEmpty;
 }
 
 /// Navigate to settings screen
-Future<bool> navigateToSettings(WidgetTester tester) async {
-  if (!await navigateToHome(tester)) return false;
+Future<bool> navigateToSettings(
+  WidgetTester tester, {
+  bool seedFreeTierUsed = false,
+}) async {
+  if (!await navigateToHome(tester, seedFreeTierUsed: seedFreeTierUsed)) {
+    return false;
+  }
 
-  if (find.byIcon(Icons.settings_outlined).evaluate().isEmpty) return false;
+  final settingsByKey = find.byKey(const ValueKey('home_settings_button'));
+  final settingsByIcon = find.byIcon(Icons.settings_outlined);
+  if (settingsByKey.evaluate().isEmpty && settingsByIcon.evaluate().isEmpty) {
+    return false;
+  }
 
-  await tester.tap(find.byIcon(Icons.settings_outlined));
+  await tester.tap(
+    settingsByKey.evaluate().isNotEmpty ? settingsByKey : settingsByIcon.first,
+    warnIfMissed: false,
+  );
   await _pumpFor(tester, const Duration(seconds: 1));
 
-  return find.text('Settings').evaluate().isNotEmpty;
+  return waitForText(tester, 'Settings', timeout: const Duration(seconds: 8));
 }
 
 /// Complete wizard through all steps (occasion -> relationship -> tone -> final)
@@ -107,43 +146,34 @@ Future<bool> completeWizard(
   String relationship = 'Close Friend',
   String tone = 'Heartfelt',
 }) async {
-  // Tap occasion
-  if (find.text(occasion).evaluate().isEmpty) {
-    final scrollable = find.byType(Scrollable).first;
-    try {
-      await tester.scrollUntilVisible(
-        find.text(occasion),
-        200,
-        scrollable: scrollable,
-      );
-      await _pumpFor(tester, const Duration(seconds: 1));
-    } on Exception catch (_) {
-      return false;
-    }
+  if (find.text(occasion).evaluate().isEmpty &&
+      !await scrollToText(tester, occasion)) {
+    return false;
   }
 
   await tester.tap(find.text(occasion));
   await _pumpFor(tester, const Duration(seconds: 1));
 
-  // Select relationship
-  if (find.text(relationship).evaluate().isNotEmpty) {
-    await tester.tap(find.text(relationship));
-    await _pumpFor(tester, const Duration(seconds: 1));
+  if (find.text(relationship).evaluate().isEmpty &&
+      !await scrollToText(tester, relationship)) {
+    return false;
   }
-  if (find.text('Continue').evaluate().isNotEmpty) {
-    await tester.tap(find.text('Continue'));
-    await _pumpFor(tester, const Duration(seconds: 1));
-  }
+  await tester.tap(find.text(relationship));
+  await _pumpFor(tester, const Duration(seconds: 1));
 
-  // Select tone
-  if (find.text(tone).evaluate().isNotEmpty) {
-    await tester.tap(find.text(tone));
-    await _pumpFor(tester, const Duration(seconds: 1));
+  if (find.text('Continue').evaluate().isEmpty) return false;
+  await tester.tap(find.text('Continue'));
+  await _pumpFor(tester, const Duration(seconds: 1));
+
+  if (find.text(tone).evaluate().isEmpty && !await scrollToText(tester, tone)) {
+    return false;
   }
-  if (find.text('Continue').evaluate().isNotEmpty) {
-    await tester.tap(find.text('Continue'));
-    await _pumpFor(tester, const Duration(seconds: 1));
-  }
+  await tester.tap(find.text(tone));
+  await _pumpFor(tester, const Duration(seconds: 1));
+
+  if (find.text('Continue').evaluate().isEmpty) return false;
+  await tester.tap(find.text('Continue'));
+  await _pumpFor(tester, const Duration(seconds: 1));
 
   // Check final step
   return find.text('Generate Messages').evaluate().isNotEmpty ||
@@ -152,7 +182,7 @@ Future<bool> completeWizard(
 
 /// Navigate to auth screen via upgrade path
 Future<bool> navigateToAuth(WidgetTester tester) async {
-  if (!await navigateToHome(tester)) return false;
+  if (!await navigateToHome(tester, seedFreeTierUsed: true)) return false;
   if (!await completeWizard(tester)) return false;
 
   if (find.text('Upgrade to Continue').evaluate().isNotEmpty) {
@@ -172,24 +202,65 @@ bool exists(Finder finder) => finder.evaluate().isNotEmpty;
 bool anyTextExists(List<String> texts) =>
     texts.any((text) => find.text(text).evaluate().isNotEmpty);
 
+/// Wait until [text] appears, polling for up to [timeout].
+Future<bool> waitForText(
+  WidgetTester tester,
+  String text, {
+  Duration timeout = const Duration(seconds: 10),
+  Duration pollInterval = const Duration(milliseconds: 250),
+}) => _waitForFinder(
+  tester,
+  find.text(text),
+  timeout: timeout,
+  pollInterval: pollInterval,
+);
+
+/// Wait until any text in [texts] appears, polling for up to [timeout].
+Future<bool> waitForAnyText(
+  WidgetTester tester,
+  List<String> texts, {
+  Duration timeout = const Duration(seconds: 10),
+  Duration pollInterval = const Duration(milliseconds: 250),
+}) async {
+  final intervalMs = pollInterval.inMilliseconds;
+  final safeIntervalMs = intervalMs <= 0 ? 1 : intervalMs;
+  final maxAttempts = timeout.inMilliseconds ~/ safeIntervalMs;
+  for (var attempt = 0; attempt < maxAttempts; attempt++) {
+    if (anyTextExists(texts)) {
+      return true;
+    }
+    await _pumpFor(tester, pollInterval);
+  }
+  return anyTextExists(texts);
+}
+
 /// Scroll until text is visible, returns true if found
 Future<bool> scrollToText(
   WidgetTester tester,
   String text, {
   double delta = 200,
+  int maxScrolls = 10,
 }) async {
-  final scrollable = find.byType(Scrollable).first;
-  try {
-    await tester.scrollUntilVisible(
-      find.text(text),
-      delta,
-      scrollable: scrollable,
-    );
-    await _pumpFor(tester, const Duration(seconds: 1));
+  final target = find.text(text);
+  if (target.evaluate().isNotEmpty) {
     return true;
-  } on Exception catch (_) {
+  }
+
+  final scrollables = find.byType(Scrollable);
+  if (scrollables.evaluate().isEmpty) {
     return false;
   }
+
+  final scrollable = scrollables.first;
+  for (var attempt = 0; attempt < maxScrolls; attempt++) {
+    await tester.drag(scrollable, Offset(0, -delta));
+    await _pumpFor(tester, const Duration(milliseconds: 300));
+    if (target.evaluate().isNotEmpty) {
+      return true;
+    }
+  }
+
+  return target.evaluate().isNotEmpty;
 }
 
 /// Tap back button if visible
@@ -202,23 +273,33 @@ Future<bool> tapBack(WidgetTester tester) async {
   return false;
 }
 
-Future<void> _resetPersistentState() async {
+Future<void> _resetPersistentState({bool seedFreeTierUsed = false}) async {
   SharedPreferences.setMockInitialValues({
     PreferenceKeys.hasCompletedOnboarding: false,
     PreferenceKeys.hasSeenFirstActionHint: false,
     PreferenceKeys.analyticsEnabled: false,
+    PreferenceKeys.usageTotalCount: seedFreeTierUsed ? 1 : 0,
+    PreferenceKeys.usageDeviceUsedFreeTier: seedFreeTierUsed,
   });
   FlutterSecureStorage.setMockInitialValues(const <String, String>{});
 }
 
-Future<void> _pumpFor(
+Future<bool> _waitForFinder(
   WidgetTester tester,
-  Duration duration, {
-  Duration step = const Duration(milliseconds: 100),
+  Finder finder, {
+  Duration timeout = const Duration(seconds: 10),
+  Duration pollInterval = const Duration(milliseconds: 250),
 }) async {
-  var elapsed = Duration.zero;
-  while (elapsed < duration) {
-    await tester.pump(step);
-    elapsed += step;
+  final intervalMs = pollInterval.inMilliseconds;
+  final safeIntervalMs = intervalMs <= 0 ? 1 : intervalMs;
+  final maxAttempts = timeout.inMilliseconds ~/ safeIntervalMs;
+  for (var attempt = 0; attempt < maxAttempts; attempt++) {
+    if (finder.evaluate().isNotEmpty) return true;
+    await _pumpFor(tester, pollInterval);
   }
+  return finder.evaluate().isNotEmpty;
+}
+
+Future<void> _pumpFor(WidgetTester tester, Duration duration) async {
+  await tester.pump(duration);
 }

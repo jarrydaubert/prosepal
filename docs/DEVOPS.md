@@ -188,6 +188,11 @@ Use wired-device evidence for release confidence:
 ./scripts/run_wired_evidence.sh --suite full
 ```
 
+Wired evidence runtime config:
+- `run_wired_evidence.sh` automatically passes `--dart-define-from-file=.env.local` when that file exists.
+- Override with `--dart-define-file <path>` for alternate environments.
+- Use `--no-dart-define-file` to run without dart-define injection.
+
 Firebase Test Lab deterministic critical suite:
 
 ```bash
