@@ -245,9 +245,12 @@ class _SplashScreenState extends ConsumerState<_SplashScreen> {
   }
 
   Future<void> _determineInitialRoute() async {
+    if (!mounted) return;
+
     // Sync device state from server FIRST - ensures accurate state on home screen
     final usageService = ref.read(usageServiceProvider);
     await usageService.syncDeviceStateFromServer();
+    if (!mounted) return;
 
     final prefs = ref.read(sharedPreferencesProvider);
     final hasCompletedOnboarding =
@@ -257,19 +260,23 @@ class _SplashScreenState extends ConsumerState<_SplashScreen> {
     final isLoggedIn = authService.isLoggedIn;
     final biometricService = ref.read(biometricServiceProvider);
     final biometricsEnabled = await biometricService.isEnabled;
+    if (!mounted) return;
 
     var biometricsAvailable = false;
     if (biometricsEnabled) {
       final available = await biometricService.availableBiometrics;
+      if (!mounted) return;
       biometricsAvailable = available.isNotEmpty;
       if (!biometricsAvailable) {
         Log.warning('Biometrics enabled but unavailable - auto-disabling');
         await biometricService.setEnabled(false);
+        if (!mounted) return;
       }
     }
 
     if (!isLoggedIn) {
       _hasProFromRestore = await _checkAnonymousProStatus();
+      if (!mounted) return;
     }
 
     if (!mounted) return;
@@ -298,6 +305,8 @@ class _SplashScreenState extends ConsumerState<_SplashScreen> {
   }
 
   Future<bool> _checkAnonymousProStatus() async {
+    if (!mounted) return false;
+
     try {
       final subscriptionService = ref.read(subscriptionServiceProvider);
       if (!subscriptionService.isConfigured) {

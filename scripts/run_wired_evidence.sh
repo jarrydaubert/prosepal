@@ -12,6 +12,8 @@ Options:
   --test-file <path>         Run a specific integration test file (repeatable)
   --android-id <device-id>   Android device ID (auto-detected if omitted)
   --ios-id <device-id>       iOS device ID (auto-detected if omitted)
+  --dart-define-file <path>  Pass --dart-define-from-file to flutter test
+  --no-dart-define-file      Do not pass --dart-define-from-file
   --skip-android             Skip Android execution
   --skip-ios                 Skip iOS execution
   --out-dir <path>           Artifact output directory
@@ -34,6 +36,8 @@ IOS_ID=""
 SKIP_ANDROID=0
 SKIP_IOS=0
 TEST_TIMEOUT_SEC="${TEST_TIMEOUT_SEC:-480}"
+DART_DEFINE_FILE="${DART_DEFINE_FILE:-}"
+USE_DART_DEFINE_FILE=1
 declare -a TEST_FILES=()
 
 while [[ $# -gt 0 ]]; do
@@ -62,6 +66,14 @@ while [[ $# -gt 0 ]]; do
       SKIP_IOS=1
       shift
       ;;
+    --dart-define-file)
+      DART_DEFINE_FILE="$2"
+      shift 2
+      ;;
+    --no-dart-define-file)
+      USE_DART_DEFINE_FILE=0
+      shift
+      ;;
     --out-dir)
       RUN_DIR="$2"
       SUMMARY_FILE="$RUN_DIR/SUMMARY.md"
@@ -78,6 +90,15 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
+
+if [[ "$USE_DART_DEFINE_FILE" -eq 1 && -z "$DART_DEFINE_FILE" && -f "$PROJECT_DIR/.env.local" ]]; then
+  DART_DEFINE_FILE="$PROJECT_DIR/.env.local"
+fi
+
+if [[ "$USE_DART_DEFINE_FILE" -eq 1 && -n "$DART_DEFINE_FILE" && ! -f "$DART_DEFINE_FILE" ]]; then
+  echo "Dart define file not found: $DART_DEFINE_FILE" >&2
+  exit 1
+fi
 
 if [[ ${#TEST_FILES[@]} -eq 0 ]]; then
   case "$SUITE_PRESET" in
@@ -152,6 +173,13 @@ cat > "$SUMMARY_FILE" <<EOF
 - per_test_timeout_sec: $TEST_TIMEOUT_SEC
 - android_device: ${ANDROID_ID:-not-configured}
 - ios_device: ${IOS_ID:-not-configured}
+- dart_define_file: $(
+  if [[ "$USE_DART_DEFINE_FILE" -eq 1 && -n "$DART_DEFINE_FILE" ]]; then
+    printf '%s' "$DART_DEFINE_FILE"
+  else
+    printf '%s' "none"
+  fi
+)
 
 ## Results
 
@@ -264,8 +292,14 @@ run_suite() {
     /opt/homebrew/share/android-commandlinetools/platform-tools/adb -s "$device_id" logcat -c >/dev/null 2>&1 || true
   fi
 
+  local -a flutter_cmd
+  flutter_cmd=(flutter test "$test_file" -d "$device_id")
+  if [[ "$USE_DART_DEFINE_FILE" -eq 1 && -n "$DART_DEFINE_FILE" ]]; then
+    flutter_cmd+=("--dart-define-from-file=$DART_DEFINE_FILE")
+  fi
+
   set +e
-  run_with_timeout "$TEST_TIMEOUT_SEC" "$log_file" flutter test "$test_file" -d "$device_id"
+  run_with_timeout "$TEST_TIMEOUT_SEC" "$log_file" "${flutter_cmd[@]}"
   local command_status=$?
   set -e
 
