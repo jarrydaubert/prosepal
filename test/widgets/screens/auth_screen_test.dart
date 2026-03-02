@@ -38,6 +38,16 @@ void main() {
     mockAuth.dispose();
   });
 
+  Future<void> prepareViewport(
+    WidgetTester tester, {
+    Size size = const Size(1080, 1920),
+  }) async {
+    tester.view.physicalSize = size;
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() => tester.view.resetPhysicalSize());
+    addTearDown(() => tester.view.resetDevicePixelRatio());
+  }
+
   Widget createTestableAuthScreen({
     String? redirectTo,
     bool isProRestore = false,
@@ -83,9 +93,7 @@ void main() {
     testWidgets('shows only social sign-in options on onboarding auth', (
       tester,
     ) async {
-      tester.view.physicalSize = const Size(1080, 1920);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(() => tester.view.resetPhysicalSize());
+      await prepareViewport(tester);
 
       await tester.pumpWidget(createTestableAuthScreen());
       await tester.pump(const Duration(milliseconds: 500));
@@ -98,9 +106,7 @@ void main() {
       tester,
     ) async {
       // Non-paywall redirects allow dismissal
-      tester.view.physicalSize = const Size(1080, 1920);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(() => tester.view.resetPhysicalSize());
+      await prepareViewport(tester);
 
       await tester.pumpWidget(createTestableAuthScreen(redirectTo: 'home'));
       await tester.pump(const Duration(milliseconds: 500));
@@ -110,9 +116,7 @@ void main() {
 
     testWidgets('paywall redirect flow has NO dismiss button', (tester) async {
       // Paywall redirect requires auth - no escape (by design)
-      tester.view.physicalSize = const Size(1080, 1920);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(() => tester.view.resetPhysicalSize());
+      await prepareViewport(tester);
 
       await tester.pumpWidget(createTestableAuthScreen(redirectTo: 'paywall'));
       await tester.pump(const Duration(milliseconds: 500));
@@ -124,6 +128,7 @@ void main() {
     testWidgets('shows loading then navigates on successful Google sign-in', (
       tester,
     ) async {
+      await prepareViewport(tester);
       mockAuth.simulateDelay = const Duration(milliseconds: 300);
 
       await tester.pumpWidget(createTestableAuthScreen());
@@ -143,11 +148,17 @@ void main() {
     });
 
     testWidgets('shows error banner when Google sign-in fails', (tester) async {
+      await prepareViewport(tester);
       mockAuth.simulateRateLimit();
 
       await tester.pumpWidget(createTestableAuthScreen());
       await tester.pump(const Duration(milliseconds: 300));
 
+      await tester.dragUntilVisible(
+        find.text('Sign in with Google'),
+        find.byType(Scrollable),
+        const Offset(0, -120),
+      );
       await tester.tap(find.text('Sign in with Google'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 200));
@@ -160,9 +171,30 @@ void main() {
       await tester.pump(const Duration(seconds: 11));
     });
 
+    testWidgets('handles compact height without RenderFlex overflow', (
+      tester,
+    ) async {
+      await prepareViewport(tester, size: const Size(320, 560));
+      mockAuth.simulateRateLimit();
+
+      await tester.pumpWidget(createTestableAuthScreen());
+      await tester.pump(const Duration(milliseconds: 300));
+
+      await tester.tap(find.text('Sign in with Google'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+
+      expect(find.byIcon(Icons.error_outline_rounded), findsOneWidget);
+      expect(tester.takeException(), isNull);
+
+      // Flush auto-dismiss timer started by AuthScreen._showError.
+      await tester.pump(const Duration(seconds: 11));
+    });
+
     testWidgets('shows pro-restore banner when isProRestore is true', (
       tester,
     ) async {
+      await prepareViewport(tester);
       await tester.pumpWidget(createTestableAuthScreen(isProRestore: true));
       await tester.pump(const Duration(milliseconds: 300));
 

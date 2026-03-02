@@ -23,6 +23,23 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Commit attribution guard
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            RANGE="${{ github.event.pull_request.base.sha }}..${{ github.sha }}"
+          else
+            BASE_SHA="${{ github.event.before }}"
+            if [[ -z "$BASE_SHA" || "$BASE_SHA" == "0000000000000000000000000000000000000000" ]]; then
+              BASE_SHA="$(git rev-list --max-parents=0 "${{ github.sha }}" | tail -n1)"
+            fi
+            RANGE="$BASE_SHA..${{ github.sha }}"
+          fi
+
+          ./scripts/check_commit_attribution.sh --range "$RANGE"
+
       - name: Detect docs-only change scope
         id: scope
         shell: bash

@@ -270,6 +270,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
     final isSmallScreen = size.width < 380;
+    final topSpacerHeight = (size.height * 0.10).clamp(24.0, 96.0);
+    final middleSpacerHeight = (size.height * 0.08).clamp(20.0, 72.0);
 
     // Responsive sizing
     final logoSize = size.width * 0.38; // ~38% of screen width
@@ -308,203 +310,225 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
               ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 40),
-              child: Column(
-                children: [
-                  const Spacer(flex: 2),
+              child: LayoutBuilder(
+                builder: (context, constraints) => SingleChildScrollView(
+                  // Keep auth screen resilient on compact or leaked test constraints.
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: constraints.maxHeight,
+                    ),
+                    child: Column(
+                      children: [
+                        SizedBox(height: topSpacerHeight),
 
-                  // App Logo with bold border container
-                  Container(
-                        width: logoSize,
-                        height: logoSize,
-                        decoration: BoxDecoration(
-                          color: AppColors.primaryLight,
-                          borderRadius: BorderRadius.circular(40),
-                          border: Border.all(
-                            color: AppColors.primary,
-                            width: 4,
-                          ),
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(36),
-                          child: AppLogo(size: logoSize - 20),
-                        ),
-                      )
-                      .animate(key: const ValueKey('logo'))
-                      .fadeIn(duration: 400.ms)
-                      .scale(delay: 100.ms, curve: Curves.easeOutBack),
+                        // App Logo with bold border container
+                        Container(
+                              width: logoSize,
+                              height: logoSize,
+                              decoration: BoxDecoration(
+                                color: AppColors.primaryLight,
+                                borderRadius: BorderRadius.circular(40),
+                                border: Border.all(
+                                  color: AppColors.primary,
+                                  width: 4,
+                                ),
+                              ),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(36),
+                                child: AppLogo(size: logoSize - 20),
+                              ),
+                            )
+                            .animate(key: const ValueKey('logo'))
+                            .fadeIn(duration: 400.ms)
+                            .scale(delay: 100.ms, curve: Curves.easeOutBack),
 
-                  const SizedBox(height: 32),
+                        const SizedBox(height: 32),
 
-                  // Title
-                  Text(
-                        'Welcome to Prosepal',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: titleSize,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.primary,
-                        ),
-                      )
-                      .animate(key: const ValueKey('title'))
-                      .fadeIn(delay: 300.ms)
-                      .slideY(begin: 0.2, end: 0),
-
-                  const SizedBox(height: 12),
-
-                  // Tagline
-                  Text(
-                        'The right words, right now',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: subtitleSize,
-                          color: AppColors.textSecondary,
-                          height: 1.5,
-                        ),
-                      )
-                      .animate(key: const ValueKey('tagline'))
-                      .fadeIn(delay: 500.ms),
-
-                  // Subscription sign-in prompt (when coming from paywall)
-                  if (isPaywallRedirect) ...[
-                    const SizedBox(height: 24),
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: AppColors.primary.withValues(alpha: 0.3),
-                        ),
-                      ),
-                      child: const Row(
-                        children: [
-                          Icon(
-                            Icons.account_circle_outlined,
-                            color: AppColors.primary,
-                            size: 24,
-                          ),
-                          SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              'Create an account to purchase a subscription',
+                        // Title
+                        Text(
+                              'Welcome to Prosepal',
+                              textAlign: TextAlign.center,
                               style: TextStyle(
-                                fontSize: 14,
+                                fontSize: titleSize,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.primary,
+                              ),
+                            )
+                            .animate(key: const ValueKey('title'))
+                            .fadeIn(delay: 300.ms)
+                            .slideY(begin: 0.2, end: 0),
+
+                        const SizedBox(height: 12),
+
+                        // Tagline
+                        Text(
+                              'The right words, right now',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: subtitleSize,
                                 color: AppColors.textSecondary,
-                                height: 1.4,
+                                height: 1.5,
+                              ),
+                            )
+                            .animate(key: const ValueKey('tagline'))
+                            .fadeIn(delay: 500.ms),
+
+                        // Subscription sign-in prompt (when coming from paywall)
+                        if (isPaywallRedirect) ...[
+                          const SizedBox(height: 24),
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: AppColors.primary.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: AppColors.primary.withValues(alpha: 0.3),
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-                    ).animate().fadeIn(delay: 600.ms).slideY(begin: 0.2),
-                  ],
-
-                  // Pro restore banner
-                  if (widget.isProRestore) ...[
-                    const SizedBox(height: 24),
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: AppColors.success.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.success),
-                      ),
-                      child: const Row(
-                        children: [
-                          Icon(Icons.star, color: AppColors.success, size: 24),
-                          SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                            child: const Row(
                               children: [
-                                Text(
-                                  'Pro subscription found!',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: AppColors.success,
-                                  ),
+                                Icon(
+                                  Icons.account_circle_outlined,
+                                  color: AppColors.primary,
+                                  size: 24,
                                 ),
-                                Text(
-                                  'Sign in to restore your Pro access',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    color: AppColors.textSecondary,
+                                SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    'Create an account to purchase a subscription',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: AppColors.textSecondary,
+                                      height: 1.4,
+                                    ),
                                   ),
                                 ),
                               ],
                             ),
-                          ),
+                          ).animate().fadeIn(delay: 600.ms).slideY(begin: 0.2),
                         ],
-                      ),
-                    ).animate().fadeIn(delay: 600.ms).slideY(begin: 0.2),
-                  ],
 
-                  const Spacer(flex: 2),
-
-                  // Error message
-                  if (_error != null) ...[
-                    _ErrorBanner(message: _error!, onDismiss: _dismissError),
-                    const SizedBox(height: 20),
-                  ],
-
-                  // Auth buttons
-                  Column(
-                        children: [
-                          // Apple Sign In (iOS/macOS only, first per Apple guidelines)
-                          // IMPORTANT: Use official SignInWithAppleButton styling
-                          // Custom text/styling violates Apple HIG and causes rejection
-                          if (Platform.isIOS || Platform.isMacOS) ...[
-                            _AuthButton(
-                              onPressed: _isLoading ? null : _signInWithApple,
-                              isLoading: _isLoading,
-                              child: SizedBox(
-                                height: 56,
-                                child: SignInWithAppleButton(
-                                  onPressed: _signInWithApple,
+                        // Pro restore banner
+                        if (widget.isProRestore) ...[
+                          const SizedBox(height: 24),
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: AppColors.success.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: AppColors.success),
+                            ),
+                            child: const Row(
+                              children: [
+                                Icon(
+                                  Icons.star,
+                                  color: AppColors.success,
+                                  size: 24,
                                 ),
-                              ),
+                                SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Pro subscription found!',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          color: AppColors.success,
+                                        ),
+                                      ),
+                                      Text(
+                                        'Sign in to restore your Pro access',
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          color: AppColors.textSecondary,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
                             ),
-                            const SizedBox(height: 12),
-                          ],
-
-                          // Google Sign In (branding: 24px icon per Google guidelines)
-                          _AuthButton(
-                            onPressed: _isLoading ? null : _signInWithGoogle,
-                            isLoading: _isLoading,
-                            style: _AuthButtonStyle.outlined,
-                            icon: Image.asset(
-                              'assets/images/icons/google_g.png',
-                              width: 24,
-                              height: 24,
-                            ),
-                            label: 'Sign in with Google',
-                          ),
+                          ).animate().fadeIn(delay: 600.ms).slideY(begin: 0.2),
                         ],
-                      )
-                      .animate(key: const ValueKey('buttons'))
-                      .fadeIn(delay: 600.ms)
-                      .slideY(begin: 0.1, end: 0),
 
-                  const SizedBox(height: 24),
+                        SizedBox(height: middleSpacerHeight),
 
-                  // Loading indicator or legal text
-                  if (_isLoading)
-                    const SizedBox(
-                      width: 28,
-                      height: 28,
-                      child: CircularProgressIndicator(
-                        color: AppColors.primary,
-                        strokeWidth: 2.5,
-                      ),
-                    )
-                  else
-                    _LegalText(
-                      onTermsTap: () => context.pushNamed('terms'),
-                      onPrivacyTap: () => context.pushNamed('privacy'),
-                    ).animate().fadeIn(delay: 800.ms),
+                        // Error message
+                        if (_error != null) ...[
+                          _ErrorBanner(
+                            message: _error!,
+                            onDismiss: _dismissError,
+                          ),
+                          const SizedBox(height: 20),
+                        ],
 
-                  const SizedBox(height: 20),
-                ],
+                        // Auth buttons
+                        Column(
+                              children: [
+                                // Apple Sign In (iOS/macOS only, first per Apple guidelines)
+                                // IMPORTANT: Use official SignInWithAppleButton styling
+                                // Custom text/styling violates Apple HIG and causes rejection
+                                if (Platform.isIOS || Platform.isMacOS) ...[
+                                  _AuthButton(
+                                    onPressed: _isLoading
+                                        ? null
+                                        : _signInWithApple,
+                                    isLoading: _isLoading,
+                                    child: SizedBox(
+                                      height: 56,
+                                      child: SignInWithAppleButton(
+                                        onPressed: _signInWithApple,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 12),
+                                ],
+
+                                // Google Sign In (branding: 24px icon per Google guidelines)
+                                _AuthButton(
+                                  onPressed: _isLoading
+                                      ? null
+                                      : _signInWithGoogle,
+                                  isLoading: _isLoading,
+                                  style: _AuthButtonStyle.outlined,
+                                  icon: Image.asset(
+                                    'assets/images/icons/google_g.png',
+                                    width: 24,
+                                    height: 24,
+                                  ),
+                                  label: 'Sign in with Google',
+                                ),
+                              ],
+                            )
+                            .animate(key: const ValueKey('buttons'))
+                            .fadeIn(delay: 600.ms)
+                            .slideY(begin: 0.1, end: 0),
+
+                        const SizedBox(height: 24),
+
+                        // Loading indicator or legal text
+                        if (_isLoading)
+                          const SizedBox(
+                            width: 28,
+                            height: 28,
+                            child: CircularProgressIndicator(
+                              color: AppColors.primary,
+                              strokeWidth: 2.5,
+                            ),
+                          )
+                        else
+                          _LegalText(
+                            onTermsTap: () => context.pushNamed('terms'),
+                            onPrivacyTap: () => context.pushNamed('privacy'),
+                          ).animate().fadeIn(delay: 800.ms),
+
+                        const SizedBox(height: 20),
+                      ],
+                    ),
+                  ),
+                ),
               ),
             ),
           ],
