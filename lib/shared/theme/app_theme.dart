@@ -7,7 +7,7 @@ import 'app_typography.dart';
 
 /// Prosepal Material 3 Theme
 ///
-/// Purple primary with system light/dark support.
+/// Coral primary with system light/dark support.
 class AppTheme {
   AppTheme._();
 
@@ -18,7 +18,7 @@ class AppTheme {
       useMaterial3: true,
       brightness: brightness,
       colorScheme: scheme,
-      scaffoldBackgroundColor: scheme.surface,
+      scaffoldBackgroundColor: AppColors.background,
       textTheme: textTheme,
       appBarTheme: AppBarTheme(
         backgroundColor: scheme.surface,

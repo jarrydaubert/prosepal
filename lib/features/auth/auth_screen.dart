@@ -176,7 +176,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       const SnackBar(
         content: Row(
           children: [
-            Icon(Icons.check_circle, color: Colors.white, size: 20),
+            Icon(Icons.check_circle, color: AppColors.textOnPrimary, size: 20),
             SizedBox(width: 8),
             Text("You're all set! Start creating messages."),
           ],
@@ -348,11 +348,12 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                         Text(
                               'Welcome to Prosepal',
                               textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: titleSize,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.primary,
-                              ),
+                              style: Theme.of(context).textTheme.displaySmall
+                                  ?.copyWith(
+                                    fontSize: titleSize,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.primary,
+                                  ),
                             )
                             .animate(key: const ValueKey('title'))
                             .fadeIn(delay: 300.ms)
@@ -364,11 +365,12 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                         Text(
                               'The right words, right now',
                               textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: subtitleSize,
-                                color: AppColors.textSecondary,
-                                height: 1.5,
-                              ),
+                              style: Theme.of(context).textTheme.bodyLarge
+                                  ?.copyWith(
+                                    fontSize: subtitleSize,
+                                    color: AppColors.textSecondary,
+                                    height: 1.5,
+                                  ),
                             )
                             .animate(key: const ValueKey('tagline'))
                             .fadeIn(delay: 500.ms),
@@ -385,22 +387,24 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                                 color: AppColors.primary.withValues(alpha: 0.3),
                               ),
                             ),
-                            child: const Row(
+                            child: Row(
                               children: [
-                                Icon(
+                                const Icon(
                                   Icons.account_circle_outlined,
                                   color: AppColors.primary,
                                   size: 24,
                                 ),
-                                SizedBox(width: 12),
+                                const SizedBox(width: 12),
                                 Expanded(
                                   child: Text(
                                     'Create an account to purchase a subscription',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: AppColors.textSecondary,
-                                      height: 1.4,
-                                    ),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyMedium
+                                        ?.copyWith(
+                                          color: AppColors.textSecondary,
+                                          height: 1.4,
+                                        ),
                                   ),
                                 ),
                               ],
@@ -418,14 +422,14 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(color: AppColors.success),
                             ),
-                            child: const Row(
+                            child: Row(
                               children: [
-                                Icon(
+                                const Icon(
                                   Icons.star,
                                   color: AppColors.success,
                                   size: 24,
                                 ),
-                                SizedBox(width: 12),
+                                const SizedBox(width: 12),
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment:
@@ -433,17 +437,22 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                                     children: [
                                       Text(
                                         'Pro subscription found!',
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          color: AppColors.success,
-                                        ),
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .titleSmall
+                                            ?.copyWith(
+                                              fontWeight: FontWeight.bold,
+                                              color: AppColors.success,
+                                            ),
                                       ),
                                       Text(
                                         'Sign in to restore your Pro access',
-                                        style: TextStyle(
-                                          fontSize: 13,
-                                          color: AppColors.textSecondary,
-                                        ),
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodySmall
+                                            ?.copyWith(
+                                              color: AppColors.textSecondary,
+                                            ),
                                       ),
                                     ],
                                   ),
@@ -571,6 +580,8 @@ class _AuthButtonState extends State<_AuthButton> {
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
     // If child is provided, use it directly (for Apple button)
     if (widget.child != null) {
       return GestureDetector(
@@ -600,12 +611,12 @@ class _AuthButtonState extends State<_AuthButton> {
 
     if (isPrimary) {
       backgroundColor = AppColors.primary;
-      textColor = Colors.white;
+      textColor = AppColors.textOnPrimary;
     } else {
-      // Google and Email: consistent white bg with subtle border
-      backgroundColor = Colors.white;
-      textColor = const Color(0xFF1F1F1F);
-      border = Border.all(color: Colors.grey.shade300, width: 1.5);
+      // Google and email styles use a light surface to preserve brand affordance.
+      backgroundColor = AppColors.surface;
+      textColor = AppColors.textPrimary;
+      border = Border.all(color: AppColors.borderMedium, width: 1.5);
     }
 
     return GestureDetector(
@@ -641,7 +652,7 @@ class _AuthButtonState extends State<_AuthButton> {
                     widget.label ?? '',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
+                    style: textTheme.titleMedium?.copyWith(
                       fontSize: 17,
                       fontWeight: FontWeight.w500,
                       color: textColor,
@@ -665,41 +676,41 @@ class _ErrorBanner extends StatelessWidget {
   final VoidCallback onDismiss;
 
   @override
-  Widget build(BuildContext context) =>
-      Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: AppColors.error.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.error, width: 2),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.error_outline_rounded, color: AppColors.error),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    message,
-                    style: const TextStyle(
-                      color: AppColors.error,
-                      fontSize: 14,
-                    ),
-                  ),
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
+    return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.error.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.error, width: 2),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.error_outline_rounded, color: AppColors.error),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  message,
+                  style: textTheme.bodyMedium?.copyWith(color: AppColors.error),
                 ),
-                GestureDetector(
-                  onTap: onDismiss,
-                  child: const Icon(
-                    Icons.close_rounded,
-                    color: AppColors.error,
-                    size: 20,
-                  ),
+              ),
+              GestureDetector(
+                onTap: onDismiss,
+                child: const Icon(
+                  Icons.close_rounded,
+                  color: AppColors.error,
+                  size: 20,
                 ),
-              ],
-            ),
-          )
-          .animate(key: ValueKey(message))
-          .fadeIn(duration: 300.ms)
-          .shake(hz: 3, duration: 400.ms);
+              ),
+            ],
+          ),
+        )
+        .animate(key: ValueKey(message))
+        .fadeIn(duration: 300.ms)
+        .shake(hz: 3, duration: 400.ms);
+  }
 }
 
 /// Legal text with tappable links
@@ -710,41 +721,43 @@ class _LegalText extends StatelessWidget {
   final VoidCallback onPrivacyTap;
 
   @override
-  Widget build(BuildContext context) => Wrap(
-    alignment: WrapAlignment.center,
-    children: [
-      const Text(
-        'By continuing, you agree to our ',
-        style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
-      ),
-      GestureDetector(
-        onTap: onTermsTap,
-        child: const Text(
-          'Terms',
-          style: TextStyle(
-            fontSize: 13,
-            color: AppColors.primary,
-            fontWeight: FontWeight.w600,
-            decoration: TextDecoration.underline,
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
+    return Wrap(
+      alignment: WrapAlignment.center,
+      children: [
+        Text(
+          'By continuing, you agree to our ',
+          style: textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+        ),
+        GestureDetector(
+          onTap: onTermsTap,
+          child: Text(
+            'Terms',
+            style: textTheme.bodySmall?.copyWith(
+              color: AppColors.primary,
+              fontWeight: FontWeight.w600,
+              decoration: TextDecoration.underline,
+            ),
           ),
         ),
-      ),
-      const Text(
-        ' and ',
-        style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
-      ),
-      GestureDetector(
-        onTap: onPrivacyTap,
-        child: const Text(
-          'Privacy Policy',
-          style: TextStyle(
-            fontSize: 13,
-            color: AppColors.primary,
-            fontWeight: FontWeight.w600,
-            decoration: TextDecoration.underline,
+        Text(
+          ' and ',
+          style: textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+        ),
+        GestureDetector(
+          onTap: onPrivacyTap,
+          child: Text(
+            'Privacy Policy',
+            style: textTheme.bodySmall?.copyWith(
+              color: AppColors.primary,
+              fontWeight: FontWeight.w600,
+              decoration: TextDecoration.underline,
+            ),
           ),
         ),
-      ),
-    ],
-  );
+      ],
+    );
+  }
 }

@@ -58,7 +58,7 @@ class _AddOccasionSheetState extends ConsumerState<AddOccasionSheet> {
     return Container(
       margin: EdgeInsets.only(bottom: bottomPadding),
       decoration: const BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: SingleChildScrollView(
@@ -73,7 +73,7 @@ class _AddOccasionSheetState extends ConsumerState<AddOccasionSheet> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.grey[300],
+                  color: AppColors.borderMedium,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -86,17 +86,16 @@ class _AddOccasionSheetState extends ConsumerState<AddOccasionSheet> {
                 Expanded(
                   child: Text(
                     _isEditing ? 'Edit Occasion' : 'Add Occasion',
-                    style: const TextStyle(
-                      fontSize: 24,
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: AppColors.textOnLight,
+                      color: AppColors.textPrimary,
                     ),
                   ),
                 ),
                 IconButton(
                   tooltip: 'Close',
                   onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.close, color: AppColors.textOnLight),
+                  icon: const Icon(Icons.close, color: AppColors.textPrimary),
                 ),
               ],
             ),
@@ -128,10 +127,14 @@ class _AddOccasionSheetState extends ConsumerState<AddOccasionSheet> {
               decoration: InputDecoration(
                 hintText: 'e.g., Mom, John, Sarah',
                 filled: true,
-                fillColor: Colors.grey[100],
+                fillColor: AppColors.surfaceVariant,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
+                  borderSide: const BorderSide(color: AppColors.borderMedium),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: AppColors.borderMedium),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -162,10 +165,14 @@ class _AddOccasionSheetState extends ConsumerState<AddOccasionSheet> {
               decoration: InputDecoration(
                 hintText: 'Add any notes or reminders...',
                 filled: true,
-                fillColor: Colors.grey[100],
+                fillColor: AppColors.surfaceVariant,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
+                  borderSide: const BorderSide(color: AppColors.borderMedium),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: AppColors.borderMedium),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -201,7 +208,6 @@ class _AddOccasionSheetState extends ConsumerState<AddOccasionSheet> {
                         child: Text(
                           'Remind me before',
                           style: TextStyle(
-                            fontSize: 16,
                             fontWeight: FontWeight.w600,
                             color: AppColors.textOnLight,
                           ),
@@ -318,8 +324,7 @@ class _SectionLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Text(
     text,
-    style: const TextStyle(
-      fontSize: 14,
+    style: Theme.of(context).textTheme.labelLarge?.copyWith(
       fontWeight: FontWeight.w600,
       color: AppColors.textSecondary,
     ),
@@ -358,10 +363,10 @@ class _OccasionPicker extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
-              color: isSelected ? AppColors.primary : Colors.grey[100],
+              color: isSelected ? AppColors.primary : AppColors.surfaceVariant,
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: isSelected ? AppColors.primary : Colors.grey[300]!,
+                color: isSelected ? AppColors.primary : AppColors.borderMedium,
                 width: 2,
               ),
             ),
@@ -372,10 +377,11 @@ class _OccasionPicker extends StatelessWidget {
                 const SizedBox(width: 6),
                 Text(
                   o.label,
-                  style: TextStyle(
-                    fontSize: 14,
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
                     fontWeight: FontWeight.w600,
-                    color: isSelected ? Colors.white : AppColors.textOnLight,
+                    color: isSelected
+                        ? AppColors.textOnPrimary
+                        : AppColors.textPrimary,
                   ),
                 ),
               ],
@@ -416,9 +422,9 @@ class _DatePicker extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.grey[100],
+          color: AppColors.surfaceVariant,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey[300]!),
+          border: Border.all(color: AppColors.borderMedium),
         ),
         child: Row(
           children: [
@@ -427,14 +433,13 @@ class _DatePicker extends StatelessWidget {
             Expanded(
               child: Text(
                 dateFormat.format(selected),
-                style: const TextStyle(
-                  fontSize: 16,
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   fontWeight: FontWeight.w500,
-                  color: AppColors.textOnLight,
+                  color: AppColors.textPrimary,
                 ),
               ),
             ),
-            const Icon(Icons.chevron_right, color: Colors.grey),
+            const Icon(Icons.chevron_right, color: AppColors.textHint),
           ],
         ),
       ),
@@ -472,19 +477,20 @@ class _RelationshipPicker extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
-              color: isSelected ? AppColors.primary : Colors.grey[100],
+              color: isSelected ? AppColors.primary : AppColors.surfaceVariant,
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: isSelected ? AppColors.primary : Colors.grey[300]!,
+                color: isSelected ? AppColors.primary : AppColors.borderMedium,
                 width: 2,
               ),
             ),
             child: Text(
               label,
-              style: TextStyle(
-                fontSize: 14,
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
                 fontWeight: FontWeight.w600,
-                color: isSelected ? Colors.white : AppColors.textOnLight,
+                color: isSelected
+                    ? AppColors.textOnPrimary
+                    : AppColors.textPrimary,
               ),
             ),
           ),
@@ -511,20 +517,19 @@ class _ReminderOption extends StatelessWidget {
     child: Container(
       padding: const EdgeInsets.symmetric(vertical: 10),
       decoration: BoxDecoration(
-        color: isSelected ? AppColors.primary : Colors.white,
+        color: isSelected ? AppColors.primary : AppColors.surfaceElevated,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: isSelected ? AppColors.primary : Colors.grey[300]!,
+          color: isSelected ? AppColors.primary : AppColors.borderMedium,
           width: 2,
         ),
       ),
       child: Center(
         child: Text(
           '$days days',
-          style: TextStyle(
-            fontSize: 14,
+          style: Theme.of(context).textTheme.labelLarge?.copyWith(
             fontWeight: FontWeight.w600,
-            color: isSelected ? Colors.white : AppColors.textOnLight,
+            color: isSelected ? AppColors.textOnPrimary : AppColors.textPrimary,
           ),
         ),
       ),

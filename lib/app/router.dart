@@ -353,7 +353,7 @@ class _SplashScreenState extends ConsumerState<_SplashScreen> {
               style: TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.bold,
-                color: Colors.white.withValues(alpha: 0.9),
+                color: AppColors.textOnDark.withValues(alpha: 0.9),
                 letterSpacing: 1.2,
               ),
             ),
@@ -371,7 +371,7 @@ class _SplashScreenState extends ConsumerState<_SplashScreen> {
               loadingLabel,
               style: TextStyle(
                 fontSize: 14,
-                color: Colors.white.withValues(alpha: 0.65),
+                color: AppColors.textOnDark.withValues(alpha: 0.65),
               ),
             ),
           ],
@@ -412,17 +412,17 @@ class _ErrorScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 12),
-              Text(
+              const Text(
                 "The page you're looking for doesn't exist.",
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                style: TextStyle(fontSize: 16, color: AppColors.textSecondary),
               ),
               const SizedBox(height: 32),
               ElevatedButton(
                 onPressed: () => context.go('/home'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
+                  foregroundColor: AppColors.textOnPrimary,
                   padding: const EdgeInsets.symmetric(
                     horizontal: 32,
                     vertical: 16,

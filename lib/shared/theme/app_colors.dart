@@ -5,8 +5,9 @@ import 'package:flutter/material.dart';
 /// Coral primary with gold reserved for Pro accents.
 ///
 /// WCAG Contrast Ratios:
-/// - textPrimary (#FFF) on bgDeep (#050505): 21:1 ✓
-/// - textSecondary (#888) on bgDeep: 5.6:1 ✓
+/// - textPrimary (#FFF) on bgDeep (#0E1116): 18.9:1 ✓
+/// - textSecondary (#A4AFC0) on bgDeep: 8.5:1 ✓
+/// - textHint (#7A8598) on bgDeep: 5.1:1 ✓
 /// - accentGold (#FBBF24) on bgDeep: 11.3:1 ✓
 class AppColors {
   AppColors._();
@@ -15,26 +16,26 @@ class AppColors {
   // BACKGROUNDS
   // ===========================================================================
 
-  /// Deepest background - near black
-  static const Color bgDeep = Color(0xFF050505);
+  /// Deepest background - charcoal slate
+  static const Color bgDeep = Color(0xFF0E1116);
 
   /// Standard dark background
-  static const Color bgDark = Color(0xFF0A0A0A);
+  static const Color bgDark = Color(0xFF131822);
 
   /// Card/surface background
-  static const Color surface = Color(0xFF111111);
+  static const Color surface = Color(0xFF1A202A);
 
   /// Elevated surface (modals, sheets)
-  static const Color surfaceElevated = Color(0xFF1A1A1A);
+  static const Color surfaceElevated = Color(0xFF232A35);
 
   /// Surface variant for subtle differentiation
-  static const Color surfaceVariant = Color(0xFF1F1F1F);
+  static const Color surfaceVariant = Color(0xFF2B3442);
 
   /// Splash screen background
-  static const Color splash = Color(0xFF050505);
+  static const Color splash = bgDeep;
 
   /// Main app background
-  static const Color background = Color(0xFF050505);
+  static const Color background = bgDeep;
 
   // ===========================================================================
   // BRAND COLORS - Coral
@@ -65,13 +66,13 @@ class AppColors {
   /// Primary text - Pure white
   static const Color textPrimary = Color(0xFFFFFFFF);
 
-  /// Secondary text - Medium gray
-  static const Color textSecondary = Color(0xFF888888);
+  /// Secondary text - Muted cool gray
+  static const Color textSecondary = Color(0xFFA4AFC0);
 
-  /// Dim/hint text - Dark gray
-  static const Color textHint = Color(0xFF555555);
+  /// Dim/hint text - Low-emphasis slate
+  static const Color textHint = Color(0xFF7A8598);
 
-  /// Text on primary (purple) backgrounds
+  /// Text on primary brand backgrounds
   static const Color textOnPrimary = Color(0xFFFFFFFF);
 
   /// Text on pro gold backgrounds
@@ -137,14 +138,14 @@ class AppColors {
   static LinearGradient get backgroundGradient => const LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
-    colors: [Color(0xFF0A0A0A), bgDeep],
+    colors: [bgDark, bgDeep],
   );
 
   /// Hero section gradient
   static const LinearGradient heroGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFF111111), bgDeep, bgDeep],
+    colors: [surface, bgDeep, bgDeep],
     stops: [0.0, 0.5, 1.0],
   );
 }

@@ -1,0 +1,4 @@
+# path_regex	line_regex	reason
+# Keep this list short. Each exception must be brand-required and reviewed.
+# Example:
+# ^lib/features/auth/auth_screen\.dart$	SignInWithAppleButton	Apple HIG branded control

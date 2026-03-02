@@ -181,11 +181,10 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     appBar: AppBar(
       backgroundColor: Colors.transparent,
       elevation: 0,
-      title: const Text(
+      title: Text(
         'Message History',
-        style: TextStyle(
-          fontSize: 20,
-          fontWeight: FontWeight.bold,
+        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+          fontWeight: FontWeight.w700,
           color: AppColors.textPrimary,
         ),
       ),
@@ -214,17 +213,17 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                   onChanged: _onSearchChanged,
                   decoration: InputDecoration(
                     hintText: 'Search messages...',
-                    hintStyle: TextStyle(color: Colors.grey[500]),
-                    prefixIcon: Icon(
+                    hintStyle: const TextStyle(color: AppColors.textHint),
+                    prefixIcon: const Icon(
                       Icons.search,
-                      color: Colors.grey[500],
+                      color: AppColors.textHint,
                       size: 20,
                     ),
                     suffixIcon: _searchQuery.isNotEmpty
                         ? IconButton(
-                            icon: Icon(
+                            icon: const Icon(
                               Icons.clear,
-                              color: Colors.grey[500],
+                              color: AppColors.textHint,
                               size: 20,
                             ),
                             onPressed: () {
@@ -234,18 +233,22 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                           )
                         : null,
                     filled: true,
-                    fillColor: Colors.white,
+                    fillColor: AppColors.surface,
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 16,
                       vertical: 12,
                     ),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
+                      borderSide: const BorderSide(
+                        color: AppColors.borderMedium,
+                      ),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
+                      borderSide: const BorderSide(
+                        color: AppColors.borderMedium,
+                      ),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -327,7 +330,10 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                     children: [
                       Text(
                         '${_filteredHistory.length} result${_filteredHistory.length == 1 ? '' : 's'}',
-                        style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: AppColors.textSecondary,
+                        ),
                       ),
                       const Spacer(),
                       TextButton(
@@ -390,18 +396,17 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
             ),
           ),
           const SizedBox(height: 24),
-          const Text(
+          Text(
             'No messages yet',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w700,
               color: AppColors.textPrimary,
             ),
           ),
           const SizedBox(height: 8),
-          Text(
+          const Text(
             'Your generated messages will appear here',
-            style: TextStyle(fontSize: 15, color: Colors.grey[600]),
+            style: TextStyle(fontSize: 15, color: AppColors.textSecondary),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 24),
@@ -414,11 +419,13 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   Widget _buildDeviceOnlyDisclaimer() => Row(
     mainAxisSize: MainAxisSize.min,
     children: [
-      Icon(Icons.smartphone, size: 14, color: Colors.grey[500]),
+      const Icon(Icons.smartphone, size: 14, color: AppColors.textHint),
       const SizedBox(width: 6),
       Text(
         'History is stored on this device only',
-        style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+        style: Theme.of(
+          context,
+        ).textTheme.bodySmall?.copyWith(color: AppColors.textHint),
       ),
     ],
   );
@@ -429,14 +436,13 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.search_off, size: 48, color: Colors.grey[400]),
+          const Icon(Icons.search_off, size: 48, color: AppColors.textHint),
           const SizedBox(height: 16),
           Text(
             'No messages found',
-            style: TextStyle(
-              fontSize: 16,
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
               fontWeight: FontWeight.w600,
-              color: Colors.grey[600],
+              color: AppColors.textSecondary,
             ),
           ),
           const SizedBox(height: 8),
@@ -521,7 +527,7 @@ class _HistoryCardState extends State<_HistoryCard> {
       padding: const EdgeInsets.only(bottom: 12),
       child: DecoratedBox(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.surface,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: occasion.borderColor, width: 2),
         ),
@@ -551,7 +557,7 @@ class _HistoryCardState extends State<_HistoryCard> {
                       width: 44,
                       height: 44,
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: AppColors.surfaceElevated,
                         shape: BoxShape.circle,
                         border: Border.all(
                           color: occasion.borderColor,
@@ -574,19 +580,17 @@ class _HistoryCardState extends State<_HistoryCard> {
                             result.recipientName?.isNotEmpty ?? false
                                 ? result.recipientName!
                                 : '${result.tone.label} ${result.relationship.label}',
-                            style: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.textPrimary,
-                            ),
+                            style: Theme.of(context).textTheme.bodyLarge
+                                ?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.textPrimary,
+                                ),
                           ),
                           const SizedBox(height: 2),
                           Text(
                             '${occasion.label} • ${_formatDate(widget.item.savedAt)}',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[600],
-                            ),
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(color: AppColors.textSecondary),
                           ),
                         ],
                       ),
@@ -610,10 +614,9 @@ class _HistoryCardState extends State<_HistoryCard> {
                   children: [
                     Text(
                       '${result.messages.length} message options',
-                      style: TextStyle(
-                        fontSize: 13,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         fontWeight: FontWeight.w600,
-                        color: Colors.grey[600],
+                        color: AppColors.textSecondary,
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -695,9 +698,9 @@ class _MessageItem extends StatelessWidget {
     margin: const EdgeInsets.only(bottom: 12),
     padding: const EdgeInsets.all(12),
     decoration: BoxDecoration(
-      color: AppColors.background,
+      color: AppColors.surfaceElevated,
       borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: Colors.grey.shade300),
+      border: Border.all(color: AppColors.borderMedium),
     ),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -714,9 +717,8 @@ class _MessageItem extends StatelessWidget {
               child: Center(
                 child: Text(
                   '${index + 1}',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Colors.white,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: AppColors.textOnPrimary,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -725,8 +727,7 @@ class _MessageItem extends StatelessWidget {
             const SizedBox(width: 8),
             Text(
               'Option ${index + 1}',
-              style: const TextStyle(
-                fontSize: 13,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 fontWeight: FontWeight.w600,
                 color: AppColors.textPrimary,
               ),
@@ -745,8 +746,7 @@ class _MessageItem extends StatelessWidget {
         const SizedBox(height: 10),
         SelectableText(
           text,
-          style: const TextStyle(
-            fontSize: 14,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
             height: 1.5,
             color: AppColors.textPrimary,
           ),
@@ -780,10 +780,10 @@ class _SmallButton extends StatelessWidget {
       decoration: BoxDecoration(
         color: isPrimary
             ? AppColors.primary.withValues(alpha: 0.1)
-            : Colors.grey.shade100,
+            : AppColors.surfaceVariant,
         borderRadius: BorderRadius.circular(6),
         border: Border.all(
-          color: isPrimary ? AppColors.primary : Colors.grey.shade300,
+          color: isPrimary ? AppColors.primary : AppColors.borderMedium,
         ),
       ),
       child: Row(
@@ -798,8 +798,7 @@ class _SmallButton extends StatelessWidget {
             const SizedBox(width: 4),
             Text(
               label!,
-              style: TextStyle(
-                fontSize: 12,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 fontWeight: FontWeight.w600,
                 color: isPrimary ? AppColors.primary : AppColors.textSecondary,
               ),

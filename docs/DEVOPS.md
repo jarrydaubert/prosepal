@@ -125,6 +125,8 @@ Purpose:
 Steps:
 - Commit attribution guard (`./scripts/check_commit_attribution.sh`) for PR/push commit ranges.
 - Release preflight tests (`./scripts/test_release_preflight.sh`).
+- Theme token guard (`./scripts/check_theme_token_usage.sh`) to block newly introduced `Colors.white/black/grey` literals in `lib/features/**` changed lines.
+  - Brand-required exceptions must be explicitly documented in `scripts/config/theme_token_usage_allowlist.tsv`.
 - Deno static validation for Supabase edge functions (`deno check`).
 - Flutter analyze.
 - Critical smoke tests.
@@ -194,6 +196,7 @@ flutter analyze
 ./scripts/test_release_preflight.sh
 deno check supabase/functions/**/*.ts
 ./scripts/check_commit_attribution.sh --range origin/main..HEAD
+./scripts/check_theme_token_usage.sh --base origin/main --head HEAD
 ./scripts/test_critical_smoke.sh
 flutter test --exclude-tags flaky --coverage
 ./scripts/check_service_coverage.sh coverage/lcov.info
@@ -220,9 +223,12 @@ Firebase Test Lab deterministic critical suite:
 
 ```bash
 flutter build apk --debug -t integration_test/ftl_test.dart
-cd android && JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ./gradlew app:assembleAndroidTest -Ptarget=../integration_test/ftl_test.dart
+export JAVA_HOME="${JAVA_HOME:-$(/usr/libexec/java_home -v 17 2>/dev/null || true)}"
+cd android && ./gradlew app:assembleAndroidTest -Ptarget=../integration_test/ftl_test.dart
 gcloud firebase test android run --type instrumentation --app build/app/outputs/flutter-apk/app-debug.apk --test build/app/outputs/apk/androidTest/debug/app-debug-androidTest.apk --device model=oriole,version=33,locale=en,orientation=portrait --timeout 12m --no-use-orchestrator
 ```
+
+If `JAVA_HOME` is still unset (for example on Linux without `/usr/libexec/java_home`), set it explicitly before running Gradle.
 
 Real backend E2E:
 

@@ -58,13 +58,15 @@ class HomeScreen extends ConsumerWidget {
                                       alignment: Alignment.centerLeft,
                                       child: Row(
                                         children: [
-                                          const Text(
+                                          Text(
                                             'Prosepal',
-                                            style: TextStyle(
-                                              fontSize: 32,
-                                              fontWeight: FontWeight.bold,
-                                              color: AppColors.primary,
-                                            ),
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .displayMedium
+                                                ?.copyWith(
+                                                  fontWeight: FontWeight.bold,
+                                                  color: AppColors.primary,
+                                                ),
                                           ),
                                           if (isPro) ...[
                                             const SizedBox(width: 10),
@@ -97,10 +99,12 @@ class HomeScreen extends ConsumerWidget {
                                     ),
                                     Text(
                                       'The right words, right now',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        color: Colors.grey[600],
-                                      ),
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyMedium
+                                          ?.copyWith(
+                                            color: AppColors.textSecondary,
+                                          ),
                                     ),
                                   ],
                                 ),
@@ -162,10 +166,9 @@ class HomeScreen extends ConsumerWidget {
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: const Text(
+                  child: Text(
                     "What's the occasion?",
-                    style: TextStyle(
-                      fontSize: 20,
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: AppColors.textPrimary,
                     ),
@@ -220,14 +223,14 @@ class HomeScreen extends ConsumerWidget {
                             size: 20,
                           ),
                           const SizedBox(width: 8),
-                          const Expanded(
+                          Expanded(
                             child: Text(
                               'Tap any occasion to create your first message!',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                                color: AppColors.primary,
-                              ),
+                              style: Theme.of(context).textTheme.bodyMedium
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.w500,
+                                    color: AppColors.primary,
+                                  ),
                             ),
                           ),
                           GestureDetector(
@@ -340,10 +343,9 @@ class _ProPill extends StatelessWidget {
           borderRadius: BorderRadius.circular(8),
           border: Border.all(color: AppColors.proGoldDark, width: 2),
         ),
-        child: const Text(
+        child: Text(
           'PRO',
-          style: TextStyle(
-            fontSize: 11,
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
             fontWeight: FontWeight.bold,
             color: AppColors.textOnPro,
           ),
@@ -388,32 +390,47 @@ class _OccasionSearchFieldState extends State<_OccasionSearchField> {
   }
 
   @override
-  Widget build(BuildContext context) => TextField(
-    controller: _controller,
-    onChanged: widget.onChanged,
-    textInputAction: TextInputAction.search,
-    decoration: InputDecoration(
-      hintText: 'Search occasions...',
-      hintStyle: TextStyle(color: Colors.grey[400]),
-      prefixIcon: Icon(Icons.search, color: Colors.grey[400]),
-      suffixIcon: _hasText
-          ? IconButton(
-              icon: Icon(Icons.clear, color: Colors.grey[400]),
-              onPressed: () {
-                _controller.clear();
-                widget.onChanged('');
-              },
-            )
-          : null,
-      filled: true,
-      fillColor: Colors.grey[100],
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide.none,
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
+    return TextField(
+      controller: _controller,
+      onChanged: widget.onChanged,
+      textInputAction: TextInputAction.search,
+      decoration: InputDecoration(
+        hintText: 'Search occasions...',
+        hintStyle: textTheme.bodyMedium?.copyWith(color: AppColors.textHint),
+        prefixIcon: const Icon(Icons.search, color: AppColors.textHint),
+        suffixIcon: _hasText
+            ? IconButton(
+                icon: const Icon(Icons.clear, color: AppColors.textHint),
+                onPressed: () {
+                  _controller.clear();
+                  widget.onChanged('');
+                },
+              )
+            : null,
+        filled: true,
+        fillColor: AppColors.surface,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.borderMedium),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.borderMedium),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.primary, width: 2),
+        ),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 12,
+        ),
       ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-    ),
-  );
+    );
+  }
 }
 
 /// Shimmer placeholder for UsageIndicator while RevenueCat loads.
@@ -425,9 +442,9 @@ class _UsageIndicatorShimmer extends StatelessWidget {
       Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppColors.surface,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.grey[300]!, width: 2),
+              border: Border.all(color: AppColors.borderMedium, width: 2),
             ),
             child: Row(
               children: [
@@ -435,8 +452,8 @@ class _UsageIndicatorShimmer extends StatelessWidget {
                 Container(
                   width: 48,
                   height: 48,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[200],
+                  decoration: const BoxDecoration(
+                    color: AppColors.surfaceVariant,
                     shape: BoxShape.circle,
                   ),
                 ),
@@ -450,7 +467,7 @@ class _UsageIndicatorShimmer extends StatelessWidget {
                         width: 140,
                         height: 16,
                         decoration: BoxDecoration(
-                          color: Colors.grey[200],
+                          color: AppColors.surfaceVariant,
                           borderRadius: BorderRadius.circular(4),
                         ),
                       ),
@@ -459,7 +476,7 @@ class _UsageIndicatorShimmer extends StatelessWidget {
                         width: 100,
                         height: 12,
                         decoration: BoxDecoration(
-                          color: Colors.grey[200],
+                          color: AppColors.surfaceVariant,
                           borderRadius: BorderRadius.circular(4),
                         ),
                       ),
@@ -470,5 +487,5 @@ class _UsageIndicatorShimmer extends StatelessWidget {
             ),
           )
           .animate(onPlay: (controller) => controller.repeat())
-          .shimmer(duration: 1200.ms, color: Colors.grey[100]);
+          .shimmer(duration: 1200.ms, color: AppColors.surface);
 }

@@ -27,11 +27,10 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: const Text(
+        title: Text(
           'Upcoming Occasions',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.w700,
             color: AppColors.textPrimary,
           ),
         ),
@@ -48,10 +47,13 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _showAddOccasion,
         backgroundColor: AppColors.primary,
-        icon: const Icon(Icons.add, color: Colors.white),
+        icon: const Icon(Icons.add, color: AppColors.textOnPrimary),
         label: const Text(
           'Add Occasion',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: AppColors.textOnPrimary,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
     );
@@ -100,11 +102,10 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
             ),
           ),
           const SizedBox(height: 24),
-          const Text(
+          Text(
             'No upcoming occasions',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w700,
               color: AppColors.textPrimary,
             ),
           ),
@@ -112,9 +113,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           Text(
             'Save occasions to get reminders\nbefore the big day',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 15,
-              color: Colors.grey[600],
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: AppColors.textSecondary,
               height: 1.5,
             ),
           ),
@@ -284,7 +284,7 @@ class _OccasionCard extends StatelessWidget {
       onTap: onTap,
       child: DecoratedBox(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.surface,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isUrgent ? AppColors.warning : AppColors.primary,
@@ -319,7 +319,7 @@ class _OccasionCard extends StatelessWidget {
                     width: 48,
                     height: 48,
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: AppColors.surfaceElevated,
                       shape: BoxShape.circle,
                       border: Border.all(
                         color: isUrgent ? AppColors.warning : AppColors.primary,
@@ -342,20 +342,18 @@ class _OccasionCard extends StatelessWidget {
                       children: [
                         Text(
                           occasion.occasion.label,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.textOnLight,
-                          ),
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.textOnLight,
+                              ),
                         ),
                         if (occasion.recipientName != null) ...[
                           const SizedBox(height: 2),
                           Text(
                             'for ${occasion.recipientName}',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey[600],
-                            ),
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(color: AppColors.textSecondary),
                           ),
                         ],
                       ],
@@ -377,7 +375,7 @@ class _OccasionCard extends StatelessWidget {
                       style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                        color: AppColors.textOnLight,
                       ),
                     ),
                   ),
@@ -394,30 +392,30 @@ class _OccasionCard extends StatelessWidget {
                   // Date row
                   Row(
                     children: [
-                      Icon(
+                      const Icon(
                         Icons.calendar_today,
                         size: 16,
-                        color: Colors.grey[600],
+                        color: AppColors.textSecondary,
                       ),
                       const SizedBox(width: 8),
                       Text(
                         dateFormat.format(occasion.date),
-                        style: TextStyle(fontSize: 14, color: Colors.grey[700]),
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
                       ),
                       if (occasion.reminderEnabled) ...[
                         const SizedBox(width: 16),
-                        Icon(
+                        const Icon(
                           Icons.notifications_active,
                           size: 16,
-                          color: Colors.grey[600],
+                          color: AppColors.textSecondary,
                         ),
                         const SizedBox(width: 4),
                         Text(
                           '${occasion.reminderDaysBefore}d reminder',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[600],
-                          ),
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(color: AppColors.textSecondary),
                         ),
                       ],
                     ],
@@ -428,9 +426,8 @@ class _OccasionCard extends StatelessWidget {
                     const SizedBox(height: 8),
                     Text(
                       occasion.notes!,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[600],
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppColors.textSecondary,
                         fontStyle: FontStyle.italic,
                       ),
                       maxLines: 2,
@@ -500,7 +497,7 @@ class _ActionChip extends StatelessWidget {
         ? AppColors.error
         : isPrimary
         ? AppColors.primary
-        : Colors.grey[600]!;
+        : AppColors.textSecondary;
 
     return GestureDetector(
       onTap: onTap,
@@ -509,7 +506,7 @@ class _ActionChip extends StatelessWidget {
         decoration: BoxDecoration(
           color: isPrimary
               ? AppColors.primary.withValues(alpha: 0.1)
-              : Colors.grey[100],
+              : AppColors.surfaceVariant,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(color: color.withValues(alpha: 0.5)),
         ),
@@ -520,8 +517,7 @@ class _ActionChip extends StatelessWidget {
             const SizedBox(width: 4),
             Text(
               label,
-              style: TextStyle(
-                fontSize: 12,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 fontWeight: FontWeight.w600,
                 color: color,
               ),

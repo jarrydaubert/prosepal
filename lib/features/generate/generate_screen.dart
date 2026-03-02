@@ -173,16 +173,15 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
                   child: Center(
                     child: Text(
                       occasion.emoji,
-                      style: const TextStyle(fontSize: 18),
+                      style: Theme.of(context).textTheme.headlineSmall,
                     ),
                   ),
                 ),
                 const SizedBox(width: 10),
                 Text(
                   occasion.label,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
                     color: AppColors.textPrimary,
                   ),
                 ),
@@ -284,6 +283,7 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
     required int remaining,
     required bool isPro,
   }) {
+    final textTheme = Theme.of(context).textTheme;
     final canProceed = switch (_currentStep) {
       0 => relationship != null,
       1 => tone != null,
@@ -304,10 +304,9 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
           children: [
             Text(
               "You've used your free message!",
-              style: TextStyle(
-                fontSize: 15,
+              style: textTheme.titleSmall?.copyWith(
                 fontWeight: FontWeight.w600,
-                color: Colors.grey[800],
+                color: AppColors.textPrimary,
               ),
             ),
             const SizedBox(height: 12),
@@ -324,7 +323,9 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
             const SizedBox(height: 8),
             Text(
               'Unlimited messages for every occasion',
-              style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+              style: textTheme.bodyMedium?.copyWith(
+                color: AppColors.textSecondary,
+              ),
             ),
           ],
         );
@@ -552,67 +553,70 @@ class _StepIndicator extends StatelessWidget {
   static const _stepLabels = ['Relationship', 'Tone', 'Details'];
 
   @override
-  Widget build(BuildContext context) => Semantics(
-    label: 'Step ${currentStep + 1} of 3: ${_stepLabels[currentStep]}',
-    child: Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Progress bars
-          Row(
-            children: List.generate(3, (index) {
-              final isActive = index == currentStep;
-              final isCompleted = index < currentStep;
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
 
-              return Expanded(
-                child: Semantics(
-                  label:
-                      '${_stepLabels[index]}: ${isCompleted
-                          ? 'completed'
-                          : isActive
-                          ? 'current'
-                          : 'pending'}',
-                  child: Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 3),
-                    height: 6,
-                    decoration: BoxDecoration(
-                      color: isActive || isCompleted
-                          ? AppColors.primary
-                          : AppColors.surfaceVariant,
-                      borderRadius: BorderRadius.circular(3),
+    return Semantics(
+      label: 'Step ${currentStep + 1} of 3: ${_stepLabels[currentStep]}',
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Progress bars
+            Row(
+              children: List.generate(3, (index) {
+                final isActive = index == currentStep;
+                final isCompleted = index < currentStep;
+
+                return Expanded(
+                  child: Semantics(
+                    label:
+                        '${_stepLabels[index]}: ${isCompleted
+                            ? 'completed'
+                            : isActive
+                            ? 'current'
+                            : 'pending'}',
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 3),
+                      height: 6,
+                      decoration: BoxDecoration(
+                        color: isActive || isCompleted
+                            ? AppColors.primary
+                            : AppColors.surfaceVariant,
+                        borderRadius: BorderRadius.circular(3),
+                      ),
                     ),
                   ),
-                ),
-              );
-            }),
-          ),
-          const SizedBox(height: 8),
-          // Step labels
-          Row(
-            children: List.generate(3, (index) {
-              final isActive = index == currentStep;
-              final isCompleted = index < currentStep;
+                );
+              }),
+            ),
+            const SizedBox(height: 8),
+            // Step labels
+            Row(
+              children: List.generate(3, (index) {
+                final isActive = index == currentStep;
+                final isCompleted = index < currentStep;
 
-              return Expanded(
-                child: Text(
-                  _stepLabels[index],
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
-                    color: isActive || isCompleted
-                        ? AppColors.primary
-                        : Colors.grey[400],
+                return Expanded(
+                  child: Text(
+                    _stepLabels[index],
+                    textAlign: TextAlign.center,
+                    style: textTheme.labelSmall?.copyWith(
+                      fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
+                      color: isActive || isCompleted
+                          ? AppColors.primary
+                          : AppColors.textHint,
+                    ),
                   ),
-                ),
-              );
-            }),
-          ),
-        ],
+                );
+              }),
+            ),
+          ],
+        ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 class _ErrorBanner extends StatelessWidget {
@@ -622,55 +626,62 @@ class _ErrorBanner extends StatelessWidget {
   final VoidCallback onDismiss;
 
   @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 20),
-    child: Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.error.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.error, width: 2),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: AppColors.error.withValues(alpha: 0.2),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.error_outline,
-              color: AppColors.error,
-              size: 18,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              error,
-              style: const TextStyle(
-                fontSize: 14,
-                color: AppColors.error,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-          GestureDetector(
-            onTap: onDismiss,
-            child: Container(
-              width: 28,
-              height: 28,
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: AppColors.error.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.error, width: 2),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 32,
+              height: 32,
               decoration: BoxDecoration(
                 color: AppColors.error.withValues(alpha: 0.2),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.close, color: AppColors.error, size: 16),
+              child: const Icon(
+                Icons.error_outline,
+                color: AppColors.error,
+                size: 18,
+              ),
             ),
-          ),
-        ],
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                error,
+                style: textTheme.bodyMedium?.copyWith(
+                  color: AppColors.error,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            GestureDetector(
+              onTap: onDismiss,
+              child: Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: AppColors.error.withValues(alpha: 0.2),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.close,
+                  color: AppColors.error,
+                  size: 16,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
-    ),
-  );
+    );
+  }
 }

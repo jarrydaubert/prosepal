@@ -66,9 +66,8 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
               result.recipientName?.isNotEmpty ?? false
                   ? 'For ${result.recipientName}'
                   : 'Your Messages',
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
+              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                fontWeight: FontWeight.w600,
                 color: AppColors.textPrimary,
               ),
             ),
@@ -129,7 +128,9 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Text(
                   'Built with Google Gemini',
-                  style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(color: AppColors.textHint),
                   textAlign: TextAlign.center,
                 ),
               ),
@@ -225,7 +226,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                   width: 24,
                   height: 24,
                   decoration: const BoxDecoration(
-                    color: Colors.white,
+                    color: AppColors.textOnPrimary,
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
@@ -235,10 +236,13 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                   ),
                 ),
                 const SizedBox(width: 12),
-                const Expanded(
+                Expanded(
                   child: Text(
                     'Your first message! You just saved 10 minutes.',
-                    style: TextStyle(fontWeight: FontWeight.w600),
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      color: AppColors.textOnPrimary,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ],
@@ -266,7 +270,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                   width: 24,
                   height: 24,
                   decoration: const BoxDecoration(
-                    color: Colors.white,
+                    color: AppColors.textOnPrimary,
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
@@ -276,9 +280,12 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                   ),
                 ),
                 const SizedBox(width: 12),
-                const Text(
+                Text(
                   'Message copied!',
-                  style: TextStyle(fontWeight: FontWeight.w600),
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    color: AppColors.textOnPrimary,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ],
             ),
@@ -418,60 +425,68 @@ class _ContextHeader extends StatelessWidget {
   final GenerationResult result;
 
   @override
-  Widget build(BuildContext context) => Semantics(
-    label:
-        'Generated ${result.occasion.label} message for ${result.relationship.label} with ${result.tone.label} tone',
-    child: Container(
-      width: double.infinity,
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: result.occasion.backgroundColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: result.occasion.borderColor, width: 3),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
-              border: Border.all(color: result.occasion.borderColor, width: 2),
-            ),
-            child: Center(
-              child: Text(
-                result.occasion.emoji,
-                style: const TextStyle(fontSize: 22),
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
+    return Semantics(
+      label:
+          'Generated ${result.occasion.label} message for ${result.relationship.label} with ${result.tone.label} tone',
+      child: Container(
+        width: double.infinity,
+        margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: result.occasion.backgroundColor,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: result.occasion.borderColor, width: 3),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: result.occasion.borderColor,
+                  width: 2,
+                ),
+              ),
+              child: Center(
+                child: Text(
+                  result.occasion.emoji,
+                  style: textTheme.headlineMedium,
+                ),
               ),
             ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '${result.occasion.label} - ${result.relationship.label}',
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${result.occasion.label} - ${result.relationship.label}',
+                    style: textTheme.titleSmall?.copyWith(
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  '${result.tone.label} tone',
-                  style: TextStyle(fontSize: 13, color: Colors.grey[600]),
-                ),
-              ],
+                  const SizedBox(height: 2),
+                  Text(
+                    '${result.tone.label} tone',
+                    style: textTheme.bodySmall?.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 class _MessageCard extends StatelessWidget {
@@ -491,95 +506,98 @@ class _MessageCard extends StatelessWidget {
   final VoidCallback onShare;
 
   @override
-  Widget build(BuildContext context) => Semantics(
-    label: 'Message option ${index + 1}',
-    child: DecoratedBox(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.primary, width: 3),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header with actions
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: const BoxDecoration(
-              color: AppColors.primaryLight,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(13)),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 28,
-                  height: 28,
-                  decoration: const BoxDecoration(
-                    color: AppColors.primary,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Center(
-                    child: Text(
-                      '${index + 1}',
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
+    return Semantics(
+      label: 'Message option ${index + 1}',
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.borderMedium, width: 2),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header with actions
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.14),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(13),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 28,
+                    height: 28,
+                    decoration: const BoxDecoration(
+                      color: AppColors.primary,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: Text(
+                        '${index + 1}',
+                        style: textTheme.labelLarge?.copyWith(
+                          color: AppColors.textOnPrimary,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 10),
-                Text(
-                  'Option ${index + 1}',
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textOnLight,
+                  const SizedBox(width: 10),
+                  Text(
+                    'Option ${index + 1}',
+                    style: textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                    ),
                   ),
-                ),
-                const Spacer(),
-                Flexible(
-                  child: Wrap(
-                    spacing: 8,
-                    runSpacing: 6,
-                    alignment: WrapAlignment.end,
-                    children: [
-                      _ActionButton(
-                        icon: Icons.share_outlined,
-                        label: 'Share',
-                        onPressed: onShare,
-                      ),
-                      _ActionButton(
-                        icon: isCopied ? Icons.check : Icons.copy,
-                        label: isCopied ? 'Copied!' : 'Copy',
-                        isPrimary: true,
-                        isSuccess: isCopied,
-                        onPressed: onCopy,
-                      ),
-                    ],
+                  const Spacer(),
+                  Flexible(
+                    child: Wrap(
+                      spacing: 8,
+                      runSpacing: 6,
+                      alignment: WrapAlignment.end,
+                      children: [
+                        _ActionButton(
+                          icon: Icons.share_outlined,
+                          label: 'Share',
+                          onPressed: onShare,
+                        ),
+                        _ActionButton(
+                          icon: isCopied ? Icons.check : Icons.copy,
+                          label: isCopied ? 'Copied!' : 'Copy',
+                          isPrimary: true,
+                          isSuccess: isCopied,
+                          onPressed: onCopy,
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
-            ),
-          ),
-
-          // Message content
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: SelectableText(
-              message.text,
-              style: const TextStyle(
-                fontSize: 15,
-                height: 1.6,
-                color: AppColors.textOnLight,
+                ],
               ),
             ),
-          ),
-        ],
+
+            // Message content
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: SelectableText(
+                message.text,
+                style: textTheme.bodyLarge?.copyWith(
+                  height: 1.6,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 class _ActionButton extends StatelessWidget {
@@ -599,6 +617,7 @@ class _ActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
     final color = isSuccess
         ? AppColors.success
         : isPrimary
@@ -617,7 +636,7 @@ class _ActionButton extends StatelessWidget {
                 ? AppColors.success.withValues(alpha: 0.15)
                 : isPrimary
                 ? AppColors.primary.withValues(alpha: 0.15)
-                : Colors.white,
+                : AppColors.surfaceVariant,
             borderRadius: BorderRadius.circular(8),
             border: Border.all(color: color, width: 2),
           ),
@@ -634,8 +653,7 @@ class _ActionButton extends StatelessWidget {
                       label,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 13,
+                      style: textTheme.labelMedium?.copyWith(
                         fontWeight: FontWeight.w600,
                         color: color,
                       ),
