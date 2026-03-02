@@ -57,31 +57,40 @@ void main() {
       final atSettings = await navigateToSettings(tester);
       expect(atSettings, isTrue, reason: 'Failed to navigate to settings');
 
-      if (await scrollToText(tester, 'Restore Purchases')) {
-        await tester.tap(find.text('Restore Purchases'));
-        await tester.pumpAndSettle(const Duration(seconds: 5));
+      final foundRestore = await scrollToText(tester, 'Restore Purchases');
+      expect(
+        foundRestore,
+        isTrue,
+        reason: 'Restore Purchases option should be present in settings',
+      );
+      await tester.tap(find.text('Restore Purchases'));
+      await tester.pumpAndSettle(const Duration(seconds: 5));
 
-        // Should show result (success, failure, or loading)
-        await screenshot(tester, 'j7_3_restore_result');
-      }
+      // Should show result (success, failure, or loading)
+      await screenshot(tester, 'j7_3_restore_result');
     });
 
     testWidgets('J7.4: Sign In from settings for restore', (tester) async {
       final atSettings = await navigateToSettings(tester);
       expect(atSettings, isTrue, reason: 'Failed to navigate to settings');
 
-      if (await scrollToText(tester, 'Sign In')) {
-        await tester.tap(find.text('Sign In'));
-        await tester.pumpAndSettle(const Duration(seconds: 2));
+      final foundSignIn = await scrollToText(tester, 'Sign In');
+      expect(
+        foundSignIn,
+        isTrue,
+        reason:
+            'Sign In action should be present in settings for anonymous user',
+      );
+      await tester.tap(find.text('Sign In'));
+      await tester.pumpAndSettle(const Duration(seconds: 2));
 
-        expect(
-          anyTextExists(['Sign in with Apple', 'Sign in with Google']),
-          isTrue,
-          reason: 'Should show auth screen',
-        );
+      expect(
+        anyTextExists(['Sign in with Apple', 'Sign in with Google']),
+        isTrue,
+        reason: 'Should show auth screen',
+      );
 
-        await screenshot(tester, 'j7_4_sign_in');
-      }
+      await screenshot(tester, 'j7_4_sign_in');
     });
 
     testWidgets('J7.5: Anonymous user gets fresh state', (tester) async {
