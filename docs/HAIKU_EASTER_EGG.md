@@ -243,7 +243,7 @@ GoRoute(
 | `lib/core/models/haiku_result.dart` | Freezed response model |
 | `lib/shared/components/haiku_card.dart` | Haiku display card |
 | `lib/shared/components/zen_loading.dart` | Loading animation |
-| `test/features/settings/haiku_screen_test.dart` | Widget tests |
+| `test/widgets/screens/haiku_screen_test.dart` | Widget tests |
 
 ### Generated Files (after build_runner)
 
