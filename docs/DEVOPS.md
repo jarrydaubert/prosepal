@@ -74,9 +74,30 @@ gh api repos/jarrydaubert/prosepal/rulesets/13237026
 
 1. Branch from `main`.
 2. Implement changes.
-3. Run local quality gate.
-4. Open PR and wait for required checks.
-5. Merge only through PR.
+3. Install/update local hooks: `./scripts/setup-hooks.sh`.
+4. Run local quality gate.
+5. Open PR and wait for required checks.
+6. Merge only through PR.
+
+## Commit Attribution Policy
+
+Purpose:
+- Prevent accidental co-author trailers from being merged into release history.
+
+Rules:
+- `Co-authored-by:` trailers are allowed only when intentional and accurate.
+- Any intentional co-author trailer must include `[allow-coauthor]` in the same commit message body.
+- Commits with `Co-authored-by:` and no `[allow-coauthor]` fail local `commit-msg` hook and CI.
+
+Commands:
+
+```bash
+# Validate a pending commit message file
+./scripts/check_commit_attribution.sh --message-file .git/COMMIT_EDITMSG
+
+# Validate a commit range (for PR/self-check)
+./scripts/check_commit_attribution.sh --range origin/main..HEAD
+```
 
 ## Public Repo Secret Safety
 
@@ -102,6 +123,7 @@ Purpose:
 - Blocking quality gate for every push/PR to `main`.
 
 Steps:
+- Commit attribution guard (`./scripts/check_commit_attribution.sh`) for PR/push commit ranges.
 - Release preflight tests (`./scripts/test_release_preflight.sh`).
 - Deno static validation for Supabase edge functions (`deno check`).
 - Flutter analyze.
@@ -171,6 +193,7 @@ Keep update load safe for free-tier CI minutes:
 flutter analyze
 ./scripts/test_release_preflight.sh
 deno check supabase/functions/**/*.ts
+./scripts/check_commit_attribution.sh --range origin/main..HEAD
 ./scripts/test_critical_smoke.sh
 flutter test --exclude-tags flaky --coverage
 ./scripts/check_service_coverage.sh coverage/lcov.info

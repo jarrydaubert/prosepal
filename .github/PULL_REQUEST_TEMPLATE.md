@@ -15,9 +15,9 @@
 - [ ] `flutter test` (or scoped equivalent) passes
 - [ ] Relevant integration/device checks run when behavior changed
 - [ ] Docs updated for behavior/process changes
+- [ ] Commit trailers reviewed (`Co-authored-by` present only when intentional and explicitly approved)
 
 ## Release Notes
 
 - [ ] Label applied for release categorization (`feature`, `fix`, `breaking`, `security`, `chore`, `ci`, `dependencies`)
 - [ ] Breaking changes are explicitly called out in PR body if applicable
-
