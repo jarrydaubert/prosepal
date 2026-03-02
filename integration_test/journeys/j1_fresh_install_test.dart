@@ -149,14 +149,16 @@ void main() {
       await tester.tap(find.text('Birthday'));
       await tester.pumpAndSettle();
 
-      if (exists(find.text('Close Friend'))) {
-        await tester.tap(find.text('Close Friend'));
-        await tester.pumpAndSettle();
-      }
-      if (exists(find.text('Continue'))) {
-        await tester.tap(find.text('Continue'));
-        await tester.pumpAndSettle();
-      }
+      await tapTextOrFail(
+        tester,
+        'Close Friend',
+        reason: 'Relationship step should include Close Friend option',
+      );
+      await tapTextOrFail(
+        tester,
+        'Continue',
+        reason: 'Continue CTA should appear after selecting relationship',
+      );
 
       expect(
         anyTextExists(['Heartfelt', 'Funny', 'Formal']),
@@ -189,85 +191,82 @@ void main() {
       final atHome = await navigateToHome(tester);
       expect(atHome, isTrue, reason: 'Failed to navigate to home');
 
-      await completeWizard(tester);
+      await completeWizardOrFail(tester);
+      expect(find.text('Generate Messages'), findsOneWidget);
+      await tester.tap(find.text('Generate Messages'));
+      await tester.pumpAndSettle(const Duration(seconds: 15));
 
-      if (exists(find.text('Generate Messages'))) {
-        await tester.tap(find.text('Generate Messages'));
-        await tester.pumpAndSettle(const Duration(seconds: 15));
+      expect(
+        anyTextExists(['Your Messages', 'Option 1', 'error', 'Unable']),
+        isTrue,
+        reason: 'Should show results or error',
+      );
 
-        expect(
-          anyTextExists(['Your Messages', 'Option 1', 'error', 'Unable']),
-          isTrue,
-          reason: 'Should show results or error',
-        );
-
-        await screenshot(tester, 'j1_8_generation_result');
-      }
+      await screenshot(tester, 'j1_8_generation_result');
     });
 
     testWidgets('J1.9: Results show 3 options', (tester) async {
       final atHome = await navigateToHome(tester);
       expect(atHome, isTrue, reason: 'Failed to navigate to home');
 
-      await completeWizard(tester);
+      await completeWizardOrFail(tester);
+      expect(find.text('Generate Messages'), findsOneWidget);
+      await tester.tap(find.text('Generate Messages'));
+      await tester.pumpAndSettle(const Duration(seconds: 15));
 
-      if (exists(find.text('Generate Messages'))) {
-        await tester.tap(find.text('Generate Messages'));
-        await tester.pumpAndSettle(const Duration(seconds: 15));
+      expect(find.text('Your Messages'), findsOneWidget);
+      expect(find.text('Option 1'), findsOneWidget);
+      expect(find.text('Option 2'), findsOneWidget);
+      expect(find.text('Option 3'), findsOneWidget);
 
-        if (exists(find.text('Your Messages'))) {
-          expect(find.text('Option 1'), findsOneWidget);
-          expect(find.text('Option 2'), findsOneWidget);
-          expect(find.text('Option 3'), findsOneWidget);
-
-          await screenshot(tester, 'j1_9_three_options');
-        }
-      }
+      await screenshot(tester, 'j1_9_three_options');
     });
 
     testWidgets('J1.10: Copy button works', (tester) async {
       final atHome = await navigateToHome(tester);
       expect(atHome, isTrue, reason: 'Failed to navigate to home');
 
-      await completeWizard(tester);
+      await completeWizardOrFail(tester);
+      expect(find.text('Generate Messages'), findsOneWidget);
+      await tester.tap(find.text('Generate Messages'));
+      await tester.pumpAndSettle(const Duration(seconds: 15));
 
-      if (exists(find.text('Generate Messages'))) {
-        await tester.tap(find.text('Generate Messages'));
-        await tester.pumpAndSettle(const Duration(seconds: 15));
+      expect(
+        exists(find.text('Copy')),
+        isTrue,
+        reason: 'Copy action not found',
+      );
+      await tester.tap(find.text('Copy').first);
+      await tester.pumpAndSettle();
 
-        if (exists(find.text('Copy'))) {
-          await tester.tap(find.text('Copy').first);
-          await tester.pumpAndSettle();
-
-          expect(find.text('Copied!'), findsOneWidget);
-          await screenshot(tester, 'j1_10_copied');
-        }
-      }
+      expect(find.text('Copied!'), findsOneWidget);
+      await screenshot(tester, 'j1_10_copied');
     });
 
     testWidgets('J1.11: Start Over returns to home', (tester) async {
       final atHome = await navigateToHome(tester);
       expect(atHome, isTrue, reason: 'Failed to navigate to home');
 
-      await completeWizard(tester);
+      await completeWizardOrFail(tester);
+      expect(find.text('Generate Messages'), findsOneWidget);
+      await tester.tap(find.text('Generate Messages'));
+      await tester.pumpAndSettle(const Duration(seconds: 15));
 
-      if (exists(find.text('Generate Messages'))) {
-        await tester.tap(find.text('Generate Messages'));
-        await tester.pumpAndSettle(const Duration(seconds: 15));
+      expect(
+        exists(find.text('Start Over')),
+        isTrue,
+        reason: 'Start Over action not found on results screen',
+      );
+      await tester.tap(find.text('Start Over'));
+      await tester.pumpAndSettle();
 
-        if (exists(find.text('Start Over'))) {
-          await tester.tap(find.text('Start Over'));
-          await tester.pumpAndSettle();
+      expect(
+        anyTextExists(["What's the occasion?", 'Birthday']),
+        isTrue,
+        reason: 'Should return to home',
+      );
 
-          expect(
-            anyTextExists(["What's the occasion?", 'Birthday']),
-            isTrue,
-            reason: 'Should return to home',
-          );
-
-          await screenshot(tester, 'j1_11_start_over');
-        }
-      }
+      await screenshot(tester, 'j1_11_start_over');
     });
   });
 }

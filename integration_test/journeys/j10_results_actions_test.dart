@@ -68,18 +68,21 @@ void main() {
       final atResults = await navigateToResults(tester);
       expect(atResults, isTrue, reason: 'Failed to navigate to results');
 
-      if (exists(find.text('Copy'))) {
-        await tester.tap(find.text('Copy').first);
-        await tester.pumpAndSettle();
+      expect(
+        exists(find.text('Copy')),
+        isTrue,
+        reason: 'Copy action not found',
+      );
+      await tester.tap(find.text('Copy').first);
+      await tester.pumpAndSettle();
 
-        expect(
-          exists(find.text('Copied!')),
-          isTrue,
-          reason: 'Should show Copied! confirmation',
-        );
+      expect(
+        exists(find.text('Copied!')),
+        isTrue,
+        reason: 'Should show Copied! confirmation',
+      );
 
-        await screenshot(tester, 'j10_3_copied_confirmation');
-      }
+      await screenshot(tester, 'j10_3_copied_confirmation');
     });
 
     testWidgets('J10.4: Can copy different options', (tester) async {
@@ -87,13 +90,16 @@ void main() {
       expect(atResults, isTrue, reason: 'Failed to navigate to results');
 
       final copyButtons = find.text('Copy');
-      if (copyButtons.evaluate().length >= 2) {
-        // Copy second option
-        await tester.tap(copyButtons.at(1));
-        await tester.pumpAndSettle();
+      expect(
+        copyButtons.evaluate().length >= 2,
+        isTrue,
+        reason: 'Expected at least two copy actions on results screen',
+      );
+      // Copy second option
+      await tester.tap(copyButtons.at(1));
+      await tester.pumpAndSettle();
 
-        await screenshot(tester, 'j10_4_second_option_copied');
-      }
+      await screenshot(tester, 'j10_4_second_option_copied');
     });
 
     testWidgets('J10.5: Share button exists', (tester) async {
@@ -115,18 +121,21 @@ void main() {
       final atResults = await navigateToResults(tester);
       expect(atResults, isTrue, reason: 'Failed to navigate to results');
 
-      if (exists(find.text('Start Over'))) {
-        await tester.tap(find.text('Start Over'));
-        await tester.pumpAndSettle();
+      expect(
+        exists(find.text('Start Over')),
+        isTrue,
+        reason: 'Start Over action should be present on results screen',
+      );
+      await tester.tap(find.text('Start Over'));
+      await tester.pumpAndSettle();
 
-        expect(
-          anyTextExists(["What's the occasion?", 'Birthday']),
-          isTrue,
-          reason: 'Should return to home',
-        );
+      expect(
+        anyTextExists(["What's the occasion?", 'Birthday']),
+        isTrue,
+        reason: 'Should return to home',
+      );
 
-        await screenshot(tester, 'j10_6_start_over');
-      }
+      await screenshot(tester, 'j10_6_start_over');
     });
 
     testWidgets('J10.7: Messages have visible content', (tester) async {

@@ -28,17 +28,7 @@ void main() {
       final atHome = await navigateToHome(tester);
       expect(atHome, isTrue, reason: 'Failed to navigate to home');
 
-      await completeWizard(tester);
-
-      // Either can generate (has free) or must upgrade (0 free)
-      final canGenerate = exists(find.text('Generate Messages'));
-      final mustUpgrade = exists(find.text('Upgrade to Continue'));
-
-      expect(
-        canGenerate || mustUpgrade,
-        isTrue,
-        reason: 'Should show Generate or Upgrade',
-      );
+      await completeWizardOrFail(tester);
 
       await screenshot(tester, 'j2_1_generate_or_upgrade');
     });
@@ -46,32 +36,33 @@ void main() {
     testWidgets('J2.2: Upgrade navigates to auth for anonymous user', (
       tester,
     ) async {
-      final atHome = await navigateToHome(tester);
+      final atHome = await navigateToHome(tester, seedFreeTierUsed: true);
       expect(atHome, isTrue, reason: 'Failed to navigate to home');
 
-      await completeWizard(tester);
+      await completeWizardOrFail(tester);
+      await tapTextOrFail(
+        tester,
+        'Upgrade to Continue',
+        settleDuration: const Duration(seconds: 2),
+        reason: 'Expected Upgrade gate for anonymous user with free tier used',
+      );
 
-      if (exists(find.text('Upgrade to Continue'))) {
-        await tester.tap(find.text('Upgrade to Continue'));
-        await tester.pumpAndSettle(const Duration(seconds: 2));
+      // Should show auth options (anonymous) or paywall (authenticated)
+      final hasAuth = anyTextExists([
+        'Sign in with Apple',
+        'Sign in with Google',
+      ]);
+      final hasPaywall =
+          find.textContaining(r'$').evaluate().isNotEmpty ||
+          exists(find.text('Subscribe'));
 
-        // Should show auth options (anonymous) or paywall (authenticated)
-        final hasAuth = anyTextExists([
-          'Sign in with Apple',
-          'Sign in with Google',
-        ]);
-        final hasPaywall =
-            find.textContaining(r'$').evaluate().isNotEmpty ||
-            exists(find.text('Subscribe'));
+      expect(
+        hasAuth || hasPaywall,
+        isTrue,
+        reason: 'Upgrade flow should show auth or paywall destination',
+      );
 
-        expect(
-          hasAuth || hasPaywall,
-          isTrue,
-          reason: 'Should show auth or paywall',
-        );
-
-        await screenshot(tester, 'j2_2_upgrade_destination');
-      }
+      await screenshot(tester, 'j2_2_upgrade_destination');
     });
 
     testWidgets('J2.3: Auth screen shows welcome message', (tester) async {
@@ -109,23 +100,26 @@ void main() {
     testWidgets('J2.6: Sub-text shows correct message for anonymous', (
       tester,
     ) async {
-      final atHome = await navigateToHome(tester);
+      final atHome = await navigateToHome(tester, seedFreeTierUsed: true);
       expect(atHome, isTrue, reason: 'Failed to navigate to home');
 
-      await completeWizard(tester);
+      await completeWizardOrFail(tester);
+      expect(
+        exists(find.text('Upgrade to Continue')),
+        isTrue,
+        reason: 'Anonymous upgrade checkpoint missing on final wizard step',
+      );
 
-      if (exists(find.text('Upgrade to Continue'))) {
-        // Check for sub-text
-        final hasSignInPrompt = exists(find.text('Sign in to go Pro'));
+      // Check for sub-text
+      final hasSignInPrompt = exists(find.text('Sign in to go Pro'));
 
-        expect(
-          hasSignInPrompt,
-          isTrue,
-          reason: 'Anonymous user should see "Sign in to go Pro"',
-        );
+      expect(
+        hasSignInPrompt,
+        isTrue,
+        reason: 'Anonymous user should see "Sign in to go Pro"',
+      );
 
-        await screenshot(tester, 'j2_7_upgrade_subtext');
-      }
+      await screenshot(tester, 'j2_7_upgrade_subtext');
     });
   });
 }

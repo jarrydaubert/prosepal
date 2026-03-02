@@ -53,13 +53,18 @@ void main() {
       final atSettings = await navigateToSettings(tester);
       expect(atSettings, isTrue, reason: 'Failed to navigate to settings');
 
-      // Look for biometric option (may not exist on all devices)
-      final _ =
+      // Security section should exist; biometric controls may vary by platform.
+      final hasSecurityOrBiometric =
+          exists(find.text('Security')) ||
           exists(find.text('Face ID')) ||
           exists(find.text('Touch ID')) ||
           exists(find.textContaining('Biometric'));
+      expect(
+        hasSecurityOrBiometric,
+        isTrue,
+        reason: 'Settings should expose security/biometric section',
+      );
 
-      // May not exist on all devices
       await screenshot(tester, 'j4_3_biometric_option');
     });
 
@@ -78,47 +83,50 @@ void main() {
       final atSettings = await navigateToSettings(tester);
       expect(atSettings, isTrue, reason: 'Failed to navigate to settings');
 
-      if (await scrollToText(tester, 'Restore Purchases')) {
-        await tester.tap(find.text('Restore Purchases'));
-        await tester.pumpAndSettle(const Duration(seconds: 3));
+      final found = await scrollToText(tester, 'Restore Purchases');
+      expect(
+        found,
+        isTrue,
+        reason: 'Restore Purchases option should be present',
+      );
+      await tester.tap(find.text('Restore Purchases'));
+      await tester.pumpAndSettle(const Duration(seconds: 3));
 
-        // Should show loading, success, or error
-        await screenshot(tester, 'j4_5_restore_result');
-      }
+      // Should show loading, success, or error
+      await screenshot(tester, 'j4_5_restore_result');
     });
 
     testWidgets('J4.6: Privacy Policy link works', (tester) async {
       final atSettings = await navigateToSettings(tester);
       expect(atSettings, isTrue, reason: 'Failed to navigate to settings');
 
-      if (await scrollToText(tester, 'Privacy Policy')) {
-        await tester.tap(find.text('Privacy Policy'));
-        await tester.pumpAndSettle();
+      final found = await scrollToText(tester, 'Privacy Policy');
+      expect(found, isTrue, reason: 'Privacy Policy link should be present');
+      await tester.tap(find.text('Privacy Policy'));
+      await tester.pumpAndSettle();
 
-        // Should navigate to privacy screen
-        await screenshot(tester, 'j4_6_privacy');
-      }
+      // Should navigate to privacy screen
+      await screenshot(tester, 'j4_6_privacy');
     });
 
     testWidgets('J4.7: Terms of Service link works', (tester) async {
       final atSettings = await navigateToSettings(tester);
       expect(atSettings, isTrue, reason: 'Failed to navigate to settings');
 
-      if (await scrollToText(tester, 'Terms of Service')) {
-        await tester.tap(find.text('Terms of Service'));
-        await tester.pumpAndSettle();
+      final found = await scrollToText(tester, 'Terms of Service');
+      expect(found, isTrue, reason: 'Terms of Service link should be present');
+      await tester.tap(find.text('Terms of Service'));
+      await tester.pumpAndSettle();
 
-        await screenshot(tester, 'j4_7_terms');
-      }
+      await screenshot(tester, 'j4_7_terms');
     });
 
     testWidgets('J4.8: Send Feedback option exists', (tester) async {
       final atSettings = await navigateToSettings(tester);
       expect(atSettings, isTrue, reason: 'Failed to navigate to settings');
 
-      final _ = await scrollToText(tester, 'Send Feedback');
-
-      // Feedback may or may not exist
+      final found = await scrollToText(tester, 'Send Feedback');
+      expect(found, isTrue, reason: 'Send Feedback option should be present');
       await screenshot(tester, 'j4_8_feedback_option');
     });
 
@@ -148,7 +156,17 @@ void main() {
       final atSettings = await navigateToSettings(tester);
       expect(atSettings, isTrue, reason: 'Failed to navigate to settings');
 
-      if (await scrollToText(tester, 'Delete Account')) {
+      final hasDeleteAccount = await scrollToText(tester, 'Delete Account');
+      final hasSignIn =
+          !hasDeleteAccount && await scrollToText(tester, 'Sign In');
+
+      expect(
+        hasDeleteAccount || hasSignIn,
+        isTrue,
+        reason: 'Expected Delete Account action or Sign In gating action',
+      );
+
+      if (hasDeleteAccount) {
         await tester.tap(find.text('Delete Account'));
         await tester.pumpAndSettle();
 
@@ -160,9 +178,16 @@ void main() {
             exists(find.textContaining('sure'));
 
         expect(hasWarning, isTrue, reason: 'Should show delete confirmation');
-
-        await screenshot(tester, 'j4_10_delete_warning');
+      } else {
+        await tester.tap(find.text('Sign In'));
+        await tester.pumpAndSettle();
+        expectAnyTextVisible([
+          'Sign in with Google',
+          'Sign in with Apple',
+        ], reason: 'Sign In action should navigate to auth screen');
       }
+
+      await screenshot(tester, 'j4_10_delete_warning');
     });
 
     testWidgets('J4.11: Version info visible', (tester) async {
@@ -175,10 +200,15 @@ void main() {
       await tester.pumpAndSettle();
 
       // Look for version text
-      final _ =
+      final hasVersionText =
           find.textContaining('Version').evaluate().isNotEmpty ||
           find.textContaining('v1.').evaluate().isNotEmpty ||
           find.textContaining('1.0').evaluate().isNotEmpty;
+      expect(
+        hasVersionText,
+        isTrue,
+        reason: 'Settings should show app version/build info',
+      );
 
       await screenshot(tester, 'j4_11_version');
     });
@@ -188,16 +218,14 @@ void main() {
       expect(atSettings, isTrue, reason: 'Failed to navigate to settings');
 
       final wentBack = await tapBack(tester);
+      expect(wentBack, isTrue, reason: 'Back action unavailable from settings');
+      expect(
+        anyTextExists(["What's the occasion?", 'Birthday']),
+        isTrue,
+        reason: 'Should return to home',
+      );
 
-      if (wentBack) {
-        expect(
-          anyTextExists(["What's the occasion?", 'Birthday']),
-          isTrue,
-          reason: 'Should return to home',
-        );
-
-        await screenshot(tester, 'j4_12_back_to_home');
-      }
+      await screenshot(tester, 'j4_12_back_to_home');
     });
   });
 }

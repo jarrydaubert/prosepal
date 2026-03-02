@@ -198,6 +198,45 @@ Future<bool> navigateToAuth(WidgetTester tester) async {
 /// Check if element exists
 bool exists(Finder finder) => finder.evaluate().isNotEmpty;
 
+/// Assert that at least one text from [texts] is visible.
+void expectAnyTextVisible(List<String> texts, {required String reason}) {
+  expect(anyTextExists(texts), isTrue, reason: reason);
+}
+
+/// Assert that [text] is visible (scrolling if needed) and tap it.
+Future<void> tapTextOrFail(
+  WidgetTester tester,
+  String text, {
+  Duration settleDuration = const Duration(seconds: 1),
+  String? reason,
+}) async {
+  final visible =
+      find.text(text).evaluate().isNotEmpty || await scrollToText(tester, text);
+  expect(visible, isTrue, reason: reason ?? 'Expected "$text" to be visible');
+  await tester.tap(find.text(text).first);
+  await _pumpFor(tester, settleDuration);
+}
+
+/// Assert that the wizard reaches final step and expose Generate/Upgrade action.
+Future<void> completeWizardOrFail(
+  WidgetTester tester, {
+  String occasion = 'Birthday',
+  String relationship = 'Close Friend',
+  String tone = 'Heartfelt',
+}) async {
+  final completed = await completeWizard(
+    tester,
+    occasion: occasion,
+    relationship: relationship,
+    tone: tone,
+  );
+  expect(completed, isTrue, reason: 'Wizard did not reach final step');
+  expectAnyTextVisible([
+    'Generate Messages',
+    'Upgrade to Continue',
+  ], reason: 'Wizard final step must show Generate or Upgrade action');
+}
+
 /// Check if any of the given texts exist
 bool anyTextExists(List<String> texts) =>
     texts.any((text) => find.text(text).evaluate().isNotEmpty);

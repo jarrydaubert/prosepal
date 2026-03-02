@@ -29,16 +29,14 @@ void main() {
       await tester.pumpAndSettle();
 
       final wentBack = await tapBack(tester);
+      expect(wentBack, isTrue, reason: 'Back action unavailable on step 1');
+      expect(
+        anyTextExists(["What's the occasion?", 'Birthday']),
+        isTrue,
+        reason: 'Should return to home',
+      );
 
-      if (wentBack) {
-        expect(
-          anyTextExists(["What's the occasion?", 'Birthday']),
-          isTrue,
-          reason: 'Should return to home',
-        );
-
-        await screenshot(tester, 'j5_1_back_to_home');
-      }
+      await screenshot(tester, 'j5_1_back_to_home');
     });
 
     testWidgets('J5.2: Back from step 2 preserves occasion', (tester) async {
@@ -49,49 +47,47 @@ void main() {
       await tester.pumpAndSettle();
 
       // Go to step 2
-      if (exists(find.text('Close Friend'))) {
-        await tester.tap(find.text('Close Friend'));
-        await tester.pumpAndSettle();
-      }
-      if (exists(find.text('Continue'))) {
-        await tester.tap(find.text('Continue'));
-        await tester.pumpAndSettle();
-      }
+      await tapTextOrFail(
+        tester,
+        'Close Friend',
+        reason: 'Relationship selection should include Close Friend',
+      );
+      await tapTextOrFail(
+        tester,
+        'Continue',
+        reason: 'Continue CTA should be present after relationship selection',
+      );
 
       // Now on tones, go back
       final wentBack = await tapBack(tester);
+      expect(wentBack, isTrue, reason: 'Back action unavailable on step 2');
+      // Should still be in Birthday wizard (showing relationships)
+      expect(
+        anyTextExists(['Close Friend', 'Family', 'Partner']),
+        isTrue,
+        reason: 'Back should preserve occasion context',
+      );
 
-      if (wentBack) {
-        // Should still be in Birthday wizard (showing relationships)
-        expect(
-          anyTextExists(['Close Friend', 'Family', 'Partner']),
-          isTrue,
-          reason: 'Back should preserve occasion context',
-        );
-
-        await screenshot(tester, 'j5_2_back_preserves');
-      }
+      await screenshot(tester, 'j5_2_back_preserves');
     });
 
     testWidgets('J5.3: Back from step 3 preserves selections', (tester) async {
       final atHome = await navigateToHome(tester);
       expect(atHome, isTrue, reason: 'Failed to navigate to home');
 
-      await completeWizard(tester);
+      await completeWizardOrFail(tester);
 
       // Now on final step, go back
       final wentBack = await tapBack(tester);
+      expect(wentBack, isTrue, reason: 'Back action unavailable on final step');
+      // Should show tones again
+      expect(
+        anyTextExists(['Heartfelt', 'Funny', 'Formal']),
+        isTrue,
+        reason: 'Should show tone selection',
+      );
 
-      if (wentBack) {
-        // Should show tones again
-        expect(
-          anyTextExists(['Heartfelt', 'Funny', 'Formal']),
-          isTrue,
-          reason: 'Should show tone selection',
-        );
-
-        await screenshot(tester, 'j5_3_back_to_tones');
-      }
+      await screenshot(tester, 'j5_3_back_to_tones');
     });
 
     testWidgets('J5.4: Can re-enter wizard after backing out', (tester) async {
@@ -104,18 +100,19 @@ void main() {
       await tapBack(tester);
 
       // Re-enter with different occasion
-      if (exists(find.text('Thank You'))) {
-        await tester.tap(find.text('Thank You'));
-        await tester.pumpAndSettle();
+      await tapTextOrFail(
+        tester,
+        'Thank You',
+        reason: 'Expected to re-enter wizard with Thank You occasion',
+      );
 
-        expect(
-          anyTextExists(['Close Friend', 'Family']),
-          isTrue,
-          reason: 'Should show relationships for new occasion',
-        );
+      expect(
+        anyTextExists(['Close Friend', 'Family']),
+        isTrue,
+        reason: 'Should show relationships for new occasion',
+      );
 
-        await screenshot(tester, 'j5_4_reenter');
-      }
+      await screenshot(tester, 'j5_4_reenter');
     });
 
     testWidgets('J5.5: Rapid back taps handled gracefully', (tester) async {
@@ -178,18 +175,22 @@ void main() {
       await tester.pumpAndSettle();
 
       // Go to legal
-      if (await scrollToText(tester, 'Privacy Policy')) {
-        await tester.tap(find.text('Privacy Policy'));
-        await tester.pumpAndSettle();
+      final foundPrivacy = await scrollToText(tester, 'Privacy Policy');
+      expect(
+        foundPrivacy,
+        isTrue,
+        reason: 'Privacy Policy link should be present',
+      );
+      await tester.tap(find.text('Privacy Policy'));
+      await tester.pumpAndSettle();
 
-        // Back twice to home
-        await tapBack(tester);
-        await tapBack(tester);
+      // Back twice to home
+      await tapBack(tester);
+      await tapBack(tester);
 
-        expect(anyTextExists(["What's the occasion?", 'Birthday']), isTrue);
+      expect(anyTextExists(["What's the occasion?", 'Birthday']), isTrue);
 
-        await screenshot(tester, 'j5_7_deep_nav');
-      }
+      await screenshot(tester, 'j5_7_deep_nav');
     });
   });
 }
