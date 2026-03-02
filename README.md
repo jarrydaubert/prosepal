@@ -48,9 +48,12 @@ flutter test
 ./scripts/run_wired_evidence.sh --suite full
 
 # QA/release checks
+./scripts/check_theme_token_usage.sh --base origin/main --head HEAD
 ./scripts/test_flake_audit.sh
 ./scripts/audit_ai_cost_controls.sh
 ```
+
+`check_theme_token_usage.sh` blocks newly introduced `Colors.white/black/grey` literals in `lib/features/**` diff lines. Brand-required exceptions must be documented in `scripts/config/theme_token_usage_allowlist.tsv`.
 
 ## Core Docs
 
