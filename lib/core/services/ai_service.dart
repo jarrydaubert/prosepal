@@ -118,6 +118,12 @@ class AiService {
 
   bool get _useVertexBackend => _aiBackend.toLowerCase() != 'google';
 
+  @visibleForTesting
+  String get configuredBackend => _useVertexBackend ? 'vertex' : 'google';
+
+  @visibleForTesting
+  String get configuredVertexLocation => _vertexLocation;
+
   GenerativeModel? _model;
   String? _currentModelName;
   bool _loggedRuntimeContext = false;
@@ -177,6 +183,17 @@ class AiService {
       );
     }
 
+    // Timeout (more specific than generic network errors)
+    if (message.contains('timeout')) {
+      return const AiErrorClassification(
+        exceptionType: AiNetworkException,
+        message:
+            'The request timed out. Please check your connection and try again.',
+        errorCode: 'TIMEOUT',
+        isRetryable: true,
+      );
+    }
+
     // Network errors
     if (message.contains('network') || message.contains('connection')) {
       return const AiErrorClassification(
@@ -191,7 +208,8 @@ class AiService {
     if ((message.contains('client application') &&
             message.contains('blocked')) ||
         (message.contains('api key') && message.contains('blocked')) ||
-        (message.contains('app check') && message.contains('blocked'))) {
+        (message.contains('app check') && message.contains('blocked')) ||
+        message.contains('attestation failed')) {
       return const AiErrorClassification(
         exceptionType: AiServiceException,
         message:
@@ -235,17 +253,6 @@ class AiService {
       );
     }
 
-    // Timeout
-    if (message.contains('timeout')) {
-      return const AiErrorClassification(
-        exceptionType: AiNetworkException,
-        message:
-            'The request timed out. Please check your connection and try again.',
-        errorCode: 'TIMEOUT',
-        isRetryable: true,
-      );
-    }
-
     // Invalid request
     if (message.contains('invalid') || message.contains('malformed')) {
       return const AiErrorClassification(
@@ -279,6 +286,29 @@ class AiService {
       );
     }
 
+    // Timeout (more specific than generic network errors)
+    if (errorStr.contains('timeout')) {
+      return const AiErrorClassification(
+        exceptionType: AiNetworkException,
+        message: 'The request timed out. Please try again.',
+        errorCode: 'TIMEOUT',
+        isRetryable: true,
+      );
+    }
+
+    // App Check attestation/auth failures
+    if (errorStr.contains('firebase_app_check') ||
+        errorStr.contains('app attestation failed') ||
+        errorStr.contains('app check')) {
+      return const AiErrorClassification(
+        exceptionType: AiServiceException,
+        message:
+            'Security verification failed for this device. '
+            'Please try again later.',
+        errorCode: 'APP_CHECK_FAILED',
+      );
+    }
+
     // Network errors
     if (errorStr.contains('network') ||
         errorStr.contains('socket') ||
@@ -288,16 +318,6 @@ class AiService {
         exceptionType: AiNetworkException,
         message: 'Unable to connect. Please check your internet connection.',
         errorCode: 'NETWORK_ERROR',
-      );
-    }
-
-    // Timeout
-    if (errorStr.contains('timeout')) {
-      return const AiErrorClassification(
-        exceptionType: AiNetworkException,
-        message: 'The request timed out. Please try again.',
-        errorCode: 'TIMEOUT',
-        isRetryable: true,
       );
     }
 
@@ -369,8 +389,12 @@ class AiService {
     return '${normalized.substring(0, max)}...';
   }
 
+  /// Verbose diagnostics are for local debugging and should not pollute
+  /// production Crashlytics logs.
+  bool get _shouldLogVerboseDiagnostics => kDebugMode;
+
   void _logRuntimeContextIfNeeded(String modelName) {
-    if (_loggedRuntimeContext) return;
+    if (_loggedRuntimeContext || !_shouldLogVerboseDiagnostics) return;
 
     final app = Firebase.app();
     final backend = _useVertexBackend ? 'vertexAI' : 'googleAI';
@@ -535,23 +559,25 @@ class AiService {
           .timeout(const Duration(seconds: 30));
       Log.info('AI response received');
 
-      // Log comprehensive response details for debugging
       final candidate = response.candidates.firstOrNull;
-      final usage = response.usageMetadata;
-      Log.info('AI response details', {
-        'finishReason': candidate?.finishReason?.name ?? 'null',
-        'candidateCount': response.candidates.length,
-        'promptTokens': usage?.promptTokenCount,
-        'responseTokens': usage?.candidatesTokenCount,
-        'thinkingTokens': usage?.thoughtsTokenCount,
-        'totalTokens': usage?.totalTokenCount,
-        'promptBlockReason': response.promptFeedback?.blockReason?.name,
-        'safetyRatings':
-            candidate?.safetyRatings
-                ?.map((r) => '${r.category.name}:${r.probability.name}')
-                .join(', ') ??
-            'none',
-      });
+      if (_shouldLogVerboseDiagnostics) {
+        // Detailed AI token/safety telemetry for local debugging only.
+        final usage = response.usageMetadata;
+        Log.info('AI response details', {
+          'finishReason': candidate?.finishReason?.name ?? 'null',
+          'candidateCount': response.candidates.length,
+          'promptTokens': usage?.promptTokenCount,
+          'responseTokens': usage?.candidatesTokenCount,
+          'thinkingTokens': usage?.thoughtsTokenCount,
+          'totalTokens': usage?.totalTokenCount,
+          'promptBlockReason': response.promptFeedback?.blockReason?.name,
+          'safetyRatings':
+              candidate?.safetyRatings
+                  ?.map((r) => '${r.category.name}:${r.probability.name}')
+                  .join(', ') ??
+              'none',
+        });
+      }
 
       // Check for blocked content
       if (response.promptFeedback?.blockReason case final reason?) {
@@ -661,7 +687,8 @@ class AiService {
 
         // Log and throw classified exception
         Log.error('Firebase AI error', e, stackTrace, {'attempt': attempt});
-        if (classification.errorCode == 'CLIENT_APP_BLOCKED') {
+        if (_shouldLogVerboseDiagnostics &&
+            classification.errorCode == 'CLIENT_APP_BLOCKED') {
           Log.warning('AI client/app blocked diagnostic', {
             'model': _currentModelName,
             'backend': _useVertexBackend ? 'vertexAI' : 'googleAI',
@@ -714,6 +741,16 @@ class AiService {
 
         // Log and throw classified exception
         Log.error('Unexpected AI error', e, stackTrace, {'attempt': attempt});
+        if (_shouldLogVerboseDiagnostics &&
+            classification.errorCode == 'APP_CHECK_FAILED') {
+          Log.warning('AI App Check diagnostic', {
+            'platform': defaultTargetPlatform.name,
+            'backend': _useVertexBackend ? 'vertexAI' : 'googleAI',
+            'hint':
+                'Verify App Check debug token allowlist for this device, '
+                'provider mode, and enforcement settings.',
+          });
+        }
         throw _createException(classification, e);
       }
     }
