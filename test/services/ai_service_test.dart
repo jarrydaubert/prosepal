@@ -553,6 +553,18 @@ void main() {
         expect(result.exceptionType, equals(AiServiceException));
         expect(result.errorCode, equals('CLIENT_APP_BLOCKED'));
       });
+
+      test(
+        'classifies Android client app blocked message as CLIENT_APP_BLOCKED',
+        () {
+          final result = AiService.classifyFirebaseAIError(
+            'Requests from this Android client application <empty> are blocked.',
+          );
+
+          expect(result.exceptionType, equals(AiServiceException));
+          expect(result.errorCode, equals('CLIENT_APP_BLOCKED'));
+        },
+      );
     });
 
     group('content blocked errors', () {
@@ -572,6 +584,18 @@ void main() {
 
         expect(result.exceptionType, equals(AiContentBlockedException));
       });
+
+      test(
+        'keeps safety-filter blocks as CONTENT_BLOCKED (not client/app blocked)',
+        () {
+          final result = AiService.classifyFirebaseAIError(
+            'Prompt blocked by safety filters for dangerous content.',
+          );
+
+          expect(result.exceptionType, equals(AiContentBlockedException));
+          expect(result.errorCode, equals('CONTENT_BLOCKED'));
+        },
+      );
     });
 
     group('service unavailable errors', () {

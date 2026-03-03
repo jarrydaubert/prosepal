@@ -331,6 +331,30 @@ Pass criteria:
 - FTL critical suite passes.
 - Supabase and AI control audits complete with no unresolved release blockers.
 
+### Firebase AI Android App Check triage (`App attestation failed`)
+
+Use this sequence when Vertex/Google AI calls fail with:
+`[firebase_app_check/unknown] ... code: 403 body: App attestation failed.`
+
+1. Confirm debug provider is active in app logs:
+  - `androidProvider=AndroidDebugProvider` for debug builds.
+2. Capture the current debug token from device logs:
+  - `./scripts/run_android.sh`
+  - Copy token from: `DebugAppCheckProvider ... Enter this debug secret into the allow list ...`
+3. Register token in Firebase Console:
+  - Firebase Console → App Check → Apps → Android app → Manage debug tokens → Add token.
+4. Verify package/signature posture:
+  - Firebase Android app package matches `com.prosepal.prosepal`.
+  - SHA-256 fingerprints in Firebase app config include active signing cert(s) for the running build.
+5. Verify App Check API status:
+  - App Check dashboard shows verified requests for Firebase AI Logic.
+  - Enforcement mode aligns with current test phase (Monitoring or Enforced).
+6. Re-run wired Android generation:
+  - `./scripts/run_android.sh --dart-define=AI_BACKEND=vertex`
+7. If it still fails:
+  - Collect log evidence with token redaction.
+  - Record failure mode and config snapshot in release evidence and backlog.
+
 ## AI Cost/Abuse Control Policy
 
 Required runtime controls:
