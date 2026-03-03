@@ -50,6 +50,10 @@ jobs:
 
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
 
+      - name: Secret history guard
+        shell: bash
+        run: bash ./scripts/security_history_guard.sh
+
       - name: Create and push tag
         shell: bash
         run: |
@@ -70,4 +74,3 @@ jobs:
             CMD+=(--prerelease)
           fi
           "${CMD[@]}"
-

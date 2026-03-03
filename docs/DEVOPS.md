@@ -108,6 +108,16 @@ Use:
 - Local `.env` files that are gitignored for developer machines.
 - Runtime config with non-secret toggles only.
 
+Automated enforcement:
+- CI runs `./scripts/security_history_guard.sh` on every PR/push to `main`.
+- The guard blocks merges if any non-example `.env*` file appears in reachable history or if high-risk secret patterns are detected.
+
+Manual verification command:
+
+```bash
+./scripts/security_history_guard.sh
+```
+
 If a secret/key is exposed:
 1. Rotate/revoke the key immediately in provider console.
 2. Restrict replacement key by API + app/bundle/package constraints.
@@ -124,6 +134,7 @@ Purpose:
 
 Steps:
 - Commit attribution guard (`./scripts/check_commit_attribution.sh`) for PR/push commit ranges.
+- Secret history guard (`./scripts/security_history_guard.sh`) to block dotenv/history leaks.
 - Release preflight tests (`./scripts/test_release_preflight.sh`).
 - Deno static validation for Supabase edge functions (`deno check`).
 - Flutter analyze.
