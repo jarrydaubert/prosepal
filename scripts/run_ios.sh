@@ -48,6 +48,15 @@ cd "$PROJECT_DIR"
 SDK_ROOT="$(xcrun --sdk iphoneos --show-sdk-path 2>/dev/null || true)"
 EXTRA_DEFINES=()
 
+# Guard against wrapper/alias invocation patterns that pass this script path
+# through as a positional arg. If forwarded to flutter run, it is treated as a
+# Dart target and causes "Launching ./scripts/run_ios.sh" build failures.
+case "${1:-}" in
+  "$0"|"./scripts/run_ios.sh"|"scripts/run_ios.sh"|"run_ios.sh")
+    shift
+    ;;
+esac
+
 # Find iOS device - extract device ID (second field separated by •)
 DEVICE=$(flutter devices | grep -i "iphone\|ipad" | head -1 | awk -F'•' '{print $2}' | xargs)
 
@@ -66,6 +75,7 @@ else
     echo "Warning: Could not resolve iOS SDK path via xcrun; continuing without SdkRoot define."
 fi
 flutter run -d "$DEVICE" \
+    --target=lib/main.dart \
     --dart-define=SUPABASE_URL="$SUPABASE_URL" \
     --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY" \
     --dart-define=REVENUECAT_IOS_KEY="$REVENUECAT_IOS_KEY" \
