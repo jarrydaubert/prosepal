@@ -230,6 +230,20 @@ Real backend E2E:
 flutter test integration_test/e2e_real_test.dart -d <android-device-id> --dart-define=REVENUECAT_USE_TEST_STORE=true
 ```
 
+### iOS CocoaPods Recovery
+
+Use this when iOS dependency resolution fails with lock mismatches (for example `Firebase/CoreOnly` or `PurchasesHybridCommon*`):
+
+```bash
+flutter clean
+flutter pub get
+cd ios
+pod update PurchasesHybridCommon PurchasesHybridCommonUI
+pod install --repo-update
+```
+
+If dependency versions changed, commit the resulting `ios/Podfile.lock` update in the same PR.
+
 ### Operational Verification
 
 Supabase read-only verification:

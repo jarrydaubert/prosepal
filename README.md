@@ -52,6 +52,20 @@ flutter test
 ./scripts/audit_ai_cost_controls.sh
 ```
 
+## iOS Dependency Recovery
+
+If `./scripts/run_ios.sh` fails during `pod install` with pod lock mismatches (for example `Firebase/CoreOnly` or `PurchasesHybridCommon*`), run:
+
+```bash
+flutter clean
+flutter pub get
+cd ios
+pod update PurchasesHybridCommon PurchasesHybridCommonUI
+pod install --repo-update
+```
+
+Then commit updated `ios/Podfile.lock` with the related dependency change.
+
 ## Core Docs
 
 - `AGENTS.md` - Canonical agent policy and working rules
