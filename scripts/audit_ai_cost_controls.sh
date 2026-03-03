@@ -176,7 +176,7 @@ if [ "$overall_fail" -eq 0 ]; then
   echo "AI cost/abuse audit: PASS"
 else
   echo "AI cost/abuse audit: FAIL"
-  echo "Review docs/AI_COST_ABUSE_RUNBOOK.md and remediate failures."
+  echo "Review docs/DEVOPS.md and remediate failures."
 fi
 
 exit "$overall_fail"

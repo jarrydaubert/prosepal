@@ -487,6 +487,21 @@ void main() {
       });
     });
 
+    group('client/app blocked errors', () {
+      test(
+        'classifies Firebase client application blocked as AiServiceException',
+        () {
+          final result = AiService.classifyFirebaseAIError(
+            'Requests from this iOS client application <empty> are blocked.',
+          );
+
+          expect(result.exceptionType, equals(AiServiceException));
+          expect(result.errorCode, equals('CLIENT_APP_BLOCKED'));
+          expect(result.isRetryable, isFalse);
+        },
+      );
+    });
+
     group('content blocked errors', () {
       test('classifies "content blocked" as AiContentBlockedException', () {
         final result = AiService.classifyFirebaseAIError(

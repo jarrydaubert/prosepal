@@ -249,7 +249,15 @@ class _SplashScreenState extends ConsumerState<_SplashScreen> {
 
     // Sync device state from server FIRST - ensures accurate state on home screen
     final usageService = ref.read(usageServiceProvider);
-    await usageService.syncDeviceStateFromServer();
+    await usageService.syncDeviceStateFromServer().timeout(
+      const Duration(seconds: 3),
+      onTimeout: () {
+        Log.warning(
+          'Device state sync exceeded splash budget; continuing startup',
+          {'timeoutMs': 3000},
+        );
+      },
+    );
     if (!mounted) return;
 
     final prefs = ref.read(sharedPreferencesProvider);

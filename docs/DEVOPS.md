@@ -281,6 +281,39 @@ AI abuse/cost verification (manual + script-assisted):
 - Budget alerts configured (warning + critical).
 - Kill-switch drill passes (`ai_enabled=false` then recovery).
 
+### Firebase AI iOS client-block triage (`client application <empty> are blocked`)
+
+Use this deterministic sequence before changing runtime code:
+
+1. Verify runtime app identity in logs:
+  - `firebaseProjectId` matches expected project.
+  - `firebaseAppId`/`apiKey` are non-empty and from `GoogleService-Info.plist`.
+2. Verify Firebase app registration:
+  - iOS app bundle ID in Firebase is exactly `com.prosepal.prosepal`.
+3. Verify GCP API key posture:
+  - `iOS key (auto created by Firebase)` has iOS app restriction for `com.prosepal.prosepal`.
+  - API targets include `firebasevertexai.googleapis.com`.
+  - `Gemini Developer API key (auto created by Firebase)` is restricted to `generativelanguage.googleapis.com`.
+4. Verify App Check posture:
+  - Firebase AI Logic receives verified requests.
+  - If testing debug builds, valid debug token is registered.
+  - If enforcement is enabled, ensure debug token/provider setup is valid for test devices.
+5. Verify API/service enablement:
+  - `firebasevertexai.googleapis.com` and `generativelanguage.googleapis.com` are enabled.
+6. Verify Remote Config inputs:
+  - `ai_enabled=true`
+  - `ai_model` and `ai_model_fallback` are in allowlist.
+  - `ai_use_limited_app_check_tokens` rollout value is intentional and documented.
+7. Isolate restriction root cause:
+  - Run once with Vertex backend path:
+    - `./scripts/run_ios.sh --dart-define=AI_BACKEND=vertex`
+  - Run once with Google Developer backend path:
+    - `./scripts/run_ios.sh --dart-define=AI_BACKEND=google`
+  - If only Google path fails with `client application <empty> are blocked`, keep Vertex as production default and track Google path as a provider/configuration issue.
+  - Temporarily set iOS key application restriction to `None` (keep API restrictions intact), retest, then immediately restore intended restriction policy.
+8. If issue persists after all checks:
+  - Capture wired-device evidence logs and open/append a backlog item with exact provider, key ID, and request classification evidence.
+
 Pass criteria:
 - Required checks are green.
 - Wired evidence captured for iOS and Android.
