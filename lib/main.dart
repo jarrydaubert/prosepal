@@ -34,8 +34,8 @@ void main() async {
   final widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
 
-  // Avoid network font fetching in runtime/device tests.
-  // If a font isn't bundled locally, Flutter falls back to system fonts.
+  // Disable runtime network font fetching. Required font files are bundled in
+  // assets/fonts for deterministic startup on physical devices and CI.
   GoogleFonts.config.allowRuntimeFetching = false;
 
   // Lock to portrait orientation only

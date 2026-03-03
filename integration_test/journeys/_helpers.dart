@@ -7,6 +7,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:prosepal/core/config/preference_keys.dart';
+import 'package:prosepal/core/services/biometric_service.dart';
 import 'package:prosepal/main.dart' as app;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -54,6 +55,11 @@ Future<void> launchApp(
     'Preparing your workspace...',
     'Securing sign-in...',
     'Syncing subscriptions...',
+    'Tap to unlock',
+    'Unlock with Biometrics',
+    'Unlock with Face ID',
+    'Unlock with Fingerprint',
+    'Unlock with Touch ID',
     'Continue',
     'Get Started',
     'Sign in with Google',
@@ -313,14 +319,22 @@ Future<bool> tapBack(WidgetTester tester) async {
 }
 
 Future<void> _resetPersistentState({bool seedFreeTierUsed = false}) async {
-  SharedPreferences.setMockInitialValues({
-    PreferenceKeys.hasCompletedOnboarding: false,
-    PreferenceKeys.hasSeenFirstActionHint: false,
-    PreferenceKeys.analyticsEnabled: false,
-    PreferenceKeys.usageTotalCount: seedFreeTierUsed ? 1 : 0,
-    PreferenceKeys.usageDeviceUsedFreeTier: seedFreeTierUsed,
-  });
-  FlutterSecureStorage.setMockInitialValues(const <String, String>{});
+  // Use real plugin storage for device integration runs.
+  // Mock initial-values helpers are unit/widget-test oriented and can leak
+  // stale state across wired runs.
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.clear();
+  await prefs.setBool(PreferenceKeys.hasCompletedOnboarding, false);
+  await prefs.setBool(PreferenceKeys.hasSeenFirstActionHint, false);
+  await prefs.setBool(PreferenceKeys.analyticsEnabled, false);
+  await prefs.setInt(PreferenceKeys.usageTotalCount, seedFreeTierUsed ? 1 : 0);
+  await prefs.setBool(PreferenceKeys.usageDeviceUsedFreeTier, seedFreeTierUsed);
+
+  const secureStorage = FlutterSecureStorage();
+  await secureStorage.deleteAll();
+
+  // Keep launch deterministic in smoke/journey tests.
+  await BiometricService.instance.setEnabled(false);
 }
 
 Future<bool> _waitForFinder(

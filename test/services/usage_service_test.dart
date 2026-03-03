@@ -152,5 +152,16 @@ void main() {
         expect(usageService.getMonthlyCount(), equals(i));
       }
     });
+
+    test(
+      'anonymous pending sync does not schedule retry timer until sign-in',
+      () async {
+        await usageService.recordGeneration();
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+
+        expect(await usageService.getPendingSyncCount(), equals(1));
+        expect(usageService.hasRetryTimer, isFalse);
+      },
+    );
   });
 }

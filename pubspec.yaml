@@ -91,6 +91,7 @@ flutter:
   assets:
     - assets/images/
     - assets/images/icons/
+    - assets/fonts/
     - assets/splash_transparent.png
 
 # Patrol integration testing configuration
