@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -119,6 +120,9 @@ class UsageService {
 
   /// Timer for periodic retry processing.
   Timer? _retryTimer;
+
+  @visibleForTesting
+  bool get hasRetryTimer => _retryTimer?.isActive ?? false;
 
   // Supabase table and columns
   static const _table = 'user_usage';
@@ -423,6 +427,7 @@ class UsageService {
           monthKey: monthKey,
           createdAt: DateTime.now(),
         ),
+        scheduleRetry: false,
       );
       return;
     }
@@ -456,6 +461,7 @@ class UsageService {
           monthKey: monthKey,
           createdAt: DateTime.now(),
         ),
+        scheduleRetry: true,
       );
     }
   }
@@ -465,7 +471,10 @@ class UsageService {
   // ===========================================================================
 
   /// Add a sync operation to the pending queue.
-  Future<void> _addPendingSync(PendingSync sync) async {
+  Future<void> _addPendingSync(
+    PendingSync sync, {
+    required bool scheduleRetry,
+  }) async {
     final pending = await _getPendingSyncs();
 
     // Deduplicate: if we have a newer sync for the same user, keep only the newest
@@ -478,8 +487,10 @@ class UsageService {
       'userId': sync.userId.substring(0, 8),
     });
 
-    // Schedule retry processing
-    _scheduleRetryProcessing();
+    // Anonymous syncs can only be flushed after sign-in via syncFromServer().
+    if (scheduleRetry) {
+      _scheduleRetryProcessing();
+    }
   }
 
   /// Get all pending syncs from storage.
