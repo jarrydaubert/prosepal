@@ -30,6 +30,20 @@ function makeRequest(payload: unknown): Request {
   })
 }
 
+function makeRequestWithAuthHeader(
+  payload: unknown,
+  authHeader: string,
+): Request {
+  return new Request('https://example.supabase.co/functions/v1/revenuecat-webhook', {
+    method: 'POST',
+    headers: {
+      Authorization: authHeader,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  })
+}
+
 /**
  * Creates deterministic dependency overrides for webhook handler tests.
  */
@@ -115,4 +129,24 @@ Deno.test('idempotent replay keeps returning 200 and upserts deterministic paylo
   assertEquals(upserts.length, 2)
   assertEquals(upserts[0], upserts[1])
   assertEquals(upserts[0].user_id, TEST_USER_ID)
+})
+
+Deno.test('returns 401 when webhook secret does not match', async () => {
+  const res = await handleRevenueCatWebhook(
+    makeRequestWithAuthHeader(validPayload, 'Bearer wrong-secret'),
+    makeDeps(),
+  )
+
+  assertEquals(res.status, 401)
+  const body = await res.json() as Record<string, unknown>
+  assertEquals(body.error, 'Unauthorized')
+})
+
+Deno.test('accepts RevenueCat Bearer header without space', async () => {
+  const res = await handleRevenueCatWebhook(
+    makeRequestWithAuthHeader(validPayload, `Bearer${TEST_SECRET}`),
+    makeDeps(),
+  )
+
+  assertEquals(res.status, 200)
 })
