@@ -40,6 +40,10 @@ jobs:
 
           ./scripts/check_commit_attribution.sh --range "$RANGE"
 
+      - name: Secret history guard
+        shell: bash
+        run: bash ./scripts/security_history_guard.sh
+
       - name: Detect docs-only change scope
         id: scope
         shell: bash
