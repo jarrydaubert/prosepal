@@ -189,6 +189,26 @@ function parsePayload(payload: unknown): { ok: true; value: RevenueCatEvent } | 
   }
 }
 
+const textEncoder = new TextEncoder()
+
+/**
+ * Constant-time string comparison for shared-secret verification.
+ *
+ * Uses XOR over full max length to avoid early-return timing leaks.
+ */
+function timingSafeEqual(left: string, right: string): boolean {
+  const leftBytes = textEncoder.encode(left)
+  const rightBytes = textEncoder.encode(right)
+  const maxLength = Math.max(leftBytes.length, rightBytes.length)
+
+  let diff = leftBytes.length ^ rightBytes.length
+  for (let i = 0; i < maxLength; i++) {
+    diff |= (leftBytes[i] ?? 0) ^ (rightBytes[i] ?? 0)
+  }
+
+  return diff === 0
+}
+
 const defaultCreateAdminClient: CreateAdminClient = (
   supabaseUrl: string,
   supabaseServiceKey: string,
@@ -225,7 +245,7 @@ export async function handleRevenueCatWebhook(
 
     // RevenueCat sends: Authorization: Bearer<secret> (no space)
     const providedSecret = authHeader?.replace(/^Bearer\s?/, '')
-    if (providedSecret !== webhookSecret) {
+    if (!providedSecret || !timingSafeEqual(providedSecret, webhookSecret)) {
       logger.warn('Invalid webhook secret')
       return jsonResponse({ error: 'Unauthorized' }, 401)
     }
