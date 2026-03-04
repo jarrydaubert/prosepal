@@ -98,12 +98,40 @@ abstract final class DiagnosticService {
     buffer.writeln('--- Auth Status ---');
     try {
       final user = Supabase.instance.client.auth.currentUser;
+      final sessionUser = Supabase.instance.client.auth.currentSession?.user;
       if (user != null) {
         supabaseUserId = user.id;
+        final metadataProvider = _metadataProvider(user.appMetadata);
+        final linkedProviders = _collectLinkedProviders(
+          metadataProvider: metadataProvider,
+          metadataProvidersRaw: user.appMetadata['providers'],
+          identityProviders: user.identities?.map((i) => i.provider),
+        );
+        final mostRecentIdentityProvider = _mostRecentIdentityProvider(
+          user.identities
+              ?.map(
+                (i) => {'provider': i.provider, 'lastSignInAt': i.lastSignInAt},
+              )
+              .toList(),
+          fallbackProvider: metadataProvider,
+        );
+        final sessionProvider = _metadataProvider(
+          sessionUser?.appMetadata ?? const {},
+        );
+
         buffer.writeln('Signed In: Yes');
         buffer.writeln('User ID: ${_truncateId(user.id)}');
         buffer.writeln(
-          'Provider: ${user.appMetadata['provider'] ?? 'unknown'}',
+          'Last Sign-In Provider: ${_providerLabel(metadataProvider)}',
+        );
+        buffer.writeln(
+          'Most Recent Identity Provider: ${_providerLabel(mostRecentIdentityProvider)}',
+        );
+        buffer.writeln(
+          'Session Provider Snapshot: ${_providerLabel(sessionProvider)}',
+        );
+        buffer.writeln(
+          'Linked Providers: ${linkedProviders.isEmpty ? '(none)' : linkedProviders.join(', ')}',
         );
         buffer.writeln(
           'Created: ${user.createdAt.substring(0, 10)}',
@@ -231,4 +259,90 @@ abstract final class DiagnosticService {
     if (telemetryAligned && revenueCatAligned) return 'Aligned';
     return 'Needs review';
   }
+
+  static String? _metadataProvider(Map<String, dynamic> appMetadata) {
+    final value = appMetadata['provider'];
+    if (value is String && value.trim().isNotEmpty) {
+      return value.trim().toLowerCase();
+    }
+    return null;
+  }
+
+  static String _providerLabel(String? provider) => provider ?? 'unknown';
+
+  static List<String> _collectLinkedProviders({
+    required String? metadataProvider,
+    required dynamic metadataProvidersRaw,
+    required Iterable<String>? identityProviders,
+  }) {
+    final candidates = <String?>[
+      metadataProvider,
+      if (metadataProvidersRaw is List)
+        ...metadataProvidersRaw.whereType<String>(),
+      ...?identityProviders,
+    ];
+    return _normalizeProviders(candidates);
+  }
+
+  static List<String> _normalizeProviders(Iterable<String?> values) {
+    final normalized = <String>{};
+    for (final value in values) {
+      final trimmed = value?.trim().toLowerCase();
+      if (trimmed != null && trimmed.isNotEmpty) {
+        normalized.add(trimmed);
+      }
+    }
+    final sorted = normalized.toList()..sort();
+    return sorted;
+  }
+
+  static String? _mostRecentIdentityProvider(
+    List<Map<String, String?>>? identityRows, {
+    required String? fallbackProvider,
+  }) {
+    if (identityRows == null || identityRows.isEmpty) {
+      return fallbackProvider;
+    }
+
+    DateTime? newestTimestamp;
+    String? newestProvider;
+    for (final row in identityRows) {
+      final provider = row['provider']?.trim().toLowerCase();
+      final timestampRaw = row['lastSignInAt'];
+      if (provider == null || provider.isEmpty) continue;
+
+      final parsedTimestamp = timestampRaw == null
+          ? null
+          : DateTime.tryParse(timestampRaw)?.toUtc();
+      if (parsedTimestamp == null) {
+        newestProvider ??= provider;
+        continue;
+      }
+      if (newestTimestamp == null || parsedTimestamp.isAfter(newestTimestamp)) {
+        newestTimestamp = parsedTimestamp;
+        newestProvider = provider;
+      }
+    }
+    return newestProvider ?? fallbackProvider;
+  }
+
+  @visibleForTesting
+  static List<String> collectLinkedProvidersForTesting({
+    String? metadataProvider,
+    dynamic metadataProvidersRaw,
+    Iterable<String>? identityProviders,
+  }) => _collectLinkedProviders(
+    metadataProvider: metadataProvider,
+    metadataProvidersRaw: metadataProvidersRaw,
+    identityProviders: identityProviders,
+  );
+
+  @visibleForTesting
+  static String? mostRecentIdentityProviderForTesting(
+    List<Map<String, String?>>? identityRows, {
+    String? fallbackProvider,
+  }) => _mostRecentIdentityProvider(
+    identityRows,
+    fallbackProvider: fallbackProvider,
+  );
 }

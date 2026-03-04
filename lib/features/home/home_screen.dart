@@ -21,6 +21,7 @@ class HomeScreen extends ConsumerWidget {
     final remaining = ref.watch(remainingGenerationsProvider);
     final isPro = ref.watch(isProProvider);
     final showFirstActionHint = ref.watch(showFirstActionHintProvider);
+    final occasionSearchQuery = ref.watch(occasionSearchProvider);
 
     // Check for pending paywall (e.g., after email sign-in from paywall sync)
     final pendingPaywallSource = ref.watch(pendingPaywallSourceProvider);
@@ -189,6 +190,7 @@ class HomeScreen extends ConsumerWidget {
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: _OccasionSearchField(
+                    query: occasionSearchQuery,
                     onChanged: (value) {
                       ref.read(occasionSearchProvider.notifier).state = value;
                       if (value.isNotEmpty) {
@@ -365,8 +367,9 @@ class _ProPill extends StatelessWidget {
 
 /// Search field for filtering occasions.
 class _OccasionSearchField extends StatefulWidget {
-  const _OccasionSearchField({required this.onChanged});
+  const _OccasionSearchField({required this.query, required this.onChanged});
 
+  final String query;
   final ValueChanged<String> onChanged;
 
   @override
@@ -377,13 +380,13 @@ class _OccasionSearchFieldState extends State<_OccasionSearchField> {
   final _controller = TextEditingController();
   final _focusNode = FocusNode();
   bool _hasText = false;
-  bool _hasFocus = false;
 
   @override
   void initState() {
     super.initState();
+    _controller.text = widget.query;
+    _hasText = widget.query.isNotEmpty;
     _controller.addListener(_onTextChanged);
-    _focusNode.addListener(_onFocusChanged);
   }
 
   void _onTextChanged() {
@@ -393,17 +396,33 @@ class _OccasionSearchFieldState extends State<_OccasionSearchField> {
     }
   }
 
-  void _onFocusChanged() {
-    final hasFocus = _focusNode.hasFocus;
-    if (hasFocus != _hasFocus) {
-      setState(() => _hasFocus = hasFocus);
+  void _clearSearch() {
+    _controller.clear();
+    widget.onChanged('');
+    _focusNode.unfocus();
+  }
+
+  @override
+  void didUpdateWidget(covariant _OccasionSearchField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.query != _controller.text) {
+      _controller.value = TextEditingValue(
+        text: widget.query,
+        selection: TextSelection.collapsed(offset: widget.query.length),
+      );
+      final hasText = widget.query.isNotEmpty;
+      if (hasText != _hasText && mounted) {
+        setState(() => _hasText = hasText);
+      }
+      if (!hasText) {
+        _focusNode.unfocus();
+      }
     }
   }
 
   @override
   void dispose() {
     _controller.removeListener(_onTextChanged);
-    _focusNode.removeListener(_onFocusChanged);
     _controller.dispose();
     _focusNode.dispose();
     super.dispose();
@@ -427,35 +446,17 @@ class _OccasionSearchFieldState extends State<_OccasionSearchField> {
       hintText: 'Search occasions...',
       hintStyle: const TextStyle(color: AppColors.textOnLightHint),
       prefixIcon: const Icon(Icons.search, color: AppColors.textOnLightHint),
-      suffixIcon: (_hasText || _hasFocus)
-          ? SizedBox(
-              width: _hasText ? 92 : 46,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (_hasText)
-                    IconButton(
-                      icon: const Icon(
-                        Icons.clear,
-                        color: AppColors.textOnLightHint,
-                      ),
-                      onPressed: () {
-                        _controller.clear();
-                        widget.onChanged('');
-                      },
-                    ),
-                  if (_hasFocus)
-                    IconButton(
-                      tooltip: 'Done',
-                      icon: const Icon(
-                        Icons.check_rounded,
-                        color: AppColors.primary,
-                      ),
-                      onPressed: () => FocusScope.of(context).unfocus(),
-                    ),
-                ],
+      suffixIcon: _hasText
+          ? IconButton(
+              icon: const Icon(
+                Icons.clear,
+                color: AppColors.textOnLightHint,
+                size: 20,
               ),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints.tightFor(width: 40, height: 40),
+              splashRadius: 18,
+              onPressed: _clearSearch,
             )
           : null,
       filled: true,

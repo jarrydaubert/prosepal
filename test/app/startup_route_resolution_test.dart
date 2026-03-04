@@ -102,17 +102,18 @@ void main() {
 
   group('resolveStartupRouteWithTimeout', () {
     test('returns resolved route before timeout', () async {
-      final route = await resolveStartupRouteWithTimeout(
+      final result = await resolveStartupRouteWithTimeout(
         resolver: () async => '/home',
         timeout: const Duration(milliseconds: 50),
         fallbackRoute: '/onboarding',
       );
 
-      expect(route, '/home');
+      expect(result.route, '/home');
+      expect(result.timedOut, isFalse);
     });
 
     test('returns fallback route when resolver exceeds timeout', () async {
-      final route = await resolveStartupRouteWithTimeout(
+      final result = await resolveStartupRouteWithTimeout(
         resolver: () async {
           await Future<void>.delayed(const Duration(milliseconds: 30));
           return '/home';
@@ -121,7 +122,36 @@ void main() {
         fallbackRoute: '/onboarding',
       );
 
-      expect(route, '/onboarding');
+      expect(result.route, '/onboarding');
+      expect(result.timedOut, isTrue);
+    });
+
+    test(
+      'does not report timeout when resolved route matches fallback route',
+      () async {
+        final result = await resolveStartupRouteWithTimeout(
+          resolver: () async => '/onboarding',
+          timeout: const Duration(milliseconds: 50),
+          fallbackRoute: '/onboarding',
+        );
+
+        expect(result.route, '/onboarding');
+        expect(result.timedOut, isFalse);
+      },
+    );
+
+    test('marks timeout when fallback route is used after timeout', () async {
+      final result = await resolveStartupRouteWithTimeout(
+        resolver: () async {
+          await Future<void>.delayed(const Duration(milliseconds: 20));
+          return '/onboarding';
+        },
+        timeout: const Duration(milliseconds: 1),
+        fallbackRoute: '/onboarding',
+      );
+
+      expect(result.route, '/onboarding');
+      expect(result.timedOut, isTrue);
     });
 
     test('does not swallow non-timeout errors', () async {

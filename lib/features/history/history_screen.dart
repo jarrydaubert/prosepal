@@ -34,20 +34,12 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   @override
   void initState() {
     super.initState();
-    _searchFocusNode.addListener(_onSearchFocusChanged);
     _loadHistory();
-  }
-
-  void _onSearchFocusChanged() {
-    if (mounted) {
-      setState(() {});
-    }
   }
 
   @override
   void dispose() {
     _debounceTimer?.cancel();
-    _searchFocusNode.removeListener(_onSearchFocusChanged);
     _searchController.dispose();
     _searchFocusNode.dispose();
     super.dispose();
@@ -242,39 +234,24 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                       color: AppColors.textOnLightHint,
                       size: 20,
                     ),
-                    suffixIcon:
-                        (_searchQuery.isNotEmpty || _searchFocusNode.hasFocus)
-                        ? SizedBox(
-                            width: _searchQuery.isNotEmpty ? 96 : 48,
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                if (_searchQuery.isNotEmpty)
-                                  IconButton(
-                                    icon: const Icon(
-                                      Icons.clear,
-                                      color: AppColors.textOnLightHint,
-                                      size: 20,
-                                    ),
-                                    onPressed: () {
-                                      _searchController.clear();
-                                      _onSearchChanged('');
-                                    },
-                                  ),
-                                if (_searchFocusNode.hasFocus)
-                                  IconButton(
-                                    tooltip: 'Done',
-                                    icon: const Icon(
-                                      Icons.check_rounded,
-                                      color: AppColors.primary,
-                                      size: 20,
-                                    ),
-                                    onPressed: () =>
-                                        FocusScope.of(context).unfocus(),
-                                  ),
-                              ],
+                    suffixIcon: _searchQuery.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(
+                              Icons.clear,
+                              color: AppColors.textOnLightHint,
+                              size: 20,
                             ),
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints.tightFor(
+                              width: 40,
+                              height: 40,
+                            ),
+                            splashRadius: 18,
+                            onPressed: () {
+                              _searchController.clear();
+                              _onSearchChanged('');
+                              _searchFocusNode.unfocus();
+                            },
                           )
                         : null,
                     filled: true,

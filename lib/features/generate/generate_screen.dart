@@ -411,6 +411,14 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
           return;
         }
       } else if (!isPro) {
+        // Fast local guard prevents repeated free generations if server sync lags.
+        if (!usageService.canGenerateFree()) {
+          ref.read(isGeneratingProvider.notifier).state = false;
+          ref.read(generationErrorProvider.notifier).state =
+              'Free message already used. Upgrade to Pro for more!';
+          return;
+        }
+
         // Anonymous free tier: server-side device fingerprint check (prevents reinstall abuse)
         try {
           final deviceCheck = await usageService

@@ -15,6 +15,8 @@ jobs:
     name: Flutter Quality Gate
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    outputs:
+      docs_only: ${{ steps.scope.outputs.docs_only }}
     permissions:
       contents: read
     steps:
@@ -129,6 +131,10 @@ jobs:
         if: steps.scope.outputs.docs_only != 'true'
         run: flutter analyze --no-fatal-infos
 
+      - name: Launch/auth color parity guard
+        if: steps.scope.outputs.docs_only != 'true'
+        run: ./scripts/check_launch_color_parity.sh
+
       - name: Critical smoke gate
         if: steps.scope.outputs.docs_only != 'true'
         run: ./scripts/test_critical_smoke.sh
@@ -157,3 +163,59 @@ jobs:
           path: coverage/lcov.info
           if-no-files-found: warn
           retention-days: 14
+
+  visual_regression:
+    name: Visual Regression (non-blocking)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: quality
+    if: needs.quality.outputs.docs_only != 'true'
+    continue-on-error: true
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+      - name: Install Flutter SDK
+        run: |
+          git clone https://github.com/flutter/flutter.git --depth 1 --branch 3.38.6 "$HOME/flutter"
+          echo "$HOME/flutter/bin" >> "$GITHUB_PATH"
+          "$HOME/flutter/bin/flutter" --version
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Run visual regression suite
+        id: visual
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./scripts/test_visual_regression.sh
+
+      - name: Upload visual diff artifacts
+        if: always()
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
+        with:
+          name: visual-regression-diffs
+          path: |
+            test/failures/**
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Visual regression summary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "## Visual Regression (non-blocking)"
+            if [[ "${{ steps.visual.outcome }}" == "success" ]]; then
+              echo "- Status: ✅ passed"
+              echo "- Baseline unchanged."
+            else
+              echo "- Status: ⚠️ failed (non-blocking)"
+              echo "- Diff artifacts: \`visual-regression-diffs\`"
+              echo "- To accept intended UI changes locally:"
+              echo "  - \`./scripts/test_visual_regression.sh --update\`"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

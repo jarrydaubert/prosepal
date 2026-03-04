@@ -39,8 +39,12 @@ class SettingsScreen extends ConsumerStatefulWidget {
 }
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
+  static const _biometricToggleDebounce = Duration(milliseconds: 1200);
+
   bool _biometricsSupported = false;
   bool _biometricsEnabled = false;
+  bool _isBiometricToggleInFlight = false;
+  DateTime? _lastBiometricToggleAt;
   String _biometricType = 'Biometrics';
   bool _isRestoringPurchases = false;
   String _appVersion = '';
@@ -143,16 +147,47 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   Future<void> _toggleBiometrics(bool value) async {
+    if (_isBiometricToggleInFlight) {
+      Log.info('Skip biometric toggle - request already in flight');
+      return;
+    }
+    if (value == _biometricsEnabled) return;
+
+    final now = DateTime.now();
+    final lastToggleAt = _lastBiometricToggleAt;
+    if (lastToggleAt != null) {
+      final elapsed = now.difference(lastToggleAt);
+      if (elapsed < _biometricToggleDebounce) {
+        Log.info('Skip biometric toggle - debounced', {
+          'elapsedMs': elapsed.inMilliseconds,
+        });
+        return;
+      }
+    }
+    _lastBiometricToggleAt = now;
+
+    setState(() => _isBiometricToggleInFlight = true);
+
     // Require auth for BOTH enable and disable (symmetric security)
     // Prevents unauthorized deactivation on shared/stolen devices
-    final reason = value
-        ? 'Authenticate to enable $_biometricType'
-        : 'Authenticate to disable $_biometricType';
-    final result = await _biometricService.authenticate(reason: reason);
-    if (!result.success) return;
+    try {
+      final reason = value
+          ? 'Authenticate to enable $_biometricType'
+          : 'Authenticate to disable $_biometricType';
+      final result = await _biometricService.authenticate(reason: reason);
+      if (!result.success) return;
 
-    await _biometricService.setEnabled(value);
-    setState(() => _biometricsEnabled = value);
+      await _biometricService.setEnabled(value);
+      if (mounted) {
+        setState(() => _biometricsEnabled = value);
+      }
+    } on Exception catch (e) {
+      Log.warning('Biometric toggle failed', {'error': '$e'});
+    } finally {
+      if (mounted) {
+        setState(() => _isBiometricToggleInFlight = false);
+      }
+    }
   }
 
   Future<void> _restorePurchases() async {
@@ -684,7 +719,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               subtitle: 'Require to open app',
               trailing: Switch.adaptive(
                 value: _biometricsEnabled,
-                onChanged: _toggleBiometrics,
+                onChanged: _isBiometricToggleInFlight
+                    ? null
+                    : _toggleBiometrics,
               ),
             ),
           ],
@@ -1121,7 +1158,6 @@ class _DeleteConfirmationDialogState extends State<_DeleteConfirmationDialog> {
               hintText: 'DELETE',
               border: OutlineInputBorder(),
               isDense: true,
-              suffixIcon: Icon(Icons.check_rounded, color: AppColors.primary),
             ),
           ),
         ],

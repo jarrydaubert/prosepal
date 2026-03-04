@@ -12,9 +12,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/config/preference_keys.dart';
 import '../../core/models/models.dart';
 import '../../core/providers/providers.dart';
+import '../../core/services/device_fingerprint_service.dart';
 import '../../core/services/log_service.dart';
+import '../../core/services/usage_service.dart';
 import '../../shared/components/app_button.dart';
 import '../../shared/components/app_emoji.dart';
+import '../../shared/components/generation_loading_overlay.dart';
 import '../../shared/theme/app_colors.dart';
 import '../paywall/paywall_sheet.dart';
 import 'save_to_calendar_dialog.dart';
@@ -202,6 +205,10 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
               ),
             ),
           ),
+        if (_isRegenerating)
+          Positioned.fill(
+            child: GenerationLoadingOverlay(accentColor: result.occasion.color),
+          ),
       ],
     );
   }
@@ -352,6 +359,8 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
   }
 
   Future<void> _regenerate(GenerationResult currentResult) async {
+    if (_isRegenerating) return;
+
     Log.info('Regenerate requested', {'occasion': currentResult.occasion.name});
 
     setState(() => _isRegenerating = true);
@@ -359,7 +368,80 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
     try {
       final aiService = ref.read(aiServiceProvider);
       final usageService = ref.read(usageServiceProvider);
+      final authService = ref.read(authServiceProvider);
       final historyService = ref.read(historyServiceProvider);
+      final isPro = ref.read(isProProvider);
+
+      // Anonymous free users have already consumed their one free generation
+      // by the time they reach the results screen.
+      if (!authService.isLoggedIn && !isPro) {
+        _showRegenerationError('Free message already used. Upgrade to Pro!');
+        if (mounted) {
+          unawaited(showPaywall(context, source: 'regenerate_blocked'));
+        }
+        return;
+      }
+
+      // Enforce the same usage limits as initial generation.
+      if (authService.isLoggedIn) {
+        try {
+          final usageResult = await usageService.checkAndIncrementServerSide(
+            isPro: isPro,
+          );
+          if (!usageResult.allowed) {
+            _showRegenerationError(
+              usageResult.errorMessage ?? 'Usage limit reached',
+            );
+            if (!isPro && mounted) {
+              unawaited(showPaywall(context, source: 'regenerate_blocked'));
+            }
+            return;
+          }
+        } on UsageCheckException catch (e) {
+          _showRegenerationError(e.message);
+          return;
+        }
+      } else if (!isPro) {
+        // Fast local guard prevents repeated free regenerations if server sync lags.
+        if (!usageService.canGenerateFree()) {
+          _showRegenerationError(
+            'Free message already used. Upgrade to Pro for more!',
+          );
+          if (mounted) {
+            unawaited(showPaywall(context, source: 'regenerate_blocked'));
+          }
+          return;
+        }
+
+        try {
+          final deviceCheck = await usageService
+              .checkDeviceFreeTierServerSide();
+          if (!deviceCheck.allowed) {
+            final errorMessage =
+                deviceCheck.reason == DeviceCheckReason.rateLimited
+                ? 'Too many attempts. Please wait a moment and try again.'
+                : 'This device has already used its free message. '
+                      'Upgrade to Pro for unlimited messages!';
+            _showRegenerationError(errorMessage);
+            if (mounted) {
+              unawaited(showPaywall(context, source: 'regenerate_blocked'));
+            }
+            return;
+          }
+        } on Exception catch (e) {
+          Log.warning('Regenerate device check failed', {'error': '$e'});
+          // Fall back to local free-tier check if server/device check fails.
+          if (!usageService.canGenerateFree()) {
+            _showRegenerationError(
+              'Free message already used. Upgrade to Pro for more!',
+            );
+            if (mounted) {
+              unawaited(showPaywall(context, source: 'regenerate_blocked'));
+            }
+            return;
+          }
+        }
+      }
 
       final useUkSpelling = ref.read(isUkSpellingProvider);
       final result = await aiService.generateMessages(
@@ -371,6 +453,11 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
         personalDetails: currentResult.personalDetails,
         useUkSpelling: useUkSpelling,
       );
+
+      // For anonymous users, regenerate also consumes usage.
+      if (!authService.isLoggedIn) {
+        await usageService.recordGeneration(isPro: isPro);
+      }
 
       // Save to history
       await historyService.saveGeneration(result);
@@ -406,6 +493,17 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
         setState(() => _isRegenerating = false);
       }
     }
+  }
+
+  void _showRegenerationError(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: AppColors.error,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 }
 

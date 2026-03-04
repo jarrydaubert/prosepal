@@ -104,7 +104,6 @@ class _DetailsInputState extends State<DetailsInput> {
           _StyledTextField(
             controller: _nameController,
             focusNode: _nameFocusNode,
-            nextFocusNode: _detailsFocusNode,
             hintText: 'e.g., Sarah, Mom, John',
             icon: Icons.person_outline,
             maxLength: 50,
@@ -173,7 +172,6 @@ class _StyledTextField extends StatefulWidget {
     required this.icon,
     required this.onChanged,
     this.focusNode,
-    this.nextFocusNode,
     this.maxLines = 1,
     this.maxLength,
   });
@@ -183,7 +181,6 @@ class _StyledTextField extends StatefulWidget {
   final IconData icon;
   final void Function(String) onChanged;
   final FocusNode? focusNode;
-  final FocusNode? nextFocusNode;
   final int maxLines;
   final int? maxLength;
 
@@ -228,6 +225,7 @@ class _StyledTextFieldState extends State<_StyledTextField> {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 150),
       clipBehavior: Clip.antiAlias,
+      constraints: BoxConstraints(minHeight: isMultiLine ? 124 : 52),
       decoration: BoxDecoration(
         color: AppColors.surfaceLight,
         borderRadius: BorderRadius.circular(14),
@@ -256,17 +254,9 @@ class _StyledTextFieldState extends State<_StyledTextField> {
             textCapitalization: isMultiLine
                 ? TextCapitalization.sentences
                 : TextCapitalization.words,
-            textInputAction: isMultiLine
-                ? TextInputAction.done
-                : TextInputAction.next,
+            textInputAction: TextInputAction.done,
             onChanged: widget.onChanged,
-            onEditingComplete: () {
-              if (widget.nextFocusNode != null) {
-                widget.nextFocusNode!.requestFocus();
-              } else {
-                FocusScope.of(context).unfocus();
-              }
-            },
+            onEditingComplete: () => FocusScope.of(context).unfocus(),
             onTapOutside: (_) => FocusScope.of(context).unfocus(),
             decoration: InputDecoration(
               hintText: widget.hintText,
@@ -275,38 +265,49 @@ class _StyledTextFieldState extends State<_StyledTextField> {
                 fontSize: 14,
                 height: 1.4,
               ),
-              suffixIcon: _isFocused
-                  ? IconButton(
-                      tooltip: 'Done',
-                      icon: const Icon(
-                        Icons.check_rounded,
-                        color: AppColors.primary,
-                        size: 20,
-                      ),
-                      onPressed: () => FocusScope.of(context).unfocus(),
-                    )
-                  : null,
+              counterText: isMultiLine ? null : '',
               filled: false,
               border: InputBorder.none,
               enabledBorder: InputBorder.none,
               focusedBorder: InputBorder.none,
               errorBorder: InputBorder.none,
               disabledBorder: InputBorder.none,
-              contentPadding: const EdgeInsets.fromLTRB(52, 14, 16, 14),
+              contentPadding: EdgeInsets.fromLTRB(
+                52,
+                isMultiLine ? 16 : 12,
+                16,
+                isMultiLine ? 16 : 12,
+              ),
               counterStyle: const TextStyle(
                 color: AppColors.textOnLightHint,
                 fontSize: 12,
               ),
             ),
           ),
-          Positioned(
-            left: 16,
-            top: isMultiLine ? 16 : 0,
-            bottom: isMultiLine ? null : 0,
-            child: IgnorePointer(
-              child: Icon(widget.icon, color: AppColors.primary, size: 20),
+          if (!isMultiLine)
+            Positioned.fill(
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 14),
+                  child: IgnorePointer(
+                    child: Icon(
+                      widget.icon,
+                      color: AppColors.primary,
+                      size: 20,
+                    ),
+                  ),
+                ),
+              ),
             ),
-          ),
+          if (isMultiLine)
+            Positioned(
+              left: 16,
+              top: 16,
+              child: IgnorePointer(
+                child: Icon(widget.icon, color: AppColors.primary, size: 20),
+              ),
+            ),
         ],
       ),
     );

@@ -14,6 +14,7 @@
 - [ ] `flutter analyze` passes
 - [ ] `flutter test` (or scoped equivalent) passes
 - [ ] Relevant integration/device checks run when behavior changed
+- [ ] For UI changes: visual regression outcome reviewed and evidence attached (or `visual-regression-diffs` artifact linked)
 - [ ] Docs updated for behavior/process changes
 - [ ] Commit trailers reviewed (`Co-authored-by` present only when intentional and explicitly approved)
 

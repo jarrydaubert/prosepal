@@ -29,20 +29,7 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
   bool _includeSensitiveLogs = false;
 
   @override
-  void initState() {
-    super.initState();
-    _focusNode.addListener(_onFocusChanged);
-  }
-
-  void _onFocusChanged() {
-    if (mounted) {
-      setState(() {});
-    }
-  }
-
-  @override
   void dispose() {
-    _focusNode.removeListener(_onFocusChanged);
     _focusNode.dispose();
     _controller.dispose();
     super.dispose();
@@ -211,8 +198,14 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
         ),
         leading: AppBackButton(onPressed: () => Navigator.pop(context)),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(AppSpacing.screenPadding),
+      body: SingleChildScrollView(
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+        padding: EdgeInsets.fromLTRB(
+          AppSpacing.screenPadding,
+          AppSpacing.screenPadding,
+          AppSpacing.screenPadding,
+          AppSpacing.screenPadding + MediaQuery.of(context).viewInsets.bottom,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -223,36 +216,29 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
               ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
             ),
             const Gap(AppSpacing.lg),
-            Expanded(
-              child: Semantics(
-                label: 'Feedback message input',
-                hint: 'Enter your feedback, bug report, or feature request',
-                child: TextField(
-                  controller: _controller,
-                  focusNode: _focusNode,
-                  maxLines: null,
-                  expands: true,
-                  textAlignVertical: TextAlignVertical.top,
-                  textCapitalization: TextCapitalization.sentences,
-                  onTapOutside: (_) => FocusScope.of(context).unfocus(),
-                  decoration: InputDecoration(
-                    labelText: 'Your feedback',
-                    hintText: 'Describe your issue or suggestion...',
-                    alignLabelWithHint: true,
-                    suffixIcon: _focusNode.hasFocus
-                        ? IconButton(
-                            tooltip: 'Done',
-                            icon: const Icon(
-                              Icons.check_rounded,
-                              color: AppColors.primary,
-                            ),
-                            onPressed: () => FocusScope.of(context).unfocus(),
-                          )
-                        : null,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(
-                        AppSpacing.radiusMedium,
-                      ),
+            Semantics(
+              label: 'Feedback message input',
+              hint: 'Enter your feedback, bug report, or feature request',
+              child: TextField(
+                controller: _controller,
+                focusNode: _focusNode,
+                minLines: 4,
+                maxLines: 6,
+                keyboardType: TextInputType.multiline,
+                textCapitalization: TextCapitalization.sentences,
+                textInputAction: TextInputAction.done,
+                style: const TextStyle(
+                  fontSize: 15,
+                  color: AppColors.textPrimary,
+                ),
+                onEditingComplete: () => FocusScope.of(context).unfocus(),
+                onTapOutside: (_) => FocusScope.of(context).unfocus(),
+                decoration: InputDecoration(
+                  hintText: 'Describe your issue or suggestion...',
+                  hintStyle: const TextStyle(color: AppColors.textHint),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(
+                      AppSpacing.radiusMedium,
                     ),
                   ),
                 ),

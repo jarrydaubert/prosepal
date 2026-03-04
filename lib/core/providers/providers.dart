@@ -455,7 +455,7 @@ final remainingGenerationsProvider = Provider<int>((ref) {
 // Search query for filtering occasions on home screen.
 // autoDispose so it resets when leaving home screen.
 
-final occasionSearchProvider = StateProvider<String>((ref) => '');
+final occasionSearchProvider = StateProvider.autoDispose<String>((ref) => '');
 
 /// Filtered occasions based on search query.
 /// Matches against label (case-insensitive).
@@ -529,6 +529,7 @@ void resetGenerationForm(WidgetRef ref) {
   ref.read(selectedLengthProvider.notifier).state = MessageLength.standard;
   ref.read(recipientNameProvider.notifier).state = '';
   ref.read(personalDetailsProvider.notifier).state = '';
+  ref.read(occasionSearchProvider.notifier).state = '';
   ref.read(generationResultProvider.notifier).state = null;
   ref.read(generationErrorProvider.notifier).state = null;
 }

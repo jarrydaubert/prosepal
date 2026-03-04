@@ -133,14 +133,6 @@ class _AddOccasionSheetState extends ConsumerState<AddOccasionSheet> {
                 hintText: 'e.g., Mom, John, Sarah',
                 filled: true,
                 fillColor: AppColors.surfaceLightMuted,
-                suffixIcon: IconButton(
-                  tooltip: 'Done',
-                  icon: const Icon(
-                    Icons.check_rounded,
-                    color: AppColors.primary,
-                  ),
-                  onPressed: () => FocusScope.of(context).unfocus(),
-                ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
@@ -178,14 +170,6 @@ class _AddOccasionSheetState extends ConsumerState<AddOccasionSheet> {
                 hintText: 'Add any notes or reminders...',
                 filled: true,
                 fillColor: AppColors.surfaceLightMuted,
-                suffixIcon: IconButton(
-                  tooltip: 'Done',
-                  icon: const Icon(
-                    Icons.check_rounded,
-                    color: AppColors.primary,
-                  ),
-                  onPressed: () => FocusScope.of(context).unfocus(),
-                ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,

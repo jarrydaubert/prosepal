@@ -27,8 +27,13 @@ class ProsepalApp extends ConsumerStatefulWidget {
 class _ProsepalAppState extends ConsumerState<ProsepalApp>
     with WidgetsBindingObserver {
   static const _isFlutterTest = bool.fromEnvironment('FLUTTER_TEST');
+  static const _lifecycleResumeDebounce = Duration(milliseconds: 1200);
+  static const _lockRedirectDebounce = Duration(seconds: 2);
   bool _isInBackground = false;
+  bool _isBiometricResumeCheckInFlight = false;
   DateTime? _backgroundedAt;
+  DateTime? _lastResumedAt;
+  DateTime? _lastLockRedirectAt;
   StreamSubscription<AuthState>? _authSubscription;
 
   // Require re-auth if backgrounded for more than this duration
@@ -108,6 +113,7 @@ class _ProsepalAppState extends ConsumerState<ProsepalApp>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    final now = DateTime.now();
     final wasInBackground = _isInBackground;
     setState(() {
       // Flutter 3.13+ added 'hidden' for brief non-visible transitions
@@ -119,45 +125,74 @@ class _ProsepalAppState extends ConsumerState<ProsepalApp>
 
     // Track when app was backgrounded for timeout calculation
     if (_isInBackground && !wasInBackground) {
-      _backgroundedAt = DateTime.now();
+      _backgroundedAt = now;
       Log.info('App backgrounded');
     } else if (!_isInBackground && wasInBackground) {
+      if (_lastResumedAt != null &&
+          now.difference(_lastResumedAt!) < _lifecycleResumeDebounce) {
+        Log.info('Skip duplicate app resume callback', {
+          'elapsedMs': now.difference(_lastResumedAt!).inMilliseconds,
+        });
+        return;
+      }
+      _lastResumedAt = now;
       Log.info('App resumed');
-      _checkBiometricLockOnResume();
+      unawaited(_checkBiometricLockOnResume(now: now));
     }
   }
 
   /// Check if biometric re-authentication is required on resume
-  Future<void> _checkBiometricLockOnResume() async {
-    // Skip if we don't have a background timestamp
-    if (_backgroundedAt == null) return;
-
-    // Skip if backgrounded for less than timeout (e.g., brief phone call)
-    final elapsed = DateTime.now().difference(_backgroundedAt!);
-    if (elapsed < _lockTimeout) {
-      Log.info('Skip biometric lock - backgrounded only ${elapsed.inSeconds}s');
+  Future<void> _checkBiometricLockOnResume({DateTime? now}) async {
+    if (_isBiometricResumeCheckInFlight) {
+      Log.info('Skip biometric lock check - check already in flight');
       return;
     }
-
-    // Skip if already on lock screen or splash
-    final currentPath = _router.routerDelegate.currentConfiguration.fullPath;
-    if (currentPath == '/lock' || currentPath == '/splash') {
-      return;
-    }
-
-    // Check if biometrics are enabled
+    _isBiometricResumeCheckInFlight = true;
+    final checkedAt = now ?? DateTime.now();
     try {
+      // Skip if we don't have a background timestamp
+      if (_backgroundedAt == null) return;
+
+      // Skip if backgrounded for less than timeout (e.g., brief phone call)
+      final elapsed = checkedAt.difference(_backgroundedAt!);
+      if (elapsed < _lockTimeout) {
+        Log.info(
+          'Skip biometric lock - backgrounded only ${elapsed.inSeconds}s',
+        );
+        return;
+      }
+
+      // Skip if already on lock screen or splash
+      final currentPath = _router.routerDelegate.currentConfiguration.fullPath;
+      if (currentPath == '/lock' || currentPath == '/splash') {
+        return;
+      }
+
+      // Check if biometrics are enabled
       final biometricService = ref.read(biometricServiceProvider);
       final isEnabled = await biometricService.isEnabled;
       final isAvailable =
           (await biometricService.availableBiometrics).isNotEmpty;
 
       if (isEnabled && isAvailable) {
+        if (_lastLockRedirectAt != null &&
+            checkedAt.difference(_lastLockRedirectAt!) <
+                _lockRedirectDebounce) {
+          Log.info('Skip biometric lock redirect - recently redirected', {
+            'elapsedMs': checkedAt
+                .difference(_lastLockRedirectAt!)
+                .inMilliseconds,
+          });
+          return;
+        }
+        _lastLockRedirectAt = checkedAt;
         Log.info('Biometric lock on resume - redirecting to /lock');
         _router.go('/lock');
       }
     } on Exception catch (e) {
       Log.warning('Failed to check biometric lock on resume', {'error': '$e'});
+    } finally {
+      _isBiometricResumeCheckInFlight = false;
     }
   }
 

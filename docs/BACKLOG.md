@@ -14,25 +14,26 @@ Process items in this order unless an explicit owner override is recorded in rel
 1. `P0-08` Design token consistency and contrast hardening
 2. `P0-09` iOS/Android launch and auth visual parity
 3. `P0-10` CI-enforced secret/config release guardrails
-4. `P1-49` Visual regression workflow hardening
-5. `P1-25` CI coverage for integration + visual QA gates
-6. `P1-51` Launch/auth color parity drift guard
-7. `P0-07` Next iOS release readiness checklist
-8. `VNEXT-08` Wired physical-device validation gates
-9. `VNEXT-09` iOS script-only archive validation
-10. `VNEXT-10` AI cost/abuse controls
-11. `P1-43` Firebase AI client-block regression hardening
-12. `P1-48` Startup phase telemetry and budget visibility
-13. `P1-50` Shared surface/card component consolidation
-14. `VNEXT-11` Canonical identity mapping
-15. `VNEXT-12` UI parity with live baseline
-16. `VNEXT-13` Device abuse-control compliance decision
-17. `P0-05` Billing budget alert controls
-18. `P0-04` Auth loading spinner after OAuth sheet
-19. `P0-01` Move Google setup to business account
-20. `P0-02` Keep redesign out of vNext scope
-21. `P1-47` Server-side AI gateway rollout (post-launch trigger)
-22. `P2-13` Startup orchestration refactor (post-launch)
+4. `P1-25` CI coverage for integration + visual QA gates
+5. `P0-07` Next iOS release readiness checklist
+6. `VNEXT-08` Wired physical-device validation gates
+7. `VNEXT-09` iOS script-only archive validation
+8. `VNEXT-10` AI cost/abuse controls
+9. `P1-43` Firebase AI client-block regression hardening
+10. `P1-48` Startup phase telemetry and budget visibility
+11. `P1-40` Startup/router timeout guard under network faults
+12. `P1-52` Biometric lifecycle debounce + single-flight guard
+13. `P1-02` Auth-provider telemetry quality
+14. `P1-50` Shared surface/card component consolidation
+15. `VNEXT-11` Canonical identity mapping
+16. `VNEXT-12` UI parity with live baseline
+17. `VNEXT-13` Device abuse-control compliance decision
+18. `P0-05` Billing budget alert controls
+19. `P0-04` Auth loading spinner after OAuth sheet
+20. `P0-01` Move Google setup to business account
+21. `P0-02` Keep redesign out of vNext scope
+22. `P1-47` Server-side AI gateway rollout (post-launch trigger)
+23. `P2-13` Startup orchestration refactor (post-launch)
 
 ## P0 - Launch Blockers
 
@@ -58,14 +59,13 @@ Process items in this order unless an explicit owner override is recorded in rel
 | ID | Item | Definition of Done |
 |----|------|--------------------|
 | `P1-48` | Startup phase telemetry and budget visibility | Existing startup flow emits structured phase telemetry (`init`, `identity`, `entitlements`, `routing`) with per-phase duration, timeout/fallback reason, and final terminal route outcome. Logs are queryable in Crashlytics/analytics, phase budgets are documented in `docs/DEVOPS.md`, and fault-injection runs prove telemetry captures degraded startup paths deterministically. |
-| `P1-49` | Visual regression workflow hardening | Golden/visual pipeline distinguishes intended UI updates from regressions: baseline update command is documented, CI publishes diff artifacts, and PR template requires visual-approval evidence for core screens. Re-running visual tests after intended baseline update is deterministic. |
-| `P1-51` | Launch/auth color parity drift guard | A lightweight CI check verifies iOS launch storyboard background color, Android launch/app background color, and Flutter splash background token remain aligned to the same canonical hex value. CI fails on drift and outputs remediation instructions with file paths. |
 | `P1-50` | Shared surface/card component consolidation | Core light-surface cards (history item, settings tiles/cards, calendar cards, results cards, free-usage card) use shared primitives for padding, border, radius, and text color tokens. Ad-hoc duplicated styling is removed and widget tests cover representative variants to prevent drift. |
 | `P1-43` | Firebase AI client-block regression hardening | Real-device AI generation succeeds on wired iOS and Android using the current Firebase AI + App Check setup, and failure classification distinguishes client/app-block configuration errors from true content-safety blocks. `docs/DEVOPS.md` includes a deterministic checklist for debugging `client application <empty> are blocked` responses. |
 | `P1-47` | Server-side AI gateway rollout (post-launch trigger) | A documented trigger policy exists for enabling a server-side AI gateway (abuse threshold, model-policy requirement, or provider-failover need). A non-production spike path exists behind a disabled feature flag, with parity tests proving no user-visible regression when enabled in staging. Production default remains client-direct until trigger criteria are met and approved. |
 | `P1-24` | Deterministic integration journey assertions | Journey tests in `integration_test/journeys/` stop using optional `if (exists(...))` branches for core checkpoints (auth entry, upgrade path, generation result, settings navigation) and fail explicitly when expected UI state is missing. Updated journeys run green in deterministic local/device execution and include clear assertion reasons. |
 | `P1-42` | Auth-screen layout flake elimination | The `AuthScreen shows error banner when Google sign-in fails` test no longer produces order-dependent `RenderFlex overflow` failures during randomized multi-file runs. Root cause is fixed (test harness isolation and/or responsive layout constraints), deterministic regression coverage is added, and `./scripts/test_flake_audit.sh` shows zero flakes for this case. |
-| `P1-40` | Startup/router timeout guard under network faults | Splash/startup routing reaches an explicit terminal route (`/onboarding`, `/home`, `/auth`, `/lock`, or init error surface) within a bounded timeout even when Supabase/RevenueCat DNS fails. Integration tests with network fault simulation prove no indefinite wait in launch phase. |
+| `P1-40` | Startup/router timeout guard under network faults | Splash/startup routing reaches an explicit terminal route (`/onboarding`, `/home`, `/auth`, `/lock`, or init error surface) within a bounded timeout even when Supabase/RevenueCat DNS fails. Returning-user entitlement routing is deterministic under delayed RevenueCat init (no false `/onboarding` fallback followed by corrective auth/restore reroute). Integration tests cover both network-fault and delayed-entitlement scenarios with deterministic pass/fail assertions. |
+| `P1-52` | Biometric lifecycle debounce + single-flight guard | Biometric lock flow guarantees a single active prompt per foreground transition, ignores duplicate resume/inactive callbacks inside a bounded debounce window, and logs one stable lifecycle transition per lock attempt. Device tests on iOS confirm no rapid repeated `Biometric auth started` bursts during Face ID enable/disable and resume flows. |
 | `P1-41` | Network-independent smoke deterministic mode | `integration_test/smoke_test.dart` has a documented deterministic mode (or injected fakes) that removes dependency on live Supabase/RevenueCat reachability for core S1-S5 assertions. CI/device smoke remains stable when outbound network is unavailable or flaky. |
 | `P1-39` | Android smoke integration harness stall (`did not complete`) | `flutter test -d <android-device> integration_test/smoke_test.dart` completes deterministically on wired hardware. No test hangs at `S1` with `+0` progress, and failures (if any) surface as explicit assertions/timeouts with actionable stack traces. |
 | `P1-35` | Smoke suite determinism and async hygiene | `integration_test/smoke_test.dart` removes guarded async conflicts and fragile route assumptions (`S4`/`S5`), uses deterministic waits/finders, and passes on wired Android + iOS without manual retries. |
@@ -81,7 +81,7 @@ Process items in this order unless an explicit owner override is recorded in rel
 | `P1-29` | Test-doc reference accuracy cleanup | Test docs only reference existing test files and runnable commands. Remove stale path references (for example `test/features/settings/haiku_screen_test.dart` in `docs/HAIKU_EASTER_EGG.md`) and align command examples with current workflow gates. |
 | `P1-25` | CI coverage for integration + visual QA gates | CI includes an explicit non-blocking job that runs `integration_test/smoke_test.dart` on a device/emulator target and publishes logs/screenshots artifacts, and a visual regression job running `./scripts/test_visual_regression.sh` with artifact upload on diff. `docs/DEVOPS.md` is updated with trigger policy and pass/fail semantics. |
 | `P1-01` | Social-auth fallback UX | Social sign-in failures show deterministic user guidance, retry actions, and support path coverage in widget/integration tests. |
-| `P1-02` | Auth-provider telemetry quality | Auth analytics/crash logs include stable provider + outcome fields with no invalid parameter types and test coverage for key event paths. |
+| `P1-02` | Auth-provider telemetry quality | Auth analytics/crash logs include stable provider + outcome fields with no invalid parameter types and test coverage for key event paths. Diagnostic output explicitly distinguishes `last_sign_in_provider`, `linked_providers`, and current session source so linked-account scenarios (for example Apple account with Google sign-in event) are unambiguous. |
 | `P1-04` | Paywall decomposition | Paywall widget is split into maintainable sections/components with unchanged behavior and passing tests. |
 | `P1-05` | Paywall accessibility improvements | Paywall has complete semantics labels and screen-reader navigation validation passes on iOS and Android. |
 | `P1-06` | Connectivity monitoring | App-level connection state monitoring is implemented with graceful degraded UX and tested offline/restore scenarios. |

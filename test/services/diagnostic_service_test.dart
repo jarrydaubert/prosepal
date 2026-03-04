@@ -46,6 +46,39 @@ void main() {
       );
       expect(status, 'Needs review');
     });
+
+    test('collects linked providers from metadata + identities', () {
+      final providers = DiagnosticService.collectLinkedProvidersForTesting(
+        metadataProvider: 'apple',
+        metadataProvidersRaw: ['google', 'apple'],
+        identityProviders: ['google', 'email', 'google'],
+      );
+
+      expect(providers, ['apple', 'email', 'google']);
+    });
+
+    test('chooses most recent identity provider by lastSignInAt', () {
+      final provider = DiagnosticService.mostRecentIdentityProviderForTesting([
+        {'provider': 'apple', 'lastSignInAt': '2026-01-02T10:00:00Z'},
+        {'provider': 'google', 'lastSignInAt': '2026-03-02T10:00:00Z'},
+      ], fallbackProvider: 'apple');
+
+      expect(provider, 'google');
+    });
+
+    test(
+      'falls back to metadata provider when identity timestamps missing',
+      () {
+        final provider = DiagnosticService.mostRecentIdentityProviderForTesting(
+          [
+            {'provider': 'apple', 'lastSignInAt': null},
+          ],
+          fallbackProvider: 'google',
+        );
+
+        expect(provider, 'apple');
+      },
+    );
   });
 
   group('DiagnosticService report redaction', () {

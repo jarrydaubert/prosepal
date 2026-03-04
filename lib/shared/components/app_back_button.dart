@@ -15,10 +15,10 @@ class AppBackButton extends StatelessWidget {
       onPressed();
     },
     tooltip: 'Back',
-    icon: const Icon(Icons.chevron_left_rounded, size: 24),
+    icon: const Icon(Icons.chevron_left_rounded, size: 22),
     style: IconButton.styleFrom(
-      minimumSize: const Size(40, 40),
-      fixedSize: const Size(40, 40),
+      minimumSize: const Size(34, 34),
+      fixedSize: const Size(34, 34),
       padding: EdgeInsets.zero,
       foregroundColor: AppColors.textPrimary,
       backgroundColor: Colors.transparent,

@@ -333,6 +333,61 @@ void main() {
         final switchWidget = tester.widget<Switch>(find.byType(Switch));
         expect(switchWidget.value, isFalse);
       });
+
+      testWidgetsWithPumps(
+        'ignores repeated biometric toggles while auth is in flight',
+        (tester) async {
+          mockBiometric.setAuthenticateDelay(const Duration(milliseconds: 250));
+
+          await tester.pumpWidget(buildTestWidget(email: 'test@example.com'));
+          await tester.pumpAndSettle();
+
+          final switchFinder = find.byType(Switch);
+          expect(switchFinder, findsOneWidget);
+
+          await tester.tap(switchFinder);
+          await tester.pump(const Duration(milliseconds: 10));
+
+          final inFlightSwitch = tester.widget<Switch>(switchFinder);
+          expect(inFlightSwitch.onChanged, isNull);
+
+          await tester.tap(switchFinder);
+          await tester.pump(const Duration(milliseconds: 10));
+          expect(mockBiometric.authenticateCallCount, 1);
+
+          await tester.pump(const Duration(milliseconds: 260));
+          await tester.pumpAndSettle();
+
+          expect(mockBiometric.authenticateCallCount, 1);
+          expect(mockBiometric.setEnabledCallCount, 1);
+        },
+      );
+
+      testWidgetsWithPumps(
+        'debounces immediate back-to-back biometric toggles',
+        (tester) async {
+          mockBiometric.setAuthenticateDelay(const Duration(milliseconds: 10));
+
+          await tester.pumpWidget(buildTestWidget(email: 'test@example.com'));
+          await tester.pumpAndSettle();
+
+          final switchFinder = find.byType(Switch);
+          expect(switchFinder, findsOneWidget);
+
+          await tester.tap(switchFinder);
+          await tester.pump(const Duration(milliseconds: 30));
+
+          await tester.tap(switchFinder);
+          await tester.pump(const Duration(milliseconds: 30));
+          await tester.pumpAndSettle();
+
+          expect(mockBiometric.authenticateCallCount, 1);
+          expect(mockBiometric.setEnabledCallCount, 1);
+
+          final switchWidget = tester.widget<Switch>(switchFinder);
+          expect(switchWidget.value, isTrue);
+        },
+      );
     });
 
     group('Stats Section', () {

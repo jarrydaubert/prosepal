@@ -138,14 +138,28 @@ Steps:
 - Release preflight tests (`./scripts/test_release_preflight.sh`).
 - Deno static validation for Supabase edge functions (`deno check`).
 - Flutter analyze.
+- Launch/auth color parity guard (`./scripts/check_launch_color_parity.sh`) to prevent iOS/Android/Flutter splash/background drift.
 - Critical smoke tests.
 - Unit/widget test suite with flaky tests excluded.
 - Service coverage gate.
 - Debug bundle build sanity check.
+- Non-blocking visual regression companion job runs `./scripts/test_visual_regression.sh` and uploads `visual-regression-diffs` artifact on any diff/failure.
 
 Free-tier optimization:
 - Docs-only changes use a fast path that skips Flutter install/build/test while still running as a required check.
 - `concurrency.cancel-in-progress` prevents duplicate runs on rapid pushes.
+
+### Visual Regression Companion (`.github/workflows/ci.yml` → `Visual Regression (non-blocking)`)
+
+Purpose:
+- Detect unintended UI drift on core golden baselines without blocking merge velocity.
+
+Policy:
+- Runs only when CI scope is not docs-only.
+- Uses `./scripts/test_visual_regression.sh`.
+- Uploads `visual-regression-diffs` artifact (from `test/failures/**`) on every run.
+- Publishes `GITHUB_STEP_SUMMARY` guidance with local baseline update command:
+  - `./scripts/test_visual_regression.sh --update`
 
 ### CodeQL (`.github/workflows/codeql.yml`)
 
@@ -205,6 +219,7 @@ flutter analyze
 ./scripts/test_release_preflight.sh
 deno check supabase/functions/**/*.ts
 ./scripts/check_commit_attribution.sh --range origin/main..HEAD
+./scripts/check_launch_color_parity.sh
 ./scripts/test_critical_smoke.sh
 flutter test --exclude-tags flaky --coverage
 ./scripts/check_service_coverage.sh coverage/lcov.info

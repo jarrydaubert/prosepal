@@ -64,16 +64,25 @@ String determineStartupFallbackRoute({
 
 /// Resolve startup route with an explicit timeout budget.
 @visibleForTesting
-Future<String> resolveStartupRouteWithTimeout({
+Future<StartupRouteResolution> resolveStartupRouteWithTimeout({
   required Future<String> Function() resolver,
   required Duration timeout,
   required String fallbackRoute,
 }) async {
   try {
-    return await resolver().timeout(timeout);
+    final route = await resolver().timeout(timeout);
+    return StartupRouteResolution(route: route, timedOut: false);
   } on TimeoutException {
-    return fallbackRoute;
+    return StartupRouteResolution(route: fallbackRoute, timedOut: true);
   }
+}
+
+/// Startup route resolution result with explicit timeout metadata.
+class StartupRouteResolution {
+  const StartupRouteResolution({required this.route, required this.timedOut});
+
+  final String route;
+  final bool timedOut;
 }
 
 /// Create router with route guards
@@ -225,9 +234,6 @@ class _SplashScreen extends ConsumerStatefulWidget {
 class _SplashScreenState extends ConsumerState<_SplashScreen> {
   static const _pollInterval = Duration(milliseconds: 120);
   static const _maxWaitForInit = Duration(seconds: 12);
-  // Allow a little extra headroom on physical devices where network/auth
-  // startup checks can briefly exceed 8s under debug load.
-  static const _maxRouteResolution = Duration(seconds: 10);
   static const _minVisibleDuration = Duration(milliseconds: 500);
   static const _deviceStateSyncTimeout = Duration(seconds: 3);
   static const _biometricCheckTimeout = Duration(seconds: 2);
@@ -304,26 +310,25 @@ class _SplashScreenState extends ConsumerState<_SplashScreen> {
       final hasCompletedOnboarding =
           prefs.getBool(PreferenceKeys.hasCompletedOnboarding) ??
           PreferenceKeys.hasCompletedOnboardingDefault;
-      final fallbackRoute = determineStartupFallbackRoute(
-        hasCompletedOnboarding: hasCompletedOnboarding,
-        hasInitError: initErrorDetected,
-      );
-      final route = await resolveStartupRouteWithTimeout(
-        resolver: () => _determineInitialRoute(
+      try {
+        final route = await _determineInitialRoute(
           hasCompletedOnboarding: hasCompletedOnboarding,
           hasInitError: initErrorDetected,
-        ),
-        timeout: _maxRouteResolution,
-        fallbackRoute: fallbackRoute,
-      );
-      if (!mounted) return;
-      if (route == fallbackRoute && !initErrorDetected) {
-        Log.warning('Startup route resolution timed out; applying fallback', {
-          'timeoutMs': _maxRouteResolution.inMilliseconds,
+        );
+        if (!mounted) return;
+        _navigateToInitialRoute(route);
+      } on Exception catch (e) {
+        final fallbackRoute = determineStartupFallbackRoute(
+          hasCompletedOnboarding: hasCompletedOnboarding,
+          hasInitError: initErrorDetected,
+        );
+        Log.warning('Startup route resolution failed; applying fallback', {
           'fallbackRoute': fallbackRoute,
+          'error': '$e',
         });
+        if (!mounted) return;
+        _navigateToInitialRoute(fallbackRoute);
       }
-      _navigateToInitialRoute(route);
     }
   }
 
