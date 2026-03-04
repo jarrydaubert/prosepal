@@ -24,8 +24,16 @@ class SettingsTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ListTile(
     leading: leading,
-    title: Text(title, style: TextStyle(color: titleColor)),
-    subtitle: subtitle != null ? Text(subtitle!) : null,
+    title: Text(
+      title,
+      style: TextStyle(color: titleColor ?? AppColors.textPrimary),
+    ),
+    subtitle: subtitle != null
+        ? Text(
+            subtitle!,
+            style: const TextStyle(color: AppColors.textSecondary),
+          )
+        : null,
     trailing:
         trailing ??
         (onTap != null

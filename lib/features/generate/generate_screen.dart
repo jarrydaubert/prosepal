@@ -11,7 +11,9 @@ import '../../core/services/device_fingerprint_service.dart'
     show DeviceCheckReason;
 import '../../core/services/log_service.dart';
 import '../../core/services/usage_service.dart' show UsageCheckException;
+import '../../shared/components/app_back_button.dart';
 import '../../shared/components/app_button.dart';
+import '../../shared/components/app_emoji.dart';
 import '../../shared/components/generation_loading_overlay.dart';
 import '../../shared/theme/app_colors.dart';
 import '../paywall/paywall_sheet.dart';
@@ -131,6 +133,11 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
     final error = ref.watch(generationErrorProvider);
     final remaining = ref.watch(remainingGenerationsProvider);
     final isPro = ref.watch(isProProvider);
+    final showBottomAction = _shouldShowBottomAction(
+      currentStep: _currentStep,
+      relationship: relationship,
+      tone: tone,
+    );
 
     ref.listen<String?>(generationErrorProvider, (previous, next) {
       if (next != null && previous == null) {
@@ -171,10 +178,7 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
                     border: Border.all(color: occasion.borderColor, width: 2),
                   ),
                   child: Center(
-                    child: Text(
-                      occasion.emoji,
-                      style: const TextStyle(fontSize: 18),
-                    ),
+                    child: AppEmoji(emoji: occasion.emoji, size: 18),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -188,8 +192,9 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
                 ),
               ],
             ),
-            leading: _BackButton(
+            leading: AppBackButton(
               onPressed: () {
+                FocusScope.of(context).unfocus();
                 if (_currentStep > 0) {
                   setState(() => _currentStep--);
                   _saveFormStateImmediate();
@@ -220,9 +225,10 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
                     ref.read(generationErrorProvider.notifier).state = null;
                   },
                 ),
-              SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
+              if (showBottomAction)
+                SafeArea(
+                  top: false,
+                  minimum: const EdgeInsets.fromLTRB(20, 8, 20, 12),
                   child: _buildBottomButton(
                     context,
                     occasion: occasion,
@@ -233,7 +239,6 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
                     isPro: isPro,
                   ),
                 ),
-              ),
             ],
           ),
         ),
@@ -302,12 +307,12 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
         return Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
+            const Text(
               "You've used your free message!",
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
-                color: Colors.grey[800],
+                color: AppColors.textPrimary,
               ),
             ),
             const SizedBox(height: 12),
@@ -322,9 +327,9 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
               },
             ),
             const SizedBox(height: 8),
-            Text(
+            const Text(
               'Unlimited messages for every occasion',
-              style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+              style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
             ),
           ],
         );
@@ -349,6 +354,17 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
             }
           : null,
     );
+  }
+
+  bool _shouldShowBottomAction({
+    required int currentStep,
+    required Relationship? relationship,
+    required Tone? tone,
+  }) {
+    if (currentStep == 2) return true;
+    if (currentStep == 0) return relationship != null;
+    if (currentStep == 1) return tone != null;
+    return false;
   }
 
   Future<void> _generate(BuildContext context) async {
@@ -520,30 +536,6 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
 // COMPONENTS
 // =============================================================================
 
-class _BackButton extends StatelessWidget {
-  const _BackButton({required this.onPressed});
-
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(left: 8),
-    child: GestureDetector(
-      onTap: onPressed,
-      child: Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          color: AppColors.primaryLight,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.primary, width: 2),
-        ),
-        child: const Icon(Icons.arrow_back, color: AppColors.primary, size: 20),
-      ),
-    ),
-  );
-}
-
 class _StepIndicator extends StatelessWidget {
   const _StepIndicator({required this.currentStep});
 
@@ -603,7 +595,7 @@ class _StepIndicator extends StatelessWidget {
                     fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
                     color: isActive || isCompleted
                         ? AppColors.primary
-                        : Colors.grey[400],
+                        : AppColors.textHint,
                   ),
                 ),
               );

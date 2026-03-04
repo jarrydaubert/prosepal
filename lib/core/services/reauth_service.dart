@@ -251,9 +251,12 @@ class ReauthService {
                 controller: controller,
                 obscureText: true,
                 autofocus: true,
+                textInputAction: TextInputAction.done,
+                onTapOutside: (_) => FocusScope.of(context).unfocus(),
                 decoration: const InputDecoration(
                   labelText: 'Password',
                   border: OutlineInputBorder(),
+                  suffixIcon: Icon(Icons.check_rounded),
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../../core/models/relationship.dart';
+import '../../../shared/components/app_emoji.dart';
 import '../../../shared/theme/app_colors.dart';
 
 class RelationshipPicker extends StatelessWidget {
@@ -29,9 +30,9 @@ class RelationshipPicker extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 8),
-        Text(
+        const Text(
           'Select your relationship with the recipient',
-          style: TextStyle(fontSize: 15, color: Colors.grey[600]),
+          style: TextStyle(fontSize: 15, color: AppColors.textSecondary),
         ),
         const SizedBox(height: 24),
         ...Relationship.values.asMap().entries.map((entry) {
@@ -94,11 +95,11 @@ class _RelationshipTile extends StatelessWidget {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primaryLight : Colors.white,
+          color: isSelected ? AppColors.primaryLight : AppColors.surfaceLight,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isSelected ? AppColors.primary : Colors.grey[300]!,
-            width: isSelected ? 3 : 2,
+            color: isSelected ? AppColors.primary : AppColors.borderOnLight,
+            width: 2,
           ),
         ),
         child: Row(
@@ -109,18 +110,17 @@ class _RelationshipTile extends StatelessWidget {
               decoration: BoxDecoration(
                 color: isSelected
                     ? AppColors.primary.withValues(alpha: 0.15)
-                    : Colors.grey[100],
+                    : AppColors.surfaceLightMuted,
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: isSelected ? AppColors.primary : Colors.grey[300]!,
+                  color: isSelected
+                      ? AppColors.primary
+                      : AppColors.borderOnLight,
                   width: 2,
                 ),
               ),
               child: Center(
-                child: Text(
-                  relationship.emoji,
-                  style: const TextStyle(fontSize: 22),
-                ),
+                child: AppEmoji(emoji: relationship.emoji, size: 22),
               ),
             ),
             const SizedBox(width: 16),
@@ -142,7 +142,11 @@ class _RelationshipTile extends StatelessWidget {
                   color: AppColors.primary,
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.check, color: Colors.white, size: 16),
+                child: const Icon(
+                  Icons.check,
+                  color: AppColors.textOnPrimary,
+                  size: 16,
+                ),
               ),
           ],
         ),

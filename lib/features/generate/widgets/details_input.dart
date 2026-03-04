@@ -85,9 +85,9 @@ class _DetailsInputState extends State<DetailsInput> {
             ),
           ),
           const SizedBox(height: 8),
-          Text(
+          const Text(
             'Optional details to make your message more personal',
-            style: TextStyle(fontSize: 15, color: Colors.grey[600]),
+            style: TextStyle(fontSize: 15, color: AppColors.textSecondary),
           ),
           const SizedBox(height: 24),
 
@@ -151,7 +151,10 @@ class _DetailsInputState extends State<DetailsInput> {
           const SizedBox(height: 8),
           Text(
             widget.selectedLength.description,
-            style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+            style: const TextStyle(
+              fontSize: 13,
+              color: AppColors.textSecondary,
+            ),
           ),
         ],
       ),
@@ -190,63 +193,124 @@ class _StyledTextField extends StatefulWidget {
 
 class _StyledTextFieldState extends State<_StyledTextField> {
   bool _isFocused = false;
+  late final FocusNode _effectiveFocusNode;
+  late final bool _ownsFocusNode;
 
   @override
-  Widget build(BuildContext context) => AnimatedContainer(
-    duration: const Duration(milliseconds: 150),
-    clipBehavior: Clip.antiAlias,
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(14),
-      border: Border.all(
-        color: _isFocused ? AppColors.primary : Colors.grey[300]!,
-        width: 2,
-      ),
-    ),
-    child: Focus(
-      onFocusChange: (focused) => setState(() => _isFocused = focused),
-      child: TextField(
-        controller: widget.controller,
-        focusNode: widget.focusNode,
-        maxLines: widget.maxLines,
-        maxLength: widget.maxLength,
-        textCapitalization: widget.maxLines > 1
-            ? TextCapitalization.sentences
-            : TextCapitalization.words,
-        textInputAction: widget.maxLines > 1
-            ? TextInputAction.done
-            : TextInputAction.next,
-        onChanged: widget.onChanged,
-        onEditingComplete: () {
-          if (widget.nextFocusNode != null) {
-            widget.nextFocusNode!.requestFocus();
-          } else {
-            FocusScope.of(context).unfocus();
-          }
-        },
-        decoration: InputDecoration(
-          hintText: widget.hintText,
-          hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
-          prefixIcon: Padding(
-            padding: EdgeInsets.only(bottom: widget.maxLines > 1 ? 60 : 0),
-            child: Icon(widget.icon, color: AppColors.primary, size: 22),
-          ),
-          // Remove all TextField styling - Container handles everything
-          filled: false,
-          border: InputBorder.none,
-          enabledBorder: InputBorder.none,
-          focusedBorder: InputBorder.none,
-          errorBorder: InputBorder.none,
-          disabledBorder: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 14,
-          ),
-          counterStyle: TextStyle(color: Colors.grey[500], fontSize: 12),
+  void initState() {
+    super.initState();
+    _ownsFocusNode = widget.focusNode == null;
+    _effectiveFocusNode = widget.focusNode ?? FocusNode();
+    _effectiveFocusNode.addListener(_onFocusChanged);
+    _isFocused = _effectiveFocusNode.hasFocus;
+  }
+
+  void _onFocusChanged() {
+    final focused = _effectiveFocusNode.hasFocus;
+    if (focused != _isFocused && mounted) {
+      setState(() => _isFocused = focused);
+    }
+  }
+
+  @override
+  void dispose() {
+    _effectiveFocusNode.removeListener(_onFocusChanged);
+    if (_ownsFocusNode) {
+      _effectiveFocusNode.dispose();
+    }
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isMultiLine = widget.maxLines > 1;
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 150),
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: AppColors.surfaceLight,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: _isFocused ? AppColors.primary : AppColors.borderOnLight,
+          width: 2,
         ),
       ),
-    ),
-  );
+      child: Stack(
+        children: [
+          TextField(
+            controller: widget.controller,
+            focusNode: _effectiveFocusNode,
+            maxLines: widget.maxLines,
+            maxLength: widget.maxLength,
+            style: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
+              height: 1.4,
+              color: AppColors.textOnLight,
+            ),
+            cursorColor: AppColors.primary,
+            textAlignVertical: isMultiLine
+                ? TextAlignVertical.top
+                : TextAlignVertical.center,
+            textCapitalization: isMultiLine
+                ? TextCapitalization.sentences
+                : TextCapitalization.words,
+            textInputAction: isMultiLine
+                ? TextInputAction.done
+                : TextInputAction.next,
+            onChanged: widget.onChanged,
+            onEditingComplete: () {
+              if (widget.nextFocusNode != null) {
+                widget.nextFocusNode!.requestFocus();
+              } else {
+                FocusScope.of(context).unfocus();
+              }
+            },
+            onTapOutside: (_) => FocusScope.of(context).unfocus(),
+            decoration: InputDecoration(
+              hintText: widget.hintText,
+              hintStyle: const TextStyle(
+                color: AppColors.textOnLightHint,
+                fontSize: 14,
+                height: 1.4,
+              ),
+              suffixIcon: _isFocused
+                  ? IconButton(
+                      tooltip: 'Done',
+                      icon: const Icon(
+                        Icons.check_rounded,
+                        color: AppColors.primary,
+                        size: 20,
+                      ),
+                      onPressed: () => FocusScope.of(context).unfocus(),
+                    )
+                  : null,
+              filled: false,
+              border: InputBorder.none,
+              enabledBorder: InputBorder.none,
+              focusedBorder: InputBorder.none,
+              errorBorder: InputBorder.none,
+              disabledBorder: InputBorder.none,
+              contentPadding: const EdgeInsets.fromLTRB(52, 14, 16, 14),
+              counterStyle: const TextStyle(
+                color: AppColors.textOnLightHint,
+                fontSize: 12,
+              ),
+            ),
+          ),
+          Positioned(
+            left: 16,
+            top: isMultiLine ? 16 : 0,
+            bottom: isMultiLine ? null : 0,
+            child: IgnorePointer(
+              child: Icon(widget.icon, color: AppColors.primary, size: 20),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _LengthSelector extends StatelessWidget {
@@ -277,10 +341,14 @@ class _LengthSelector extends StatelessWidget {
               duration: const Duration(milliseconds: 200),
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
-                color: isSelected ? AppColors.primaryLight : Colors.white,
+                color: isSelected
+                    ? AppColors.primaryLight
+                    : AppColors.surfaceLight,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: isSelected ? AppColors.primary : Colors.grey[300]!,
+                  color: isSelected
+                      ? AppColors.primary
+                      : AppColors.borderOnLight,
                   width: isSelected ? 2 : 2,
                 ),
               ),
@@ -299,7 +367,7 @@ class _LengthSelector extends StatelessWidget {
                       child: const Icon(
                         Icons.check,
                         size: 12,
-                        color: Colors.white,
+                        color: AppColors.textOnPrimary,
                       ),
                     ),
                   Text(

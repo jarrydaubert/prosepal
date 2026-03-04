@@ -7,18 +7,46 @@ Rules:
 - Every item must include a clear, testable Definition of Done (DoD).
 - When an item is complete, remove it from this file.
 
+## Release Priority Order (vNext)
+
+Process items in this order unless an explicit owner override is recorded in release planning.
+
+1. `P0-08` Design token consistency and contrast hardening
+2. `P0-09` iOS/Android launch and auth visual parity
+3. `P0-10` CI-enforced secret/config release guardrails
+4. `P1-49` Visual regression workflow hardening
+5. `P1-25` CI coverage for integration + visual QA gates
+6. `P1-51` Launch/auth color parity drift guard
+7. `P0-07` Next iOS release readiness checklist
+8. `VNEXT-08` Wired physical-device validation gates
+9. `VNEXT-09` iOS script-only archive validation
+10. `VNEXT-10` AI cost/abuse controls
+11. `P1-43` Firebase AI client-block regression hardening
+12. `P1-48` Startup phase telemetry and budget visibility
+13. `P1-50` Shared surface/card component consolidation
+14. `VNEXT-11` Canonical identity mapping
+15. `VNEXT-12` UI parity with live baseline
+16. `VNEXT-13` Device abuse-control compliance decision
+17. `P0-05` Billing budget alert controls
+18. `P0-04` Auth loading spinner after OAuth sheet
+19. `P0-01` Move Google setup to business account
+20. `P0-02` Keep redesign out of vNext scope
+21. `P1-47` Server-side AI gateway rollout (post-launch trigger)
+22. `P2-13` Startup orchestration refactor (post-launch)
+
 ## P0 - Launch Blockers
 
 | ID | Item | Definition of Done |
 |----|------|--------------------|
-| `P0-01` | Move Google setup to business account | Google/Play Console ownership is migrated to business account, required permissions are validated, and Android release flow works without personal-account blockers. |
-| `P0-03` | Supabase social-only auth policy | Supabase Email provider is disabled for production (or explicitly blocked at app level), Apple/Google providers remain healthy, and auth behavior is validated in test flows. |
-| `P0-06` | Supabase manual console actions (owner-run) | Owner completes Supabase Dashboard checks: (1) Auth > Providers confirms Email disabled and Apple/Google enabled, (2) OAuth redirect URLs validated for production callbacks, (3) Apple/Google provider credentials validated, and (4) completion evidence recorded in `docs/LAUNCH_CHECKLIST.md`. |
-| `P0-04` | Auth loading spinner after OAuth sheet | After Apple/Google auth sheet closes, UI shows deterministic loading state until auth completion resolves or fails with user-visible error. |
-| `P0-05` | Billing budget alert controls | Budget thresholds and notification channels are configured and verified through a dry-run alert path. |
 | `P0-07` | Next iOS release readiness checklist | `docs/IOS_RELEASE_CHECKLIST.md` contains an explicit pre-release checklist and every line item is executed with evidence: version/build bump, `flutter analyze`, `flutter test`, `./scripts/test_critical_smoke.sh`, wired iOS smoke/journey run, scripted iOS archive success, Crashlytics dSYM upload verification, Firebase App Check + AI generation verification on physical iOS, RevenueCat entitlement/paywall verification, Supabase auth/provider verification, App Store Connect metadata/release notes/screenshots review, TestFlight sanity pass, git-history secret audit (`git log --all -- .env.local` + CI secret scan output), and rollback path confirmation with owner sign-off. |
 | `VNEXT-08` | Wired physical-device validation gates | Critical suite passes on one wired iOS and one wired Android physical device; release evidence bundle is captured and attached. |
+| `P0-08` | Design token consistency and contrast hardening | Core screens (`home`, `generate`, `results`, `history`, `settings`, `calendar`, `auth`, onboarding, paywall) use shared semantic tokens only (canonical palette: navy/slate backgrounds, coral actions, white/light surfaces) with no light-on-light or dark-on-dark regressions. Back navigation controls are visually consistent across screens, text-field prefix/suffix icon alignment is consistent, and text-entry surfaces provide deterministic keyboard-dismiss behavior (`done` action and/or explicit dismiss affordance). Golden + manual accessibility pass confirms WCAG AA for primary text on every core screen before RC cut. |
+| `P0-09` | iOS/Android launch and auth visual parity | Cold-launch capture on physical iOS and Android shows matching launch background tone, no white/grey flash during transition to Flutter splash/auth, and consistent auth-screen logo/button contrast treatment. Evidence screenshots/videos are attached in release artifact bundle. |
+| `P0-10` | CI-enforced secret/config release guardrails | CI blocks release candidates on secret scanning or missing required runtime config gates: (1) secret scan (gitleaks/trufflehog) on full git history and working tree, (2) required `dart-define` preflight validation, (3) failure messaging links to exact remediation commands. `docs/DEVOPS.md` documents enforcement + rotation procedure. |
+| `P0-05` | Billing budget alert controls | Budget thresholds and notification channels are configured and verified through a dry-run alert path. |
 | `VNEXT-09` | iOS script-only archive validation | Release-candidate archive succeeds via scripted iOS build path and evidence confirms non-scripted archive paths are not used. |
+| `P0-04` | Auth loading spinner after OAuth sheet | After Apple/Google auth sheet closes, UI shows deterministic loading state until auth completion resolves or fails with user-visible error. |
+| `P0-01` | Move Google setup to business account | Google/Play Console ownership is migrated to business account, required permissions are validated, and Android release flow works without personal-account blockers. |
 | `VNEXT-10` | AI cost/abuse controls | API and app restrictions are verified, budget alerts are configured, kill-switch drill passes, and `docs/DEVOPS.md` reflects final policy. |
 | `VNEXT-11` | Canonical identity mapping | Supabase ID, RevenueCat App User ID, Analytics ID, and Crashlytics ID mapping is validated across sign-in/sign-out transitions and documented in `docs/IDENTITY_MAPPING.md`. |
 | `VNEXT-12` | UI parity with live baseline | Baseline screenshots exist for core screens and any styling delta is either matched to live or explicitly approved before release. |
@@ -29,7 +57,12 @@ Rules:
 
 | ID | Item | Definition of Done |
 |----|------|--------------------|
+| `P1-48` | Startup phase telemetry and budget visibility | Existing startup flow emits structured phase telemetry (`init`, `identity`, `entitlements`, `routing`) with per-phase duration, timeout/fallback reason, and final terminal route outcome. Logs are queryable in Crashlytics/analytics, phase budgets are documented in `docs/DEVOPS.md`, and fault-injection runs prove telemetry captures degraded startup paths deterministically. |
+| `P1-49` | Visual regression workflow hardening | Golden/visual pipeline distinguishes intended UI updates from regressions: baseline update command is documented, CI publishes diff artifacts, and PR template requires visual-approval evidence for core screens. Re-running visual tests after intended baseline update is deterministic. |
+| `P1-51` | Launch/auth color parity drift guard | A lightweight CI check verifies iOS launch storyboard background color, Android launch/app background color, and Flutter splash background token remain aligned to the same canonical hex value. CI fails on drift and outputs remediation instructions with file paths. |
+| `P1-50` | Shared surface/card component consolidation | Core light-surface cards (history item, settings tiles/cards, calendar cards, results cards, free-usage card) use shared primitives for padding, border, radius, and text color tokens. Ad-hoc duplicated styling is removed and widget tests cover representative variants to prevent drift. |
 | `P1-43` | Firebase AI client-block regression hardening | Real-device AI generation succeeds on wired iOS and Android using the current Firebase AI + App Check setup, and failure classification distinguishes client/app-block configuration errors from true content-safety blocks. `docs/DEVOPS.md` includes a deterministic checklist for debugging `client application <empty> are blocked` responses. |
+| `P1-47` | Server-side AI gateway rollout (post-launch trigger) | A documented trigger policy exists for enabling a server-side AI gateway (abuse threshold, model-policy requirement, or provider-failover need). A non-production spike path exists behind a disabled feature flag, with parity tests proving no user-visible regression when enabled in staging. Production default remains client-direct until trigger criteria are met and approved. |
 | `P1-24` | Deterministic integration journey assertions | Journey tests in `integration_test/journeys/` stop using optional `if (exists(...))` branches for core checkpoints (auth entry, upgrade path, generation result, settings navigation) and fail explicitly when expected UI state is missing. Updated journeys run green in deterministic local/device execution and include clear assertion reasons. |
 | `P1-42` | Auth-screen layout flake elimination | The `AuthScreen shows error banner when Google sign-in fails` test no longer produces order-dependent `RenderFlex overflow` failures during randomized multi-file runs. Root cause is fixed (test harness isolation and/or responsive layout constraints), deterministic regression coverage is added, and `./scripts/test_flake_audit.sh` shows zero flakes for this case. |
 | `P1-40` | Startup/router timeout guard under network faults | Splash/startup routing reaches an explicit terminal route (`/onboarding`, `/home`, `/auth`, `/lock`, or init error surface) within a bounded timeout even when Supabase/RevenueCat DNS fails. Integration tests with network fault simulation prove no indefinite wait in launch phase. |
@@ -84,3 +117,4 @@ Rules:
 | `P2-08` | Database backup restore verification | Supabase backup restore procedure is documented in `docs/DEVOPS.md` with steps to verify a restore, and at least one test restore has been completed and evidenced. |
 | `P2-11` | Mock-layer usage hygiene | Every file in `test/mocks/` is either exercised by at least one test or removed. In particular, `mock_reauth_service.dart` is either used by `reauth_service_test.dart`/widget tests or deleted to avoid dead mock surface area. |
 | `P2-12` | Device fingerprint real-service test coverage | Add direct tests for `DeviceFingerprintService` RPC/result mapping and graceful-degradation paths (server unavailable, fingerprint unavailable, Postgrest errors) using Supabase stubs/fakes rather than only mock-self-tests. |
+| `P2-13` | Startup orchestration refactor (post-launch) | Startup is moved to an explicit orchestration state machine/service with isolated phase boundaries, cancellation semantics, and deterministic tests for success/failure permutations. Refactor is informed by production startup telemetry from `P1-48` and does not regress route determinism or launch latency budgets. |

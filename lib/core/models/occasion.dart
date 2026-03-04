@@ -127,7 +127,7 @@ enum Occasion {
   ),
   newYear(
     label: 'New Year',
-    emoji: '🎆',
+    emoji: '🎊',
     prompt:
         'New Year wishes - hopeful sentiments for happiness, health, and success in the year ahead',
     opacity: _OccasionOpacity.medium,

@@ -95,11 +95,11 @@ class HomeScreen extends ConsumerWidget {
                                         ],
                                       ),
                                     ),
-                                    Text(
+                                    const Text(
                                       'The right words, right now',
                                       style: TextStyle(
                                         fontSize: 14,
-                                        color: Colors.grey[600],
+                                        color: AppColors.textSecondary,
                                       ),
                                     ),
                                   ],
@@ -111,23 +111,32 @@ class HomeScreen extends ConsumerWidget {
                                 children: [
                                   _IconButton(
                                     icon: Icons.calendar_month_outlined,
-                                    onPressed: () =>
-                                        context.pushNamed('calendar'),
+                                    onPressed: () {
+                                      FocusManager.instance.primaryFocus
+                                          ?.unfocus();
+                                      context.pushNamed('calendar');
+                                    },
                                     tooltip: 'Upcoming occasions',
                                   ),
                                   const SizedBox(width: 8),
                                   _IconButton(
                                     icon: Icons.history,
-                                    onPressed: () =>
-                                        context.pushNamed('history'),
+                                    onPressed: () {
+                                      FocusManager.instance.primaryFocus
+                                          ?.unfocus();
+                                      context.pushNamed('history');
+                                    },
                                     tooltip: 'Message history',
                                   ),
                                   const SizedBox(width: 8),
                                   _IconButton(
                                     key: const ValueKey('home_settings_button'),
                                     icon: Icons.settings_outlined,
-                                    onPressed: () =>
-                                        context.pushNamed('settings'),
+                                    onPressed: () {
+                                      FocusManager.instance.primaryFocus
+                                          ?.unfocus();
+                                      context.pushNamed('settings');
+                                    },
                                     tooltip: 'Settings',
                                   ),
                                 ],
@@ -258,6 +267,7 @@ class HomeScreen extends ConsumerWidget {
                     if (showFirstActionHint) {
                       _dismissFirstActionHint(ref);
                     }
+                    FocusManager.instance.primaryFocus?.unfocus();
                     ref.read(selectedOccasionProvider.notifier).state =
                         occasion;
                     // Clear search when selecting
@@ -365,12 +375,15 @@ class _OccasionSearchField extends StatefulWidget {
 
 class _OccasionSearchFieldState extends State<_OccasionSearchField> {
   final _controller = TextEditingController();
+  final _focusNode = FocusNode();
   bool _hasText = false;
+  bool _hasFocus = false;
 
   @override
   void initState() {
     super.initState();
     _controller.addListener(_onTextChanged);
+    _focusNode.addListener(_onFocusChanged);
   }
 
   void _onTextChanged() {
@@ -380,33 +393,73 @@ class _OccasionSearchFieldState extends State<_OccasionSearchField> {
     }
   }
 
+  void _onFocusChanged() {
+    final hasFocus = _focusNode.hasFocus;
+    if (hasFocus != _hasFocus) {
+      setState(() => _hasFocus = hasFocus);
+    }
+  }
+
   @override
   void dispose() {
     _controller.removeListener(_onTextChanged);
+    _focusNode.removeListener(_onFocusChanged);
     _controller.dispose();
+    _focusNode.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) => TextField(
     controller: _controller,
+    focusNode: _focusNode,
     onChanged: widget.onChanged,
-    textInputAction: TextInputAction.search,
+    textInputAction: TextInputAction.done,
+    onSubmitted: (_) => FocusScope.of(context).unfocus(),
+    onTapOutside: (_) => FocusScope.of(context).unfocus(),
+    style: const TextStyle(
+      color: AppColors.textOnLight,
+      fontSize: 16,
+      fontWeight: FontWeight.w500,
+    ),
+    cursorColor: AppColors.primary,
     decoration: InputDecoration(
       hintText: 'Search occasions...',
-      hintStyle: TextStyle(color: Colors.grey[400]),
-      prefixIcon: Icon(Icons.search, color: Colors.grey[400]),
-      suffixIcon: _hasText
-          ? IconButton(
-              icon: Icon(Icons.clear, color: Colors.grey[400]),
-              onPressed: () {
-                _controller.clear();
-                widget.onChanged('');
-              },
+      hintStyle: const TextStyle(color: AppColors.textOnLightHint),
+      prefixIcon: const Icon(Icons.search, color: AppColors.textOnLightHint),
+      suffixIcon: (_hasText || _hasFocus)
+          ? SizedBox(
+              width: _hasText ? 92 : 46,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (_hasText)
+                    IconButton(
+                      icon: const Icon(
+                        Icons.clear,
+                        color: AppColors.textOnLightHint,
+                      ),
+                      onPressed: () {
+                        _controller.clear();
+                        widget.onChanged('');
+                      },
+                    ),
+                  if (_hasFocus)
+                    IconButton(
+                      tooltip: 'Done',
+                      icon: const Icon(
+                        Icons.check_rounded,
+                        color: AppColors.primary,
+                      ),
+                      onPressed: () => FocusScope.of(context).unfocus(),
+                    ),
+                ],
+              ),
             )
           : null,
       filled: true,
-      fillColor: Colors.grey[100],
+      fillColor: AppColors.surfaceLight,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: BorderSide.none,
@@ -425,9 +478,9 @@ class _UsageIndicatorShimmer extends StatelessWidget {
       Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppColors.surfaceLight,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.grey[300]!, width: 2),
+              border: Border.all(color: AppColors.borderOnLight, width: 2),
             ),
             child: Row(
               children: [
@@ -435,8 +488,8 @@ class _UsageIndicatorShimmer extends StatelessWidget {
                 Container(
                   width: 48,
                   height: 48,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[200],
+                  decoration: const BoxDecoration(
+                    color: AppColors.surfaceLightMuted,
                     shape: BoxShape.circle,
                   ),
                 ),
@@ -450,7 +503,7 @@ class _UsageIndicatorShimmer extends StatelessWidget {
                         width: 140,
                         height: 16,
                         decoration: BoxDecoration(
-                          color: Colors.grey[200],
+                          color: AppColors.surfaceLightMuted,
                           borderRadius: BorderRadius.circular(4),
                         ),
                       ),
@@ -459,7 +512,7 @@ class _UsageIndicatorShimmer extends StatelessWidget {
                         width: 100,
                         height: 12,
                         decoration: BoxDecoration(
-                          color: Colors.grey[200],
+                          color: AppColors.surfaceLightMuted,
                           borderRadius: BorderRadius.circular(4),
                         ),
                       ),
@@ -470,5 +523,5 @@ class _UsageIndicatorShimmer extends StatelessWidget {
             ),
           )
           .animate(onPlay: (controller) => controller.repeat())
-          .shimmer(duration: 1200.ms, color: Colors.grey[100]);
+          .shimmer(duration: 1200.ms, color: AppColors.surfaceLight);
 }

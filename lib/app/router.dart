@@ -21,7 +21,6 @@ import '../features/results/results_screen.dart';
 import '../features/settings/feedback_screen.dart';
 import '../features/settings/legal_screen.dart';
 import '../features/settings/settings_screen.dart';
-import '../shared/components/app_logo.dart';
 import '../shared/theme/app_colors.dart';
 
 /// Routes that don't require onboarding completion
@@ -226,7 +225,9 @@ class _SplashScreen extends ConsumerStatefulWidget {
 class _SplashScreenState extends ConsumerState<_SplashScreen> {
   static const _pollInterval = Duration(milliseconds: 120);
   static const _maxWaitForInit = Duration(seconds: 12);
-  static const _maxRouteResolution = Duration(seconds: 8);
+  // Allow a little extra headroom on physical devices where network/auth
+  // startup checks can briefly exceed 8s under debug load.
+  static const _maxRouteResolution = Duration(seconds: 10);
   static const _minVisibleDuration = Duration(milliseconds: 500);
   static const _deviceStateSyncTimeout = Duration(seconds: 3);
   static const _biometricCheckTimeout = Duration(seconds: 2);
@@ -361,6 +362,21 @@ class _SplashScreenState extends ConsumerState<_SplashScreen> {
       return '/init-error';
     }
 
+    // Fast-path first-launch onboarding. Avoid running additional startup
+    // checks (device sync/auth/pro restore) when we already know route intent.
+    if (!hasCompletedOnboarding) {
+      _hasProFromRestore = false;
+      Log.info('Router: Initial navigation', {
+        'onboarded': false,
+        'loggedIn': false,
+        'bioEnabled': false,
+        'bioAvailable': false,
+        'hasProRestore': _hasProFromRestore,
+        'initError': false,
+      });
+      return '/onboarding';
+    }
+
     // Sync device state from server FIRST - ensures accurate state on home screen
     final usageService = ref.read(usageServiceProvider);
     await usageService.syncDeviceStateFromServer().timeout(
@@ -487,40 +503,47 @@ class _SplashScreenState extends ConsumerState<_SplashScreen> {
     };
 
     return Scaffold(
-      backgroundColor: AppColors.splash,
-      body: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const AppLogoSplash(),
-            const SizedBox(height: 24),
-            Text(
-              'Prosepal',
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: Colors.white.withValues(alpha: 0.9),
-                letterSpacing: 1.2,
+      backgroundColor: AppColors.bgDark,
+      body: DecoratedBox(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [AppColors.bgDark, AppColors.bgDeep],
+          ),
+        ),
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Prosepal',
+                style: TextStyle(
+                  fontSize: 44,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                  letterSpacing: 0.4,
+                ),
               ),
-            ),
-            const SizedBox(height: 30),
-            const SizedBox(
-              width: 24,
-              height: 24,
-              child: CircularProgressIndicator(
-                strokeWidth: 2.5,
-                valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+              const SizedBox(height: 26),
+              const SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.5,
+                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                ),
               ),
-            ),
-            const SizedBox(height: 14),
-            Text(
-              loadingLabel,
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.white.withValues(alpha: 0.65),
+              const SizedBox(height: 14),
+              Text(
+                loadingLabel,
+                style: const TextStyle(
+                  fontSize: 18,
+                  color: AppColors.textSecondary,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -567,7 +590,7 @@ class _InitErrorScreen extends StatelessWidget {
                 onPressed: () => context.go('/splash'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
+                  foregroundColor: AppColors.textOnPrimary,
                 ),
                 child: const Text('Retry Startup'),
               ),
@@ -610,17 +633,17 @@ class _ErrorScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 12),
-              Text(
+              const Text(
                 "The page you're looking for doesn't exist.",
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                style: TextStyle(fontSize: 16, color: AppColors.textSecondary),
               ),
               const SizedBox(height: 32),
               ElevatedButton(
                 onPressed: () => context.go('/home'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
+                  foregroundColor: AppColors.textOnPrimary,
                   padding: const EdgeInsets.symmetric(
                     horizontal: 32,
                     vertical: 16,

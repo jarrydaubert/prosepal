@@ -60,12 +60,12 @@ class ForceUpdateScreen extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               // Description
-              Text(
+              const Text(
                 'A new version of Prosepal is available with important updates. '
                 'Please update to continue using the app.',
                 style: TextStyle(
                   fontSize: 16,
-                  color: Colors.grey[600],
+                  color: AppColors.textSecondary,
                   height: 1.5,
                 ),
                 textAlign: TextAlign.center,
@@ -79,7 +79,7 @@ class ForceUpdateScreen extends StatelessWidget {
                   onPressed: _openStore,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
+                    foregroundColor: AppColors.textOnPrimary,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),

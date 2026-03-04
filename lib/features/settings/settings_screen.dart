@@ -594,7 +594,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             color: AppColors.textPrimary,
           ),
         ),
-        leading: _BackButton(onPressed: () => context.pop()),
+        leading: AppBackButton(onPressed: () => context.pop()),
       ),
       body: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -814,7 +814,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           Center(
             child: Text(
               'Prosepal ${_appVersion.isNotEmpty ? _appVersion : ""}',
-              style: TextStyle(fontSize: 12, color: Colors.grey[400]),
+              style: const TextStyle(fontSize: 12, color: AppColors.textHint),
             ),
           ),
           const SizedBox(height: 40),
@@ -827,30 +827,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 // =============================================================================
 // COMPONENTS
 // =============================================================================
-
-class _BackButton extends StatelessWidget {
-  const _BackButton({required this.onPressed});
-
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(left: 8),
-    child: GestureDetector(
-      onTap: onPressed,
-      child: Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          color: AppColors.primaryLight,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.primary, width: 2),
-        ),
-        child: const Icon(Icons.arrow_back, color: AppColors.primary, size: 20),
-      ),
-    ),
-  );
-}
 
 class _AccountCard extends StatelessWidget {
   const _AccountCard({
@@ -870,7 +846,7 @@ class _AccountCard extends StatelessWidget {
     child: Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surfaceLight,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isPro ? AppColors.proGold : AppColors.primary,
@@ -954,7 +930,10 @@ class _AccountCard extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     userEmail!,
-                    style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: AppColors.textOnLightSecondary,
+                    ),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ],
@@ -1015,7 +994,7 @@ class _StatsCard extends StatelessWidget {
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppColors.surfaceLight,
               shape: BoxShape.circle,
               border: Border.all(color: AppColors.primary, width: 2),
             ),
@@ -1041,9 +1020,12 @@ class _StatsCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 2),
-                Text(
+                const Text(
                   'All time',
-                  style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: AppColors.textOnLightSecondary,
+                  ),
                 ),
               ],
             ),
@@ -1132,10 +1114,14 @@ class _DeleteConfirmationDialogState extends State<_DeleteConfirmationDialog> {
             controller: _controller,
             autofocus: true,
             textCapitalization: TextCapitalization.characters,
+            textInputAction: TextInputAction.done,
+            onSubmitted: (_) => FocusScope.of(context).unfocus(),
+            onTapOutside: (_) => FocusScope.of(context).unfocus(),
             decoration: const InputDecoration(
               hintText: 'DELETE',
               border: OutlineInputBorder(),
               isDense: true,
+              suffixIcon: Icon(Icons.check_rounded, color: AppColors.primary),
             ),
           ),
         ],
@@ -1154,7 +1140,9 @@ class _DeleteConfirmationDialogState extends State<_DeleteConfirmationDialog> {
         onPressed: _canDelete ? () => Navigator.pop(context, true) : null,
         child: Text(
           'Delete My Account',
-          style: TextStyle(color: _canDelete ? AppColors.error : Colors.grey),
+          style: TextStyle(
+            color: _canDelete ? AppColors.error : AppColors.textHint,
+          ),
         ),
       ),
     ],
@@ -1171,7 +1159,7 @@ class _SpellingPicker extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
     decoration: BoxDecoration(
-      color: Colors.grey[200],
+      color: AppColors.surfaceLightMuted,
       borderRadius: BorderRadius.circular(8),
     ),
     padding: const EdgeInsets.all(2),
@@ -1210,12 +1198,12 @@ class _PickerOption extends StatelessWidget {
     child: Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: isSelected ? Colors.white : Colors.transparent,
+        color: isSelected ? AppColors.surfaceLight : Colors.transparent,
         borderRadius: BorderRadius.circular(6),
         boxShadow: isSelected
             ? [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.1),
+                  color: AppColors.textOnLight.withValues(alpha: 0.1),
                   blurRadius: 2,
                   offset: const Offset(0, 1),
                 ),

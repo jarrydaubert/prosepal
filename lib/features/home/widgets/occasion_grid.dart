@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../../core/models/occasion.dart';
+import '../../../shared/components/app_emoji.dart';
 import '../../../shared/theme/app_colors.dart';
 
 class OccasionGrid extends StatelessWidget {
@@ -24,26 +25,26 @@ class OccasionGrid extends StatelessWidget {
 
     // Show empty state if no matches
     if (occasions.isEmpty) {
-      return SliverToBoxAdapter(
+      return const SliverToBoxAdapter(
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
+          padding: EdgeInsets.symmetric(vertical: 40, horizontal: 20),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text('🔍', style: TextStyle(fontSize: 48)),
-              const SizedBox(height: 12),
+              Text('🔍', style: TextStyle(fontSize: 48)),
+              SizedBox(height: 12),
               Text(
                 'No occasions found',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: Colors.grey[600],
+                  color: AppColors.textSecondary,
                 ),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               Text(
                 'Try searching for "birthday" or "thank you"',
-                style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+                style: TextStyle(fontSize: 14, color: AppColors.textHint),
                 textAlign: TextAlign.center,
               ),
             ],
@@ -220,7 +221,7 @@ class _OccasionTileState extends State<_OccasionTile>
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: AppColors.surfaceLight,
                   shape: BoxShape.circle,
                   border: Border.all(
                     color: widget.occasion.borderColor,
@@ -228,10 +229,7 @@ class _OccasionTileState extends State<_OccasionTile>
                   ),
                 ),
                 child: Center(
-                  child: Text(
-                    widget.occasion.emoji,
-                    style: const TextStyle(fontSize: 24),
-                  ),
+                  child: AppEmoji(emoji: widget.occasion.emoji, size: 24),
                 ),
               ),
               const SizedBox(height: 8),

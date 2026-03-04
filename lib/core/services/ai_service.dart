@@ -377,12 +377,6 @@ class AiService {
   /// Get fallback model name from Remote Config
   String get _fallbackModelName => RemoteConfigService.instance.aiModelFallback;
 
-  String _redact(String value) {
-    if (value.isEmpty) return 'empty';
-    if (value.length <= 8) return '${value.substring(0, 2)}***';
-    return '${value.substring(0, 4)}...${value.substring(value.length - 4)}';
-  }
-
   String _snippet(String value, {int max = 120}) {
     final normalized = value.replaceAll(RegExp(r'\s+'), ' ').trim();
     if (normalized.length <= max) return normalized;
@@ -400,7 +394,6 @@ class AiService {
     final backend = _useVertexBackend ? 'vertexAI' : 'googleAI';
     Log.info('AI runtime context', {
       'backend': backend,
-      'backendOverride': _aiBackend,
       if (_useVertexBackend) 'vertexLocation': _vertexLocation,
       'model': modelName,
       'fallbackModel': _fallbackModelName,
@@ -410,8 +403,6 @@ class AiService {
       'platform': defaultTargetPlatform.name,
       'releaseMode': kReleaseMode,
       'firebaseProjectId': app.options.projectId,
-      'firebaseAppId': _redact(app.options.appId),
-      'firebaseApiKey': _redact(app.options.apiKey),
     });
     _loggedRuntimeContext = true;
   }
@@ -687,16 +678,6 @@ class AiService {
 
         // Log and throw classified exception
         Log.error('Firebase AI error', e, stackTrace, {'attempt': attempt});
-        if (_shouldLogVerboseDiagnostics &&
-            classification.errorCode == 'CLIENT_APP_BLOCKED') {
-          Log.warning('AI client/app blocked diagnostic', {
-            'model': _currentModelName,
-            'backend': _useVertexBackend ? 'vertexAI' : 'googleAI',
-            'hint':
-                'Verify iOS key app restriction (bundle id), '
-                'firebasevertexai API target, and App Check mode/debug token.',
-          });
-        }
         throw _createException(classification, e);
       } on AiTruncationException catch (e, stackTrace) {
         // Truncation is retryable - model may succeed on retry
@@ -741,16 +722,6 @@ class AiService {
 
         // Log and throw classified exception
         Log.error('Unexpected AI error', e, stackTrace, {'attempt': attempt});
-        if (_shouldLogVerboseDiagnostics &&
-            classification.errorCode == 'APP_CHECK_FAILED') {
-          Log.warning('AI App Check diagnostic', {
-            'platform': defaultTargetPlatform.name,
-            'backend': _useVertexBackend ? 'vertexAI' : 'googleAI',
-            'hint':
-                'Verify App Check debug token allowlist for this device, '
-                'provider mode, and enforcement settings.',
-          });
-        }
         throw _createException(classification, e);
       }
     }

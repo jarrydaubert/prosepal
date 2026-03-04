@@ -86,7 +86,7 @@ class _FreeUsageCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.surfaceLight,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: _statusColor, width: 3),
         ),
@@ -103,9 +103,11 @@ class _FreeUsageCard extends StatelessWidget {
               child: Center(
                 child: Text(
                   '$remaining',
+                  textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
+                    height: 1,
                     color: _statusColor,
                   ),
                 ),
@@ -123,7 +125,7 @@ class _FreeUsageCard extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
+                      color: AppColors.textOnLight,
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -131,7 +133,7 @@ class _FreeUsageCard extends StatelessWidget {
                     'Tap to unlock unlimited',
                     style: TextStyle(
                       fontSize: 13,
-                      color: AppColors.textSecondary,
+                      color: AppColors.textOnLightSecondary,
                     ),
                   ),
                 ],

@@ -91,6 +91,7 @@ flutter:
   assets:
     - assets/images/
     - assets/images/icons/
+    - assets/images/onboarding/
     - assets/fonts/
     - assets/splash_transparent.png
 
@@ -106,12 +107,12 @@ patrol:
 # Native splash screen configuration
 # Dark charcoal background - matches AppColors.splash
 flutter_native_splash:
-  color: "#2D2D37"
-  color_dark: "#2D2D37"
+  color: "#0A0A0A"
+  color_dark: "#0A0A0A"
 
   # Android 12+ - solid background color only (no icon)
   android_12:
-    color: "#2D2D37"
-    color_dark: "#2D2D37"
+    color: "#0A0A0A"
+    color_dark: "#0A0A0A"
 
   web: false

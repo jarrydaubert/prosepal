@@ -10,6 +10,7 @@ import 'package:share_plus/share_plus.dart';
 import '../../core/models/models.dart';
 import '../../core/providers/providers.dart';
 import '../../core/services/history_service.dart';
+import '../../shared/components/app_emoji.dart';
 import '../../shared/components/components.dart';
 import '../../shared/theme/app_colors.dart';
 
@@ -27,18 +28,28 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   Occasion? _selectedOccasion;
   String _searchQuery = '';
   final _searchController = TextEditingController();
+  final _searchFocusNode = FocusNode();
   Timer? _debounceTimer;
 
   @override
   void initState() {
     super.initState();
+    _searchFocusNode.addListener(_onSearchFocusChanged);
     _loadHistory();
+  }
+
+  void _onSearchFocusChanged() {
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   @override
   void dispose() {
     _debounceTimer?.cancel();
+    _searchFocusNode.removeListener(_onSearchFocusChanged);
     _searchController.dispose();
+    _searchFocusNode.dispose();
     super.dispose();
   }
 
@@ -211,41 +222,78 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
                 child: TextField(
                   controller: _searchController,
+                  focusNode: _searchFocusNode,
                   onChanged: _onSearchChanged,
+                  textInputAction: TextInputAction.done,
+                  onSubmitted: (_) => FocusScope.of(context).unfocus(),
+                  onTapOutside: (_) => FocusScope.of(context).unfocus(),
+                  style: const TextStyle(
+                    color: AppColors.textOnLight,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                  ),
                   decoration: InputDecoration(
                     hintText: 'Search messages...',
-                    hintStyle: TextStyle(color: Colors.grey[500]),
-                    prefixIcon: Icon(
+                    hintStyle: const TextStyle(
+                      color: AppColors.textOnLightHint,
+                    ),
+                    prefixIcon: const Icon(
                       Icons.search,
-                      color: Colors.grey[500],
+                      color: AppColors.textOnLightHint,
                       size: 20,
                     ),
-                    suffixIcon: _searchQuery.isNotEmpty
-                        ? IconButton(
-                            icon: Icon(
-                              Icons.clear,
-                              color: Colors.grey[500],
-                              size: 20,
+                    suffixIcon:
+                        (_searchQuery.isNotEmpty || _searchFocusNode.hasFocus)
+                        ? SizedBox(
+                            width: _searchQuery.isNotEmpty ? 96 : 48,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                if (_searchQuery.isNotEmpty)
+                                  IconButton(
+                                    icon: const Icon(
+                                      Icons.clear,
+                                      color: AppColors.textOnLightHint,
+                                      size: 20,
+                                    ),
+                                    onPressed: () {
+                                      _searchController.clear();
+                                      _onSearchChanged('');
+                                    },
+                                  ),
+                                if (_searchFocusNode.hasFocus)
+                                  IconButton(
+                                    tooltip: 'Done',
+                                    icon: const Icon(
+                                      Icons.check_rounded,
+                                      color: AppColors.primary,
+                                      size: 20,
+                                    ),
+                                    onPressed: () =>
+                                        FocusScope.of(context).unfocus(),
+                                  ),
+                              ],
                             ),
-                            onPressed: () {
-                              _searchController.clear();
-                              _onSearchChanged('');
-                            },
                           )
                         : null,
                     filled: true,
-                    fillColor: Colors.white,
+                    fillColor: AppColors.surfaceLight,
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 16,
                       vertical: 12,
                     ),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
+                      borderSide: const BorderSide(
+                        color: AppColors.borderOnLight,
+                      ),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
+                      borderSide: const BorderSide(
+                        color: AppColors.borderOnLight,
+                      ),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -291,9 +339,15 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                         return Padding(
                           padding: const EdgeInsets.only(right: 8),
                           child: FilterChip(
-                            avatar: Text(
-                              occasion.emoji,
-                              style: const TextStyle(fontSize: 14),
+                            avatar: SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: Center(
+                                child: AppEmoji(
+                                  emoji: occasion.emoji,
+                                  size: 14,
+                                ),
+                              ),
                             ),
                             label: Text('${occasion.label} ($count)'),
                             selected: _selectedOccasion == occasion,
@@ -327,7 +381,10 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                     children: [
                       Text(
                         '${_filteredHistory.length} result${_filteredHistory.length == 1 ? '' : 's'}',
-                        style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: AppColors.textSecondary,
+                        ),
                       ),
                       const Spacer(),
                       TextButton(
@@ -399,9 +456,9 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
             ),
           ),
           const SizedBox(height: 8),
-          Text(
+          const Text(
             'Your generated messages will appear here',
-            style: TextStyle(fontSize: 15, color: Colors.grey[600]),
+            style: TextStyle(fontSize: 15, color: AppColors.textSecondary),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 24),
@@ -411,14 +468,14 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     ),
   );
 
-  Widget _buildDeviceOnlyDisclaimer() => Row(
+  Widget _buildDeviceOnlyDisclaimer() => const Row(
     mainAxisSize: MainAxisSize.min,
-    children: [
-      Icon(Icons.smartphone, size: 14, color: Colors.grey[500]),
-      const SizedBox(width: 6),
+    children: <Widget>[
+      Icon(Icons.smartphone, size: 14, color: AppColors.textHint),
+      SizedBox(width: 6),
       Text(
         'History is stored on this device only',
-        style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+        style: TextStyle(fontSize: 12, color: AppColors.textHint),
       ),
     ],
   );
@@ -429,14 +486,14 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.search_off, size: 48, color: Colors.grey[400]),
+          const Icon(Icons.search_off, size: 48, color: AppColors.textHint),
           const SizedBox(height: 16),
-          Text(
+          const Text(
             'No messages found',
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: Colors.grey[600],
+              color: AppColors.textSecondary,
             ),
           ),
           const SizedBox(height: 8),
@@ -521,7 +578,7 @@ class _HistoryCardState extends State<_HistoryCard> {
       padding: const EdgeInsets.only(bottom: 12),
       child: DecoratedBox(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.surfaceLight,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: occasion.borderColor, width: 2),
         ),
@@ -551,7 +608,7 @@ class _HistoryCardState extends State<_HistoryCard> {
                       width: 44,
                       height: 44,
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: AppColors.surfaceLight,
                         shape: BoxShape.circle,
                         border: Border.all(
                           color: occasion.borderColor,
@@ -559,10 +616,7 @@ class _HistoryCardState extends State<_HistoryCard> {
                         ),
                       ),
                       child: Center(
-                        child: Text(
-                          occasion.emoji,
-                          style: const TextStyle(fontSize: 20),
-                        ),
+                        child: AppEmoji(emoji: occasion.emoji, size: 20),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -577,15 +631,15 @@ class _HistoryCardState extends State<_HistoryCard> {
                             style: const TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.bold,
-                              color: AppColors.textPrimary,
+                              color: AppColors.textOnLight,
                             ),
                           ),
                           const SizedBox(height: 2),
                           Text(
                             '${occasion.label} • ${_formatDate(widget.item.savedAt)}',
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 12,
-                              color: Colors.grey[600],
+                              color: AppColors.textOnLight,
                             ),
                           ),
                         ],
@@ -610,10 +664,10 @@ class _HistoryCardState extends State<_HistoryCard> {
                   children: [
                     Text(
                       '${result.messages.length} message options',
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
-                        color: Colors.grey[600],
+                        color: AppColors.textOnLightSecondary,
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -697,7 +751,7 @@ class _MessageItem extends StatelessWidget {
     decoration: BoxDecoration(
       color: AppColors.background,
       borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: Colors.grey.shade300),
+      border: Border.all(color: AppColors.borderOnLight),
     ),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -716,7 +770,7 @@ class _MessageItem extends StatelessWidget {
                   '${index + 1}',
                   style: const TextStyle(
                     fontSize: 12,
-                    color: Colors.white,
+                    color: AppColors.textOnPrimary,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -780,10 +834,10 @@ class _SmallButton extends StatelessWidget {
       decoration: BoxDecoration(
         color: isPrimary
             ? AppColors.primary.withValues(alpha: 0.1)
-            : Colors.grey.shade100,
+            : AppColors.surfaceLightMuted,
         borderRadius: BorderRadius.circular(6),
         border: Border.all(
-          color: isPrimary ? AppColors.primary : Colors.grey.shade300,
+          color: isPrimary ? AppColors.primary : AppColors.borderOnLight,
         ),
       ),
       child: Row(

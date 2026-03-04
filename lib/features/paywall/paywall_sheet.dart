@@ -384,7 +384,7 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
             const SnackBar(
               content: Row(
                 children: [
-                  Icon(Icons.check_circle, color: Colors.white),
+                  Icon(Icons.check_circle, color: AppColors.surfaceLight),
                   Gap(AppSpacing.sm),
                   Text('Welcome to Pro!'),
                 ],
@@ -452,7 +452,7 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
             const SnackBar(
               content: Row(
                 children: [
-                  Icon(Icons.check_circle, color: Colors.white),
+                  Icon(Icons.check_circle, color: AppColors.surfaceLight),
                   Gap(AppSpacing.sm),
                   Text('Pro subscription restored!'),
                 ],
@@ -503,7 +503,7 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
         ),
         margin: isTablet ? const EdgeInsets.only(bottom: 40) : EdgeInsets.zero,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.surfaceLight,
           borderRadius: BorderRadius.vertical(
             top: const Radius.circular(24),
             bottom: isTablet ? const Radius.circular(24) : Radius.zero,
@@ -519,7 +519,7 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.grey[300],
+                  color: AppColors.borderOnLight,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -554,7 +554,9 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
             Icon(
               Icons.error_outline,
               size: 48,
-              color: _error != null ? AppColors.error : Colors.grey,
+              color: _error != null
+                  ? AppColors.error
+                  : AppColors.textOnLightSecondary,
             ),
             const Gap(16),
             Text(
@@ -663,7 +665,10 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
       const Gap(4),
       Text(
         _contextSubtitle,
-        style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+        style: const TextStyle(
+          fontSize: 14,
+          color: AppColors.textOnLightSecondary,
+        ),
         textAlign: TextAlign.center,
       ),
     ],
@@ -728,13 +733,13 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             border: Border.all(
-              color: isSelected ? AppColors.primary : Colors.grey[300]!,
+              color: isSelected ? AppColors.primary : AppColors.borderOnLight,
               width: isSelected ? 2 : 1,
             ),
             borderRadius: BorderRadius.circular(12),
             color: isSelected
                 ? AppColors.primary.withValues(alpha: 0.05)
-                : Colors.white,
+                : AppColors.surfaceLight,
           ),
           child: Row(
             children: [
@@ -745,7 +750,9 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: isSelected ? AppColors.primary : Colors.grey[400]!,
+                    color: isSelected
+                        ? AppColors.primary
+                        : AppColors.textOnLightHint,
                     width: 2,
                   ),
                 ),
@@ -777,7 +784,7 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
                             fontSize: 16,
                             color: isSelected
                                 ? AppColors.primary
-                                : Colors.black,
+                                : AppColors.textOnLight,
                           ),
                         ),
                         if (isAnnual) ...[
@@ -794,7 +801,7 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
                             child: Text(
                               _savingsText(packages),
                               style: const TextStyle(
-                                color: Colors.white,
+                                color: AppColors.textOnPrimary,
                                 fontSize: 10,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -806,7 +813,10 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
                     const Gap(4),
                     Text(
                       _packageSubtitle(pkg),
-                      style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: AppColors.textOnLightSecondary,
+                      ),
                     ),
                   ],
                 ),
@@ -817,7 +827,7 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 18,
-                  color: isSelected ? AppColors.primary : Colors.black,
+                  color: isSelected ? AppColors.primary : AppColors.textOnLight,
                 ),
               ),
             ],
@@ -917,29 +927,29 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
       // Divider with text
-      Row(
+      const Row(
         children: [
-          Expanded(child: Divider(color: Colors.grey[300])),
+          Expanded(child: Divider(color: AppColors.borderOnLight)),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: EdgeInsets.symmetric(horizontal: 16),
             child: Text(
               'Sync across devices',
               style: TextStyle(
-                color: Colors.grey[600],
+                color: AppColors.textOnLightSecondary,
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
               ),
             ),
           ),
-          Expanded(child: Divider(color: Colors.grey[300])),
+          Expanded(child: Divider(color: AppColors.borderOnLight)),
         ],
       ),
       const Gap(12),
 
       // Explanation text
-      Text(
+      const Text(
         'Sign in to access your subscription on all your devices',
-        style: TextStyle(fontSize: 13, color: Colors.grey[500]),
+        style: TextStyle(fontSize: 13, color: AppColors.textOnLightHint),
         textAlign: TextAlign.center,
       ),
       const Gap(16),
@@ -1007,9 +1017,9 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
         const Gap(8),
 
         // Legal compliance: cancel/renewal disclosure (Apple requirement)
-        Text(
+        const Text(
           'Auto-renews. Cancel anytime in App Store settings.',
-          style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+          style: TextStyle(fontSize: 11, color: AppColors.textOnLightHint),
           textAlign: TextAlign.center,
         ),
         const Gap(12),
@@ -1024,9 +1034,12 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
                     width: 14,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : Text(
+                : const Text(
                     'Restore Purchases',
-                    style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: AppColors.textOnLightSecondary,
+                    ),
                   ),
           ),
         ),
@@ -1040,9 +1053,9 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
               });
               Navigator.of(context).pop(false);
             },
-            child: Text(
+            child: const Text(
               'Maybe Later',
-              style: TextStyle(fontSize: 13, color: Colors.grey[500]),
+              style: TextStyle(fontSize: 13, color: AppColors.textOnLightHint),
             ),
           ),
         ),
@@ -1055,17 +1068,17 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
     children: [
       TextButton(
         onPressed: () => context.push('/terms'),
-        child: Text(
+        child: const Text(
           'Terms',
-          style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+          style: TextStyle(fontSize: 12, color: AppColors.textOnLightHint),
         ),
       ),
-      Text('•', style: TextStyle(color: Colors.grey[400])),
+      const Text('•', style: TextStyle(color: AppColors.textOnLightHint)),
       TextButton(
         onPressed: () => context.push('/privacy'),
-        child: Text(
+        child: const Text(
           'Privacy',
-          style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+          style: TextStyle(fontSize: 12, color: AppColors.textOnLightHint),
         ),
       ),
     ],
@@ -1097,8 +1110,8 @@ class _AuthButton extends StatelessWidget {
     child: OutlinedButton(
       onPressed: onPressed,
       style: OutlinedButton.styleFrom(
-        foregroundColor: Colors.black87,
-        side: BorderSide(color: Colors.grey[300]!),
+        foregroundColor: AppColors.textOnLight,
+        side: const BorderSide(color: AppColors.borderOnLight),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
       child: Row(

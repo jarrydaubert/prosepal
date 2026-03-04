@@ -30,6 +30,14 @@ class AppButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isEnabled = !isLoading && onPressed != null;
+    final contentColor = switch (style) {
+      AppButtonStyle.primary || AppButtonStyle.secondary =>
+        isEnabled ? AppColors.textOnPrimary : AppColors.textSecondary,
+      AppButtonStyle.outline || AppButtonStyle.text =>
+        isEnabled ? AppColors.textPrimary : AppColors.textSecondary,
+    };
+
     final height = switch (size) {
       AppButtonSize.small => AppSpacing.buttonHeightSmall,
       AppButtonSize.medium => AppSpacing.buttonHeight,
@@ -42,9 +50,7 @@ class AppButton extends StatelessWidget {
             width: 20,
             child: CircularProgressIndicator(
               strokeWidth: 2,
-              color: style == AppButtonStyle.primary
-                  ? AppColors.textOnPrimary
-                  : AppColors.primary,
+              color: contentColor,
             ),
           )
         : Row(
@@ -52,22 +58,40 @@ class AppButton extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               if (icon != null) ...[
-                Icon(icon, size: AppSpacing.iconSizeSmall),
+                Icon(icon, size: AppSpacing.iconSizeSmall, color: contentColor),
                 const SizedBox(width: AppSpacing.sm),
               ],
-              Flexible(child: Text(label, overflow: TextOverflow.ellipsis)),
+              Flexible(
+                child: Text(
+                  label,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    color: contentColor,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
             ],
           );
 
     final buttonStyle = switch (style) {
       AppButtonStyle.primary => ElevatedButton.styleFrom(
+        backgroundColor: AppColors.primaryDark,
+        disabledBackgroundColor: AppColors.surfaceVariant,
+        disabledForegroundColor: AppColors.textSecondary,
         minimumSize: Size(isFullWidth ? double.infinity : 0, height),
       ),
       AppButtonStyle.secondary => ElevatedButton.styleFrom(
         backgroundColor: AppColors.primary,
+        disabledBackgroundColor: AppColors.surfaceVariant,
+        disabledForegroundColor: AppColors.textSecondary,
         minimumSize: Size(isFullWidth ? double.infinity : 0, height),
       ),
       AppButtonStyle.outline => OutlinedButton.styleFrom(
+        foregroundColor: AppColors.textPrimary,
+        disabledForegroundColor: AppColors.textSecondary,
+        side: const BorderSide(color: AppColors.borderMedium, width: 1.5),
+        backgroundColor: Colors.transparent,
         minimumSize: Size(isFullWidth ? double.infinity : 0, height),
       ),
       AppButtonStyle.text => TextButton.styleFrom(

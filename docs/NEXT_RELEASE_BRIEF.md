@@ -14,6 +14,7 @@ Current reality:
 - The app is live on iOS and has a substantial working feature set.
 - Core architecture and integrations (Supabase, RevenueCat, Firebase AI, Analytics/Crashlytics, Remote Config) are in place.
 - Unit/widget testing is strong; integration testing exists but still needs hardening for deterministic reliability.
+- vNext UI baseline is a tokenized coral/navy/white theme direction (no ad-hoc per-screen color systems).
 - The major redesign is planned but not sufficiently implemented to be the safest next release target.
 
 Recommendation for next release:
@@ -183,6 +184,7 @@ Recommendation for next release:
 
 ### Provider and model
 - AI generation uses Firebase AI SDK (Gemini).
+- Runtime backend default is Vertex (`AI_BACKEND=vertex`), with optional override to Google Developer API path (`AI_BACKEND=google`) for controlled debugging.
 - Remote-configured primary and fallback model names are supported.
 - Current app defaults:
   - primary: `gemini-2.5-flash`
@@ -334,52 +336,25 @@ This lowers release risk and gives a trusted baseline for measuring redesign imp
 ## 12) Proposed Next Release Scope (vNext)
 
 ### Must-ship
-- Dependency upgrades in controlled batches with regression checks.
-- Integration harness stabilization (remove nondeterministic waits/taps, stable assertions).
-- Physical-device validation path (wired iOS + wired Android).
-- Firebase Test Lab runbook execution and verified pass.
-- CI gating policy updated to reflect trusted signals.
-- Any high-risk auth/purchase edge-case gaps required for safe release.
-- App Check operational hardening:
-  - AI path protection posture confirmed for production (not just monitoring intent)
-  - iOS and Android provider behavior re-validated
-  - Flutter AI SDK App Check integration path verified
-  - limited-use token strategy validated (or explicitly deferred with rationale)
-- AI model lifecycle hardening:
-  - production default model pinned to stable `gemini-2.5-flash`
-  - fallback model confirmed active/supported
-  - RC allowlist validation live and tested
-- Remote Config guardrails shipped as hard requirements:
-  - `config_schema_version` live
-  - `ai_enabled`, `paywall_enabled`, `premium_enabled` kill switches live
-  - RC defaults/template committed and reviewed
-  - explicit "no secrets in RC" rule added to release process
-- RevenueCat policy finalization:
-  - restore behavior policy documented (dashboard setting + expected outcomes)
-  - entitlement refresh points documented for premium-critical UX
-- Account deletion UX/compliance hardening:
-  - active-subscription guidance copy verified
-  - "Manage Subscription" path available near deletion flow
-  - deletion timing/expectation copy documented and tested
-- Build/release guardrail hardening:
-  - required `dart-define` preflight check in CI/release script
-  - script-only iOS archive enforcement remains hard gate
-  - `--dart-define-from-file` migration path documented (adopt now or explicitly defer)
-- AI cost/abuse controls explicitly operationalized:
-  - API restrictions + app restrictions verified
-  - per-user rate limit thresholds documented
-  - budget alerts + cost spike response trigger in runbook
-- Device abuse-control compliance hardening:
-  - decide and document platform approach (current fingerprinting vs migration to native attestation APIs)
-  - verify iOS/Android implementation is policy-compliant before release
-- UI parity baseline for vNext:
-  - core screens visually aligned to live baseline where redesign is out-of-scope
-  - any intentional style deltas documented before release
+- Release readiness and evidence gates (`P0-07`, `VNEXT-08`, `VNEXT-09`) with scripted iOS archive, wired-device evidence, and checklist sign-off.
+- Security and release guardrails (`P0-10`) with mandatory CI secret scanning and required runtime-config gate enforcement.
+- UI quality hardening (`P0-08`, `P1-50`, `VNEXT-12`) to eliminate contrast regressions and styling drift, with approved baseline captures.
+- Input/navigation UX hardening within the existing design system: consistent back-nav controls, aligned text-field icons, and deterministic keyboard-dismiss behavior on searchable/form surfaces.
+- Visual QA automation (`P1-49`, `P1-25`) so CI publishes deterministic visual and smoke artifacts for candidate branches.
+- Launch/auth parity (`P0-09`) verified on physical iOS and Android cold-start captures (no flash mismatches, consistent auth-screen contrast treatment).
+- Launch/auth color drift guard (`P1-51`) to prevent iOS/Android/Flutter splash color divergence from reappearing.
+- AI reliability hardening (`VNEXT-10`, `P1-43`) including App Check posture validation, error-classification quality, and production model allowlist controls.
+- Startup resilience observability (`P1-48`) with structured phase telemetry and explicit phase-budget reporting on real-device runs.
+- Identity, entitlement, and abuse-control integrity (`VNEXT-11`, `VNEXT-13`) validated and documented.
+- Billing/ops controls (`P0-05`) verified with dry-run alert evidence.
+- Targeted auth flow polish (`P0-04`) to guarantee deterministic post-OAuth loading and failure messaging.
 
 ### Explicitly out-of-scope for vNext
 - Full redesign rollout.
 - Large visual theme replacement.
 - New major UX architecture (chat-first) in production.
+- Server-side AI gateway as production default (`P1-47`) unless post-launch trigger criteria are met.
+- Startup orchestration refactor/state-machine migration (`P2-13`).
 
 ---
 
@@ -391,8 +366,12 @@ Release is eligible only if all are true:
 - Flake audit passes repeated runs.
 - Integration smoke passes on iOS simulator and Android emulator.
 - Critical integration suite passes on one wired iOS and one wired Android physical device.
+- Visual regression CI job publishes no unapproved core-screen diffs.
+- Launch/auth color parity drift check (`P1-51`) passes in CI.
 - FTL Android run passes for selected critical suite.
 - iOS release build process validated via required build script.
+- Next-release checklist evidence (`P0-07`) is complete and attached.
+- CI secret/config release gates (`P0-10`) pass with zero bypasses.
 - No critical auth/payment/security regressions.
 - App Check production posture and provider validation are confirmed for AI-critical paths.
 - Production AI model default is stable non-preview; fallback + allowlist validation confirmed.
@@ -401,7 +380,9 @@ Release is eligible only if all are true:
 - Account deletion flow includes subscription handling guidance and management path.
 - Release preflight blocks missing required runtime configuration.
 - Device abuse-control approach is documented and approved for platform-policy compliance.
+- Startup phase telemetry evidence is attached for wired iOS and Android runs (phase timings plus terminal route outcome).
 - Core screen styling is verified against live baseline (or documented intentional deltas approved).
+- Launch/auth visual parity evidence from physical iOS + Android cold starts is attached (`P0-09`).
 
 ---
 

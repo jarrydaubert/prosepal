@@ -282,7 +282,7 @@ void main() {
     });
 
     testWidgetsWithPumps(
-      'Continue button is disabled when no relationship selected',
+      'Continue button is hidden when no relationship selected',
       (tester) async {
         await tester.pumpWidget(
           createTestableGenerateScreen(selectedOccasion: Occasion.birthday),
@@ -290,11 +290,7 @@ void main() {
         await tester.pump(const Duration(seconds: 1));
 
         final continueButton = find.text('Continue');
-        expect(continueButton, findsOneWidget);
-
-        // Tap without selecting - should not navigate
-        await tester.tap(continueButton);
-        await tester.pump(const Duration(seconds: 1));
+        expect(continueButton, findsNothing);
 
         // Should still be on step 1 (relationships visible)
         expect(find.text('Close Friend'), findsOneWidget);
@@ -588,7 +584,7 @@ void main() {
       expect(find.text('Heartfelt'), findsOneWidget);
 
       // Go back
-      await tester.tap(find.byIcon(Icons.arrow_back));
+      await tester.tap(find.byTooltip('Back'));
       await tester.pump(const Duration(seconds: 1));
 
       // Should be on step 1
@@ -603,7 +599,7 @@ void main() {
       await navigateToStep3(tester);
 
       // Go back
-      await tester.tap(find.byIcon(Icons.arrow_back));
+      await tester.tap(find.byTooltip('Back'));
       await tester.pump(const Duration(seconds: 1));
 
       // Should be on step 2
