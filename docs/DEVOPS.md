@@ -157,7 +157,7 @@ Purpose:
 Policy:
 - Runs only when CI scope is not docs-only.
 - Uses `./scripts/test_visual_regression.sh`.
-- Uploads `visual-regression-diffs` artifact (from `test/failures/**`) on every run.
+- Uploads `visual-regression-diffs` artifact (from `test/widgets/goldens/failures/**`) on every run.
 - Publishes `GITHUB_STEP_SUMMARY` guidance with local baseline update command:
   - `./scripts/test_visual_regression.sh --update`
 

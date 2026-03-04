@@ -199,7 +199,7 @@ jobs:
         with:
           name: visual-regression-diffs
           path: |
-            test/failures/**
+            test/widgets/goldens/failures/**
           if-no-files-found: warn
           retention-days: 14
 

@@ -17,4 +17,4 @@ fi
 
 echo
 echo "Visual regression suite complete."
-echo "Golden failures/diffs are written under: test/failures/"
+echo "Golden failures/diffs are written under: test/widgets/goldens/failures/"
