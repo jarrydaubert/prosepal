@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../core/models/models.dart';
 import '../../core/providers/providers.dart';
 import '../../shared/components/app_button.dart';
+import '../../shared/components/app_emoji.dart';
 import '../../shared/theme/app_colors.dart';
 
 class AddOccasionSheet extends ConsumerStatefulWidget {
@@ -58,7 +59,7 @@ class _AddOccasionSheetState extends ConsumerState<AddOccasionSheet> {
     return Container(
       margin: EdgeInsets.only(bottom: bottomPadding),
       decoration: const BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surfaceLight,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: SingleChildScrollView(
@@ -73,7 +74,7 @@ class _AddOccasionSheetState extends ConsumerState<AddOccasionSheet> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.grey[300],
+                  color: AppColors.borderOnLight,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -125,10 +126,21 @@ class _AddOccasionSheetState extends ConsumerState<AddOccasionSheet> {
             const SizedBox(height: 8),
             TextField(
               controller: _nameController,
+              textInputAction: TextInputAction.done,
+              onSubmitted: (_) => FocusScope.of(context).unfocus(),
+              onTapOutside: (_) => FocusScope.of(context).unfocus(),
               decoration: InputDecoration(
                 hintText: 'e.g., Mom, John, Sarah',
                 filled: true,
-                fillColor: Colors.grey[100],
+                fillColor: AppColors.surfaceLightMuted,
+                suffixIcon: IconButton(
+                  tooltip: 'Done',
+                  icon: const Icon(
+                    Icons.check_rounded,
+                    color: AppColors.primary,
+                  ),
+                  onPressed: () => FocusScope.of(context).unfocus(),
+                ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
@@ -159,10 +171,21 @@ class _AddOccasionSheetState extends ConsumerState<AddOccasionSheet> {
             TextField(
               controller: _notesController,
               maxLines: 2,
+              textInputAction: TextInputAction.done,
+              onSubmitted: (_) => FocusScope.of(context).unfocus(),
+              onTapOutside: (_) => FocusScope.of(context).unfocus(),
               decoration: InputDecoration(
                 hintText: 'Add any notes or reminders...',
                 filled: true,
-                fillColor: Colors.grey[100],
+                fillColor: AppColors.surfaceLightMuted,
+                suffixIcon: IconButton(
+                  tooltip: 'Done',
+                  icon: const Icon(
+                    Icons.check_rounded,
+                    color: AppColors.primary,
+                  ),
+                  onPressed: () => FocusScope.of(context).unfocus(),
+                ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
@@ -358,24 +381,28 @@ class _OccasionPicker extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
-              color: isSelected ? AppColors.primary : Colors.grey[100],
+              color: isSelected
+                  ? AppColors.primary
+                  : AppColors.surfaceLightMuted,
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: isSelected ? AppColors.primary : Colors.grey[300]!,
+                color: isSelected ? AppColors.primary : AppColors.borderOnLight,
                 width: 2,
               ),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(o.emoji, style: const TextStyle(fontSize: 16)),
+                AppEmoji(emoji: o.emoji, size: 16),
                 const SizedBox(width: 6),
                 Text(
                   o.label,
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: isSelected ? Colors.white : AppColors.textOnLight,
+                    color: isSelected
+                        ? AppColors.textOnPrimary
+                        : AppColors.textOnLight,
                   ),
                 ),
               ],
@@ -416,9 +443,9 @@ class _DatePicker extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.grey[100],
+          color: AppColors.surfaceLightMuted,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey[300]!),
+          border: Border.all(color: AppColors.borderOnLight),
         ),
         child: Row(
           children: [
@@ -434,7 +461,10 @@ class _DatePicker extends StatelessWidget {
                 ),
               ),
             ),
-            const Icon(Icons.chevron_right, color: Colors.grey),
+            const Icon(
+              Icons.chevron_right,
+              color: AppColors.textOnLightSecondary,
+            ),
           ],
         ),
       ),
@@ -472,10 +502,12 @@ class _RelationshipPicker extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
-              color: isSelected ? AppColors.primary : Colors.grey[100],
+              color: isSelected
+                  ? AppColors.primary
+                  : AppColors.surfaceLightMuted,
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: isSelected ? AppColors.primary : Colors.grey[300]!,
+                color: isSelected ? AppColors.primary : AppColors.borderOnLight,
                 width: 2,
               ),
             ),
@@ -484,7 +516,9 @@ class _RelationshipPicker extends StatelessWidget {
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: isSelected ? Colors.white : AppColors.textOnLight,
+                color: isSelected
+                    ? AppColors.textOnPrimary
+                    : AppColors.textOnLight,
               ),
             ),
           ),
@@ -511,10 +545,10 @@ class _ReminderOption extends StatelessWidget {
     child: Container(
       padding: const EdgeInsets.symmetric(vertical: 10),
       decoration: BoxDecoration(
-        color: isSelected ? AppColors.primary : Colors.white,
+        color: isSelected ? AppColors.primary : AppColors.surfaceLight,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: isSelected ? AppColors.primary : Colors.grey[300]!,
+          color: isSelected ? AppColors.primary : AppColors.borderOnLight,
           width: 2,
         ),
       ),
@@ -524,7 +558,7 @@ class _ReminderOption extends StatelessWidget {
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w600,
-            color: isSelected ? Colors.white : AppColors.textOnLight,
+            color: isSelected ? AppColors.textOnPrimary : AppColors.textOnLight,
           ),
         ),
       ),

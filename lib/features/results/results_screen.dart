@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -12,6 +14,7 @@ import '../../core/models/models.dart';
 import '../../core/providers/providers.dart';
 import '../../core/services/log_service.dart';
 import '../../shared/components/app_button.dart';
+import '../../shared/components/app_emoji.dart';
 import '../../shared/theme/app_colors.dart';
 import '../paywall/paywall_sheet.dart';
 import 'save_to_calendar_dialog.dart';
@@ -26,20 +29,22 @@ class ResultsScreen extends ConsumerStatefulWidget {
 class _ResultsScreenState extends ConsumerState<ResultsScreen> {
   int? _copiedIndex;
   bool _isRegenerating = false;
+  bool _showConfetti = false;
+  Timer? _confettiHideTimer;
   late ConfettiController _confettiController;
+  static const Duration _confettiDuration = Duration(milliseconds: 1400);
 
   bool get _reduceMotion => MediaQuery.of(context).disableAnimations;
 
   @override
   void initState() {
     super.initState();
-    _confettiController = ConfettiController(
-      duration: const Duration(seconds: 2),
-    );
+    _confettiController = ConfettiController(duration: _confettiDuration);
   }
 
   @override
   void dispose() {
+    _confettiHideTimer?.cancel();
     _confettiController.dispose();
     super.dispose();
   }
@@ -125,11 +130,11 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
               ),
 
               // Gemini attribution
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 20),
                 child: Text(
                   'Built with Google Gemini',
-                  style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                  style: TextStyle(fontSize: 12, color: AppColors.textHint),
                   textAlign: TextAlign.center,
                 ),
               ),
@@ -169,22 +174,34 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
             ],
           ),
         ),
-        // Confetti overlay for first message celebration
-        Align(
-          alignment: Alignment.topCenter,
-          child: ConfettiWidget(
-            confettiController: _confettiController,
-            blastDirectionality: BlastDirectionality.explosive,
-            colors: const [
-              AppColors.primary,
-              AppColors.success,
-              Color(0xFFFFD700),
-              Color(0xFFFF69B4),
-            ],
-            numberOfParticles: 20,
-            gravity: 0.3,
+        // Confetti overlay only when active (reduces idle frame work).
+        if (_showConfetti)
+          Positioned.fill(
+            child: IgnorePointer(
+              child: RepaintBoundary(
+                child: Align(
+                  alignment: Alignment.topCenter,
+                  child: ConfettiWidget(
+                    confettiController: _confettiController,
+                    blastDirectionality: BlastDirectionality.explosive,
+                    emissionFrequency: 0.025,
+                    numberOfParticles: 14,
+                    gravity: 0.28,
+                    minBlastForce: 8,
+                    maxBlastForce: 18,
+                    minimumSize: const Size(4, 4),
+                    maximumSize: const Size(8, 8),
+                    colors: const [
+                      AppColors.primary,
+                      AppColors.success,
+                      Color(0xFFFFD700),
+                      Color(0xFFFF69B4),
+                    ],
+                  ),
+                ),
+              ),
+            ),
           ),
-        ),
       ],
     );
   }
@@ -213,7 +230,19 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
 
       // Celebration: confetti + special snackbar
       if (!_reduceMotion) {
+        _confettiHideTimer?.cancel();
+        if (mounted) {
+          setState(() => _showConfetti = true);
+        }
         _confettiController.play();
+        _confettiHideTimer = Timer(
+          _confettiDuration + const Duration(milliseconds: 250),
+          () {
+            if (mounted) {
+              setState(() => _showConfetti = false);
+            }
+          },
+        );
       }
 
       if (mounted) {
@@ -225,7 +254,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                   width: 24,
                   height: 24,
                   decoration: const BoxDecoration(
-                    color: Colors.white,
+                    color: AppColors.surfaceLight,
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
@@ -266,7 +295,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                   width: 24,
                   height: 24,
                   decoration: const BoxDecoration(
-                    color: Colors.white,
+                    color: AppColors.surfaceLight,
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
@@ -436,15 +465,12 @@ class _ContextHeader extends StatelessWidget {
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppColors.surfaceLight,
               shape: BoxShape.circle,
               border: Border.all(color: result.occasion.borderColor, width: 2),
             ),
             child: Center(
-              child: Text(
-                result.occasion.emoji,
-                style: const TextStyle(fontSize: 22),
-              ),
+              child: AppEmoji(emoji: result.occasion.emoji, size: 22),
             ),
           ),
           const SizedBox(width: 14),
@@ -463,7 +489,10 @@ class _ContextHeader extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   '${result.tone.label} tone',
-                  style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: AppColors.textPrimary.withValues(alpha: 0.78),
+                  ),
                 ),
               ],
             ),
@@ -493,21 +522,23 @@ class _MessageCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Semantics(
     label: 'Message option ${index + 1}',
-    child: DecoratedBox(
+    child: Container(
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surfaceLight,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.primary, width: 3),
+        border: Border.all(color: AppColors.primary, width: 2),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Header with actions
           Container(
+            margin: const EdgeInsets.fromLTRB(2, 2, 2, 0),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: const BoxDecoration(
               color: AppColors.primaryLight,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(13)),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
             ),
             child: Row(
               children: [
@@ -523,7 +554,7 @@ class _MessageCard extends StatelessWidget {
                       '${index + 1}',
                       style: const TextStyle(
                         fontSize: 14,
-                        color: Colors.white,
+                        color: AppColors.textOnPrimary,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -617,7 +648,7 @@ class _ActionButton extends StatelessWidget {
                 ? AppColors.success.withValues(alpha: 0.15)
                 : isPrimary
                 ? AppColors.primary.withValues(alpha: 0.15)
-                : Colors.white,
+                : AppColors.surfaceLight,
             borderRadius: BorderRadius.circular(8),
             border: Border.all(color: color, width: 2),
           ),

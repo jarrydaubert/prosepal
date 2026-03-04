@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/models/models.dart';
 import '../../core/providers/providers.dart';
 import '../../core/services/log_service.dart';
+import '../../shared/components/app_emoji.dart';
 import '../../shared/theme/app_colors.dart';
 
 /// Dialog shown after copying a message to prompt saving the occasion to calendar
@@ -36,6 +37,7 @@ class _SaveToCalendarDialogState extends ConsumerState<SaveToCalendarDialog> {
 
   @override
   Widget build(BuildContext context) => AlertDialog(
+    backgroundColor: AppColors.surfaceLight,
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
     contentPadding: EdgeInsets.zero,
     content: Container(
@@ -54,10 +56,7 @@ class _SaveToCalendarDialogState extends ConsumerState<SaveToCalendarDialog> {
               border: Border.all(color: AppColors.primary, width: 3),
             ),
             child: Center(
-              child: Text(
-                widget.result.occasion.emoji,
-                style: const TextStyle(fontSize: 28),
-              ),
+              child: AppEmoji(emoji: widget.result.occasion.emoji, size: 28),
             ),
           ),
           const SizedBox(height: 16),
@@ -68,7 +67,7 @@ class _SaveToCalendarDialogState extends ConsumerState<SaveToCalendarDialog> {
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
+              color: AppColors.textOnLight,
             ),
           ),
           const SizedBox(height: 8),
@@ -77,9 +76,9 @@ class _SaveToCalendarDialogState extends ConsumerState<SaveToCalendarDialog> {
           Text(
             "Get reminded before ${widget.result.recipientName ?? 'this occasion'}'s ${widget.result.occasion.label.toLowerCase()}",
             textAlign: TextAlign.center,
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 14,
-              color: Colors.grey[600],
+              color: AppColors.textOnLightSecondary,
               height: 1.4,
             ),
           ),
@@ -116,7 +115,7 @@ class _SaveToCalendarDialogState extends ConsumerState<SaveToCalendarDialog> {
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.textSecondary,
+                      color: AppColors.textOnLightSecondary,
                     ),
                   ),
                 ),
@@ -126,8 +125,8 @@ class _SaveToCalendarDialogState extends ConsumerState<SaveToCalendarDialog> {
                 child: ElevatedButton(
                   onPressed: _isSaving ? null : _save,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
+                    backgroundColor: AppColors.primaryDark,
+                    foregroundColor: AppColors.textOnPrimary,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -139,7 +138,7 @@ class _SaveToCalendarDialogState extends ConsumerState<SaveToCalendarDialog> {
                           height: 20,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            color: Colors.white,
+                            color: AppColors.textOnPrimary,
                           ),
                         )
                       : const Text(
@@ -245,9 +244,9 @@ class _DatePickerTile extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: Colors.grey[100],
+          color: AppColors.surfaceLightMuted,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey[300]!),
+          border: Border.all(color: AppColors.borderOnLight),
         ),
         child: Row(
           children: [
@@ -265,7 +264,7 @@ class _DatePickerTile extends StatelessWidget {
                     'Date',
                     style: TextStyle(
                       fontSize: 12,
-                      color: AppColors.textSecondary,
+                      color: AppColors.textOnLightSecondary,
                     ),
                   ),
                   Text(
@@ -273,13 +272,13 @@ class _DatePickerTile extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
+                      color: AppColors.textOnLight,
                     ),
                   ),
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right, color: Colors.grey),
+            const Icon(Icons.chevron_right, color: AppColors.textOnLightHint),
           ],
         ),
       ),
@@ -299,17 +298,17 @@ class _ReminderToggle extends StatelessWidget {
     decoration: BoxDecoration(
       color: enabled
           ? AppColors.primary.withValues(alpha: 0.1)
-          : Colors.grey[100],
+          : AppColors.surfaceLightMuted,
       borderRadius: BorderRadius.circular(12),
       border: Border.all(
-        color: enabled ? AppColors.primary : Colors.grey[300]!,
+        color: enabled ? AppColors.primary : AppColors.borderOnLight,
       ),
     ),
     child: Row(
       children: [
         Icon(
           Icons.notifications_active,
-          color: enabled ? AppColors.primary : Colors.grey[600],
+          color: enabled ? AppColors.primary : AppColors.textOnLightSecondary,
           size: 20,
         ),
         const SizedBox(width: 12),
@@ -319,7 +318,9 @@ class _ReminderToggle extends StatelessWidget {
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w500,
-              color: enabled ? AppColors.textPrimary : Colors.grey[600],
+              color: enabled
+                  ? AppColors.textOnLight
+                  : AppColors.textOnLightSecondary,
             ),
           ),
         ),

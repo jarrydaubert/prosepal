@@ -23,12 +23,27 @@ class FeedbackScreen extends ConsumerStatefulWidget {
 class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
   static const _maxMailtoUriLength = 8000;
   final _controller = TextEditingController();
+  final _focusNode = FocusNode();
   bool _isSending = false;
   bool _includeLogs = false;
   bool _includeSensitiveLogs = false;
 
   @override
+  void initState() {
+    super.initState();
+    _focusNode.addListener(_onFocusChanged);
+  }
+
+  void _onFocusChanged() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  @override
   void dispose() {
+    _focusNode.removeListener(_onFocusChanged);
+    _focusNode.dispose();
     _controller.dispose();
     super.dispose();
   }
@@ -214,14 +229,26 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
                 hint: 'Enter your feedback, bug report, or feature request',
                 child: TextField(
                   controller: _controller,
+                  focusNode: _focusNode,
                   maxLines: null,
                   expands: true,
                   textAlignVertical: TextAlignVertical.top,
                   textCapitalization: TextCapitalization.sentences,
+                  onTapOutside: (_) => FocusScope.of(context).unfocus(),
                   decoration: InputDecoration(
                     labelText: 'Your feedback',
                     hintText: 'Describe your issue or suggestion...',
                     alignLabelWithHint: true,
+                    suffixIcon: _focusNode.hasFocus
+                        ? IconButton(
+                            tooltip: 'Done',
+                            icon: const Icon(
+                              Icons.check_rounded,
+                              color: AppColors.primary,
+                            ),
+                            onPressed: () => FocusScope.of(context).unfocus(),
+                          )
+                        : null,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(
                         AppSpacing.radiusMedium,

@@ -55,3 +55,7 @@ key.properties
 custom_lint.log
 .crashlytics/
 artifacts/
+
+# Golden test generated diffs (local diagnostics only)
+test/widgets/goldens/failures/
+test/failures/

@@ -70,7 +70,15 @@ echo "Running on iOS device: $DEVICE"
 if [ -n "$SDK_ROOT" ]; then
     echo "Using iOS SDK root: $SDK_ROOT"
     export SDKROOT="$SDK_ROOT"
+    export SdkRoot="$SDK_ROOT"
+    export FLUTTER_XCODE_SDKROOT="$SDK_ROOT"
+    # Native assets in newer Flutter toolchains sometimes resolve iOS SDK root
+    # from different define keys depending on build path (xcode_backend vs
+    # resident compiler sync). Provide both to avoid intermittent warnings.
     EXTRA_DEFINES+=(--dart-define=SdkRoot="$SDK_ROOT")
+    EXTRA_DEFINES+=(--dart-define=SDKROOT="$SDK_ROOT")
+    EXTRA_DEFINES+=(--dart-define=FLUTTER_XCODE_SDKROOT="$SDK_ROOT")
+    EXTRA_DEFINES+=(--dart-define=XCODE_SDKROOT="$SDK_ROOT")
 else
     echo "Warning: Could not resolve iOS SDK path via xcrun; continuing without SdkRoot define."
 fi

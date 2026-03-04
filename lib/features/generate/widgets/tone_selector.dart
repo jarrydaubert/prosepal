@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../../core/models/tone.dart';
+import '../../../shared/components/app_emoji.dart';
 import '../../../shared/theme/app_colors.dart';
 
 class ToneSelector extends StatelessWidget {
@@ -29,9 +30,9 @@ class ToneSelector extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 8),
-        Text(
+        const Text(
           'How do you want the message to feel?',
-          style: TextStyle(fontSize: 15, color: Colors.grey[600]),
+          style: TextStyle(fontSize: 15, color: AppColors.textSecondary),
         ),
         const SizedBox(height: 24),
         GridView.builder(
@@ -99,59 +100,82 @@ class _ToneTile extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primaryLight : Colors.white,
+          color: isSelected ? AppColors.primaryLight : AppColors.surfaceLight,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isSelected ? AppColors.primary : Colors.grey[300]!,
-            width: isSelected ? 3 : 2,
+            color: isSelected ? AppColors.primary : AppColors.borderOnLight,
+            width: 2,
           ),
         ),
         child: Stack(
+          fit: StackFit.expand,
           children: [
-            Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? AppColors.primary.withValues(alpha: 0.15)
-                        : Colors.grey[100],
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: isSelected ? AppColors.primary : Colors.grey[300]!,
-                      width: 2,
+            Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 140),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? AppColors.primary.withValues(alpha: 0.15)
+                            : AppColors.surfaceLightMuted,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: isSelected
+                              ? AppColors.primary
+                              : AppColors.borderOnLight,
+                          width: 2,
+                        ),
+                      ),
+                      child: Center(
+                        child: AppEmoji(emoji: tone.emoji, size: 20),
+                      ),
                     ),
-                  ),
-                  child: Center(
-                    child: Text(
-                      tone.emoji,
-                      style: const TextStyle(fontSize: 20),
+                    const SizedBox(height: 10),
+                    Text(
+                      tone.label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: isSelected
+                            ? FontWeight.bold
+                            : FontWeight.w600,
+                        color: isSelected
+                            ? AppColors.primary
+                            : AppColors.textOnLight,
+                      ),
+                      textAlign: TextAlign.center,
                     ),
-                  ),
+                    const SizedBox(height: 4),
+                    SizedBox(
+                      height: 38,
+                      child: Text(
+                        tone.description,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 11.5,
+                          color: AppColors.textOnLightSecondary,
+                          height: 1.25,
+                        ),
+                        strutStyle: const StrutStyle(
+                          fontSize: 11,
+                          height: 1.25,
+                          forceStrutHeight: true,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 10),
-                Text(
-                  tone.label,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                    color: isSelected
-                        ? AppColors.primary
-                        : AppColors.textOnLight,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  tone.description,
-                  style: TextStyle(fontSize: 11, color: Colors.grey[600]),
-                  textAlign: TextAlign.center,
-                ),
-              ],
+              ),
             ),
             if (isSelected)
               Positioned(
@@ -164,7 +188,11 @@ class _ToneTile extends StatelessWidget {
                     color: AppColors.primary,
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.check, color: Colors.white, size: 12),
+                  child: const Icon(
+                    Icons.check,
+                    color: AppColors.textOnPrimary,
+                    size: 12,
+                  ),
                 ),
               ),
           ],

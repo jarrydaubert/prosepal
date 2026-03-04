@@ -116,6 +116,25 @@ open ios/Runner.xcworkspace
 | Edge Function: exchange-apple-token | Edge Functions | ✅ | `https://mwoxtqxzunsjmbdqezif.supabase.co/functions/v1/exchange-apple-token` (3 deployments) |
 | Leaked password protection | Authentication > Sign In / Providers > Email | N/A | Not applicable once email auth is disabled |
 
+#### Supabase Social-Only Auth Evidence (Owner-Run)
+
+Record evidence here whenever auth provider settings are changed or re-verified:
+
+- [ ] `Auth > Providers > Email` is disabled in production.
+- [ ] `Auth > Providers > Google` is enabled and credentials validate.
+- [ ] `Auth > Providers > Apple` is enabled and credentials validate.
+- [ ] `Auth > URL Configuration` includes only approved production callback URLs.
+- [ ] Evidence screenshots captured for Providers page + URL Configuration page.
+- [ ] Verification date and owner recorded below.
+
+| Field | Value |
+|------|-------|
+| Verified by | |
+| Verified at (UTC) | |
+| Provider screenshot path | |
+| URL config screenshot path | |
+| Notes | |
+
 ### RevenueCat ✅ VERIFIED 2026-01-10
 
 **Dashboard:** https://app.revenuecat.com/projects/a8bf92d5/apps

@@ -81,7 +81,7 @@ void main() {
       await tester.pumpWidget(createTestableHistoryScreen());
       await tester.pumpAndSettle();
 
-      expect(find.byIcon(Icons.arrow_back), findsOneWidget);
+      expect(find.byTooltip('Back'), findsOneWidget);
     });
   });
 
@@ -404,7 +404,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Verify back button exists
-      expect(find.byIcon(Icons.arrow_back), findsOneWidget);
+      expect(find.byTooltip('Back'), findsOneWidget);
 
       // Widget tree should be stable
       expect(find.byType(MaterialApp), findsOneWidget);

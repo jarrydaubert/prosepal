@@ -45,12 +45,12 @@ class InitErrorScreen extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
-              Text(
+              const Text(
                 "We couldn't connect to our services. "
                 'Please check your internet connection and try again.',
                 style: TextStyle(
                   fontSize: 16,
-                  color: Colors.grey[600],
+                  color: AppColors.textSecondary,
                   height: 1.5,
                 ),
                 textAlign: TextAlign.center,
@@ -59,14 +59,14 @@ class InitErrorScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.grey[100],
+                  color: AppColors.surfaceLightMuted,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
                   errorMessage,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 12,
-                    color: Colors.grey[700],
+                    color: AppColors.textOnLightSecondary,
                     fontFamily: 'monospace',
                   ),
                   textAlign: TextAlign.center,
@@ -79,7 +79,7 @@ class InitErrorScreen extends StatelessWidget {
                   onPressed: onRetry,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
+                    foregroundColor: AppColors.textOnPrimary,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),

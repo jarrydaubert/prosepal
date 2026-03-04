@@ -132,7 +132,7 @@ class _LockScreenState extends State<LockScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    backgroundColor: Colors.white,
+    backgroundColor: AppColors.background,
     body: SafeArea(
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.screenPadding),
@@ -197,7 +197,7 @@ class _LockScreenState extends State<LockScreen> {
                 onPressed: _isAuthenticating ? null : _authenticate,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
+                  foregroundColor: AppColors.textOnPrimary,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(
                       AppSpacing.radiusMedium,
@@ -210,7 +210,7 @@ class _LockScreenState extends State<LockScreen> {
                         height: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          color: Colors.white,
+                          color: AppColors.textOnPrimary,
                         ),
                       )
                     : Icon(

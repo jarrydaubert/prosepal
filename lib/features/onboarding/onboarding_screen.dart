@@ -15,11 +15,13 @@ class OnboardingPageData {
     required this.emoji,
     required this.title,
     required this.subtitle,
+    this.illustrationAssetPath,
   });
 
   final String emoji;
   final String title;
   final String subtitle;
+  final String? illustrationAssetPath;
 }
 
 /// Onboarding content - value-focused copy with emotional benefits
@@ -29,17 +31,20 @@ const _onboardingPages = [
     title: 'The Right Words,\nRight Now',
     subtitle:
         'Stop staring at blank cards. Get the perfect message in 30 seconds.',
+    illustrationAssetPath: 'assets/images/onboarding/slide_1.png',
   ),
   OnboardingPageData(
     emoji: '⚡',
     title: 'Pick. Tap.\nDone.',
     subtitle:
         'Choose your occasion, add a personal touch, and get 3 heartfelt messages instantly.',
+    illustrationAssetPath: 'assets/images/onboarding/slide_2.png',
   ),
   OnboardingPageData(
     emoji: '🎁',
     title: 'Try it Free',
     subtitle: 'No sign-up, no credit card. Just great messages.',
+    illustrationAssetPath: 'assets/images/onboarding/slide_3.png',
   ),
 ];
 
@@ -116,109 +121,177 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Top bar with progress (skip button removed - onboarding is init cover)
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.screenPadding,
-                vertical: AppSpacing.sm,
-              ),
-              child: Semantics(
-                label:
-                    'Onboarding progress: step ${_currentPage + 1} of ${_onboardingPages.length}',
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: TweenAnimationBuilder<double>(
-                    tween: Tween(
-                      begin: 0,
-                      end: (_currentPage + 1) / _onboardingPages.length,
-                    ),
-                    duration: const Duration(milliseconds: 200),
-                    curve: Curves.easeOut,
-                    builder: (context, value, _) => LinearProgressIndicator(
-                      value: value,
-                      backgroundColor: AppColors.primaryLight,
-                      valueColor: const AlwaysStoppedAnimation(
-                        AppColors.primary,
+      body: Stack(
+        children: [
+          const Positioned.fill(child: _OnboardingBackground()),
+          SafeArea(
+            child: Column(
+              children: [
+                // Top bar with progress (skip button removed - onboarding is init cover)
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.screenPadding,
+                    vertical: AppSpacing.sm,
+                  ),
+                  child: Semantics(
+                    label:
+                        'Onboarding progress: step ${_currentPage + 1} of ${_onboardingPages.length}',
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: TweenAnimationBuilder<double>(
+                        tween: Tween(
+                          begin: 0,
+                          end: (_currentPage + 1) / _onboardingPages.length,
+                        ),
+                        duration: const Duration(milliseconds: 200),
+                        curve: Curves.easeOut,
+                        builder: (context, value, _) => LinearProgressIndicator(
+                          value: value,
+                          backgroundColor: AppColors.primaryLight,
+                          valueColor: const AlwaysStoppedAnimation(
+                            AppColors.primary,
+                          ),
+                          minHeight: 4,
+                        ),
                       ),
-                      minHeight: 4,
                     ),
                   ),
                 ),
-              ),
-            ),
-            // Page content
-            Expanded(
-              child: PageView.builder(
-                controller: _pageController,
-                itemCount: _onboardingPages.length,
-                onPageChanged: (index) {
-                  setState(() => _currentPage = index);
-                  Log.event('onboarding_slide_viewed', {'slide': index + 1});
-                },
-                itemBuilder: (context, index) {
-                  final page = _onboardingPages[index];
-                  return _OnboardingPageWidget(
-                    key: ValueKey('page_$index'),
-                    page: page,
-                    pageNumber: index + 1,
-                    totalPages: _onboardingPages.length,
-                  );
-                },
-              ),
-            ),
-            // Page indicators and button
-            Padding(
-              padding: const EdgeInsets.all(AppSpacing.screenPadding),
-              child: Column(
-                children: [
-                  // Animated page indicators
-                  Builder(
-                    builder: (context) {
-                      final reduceMotion = MediaQuery.of(
-                        context,
-                      ).disableAnimations;
-                      return Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: List.generate(
-                          _onboardingPages.length,
-                          (index) => AnimatedContainer(
-                            duration: reduceMotion
-                                ? Duration.zero
-                                : const Duration(milliseconds: 300),
-                            margin: const EdgeInsets.symmetric(horizontal: 4),
-                            width: _currentPage == index ? 30 : 10,
-                            height: 10,
-                            decoration: BoxDecoration(
-                              color: _currentPage == index
-                                  ? AppColors.primary
-                                  : AppColors.primaryLight,
-                              borderRadius: BorderRadius.circular(5),
-                            ),
-                          ),
-                        ),
+                // Page content
+                Expanded(
+                  child: PageView.builder(
+                    controller: _pageController,
+                    itemCount: _onboardingPages.length,
+                    onPageChanged: (index) {
+                      setState(() => _currentPage = index);
+                      Log.event('onboarding_slide_viewed', {
+                        'slide': index + 1,
+                      });
+                    },
+                    itemBuilder: (context, index) {
+                      final page = _onboardingPages[index];
+                      return _OnboardingPageWidget(
+                        key: ValueKey('page_$index'),
+                        page: page,
+                        pageNumber: index + 1,
+                        totalPages: _onboardingPages.length,
                       );
                     },
                   ),
-                  const SizedBox(height: AppSpacing.xl),
-                  // Action button with scale animation
-                  // On last page, wait for services to initialize before allowing "Get Started"
-                  _GetStartedButton(
-                    isLastPage: isLastPage,
-                    onContinue: _nextPage,
-                    onGetStarted: _completeOnboarding,
+                ),
+                // Page indicators and button
+                Padding(
+                  padding: const EdgeInsets.all(AppSpacing.screenPadding),
+                  child: Column(
+                    children: [
+                      // Animated page indicators
+                      Builder(
+                        builder: (context) {
+                          final reduceMotion = MediaQuery.of(
+                            context,
+                          ).disableAnimations;
+                          return Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: List.generate(
+                              _onboardingPages.length,
+                              (index) => AnimatedContainer(
+                                duration: reduceMotion
+                                    ? Duration.zero
+                                    : const Duration(milliseconds: 300),
+                                margin: const EdgeInsets.symmetric(
+                                  horizontal: 4,
+                                ),
+                                width: _currentPage == index ? 30 : 10,
+                                height: 10,
+                                decoration: BoxDecoration(
+                                  color: _currentPage == index
+                                      ? AppColors.primary
+                                      : AppColors.primaryLight,
+                                  borderRadius: BorderRadius.circular(5),
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: AppSpacing.xl),
+                      // Action button with scale animation
+                      // On last page, wait for services to initialize before allowing "Get Started"
+                      _GetStartedButton(
+                        isLastPage: isLastPage,
+                        onContinue: _nextPage,
+                        onGetStarted: _completeOnboarding,
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                    ],
                   ),
-                  const SizedBox(height: AppSpacing.md),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
+}
+
+class _OnboardingBackground extends StatelessWidget {
+  const _OnboardingBackground();
+
+  @override
+  Widget build(BuildContext context) => Stack(
+    children: [
+      const DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [AppColors.bgDark, AppColors.surface, AppColors.bgDeep],
+            stops: [0.0, 0.5, 1.0],
+          ),
+        ),
+        child: SizedBox.expand(),
+      ),
+      Positioned(
+        top: -140,
+        left: -90,
+        child: _GlowOrb(
+          size: 320,
+          color: AppColors.primary.withValues(alpha: 0.22),
+        ),
+      ),
+      Positioned(
+        bottom: -180,
+        right: -110,
+        child: _GlowOrb(
+          size: 360,
+          color: AppColors.primary.withValues(alpha: 0.16),
+        ),
+      ),
+    ],
+  );
+}
+
+class _GlowOrb extends StatelessWidget {
+  const _GlowOrb({required this.size, required this.color});
+
+  final double size;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) => IgnorePointer(
+    child: Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: RadialGradient(
+          colors: [color, color.withValues(alpha: 0)],
+          stops: const [0.0, 1.0],
+        ),
+      ),
+    ),
+  );
 }
 
 /// Get Started button that watches init status on last page.
@@ -254,7 +327,7 @@ class _GetStartedButton extends ConsumerWidget {
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
                   valueColor: AlwaysStoppedAnimation(
-                    Colors.white.withValues(alpha: 0.8),
+                    AppColors.textOnPrimary.withValues(alpha: 0.8),
                   ),
                 ),
               ),
@@ -264,7 +337,7 @@ class _GetStartedButton extends ConsumerWidget {
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                  color: AppColors.textOnPrimary,
                 ),
               ),
             ],
@@ -280,7 +353,7 @@ class _GetStartedButton extends ConsumerWidget {
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: AppColors.textOnPrimary,
           ),
         ),
       );
@@ -294,7 +367,7 @@ class _GetStartedButton extends ConsumerWidget {
         style: TextStyle(
           fontSize: 18,
           fontWeight: FontWeight.bold,
-          color: Colors.white,
+          color: AppColors.textOnPrimary,
         ),
       ),
     );
@@ -449,10 +522,27 @@ class _OnboardingPageWidget extends StatelessWidget {
           borderRadius: BorderRadius.circular(32),
           border: Border.all(color: AppColors.primary, width: 4),
         ),
-        child: Center(
-          child: Text(page.emoji, style: TextStyle(fontSize: emojiSize)),
-        ),
+        child: Center(child: _buildHeroVisual(containerSize, emojiSize)),
       );
+
+  Widget _buildHeroVisual(double containerSize, double emojiSize) {
+    final path = page.illustrationAssetPath;
+    if (path == null) {
+      return Text(page.emoji, style: TextStyle(fontSize: emojiSize));
+    }
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(26),
+      child: Image.asset(
+        path,
+        width: containerSize - 24,
+        height: containerSize - 24,
+        fit: BoxFit.cover,
+        errorBuilder: (_, _, _) =>
+            Text(page.emoji, style: TextStyle(fontSize: emojiSize)),
+      ),
+    );
+  }
 
   /// No animation - instant display
   Widget _buildTitle(double titleSize) => Text(
@@ -471,7 +561,7 @@ class _OnboardingPageWidget extends StatelessWidget {
     textAlign: TextAlign.center,
     style: TextStyle(
       fontSize: subtitleSize,
-      color: Colors.grey[700],
+      color: AppColors.textPrimary.withValues(alpha: 0.72),
       height: 1.5,
     ),
   );

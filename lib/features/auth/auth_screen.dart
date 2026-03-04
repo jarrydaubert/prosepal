@@ -176,7 +176,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       const SnackBar(
         content: Row(
           children: [
-            Icon(Icons.check_circle, color: Colors.white, size: 20),
+            Icon(Icons.check_circle, color: AppColors.textOnPrimary, size: 20),
             SizedBox(width: 8),
             Text("You're all set! Start creating messages."),
           ],
@@ -321,21 +321,25 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                       children: [
                         SizedBox(height: topSpacerHeight),
 
-                        // App Logo with bold border container
+                        // App logo with clean edge (avoid double-border effect)
                         Container(
                               width: logoSize,
                               height: logoSize,
                               decoration: BoxDecoration(
-                                color: AppColors.primaryLight,
-                                borderRadius: BorderRadius.circular(40),
-                                border: Border.all(
-                                  color: AppColors.primary,
-                                  width: 4,
-                                ),
+                                borderRadius: BorderRadius.circular(30),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: AppColors.primary.withValues(
+                                      alpha: 0.22,
+                                    ),
+                                    blurRadius: 18,
+                                    offset: const Offset(0, 6),
+                                  ),
+                                ],
                               ),
                               child: ClipRRect(
-                                borderRadius: BorderRadius.circular(36),
-                                child: AppLogo(size: logoSize - 20),
+                                borderRadius: BorderRadius.circular(30),
+                                child: AppLogo(size: logoSize),
                               ),
                             )
                             .animate(key: const ValueKey('logo'))
@@ -479,6 +483,10 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                                     child: SizedBox(
                                       height: 56,
                                       child: SignInWithAppleButton(
+                                        style: SignInWithAppleButtonStyle.white,
+                                        borderRadius: const BorderRadius.all(
+                                          Radius.circular(16),
+                                        ),
                                         onPressed: _signInWithApple,
                                       ),
                                     ),
@@ -600,12 +608,12 @@ class _AuthButtonState extends State<_AuthButton> {
 
     if (isPrimary) {
       backgroundColor = AppColors.primary;
-      textColor = Colors.white;
+      textColor = AppColors.textOnPrimary;
     } else {
       // Google and Email: consistent white bg with subtle border
-      backgroundColor = Colors.white;
-      textColor = const Color(0xFF1F1F1F);
-      border = Border.all(color: Colors.grey.shade300, width: 1.5);
+      backgroundColor = AppColors.surfaceLight;
+      textColor = AppColors.textOnLight;
+      border = Border.all(color: AppColors.borderOnLight, width: 1.5);
     }
 
     return GestureDetector(
