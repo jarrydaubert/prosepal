@@ -505,13 +505,8 @@ class _UsageIndicatorShimmer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) =>
-      Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: AppColors.surfaceLight,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.borderOnLight, width: 2),
-            ),
+      AppSurfaceCard(
+            borderWidth: AppSurfaceTokens.emphasizedBorderWidth,
             child: Row(
               children: [
                 // Circle placeholder

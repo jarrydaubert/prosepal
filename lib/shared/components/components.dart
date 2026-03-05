@@ -2,6 +2,7 @@
 export 'app_back_button.dart';
 export 'app_button.dart';
 export 'app_logo.dart';
+export 'app_surface_card.dart';
 export 'generation_loading_overlay.dart';
 export 'section_header.dart';
 export 'settings_tile.dart';

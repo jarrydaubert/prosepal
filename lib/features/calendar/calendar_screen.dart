@@ -9,6 +9,7 @@ import '../../core/services/log_service.dart';
 import '../../shared/components/app_back_button.dart';
 import '../../shared/components/app_button.dart';
 import '../../shared/components/app_emoji.dart';
+import '../../shared/components/app_surface_card.dart';
 import '../../shared/theme/app_colors.dart';
 import 'add_occasion_sheet.dart';
 
@@ -284,23 +285,21 @@ class _OccasionCard extends StatelessWidget {
 
     return GestureDetector(
       onTap: onTap,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: AppColors.surfaceLight,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isUrgent ? AppColors.warning : AppColors.primary,
-            width: isUrgent ? 3 : 2,
-          ),
-          boxShadow: [
-            if (isUrgent)
-              BoxShadow(
-                color: AppColors.warning.withValues(alpha: 0.2),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-          ],
-        ),
+      child: AppSurfaceCard(
+        padding: EdgeInsets.zero,
+        borderColor: isUrgent ? AppColors.warning : AppColors.primary,
+        borderWidth: isUrgent
+            ? AppSurfaceTokens.strongBorderWidth
+            : AppSurfaceTokens.emphasizedBorderWidth,
+        boxShadow: isUrgent
+            ? [
+                BoxShadow(
+                  color: AppColors.warning.withValues(alpha: 0.2),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ]
+            : null,
         child: Column(
           children: [
             // Header

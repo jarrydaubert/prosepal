@@ -22,16 +22,15 @@ Process items in this order unless an explicit owner override is recorded in rel
 9. `P1-48` Startup phase telemetry and budget visibility
 10. `P1-40` Startup/router timeout guard under network faults
 11. `P1-52` Biometric lifecycle debounce + single-flight guard
-12. `P1-50` Shared surface/card component consolidation
-13. `VNEXT-11` Canonical identity mapping
-14. `VNEXT-12` UI parity with live baseline
-15. `VNEXT-13` Device abuse-control compliance decision
-16. `P0-05` Billing budget alert controls
-17. `P0-04` Auth loading spinner after OAuth sheet
-18. `P0-01` Move Google setup to business account
-19. `P0-02` Keep redesign out of vNext scope
-20. `P1-47` Server-side AI gateway rollout (post-launch trigger)
-21. `P2-13` Startup orchestration refactor (post-launch)
+12. `VNEXT-11` Canonical identity mapping
+13. `VNEXT-12` UI parity with live baseline
+14. `VNEXT-13` Device abuse-control compliance decision
+15. `P0-05` Billing budget alert controls
+16. `P0-04` Auth loading spinner after OAuth sheet
+17. `P0-01` Move Google setup to business account
+18. `P0-02` Keep redesign out of vNext scope
+19. `P1-47` Server-side AI gateway rollout (post-launch trigger)
+20. `P2-13` Startup orchestration refactor (post-launch)
 
 ## P0 - Launch Blockers
 
@@ -57,7 +56,6 @@ Process items in this order unless an explicit owner override is recorded in rel
 | ID | Item | Definition of Done |
 |----|------|--------------------|
 | `P1-48` | Startup phase telemetry and budget visibility | Existing startup flow emits structured phase telemetry (`init`, `identity`, `entitlements`, `routing`) with per-phase duration, timeout/fallback reason, and final terminal route outcome. Logs are queryable in Crashlytics/analytics, phase budgets are documented in `docs/DEVOPS.md`, and fault-injection runs prove telemetry captures degraded startup paths deterministically. |
-| `P1-50` | Shared surface/card component consolidation | Core light-surface cards (history item, settings tiles/cards, calendar cards, results cards, free-usage card) use shared primitives for padding, border, radius, and text color tokens. Ad-hoc duplicated styling is removed and widget tests cover representative variants to prevent drift. |
 | `P1-43` | Firebase AI client-block regression hardening | Real-device AI generation succeeds on wired iOS and Android using the current Firebase AI + App Check setup, and failure classification distinguishes client/app-block configuration errors from true content-safety blocks. `docs/DEVOPS.md` includes a deterministic checklist for debugging `client application <empty> are blocked` responses. |
 | `P1-47` | Server-side AI gateway rollout (post-launch trigger) | A documented trigger policy exists for enabling a server-side AI gateway (abuse threshold, model-policy requirement, or provider-failover need). A non-production spike path exists behind a disabled feature flag, with parity tests proving no user-visible regression when enabled in staging. Production default remains client-direct until trigger criteria are met and approved. |
 | `P1-24` | Deterministic integration journey assertions | Journey tests in `integration_test/journeys/` stop using optional `if (exists(...))` branches for core checkpoints (auth entry, upgrade path, generation result, settings navigation) and fail explicitly when expected UI state is missing. Updated journeys run green in deterministic local/device execution and include clear assertion reasons. |

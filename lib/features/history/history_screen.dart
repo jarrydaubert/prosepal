@@ -553,12 +553,11 @@ class _HistoryCardState extends State<_HistoryCard> {
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: AppColors.surfaceLight,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: occasion.borderColor, width: 2),
-        ),
+      child: AppSurfaceCard(
+        padding: EdgeInsets.zero,
+        clipBehavior: Clip.antiAlias,
+        borderColor: occasion.borderColor,
+        borderWidth: AppSurfaceTokens.emphasizedBorderWidth,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -722,14 +721,11 @@ class _MessageItem extends StatelessWidget {
   final VoidCallback onShare;
 
   @override
-  Widget build(BuildContext context) => Container(
+  Widget build(BuildContext context) => AppSurfaceCard(
     margin: const EdgeInsets.only(bottom: 12),
-    padding: const EdgeInsets.all(12),
-    decoration: BoxDecoration(
-      color: AppColors.background,
-      borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: AppColors.borderOnLight),
-    ),
+    padding: AppSurfaceTokens.compactPadding,
+    backgroundColor: AppColors.background,
+    borderRadius: 12,
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

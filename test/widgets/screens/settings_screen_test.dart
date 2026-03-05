@@ -429,15 +429,29 @@ void main() {
         await tester.pumpWidget(buildTestWidget(totalGenerated: 42));
         await tester.pumpAndSettle();
 
+        await tester.scrollUntilVisible(
+          find.text('YOUR STATS'),
+          100,
+          scrollable: find.byType(Scrollable).first,
+        );
+        await tester.pumpAndSettle();
+
         expect(find.text('YOUR STATS'), findsOneWidget);
-        expect(find.text('42 messages generated'), findsOneWidget);
+        expect(find.textContaining('42 messages generated'), findsOneWidget);
       });
 
       testWidgetsWithPumps('shows 0 for new users', (tester) async {
         await tester.pumpWidget(buildTestWidget());
         await tester.pumpAndSettle();
 
-        expect(find.text('0 messages generated'), findsOneWidget);
+        await tester.scrollUntilVisible(
+          find.text('YOUR STATS'),
+          100,
+          scrollable: find.byType(Scrollable).first,
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.textContaining('0 messages generated'), findsOneWidget);
       });
     });
 

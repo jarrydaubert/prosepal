@@ -16,6 +16,7 @@ import '../../core/services/log_service.dart';
 import '../../core/services/usage_service.dart';
 import '../../shared/components/app_button.dart';
 import '../../shared/components/app_emoji.dart';
+import '../../shared/components/app_surface_card.dart';
 import '../../shared/components/generation_loading_overlay.dart';
 import '../../shared/theme/app_colors.dart';
 import '../paywall/paywall_sheet.dart';
@@ -601,13 +602,11 @@ class _MessageCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Semantics(
     label: 'Message option ${index + 1}',
-    child: Container(
+    child: AppSurfaceCard(
+      padding: EdgeInsets.zero,
       clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        color: AppColors.surfaceLight,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.primary, width: 2),
-      ),
+      borderColor: AppColors.primary,
+      borderWidth: AppSurfaceTokens.emphasizedBorderWidth,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

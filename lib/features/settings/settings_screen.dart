@@ -880,16 +880,9 @@ class _AccountCard extends StatelessWidget {
   Widget build(BuildContext context) => Semantics(
     label:
         'Account: ${userName ?? userEmail ?? "User"}${isPro ? ", Pro subscriber" : ""}',
-    child: Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceLight,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isPro ? AppColors.proGold : AppColors.primary,
-          width: 3,
-        ),
-      ),
+    child: AppSurfaceCard(
+      borderColor: isPro ? AppColors.proGold : AppColors.primary,
+      borderWidth: AppSurfaceTokens.strongBorderWidth,
       child: Row(
         children: [
           // Avatar
@@ -1018,13 +1011,10 @@ class _StatsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Semantics(
     label: '$totalGenerated messages generated all time',
-    child: Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.primaryLight,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.primary, width: 3),
-      ),
+    child: AppSurfaceCard(
+      backgroundColor: AppColors.primaryLight,
+      borderColor: AppColors.primary,
+      borderWidth: AppSurfaceTokens.strongBorderWidth,
       child: Row(
         children: [
           Container(
