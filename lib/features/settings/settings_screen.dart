@@ -44,7 +44,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _biometricsSupported = false;
   bool _biometricsEnabled = false;
   bool _isBiometricToggleInFlight = false;
-  DateTime? _lastBiometricToggleAt;
+  DateTime? _lastBiometricToggleCompletedAt;
   String _biometricType = 'Biometrics';
   bool _isRestoringPurchases = false;
   String _appVersion = '';
@@ -153,8 +153,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     }
     if (value == _biometricsEnabled) return;
 
-    final now = DateTime.now();
-    final lastToggleAt = _lastBiometricToggleAt;
+    final now = DateTime.now().toUtc();
+    final lastToggleAt = _lastBiometricToggleCompletedAt;
     if (lastToggleAt != null) {
       final elapsed = now.difference(lastToggleAt);
       if (elapsed < _biometricToggleDebounce) {
@@ -164,7 +164,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         return;
       }
     }
-    _lastBiometricToggleAt = now;
 
     setState(() => _isBiometricToggleInFlight = true);
 
@@ -184,6 +183,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     } on Exception catch (e) {
       Log.warning('Biometric toggle failed', {'error': '$e'});
     } finally {
+      _lastBiometricToggleCompletedAt = DateTime.now().toUtc();
       if (mounted) {
         setState(() => _isBiometricToggleInFlight = false);
       }

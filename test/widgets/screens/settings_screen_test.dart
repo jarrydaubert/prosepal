@@ -388,6 +388,40 @@ void main() {
           expect(switchWidget.value, isTrue);
         },
       );
+
+      testWidgetsWithPumps(
+        'debounces immediate retry after a long biometric prompt completes',
+        (tester) async {
+          mockBiometric.setAuthenticateDelay(
+            const Duration(milliseconds: 2200),
+          );
+
+          await tester.pumpWidget(buildTestWidget(email: 'test@example.com'));
+          await tester.pumpAndSettle();
+
+          final switchFinder = find.byType(Switch);
+          expect(switchFinder, findsOneWidget);
+
+          await tester.tap(switchFinder);
+          await tester.pump(const Duration(milliseconds: 2250));
+          await tester.pumpAndSettle();
+
+          final switchAfterEnable = tester.widget<Switch>(switchFinder);
+          expect(switchAfterEnable.value, isTrue);
+          expect(mockBiometric.authenticateCallCount, 1);
+          expect(mockBiometric.setEnabledCallCount, 1);
+
+          // Immediate retry should be blocked by completion-based debounce.
+          await tester.tap(switchFinder);
+          await tester.pump(const Duration(milliseconds: 50));
+          await tester.pumpAndSettle();
+
+          final switchAfterRetry = tester.widget<Switch>(switchFinder);
+          expect(switchAfterRetry.value, isTrue);
+          expect(mockBiometric.authenticateCallCount, 1);
+          expect(mockBiometric.setEnabledCallCount, 1);
+        },
+      );
     });
 
     group('Stats Section', () {

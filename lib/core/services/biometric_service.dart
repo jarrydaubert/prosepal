@@ -46,7 +46,6 @@ class BiometricService implements IBiometricService {
   static const _authenticationDebounce = Duration(seconds: 2);
   Future<BiometricResult>? _activeAuthentication;
   DateTime? _lastAuthenticationCompletedAt;
-  BiometricResult? _lastAuthenticationResult;
 
   @override
   Future<bool> get isSupported async {
@@ -129,7 +128,6 @@ class BiometricService implements IBiometricService {
   }) async {
     BiometricResult trackResult(BiometricResult result) {
       _lastAuthenticationCompletedAt = DateTime.now().toUtc();
-      _lastAuthenticationResult = result;
       return result;
     }
 
@@ -145,11 +143,10 @@ class BiometricService implements IBiometricService {
         Log.info('Skip biometric auth - debounced', {
           'elapsedMs': elapsed.inMilliseconds,
         });
-        return _lastAuthenticationResult ??
-            const BiometricResult(
-              success: false,
-              error: BiometricError.cancelled,
-            );
+        return const BiometricResult(
+          success: false,
+          error: BiometricError.cancelled,
+        );
       }
     }
 
@@ -286,6 +283,5 @@ class BiometricService implements IBiometricService {
   void resetAuthStateForTests() {
     _activeAuthentication = null;
     _lastAuthenticationCompletedAt = null;
-    _lastAuthenticationResult = null;
   }
 }

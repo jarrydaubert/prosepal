@@ -134,7 +134,12 @@ void main() {
         final immediateRetry = await BiometricService.instance.authenticate();
 
         expect(first.success, isTrue);
-        expect(immediateRetry.success, isTrue);
+        expect(
+          immediateRetry.success,
+          isFalse,
+          reason: 'debounced calls must not inherit prior auth success',
+        );
+        expect(immediateRetry.error, BiometricError.cancelled);
         expect(
           authenticateCalls,
           1,
