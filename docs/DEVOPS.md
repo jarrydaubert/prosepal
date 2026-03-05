@@ -144,6 +144,7 @@ Steps:
 - Service coverage gate.
 - Debug bundle build sanity check.
 - Non-blocking visual regression companion job runs `./scripts/test_visual_regression.sh` and uploads `visual-regression-diffs` artifact on any diff/failure.
+- Non-blocking integration smoke companion job runs `flutter test -d flutter-tester integration_test/smoke_test.dart` and uploads `integration-smoke-artifacts`.
 
 Free-tier optimization:
 - Docs-only changes use a fast path that skips Flutter install/build/test while still running as a required check.
@@ -160,6 +161,23 @@ Policy:
 - Uploads `visual-regression-diffs` artifact (from `test/widgets/goldens/failures/**`) on every run.
 - Publishes `GITHUB_STEP_SUMMARY` guidance with local baseline update command:
   - `./scripts/test_visual_regression.sh --update`
+
+### Integration Smoke Companion (`.github/workflows/ci.yml` → `Integration Smoke (non-blocking)`)
+
+Purpose:
+- Run `integration_test/smoke_test.dart` in CI on a deterministic non-blocking target and publish evidence artifacts.
+
+Policy:
+- Runs only when CI scope is not docs-only.
+- Uses `flutter test -d flutter-tester integration_test/smoke_test.dart`.
+- Uploads `integration-smoke-artifacts` containing:
+  - `artifacts/integration-smoke/smoke.log`
+  - `integration_test/screenshots/**` (when produced)
+- Publishes `GITHUB_STEP_SUMMARY` with pass/fail outcome and target details.
+
+Pass/fail semantics:
+- This job is non-blocking (`continue-on-error: true`) so it does not block merge.
+- Any failure must be triaged and either fixed immediately or tracked in `docs/BACKLOG.md` with deterministic DoD before release cut.
 
 ### CodeQL (`.github/workflows/codeql.yml`)
 

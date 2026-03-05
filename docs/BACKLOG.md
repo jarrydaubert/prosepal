@@ -14,26 +14,25 @@ Process items in this order unless an explicit owner override is recorded in rel
 1. `P0-08` Design token consistency and contrast hardening
 2. `P0-09` iOS/Android launch and auth visual parity
 3. `P0-10` CI-enforced secret/config release guardrails
-4. `P1-25` CI coverage for integration + visual QA gates
-5. `P0-07` Next iOS release readiness checklist
-6. `VNEXT-08` Wired physical-device validation gates
-7. `VNEXT-09` iOS script-only archive validation
-8. `VNEXT-10` AI cost/abuse controls
-9. `P1-43` Firebase AI client-block regression hardening
-10. `P1-48` Startup phase telemetry and budget visibility
-11. `P1-40` Startup/router timeout guard under network faults
-12. `P1-52` Biometric lifecycle debounce + single-flight guard
-13. `P1-02` Auth-provider telemetry quality
-14. `P1-50` Shared surface/card component consolidation
-15. `VNEXT-11` Canonical identity mapping
-16. `VNEXT-12` UI parity with live baseline
-17. `VNEXT-13` Device abuse-control compliance decision
-18. `P0-05` Billing budget alert controls
-19. `P0-04` Auth loading spinner after OAuth sheet
-20. `P0-01` Move Google setup to business account
-21. `P0-02` Keep redesign out of vNext scope
-22. `P1-47` Server-side AI gateway rollout (post-launch trigger)
-23. `P2-13` Startup orchestration refactor (post-launch)
+4. `P0-07` Next iOS release readiness checklist
+5. `VNEXT-08` Wired physical-device validation gates
+6. `VNEXT-09` iOS script-only archive validation
+7. `VNEXT-10` AI cost/abuse controls
+8. `P1-43` Firebase AI client-block regression hardening
+9. `P1-48` Startup phase telemetry and budget visibility
+10. `P1-40` Startup/router timeout guard under network faults
+11. `P1-52` Biometric lifecycle debounce + single-flight guard
+12. `P1-02` Auth-provider telemetry quality
+13. `P1-50` Shared surface/card component consolidation
+14. `VNEXT-11` Canonical identity mapping
+15. `VNEXT-12` UI parity with live baseline
+16. `VNEXT-13` Device abuse-control compliance decision
+17. `P0-05` Billing budget alert controls
+18. `P0-04` Auth loading spinner after OAuth sheet
+19. `P0-01` Move Google setup to business account
+20. `P0-02` Keep redesign out of vNext scope
+21. `P1-47` Server-side AI gateway rollout (post-launch trigger)
+22. `P2-13` Startup orchestration refactor (post-launch)
 
 ## P0 - Launch Blockers
 
@@ -78,7 +77,6 @@ Process items in this order unless an explicit owner override is recorded in rel
 | `P1-27` | QA code documentation standards (Dartdoc/JSDoc) | Public QA-facing helpers and APIs have accurate documentation comments: Dartdoc on shared test helpers/mocks/services and JSDoc on JavaScript/TypeScript automation code in repo scope. Comments describe purpose, inputs/outputs, and failure modes; stale examples are removed; documentation quality is verified in CI (lint/check step) and reflected in `docs/DEVOPS.md`. |
 | `P1-44` | Full documentation walkthrough with repo owner | A full walkthrough of repo docs is completed with the repo owner: `README.md`, `docs/DEVOPS.md`, `docs/NEXT_RELEASE_BRIEF.md`, `docs/LAUNCH_CHECKLIST.md`, `docs/IDENTITY_MAPPING.md`, and `docs/BACKLOG.md`. All command snippets are verified runnable, stale references are removed, cross-links are valid, and any follow-up gaps are captured as explicit backlog items. |
 | `P1-29` | Test-doc reference accuracy cleanup | Test docs only reference existing test files and runnable commands. Remove stale path references (for example `test/features/settings/haiku_screen_test.dart` in `docs/HAIKU_EASTER_EGG.md`) and align command examples with current workflow gates. |
-| `P1-25` | CI coverage for integration + visual QA gates | CI includes an explicit non-blocking job that runs `integration_test/smoke_test.dart` on a device/emulator target and publishes logs/screenshots artifacts, and a visual regression job running `./scripts/test_visual_regression.sh` with artifact upload on diff. `docs/DEVOPS.md` is updated with trigger policy and pass/fail semantics. |
 | `P1-01` | Social-auth fallback UX | Social sign-in failures show deterministic user guidance, retry actions, and support path coverage in widget/integration tests. |
 | `P1-02` | Auth-provider telemetry quality | Auth analytics/crash logs include stable provider + outcome fields with no invalid parameter types and test coverage for key event paths. Diagnostic output explicitly distinguishes `last_sign_in_provider`, `linked_providers`, and current session source so linked-account scenarios (for example Apple account with Google sign-in event) are unambiguous. |
 | `P1-04` | Paywall decomposition | Paywall widget is split into maintainable sections/components with unchanged behavior and passing tests. |
