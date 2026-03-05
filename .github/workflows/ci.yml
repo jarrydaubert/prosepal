@@ -244,11 +244,20 @@ jobs:
 
       - name: Run integration smoke target
         id: smoke
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p artifacts/integration-smoke
-          flutter test -d flutter-tester integration_test/smoke_test.dart 2>&1 | tee artifacts/integration-smoke/smoke.log
+        uses: reactivecircus/android-emulator-runner@324029e2f414c084d8b15ba075288885e74aef9c
+        env:
+          INTEGRATION_CAPTURE_SCREENSHOTS: "true"
+        with:
+          api-level: 34
+          arch: x86_64
+          profile: pixel_6
+          disable-animations: true
+          ram-size: 2048M
+          script: |
+            set -euo pipefail
+            mkdir -p artifacts/integration-smoke
+            flutter devices
+            flutter test -d emulator-5554 integration_test/smoke_test.dart -r expanded 2>&1 | tee artifacts/integration-smoke/smoke.log
 
       - name: Upload integration smoke artifacts
         if: always()
@@ -273,6 +282,6 @@ jobs:
               echo "- Status: ⚠️ failed (non-blocking)"
               echo "- Artifacts: \`integration-smoke-artifacts\`"
             fi
-            echo "- Target: \`flutter-tester\`"
-            echo "- Command: \`flutter test -d flutter-tester integration_test/smoke_test.dart\`"
+            echo "- Target: Android emulator (API 34)"
+            echo "- Command: \`flutter test -d emulator-5554 integration_test/smoke_test.dart\`"
           } >> "$GITHUB_STEP_SUMMARY"

@@ -144,7 +144,7 @@ Steps:
 - Service coverage gate.
 - Debug bundle build sanity check.
 - Non-blocking visual regression companion job runs `./scripts/test_visual_regression.sh` and uploads `visual-regression-diffs` artifact on any diff/failure.
-- Non-blocking integration smoke companion job runs `flutter test -d flutter-tester integration_test/smoke_test.dart` and uploads `integration-smoke-artifacts`.
+- Non-blocking integration smoke companion job runs `integration_test/smoke_test.dart` on Android emulator and uploads `integration-smoke-artifacts`.
 
 Free-tier optimization:
 - Docs-only changes use a fast path that skips Flutter install/build/test while still running as a required check.
@@ -169,7 +169,9 @@ Purpose:
 
 Policy:
 - Runs only when CI scope is not docs-only.
-- Uses `flutter test -d flutter-tester integration_test/smoke_test.dart`.
+- Uses Android emulator target (API 34, x86_64) via pinned
+  `ReactiveCircus/android-emulator-runner`.
+- Runs `flutter test -d emulator-5554 integration_test/smoke_test.dart`.
 - Uploads `integration-smoke-artifacts` containing:
   - `artifacts/integration-smoke/smoke.log`
   - `integration_test/screenshots/**` (when produced)
