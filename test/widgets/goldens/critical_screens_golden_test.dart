@@ -34,7 +34,7 @@ void main() {
     if (Platform.isLinux && defaultGoldenComparator is LocalFileComparator) {
       final comparator = defaultGoldenComparator;
       goldenFileComparator = _TolerantGoldenFileComparator(
-        comparator.basedir,
+        comparator.basedir.resolve('critical_screens_golden_test.dart'),
         precisionTolerance: 0.012,
       );
     }
