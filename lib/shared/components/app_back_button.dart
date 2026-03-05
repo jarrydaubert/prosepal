@@ -12,24 +12,22 @@ class AppBackButton extends StatelessWidget {
   Widget build(BuildContext context) => Semantics(
     label: 'Back',
     button: true,
-    child: Material(
-      color: Colors.transparent,
-      child: InkResponse(
-        onTap: () {
+    child: SizedBox(
+      width: 40,
+      height: 40,
+      child: IconButton(
+        tooltip: 'Back',
+        padding: EdgeInsets.zero,
+        splashRadius: 18,
+        icon: const Icon(
+          Icons.chevron_left_rounded,
+          size: 24,
+          color: AppColors.textPrimary,
+        ),
+        onPressed: () {
           FocusManager.instance.primaryFocus?.unfocus();
           onPressed();
         },
-        radius: 20,
-        splashColor: AppColors.primary.withValues(alpha: 0.16),
-        highlightColor: Colors.transparent,
-        child: const Padding(
-          padding: EdgeInsets.all(8),
-          child: Icon(
-            Icons.chevron_left_rounded,
-            size: 28,
-            color: AppColors.textPrimary,
-          ),
-        ),
       ),
     ),
   );

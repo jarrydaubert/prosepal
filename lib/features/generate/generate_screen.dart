@@ -37,6 +37,9 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
   @override
   void initState() {
     super.initState();
+    // Entering generation flow should always clear home search state so users
+    // don't return to a stale filtered home list.
+    ref.read(occasionSearchProvider.notifier).state = '';
     // Attempt to restore form state after first frame
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _attemptRestoreFormState();

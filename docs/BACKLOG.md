@@ -7,6 +7,17 @@ Rules:
 - Every item must include a clear, testable Definition of Done (DoD).
 - When an item is complete, remove it from this file.
 
+## Global DoD Contract (Applies To Every Item)
+
+A backlog item is only considered complete when all conditions below are true:
+
+1. `Outcome delivered`: The row's feature/fix/docs scope is implemented exactly as written.
+2. `Deterministic validation passed`: Relevant validation commands pass with no manual interpretation required.
+3. `Evidence attached`: PR/release evidence includes concrete proof (logs, screenshots, CI run IDs, or artifact links) for the completed outcome.
+4. `Backlog hygiene`: The completed item is removed from this file in the same change set that provides outcome + validation + evidence.
+
+If any condition is missing, the item remains open.
+
 ## Release Priority Order (vNext)
 
 Process items in this order unless an explicit owner override is recorded in release planning.
@@ -38,7 +49,7 @@ Process items in this order unless an explicit owner override is recorded in rel
 |----|------|--------------------|
 | `P0-07` | Next iOS release readiness checklist | `docs/IOS_RELEASE_CHECKLIST.md` contains an explicit pre-release checklist and every line item is executed with evidence: version/build bump, `flutter analyze`, `flutter test`, `./scripts/test_critical_smoke.sh`, wired iOS smoke/journey run, scripted iOS archive success, Crashlytics dSYM upload verification, Firebase App Check + AI generation verification on physical iOS, RevenueCat entitlement/paywall verification, Supabase auth/provider verification, App Store Connect metadata/release notes/screenshots review, TestFlight sanity pass, git-history secret audit (`git log --all -- .env.local` + CI secret scan output), and rollback path confirmation with owner sign-off. |
 | `VNEXT-08` | Wired physical-device validation gates | Critical suite passes on one wired iOS and one wired Android physical device; release evidence bundle is captured and attached. |
-| `P0-08` | Design token consistency and contrast hardening | Core screens (`home`, `generate`, `results`, `history`, `settings`, `calendar`, `auth`, onboarding, paywall) use shared semantic tokens only (canonical palette: navy/slate backgrounds, coral actions, white/light surfaces) with no light-on-light or dark-on-dark regressions. Back navigation controls are visually consistent across screens, text-field prefix/suffix icon alignment is consistent, and text-entry surfaces provide deterministic keyboard-dismiss behavior (`done` action and/or explicit dismiss affordance). Golden + manual accessibility pass confirms WCAG AA for primary text on every core screen before RC cut. |
+| `P0-08` | Design token consistency and contrast hardening | Core screens (`home`, `generate`, `results`, `history`, `settings`, `calendar`, `auth`, onboarding, paywall) use shared semantic tokens only (canonical palette: navy/slate backgrounds, coral actions, white/light surfaces) with no light-on-light or dark-on-dark regressions. Back navigation controls are visually consistent across screens, text-field prefix/suffix icon alignment is consistent, and text-entry surfaces provide deterministic keyboard-dismiss behavior (`done` action and/or explicit dismiss affordance). DoD evidence requires: updated golden baseline for affected core screens, physical iOS + Android screenshots for each affected flow, and an explicit WCAG AA manual verification note for primary text before RC cut. |
 | `P0-09` | iOS/Android launch and auth visual parity | Cold-launch capture on physical iOS and Android shows matching launch background tone, no white/grey flash during transition to Flutter splash/auth, and consistent auth-screen logo/button contrast treatment. Evidence screenshots/videos are attached in release artifact bundle. |
 | `P0-10` | CI-enforced secret/config release guardrails | CI blocks release candidates on secret scanning or missing required runtime config gates: (1) secret scan (gitleaks/trufflehog) on full git history and working tree, (2) required `dart-define` preflight validation, (3) failure messaging links to exact remediation commands. `docs/DEVOPS.md` documents enforcement + rotation procedure. |
 | `P0-05` | Billing budget alert controls | Budget thresholds and notification channels are configured and verified through a dry-run alert path. |
