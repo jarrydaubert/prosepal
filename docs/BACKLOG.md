@@ -24,24 +24,23 @@ Process items in this order unless an explicit owner override is recorded in rel
 
 1. `P0-08` Design token consistency and contrast hardening
 2. `P0-09` iOS/Android launch and auth visual parity
-3. `P0-10` CI-enforced secret/config release guardrails
-4. `P0-07` Next iOS release readiness checklist
-5. `VNEXT-08` Wired physical-device validation gates
-6. `VNEXT-09` iOS script-only archive validation
-7. `VNEXT-10` AI cost/abuse controls
-8. `P1-43` Firebase AI client-block regression hardening
-9. `P1-48` Startup phase telemetry and budget visibility
-10. `P1-40` Startup/router timeout guard under network faults
-11. `P1-52` Biometric lifecycle debounce + single-flight guard
-12. `VNEXT-11` Canonical identity mapping
-13. `VNEXT-12` UI parity with live baseline
-14. `VNEXT-13` Device abuse-control compliance decision
-15. `P0-05` Billing budget alert controls
-16. `P0-04` Auth loading spinner after OAuth sheet
-17. `P0-01` Move Google setup to business account
-18. `P0-02` Keep redesign out of vNext scope
-19. `P1-47` Server-side AI gateway rollout (post-launch trigger)
-20. `P2-13` Startup orchestration refactor (post-launch)
+3. `P0-07` Next iOS release readiness checklist
+4. `VNEXT-08` Wired physical-device validation gates
+5. `VNEXT-09` iOS script-only archive validation
+6. `VNEXT-10` AI cost/abuse controls
+7. `P1-43` Firebase AI client-block regression hardening
+8. `P1-48` Startup phase telemetry and budget visibility
+9. `P1-40` Startup/router timeout guard under network faults
+10. `P1-52` Biometric lifecycle debounce + single-flight guard
+11. `VNEXT-11` Canonical identity mapping
+12. `VNEXT-12` UI parity with live baseline
+13. `VNEXT-13` Device abuse-control compliance decision
+14. `P0-05` Billing budget alert controls
+15. `P0-04` Auth loading spinner after OAuth sheet
+16. `P0-01` Move Google setup to business account
+17. `P0-02` Keep redesign out of vNext scope
+18. `P1-47` Server-side AI gateway rollout (post-launch trigger)
+19. `P2-13` Startup orchestration refactor (post-launch)
 
 ## P0 - Launch Blockers
 
@@ -51,7 +50,6 @@ Process items in this order unless an explicit owner override is recorded in rel
 | `VNEXT-08` | Wired physical-device validation gates | Critical suite passes on one wired iOS and one wired Android physical device; release evidence bundle is captured and attached. |
 | `P0-08` | Design token consistency and contrast hardening | Core screens (`home`, `generate`, `results`, `history`, `settings`, `calendar`, `auth`, onboarding, paywall) use shared semantic tokens only (canonical palette: navy/slate backgrounds, coral actions, white/light surfaces) with no light-on-light or dark-on-dark regressions. Back navigation controls are visually consistent across screens, text-field prefix/suffix icon alignment is consistent, and text-entry surfaces provide deterministic keyboard-dismiss behavior (`done` action and/or explicit dismiss affordance). DoD evidence requires: updated golden baseline for affected core screens, physical iOS + Android screenshots for each affected flow, and an explicit WCAG AA manual verification note for primary text before RC cut. |
 | `P0-09` | iOS/Android launch and auth visual parity | Cold-launch capture on physical iOS and Android shows matching launch background tone, no white/grey flash during transition to Flutter splash/auth, and consistent auth-screen logo/button contrast treatment. Evidence screenshots/videos are attached in release artifact bundle. |
-| `P0-10` | CI-enforced secret/config release guardrails | CI blocks release candidates on secret scanning or missing required runtime config gates: (1) secret scan (gitleaks/trufflehog) on full git history and working tree, (2) required `dart-define` preflight validation, (3) failure messaging links to exact remediation commands. `docs/DEVOPS.md` documents enforcement + rotation procedure. |
 | `P0-05` | Billing budget alert controls | Budget thresholds and notification channels are configured and verified through a dry-run alert path. |
 | `VNEXT-09` | iOS script-only archive validation | Release-candidate archive succeeds via scripted iOS build path and evidence confirms non-scripted archive paths are not used. |
 | `P0-04` | Auth loading spinner after OAuth sheet | After Apple/Google auth sheet closes, UI shows deterministic loading state until auth completion resolves or fails with user-visible error. |
