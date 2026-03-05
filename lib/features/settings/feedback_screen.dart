@@ -226,7 +226,7 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
                 maxLines: 8,
                 keyboardType: TextInputType.multiline,
                 textCapitalization: TextCapitalization.sentences,
-                textInputAction: TextInputAction.done,
+                textInputAction: TextInputAction.newline,
                 textAlignVertical: TextAlignVertical.top,
                 scrollPadding: const EdgeInsets.only(bottom: 140),
                 style: const TextStyle(

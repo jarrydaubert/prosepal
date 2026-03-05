@@ -225,6 +225,9 @@ class _StyledTextFieldState extends State<_StyledTextField> {
   @override
   Widget build(BuildContext context) {
     final isMultiLine = widget.maxLines > 1;
+    final effectiveKeyboardType = isMultiLine
+        ? TextInputType.multiline
+        : widget.keyboardType;
     final minHeight = isMultiLine ? 132.0 : 56.0;
     final fieldTopInset = isMultiLine ? 14.0 : 12.0;
     const iconStartInset = 14.0;
@@ -255,7 +258,7 @@ class _StyledTextFieldState extends State<_StyledTextField> {
           TextField(
             controller: widget.controller,
             focusNode: _effectiveFocusNode,
-            keyboardType: widget.keyboardType,
+            keyboardType: effectiveKeyboardType,
             minLines: isMultiLine ? widget.maxLines : 1,
             maxLines: widget.maxLines,
             maxLength: widget.maxLength,
@@ -272,7 +275,9 @@ class _StyledTextFieldState extends State<_StyledTextField> {
             textCapitalization: isMultiLine
                 ? TextCapitalization.sentences
                 : TextCapitalization.words,
-            textInputAction: TextInputAction.done,
+            textInputAction: isMultiLine
+                ? TextInputAction.newline
+                : TextInputAction.done,
             onChanged: widget.onChanged,
             onEditingComplete: () => FocusScope.of(context).unfocus(),
             onTapOutside: (_) => FocusScope.of(context).unfocus(),
