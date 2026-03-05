@@ -190,6 +190,17 @@ void main() {
         expect(result.allowed, isTrue);
       });
 
+      test('persists local fallback timestamps in UTC format', () async {
+        await service.checkRateLimit();
+
+        final prefs = await SharedPreferences.getInstance();
+        final stored = prefs.getStringList('rate_limit_timestamps');
+
+        expect(stored, isNotNull);
+        expect(stored, isNotEmpty);
+        expect(DateTime.parse(stored!.first).isUtc, isTrue);
+      });
+
       test('local fallback has user-friendly error message', () async {
         // Exhaust the local limit
         for (var i = 0; i < 10; i++) {

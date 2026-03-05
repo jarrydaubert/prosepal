@@ -295,14 +295,94 @@ void main() {
         await tester.pumpAndSettle();
 
         await tester.tap(find.text('Regenerate'));
-        await tester.pumpAndSettle();
+        await tester.pump(const Duration(milliseconds: 400));
 
         expect(mockAi.generateCallCount, 0);
         expect(usageService.getTotalCount(), 0);
         expect(
-          find.text('Free message already used. Upgrade to Pro!'),
+          find.text('Regenerate is a Pro feature. Upgrade to Pro!'),
           findsOneWidget,
         );
+
+        // Dismiss paywall to avoid pending flutter_animate timers at teardown.
+        final maybeLater = find.text('Maybe Later');
+        if (maybeLater.evaluate().isNotEmpty) {
+          await tester.tap(maybeLater);
+          await tester.pump(const Duration(milliseconds: 300));
+        }
+
+        // Allow delayed animation timers to drain.
+        await tester.pump(const Duration(seconds: 3));
+      });
+
+      testWidgets('blocks authenticated free regenerate on results screen', (
+        tester,
+      ) async {
+        await prefs.setBool(PreferenceKeys.reviewHasRequested, true);
+
+        final mockAi = MockAiService();
+        final mockAuth = MockAuthService()..setLoggedIn(true);
+        final mockFingerprint = MockDeviceFingerprintService();
+        final mockRateLimit = MockRateLimitService(
+          deviceFingerprint: mockFingerprint,
+        );
+        final usageService = UsageService(
+          prefs,
+          mockFingerprint,
+          mockRateLimit,
+        );
+        final mockHistory = MockHistoryService();
+
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              sharedPreferencesProvider.overrideWithValue(prefs),
+              generationResultProvider.overrideWith(
+                (ref) => createTestResult(),
+              ),
+              aiServiceProvider.overrideWithValue(mockAi),
+              authServiceProvider.overrideWithValue(mockAuth),
+              usageServiceProvider.overrideWithValue(usageService),
+              historyServiceProvider.overrideWithValue(mockHistory),
+              isProProvider.overrideWith((ref) => false),
+            ],
+            child: MaterialApp.router(
+              routerConfig: GoRouter(
+                initialLocation: '/results',
+                routes: [
+                  GoRoute(
+                    path: '/',
+                    builder: (context, state) =>
+                        const Scaffold(body: Text('Home')),
+                  ),
+                  GoRoute(
+                    path: '/results',
+                    builder: (context, state) => const ResultsScreen(),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('Regenerate'));
+        await tester.pump(const Duration(milliseconds: 400));
+
+        expect(mockAi.generateCallCount, 0);
+        expect(usageService.getTotalCount(), 0);
+        expect(
+          find.text('Regenerate is a Pro feature. Upgrade to Pro!'),
+          findsOneWidget,
+        );
+
+        final maybeLater = find.text('Maybe Later');
+        if (maybeLater.evaluate().isNotEmpty) {
+          await tester.tap(maybeLater);
+          await tester.pump(const Duration(milliseconds: 300));
+        }
+
+        await tester.pump(const Duration(seconds: 3));
       });
     });
 

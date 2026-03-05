@@ -12,7 +12,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/config/preference_keys.dart';
 import '../../core/models/models.dart';
 import '../../core/providers/providers.dart';
-import '../../core/services/device_fingerprint_service.dart';
 import '../../core/services/log_service.dart';
 import '../../core/services/usage_service.dart';
 import '../../shared/components/app_button.dart';
@@ -36,6 +35,9 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
   Timer? _confettiHideTimer;
   late ConfettiController _confettiController;
   static const Duration _confettiDuration = Duration(milliseconds: 1400);
+  static const Duration _minRegenerationOverlayDuration = Duration(
+    milliseconds: 700,
+  );
 
   bool get _reduceMotion => MediaQuery.of(context).disableAnimations;
 
@@ -55,6 +57,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
   @override
   Widget build(BuildContext context) {
     final result = ref.watch(generationResultProvider);
+    final canRegenerate = !_isRegenerating;
 
     if (result == null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -80,12 +83,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                 color: AppColors.textPrimary,
               ),
             ),
-            leading: _CloseButton(
-              onPressed: () {
-                resetGenerationForm(ref);
-                context.go('/home');
-              },
-            ),
+            leading: _CloseButton(onPressed: _returnHome),
           ),
           body: Column(
             children: [
@@ -153,10 +151,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                           label: 'Start Over',
                           style: AppButtonStyle.outline,
                           icon: Icons.home_outlined,
-                          onPressed: () {
-                            resetGenerationForm(ref);
-                            context.go('/home');
-                          },
+                          onPressed: _returnHome,
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -165,9 +160,9 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                           label: 'Regenerate',
                           icon: Icons.auto_awesome,
                           isLoading: _isRegenerating,
-                          onPressed: _isRegenerating
-                              ? null
-                              : () => _regenerate(result),
+                          onPressed: canRegenerate
+                              ? () => _regenerate(result)
+                              : null,
                         ),
                       ),
                     ],
@@ -337,6 +332,13 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
     }
   }
 
+  void _returnHome() {
+    resetGenerationForm(ref);
+    ref.read(occasionSearchProvider.notifier).state = '';
+    FocusManager.instance.primaryFocus?.unfocus();
+    context.go('/home');
+  }
+
   void _showSaveToCalendarDialog(GenerationResult result) {
     showDialog<bool>(
       context: context,
@@ -360,6 +362,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
 
   Future<void> _regenerate(GenerationResult currentResult) async {
     if (_isRegenerating) return;
+    final startedAt = DateTime.now();
 
     Log.info('Regenerate requested', {'occasion': currentResult.occasion.name});
 
@@ -369,20 +372,34 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
       final aiService = ref.read(aiServiceProvider);
       final usageService = ref.read(usageServiceProvider);
       final authService = ref.read(authServiceProvider);
+      final subscriptionService = ref.read(subscriptionServiceProvider);
       final historyService = ref.read(historyServiceProvider);
-      final isPro = ref.read(isProProvider);
+      var isPro = ref.read(isProProvider);
 
-      // Anonymous free users have already consumed their one free generation
-      // by the time they reach the results screen.
-      if (!authService.isLoggedIn && !isPro) {
-        _showRegenerationError('Free message already used. Upgrade to Pro!');
+      // Re-check entitlement directly with RevenueCat to avoid stale provider
+      // state allowing free-tier users to regenerate.
+      if (subscriptionService.isConfigured) {
+        final runtimeIsPro = await subscriptionService.isPro();
+        if (runtimeIsPro != isPro) {
+          Log.warning('Regenerate entitlement mismatch corrected', {
+            'providerIsPro': isPro,
+            'runtimeIsPro': runtimeIsPro,
+          });
+        }
+        isPro = runtimeIsPro;
+      }
+
+      // Regeneration is a Pro-only feature. Free users receive one generation
+      // from the wizard flow and are routed to paywall for additional options.
+      if (!isPro) {
+        _showRegenerationError('Regenerate is a Pro feature. Upgrade to Pro!');
         if (mounted) {
           unawaited(showPaywall(context, source: 'regenerate_blocked'));
         }
         return;
       }
 
-      // Enforce the same usage limits as initial generation.
+      // Enforce usage limits for Pro users (server-side for authenticated).
       if (authService.isLoggedIn) {
         try {
           final usageResult = await usageService.checkAndIncrementServerSide(
@@ -400,46 +417,6 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
         } on UsageCheckException catch (e) {
           _showRegenerationError(e.message);
           return;
-        }
-      } else if (!isPro) {
-        // Fast local guard prevents repeated free regenerations if server sync lags.
-        if (!usageService.canGenerateFree()) {
-          _showRegenerationError(
-            'Free message already used. Upgrade to Pro for more!',
-          );
-          if (mounted) {
-            unawaited(showPaywall(context, source: 'regenerate_blocked'));
-          }
-          return;
-        }
-
-        try {
-          final deviceCheck = await usageService
-              .checkDeviceFreeTierServerSide();
-          if (!deviceCheck.allowed) {
-            final errorMessage =
-                deviceCheck.reason == DeviceCheckReason.rateLimited
-                ? 'Too many attempts. Please wait a moment and try again.'
-                : 'This device has already used its free message. '
-                      'Upgrade to Pro for unlimited messages!';
-            _showRegenerationError(errorMessage);
-            if (mounted) {
-              unawaited(showPaywall(context, source: 'regenerate_blocked'));
-            }
-            return;
-          }
-        } on Exception catch (e) {
-          Log.warning('Regenerate device check failed', {'error': '$e'});
-          // Fall back to local free-tier check if server/device check fails.
-          if (!usageService.canGenerateFree()) {
-            _showRegenerationError(
-              'Free message already used. Upgrade to Pro for more!',
-            );
-            if (mounted) {
-              unawaited(showPaywall(context, source: 'regenerate_blocked'));
-            }
-            return;
-          }
         }
       }
 
@@ -489,6 +466,10 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
         );
       }
     } finally {
+      final elapsed = DateTime.now().difference(startedAt);
+      if (elapsed < _minRegenerationOverlayDuration) {
+        await Future<void>.delayed(_minRegenerationOverlayDuration - elapsed);
+      }
       if (mounted) {
         setState(() => _isRegenerating = false);
       }

@@ -106,6 +106,7 @@ class _DetailsInputState extends State<DetailsInput> {
             focusNode: _nameFocusNode,
             hintText: 'e.g., Sarah, Mom, John',
             icon: Icons.person_outline,
+            keyboardType: TextInputType.name,
             maxLength: 50,
             onChanged: widget.onRecipientNameChanged,
           ),
@@ -127,6 +128,7 @@ class _DetailsInputState extends State<DetailsInput> {
             hintText:
                 'Add as much detail as possible for a more personalized message...',
             icon: Icons.notes_outlined,
+            keyboardType: TextInputType.text,
             maxLines: 4,
             maxLength: 300,
             onChanged: widget.onPersonalDetailsChanged,
@@ -170,6 +172,7 @@ class _StyledTextField extends StatefulWidget {
     required this.controller,
     required this.hintText,
     required this.icon,
+    required this.keyboardType,
     required this.onChanged,
     this.focusNode,
     this.maxLines = 1,
@@ -179,6 +182,7 @@ class _StyledTextField extends StatefulWidget {
   final TextEditingController controller;
   final String hintText;
   final IconData icon;
+  final TextInputType keyboardType;
   final void Function(String) onChanged;
   final FocusNode? focusNode;
   final int maxLines;
@@ -221,11 +225,15 @@ class _StyledTextFieldState extends State<_StyledTextField> {
   @override
   Widget build(BuildContext context) {
     final isMultiLine = widget.maxLines > 1;
+    final minHeight = isMultiLine ? 132.0 : 44.0;
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 150),
       clipBehavior: Clip.antiAlias,
-      constraints: BoxConstraints(minHeight: isMultiLine ? 124 : 52),
+      constraints: BoxConstraints(
+        minHeight: minHeight,
+        maxHeight: isMultiLine ? double.infinity : minHeight,
+      ),
       decoration: BoxDecoration(
         color: AppColors.surfaceLight,
         borderRadius: BorderRadius.circular(14),
@@ -234,81 +242,72 @@ class _StyledTextFieldState extends State<_StyledTextField> {
           width: 2,
         ),
       ),
-      child: Stack(
-        children: [
-          TextField(
-            controller: widget.controller,
-            focusNode: _effectiveFocusNode,
-            maxLines: widget.maxLines,
-            maxLength: widget.maxLength,
-            style: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w500,
-              height: 1.4,
-              color: AppColors.textOnLight,
-            ),
-            cursorColor: AppColors.primary,
-            textAlignVertical: isMultiLine
-                ? TextAlignVertical.top
-                : TextAlignVertical.center,
-            textCapitalization: isMultiLine
-                ? TextCapitalization.sentences
-                : TextCapitalization.words,
-            textInputAction: TextInputAction.done,
-            onChanged: widget.onChanged,
-            onEditingComplete: () => FocusScope.of(context).unfocus(),
-            onTapOutside: (_) => FocusScope.of(context).unfocus(),
-            decoration: InputDecoration(
-              hintText: widget.hintText,
-              hintStyle: const TextStyle(
-                color: AppColors.textOnLightHint,
-                fontSize: 14,
-                height: 1.4,
+      child: TextField(
+        controller: widget.controller,
+        focusNode: _effectiveFocusNode,
+        keyboardType: widget.keyboardType,
+        minLines: isMultiLine ? widget.maxLines : 1,
+        maxLines: widget.maxLines,
+        maxLength: widget.maxLength,
+        style: const TextStyle(
+          fontSize: 15,
+          fontWeight: FontWeight.w500,
+          height: 1.4,
+          color: AppColors.textOnLight,
+        ),
+        cursorColor: AppColors.primary,
+        textAlignVertical: isMultiLine
+            ? TextAlignVertical.top
+            : TextAlignVertical.center,
+        textCapitalization: isMultiLine
+            ? TextCapitalization.sentences
+            : TextCapitalization.words,
+        textInputAction: TextInputAction.done,
+        onChanged: widget.onChanged,
+        onEditingComplete: () => FocusScope.of(context).unfocus(),
+        onTapOutside: (_) => FocusScope.of(context).unfocus(),
+        decoration: InputDecoration(
+          hintText: widget.hintText,
+          hintStyle: const TextStyle(
+            color: AppColors.textOnLightHint,
+            fontSize: 14,
+            height: 1.4,
+          ),
+          counterText: isMultiLine ? null : '',
+          filled: false,
+          border: InputBorder.none,
+          enabledBorder: InputBorder.none,
+          focusedBorder: InputBorder.none,
+          errorBorder: InputBorder.none,
+          disabledBorder: InputBorder.none,
+          alignLabelWithHint: isMultiLine,
+          prefixIcon: Align(
+            widthFactor: 1,
+            heightFactor: 1,
+            alignment: isMultiLine ? Alignment.topLeft : Alignment.center,
+            child: Padding(
+              padding: EdgeInsets.only(
+                top: isMultiLine ? 14 : 0,
+                left: isMultiLine ? 2 : 0,
               ),
-              counterText: isMultiLine ? null : '',
-              filled: false,
-              border: InputBorder.none,
-              enabledBorder: InputBorder.none,
-              focusedBorder: InputBorder.none,
-              errorBorder: InputBorder.none,
-              disabledBorder: InputBorder.none,
-              contentPadding: EdgeInsets.fromLTRB(
-                52,
-                isMultiLine ? 16 : 12,
-                16,
-                isMultiLine ? 16 : 12,
-              ),
-              counterStyle: const TextStyle(
-                color: AppColors.textOnLightHint,
-                fontSize: 12,
-              ),
+              child: Icon(widget.icon, color: AppColors.primary, size: 20),
             ),
           ),
-          if (!isMultiLine)
-            Positioned.fill(
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Padding(
-                  padding: const EdgeInsets.only(left: 14),
-                  child: IgnorePointer(
-                    child: Icon(
-                      widget.icon,
-                      color: AppColors.primary,
-                      size: 20,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          if (isMultiLine)
-            Positioned(
-              left: 16,
-              top: 16,
-              child: IgnorePointer(
-                child: Icon(widget.icon, color: AppColors.primary, size: 20),
-              ),
-            ),
-        ],
+          prefixIconConstraints: const BoxConstraints(
+            minWidth: 44,
+            minHeight: 44,
+          ),
+          contentPadding: EdgeInsets.fromLTRB(
+            12,
+            isMultiLine ? 14 : 12,
+            14,
+            isMultiLine ? 14 : 12,
+          ),
+          counterStyle: const TextStyle(
+            color: AppColors.textOnLightHint,
+            fontSize: 12,
+          ),
+        ),
       ),
     );
   }

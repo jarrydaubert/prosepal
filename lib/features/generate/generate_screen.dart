@@ -204,6 +204,7 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
                       .read(formRestorationServiceProvider)
                       .clearGenerateFormState();
                   resetGenerationForm(ref);
+                  ref.read(occasionSearchProvider.notifier).state = '';
                   context.pop();
                 }
               },

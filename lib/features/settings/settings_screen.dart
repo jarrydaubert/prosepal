@@ -39,7 +39,7 @@ class SettingsScreen extends ConsumerStatefulWidget {
 }
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
-  static const _biometricToggleDebounce = Duration(milliseconds: 1200);
+  static const _biometricToggleDebounce = Duration(seconds: 2);
 
   bool _biometricsSupported = false;
   bool _biometricsEnabled = false;

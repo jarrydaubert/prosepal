@@ -224,18 +224,28 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
                 focusNode: _focusNode,
                 minLines: 4,
                 maxLines: 6,
-                keyboardType: TextInputType.multiline,
+                keyboardType: TextInputType.text,
                 textCapitalization: TextCapitalization.sentences,
                 textInputAction: TextInputAction.done,
+                textAlignVertical: TextAlignVertical.top,
+                scrollPadding: const EdgeInsets.only(bottom: 140),
                 style: const TextStyle(
                   fontSize: 15,
+                  height: 1.35,
                   color: AppColors.textPrimary,
                 ),
                 onEditingComplete: () => FocusScope.of(context).unfocus(),
                 onTapOutside: (_) => FocusScope.of(context).unfocus(),
                 decoration: InputDecoration(
                   hintText: 'Describe your issue or suggestion...',
-                  hintStyle: const TextStyle(color: AppColors.textHint),
+                  hintStyle: const TextStyle(
+                    color: AppColors.textHint,
+                    height: 1.35,
+                  ),
+                  contentPadding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+                  filled: true,
+                  fillColor: AppColors.surface,
+                  alignLabelWithHint: true,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(
                       AppSpacing.radiusMedium,
@@ -284,6 +294,7 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
                   Switch.adaptive(
                     value: _includeLogs,
                     onChanged: (value) {
+                      FocusScope.of(context).unfocus();
                       setState(() {
                         _includeLogs = value;
                         if (!value) _includeSensitiveLogs = false;
@@ -320,7 +331,10 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
                     ),
                     Switch.adaptive(
                       value: _includeSensitiveLogs,
-                      onChanged: _toggleSensitiveLogs,
+                      onChanged: (value) {
+                        FocusScope.of(context).unfocus();
+                        _toggleSensitiveLogs(value);
+                      },
                     ),
                   ],
                 ),

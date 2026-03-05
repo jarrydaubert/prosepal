@@ -165,4 +165,33 @@ void main() {
       );
     });
   });
+
+  group('shouldShortCircuitStartupResolution', () {
+    test('short-circuits when init error is present', () {
+      final result = shouldShortCircuitStartupResolution(
+        hasCompletedOnboarding: true,
+        hasInitError: true,
+      );
+
+      expect(result, isTrue);
+    });
+
+    test('short-circuits for first launch onboarding path', () {
+      final result = shouldShortCircuitStartupResolution(
+        hasCompletedOnboarding: false,
+        hasInitError: false,
+      );
+
+      expect(result, isTrue);
+    });
+
+    test('does not short-circuit for normal onboarded startup', () {
+      final result = shouldShortCircuitStartupResolution(
+        hasCompletedOnboarding: true,
+        hasInitError: false,
+      );
+
+      expect(result, isFalse);
+    });
+  });
 }

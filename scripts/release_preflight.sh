@@ -89,11 +89,18 @@ validate_keys() {
 
   if [ "${#missing[@]}" -gt 0 ]; then
     echo "Error: Missing required values for $label: ${missing[*]}"
+    echo "Remediation:"
+    echo "  - Local build: copy .env.example -> .env.local and set these keys."
+    echo "  - CI release: add/update matching GitHub Actions secrets."
+    echo "  - Re-run: ./scripts/release_preflight.sh ${PLATFORM} --env-file \"$ENV_FILE\""
     return 1
   fi
 
   if [ "${#placeholder[@]}" -gt 0 ]; then
     echo "Error: Placeholder values detected for $label: ${placeholder[*]}"
+    echo "Remediation:"
+    echo "  - Replace placeholder/example values with real runtime config."
+    echo "  - Re-run: ./scripts/release_preflight.sh ${PLATFORM} --env-file \"$ENV_FILE\""
     return 1
   fi
 

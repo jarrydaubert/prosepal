@@ -202,6 +202,12 @@ Rules:
 - Tags must be `vMAJOR.MINOR.PATCH` (SemVer).
 - Use workflow dispatch only.
 - No ad-hoc production tags.
+- Release workflow blocks before tag creation when required runtime config
+  secrets are missing or placeholder-like by running:
+  `./scripts/release_preflight.sh all --no-env-file`
+  with GitHub Actions secrets mapped to:
+  `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `REVENUECAT_IOS_KEY`,
+  `REVENUECAT_ANDROID_KEY`, `GOOGLE_WEB_CLIENT_ID`, `GOOGLE_IOS_CLIENT_ID`.
 
 ## Dependabot Policy
 
@@ -306,6 +312,27 @@ AI abuse/cost verification (manual + script-assisted):
 - Rate limits and quotas match policy.
 - Budget alerts configured (warning + critical).
 - Kill-switch drill passes (`ai_enabled=false` then recovery).
+
+### Startup Phase Telemetry And Budgets
+
+Startup reliability is validated from structured logs emitted by splash routing:
+- `Startup phase telemetry` (per phase)
+- `Startup routing summary` (terminal outcome)
+
+Phases and budgets:
+- `init`: max `12000ms` (wait for critical init readiness)
+- `identity`: budget `4000ms` (auth + biometric checks)
+- `entitlements`: budget `3000ms` (anonymous Pro restore check; authenticated path is marked `authenticated_skipped`)
+- `routing`: max `10000ms` (initial route resolution timeout/fallback budget)
+
+Required telemetry fields:
+- Per-phase: `phase`, `durationMs`, `budgetMs`, `timedOut`, `outcome`
+- Final summary: `resolvedRoute`, `usedFallback`, `fallbackReason`, `initPhaseOutcome`, `identityPhaseMs/outcome`, `entitlementsPhaseMs/outcome`
+
+Triage policy:
+- Investigate any `timedOut=true` phase on release-candidate builds.
+- Investigate repeated `usedFallback=true` startup summaries for the same route path or device cohort.
+- Treat `/onboarding` fallback for previously onboarded users as regression unless an explicit init error is present.
 
 ### Firebase AI iOS client-block triage (`client application <empty> are blocked`)
 

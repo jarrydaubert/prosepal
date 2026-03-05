@@ -19,6 +19,7 @@ void main() {
   group('BiometricService Singleton', () {
     setUp(() async {
       FlutterSecureStorage.setMockInitialValues({});
+      BiometricService.instance.resetAuthStateForTests();
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(localAuthChannel, (call) async {
             switch (call.method) {
@@ -109,9 +110,9 @@ void main() {
     });
 
     test(
-      'authenticate accepts a new request after previous one completes',
+      'authenticate debounces rapid re-requests right after completion',
       () async {
-        // Bug: Single-flight lock never resets after completion
+        // Bug: lifecycle jitter triggers repeated prompts within milliseconds.
         var authenticateCalls = 0;
 
         TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
@@ -130,10 +131,19 @@ void main() {
             });
 
         final first = await BiometricService.instance.authenticate();
-        final second = await BiometricService.instance.authenticate();
+        final immediateRetry = await BiometricService.instance.authenticate();
 
         expect(first.success, isTrue);
-        expect(second.success, isTrue);
+        expect(immediateRetry.success, isTrue);
+        expect(
+          authenticateCalls,
+          1,
+          reason: 'second call should be absorbed by debounce window',
+        );
+
+        await Future<void>.delayed(const Duration(milliseconds: 2100));
+        final afterDebounce = await BiometricService.instance.authenticate();
+        expect(afterDebounce.success, isTrue);
         expect(authenticateCalls, 2);
       },
     );

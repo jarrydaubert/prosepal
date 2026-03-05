@@ -77,6 +77,13 @@ Future<StartupRouteResolution> resolveStartupRouteWithTimeout({
   }
 }
 
+/// Whether splash should bypass async route resolution and navigate directly.
+@visibleForTesting
+bool shouldShortCircuitStartupResolution({
+  required bool hasCompletedOnboarding,
+  required bool hasInitError,
+}) => hasInitError || !hasCompletedOnboarding;
+
 /// Startup route resolution result with explicit timeout metadata.
 class StartupRouteResolution {
   const StartupRouteResolution({required this.route, required this.timedOut});
@@ -234,6 +241,7 @@ class _SplashScreen extends ConsumerStatefulWidget {
 class _SplashScreenState extends ConsumerState<_SplashScreen> {
   static const _pollInterval = Duration(milliseconds: 120);
   static const _maxWaitForInit = Duration(seconds: 12);
+  static const _routeResolutionTimeout = Duration(seconds: 10);
   static const _minVisibleDuration = Duration(milliseconds: 500);
   static const _deviceStateSyncTimeout = Duration(seconds: 3);
   static const _biometricCheckTimeout = Duration(seconds: 2);
@@ -242,6 +250,10 @@ class _SplashScreenState extends ConsumerState<_SplashScreen> {
   bool _hasNavigated = false;
   bool _hasProFromRestore = false;
   late final DateTime _shownAt;
+  int _identityPhaseMs = 0;
+  int _entitlementsPhaseMs = 0;
+  String _identityPhaseOutcome = 'not_started';
+  String _entitlementsPhaseOutcome = 'not_started';
 
   @override
   void initState() {
@@ -253,12 +265,25 @@ class _SplashScreenState extends ConsumerState<_SplashScreen> {
   Future<void> _waitForInitAndNavigate() async {
     final startedAt = DateTime.now();
     var initErrorDetected = false;
+    var initWaitMs = 0;
+    var initPhaseOutcome = 'unknown';
+    var splashHoldMs = 0;
+    var routeResolutionMs = 0;
+    var usedFallback = false;
+    String? fallbackReason;
+    String? resolvedRoute;
+    _identityPhaseMs = 0;
+    _entitlementsPhaseMs = 0;
+    _identityPhaseOutcome = 'not_started';
+    _entitlementsPhaseOutcome = 'not_started';
 
     // Wait for Supabase to be ready (required for auth)
     // RevenueCat can timeout - we'll proceed without it if needed
     while (mounted) {
       final elapsed = DateTime.now().difference(startedAt);
+      initWaitMs = elapsed.inMilliseconds;
       if (elapsed >= _maxWaitForInit) {
+        initPhaseOutcome = 'timeout';
         Log.warning('Splash init wait timeout reached', {
           'timeoutMs': _maxWaitForInit.inMilliseconds,
         });
@@ -283,6 +308,7 @@ class _SplashScreenState extends ConsumerState<_SplashScreen> {
 
       // Check for critical error
       if (status.hasError) {
+        initPhaseOutcome = 'init_error';
         Log.error('Init failed', {'error': status.error});
         initErrorDetected = true;
         break;
@@ -293,6 +319,9 @@ class _SplashScreenState extends ConsumerState<_SplashScreen> {
       // (RemoteConfig ready OR debug mode = force update check complete)
       if (status.isSupabaseReady &&
           (status.isRevenueCatReady || status.isTimedOut)) {
+        initPhaseOutcome = status.isTimedOut
+            ? 'supabase_ready_revenuecat_timeout'
+            : 'ready';
         break;
       }
 
@@ -301,35 +330,186 @@ class _SplashScreenState extends ConsumerState<_SplashScreen> {
     }
 
     if (mounted && !_hasNavigated) {
+      _logStartupPhase(
+        phase: 'init',
+        durationMs: initWaitMs,
+        budgetMs: _maxWaitForInit.inMilliseconds,
+        outcome: initPhaseOutcome,
+        timedOut: initPhaseOutcome == 'timeout',
+      );
+
       final visibleFor = DateTime.now().difference(_shownAt);
       if (visibleFor < _minVisibleDuration) {
-        await Future<void>.delayed(_minVisibleDuration - visibleFor);
+        final hold = _minVisibleDuration - visibleFor;
+        splashHoldMs = hold.inMilliseconds;
+        await Future<void>.delayed(hold);
       }
       _hasNavigated = true;
       final prefs = ref.read(sharedPreferencesProvider);
       final hasCompletedOnboarding =
           prefs.getBool(PreferenceKeys.hasCompletedOnboarding) ??
           PreferenceKeys.hasCompletedOnboardingDefault;
+      final fallbackRoute = determineStartupFallbackRoute(
+        hasCompletedOnboarding: hasCompletedOnboarding,
+        hasInitError: initErrorDetected,
+      );
+      if (shouldShortCircuitStartupResolution(
+        hasCompletedOnboarding: hasCompletedOnboarding,
+        hasInitError: initErrorDetected,
+      )) {
+        // Deterministic short-circuit for first launch / init error paths.
+        // Avoids unnecessary async checks that can trigger false timeout
+        // fallbacks on slow devices during onboarding entry.
+        resolvedRoute = fallbackRoute;
+        usedFallback = true;
+        fallbackReason = initErrorDetected
+            ? 'init_error'
+            : 'first_launch_onboarding';
+        _logStartupPhase(
+          phase: 'routing',
+          durationMs: routeResolutionMs,
+          budgetMs: _routeResolutionTimeout.inMilliseconds,
+          outcome: 'short_circuit',
+          timedOut: false,
+        );
+        _logStartupRoutingSummary(
+          initWaitMs: initWaitMs,
+          splashHoldMs: splashHoldMs,
+          routeResolutionMs: routeResolutionMs,
+          initPhaseOutcome: initPhaseOutcome,
+          identityPhaseMs: _identityPhaseMs,
+          identityPhaseOutcome: _identityPhaseOutcome,
+          entitlementsPhaseMs: _entitlementsPhaseMs,
+          entitlementsPhaseOutcome: _entitlementsPhaseOutcome,
+          usedFallback: usedFallback,
+          fallbackReason: fallbackReason,
+          resolvedRoute: resolvedRoute,
+        );
+        _navigateToInitialRoute(fallbackRoute);
+        return;
+      }
       try {
-        final route = await _determineInitialRoute(
-          hasCompletedOnboarding: hasCompletedOnboarding,
-          hasInitError: initErrorDetected,
+        final routeResolveStartedAt = DateTime.now();
+        final resolution = await resolveStartupRouteWithTimeout(
+          resolver: () => _determineInitialRoute(
+            hasCompletedOnboarding: hasCompletedOnboarding,
+            hasInitError: initErrorDetected,
+          ),
+          timeout: _routeResolutionTimeout,
+          fallbackRoute: fallbackRoute,
+        );
+        routeResolutionMs = DateTime.now()
+            .difference(routeResolveStartedAt)
+            .inMilliseconds;
+
+        if (resolution.timedOut) {
+          usedFallback = true;
+          fallbackReason = 'route_resolution_timeout';
+          Log.warning('Startup route resolution timed out; applying fallback', {
+            'timeoutMs': _routeResolutionTimeout.inMilliseconds,
+            'fallbackRoute': fallbackRoute,
+          });
+        }
+        _logStartupPhase(
+          phase: 'routing',
+          durationMs: routeResolutionMs,
+          budgetMs: _routeResolutionTimeout.inMilliseconds,
+          outcome: resolution.timedOut ? 'timeout_fallback' : 'resolved',
+          timedOut: resolution.timedOut,
+        );
+
+        resolvedRoute = resolution.route;
+        _logStartupRoutingSummary(
+          initWaitMs: initWaitMs,
+          splashHoldMs: splashHoldMs,
+          routeResolutionMs: routeResolutionMs,
+          initPhaseOutcome: initPhaseOutcome,
+          identityPhaseMs: _identityPhaseMs,
+          identityPhaseOutcome: _identityPhaseOutcome,
+          entitlementsPhaseMs: _entitlementsPhaseMs,
+          entitlementsPhaseOutcome: _entitlementsPhaseOutcome,
+          usedFallback: usedFallback,
+          fallbackReason: fallbackReason,
+          resolvedRoute: resolvedRoute,
         );
         if (!mounted) return;
-        _navigateToInitialRoute(route);
+        _navigateToInitialRoute(resolution.route);
       } on Exception catch (e) {
-        final fallbackRoute = determineStartupFallbackRoute(
-          hasCompletedOnboarding: hasCompletedOnboarding,
-          hasInitError: initErrorDetected,
-        );
+        usedFallback = true;
+        fallbackReason = 'route_resolution_exception';
+        resolvedRoute = fallbackRoute;
         Log.warning('Startup route resolution failed; applying fallback', {
           'fallbackRoute': fallbackRoute,
           'error': '$e',
         });
+        _logStartupPhase(
+          phase: 'routing',
+          durationMs: routeResolutionMs,
+          budgetMs: _routeResolutionTimeout.inMilliseconds,
+          outcome: 'exception_fallback',
+          timedOut: false,
+        );
+        _logStartupRoutingSummary(
+          initWaitMs: initWaitMs,
+          splashHoldMs: splashHoldMs,
+          routeResolutionMs: routeResolutionMs,
+          initPhaseOutcome: initPhaseOutcome,
+          identityPhaseMs: _identityPhaseMs,
+          identityPhaseOutcome: _identityPhaseOutcome,
+          entitlementsPhaseMs: _entitlementsPhaseMs,
+          entitlementsPhaseOutcome: _entitlementsPhaseOutcome,
+          usedFallback: usedFallback,
+          fallbackReason: fallbackReason,
+          resolvedRoute: resolvedRoute,
+        );
         if (!mounted) return;
         _navigateToInitialRoute(fallbackRoute);
       }
     }
+  }
+
+  void _logStartupRoutingSummary({
+    required int initWaitMs,
+    required int splashHoldMs,
+    required int routeResolutionMs,
+    required String initPhaseOutcome,
+    required int identityPhaseMs,
+    required String identityPhaseOutcome,
+    required int entitlementsPhaseMs,
+    required String entitlementsPhaseOutcome,
+    required bool usedFallback,
+    required String? fallbackReason,
+    required String? resolvedRoute,
+  }) {
+    Log.info('Startup routing summary', {
+      'initWaitMs': initWaitMs,
+      'splashHoldMs': splashHoldMs,
+      'routeResolutionMs': routeResolutionMs,
+      'initPhaseOutcome': initPhaseOutcome,
+      'identityPhaseMs': identityPhaseMs,
+      'identityPhaseOutcome': identityPhaseOutcome,
+      'entitlementsPhaseMs': entitlementsPhaseMs,
+      'entitlementsPhaseOutcome': entitlementsPhaseOutcome,
+      'usedFallback': usedFallback,
+      'fallbackReason': fallbackReason,
+      'resolvedRoute': resolvedRoute,
+    });
+  }
+
+  void _logStartupPhase({
+    required String phase,
+    required int durationMs,
+    required int budgetMs,
+    required String outcome,
+    required bool timedOut,
+  }) {
+    Log.info('Startup phase telemetry', {
+      'phase': phase,
+      'durationMs': durationMs,
+      'budgetMs': budgetMs,
+      'timedOut': timedOut,
+      'outcome': outcome,
+    });
   }
 
   void _navigateToInitialRoute(String route) {
@@ -382,20 +562,10 @@ class _SplashScreenState extends ConsumerState<_SplashScreen> {
       return '/onboarding';
     }
 
-    // Sync device state from server FIRST - ensures accurate state on home screen
-    final usageService = ref.read(usageServiceProvider);
-    await usageService.syncDeviceStateFromServer().timeout(
-      _deviceStateSyncTimeout,
-      onTimeout: () {
-        Log.warning(
-          'Device state sync exceeded splash budget; continuing startup',
-          {'timeoutMs': _deviceStateSyncTimeout.inMilliseconds},
-        );
-      },
-    );
-    if (!mounted) return '/init-error';
+    _startDeviceStateSyncBackground();
 
     final authService = ref.read(authServiceProvider);
+    final identityPhaseStartedAt = DateTime.now();
     final isLoggedIn = authService.isLoggedIn;
     final biometricService = ref.read(biometricServiceProvider);
     final biometricsEnabled = await biometricService.isEnabled.timeout(
@@ -430,7 +600,20 @@ class _SplashScreenState extends ConsumerState<_SplashScreen> {
         if (!mounted) return '/init-error';
       }
     }
+    _identityPhaseMs = DateTime.now()
+        .difference(identityPhaseStartedAt)
+        .inMilliseconds;
+    _identityPhaseOutcome = 'ok';
+    _logStartupPhase(
+      phase: 'identity',
+      durationMs: _identityPhaseMs,
+      budgetMs:
+          (_biometricCheckTimeout + _biometricCheckTimeout).inMilliseconds,
+      outcome: _identityPhaseOutcome,
+      timedOut: false,
+    );
 
+    final entitlementsPhaseStartedAt = DateTime.now();
     if (!isLoggedIn) {
       _hasProFromRestore = await _checkAnonymousProStatus().timeout(
         _anonymousProCheckTimeout,
@@ -443,7 +626,24 @@ class _SplashScreenState extends ConsumerState<_SplashScreen> {
         },
       );
       if (!mounted) return '/init-error';
+      _entitlementsPhaseOutcome = _hasProFromRestore
+          ? 'anonymous_pro_detected'
+          : 'anonymous_no_pro';
+    } else {
+      _entitlementsPhaseOutcome = 'authenticated_skipped';
     }
+    _entitlementsPhaseMs = DateTime.now()
+        .difference(entitlementsPhaseStartedAt)
+        .inMilliseconds;
+    _logStartupPhase(
+      phase: 'entitlements',
+      durationMs: _entitlementsPhaseMs,
+      budgetMs: _anonymousProCheckTimeout.inMilliseconds,
+      outcome: _entitlementsPhaseOutcome,
+      timedOut:
+          _entitlementsPhaseMs > _anonymousProCheckTimeout.inMilliseconds &&
+          !isLoggedIn,
+    );
 
     if (!mounted) return '/init-error';
 
@@ -463,6 +663,28 @@ class _SplashScreenState extends ConsumerState<_SplashScreen> {
       biometricsAvailable: biometricsAvailable,
       hasProRestore: _hasProFromRestore,
       hasInitError: hasInitError,
+    );
+  }
+
+  void _startDeviceStateSyncBackground() {
+    final usageService = ref.read(usageServiceProvider);
+    unawaited(
+      usageService
+          .syncDeviceStateFromServer()
+          .timeout(
+            _deviceStateSyncTimeout,
+            onTimeout: () {
+              Log.warning(
+                'Device state sync exceeded splash budget; continuing startup',
+                {'timeoutMs': _deviceStateSyncTimeout.inMilliseconds},
+              );
+            },
+          )
+          .catchError((Object error, StackTrace stackTrace) {
+            Log.warning('Device state sync failed during startup', {
+              'error': '$error',
+            });
+          }),
     );
   }
 

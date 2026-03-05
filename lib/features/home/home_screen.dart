@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -17,6 +19,11 @@ class HomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isCompactWidth = MediaQuery.of(context).size.width < 390;
+    final headerIconButtonSize = isCompactWidth ? 36.0 : 40.0;
+    final headerIconSize = isCompactWidth ? 20.0 : 22.0;
+    final headerIconSpacing = isCompactWidth ? 6.0 : 8.0;
+
     final initStatus = ref.watch(initStatusProvider);
     final remaining = ref.watch(remainingGenerationsProvider);
     final isPro = ref.watch(isProProvider);
@@ -106,41 +113,52 @@ class HomeScreen extends ConsumerWidget {
                                   ],
                                 ),
                               ),
-                              const SizedBox(width: 8),
-                              Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  _IconButton(
-                                    icon: Icons.calendar_month_outlined,
-                                    onPressed: () {
-                                      FocusManager.instance.primaryFocus
-                                          ?.unfocus();
-                                      context.pushNamed('calendar');
-                                    },
-                                    tooltip: 'Upcoming occasions',
-                                  ),
-                                  const SizedBox(width: 8),
-                                  _IconButton(
-                                    icon: Icons.history,
-                                    onPressed: () {
-                                      FocusManager.instance.primaryFocus
-                                          ?.unfocus();
-                                      context.pushNamed('history');
-                                    },
-                                    tooltip: 'Message history',
-                                  ),
-                                  const SizedBox(width: 8),
-                                  _IconButton(
-                                    key: const ValueKey('home_settings_button'),
-                                    icon: Icons.settings_outlined,
-                                    onPressed: () {
-                                      FocusManager.instance.primaryFocus
-                                          ?.unfocus();
-                                      context.pushNamed('settings');
-                                    },
-                                    tooltip: 'Settings',
-                                  ),
-                                ],
+                              SizedBox(width: headerIconSpacing),
+                              FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    _IconButton(
+                                      icon: Icons.calendar_month_outlined,
+                                      onPressed: () {
+                                        FocusManager.instance.primaryFocus
+                                            ?.unfocus();
+                                        context.pushNamed('calendar');
+                                      },
+                                      tooltip: 'Upcoming occasions',
+                                      size: headerIconButtonSize,
+                                      iconSize: headerIconSize,
+                                    ),
+                                    SizedBox(width: headerIconSpacing),
+                                    _IconButton(
+                                      icon: Icons.history,
+                                      onPressed: () {
+                                        FocusManager.instance.primaryFocus
+                                            ?.unfocus();
+                                        context.pushNamed('history');
+                                      },
+                                      tooltip: 'Message history',
+                                      size: headerIconButtonSize,
+                                      iconSize: headerIconSize,
+                                    ),
+                                    SizedBox(width: headerIconSpacing),
+                                    _IconButton(
+                                      key: const ValueKey(
+                                        'home_settings_button',
+                                      ),
+                                      icon: Icons.settings_outlined,
+                                      onPressed: () {
+                                        FocusManager.instance.primaryFocus
+                                            ?.unfocus();
+                                        context.pushNamed('settings');
+                                      },
+                                      tooltip: 'Settings',
+                                      size: headerIconButtonSize,
+                                      iconSize: headerIconSize,
+                                    ),
+                                  ],
+                                ),
                               ),
                             ],
                           )
@@ -274,7 +292,14 @@ class HomeScreen extends ConsumerWidget {
                         occasion;
                     // Clear search when selecting
                     ref.read(occasionSearchProvider.notifier).state = '';
-                    context.pushNamed('generate');
+                    unawaited(
+                      context.pushNamed('generate').whenComplete(() {
+                        // Defensive reset: ensure search is always cleared
+                        // when user returns home from the wizard flow.
+                        ref.read(occasionSearchProvider.notifier).state = '';
+                        FocusManager.instance.primaryFocus?.unfocus();
+                      }),
+                    );
                   },
                 ),
               ),
@@ -305,11 +330,15 @@ class _IconButton extends StatelessWidget {
     super.key,
     required this.icon,
     required this.onPressed,
+    required this.size,
+    required this.iconSize,
     this.tooltip = '',
   });
 
   final IconData icon;
   final VoidCallback onPressed;
+  final double size;
+  final double iconSize;
   final String tooltip;
 
   @override
@@ -319,14 +348,14 @@ class _IconButton extends StatelessWidget {
     child: GestureDetector(
       onTap: onPressed,
       child: Container(
-        width: 44,
-        height: 44,
+        width: size,
+        height: size,
         decoration: BoxDecoration(
           color: AppColors.primaryLight,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.primary, width: 2),
+          border: Border.all(color: AppColors.primary, width: 1.5),
         ),
-        child: Icon(icon, color: AppColors.primary, size: 22),
+        child: Icon(icon, color: AppColors.primary, size: iconSize),
       ),
     ),
   );

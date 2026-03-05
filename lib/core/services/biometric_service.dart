@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:local_auth/local_auth.dart';
@@ -42,7 +43,10 @@ class BiometricService implements IBiometricService {
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
 
   static const _biometricsEnabledKey = 'biometrics_enabled';
+  static const _authenticationDebounce = Duration(seconds: 2);
   Future<BiometricResult>? _activeAuthentication;
+  DateTime? _lastAuthenticationCompletedAt;
+  BiometricResult? _lastAuthenticationResult;
 
   @override
   Future<bool> get isSupported async {
@@ -123,9 +127,30 @@ class BiometricService implements IBiometricService {
     String? reason,
     bool biometricOnly = false,
   }) async {
+    BiometricResult trackResult(BiometricResult result) {
+      _lastAuthenticationCompletedAt = DateTime.now().toUtc();
+      _lastAuthenticationResult = result;
+      return result;
+    }
+
     if (_activeAuthentication case final inFlight?) {
       Log.info('Skip biometric auth - request already in flight');
       return inFlight;
+    }
+
+    final completedAt = _lastAuthenticationCompletedAt;
+    if (completedAt != null) {
+      final elapsed = DateTime.now().toUtc().difference(completedAt);
+      if (elapsed < _authenticationDebounce) {
+        Log.info('Skip biometric auth - debounced', {
+          'elapsedMs': elapsed.inMilliseconds,
+        });
+        return _lastAuthenticationResult ??
+            const BiometricResult(
+              success: false,
+              error: BiometricError.cancelled,
+            );
+      }
     }
 
     final completer = Completer<BiometricResult>();
@@ -143,7 +168,7 @@ class BiometricService implements IBiometricService {
       } else {
         Log.warning('Biometric auth failed');
       }
-      final result = BiometricResult(success: success);
+      final result = trackResult(BiometricResult(success: success));
       completer.complete(result);
       return result;
     } on LocalAuthException catch (e) {
@@ -155,58 +180,72 @@ class BiometricService implements IBiometricService {
       switch (e.code) {
         case LocalAuthExceptionCode.noBiometricHardware:
         case LocalAuthExceptionCode.biometricHardwareTemporarilyUnavailable:
-          const result = BiometricResult(
-            success: false,
-            error: BiometricError.notAvailable,
-            message: 'Biometrics not available on this device.',
+          final result = trackResult(
+            const BiometricResult(
+              success: false,
+              error: BiometricError.notAvailable,
+              message: 'Biometrics not available on this device.',
+            ),
           );
           completer.complete(result);
           return result;
         case LocalAuthExceptionCode.noBiometricsEnrolled:
-          const result = BiometricResult(
-            success: false,
-            error: BiometricError.notEnrolled,
-            message: 'No biometrics enrolled. Set up in device settings.',
+          final result = trackResult(
+            const BiometricResult(
+              success: false,
+              error: BiometricError.notEnrolled,
+              message: 'No biometrics enrolled. Set up in device settings.',
+            ),
           );
           completer.complete(result);
           return result;
         case LocalAuthExceptionCode.temporaryLockout:
-          const result = BiometricResult(
-            success: false,
-            error: BiometricError.lockedOut,
-            message: 'Too many attempts. Try again later.',
+          final result = trackResult(
+            const BiometricResult(
+              success: false,
+              error: BiometricError.lockedOut,
+              message: 'Too many attempts. Try again later.',
+            ),
           );
           completer.complete(result);
           return result;
         case LocalAuthExceptionCode.biometricLockout:
-          const result = BiometricResult(
-            success: false,
-            error: BiometricError.permanentlyLockedOut,
-            message: 'Biometrics locked. Use device passcode to unlock.',
+          final result = trackResult(
+            const BiometricResult(
+              success: false,
+              error: BiometricError.permanentlyLockedOut,
+              message: 'Biometrics locked. Use device passcode to unlock.',
+            ),
           );
           completer.complete(result);
           return result;
         case LocalAuthExceptionCode.noCredentialsSet:
-          const result = BiometricResult(
-            success: false,
-            error: BiometricError.passcodeNotSet,
-            message: 'Set up a device passcode first.',
+          final result = trackResult(
+            const BiometricResult(
+              success: false,
+              error: BiometricError.passcodeNotSet,
+              message: 'Set up a device passcode first.',
+            ),
           );
           completer.complete(result);
           return result;
         case LocalAuthExceptionCode.userCanceled:
-          const result = BiometricResult(
-            success: false,
-            error: BiometricError.cancelled,
+          final result = trackResult(
+            const BiometricResult(
+              success: false,
+              error: BiometricError.cancelled,
+            ),
           );
           completer.complete(result);
           return result;
         default:
-          final result = BiometricResult(
-            success: false,
-            error: BiometricError.unknown,
-            message:
-                e.description ?? 'Authentication failed. Please try again.',
+          final result = trackResult(
+            BiometricResult(
+              success: false,
+              error: BiometricError.unknown,
+              message:
+                  e.description ?? 'Authentication failed. Please try again.',
+            ),
           );
           completer.complete(result);
           return result;
@@ -216,10 +255,12 @@ class BiometricService implements IBiometricService {
         'code': e.code,
         'message': e.message ?? 'unknown',
       });
-      const result = BiometricResult(
-        success: false,
-        error: BiometricError.unknown,
-        message: 'Authentication failed. Please try again.',
+      final result = trackResult(
+        const BiometricResult(
+          success: false,
+          error: BiometricError.unknown,
+          message: 'Authentication failed. Please try again.',
+        ),
       );
       completer.complete(result);
       return result;
@@ -239,5 +280,12 @@ class BiometricService implements IBiometricService {
       ); // Not supported, allow access
     }
     return authenticate();
+  }
+
+  @visibleForTesting
+  void resetAuthStateForTests() {
+    _activeAuthentication = null;
+    _lastAuthenticationCompletedAt = null;
+    _lastAuthenticationResult = null;
   }
 }

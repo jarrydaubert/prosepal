@@ -27,7 +27,7 @@ class PendingSync {
     totalCount: json['totalCount'] as int,
     monthlyCount: json['monthlyCount'] as int,
     monthKey: json['monthKey'] as String,
-    createdAt: DateTime.parse(json['createdAt'] as String),
+    createdAt: DateTime.parse(json['createdAt'] as String).toUtc(),
     retryCount: json['retryCount'] as int? ?? 0,
   );
 
@@ -43,7 +43,7 @@ class PendingSync {
     'totalCount': totalCount,
     'monthlyCount': monthlyCount,
     'monthKey': monthKey,
-    'createdAt': createdAt.toIso8601String(),
+    'createdAt': createdAt.toUtc().toIso8601String(),
     'retryCount': retryCount,
   };
 
@@ -425,7 +425,7 @@ class UsageService {
           totalCount: totalCount,
           monthlyCount: monthlyCount,
           monthKey: monthKey,
-          createdAt: DateTime.now(),
+          createdAt: DateTime.now().toUtc(),
         ),
         scheduleRetry: false,
       );
@@ -459,7 +459,7 @@ class UsageService {
           totalCount: totalCount,
           monthlyCount: monthlyCount,
           monthKey: monthKey,
-          createdAt: DateTime.now(),
+          createdAt: DateTime.now().toUtc(),
         ),
         scheduleRetry: true,
       );
@@ -541,7 +541,7 @@ class UsageService {
 
     Log.info('Processing pending syncs', {'count': pending.length});
 
-    final now = DateTime.now();
+    final now = DateTime.now().toUtc();
     final stillPending = <PendingSync>[];
     var successCount = 0;
     var discardedCount = 0;
@@ -762,10 +762,13 @@ class UsageService {
     await _prefs.remove(_keyMonthlyDate);
   }
 
-  String _monthString() {
-    final now = DateTime.now();
+  @visibleForTesting
+  static String monthStringFor(DateTime timestamp) {
+    final now = timestamp.toUtc();
     return '${now.year}-${now.month.toString().padLeft(2, '0')}';
   }
+
+  String _monthString() => monthStringFor(DateTime.now());
 }
 
 // =============================================================================

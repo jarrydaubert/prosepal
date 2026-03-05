@@ -584,7 +584,7 @@ void main() {
       expect(find.text('Heartfelt'), findsOneWidget);
 
       // Go back
-      await tester.tap(find.byTooltip('Back'));
+      await tester.tap(find.bySemanticsLabel('Back'));
       await tester.pump(const Duration(seconds: 1));
 
       // Should be on step 1
@@ -599,7 +599,7 @@ void main() {
       await navigateToStep3(tester);
 
       // Go back
-      await tester.tap(find.byTooltip('Back'));
+      await tester.tap(find.bySemanticsLabel('Back'));
       await tester.pump(const Duration(seconds: 1));
 
       // Should be on step 2

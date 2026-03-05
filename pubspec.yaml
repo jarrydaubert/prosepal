@@ -105,14 +105,14 @@ patrol:
     bundle_id: com.prosepal.prosepal
 
 # Native splash screen configuration
-# Dark charcoal background - matches AppColors.splash
+# Navy slate background - matches AppColors.splash/AppColors.bgDark
 flutter_native_splash:
-  color: "#0A0A0A"
-  color_dark: "#0A0A0A"
+  color: "#1D2633"
+  color_dark: "#1D2633"
 
   # Android 12+ - solid background color only (no icon)
   android_12:
-    color: "#0A0A0A"
-    color_dark: "#0A0A0A"
+    color: "#1D2633"
+    color_dark: "#1D2633"
 
   web: false
