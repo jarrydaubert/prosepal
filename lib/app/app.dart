@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../core/config/preference_keys.dart';
 import '../core/providers/providers.dart';
+import '../core/services/auth_telemetry.dart';
 import '../core/services/log_service.dart';
 
 import '../shared/theme/app_colors.dart';
@@ -213,11 +214,41 @@ class _ProsepalAppState extends ConsumerState<ProsepalApp>
     ) async {
       final event = data.event;
       final session = data.session;
+      final sessionUser = session?.user;
+      final lastSignInProvider = AuthTelemetry.metadataProvider(
+        sessionUser?.appMetadata,
+      );
+      final linkedProviders = AuthTelemetry.linkedProviders(
+        metadataProvider: lastSignInProvider,
+        metadataProvidersRaw: sessionUser?.appMetadata['providers'],
+        identityProviders: sessionUser?.identities?.map((i) => i.provider),
+      );
+      final currentSessionSource = AuthTelemetry.currentSessionSource(
+        hasSession: session != null,
+        sessionProvider: lastSignInProvider,
+        fallbackProvider: lastSignInProvider,
+      );
       Log.info('Auth state changed', {
         'event': event.name,
         'hasSession': session != null,
-        'userId': session?.user.id.substring(0, 8),
+        'userId': AuthTelemetry.truncatedUserId(sessionUser?.id),
+        'lastSignInProvider': AuthTelemetry.providerLabel(lastSignInProvider),
+        'currentSessionSource': currentSessionSource,
+        'linkedProviders': AuthTelemetry.linkedProvidersValue(linkedProviders),
+        'linkedProviderCount': linkedProviders.length,
       });
+      unawaited(
+        Log.event(
+          'auth_state_changed',
+          AuthTelemetry.authStateAnalyticsParams(
+            event: event.name,
+            hasSession: session != null,
+            lastSignInProvider: AuthTelemetry.providerLabel(lastSignInProvider),
+            currentSessionSource: currentSessionSource,
+            linkedProviderCount: linkedProviders.length,
+          ),
+        ),
+      );
 
       if (event == AuthChangeEvent.signedIn && session != null) {
         // Keep telemetry identity aligned with authenticated backend identity.

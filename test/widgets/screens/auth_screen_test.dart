@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:prosepal/core/providers/providers.dart';
+import 'package:prosepal/core/services/log_service.dart';
 import 'package:prosepal/features/auth/auth_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -32,6 +33,7 @@ void main() {
     mockAuth = MockAuthService();
     mockBiometric = MockBiometricService();
     mockSubscription = MockSubscriptionService();
+    Log.clearBuffer();
   });
 
   tearDown(() {
@@ -145,6 +147,10 @@ void main() {
 
       expect(find.text('Home Screen'), findsOneWidget);
       expect(find.byType(CircularProgressIndicator), findsNothing);
+      final exportedLog = Log.getExportableLog(includeSensitive: true);
+      expect(exportedLog, contains('Auth method outcome'));
+      expect(exportedLog, contains('method=google'));
+      expect(exportedLog, contains('outcome=success'));
     });
 
     testWidgets('shows error banner when Google sign-in fails', (tester) async {
@@ -166,6 +172,10 @@ void main() {
       expect(mockAuth.signInWithGoogleCallCount, 1);
       expect(find.byIcon(Icons.error_outline_rounded), findsOneWidget);
       expect(find.text('Home Screen'), findsNothing);
+      final exportedLog = Log.getExportableLog(includeSensitive: true);
+      expect(exportedLog, contains('Auth method outcome'));
+      expect(exportedLog, contains('method=google'));
+      expect(exportedLog, contains('outcome=error'));
 
       // Flush auto-dismiss timer started by AuthScreen._showError.
       await tester.pump(const Duration(seconds: 11));

@@ -22,17 +22,16 @@ Process items in this order unless an explicit owner override is recorded in rel
 9. `P1-48` Startup phase telemetry and budget visibility
 10. `P1-40` Startup/router timeout guard under network faults
 11. `P1-52` Biometric lifecycle debounce + single-flight guard
-12. `P1-02` Auth-provider telemetry quality
-13. `P1-50` Shared surface/card component consolidation
-14. `VNEXT-11` Canonical identity mapping
-15. `VNEXT-12` UI parity with live baseline
-16. `VNEXT-13` Device abuse-control compliance decision
-17. `P0-05` Billing budget alert controls
-18. `P0-04` Auth loading spinner after OAuth sheet
-19. `P0-01` Move Google setup to business account
-20. `P0-02` Keep redesign out of vNext scope
-21. `P1-47` Server-side AI gateway rollout (post-launch trigger)
-22. `P2-13` Startup orchestration refactor (post-launch)
+12. `P1-50` Shared surface/card component consolidation
+13. `VNEXT-11` Canonical identity mapping
+14. `VNEXT-12` UI parity with live baseline
+15. `VNEXT-13` Device abuse-control compliance decision
+16. `P0-05` Billing budget alert controls
+17. `P0-04` Auth loading spinner after OAuth sheet
+18. `P0-01` Move Google setup to business account
+19. `P0-02` Keep redesign out of vNext scope
+20. `P1-47` Server-side AI gateway rollout (post-launch trigger)
+21. `P2-13` Startup orchestration refactor (post-launch)
 
 ## P0 - Launch Blockers
 
@@ -78,7 +77,6 @@ Process items in this order unless an explicit owner override is recorded in rel
 | `P1-44` | Full documentation walkthrough with repo owner | A full walkthrough of repo docs is completed with the repo owner: `README.md`, `docs/DEVOPS.md`, `docs/NEXT_RELEASE_BRIEF.md`, `docs/LAUNCH_CHECKLIST.md`, `docs/IDENTITY_MAPPING.md`, and `docs/BACKLOG.md`. All command snippets are verified runnable, stale references are removed, cross-links are valid, and any follow-up gaps are captured as explicit backlog items. |
 | `P1-29` | Test-doc reference accuracy cleanup | Test docs only reference existing test files and runnable commands. Remove stale path references (for example `test/features/settings/haiku_screen_test.dart` in `docs/HAIKU_EASTER_EGG.md`) and align command examples with current workflow gates. |
 | `P1-01` | Social-auth fallback UX | Social sign-in failures show deterministic user guidance, retry actions, and support path coverage in widget/integration tests. |
-| `P1-02` | Auth-provider telemetry quality | Auth analytics/crash logs include stable provider + outcome fields with no invalid parameter types and test coverage for key event paths. Diagnostic output explicitly distinguishes `last_sign_in_provider`, `linked_providers`, and current session source so linked-account scenarios (for example Apple account with Google sign-in event) are unambiguous. |
 | `P1-04` | Paywall decomposition | Paywall widget is split into maintainable sections/components with unchanged behavior and passing tests. |
 | `P1-05` | Paywall accessibility improvements | Paywall has complete semantics labels and screen-reader navigation validation passes on iOS and Android. |
 | `P1-06` | Connectivity monitoring | App-level connection state monitoring is implemented with graceful degraded UX and tested offline/restore scenarios. |

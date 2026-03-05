@@ -54,7 +54,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     setState(() => _error = message);
     Log.event('auth_error_shown', {
       'method': _authMethod ?? 'unknown',
-      'message': message,
+      'error_bucket': _errorBucket(message),
       'source': widget.redirectTo ?? 'default',
     });
     // Auto-dismiss after 10 seconds (accessibility: give time to read)
@@ -67,6 +67,19 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
 
   void _dismissError() {
     setState(() => _error = null);
+  }
+
+  String _errorBucket(String message) {
+    final normalized = message.toLowerCase();
+    if (normalized.contains('cancel')) return 'cancelled';
+    if (normalized.contains('timed out') || normalized.contains('timeout')) {
+      return 'timeout';
+    }
+    if (normalized.contains('internet') || normalized.contains('network')) {
+      return 'network';
+    }
+    if (normalized.contains('too many')) return 'rate_limit';
+    return 'generic';
   }
 
   Future<void> _navigateAfterAuth() async {
@@ -209,6 +222,16 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
             throw Exception('Sign in timed out. Please try again.'),
       );
       if (response.user != null) {
+        Log.event('auth_method_result', {
+          'method': 'apple',
+          'outcome': 'success',
+          'source': widget.redirectTo ?? 'default',
+        });
+        Log.info('Auth method outcome', {
+          'method': 'apple',
+          'outcome': 'success',
+          'source': widget.redirectTo ?? 'default',
+        });
         // Sync usage from server (restores usage after reinstall)
         // Non-critical - don't block auth success if sync fails
         try {
@@ -219,8 +242,22 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       }
       if (mounted) await _navigateAfterAuth();
     } on Exception catch (e) {
-      if (!AuthErrorHandler.isCancellation(e)) {
-        _showError(AuthErrorHandler.getMessage(e));
+      final authResult = AuthErrorHandler.getResult(e);
+      final outcome = authResult.isCancellation ? 'cancelled' : 'error';
+      Log.event('auth_method_result', {
+        'method': 'apple',
+        'outcome': outcome,
+        'should_retry': authResult.shouldRetry,
+        'source': widget.redirectTo ?? 'default',
+      });
+      Log.info('Auth method outcome', {
+        'method': 'apple',
+        'outcome': outcome,
+        'shouldRetry': authResult.shouldRetry,
+        'source': widget.redirectTo ?? 'default',
+      });
+      if (!authResult.isCancellation) {
+        _showError(authResult.message);
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -248,6 +285,16 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
             throw Exception('Sign in timed out. Please try again.'),
       );
       if (response.user != null) {
+        Log.event('auth_method_result', {
+          'method': 'google',
+          'outcome': 'success',
+          'source': widget.redirectTo ?? 'default',
+        });
+        Log.info('Auth method outcome', {
+          'method': 'google',
+          'outcome': 'success',
+          'source': widget.redirectTo ?? 'default',
+        });
         // Sync usage from server (restores usage after reinstall)
         // Non-critical - don't block auth success if sync fails
         try {
@@ -258,8 +305,22 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       }
       if (mounted) await _navigateAfterAuth();
     } on Exception catch (e) {
-      if (!AuthErrorHandler.isCancellation(e)) {
-        _showError(AuthErrorHandler.getMessage(e));
+      final authResult = AuthErrorHandler.getResult(e);
+      final outcome = authResult.isCancellation ? 'cancelled' : 'error';
+      Log.event('auth_method_result', {
+        'method': 'google',
+        'outcome': outcome,
+        'should_retry': authResult.shouldRetry,
+        'source': widget.redirectTo ?? 'default',
+      });
+      Log.info('Auth method outcome', {
+        'method': 'google',
+        'outcome': outcome,
+        'shouldRetry': authResult.shouldRetry,
+        'source': widget.redirectTo ?? 'default',
+      });
+      if (!authResult.isCancellation) {
+        _showError(authResult.message);
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
