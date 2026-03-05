@@ -44,8 +44,9 @@ class BiometricService implements IBiometricService {
 
   static const _biometricsEnabledKey = 'biometrics_enabled';
   static const _authenticationDebounce = Duration(seconds: 2);
-  Future<BiometricResult>? _activeAuthentication;
-  DateTime? _lastAuthenticationCompletedAt;
+  static Future<BiometricResult>? _activeAuthentication;
+  static DateTime? _lastAuthenticationStartedAt;
+  static DateTime? _lastAuthenticationCompletedAt;
 
   @override
   Future<bool> get isSupported async {
@@ -131,6 +132,20 @@ class BiometricService implements IBiometricService {
       return inFlight;
     }
 
+    final startedAt = _lastAuthenticationStartedAt;
+    if (startedAt != null) {
+      final elapsed = DateTime.now().toUtc().difference(startedAt);
+      if (elapsed < _authenticationDebounce) {
+        Log.info('Skip biometric auth - start debounced', {
+          'elapsedMs': elapsed.inMilliseconds,
+        });
+        return const BiometricResult(
+          success: false,
+          error: BiometricError.cancelled,
+        );
+      }
+    }
+
     final completedAt = _lastAuthenticationCompletedAt;
     if (completedAt != null) {
       final elapsed = DateTime.now().toUtc().difference(completedAt);
@@ -147,6 +162,7 @@ class BiometricService implements IBiometricService {
 
     final completer = Completer<BiometricResult>();
     _activeAuthentication = completer.future;
+    _lastAuthenticationStartedAt = DateTime.now().toUtc();
 
     Log.info('Biometric auth started', {'biometricOnly': biometricOnly});
     try {
@@ -271,6 +287,7 @@ class BiometricService implements IBiometricService {
   @visibleForTesting
   void resetAuthStateForTests() {
     _activeAuthentication = null;
+    _lastAuthenticationStartedAt = null;
     _lastAuthenticationCompletedAt = null;
   }
 }
