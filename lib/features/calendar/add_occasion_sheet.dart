@@ -163,7 +163,7 @@ class _AddOccasionSheetState extends ConsumerState<AddOccasionSheet> {
             TextField(
               controller: _notesController,
               maxLines: 2,
-              textInputAction: TextInputAction.newline,
+              textInputAction: TextInputAction.done,
               onSubmitted: (_) => FocusScope.of(context).unfocus(),
               onTapOutside: (_) => FocusScope.of(context).unfocus(),
               decoration: InputDecoration(

@@ -13,15 +13,15 @@ class AppBackButton extends StatelessWidget {
     label: 'Back',
     button: true,
     child: SizedBox(
-      width: 40,
-      height: 40,
+      width: 34,
+      height: 34,
       child: IconButton(
         tooltip: 'Back',
         padding: EdgeInsets.zero,
-        splashRadius: 18,
+        splashRadius: 16,
         icon: const Icon(
           Icons.chevron_left_rounded,
-          size: 24,
+          size: 22,
           color: AppColors.textPrimary,
         ),
         onPressed: () {

@@ -222,11 +222,11 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
               child: TextField(
                 controller: _controller,
                 focusNode: _focusNode,
-                minLines: 5,
-                maxLines: 8,
+                minLines: 4,
+                maxLines: 6,
                 keyboardType: TextInputType.multiline,
                 textCapitalization: TextCapitalization.sentences,
-                textInputAction: TextInputAction.newline,
+                textInputAction: TextInputAction.done,
                 textAlignVertical: TextAlignVertical.top,
                 scrollPadding: const EdgeInsets.only(bottom: 140),
                 style: const TextStyle(

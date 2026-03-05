@@ -228,8 +228,8 @@ class _StyledTextFieldState extends State<_StyledTextField> {
     final effectiveKeyboardType = isMultiLine
         ? TextInputType.multiline
         : widget.keyboardType;
-    final minHeight = isMultiLine ? 132.0 : 56.0;
-    final fieldTopInset = isMultiLine ? 14.0 : 12.0;
+    final minHeight = isMultiLine ? 132.0 : 52.0;
+    final fieldTopInset = isMultiLine ? 14.0 : 10.0;
     const iconStartInset = 14.0;
     const textStartInset = 46.0;
 
@@ -252,7 +252,7 @@ class _StyledTextFieldState extends State<_StyledTextField> {
         children: [
           PositionedDirectional(
             start: iconStartInset,
-            top: isMultiLine ? fieldTopInset + 2 : (minHeight - 20) / 2,
+            top: isMultiLine ? fieldTopInset : (minHeight - 20) / 2,
             child: Icon(widget.icon, color: AppColors.primary, size: 20),
           ),
           TextField(
@@ -275,10 +275,9 @@ class _StyledTextFieldState extends State<_StyledTextField> {
             textCapitalization: isMultiLine
                 ? TextCapitalization.sentences
                 : TextCapitalization.words,
-            textInputAction: isMultiLine
-                ? TextInputAction.newline
-                : TextInputAction.done,
+            textInputAction: TextInputAction.done,
             onChanged: widget.onChanged,
+            onSubmitted: (_) => FocusScope.of(context).unfocus(),
             onEditingComplete: () => FocusScope.of(context).unfocus(),
             onTapOutside: (_) => FocusScope.of(context).unfocus(),
             decoration: InputDecoration(
