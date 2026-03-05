@@ -152,5 +152,36 @@ void main() {
         expect(authenticateCalls, 2);
       },
     );
+
+    test(
+      'authenticate classifies unexpected errors and debounces immediate retry',
+      () async {
+        var authenticateCalls = 0;
+
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(localAuthChannel, (call) async {
+              switch (call.method) {
+                case 'authenticate':
+                  authenticateCalls++;
+                  throw StateError('unexpected auth channel failure');
+                case 'isDeviceSupported':
+                  return true;
+                case 'getAvailableBiometrics':
+                  return <String>['face'];
+                default:
+                  return null;
+              }
+            });
+
+        final first = await BiometricService.instance.authenticate();
+        final retry = await BiometricService.instance.authenticate();
+
+        expect(first.success, isFalse);
+        expect(first.error, BiometricError.unknown);
+        expect(retry.success, isFalse);
+        expect(retry.error, BiometricError.cancelled);
+        expect(authenticateCalls, 1);
+      },
+    );
   });
 }

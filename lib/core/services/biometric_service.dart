@@ -126,11 +126,6 @@ class BiometricService implements IBiometricService {
     String? reason,
     bool biometricOnly = false,
   }) async {
-    BiometricResult trackResult(BiometricResult result) {
-      _lastAuthenticationCompletedAt = DateTime.now().toUtc();
-      return result;
-    }
-
     if (_activeAuthentication case final inFlight?) {
       Log.info('Skip biometric auth - request already in flight');
       return inFlight;
@@ -165,7 +160,7 @@ class BiometricService implements IBiometricService {
       } else {
         Log.warning('Biometric auth failed');
       }
-      final result = trackResult(BiometricResult(success: success));
+      final result = BiometricResult(success: success);
       completer.complete(result);
       return result;
     } on LocalAuthException catch (e) {
@@ -177,72 +172,58 @@ class BiometricService implements IBiometricService {
       switch (e.code) {
         case LocalAuthExceptionCode.noBiometricHardware:
         case LocalAuthExceptionCode.biometricHardwareTemporarilyUnavailable:
-          final result = trackResult(
-            const BiometricResult(
-              success: false,
-              error: BiometricError.notAvailable,
-              message: 'Biometrics not available on this device.',
-            ),
+          const result = BiometricResult(
+            success: false,
+            error: BiometricError.notAvailable,
+            message: 'Biometrics not available on this device.',
           );
           completer.complete(result);
           return result;
         case LocalAuthExceptionCode.noBiometricsEnrolled:
-          final result = trackResult(
-            const BiometricResult(
-              success: false,
-              error: BiometricError.notEnrolled,
-              message: 'No biometrics enrolled. Set up in device settings.',
-            ),
+          const result = BiometricResult(
+            success: false,
+            error: BiometricError.notEnrolled,
+            message: 'No biometrics enrolled. Set up in device settings.',
           );
           completer.complete(result);
           return result;
         case LocalAuthExceptionCode.temporaryLockout:
-          final result = trackResult(
-            const BiometricResult(
-              success: false,
-              error: BiometricError.lockedOut,
-              message: 'Too many attempts. Try again later.',
-            ),
+          const result = BiometricResult(
+            success: false,
+            error: BiometricError.lockedOut,
+            message: 'Too many attempts. Try again later.',
           );
           completer.complete(result);
           return result;
         case LocalAuthExceptionCode.biometricLockout:
-          final result = trackResult(
-            const BiometricResult(
-              success: false,
-              error: BiometricError.permanentlyLockedOut,
-              message: 'Biometrics locked. Use device passcode to unlock.',
-            ),
+          const result = BiometricResult(
+            success: false,
+            error: BiometricError.permanentlyLockedOut,
+            message: 'Biometrics locked. Use device passcode to unlock.',
           );
           completer.complete(result);
           return result;
         case LocalAuthExceptionCode.noCredentialsSet:
-          final result = trackResult(
-            const BiometricResult(
-              success: false,
-              error: BiometricError.passcodeNotSet,
-              message: 'Set up a device passcode first.',
-            ),
+          const result = BiometricResult(
+            success: false,
+            error: BiometricError.passcodeNotSet,
+            message: 'Set up a device passcode first.',
           );
           completer.complete(result);
           return result;
         case LocalAuthExceptionCode.userCanceled:
-          final result = trackResult(
-            const BiometricResult(
-              success: false,
-              error: BiometricError.cancelled,
-            ),
+          const result = BiometricResult(
+            success: false,
+            error: BiometricError.cancelled,
           );
           completer.complete(result);
           return result;
         default:
-          final result = trackResult(
-            BiometricResult(
-              success: false,
-              error: BiometricError.unknown,
-              message:
-                  e.description ?? 'Authentication failed. Please try again.',
-            ),
+          final result = BiometricResult(
+            success: false,
+            error: BiometricError.unknown,
+            message:
+                e.description ?? 'Authentication failed. Please try again.',
           );
           completer.complete(result);
           return result;
@@ -252,16 +233,24 @@ class BiometricService implements IBiometricService {
         'code': e.code,
         'message': e.message ?? 'unknown',
       });
-      final result = trackResult(
-        const BiometricResult(
-          success: false,
-          error: BiometricError.unknown,
-          message: 'Authentication failed. Please try again.',
-        ),
+      const result = BiometricResult(
+        success: false,
+        error: BiometricError.unknown,
+        message: 'Authentication failed. Please try again.',
+      );
+      completer.complete(result);
+      return result;
+    } on Object catch (e, stackTrace) {
+      Log.error('Unexpected biometric auth error', e, stackTrace);
+      const result = BiometricResult(
+        success: false,
+        error: BiometricError.unknown,
+        message: 'Authentication failed. Please try again.',
       );
       completer.complete(result);
       return result;
     } finally {
+      _lastAuthenticationCompletedAt = DateTime.now().toUtc();
       _activeAuthentication = null;
     }
   }
