@@ -92,6 +92,48 @@ class StartupRouteResolution {
   final bool timedOut;
 }
 
+@visibleForTesting
+Map<String, Object> startupPhaseTelemetryParams({
+  required String phase,
+  required int durationMs,
+  required int budgetMs,
+  required bool timedOut,
+  required String outcome,
+}) => <String, Object>{
+  'phase': phase,
+  'duration_ms': durationMs,
+  'budget_ms': budgetMs,
+  'timed_out': timedOut,
+  'outcome': outcome,
+};
+
+@visibleForTesting
+Map<String, Object> startupRoutingSummaryAnalyticsParams({
+  required int initWaitMs,
+  required int splashHoldMs,
+  required int routeResolutionMs,
+  required String initPhaseOutcome,
+  required int identityPhaseMs,
+  required String identityPhaseOutcome,
+  required int entitlementsPhaseMs,
+  required String entitlementsPhaseOutcome,
+  required bool usedFallback,
+  required String? fallbackReason,
+  required String? resolvedRoute,
+}) => <String, Object>{
+  'init_wait_ms': initWaitMs,
+  'splash_hold_ms': splashHoldMs,
+  'route_resolution_ms': routeResolutionMs,
+  'init_phase_outcome': initPhaseOutcome,
+  'identity_phase_ms': identityPhaseMs,
+  'identity_phase_outcome': identityPhaseOutcome,
+  'entitlements_phase_ms': entitlementsPhaseMs,
+  'entitlements_phase_outcome': entitlementsPhaseOutcome,
+  'used_fallback': usedFallback,
+  'fallback_reason': fallbackReason ?? 'none',
+  'resolved_route': resolvedRoute ?? 'unknown',
+};
+
 /// Create router with route guards
 ///
 /// Route guard logic:
@@ -494,6 +536,24 @@ class _SplashScreenState extends ConsumerState<_SplashScreen> {
       'fallbackReason': fallbackReason,
       'resolvedRoute': resolvedRoute,
     });
+    unawaited(
+      Log.event(
+        'startup_routing_summary',
+        startupRoutingSummaryAnalyticsParams(
+          initWaitMs: initWaitMs,
+          splashHoldMs: splashHoldMs,
+          routeResolutionMs: routeResolutionMs,
+          initPhaseOutcome: initPhaseOutcome,
+          identityPhaseMs: identityPhaseMs,
+          identityPhaseOutcome: identityPhaseOutcome,
+          entitlementsPhaseMs: entitlementsPhaseMs,
+          entitlementsPhaseOutcome: entitlementsPhaseOutcome,
+          usedFallback: usedFallback,
+          fallbackReason: fallbackReason,
+          resolvedRoute: resolvedRoute,
+        ),
+      ),
+    );
   }
 
   void _logStartupPhase({
@@ -510,6 +570,18 @@ class _SplashScreenState extends ConsumerState<_SplashScreen> {
       'timedOut': timedOut,
       'outcome': outcome,
     });
+    unawaited(
+      Log.event(
+        'startup_phase',
+        startupPhaseTelemetryParams(
+          phase: phase,
+          durationMs: durationMs,
+          budgetMs: budgetMs,
+          timedOut: timedOut,
+          outcome: outcome,
+        ),
+      ),
+    );
   }
 
   void _navigateToInitialRoute(String route) {

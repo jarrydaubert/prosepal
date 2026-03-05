@@ -194,4 +194,44 @@ void main() {
       expect(result, isFalse);
     });
   });
+
+  group('startup telemetry payload helpers', () {
+    test('startupPhaseTelemetryParams emits stable analytics payload keys', () {
+      final payload = startupPhaseTelemetryParams(
+        phase: 'identity',
+        durationMs: 800,
+        budgetMs: 4000,
+        timedOut: false,
+        outcome: 'ok',
+      );
+
+      expect(payload['phase'], 'identity');
+      expect(payload['duration_ms'], 800);
+      expect(payload['budget_ms'], 4000);
+      expect(payload['timed_out'], false);
+      expect(payload['outcome'], 'ok');
+    });
+
+    test('startupRoutingSummaryAnalyticsParams normalizes nullable values', () {
+      final payload = startupRoutingSummaryAnalyticsParams(
+        initWaitMs: 1200,
+        splashHoldMs: 200,
+        routeResolutionMs: 300,
+        initPhaseOutcome: 'ready',
+        identityPhaseMs: 90,
+        identityPhaseOutcome: 'ok',
+        entitlementsPhaseMs: 110,
+        entitlementsPhaseOutcome: 'authenticated_skipped',
+        usedFallback: true,
+        fallbackReason: null,
+        resolvedRoute: null,
+      );
+
+      expect(payload['init_wait_ms'], 1200);
+      expect(payload['route_resolution_ms'], 300);
+      expect(payload['used_fallback'], true);
+      expect(payload['fallback_reason'], 'none');
+      expect(payload['resolved_route'], 'unknown');
+    });
+  });
 }

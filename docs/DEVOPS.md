@@ -339,6 +339,10 @@ Startup reliability is validated from structured logs emitted by splash routing:
 - `Startup phase telemetry` (per phase)
 - `Startup routing summary` (terminal outcome)
 
+The same fields are emitted to Firebase Analytics events for queryability:
+- `startup_phase`
+- `startup_routing_summary`
+
 Phases and budgets:
 - `init`: max `12000ms` (wait for critical init readiness)
 - `identity`: budget `4000ms` (auth + biometric checks)
@@ -348,6 +352,10 @@ Phases and budgets:
 Required telemetry fields:
 - Per-phase: `phase`, `durationMs`, `budgetMs`, `timedOut`, `outcome`
 - Final summary: `resolvedRoute`, `usedFallback`, `fallbackReason`, `initPhaseOutcome`, `identityPhaseMs/outcome`, `entitlementsPhaseMs/outcome`
+
+Analytics parameter keys:
+- `startup_phase`: `phase`, `duration_ms`, `budget_ms`, `timed_out`, `outcome`
+- `startup_routing_summary`: `init_wait_ms`, `splash_hold_ms`, `route_resolution_ms`, `init_phase_outcome`, `identity_phase_ms`, `identity_phase_outcome`, `entitlements_phase_ms`, `entitlements_phase_outcome`, `used_fallback`, `fallback_reason`, `resolved_route`
 
 Triage policy:
 - Investigate any `timedOut=true` phase on release-candidate builds.
