@@ -1,8 +1,12 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:prosepal/core/config/preference_keys.dart';
+import 'package:prosepal/core/models/models.dart';
 import 'package:prosepal/core/services/notification_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:timezone/data/latest_all.dart' as tz;
+import 'package:timezone/timezone.dart' as tz;
 
 class _MockNotificationsPlugin extends Mock
     implements FlutterLocalNotificationsPlugin {}
@@ -11,12 +15,21 @@ void main() {
   late SharedPreferences prefs;
 
   setUpAll(() {
+    tz.initializeTimeZones();
     registerFallbackValue(
       const InitializationSettings(
         android: AndroidInitializationSettings('@mipmap/ic_launcher'),
         iOS: DarwinInitializationSettings(),
       ),
     );
+    registerFallbackValue(
+      const NotificationDetails(
+        android: AndroidNotificationDetails('c', 'n'),
+        iOS: DarwinNotificationDetails(),
+      ),
+    );
+    registerFallbackValue(tz.TZDateTime.utc(2026));
+    registerFallbackValue(AndroidScheduleMode.inexactAllowWhileIdle);
   });
 
   setUp(() async {
@@ -80,9 +93,6 @@ void main() {
             onDidReceiveNotificationResponse: any(
               named: 'onDidReceiveNotificationResponse',
             ),
-            onDidReceiveBackgroundNotificationResponse: any(
-              named: 'onDidReceiveBackgroundNotificationResponse',
-            ),
           ),
         ).thenAnswer((_) async => true);
         when(() => plugin.cancel(id: any(named: 'id'))).thenAnswer((
@@ -108,5 +118,103 @@ void main() {
         expect(service.storedNotificationIdForTesting('occasion-321'), isNull);
       },
     );
+  });
+
+  group('reminder scheduling', () {
+    test('skips scheduling when notifications are disabled', () async {
+      final plugin = _MockNotificationsPlugin();
+      var scheduled = 0;
+      when(
+        () => plugin.initialize(
+          settings: any(named: 'settings'),
+          onDidReceiveNotificationResponse: any(
+            named: 'onDidReceiveNotificationResponse',
+          ),
+        ),
+      ).thenAnswer((_) async => true);
+      when(
+        () => plugin.zonedSchedule(
+          id: any(named: 'id'),
+          title: any(named: 'title'),
+          body: any(named: 'body'),
+          scheduledDate: any(named: 'scheduledDate'),
+          notificationDetails: any(named: 'notificationDetails'),
+          androidScheduleMode: any(named: 'androidScheduleMode'),
+          payload: any(named: 'payload'),
+        ),
+      ).thenAnswer((_) async {
+        scheduled++;
+      });
+
+      final service = NotificationService(prefs, notifications: plugin);
+      final occasion = SavedOccasion(
+        id: 'occasion-disabled',
+        occasion: Occasion.birthday,
+        date: DateTime.now().add(const Duration(days: 10)),
+        createdAt: DateTime.now().toUtc(),
+      );
+
+      await service.scheduleReminder(occasion);
+
+      expect(scheduled, 0);
+      verifyNever(
+        () => plugin.zonedSchedule(
+          id: any(named: 'id'),
+          title: any(named: 'title'),
+          body: any(named: 'body'),
+          scheduledDate: any(named: 'scheduledDate'),
+          notificationDetails: any(named: 'notificationDetails'),
+          androidScheduleMode: any(named: 'androidScheduleMode'),
+          payload: any(named: 'payload'),
+        ),
+      );
+    });
+
+    test('schedules reminders with stable id and payload', () async {
+      await prefs.setBool(PreferenceKeys.notificationsEnabled, true);
+
+      final plugin = _MockNotificationsPlugin();
+      Map<Symbol, dynamic>? args;
+      when(
+        () => plugin.initialize(
+          settings: any(named: 'settings'),
+          onDidReceiveNotificationResponse: any(
+            named: 'onDidReceiveNotificationResponse',
+          ),
+        ),
+      ).thenAnswer((_) async => true);
+      when(() => plugin.cancel(id: any(named: 'id'))).thenAnswer((_) async {});
+      when(
+        () => plugin.zonedSchedule(
+          id: any(named: 'id'),
+          title: any(named: 'title'),
+          body: any(named: 'body'),
+          scheduledDate: any(named: 'scheduledDate'),
+          notificationDetails: any(named: 'notificationDetails'),
+          androidScheduleMode: any(named: 'androidScheduleMode'),
+          payload: any(named: 'payload'),
+        ),
+      ).thenAnswer((invocation) async {
+        args = invocation.namedArguments;
+      });
+
+      final service = NotificationService(prefs, notifications: plugin);
+      final occasion = SavedOccasion(
+        id: 'occasion-stable',
+        occasion: Occasion.newYear,
+        date: DateTime.now().add(const Duration(days: 14)),
+        recipientName: 'Alex',
+        relationship: Relationship.closeFriend,
+        createdAt: DateTime.now().toUtc(),
+      );
+
+      await service.scheduleReminder(occasion);
+
+      final expectedId = await service.notificationIdForTesting(occasion.id);
+      expect(args, isNotNull);
+      expect(args![#id], expectedId);
+      expect(args![#payload], 'occasion:${occasion.id}');
+      expect(args![#title], '${occasion.occasion.emoji} New Year coming up!');
+    });
   });
 }

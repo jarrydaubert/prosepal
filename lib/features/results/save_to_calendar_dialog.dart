@@ -196,6 +196,19 @@ class _SaveToCalendarDialogState extends ConsumerState<SaveToCalendarDialog> {
       if (mounted) {
         Navigator.pop(context, true);
       }
+    } on Exception catch (error, stackTrace) {
+      Log.error(
+        'Failed to save occasion from results dialog',
+        error,
+        stackTrace,
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Could not save this occasion. Please try again.'),
+          backgroundColor: AppColors.error,
+        ),
+      );
     } finally {
       if (mounted) {
         setState(() => _isSaving = false);
