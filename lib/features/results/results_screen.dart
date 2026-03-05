@@ -284,7 +284,22 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
 
       // Show paywall after celebration (value-first approach)
       await Future.delayed(const Duration(seconds: 3));
-      if (mounted && !isPro) {
+      var shouldShowPaywall = !isPro;
+      if (shouldShowPaywall) {
+        final subscriptionService = ref.read(subscriptionServiceProvider);
+        if (subscriptionService.isConfigured) {
+          final runtimeIsPro = await subscriptionService.isPro();
+          if (runtimeIsPro != isPro) {
+            Log.warning(
+              'First-message paywall entitlement mismatch corrected',
+              {'providerIsPro': isPro, 'runtimeIsPro': runtimeIsPro},
+            );
+          }
+          shouldShowPaywall = !runtimeIsPro;
+        }
+      }
+
+      if (mounted && shouldShowPaywall) {
         showPaywall(context, source: 'first_message');
       }
     } else {
