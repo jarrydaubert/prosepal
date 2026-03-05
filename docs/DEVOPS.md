@@ -171,6 +171,7 @@ Policy:
 - Runs only when CI scope is not docs-only.
 - Uses first-party tooling on `macos-latest` with `xcrun simctl` to boot an available iPhone simulator.
 - Runs `flutter test -d <simulator-udid> integration_test/smoke_test.dart`.
+- Integration execution step is bounded with `timeout-minutes: 12` to prevent stalled simulator runs from consuming CI concurrency indefinitely.
 - Uploads `integration-smoke-artifacts` containing:
   - `artifacts/integration-smoke/smoke.log`
   - `integration_test/screenshots/**` (when produced)

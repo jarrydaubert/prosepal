@@ -245,6 +245,7 @@ jobs:
       - name: Run integration smoke target
         id: smoke
         shell: bash
+        timeout-minutes: 12
         env:
           INTEGRATION_CAPTURE_SCREENSHOTS: "true"
         run: |
