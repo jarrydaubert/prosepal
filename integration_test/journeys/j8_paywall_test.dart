@@ -25,10 +25,13 @@ void main() {
       final atSettings = await navigateToSettings(tester);
       expect(atSettings, isTrue, reason: 'Failed to navigate to settings');
 
+      final foundUpgrade = await scrollToText(tester, 'Upgrade');
+      final foundGoPro = !foundUpgrade && await scrollToText(tester, 'Go Pro');
+
       var triggerLabel = '';
-      if (await scrollToText(tester, 'Upgrade')) {
+      if (foundUpgrade) {
         triggerLabel = 'Upgrade';
-      } else if (await scrollToText(tester, 'Go Pro')) {
+      } else if (foundGoPro) {
         triggerLabel = 'Go Pro';
       }
 
