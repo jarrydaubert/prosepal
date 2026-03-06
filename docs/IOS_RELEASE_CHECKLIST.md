@@ -41,10 +41,10 @@ Required evidence files:
 1. Version/build bump recorded.
 Command:
 ```bash
-/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" ios/Runner/Info.plist
-/usr/libexec/PlistBuddy -c "Print :CFBundleVersion" ios/Runner/Info.plist
+rg '^version:' pubspec.yaml
+xcodebuild -workspace ios/Runner.xcworkspace -scheme Runner -configuration Release -showBuildSettings | rg 'CURRENT_PROJECT_VERSION ='
 ```
-Pass criteria: version/build values match intended release notes and are recorded in `01-version-build.txt`.
+Pass criteria: marketing version from `pubspec.yaml` and build number from Xcode build settings match intended release notes and are recorded in `01-version-build.txt`. Do not rely on literal `Info.plist` values here because this app uses Flutter build-variable substitution (`$(FLUTTER_BUILD_NAME)` / `$(FLUTTER_BUILD_NUMBER)`).
 
 2. Analyzer gate.
 Command:

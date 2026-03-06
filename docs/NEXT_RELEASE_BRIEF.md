@@ -332,24 +332,23 @@ This lowers release risk and preserves the current design baseline while hardeni
 
 ## 12) Proposed Next Release Scope (vNext)
 
-### Must-ship
+### Must-ship for the March 9 release cut
 - Release readiness and evidence gates (`P0-07`, `VNEXT-08`, `VNEXT-09`) with scripted iOS archive, wired-device evidence, and checklist sign-off.
 - Runtime-config and release guardrails enforced through the existing scripted preflight/build path.
-- UI quality hardening (`P0-08`, `VNEXT-12`) to eliminate contrast regressions and styling drift, with approved baseline captures.
-- Input/navigation UX hardening within the existing design system: consistent back-nav controls, aligned text-field icons, and deterministic keyboard-dismiss behavior on searchable/form surfaces.
-- Launch/auth parity (`P0-09`) verified on physical iOS and Android cold-start captures (no flash mismatches, consistent auth-screen contrast treatment).
-- AI reliability hardening (`VNEXT-10`, `P1-43`) including App Check posture validation, error-classification quality, and production model allowlist controls.
-- Deterministic integration/device confidence on the current harness (`P1-24`, `P1-35`, `P1-36`, `P1-39`, `P1-41`) so the critical suite is trusted before release.
-- Startup resilience observability (`P1-48`) with structured phase telemetry and explicit phase-budget reporting on real-device runs.
-- Identity, entitlement, and abuse-control integrity (`VNEXT-11`, `VNEXT-13`) validated and documented.
-- Billing/ops controls (`P0-05`) verified with dry-run alert evidence.
-- Targeted auth flow polish (`P0-04`) to guarantee deterministic post-OAuth loading and failure messaging.
+- AI reliability hardening (`VNEXT-10`, `P1-43`) including App Check posture validation, error-classification quality, production model allowlist controls, and verified physical-device generation on iOS + Android.
+- Launch/auth parity (`P0-09`) only to the extent needed to avoid release-visible regressions: no flash mismatch, no broken auth contrast treatment, and no startup visual defect that would risk review or trust.
+- Identity and entitlement integrity sufficient for release confidence: sign-in/sign-out, purchase, restore, and entitlement reconciliation all pass on physical devices with evidence attached. Full follow-on documentation/cleanup can continue post-launch.
+- Billing/ops controls (`P0-05`) verified with dry-run alert evidence and a known rollback path.
+- Targeted auth flow polish (`P0-04`) only if it is still reproducible on the release candidate.
 
 ### Explicitly out-of-scope for vNext
+- Broad design-system cleanup or component consolidation beyond fixing release-visible regressions (`P0-08`, `VNEXT-12`).
+- Large integration-harness hardening work beyond the minimum evidence needed to trust the release (`P1-24`, `P1-35`, `P1-36`, `P1-39`, `P1-41`, `P1-48`).
 - Large visual theme replacement.
 - New major UX architecture (chat-first) in production.
 - Server-side AI gateway as production default (`P1-47`) unless post-launch trigger criteria are met.
 - Startup orchestration refactor/state-machine migration (`P2-13`).
+- Portfolio/showcase packaging work (`P2-16`) and selective Patrol expansion (`P2-15`) unless they directly unblock a release-critical native flow.
 
 ---
 
@@ -361,7 +360,7 @@ Release is eligible only if all are true:
 - Flake audit passes repeated runs.
 - Integration smoke passes on iOS simulator and Android emulator.
 - Critical integration suite passes on one wired iOS and one wired Android physical device.
-- Visual regression CI job publishes no unapproved core-screen diffs.
+- Visual regression CI job publishes no unapproved release-critical diffs.
 - FTL Android run passes for selected critical suite.
 - iOS release build process validated via required build script.
 - Next-release checklist evidence (`P0-07`) is complete and attached.
@@ -374,8 +373,8 @@ Release is eligible only if all are true:
 - Account deletion flow includes subscription handling guidance and management path.
 - Release preflight blocks missing required runtime configuration.
 - Device abuse-control approach is documented and approved for platform-policy compliance.
-- Startup phase telemetry evidence is attached for wired iOS and Android runs (phase timings plus terminal route outcome).
-- Core screen styling is verified against live baseline (or documented intentional deltas approved).
+- Startup phase telemetry evidence is attached for wired iOS and Android runs if captured as part of release validation; absence is acceptable only if startup behavior is otherwise stable and explicitly signed off for this cut.
+- Core release-critical screens are visually sane on physical devices; broader live-baseline alignment can follow post-launch.
 - Launch/auth visual parity evidence from physical iOS + Android cold starts is attached (`P0-09`).
 
 ---

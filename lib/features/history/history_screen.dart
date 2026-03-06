@@ -216,6 +216,8 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                   controller: _searchController,
                   focusNode: _searchFocusNode,
                   onChanged: _onSearchChanged,
+                  keyboardType: TextInputType.text,
+                  textCapitalization: TextCapitalization.words,
                   textInputAction: TextInputAction.done,
                   onSubmitted: (_) => FocusScope.of(context).unfocus(),
                   onTapOutside: (_) => FocusScope.of(context).unfocus(),

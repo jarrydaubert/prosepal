@@ -150,6 +150,10 @@ void main() {
 
       expect(find.byType(TextField), findsOneWidget);
       expect(find.text('Search messages...'), findsOneWidget);
+
+      final searchField = tester.widget<TextField>(find.byType(TextField));
+      expect(searchField.textCapitalization, TextCapitalization.words);
+      expect(searchField.keyboardType, TextInputType.text);
     });
 
     testWidgets('shows clear all button when history exists', (tester) async {

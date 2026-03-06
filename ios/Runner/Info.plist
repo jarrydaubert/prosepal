@@ -49,6 +49,12 @@
 		<true/>
 		<key>NSFaceIDUsageDescription</key>
 		<string>Prosepal uses Face ID to protect your account and keep your messages private.</string>
+		<key>NSCalendarsUsageDescription</key>
+		<string>Prosepal uses calendar access so you can save occasions and reminders to your calendar.</string>
+		<key>NSCalendarsFullAccessUsageDescription</key>
+		<string>Prosepal uses calendar access so you can save occasions and reminders to your calendar.</string>
+		<key>NSCalendarsWriteOnlyAccessUsageDescription</key>
+		<string>Prosepal uses calendar access so you can add occasions and reminders to your calendar.</string>
 		<key>UIApplicationSceneManifest</key>
 		<dict>
 			<key>UIApplicationSupportsMultipleScenes</key>

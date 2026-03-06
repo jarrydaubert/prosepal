@@ -498,6 +498,21 @@ Create production release via `Release` workflow:
 - Workflow creates annotated `vX.Y.Z` tag.
 - Workflow publishes GitHub Release notes with category mapping from `.github/release.yml`.
 
+For iOS releases, upload dSYMs from the final submitted `.xcarchive` after App Store Connect upload completes:
+
+```bash
+./ios/Pods/FirebaseCrashlytics/upload-symbols \
+  -d \
+  -gsp ./ios/Runner/GoogleService-Info.plist \
+  -p ios \
+  "$HOME/Library/Developer/Xcode/Archives/<yyyy-mm-dd>/<Archive Name>.xcarchive/dSYMs"
+```
+
+Notes:
+- Use the exact archive that was submitted to App Store Connect.
+- `build/debug-info/ios` is still required for Flutter obfuscation symbolication, but it is not a substitute for archive dSYM upload.
+- Firebase SDK internal frameworks can emit invalid/empty dSYM warnings during upload; treat those as non-blocking if the uploader still finishes with `Successfully uploaded Crashlytics symbols`.
+
 ## Monthly Governance Review
 
 Run once per month (or after major GitHub-policy changes):
