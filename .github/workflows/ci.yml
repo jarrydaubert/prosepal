@@ -15,6 +15,8 @@ jobs:
     name: Flutter Quality Gate
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    outputs:
+      docs_only: ${{ steps.scope.outputs.docs_only }}
     permissions:
       contents: read
     steps:
@@ -117,7 +119,7 @@ jobs:
       - name: Install Flutter SDK
         if: steps.scope.outputs.docs_only != 'true'
         run: |
-          git clone https://github.com/flutter/flutter.git --depth 1 --branch 3.38.6 "$HOME/flutter"
+          git clone https://github.com/flutter/flutter.git --depth 1 --branch 3.41.4 "$HOME/flutter"
           echo "$HOME/flutter/bin" >> "$GITHUB_PATH"
           "$HOME/flutter/bin/flutter" --version
 
@@ -128,6 +130,10 @@ jobs:
       - name: Static analysis
         if: steps.scope.outputs.docs_only != 'true'
         run: flutter analyze --no-fatal-infos
+
+      - name: Launch/auth color parity guard
+        if: steps.scope.outputs.docs_only != 'true'
+        run: ./scripts/check_launch_color_parity.sh
 
       - name: Critical smoke gate
         if: steps.scope.outputs.docs_only != 'true'
@@ -157,3 +163,130 @@ jobs:
           path: coverage/lcov.info
           if-no-files-found: warn
           retention-days: 14
+
+  visual_regression:
+    name: Visual Regression (non-blocking)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: quality
+    if: needs.quality.outputs.docs_only != 'true'
+    continue-on-error: true
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+      - name: Install Flutter SDK
+        run: |
+          git clone https://github.com/flutter/flutter.git --depth 1 --branch 3.41.4 "$HOME/flutter"
+          echo "$HOME/flutter/bin" >> "$GITHUB_PATH"
+          "$HOME/flutter/bin/flutter" --version
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Run visual regression suite
+        id: visual
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./scripts/test_visual_regression.sh
+
+      - name: Upload visual diff artifacts
+        if: always()
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
+        with:
+          name: visual-regression-diffs
+          path: |
+            test/widgets/goldens/failures/**
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Visual regression summary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "## Visual Regression (non-blocking)"
+            if [[ "${{ steps.visual.outcome }}" == "success" ]]; then
+              echo "- Status: ✅ passed"
+              echo "- Baseline unchanged."
+            else
+              echo "- Status: ⚠️ failed (non-blocking)"
+              echo "- Diff artifacts: \`visual-regression-diffs\`"
+              echo "- To accept intended UI changes locally:"
+              echo "  - \`./scripts/test_visual_regression.sh --update\`"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  integration_smoke:
+    name: Integration Smoke (non-blocking)
+    runs-on: macos-latest
+    timeout-minutes: 35
+    needs: quality
+    if: needs.quality.outputs.docs_only != 'true'
+    continue-on-error: true
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+      - name: Install Flutter SDK
+        run: |
+          git clone https://github.com/flutter/flutter.git --depth 1 --branch 3.41.4 "$HOME/flutter"
+          echo "$HOME/flutter/bin" >> "$GITHUB_PATH"
+          "$HOME/flutter/bin/flutter" --version
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Run integration smoke target
+        id: smoke
+        shell: bash
+        timeout-minutes: 12
+        env:
+          INTEGRATION_CAPTURE_SCREENSHOTS: "true"
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/integration-smoke
+          SIM_ID="$(xcrun simctl list devices available | awk -F '[()]' '/iPhone 16/ {print $2; exit}')"
+          if [[ -z "$SIM_ID" ]]; then
+            SIM_ID="$(xcrun simctl list devices available | awk -F '[()]' '/iPhone/ {print $2; exit}')"
+          fi
+          if [[ -z "$SIM_ID" ]]; then
+            echo "No available iOS simulator found."
+            exit 1
+          fi
+          xcrun simctl boot "$SIM_ID" || true
+          xcrun simctl bootstatus "$SIM_ID" -b
+          flutter devices
+          flutter test -d "$SIM_ID" integration_test/smoke_test.dart -r expanded 2>&1 | tee artifacts/integration-smoke/smoke.log
+
+      - name: Upload integration smoke artifacts
+        if: always()
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
+        with:
+          name: integration-smoke-artifacts
+          path: |
+            artifacts/integration-smoke/**
+            integration_test/screenshots/**
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Integration smoke summary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "## Integration Smoke (non-blocking)"
+            if [[ "${{ steps.smoke.outcome }}" == "success" ]]; then
+              echo "- Status: ✅ passed"
+            else
+              echo "- Status: ⚠️ failed (non-blocking)"
+              echo "- Artifacts: \`integration-smoke-artifacts\`"
+            fi
+            echo "- Target: iOS Simulator on \`macos-latest\`"
+            echo "- Command: \`flutter test -d <simulator-udid> integration_test/smoke_test.dart\`"
+          } >> "$GITHUB_STEP_SUMMARY"

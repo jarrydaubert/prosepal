@@ -163,5 +163,29 @@ void main() {
         expect(usageService.hasRetryTimer, isFalse);
       },
     );
+
+    test('pending sync timestamps are stored as UTC', () async {
+      await usageService.recordGeneration();
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString('pending_usage_syncs');
+
+      expect(raw, isNotNull);
+      final createdAtRaw = RegExp(
+        '"createdAt":"([^"]+)"',
+      ).firstMatch(raw!)?.group(1);
+      expect(createdAtRaw, isNotNull);
+      expect(DateTime.parse(createdAtRaw!).isUtc, isTrue);
+    });
+
+    test('month key generation is UTC normalized', () {
+      final localOffsetTimestamp = DateTime.parse(
+        '2026-03-01T00:30:00+02:00',
+      ); // UTC: 2026-02-28T22:30:00Z
+      final monthKey = UsageService.monthStringFor(localOffsetTimestamp);
+
+      expect(monthKey, equals('2026-02'));
+    });
   });
 }

@@ -15,12 +15,13 @@ Current reality:
 - Core architecture and integrations (Supabase, RevenueCat, Firebase AI, Analytics/Crashlytics, Remote Config) are in place.
 - Unit/widget testing is strong; integration testing exists but still needs hardening for deterministic reliability.
 - vNext UI baseline is a tokenized coral/navy/white theme direction (no ad-hoc per-screen color systems).
-- The major redesign is planned but not sufficiently implemented to be the safest next release target.
+- The current product design is the intended baseline for vNext, with only targeted quality and parity hardening.
 
 Recommendation for next release:
-- Prioritize an infrastructure/reliability release first.
+- Prioritize a release-readiness + reliability release first.
+- Focus on AI client reliability, deterministic device validation, and release evidence.
 - Keep current UX as baseline.
-- Treat redesign as a controlled follow-up behind feature flag + rollout gates.
+- Avoid major UX architecture changes in this release.
 
 ---
 
@@ -279,6 +280,7 @@ Recommendation for next release:
 - Unit tests: service/model/logic coverage.
 - Widget tests: screen behavior and rendering.
 - Integration tests: smoke + journey + coverage suites under `integration_test/`.
+- Patrol should be adopted selectively for true native/system UI interactions, not as a blanket replacement for the existing integration harness.
 
 ### Local commands used
 - `flutter analyze`
@@ -315,21 +317,16 @@ Recommendation for next release:
 
 ---
 
-## 11) Redesign Status and Product Direction
-
-### Current redesign state
-- Redesign plan exists and is detailed.
-- Implementation is still partial with major phases not complete.
-- It is not yet the safest primary target for immediate release.
+## 11) Product Direction
 
 ### Recommended sequencing
-1. Ship infrastructure/reliability release first.
+1. Ship release-readiness + reliability first.
 2. Freeze major UX changes for that release.
-3. Align core screen styling to current live baseline (or explicitly approve intentional deltas).
-4. Finalize deterministic integration + device/FTL confidence.
-5. Then start redesign rollout behind feature flags and staged metrics gates.
+3. Close the AI client-block/App Check gap on real devices.
+4. Finalize deterministic integration + wired-device confidence before RC.
+5. Align core screen styling to the current baseline (or explicitly approve deltas).
 
-This lowers release risk and gives a trusted baseline for measuring redesign impact.
+This lowers release risk and preserves the current design baseline while hardening release confidence.
 
 ---
 
@@ -337,20 +334,18 @@ This lowers release risk and gives a trusted baseline for measuring redesign imp
 
 ### Must-ship
 - Release readiness and evidence gates (`P0-07`, `VNEXT-08`, `VNEXT-09`) with scripted iOS archive, wired-device evidence, and checklist sign-off.
-- Security and release guardrails (`P0-10`) with mandatory CI secret scanning and required runtime-config gate enforcement.
-- UI quality hardening (`P0-08`, `P1-50`, `VNEXT-12`) to eliminate contrast regressions and styling drift, with approved baseline captures.
+- Runtime-config and release guardrails enforced through the existing scripted preflight/build path.
+- UI quality hardening (`P0-08`, `VNEXT-12`) to eliminate contrast regressions and styling drift, with approved baseline captures.
 - Input/navigation UX hardening within the existing design system: consistent back-nav controls, aligned text-field icons, and deterministic keyboard-dismiss behavior on searchable/form surfaces.
-- Visual QA automation (`P1-49`, `P1-25`) so CI publishes deterministic visual and smoke artifacts for candidate branches.
 - Launch/auth parity (`P0-09`) verified on physical iOS and Android cold-start captures (no flash mismatches, consistent auth-screen contrast treatment).
-- Launch/auth color drift guard (`P1-51`) to prevent iOS/Android/Flutter splash color divergence from reappearing.
 - AI reliability hardening (`VNEXT-10`, `P1-43`) including App Check posture validation, error-classification quality, and production model allowlist controls.
+- Deterministic integration/device confidence on the current harness (`P1-24`, `P1-35`, `P1-36`, `P1-39`, `P1-41`) so the critical suite is trusted before release.
 - Startup resilience observability (`P1-48`) with structured phase telemetry and explicit phase-budget reporting on real-device runs.
 - Identity, entitlement, and abuse-control integrity (`VNEXT-11`, `VNEXT-13`) validated and documented.
 - Billing/ops controls (`P0-05`) verified with dry-run alert evidence.
 - Targeted auth flow polish (`P0-04`) to guarantee deterministic post-OAuth loading and failure messaging.
 
 ### Explicitly out-of-scope for vNext
-- Full redesign rollout.
 - Large visual theme replacement.
 - New major UX architecture (chat-first) in production.
 - Server-side AI gateway as production default (`P1-47`) unless post-launch trigger criteria are met.
@@ -367,11 +362,10 @@ Release is eligible only if all are true:
 - Integration smoke passes on iOS simulator and Android emulator.
 - Critical integration suite passes on one wired iOS and one wired Android physical device.
 - Visual regression CI job publishes no unapproved core-screen diffs.
-- Launch/auth color parity drift check (`P1-51`) passes in CI.
 - FTL Android run passes for selected critical suite.
 - iOS release build process validated via required build script.
 - Next-release checklist evidence (`P0-07`) is complete and attached.
-- CI secret/config release gates (`P0-10`) pass with zero bypasses.
+- Release preflight/build scripts pass with zero bypasses.
 - No critical auth/payment/security regressions.
 - App Check production posture and provider validation are confirmed for AI-critical paths.
 - Production AI model default is stable non-preview; fallback + allowlist validation confirmed.
@@ -394,7 +388,7 @@ Please comment directly on these points:
 2. Are any user-facing features mandatory for this release beyond reliability?
 3. Which exact integration tests should become hard release gates?
 4. What dependency upgrade risk tolerance do we want (aggressive vs staged)?
-5. Do we approve redesign as a post-vNext flagged rollout rather than primary target?
+5. Do we confirm the current design remains the product baseline for vNext?
 6. For vNext visuals, do we require strict live-style parity on core screens (yes/no)?
 
 ### Draft sign-off responses (recommended)
@@ -408,9 +402,9 @@ Please comment directly on these points:
 4. Dependency strategy should be staged:
    - batch A: low-risk toolchain/minor updates
    - batch B: Riverpod/annotation ecosystem
-   - batch C: RevenueCat SDK pins and purchase-flow regression pass
+   - batch C: purchase/auth/device-regression pass after dependency movement
    - each batch must pass analyzer/tests/integration smoke before merge
-5. Yes, redesign should be post-vNext behind feature flags and staged rollout metrics.
+5. Yes, keep the current design as the product baseline for vNext.
 6. Yes, enforce live-style parity for vNext core screens unless a delta is explicitly approved.
 
 ### Additional recommendations from audit

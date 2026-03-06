@@ -286,7 +286,7 @@ Instead of guessing, analyze what's working for top creators in your niche:
 3. **Instagram** — Reels + Stories, beautiful card imagery, behind-the-scenes
 4. **X (Twitter)** — Launch announcements, tech/indie community engagement
 
-### Content Pillars (from docs/MARKETING.md)
+### Content Pillars (from docs/PRODUCT_STRATEGY.md)
 1. **The Struggle** — Relatable "staring at a blank card" content
 2. **The Speed Run** — "Watch me write the perfect message in 30 seconds"
 3. **The Transformation** — Before (generic) vs. after (personalized) messages
@@ -305,4 +305,4 @@ Instead of guessing, analyze what's working for top creators in your niche:
 - NOT influencer-speak, NOT corporate
 
 ### Reference
-- `docs/MARKETING.md` Section 13 — AI execution playbook
+- `docs/PRODUCT_STRATEGY.md` — High-level product and growth strategy

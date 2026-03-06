@@ -378,5 +378,5 @@ Prosepal is a native mobile app — launch strategy centers on App Store and Pla
 - Worst: mid-summer (low card-sending activity, except weddings)
 
 ### Reference
-- `docs/MARKETING.md` — Full marketing and launch strategy
+- `docs/PRODUCT_STRATEGY.md` — High-level product and growth strategy
 - `docs/LAUNCH_CHECKLIST.md` — Pre-launch checklist

@@ -37,6 +37,9 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
   @override
   void initState() {
     super.initState();
+    // Entering generation flow should always clear home search state so users
+    // don't return to a stale filtered home list.
+    ref.read(occasionSearchProvider.notifier).state = '';
     // Attempt to restore form state after first frame
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _attemptRestoreFormState();
@@ -204,7 +207,12 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
                       .read(formRestorationServiceProvider)
                       .clearGenerateFormState();
                   resetGenerationForm(ref);
-                  context.pop();
+                  ref.read(occasionSearchProvider.notifier).state = '';
+                  if (context.canPop()) {
+                    context.pop();
+                  } else {
+                    context.go('/home');
+                  }
                 }
               },
             ),
@@ -411,6 +419,14 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
           return;
         }
       } else if (!isPro) {
+        // Fast local guard prevents repeated free generations if server sync lags.
+        if (!usageService.canGenerateFree()) {
+          ref.read(isGeneratingProvider.notifier).state = false;
+          ref.read(generationErrorProvider.notifier).state =
+              'Free message already used. Upgrade to Pro for more!';
+          return;
+        }
+
         // Anonymous free tier: server-side device fingerprint check (prevents reinstall abuse)
         try {
           final deviceCheck = await usageService

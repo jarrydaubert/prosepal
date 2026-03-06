@@ -334,5 +334,5 @@ For implementation, see the [tools registry](../../tools/REGISTRY.md). Key email
 - Generic newsletters with no clear value
 
 ### Reference
-- `docs/MARKETING.md` — Email marketing strategy
+- `docs/PRODUCT_STRATEGY.md` — High-level product and growth strategy
 - `churn-prevention` skill — Retention email patterns

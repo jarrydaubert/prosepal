@@ -7,30 +7,41 @@ Rules:
 - Every item must include a clear, testable Definition of Done (DoD).
 - When an item is complete, remove it from this file.
 
+## Global DoD Contract (Applies To Every Item)
+
+A backlog item is only considered complete when all conditions below are true:
+
+1. `Outcome delivered`: The row's feature/fix/docs scope is implemented exactly as written.
+2. `Deterministic validation passed`: Relevant validation commands pass with no manual interpretation required.
+3. `Evidence attached`: PR/release evidence includes concrete proof (logs, screenshots, CI run IDs, or artifact links) for the completed outcome.
+4. `Backlog hygiene`: The completed item is removed from this file in the same change set that provides outcome + validation + evidence.
+
+If any condition is missing, the item remains open.
+
 ## Release Priority Order (vNext)
 
 Process items in this order unless an explicit owner override is recorded in release planning.
 
-1. `P0-08` Design token consistency and contrast hardening
-2. `P0-09` iOS/Android launch and auth visual parity
-3. `P0-10` CI-enforced secret/config release guardrails
-4. `P1-49` Visual regression workflow hardening
-5. `P1-25` CI coverage for integration + visual QA gates
-6. `P1-51` Launch/auth color parity drift guard
-7. `P0-07` Next iOS release readiness checklist
-8. `VNEXT-08` Wired physical-device validation gates
-9. `VNEXT-09` iOS script-only archive validation
-10. `VNEXT-10` AI cost/abuse controls
-11. `P1-43` Firebase AI client-block regression hardening
-12. `P1-48` Startup phase telemetry and budget visibility
-13. `P1-50` Shared surface/card component consolidation
-14. `VNEXT-11` Canonical identity mapping
-15. `VNEXT-12` UI parity with live baseline
+1. `P0-07` Next iOS release readiness checklist
+2. `VNEXT-08` Wired physical-device validation gates
+3. `P1-43` Firebase AI client-block regression hardening
+4. `VNEXT-10` AI cost/abuse controls
+5. `P0-08` Design token consistency and contrast hardening
+6. `P0-09` iOS/Android launch and auth visual parity
+7. `VNEXT-09` iOS script-only archive validation
+8. `P1-24` Deterministic integration journey assertions
+9. `P1-35` Smoke suite determinism and async hygiene
+10. `P1-39` Android smoke integration harness stall (`did not complete`)
+11. `P1-41` Network-independent smoke deterministic mode
+12. `P1-36` Journey launch readiness hardening
+13. `P1-48` Startup phase telemetry and budget visibility
+14. `P1-52` Biometric lifecycle debounce + single-flight guard
+15. `VNEXT-11` Canonical identity mapping
 16. `VNEXT-13` Device abuse-control compliance decision
-17. `P0-05` Billing budget alert controls
-18. `P0-04` Auth loading spinner after OAuth sheet
-19. `P0-01` Move Google setup to business account
-20. `P0-02` Keep redesign out of vNext scope
+17. `VNEXT-12` UI parity with live baseline
+18. `P0-05` Billing budget alert controls
+19. `P0-04` Auth loading spinner after OAuth sheet
+20. `P0-01` Move Google setup to business account
 21. `P1-47` Server-side AI gateway rollout (post-launch trigger)
 22. `P2-13` Startup orchestration refactor (post-launch)
 
@@ -40,9 +51,8 @@ Process items in this order unless an explicit owner override is recorded in rel
 |----|------|--------------------|
 | `P0-07` | Next iOS release readiness checklist | `docs/IOS_RELEASE_CHECKLIST.md` contains an explicit pre-release checklist and every line item is executed with evidence: version/build bump, `flutter analyze`, `flutter test`, `./scripts/test_critical_smoke.sh`, wired iOS smoke/journey run, scripted iOS archive success, Crashlytics dSYM upload verification, Firebase App Check + AI generation verification on physical iOS, RevenueCat entitlement/paywall verification, Supabase auth/provider verification, App Store Connect metadata/release notes/screenshots review, TestFlight sanity pass, git-history secret audit (`git log --all -- .env.local` + CI secret scan output), and rollback path confirmation with owner sign-off. |
 | `VNEXT-08` | Wired physical-device validation gates | Critical suite passes on one wired iOS and one wired Android physical device; release evidence bundle is captured and attached. |
-| `P0-08` | Design token consistency and contrast hardening | Core screens (`home`, `generate`, `results`, `history`, `settings`, `calendar`, `auth`, onboarding, paywall) use shared semantic tokens only (canonical palette: navy/slate backgrounds, coral actions, white/light surfaces) with no light-on-light or dark-on-dark regressions. Back navigation controls are visually consistent across screens, text-field prefix/suffix icon alignment is consistent, and text-entry surfaces provide deterministic keyboard-dismiss behavior (`done` action and/or explicit dismiss affordance). Golden + manual accessibility pass confirms WCAG AA for primary text on every core screen before RC cut. |
+| `P0-08` | Design token consistency and contrast hardening | Core screens (`home`, `generate`, `results`, `history`, `settings`, `calendar`, `auth`, onboarding, paywall) use shared semantic tokens only (canonical palette: navy/slate backgrounds, coral actions, white/light surfaces) with no light-on-light or dark-on-dark regressions. Back navigation controls are visually consistent across screens, text-field prefix/suffix icon alignment is consistent, and text-entry surfaces provide deterministic keyboard-dismiss behavior (`done` action and/or explicit dismiss affordance). DoD evidence requires: updated golden baseline for affected core screens, physical iOS + Android screenshots for each affected flow, and an explicit WCAG AA manual verification note for primary text before RC cut. |
 | `P0-09` | iOS/Android launch and auth visual parity | Cold-launch capture on physical iOS and Android shows matching launch background tone, no white/grey flash during transition to Flutter splash/auth, and consistent auth-screen logo/button contrast treatment. Evidence screenshots/videos are attached in release artifact bundle. |
-| `P0-10` | CI-enforced secret/config release guardrails | CI blocks release candidates on secret scanning or missing required runtime config gates: (1) secret scan (gitleaks/trufflehog) on full git history and working tree, (2) required `dart-define` preflight validation, (3) failure messaging links to exact remediation commands. `docs/DEVOPS.md` documents enforcement + rotation procedure. |
 | `P0-05` | Billing budget alert controls | Budget thresholds and notification channels are configured and verified through a dry-run alert path. |
 | `VNEXT-09` | iOS script-only archive validation | Release-candidate archive succeeds via scripted iOS build path and evidence confirms non-scripted archive paths are not used. |
 | `P0-04` | Auth loading spinner after OAuth sheet | After Apple/Google auth sheet closes, UI shows deterministic loading state until auth completion resolves or fails with user-visible error. |
@@ -51,37 +61,29 @@ Process items in this order unless an explicit owner override is recorded in rel
 | `VNEXT-11` | Canonical identity mapping | Supabase ID, RevenueCat App User ID, Analytics ID, and Crashlytics ID mapping is validated across sign-in/sign-out transitions and documented in `docs/IDENTITY_MAPPING.md`. |
 | `VNEXT-12` | UI parity with live baseline | Baseline screenshots exist for core screens and any styling delta is either matched to live or explicitly approved before release. |
 | `VNEXT-13` | Device abuse-control compliance decision | iOS/Android abuse-control approach is approved, documented, and reflected in release checklist and runtime configuration. |
-| `P0-02` | Keep redesign out of vNext scope | vNext release scope excludes major redesign code paths; only reliability and approved live-style parity changes are included in release candidate. |
 
 ## P1 - Engineering Tasks
 
 | ID | Item | Definition of Done |
 |----|------|--------------------|
 | `P1-48` | Startup phase telemetry and budget visibility | Existing startup flow emits structured phase telemetry (`init`, `identity`, `entitlements`, `routing`) with per-phase duration, timeout/fallback reason, and final terminal route outcome. Logs are queryable in Crashlytics/analytics, phase budgets are documented in `docs/DEVOPS.md`, and fault-injection runs prove telemetry captures degraded startup paths deterministically. |
-| `P1-49` | Visual regression workflow hardening | Golden/visual pipeline distinguishes intended UI updates from regressions: baseline update command is documented, CI publishes diff artifacts, and PR template requires visual-approval evidence for core screens. Re-running visual tests after intended baseline update is deterministic. |
-| `P1-51` | Launch/auth color parity drift guard | A lightweight CI check verifies iOS launch storyboard background color, Android launch/app background color, and Flutter splash background token remain aligned to the same canonical hex value. CI fails on drift and outputs remediation instructions with file paths. |
-| `P1-50` | Shared surface/card component consolidation | Core light-surface cards (history item, settings tiles/cards, calendar cards, results cards, free-usage card) use shared primitives for padding, border, radius, and text color tokens. Ad-hoc duplicated styling is removed and widget tests cover representative variants to prevent drift. |
 | `P1-43` | Firebase AI client-block regression hardening | Real-device AI generation succeeds on wired iOS and Android using the current Firebase AI + App Check setup, and failure classification distinguishes client/app-block configuration errors from true content-safety blocks. `docs/DEVOPS.md` includes a deterministic checklist for debugging `client application <empty> are blocked` responses. |
 | `P1-47` | Server-side AI gateway rollout (post-launch trigger) | A documented trigger policy exists for enabling a server-side AI gateway (abuse threshold, model-policy requirement, or provider-failover need). A non-production spike path exists behind a disabled feature flag, with parity tests proving no user-visible regression when enabled in staging. Production default remains client-direct until trigger criteria are met and approved. |
 | `P1-24` | Deterministic integration journey assertions | Journey tests in `integration_test/journeys/` stop using optional `if (exists(...))` branches for core checkpoints (auth entry, upgrade path, generation result, settings navigation) and fail explicitly when expected UI state is missing. Updated journeys run green in deterministic local/device execution and include clear assertion reasons. |
 | `P1-42` | Auth-screen layout flake elimination | The `AuthScreen shows error banner when Google sign-in fails` test no longer produces order-dependent `RenderFlex overflow` failures during randomized multi-file runs. Root cause is fixed (test harness isolation and/or responsive layout constraints), deterministic regression coverage is added, and `./scripts/test_flake_audit.sh` shows zero flakes for this case. |
-| `P1-40` | Startup/router timeout guard under network faults | Splash/startup routing reaches an explicit terminal route (`/onboarding`, `/home`, `/auth`, `/lock`, or init error surface) within a bounded timeout even when Supabase/RevenueCat DNS fails. Integration tests with network fault simulation prove no indefinite wait in launch phase. |
+| `P1-40` | Startup/router timeout guard under network faults | Splash/startup routing reaches an explicit terminal route (`/onboarding`, `/home`, `/auth`, `/lock`, or init error surface) within a bounded timeout even when Supabase/RevenueCat DNS fails. Returning-user entitlement routing is deterministic under delayed RevenueCat init (no false `/onboarding` fallback followed by corrective auth/restore reroute). Integration tests cover both network-fault and delayed-entitlement scenarios with deterministic pass/fail assertions. |
+| `P1-52` | Biometric lifecycle debounce + single-flight guard | Biometric lock flow guarantees a single active prompt per foreground transition, ignores duplicate resume/inactive callbacks inside a bounded debounce window, and logs one stable lifecycle transition per lock attempt. Device tests on iOS confirm no rapid repeated `Biometric auth started` bursts during Face ID enable/disable and resume flows. |
 | `P1-41` | Network-independent smoke deterministic mode | `integration_test/smoke_test.dart` has a documented deterministic mode (or injected fakes) that removes dependency on live Supabase/RevenueCat reachability for core S1-S5 assertions. CI/device smoke remains stable when outbound network is unavailable or flaky. |
 | `P1-39` | Android smoke integration harness stall (`did not complete`) | `flutter test -d <android-device> integration_test/smoke_test.dart` completes deterministically on wired hardware. No test hangs at `S1` with `+0` progress, and failures (if any) surface as explicit assertions/timeouts with actionable stack traces. |
 | `P1-35` | Smoke suite determinism and async hygiene | `integration_test/smoke_test.dart` removes guarded async conflicts and fragile route assumptions (`S4`/`S5`), uses deterministic waits/finders, and passes on wired Android + iOS without manual retries. |
 | `P1-36` | Journey launch readiness hardening | `integration_test/journeys/_helpers.dart` `launchApp()` waits for a concrete ready surface (onboarding/auth/home) with bounded timeout and clear failure reasons. `j1_fresh_install_test.dart` no longer produces `did not complete` behavior during wired-device execution. |
 | `P1-38` | E2E suite failure isolation | `integration_test/e2e_test.dart` execution is split or orchestrated so one early failure does not collapse the full suite into mass `did not complete` noise. Each shard outputs independent pass/fail and artifacts. |
 | `P1-34` | Offline-safe integration font loading | Integration runs do not depend on live `fonts.gstatic.com` fetches. `google_fonts` runtime fetching is disabled in test mode (or fonts are bundled/preloaded), and `integration_test/smoke_test.dart` + `integration_test/e2e_test.dart` pass without DNS/network access. |
-| `P1-32` | Calendar reminder flow test coverage | Add widget tests for `save_to_calendar_dialog.dart` and service tests for `notification_service.dart` that verify save success path, permission denied/granted handling, reminder toggle behavior, schedule/cancel outcomes, and failure handling. Tests are deterministic and included in blocking or clearly documented non-blocking QA gates. |
-| `P1-33` | Deterministic notification IDs | Replace `String.hashCode`-based notification IDs with deterministic stored integer IDs for reminder scheduling/cancellation. Add migration-safe behavior and tests proving stable ID reuse across app restarts and correct cancellation targeting. |
 | `P1-37` | iOS CocoaPods lockfile consistency gate | `ios/Podfile.lock` stays aligned with plugin constraints on clean clone. Running `flutter test -d <ios-device> integration_test/*` does not require ad-hoc pod updates, and CI/dev docs include a reproducible pod consistency check. |
-| `P1-22` | UTC consistency for server-synced timestamps | `rate_limit_service.dart` and `usage_service.dart` use `DateTime.now().toUtc()` for all server-synced timestamp calculations (rate limit windows, monthly resets, usage sync). Local time usage is restricted to local-only features (history display). Existing tests updated to validate UTC. |
 | `P1-27` | QA code documentation standards (Dartdoc/JSDoc) | Public QA-facing helpers and APIs have accurate documentation comments: Dartdoc on shared test helpers/mocks/services and JSDoc on JavaScript/TypeScript automation code in repo scope. Comments describe purpose, inputs/outputs, and failure modes; stale examples are removed; documentation quality is verified in CI (lint/check step) and reflected in `docs/DEVOPS.md`. |
 | `P1-44` | Full documentation walkthrough with repo owner | A full walkthrough of repo docs is completed with the repo owner: `README.md`, `docs/DEVOPS.md`, `docs/NEXT_RELEASE_BRIEF.md`, `docs/LAUNCH_CHECKLIST.md`, `docs/IDENTITY_MAPPING.md`, and `docs/BACKLOG.md`. All command snippets are verified runnable, stale references are removed, cross-links are valid, and any follow-up gaps are captured as explicit backlog items. |
-| `P1-29` | Test-doc reference accuracy cleanup | Test docs only reference existing test files and runnable commands. Remove stale path references (for example `test/features/settings/haiku_screen_test.dart` in `docs/HAIKU_EASTER_EGG.md`) and align command examples with current workflow gates. |
-| `P1-25` | CI coverage for integration + visual QA gates | CI includes an explicit non-blocking job that runs `integration_test/smoke_test.dart` on a device/emulator target and publishes logs/screenshots artifacts, and a visual regression job running `./scripts/test_visual_regression.sh` with artifact upload on diff. `docs/DEVOPS.md` is updated with trigger policy and pass/fail semantics. |
+| `P1-29` | Test-doc reference accuracy cleanup | Test docs only reference existing test files and runnable commands. Remove stale path references from docs and align command examples with current workflow gates. |
 | `P1-01` | Social-auth fallback UX | Social sign-in failures show deterministic user guidance, retry actions, and support path coverage in widget/integration tests. |
-| `P1-02` | Auth-provider telemetry quality | Auth analytics/crash logs include stable provider + outcome fields with no invalid parameter types and test coverage for key event paths. |
 | `P1-04` | Paywall decomposition | Paywall widget is split into maintainable sections/components with unchanged behavior and passing tests. |
 | `P1-05` | Paywall accessibility improvements | Paywall has complete semantics labels and screen-reader navigation validation passes on iOS and Android. |
 | `P1-06` | Connectivity monitoring | App-level connection state monitoring is implemented with graceful degraded UX and tested offline/restore scenarios. |
@@ -118,3 +120,6 @@ Process items in this order unless an explicit owner override is recorded in rel
 | `P2-11` | Mock-layer usage hygiene | Every file in `test/mocks/` is either exercised by at least one test or removed. In particular, `mock_reauth_service.dart` is either used by `reauth_service_test.dart`/widget tests or deleted to avoid dead mock surface area. |
 | `P2-12` | Device fingerprint real-service test coverage | Add direct tests for `DeviceFingerprintService` RPC/result mapping and graceful-degradation paths (server unavailable, fingerprint unavailable, Postgrest errors) using Supabase stubs/fakes rather than only mock-self-tests. |
 | `P2-13` | Startup orchestration refactor (post-launch) | Startup is moved to an explicit orchestration state machine/service with isolated phase boundaries, cancellation semantics, and deterministic tests for success/failure permutations. Refactor is informed by production startup telemetry from `P1-48` and does not regress route determinism or launch latency budgets. |
+| `P2-14` | Re-evaluate custom-lint compatibility | On a scheduled toolchain review, verify whether the published `custom_lint`/`riverpod_lint` ecosystem is compatible with the current Flutter/Dart/Riverpod analyzer line, document the decision in `docs/DEVOPS.md`, and either reintroduce the lint stack with passing `flutter analyze`/`flutter test`/`./scripts/test_critical_smoke.sh` or explicitly keep it deferred with recorded evidence. |
+| `P2-15` | Selective Patrol native-automation adoption | High-value device flows that genuinely need system/native automation (for example notification permissions, social-auth sheets, purchase/restore dialogs, or settings deep-links) are identified, at least one such flow is covered with `patrolTest` + Patrol native APIs, `patrol_cli` setup/usage is documented in `docs/DEVOPS.md` + `test/README.md`, and the repo clearly distinguishes when to use `flutter test` vs `patrol test`. |
+| `P2-16` | Public QA showcase packaging | `README.md` presents the repo as a quality-engineering portfolio with an honest test-strategy narrative (deterministic Flutter gate, wired-device validation, cloud/native-risk coverage, evidence model, and explicit tradeoffs). The README links to the canonical runbooks/backlog, does not overstate Patrol usage, and a repo-owner walkthrough confirms the public-facing story is aligned with actual commands, artifacts, and current harnesses. |

@@ -102,17 +102,18 @@ void main() {
 
   group('resolveStartupRouteWithTimeout', () {
     test('returns resolved route before timeout', () async {
-      final route = await resolveStartupRouteWithTimeout(
+      final result = await resolveStartupRouteWithTimeout(
         resolver: () async => '/home',
         timeout: const Duration(milliseconds: 50),
         fallbackRoute: '/onboarding',
       );
 
-      expect(route, '/home');
+      expect(result.route, '/home');
+      expect(result.timedOut, isFalse);
     });
 
     test('returns fallback route when resolver exceeds timeout', () async {
-      final route = await resolveStartupRouteWithTimeout(
+      final result = await resolveStartupRouteWithTimeout(
         resolver: () async {
           await Future<void>.delayed(const Duration(milliseconds: 30));
           return '/home';
@@ -121,7 +122,36 @@ void main() {
         fallbackRoute: '/onboarding',
       );
 
-      expect(route, '/onboarding');
+      expect(result.route, '/onboarding');
+      expect(result.timedOut, isTrue);
+    });
+
+    test(
+      'does not report timeout when resolved route matches fallback route',
+      () async {
+        final result = await resolveStartupRouteWithTimeout(
+          resolver: () async => '/onboarding',
+          timeout: const Duration(milliseconds: 50),
+          fallbackRoute: '/onboarding',
+        );
+
+        expect(result.route, '/onboarding');
+        expect(result.timedOut, isFalse);
+      },
+    );
+
+    test('marks timeout when fallback route is used after timeout', () async {
+      final result = await resolveStartupRouteWithTimeout(
+        resolver: () async {
+          await Future<void>.delayed(const Duration(milliseconds: 20));
+          return '/onboarding';
+        },
+        timeout: const Duration(milliseconds: 1),
+        fallbackRoute: '/onboarding',
+      );
+
+      expect(result.route, '/onboarding');
+      expect(result.timedOut, isTrue);
     });
 
     test('does not swallow non-timeout errors', () async {
@@ -133,6 +163,75 @@ void main() {
         ),
         throwsA(isA<StateError>()),
       );
+    });
+  });
+
+  group('shouldShortCircuitStartupResolution', () {
+    test('short-circuits when init error is present', () {
+      final result = shouldShortCircuitStartupResolution(
+        hasCompletedOnboarding: true,
+        hasInitError: true,
+      );
+
+      expect(result, isTrue);
+    });
+
+    test('short-circuits for first launch onboarding path', () {
+      final result = shouldShortCircuitStartupResolution(
+        hasCompletedOnboarding: false,
+        hasInitError: false,
+      );
+
+      expect(result, isTrue);
+    });
+
+    test('does not short-circuit for normal onboarded startup', () {
+      final result = shouldShortCircuitStartupResolution(
+        hasCompletedOnboarding: true,
+        hasInitError: false,
+      );
+
+      expect(result, isFalse);
+    });
+  });
+
+  group('startup telemetry payload helpers', () {
+    test('startupPhaseTelemetryParams emits stable analytics payload keys', () {
+      final payload = startupPhaseTelemetryParams(
+        phase: 'identity',
+        durationMs: 800,
+        budgetMs: 4000,
+        timedOut: false,
+        outcome: 'ok',
+      );
+
+      expect(payload['phase'], 'identity');
+      expect(payload['duration_ms'], 800);
+      expect(payload['budget_ms'], 4000);
+      expect(payload['timed_out'], false);
+      expect(payload['outcome'], 'ok');
+    });
+
+    test('startupRoutingSummaryAnalyticsParams normalizes nullable values', () {
+      final payload = startupRoutingSummaryAnalyticsParams(
+        initWaitMs: 1200,
+        splashHoldMs: 200,
+        routeResolutionMs: 300,
+        initPhaseOutcome: 'ready',
+        identityPhaseMs: 90,
+        identityPhaseOutcome: 'ok',
+        entitlementsPhaseMs: 110,
+        entitlementsPhaseOutcome: 'authenticated_skipped',
+        usedFallback: true,
+        fallbackReason: null,
+        resolvedRoute: null,
+      );
+
+      expect(payload['init_wait_ms'], 1200);
+      expect(payload['route_resolution_ms'], 300);
+      expect(payload['used_fallback'], true);
+      expect(payload['fallback_reason'], 'none');
+      expect(payload['resolved_route'], 'unknown');
     });
   });
 }

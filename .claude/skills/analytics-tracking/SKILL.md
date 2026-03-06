@@ -347,4 +347,4 @@ For implementation, see the [tools registry](../../tools/REGISTRY.md). Key analy
 
 ### Reference
 - `ab-test-setup` skill — Firebase Remote Config for experiments
-- `docs/MARKETING.md` — Marketing metrics and KPIs
+- `docs/PRODUCT_STRATEGY.md` — High-level product and growth strategy

@@ -44,12 +44,13 @@ class RateLimitService {
       final prefs = await SharedPreferences.getInstance();
       final stored = prefs.getStringList(_prefsKey);
       if (stored != null) {
-        final now = DateTime.now();
+        final now = DateTime.now().toUtc();
         final windowStart = now.subtract(_localWindowDuration);
         // Only load timestamps within the current window
         _localRequestTimestamps = stored
             .map(DateTime.tryParse)
             .whereType<DateTime>()
+            .map((ts) => ts.toUtc())
             .where((ts) => ts.isAfter(windowStart))
             .toList();
       }
@@ -65,7 +66,7 @@ class RateLimitService {
     try {
       final prefs = await SharedPreferences.getInstance();
       final strings = _localRequestTimestamps
-          .map((ts) => ts.toIso8601String())
+          .map((ts) => ts.toUtc().toIso8601String())
           .toList();
       await prefs.setStringList(_prefsKey, strings);
     } on Exception catch (e) {
@@ -162,7 +163,7 @@ class RateLimitService {
   Future<RateLimitResult> _checkLocalRateLimit() async {
     await _ensureInitialized();
 
-    final now = DateTime.now();
+    final now = DateTime.now().toUtc();
     final windowStart = now.subtract(_localWindowDuration);
 
     // Remove expired timestamps
@@ -191,7 +192,7 @@ class RateLimitService {
     }
 
     // Record this request and persist
-    _localRequestTimestamps.add(now);
+    _localRequestTimestamps.add(now.toUtc());
     await _persistTimestamps();
 
     Log.info('Local rate limit check passed', {

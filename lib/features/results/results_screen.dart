@@ -13,8 +13,11 @@ import '../../core/config/preference_keys.dart';
 import '../../core/models/models.dart';
 import '../../core/providers/providers.dart';
 import '../../core/services/log_service.dart';
+import '../../core/services/usage_service.dart';
 import '../../shared/components/app_button.dart';
 import '../../shared/components/app_emoji.dart';
+import '../../shared/components/app_surface_card.dart';
+import '../../shared/components/generation_loading_overlay.dart';
 import '../../shared/theme/app_colors.dart';
 import '../paywall/paywall_sheet.dart';
 import 'save_to_calendar_dialog.dart';
@@ -33,6 +36,9 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
   Timer? _confettiHideTimer;
   late ConfettiController _confettiController;
   static const Duration _confettiDuration = Duration(milliseconds: 1400);
+  static const Duration _minRegenerationOverlayDuration = Duration(
+    milliseconds: 700,
+  );
 
   bool get _reduceMotion => MediaQuery.of(context).disableAnimations;
 
@@ -52,6 +58,8 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
   @override
   Widget build(BuildContext context) {
     final result = ref.watch(generationResultProvider);
+    final canRegenerate = !_isRegenerating;
+    final isPro = ref.watch(isProProvider);
 
     if (result == null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -77,12 +85,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                 color: AppColors.textPrimary,
               ),
             ),
-            leading: _CloseButton(
-              onPressed: () {
-                resetGenerationForm(ref);
-                context.go('/home');
-              },
-            ),
+            leading: _CloseButton(onPressed: _returnHome),
           ),
           body: Column(
             children: [
@@ -150,21 +153,20 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                           label: 'Start Over',
                           style: AppButtonStyle.outline,
                           icon: Icons.home_outlined,
-                          onPressed: () {
-                            resetGenerationForm(ref);
-                            context.go('/home');
-                          },
+                          onPressed: _returnHome,
                         ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: AppButton(
-                          label: 'Regenerate',
-                          icon: Icons.auto_awesome,
+                          label: isPro ? 'Regenerate' : 'Unlock Pro',
+                          icon: isPro ? Icons.auto_awesome : Icons.lock_outline,
                           isLoading: _isRegenerating,
-                          onPressed: _isRegenerating
-                              ? null
-                              : () => _regenerate(result),
+                          onPressed: canRegenerate
+                              ? () => isPro
+                                    ? _regenerate(result)
+                                    : _showUpgradeCTA()
+                              : null,
                         ),
                       ),
                     ],
@@ -201,6 +203,10 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                 ),
               ),
             ),
+          ),
+        if (_isRegenerating)
+          Positioned.fill(
+            child: GenerationLoadingOverlay(accentColor: result.occasion.color),
           ),
       ],
     );
@@ -281,7 +287,22 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
 
       // Show paywall after celebration (value-first approach)
       await Future.delayed(const Duration(seconds: 3));
-      if (mounted && !isPro) {
+      var shouldShowPaywall = !isPro;
+      if (shouldShowPaywall) {
+        final subscriptionService = ref.read(subscriptionServiceProvider);
+        if (subscriptionService.isConfigured) {
+          final runtimeIsPro = await subscriptionService.isPro();
+          if (runtimeIsPro != isPro) {
+            Log.warning(
+              'First-message paywall entitlement mismatch corrected',
+              {'providerIsPro': isPro, 'runtimeIsPro': runtimeIsPro},
+            );
+          }
+          shouldShowPaywall = !runtimeIsPro;
+        }
+      }
+
+      if (mounted && shouldShowPaywall) {
         showPaywall(context, source: 'first_message');
       }
     } else {
@@ -330,6 +351,13 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
     }
   }
 
+  void _returnHome() {
+    resetGenerationForm(ref);
+    ref.read(occasionSearchProvider.notifier).state = '';
+    FocusManager.instance.primaryFocus?.unfocus();
+    context.go('/home');
+  }
+
   void _showSaveToCalendarDialog(GenerationResult result) {
     showDialog<bool>(
       context: context,
@@ -351,7 +379,19 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
     );
   }
 
+  void _showUpgradeCTA() {
+    _showRegenerationError('Regenerate is a Pro feature. Upgrade to Pro!');
+    if (mounted) {
+      unawaited(
+        showPaywall(context, source: 'regenerate_blocked', force: true),
+      );
+    }
+  }
+
   Future<void> _regenerate(GenerationResult currentResult) async {
+    if (_isRegenerating) return;
+    final startedAt = DateTime.now();
+
     Log.info('Regenerate requested', {'occasion': currentResult.occasion.name});
 
     setState(() => _isRegenerating = true);
@@ -359,7 +399,51 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
     try {
       final aiService = ref.read(aiServiceProvider);
       final usageService = ref.read(usageServiceProvider);
+      final authService = ref.read(authServiceProvider);
+      final subscriptionService = ref.read(subscriptionServiceProvider);
       final historyService = ref.read(historyServiceProvider);
+      var isPro = ref.read(isProProvider);
+
+      // Re-check entitlement directly with RevenueCat to avoid stale provider
+      // state allowing free-tier users to regenerate.
+      if (subscriptionService.isConfigured) {
+        final runtimeIsPro = await subscriptionService.isPro();
+        if (runtimeIsPro != isPro) {
+          Log.warning('Regenerate entitlement mismatch corrected', {
+            'providerIsPro': isPro,
+            'runtimeIsPro': runtimeIsPro,
+          });
+        }
+        isPro = runtimeIsPro;
+      }
+
+      // Regeneration is a Pro-only feature. Free users receive one generation
+      // from the wizard flow and are routed to paywall for additional options.
+      if (!isPro) {
+        _showUpgradeCTA();
+        return;
+      }
+
+      // Enforce usage limits for Pro users (server-side for authenticated).
+      if (authService.isLoggedIn) {
+        try {
+          final usageResult = await usageService.checkAndIncrementServerSide(
+            isPro: isPro,
+          );
+          if (!usageResult.allowed) {
+            _showRegenerationError(
+              usageResult.errorMessage ?? 'Usage limit reached',
+            );
+            if (!isPro && mounted) {
+              unawaited(showPaywall(context, source: 'regenerate_blocked'));
+            }
+            return;
+          }
+        } on UsageCheckException catch (e) {
+          _showRegenerationError(e.message);
+          return;
+        }
+      }
 
       final useUkSpelling = ref.read(isUkSpellingProvider);
       final result = await aiService.generateMessages(
@@ -371,6 +455,11 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
         personalDetails: currentResult.personalDetails,
         useUkSpelling: useUkSpelling,
       );
+
+      // For anonymous users, regenerate also consumes usage.
+      if (!authService.isLoggedIn) {
+        await usageService.recordGeneration(isPro: isPro);
+      }
 
       // Save to history
       await historyService.saveGeneration(result);
@@ -402,10 +491,25 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
         );
       }
     } finally {
+      final elapsed = DateTime.now().difference(startedAt);
+      if (elapsed < _minRegenerationOverlayDuration) {
+        await Future<void>.delayed(_minRegenerationOverlayDuration - elapsed);
+      }
       if (mounted) {
         setState(() => _isRegenerating = false);
       }
     }
+  }
+
+  void _showRegenerationError(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: AppColors.error,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 }
 
@@ -522,13 +626,11 @@ class _MessageCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Semantics(
     label: 'Message option ${index + 1}',
-    child: Container(
+    child: AppSurfaceCard(
+      padding: EdgeInsets.zero,
       clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        color: AppColors.surfaceLight,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.primary, width: 2),
-      ),
+      borderColor: AppColors.primary,
+      borderWidth: AppSurfaceTokens.emphasizedBorderWidth,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

@@ -24,6 +24,8 @@ This folder holds canonical product, engineering, and operations docs for the mo
    - Release execution and provider-console verification checklist.
 10. `ARCHITECTURE.md`
     - System architecture, core modules, and integration boundaries.
+11. `PRODUCT_STRATEGY.md`
+    - High-level product, growth, and experimentation direction.
 
 ## Working rules
 

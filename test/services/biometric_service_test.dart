@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:prosepal/core/services/biometric_service.dart';
@@ -11,10 +14,30 @@ import 'package:prosepal/core/services/biometric_service.dart';
 /// so platform-specific behavior is tested via MockBiometricService in widgets.
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  const localAuthChannel = MethodChannel('plugins.flutter.io/local_auth');
 
   group('BiometricService Singleton', () {
     setUp(() async {
       FlutterSecureStorage.setMockInitialValues({});
+      BiometricService.instance.resetAuthStateForTests();
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(localAuthChannel, (call) async {
+            switch (call.method) {
+              case 'isDeviceSupported':
+                return true;
+              case 'getAvailableBiometrics':
+                return <String>['fingerprint'];
+              case 'authenticate':
+                return true;
+              default:
+                return null;
+            }
+          });
+    });
+
+    tearDown(() {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(localAuthChannel, null);
     });
 
     test('returns singleton instance', () {
@@ -45,5 +68,120 @@ void main() {
       await BiometricService.instance.setEnabled(false);
       expect(await BiometricService.instance.isEnabled, isFalse);
     });
+
+    test('authenticate is single-flight while request is in progress', () async {
+      // Bug: Rapid lifecycle/toggle events trigger overlapping biometric prompts
+      var authenticateCalls = 0;
+      final authResult = Completer<bool>();
+
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(localAuthChannel, (call) async {
+            switch (call.method) {
+              case 'authenticate':
+                authenticateCalls++;
+                return authResult.future;
+              case 'isDeviceSupported':
+                return true;
+              case 'getAvailableBiometrics':
+                return <String>['face'];
+              default:
+                return null;
+            }
+          });
+
+      final first = BiometricService.instance.authenticate();
+      final second = BiometricService.instance.authenticate();
+      try {
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+        expect(authenticateCalls, 1);
+
+        authResult.complete(true);
+        final results = await Future.wait([first, second]);
+
+        expect(authenticateCalls, 1);
+        expect(results.every((r) => r.success), isTrue);
+      } finally {
+        if (!authResult.isCompleted) {
+          authResult.complete(true);
+        }
+        await first;
+        await second;
+      }
+    });
+
+    test(
+      'authenticate debounces rapid re-requests right after completion',
+      () async {
+        // Bug: lifecycle jitter triggers repeated prompts within milliseconds.
+        var authenticateCalls = 0;
+
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(localAuthChannel, (call) async {
+              switch (call.method) {
+                case 'authenticate':
+                  authenticateCalls++;
+                  return true;
+                case 'isDeviceSupported':
+                  return true;
+                case 'getAvailableBiometrics':
+                  return <String>['face'];
+                default:
+                  return null;
+              }
+            });
+
+        final first = await BiometricService.instance.authenticate();
+        final immediateRetry = await BiometricService.instance.authenticate();
+
+        expect(first.success, isTrue);
+        expect(
+          immediateRetry.success,
+          isFalse,
+          reason: 'debounced calls must not inherit prior auth success',
+        );
+        expect(immediateRetry.error, BiometricError.cancelled);
+        expect(
+          authenticateCalls,
+          1,
+          reason: 'second call should be absorbed by debounce window',
+        );
+
+        await Future<void>.delayed(const Duration(milliseconds: 2100));
+        final afterDebounce = await BiometricService.instance.authenticate();
+        expect(afterDebounce.success, isTrue);
+        expect(authenticateCalls, 2);
+      },
+    );
+
+    test(
+      'authenticate classifies unexpected errors and debounces immediate retry',
+      () async {
+        var authenticateCalls = 0;
+
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(localAuthChannel, (call) async {
+              switch (call.method) {
+                case 'authenticate':
+                  authenticateCalls++;
+                  throw StateError('unexpected auth channel failure');
+                case 'isDeviceSupported':
+                  return true;
+                case 'getAvailableBiometrics':
+                  return <String>['face'];
+                default:
+                  return null;
+              }
+            });
+
+        final first = await BiometricService.instance.authenticate();
+        final retry = await BiometricService.instance.authenticate();
+
+        expect(first.success, isFalse);
+        expect(first.error, BiometricError.unknown);
+        expect(retry.success, isFalse);
+        expect(retry.error, BiometricError.cancelled);
+        expect(authenticateCalls, 1);
+      },
+    );
   });
 }

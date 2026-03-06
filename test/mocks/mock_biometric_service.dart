@@ -23,6 +23,7 @@ class MockBiometricService implements IBiometricService {
   bool _hasTouchId = false;
   List<BiometricType> _availableBiometrics = [BiometricType.face];
   BiometricResult _authenticateResult = const BiometricResult(success: true);
+  Duration _authenticateDelay = Duration.zero;
 
   /// Error to throw on authenticate (simulates PlatformException, lockout, etc.)
   Exception? errorToThrow;
@@ -36,6 +37,7 @@ class MockBiometricService implements IBiometricService {
       _availableBiometrics = value;
   void setAuthenticateResult(BiometricResult result) =>
       _authenticateResult = result;
+  void setAuthenticateDelay(Duration delay) => _authenticateDelay = delay;
 
   /// Simulate user cancellation
   void simulateCancellation() {
@@ -74,6 +76,7 @@ class MockBiometricService implements IBiometricService {
     _hasTouchId = false;
     _availableBiometrics = [BiometricType.face];
     _authenticateResult = const BiometricResult(success: true);
+    _authenticateDelay = Duration.zero;
     errorToThrow = null;
     authenticateCallCount = 0;
     setEnabledCallCount = 0;
@@ -129,6 +132,9 @@ class MockBiometricService implements IBiometricService {
     authenticateCallCount++;
     lastAuthenticateReason = reason;
     lastBiometricOnly = biometricOnly;
+    if (_authenticateDelay > Duration.zero) {
+      await Future<void>.delayed(_authenticateDelay);
+    }
     if (errorToThrow != null) {
       throw errorToThrow!;
     }

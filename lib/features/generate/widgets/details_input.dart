@@ -104,9 +104,9 @@ class _DetailsInputState extends State<DetailsInput> {
           _StyledTextField(
             controller: _nameController,
             focusNode: _nameFocusNode,
-            nextFocusNode: _detailsFocusNode,
             hintText: 'e.g., Sarah, Mom, John',
             icon: Icons.person_outline,
+            keyboardType: TextInputType.name,
             maxLength: 50,
             onChanged: widget.onRecipientNameChanged,
           ),
@@ -128,6 +128,7 @@ class _DetailsInputState extends State<DetailsInput> {
             hintText:
                 'Add as much detail as possible for a more personalized message...',
             icon: Icons.notes_outlined,
+            keyboardType: TextInputType.text,
             maxLines: 4,
             maxLength: 300,
             onChanged: widget.onPersonalDetailsChanged,
@@ -171,9 +172,9 @@ class _StyledTextField extends StatefulWidget {
     required this.controller,
     required this.hintText,
     required this.icon,
+    required this.keyboardType,
     required this.onChanged,
     this.focusNode,
-    this.nextFocusNode,
     this.maxLines = 1,
     this.maxLength,
   });
@@ -181,9 +182,9 @@ class _StyledTextField extends StatefulWidget {
   final TextEditingController controller;
   final String hintText;
   final IconData icon;
+  final TextInputType keyboardType;
   final void Function(String) onChanged;
   final FocusNode? focusNode;
-  final FocusNode? nextFocusNode;
   final int maxLines;
   final int? maxLength;
 
@@ -224,10 +225,19 @@ class _StyledTextFieldState extends State<_StyledTextField> {
   @override
   Widget build(BuildContext context) {
     final isMultiLine = widget.maxLines > 1;
+    final effectiveKeyboardType = isMultiLine
+        ? TextInputType.multiline
+        : widget.keyboardType;
+    final minHeight = isMultiLine ? 132.0 : 52.0;
+    final fieldTopInset = isMultiLine ? 14.0 : 10.0;
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 150),
       clipBehavior: Clip.antiAlias,
+      constraints: BoxConstraints(
+        minHeight: minHeight,
+        maxHeight: isMultiLine ? double.infinity : minHeight,
+      ),
       decoration: BoxDecoration(
         color: AppColors.surfaceLight,
         borderRadius: BorderRadius.circular(14),
@@ -236,78 +246,60 @@ class _StyledTextFieldState extends State<_StyledTextField> {
           width: 2,
         ),
       ),
-      child: Stack(
-        children: [
-          TextField(
-            controller: widget.controller,
-            focusNode: _effectiveFocusNode,
-            maxLines: widget.maxLines,
-            maxLength: widget.maxLength,
-            style: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w500,
-              height: 1.4,
-              color: AppColors.textOnLight,
-            ),
-            cursorColor: AppColors.primary,
-            textAlignVertical: isMultiLine
-                ? TextAlignVertical.top
-                : TextAlignVertical.center,
-            textCapitalization: isMultiLine
-                ? TextCapitalization.sentences
-                : TextCapitalization.words,
-            textInputAction: isMultiLine
-                ? TextInputAction.done
-                : TextInputAction.next,
-            onChanged: widget.onChanged,
-            onEditingComplete: () {
-              if (widget.nextFocusNode != null) {
-                widget.nextFocusNode!.requestFocus();
-              } else {
-                FocusScope.of(context).unfocus();
-              }
-            },
-            onTapOutside: (_) => FocusScope.of(context).unfocus(),
-            decoration: InputDecoration(
-              hintText: widget.hintText,
-              hintStyle: const TextStyle(
-                color: AppColors.textOnLightHint,
-                fontSize: 14,
-                height: 1.4,
-              ),
-              suffixIcon: _isFocused
-                  ? IconButton(
-                      tooltip: 'Done',
-                      icon: const Icon(
-                        Icons.check_rounded,
-                        color: AppColors.primary,
-                        size: 20,
-                      ),
-                      onPressed: () => FocusScope.of(context).unfocus(),
-                    )
-                  : null,
-              filled: false,
-              border: InputBorder.none,
-              enabledBorder: InputBorder.none,
-              focusedBorder: InputBorder.none,
-              errorBorder: InputBorder.none,
-              disabledBorder: InputBorder.none,
-              contentPadding: const EdgeInsets.fromLTRB(52, 14, 16, 14),
-              counterStyle: const TextStyle(
-                color: AppColors.textOnLightHint,
-                fontSize: 12,
-              ),
-            ),
+      child: TextField(
+        controller: widget.controller,
+        focusNode: _effectiveFocusNode,
+        keyboardType: effectiveKeyboardType,
+        minLines: isMultiLine ? widget.maxLines : 1,
+        maxLines: widget.maxLines,
+        maxLength: widget.maxLength,
+        style: TextStyle(
+          fontSize: isMultiLine ? 15 : 16,
+          fontWeight: FontWeight.w500,
+          height: isMultiLine ? 1.4 : null,
+          color: AppColors.textOnLight,
+        ),
+        cursorColor: AppColors.primary,
+        textAlignVertical: isMultiLine
+            ? TextAlignVertical.top
+            : TextAlignVertical.center,
+        textCapitalization: isMultiLine
+            ? TextCapitalization.sentences
+            : TextCapitalization.words,
+        textInputAction: TextInputAction.done,
+        onChanged: widget.onChanged,
+        onSubmitted: (_) => FocusScope.of(context).unfocus(),
+        onEditingComplete: () => FocusScope.of(context).unfocus(),
+        onTapOutside: (_) => FocusScope.of(context).unfocus(),
+        decoration: InputDecoration(
+          hintText: widget.hintText,
+          hintStyle: TextStyle(
+            color: AppColors.textOnLightHint,
+            fontSize: isMultiLine ? 14 : 16,
+            height: isMultiLine ? 1.4 : null,
           ),
-          Positioned(
-            left: 16,
-            top: isMultiLine ? 16 : 0,
-            bottom: isMultiLine ? null : 0,
-            child: IgnorePointer(
-              child: Icon(widget.icon, color: AppColors.primary, size: 20),
-            ),
+          counterText: isMultiLine ? null : '',
+          filled: false,
+          border: InputBorder.none,
+          enabledBorder: InputBorder.none,
+          focusedBorder: InputBorder.none,
+          errorBorder: InputBorder.none,
+          disabledBorder: InputBorder.none,
+          alignLabelWithHint: isMultiLine,
+          prefixIcon: isMultiLine
+              ? null
+              : Icon(widget.icon, color: AppColors.primary, size: 20),
+          prefixIconConstraints: isMultiLine
+              ? null
+              : const BoxConstraints(minWidth: 44, minHeight: 44),
+          contentPadding: isMultiLine
+              ? EdgeInsets.fromLTRB(14, fieldTopInset, 14, fieldTopInset)
+              : const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          counterStyle: const TextStyle(
+            color: AppColors.textOnLightHint,
+            fontSize: 12,
           ),
-        ],
+        ),
       ),
     );
   }

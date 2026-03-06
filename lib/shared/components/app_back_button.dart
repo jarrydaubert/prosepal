@@ -9,19 +9,26 @@ class AppBackButton extends StatelessWidget {
   final VoidCallback onPressed;
 
   @override
-  Widget build(BuildContext context) => IconButton(
-    onPressed: () {
-      FocusManager.instance.primaryFocus?.unfocus();
-      onPressed();
-    },
-    tooltip: 'Back',
-    icon: const Icon(Icons.chevron_left_rounded, size: 24),
-    style: IconButton.styleFrom(
-      minimumSize: const Size(40, 40),
-      fixedSize: const Size(40, 40),
-      padding: EdgeInsets.zero,
-      foregroundColor: AppColors.textPrimary,
-      backgroundColor: Colors.transparent,
+  Widget build(BuildContext context) => Semantics(
+    label: 'Back',
+    button: true,
+    child: SizedBox(
+      width: 34,
+      height: 34,
+      child: IconButton(
+        tooltip: 'Back',
+        padding: EdgeInsets.zero,
+        splashRadius: 16,
+        icon: const Icon(
+          Icons.chevron_left_rounded,
+          size: 22,
+          color: AppColors.textPrimary,
+        ),
+        onPressed: () {
+          FocusManager.instance.primaryFocus?.unfocus();
+          onPressed();
+        },
+      ),
     ),
   );
 }

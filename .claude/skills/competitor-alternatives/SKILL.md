@@ -277,4 +277,4 @@ Recommended pages to create with priority order based on search volume.
 
 ### Reference
 - `product-marketing-context` skill — Full positioning framework
-- `docs/MARKETING.md` — Competitive analysis section
+- `docs/PRODUCT_STRATEGY.md` — High-level positioning and market direction

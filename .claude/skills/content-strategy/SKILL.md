@@ -360,7 +360,7 @@ Visual or structured representation of how content interconnects.
 
 ## Prosepal Context
 
-### Content Pillars (from docs/MARKETING.md)
+### Content Pillars (from docs/PRODUCT_STRATEGY.md)
 1. **The Struggle** — "I stared at this card for 20 minutes" relatability
 2. **The Speed Run** — "Watch me write the perfect message in 30 seconds"
 3. **The Transformation** — Before/after of generic vs. personalized messages
@@ -399,5 +399,5 @@ Visual or structured representation of how content interconnects.
 - Empathy for the blank-card struggle
 
 ### Reference
-- `docs/MARKETING.md` — Full strategy (Section 13 for AI execution playbook)
+- `docs/PRODUCT_STRATEGY.md` — High-level product and growth strategy
 - Use active command set in `.claude/commands/README.md`

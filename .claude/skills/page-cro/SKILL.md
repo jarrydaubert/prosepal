@@ -211,4 +211,4 @@ Page CRO for Prosepal applies to the **prosepal-web** Vercel landing page, not t
 
 ### Reference
 - prosepal-web repo (separate from this Flutter repo)
-- `docs/MARKETING.md` — Marketing strategy
+- `docs/PRODUCT_STRATEGY.md` — High-level product and growth strategy

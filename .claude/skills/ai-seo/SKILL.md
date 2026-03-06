@@ -429,6 +429,6 @@ Users asking AI assistants:
 - Play Store metadata — managed via Google Play Console
 
 ### Reference
-- `docs/MARKETING.md` — Full marketing strategy
+- `docs/PRODUCT_STRATEGY.md` — High-level product and growth strategy
 - `seo-audit` skill — Traditional SEO for prosepal-web
 - `schema-markup` skill — Structured data for prosepal-web

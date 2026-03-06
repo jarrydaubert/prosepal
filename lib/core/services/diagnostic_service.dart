@@ -7,6 +7,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'auth_telemetry.dart';
 import 'log_service.dart';
 
 /// Diagnostic service for generating user-shareable support reports
@@ -98,12 +99,45 @@ abstract final class DiagnosticService {
     buffer.writeln('--- Auth Status ---');
     try {
       final user = Supabase.instance.client.auth.currentUser;
+      final sessionUser = Supabase.instance.client.auth.currentSession?.user;
       if (user != null) {
         supabaseUserId = user.id;
+        final metadataProvider = _metadataProvider(user.appMetadata);
+        final linkedProviders = _collectLinkedProviders(
+          metadataProvider: metadataProvider,
+          metadataProvidersRaw: user.appMetadata['providers'],
+          identityProviders: user.identities?.map((i) => i.provider),
+        );
+        final mostRecentIdentityProvider = _mostRecentIdentityProvider(
+          user.identities
+              ?.map(
+                (i) => {'provider': i.provider, 'lastSignInAt': i.lastSignInAt},
+              )
+              .toList(),
+          fallbackProvider: metadataProvider,
+        );
+        final sessionProvider = _metadataProvider(
+          sessionUser?.appMetadata ?? const {},
+        );
+        final currentSessionSource = AuthTelemetry.currentSessionSource(
+          hasSession: sessionUser != null,
+          sessionProvider: sessionProvider,
+          fallbackProvider: metadataProvider,
+        );
+
         buffer.writeln('Signed In: Yes');
         buffer.writeln('User ID: ${_truncateId(user.id)}');
         buffer.writeln(
-          'Provider: ${user.appMetadata['provider'] ?? 'unknown'}',
+          'last_sign_in_provider: ${_providerLabel(metadataProvider)}',
+        );
+        buffer.writeln(
+          'Most Recent Identity Provider: ${_providerLabel(mostRecentIdentityProvider)}',
+        );
+        buffer.writeln(
+          'current_session_source: ${_providerLabel(currentSessionSource)}',
+        );
+        buffer.writeln(
+          'linked_providers: ${linkedProviders.isEmpty ? '(none)' : linkedProviders.join(', ')}',
         );
         buffer.writeln(
           'Created: ${user.createdAt.substring(0, 10)}',
@@ -231,4 +265,47 @@ abstract final class DiagnosticService {
     if (telemetryAligned && revenueCatAligned) return 'Aligned';
     return 'Needs review';
   }
+
+  static String? _metadataProvider(Map<String, dynamic> appMetadata) =>
+      AuthTelemetry.metadataProvider(appMetadata);
+
+  static String _providerLabel(String? provider) => provider ?? 'unknown';
+
+  static List<String> _collectLinkedProviders({
+    required String? metadataProvider,
+    required dynamic metadataProvidersRaw,
+    required Iterable<String>? identityProviders,
+  }) => AuthTelemetry.linkedProviders(
+    metadataProvider: metadataProvider,
+    metadataProvidersRaw: metadataProvidersRaw,
+    identityProviders: identityProviders,
+  );
+
+  static String? _mostRecentIdentityProvider(
+    List<Map<String, String?>>? identityRows, {
+    required String? fallbackProvider,
+  }) => AuthTelemetry.mostRecentIdentityProvider(
+    identityRows,
+    fallbackProvider: fallbackProvider,
+  );
+
+  @visibleForTesting
+  static List<String> collectLinkedProvidersForTesting({
+    String? metadataProvider,
+    dynamic metadataProvidersRaw,
+    Iterable<String>? identityProviders,
+  }) => _collectLinkedProviders(
+    metadataProvider: metadataProvider,
+    metadataProvidersRaw: metadataProvidersRaw,
+    identityProviders: identityProviders,
+  );
+
+  @visibleForTesting
+  static String? mostRecentIdentityProviderForTesting(
+    List<Map<String, String?>>? identityRows, {
+    String? fallbackProvider,
+  }) => _mostRecentIdentityProvider(
+    identityRows,
+    fallbackProvider: fallbackProvider,
+  );
 }

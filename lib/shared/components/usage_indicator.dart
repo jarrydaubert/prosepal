@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
+import 'app_surface_card.dart';
 
 class UsageIndicator extends StatelessWidget {
   const UsageIndicator({
@@ -83,13 +84,9 @@ class _FreeUsageCard extends StatelessWidget {
       onTap: () {
         onUpgrade?.call();
       },
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: AppColors.surfaceLight,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: _statusColor, width: 3),
-        ),
+      child: AppSurfaceCard(
+        borderColor: _statusColor,
+        borderWidth: AppSurfaceTokens.strongBorderWidth,
         child: Row(
           children: [
             Container(

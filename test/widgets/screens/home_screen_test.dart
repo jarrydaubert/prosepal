@@ -247,6 +247,26 @@ void main() {
         );
       }
     });
+
+    testWidgets('clears occasion search query when occasion is selected', (
+      tester,
+    ) async {
+      await tester.pumpWidget(createTestableHomeScreen());
+      await tester.pump(const Duration(milliseconds: 300));
+
+      final container = ProviderScope.containerOf(
+        tester.element(find.byType(HomeScreen)),
+      );
+
+      await tester.enterText(find.byType(TextField).first, 'birt');
+      await tester.pump();
+      expect(container.read(occasionSearchProvider), 'birt');
+
+      await tester.tap(find.text('Birthday'));
+      await pumpUntilFound(tester, find.text('Generate Screen'));
+
+      expect(container.read(occasionSearchProvider), isEmpty);
+    });
   });
 
   group('HomeScreen Accessibility', () {

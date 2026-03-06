@@ -54,7 +54,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     setState(() => _error = message);
     Log.event('auth_error_shown', {
       'method': _authMethod ?? 'unknown',
-      'message': message,
+      'error_bucket': _errorBucket(message),
       'source': widget.redirectTo ?? 'default',
     });
     // Auto-dismiss after 10 seconds (accessibility: give time to read)
@@ -67,6 +67,19 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
 
   void _dismissError() {
     setState(() => _error = null);
+  }
+
+  String _errorBucket(String message) {
+    final normalized = message.toLowerCase();
+    if (normalized.contains('cancel')) return 'cancelled';
+    if (normalized.contains('timed out') || normalized.contains('timeout')) {
+      return 'timeout';
+    }
+    if (normalized.contains('internet') || normalized.contains('network')) {
+      return 'network';
+    }
+    if (normalized.contains('too many')) return 'rate_limit';
+    return 'generic';
   }
 
   Future<void> _navigateAfterAuth() async {
@@ -91,18 +104,19 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
               .identifyUser(authService.currentUser!.id);
         }
 
-        // Restore through the subscription service (mockable + platform-safe)
+        // Silent claim for users whose store subscription was detected before
+        // sign-in. This avoids explicit restore UI during startup claim flows.
         final hasPro = await ref
             .read(subscriptionServiceProvider)
-            .restorePurchases();
-        Log.info('Auto-restore completed', {'hasPro': hasPro});
+            .syncPurchases();
+        Log.info('Auto-claim sync completed', {'hasPro': hasPro});
 
         if (!mounted) return;
 
         if (hasPro) {
           // User has Pro - go to home, they can generate
           ref.invalidate(customerInfoProvider);
-          Log.info('Auth success: Pro restored, navigating to home');
+          Log.info('Auth success: Pro claim confirmed, navigating to home');
           context.go('/home');
           return;
         } else {
@@ -191,6 +205,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   Future<void> _signInWithApple() async {
     if (_isLoading) return; // Prevent double-tap race condition
     _authMethod = 'apple';
+    ref.read(interactiveAuthMethodOverrideProvider.notifier).state = 'apple';
     Log.event('auth_method_selected', {'method': 'apple'});
     setState(() {
       _isLoading = true;
@@ -199,8 +214,6 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
 
     // Capture services before async to avoid ref access after unmount
     final authService = ref.read(authServiceProvider);
-    final usageService = ref.read(usageServiceProvider);
-
     try {
       // Timeout prevents stuck spinner if OAuth window killed externally
       final response = await authService.signInWithApple().timeout(
@@ -209,18 +222,36 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
             throw Exception('Sign in timed out. Please try again.'),
       );
       if (response.user != null) {
-        // Sync usage from server (restores usage after reinstall)
-        // Non-critical - don't block auth success if sync fails
-        try {
-          await usageService.syncFromServer();
-        } on Exception catch (e) {
-          Log.warning('Usage sync failed after auth', {'error': '$e'});
-        }
+        Log.event('auth_method_result', {
+          'method': 'apple',
+          'outcome': 'success',
+          'source': widget.redirectTo ?? 'default',
+        });
+        Log.info('Auth method outcome', {
+          'method': 'apple',
+          'outcome': 'success',
+          'source': widget.redirectTo ?? 'default',
+        });
       }
       if (mounted) await _navigateAfterAuth();
     } on Exception catch (e) {
-      if (!AuthErrorHandler.isCancellation(e)) {
-        _showError(AuthErrorHandler.getMessage(e));
+      ref.read(interactiveAuthMethodOverrideProvider.notifier).state = null;
+      final authResult = AuthErrorHandler.getResult(e);
+      final outcome = authResult.isCancellation ? 'cancelled' : 'error';
+      Log.event('auth_method_result', {
+        'method': 'apple',
+        'outcome': outcome,
+        'should_retry': authResult.shouldRetry,
+        'source': widget.redirectTo ?? 'default',
+      });
+      Log.info('Auth method outcome', {
+        'method': 'apple',
+        'outcome': outcome,
+        'shouldRetry': authResult.shouldRetry,
+        'source': widget.redirectTo ?? 'default',
+      });
+      if (!authResult.isCancellation) {
+        _showError(authResult.message);
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -230,6 +261,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   Future<void> _signInWithGoogle() async {
     if (_isLoading) return; // Prevent double-tap race condition
     _authMethod = 'google';
+    ref.read(interactiveAuthMethodOverrideProvider.notifier).state = 'google';
     Log.event('auth_method_selected', {'method': 'google'});
     setState(() {
       _isLoading = true;
@@ -238,8 +270,6 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
 
     // Capture services before async to avoid ref access after unmount
     final authService = ref.read(authServiceProvider);
-    final usageService = ref.read(usageServiceProvider);
-
     try {
       // Timeout prevents stuck spinner if OAuth window killed externally
       final response = await authService.signInWithGoogle().timeout(
@@ -248,18 +278,36 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
             throw Exception('Sign in timed out. Please try again.'),
       );
       if (response.user != null) {
-        // Sync usage from server (restores usage after reinstall)
-        // Non-critical - don't block auth success if sync fails
-        try {
-          await usageService.syncFromServer();
-        } on Exception catch (e) {
-          Log.warning('Usage sync failed after auth', {'error': '$e'});
-        }
+        Log.event('auth_method_result', {
+          'method': 'google',
+          'outcome': 'success',
+          'source': widget.redirectTo ?? 'default',
+        });
+        Log.info('Auth method outcome', {
+          'method': 'google',
+          'outcome': 'success',
+          'source': widget.redirectTo ?? 'default',
+        });
       }
       if (mounted) await _navigateAfterAuth();
     } on Exception catch (e) {
-      if (!AuthErrorHandler.isCancellation(e)) {
-        _showError(AuthErrorHandler.getMessage(e));
+      ref.read(interactiveAuthMethodOverrideProvider.notifier).state = null;
+      final authResult = AuthErrorHandler.getResult(e);
+      final outcome = authResult.isCancellation ? 'cancelled' : 'error';
+      Log.event('auth_method_result', {
+        'method': 'google',
+        'outcome': outcome,
+        'should_retry': authResult.shouldRetry,
+        'source': widget.redirectTo ?? 'default',
+      });
+      Log.info('Auth method outcome', {
+        'method': 'google',
+        'outcome': outcome,
+        'shouldRetry': authResult.shouldRetry,
+        'source': widget.redirectTo ?? 'default',
+      });
+      if (!authResult.isCancellation) {
+        _showError(authResult.message);
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);

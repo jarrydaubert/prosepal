@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -20,17 +21,21 @@ typedef NotificationTapCallback = void Function(String? payload);
 /// - Scheduling reminders for saved occasions
 /// - Deep linking from notification taps
 class NotificationService {
-  NotificationService(this._prefs);
+  NotificationService(
+    this._prefs, {
+    FlutterLocalNotificationsPlugin? notifications,
+  }) : _notifications = notifications ?? FlutterLocalNotificationsPlugin();
 
   final SharedPreferences _prefs;
-  final FlutterLocalNotificationsPlugin _notifications =
-      FlutterLocalNotificationsPlugin();
+  final FlutterLocalNotificationsPlugin _notifications;
 
   static NotificationTapCallback? onNotificationTap;
 
   static const _channelId = 'prosepal_reminders';
   static const _channelName = 'Occasion Reminders';
   static const _channelDesc = 'Reminders for upcoming occasions';
+  static const _notificationIdMapKey = 'notification_id_map_v1';
+  static const _maxNotificationId = 0x7FFFFFFF;
 
   bool _initialized = false;
 
@@ -136,9 +141,15 @@ class NotificationService {
     final body = occasion.recipientName != null
         ? "${occasion.recipientName}'s ${occasion.occasion.label.toLowerCase()} is in ${occasion.reminderDaysBefore} days"
         : '${occasion.occasion.label} is in ${occasion.reminderDaysBefore} days';
+    final notificationId = await _notificationIdForOccasion(occasion.id);
+    final legacyNotificationId = _legacyNotificationIdForOccasion(occasion.id);
+    if (legacyNotificationId != notificationId) {
+      // Migration safety: clear reminders created by the legacy hashCode path.
+      await _notifications.cancel(id: legacyNotificationId);
+    }
 
     await _notifications.zonedSchedule(
-      id: occasion.id.hashCode,
+      id: notificationId,
       title: title,
       body: body,
       scheduledDate: tzScheduledDate,
@@ -170,7 +181,19 @@ class NotificationService {
   /// Cancel a scheduled reminder
   Future<void> cancelReminder(String occasionId) async {
     if (!_initialized) await initialize();
-    await _notifications.cancel(id: occasionId.hashCode);
+    final mappedId = _storedNotificationIdForOccasion(occasionId);
+    final deterministicId = _deterministicNotificationId(occasionId);
+    final legacyId = _legacyNotificationIdForOccasion(occasionId);
+    final idsToCancel = <int?>[
+      mappedId,
+      deterministicId,
+      legacyId,
+    ].whereType<int>().toSet();
+
+    for (final id in idsToCancel) {
+      await _notifications.cancel(id: id);
+    }
+    await _removeStoredNotificationId(occasionId);
     Log.info('Reminder cancelled', {'id': occasionId});
   }
 
@@ -178,6 +201,7 @@ class NotificationService {
   Future<void> cancelAll() async {
     if (!_initialized) await initialize();
     await _notifications.cancelAll();
+    await _prefs.remove(_notificationIdMapKey);
     Log.info('All reminders cancelled');
   }
 
@@ -231,5 +255,81 @@ class NotificationService {
         ),
       ),
     );
+  }
+
+  Future<int> _notificationIdForOccasion(String occasionId) async {
+    final existingId = _storedNotificationIdForOccasion(occasionId);
+    if (existingId != null) return existingId;
+
+    final map = _notificationIdMap;
+    var candidate = _deterministicNotificationId(occasionId);
+    final usedIds = map.values.toSet();
+
+    while (usedIds.contains(candidate)) {
+      candidate = candidate == _maxNotificationId ? 1 : candidate + 1;
+    }
+
+    map[occasionId] = candidate;
+    await _saveNotificationIdMap(map);
+    return candidate;
+  }
+
+  Map<String, int> get _notificationIdMap {
+    final raw = _prefs.getString(_notificationIdMapKey);
+    if (raw == null || raw.isEmpty) return <String, int>{};
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is! Map<String, dynamic>) return <String, int>{};
+      return decoded.map((key, value) {
+        final parsed = value is int ? value : int.tryParse('$value');
+        return MapEntry(key, parsed ?? 0);
+      })..removeWhere((_, value) => value <= 0);
+    } on FormatException {
+      return <String, int>{};
+    }
+  }
+
+  int? _storedNotificationIdForOccasion(String occasionId) =>
+      _notificationIdMap[occasionId];
+
+  Future<void> _removeStoredNotificationId(String occasionId) async {
+    final map = _notificationIdMap;
+    if (!map.containsKey(occasionId)) return;
+    map.remove(occasionId);
+    await _saveNotificationIdMap(map);
+  }
+
+  Future<void> _saveNotificationIdMap(Map<String, int> map) async {
+    await _prefs.setString(_notificationIdMapKey, jsonEncode(map));
+  }
+
+  int _legacyNotificationIdForOccasion(String occasionId) =>
+      occasionId.hashCode;
+
+  @visibleForTesting
+  int deterministicNotificationIdForTesting(String occasionId) =>
+      _deterministicNotificationId(occasionId);
+
+  @visibleForTesting
+  int? storedNotificationIdForTesting(String occasionId) =>
+      _storedNotificationIdForOccasion(occasionId);
+
+  @visibleForTesting
+  Future<int> notificationIdForTesting(String occasionId) =>
+      _notificationIdForOccasion(occasionId);
+
+  @visibleForTesting
+  int legacyNotificationIdForTesting(String occasionId) =>
+      _legacyNotificationIdForOccasion(occasionId);
+
+  int _deterministicNotificationId(String occasionId) {
+    // FNV-1a 32-bit hash for stable cross-run IDs (unlike Dart hashCode).
+    var hash = 0x811C9DC5;
+    for (final unit in occasionId.codeUnits) {
+      hash ^= unit;
+      hash = (hash * 0x01000193) & 0xFFFFFFFF;
+    }
+    final positive = hash & 0x7FFFFFFF;
+    return positive == 0 ? 1 : positive;
   }
 }

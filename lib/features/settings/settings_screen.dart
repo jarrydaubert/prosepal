@@ -39,8 +39,12 @@ class SettingsScreen extends ConsumerStatefulWidget {
 }
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
+  static const _biometricToggleDebounce = Duration(seconds: 2);
+
   bool _biometricsSupported = false;
   bool _biometricsEnabled = false;
+  bool _isBiometricToggleInFlight = false;
+  DateTime? _lastBiometricToggleCompletedAt;
   String _biometricType = 'Biometrics';
   bool _isRestoringPurchases = false;
   String _appVersion = '';
@@ -143,16 +147,47 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   Future<void> _toggleBiometrics(bool value) async {
+    if (_isBiometricToggleInFlight) {
+      Log.info('Skip biometric toggle - request already in flight');
+      return;
+    }
+    if (value == _biometricsEnabled) return;
+
+    final now = DateTime.now().toUtc();
+    final lastToggleAt = _lastBiometricToggleCompletedAt;
+    if (lastToggleAt != null) {
+      final elapsed = now.difference(lastToggleAt);
+      if (elapsed < _biometricToggleDebounce) {
+        Log.info('Skip biometric toggle - debounced', {
+          'elapsedMs': elapsed.inMilliseconds,
+        });
+        return;
+      }
+    }
+
+    setState(() => _isBiometricToggleInFlight = true);
+
     // Require auth for BOTH enable and disable (symmetric security)
     // Prevents unauthorized deactivation on shared/stolen devices
-    final reason = value
-        ? 'Authenticate to enable $_biometricType'
-        : 'Authenticate to disable $_biometricType';
-    final result = await _biometricService.authenticate(reason: reason);
-    if (!result.success) return;
+    try {
+      final reason = value
+          ? 'Authenticate to enable $_biometricType'
+          : 'Authenticate to disable $_biometricType';
+      final result = await _biometricService.authenticate(reason: reason);
+      if (!result.success) return;
 
-    await _biometricService.setEnabled(value);
-    setState(() => _biometricsEnabled = value);
+      await _biometricService.setEnabled(value);
+      if (mounted) {
+        setState(() => _biometricsEnabled = value);
+      }
+    } on Exception catch (e) {
+      Log.warning('Biometric toggle failed', {'error': '$e'});
+    } finally {
+      _lastBiometricToggleCompletedAt = DateTime.now().toUtc();
+      if (mounted) {
+        setState(() => _isBiometricToggleInFlight = false);
+      }
+    }
   }
 
   Future<void> _restorePurchases() async {
@@ -684,7 +719,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               subtitle: 'Require to open app',
               trailing: Switch.adaptive(
                 value: _biometricsEnabled,
-                onChanged: _toggleBiometrics,
+                onChanged: _isBiometricToggleInFlight
+                    ? null
+                    : _toggleBiometrics,
               ),
             ),
           ],
@@ -843,16 +880,9 @@ class _AccountCard extends StatelessWidget {
   Widget build(BuildContext context) => Semantics(
     label:
         'Account: ${userName ?? userEmail ?? "User"}${isPro ? ", Pro subscriber" : ""}',
-    child: Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceLight,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isPro ? AppColors.proGold : AppColors.primary,
-          width: 3,
-        ),
-      ),
+    child: AppSurfaceCard(
+      borderColor: isPro ? AppColors.proGold : AppColors.primary,
+      borderWidth: AppSurfaceTokens.strongBorderWidth,
       child: Row(
         children: [
           // Avatar
@@ -981,13 +1011,10 @@ class _StatsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Semantics(
     label: '$totalGenerated messages generated all time',
-    child: Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.primaryLight,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.primary, width: 3),
-      ),
+    child: AppSurfaceCard(
+      backgroundColor: AppColors.primaryLight,
+      borderColor: AppColors.primary,
+      borderWidth: AppSurfaceTokens.strongBorderWidth,
       child: Row(
         children: [
           Container(
@@ -1121,7 +1148,6 @@ class _DeleteConfirmationDialogState extends State<_DeleteConfirmationDialog> {
               hintText: 'DELETE',
               border: OutlineInputBorder(),
               isDense: true,
-              suffixIcon: Icon(Icons.check_rounded, color: AppColors.primary),
             ),
           ),
         ],

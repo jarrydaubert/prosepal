@@ -7,10 +7,11 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../core/config/preference_keys.dart';
 import '../core/providers/providers.dart';
+import '../core/services/auth_telemetry.dart';
 import '../core/services/log_service.dart';
-
 import '../shared/theme/app_colors.dart';
 import '../shared/theme/app_theme.dart';
+import 'auth_identity_sync.dart';
 import 'router.dart';
 
 class ProsepalApp extends ConsumerStatefulWidget {
@@ -27,8 +28,13 @@ class ProsepalApp extends ConsumerStatefulWidget {
 class _ProsepalAppState extends ConsumerState<ProsepalApp>
     with WidgetsBindingObserver {
   static const _isFlutterTest = bool.fromEnvironment('FLUTTER_TEST');
+  static const _lifecycleResumeDebounce = Duration(milliseconds: 1200);
+  static const _lockRedirectDebounce = Duration(seconds: 2);
   bool _isInBackground = false;
+  bool _isBiometricResumeCheckInFlight = false;
   DateTime? _backgroundedAt;
+  DateTime? _lastResumedAt;
+  DateTime? _lastLockRedirectAt;
   StreamSubscription<AuthState>? _authSubscription;
 
   // Require re-auth if backgrounded for more than this duration
@@ -108,6 +114,7 @@ class _ProsepalAppState extends ConsumerState<ProsepalApp>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    final now = DateTime.now();
     final wasInBackground = _isInBackground;
     setState(() {
       // Flutter 3.13+ added 'hidden' for brief non-visible transitions
@@ -119,45 +126,74 @@ class _ProsepalAppState extends ConsumerState<ProsepalApp>
 
     // Track when app was backgrounded for timeout calculation
     if (_isInBackground && !wasInBackground) {
-      _backgroundedAt = DateTime.now();
+      _backgroundedAt = now;
       Log.info('App backgrounded');
     } else if (!_isInBackground && wasInBackground) {
+      if (_lastResumedAt != null &&
+          now.difference(_lastResumedAt!) < _lifecycleResumeDebounce) {
+        Log.info('Skip duplicate app resume callback', {
+          'elapsedMs': now.difference(_lastResumedAt!).inMilliseconds,
+        });
+        return;
+      }
+      _lastResumedAt = now;
       Log.info('App resumed');
-      _checkBiometricLockOnResume();
+      unawaited(_checkBiometricLockOnResume(now: now));
     }
   }
 
   /// Check if biometric re-authentication is required on resume
-  Future<void> _checkBiometricLockOnResume() async {
-    // Skip if we don't have a background timestamp
-    if (_backgroundedAt == null) return;
-
-    // Skip if backgrounded for less than timeout (e.g., brief phone call)
-    final elapsed = DateTime.now().difference(_backgroundedAt!);
-    if (elapsed < _lockTimeout) {
-      Log.info('Skip biometric lock - backgrounded only ${elapsed.inSeconds}s');
+  Future<void> _checkBiometricLockOnResume({DateTime? now}) async {
+    if (_isBiometricResumeCheckInFlight) {
+      Log.info('Skip biometric lock check - check already in flight');
       return;
     }
-
-    // Skip if already on lock screen or splash
-    final currentPath = _router.routerDelegate.currentConfiguration.fullPath;
-    if (currentPath == '/lock' || currentPath == '/splash') {
-      return;
-    }
-
-    // Check if biometrics are enabled
+    _isBiometricResumeCheckInFlight = true;
+    final checkedAt = now ?? DateTime.now();
     try {
+      // Skip if we don't have a background timestamp
+      if (_backgroundedAt == null) return;
+
+      // Skip if backgrounded for less than timeout (e.g., brief phone call)
+      final elapsed = checkedAt.difference(_backgroundedAt!);
+      if (elapsed < _lockTimeout) {
+        Log.info(
+          'Skip biometric lock - backgrounded only ${elapsed.inSeconds}s',
+        );
+        return;
+      }
+
+      // Skip if already on lock screen or splash
+      final currentPath = _router.routerDelegate.currentConfiguration.fullPath;
+      if (currentPath == '/lock' || currentPath == '/splash') {
+        return;
+      }
+
+      // Check if biometrics are enabled
       final biometricService = ref.read(biometricServiceProvider);
       final isEnabled = await biometricService.isEnabled;
       final isAvailable =
           (await biometricService.availableBiometrics).isNotEmpty;
 
       if (isEnabled && isAvailable) {
+        if (_lastLockRedirectAt != null &&
+            checkedAt.difference(_lastLockRedirectAt!) <
+                _lockRedirectDebounce) {
+          Log.info('Skip biometric lock redirect - recently redirected', {
+            'elapsedMs': checkedAt
+                .difference(_lastLockRedirectAt!)
+                .inMilliseconds,
+          });
+          return;
+        }
+        _lastLockRedirectAt = checkedAt;
         Log.info('Biometric lock on resume - redirecting to /lock');
         _router.go('/lock');
       }
     } on Exception catch (e) {
       Log.warning('Failed to check biometric lock on resume', {'error': '$e'});
+    } finally {
+      _isBiometricResumeCheckInFlight = false;
     }
   }
 
@@ -178,11 +214,71 @@ class _ProsepalAppState extends ConsumerState<ProsepalApp>
     ) async {
       final event = data.event;
       final session = data.session;
+      final sessionUser = session?.user;
+      final metadataProvider = AuthTelemetry.metadataProvider(
+        sessionUser?.appMetadata,
+      );
+      final mostRecentIdentityProvider =
+          AuthTelemetry.mostRecentIdentityProvider(
+            sessionUser?.identities
+                ?.map(
+                  (identity) => {
+                    'provider': identity.provider,
+                    'lastSignInAt': identity.lastSignInAt,
+                  },
+                )
+                .toList(),
+            fallbackProvider: metadataProvider,
+          );
+      final interactiveAuthOverride = ref.read(
+        interactiveAuthMethodOverrideProvider,
+      );
+      final effectiveSignedInProvider =
+          event == AuthChangeEvent.signedIn &&
+              interactiveAuthOverride != null &&
+              interactiveAuthOverride.isNotEmpty
+          ? interactiveAuthOverride
+          : mostRecentIdentityProvider;
+      final linkedProviders = AuthTelemetry.linkedProviders(
+        metadataProvider: metadataProvider,
+        metadataProvidersRaw: sessionUser?.appMetadata['providers'],
+        identityProviders: sessionUser?.identities?.map((i) => i.provider),
+      );
+      final currentSessionSource = AuthTelemetry.currentSessionSource(
+        hasSession: session != null,
+        sessionProvider: effectiveSignedInProvider,
+        fallbackProvider: metadataProvider,
+      );
       Log.info('Auth state changed', {
         'event': event.name,
         'hasSession': session != null,
-        'userId': session?.user.id.substring(0, 8),
+        'userId': AuthTelemetry.truncatedUserId(sessionUser?.id),
+        'lastSignInProvider': AuthTelemetry.providerLabel(
+          effectiveSignedInProvider,
+        ),
+        'currentSessionSource': currentSessionSource,
+        'linkedProviders': AuthTelemetry.linkedProvidersValue(linkedProviders),
+        'linkedProviderCount': linkedProviders.length,
       });
+      unawaited(
+        Log.event(
+          'auth_state_changed',
+          AuthTelemetry.authStateAnalyticsParams(
+            event: event.name,
+            hasSession: session != null,
+            lastSignInProvider: AuthTelemetry.providerLabel(
+              effectiveSignedInProvider,
+            ),
+            currentSessionSource: currentSessionSource,
+            linkedProviderCount: linkedProviders.length,
+          ),
+        ),
+      );
+
+      if (event == AuthChangeEvent.signedIn ||
+          event == AuthChangeEvent.signedOut) {
+        ref.read(interactiveAuthMethodOverrideProvider.notifier).state = null;
+      }
 
       if (event == AuthChangeEvent.signedIn && session != null) {
         // Keep telemetry identity aligned with authenticated backend identity.
@@ -205,11 +301,26 @@ class _ProsepalAppState extends ConsumerState<ProsepalApp>
 
         // Identify with RevenueCat to restore Pro entitlements
         try {
-          await ref
-              .read(subscriptionServiceProvider)
-              .identifyUser(session.user.id);
-          Log.info('Auth listener: RevenueCat identified');
+          final subscriptionService = ref.read(subscriptionServiceProvider);
+          final hadPreSignInPro = await subscriptionService.isPro();
+          if (hadPreSignInPro) {
+            ref.read(proEntitlementHoldProvider.notifier).state = true;
+          }
+          final syncResult = await reconcileSubscriptionIdentityAfterSignIn(
+            subscriptionService: subscriptionService,
+            userId: session.user.id,
+            hadPreSignInProOverride: hadPreSignInPro,
+          );
+          ref.read(proEntitlementHoldProvider.notifier).state = false;
+          ref.invalidate(customerInfoProvider);
+          Log.info('Auth listener: RevenueCat identified', {
+            'preSignInPro': syncResult.hadPreSignInPro,
+            'hasProAfterIdentify': syncResult.hasProAfterIdentify,
+            'claimedViaSync': syncResult.claimedViaSync,
+            'finalHasPro': syncResult.finalHasPro,
+          });
         } on Exception catch (e) {
+          ref.read(proEntitlementHoldProvider.notifier).state = false;
           Log.warning('Auth listener: RevenueCat identify failed', {
             'error': '$e',
           });
@@ -228,6 +339,7 @@ class _ProsepalAppState extends ConsumerState<ProsepalApp>
         // identity, entitlement cache, and usage state.
       } else if (event == AuthChangeEvent.signedOut) {
         try {
+          ref.read(proEntitlementHoldProvider.notifier).state = false;
           await Log.clearUserId();
           final prefs = ref.read(sharedPreferencesProvider);
           await prefs.remove(PreferenceKeys.proStatusCache);

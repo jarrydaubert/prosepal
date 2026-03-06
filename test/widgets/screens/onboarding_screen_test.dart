@@ -3,20 +3,26 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:prosepal/core/providers/providers.dart';
+import 'package:prosepal/core/services/device_fingerprint_service.dart';
+import 'package:prosepal/core/services/usage_service.dart';
 import 'package:prosepal/features/onboarding/onboarding_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../mocks/mock_auth_service.dart';
+import '../../mocks/mock_device_fingerprint_service.dart';
+import '../../mocks/mock_rate_limit_service.dart';
 
 /// OnboardingScreen Widget Tests
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   late MockAuthService mockAuth;
+  late SharedPreferences prefs;
 
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
     mockAuth = MockAuthService();
+    prefs = await SharedPreferences.getInstance();
   });
 
   tearDown(() {
@@ -70,6 +76,7 @@ void main() {
 
     return ProviderScope(
       overrides: [
+        sharedPreferencesProvider.overrideWithValue(prefs),
         initStatusProvider.overrideWith((ref) => initStatusNotifier),
         isProProvider.overrideWith((ref) => isPro),
         // Mock auth service to avoid Supabase initialization
@@ -235,5 +242,68 @@ void main() {
         findsOneWidget,
       );
     });
+
+    testWidgets(
+      'syncs device state before routing home for anonymous free users',
+      (tester) async {
+        tester.view.physicalSize = const Size(1080, 1920);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(() => tester.view.resetPhysicalSize());
+
+        final mockDeviceFingerprint = MockDeviceFingerprintService(
+          allowFreeTier: false,
+          deviceCheckReason: DeviceCheckReason.alreadyUsed,
+          mockPlatform: 'android',
+        );
+        final usageService = UsageService(
+          prefs,
+          mockDeviceFingerprint,
+          MockRateLimitService(deviceFingerprint: mockDeviceFingerprint),
+        );
+        final testRouter = GoRouter(
+          initialLocation: '/onboarding',
+          routes: [
+            GoRoute(
+              path: '/onboarding',
+              builder: (context, state) => const OnboardingScreen(),
+            ),
+            GoRoute(
+              path: '/home',
+              builder: (context, state) =>
+                  const Scaffold(body: Text('Home Screen')),
+            ),
+          ],
+        );
+        final initStatusNotifier = InitStatusNotifier()
+          ..markSupabaseReady()
+          ..markRevenueCatReady();
+
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              sharedPreferencesProvider.overrideWithValue(prefs),
+              initStatusProvider.overrideWith((ref) => initStatusNotifier),
+              authServiceProvider.overrideWithValue(mockAuth),
+              deviceFingerprintServiceProvider.overrideWithValue(
+                mockDeviceFingerprint,
+              ),
+              usageServiceProvider.overrideWithValue(usageService),
+            ],
+            child: MaterialApp.router(routerConfig: testRouter),
+          ),
+        );
+        await tester.pump(const Duration(milliseconds: 500));
+
+        await tester.tap(find.text('Continue'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Continue'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Get Started'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Home Screen'), findsOneWidget);
+        expect(usageService.hasDeviceUsedFreeTier(), isTrue);
+      },
+    );
   });
 }

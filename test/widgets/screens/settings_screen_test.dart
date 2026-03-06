@@ -333,6 +333,95 @@ void main() {
         final switchWidget = tester.widget<Switch>(find.byType(Switch));
         expect(switchWidget.value, isFalse);
       });
+
+      testWidgetsWithPumps(
+        'ignores repeated biometric toggles while auth is in flight',
+        (tester) async {
+          mockBiometric.setAuthenticateDelay(const Duration(milliseconds: 250));
+
+          await tester.pumpWidget(buildTestWidget(email: 'test@example.com'));
+          await tester.pumpAndSettle();
+
+          final switchFinder = find.byType(Switch);
+          expect(switchFinder, findsOneWidget);
+
+          await tester.tap(switchFinder);
+          await tester.pump(const Duration(milliseconds: 10));
+
+          final inFlightSwitch = tester.widget<Switch>(switchFinder);
+          expect(inFlightSwitch.onChanged, isNull);
+
+          await tester.tap(switchFinder);
+          await tester.pump(const Duration(milliseconds: 10));
+          expect(mockBiometric.authenticateCallCount, 1);
+
+          await tester.pump(const Duration(milliseconds: 260));
+          await tester.pumpAndSettle();
+
+          expect(mockBiometric.authenticateCallCount, 1);
+          expect(mockBiometric.setEnabledCallCount, 1);
+        },
+      );
+
+      testWidgetsWithPumps(
+        'debounces immediate back-to-back biometric toggles',
+        (tester) async {
+          mockBiometric.setAuthenticateDelay(const Duration(milliseconds: 10));
+
+          await tester.pumpWidget(buildTestWidget(email: 'test@example.com'));
+          await tester.pumpAndSettle();
+
+          final switchFinder = find.byType(Switch);
+          expect(switchFinder, findsOneWidget);
+
+          await tester.tap(switchFinder);
+          await tester.pump(const Duration(milliseconds: 30));
+
+          await tester.tap(switchFinder);
+          await tester.pump(const Duration(milliseconds: 30));
+          await tester.pumpAndSettle();
+
+          expect(mockBiometric.authenticateCallCount, 1);
+          expect(mockBiometric.setEnabledCallCount, 1);
+
+          final switchWidget = tester.widget<Switch>(switchFinder);
+          expect(switchWidget.value, isTrue);
+        },
+      );
+
+      testWidgetsWithPumps(
+        'debounces immediate retry after a long biometric prompt completes',
+        (tester) async {
+          mockBiometric.setAuthenticateDelay(
+            const Duration(milliseconds: 2200),
+          );
+
+          await tester.pumpWidget(buildTestWidget(email: 'test@example.com'));
+          await tester.pumpAndSettle();
+
+          final switchFinder = find.byType(Switch);
+          expect(switchFinder, findsOneWidget);
+
+          await tester.tap(switchFinder);
+          await tester.pump(const Duration(milliseconds: 2250));
+          await tester.pumpAndSettle();
+
+          final switchAfterEnable = tester.widget<Switch>(switchFinder);
+          expect(switchAfterEnable.value, isTrue);
+          expect(mockBiometric.authenticateCallCount, 1);
+          expect(mockBiometric.setEnabledCallCount, 1);
+
+          // Immediate retry should be blocked by completion-based debounce.
+          await tester.tap(switchFinder);
+          await tester.pump(const Duration(milliseconds: 50));
+          await tester.pumpAndSettle();
+
+          final switchAfterRetry = tester.widget<Switch>(switchFinder);
+          expect(switchAfterRetry.value, isTrue);
+          expect(mockBiometric.authenticateCallCount, 1);
+          expect(mockBiometric.setEnabledCallCount, 1);
+        },
+      );
     });
 
     group('Stats Section', () {
@@ -340,15 +429,29 @@ void main() {
         await tester.pumpWidget(buildTestWidget(totalGenerated: 42));
         await tester.pumpAndSettle();
 
+        await tester.scrollUntilVisible(
+          find.text('YOUR STATS'),
+          100,
+          scrollable: find.byType(Scrollable).first,
+        );
+        await tester.pumpAndSettle();
+
         expect(find.text('YOUR STATS'), findsOneWidget);
-        expect(find.text('42 messages generated'), findsOneWidget);
+        expect(find.textContaining('42 messages generated'), findsOneWidget);
       });
 
       testWidgetsWithPumps('shows 0 for new users', (tester) async {
         await tester.pumpWidget(buildTestWidget());
         await tester.pumpAndSettle();
 
-        expect(find.text('0 messages generated'), findsOneWidget);
+        await tester.scrollUntilVisible(
+          find.text('YOUR STATS'),
+          100,
+          scrollable: find.byType(Scrollable).first,
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.textContaining('0 messages generated'), findsOneWidget);
       });
     });
 

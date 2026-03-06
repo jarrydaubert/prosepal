@@ -1,3 +1,6 @@
+import 'dart:io';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -22,6 +25,24 @@ import '../../mocks/mock_subscription_service.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  final defaultGoldenComparator = goldenFileComparator;
+
+  setUpAll(() {
+    // CI runs on Linux where text/shadow rasterization can differ slightly
+    // from macOS baselines despite identical layout.
+    if (Platform.isLinux && defaultGoldenComparator is LocalFileComparator) {
+      final comparator = defaultGoldenComparator;
+      goldenFileComparator = _TolerantGoldenFileComparator(
+        comparator.basedir.resolve('critical_screens_golden_test.dart'),
+        precisionTolerance: 0.012,
+      );
+    }
+  });
+
+  tearDownAll(() {
+    goldenFileComparator = defaultGoldenComparator;
+  });
 
   const viewportSize = Size(393, 852); // iPhone 14 style portrait baseline
   const dpr = 3.0;
@@ -387,4 +408,31 @@ void main() {
       matchesGoldenFile('../../goldens/critical/paywall_sheet.png'),
     );
   });
+}
+
+class _TolerantGoldenFileComparator extends LocalFileComparator {
+  _TolerantGoldenFileComparator(
+    super.testFile, {
+    required this.precisionTolerance,
+  });
+
+  final double precisionTolerance;
+
+  @override
+  Future<bool> compare(Uint8List imageBytes, Uri golden) async {
+    final result = await GoldenFileComparator.compareLists(
+      imageBytes,
+      await getGoldenBytes(golden),
+    );
+
+    if (result.passed || result.diffPercent <= precisionTolerance) {
+      result.dispose();
+      return true;
+    }
+
+    final error = await generateFailureOutput(result, golden, basedir);
+    result.dispose();
+
+    throw FlutterError(error);
+  }
 }

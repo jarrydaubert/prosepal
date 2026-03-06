@@ -168,17 +168,6 @@ class SubscriptionService implements ISubscriptionService {
       });
     }
 
-    // Sync purchases to transfer any subscriptions to the current RC user.
-    // This prevents orphaned anonymous users and inflated customer counts.
-    // - Android: Google Play subscriptions follow the Google account
-    // - iOS: App Store receipts are device-bound but still need sync after reinstall
-    try {
-      await Purchases.syncPurchases();
-      Log.info('RevenueCat: Purchases synced');
-    } on PlatformException catch (e) {
-      Log.warning('RevenueCat: Sync failed', {'error': '$e'});
-    }
-
     Log.info('RevenueCat initialized', {
       'platform': Platform.isIOS ? 'iOS' : 'Android',
       'testStore': isUsingTestStore,
@@ -264,6 +253,26 @@ class SubscriptionService implements ISubscriptionService {
       return hasPro;
     } on PlatformException catch (e) {
       Log.error('Error restoring purchases', e);
+      return false;
+    }
+  }
+
+  @override
+  Future<bool> syncPurchases() async {
+    if (!_isInitialized) {
+      Log.warning('RevenueCat not initialized - cannot sync purchases');
+      return false;
+    }
+    try {
+      await Purchases.syncPurchases();
+      final customerInfo = await Purchases.getCustomerInfo();
+      final hasPro = customerInfo.entitlements.active.containsKey(
+        _entitlementId,
+      );
+      Log.info('RevenueCat purchases synced', {'hasPro': hasPro});
+      return hasPro;
+    } on PlatformException catch (e) {
+      Log.warning('RevenueCat purchase sync failed', {'error': '$e'});
       return false;
     }
   }
@@ -373,18 +382,6 @@ class SubscriptionService implements ISubscriptionService {
         'created': result.created,
         'hasPro': hasPro,
       });
-
-      // Sync purchases to ensure entitlements are fresh after login
-      // This is especially important on Android for purchase restoration
-      try {
-        await Purchases.syncPurchases();
-        Log.info('RevenueCat purchases synced after identify');
-      } on PlatformException catch (syncError) {
-        // Non-fatal: sync may fail if no purchases exist
-        Log.warning('Purchase sync after identify failed', {
-          'error': '$syncError',
-        });
-      }
 
       // Set user ID in Crashlytics for crash correlation
       await Log.setUserId(userId);

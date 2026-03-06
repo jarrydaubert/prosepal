@@ -34,11 +34,18 @@ SUPABASE_DB_URL="postgresql://..." ./scripts/verify_supabase_readonly.sh
 ./scripts/cleanup.sh
 
 # Integration smoke/e2e
+# Checked-in integration suites use Flutter's `integration_test` harness.
 flutter test integration_test/smoke_test.dart -d <device-id>
 flutter test integration_test/e2e_test.dart -d <device-id>
 flutter test integration_test/e2e_real_test.dart -d <android-device-id> --dart-define=REVENUECAT_USE_TEST_STORE=true
 ./scripts/run_wired_evidence.sh --suite smoke
 ./scripts/run_wired_evidence.sh --suite full
+
+# Patrol-native/system UI automation (only for tests written with
+# `patrolTest` or `$.native` APIs)
+dart pub global activate patrol_cli
+patrol doctor
+patrol test -t integration_test/<patrol_test_file>.dart
 
 # Firebase Test Lab critical suite
 flutter build apk --debug -t integration_test/ftl_test.dart

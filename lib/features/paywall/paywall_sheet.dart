@@ -227,6 +227,7 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
   /// Does NOT auto-trigger purchase - user can tap "Continue" button after.
   Future<void> _signInForSync() async {
     if (_isAuthenticating) return;
+    ref.read(interactiveAuthMethodOverrideProvider.notifier).state = 'apple';
     setState(() {
       _isAuthenticating = true;
       _error = null;
@@ -277,6 +278,7 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
         }
       }
     } on Exception catch (e) {
+      ref.read(interactiveAuthMethodOverrideProvider.notifier).state = null;
       if (!AuthErrorHandler.isCancellation(e)) {
         _showError(AuthErrorHandler.getMessage(e));
       }
@@ -288,6 +290,7 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
   /// Sign in with Google for sync purposes only.
   Future<void> _signInWithGoogleForSync() async {
     if (_isAuthenticating) return;
+    ref.read(interactiveAuthMethodOverrideProvider.notifier).state = 'google';
     setState(() {
       _isAuthenticating = true;
       _error = null;
@@ -335,6 +338,7 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
         }
       }
     } on Exception catch (e) {
+      ref.read(interactiveAuthMethodOverrideProvider.notifier).state = null;
       if (!AuthErrorHandler.isCancellation(e)) {
         _showError(AuthErrorHandler.getMessage(e));
       }
@@ -437,8 +441,6 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
       // Route through ISubscriptionService for testability
       // Service returns true if 'pro' entitlement is now active
       final hasPro = await subscriptionService.restorePurchases();
-
-      Log.info('Restore completed', {'hasPro': hasPro});
 
       if (hasPro && mounted) {
         ref.invalidate(customerInfoProvider);

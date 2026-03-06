@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
+import 'app_surface_card.dart';
 
 /// iOS-style settings tile with leading icon, title, subtitle, and trailing
 class SettingsTile extends StatelessWidget {
@@ -22,24 +23,35 @@ class SettingsTile extends StatelessWidget {
   final Color? titleColor;
 
   @override
-  Widget build(BuildContext context) => ListTile(
-    leading: leading,
-    title: Text(
-      title,
-      style: TextStyle(color: titleColor ?? AppColors.textPrimary),
+  Widget build(BuildContext context) => AppSurfaceCard(
+    margin: const EdgeInsets.only(bottom: 10),
+    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+    child: ListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: leading,
+      title: Text(
+        title,
+        style: TextStyle(
+          color: titleColor ?? AppColors.textOnLight,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      subtitle: subtitle != null
+          ? Text(
+              subtitle!,
+              style: const TextStyle(color: AppColors.textOnLightSecondary),
+            )
+          : null,
+      trailing:
+          trailing ??
+          (onTap != null
+              ? const Icon(
+                  Icons.chevron_right,
+                  color: AppColors.textOnLightHint,
+                )
+              : null),
+      onTap: onTap,
     ),
-    subtitle: subtitle != null
-        ? Text(
-            subtitle!,
-            style: const TextStyle(color: AppColors.textSecondary),
-          )
-        : null,
-    trailing:
-        trailing ??
-        (onTap != null
-            ? const Icon(Icons.chevron_right, color: AppColors.textHint)
-            : null),
-    onTap: onTap,
   );
 }
 

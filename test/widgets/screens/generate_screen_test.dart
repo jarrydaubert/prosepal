@@ -571,6 +571,20 @@ void main() {
   // NAVIGATION
   // ============================================================
   group('GenerateScreen Navigation', () {
+    testWidgetsWithPumps('back on first step falls back to home route', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        createTestableGenerateScreen(selectedOccasion: Occasion.birthday),
+      );
+      await tester.pump(const Duration(seconds: 1));
+
+      await tester.tap(find.bySemanticsLabel('Back'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Home'), findsOneWidget);
+    });
+
     testWidgetsWithPumps('back button returns to previous step', (
       tester,
     ) async {
@@ -584,7 +598,7 @@ void main() {
       expect(find.text('Heartfelt'), findsOneWidget);
 
       // Go back
-      await tester.tap(find.byTooltip('Back'));
+      await tester.tap(find.bySemanticsLabel('Back'));
       await tester.pump(const Duration(seconds: 1));
 
       // Should be on step 1
@@ -599,7 +613,7 @@ void main() {
       await navigateToStep3(tester);
 
       // Go back
-      await tester.tap(find.byTooltip('Back'));
+      await tester.tap(find.bySemanticsLabel('Back'));
       await tester.pump(const Duration(seconds: 1));
 
       // Should be on step 2

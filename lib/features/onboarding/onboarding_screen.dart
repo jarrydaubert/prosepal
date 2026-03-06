@@ -56,6 +56,7 @@ class OnboardingScreen extends ConsumerStatefulWidget {
 }
 
 class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
+  static const _deviceSyncTimeout = Duration(seconds: 2);
   final PageController _pageController = PageController();
   int _currentPage = 0;
   late final DateTime _startTime;
@@ -102,6 +103,18 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       Log.info('Onboarding: -> /home (has Pro, signed in)');
       context.go('/home');
     } else {
+      try {
+        await ref
+            .read(usageServiceProvider)
+            .syncDeviceStateFromServer()
+            .timeout(_deviceSyncTimeout);
+        ref.invalidate(remainingGenerationsProvider);
+      } on Exception catch (e) {
+        Log.warning('Onboarding: Device state sync skipped before home', {
+          'error': '$e',
+        });
+      }
+
       // No Pro - go to home, let them experience value first
       // Paywall will show AFTER first message copy (value-first approach)
       Log.info('Onboarding: -> /home (value-first, paywall deferred)');

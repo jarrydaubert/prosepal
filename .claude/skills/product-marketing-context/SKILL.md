@@ -272,7 +272,7 @@ For gift-givers who struggle to write heartfelt card messages, Prosepal is a mob
 3. **Try before you buy** — Your first message is free, no account required
 4. **Private and personal** — Your messages aren't stored or used to train AI
 
-### Target Personas (from docs/MARKETING.md)
+### Target Personas (from docs/PRODUCT_STRATEGY.md)
 - **Primary:** 25-45, buys 5+ cards/year, time-poor, wants thoughtful messages without the stress
 - **Secondary:** 18-25, new to card-giving, needs help with tone and formality
 - **Tertiary:** 45+, frequent card sender, values quality and personal touch
@@ -292,7 +292,7 @@ For gift-givers who struggle to write heartfelt card messages, Prosepal is a mob
 - Apple and Google take 15-30% commission
 
 ### Key Files
-- `docs/MARKETING.md` — Full marketing strategy
+- `docs/PRODUCT_STRATEGY.md` — High-level product and growth strategy
 - `docs/NEXT_RELEASE_BRIEF.md` — Current product scope and features
 - `lib/core/services/ai_service.dart` — How AI generation works
 - `lib/core/services/subscription_service.dart` — Pricing/entitlements

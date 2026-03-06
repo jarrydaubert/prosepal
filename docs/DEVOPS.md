@@ -138,14 +138,53 @@ Steps:
 - Release preflight tests (`./scripts/test_release_preflight.sh`).
 - Deno static validation for Supabase edge functions (`deno check`).
 - Flutter analyze.
+- Launch/auth color parity guard (`./scripts/check_launch_color_parity.sh`) to prevent iOS/Android/Flutter splash/background drift.
 - Critical smoke tests.
 - Unit/widget test suite with flaky tests excluded.
 - Service coverage gate.
 - Debug bundle build sanity check.
+- Non-blocking visual regression companion job runs `./scripts/test_visual_regression.sh` and uploads `visual-regression-diffs` artifact on any diff/failure.
+- Non-blocking integration smoke companion job runs `integration_test/smoke_test.dart` on iOS Simulator (`macos-latest`) and uploads `integration-smoke-artifacts`.
 
 Free-tier optimization:
 - Docs-only changes use a fast path that skips Flutter install/build/test while still running as a required check.
 - `concurrency.cancel-in-progress` prevents duplicate runs on rapid pushes.
+
+### Visual Regression Companion (`.github/workflows/ci.yml` → `Visual Regression (non-blocking)`)
+
+Purpose:
+- Detect unintended UI drift on core golden baselines without blocking merge velocity.
+
+Policy:
+- Runs only when CI scope is not docs-only.
+- Uses `./scripts/test_visual_regression.sh`.
+- Uploads `visual-regression-diffs` artifact (from `test/widgets/goldens/failures/**`) on every run.
+- Publishes `GITHUB_STEP_SUMMARY` guidance with local baseline update command:
+  - `./scripts/test_visual_regression.sh --update`
+
+### Integration Smoke Companion (`.github/workflows/ci.yml` → `Integration Smoke (non-blocking)`)
+
+Purpose:
+- Run `integration_test/smoke_test.dart` in CI on a deterministic non-blocking target and publish evidence artifacts.
+
+Harness selection:
+- Checked-in suites under `integration_test/` currently use Flutter's standard `integration_test` harness, so CI and local smoke use `flutter test`.
+- Use Patrol CLI only for tests that explicitly adopt Patrol APIs/native automation (for example `patrolTest(...)` or `$.native` interactions). In that case, install `patrol_cli`, run `patrol doctor`, and execute via `patrol test`.
+
+Policy:
+- Runs only when CI scope is not docs-only.
+- Uses first-party tooling on `macos-latest` with `xcrun simctl` to boot an available iPhone simulator.
+- Runs `flutter test -d <simulator-udid> integration_test/smoke_test.dart`.
+- Integration execution step is bounded with `timeout-minutes: 12` to prevent stalled simulator runs from consuming CI concurrency indefinitely.
+- CI Flutter version should track the current repo-supported stable toolchain so dependency solving stays aligned between local validation and GitHub Actions.
+- Uploads `integration-smoke-artifacts` containing:
+  - `artifacts/integration-smoke/smoke.log`
+  - `integration_test/screenshots/**` (when produced)
+- Publishes `GITHUB_STEP_SUMMARY` with pass/fail outcome and target details.
+
+Pass/fail semantics:
+- This job is non-blocking (`continue-on-error: true`) so it does not block merge.
+- Any failure must be triaged and either fixed immediately or tracked in `docs/BACKLOG.md` with deterministic DoD before release cut.
 
 ### CodeQL (`.github/workflows/codeql.yml`)
 
@@ -188,6 +227,12 @@ Rules:
 - Tags must be `vMAJOR.MINOR.PATCH` (SemVer).
 - Use workflow dispatch only.
 - No ad-hoc production tags.
+- Release workflow blocks before tag creation when required runtime config
+  secrets are missing or placeholder-like by running:
+  `./scripts/release_preflight.sh all --no-env-file`
+  with GitHub Actions secrets mapped to:
+  `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `REVENUECAT_IOS_KEY`,
+  `REVENUECAT_ANDROID_KEY`, `GOOGLE_WEB_CLIENT_ID`, `GOOGLE_IOS_CLIENT_ID`.
 
 ## Dependabot Policy
 
@@ -205,12 +250,31 @@ flutter analyze
 ./scripts/test_release_preflight.sh
 deno check supabase/functions/**/*.ts
 ./scripts/check_commit_attribution.sh --range origin/main..HEAD
+./scripts/check_launch_color_parity.sh
 ./scripts/test_critical_smoke.sh
 flutter test --exclude-tags flaky --coverage
 ./scripts/check_service_coverage.sh coverage/lcov.info
 ./scripts/test_flake_audit.sh
 ./scripts/test_visual_regression.sh
 ./scripts/cleanup.sh --dry-run
+```
+
+### Device Reset
+
+For a clean local/device reset before fresh installs:
+
+```bash
+./scripts/reset_devices.sh
+```
+
+This cleans local generated artifacts and uninstalls the app from the first
+tethered Android and iOS devices it finds. Keep interactive device runs in
+separate terminals so each platform retains its own logs and hot reload/restart
+controls:
+
+```bash
+./scripts/run_ios.sh
+./scripts/run_android.sh
 ```
 
 ### Integration And Device Validation
@@ -239,6 +303,14 @@ Real backend E2E:
 
 ```bash
 flutter test integration_test/e2e_real_test.dart -d <android-device-id> --dart-define=REVENUECAT_USE_TEST_STORE=true
+```
+
+Patrol-native/system UI automation:
+
+```bash
+dart pub global activate patrol_cli
+patrol doctor
+patrol test -t integration_test/<patrol_test_file>.dart
 ```
 
 ### iOS CocoaPods Recovery
@@ -291,6 +363,35 @@ AI abuse/cost verification (manual + script-assisted):
 - Rate limits and quotas match policy.
 - Budget alerts configured (warning + critical).
 - Kill-switch drill passes (`ai_enabled=false` then recovery).
+
+### Startup Phase Telemetry And Budgets
+
+Startup reliability is validated from structured logs emitted by splash routing:
+- `Startup phase telemetry` (per phase)
+- `Startup routing summary` (terminal outcome)
+
+The same fields are emitted to Firebase Analytics events for queryability:
+- `startup_phase`
+- `startup_routing_summary`
+
+Phases and budgets:
+- `init`: max `12000ms` (wait for critical init readiness)
+- `identity`: budget `4000ms` (auth + biometric checks)
+- `entitlements`: budget `3000ms` (anonymous Pro restore check; authenticated path is marked `authenticated_skipped`)
+- `routing`: max `10000ms` (initial route resolution timeout/fallback budget)
+
+Required telemetry fields:
+- Per-phase: `phase`, `durationMs`, `budgetMs`, `timedOut`, `outcome`
+- Final summary: `resolvedRoute`, `usedFallback`, `fallbackReason`, `initPhaseOutcome`, `identityPhaseMs/outcome`, `entitlementsPhaseMs/outcome`
+
+Analytics parameter keys:
+- `startup_phase`: `phase`, `duration_ms`, `budget_ms`, `timed_out`, `outcome`
+- `startup_routing_summary`: `init_wait_ms`, `splash_hold_ms`, `route_resolution_ms`, `init_phase_outcome`, `identity_phase_ms`, `identity_phase_outcome`, `entitlements_phase_ms`, `entitlements_phase_outcome`, `used_fallback`, `fallback_reason`, `resolved_route`
+
+Triage policy:
+- Investigate any `timedOut=true` phase on release-candidate builds.
+- Investigate repeated `usedFallback=true` startup summaries for the same route path or device cohort.
+- Treat `/onboarding` fallback for previously onboarded users as regression unless an explicit init error is present.
 
 ### Firebase AI iOS client-block triage (`client application <empty> are blocked`)
 
