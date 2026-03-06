@@ -22,24 +22,28 @@ If any condition is missing, the item remains open.
 
 Process items in this order unless an explicit owner override is recorded in release planning.
 
-1. `P0-08` Design token consistency and contrast hardening
-2. `P0-09` iOS/Android launch and auth visual parity
-3. `P0-07` Next iOS release readiness checklist
-4. `VNEXT-08` Wired physical-device validation gates
-5. `VNEXT-09` iOS script-only archive validation
-6. `VNEXT-10` AI cost/abuse controls
-7. `P1-43` Firebase AI client-block regression hardening
-8. `P1-48` Startup phase telemetry and budget visibility
-9. `P1-40` Startup/router timeout guard under network faults
-10. `P1-52` Biometric lifecycle debounce + single-flight guard
-11. `VNEXT-11` Canonical identity mapping
-12. `VNEXT-12` UI parity with live baseline
-13. `VNEXT-13` Device abuse-control compliance decision
-14. `P0-05` Billing budget alert controls
-15. `P0-04` Auth loading spinner after OAuth sheet
-16. `P0-01` Move Google setup to business account
-17. `P1-47` Server-side AI gateway rollout (post-launch trigger)
-18. `P2-13` Startup orchestration refactor (post-launch)
+1. `P0-07` Next iOS release readiness checklist
+2. `VNEXT-08` Wired physical-device validation gates
+3. `P1-43` Firebase AI client-block regression hardening
+4. `VNEXT-10` AI cost/abuse controls
+5. `P0-08` Design token consistency and contrast hardening
+6. `P0-09` iOS/Android launch and auth visual parity
+7. `VNEXT-09` iOS script-only archive validation
+8. `P1-24` Deterministic integration journey assertions
+9. `P1-35` Smoke suite determinism and async hygiene
+10. `P1-39` Android smoke integration harness stall (`did not complete`)
+11. `P1-41` Network-independent smoke deterministic mode
+12. `P1-36` Journey launch readiness hardening
+13. `P1-48` Startup phase telemetry and budget visibility
+14. `P1-52` Biometric lifecycle debounce + single-flight guard
+15. `VNEXT-11` Canonical identity mapping
+16. `VNEXT-13` Device abuse-control compliance decision
+17. `VNEXT-12` UI parity with live baseline
+18. `P0-05` Billing budget alert controls
+19. `P0-04` Auth loading spinner after OAuth sheet
+20. `P0-01` Move Google setup to business account
+21. `P1-47` Server-side AI gateway rollout (post-launch trigger)
+22. `P2-13` Startup orchestration refactor (post-launch)
 
 ## P0 - Launch Blockers
 
