@@ -66,4 +66,24 @@ void main() {
 
     expect(find.text('Add Occasion'), findsNothing);
   });
+
+  testWidgets('Add occasion sheet uses natural text capitalization', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1080, 1920);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() => tester.view.resetPhysicalSize());
+
+    await tester.pumpWidget(buildHarness());
+    await tester.tap(find.text('Open Add Occasion'));
+    await tester.pumpAndSettle();
+
+    final fields = tester
+        .widgetList<TextField>(find.byType(TextField))
+        .toList();
+
+    expect(fields, hasLength(2));
+    expect(fields.first.textCapitalization, TextCapitalization.words);
+    expect(fields.last.textCapitalization, TextCapitalization.sentences);
+  });
 }

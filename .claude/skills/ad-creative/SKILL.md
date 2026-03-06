@@ -404,4 +404,4 @@ Align ad spend with greeting card peaks:
 
 ### Reference
 - `paid-ads` skill — Overall paid advertising strategy
-- `docs/MARKETING.md` — Marketing strategy and budget guidance
+- `docs/PRODUCT_STRATEGY.md` — High-level product and growth strategy

@@ -233,21 +233,21 @@ PODS:
   - PromisesObjC (2.4.0)
   - PromisesSwift (2.4.0):
     - PromisesObjC (= 2.4.0)
-  - purchases_flutter (9.12.3):
+  - purchases_flutter (9.13.1):
     - Flutter
-    - PurchasesHybridCommon (= 17.41.1)
-  - purchases_ui_flutter (9.12.3):
+    - PurchasesHybridCommon (= 17.42.0)
+  - purchases_ui_flutter (9.13.1):
     - Flutter
-    - PurchasesHybridCommonUI (= 17.41.1)
-  - PurchasesHybridCommon (17.41.1):
-    - RevenueCat (= 5.59.2)
-  - PurchasesHybridCommonUI (17.41.1):
-    - PurchasesHybridCommon (= 17.41.1)
-    - RevenueCatUI (= 5.59.2)
+    - PurchasesHybridCommonUI (= 17.42.0)
+  - PurchasesHybridCommon (17.42.0):
+    - RevenueCat (= 5.60.0)
+  - PurchasesHybridCommonUI (17.42.0):
+    - PurchasesHybridCommon (= 17.42.0)
+    - RevenueCatUI (= 5.60.0)
   - RecaptchaInterop (101.0.0)
-  - RevenueCat (5.59.2)
-  - RevenueCatUI (5.59.2):
-    - RevenueCat (= 5.59.2)
+  - RevenueCat (5.60.0)
+  - RevenueCatUI (5.60.0):
+    - RevenueCat (= 5.60.0)
   - share_plus (0.0.1):
     - Flutter
   - shared_preferences_foundation (0.0.1):
@@ -423,13 +423,13 @@ SPEC CHECKSUMS:
   patrol: cea8074f183a2a4232d0ebd10569ae05149ada42
   PromisesObjC: f5707f49cb48b9636751c5b2e7d227e43fba9f47
   PromisesSwift: 9d77319bbe72ebf6d872900551f7eeba9bce2851
-  purchases_flutter: 64e28fe4f41a5898e50b896b698daeb276101062
-  purchases_ui_flutter: d30ae1f3ac1fd284db4a1e5bdea5c4c61d3cb6f5
-  PurchasesHybridCommon: 8eb130ab98f8dab600dea932a2599dee79304bb5
-  PurchasesHybridCommonUI: 59c7bf053558417dcabc06ec6ac072fa8181b865
+  purchases_flutter: 0c05be8e6d5afbd2dc581ce7f823015ff1b5831a
+  purchases_ui_flutter: acbcb4cbb7f1670c9c884a8f850b4f9ad388b8dc
+  PurchasesHybridCommon: c0a62a03bd15e40af1c3cd111f5f4f50cac751c7
+  PurchasesHybridCommonUI: b4ed664293091eb6f38f3c6549ded679d61b0625
   RecaptchaInterop: 11e0b637842dfb48308d242afc3f448062325aba
-  RevenueCat: f352b3661288080bd8bf30bbb96e331940e73c88
-  RevenueCatUI: 5f7b3496a7fd7a16a254a6b78de2e221c117d9d2
+  RevenueCat: 88010b2d5fc8fb7405d2e11dacd65ac74c9d21d1
+  RevenueCatUI: 4947e99bffd02fee429202b70b14dd780b8884ea
   share_plus: 50da8cb520a8f0f65671c6c6a99b3617ed10a58a
   shared_preferences_foundation: 7036424c3d8ec98dfe75ff1667cb0cd531ec82bb
   sign_in_with_apple: c5dcc141574c8c54d5ac99dd2163c0c72ad22418

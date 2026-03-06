@@ -310,8 +310,15 @@ Future<bool> scrollToText(
 
 /// Tap back button if visible
 Future<bool> tapBack(WidgetTester tester) async {
-  if (find.byIcon(Icons.arrow_back).evaluate().isNotEmpty) {
-    await tester.tap(find.byIcon(Icons.arrow_back));
+  final standardBack = find.byIcon(Icons.arrow_back);
+  final chevronBack = find.byIcon(Icons.chevron_left_rounded);
+  if (standardBack.evaluate().isNotEmpty) {
+    await tester.tap(standardBack);
+    await _pumpFor(tester, const Duration(seconds: 1));
+    return true;
+  }
+  if (chevronBack.evaluate().isNotEmpty) {
+    await tester.tap(chevronBack);
     await _pumpFor(tester, const Duration(seconds: 1));
     return true;
   }

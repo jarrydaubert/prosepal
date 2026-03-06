@@ -16,6 +16,27 @@ const validPayload = {
   },
 }
 
+const aliasPayload = {
+  api_version: '1.0',
+  event: {
+    type: 'INITIAL_PURCHASE',
+    app_user_id: 'anon_123',
+    product_id: 'pro_monthly',
+    original_app_user_id: 'anon_123',
+    aliases: ['anon_123', TEST_USER_ID],
+    expiration_at_ms: 1735689600000,
+  },
+}
+
+const transferPayload = {
+  api_version: '1.0',
+  event: {
+    type: 'TRANSFER',
+    transferred_from: ['anon_123', TEST_USER_ID],
+    transferred_to: ['anon_456', '22222222-2222-2222-2222-222222222222'],
+  },
+}
+
 /**
  * Builds a webhook request with auth and JSON body.
  */
@@ -149,4 +170,35 @@ Deno.test('accepts RevenueCat Bearer header without space', async () => {
   )
 
   assertEquals(res.status, 200)
+})
+
+Deno.test('resolves UUID user from aliases when app_user_id is anonymous', async () => {
+  const upserts: Array<Record<string, unknown>> = []
+
+  const res = await handleRevenueCatWebhook(
+    makeRequest(aliasPayload),
+    makeDeps({ captureUpserts: upserts }),
+  )
+
+  assertEquals(res.status, 200)
+  assertEquals(upserts.length, 1)
+  assertEquals(upserts[0].user_id, TEST_USER_ID)
+  assertEquals(upserts[0].is_pro, true)
+})
+
+Deno.test('processes transfer events for UUID-backed destination users', async () => {
+  const upserts: Array<Record<string, unknown>> = []
+
+  const res = await handleRevenueCatWebhook(
+    makeRequest(transferPayload),
+    makeDeps({ captureUpserts: upserts }),
+  )
+
+  assertEquals(res.status, 200)
+  assertEquals(upserts.length, 2)
+  assertEquals(upserts[0].user_id, TEST_USER_ID)
+  assertEquals(upserts[0].is_pro, false)
+  assertEquals(upserts[1].user_id, '22222222-2222-2222-2222-222222222222')
+  assertEquals(upserts[1].is_pro, true)
+  assertEquals(upserts[1].last_event_type, 'TRANSFER')
 })

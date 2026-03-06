@@ -461,7 +461,7 @@ main()
 |-------|----------|---------|
 | Unit | `test/services/`, `test/models/` | Services, models, utilities |
 | Widget | `test/widgets/` | Screen rendering, interactions |
-| Integration | `integration_test/journeys/` | User journeys (Patrol) |
+| Integration | `integration_test/journeys/` | User journeys and device flows (`integration_test`, Patrol-ready) |
 
 ### Mocking Pattern
 

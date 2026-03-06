@@ -59,6 +59,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
   Widget build(BuildContext context) {
     final result = ref.watch(generationResultProvider);
     final canRegenerate = !_isRegenerating;
+    final isPro = ref.watch(isProProvider);
 
     if (result == null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -158,11 +159,13 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                       const SizedBox(width: 12),
                       Expanded(
                         child: AppButton(
-                          label: 'Regenerate',
-                          icon: Icons.auto_awesome,
+                          label: isPro ? 'Regenerate' : 'Unlock Pro',
+                          icon: isPro ? Icons.auto_awesome : Icons.lock_outline,
                           isLoading: _isRegenerating,
                           onPressed: canRegenerate
-                              ? () => _regenerate(result)
+                              ? () => isPro
+                                    ? _regenerate(result)
+                                    : _showUpgradeCTA()
                               : null,
                         ),
                       ),
@@ -376,6 +379,15 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
     );
   }
 
+  void _showUpgradeCTA() {
+    _showRegenerationError('Regenerate is a Pro feature. Upgrade to Pro!');
+    if (mounted) {
+      unawaited(
+        showPaywall(context, source: 'regenerate_blocked', force: true),
+      );
+    }
+  }
+
   Future<void> _regenerate(GenerationResult currentResult) async {
     if (_isRegenerating) return;
     final startedAt = DateTime.now();
@@ -408,10 +420,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
       // Regeneration is a Pro-only feature. Free users receive one generation
       // from the wizard flow and are routed to paywall for additional options.
       if (!isPro) {
-        _showRegenerationError('Regenerate is a Pro feature. Upgrade to Pro!');
-        if (mounted) {
-          unawaited(showPaywall(context, source: 'regenerate_blocked'));
-        }
+        _showUpgradeCTA();
         return;
       }
 

@@ -1,15 +1,17 @@
 import 'dart:io';
 
 import 'package:device_info_plus/device_info_plus.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:uuid/uuid.dart';
 
 import 'log_service.dart';
 
 /// Service for device fingerprinting and server-side free tier tracking.
 ///
-/// Uses platform-specific identifiers that persist across app reinstalls:
-/// - iOS: `identifierForVendor` - UUID consistent for apps from same vendor
-/// - Android: `androidId` - 64-bit hex string consistent per signing key/user/device
+/// Uses platform-specific identifiers for server-side free tier tracking:
+/// - iOS: keychain-backed persisted ID, seeded from `identifierForVendor`
+/// - Android: current device identifier implementation
 ///
 /// ## Security Notes
 /// - Device fingerprints can be spoofed on rooted/jailbroken devices
@@ -26,9 +28,41 @@ import 'log_service.dart';
 /// }
 /// ```
 class DeviceFingerprintService {
-  DeviceFingerprintService();
+  DeviceFingerprintService({
+    DeviceInfoPlugin? deviceInfo,
+    FlutterSecureStorage? secureStorage,
+    Future<String?> Function(String key)? secureRead,
+    Future<void> Function(String key, String value)? secureWrite,
+    Future<String?> Function(DeviceInfoPlugin deviceInfo)? iosIdentifierReader,
+    Future<String?> Function(DeviceInfoPlugin deviceInfo)?
+    androidIdentifierReader,
+    bool Function()? isIOS,
+    bool Function()? isAndroid,
+    String Function()? generateUuid,
+  }) : _deviceInfo = deviceInfo ?? DeviceInfoPlugin(),
+       _secureStorage = secureStorage ?? const FlutterSecureStorage(),
+       _secureReadOverride = secureRead,
+       _secureWriteOverride = secureWrite,
+       _iosIdentifierReader = iosIdentifierReader,
+       _androidIdentifierReader = androidIdentifierReader,
+       _isIOS = isIOS,
+       _isAndroid = isAndroid,
+       _generateUuid = generateUuid;
 
-  final DeviceInfoPlugin _deviceInfo = DeviceInfoPlugin();
+  static const _iosPersistentFingerprintKey =
+      'device_fingerprint_ios_persistent_id';
+
+  final DeviceInfoPlugin _deviceInfo;
+  final FlutterSecureStorage _secureStorage;
+  final Future<String?> Function(String key)? _secureReadOverride;
+  final Future<void> Function(String key, String value)? _secureWriteOverride;
+  final Future<String?> Function(DeviceInfoPlugin deviceInfo)?
+  _iosIdentifierReader;
+  final Future<String?> Function(DeviceInfoPlugin deviceInfo)?
+  _androidIdentifierReader;
+  final bool Function()? _isIOS;
+  final bool Function()? _isAndroid;
+  final String Function()? _generateUuid;
   String? _cachedFingerprint;
   String? _cachedPlatform;
 
@@ -47,8 +81,8 @@ class DeviceFingerprintService {
   /// Get the device fingerprint.
   ///
   /// Returns a unique identifier that persists across app reinstalls:
-  /// - iOS: identifierForVendor (resets only when all vendor apps uninstalled)
-  /// - Android: androidId (consistent per signing key and user)
+  /// - iOS: keychain-backed identifier seeded from identifierForVendor
+  /// - Android: current device identifier implementation
   ///
   /// Returns null if unable to get fingerprint (should fallback to local check).
   Future<String?> getDeviceFingerprint() async {
@@ -58,13 +92,11 @@ class DeviceFingerprintService {
     }
 
     try {
-      if (Platform.isIOS) {
-        final iosInfo = await _deviceInfo.iosInfo;
-        _cachedFingerprint = iosInfo.identifierForVendor;
+      if (_isIOSPlatform) {
+        _cachedFingerprint = await _getOrCreateIosPersistentFingerprint();
         _cachedPlatform = 'ios';
-      } else if (Platform.isAndroid) {
-        final androidInfo = await _deviceInfo.androidInfo;
-        _cachedFingerprint = androidInfo.id;
+      } else if (_isAndroidPlatform) {
+        _cachedFingerprint = await _readAndroidIdentifier();
         _cachedPlatform = 'android';
       }
 
@@ -88,8 +120,8 @@ class DeviceFingerprintService {
   /// Get the platform string for the current device.
   String getPlatform() {
     if (_cachedPlatform != null) return _cachedPlatform!;
-    if (Platform.isIOS) return 'ios';
-    if (Platform.isAndroid) return 'android';
+    if (_isIOSPlatform) return 'ios';
+    if (_isAndroidPlatform) return 'android';
     return 'unknown';
   }
 
@@ -206,7 +238,7 @@ class DeviceFingerprintService {
       final result = response as Map<String, dynamic>;
       final allowed = result['allowed'] as bool? ?? false;
 
-      Log.info('Device marked as used free tier', {'success': allowed});
+      Log.info('Device free tier mark evaluated', {'allowed': allowed});
 
       return allowed;
     } on PostgrestException catch (e) {
@@ -219,6 +251,69 @@ class DeviceFingerprintService {
   void clearCache() {
     _cachedFingerprint = null;
     _cachedPlatform = null;
+  }
+
+  bool get _isIOSPlatform => _isIOS?.call() ?? Platform.isIOS;
+
+  bool get _isAndroidPlatform => _isAndroid?.call() ?? Platform.isAndroid;
+
+  Future<String?> _readSecure(String key) async {
+    final secureReadOverride = _secureReadOverride;
+    if (secureReadOverride != null) {
+      return secureReadOverride(key);
+    }
+    return _secureStorage.read(key: key);
+  }
+
+  Future<void> _writeSecure(String key, String value) async {
+    if (_secureWriteOverride != null) {
+      await _secureWriteOverride(key, value);
+      return;
+    }
+    await _secureStorage.write(key: key, value: value);
+  }
+
+  Future<String?> _readIosIdentifier() async {
+    final iosIdentifierReader = _iosIdentifierReader;
+    if (iosIdentifierReader != null) {
+      return iosIdentifierReader(_deviceInfo);
+    }
+    return (await _deviceInfo.iosInfo).identifierForVendor;
+  }
+
+  Future<String?> _readAndroidIdentifier() async {
+    final androidIdentifierReader = _androidIdentifierReader;
+    if (androidIdentifierReader != null) {
+      return androidIdentifierReader(_deviceInfo);
+    }
+    return (await _deviceInfo.androidInfo).id;
+  }
+
+  Future<String?> _getOrCreateIosPersistentFingerprint() async {
+    final persisted = await _readSecure(_iosPersistentFingerprintKey);
+    if (persisted != null && persisted.isNotEmpty) {
+      return persisted;
+    }
+
+    final identifierForVendor = await _readIosIdentifier();
+    final fingerprint =
+        (identifierForVendor != null && identifierForVendor.isNotEmpty)
+        ? identifierForVendor
+        : (_generateUuid?.call() ?? const Uuid().v4());
+
+    await _writeSecure(_iosPersistentFingerprintKey, fingerprint);
+
+    Log.info('Persisted iOS device fingerprint', {
+      'seed': identifierForVendor != null && identifierForVendor.isNotEmpty
+          ? 'identifier_for_vendor'
+          : 'generated_uuid',
+      'fingerprintPrefix': fingerprint.substring(
+        0,
+        fingerprint.length.clamp(0, 8),
+      ),
+    });
+
+    return fingerprint;
   }
 }
 

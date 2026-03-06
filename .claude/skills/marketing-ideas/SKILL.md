@@ -190,4 +190,4 @@ Many marketing ideas in this skill are designed for web SaaS. When applying to P
 - Enterprise sales motions
 
 ### Reference
-- `docs/MARKETING.md` — Full strategy with 13 sections
+- `docs/PRODUCT_STRATEGY.md` — High-level product and growth strategy

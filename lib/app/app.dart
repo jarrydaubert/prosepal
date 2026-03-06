@@ -9,9 +9,9 @@ import '../core/config/preference_keys.dart';
 import '../core/providers/providers.dart';
 import '../core/services/auth_telemetry.dart';
 import '../core/services/log_service.dart';
-
 import '../shared/theme/app_colors.dart';
 import '../shared/theme/app_theme.dart';
+import 'auth_identity_sync.dart';
 import 'router.dart';
 
 class ProsepalApp extends ConsumerStatefulWidget {
@@ -215,24 +215,47 @@ class _ProsepalAppState extends ConsumerState<ProsepalApp>
       final event = data.event;
       final session = data.session;
       final sessionUser = session?.user;
-      final lastSignInProvider = AuthTelemetry.metadataProvider(
+      final metadataProvider = AuthTelemetry.metadataProvider(
         sessionUser?.appMetadata,
       );
+      final mostRecentIdentityProvider =
+          AuthTelemetry.mostRecentIdentityProvider(
+            sessionUser?.identities
+                ?.map(
+                  (identity) => {
+                    'provider': identity.provider,
+                    'lastSignInAt': identity.lastSignInAt,
+                  },
+                )
+                .toList(),
+            fallbackProvider: metadataProvider,
+          );
+      final interactiveAuthOverride = ref.read(
+        interactiveAuthMethodOverrideProvider,
+      );
+      final effectiveSignedInProvider =
+          event == AuthChangeEvent.signedIn &&
+              interactiveAuthOverride != null &&
+              interactiveAuthOverride.isNotEmpty
+          ? interactiveAuthOverride
+          : mostRecentIdentityProvider;
       final linkedProviders = AuthTelemetry.linkedProviders(
-        metadataProvider: lastSignInProvider,
+        metadataProvider: metadataProvider,
         metadataProvidersRaw: sessionUser?.appMetadata['providers'],
         identityProviders: sessionUser?.identities?.map((i) => i.provider),
       );
       final currentSessionSource = AuthTelemetry.currentSessionSource(
         hasSession: session != null,
-        sessionProvider: lastSignInProvider,
-        fallbackProvider: lastSignInProvider,
+        sessionProvider: effectiveSignedInProvider,
+        fallbackProvider: metadataProvider,
       );
       Log.info('Auth state changed', {
         'event': event.name,
         'hasSession': session != null,
         'userId': AuthTelemetry.truncatedUserId(sessionUser?.id),
-        'lastSignInProvider': AuthTelemetry.providerLabel(lastSignInProvider),
+        'lastSignInProvider': AuthTelemetry.providerLabel(
+          effectiveSignedInProvider,
+        ),
         'currentSessionSource': currentSessionSource,
         'linkedProviders': AuthTelemetry.linkedProvidersValue(linkedProviders),
         'linkedProviderCount': linkedProviders.length,
@@ -243,12 +266,19 @@ class _ProsepalAppState extends ConsumerState<ProsepalApp>
           AuthTelemetry.authStateAnalyticsParams(
             event: event.name,
             hasSession: session != null,
-            lastSignInProvider: AuthTelemetry.providerLabel(lastSignInProvider),
+            lastSignInProvider: AuthTelemetry.providerLabel(
+              effectiveSignedInProvider,
+            ),
             currentSessionSource: currentSessionSource,
             linkedProviderCount: linkedProviders.length,
           ),
         ),
       );
+
+      if (event == AuthChangeEvent.signedIn ||
+          event == AuthChangeEvent.signedOut) {
+        ref.read(interactiveAuthMethodOverrideProvider.notifier).state = null;
+      }
 
       if (event == AuthChangeEvent.signedIn && session != null) {
         // Keep telemetry identity aligned with authenticated backend identity.
@@ -271,11 +301,26 @@ class _ProsepalAppState extends ConsumerState<ProsepalApp>
 
         // Identify with RevenueCat to restore Pro entitlements
         try {
-          await ref
-              .read(subscriptionServiceProvider)
-              .identifyUser(session.user.id);
-          Log.info('Auth listener: RevenueCat identified');
+          final subscriptionService = ref.read(subscriptionServiceProvider);
+          final hadPreSignInPro = await subscriptionService.isPro();
+          if (hadPreSignInPro) {
+            ref.read(proEntitlementHoldProvider.notifier).state = true;
+          }
+          final syncResult = await reconcileSubscriptionIdentityAfterSignIn(
+            subscriptionService: subscriptionService,
+            userId: session.user.id,
+            hadPreSignInProOverride: hadPreSignInPro,
+          );
+          ref.read(proEntitlementHoldProvider.notifier).state = false;
+          ref.invalidate(customerInfoProvider);
+          Log.info('Auth listener: RevenueCat identified', {
+            'preSignInPro': syncResult.hadPreSignInPro,
+            'hasProAfterIdentify': syncResult.hasProAfterIdentify,
+            'claimedViaSync': syncResult.claimedViaSync,
+            'finalHasPro': syncResult.finalHasPro,
+          });
         } on Exception catch (e) {
+          ref.read(proEntitlementHoldProvider.notifier).state = false;
           Log.warning('Auth listener: RevenueCat identify failed', {
             'error': '$e',
           });
@@ -294,6 +339,7 @@ class _ProsepalAppState extends ConsumerState<ProsepalApp>
         // identity, entitlement cache, and usage state.
       } else if (event == AuthChangeEvent.signedOut) {
         try {
+          ref.read(proEntitlementHoldProvider.notifier).state = false;
           await Log.clearUserId();
           final prefs = ref.read(sharedPreferencesProvider);
           await prefs.remove(PreferenceKeys.proStatusCache);

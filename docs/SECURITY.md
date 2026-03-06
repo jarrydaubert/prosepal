@@ -115,7 +115,7 @@ RevenueCat does **not** support HMAC signature verification. Per their docs, the
 |---------|----------------|----------|
 | Firebase App Check | PlayIntegrity (Android), AppAttest (iOS) | `main.dart:94-100` |
 | Rate Limiting | Server-side primary, client fallback | `rate_limit_service.dart` |
-| Device Fingerprinting | `identifierForVendor` (iOS), `androidId` (Android) | `device_fingerprint_service.dart` |
+| Device Fingerprinting | Keychain-backed persisted device ID (iOS), platform device identifier (Android) | `device_fingerprint_service.dart` |
 | Request Timeouts | 30 seconds | `supabase_auth_provider.dart:92` |
 
 ### Rate Limiting Architecture

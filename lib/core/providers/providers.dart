@@ -311,7 +311,8 @@ final upcomingOccasionsProvider = FutureProvider<List<SavedOccasion>>((ref) {
 
 /// Notifier that holds the latest CustomerInfo and listens for updates
 class CustomerInfoNotifier extends StateNotifier<CustomerInfo?> {
-  CustomerInfoNotifier(this._subscriptionService, this._prefs) : super(null) {
+  CustomerInfoNotifier(this._ref, this._subscriptionService, this._prefs)
+    : super(null) {
     // Add listener for live updates (may fire immediately)
     _subscriptionService.addCustomerInfoListener(_onListenerUpdate);
 
@@ -322,6 +323,7 @@ class CustomerInfoNotifier extends StateNotifier<CustomerInfo?> {
       }
     });
   }
+  final Ref _ref;
   final ISubscriptionService _subscriptionService;
   final SharedPreferences _prefs;
 
@@ -335,10 +337,18 @@ class CustomerInfoNotifier extends StateNotifier<CustomerInfo?> {
   void _updateCustomerInfo(CustomerInfo info) {
     final hasPro = info.entitlements.active.containsKey('pro');
     final activeEntitlements = info.entitlements.active.keys.toList();
-    Log.info('Pro status updated', {
-      'hasPro': hasPro,
-      'activeEntitlements': activeEntitlements,
-    });
+    final holdActive = _ref.read(proEntitlementHoldProvider);
+    if (holdActive && !hasPro) {
+      Log.info('Pro status update deferred during entitlement claim', {
+        'hasPro': hasPro,
+        'activeEntitlements': activeEntitlements,
+      });
+    } else {
+      Log.info('Pro status updated', {
+        'hasPro': hasPro,
+        'activeEntitlements': activeEntitlements,
+      });
+    }
     state = info;
 
     // Cache pro status for offline fallback, scoped to the current user.
@@ -365,12 +375,19 @@ final customerInfoProvider =
     StateNotifierProvider<CustomerInfoNotifier, CustomerInfo?>((ref) {
       final subscriptionService = ref.watch(subscriptionServiceProvider);
       final prefs = ref.watch(sharedPreferencesProvider);
-      return CustomerInfoNotifier(subscriptionService, prefs);
+      return CustomerInfoNotifier(ref, subscriptionService, prefs);
     });
+
+/// Holds Pro UI state during a silent post-sign-in claim.
+final proEntitlementHoldProvider = StateProvider<bool>((ref) => false);
 
 /// Reactive pro subscription status (live from RevenueCat)
 /// Uses cached value as fallback when offline or loading
 final isProProvider = Provider<bool>((ref) {
+  if (ref.watch(proEntitlementHoldProvider)) {
+    return true;
+  }
+
   final customerInfo = ref.watch(customerInfoProvider);
   if (customerInfo != null) {
     return customerInfo.entitlements.active.containsKey('pro');
@@ -509,6 +526,14 @@ final generationErrorProvider = StateProvider.autoDispose<String?>(
 /// Pending paywall source - set this before navigating to home to auto-show paywall.
 /// Home screen checks this on build and shows paywall if non-null, then clears it.
 final pendingPaywallSourceProvider = StateProvider<String?>((ref) => null);
+
+/// Interactive auth provider selected by the user for the current sign-in flow.
+///
+/// Used to keep auth telemetry aligned with the explicit Apple/Google choice
+/// when linked-account metadata is stale at the moment the signed-in event fires.
+final interactiveAuthMethodOverrideProvider = StateProvider<String?>(
+  (ref) => null,
+);
 
 /// Whether to show the first-action hint on home screen (pulsing Birthday card).
 /// Initialized from SharedPreferences, dismissed when user taps any occasion.

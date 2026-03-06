@@ -276,6 +276,6 @@ For headlines and CTAs, provide 2-3 options:
 - Apple and Google review guidelines constrain certain claims — no "best," no health claims
 
 ### Key References
-- `docs/MARKETING.md` — Brand voice matrix, content pillars
+- `docs/PRODUCT_STRATEGY.md` — Brand, positioning, and growth direction
 - `lib/core/services/ai_service.dart` — How AI generation works (for accurate copy)
 - `product-marketing-context` skill — Full positioning and messaging framework

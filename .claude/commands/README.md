@@ -7,7 +7,7 @@ Only these slash commands are active in this repo.
 | Command | Purpose | Writes Code? |
 |---------|---------|--------------|
 | `/audit [target]` | Deep architecture/code audit with risk-first findings | No |
-| `/security [scope]` | Security-focused review and hardening guidance | No |
+| `/sec-review [scope]` | Security-focused review and hardening guidance | No |
 | `/test [scope]` | Test gap analysis and test implementation support | Yes |
 | `/cleanup` | Dead code/dependency cleanup audit | No |
 
@@ -15,7 +15,7 @@ Only these slash commands are active in this repo.
 
 ```bash
 /audit auth
-/security payments
+/sec-review payments
 /test integration
 /cleanup
 ```

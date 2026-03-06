@@ -24,6 +24,10 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   @override
   Widget build(BuildContext context) {
     final occasionsAsync = ref.watch(upcomingOccasionsProvider);
+    final showFloatingAddButton = occasionsAsync.maybeWhen(
+      data: (occasions) => occasions.isNotEmpty,
+      orElse: () => false,
+    );
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -45,18 +49,20 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Error loading occasions: $e')),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _showAddOccasion,
-        backgroundColor: AppColors.primary,
-        icon: const Icon(Icons.add, color: AppColors.textOnPrimary),
-        label: const Text(
-          'Add Occasion',
-          style: TextStyle(
-            color: AppColors.textOnPrimary,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
+      floatingActionButton: showFloatingAddButton
+          ? FloatingActionButton.extended(
+              onPressed: _showAddOccasion,
+              backgroundColor: AppColors.primary,
+              icon: const Icon(Icons.add, color: AppColors.textOnPrimary),
+              label: const Text(
+                'Add Occasion',
+                style: TextStyle(
+                  color: AppColors.textOnPrimary,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            )
+          : null,
     );
   }
 
@@ -313,55 +319,10 @@ class _OccasionCard extends StatelessWidget {
                   top: Radius.circular(14),
                 ),
               ),
-              child: Row(
-                children: [
-                  // Emoji
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: AppColors.surfaceLight,
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: isUrgent ? AppColors.warning : AppColors.primary,
-                        width: 2,
-                      ),
-                    ),
-                    child: Center(
-                      child: AppEmoji(emoji: occasion.occasion.emoji, size: 24),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-
-                  // Title & date
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          occasion.occasion.label,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.textOnLight,
-                          ),
-                        ),
-                        if (occasion.recipientName != null) ...[
-                          const SizedBox(height: 2),
-                          Text(
-                            'for ${occasion.recipientName}',
-                            style: const TextStyle(
-                              fontSize: 14,
-                              color: AppColors.textOnLightSecondary,
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-
-                  // Days until badge
-                  Container(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final useCompactHeader = constraints.maxWidth < 280;
+                  final badge = Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 12,
                       vertical: 6,
@@ -378,8 +339,104 @@ class _OccasionCard extends StatelessWidget {
                         color: AppColors.textOnPrimary,
                       ),
                     ),
-                  ),
-                ],
+                  );
+
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceLight,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: isUrgent
+                                ? AppColors.warning
+                                : AppColors.primary,
+                            width: 2,
+                          ),
+                        ),
+                        child: Center(
+                          child: AppEmoji(
+                            emoji: occasion.occasion.emoji,
+                            size: 24,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (useCompactHeader) ...[
+                              Text(
+                                occasion.occasion.label,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.textOnLight,
+                                ),
+                              ),
+                              if (occasion.recipientName != null) ...[
+                                const SizedBox(height: 2),
+                                Text(
+                                  'for ${occasion.recipientName}',
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    color: AppColors.textOnLightSecondary,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                              const SizedBox(height: 10),
+                              badge,
+                            ] else ...[
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          occasion.occasion.label,
+                                          style: const TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                            color: AppColors.textOnLight,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        if (occasion.recipientName != null) ...[
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            'for ${occasion.recipientName}',
+                                            style: const TextStyle(
+                                              fontSize: 14,
+                                              color: AppColors
+                                                  .textOnLightSecondary,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  badge,
+                                ],
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ],
+                  );
+                },
               ),
             ),
 
@@ -390,37 +447,48 @@ class _OccasionCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Date row
-                  Row(
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 6,
+                    crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
-                      const Icon(
-                        Icons.calendar_today,
-                        size: 16,
-                        color: AppColors.textOnLightSecondary,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        dateFormat.format(occasion.date),
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: AppColors.textOnLight,
-                        ),
-                      ),
-                      if (occasion.reminderEnabled) ...[
-                        const SizedBox(width: 16),
-                        const Icon(
-                          Icons.notifications_active,
-                          size: 16,
-                          color: AppColors.textOnLightSecondary,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          '${occasion.reminderDaysBefore}d reminder',
-                          style: const TextStyle(
-                            fontSize: 14,
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.calendar_today,
+                            size: 16,
                             color: AppColors.textOnLightSecondary,
                           ),
+                          const SizedBox(width: 8),
+                          Text(
+                            dateFormat.format(occasion.date),
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: AppColors.textOnLight,
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (occasion.reminderEnabled)
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.notifications_active,
+                              size: 16,
+                              color: AppColors.textOnLightSecondary,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              '${occasion.reminderDaysBefore}d reminder',
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: AppColors.textOnLightSecondary,
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
                     ],
                   ),
 
@@ -444,7 +512,7 @@ class _OccasionCard extends StatelessWidget {
                   // Action buttons
                   LayoutBuilder(
                     builder: (context, constraints) {
-                      final useSingleRow = constraints.maxWidth >= 300;
+                      final useSingleRow = constraints.maxWidth >= 340;
                       if (useSingleRow) {
                         return Row(
                           children: [
@@ -553,6 +621,7 @@ class _ActionChip extends StatelessWidget {
         : isPrimary
         ? AppColors.primary
         : AppColors.textOnLightSecondary;
+    final showIcon = !compact || isPrimary;
 
     return GestureDetector(
       onTap: onTap,
@@ -573,18 +642,22 @@ class _ActionChip extends StatelessWidget {
           mainAxisSize: compact ? MainAxisSize.max : MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: compact ? 13 : 14, color: color),
-            SizedBox(width: compact ? 3 : 4),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: compact ? 10.5 : 12,
-                fontWeight: FontWeight.w600,
-                color: color,
+            if (showIcon) ...[
+              Icon(icon, size: compact ? 13 : 14, color: color),
+              SizedBox(width: compact ? 3 : 4),
+            ],
+            Flexible(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: compact ? 10.5 : 12,
+                  fontWeight: FontWeight.w600,
+                  color: color,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                softWrap: false,
               ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              softWrap: false,
             ),
           ],
         ),

@@ -743,6 +743,10 @@ class _SplashScreenState extends ConsumerState<_SplashScreen> {
     unawaited(
       usageService
           .syncDeviceStateFromServer()
+          .then((_) {
+            if (!mounted) return;
+            ref.invalidate(remainingGenerationsProvider);
+          })
           .timeout(
             _deviceStateSyncTimeout,
             onTimeout: () {

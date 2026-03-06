@@ -92,6 +92,10 @@ class MockSubscriptionService implements ISubscriptionService {
   @visibleForTesting
   int restorePurchasesCallCount = 0;
 
+  /// Number of times syncPurchases() was called
+  @visibleForTesting
+  int syncPurchasesCallCount = 0;
+
   /// Number of times showPaywall() was called
   @visibleForTesting
   int showPaywallCallCount = 0;
@@ -116,6 +120,10 @@ class MockSubscriptionService implements ISubscriptionService {
   @visibleForTesting
   String? lastIdentifiedUserId;
 
+  /// Optional hook invoked when identifyUser() succeeds.
+  @visibleForTesting
+  void Function(String userId)? onIdentifyUser;
+
   /// Last package passed to purchasePackage()
   @visibleForTesting
   Package? lastPurchasedPackage;
@@ -131,6 +139,10 @@ class MockSubscriptionService implements ISubscriptionService {
   /// Result to return from restorePurchases()
   @visibleForTesting
   bool restoreResult = false;
+
+  /// Result to return from syncPurchases()
+  @visibleForTesting
+  bool syncPurchasesResult = false;
 
   /// Result to return from showPaywall() and showPaywallIfNeeded()
   @visibleForTesting
@@ -270,6 +282,7 @@ class MockSubscriptionService implements ISubscriptionService {
     getOfferingsCallCount = 0;
     purchasePackageCallCount = 0;
     restorePurchasesCallCount = 0;
+    syncPurchasesCallCount = 0;
     showPaywallCallCount = 0;
     showPaywallIfNeededCallCount = 0;
     showCustomerCenterCallCount = 0;
@@ -280,6 +293,7 @@ class MockSubscriptionService implements ISubscriptionService {
     lastCheckedEntitlement = null;
     purchaseResult = true;
     restoreResult = false;
+    syncPurchasesResult = false;
     paywallResult = false;
     showPaywallDelay = null;
     errorToThrow = null;
@@ -389,6 +403,16 @@ class MockSubscriptionService implements ISubscriptionService {
   }
 
   @override
+  Future<bool> syncPurchases() async {
+    syncPurchasesCallCount++;
+    if (!_isConfigured) return false;
+    final error = _getError('syncPurchases');
+    if (error != null) throw error;
+    if (syncPurchasesResult) _isPro = true;
+    return syncPurchasesResult;
+  }
+
+  @override
   Future<bool> showPaywall() async {
     showPaywallCallCount++;
     if (showPaywallDelay != null) {
@@ -438,6 +462,7 @@ class MockSubscriptionService implements ISubscriptionService {
     if (!_isConfigured) return;
     final error = _getError('identifyUser');
     if (error != null) throw error;
+    onIdentifyUser?.call(userId);
   }
 
   @override

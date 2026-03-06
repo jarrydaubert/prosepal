@@ -119,8 +119,8 @@ void main() {
 
         expect(find.text('Start Over'), findsOneWidget);
         expect(find.byIcon(Icons.home_outlined), findsOneWidget);
-        expect(find.text('Regenerate'), findsOneWidget);
-        expect(find.byIcon(Icons.auto_awesome), findsOneWidget);
+        expect(find.text('Unlock Pro'), findsOneWidget);
+        expect(find.byIcon(Icons.lock_outline), findsOneWidget);
       });
     });
 
@@ -294,7 +294,10 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        await tester.tap(find.text('Regenerate'));
+        expect(find.text('Unlock Pro'), findsOneWidget);
+        expect(find.byIcon(Icons.lock_outline), findsOneWidget);
+
+        await tester.tap(find.text('Unlock Pro'));
         await tester.pump(const Duration(milliseconds: 400));
 
         expect(mockAi.generateCallCount, 0);
@@ -366,7 +369,10 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        await tester.tap(find.text('Regenerate'));
+        expect(find.text('Unlock Pro'), findsOneWidget);
+        expect(find.byIcon(Icons.lock_outline), findsOneWidget);
+
+        await tester.tap(find.text('Unlock Pro'));
         await tester.pump(const Duration(milliseconds: 400));
 
         expect(mockAi.generateCallCount, 0);

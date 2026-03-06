@@ -349,4 +349,4 @@ For tracking, see also: [ga4.md](../../tools/integrations/ga4.md), [segment.md](
 
 ### Reference
 - `ad-creative` skill — Ad copy and creative concepts
-- `docs/MARKETING.md` — Marketing budget and strategy
+- `docs/PRODUCT_STRATEGY.md` — High-level product and growth strategy

@@ -38,9 +38,8 @@ Process items in this order unless an explicit owner override is recorded in rel
 14. `P0-05` Billing budget alert controls
 15. `P0-04` Auth loading spinner after OAuth sheet
 16. `P0-01` Move Google setup to business account
-17. `P0-02` Keep redesign out of vNext scope
-18. `P1-47` Server-side AI gateway rollout (post-launch trigger)
-19. `P2-13` Startup orchestration refactor (post-launch)
+17. `P1-47` Server-side AI gateway rollout (post-launch trigger)
+18. `P2-13` Startup orchestration refactor (post-launch)
 
 ## P0 - Launch Blockers
 
@@ -58,7 +57,6 @@ Process items in this order unless an explicit owner override is recorded in rel
 | `VNEXT-11` | Canonical identity mapping | Supabase ID, RevenueCat App User ID, Analytics ID, and Crashlytics ID mapping is validated across sign-in/sign-out transitions and documented in `docs/IDENTITY_MAPPING.md`. |
 | `VNEXT-12` | UI parity with live baseline | Baseline screenshots exist for core screens and any styling delta is either matched to live or explicitly approved before release. |
 | `VNEXT-13` | Device abuse-control compliance decision | iOS/Android abuse-control approach is approved, documented, and reflected in release checklist and runtime configuration. |
-| `P0-02` | Keep redesign out of vNext scope | vNext release scope excludes major redesign code paths; only reliability and approved live-style parity changes are included in release candidate. |
 
 ## P1 - Engineering Tasks
 
@@ -80,7 +78,7 @@ Process items in this order unless an explicit owner override is recorded in rel
 | `P1-37` | iOS CocoaPods lockfile consistency gate | `ios/Podfile.lock` stays aligned with plugin constraints on clean clone. Running `flutter test -d <ios-device> integration_test/*` does not require ad-hoc pod updates, and CI/dev docs include a reproducible pod consistency check. |
 | `P1-27` | QA code documentation standards (Dartdoc/JSDoc) | Public QA-facing helpers and APIs have accurate documentation comments: Dartdoc on shared test helpers/mocks/services and JSDoc on JavaScript/TypeScript automation code in repo scope. Comments describe purpose, inputs/outputs, and failure modes; stale examples are removed; documentation quality is verified in CI (lint/check step) and reflected in `docs/DEVOPS.md`. |
 | `P1-44` | Full documentation walkthrough with repo owner | A full walkthrough of repo docs is completed with the repo owner: `README.md`, `docs/DEVOPS.md`, `docs/NEXT_RELEASE_BRIEF.md`, `docs/LAUNCH_CHECKLIST.md`, `docs/IDENTITY_MAPPING.md`, and `docs/BACKLOG.md`. All command snippets are verified runnable, stale references are removed, cross-links are valid, and any follow-up gaps are captured as explicit backlog items. |
-| `P1-29` | Test-doc reference accuracy cleanup | Test docs only reference existing test files and runnable commands. Remove stale path references (for example `test/features/settings/haiku_screen_test.dart` in `docs/HAIKU_EASTER_EGG.md`) and align command examples with current workflow gates. |
+| `P1-29` | Test-doc reference accuracy cleanup | Test docs only reference existing test files and runnable commands. Remove stale path references from docs and align command examples with current workflow gates. |
 | `P1-01` | Social-auth fallback UX | Social sign-in failures show deterministic user guidance, retry actions, and support path coverage in widget/integration tests. |
 | `P1-04` | Paywall decomposition | Paywall widget is split into maintainable sections/components with unchanged behavior and passing tests. |
 | `P1-05` | Paywall accessibility improvements | Paywall has complete semantics labels and screen-reader navigation validation passes on iOS and Android. |
@@ -118,3 +116,6 @@ Process items in this order unless an explicit owner override is recorded in rel
 | `P2-11` | Mock-layer usage hygiene | Every file in `test/mocks/` is either exercised by at least one test or removed. In particular, `mock_reauth_service.dart` is either used by `reauth_service_test.dart`/widget tests or deleted to avoid dead mock surface area. |
 | `P2-12` | Device fingerprint real-service test coverage | Add direct tests for `DeviceFingerprintService` RPC/result mapping and graceful-degradation paths (server unavailable, fingerprint unavailable, Postgrest errors) using Supabase stubs/fakes rather than only mock-self-tests. |
 | `P2-13` | Startup orchestration refactor (post-launch) | Startup is moved to an explicit orchestration state machine/service with isolated phase boundaries, cancellation semantics, and deterministic tests for success/failure permutations. Refactor is informed by production startup telemetry from `P1-48` and does not regress route determinism or launch latency budgets. |
+| `P2-14` | Re-evaluate custom-lint compatibility | On a scheduled toolchain review, verify whether the published `custom_lint`/`riverpod_lint` ecosystem is compatible with the current Flutter/Dart/Riverpod analyzer line, document the decision in `docs/DEVOPS.md`, and either reintroduce the lint stack with passing `flutter analyze`/`flutter test`/`./scripts/test_critical_smoke.sh` or explicitly keep it deferred with recorded evidence. |
+| `P2-15` | Selective Patrol native-automation adoption | High-value device flows that genuinely need system/native automation (for example notification permissions, social-auth sheets, purchase/restore dialogs, or settings deep-links) are identified, at least one such flow is covered with `patrolTest` + Patrol native APIs, `patrol_cli` setup/usage is documented in `docs/DEVOPS.md` + `test/README.md`, and the repo clearly distinguishes when to use `flutter test` vs `patrol test`. |
+| `P2-16` | Public QA showcase packaging | `README.md` presents the repo as a quality-engineering portfolio with an honest test-strategy narrative (deterministic Flutter gate, wired-device validation, cloud/native-risk coverage, evidence model, and explicit tradeoffs). The README links to the canonical runbooks/backlog, does not overstate Patrol usage, and a repo-owner walkthrough confirms the public-facing story is aligned with actual commands, artifacts, and current harnesses. |

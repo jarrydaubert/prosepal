@@ -41,11 +41,13 @@ const PRO_REVOKE_EVENTS = [
 interface RevenueCatEvent {
   event: {
     type: string
-    app_user_id: string
-    product_id: string
+    app_user_id?: string
+    product_id?: string
     expiration_at_ms?: number
-    original_app_user_id: string
+    original_app_user_id?: string
     aliases?: string[]
+    transferred_from?: string[]
+    transferred_to?: string[]
   }
   api_version: string
 }
@@ -145,6 +147,8 @@ function parsePayload(payload: unknown): { ok: true; value: RevenueCatEvent } | 
     original_app_user_id?: unknown
     expiration_at_ms?: unknown
     aliases?: unknown
+    transferred_from?: unknown
+    transferred_to?: unknown
   }
 
   if (!event || typeof event !== 'object') {
@@ -154,14 +158,26 @@ function parsePayload(payload: unknown): { ok: true; value: RevenueCatEvent } | 
   if (typeof event.type !== 'string' || !event.type) {
     return { ok: false, reason: 'Missing event.type' }
   }
-  if (typeof event.app_user_id !== 'string' || !event.app_user_id) {
-    return { ok: false, reason: 'Missing event.app_user_id' }
-  }
-  if (typeof event.product_id !== 'string' || !event.product_id) {
-    return { ok: false, reason: 'Missing event.product_id' }
-  }
-  if (typeof event.original_app_user_id !== 'string' || !event.original_app_user_id) {
-    return { ok: false, reason: 'Missing event.original_app_user_id' }
+  if (event.type === 'TRANSFER') {
+    if (
+      !Array.isArray(event.transferred_from) ||
+      !Array.isArray(event.transferred_to)
+    ) {
+      return { ok: false, reason: 'Missing transfer user arrays' }
+    }
+  } else {
+    if (typeof event.app_user_id !== 'string' || !event.app_user_id) {
+      return { ok: false, reason: 'Missing event.app_user_id' }
+    }
+    if (typeof event.product_id !== 'string' || !event.product_id) {
+      return { ok: false, reason: 'Missing event.product_id' }
+    }
+    if (
+      typeof event.original_app_user_id !== 'string' ||
+      !event.original_app_user_id
+    ) {
+      return { ok: false, reason: 'Missing event.original_app_user_id' }
+    }
   }
   if (
     event.expiration_at_ms !== undefined &&
@@ -172,6 +188,18 @@ function parsePayload(payload: unknown): { ok: true; value: RevenueCatEvent } | 
   if (event.aliases !== undefined && !Array.isArray(event.aliases)) {
     return { ok: false, reason: 'Invalid event.aliases' }
   }
+  if (
+    event.transferred_from !== undefined &&
+    !Array.isArray(event.transferred_from)
+  ) {
+    return { ok: false, reason: 'Invalid event.transferred_from' }
+  }
+  if (
+    event.transferred_to !== undefined &&
+    !Array.isArray(event.transferred_to)
+  ) {
+    return { ok: false, reason: 'Invalid event.transferred_to' }
+  }
 
   return {
     ok: true,
@@ -179,11 +207,13 @@ function parsePayload(payload: unknown): { ok: true; value: RevenueCatEvent } | 
       api_version: typeof data.api_version === 'string' ? data.api_version : 'unknown',
       event: {
         type: event.type,
-        app_user_id: event.app_user_id,
-        product_id: event.product_id,
-        original_app_user_id: event.original_app_user_id,
+        app_user_id: event.app_user_id as string | undefined,
+        product_id: event.product_id as string | undefined,
+        original_app_user_id: event.original_app_user_id as string | undefined,
         expiration_at_ms: event.expiration_at_ms as number | undefined,
         aliases: event.aliases as string[] | undefined,
+        transferred_from: event.transferred_from as string[] | undefined,
+        transferred_to: event.transferred_to as string[] | undefined,
       },
     },
   }
@@ -213,6 +243,29 @@ const defaultCreateAdminClient: CreateAdminClient = (
   supabaseUrl: string,
   supabaseServiceKey: string,
 ) => createClient(supabaseUrl, supabaseServiceKey) as unknown as AdminClient
+
+function uniqueUuidValues(values: Array<string | undefined>): string[] {
+  return [...new Set(values.filter((value): value is string => !!value && isUuid(value)))]
+}
+
+function resolveSupabaseUserId(event: RevenueCatEvent['event']): string | null {
+  const candidates = uniqueUuidValues([
+    event.app_user_id,
+    event.original_app_user_id,
+    ...(event.aliases ?? []),
+  ])
+  return candidates[0] ?? null
+}
+
+async function upsertEntitlement(
+  adminClient: AdminClient,
+  values: Record<string, unknown>,
+): Promise<DbError | null> {
+  const { error } = await adminClient
+    .from('user_entitlements')
+    .upsert(values, { onConflict: 'user_id' })
+  return error
+}
 
 export async function handleRevenueCatWebhook(
   req: Request,
@@ -274,23 +327,86 @@ export async function handleRevenueCatWebhook(
       product_id: event.product_id,
     })
 
-    // Get Supabase user ID from app_user_id
-    // RevenueCat app_user_id should be set to Supabase user.id during identify()
-    const supabaseUserId = event.app_user_id
-
-    // Validate UUID format (Supabase user IDs are UUIDs)
-    if (!isUuid(supabaseUserId)) {
-      logger.log(
-        'Skipping non-UUID app_user_id (anonymous user):',
-        supabaseUserId?.substring(0, 8),
-      )
-      return jsonResponse({ success: true, message: 'Skipped anonymous user' }, 200)
-    }
-
     // Initialize Supabase admin client
     const supabaseUrl = getEnv('SUPABASE_URL')!
     const supabaseServiceKey = getEnv('SUPABASE_SERVICE_ROLE_KEY')!
     const adminClient = createAdminClient(supabaseUrl, supabaseServiceKey)
+
+    if (event.type === 'TRANSFER') {
+      const transferredFrom = uniqueUuidValues(event.transferred_from ?? [])
+      const transferredTo = uniqueUuidValues(event.transferred_to ?? [])
+
+      if (transferredFrom.length === 0 && transferredTo.length === 0) {
+        logger.log('Skipping transfer without UUID-backed users')
+        return jsonResponse(
+          { success: true, message: 'Skipped anonymous transfer' },
+          200,
+        )
+      }
+
+      for (const userId of transferredFrom) {
+        const upsertError = await upsertEntitlement(adminClient, {
+          user_id: userId,
+          is_pro: false,
+          product_id: event.product_id ?? null,
+          expires_at: null,
+          updated_at: now().toISOString(),
+          revenuecat_app_user_id: userId,
+          last_event_type: event.type,
+        })
+        if (upsertError) {
+          logger.error('Failed to revoke transferred entitlement:', upsertError)
+          if (isUnknownUserDbError(upsertError)) continue
+          return jsonResponse(
+            {
+              success: false,
+              error: 'Database error',
+              details: upsertError.message,
+            },
+            503,
+          )
+        }
+      }
+
+      for (const userId of transferredTo) {
+        const upsertError = await upsertEntitlement(adminClient, {
+          user_id: userId,
+          is_pro: true,
+          product_id: event.product_id ?? null,
+          expires_at: event.expiration_at_ms
+            ? new Date(event.expiration_at_ms).toISOString()
+            : null,
+          updated_at: now().toISOString(),
+          revenuecat_app_user_id: userId,
+          last_event_type: event.type,
+        })
+        if (upsertError) {
+          logger.error('Failed to grant transferred entitlement:', upsertError)
+          if (isUnknownUserDbError(upsertError)) continue
+          return jsonResponse(
+            {
+              success: false,
+              error: 'Database error',
+              details: upsertError.message,
+            },
+            503,
+          )
+        }
+      }
+
+      logger.log('Transfer entitlement updated:', {
+        transferred_from: transferredFrom.map((id) => id.substring(0, 8) + '...'),
+        transferred_to: transferredTo.map((id) => id.substring(0, 8) + '...'),
+      })
+
+      return jsonResponse({ success: true }, 200)
+    }
+
+    const supabaseUserId = resolveSupabaseUserId(event)
+    if (!supabaseUserId) {
+      logger.log('Skipping event without UUID-backed app user')
+      return jsonResponse({ success: true, message: 'Skipped anonymous user' }, 200)
+    }
 
     // Determine Pro status based on event type
     let isPro = false
@@ -318,19 +434,16 @@ export async function handleRevenueCatWebhook(
     }
 
     // Upsert entitlement record
-    const { error: upsertError } = await adminClient
-      .from('user_entitlements')
-      .upsert({
-        user_id: supabaseUserId,
-        is_pro: isPro,
-        product_id: event.product_id,
-        expires_at: expiresAt?.toISOString() ?? null,
-        updated_at: now().toISOString(),
-        revenuecat_app_user_id: event.original_app_user_id,
-        last_event_type: event.type,
-      }, {
-        onConflict: 'user_id',
-      })
+    const upsertError = await upsertEntitlement(adminClient, {
+      user_id: supabaseUserId,
+      is_pro: isPro,
+      product_id: event.product_id ?? null,
+      expires_at: expiresAt?.toISOString() ?? null,
+      updated_at: now().toISOString(),
+      revenuecat_app_user_id:
+        event.app_user_id ?? event.original_app_user_id ?? supabaseUserId,
+      last_event_type: event.type,
+    })
 
     if (upsertError) {
       logger.error('Failed to upsert entitlement:', upsertError)

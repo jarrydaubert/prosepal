@@ -421,7 +421,7 @@ Max 12 renewals per day in sandbox.
 
 | Issue | Severity | Notes |
 |-------|----------|-------|
-| Device fingerprint resets on reinstall | Medium | `identifierForVendor` resets when app deleted. Fix in v1.1: Keychain/DeviceCheck |
+| Device fingerprint continuity can still break if secure storage is cleared | Medium | iOS now persists the app fingerprint in Keychain; legacy installs tied to old `identifierForVendor` records may still need cleanup/migration evidence |
 | 3 failed biometrics shows generic error | Medium | |
 | Supabase session persists after reinstall | Low | |
 | USD shown in sandbox | Low | TestFlight shows USD, production shows localized currency |

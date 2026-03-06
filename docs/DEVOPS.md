@@ -167,6 +167,10 @@ Policy:
 Purpose:
 - Run `integration_test/smoke_test.dart` in CI on a deterministic non-blocking target and publish evidence artifacts.
 
+Harness selection:
+- Checked-in suites under `integration_test/` currently use Flutter's standard `integration_test` harness, so CI and local smoke use `flutter test`.
+- Use Patrol CLI only for tests that explicitly adopt Patrol APIs/native automation (for example `patrolTest(...)` or `$.native` interactions). In that case, install `patrol_cli`, run `patrol doctor`, and execute via `patrol test`.
+
 Policy:
 - Runs only when CI scope is not docs-only.
 - Uses first-party tooling on `macos-latest` with `xcrun simctl` to boot an available iPhone simulator.
@@ -254,6 +258,24 @@ flutter test --exclude-tags flaky --coverage
 ./scripts/cleanup.sh --dry-run
 ```
 
+### Device Reset
+
+For a clean local/device reset before fresh installs:
+
+```bash
+./scripts/reset_devices.sh
+```
+
+This cleans local generated artifacts and uninstalls the app from the first
+tethered Android and iOS devices it finds. Keep interactive device runs in
+separate terminals so each platform retains its own logs and hot reload/restart
+controls:
+
+```bash
+./scripts/run_ios.sh
+./scripts/run_android.sh
+```
+
 ### Integration And Device Validation
 
 Use wired-device evidence for release confidence:
@@ -280,6 +302,14 @@ Real backend E2E:
 
 ```bash
 flutter test integration_test/e2e_real_test.dart -d <android-device-id> --dart-define=REVENUECAT_USE_TEST_STORE=true
+```
+
+Patrol-native/system UI automation:
+
+```bash
+dart pub global activate patrol_cli
+patrol doctor
+patrol test -t integration_test/<patrol_test_file>.dart
 ```
 
 ### iOS CocoaPods Recovery

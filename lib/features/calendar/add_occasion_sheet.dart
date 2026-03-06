@@ -126,6 +126,7 @@ class _AddOccasionSheetState extends ConsumerState<AddOccasionSheet> {
             const SizedBox(height: 8),
             TextField(
               controller: _nameController,
+              textCapitalization: TextCapitalization.words,
               textInputAction: TextInputAction.done,
               onSubmitted: (_) => FocusScope.of(context).unfocus(),
               onTapOutside: (_) => FocusScope.of(context).unfocus(),
@@ -163,6 +164,7 @@ class _AddOccasionSheetState extends ConsumerState<AddOccasionSheet> {
             TextField(
               controller: _notesController,
               maxLines: 2,
+              textCapitalization: TextCapitalization.sentences,
               textInputAction: TextInputAction.done,
               onSubmitted: (_) => FocusScope.of(context).unfocus(),
               onTapOutside: (_) => FocusScope.of(context).unfocus(),

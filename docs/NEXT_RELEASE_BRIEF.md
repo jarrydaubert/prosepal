@@ -15,12 +15,12 @@ Current reality:
 - Core architecture and integrations (Supabase, RevenueCat, Firebase AI, Analytics/Crashlytics, Remote Config) are in place.
 - Unit/widget testing is strong; integration testing exists but still needs hardening for deterministic reliability.
 - vNext UI baseline is a tokenized coral/navy/white theme direction (no ad-hoc per-screen color systems).
-- The major redesign is planned but not sufficiently implemented to be the safest next release target.
+- The current product design is the intended baseline for vNext, with only targeted quality and parity hardening.
 
 Recommendation for next release:
 - Prioritize an infrastructure/reliability release first.
 - Keep current UX as baseline.
-- Treat redesign as a controlled follow-up behind feature flag + rollout gates.
+- Avoid major UX architecture changes in this release.
 
 ---
 
@@ -315,21 +315,15 @@ Recommendation for next release:
 
 ---
 
-## 11) Redesign Status and Product Direction
-
-### Current redesign state
-- Redesign plan exists and is detailed.
-- Implementation is still partial with major phases not complete.
-- It is not yet the safest primary target for immediate release.
+## 11) Product Direction
 
 ### Recommended sequencing
 1. Ship infrastructure/reliability release first.
 2. Freeze major UX changes for that release.
 3. Align core screen styling to current live baseline (or explicitly approve intentional deltas).
 4. Finalize deterministic integration + device/FTL confidence.
-5. Then start redesign rollout behind feature flags and staged metrics gates.
 
-This lowers release risk and gives a trusted baseline for measuring redesign impact.
+This lowers release risk and preserves the current design baseline while hardening release confidence.
 
 ---
 
@@ -350,7 +344,6 @@ This lowers release risk and gives a trusted baseline for measuring redesign imp
 - Targeted auth flow polish (`P0-04`) to guarantee deterministic post-OAuth loading and failure messaging.
 
 ### Explicitly out-of-scope for vNext
-- Full redesign rollout.
 - Large visual theme replacement.
 - New major UX architecture (chat-first) in production.
 - Server-side AI gateway as production default (`P1-47`) unless post-launch trigger criteria are met.
@@ -394,7 +387,7 @@ Please comment directly on these points:
 2. Are any user-facing features mandatory for this release beyond reliability?
 3. Which exact integration tests should become hard release gates?
 4. What dependency upgrade risk tolerance do we want (aggressive vs staged)?
-5. Do we approve redesign as a post-vNext flagged rollout rather than primary target?
+5. Do we confirm the current design remains the product baseline for vNext?
 6. For vNext visuals, do we require strict live-style parity on core screens (yes/no)?
 
 ### Draft sign-off responses (recommended)
@@ -410,7 +403,7 @@ Please comment directly on these points:
    - batch B: Riverpod/annotation ecosystem
    - batch C: RevenueCat SDK pins and purchase-flow regression pass
    - each batch must pass analyzer/tests/integration smoke before merge
-5. Yes, redesign should be post-vNext behind feature flags and staged rollout metrics.
+5. Yes, keep the current design as the product baseline for vNext.
 6. Yes, enforce live-style parity for vNext core screens unless a delta is explicitly approved.
 
 ### Additional recommendations from audit

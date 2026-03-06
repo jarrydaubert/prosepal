@@ -158,4 +158,65 @@ void main() {
       );
     });
   });
+
+  group('iOS persistent fingerprint', () {
+    test('seeds keychain storage from identifierForVendor', () async {
+      final secureStore = <String, String>{};
+      final service = DeviceFingerprintService(
+        isIOS: () => true,
+        isAndroid: () => false,
+        iosIdentifierReader: (_) async => 'vendor-id-123',
+        secureRead: (key) async => secureStore[key],
+        secureWrite: (key, value) async => secureStore[key] = value,
+      );
+
+      final fingerprint = await service.getDeviceFingerprint();
+
+      expect(fingerprint, equals('vendor-id-123'));
+      expect(secureStore.values.single, equals('vendor-id-123'));
+    });
+
+    test(
+      'reuses persisted keychain value when identifierForVendor changes',
+      () async {
+        final secureStore = <String, String>{};
+        var currentVendorId = 'vendor-id-123';
+        final service = DeviceFingerprintService(
+          isIOS: () => true,
+          isAndroid: () => false,
+          iosIdentifierReader: (_) async => currentVendorId,
+          secureRead: (key) async => secureStore[key],
+          secureWrite: (key, value) async => secureStore[key] = value,
+        );
+
+        expect(await service.getDeviceFingerprint(), equals('vendor-id-123'));
+
+        service.clearCache();
+        currentVendorId = 'vendor-id-999';
+
+        expect(await service.getDeviceFingerprint(), equals('vendor-id-123'));
+        expect(secureStore.values.single, equals('vendor-id-123'));
+      },
+    );
+
+    test(
+      'falls back to generated uuid when identifierForVendor is unavailable',
+      () async {
+        final secureStore = <String, String>{};
+        final service = DeviceFingerprintService(
+          isIOS: () => true,
+          isAndroid: () => false,
+          iosIdentifierReader: (_) async => null,
+          secureRead: (key) async => secureStore[key],
+          secureWrite: (key, value) async => secureStore[key] = value,
+          generateUuid: () => 'generated-device-id',
+        );
+
+        final fingerprint = await service.getDeviceFingerprint();
+
+        expect(fingerprint, equals('generated-device-id'));
+        expect(secureStore.values.single, equals('generated-device-id'));
+      },
+    );
+  });
 }

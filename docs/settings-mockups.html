@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prosepal Settings - Layout Mockups</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, sans-serif;
+    background: #0C1017;
+    color: #e0e0e0;
+    padding: 40px 20px 80px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  :root {
+    --bg: #1D2633;
+    --surface: #222E3D;
+    --surface-light: #FFFFFF;
+    --surface-light-muted: #F4F4F4;
+    --primary: #D4736B;
+    --primary-light: #FCE9E7;
+    --pro-gold: #FBBF24;
+    --pro-gold-dark: #D4A017;
+    --text-primary: #FFFFFF;
+    --text-secondary: #8D99A8;
+    --text-hint: #5C6878;
+    --text-on-light: #1C1B1F;
+    --text-on-light-secondary: #6B6B6B;
+    --text-on-pro: #3D2800;
+    --error: #EF4444;
+    --border-subtle: rgba(255,255,255,0.06);
+    --border-medium: rgba(255,255,255,0.12);
+    --radius: 14px;
+  }
+
+  /* ── Page ── */
+  .page-title { text-align: center; font-size: 32px; font-weight: 700; color: #fff; margin-bottom: 6px; letter-spacing: -0.5px; }
+  .page-subtitle { text-align: center; font-size: 14px; color: var(--text-secondary); margin-bottom: 48px; }
+
+  /* ── Tabs ── */
+  .tab-bar {
+    display: flex; justify-content: center; gap: 6px; margin-bottom: 40px;
+    flex-wrap: wrap; position: sticky; top: 0; z-index: 100;
+    background: #0C1017; padding: 16px 0;
+  }
+  .tab-btn {
+    padding: 10px 22px; border-radius: 10px; border: 1.5px solid var(--border-medium);
+    background: var(--surface); color: var(--text-secondary);
+    font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.15s;
+  }
+  .tab-btn:hover { border-color: var(--primary); color: var(--primary); }
+  .tab-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); font-weight: 600; }
+
+  /* ── Phone ── */
+  .phone-pair { display: flex; gap: 36px; flex-wrap: wrap; justify-content: center; }
+  .phone-wrapper { text-align: center; }
+  .phone-label {
+    font-size: 11px; font-weight: 600; color: var(--text-hint);
+    text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 14px;
+  }
+  .phone {
+    width: 375px; height: 812px; background: var(--bg);
+    border-radius: 44px; border: 2.5px solid #2E3A4A;
+    overflow: hidden; position: relative;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04);
+  }
+  .phone-inner {
+    height: 100%; overflow-y: auto;
+    scrollbar-width: thin; scrollbar-color: var(--border-medium) transparent;
+  }
+  .phone-inner::-webkit-scrollbar { width: 3px; }
+  .phone-inner::-webkit-scrollbar-track { background: transparent; }
+  .phone-inner::-webkit-scrollbar-thumb { background: var(--border-medium); border-radius: 2px; }
+
+  /* ── Section ── */
+  .mockup-section { display: none; flex-direction: column; align-items: center; gap: 16px; }
+  .mockup-section.active { display: flex; }
+  .mockup-section h2 { font-size: 22px; font-weight: 700; color: #fff; letter-spacing: -0.3px; }
+  .mockup-section .desc {
+    font-size: 14px; color: var(--text-secondary); max-width: 560px;
+    text-align: center; margin-bottom: 28px; line-height: 1.6;
+  }
+
+  /* ── App Bar ── */
+  .app-bar { display: flex; align-items: center; padding: 56px 20px 14px; gap: 12px; }
+  .app-bar .back {
+    width: 30px; height: 30px; border-radius: 8px; background: var(--surface);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-secondary); font-size: 16px; font-weight: 300;
+  }
+  .app-bar .title { font-size: 20px; font-weight: 700; color: var(--text-primary); letter-spacing: -0.3px; }
+
+  /* ── Section Header ── */
+  .section-header {
+    font-size: 11px; font-weight: 600; letter-spacing: 1.2px;
+    color: var(--text-hint); text-transform: uppercase; padding: 20px 20px 8px;
+  }
+
+  /* ── Tile ── */
+  .tile { display: flex; align-items: center; padding: 15px 20px; gap: 0; }
+  .tile-content { flex: 1; min-width: 0; }
+  .tile-title { font-size: 15px; font-weight: 500; color: var(--text-primary); }
+  .tile-title.error { color: var(--error); }
+  .tile-subtitle { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+  .tile-trailing { flex-shrink: 0; display: flex; align-items: center; margin-left: 12px; }
+  .chevron-right { color: var(--text-hint); font-size: 14px; font-weight: 300; }
+
+  /* ── Toggle ── */
+  .toggle { width: 46px; height: 28px; border-radius: 14px; background: #3A4556; position: relative; }
+  .toggle.on { background: var(--primary); }
+  .toggle::after {
+    content: ''; width: 22px; height: 22px; border-radius: 50%; background: #fff;
+    position: absolute; top: 3px; left: 3px; transition: transform 0.2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+  .toggle.on::after { transform: translateX(18px); }
+
+  /* ── Account Card ── */
+  .account-card {
+    margin: 0 20px; padding: 18px 20px; background: var(--surface-light);
+    border-radius: var(--radius); display: flex; align-items: center; gap: 16px;
+  }
+  .account-card.pro { border: 2.5px solid var(--pro-gold); }
+  .account-card.free { border: 2.5px solid var(--primary); }
+  .avatar {
+    width: 50px; height: 50px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; font-weight: 700; flex-shrink: 0;
+  }
+  .avatar.free { background: var(--primary-light); color: var(--primary); }
+  .avatar.pro { background: #FEF3D1; color: var(--pro-gold-dark); }
+  .account-info { flex: 1; min-width: 0; }
+  .account-name { font-size: 16px; font-weight: 700; color: var(--text-on-light); display: flex; align-items: center; gap: 8px; }
+  .account-email { font-size: 13px; color: var(--text-on-light-secondary); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pro-badge {
+    display: inline-block; padding: 3px 10px; background: var(--pro-gold);
+    border: 1.5px solid var(--pro-gold-dark); border-radius: 6px;
+    font-size: 10px; font-weight: 800; color: var(--text-on-pro); letter-spacing: 0.5px;
+  }
+  .free-badge {
+    display: inline-block; padding: 3px 10px; background: var(--primary-light);
+    border: 1.5px solid var(--primary); border-radius: 6px;
+    font-size: 10px; font-weight: 800; color: var(--primary); letter-spacing: 0.5px;
+  }
+
+  /* ── Stats Card ── */
+  .stats-card {
+    margin: 0 20px; padding: 16px 20px; background: var(--primary-light);
+    border-radius: var(--radius); border: 2px solid var(--primary);
+  }
+  .stats-text { font-size: 15px; font-weight: 700; color: var(--text-on-light); }
+  .stats-sub { font-size: 13px; color: var(--text-on-light-secondary); margin-top: 2px; }
+
+  /* ── Buttons ── */
+  .upgrade-btn {
+    padding: 7px 14px; background: var(--primary-light); border: 1.5px solid var(--primary);
+    border-radius: 8px; font-size: 13px; font-weight: 700; color: var(--primary);
+  }
+  .spelling-picker { display: flex; background: var(--surface-light-muted); border-radius: 8px; padding: 2px; }
+  .spelling-opt { padding: 6px 12px; border-radius: 6px; font-size: 13px; color: var(--text-on-light-secondary); }
+  .spelling-opt.active {
+    background: var(--surface-light); color: var(--text-on-light);
+    font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+
+  /* ── Group Card ── */
+  .group-card {
+    margin: 8px 20px; background: var(--surface); border-radius: var(--radius);
+    border: 1px solid var(--border-subtle); overflow: hidden;
+  }
+  .group-card .tile { padding: 15px 18px; }
+  .group-card .divider { height: 1px; background: var(--border-subtle); margin: 0 18px; }
+
+  /* ── Version ── */
+  .version { text-align: center; font-size: 12px; color: var(--text-hint); padding: 32px 0 40px; }
+
+  /* ═══ OPTION B: Profile Grid ═══ */
+  .profile-hero {
+    margin: 0 20px; padding: 28px 24px; background: var(--surface-light);
+    border-radius: var(--radius); text-align: center;
+  }
+  .profile-hero.pro-border { border: 2.5px solid var(--pro-gold); }
+  .profile-hero.free-border { border: 2.5px solid var(--primary); }
+  .profile-hero .avatar-lg {
+    width: 76px; height: 76px; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 30px; font-weight: 700; margin-bottom: 14px;
+  }
+  .profile-hero .avatar-lg.pro { background: #FEF3D1; color: var(--pro-gold-dark); border: 2.5px solid var(--pro-gold); }
+  .profile-hero .avatar-lg.free { background: var(--primary-light); color: var(--primary); border: 2.5px solid var(--primary); }
+  .profile-hero .name { font-size: 20px; font-weight: 700; color: var(--text-on-light); letter-spacing: -0.3px; }
+  .profile-hero .email { font-size: 14px; color: var(--text-on-light-secondary); margin-top: 4px; }
+  .profile-hero .badges { display: flex; justify-content: center; gap: 8px; margin-top: 14px; }
+  .profile-hero .msgs-badge {
+    padding: 5px 12px; background: var(--primary-light);
+    border: 1px solid #E6B3AF; border-radius: 8px;
+    font-size: 12px; font-weight: 600; color: var(--primary);
+  }
+  .quick-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 0 20px; }
+  .quick-card {
+    background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border-subtle);
+    padding: 18px 14px; text-align: center; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 4px; aspect-ratio: 1.6;
+  }
+  .quick-card .qc-title { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+  .quick-card .qc-sub { font-size: 12px; color: var(--text-secondary); }
+
+  .upgrade-cta-hero {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 11px 22px; background: var(--primary); border-radius: 10px;
+    color: #fff; font-size: 14px; font-weight: 700; margin-top: 14px; letter-spacing: -0.1px;
+  }
+  .free-remaining { font-size: 13px; color: var(--text-on-light-secondary); margin-top: 8px; }
+
+  /* ═══ OPTION C: Tabs ═══ */
+  .tab-control {
+    margin: 0 20px; background: var(--surface); border-radius: var(--radius);
+    display: flex; padding: 3px; gap: 3px;
+  }
+  .tab-control .tab-item {
+    flex: 1; text-align: center; padding: 10px 0; border-radius: 11px;
+    font-size: 14px; color: var(--text-secondary); cursor: pointer;
+  }
+  .tab-control .tab-item.active {
+    background: rgba(212,115,107,0.15); color: var(--primary); font-weight: 600;
+  }
+
+  /* ═══ OPTION D: Bottom Sheet ═══ */
+  .drag-handle { width: 36px; height: 4px; background: var(--border-medium); border-radius: 2px; margin: 8px auto 16px; }
+  .compact-header { display: flex; align-items: center; padding: 0 20px; gap: 14px; }
+  .compact-header .avatar-sm {
+    width: 44px; height: 44px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 17px; font-weight: 700; flex-shrink: 0;
+  }
+  .compact-header .ch-name { font-size: 17px; font-weight: 700; color: var(--text-primary); }
+  .compact-header .ch-email { font-size: 13px; color: var(--text-secondary); }
+  .inline-stats { padding: 4px 20px 0 78px; font-size: 13px; color: var(--text-secondary); }
+  .divider-line { height: 1px; background: var(--border-subtle); margin: 14px 20px; }
+  .expand-header { display: flex; align-items: center; padding: 14px 24px; gap: 10px; }
+  .expand-header .chevron { font-size: 11px; color: var(--text-hint); width: 16px; }
+  .expand-header .eh-title { font-size: 15px; font-weight: 500; color: var(--text-primary); flex: 1; }
+  .expand-header .eh-title.active { font-weight: 600; }
+  .expand-content { padding: 0 20px 8px; }
+  .upgrade-cta-card {
+    margin: 0 20px 16px; padding: 20px; border-radius: var(--radius);
+    background: linear-gradient(135deg, var(--primary), #C05A52); color: #fff;
+  }
+  .upgrade-cta-card .cta-header { font-size: 16px; font-weight: 700; }
+  .upgrade-cta-card .cta-sub { font-size: 13px; color: rgba(255,255,255,0.65); margin-top: 4px; }
+  .upgrade-cta-card .cta-btn {
+    display: block; width: 100%; margin-top: 14px; padding: 11px;
+    background: #fff; color: var(--primary); border: none; border-radius: 10px;
+    font-size: 14px; font-weight: 700; text-align: center;
+  }
+  .sign-in-btn {
+    display: block; width: calc(100% - 40px); margin: 8px 20px; padding: 14px;
+    background: transparent; border: 2px solid var(--primary); border-radius: var(--radius);
+    color: var(--primary); font-size: 15px; font-weight: 700; text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<div class="page-title">Prosepal Settings</div>
+<div class="page-subtitle">Layout Mockups &mdash; Pro &amp; Free variants</div>
+
+<div class="tab-bar">
+  <button class="tab-btn active" onclick="showMockup('current')">Current</button>
+  <button class="tab-btn" onclick="showMockup('optA')">A: Grouped Cards</button>
+  <button class="tab-btn" onclick="showMockup('optB')">B: Profile Grid</button>
+  <button class="tab-btn" onclick="showMockup('optC')">C: Tabs</button>
+  <button class="tab-btn" onclick="showMockup('optD')">D: Sheet</button>
+</div>
+
+<!-- ════════════════════════════════════════
+     CURRENT LAYOUT
+     ════════════════════════════════════════ -->
+<div class="mockup-section active" id="current">
+  <h2>Current Layout</h2>
+  <div class="desc">Single-column scrollable list with uppercase section headers. Flat tiles on dark background.</div>
+  <div class="phone-pair">
+
+    <div class="phone-wrapper">
+      <div class="phone-label">Pro User</div>
+      <div class="phone"><div class="phone-inner">
+        <div class="app-bar"><div class="back">&larr;</div><div class="title">Settings</div></div>
+
+        <div class="section-header">Account</div>
+        <div class="account-card pro">
+          <div class="avatar pro">J</div>
+          <div class="account-info">
+            <div class="account-name">Jarryd Aubert <span class="pro-badge">PRO</span></div>
+            <div class="account-email">jarryd@email.com</div>
+          </div>
+        </div>
+
+        <div class="section-header">Subscription</div>
+        <div class="tile"><div class="tile-content"><div class="tile-title">Prosepal Pro</div><div class="tile-subtitle">Unlimited messages</div></div></div>
+        <div class="tile"><div class="tile-content"><div class="tile-title">Manage Subscription</div></div><div class="tile-trailing"><span class="chevron-right">&rsaquo;</span></div></div>
+        <div class="tile"><div class="tile-content"><div class="tile-title">Restore Purchases</div><div class="tile-subtitle">Reinstalled? Restore your Pro subscription</div></div></div>
+
+        <div class="section-header">Security</div>
+        <div class="tile"><div class="tile-content"><div class="tile-title">Face ID</div><div class="tile-subtitle">Require to open app</div></div><div class="tile-trailing"><div class="toggle on"></div></div></div>
+
+        <div class="section-header">Preferences</div>
+        <div class="tile"><div class="tile-content"><div class="tile-title">Spelling</div><div class="tile-subtitle">Mom, favorite</div></div><div class="tile-trailing"><div class="spelling-picker"><span class="spelling-opt active">US</span><span class="spelling-opt">UK</span></div></div></div>
+
+        <div class="section-header">Your Stats</div>
+        <div class="stats-card">
+          <div class="stats-text">42 messages generated</div>
+          <div class="stats-sub">All time</div>
+        </div>
+
+        <div class="section-header">Support</div>
+        <div class="tile"><div class="tile-content"><div class="tile-title">Help &amp; FAQ</div></div><div class="tile-trailing"><span class="chevron-right">&rsaquo;</span></div></div>
+        <div class="tile"><div class="tile-content"><div class="tile-title">Send Feedback</div><div class="tile-subtitle">Questions, bugs, or feature requests</div></div><div class="tile-trailing"><span class="chevron-right">&rsaquo;</span></div></div>
+        <div class="tile"><div class="tile-content"><div class="tile-title">Rate Prosepal</div><div class="tile-subtitle">Love the app? Leave a review!</div></div></div>
+
+        <div class="section-header">Legal</div>
+        <div class="tile"><div class="tile-content"><div class="tile-title">Terms of Service</div></div><div class="tile-trailing"><span class="chevron-right">&rsaquo;</span></div></div>
+        <div class="tile"><div class="tile-content"><div class="tile-title">Privacy Policy</div></div><div class="tile-trailing"><span class="chevron-right">&rsaquo;</span></div></div>
+        <div class="tile"><div class="tile-content"><div class="tile-title">Analytics &amp; Crash Reports</div><div class="tile-subtitle">Help improve Prosepal</div></div><div class="tile-trailing"><div class="toggle on"></div></div></div>
+
+        <div class="section-header">Account Actions</div>
+        <div class="tile"><div class="tile-content"><div class="tile-title">Export My Data</div><div class="tile-subtitle">Download a copy of your data</div></div></div>
+        <div class="tile"><div class="tile-content"><div class="tile-title error">Sign Out</div></div></div>
+        <div class="tile"><div class="tile-content"><div class="tile-title error">Delete Account</div><div class="tile-subtitle">Permanently delete your account and data</div></div></div>
+
+        <div class="version">Prosepal v1.0.0</div>
+      </div></div>
+    </div>
+
+    <div class="phone-wrapper">
+      <div class="phone-label">Free / Guest</div>
+      <div class="phone"><div class="phone-inner">
+        <div class="app-bar"><div class="back">&larr;</div><div class="title">Settings</div></div>
+
+        <div class="section-header">Account</div>
+        <div class="tile"><div class="tile-content"><div class="tile-title">Sign In / Create Account</div><div class="tile-subtitle">Save your subscription and preferences</div></div><div class="tile-trailing"><span class="chevron-right">&rsaquo;</span></div></div>
+
+        <div class="section-header">Subscription</div>
+        <div class="tile"><div class="tile-content"><div class="tile-title">Free Plan</div><div class="tile-subtitle">0 free messages remaining</div></div><div class="tile-trailing"><span class="upgrade-btn">Upgrade</span></div></div>
+        <div class="tile"><div class="tile-content"><div class="tile-title">Restore Purchases</div><div class="tile-subtitle">Reinstalled? Restore your Pro subscription</div></div></div>
+
+        <div class="section-header">Preferences</div>
+        <div class="tile"><div class="tile-content"><div class="tile-title">Spelling</div><div class="tile-subtitle">Mom, favorite</div></div><div class="tile-trailing"><div class="spelling-picker"><span class="spelling-opt active">US</span><span class="spelling-opt">UK</span></div></div></div>
+
+        <div class="section-header">Your Stats</div>
+        <div class="stats-card">
+          <div class="stats-text">0 messages generated</div>
+          <div class="stats-sub">All time</div>
+        </div>
+
+        <div class="section-header">Support</div>
+        <div class="tile"><div class="tile-content"><div class="tile-title">Help &amp; FAQ</div></div><div class="tile-trailing"><span class="chevron-right">&rsaquo;</span></div></div>
+        <div class="tile"><div class="tile-content"><div class="tile-title">Send Feedback</div><div class="tile-subtitle">Questions, bugs, or feature requests</div></div><div class="tile-trailing"><span class="chevron-right">&rsaquo;</span></div></div>
+        <div class="tile"><div class="tile-content"><div class="tile-title">Rate Prosepal</div><div class="tile-subtitle">Love the app? Leave a review!</div></div></div>
+
+        <div class="section-header">Legal</div>
+        <div class="tile"><div class="tile-content"><div class="tile-title">Terms of Service</div></div><div class="tile-trailing"><span class="chevron-right">&rsaquo;</span></div></div>
+        <div class="tile"><div class="tile-content"><div class="tile-title">Privacy Policy</div></div><div class="tile-trailing"><span class="chevron-right">&rsaquo;</span></div></div>
+        <div class="tile"><div class="tile-content"><div class="tile-title">Analytics &amp; Crash Reports</div><div class="tile-subtitle">Help improve Prosepal</div></div><div class="tile-trailing"><div class="toggle on"></div></div></div>
+
+        <div class="version">Prosepal v1.0.0</div>
+      </div></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     OPTION A: GROUPED CARDS
+     ════════════════════════════════════════ -->
+<div class="mockup-section" id="optA">
+  <h2>A: Grouped Cards</h2>
+  <div class="desc">iOS 18 / Material You. Settings grouped into rounded surface cards. No section headers &mdash; grouping provides structure.</div>
+  <div class="phone-pair">
+
+    <div class="phone-wrapper">
+      <div class="phone-label">Pro User</div>
+      <div class="phone"><div class="phone-inner">
+        <div class="app-bar"><div class="back">&larr;</div><div class="title">Settings</div></div>
+        <div style="height:8px"></div>
+
+        <div class="account-card pro">
+          <div class="avatar pro">J</div>
+          <div class="account-info">
+            <div class="account-name">Jarryd Aubert <span class="pro-badge">PRO</span></div>
+            <div class="account-email">jarryd@email.com</div>
+          </div>
+        </div>
+
+        <div class="group-card">
+          <div class="tile"><div class="tile-content"><div class="tile-title">Prosepal Pro</div><div class="tile-subtitle">Unlimited messages</div></div></div>
+          <div class="divider"></div>
+          <div class="tile"><div class="tile-content"><div class="tile-title">Manage Subscription</div></div><div class="tile-trailing"><span class="chevron-right">&rsaquo;</span></div></div>
+          <div class="divider"></div>
+          <div class="tile"><div class="tile-content"><div class="tile-title">Restore Purchases</div></div><div class="tile-trailing"><span class="chevron-right">&rsaquo;</span></div></div>
+        </div>
+
+        <div class="group-card">
+          <div class="tile"><div class="tile-content"><div class="tile-title">Face ID</div><div class="tile-subtitle">Require to open app</div></div><div class="tile-trailing"><div class="toggle on"></div></div></div>
+          <div class="divider"></div>
+          <div class="tile"><div class="tile-content"><div class="tile-title">Spelling</div><div class="tile-subtitle">Mom, favorite</div></div><div class="tile-trailing"><div class="spelling-picker"><span class="spelling-opt active">US</span><span class="spelling-opt">UK</span></div></div></div>
+        </div>
+
+        <div style="height:4px"></div>
+        <div class="stats-card">
+          <div class="stats-text">42 messages generated</div>
+          <div class="stats-sub">All time</div>
+        </div>
+
+        <div class="group-card">
+          <div class="tile"><div class="tile-content"><div class="tile-title">Help &amp; FAQ</div></div><div class="tile-trailing"><span class="chevron-right">&rsaquo;</span></div></div>
+          <div class="divider"></div>
+          <div class="tile"><div class="tile-content"><div class="tile-title">Send Feedback</div><div class="tile-subtitle">Questions, bugs, or feature requests</div></div><div class="tile-trailing"><span class="chevron-right">&rsaquo;</span></div></div>
+          <div class="divider"></div>
+          <div class="tile"><div class="tile-content"><div class="tile-title">Rate Prosepal</div></div></div>
+        </div>
+
+        <div class="group-card">
+          <div class="tile"><div class="tile-content"><div class="tile-title">Terms of Service</div></div><div class="tile-trailing"><span class="chevron-right">&rsaquo;</span></div></div>
+          <div class="divider"></div>
+          <div class="tile"><div class="tile-content"><div class="tile-title">Privacy Policy</div></div><div class="tile-trailing"><span class="chevron-right">&rsaquo;</span></div></div>
+          <div class="divider"></div>
+          <div class="tile"><div class="tile-content"><div class="tile-title">Analytics &amp; Crash Reports</div><div class="tile-subtitle">Help improve Prosepal</div></div><div class="tile-trailing"><div class="toggle on"></div></div></div>
+        </div>
+
+        <div class="group-card">
+          <div class="tile"><div class="tile-content"><div class="tile-title">Export My Data</div></div><div class="tile-trailing"><span class="chevron-right">&rsaquo;</span></div></div>
+          <div class="divider"></div>
+          <div class="tile"><div class="tile-content"><div class="tile-title error">Sign Out</div></div></div>
+          <div class="divider"></div>
+          <div class="tile"><div class="tile-content"><div class="tile-title error">Delete Account</div></div></div>
+        </div>
+
+        <div class="version">Prosepal v1.0.0</div>
+      </div></div>
+    </div>
+
+    <div class="phone-wrapper">
+      <div class="phone-label">Free / Guest</div>
+      <div class="phone"><div class="phone-inner">
+        <div class="app-bar"><div class="back">&larr;</div><div class="title">Settings</div></div>
+        <div style="height:8px"></div>
+
+        <div class="group-card">
+          <div class="tile"><div class="tile-content"><div class="tile-title">Sign In / Create Account</div><div class="tile-subtitle">Save your subscription and preferences</div></div><div class="tile-trailing"><span class="chevron-right">&rsaquo;</span></div></div>
+        </div>
+
+        <div class="group-card">
+          <div class="tile"><div class="tile-content"><div class="tile-title">Free Plan</div><div class="tile-subtitle">0 free messages remaining</div></div><div class="tile-trailing"><span class="upgrade-btn">Upgrade</span></div></div>
+          <div class="divider"></div>
+          <div class="tile"><div class="tile-content"><div class="tile-title">Restore Purchases</div></div><div class="tile-trailing"><span class="chevron-right">&rsaquo;</span></div></div>
+        </div>
+
+        <div class="group-card">
+          <div class="tile"><div class="tile-content"><div class="tile-title">Spelling</div><div class="tile-subtitle">Mom, favorite</div></div><div class="tile-trailing"><div class="spelling-picker"><span class="spelling-opt active">US</span><span class="spelling-opt">UK</span></div></div></div>
+        </div>
+
+        <div style="height:4px"></div>
+        <div class="stats-card">
+          <div class="stats-text">0 messages generated</div>
+          <div class="stats-sub">All time</div>
+        </div>
+
+        <div class="group-card">
+          <div class="tile"><div class="tile-content"><div class="tile-title">Help &amp; FAQ</div></div><div class="tile-trailing"><span class="chevron-right">&rsaquo;</span></div></div>
+          <div class="divider"></div>
+          <div class="tile"><div class="tile-content"><div class="tile-title">Send Feedback</div><div class="tile-subtitle">Questions, bugs, or feature requests</div></div><div class="tile-trailing"><span class="chevron-right">&rsaquo;</span></div></div>
+          <div class="divider"></div>
+          <div class="tile"><div class="tile-content"><div class="tile-title">Rate Prosepal</div></div></div>
+        </div>
+
+        <div class="group-card">
+          <div class="tile"><div class="tile-content"><div class="tile-title">Terms of Service</div></div><div class="tile-trailing"><span class="chevron-right">&rsaquo;</span></div></div>
+          <div class="divider"></div>
+          <div class="tile"><div class="tile-content"><div class="tile-title">Privacy Policy</div></div><div class="tile-trailing"><span class="chevron-right">&rsaquo;</span></div></div>
+          <div class="divider"></div>
+          <div class="tile"><div class="tile-content"><div class="tile-title">Analytics &amp; Crash Reports</div><div class="tile-subtitle">Help improve Prosepal</div></div><div class="tile-trailing"><div class="toggle on"></div></div></div>
+        </div>
+
+        <div class="version">Prosepal v1.0.0</div>
+      </div></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     OPTION B: PROFILE GRID
+     ════════════════════════════════════════ -->
+<div class="mockup-section" id="optB">
+  <h2>B: Profile + Compact Grid</h2>
+  <div class="desc">Telegram / WhatsApp. Large profile hero at top, 2-column grid for quick access, grouped lists below.</div>
+  <div class="phone-pair">
+
+    <div class="phone-wrapper">
+      <div class="phone-label">Pro User</div>
+      <div class="phone"><div class="phone-inner">
+        <div class="app-bar"><div class="back">&larr;</div><div class="title">Settings</div></div>
+        <div style="height:8px"></div>
+
+        <div class="profile-hero pro-border">
+          <div class="avatar-lg pro">J</div>
+          <div class="name">Jarryd Aubert</div>
+          <div class="email">jarryd@email.com</div>
+          <div class="badges">
+            <span class="pro-badge">PRO</span>
+            <span class="msgs-badge">42 messages</span>
+          </div>
+        </div>
+
+        <div style="height:20px"></div>
+        <div class="quick-grid">
+          <div class="quick-card"><div class="qc-title">Manage Sub</div><div class="qc-sub">Subscription</div></div>
+          <div class="quick-card"><div class="qc-title">Spelling</div><div class="qc-sub">US English</div></div>
+          <div class="quick-card"><div class="qc-title">Face ID</div><div class="qc-sub">On</div></div>
+          <div class="quick-card"><div class="qc-title">Restore</div><div class="qc-sub">Purchases</div></div>
+        </div>
+
+        <div style="height:12px"></div>
+        <div class="group-card">
+          <div class="tile"><div class="tile-content"><div class="tile-title">Help &amp; FAQ</div></div><div class="tile-trailing"><span class="chevron-right">&rsaquo;</span></div></div>
+          <div class="divider"></div>
+          <div class="tile"><div class="tile-content"><div class="tile-title">Send Feedback</div><div class="tile-subtitle">Questions, bugs, or feature requests</div></div><div class="tile-trailing"><span class="chevron-right">&rsaquo;</span></div></div>
+          <div class="divider"></div>
+          <div class="tile"><div class="tile-content"><div class="tile-title">Rate Prosepal</div></div></div>
+        </div>
+
+        <div class="group-card">
+          <div class="tile"><div class="tile-content"><div class="tile-title">Terms of Service</div></div><div class="tile-trailing"><span class="chevron-right">&rsaquo;</span></div></div>
+          <div class="divider"></div>
+          <div class="tile"><div class="tile-content"><div class="tile-title">Privacy Policy</div></div><div class="tile-trailing"><span class="chevron-right">&rsaquo;</span></div></div>
+          <div class="divider"></div>
+          <div class="tile"><div class="tile-content"><div class="tile-title">Analytics &amp; Crash Reports</div><div class="tile-subtitle">Help improve Prosepal</div></div><div class="tile-trailing"><div class="toggle on"></div></div></div>
+        </div>
+
+        <div class="group-card">
+          <div class="tile"><div class="tile-content"><div class="tile-title">Export My Data</div></div><div class="tile-trailing"><span class="chevron-right">&rsaquo;</span></div></div>
+          <div class="divider"></div>
+          <div class="tile"><div class="tile-content"><div class="tile-title error">Sign Out</div></div></div>
+          <div class="divider"></div>
+          <div class="tile"><div class="tile-content"><div class="tile-title error">Delete Account</div></div></div>
+        </div>
+
+        <div class="version">Prosepal v1.0.0</div>
+      </div></div>
+    </div>
+
+    <div class="phone-wrapper">
+      <div class="phone-label">Free / Guest</div>
+      <div class="phone"><div class="phone-inner">
+        <div class="app-bar"><div class="back">&larr;</div><div class="title">Settings</div></div>
+        <div style="height:8px"></div>
+
+        <div class="profile-hero free-border">
+          <div class="avatar-lg free">?</div>
+          <div class="name">Guest User</div>
+          <div class="upgrade-cta-hero">Upgrade to Pro &rarr;</div>
+          <div class="free-remaining">Free &middot; 0 messages left</div>
+        </div>
+
+        <div style="height:20px"></div>
+        <div class="quick-grid">
+          <div class="quick-card"><div class="qc-title">Free Plan</div><div class="qc-sub">0 left</div></div>
+          <div class="quick-card"><div class="qc-title">Spelling</div><div class="qc-sub">US English</div></div>
+          <div class="quick-card" style="grid-column:span 2"><div class="qc-title">Restore Purchases</div></div>
+        </div>
+
+        <div style="height:12px"></div>
+        <div class="group-card">
+          <div class="tile"><div class="tile-content"><div class="tile-title">Help &amp; FAQ</div></div><div class="tile-trailing"><span class="chevron-right">&rsaquo;</span></div></div>
+          <div class="divider"></div>
+          <div class="tile"><div class="tile-content"><div class="tile-title">Send Feedback</div><div class="tile-subtitle">Questions, bugs, or feature requests</div></div><div class="tile-trailing"><span class="chevron-right">&rsaquo;</span></div></div>
+          <div class="divider"></div>
+          <div class="tile"><div class="tile-content"><div class="tile-title">Rate Prosepal</div></div></div>
+        </div>
+
+        <div class="group-card">
+          <div class="tile"><div class="tile-content"><div class="tile-title">Terms of Service</div></div><div class="tile-trailing"><span class="chevron-right">&rsaquo;</span></div></div>
+          <div class="divider"></div>
+          <div class="tile"><div class="tile-content"><div class="tile-title">Privacy Policy</div></div><div class="tile-trailing"><span class="chevron-right">&rsaquo;</span></div></div>
+          <div class="divider"></div>
+          <div class="tile"><div class="tile-content"><div class="tile-title">Analytics &amp; Crash Reports</div><div class="tile-subtitle">Help improve Prosepal</div></div><div class="tile-trailing"><div class="toggle on"></div></div></div>
+        </div>
+
+        <div class="version">Prosepal v1.0.0</div>
+      </div></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     OPTION C: SEGMENTED TABS
+     ════════════════════════════════════════ -->
+<div class="mockup-section" id="optC">
+  <h2>C: Segmented Tabs</h2>
+  <div class="desc">Discord / Notion. Account card always visible above a 3-tab bar. Each tab is a focused, short view.</div>
+  <div class="phone-pair">
+
+    <div class="phone-wrapper">
+      <div class="phone-label">Pro &mdash; General</div>
+      <div class="phone"><div class="phone-inner">
+        <div class="app-bar"><div class="back">&larr;</div><div class="title">Settings</div></div>
+        <div style="height:8px"></div>
+
+        <div class="account-card pro">
+          <div class="avatar pro">J</div>
+          <div class="account-info">
+            <div class="account-name">Jarryd Aubert <span class="pro-badge">PRO</span></div>
+            <div class="account-email">jarryd@email.com</div>
+          </div>
+        </div>
+        <div style="height:12px"></div>
+
+        <div class="tab-control">
+          <div class="tab-item active">General</div>
+          <div class="tab-item">Support</div>
+          <div class="tab-item">Account</div>
+        </div>
+        <div style="height:12px"></div>
+
+        <div class="group-card">
+          <div class="tile"><div class="tile-content"><div class="tile-title">Prosepal Pro</div><div class="tile-subtitle">Unlimited messages</div></div></div>
+          <div class="divider"></div>
+          <div class="tile"><div class="tile-content"><div class="tile-title">Manage Subscription</div></div><div class="tile-trailing"><span class="chevron-right">&rsaquo;</span></div></div>
+          <div class="divider"></div>
+          <div class="tile"><div class="tile-content"><div class="tile-title">Restore Purchases</div></div><div class="tile-trailing"><span class="chevron-right">&rsaquo;</span></div></div>
+        </div>
+
+        <div class="group-card">
+          <div class="tile"><div class="tile-content"><div class="tile-title">Face ID</div><div class="tile-subtitle">Require to open app</div></div><div class="tile-trailing"><div class="toggle on"></div></div></div>
+          <div class="divider"></div>
+          <div class="tile"><div class="tile-content"><div class="tile-title">Spelling</div><div class="tile-subtitle">Mom, favorite</div></div><div class="tile-trailing"><div class="spelling-picker"><span class="spelling-opt active">US</span><span class="spelling-opt">UK</span></div></div></div>
+          <div class="divider"></div>
+          <div class="tile"><div class="tile-content"><div class="tile-title">Analytics &amp; Crash Reports</div><div class="tile-subtitle">Help improve Prosepal</div></div><div class="tile-trailing"><div class="toggle on"></div></div></div>
+        </div>
+
+        <div style="height:4px"></div>
+        <div class="stats-card">
+          <div class="stats-text">42 messages generated</div>
+          <div class="stats-sub">All time</div>
+        </div>
+
+        <div class="version">Prosepal v1.0.0</div>
+      </div></div>
+    </div>
+
+    <div class="phone-wrapper">
+      <div class="phone-label">Pro &mdash; Support</div>
+      <div class="phone"><div class="phone-inner">
+        <div class="app-bar"><div class="back">&larr;</div><div class="title">Settings</div></div>
+        <div style="height:8px"></div>
+
+        <div class="account-card pro">
+          <div class="avatar pro">J</div>
+          <div class="account-info">
+            <div class="account-name">Jarryd Aubert <span class="pro-badge">PRO</span></div>
+            <div class="account-email">jarryd@email.com</div>
+          </div>
+        </div>
+        <div style="height:12px"></div>
+
+        <div class="tab-control">
+          <div class="tab-item">General</div>
+          <div class="tab-item active">Support</div>
+          <div class="tab-item">Account</div>
+        </div>
+        <div style="height:12px"></div>
+
+        <div class="group-card">
+          <div class="tile"><div class="tile-content"><div class="tile-title">Help &amp; FAQ</div></div><div class="tile-trailing"><span class="chevron-right">&rsaquo;</span></div></div>
+          <div class="divider"></div>
+          <div class="tile"><div class="tile-content"><div class="tile-title">Send Feedback</div><div class="tile-subtitle">Questions, bugs, or feature requests</div></div><div class="tile-trailing"><span class="chevron-right">&rsaquo;</span></div></div>
+          <div class="divider"></div>
+          <div class="tile"><div class="tile-content"><div class="tile-title">Rate Prosepal</div><div class="tile-subtitle">Love the app? Leave a review!</div></div></div>
+        </div>
+
+        <div class="group-card">
+          <div class="tile"><div class="tile-content"><div class="tile-title">Terms of Service</div></div><div class="tile-trailing"><span class="chevron-right">&rsaquo;</span></div></div>
+          <div class="divider"></div>
+          <div class="tile"><div class="tile-content"><div class="tile-title">Privacy Policy</div></div><div class="tile-trailing"><span class="chevron-right">&rsaquo;</span></div></div>
+        </div>
+
+        <div class="version">Prosepal v1.0.0</div>
+      </div></div>
+    </div>
+
+    <div class="phone-wrapper">
+      <div class="phone-label">Pro &mdash; Account</div>
+      <div class="phone"><div class="phone-inner">
+        <div class="app-bar"><div class="back">&larr;</div><div class="title">Settings</div></div>
+        <div style="height:8px"></div>
+
+        <div class="account-card pro">
+          <div class="avatar pro">J</div>
+          <div class="account-info">
+            <div class="account-name">Jarryd Aubert <span class="pro-badge">PRO</span></div>
+            <div class="account-email">jarryd@email.com</div>
+          </div>
+        </div>
+        <div style="height:12px"></div>
+
+        <div class="tab-control">
+          <div class="tab-item">General</div>
+          <div class="tab-item">Support</div>
+          <div class="tab-item active">Account</div>
+        </div>
+        <div style="height:12px"></div>
+
+        <div class="group-card">
+          <div class="tile"><div class="tile-content"><div class="tile-title">Export My Data</div><div class="tile-subtitle">Download a copy of your data</div></div><div class="tile-trailing"><span class="chevron-right">&rsaquo;</span></div></div>
+          <div class="divider"></div>
+          <div class="tile"><div class="tile-content"><div class="tile-title error">Sign Out</div></div></div>
+          <div class="divider"></div>
+          <div class="tile"><div class="tile-content"><div class="tile-title error">Delete Account</div><div class="tile-subtitle">Permanently delete your account and data</div></div></div>
+        </div>
+
+        <div class="group-card">
+          <div class="tile"><div class="tile-content"><div class="tile-title">Terms of Service</div></div><div class="tile-trailing"><span class="chevron-right">&rsaquo;</span></div></div>
+          <div class="divider"></div>
+          <div class="tile"><div class="tile-content"><div class="tile-title">Privacy Policy</div></div><div class="tile-trailing"><span class="chevron-right">&rsaquo;</span></div></div>
+        </div>
+
+        <div class="version">Prosepal v1.0.0</div>
+      </div></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     OPTION D: BOTTOM SHEET
+     ════════════════════════════════════════ -->
+<div class="mockup-section" id="optD">
+  <h2>D: Bottom Sheet / Drawer</h2>
+  <div class="desc">Apple Music / Uber. Compact header, expandable accordion sections, destructive actions always visible at bottom.</div>
+  <div class="phone-pair">
+
+    <div class="phone-wrapper">
+      <div class="phone-label">Pro &mdash; Subscription Open</div>
+      <div class="phone"><div class="phone-inner">
+        <div class="app-bar"><div class="back">&larr;</div><div class="title">Settings</div></div>
+        <div class="drag-handle"></div>
+
+        <div class="compact-header">
+          <div class="avatar-sm" style="background:#FEF3D1; color:var(--pro-gold-dark); border:2px solid var(--pro-gold)">J</div>
+          <div style="flex:1"><div class="ch-name">Jarryd Aubert</div><div class="ch-email">jarryd@email.com</div></div>
+          <span class="pro-badge">PRO</span>
+        </div>
+        <div class="inline-stats">42 generated &middot; Pro Plan</div>
+        <div class="divider-line"></div>
+
+        <div class="expand-header"><span class="chevron">&#9660;</span><span class="eh-title active">Subscription</span></div>
+        <div class="expand-content">
+          <div class="group-card" style="margin:0">
+            <div class="tile"><div class="tile-content"><div class="tile-title">Prosepal Pro</div><div class="tile-subtitle">Unlimited messages</div></div></div>
+            <div class="divider"></div>
+            <div class="tile"><div class="tile-content"><div class="tile-title">Manage Subscription</div></div><div class="tile-trailing"><span class="chevron-right">&rsaquo;</span></div></div>
+            <div class="divider"></div>
+            <div class="tile"><div class="tile-content"><div class="tile-title">Restore Purchases</div></div><div class="tile-trailing"><span class="chevron-right">&rsaquo;</span></div></div>
+          </div>
+        </div>
+
+        <div class="expand-header"><span class="chevron">&#9654;</span><span class="eh-title">App Settings</span></div>
+        <div class="expand-header"><span class="chevron">&#9654;</span><span class="eh-title">Support &amp; Feedback</span></div>
+        <div class="expand-header"><span class="chevron">&#9654;</span><span class="eh-title">Legal</span></div>
+
+        <div class="divider-line"></div>
+
+        <div class="tile"><div class="tile-content"><div class="tile-title">Export My Data</div></div></div>
+        <div class="tile"><div class="tile-content"><div class="tile-title error">Sign Out</div></div></div>
+        <div class="tile"><div class="tile-content"><div class="tile-title error">Delete Account</div></div></div>
+
+        <div class="version">Prosepal v1.0.0</div>
+      </div></div>
+    </div>
+
+    <div class="phone-wrapper">
+      <div class="phone-label">Pro &mdash; App Settings Open</div>
+      <div class="phone"><div class="phone-inner">
+        <div class="app-bar"><div class="back">&larr;</div><div class="title">Settings</div></div>
+        <div class="drag-handle"></div>
+
+        <div class="compact-header">
+          <div class="avatar-sm" style="background:#FEF3D1; color:var(--pro-gold-dark); border:2px solid var(--pro-gold)">J</div>
+          <div style="flex:1"><div class="ch-name">Jarryd Aubert</div><div class="ch-email">jarryd@email.com</div></div>
+          <span class="pro-badge">PRO</span>
+        </div>
+        <div class="inline-stats">42 generated &middot; Pro Plan</div>
+        <div class="divider-line"></div>
+
+        <div class="expand-header"><span class="chevron">&#9654;</span><span class="eh-title">Subscription</span></div>
+
+        <div class="expand-header"><span class="chevron">&#9660;</span><span class="eh-title active">App Settings</span></div>
+        <div class="expand-content">
+          <div class="group-card" style="margin:0">
+            <div class="tile"><div class="tile-content"><div class="tile-title">Face ID</div><div class="tile-subtitle">Require to open app</div></div><div class="tile-trailing"><div class="toggle on"></div></div></div>
+            <div class="divider"></div>
+            <div class="tile"><div class="tile-content"><div class="tile-title">Spelling</div><div class="tile-subtitle">Mom, favorite</div></div><div class="tile-trailing"><div class="spelling-picker"><span class="spelling-opt active">US</span><span class="spelling-opt">UK</span></div></div></div>
+            <div class="divider"></div>
+            <div class="tile"><div class="tile-content"><div class="tile-title">Analytics &amp; Crash Reports</div><div class="tile-subtitle">Help improve Prosepal</div></div><div class="tile-trailing"><div class="toggle on"></div></div></div>
+          </div>
+        </div>
+
+        <div class="expand-header"><span class="chevron">&#9654;</span><span class="eh-title">Support &amp; Feedback</span></div>
+        <div class="expand-header"><span class="chevron">&#9654;</span><span class="eh-title">Legal</span></div>
+
+        <div class="divider-line"></div>
+
+        <div class="tile"><div class="tile-content"><div class="tile-title">Export My Data</div></div></div>
+        <div class="tile"><div class="tile-content"><div class="tile-title error">Sign Out</div></div></div>
+        <div class="tile"><div class="tile-content"><div class="tile-title error">Delete Account</div></div></div>
+
+        <div class="version">Prosepal v1.0.0</div>
+      </div></div>
+    </div>
+
+    <div class="phone-wrapper">
+      <div class="phone-label">Free / Guest</div>
+      <div class="phone"><div class="phone-inner">
+        <div class="app-bar"><div class="back">&larr;</div><div class="title">Settings</div></div>
+        <div class="drag-handle"></div>
+
+        <div class="compact-header">
+          <div class="avatar-sm" style="background:var(--primary-light); color:var(--primary); border:2px solid var(--primary)">?</div>
+          <div style="flex:1"><div class="ch-name">Guest User</div><div class="ch-email" style="color:var(--text-hint)">Not signed in</div></div>
+        </div>
+        <div class="inline-stats">0 generated &middot; Free Plan</div>
+        <div class="divider-line"></div>
+
+        <div class="upgrade-cta-card">
+          <div class="cta-header">Upgrade to Prosepal Pro</div>
+          <div class="cta-sub">Unlimited messages &amp; more</div>
+          <button class="cta-btn">Upgrade Now</button>
+        </div>
+
+        <div class="expand-header"><span class="chevron">&#9654;</span><span class="eh-title">Subscription</span></div>
+        <div class="expand-header"><span class="chevron">&#9654;</span><span class="eh-title">App Settings</span></div>
+        <div class="expand-header"><span class="chevron">&#9654;</span><span class="eh-title">Support &amp; Feedback</span></div>
+        <div class="expand-header"><span class="chevron">&#9654;</span><span class="eh-title">Legal</span></div>
+
+        <div class="divider-line"></div>
+
+        <button class="sign-in-btn">Sign In / Create Account</button>
+
+        <div class="version">Prosepal v1.0.0</div>
+      </div></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+function showMockup(id) {
+  document.querySelectorAll('.mockup-section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  event.target.classList.add('active');
+}
+</script>
+</body>
+</html>

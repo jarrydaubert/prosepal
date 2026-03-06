@@ -19,8 +19,6 @@ analyzer:
   exclude:
     - "**/*.g.dart"
     - "**/*.freezed.dart"
-  plugins:
-    - custom_lint
 
 linter:
   rules:
@@ -62,7 +60,6 @@ linter:
     - throw_in_finally
     - unnecessary_statements
     - always_declare_return_types
-    - avoid_returning_null_for_future
     # avoid_slow_async_io - disabled, File.exists() is fine for our use
     - avoid_web_libraries_in_flutter
     - no_logic_in_create_state
@@ -115,28 +112,3 @@ linter:
     # use_setters_to_change_properties - disabled, breaks test mock APIs
     - use_string_buffers
     - use_to_and_as_if_applicable
-
-# Riverpod Lint - strict mode
-custom_lint:
-  rules:
-    # Errors - must fix
-    - riverpod_final_provider: error
-    - notifier_extends: error
-    - async_notifier_extends: error
-    - missing_provider_scope: error
-    - provider_dependencies: error
-    - scoped_providers_should_specify_dependencies: error
-    - avoid_ref_inside_state_dispose: error
-    
-    # Warnings - should fix  
-    - functional_ref: warning
-    - avoid_build_context_in_providers: warning
-    - avoid_public_notifier_properties: warning
-    - protected_notifier_properties: warning
-    - unsupported_provider_value: warning
-    - stateless_ref: warning
-    - avoid_notifier_constructors: warning
-    
-    # Info - best practices
-    - avoid_manual_providers_as_generated_provider_dependency: info
-    - provider_parameters: info

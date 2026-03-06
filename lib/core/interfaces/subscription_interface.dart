@@ -59,7 +59,6 @@ abstract class ISubscriptionService {
   /// Initialize RevenueCat SDK with platform-specific API key.
   ///
   /// Must be called once at app startup before other methods.
-  /// Automatically syncs existing purchases after initialization.
   ///
   /// Throws [StateError] if:
   /// - Test Store is enabled in release mode (fatal misconfiguration)
@@ -123,6 +122,14 @@ abstract class ISubscriptionService {
   /// Call this when user taps "Restore Purchases" in settings.
   Future<bool> restorePurchases();
 
+  /// Programmatically sync store purchases into RevenueCat.
+  ///
+  /// Use this for silent claim/migration flows where the user already has
+  /// store-backed purchases and explicit restore UI would be inappropriate.
+  ///
+  /// Returns true if the pro entitlement is active after the sync.
+  Future<bool> syncPurchases();
+
   /// Show RevenueCat's native paywall UI.
   ///
   /// Returns true if user purchased or restored successfully.
@@ -164,8 +171,6 @@ abstract class ISubscriptionService {
   /// [userId] - Your app's unique user identifier (e.g., Supabase user ID).
   ///
   /// Call after user signs in to link purchases to their account.
-  /// Automatically syncs purchases after identification.
-  ///
   /// RevenueCat will merge any anonymous purchases with the identified user.
   Future<void> identifyUser(String userId);
 

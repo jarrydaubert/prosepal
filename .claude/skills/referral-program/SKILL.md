@@ -278,5 +278,5 @@ Prosepal has a built-in viral mechanic: when users copy a message and write it i
 - Don't over-invest in referral infrastructure before product-market fit
 
 ### Reference
-- `docs/MARKETING.md` — Viral and growth strategy
+- `docs/PRODUCT_STRATEGY.md` — High-level growth strategy
 - `social-content` skill — Social sharing content
