@@ -316,7 +316,13 @@ Patrol-native/system UI automation:
 dart pub global activate patrol_cli
 patrol doctor
 patrol test -t integration_test/<patrol_test_file>.dart
+patrol test -t integration_test/patrol_notification_permission_test.dart --clear-permissions
 ```
+
+Recommended first Patrol pilot:
+- `integration_test/patrol_notification_permission_test.dart`
+- Covers the native notification-permission dialog that appears after saving the first calendar occasion with reminders enabled.
+- Run with `--clear-permissions` so the system dialog is deterministic across repeated local/device runs.
 
 ### iOS CocoaPods Recovery
 
