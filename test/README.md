@@ -46,6 +46,7 @@ flutter test integration_test/e2e_real_test.dart -d <android-device-id> --dart-d
 dart pub global activate patrol_cli
 patrol doctor
 patrol test -t integration_test/<patrol_test_file>.dart
+patrol test -t integration_test/patrol_notification_permission_test.dart --clear-permissions
 
 # Firebase Test Lab critical suite
 flutter build apk --debug -t integration_test/ftl_test.dart
