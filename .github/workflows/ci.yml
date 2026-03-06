@@ -119,7 +119,7 @@ jobs:
       - name: Install Flutter SDK
         if: steps.scope.outputs.docs_only != 'true'
         run: |
-          git clone https://github.com/flutter/flutter.git --depth 1 --branch 3.38.6 "$HOME/flutter"
+          git clone https://github.com/flutter/flutter.git --depth 1 --branch 3.41.4 "$HOME/flutter"
           echo "$HOME/flutter/bin" >> "$GITHUB_PATH"
           "$HOME/flutter/bin/flutter" --version
 
@@ -179,7 +179,7 @@ jobs:
 
       - name: Install Flutter SDK
         run: |
-          git clone https://github.com/flutter/flutter.git --depth 1 --branch 3.38.6 "$HOME/flutter"
+          git clone https://github.com/flutter/flutter.git --depth 1 --branch 3.41.4 "$HOME/flutter"
           echo "$HOME/flutter/bin" >> "$GITHUB_PATH"
           "$HOME/flutter/bin/flutter" --version
 
@@ -235,7 +235,7 @@ jobs:
 
       - name: Install Flutter SDK
         run: |
-          git clone https://github.com/flutter/flutter.git --depth 1 --branch 3.38.6 "$HOME/flutter"
+          git clone https://github.com/flutter/flutter.git --depth 1 --branch 3.41.4 "$HOME/flutter"
           echo "$HOME/flutter/bin" >> "$GITHUB_PATH"
           "$HOME/flutter/bin/flutter" --version
 
