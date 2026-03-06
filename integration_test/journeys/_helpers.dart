@@ -126,15 +126,19 @@ Future<bool> navigateToSettings(
   WidgetTester tester, {
   bool seedFreeTierUsed = false,
 }) async {
-  if (!await navigateToHome(tester, seedFreeTierUsed: seedFreeTierUsed)) {
-    return false;
-  }
+  final atHome = await navigateToHome(
+    tester,
+    seedFreeTierUsed: seedFreeTierUsed,
+  );
+  expect(atHome, isTrue, reason: 'Expected to reach home before settings');
 
   final settingsByKey = find.byKey(const ValueKey('home_settings_button'));
   final settingsByIcon = find.byIcon(Icons.settings_outlined);
-  if (settingsByKey.evaluate().isEmpty && settingsByIcon.evaluate().isEmpty) {
-    return false;
-  }
+  expect(
+    settingsByKey.evaluate().isNotEmpty || settingsByIcon.evaluate().isNotEmpty,
+    isTrue,
+    reason: 'Expected home settings trigger to be visible',
+  );
 
   await tester.tap(
     settingsByKey.evaluate().isNotEmpty ? settingsByKey : settingsByIcon.first,
@@ -203,23 +207,42 @@ Future<bool> completeWizard(
   await _pumpFor(tester, const Duration(seconds: 1));
 
   // Check final step
-  return find.text('Generate Messages').evaluate().isNotEmpty ||
+  final reachedFinalStep =
+      find.text('Generate Messages').evaluate().isNotEmpty ||
       find.text('Upgrade to Continue').evaluate().isNotEmpty;
+  expect(
+    reachedFinalStep,
+    isTrue,
+    reason: 'Expected wizard to reach Generate or Upgrade action on final step',
+  );
+  return reachedFinalStep;
 }
 
 /// Navigate to auth screen via upgrade path
 Future<bool> navigateToAuth(WidgetTester tester) async {
-  if (!await navigateToHome(tester, seedFreeTierUsed: true)) return false;
-  if (!await completeWizard(tester)) return false;
+  final atHome = await navigateToHome(tester, seedFreeTierUsed: true);
+  expect(
+    atHome,
+    isTrue,
+    reason: 'Expected to reach home before navigating to auth',
+  );
+  await completeWizardOrFail(tester);
 
   if (find.text('Upgrade to Continue').evaluate().isNotEmpty) {
     await tester.tap(find.text('Upgrade to Continue'));
     await _pumpFor(tester, const Duration(seconds: 2));
-    return find.text('Sign in with Google').evaluate().isNotEmpty ||
+    final reachedAuth =
+        find.text('Sign in with Google').evaluate().isNotEmpty ||
         find.text('Sign in with Apple').evaluate().isNotEmpty;
+    expect(
+      reachedAuth,
+      isTrue,
+      reason: 'Expected upgrade flow to reach auth providers',
+    );
+    return reachedAuth;
   }
 
-  return false;
+  fail('Expected Upgrade to Continue CTA after exhausting free tier');
 }
 
 /// Check if element exists

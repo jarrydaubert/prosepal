@@ -104,28 +104,27 @@ void main() {
       final atHome = await navigateToHome(tester);
       expect(atHome, isTrue, reason: 'Failed to navigate to home');
 
-      await completeWizard(tester);
+      await completeWizardOrFail(tester);
+      expect(
+        find.text('Generate Messages'),
+        findsOneWidget,
+        reason: 'Expected Generate Messages CTA before loading-state tap test',
+      );
+      await tester.tap(find.text('Generate Messages'));
 
-      if (exists(find.text('Generate Messages'))) {
-        await tester.tap(find.text('Generate Messages'));
+      // Immediately try tapping other things while loading
+      await tester.pump(const Duration(milliseconds: 500));
+      await tapBack(tester);
 
-        // Immediately try tapping other things while loading
-        await tester.pump(const Duration(milliseconds: 500));
+      await tester.pumpAndSettle(const Duration(seconds: 15));
 
-        if (exists(find.byIcon(Icons.arrow_back))) {
-          await tester.tap(find.byIcon(Icons.arrow_back), warnIfMissed: false);
-        }
+      expect(
+        find.byType(MaterialApp),
+        findsOneWidget,
+        reason: 'App should handle taps during loading',
+      );
 
-        await tester.pumpAndSettle(const Duration(seconds: 15));
-
-        expect(
-          find.byType(MaterialApp),
-          findsOneWidget,
-          reason: 'App should handle taps during loading',
-        );
-
-        await screenshot(tester, 'j6_5_tap_during_load');
-      }
+      await screenshot(tester, 'j6_5_tap_during_load');
     });
 
     testWidgets('J6.6: Multiple wizard completions', (tester) async {
@@ -134,19 +133,37 @@ void main() {
 
       // Complete wizard multiple times
       for (var i = 0; i < 3; i++) {
-        await tester.tap(find.text('Birthday'));
+        await tapTextOrFail(
+          tester,
+          'Birthday',
+          reason: 'Expected Birthday occasion on wizard iteration ${i + 1}',
+        );
+        await tapTextOrFail(
+          tester,
+          'Close Friend',
+          reason:
+              'Expected Close Friend relationship on wizard iteration ${i + 1}',
+        );
+
+        final firstBack = await tapBack(tester);
+        expect(
+          firstBack,
+          isTrue,
+          reason: 'Expected back navigation from relationship step',
+        );
+        final secondBack = await tapBack(tester);
+        expect(
+          secondBack,
+          isTrue,
+          reason: 'Expected back navigation from occasion step',
+        );
         await tester.pumpAndSettle();
 
-        if (exists(find.text('Close Friend'))) {
-          await tester.tap(find.text('Close Friend'));
-          await tester.pumpAndSettle();
-        }
-
-        await tapBack(tester);
-        await tapBack(tester);
-        await tester.pumpAndSettle();
-
-        if (!exists(find.text('Birthday'))) break;
+        expect(
+          find.text('Birthday'),
+          findsOneWidget,
+          reason: 'Expected to return to home after wizard back navigation',
+        );
       }
 
       expect(
@@ -162,19 +179,21 @@ void main() {
       final atHome = await navigateToHome(tester);
       expect(atHome, isTrue, reason: 'Failed to navigate to home');
 
-      await completeWizard(tester);
+      await completeWizardOrFail(tester);
+      expect(
+        find.text('Generate Messages'),
+        findsOneWidget,
+        reason: 'Expected Generate Messages CTA before error-dismiss test',
+      );
+      await tester.tap(find.text('Generate Messages'));
+      await tester.pumpAndSettle(const Duration(seconds: 15));
 
-      if (exists(find.text('Generate Messages'))) {
-        await tester.tap(find.text('Generate Messages'));
-        await tester.pumpAndSettle(const Duration(seconds: 15));
+      // If error shown, try to dismiss
+      if (exists(find.byIcon(Icons.close))) {
+        await tester.tap(find.byIcon(Icons.close).first);
+        await tester.pumpAndSettle();
 
-        // If error shown, try to dismiss
-        if (exists(find.byIcon(Icons.close))) {
-          await tester.tap(find.byIcon(Icons.close).first);
-          await tester.pumpAndSettle();
-
-          await screenshot(tester, 'j6_7_error_dismissed');
-        }
+        await screenshot(tester, 'j6_7_error_dismissed');
       }
     });
 
@@ -182,19 +201,21 @@ void main() {
       final atHome = await navigateToHome(tester);
       expect(atHome, isTrue, reason: 'Failed to navigate to home');
 
-      await completeWizard(tester);
+      await completeWizardOrFail(tester);
+      expect(
+        find.text('Generate Messages'),
+        findsOneWidget,
+        reason: 'Expected Generate Messages CTA before retry test',
+      );
+      await tester.tap(find.text('Generate Messages'));
+      await tester.pumpAndSettle(const Duration(seconds: 15));
 
+      // If error, should still be able to retry
       if (exists(find.text('Generate Messages'))) {
         await tester.tap(find.text('Generate Messages'));
         await tester.pumpAndSettle(const Duration(seconds: 15));
 
-        // If error, should still be able to retry
-        if (exists(find.text('Generate Messages'))) {
-          await tester.tap(find.text('Generate Messages'));
-          await tester.pumpAndSettle(const Duration(seconds: 15));
-
-          await screenshot(tester, 'j6_8_retry');
-        }
+        await screenshot(tester, 'j6_8_retry');
       }
     });
   });

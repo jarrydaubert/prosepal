@@ -37,17 +37,25 @@ void main() {
         await tester.tap(find.text('Birthday'));
         await tester.pumpAndSettle();
 
-        if (await scrollToText(tester, relationship, delta: 100)) {
-          await tester.tap(find.text(relationship));
-          await tester.pumpAndSettle();
+        final relationshipVisible = await scrollToText(
+          tester,
+          relationship,
+          delta: 100,
+        );
+        expect(
+          relationshipVisible,
+          isTrue,
+          reason: 'Expected relationship "$relationship" to be visible',
+        );
+        await tester.tap(find.text(relationship));
+        await tester.pumpAndSettle();
 
-          // Should enable Continue button
-          expect(
-            exists(find.text('Continue')),
-            isTrue,
-            reason: '$relationship should be selectable',
-          );
-        }
+        // Should enable Continue button
+        expect(
+          exists(find.text('Continue')),
+          isTrue,
+          reason: '$relationship should be selectable',
+        );
       });
     }
   });
@@ -61,16 +69,24 @@ void main() {
         await tester.tap(find.text('Birthday'));
         await tester.pumpAndSettle();
 
-        if (await scrollToText(tester, relationship, delta: 100)) {
-          await tester.tap(find.text(relationship));
-          await tester.pumpAndSettle();
+        final relationshipVisible = await scrollToText(
+          tester,
+          relationship,
+          delta: 100,
+        );
+        expect(
+          relationshipVisible,
+          isTrue,
+          reason: 'Expected relationship "$relationship" to be visible',
+        );
+        await tester.tap(find.text(relationship));
+        await tester.pumpAndSettle();
 
-          expect(
-            exists(find.text('Continue')),
-            isTrue,
-            reason: '$relationship should be selectable',
-          );
-        }
+        expect(
+          exists(find.text('Continue')),
+          isTrue,
+          reason: '$relationship should be selectable',
+        );
       });
     }
   });
@@ -84,16 +100,24 @@ void main() {
         await tester.tap(find.text('Birthday'));
         await tester.pumpAndSettle();
 
-        if (await scrollToText(tester, relationship, delta: 100)) {
-          await tester.tap(find.text(relationship));
-          await tester.pumpAndSettle();
+        final relationshipVisible = await scrollToText(
+          tester,
+          relationship,
+          delta: 100,
+        );
+        expect(
+          relationshipVisible,
+          isTrue,
+          reason: 'Expected relationship "$relationship" to be visible',
+        );
+        await tester.tap(find.text(relationship));
+        await tester.pumpAndSettle();
 
-          expect(
-            exists(find.text('Continue')),
-            isTrue,
-            reason: '$relationship should be selectable',
-          );
-        }
+        expect(
+          exists(find.text('Continue')),
+          isTrue,
+          reason: '$relationship should be selectable',
+        );
       });
     }
   });

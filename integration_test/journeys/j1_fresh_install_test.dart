@@ -44,36 +44,7 @@ void main() {
 
     testWidgets('J1.2: Onboarding completes to home', (tester) async {
       await launchApp(tester);
-
-      // Navigate through onboarding carousel (up to 10 pages max)
-      var pages = 0;
-      while (pages < 10) {
-        // Check if we've reached auth or home
-        if (exists(find.text('Birthday')) ||
-            exists(find.text('Sign in with Google')) ||
-            exists(find.text('Sign in with Apple')) ||
-            exists(find.text("What's the occasion?"))) {
-          break;
-        }
-
-        // Tap "Get Started" to complete onboarding (final carousel page)
-        if (exists(find.text('Get Started'))) {
-          await tester.tap(find.text('Get Started'));
-          await tester.pumpAndSettle(const Duration(seconds: 2));
-          break;
-        }
-
-        // Tap "Continue" to advance carousel
-        if (exists(find.text('Continue'))) {
-          await tester.tap(find.text('Continue'));
-          await tester.pumpAndSettle(const Duration(seconds: 1));
-          pages++;
-        } else {
-          break;
-        }
-      }
-
-      // Give extra time for final screen to render
+      await skipOnboarding(tester);
       await tester.pumpAndSettle(const Duration(seconds: 2));
 
       expect(
