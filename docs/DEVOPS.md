@@ -139,7 +139,7 @@ Steps:
 - Deno static validation for Supabase edge functions (`deno check`).
 - Flutter analyze.
 - Launch/auth color parity guard (`./scripts/check_launch_color_parity.sh`) to prevent iOS/Android/Flutter splash/background drift.
-- Critical smoke tests.
+- Critical smoke tests, including deterministic AI service parsing/error-classification coverage.
 - Unit/widget test suite with flaky tests excluded.
 - Service coverage gate.
 - Debug bundle build sanity check.
@@ -252,6 +252,11 @@ deno check supabase/functions/**/*.ts
 ./scripts/check_commit_attribution.sh --range origin/main..HEAD
 ./scripts/check_launch_color_parity.sh
 ./scripts/test_critical_smoke.sh
+# Critical smoke currently includes:
+# - app lifecycle
+# - app config
+# - AI service parsing/error-classification
+# - home/generate/results/settings widget smoke
 flutter test --exclude-tags flaky --coverage
 ./scripts/check_service_coverage.sh coverage/lcov.info
 ./scripts/test_flake_audit.sh

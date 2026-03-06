@@ -152,32 +152,53 @@ Future<bool> completeWizard(
   String relationship = 'Close Friend',
   String tone = 'Heartfelt',
 }) async {
-  if (find.text(occasion).evaluate().isEmpty &&
-      !await scrollToText(tester, occasion)) {
-    return false;
-  }
+  final occasionVisible =
+      find.text(occasion).evaluate().isNotEmpty ||
+      await scrollToText(tester, occasion);
+  expect(
+    occasionVisible,
+    isTrue,
+    reason: 'Expected occasion "$occasion" to be visible in wizard flow',
+  );
 
   await tester.tap(find.text(occasion));
   await _pumpFor(tester, const Duration(seconds: 1));
 
-  if (find.text(relationship).evaluate().isEmpty &&
-      !await scrollToText(tester, relationship)) {
-    return false;
-  }
+  final relationshipVisible =
+      find.text(relationship).evaluate().isNotEmpty ||
+      await scrollToText(tester, relationship);
+  expect(
+    relationshipVisible,
+    isTrue,
+    reason:
+        'Expected relationship "$relationship" to be visible in wizard flow',
+  );
   await tester.tap(find.text(relationship));
   await _pumpFor(tester, const Duration(seconds: 1));
 
-  if (find.text('Continue').evaluate().isEmpty) return false;
+  expect(
+    find.text('Continue').evaluate().isNotEmpty,
+    isTrue,
+    reason: 'Expected Continue button after relationship selection',
+  );
   await tester.tap(find.text('Continue'));
   await _pumpFor(tester, const Duration(seconds: 1));
 
-  if (find.text(tone).evaluate().isEmpty && !await scrollToText(tester, tone)) {
-    return false;
-  }
+  final toneVisible =
+      find.text(tone).evaluate().isNotEmpty || await scrollToText(tester, tone);
+  expect(
+    toneVisible,
+    isTrue,
+    reason: 'Expected tone "$tone" to be visible in wizard flow',
+  );
   await tester.tap(find.text(tone));
   await _pumpFor(tester, const Duration(seconds: 1));
 
-  if (find.text('Continue').evaluate().isEmpty) return false;
+  expect(
+    find.text('Continue').evaluate().isNotEmpty,
+    isTrue,
+    reason: 'Expected Continue button after tone selection',
+  );
   await tester.tap(find.text('Continue'));
   await _pumpFor(tester, const Duration(seconds: 1));
 

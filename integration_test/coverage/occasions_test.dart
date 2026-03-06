@@ -71,16 +71,17 @@ void main() {
         final atHome = await navigateToHome(tester);
         expect(atHome, isTrue, reason: 'Failed to navigate to home');
 
-        if (await scrollToText(tester, occasion)) {
-          await tester.tap(find.text(occasion));
-          await tester.pumpAndSettle();
+        final occasionVisible = await scrollToText(tester, occasion);
+        expect(occasionVisible, isTrue, reason: '$occasion should be visible');
 
-          expect(
-            anyTextExists(['Close Friend', 'Family', 'Partner', 'Colleague']),
-            isTrue,
-            reason: '$occasion should show relationships',
-          );
-        }
+        await tester.tap(find.text(occasion));
+        await tester.pumpAndSettle();
+
+        expect(
+          anyTextExists(['Close Friend', 'Family', 'Partner', 'Colleague']),
+          isTrue,
+          reason: '$occasion should show relationships',
+        );
       });
     }
   });
@@ -91,16 +92,17 @@ void main() {
         final atHome = await navigateToHome(tester);
         expect(atHome, isTrue, reason: 'Failed to navigate to home');
 
-        if (await scrollToText(tester, occasion)) {
-          await tester.tap(find.text(occasion));
-          await tester.pumpAndSettle();
+        final occasionVisible = await scrollToText(tester, occasion);
+        expect(occasionVisible, isTrue, reason: '$occasion should be visible');
 
-          expect(
-            anyTextExists(['Close Friend', 'Family', 'Partner', 'Colleague']),
-            isTrue,
-            reason: '$occasion should show relationships',
-          );
-        }
+        await tester.tap(find.text(occasion));
+        await tester.pumpAndSettle();
+
+        expect(
+          anyTextExists(['Close Friend', 'Family', 'Partner', 'Colleague']),
+          isTrue,
+          reason: '$occasion should show relationships',
+        );
       });
     }
   });
@@ -111,16 +113,17 @@ void main() {
         final atHome = await navigateToHome(tester);
         expect(atHome, isTrue, reason: 'Failed to navigate to home');
 
-        if (await scrollToText(tester, occasion)) {
-          await tester.tap(find.text(occasion));
-          await tester.pumpAndSettle();
+        final occasionVisible = await scrollToText(tester, occasion);
+        expect(occasionVisible, isTrue, reason: '$occasion should be visible');
 
-          expect(
-            anyTextExists(['Close Friend', 'Family', 'Partner', 'Colleague']),
-            isTrue,
-            reason: '$occasion should show relationships',
-          );
-        }
+        await tester.tap(find.text(occasion));
+        await tester.pumpAndSettle();
+
+        expect(
+          anyTextExists(['Close Friend', 'Family', 'Partner', 'Colleague']),
+          isTrue,
+          reason: '$occasion should show relationships',
+        );
       });
     }
   });
@@ -131,16 +134,17 @@ void main() {
         final atHome = await navigateToHome(tester);
         expect(atHome, isTrue, reason: 'Failed to navigate to home');
 
-        if (await scrollToText(tester, occasion)) {
-          await tester.tap(find.text(occasion));
-          await tester.pumpAndSettle();
+        final occasionVisible = await scrollToText(tester, occasion);
+        expect(occasionVisible, isTrue, reason: '$occasion should be visible');
 
-          expect(
-            anyTextExists(['Close Friend', 'Family', 'Partner', 'Colleague']),
-            isTrue,
-            reason: '$occasion should show relationships',
-          );
-        }
+        await tester.tap(find.text(occasion));
+        await tester.pumpAndSettle();
+
+        expect(
+          anyTextExists(['Close Friend', 'Family', 'Partner', 'Colleague']),
+          isTrue,
+          reason: '$occasion should show relationships',
+        );
       });
     }
   });
@@ -151,16 +155,17 @@ void main() {
         final atHome = await navigateToHome(tester);
         expect(atHome, isTrue, reason: 'Failed to navigate to home');
 
-        if (await scrollToText(tester, occasion)) {
-          await tester.tap(find.text(occasion));
-          await tester.pumpAndSettle();
+        final occasionVisible = await scrollToText(tester, occasion);
+        expect(occasionVisible, isTrue, reason: '$occasion should be visible');
 
-          expect(
-            anyTextExists(['Close Friend', 'Family', 'Partner', 'Colleague']),
-            isTrue,
-            reason: '$occasion should show relationships',
-          );
-        }
+        await tester.tap(find.text(occasion));
+        await tester.pumpAndSettle();
+
+        expect(
+          anyTextExists(['Close Friend', 'Family', 'Partner', 'Colleague']),
+          isTrue,
+          reason: '$occasion should show relationships',
+        );
       });
     }
   });
@@ -171,16 +176,17 @@ void main() {
         final atHome = await navigateToHome(tester);
         expect(atHome, isTrue, reason: 'Failed to navigate to home');
 
-        if (await scrollToText(tester, occasion)) {
-          await tester.tap(find.text(occasion));
-          await tester.pumpAndSettle();
+        final occasionVisible = await scrollToText(tester, occasion);
+        expect(occasionVisible, isTrue, reason: '$occasion should be visible');
 
-          expect(
-            anyTextExists(['Close Friend', 'Family', 'Partner', 'Colleague']),
-            isTrue,
-            reason: '$occasion should show relationships',
-          );
-        }
+        await tester.tap(find.text(occasion));
+        await tester.pumpAndSettle();
+
+        expect(
+          anyTextExists(['Close Friend', 'Family', 'Partner', 'Colleague']),
+          isTrue,
+          reason: '$occasion should show relationships',
+        );
       });
     }
   });

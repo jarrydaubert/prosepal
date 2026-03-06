@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -198,6 +199,7 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
             leading: AppBackButton(
               onPressed: () {
                 FocusScope.of(context).unfocus();
+                SystemChannels.textInput.invokeMethod<void>('TextInput.hide');
                 if (_currentStep > 0) {
                   setState(() => _currentStep--);
                   _saveFormStateImmediate();

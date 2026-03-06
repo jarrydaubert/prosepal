@@ -278,6 +278,7 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
                           style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w500,
+                            color: AppColors.textPrimary,
                           ),
                         ),
                         Gap(2),
@@ -326,7 +327,10 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
                     const Expanded(
                       child: Text(
                         'Include full technical details (advanced)',
-                        style: TextStyle(fontSize: 13),
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: AppColors.textPrimary,
+                        ),
                       ),
                     ),
                     Switch.adaptive(

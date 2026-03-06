@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:prosepal/features/auth/lock_screen.dart';
+import 'package:prosepal/shared/theme/app_colors.dart';
 
 /// LockScreen Widget Tests
 void main() {
@@ -78,6 +79,11 @@ void main() {
       expect(find.text('Prosepal'), findsOneWidget);
       expect(find.text('Tap to unlock'), findsOneWidget);
       expect(find.textContaining('Unlock with'), findsOneWidget);
+
+      final title = tester.widget<Text>(find.text('Prosepal'));
+      final subtitle = tester.widget<Text>(find.text('Tap to unlock'));
+      expect(title.style?.color, AppColors.textPrimary);
+      expect(subtitle.style?.color, AppColors.textSecondary);
     });
 
     testWidgetsWithCleanup('shows retry hint after repeated failed attempts', (
@@ -91,6 +97,11 @@ void main() {
       await tester.pump(const Duration(milliseconds: 300));
 
       expect(find.textContaining('Having trouble?'), findsOneWidget);
+
+      final retryHint = tester.widget<Text>(
+        find.textContaining('Having trouble?'),
+      );
+      expect(retryHint.style?.color, AppColors.textSecondary);
 
       // Flush auto-dismiss timer started by LockScreen.
       await tester.pump(const Duration(seconds: 5));

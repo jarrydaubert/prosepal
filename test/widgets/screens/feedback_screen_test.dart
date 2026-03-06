@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:prosepal/core/providers/providers.dart';
 import 'package:prosepal/features/settings/feedback_screen.dart';
+import 'package:prosepal/shared/theme/app_colors.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../mocks/mock_subscription_service.dart';
@@ -70,5 +71,23 @@ void main() {
     await tester.pump();
 
     expect(find.text('Please enter a message'), findsOneWidget);
+  });
+
+  testWidgets('toggle labels use readable contrast colors', (tester) async {
+    await tester.pumpWidget(buildTestWidget());
+    await tester.pumpAndSettle();
+
+    final diagnosticsLabel = tester.widget<Text>(
+      find.text('Include diagnostic logs'),
+    );
+    expect(diagnosticsLabel.style?.color, AppColors.textPrimary);
+
+    await tester.tap(find.byType(Switch).first);
+    await tester.pumpAndSettle();
+
+    final technicalLabel = tester.widget<Text>(
+      find.text('Include full technical details (advanced)'),
+    );
+    expect(technicalLabel.style?.color, AppColors.textPrimary);
   });
 }
