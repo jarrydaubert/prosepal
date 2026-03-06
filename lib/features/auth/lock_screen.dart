@@ -167,9 +167,10 @@ class _LockScreenState extends State<LockScreen> {
 
             Text(
               'Prosepal',
-              style: Theme.of(
-                context,
-              ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
+              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
             ).animate().fadeIn(delay: 100.ms),
 
             const SizedBox(height: AppSpacing.sm),
@@ -237,7 +238,7 @@ class _LockScreenState extends State<LockScreen> {
                 'Having trouble? Make sure $_biometricType is set up in your device settings.',
                 style: Theme.of(
                   context,
-                ).textTheme.bodySmall?.copyWith(color: AppColors.textHint),
+                ).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
                 textAlign: TextAlign.center,
               ).animate().fadeIn(),
             ],

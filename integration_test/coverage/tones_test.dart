@@ -31,26 +31,34 @@ void main() {
         await tester.tap(find.text('Birthday'));
         await tester.pumpAndSettle();
 
-        if (exists(find.text('Close Friend'))) {
-          await tester.tap(find.text('Close Friend'));
-          await tester.pumpAndSettle();
-        }
-        if (exists(find.text('Continue'))) {
-          await tester.tap(find.text('Continue'));
-          await tester.pumpAndSettle();
-        }
+        expect(
+          exists(find.text('Close Friend')),
+          isTrue,
+          reason: 'Expected Close Friend relationship option',
+        );
+        await tester.tap(find.text('Close Friend'));
+        await tester.pumpAndSettle();
+
+        expect(
+          exists(find.text('Continue')),
+          isTrue,
+          reason: 'Expected Continue button before tone selection',
+        );
+        await tester.tap(find.text('Continue'));
+        await tester.pumpAndSettle();
 
         // Now on tone step
-        if (await scrollToText(tester, tone, delta: 100)) {
-          await tester.tap(find.text(tone));
-          await tester.pumpAndSettle();
+        final toneVisible = await scrollToText(tester, tone, delta: 100);
+        expect(toneVisible, isTrue, reason: '$tone should be visible');
 
-          expect(
-            exists(find.text('Continue')),
-            isTrue,
-            reason: '$tone should be selectable',
-          );
-        }
+        await tester.tap(find.text(tone));
+        await tester.pumpAndSettle();
+
+        expect(
+          exists(find.text('Continue')),
+          isTrue,
+          reason: '$tone should be selectable',
+        );
       });
     }
   });

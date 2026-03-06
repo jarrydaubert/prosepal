@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -124,6 +125,10 @@ class HomeScreen extends ConsumerWidget {
                                       onPressed: () {
                                         FocusManager.instance.primaryFocus
                                             ?.unfocus();
+                                        SystemChannels.textInput
+                                            .invokeMethod<void>(
+                                              'TextInput.hide',
+                                            );
                                         context.pushNamed('calendar');
                                       },
                                       tooltip: 'Upcoming occasions',
@@ -136,6 +141,10 @@ class HomeScreen extends ConsumerWidget {
                                       onPressed: () {
                                         FocusManager.instance.primaryFocus
                                             ?.unfocus();
+                                        SystemChannels.textInput
+                                            .invokeMethod<void>(
+                                              'TextInput.hide',
+                                            );
                                         context.pushNamed('history');
                                       },
                                       tooltip: 'Message history',
@@ -151,6 +160,10 @@ class HomeScreen extends ConsumerWidget {
                                       onPressed: () {
                                         FocusManager.instance.primaryFocus
                                             ?.unfocus();
+                                        SystemChannels.textInput
+                                            .invokeMethod<void>(
+                                              'TextInput.hide',
+                                            );
                                         context.pushNamed('settings');
                                       },
                                       tooltip: 'Settings',
@@ -288,6 +301,9 @@ class HomeScreen extends ConsumerWidget {
                       _dismissFirstActionHint(ref);
                     }
                     FocusManager.instance.primaryFocus?.unfocus();
+                    SystemChannels.textInput.invokeMethod<void>(
+                      'TextInput.hide',
+                    );
                     ref.read(selectedOccasionProvider.notifier).state =
                         occasion;
                     // Clear search when selecting
@@ -298,6 +314,9 @@ class HomeScreen extends ConsumerWidget {
                         // when user returns home from the wizard flow.
                         ref.read(occasionSearchProvider.notifier).state = '';
                         FocusManager.instance.primaryFocus?.unfocus();
+                        SystemChannels.textInput.invokeMethod<void>(
+                          'TextInput.hide',
+                        );
                       }),
                     );
                   },
@@ -429,6 +448,7 @@ class _OccasionSearchFieldState extends State<_OccasionSearchField> {
     _controller.clear();
     widget.onChanged('');
     _focusNode.unfocus();
+    SystemChannels.textInput.invokeMethod<void>('TextInput.hide');
   }
 
   @override
@@ -445,6 +465,7 @@ class _OccasionSearchFieldState extends State<_OccasionSearchField> {
       }
       if (!hasText) {
         _focusNode.unfocus();
+        SystemChannels.textInput.invokeMethod<void>('TextInput.hide');
       }
     }
   }

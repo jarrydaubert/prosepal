@@ -149,10 +149,31 @@ void main() {
         await tester.pumpWidget(buildTestWidget(result: createTestResult()));
         await tester.pumpAndSettle();
 
-        await tester.tap(find.byIcon(Icons.close));
+        await tester.tap(find.byIcon(Icons.chevron_left_rounded));
         await tester.pumpAndSettle();
 
         expect(find.text('Home'), findsOneWidget);
+      });
+
+      testWidgets('uses canonical back chevron and padded Gemini attribution', (
+        tester,
+      ) async {
+        await tester.pumpWidget(buildTestWidget(result: createTestResult()));
+        await tester.pumpAndSettle();
+
+        expect(find.byIcon(Icons.chevron_left_rounded), findsOneWidget);
+        expect(find.byIcon(Icons.close), findsNothing);
+
+        final attributionPadding = tester.widget<Padding>(
+          find.ancestor(
+            of: find.text('Built with Google Gemini'),
+            matching: find.byType(Padding),
+          ),
+        );
+        expect(
+          attributionPadding.padding,
+          const EdgeInsets.fromLTRB(20, 12, 20, 0),
+        );
       });
 
       testWidgets('Start Over button navigates to home', (tester) async {
@@ -407,19 +428,12 @@ void main() {
     });
 
     group('Accessibility', () {
-      testWidgets('close button has semantic label', (tester) async {
+      testWidgets('back button has semantic label', (tester) async {
         await tester.pumpWidget(buildTestWidget(result: createTestResult()));
         await tester.pumpAndSettle();
 
-        final closeButton = find.byIcon(Icons.close);
-        expect(closeButton, findsOneWidget);
-
-        // Close button is inside a GestureDetector with Semantics
-        final gestureDetector = find.ancestor(
-          of: closeButton,
-          matching: find.byType(GestureDetector),
-        );
-        expect(gestureDetector, findsOneWidget);
+        expect(find.byIcon(Icons.chevron_left_rounded), findsOneWidget);
+        expect(find.bySemanticsLabel('Back'), findsWidgets);
       });
 
       testWidgets('message text is selectable', (tester) async {

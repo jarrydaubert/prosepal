@@ -14,6 +14,7 @@ import '../../core/models/models.dart';
 import '../../core/providers/providers.dart';
 import '../../core/services/log_service.dart';
 import '../../core/services/usage_service.dart';
+import '../../shared/components/app_back_button.dart';
 import '../../shared/components/app_button.dart';
 import '../../shared/components/app_emoji.dart';
 import '../../shared/components/app_surface_card.dart';
@@ -85,7 +86,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                 color: AppColors.textPrimary,
               ),
             ),
-            leading: _CloseButton(onPressed: _returnHome),
+            leading: AppBackButton(onPressed: _returnHome),
           ),
           body: Column(
             children: [
@@ -134,7 +135,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
 
               // Gemini attribution
               const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20),
+                padding: EdgeInsets.fromLTRB(20, 12, 20, 0),
                 child: Text(
                   'Built with Google Gemini',
                   style: TextStyle(fontSize: 12, color: AppColors.textHint),
@@ -355,6 +356,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
     resetGenerationForm(ref);
     ref.read(occasionSearchProvider.notifier).state = '';
     FocusManager.instance.primaryFocus?.unfocus();
+    SystemChannels.textInput.invokeMethod<void>('TextInput.hide');
     context.go('/home');
   }
 
@@ -516,34 +518,6 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
 // =============================================================================
 // COMPONENTS
 // =============================================================================
-
-class _CloseButton extends StatelessWidget {
-  const _CloseButton({required this.onPressed});
-
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(left: 8),
-    child: Semantics(
-      label: 'Close and return home',
-      button: true,
-      child: GestureDetector(
-        onTap: onPressed,
-        child: Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: AppColors.primaryLight,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.primary, width: 2),
-          ),
-          child: const Icon(Icons.close, color: AppColors.primary, size: 20),
-        ),
-      ),
-    ),
-  );
-}
 
 class _ContextHeader extends StatelessWidget {
   const _ContextHeader({required this.result});
