@@ -226,6 +226,14 @@ void main() {
     await FormRestorationService(mockPrefs).clearGenerateFormState();
   }
 
+  TextField findTextFieldByHint(WidgetTester tester, String hintText) =>
+      tester.widget<TextField>(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is TextField && widget.decoration?.hintText == hintText,
+        ),
+      );
+
   /// Helper to navigate from step 1 to step 2
   Future<void> navigateToStep2(WidgetTester tester) async {
     await tester.tap(find.text('Close Friend'));
@@ -348,6 +356,35 @@ void main() {
         );
       }
     });
+  });
+
+  group('GenerateScreen Input Configuration', () {
+    testWidgetsWithPumps(
+      'recipient and details fields expose expected keyboard hints',
+      (tester) async {
+        await tester.pumpWidget(
+          createTestableGenerateScreen(selectedOccasion: Occasion.birthday),
+        );
+        await tester.pump(const Duration(seconds: 1));
+        await navigateToStep3(tester);
+
+        final recipientField = findTextFieldByHint(
+          tester,
+          'e.g., Sarah, Mom, John',
+        );
+        final detailsField = findTextFieldByHint(
+          tester,
+          'Add as much detail as possible for a more personalized message...',
+        );
+
+        expect(recipientField.textCapitalization, TextCapitalization.words);
+        expect(recipientField.keyboardType, TextInputType.text);
+        expect(recipientField.autofillHints, contains(AutofillHints.name));
+
+        expect(detailsField.textCapitalization, TextCapitalization.sentences);
+        expect(detailsField.keyboardType, TextInputType.multiline);
+      },
+    );
   });
 
   // ============================================================

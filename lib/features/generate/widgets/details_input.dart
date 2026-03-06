@@ -106,8 +106,10 @@ class _DetailsInputState extends State<DetailsInput> {
             focusNode: _nameFocusNode,
             hintText: 'e.g., Sarah, Mom, John',
             icon: Icons.person_outline,
-            keyboardType: TextInputType.name,
+            keyboardType: TextInputType.text,
             maxLength: 50,
+            autofillHints: const [AutofillHints.name],
+            textCapitalization: TextCapitalization.words,
             onChanged: widget.onRecipientNameChanged,
           ),
           const SizedBox(height: 24),
@@ -131,6 +133,7 @@ class _DetailsInputState extends State<DetailsInput> {
             keyboardType: TextInputType.text,
             maxLines: 4,
             maxLength: 300,
+            textCapitalization: TextCapitalization.sentences,
             onChanged: widget.onPersonalDetailsChanged,
           ),
           const SizedBox(height: 24),
@@ -177,6 +180,8 @@ class _StyledTextField extends StatefulWidget {
     this.focusNode,
     this.maxLines = 1,
     this.maxLength,
+    this.autofillHints,
+    this.textCapitalization,
   });
 
   final TextEditingController controller;
@@ -187,6 +192,8 @@ class _StyledTextField extends StatefulWidget {
   final FocusNode? focusNode;
   final int maxLines;
   final int? maxLength;
+  final Iterable<String>? autofillHints;
+  final TextCapitalization? textCapitalization;
 
   @override
   State<_StyledTextField> createState() => _StyledTextFieldState();
@@ -250,6 +257,7 @@ class _StyledTextFieldState extends State<_StyledTextField> {
         controller: widget.controller,
         focusNode: _effectiveFocusNode,
         keyboardType: effectiveKeyboardType,
+        autofillHints: widget.autofillHints,
         minLines: isMultiLine ? widget.maxLines : 1,
         maxLines: widget.maxLines,
         maxLength: widget.maxLength,
@@ -263,10 +271,13 @@ class _StyledTextFieldState extends State<_StyledTextField> {
         textAlignVertical: isMultiLine
             ? TextAlignVertical.top
             : TextAlignVertical.center,
-        textCapitalization: isMultiLine
-            ? TextCapitalization.sentences
-            : TextCapitalization.words,
+        textCapitalization:
+            widget.textCapitalization ??
+            (isMultiLine
+                ? TextCapitalization.sentences
+                : TextCapitalization.words),
         textInputAction: TextInputAction.done,
+        scrollPadding: const EdgeInsets.only(bottom: 140),
         onChanged: widget.onChanged,
         onSubmitted: (_) => FocusScope.of(context).unfocus(),
         onEditingComplete: () => FocusScope.of(context).unfocus(),

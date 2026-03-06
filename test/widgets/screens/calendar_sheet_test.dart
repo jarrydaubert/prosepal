@@ -84,6 +84,9 @@ void main() {
 
     expect(fields, hasLength(2));
     expect(fields.first.textCapitalization, TextCapitalization.words);
+    expect(fields.first.keyboardType, TextInputType.text);
+    expect(fields.first.autofillHints, contains(AutofillHints.name));
     expect(fields.last.textCapitalization, TextCapitalization.sentences);
+    expect(fields.last.keyboardType, TextInputType.multiline);
   });
 }

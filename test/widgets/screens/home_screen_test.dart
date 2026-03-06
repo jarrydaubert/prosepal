@@ -142,6 +142,22 @@ void main() {
       }
     });
 
+    testWidgets('search field uses expected keyboard hints', (tester) async {
+      await tester.pumpWidget(createTestableHomeScreen());
+      await tester.pump(const Duration(milliseconds: 300));
+
+      final searchField = tester.widget<TextField>(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is TextField &&
+              widget.decoration?.hintText == 'Search occasions...',
+        ),
+      );
+
+      expect(searchField.textCapitalization, TextCapitalization.words);
+      expect(searchField.keyboardType, TextInputType.text);
+    });
+
     testWidgets('should display occasion emojis', (tester) async {
       await tester.pumpWidget(createTestableHomeScreen());
       await tester.pump(const Duration(milliseconds: 300));

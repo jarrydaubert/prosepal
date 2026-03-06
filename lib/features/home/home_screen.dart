@@ -462,6 +462,8 @@ class _OccasionSearchFieldState extends State<_OccasionSearchField> {
     controller: _controller,
     focusNode: _focusNode,
     onChanged: widget.onChanged,
+    keyboardType: TextInputType.text,
+    textCapitalization: TextCapitalization.words,
     textInputAction: TextInputAction.done,
     onSubmitted: (_) => FocusScope.of(context).unfocus(),
     onTapOutside: (_) => FocusScope.of(context).unfocus(),

@@ -1097,61 +1097,59 @@ class _DeleteConfirmationDialogState extends State<_DeleteConfirmationDialog> {
 
   @override
   Widget build(BuildContext context) => AlertDialog(
+    scrollable: true,
     title: const Text('Are you absolutely sure?'),
-    content: SingleChildScrollView(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('You will lose:'),
-          const SizedBox(height: 8),
-          const Text('• All your generated messages'),
-          const Text('• Your account and preferences'),
-          const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: AppColors.proGold.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: AppColors.proGold.withValues(alpha: 0.4),
-              ),
-            ),
-            child: const Row(
-              children: [
-                Icon(Icons.info_outline, color: AppColors.proGold, size: 20),
-                SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Active subscriptions are not automatically cancelled. '
-                    'Manage subscriptions in your device Settings.',
-                    style: TextStyle(fontSize: 13),
-                  ),
+    content: Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('You will lose:'),
+        const SizedBox(height: 8),
+        const Text('• All your generated messages'),
+        const Text('• Your account and preferences'),
+        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: AppColors.proGold.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: AppColors.proGold.withValues(alpha: 0.4)),
+          ),
+          child: const Row(
+            children: [
+              Icon(Icons.info_outline, color: AppColors.proGold, size: 20),
+              SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Active subscriptions are not automatically cancelled. '
+                  'Manage subscriptions in your device Settings.',
+                  style: TextStyle(fontSize: 13),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-          const SizedBox(height: 16),
-          const Text(
-            'Type DELETE to confirm:',
-            style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 16),
+        const Text(
+          'Type DELETE to confirm:',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 8),
+        TextField(
+          controller: _controller,
+          autofocus: true,
+          textCapitalization: TextCapitalization.characters,
+          textInputAction: TextInputAction.done,
+          scrollPadding: const EdgeInsets.only(bottom: 160),
+          onSubmitted: (_) => FocusScope.of(context).unfocus(),
+          onTapOutside: (_) => FocusScope.of(context).unfocus(),
+          decoration: const InputDecoration(
+            hintText: 'DELETE',
+            border: OutlineInputBorder(),
+            isDense: true,
           ),
-          const SizedBox(height: 8),
-          TextField(
-            controller: _controller,
-            autofocus: true,
-            textCapitalization: TextCapitalization.characters,
-            textInputAction: TextInputAction.done,
-            onSubmitted: (_) => FocusScope.of(context).unfocus(),
-            onTapOutside: (_) => FocusScope.of(context).unfocus(),
-            decoration: const InputDecoration(
-              hintText: 'DELETE',
-              border: OutlineInputBorder(),
-              isDense: true,
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     ),
     actions: [
       TextButton(

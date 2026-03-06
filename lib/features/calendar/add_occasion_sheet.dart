@@ -126,8 +126,11 @@ class _AddOccasionSheetState extends ConsumerState<AddOccasionSheet> {
             const SizedBox(height: 8),
             TextField(
               controller: _nameController,
+              keyboardType: TextInputType.text,
               textCapitalization: TextCapitalization.words,
               textInputAction: TextInputAction.done,
+              autofillHints: const [AutofillHints.name],
+              scrollPadding: const EdgeInsets.only(bottom: 140),
               onSubmitted: (_) => FocusScope.of(context).unfocus(),
               onTapOutside: (_) => FocusScope.of(context).unfocus(),
               decoration: InputDecoration(
@@ -164,8 +167,10 @@ class _AddOccasionSheetState extends ConsumerState<AddOccasionSheet> {
             TextField(
               controller: _notesController,
               maxLines: 2,
+              keyboardType: TextInputType.multiline,
               textCapitalization: TextCapitalization.sentences,
               textInputAction: TextInputAction.done,
+              scrollPadding: const EdgeInsets.only(bottom: 140),
               onSubmitted: (_) => FocusScope.of(context).unfocus(),
               onTapOutside: (_) => FocusScope.of(context).unfocus(),
               decoration: InputDecoration(
