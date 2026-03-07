@@ -283,6 +283,18 @@ Preferred review questions for test PRs:
 4. What exact condition proves fail?
 5. If this stayed green, what important regression could still sneak through?
 
+Backlog/DoD rule for behavior changes:
+
+- A backlog item that changes runtime behavior is not done unless the change
+  also defines its regression protection.
+- Preferred outcome: automated coverage at the correct layer.
+- If automation is intentionally not added, the PR/backlog evidence must state:
+  - the named bug target
+  - why that test layer is wrong or impractical
+  - the explicit pass/fail oracle
+  - the replacement evidence path (for example wired-device capture, TestFlight
+    sanity, or manual console verification)
+
 ### Local Baseline
 
 ```bash

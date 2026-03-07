@@ -21,6 +21,16 @@ Prefer one high-signal test with a strong oracle over many low-signal
 click-through tests. If a test cannot explain its bug target and failure
 contract, rewrite it or delete it.
 
+For backlog/PR completion:
+
+- if a change affects runtime behavior, "done" must include regression
+  protection
+- preferred outcome is automated coverage at the right layer
+- if automation is not the right tool, the PR must still name:
+  - the bug target
+  - the pass/fail oracle
+  - the evidence path being relied on instead
+
 ## Commands
 
 ```bash

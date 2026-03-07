@@ -5,6 +5,9 @@ Only open TODO items live here.
 Rules:
 - No status updates, progress notes, or completed work.
 - Every item must include a clear, testable Definition of Done (DoD).
+- If an item changes runtime behavior, its DoD must also describe the intended
+  regression protection: automated test coverage at the right layer or an
+  explicit evidence path that replaces automation.
 - When an item is complete, remove it from this file.
 
 ## Global DoD Contract (Applies To Every Item)
@@ -12,11 +15,20 @@ Rules:
 A backlog item is only considered complete when all conditions below are true:
 
 1. `Outcome delivered`: The row's feature/fix/docs scope is implemented exactly as written.
-2. `Deterministic validation passed`: Relevant validation commands pass with no manual interpretation required.
-3. `Evidence attached`: PR/release evidence includes concrete proof (logs, screenshots, CI run IDs, or artifact links) for the completed outcome.
-4. `Backlog hygiene`: The completed item is removed from this file in the same change set that provides outcome + validation + evidence.
+2. `Regression protection defined`: If the change affects behavior, the completion change set must either add/update the right automated test coverage or explicitly justify why automated coverage is not the correct layer. That justification must name the intended bug target, the pass/fail oracle, and the evidence source that replaces automation.
+3. `Deterministic validation passed`: Relevant validation commands pass with no manual interpretation required.
+4. `Evidence attached`: PR/release evidence includes concrete proof (logs, screenshots, CI run IDs, or artifact links) for the completed outcome.
+5. `Backlog hygiene`: The completed item is removed from this file in the same change set that provides outcome + validation + evidence.
 
 If any condition is missing, the item remains open.
+
+## Backlog Mantra
+
+- Open TODO items only.
+- Clear, testable DoD only.
+- Behavior changes must say how they stay fixed:
+  - automated test coverage at the right layer, or
+  - an explicit replacement evidence path with a named bug target and oracle.
 
 ## Release Priority Order (next post-submission cycle)
 
