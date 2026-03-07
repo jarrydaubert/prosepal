@@ -243,6 +243,46 @@ Keep update load safe for free-tier CI minutes:
 
 ## Test And Validation Model
 
+### Test Design Standard
+
+Every test added to this repo must answer one question first:
+
+- What bug is this test trying to find?
+
+A green result is only meaningful when the test has a credible oracle and a
+clear failure mode. Test count, broad click-through coverage, and coverage
+percentages are not success metrics by themselves.
+
+Required quality bar for any new or retained test:
+
+1. `Bug-oriented`: the test targets a concrete regression, failure mode, or
+   user-risk scenario.
+2. `Layer-appropriate`: the test runs at the lowest layer that can detect the
+   bug reliably.
+3. `Explicit oracle`: pass/fail is tied to the state that actually proves
+   correctness, not a vague proxy like "screen still renders".
+4. `Actionable failure`: when it fails, the reason identifies the missing
+   state, broken transition, or violated contract.
+5. `Deterministic`: the test should not depend on optional branches, silent
+   skips, or ambient external state unless that dependency is the thing being
+   verified.
+
+Reject or rewrite tests that:
+
+- only prove the app did not crash without asserting the intended outcome
+- click through long flows without a named bug target
+- accept multiple unrelated end states without documenting why
+- silently skip core checkpoints with optional `if (exists(...))` logic
+- use brittle finders when a stable semantic/key-based finder exists
+
+Preferred review questions for test PRs:
+
+1. What bug would this fail on?
+2. Why is this the right layer for that bug?
+3. What exact condition proves pass?
+4. What exact condition proves fail?
+5. If this stayed green, what important regression could still sneak through?
+
 ### Local Baseline
 
 ```bash

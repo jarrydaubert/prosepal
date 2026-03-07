@@ -8,6 +8,11 @@
 /// - Journey tests: User can't complete a critical flow
 /// - Coverage tests: Specific option causes crash
 ///
+/// A passing test here must do more than keep the app alive. It should assert
+/// a concrete state transition or user-visible contract tied to the bug named
+/// in the test description. Broad click-through coverage without a strong
+/// oracle should be rewritten or removed.
+///
 /// Build for Firebase Test Lab:
 ///   # Android
 ///   flutter build apk --debug -t integration_test/e2e_test.dart
