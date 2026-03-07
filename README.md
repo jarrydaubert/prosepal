@@ -90,6 +90,15 @@ This repo deliberately does not try to force every test into one framework.
 - Firebase Test Lab gives repeatable hardware-backed evidence
 - Patrol should be used only where Flutter alone is weak
 
+Quality matters more than test count:
+
+- one high-signal test with a strong oracle is better than ten shallow
+  click-through tests
+- green is only trustworthy when pass/fail is tied to the bug the test is meant
+  to catch
+- low-signal or silently-skipping tests should be rewritten or removed, not
+  defended because they increase numbers
+
 That split is intentional. It is the test strategy I would use on a real mobile team.
 
 ## Evidence

@@ -8,6 +8,19 @@ This file is intentionally concise. Test strategy and policy live in docs.
 - [Docs Policy](../docs/DOCS_POLICY.md)
 - [Backlog](../docs/BACKLOG.md)
 
+## Quality Bar
+
+Before adding or keeping a test, be able to answer:
+
+1. What bug is this test trying to find?
+2. Why is this the right test layer?
+3. What exact state proves pass?
+4. What exact state proves fail?
+
+Prefer one high-signal test with a strong oracle over many low-signal
+click-through tests. If a test cannot explain its bug target and failure
+contract, rewrite it or delete it.
+
 ## Commands
 
 ```bash
