@@ -18,42 +18,35 @@ A backlog item is only considered complete when all conditions below are true:
 
 If any condition is missing, the item remains open.
 
-## Release Priority Order (vNext)
+## Release Priority Order (next post-submission cycle)
 
 Process items in this order unless an explicit owner override is recorded in release planning.
 
-1. `P0-07` Next iOS release readiness checklist
-2. `VNEXT-08` Wired physical-device validation gates
+1. `P0-08` Design token consistency and contrast hardening
+2. `P1-24` Deterministic integration journey assertions
 3. `P1-43` Firebase AI client-block regression hardening
-4. `VNEXT-10` AI cost/abuse controls
-5. `VNEXT-09` iOS script-only archive validation
-6. `P0-09` iOS/Android launch and auth visual parity
-7. `P0-08` Design token consistency and contrast hardening
-8. `P1-24` Deterministic integration journey assertions
-9. `P1-39` Android smoke integration harness stall (`did not complete`)
-10. `P1-41` Network-independent smoke deterministic mode
-11. `P1-36` Journey launch readiness hardening
-12. `P1-48` Startup phase telemetry and budget visibility
-13. `P1-52` Biometric lifecycle debounce + single-flight guard
-14. `VNEXT-11` Canonical identity mapping
-15. `VNEXT-13` Device abuse-control compliance decision
-16. `VNEXT-12` UI parity with live baseline
-17. `P0-05` Billing budget alert controls
-18. `P0-04` Auth loading spinner after OAuth sheet
-19. `P0-01` Move Google setup to business account
-20. `P1-47` Server-side AI gateway rollout (post-launch trigger)
-21. `P2-13` Startup orchestration refactor (post-launch)
+4. `P1-41` Network-independent smoke deterministic mode
+5. `VNEXT-10` AI cost/abuse controls
+6. `P2-17` RevenueCat transfer metadata hydration
+7. `P2-16` Public QA showcase packaging
+8. `P2-18` AI technical-depth showcase
+9. `P1-48` Startup phase telemetry and budget visibility
+10. `P1-52` Biometric lifecycle debounce + single-flight guard
+11. `VNEXT-11` Canonical identity mapping
+12. `VNEXT-13` Device abuse-control compliance decision
+13. `VNEXT-12` UI parity with live baseline
+14. `P0-05` Billing budget alert controls
+15. `P0-04` Auth loading spinner after OAuth sheet
+16. `P0-01` Move Google setup to business account
+17. `P1-47` Server-side AI gateway rollout (post-launch trigger)
+18. `P2-13` Startup orchestration refactor (post-launch)
 
 ## P0 - Launch Blockers
 
 | ID | Item | Definition of Done |
 |----|------|--------------------|
-| `P0-07` | Next iOS release readiness checklist | `docs/IOS_RELEASE_CHECKLIST.md` contains an explicit pre-release checklist and every line item is executed with evidence: version/build bump, `flutter analyze`, `flutter test`, `./scripts/test_critical_smoke.sh`, wired iOS smoke/journey run, scripted iOS archive success, Crashlytics dSYM upload verification, Firebase App Check + AI generation verification on physical iOS, RevenueCat entitlement/paywall verification, Supabase auth/provider verification, live Remote Config sanity review for release-critical keys/model IDs, App Store Connect metadata/release notes/screenshots review, TestFlight sanity pass, git-history secret audit (`git log --all -- .env.local` + CI secret scan output), and rollback path confirmation with owner sign-off. |
-| `VNEXT-08` | Wired physical-device validation gates | Critical suite passes on one wired iOS and one wired Android physical device; release evidence bundle is captured and attached. |
 | `P0-08` | Design token consistency and contrast hardening | Core screens (`home`, `generate`, `results`, `history`, `settings`, `calendar`, `auth`, onboarding, `lock`, `paywall`, including feedback/settings subflows) use shared semantic tokens only (canonical palette: navy/slate backgrounds, coral actions, white/light surfaces) with no light-on-light or dark-on-dark regressions. Back navigation controls are visually consistent across screens, text-field prefix/suffix icon alignment is consistent, results-screen attribution/footer spacing is visually balanced, settings/feedback toggle labels remain readable against their background, lock/Face ID copy remains readable on subsequent launch, and text-entry surfaces provide deterministic keyboard-dismiss behavior (`done` action and/or explicit dismiss affordance) including returning from generate/results flows to home without leaving the search keyboard open. DoD evidence requires: updated golden baseline for affected core screens, physical iOS + Android screenshots for each affected flow, explicit verification that the results screen uses the canonical back chevron treatment, explicit verification that Gemini attribution copy has correct spacing above action buttons, explicit verification that feedback-screen toggle labels meet readable contrast, explicit verification that the lock/biometric screen meets readable contrast on subsequent app launch, and an explicit WCAG AA manual verification note for primary text before RC cut. |
-| `P0-09` | iOS/Android launch and auth visual parity | Cold-launch capture on physical iOS and Android shows matching launch background tone, no white/grey flash during transition to Flutter splash/auth, and consistent auth-screen logo/button contrast treatment. Evidence screenshots/videos are attached in release artifact bundle. |
 | `P0-05` | Billing budget alert controls | Budget thresholds and notification channels are configured and verified through a dry-run alert path. |
-| `VNEXT-09` | iOS script-only archive validation | Release-candidate archive succeeds via scripted iOS build path and evidence confirms non-scripted archive paths are not used. |
 | `P0-04` | Auth loading spinner after OAuth sheet | After Apple/Google auth sheet closes, UI shows deterministic loading state until auth completion resolves or fails with user-visible error. |
 | `P0-01` | Move Google setup to business account | Google/Play Console ownership is migrated to business account, required permissions are validated, and Android release flow works without personal-account blockers. |
 | `VNEXT-10` | AI cost/abuse controls | API and app restrictions are verified, budget alerts are configured, App Check production posture is confirmed, release Remote Config kill-switch/model allowlist state is reviewed, kill-switch drill passes, and `docs/DEVOPS.md` reflects final policy. |
@@ -73,7 +66,6 @@ Process items in this order unless an explicit owner override is recorded in rel
 | `P1-40` | Startup/router timeout guard under network faults | Splash/startup routing reaches an explicit terminal route (`/onboarding`, `/home`, `/auth`, `/lock`, or init error surface) within a bounded timeout even when Supabase/RevenueCat DNS fails. Returning-user entitlement routing is deterministic under delayed RevenueCat init (no false `/onboarding` fallback followed by corrective auth/restore reroute). Integration tests cover both network-fault and delayed-entitlement scenarios with deterministic pass/fail assertions. |
 | `P1-52` | Biometric lifecycle debounce + single-flight guard | Biometric lock flow guarantees a single active prompt per foreground transition, ignores duplicate resume/inactive callbacks inside a bounded debounce window, and logs one stable lifecycle transition per lock attempt. Device tests on iOS confirm no rapid repeated `Biometric auth started` bursts during Face ID enable/disable and resume flows. |
 | `P1-41` | Network-independent smoke deterministic mode | `integration_test/smoke_test.dart` has a documented deterministic mode (or injected fakes) that removes dependency on live Supabase/RevenueCat reachability for core S1-S5 assertions. CI/device smoke remains stable when outbound network is unavailable or flaky, and the home/onboarding checkpoint does not depend on live backend timing to reach `What's the occasion?` or `Birthday`. |
-| `P1-39` | Android smoke integration harness stall (`did not complete`) | `flutter test -d <android-device> integration_test/smoke_test.dart` completes deterministically on wired hardware. No test hangs at `S1` with `+0` progress, and failures (if any) surface as explicit assertions/timeouts with actionable stack traces. |
 | `P1-36` | Journey launch readiness hardening | `integration_test/journeys/_helpers.dart` `launchApp()` waits for a concrete ready surface (onboarding/auth/home) with bounded timeout and clear failure reasons. `j1_fresh_install_test.dart` no longer produces `did not complete` behavior during wired-device execution. |
 | `P1-38` | E2E suite failure isolation | `integration_test/e2e_test.dart` execution is split or orchestrated so one early failure does not collapse the full suite into mass `did not complete` noise. Each shard outputs independent pass/fail and artifacts. |
 | `P1-34` | Offline-safe integration font loading | Integration runs do not depend on live `fonts.gstatic.com` fetches. `google_fonts` runtime fetching is disabled in test mode (or fonts are bundled/preloaded), and `integration_test/smoke_test.dart` + `integration_test/e2e_test.dart` pass without DNS/network access. |
@@ -121,3 +113,4 @@ Process items in this order unless an explicit owner override is recorded in rel
 | `P2-14` | Re-evaluate custom-lint compatibility | On a scheduled toolchain review, verify whether the published `custom_lint`/`riverpod_lint` ecosystem is compatible with the current Flutter/Dart/Riverpod analyzer line, document the decision in `docs/DEVOPS.md`, and either reintroduce the lint stack with passing `flutter analyze`/`flutter test`/`./scripts/test_critical_smoke.sh` or explicitly keep it deferred with recorded evidence. |
 | `P2-16` | Public QA showcase packaging | `README.md` includes a concise risk-to-test-layer matrix, links to concrete evidence sources for local, wired-device, Patrol native-risk, and Firebase Test Lab runs, and describes Patrol/FTL usage honestly as selective native-risk coverage rather than the mainline harness. The public story must explicitly favor a small number of high-signal, bug-oriented tests over inflated test counts or threshold-chasing. `docs/DEVOPS.md` and linked runbooks expose runnable commands for collecting that evidence, the public wording is reviewed against the actual repo workflows/harnesses, and a repo-owner walkthrough confirms the showcase story is accurate and portfolio-ready. |
 | `P2-17` | RevenueCat transfer metadata hydration | `user_entitlements` rows created from RevenueCat `TRANSFER` flows preserve or recover canonical `product_id` and `expires_at` values instead of leaving them null. Delete-account/recreate/restore/sign-in validation proves the backend row contains `is_pro=true` plus non-null metadata, and the recovery path is documented in `docs/DEVOPS.md` if webhook/event ordering can still temporarily omit those fields. |
+| `P2-18` | AI technical-depth showcase | The repo and app make the AI system design legible and impressive without hand-waving: public docs explain the pinned-model strategy, Remote Config controls, App Check posture, structured JSON contract, fallback path, and typed error handling; diagnostics/support surfaces expose the active AI backend/model configuration without leaking secrets; and at least one reproducible evidence path demonstrates a non-happy-path AI behavior (for example fallback-model recovery, client-block triage, or blocked-content classification) with a clear oracle and captured artifact. |
