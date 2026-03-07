@@ -46,8 +46,12 @@ Future<void> screenshot(WidgetTester tester, String name) async {
 Future<void> launchApp(
   WidgetTester tester, {
   bool seedFreeTierUsed = false,
+  bool seedOnboardingCompleted = false,
 }) async {
-  await _resetPersistentState(seedFreeTierUsed: seedFreeTierUsed);
+  await _resetPersistentState(
+    seedFreeTierUsed: seedFreeTierUsed,
+    seedOnboardingCompleted: seedOnboardingCompleted,
+  );
   app.main();
   binding.scheduleWarmUpFrame();
   final reachedReadySurface = await waitForAnyText(tester, const [
@@ -369,13 +373,19 @@ Future<bool> tapBack(WidgetTester tester) async {
   return false;
 }
 
-Future<void> _resetPersistentState({bool seedFreeTierUsed = false}) async {
+Future<void> _resetPersistentState({
+  bool seedFreeTierUsed = false,
+  bool seedOnboardingCompleted = false,
+}) async {
   // Use real plugin storage for device integration runs.
   // Mock initial-values helpers are unit/widget-test oriented and can leak
   // stale state across wired runs.
   final prefs = await SharedPreferences.getInstance();
   await prefs.clear();
-  await prefs.setBool(PreferenceKeys.hasCompletedOnboarding, false);
+  await prefs.setBool(
+    PreferenceKeys.hasCompletedOnboarding,
+    seedOnboardingCompleted,
+  );
   await prefs.setBool(PreferenceKeys.hasSeenFirstActionHint, false);
   await prefs.setBool(PreferenceKeys.analyticsEnabled, false);
   await prefs.setInt(PreferenceKeys.usageTotalCount, seedFreeTierUsed ? 1 : 0);

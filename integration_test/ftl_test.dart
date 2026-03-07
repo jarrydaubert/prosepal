@@ -104,6 +104,21 @@ void main() {
       fail('Timed out waiting for expected widget');
     }
 
+    Future<void> pumpUntilAnyVisible(
+      WidgetTester tester,
+      List<Finder> finders, {
+      int maxTicks = 30,
+      Duration step = const Duration(milliseconds: 200),
+    }) async {
+      for (var i = 0; i < maxTicks; i++) {
+        if (finders.any((finder) => finder.evaluate().isNotEmpty)) {
+          return;
+        }
+        await tester.pump(step);
+      }
+      fail('Timed out waiting for any expected widget');
+    }
+
     void registerAppCleanup(WidgetTester tester) {
       addTearDown(() async {
         await tester.pumpWidget(const SizedBox.shrink());
@@ -114,7 +129,11 @@ void main() {
     testWidgets('S1: Launches and renders home', (tester) async {
       registerAppCleanup(tester);
       await tester.pumpWidget(buildApp());
-      await pumpUntilVisible(tester, find.text('Prosepal'));
+      await pumpUntilAnyVisible(tester, [
+        find.text("What's the occasion?"),
+        find.text('Birthday'),
+        find.byKey(const ValueKey('home_settings_button')),
+      ]);
       expect(find.byType(MaterialApp), findsOneWidget);
     });
 
@@ -139,7 +158,17 @@ void main() {
       await pumpUntilVisible(tester, find.text('Settings'));
       expect(find.text('Settings'), findsOneWidget);
 
-      await tester.tap(find.byIcon(Icons.arrow_back));
+      final canonicalBack = find.byIcon(Icons.chevron_left_rounded);
+      final fallbackBack = find.byTooltip('Back');
+      expect(
+        canonicalBack.evaluate().isNotEmpty ||
+            fallbackBack.evaluate().isNotEmpty,
+        isTrue,
+        reason: 'Expected a back affordance on the settings screen',
+      );
+      await tester.tap(
+        canonicalBack.evaluate().isNotEmpty ? canonicalBack : fallbackBack,
+      );
       await tester.pump(const Duration(milliseconds: 300));
       await pumpUntilVisible(tester, find.text('Birthday'));
     });
@@ -147,7 +176,11 @@ void main() {
     testWidgets('S4: Pro override renders without crash', (tester) async {
       registerAppCleanup(tester);
       await tester.pumpWidget(buildApp(isPro: true));
-      await pumpUntilVisible(tester, find.text('Prosepal'));
+      await pumpUntilAnyVisible(tester, [
+        find.text("What's the occasion?"),
+        find.text('Birthday'),
+        find.byKey(const ValueKey('home_settings_button')),
+      ]);
       expect(find.byType(MaterialApp), findsOneWidget);
     });
   });

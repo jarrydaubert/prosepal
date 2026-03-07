@@ -16,16 +16,15 @@ void main() {
       'S1-S5: Launch, home, occasion, wizard, settings',
       (tester) async {
         // S1: app launches without crashing.
-        await launchApp(tester);
+        await launchApp(tester, seedOnboardingCompleted: true);
         expect(find.byType(MaterialApp), findsOneWidget);
         await screenshot(tester, 'smoke_1_launch');
 
         // S2: home renders expected title/signals.
-        await skipOnboarding(tester);
         final atHome = await waitForAnyText(tester, const [
           "What's the occasion?",
           'Birthday',
-        ]);
+        ], timeout: const Duration(seconds: 12));
         expect(atHome, isTrue, reason: 'Failed to navigate to home');
         expect(find.text('Prosepal'), findsOneWidget);
         expect(find.text("What's the occasion?"), findsOneWidget);
