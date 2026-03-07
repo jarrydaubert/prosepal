@@ -386,6 +386,9 @@ class _SplashScreenState extends ConsumerState<_SplashScreen> {
         splashHoldMs = hold.inMilliseconds;
         await Future<void>.delayed(hold);
       }
+      if (!mounted || _hasNavigated) {
+        return;
+      }
       _hasNavigated = true;
       final prefs = ref.read(sharedPreferencesProvider);
       final hasCompletedOnboarding =

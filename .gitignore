@@ -59,3 +59,6 @@ artifacts/
 # Golden test generated diffs (local diagnostics only)
 test/widgets/goldens/failures/
 test/failures/
+
+# Patrol-generated local test bundle
+integration_test/test_bundle.dart

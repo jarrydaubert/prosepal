@@ -30,20 +30,19 @@ Process items in this order unless an explicit owner override is recorded in rel
 6. `P0-09` iOS/Android launch and auth visual parity
 7. `P0-08` Design token consistency and contrast hardening
 8. `P1-24` Deterministic integration journey assertions
-9. `P1-35` Smoke suite determinism and async hygiene
-10. `P1-39` Android smoke integration harness stall (`did not complete`)
-11. `P1-41` Network-independent smoke deterministic mode
-12. `P1-36` Journey launch readiness hardening
-13. `P1-48` Startup phase telemetry and budget visibility
-14. `P1-52` Biometric lifecycle debounce + single-flight guard
-15. `VNEXT-11` Canonical identity mapping
-16. `VNEXT-13` Device abuse-control compliance decision
-17. `VNEXT-12` UI parity with live baseline
-18. `P0-05` Billing budget alert controls
-19. `P0-04` Auth loading spinner after OAuth sheet
-20. `P0-01` Move Google setup to business account
-21. `P1-47` Server-side AI gateway rollout (post-launch trigger)
-22. `P2-13` Startup orchestration refactor (post-launch)
+9. `P1-39` Android smoke integration harness stall (`did not complete`)
+10. `P1-41` Network-independent smoke deterministic mode
+11. `P1-36` Journey launch readiness hardening
+12. `P1-48` Startup phase telemetry and budget visibility
+13. `P1-52` Biometric lifecycle debounce + single-flight guard
+14. `VNEXT-11` Canonical identity mapping
+15. `VNEXT-13` Device abuse-control compliance decision
+16. `VNEXT-12` UI parity with live baseline
+17. `P0-05` Billing budget alert controls
+18. `P0-04` Auth loading spinner after OAuth sheet
+19. `P0-01` Move Google setup to business account
+20. `P1-47` Server-side AI gateway rollout (post-launch trigger)
+21. `P2-13` Startup orchestration refactor (post-launch)
 
 ## P0 - Launch Blockers
 
@@ -69,13 +68,12 @@ Process items in this order unless an explicit owner override is recorded in rel
 | `P1-48` | Startup phase telemetry and budget visibility | Existing startup flow emits structured phase telemetry (`init`, `identity`, `entitlements`, `routing`) with per-phase duration, timeout/fallback reason, and final terminal route outcome. Logs are queryable in Crashlytics/analytics, phase budgets are documented in `docs/DEVOPS.md`, and fault-injection runs prove telemetry captures degraded startup paths deterministically. |
 | `P1-43` | Firebase AI client-block regression hardening | Real-device AI generation succeeds on wired iOS and Android using the current Firebase AI + App Check setup, and failure classification distinguishes client/app-block configuration errors from true content-safety blocks. `docs/DEVOPS.md` includes a deterministic checklist for debugging `client application <empty> are blocked` responses. |
 | `P1-47` | Server-side AI gateway rollout (post-launch trigger) | A documented trigger policy exists for enabling a server-side AI gateway (abuse threshold, model-policy requirement, or provider-failover need). A non-production spike path exists behind a disabled feature flag, with parity tests proving no user-visible regression when enabled in staging. Production default remains client-direct until trigger criteria are met and approved. |
-| `P1-24` | Deterministic integration journey assertions | Journey tests in `integration_test/journeys/` stop using optional `if (exists(...))` branches for core checkpoints (auth entry, upgrade path, generation result, settings navigation) and fail explicitly when expected UI state is missing. Updated journeys run green in deterministic local/device execution and include clear assertion reasons. |
+| `P1-24` | Deterministic integration journey assertions | Journey tests in `integration_test/journeys/` stop using optional `if (exists(...))` branches for core checkpoints (auth entry, upgrade path, generation result, settings navigation) and fail explicitly when expected UI state is missing. Representative journey execution on a real mobile target completes without silent skips, and failures include clear assertion reasons tied to the missing checkpoint. |
 | `P1-42` | Auth-screen layout flake elimination | The `AuthScreen shows error banner when Google sign-in fails` test no longer produces order-dependent `RenderFlex overflow` failures during randomized multi-file runs. Root cause is fixed (test harness isolation and/or responsive layout constraints), deterministic regression coverage is added, and `./scripts/test_flake_audit.sh` shows zero flakes for this case. |
 | `P1-40` | Startup/router timeout guard under network faults | Splash/startup routing reaches an explicit terminal route (`/onboarding`, `/home`, `/auth`, `/lock`, or init error surface) within a bounded timeout even when Supabase/RevenueCat DNS fails. Returning-user entitlement routing is deterministic under delayed RevenueCat init (no false `/onboarding` fallback followed by corrective auth/restore reroute). Integration tests cover both network-fault and delayed-entitlement scenarios with deterministic pass/fail assertions. |
 | `P1-52` | Biometric lifecycle debounce + single-flight guard | Biometric lock flow guarantees a single active prompt per foreground transition, ignores duplicate resume/inactive callbacks inside a bounded debounce window, and logs one stable lifecycle transition per lock attempt. Device tests on iOS confirm no rapid repeated `Biometric auth started` bursts during Face ID enable/disable and resume flows. |
-| `P1-41` | Network-independent smoke deterministic mode | `integration_test/smoke_test.dart` has a documented deterministic mode (or injected fakes) that removes dependency on live Supabase/RevenueCat reachability for core S1-S5 assertions. CI/device smoke remains stable when outbound network is unavailable or flaky. |
+| `P1-41` | Network-independent smoke deterministic mode | `integration_test/smoke_test.dart` has a documented deterministic mode (or injected fakes) that removes dependency on live Supabase/RevenueCat reachability for core S1-S5 assertions. CI/device smoke remains stable when outbound network is unavailable or flaky, and the home/onboarding checkpoint does not depend on live backend timing to reach `What's the occasion?` or `Birthday`. |
 | `P1-39` | Android smoke integration harness stall (`did not complete`) | `flutter test -d <android-device> integration_test/smoke_test.dart` completes deterministically on wired hardware. No test hangs at `S1` with `+0` progress, and failures (if any) surface as explicit assertions/timeouts with actionable stack traces. |
-| `P1-35` | Smoke suite determinism and async hygiene | `integration_test/smoke_test.dart` removes guarded async conflicts and fragile route assumptions (`S4`/`S5`), uses deterministic waits/finders, and passes on wired Android + iOS without manual retries. |
 | `P1-36` | Journey launch readiness hardening | `integration_test/journeys/_helpers.dart` `launchApp()` waits for a concrete ready surface (onboarding/auth/home) with bounded timeout and clear failure reasons. `j1_fresh_install_test.dart` no longer produces `did not complete` behavior during wired-device execution. |
 | `P1-38` | E2E suite failure isolation | `integration_test/e2e_test.dart` execution is split or orchestrated so one early failure does not collapse the full suite into mass `did not complete` noise. Each shard outputs independent pass/fail and artifacts. |
 | `P1-34` | Offline-safe integration font loading | Integration runs do not depend on live `fonts.gstatic.com` fetches. `google_fonts` runtime fetching is disabled in test mode (or fonts are bundled/preloaded), and `integration_test/smoke_test.dart` + `integration_test/e2e_test.dart` pass without DNS/network access. |
@@ -121,6 +119,5 @@ Process items in this order unless an explicit owner override is recorded in rel
 | `P2-12` | Device fingerprint real-service test coverage | Add direct tests for `DeviceFingerprintService` RPC/result mapping and graceful-degradation paths (server unavailable, fingerprint unavailable, Postgrest errors) using Supabase stubs/fakes rather than only mock-self-tests. |
 | `P2-13` | Startup orchestration refactor (post-launch) | Startup is moved to an explicit orchestration state machine/service with isolated phase boundaries, cancellation semantics, and deterministic tests for success/failure permutations. Refactor is informed by production startup telemetry from `P1-48` and does not regress route determinism or launch latency budgets. |
 | `P2-14` | Re-evaluate custom-lint compatibility | On a scheduled toolchain review, verify whether the published `custom_lint`/`riverpod_lint` ecosystem is compatible with the current Flutter/Dart/Riverpod analyzer line, document the decision in `docs/DEVOPS.md`, and either reintroduce the lint stack with passing `flutter analyze`/`flutter test`/`./scripts/test_critical_smoke.sh` or explicitly keep it deferred with recorded evidence. |
-| `P2-15` | Selective Patrol native-automation adoption | High-value device flows that genuinely need system/native automation (for example notification permissions, social-auth sheets, purchase/restore dialogs, or settings deep-links) are identified, at least one such flow is covered with `patrolTest` + Patrol native APIs, `patrol_cli` setup/usage is documented in `docs/DEVOPS.md` + `test/README.md`, and the repo clearly distinguishes when to use `flutter test` vs `patrol test`. |
-| `P2-16` | Public QA showcase packaging | `README.md` includes a concise risk-to-test-layer matrix, links to concrete evidence sources for local, wired-device, and cloud/native-risk runs, and describes Patrol/FTL usage honestly as selective native-risk coverage rather than the mainline harness. `docs/DEVOPS.md` and linked runbooks expose runnable commands for collecting that evidence, the public wording is reviewed against the actual repo workflows/harnesses, and a repo-owner walkthrough confirms the showcase story is accurate and portfolio-ready. |
+| `P2-16` | Public QA showcase packaging | `README.md` includes a concise risk-to-test-layer matrix, links to concrete evidence sources for local, wired-device, Patrol native-risk, and Firebase Test Lab runs, and describes Patrol/FTL usage honestly as selective native-risk coverage rather than the mainline harness. `docs/DEVOPS.md` and linked runbooks expose runnable commands for collecting that evidence, the public wording is reviewed against the actual repo workflows/harnesses, and a repo-owner walkthrough confirms the showcase story is accurate and portfolio-ready. |
 | `P2-17` | RevenueCat transfer metadata hydration | `user_entitlements` rows created from RevenueCat `TRANSFER` flows preserve or recover canonical `product_id` and `expires_at` values instead of leaving them null. Delete-account/recreate/restore/sign-in validation proves the backend row contains `is_pro=true` plus non-null metadata, and the recovery path is documented in `docs/DEVOPS.md` if webhook/event ordering can still temporarily omit those fields. |
