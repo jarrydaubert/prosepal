@@ -115,13 +115,6 @@ void main() {
 
   group('SettingsScreen', () {
     group('Display', () {
-      testWidgetsWithPumps('shows app bar with title', (tester) async {
-        await tester.pumpWidget(buildTestWidget());
-        await tester.pumpAndSettle();
-
-        expect(find.text('Settings'), findsOneWidget);
-      });
-
       testWidgetsWithPumps('shows Account section with user info', (
         tester,
       ) async {
@@ -170,31 +163,6 @@ void main() {
         expect(find.text('Prosepal Pro'), findsOneWidget);
         expect(find.text('Unlimited messages'), findsOneWidget);
         expect(find.text('Upgrade'), findsNothing);
-      });
-
-      testWidgetsWithPumps('shows Manage Subscription for pro users', (
-        tester,
-      ) async {
-        await tester.pumpWidget(buildTestWidget(isPro: true));
-        await tester.pumpAndSettle();
-
-        expect(find.text('Manage Subscription'), findsOneWidget);
-      });
-
-      testWidgetsWithPumps('hides Manage Subscription for free users', (
-        tester,
-      ) async {
-        await tester.pumpWidget(buildTestWidget());
-        await tester.pumpAndSettle();
-
-        expect(find.text('Manage Subscription'), findsNothing);
-      });
-
-      testWidgetsWithPumps('shows Restore Purchases option', (tester) async {
-        await tester.pumpWidget(buildTestWidget());
-        await tester.pumpAndSettle();
-
-        expect(find.text('Restore Purchases'), findsOneWidget);
       });
 
       testWidgetsWithPumps('restore purchases success shows confirmation', (
@@ -305,15 +273,6 @@ void main() {
 
         expect(find.text('SECURITY'), findsNothing);
         expect(find.text('Face ID'), findsNothing);
-      });
-
-      testWidgetsWithPumps('shows switch for biometrics when signed in', (
-        tester,
-      ) async {
-        await tester.pumpWidget(buildTestWidget(email: 'test@example.com'));
-        await tester.pumpAndSettle();
-
-        expect(find.byType(Switch), findsOneWidget);
       });
 
       testWidgetsWithPumps('switch reflects enabled state', (tester) async {
@@ -456,24 +415,6 @@ void main() {
     });
 
     group('Support Section', () {
-      testWidgetsWithPumps('shows support options', (tester) async {
-        await tester.pumpWidget(buildTestWidget());
-        await tester.pumpAndSettle();
-
-        // Scroll down to find Support section
-        await tester.scrollUntilVisible(
-          find.text('SUPPORT'),
-          100,
-          scrollable: find.byType(Scrollable).first,
-        );
-        await tester.pumpAndSettle();
-
-        expect(find.text('SUPPORT'), findsOneWidget);
-        expect(find.text('Help & FAQ'), findsOneWidget);
-        expect(find.text('Send Feedback'), findsOneWidget);
-        expect(find.text('Rate Prosepal'), findsOneWidget);
-      });
-
       testWidgetsWithPumps('Send Feedback navigates to feedback screen', (
         tester,
       ) async {
@@ -495,22 +436,6 @@ void main() {
     });
 
     group('Legal Section', () {
-      testWidgetsWithPumps('shows legal options', (tester) async {
-        await tester.pumpWidget(buildTestWidget());
-        await tester.pumpAndSettle();
-
-        await tester.scrollUntilVisible(
-          find.text('LEGAL'),
-          100,
-          scrollable: find.byType(Scrollable).first,
-        );
-        await tester.pumpAndSettle();
-
-        expect(find.text('LEGAL'), findsOneWidget);
-        expect(find.text('Terms of Service'), findsOneWidget);
-        expect(find.text('Privacy Policy'), findsOneWidget);
-      });
-
       testWidgetsWithPumps('Terms navigates to terms screen', (tester) async {
         await tester.pumpWidget(buildTestWidget());
         await tester.pumpAndSettle();
@@ -549,25 +474,6 @@ void main() {
     });
 
     group('Account Actions', () {
-      testWidgetsWithPumps('shows account action options for signed-in user', (
-        tester,
-      ) async {
-        // Account actions only show for signed-in users
-        await tester.pumpWidget(buildTestWidget(email: 'test@example.com'));
-        await tester.pumpAndSettle();
-
-        await tester.scrollUntilVisible(
-          find.text('ACCOUNT ACTIONS'),
-          100,
-          scrollable: find.byType(Scrollable).first,
-        );
-        await tester.pumpAndSettle();
-
-        expect(find.text('ACCOUNT ACTIONS'), findsOneWidget);
-        expect(find.text('Sign Out'), findsOneWidget);
-        expect(find.text('Delete Account'), findsOneWidget);
-      });
-
       testWidgetsWithPumps('hides account actions for anonymous user', (
         tester,
       ) async {

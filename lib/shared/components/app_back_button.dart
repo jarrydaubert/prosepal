@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
+import '../utils/keyboard_utils.dart';
 
 /// Consistent back button used across all app bars.
 class AppBackButton extends StatelessWidget {
@@ -25,7 +26,7 @@ class AppBackButton extends StatelessWidget {
           color: AppColors.textPrimary,
         ),
         onPressed: () {
-          FocusManager.instance.primaryFocus?.unfocus();
+          dismissKeyboard(context);
           onPressed();
         },
       ),

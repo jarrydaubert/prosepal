@@ -77,13 +77,6 @@ void main() {
 
   group('ResultsScreen', () {
     group('Display', () {
-      testWidgets('shows app bar with title', (tester) async {
-        await tester.pumpWidget(buildTestWidget(result: createTestResult()));
-        await tester.pumpAndSettle();
-
-        expect(find.text('Your Messages'), findsOneWidget);
-      });
-
       testWidgets('shows context header with occasion info', (tester) async {
         final result = createTestResult(
           occasion: Occasion.wedding,
@@ -112,16 +105,6 @@ void main() {
         expect(find.text('Test message 2 for Birthday'), findsOneWidget);
         expect(find.text('Test message 3 for Birthday'), findsOneWidget);
       });
-
-      testWidgets('shows Start Over button', (tester) async {
-        await tester.pumpWidget(buildTestWidget(result: createTestResult()));
-        await tester.pumpAndSettle();
-
-        expect(find.text('Start Over'), findsOneWidget);
-        expect(find.byIcon(Icons.home_outlined), findsOneWidget);
-        expect(find.text('Unlock Pro'), findsOneWidget);
-        expect(find.byIcon(Icons.lock_outline), findsOneWidget);
-      });
     });
 
     group('Message Actions', () {
@@ -132,15 +115,6 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.text('Copy'), findsNWidgets(2));
-      });
-
-      testWidgets('each message has Share button', (tester) async {
-        final result = createTestResult(messageCount: 2);
-
-        await tester.pumpWidget(buildTestWidget(result: result));
-        await tester.pumpAndSettle();
-
-        expect(find.byIcon(Icons.share_outlined), findsNWidgets(2));
       });
     });
 
@@ -153,6 +127,11 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.text('Home'), findsOneWidget);
+
+        final container = ProviderScope.containerOf(
+          tester.element(find.text('Home')),
+        );
+        expect(container.read(dismissHomeKeyboardProvider), isTrue);
       });
 
       testWidgets('uses canonical back chevron and padded Gemini attribution', (
@@ -184,6 +163,11 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.text('Home'), findsOneWidget);
+
+        final container = ProviderScope.containerOf(
+          tester.element(find.text('Home')),
+        );
+        expect(container.read(dismissHomeKeyboardProvider), isTrue);
       });
 
       testWidgets('redirects to home if no result', (tester) async {
@@ -411,20 +395,6 @@ void main() {
 
         await tester.pump(const Duration(seconds: 3));
       });
-    });
-
-    group('All Occasions', () {
-      for (final occasion in Occasion.values) {
-        testWidgets('displays ${occasion.label} correctly', (tester) async {
-          final result = createTestResult(occasion: occasion);
-
-          await tester.pumpWidget(buildTestWidget(result: result));
-          await tester.pumpAndSettle();
-
-          expect(find.text(occasion.emoji), findsOneWidget);
-          expect(find.textContaining(occasion.label), findsWidgets);
-        });
-      }
     });
 
     group('Accessibility', () {

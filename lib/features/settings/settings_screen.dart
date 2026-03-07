@@ -21,6 +21,7 @@ import '../../core/services/log_service.dart';
 import '../../core/services/usage_service.dart';
 import '../../shared/components/components.dart';
 import '../../shared/theme/app_colors.dart';
+import '../../shared/utils/keyboard_utils.dart';
 import '../paywall/paywall_sheet.dart';
 
 // ===========================================================================
@@ -1141,8 +1142,8 @@ class _DeleteConfirmationDialogState extends State<_DeleteConfirmationDialog> {
           textCapitalization: TextCapitalization.characters,
           textInputAction: TextInputAction.done,
           scrollPadding: const EdgeInsets.only(bottom: 160),
-          onSubmitted: (_) => FocusScope.of(context).unfocus(),
-          onTapOutside: (_) => FocusScope.of(context).unfocus(),
+          onSubmitted: (_) => dismissKeyboard(context),
+          onTapOutside: (_) => dismissKeyboard(context),
           decoration: const InputDecoration(
             hintText: 'DELETE',
             border: OutlineInputBorder(),

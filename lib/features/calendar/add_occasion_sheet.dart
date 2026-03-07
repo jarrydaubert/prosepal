@@ -7,6 +7,7 @@ import '../../core/providers/providers.dart';
 import '../../shared/components/app_button.dart';
 import '../../shared/components/app_emoji.dart';
 import '../../shared/theme/app_colors.dart';
+import '../../shared/utils/keyboard_utils.dart';
 
 class AddOccasionSheet extends ConsumerStatefulWidget {
   const AddOccasionSheet({super.key, this.existingOccasion});
@@ -131,8 +132,8 @@ class _AddOccasionSheetState extends ConsumerState<AddOccasionSheet> {
               textInputAction: TextInputAction.done,
               autofillHints: const [AutofillHints.name],
               scrollPadding: const EdgeInsets.only(bottom: 140),
-              onSubmitted: (_) => FocusScope.of(context).unfocus(),
-              onTapOutside: (_) => FocusScope.of(context).unfocus(),
+              onSubmitted: (_) => dismissKeyboard(context),
+              onTapOutside: (_) => dismissKeyboard(context),
               decoration: InputDecoration(
                 hintText: 'e.g., Mom, John, Sarah',
                 filled: true,
@@ -171,8 +172,8 @@ class _AddOccasionSheetState extends ConsumerState<AddOccasionSheet> {
               textCapitalization: TextCapitalization.sentences,
               textInputAction: TextInputAction.done,
               scrollPadding: const EdgeInsets.only(bottom: 140),
-              onSubmitted: (_) => FocusScope.of(context).unfocus(),
-              onTapOutside: (_) => FocusScope.of(context).unfocus(),
+              onSubmitted: (_) => dismissKeyboard(context),
+              onTapOutside: (_) => dismissKeyboard(context),
               decoration: InputDecoration(
                 hintText: 'Add any notes or reminders...',
                 filled: true,

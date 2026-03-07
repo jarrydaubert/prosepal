@@ -21,19 +21,10 @@
 library;
 
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
-import 'package:prosepal/app/app.dart';
-import 'package:prosepal/core/providers/providers.dart';
-import 'package:prosepal/core/services/usage_service.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
-import '../test/mocks/mock_ai_service.dart';
-import '../test/mocks/mock_auth_service.dart';
-import '../test/mocks/mock_device_fingerprint_service.dart';
-import '../test/mocks/mock_rate_limit_service.dart';
-import '../test/mocks/mock_subscription_service.dart';
+import '_deterministic_app_harness.dart';
 
 late IntegrationTestWidgetsFlutterBinding binding;
 
@@ -41,53 +32,11 @@ void main() {
   binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   group('FTL Critical', () {
-    late SharedPreferences prefs;
-    late MockAuthService mockAuth;
-    late MockSubscriptionService mockSubscription;
-    late MockAiService mockAi;
-    late MockDeviceFingerprintService mockDeviceFingerprint;
-    late MockRateLimitService mockRateLimit;
-    late InitStatusNotifier initStatusNotifier;
+    late DeterministicAppHarness harness;
 
     setUp(() async {
-      SharedPreferences.setMockInitialValues({'hasCompletedOnboarding': true});
-      prefs = await SharedPreferences.getInstance();
-      mockAuth = MockAuthService()
-        ..setLoggedIn(true, email: 'test@example.com');
-      mockSubscription = MockSubscriptionService()..setIsPro(false);
-      mockAi = MockAiService();
-      mockDeviceFingerprint = MockDeviceFingerprintService();
-      mockRateLimit = MockRateLimitService(
-        deviceFingerprint: mockDeviceFingerprint,
-      );
-      initStatusNotifier = InitStatusNotifier()
-        ..markSupabaseReady()
-        ..markRevenueCatReady()
-        ..markRemoteConfigReady();
+      harness = await DeterministicAppHarness.create(loggedIn: true);
     });
-
-    Widget buildApp({bool isPro = false}) {
-      mockSubscription.setIsPro(isPro);
-      return ProviderScope(
-        overrides: [
-          sharedPreferencesProvider.overrideWithValue(prefs),
-          authServiceProvider.overrideWithValue(mockAuth),
-          subscriptionServiceProvider.overrideWithValue(mockSubscription),
-          aiServiceProvider.overrideWithValue(mockAi),
-          deviceFingerprintServiceProvider.overrideWithValue(
-            mockDeviceFingerprint,
-          ),
-          rateLimitServiceProvider.overrideWithValue(mockRateLimit),
-          usageServiceProvider.overrideWith(
-            (ref) => UsageService(prefs, mockDeviceFingerprint, mockRateLimit),
-          ),
-          initStatusProvider.overrideWith((ref) => initStatusNotifier),
-          isProProvider.overrideWith((ref) => isPro),
-          remainingGenerationsProvider.overrideWith((ref) => isPro ? 999 : 1),
-        ],
-        child: const ProsepalApp(),
-      );
-    }
 
     Future<void> pumpUntilVisible(
       WidgetTester tester,
@@ -123,12 +72,13 @@ void main() {
       addTearDown(() async {
         await tester.pumpWidget(const SizedBox.shrink());
         await tester.pump(const Duration(milliseconds: 50));
+        harness.dispose();
       });
     }
 
     testWidgets('S1: Launches and renders home', (tester) async {
       registerAppCleanup(tester);
-      await tester.pumpWidget(buildApp());
+      await tester.pumpWidget(harness.buildApp());
       await pumpUntilAnyVisible(tester, [
         find.text("What's the occasion?"),
         find.text('Birthday'),
@@ -139,7 +89,7 @@ void main() {
 
     testWidgets('S2: Occasion opens wizard', (tester) async {
       registerAppCleanup(tester);
-      await tester.pumpWidget(buildApp());
+      await tester.pumpWidget(harness.buildApp());
       await pumpUntilVisible(tester, find.text('Birthday'));
 
       await tester.tap(find.text('Birthday'));
@@ -150,7 +100,7 @@ void main() {
 
     testWidgets('S3: Settings open and return', (tester) async {
       registerAppCleanup(tester);
-      await tester.pumpWidget(buildApp());
+      await tester.pumpWidget(harness.buildApp());
       await pumpUntilVisible(tester, find.byIcon(Icons.settings_outlined));
 
       await tester.tap(find.byIcon(Icons.settings_outlined));
@@ -175,7 +125,7 @@ void main() {
 
     testWidgets('S4: Pro override renders without crash', (tester) async {
       registerAppCleanup(tester);
-      await tester.pumpWidget(buildApp(isPro: true));
+      await tester.pumpWidget(harness.buildApp(isPro: true));
       await pumpUntilAnyVisible(tester, [
         find.text("What's the occasion?"),
         find.text('Birthday'),

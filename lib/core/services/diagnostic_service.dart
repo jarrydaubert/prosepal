@@ -7,8 +7,11 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../config/ai_config.dart';
+import 'ai_service.dart';
 import 'auth_telemetry.dart';
 import 'log_service.dart';
+import 'remote_config_service.dart';
 
 /// Diagnostic service for generating user-shareable support reports
 ///
@@ -181,6 +184,45 @@ abstract final class DiagnosticService {
     } else {
       buffer.writeln('Pro Status: Not configured');
     }
+    buffer.writeln();
+
+    buffer.writeln('--- AI Runtime ---');
+    final aiBackend = AiService.configuredBackendLabel;
+    final primaryModel = RemoteConfigService.instance.aiModel;
+    final fallbackModel = RemoteConfigService.instance.aiModelFallback;
+    final primaryAllowed = AiConfig.allowedModelIds.contains(primaryModel);
+    final fallbackAllowed = AiConfig.allowedModelIds.contains(fallbackModel);
+    buffer.writeln('Backend: $aiBackend');
+    if (aiBackend == 'vertexAI') {
+      buffer.writeln('Vertex Location: ${AiService.diagnosticVertexLocation}');
+    }
+    buffer.writeln('Primary Model: $primaryModel');
+    buffer.writeln('Fallback Model: $fallbackModel');
+    buffer.writeln(
+      'Model Allowlist: ${primaryAllowed && fallbackAllowed ? 'Pass' : 'Review'}',
+    );
+    buffer.writeln(
+      'AI Enabled: ${RemoteConfigService.instance.isAiEnabled ? 'Yes' : 'No'}',
+    );
+    buffer.writeln(
+      'Limited-use App Check Tokens: ${RemoteConfigService.instance.useLimitedUseAppCheckTokens ? 'Yes' : 'No'}',
+    );
+    buffer.writeln(
+      'Config Schema Version: ${RemoteConfigService.instance.configSchemaVersion}',
+    );
+    buffer.writeln('AI Failure Triage:');
+    buffer.writeln(
+      '- CLIENT_APP_BLOCKED => app/bundle/API restriction or provider config issue',
+    );
+    buffer.writeln(
+      '- APP_CHECK_FAILED => device attestation / App Check verification issue',
+    );
+    buffer.writeln(
+      '- CONTENT_BLOCKED => safety filter decision, not app configuration',
+    );
+    buffer.writeln(
+      '- MODEL_NOT_FOUND => primary model unavailable; fallback path should engage',
+    );
     buffer.writeln();
 
     buffer.writeln('--- Identity Mapping ---');

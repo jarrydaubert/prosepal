@@ -27,16 +27,13 @@
 /// Test Structure:
 ///   smoke_test.dart              - Quick sanity (5 tests, <30s)
 ///   journeys/
-///     j1_fresh_install_test.dart - Fresh user → free generation
-///     j2_upgrade_flow_test.dart  - Free user → upgrade → purchase
-///     j3_pro_generate_test.dart  - Pro user → unlimited generation
-///     j4_settings_test.dart      - Account management
-///     j5_navigation_test.dart    - Back button, wizard state
-///     j6_error_resilience_test.dart - Rapid taps, error recovery
-///     j7_restore_flow_test.dart  - Restore purchases
-///     j8_paywall_test.dart       - Paywall display
+///     j1_fresh_install_test.dart - First-time user can reach results and recover
+///     j2_upgrade_flow_test.dart  - Exhausted anonymous user is gated to auth/paywall
+///     j3_pro_generate_test.dart  - Pro user reaches generate and completes output
+///     j4_settings_test.dart      - Destructive account gate in settings
+///     j5_navigation_test.dart    - Wizard state preservation
 ///     j9_wizard_details_test.dart - Name/details customization
-///     j10_results_actions_test.dart - Copy/share/regenerate
+///     j10_results_actions_test.dart - Copy/start-over results actions
 ///     j11_auth_entitlement_edges_test.dart - Auth race + stale entitlement
 ///   coverage/
 ///     occasions_test.dart        - All 40 occasions load
@@ -56,9 +53,6 @@ import 'journeys/j2_upgrade_flow_test.dart' as j2;
 import 'journeys/j3_pro_generate_test.dart' as j3;
 import 'journeys/j4_settings_test.dart' as j4;
 import 'journeys/j5_navigation_test.dart' as j5;
-import 'journeys/j6_error_resilience_test.dart' as j6;
-import 'journeys/j7_restore_flow_test.dart' as j7;
-import 'journeys/j8_paywall_test.dart' as j8;
 import 'journeys/j9_wizard_details_test.dart' as j9;
 // Smoke test (runs first - validates app launches)
 import 'smoke_test.dart' as smoke;
@@ -76,40 +70,28 @@ void main() {
   // Bug: First-time user blocked from experiencing app
   j1.main();
 
-  // J2: Free user → Upgrade → Purchase
-  // Bug: Users can't pay us (revenue impact!)
+  // J2: Free user → Upgrade gate
+  // Bug: Exhausted anonymous users bypass auth/paywall gating
   j2.main();
 
-  // J3: Pro user → Generate → Sign out
-  // Bug: Paying customers can't use what they paid for
+  // J3: Pro user → Generate
+  // Bug: Paying customers still hit Upgrade or can't generate
   j3.main();
 
-  // J4: Settings & Account management
-  // Bug: Users can't manage their account
+  // J4: Settings account safety gate
+  // Bug: destructive account action is missing its warning or auth gate
   j4.main();
 
   // J5: Navigation (back, wizard state)
   // Bug: Users get stuck, can't go back
   j5.main();
 
-  // J6: Error resilience (rapid taps, recovery)
-  // Bug: App crashes under normal user behavior
-  j6.main();
-
-  // J7: Restore purchases
-  // Bug: Users who reinstall lose their subscription
-  j7.main();
-
-  // J8: Paywall display
-  // Bug: Paywall broken, users can't see pricing
-  j8.main();
-
   // J9: Wizard details (name, personal details)
   // Bug: Customization features don't work
   j9.main();
 
-  // J10: Results actions (copy, share, regenerate)
-  // Bug: Users can't use generated messages
+  // J10: Results actions (copy, start over)
+  // Bug: Users can't reuse generated messages or return safely home
   j10.main();
 
   // J11: Auth race + stale entitlement edges

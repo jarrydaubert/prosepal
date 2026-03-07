@@ -116,6 +116,13 @@ class AiService {
     defaultValue: 'us-central1',
   );
 
+  /// Runtime backend selected for this build.
+  static String get configuredBackendLabel =>
+      _aiBackend.toLowerCase() != 'google' ? 'vertexAI' : 'googleAI';
+
+  /// Vertex location used when the Vertex backend is active.
+  static String get diagnosticVertexLocation => _vertexLocation;
+
   bool get _useVertexBackend => _aiBackend.toLowerCase() != 'google';
 
   @visibleForTesting

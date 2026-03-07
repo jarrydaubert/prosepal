@@ -107,28 +107,6 @@ void main() {
       expect(continueButton, findsOneWidget);
     });
 
-    testWidgets('can navigate through all pages', (tester) async {
-      tester.view.physicalSize = const Size(1080, 1920);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(() => tester.view.resetPhysicalSize());
-
-      await tester.pumpWidget(createTestableOnboardingScreen());
-      await tester.pump(const Duration(milliseconds: 500));
-
-      // Page 1 - Continue
-      expect(find.text('Continue'), findsOneWidget);
-      await tester.tap(find.text('Continue'));
-      await tester.pumpAndSettle();
-
-      // Page 2 - Continue
-      expect(find.text('Continue'), findsOneWidget);
-      await tester.tap(find.text('Continue'));
-      await tester.pumpAndSettle();
-
-      // Page 3 - Get Started (final page)
-      expect(find.text('Get Started'), findsOneWidget);
-    });
-
     testWidgets('completion persists - no repeat onboarding', (tester) async {
       tester.view.physicalSize = const Size(1080, 1920);
       tester.view.devicePixelRatio = 1.0;

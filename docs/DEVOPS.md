@@ -170,6 +170,7 @@ Purpose:
 Harness selection:
 - Checked-in suites under `integration_test/` currently use Flutter's standard `integration_test` harness, so CI and local smoke use `flutter test`.
 - Use Patrol CLI only for tests that explicitly adopt Patrol APIs/native automation (for example `patrolTest(...)` or `$.native` interactions). In that case, install `patrol_cli`, run `patrol doctor`, and execute via `patrol test`.
+- `integration_test/smoke_test.dart` is intentionally mock-driven through deterministic provider overrides. It should validate launch/home/wizard/settings behavior without depending on live Supabase, RevenueCat, or Firebase AI availability. Use wired evidence runs and `e2e_real_test.dart` when the goal is to validate real backend behavior.
 
 Policy:
 - Runs only when CI scope is not docs-only.
@@ -266,6 +267,13 @@ Required quality bar for any new or retained test:
 5. `Deterministic`: the test should not depend on optional branches, silent
    skips, or ambient external state unless that dependency is the thing being
    verified.
+
+Backlog/DoD rule for behavior changes:
+- A change is not done unless regression protection is defined.
+- Preferred outcome: automated coverage at the correct layer.
+- If automation is intentionally not added, the PR/backlog item must still
+  state the target bug, why that layer is wrong or impractical, the explicit
+  pass/fail oracle, and the replacement evidence path.
 
 Reject or rewrite tests that:
 
@@ -487,6 +495,39 @@ Pass criteria:
 - Wired evidence captured for iOS and Android.
 - FTL critical suite passes.
 - Supabase and AI control audits complete with no unresolved release blockers.
+
+### AI runtime diagnostics and no-device evidence
+
+The in-app diagnostic report should make the active AI runtime legible without
+revealing secrets. Review the `AI Runtime` section for:
+
+- backend (`vertexAI` or `googleAI`)
+- primary model
+- fallback model
+- allowlist status
+- App Check token mode
+- config schema version
+- built-in triage labels for:
+  - `CLIENT_APP_BLOCKED`
+  - `APP_CHECK_FAILED`
+  - `CONTENT_BLOCKED`
+  - `MODEL_NOT_FOUND`
+
+Deterministic no-device evidence paths:
+
+```bash
+flutter test test/services/diagnostic_service_test.dart
+flutter test test/services/ai_service_test.dart --plain-name "classifies Firebase client application blocked"
+flutter test test/services/ai_service_test.dart --plain-name "keeps safety-filter blocks as CONTENT_BLOCKED"
+flutter test test/services/ai_service_test.dart --plain-name "classifies firebase_app_check platform error as APP_CHECK_FAILED"
+flutter test test/services/ai_service_test.dart --plain-name "classifies \"404\" as MODEL_NOT_FOUND"
+```
+
+Use these when you need to prove:
+
+- app-configuration/client-block failures are distinguished from safety blocks
+- App Check failures are classified separately from generic network errors
+- fallback-model behavior remains an explicit runtime concern, not hidden logic
 
 ### Firebase AI Android App Check triage (`App attestation failed`)
 

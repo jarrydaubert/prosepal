@@ -6,6 +6,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '_deterministic_app_harness.dart';
 import 'journeys/_helpers.dart';
 
 void main() {
@@ -15,8 +16,22 @@ void main() {
     testWidgets(
       'S1-S5: Launch, home, occasion, wizard, settings',
       (tester) async {
+        final harness = await DeterministicAppHarness.create();
+        addTearDown(harness.dispose);
+
         // S1: app launches without crashing.
-        await launchApp(tester, seedOnboardingCompleted: true);
+        await tester.pumpWidget(harness.buildApp());
+        await _pumpForSmoke(tester, const Duration(milliseconds: 500));
+        final reachedReadySurface = await waitForAnyText(tester, const [
+          "What's the occasion?",
+          'Birthday',
+          'Settings',
+        ], timeout: const Duration(seconds: 12));
+        expect(
+          reachedReadySurface,
+          isTrue,
+          reason: 'App did not reach deterministic home surface after launch',
+        );
         expect(find.byType(MaterialApp), findsOneWidget);
         await screenshot(tester, 'smoke_1_launch');
 

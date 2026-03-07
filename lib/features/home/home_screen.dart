@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -12,6 +11,7 @@ import '../../core/providers/providers.dart';
 import '../../core/services/log_service.dart';
 import '../../shared/components/components.dart';
 import '../../shared/theme/app_colors.dart';
+import '../../shared/utils/keyboard_utils.dart';
 import '../paywall/paywall_sheet.dart';
 import 'widgets/occasion_grid.dart';
 
@@ -30,6 +30,15 @@ class HomeScreen extends ConsumerWidget {
     final isPro = ref.watch(isProProvider);
     final showFirstActionHint = ref.watch(showFirstActionHintProvider);
     final occasionSearchQuery = ref.watch(occasionSearchProvider);
+    final dismissHomeKeyboard = ref.watch(dismissHomeKeyboardProvider);
+
+    if (dismissHomeKeyboard) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!context.mounted) return;
+        dismissKeyboard(context);
+        ref.read(dismissHomeKeyboardProvider.notifier).state = false;
+      });
+    }
 
     // Check for pending paywall (e.g., after email sign-in from paywall sync)
     final pendingPaywallSource = ref.watch(pendingPaywallSourceProvider);
@@ -42,7 +51,7 @@ class HomeScreen extends ConsumerWidget {
     }
 
     return GestureDetector(
-      onTap: () => FocusScope.of(context).unfocus(),
+      onTap: () => dismissKeyboard(context),
       child: Scaffold(
         backgroundColor: AppColors.background,
         body: SafeArea(
@@ -123,12 +132,7 @@ class HomeScreen extends ConsumerWidget {
                                     _IconButton(
                                       icon: Icons.calendar_month_outlined,
                                       onPressed: () {
-                                        FocusManager.instance.primaryFocus
-                                            ?.unfocus();
-                                        SystemChannels.textInput
-                                            .invokeMethod<void>(
-                                              'TextInput.hide',
-                                            );
+                                        dismissKeyboard(context);
                                         context.pushNamed('calendar');
                                       },
                                       tooltip: 'Upcoming occasions',
@@ -139,12 +143,7 @@ class HomeScreen extends ConsumerWidget {
                                     _IconButton(
                                       icon: Icons.history,
                                       onPressed: () {
-                                        FocusManager.instance.primaryFocus
-                                            ?.unfocus();
-                                        SystemChannels.textInput
-                                            .invokeMethod<void>(
-                                              'TextInput.hide',
-                                            );
+                                        dismissKeyboard(context);
                                         context.pushNamed('history');
                                       },
                                       tooltip: 'Message history',
@@ -158,12 +157,7 @@ class HomeScreen extends ConsumerWidget {
                                       ),
                                       icon: Icons.settings_outlined,
                                       onPressed: () {
-                                        FocusManager.instance.primaryFocus
-                                            ?.unfocus();
-                                        SystemChannels.textInput
-                                            .invokeMethod<void>(
-                                              'TextInput.hide',
-                                            );
+                                        dismissKeyboard(context);
                                         context.pushNamed('settings');
                                       },
                                       tooltip: 'Settings',
@@ -300,10 +294,7 @@ class HomeScreen extends ConsumerWidget {
                     if (showFirstActionHint) {
                       _dismissFirstActionHint(ref);
                     }
-                    FocusManager.instance.primaryFocus?.unfocus();
-                    SystemChannels.textInput.invokeMethod<void>(
-                      'TextInput.hide',
-                    );
+                    dismissKeyboard(context);
                     ref.read(selectedOccasionProvider.notifier).state =
                         occasion;
                     // Clear search when selecting
@@ -312,11 +303,10 @@ class HomeScreen extends ConsumerWidget {
                       context.pushNamed('generate').whenComplete(() {
                         // Defensive reset: ensure search is always cleared
                         // when user returns home from the wizard flow.
+                        ref.read(dismissHomeKeyboardProvider.notifier).state =
+                            true;
                         ref.read(occasionSearchProvider.notifier).state = '';
-                        FocusManager.instance.primaryFocus?.unfocus();
-                        SystemChannels.textInput.invokeMethod<void>(
-                          'TextInput.hide',
-                        );
+                        dismissKeyboard(context);
                       }),
                     );
                   },
@@ -447,8 +437,7 @@ class _OccasionSearchFieldState extends State<_OccasionSearchField> {
   void _clearSearch() {
     _controller.clear();
     widget.onChanged('');
-    _focusNode.unfocus();
-    SystemChannels.textInput.invokeMethod<void>('TextInput.hide');
+    dismissKeyboard(context);
   }
 
   @override
@@ -464,8 +453,7 @@ class _OccasionSearchFieldState extends State<_OccasionSearchField> {
         setState(() => _hasText = hasText);
       }
       if (!hasText) {
-        _focusNode.unfocus();
-        SystemChannels.textInput.invokeMethod<void>('TextInput.hide');
+        dismissKeyboard(context);
       }
     }
   }
@@ -486,8 +474,8 @@ class _OccasionSearchFieldState extends State<_OccasionSearchField> {
     keyboardType: TextInputType.text,
     textCapitalization: TextCapitalization.words,
     textInputAction: TextInputAction.done,
-    onSubmitted: (_) => FocusScope.of(context).unfocus(),
-    onTapOutside: (_) => FocusScope.of(context).unfocus(),
+    onSubmitted: (_) => dismissKeyboard(context),
+    onTapOutside: (_) => dismissKeyboard(context),
     style: const TextStyle(
       color: AppColors.textOnLight,
       fontSize: 16,

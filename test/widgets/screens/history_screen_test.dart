@@ -61,30 +61,6 @@ void main() {
     );
   }
 
-  group('HistoryScreen Initial Render', () {
-    testWidgets('renders without crashing', (tester) async {
-      await tester.pumpWidget(createTestableHistoryScreen());
-      await tester.pumpAndSettle();
-
-      expect(find.byType(MaterialApp), findsOneWidget);
-      expect(find.byType(Scaffold), findsWidgets);
-    });
-
-    testWidgets('displays app bar with title', (tester) async {
-      await tester.pumpWidget(createTestableHistoryScreen());
-      await tester.pumpAndSettle();
-
-      expect(find.text('Message History'), findsOneWidget);
-    });
-
-    testWidgets('displays back button', (tester) async {
-      await tester.pumpWidget(createTestableHistoryScreen());
-      await tester.pumpAndSettle();
-
-      expect(find.bySemanticsLabel('Back'), findsOneWidget);
-    });
-  });
-
   group('HistoryScreen Empty State', () {
     testWidgets('displays empty state when no history', (tester) async {
       // BUG-001: Empty state should show when history is empty

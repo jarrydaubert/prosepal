@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -17,6 +16,7 @@ import '../../shared/components/app_button.dart';
 import '../../shared/components/app_emoji.dart';
 import '../../shared/components/generation_loading_overlay.dart';
 import '../../shared/theme/app_colors.dart';
+import '../../shared/utils/keyboard_utils.dart';
 import '../paywall/paywall_sheet.dart';
 import 'widgets/details_input.dart';
 import 'widgets/relationship_picker.dart';
@@ -198,8 +198,7 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
             ),
             leading: AppBackButton(
               onPressed: () {
-                FocusScope.of(context).unfocus();
-                SystemChannels.textInput.invokeMethod<void>('TextInput.hide');
+                dismissKeyboard(context);
                 if (_currentStep > 0) {
                   setState(() => _currentStep--);
                   _saveFormStateImmediate();
@@ -209,6 +208,7 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
                       .read(formRestorationServiceProvider)
                       .clearGenerateFormState();
                   resetGenerationForm(ref);
+                  ref.read(dismissHomeKeyboardProvider.notifier).state = true;
                   ref.read(occasionSearchProvider.notifier).state = '';
                   if (context.canPop()) {
                     context.pop();
@@ -382,7 +382,7 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
     if (ref.read(isGeneratingProvider)) return;
 
     // Dismiss keyboard before starting generation
-    FocusScope.of(context).unfocus();
+    dismissKeyboard(context);
 
     final occasion = ref.read(selectedOccasionProvider);
     final relationship = ref.read(selectedRelationshipProvider);

@@ -82,13 +82,22 @@ class _LockScreenState extends State<LockScreen> {
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
-        title: const Text('Biometrics Locked'),
+        backgroundColor: AppColors.surfaceElevated,
+        title: const Text(
+          'Biometrics Locked',
+          style: TextStyle(
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
         content: const Text(
           'Too many failed attempts. Please unlock your device with your '
           'passcode first, then try again.',
+          style: TextStyle(color: AppColors.textSecondary),
         ),
         actions: [
           TextButton(
+            style: TextButton.styleFrom(foregroundColor: AppColors.primary),
             onPressed: () => Navigator.pop(context),
             child: const Text('OK'),
           ),
@@ -165,9 +174,10 @@ class _LockScreenState extends State<LockScreen> {
 
             const SizedBox(height: AppSpacing.xl),
 
-            Text(
+            const Text(
               'Prosepal',
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+              style: TextStyle(
+                fontSize: 28,
                 fontWeight: FontWeight.bold,
                 color: AppColors.textPrimary,
               ),
@@ -175,11 +185,9 @@ class _LockScreenState extends State<LockScreen> {
 
             const SizedBox(height: AppSpacing.sm),
 
-            Text(
+            const Text(
               'Tap to unlock',
-              style: Theme.of(
-                context,
-              ).textTheme.bodyLarge?.copyWith(color: AppColors.textSecondary),
+              style: TextStyle(fontSize: 16, color: AppColors.textSecondary),
             ).animate().fadeIn(delay: 200.ms),
 
             const Spacer(),
@@ -218,6 +226,7 @@ class _LockScreenState extends State<LockScreen> {
                         _biometricType == 'Face ID'
                             ? Icons.face
                             : Icons.fingerprint,
+                        color: AppColors.textOnPrimary,
                       ),
                 label: Text(
                   _isAuthenticating
@@ -226,6 +235,7 @@ class _LockScreenState extends State<LockScreen> {
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
+                    color: AppColors.textOnPrimary,
                   ),
                 ),
               ),
@@ -236,9 +246,10 @@ class _LockScreenState extends State<LockScreen> {
               const SizedBox(height: AppSpacing.lg),
               Text(
                 'Having trouble? Make sure $_biometricType is set up in your device settings.',
-                style: Theme.of(
-                  context,
-                ).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: AppColors.textSecondary,
+                ),
                 textAlign: TextAlign.center,
               ).animate().fadeIn(),
             ],

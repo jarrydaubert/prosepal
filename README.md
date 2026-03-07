@@ -101,6 +101,27 @@ Quality matters more than test count:
 
 That split is intentional. It is the test strategy I would use on a real mobile team.
 
+## AI Engineering Depth
+
+The AI path is intentionally more than a single SDK call.
+
+- pinned primary and fallback model IDs, not vague `latest` aliases
+- Remote Config allowlist validation for model selection
+- runtime backend control (`Vertex AI` by default, optional Google-path override for controlled debugging)
+- structured JSON response contract instead of free-form parsing
+- typed error classification for:
+  - network/timeouts
+  - client/app-blocked configuration failures
+  - App Check attestation failures
+  - safety/content blocks
+  - model-unavailable / fallback cases
+- support diagnostics that expose the active AI runtime configuration without exposing secrets
+
+This is meant to show LLM engineering judgment:
+- make failure modes legible
+- keep runtime controls explicit
+- make it possible to debug real mobile AI failures without guesswork
+
 ## Evidence
 
 The repo is designed to produce evidence, not just green commands.
@@ -165,6 +186,7 @@ Where work remains, it is tracked in [docs/BACKLOG.md](docs/BACKLOG.md) with exp
 - [docs/NEXT_RELEASE_BRIEF.md](docs/NEXT_RELEASE_BRIEF.md) - Release scope and gates
 - [docs/BACKLOG.md](docs/BACKLOG.md) - Open work only, with Definition of Done
 - [docs/SECURITY.md](docs/SECURITY.md) - Security posture and reporting rules
+- [docs/AI_SYSTEM.md](docs/AI_SYSTEM.md) - AI runtime design, failure taxonomy, and evidence paths
 - [docs/REVENUECAT_POLICY.md](docs/REVENUECAT_POLICY.md) - Subscription identity and restore policy
 - [docs/IDENTITY_MAPPING.md](docs/IDENTITY_MAPPING.md) - Auth / subscription / telemetry identity map
 - [docs/DOCS_POLICY.md](docs/DOCS_POLICY.md) - Evergreen documentation rules
