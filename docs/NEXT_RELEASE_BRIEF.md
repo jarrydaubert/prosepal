@@ -18,10 +18,10 @@ Current reality:
 - The current product design is the intended baseline for vNext, with only targeted quality and parity hardening.
 
 Recommendation for next release:
-- Prioritize a release-readiness + reliability release first.
-- Focus on AI client reliability, deterministic device validation, and release evidence.
-- Keep current UX as baseline.
-- Avoid major UX architecture changes in this release.
+- Treat `1.1.2` submission as the completed release-readiness cycle and stop spending backlog attention on already-finished gates.
+- Focus next on visible product polish, higher-signal journey tests, and AI reliability/technical depth.
+- Keep the current UX as baseline, but raise its consistency and contrast quality.
+- Avoid major UX or architecture rewrites until the current startup/auth/payment systems are better instrumented and easier to reason about.
 
 ---
 
@@ -320,62 +320,54 @@ Recommendation for next release:
 ## 11) Product Direction
 
 ### Recommended sequencing
-1. Ship release-readiness + reliability first.
-2. Freeze major UX changes for that release.
-3. Close the AI client-block/App Check gap on real devices.
-4. Finalize deterministic integration + wired-device confidence before RC.
-5. Align core screen styling to the current baseline (or explicitly approve deltas).
+1. Keep the submitted `1.1.2` release stable unless Apple review finds a blocker.
+2. Use the next cycle to improve visible product polish and test credibility at the same time.
+3. Prefer fewer, sharper journey tests over broader click-through coverage.
+4. Keep the app technically legible as an AI system, not just an app that happens to call Gemini.
+5. Avoid large architectural rewrites until the current startup/auth/payments boundaries have stronger telemetry and clearer test oracles.
 
 This lowers release risk and preserves the current design baseline while hardening release confidence.
 
 ---
 
-## 12) Proposed Next Release Scope (vNext)
+## 12) Proposed Next Release Scope (post-`1.1.2` submission)
 
-### Must-ship for the March 9 release cut
-- Release readiness and evidence gates (`P0-07`, `VNEXT-08`, `VNEXT-09`) with scripted iOS archive, wired-device evidence, and checklist sign-off.
-- Runtime-config and release guardrails enforced through the existing scripted preflight/build path.
-- AI reliability hardening (`VNEXT-10`, `P1-43`) including App Check posture validation, error-classification quality, production model allowlist controls, and verified physical-device generation on iOS + Android.
-- Launch/auth parity (`P0-09`) only to the extent needed to avoid release-visible regressions: no flash mismatch, no broken auth contrast treatment, and no startup visual defect that would risk review or trust.
-- Identity and entitlement integrity sufficient for release confidence: sign-in/sign-out, purchase, restore, and entitlement reconciliation all pass on physical devices with evidence attached. Full follow-on documentation/cleanup can continue post-launch.
-- Billing/ops controls (`P0-05`) verified with dry-run alert evidence and a known rollback path.
-- Targeted auth flow polish (`P0-04`) only if it is still reproducible on the release candidate.
+### Must-ship for the next cycle
+- Visible UI polish and consistency (`P0-08`) so the app looks intentionally designed rather than merely functional.
+- Journey test quality hardening (`P1-24`) so green integration results are actually trustworthy.
+- AI reliability hardening (`P1-43`, `VNEXT-10`) so the Gemini/Firebase AI path remains defensible on real devices and in public portfolio review.
+- Smoke determinism under weaker network conditions (`P1-41`) so the blocking story stays credible.
+- RevenueCat transfer metadata hydration (`P2-17`) so backend entitlement rows are complete, not merely permissive.
 
-### Explicitly out-of-scope for vNext
-- Broad design-system cleanup or component consolidation beyond fixing release-visible regressions (`P0-08`, `VNEXT-12`).
-- Large integration-harness hardening work beyond the minimum evidence needed to trust the release (`P1-24`, `P1-35`, `P1-36`, `P1-39`, `P1-41`, `P1-48`).
-- Large visual theme replacement.
-- New major UX architecture (chat-first) in production.
-- Server-side AI gateway as production default (`P1-47`) unless post-launch trigger criteria are met.
-- Startup orchestration refactor/state-machine migration (`P2-13`).
-- Portfolio/showcase packaging work (`P2-16`) and selective Patrol expansion (`P2-15`) unless they directly unblock a release-critical native flow.
+### Strongly recommended for the same cycle
+- Public QA showcase packaging (`P2-16`) once the above quality work is in place.
+- AI technical-depth showcase (`P2-18`) so the repo demonstrates LLM engineering judgment, not just API usage.
+- Startup telemetry tightening (`P1-48`) if the next cycle still touches startup/auth/payment boundaries.
+
+### Explicitly out-of-scope for the next cycle
+- Another rushed release-readiness push unless Apple review forces a hotfix.
+- Test-count inflation or broad new E2E suites without strong bug targets.
+- Large visual theme replacement disconnected from the current design baseline.
+- Server-side AI gateway as production default (`P1-47`) unless clear trigger criteria are met.
+- Startup orchestration/state-machine rewrite (`P2-13`) before the current system is better instrumented.
 
 ---
 
-## 13) Go/No-Go Gates For vNext
+## 13) Go/No-Go Gates For The Next Engineering Cycle
 
-Release is eligible only if all are true:
+The next cycle is complete only if all are true:
 - Analyzer passes.
 - Unit/widget tests pass in CI and locally.
-- Flake audit passes repeated runs.
-- Integration smoke passes on iOS simulator and Android emulator.
-- Critical integration suite passes on one wired iOS and one wired Android physical device.
-- Visual regression CI job publishes no unapproved release-critical diffs.
-- FTL Android run passes for selected critical suite.
-- iOS release build process validated via required build script.
-- Next-release checklist evidence (`P0-07`) is complete and attached.
-- Release preflight/build scripts pass with zero bypasses.
-- No critical auth/payment/security regressions.
-- App Check production posture and provider validation are confirmed for AI-critical paths.
-- Production AI model default is stable non-preview; fallback + allowlist validation confirmed.
-- Remote Config safety controls (`config_schema_version`, kill switches, no-secrets policy) are active.
-- RevenueCat restore behavior policy is documented and validated in test flows.
-- Account deletion flow includes subscription handling guidance and management path.
-- Release preflight blocks missing required runtime configuration.
-- Device abuse-control approach is documented and approved for platform-policy compliance.
-- Startup phase telemetry evidence is attached for wired iOS and Android runs if captured as part of release validation; absence is acceptable only if startup behavior is otherwise stable and explicitly signed off for this cut.
-- Core release-critical screens are visually sane on physical devices; broader live-baseline alignment can follow post-launch.
-- Launch/auth visual parity evidence from physical iOS + Android cold starts is attached (`P0-09`).
+- Critical smoke passes locally and in CI.
+- The journey suite keeps only tests with a named bug target and explicit oracle; low-signal tests are removed or rewritten.
+- Wired iOS smoke, Patrol pilot, and Firebase Test Lab critical Android suite still pass after any changes to startup/auth/payments/UI.
+- Core screens touched by the cycle are visually sane on physical iOS and Android devices with attached before/after evidence where applicable.
+- AI-critical flows still show correct behavior on real devices:
+  - App Check active
+  - generation succeeds when it should
+  - failure classes remain distinguishable when it should not
+- RevenueCat/Supabase entitlement state remains aligned after purchase, restore, sign-in, sign-out, and delete/recreate edge paths.
+- Public docs remain honest about the actual harnesses and evidence available; no portfolio wording outruns the repo reality.
 
 ---
 
