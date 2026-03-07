@@ -314,15 +314,20 @@ Patrol-native/system UI automation:
 
 ```bash
 dart pub global activate patrol_cli
+# Reload your shell after first activation if `patrol` is not found:
+#   source ~/.zshrc
 patrol doctor
 patrol test -t integration_test/<patrol_test_file>.dart
 patrol test -t integration_test/patrol_notification_permission_test.dart --clear-permissions
+# Physical iOS devices require release mode:
+patrol test -t integration_test/patrol_notification_permission_test.dart -d <ios-device-id> --clear-permissions --release
 ```
 
 Recommended first Patrol pilot:
 - `integration_test/patrol_notification_permission_test.dart`
 - Covers the native notification-permission dialog that appears after saving the first calendar occasion with reminders enabled.
 - Run with `--clear-permissions` so the system dialog is deterministic across repeated local/device runs.
+- Verified on tethered iPhone hardware with `patrol_cli 4.2.0`.
 
 ### iOS CocoaPods Recovery
 
