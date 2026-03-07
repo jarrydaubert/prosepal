@@ -31,19 +31,20 @@ Process items in this order unless an explicit owner override is recorded in rel
 7. `P0-08` Design token consistency and contrast hardening
 8. `P1-24` Deterministic integration journey assertions
 9. `P1-35` Smoke suite determinism and async hygiene
-10. `P1-39` Android smoke integration harness stall (`did not complete`)
-11. `P1-41` Network-independent smoke deterministic mode
-12. `P1-36` Journey launch readiness hardening
-13. `P1-48` Startup phase telemetry and budget visibility
-14. `P1-52` Biometric lifecycle debounce + single-flight guard
-15. `VNEXT-11` Canonical identity mapping
-16. `VNEXT-13` Device abuse-control compliance decision
-17. `VNEXT-12` UI parity with live baseline
-18. `P0-05` Billing budget alert controls
-19. `P0-04` Auth loading spinner after OAuth sheet
-20. `P0-01` Move Google setup to business account
-21. `P1-47` Server-side AI gateway rollout (post-launch trigger)
-22. `P2-13` Startup orchestration refactor (post-launch)
+10. `P1-54` Firebase Test Lab critical suite determinism
+11. `P1-39` Android smoke integration harness stall (`did not complete`)
+12. `P1-41` Network-independent smoke deterministic mode
+13. `P1-36` Journey launch readiness hardening
+14. `P1-48` Startup phase telemetry and budget visibility
+15. `P1-52` Biometric lifecycle debounce + single-flight guard
+16. `VNEXT-11` Canonical identity mapping
+17. `VNEXT-13` Device abuse-control compliance decision
+18. `VNEXT-12` UI parity with live baseline
+19. `P0-05` Billing budget alert controls
+20. `P0-04` Auth loading spinner after OAuth sheet
+21. `P0-01` Move Google setup to business account
+22. `P1-47` Server-side AI gateway rollout (post-launch trigger)
+23. `P2-13` Startup orchestration refactor (post-launch)
 
 ## P0 - Launch Blockers
 
@@ -69,13 +70,14 @@ Process items in this order unless an explicit owner override is recorded in rel
 | `P1-48` | Startup phase telemetry and budget visibility | Existing startup flow emits structured phase telemetry (`init`, `identity`, `entitlements`, `routing`) with per-phase duration, timeout/fallback reason, and final terminal route outcome. Logs are queryable in Crashlytics/analytics, phase budgets are documented in `docs/DEVOPS.md`, and fault-injection runs prove telemetry captures degraded startup paths deterministically. |
 | `P1-43` | Firebase AI client-block regression hardening | Real-device AI generation succeeds on wired iOS and Android using the current Firebase AI + App Check setup, and failure classification distinguishes client/app-block configuration errors from true content-safety blocks. `docs/DEVOPS.md` includes a deterministic checklist for debugging `client application <empty> are blocked` responses. |
 | `P1-47` | Server-side AI gateway rollout (post-launch trigger) | A documented trigger policy exists for enabling a server-side AI gateway (abuse threshold, model-policy requirement, or provider-failover need). A non-production spike path exists behind a disabled feature flag, with parity tests proving no user-visible regression when enabled in staging. Production default remains client-direct until trigger criteria are met and approved. |
-| `P1-24` | Deterministic integration journey assertions | Journey tests in `integration_test/journeys/` stop using optional `if (exists(...))` branches for core checkpoints (auth entry, upgrade path, generation result, settings navigation) and fail explicitly when expected UI state is missing. Updated journeys run green in deterministic local/device execution and include clear assertion reasons. |
+| `P1-24` | Deterministic integration journey assertions | Journey tests in `integration_test/journeys/` stop using optional `if (exists(...))` branches for core checkpoints (auth entry, upgrade path, generation result, settings navigation) and fail explicitly when expected UI state is missing. Representative journey execution on a real mobile target completes without silent skips, and failures include clear assertion reasons tied to the missing checkpoint. |
 | `P1-42` | Auth-screen layout flake elimination | The `AuthScreen shows error banner when Google sign-in fails` test no longer produces order-dependent `RenderFlex overflow` failures during randomized multi-file runs. Root cause is fixed (test harness isolation and/or responsive layout constraints), deterministic regression coverage is added, and `./scripts/test_flake_audit.sh` shows zero flakes for this case. |
 | `P1-40` | Startup/router timeout guard under network faults | Splash/startup routing reaches an explicit terminal route (`/onboarding`, `/home`, `/auth`, `/lock`, or init error surface) within a bounded timeout even when Supabase/RevenueCat DNS fails. Returning-user entitlement routing is deterministic under delayed RevenueCat init (no false `/onboarding` fallback followed by corrective auth/restore reroute). Integration tests cover both network-fault and delayed-entitlement scenarios with deterministic pass/fail assertions. |
 | `P1-52` | Biometric lifecycle debounce + single-flight guard | Biometric lock flow guarantees a single active prompt per foreground transition, ignores duplicate resume/inactive callbacks inside a bounded debounce window, and logs one stable lifecycle transition per lock attempt. Device tests on iOS confirm no rapid repeated `Biometric auth started` bursts during Face ID enable/disable and resume flows. |
-| `P1-41` | Network-independent smoke deterministic mode | `integration_test/smoke_test.dart` has a documented deterministic mode (or injected fakes) that removes dependency on live Supabase/RevenueCat reachability for core S1-S5 assertions. CI/device smoke remains stable when outbound network is unavailable or flaky. |
+| `P1-41` | Network-independent smoke deterministic mode | `integration_test/smoke_test.dart` has a documented deterministic mode (or injected fakes) that removes dependency on live Supabase/RevenueCat reachability for core S1-S5 assertions. CI/device smoke remains stable when outbound network is unavailable or flaky, and the home/onboarding checkpoint does not depend on live backend timing to reach `What's the occasion?` or `Birthday`. |
 | `P1-39` | Android smoke integration harness stall (`did not complete`) | `flutter test -d <android-device> integration_test/smoke_test.dart` completes deterministically on wired hardware. No test hangs at `S1` with `+0` progress, and failures (if any) surface as explicit assertions/timeouts with actionable stack traces. |
-| `P1-35` | Smoke suite determinism and async hygiene | `integration_test/smoke_test.dart` removes guarded async conflicts and fragile route assumptions (`S4`/`S5`), uses deterministic waits/finders, and passes on wired Android + iOS without manual retries. |
+| `P1-35` | Smoke suite determinism and async hygiene | `integration_test/smoke_test.dart` removes guarded async conflicts and fragile route assumptions, uses deterministic waits/finders, and passes on wired Android + iOS without manual retries. In particular, the post-onboarding home assertion no longer fails with `Failed to navigate to home`, and the settings leg uses stable finders that survive canonical back/icon changes. |
+| `P1-54` | Firebase Test Lab critical suite determinism | `integration_test/ftl_test.dart` passes on the documented Firebase Test Lab target (`oriole`, Android 33, portrait, no orchestrator) with 4/4 passing. The suite must not emit post-test startup-router disposal errors (`ref` read after unmount), the settings case must use stable navigation/back finders instead of icon-only assumptions, the Pro override case must reach a deterministic ready surface without timeout, and PR/release evidence includes the Firebase matrix link plus JUnit/log output for the passing run. |
 | `P1-36` | Journey launch readiness hardening | `integration_test/journeys/_helpers.dart` `launchApp()` waits for a concrete ready surface (onboarding/auth/home) with bounded timeout and clear failure reasons. `j1_fresh_install_test.dart` no longer produces `did not complete` behavior during wired-device execution. |
 | `P1-38` | E2E suite failure isolation | `integration_test/e2e_test.dart` execution is split or orchestrated so one early failure does not collapse the full suite into mass `did not complete` noise. Each shard outputs independent pass/fail and artifacts. |
 | `P1-34` | Offline-safe integration font loading | Integration runs do not depend on live `fonts.gstatic.com` fetches. `google_fonts` runtime fetching is disabled in test mode (or fonts are bundled/preloaded), and `integration_test/smoke_test.dart` + `integration_test/e2e_test.dart` pass without DNS/network access. |
