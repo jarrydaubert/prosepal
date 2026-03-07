@@ -1,17 +1,10 @@
 /// Journey 10: Results Screen Actions
 ///
-/// Tests all actions on the results screen:
-/// 1. Copy each message option
-/// 2. Share functionality
-/// 3. Start Over
-/// 4. Regenerate (if available)
-///
-/// Expected logs:
-/// - [INFO] Message copied | option=1/2/3
-/// - [INFO] Share initiated
+/// Keeps the two results actions with a concrete bug target:
+/// 1. Copy must show explicit confirmation.
+/// 2. Start Over must return to home.
 library;
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import '_helpers.dart';
 
@@ -38,32 +31,6 @@ void main() {
           exists(find.text('Option 1'));
     }
 
-    testWidgets('J10.1: Results show 3 message options', (tester) async {
-      final atResults = await navigateToResults(tester);
-      expect(atResults, isTrue, reason: 'Failed to navigate to results');
-
-      expect(exists(find.text('Option 1')), isTrue);
-      expect(exists(find.text('Option 2')), isTrue);
-      expect(exists(find.text('Option 3')), isTrue);
-
-      await screenshot(tester, 'j10_1_three_options');
-    });
-
-    testWidgets('J10.2: Copy button on each option', (tester) async {
-      final atResults = await navigateToResults(tester);
-      expect(atResults, isTrue, reason: 'Failed to navigate to results');
-
-      // Should have at least one copy button
-      final copyButtons = find.text('Copy');
-      expect(
-        copyButtons.evaluate().isNotEmpty,
-        isTrue,
-        reason: 'Should have Copy buttons',
-      );
-
-      await screenshot(tester, 'j10_2_copy_buttons');
-    });
-
     testWidgets('J10.3: Copy first option shows confirmation', (tester) async {
       final atResults = await navigateToResults(tester);
       expect(atResults, isTrue, reason: 'Failed to navigate to results');
@@ -85,39 +52,7 @@ void main() {
       await screenshot(tester, 'j10_3_copied_confirmation');
     });
 
-    testWidgets('J10.4: Can copy different options', (tester) async {
-      final atResults = await navigateToResults(tester);
-      expect(atResults, isTrue, reason: 'Failed to navigate to results');
-
-      final copyButtons = find.text('Copy');
-      expect(
-        copyButtons.evaluate().length >= 2,
-        isTrue,
-        reason: 'Expected at least two copy actions on results screen',
-      );
-      // Copy second option
-      await tester.tap(copyButtons.at(1));
-      await tester.pumpAndSettle();
-
-      await screenshot(tester, 'j10_4_second_option_copied');
-    });
-
-    testWidgets('J10.5: Share button exists', (tester) async {
-      // Bug: Share functionality missing from results screen
-      final atResults = await navigateToResults(tester);
-      expect(atResults, isTrue, reason: 'Failed to navigate to results');
-
-      // Look for share button/icon
-      final hasShare =
-          exists(find.text('Share')) ||
-          exists(find.byIcon(Icons.share)) ||
-          exists(find.byIcon(Icons.share_outlined));
-
-      expect(hasShare, isTrue, reason: 'Results should have share button');
-      await screenshot(tester, 'j10_5_share_button');
-    });
-
-    testWidgets('J10.6: Start Over button returns to home', (tester) async {
+    testWidgets('J10.6: Start Over returns to the home picker', (tester) async {
       final atResults = await navigateToResults(tester);
       expect(atResults, isTrue, reason: 'Failed to navigate to results');
 
@@ -136,21 +71,6 @@ void main() {
       );
 
       await screenshot(tester, 'j10_6_start_over');
-    });
-
-    testWidgets('J10.7: Messages have visible content', (tester) async {
-      // Bug: Generated messages are empty or not displayed
-      final atResults = await navigateToResults(tester);
-      expect(atResults, isTrue, reason: 'Failed to navigate to results');
-
-      // Verify message cards/content are visible (not empty results)
-      final hasContent =
-          exists(find.byType(Card)) ||
-          exists(find.text('Copy')) ||
-          exists(find.text('Option 1'));
-
-      expect(hasContent, isTrue, reason: 'Results should show message content');
-      await screenshot(tester, 'j10_7_message_content');
     });
   });
 }

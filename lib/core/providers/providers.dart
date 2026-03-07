@@ -474,6 +474,9 @@ final remainingGenerationsProvider = Provider<int>((ref) {
 
 final occasionSearchProvider = StateProvider.autoDispose<String>((ref) => '');
 
+/// One-shot signal to dismiss stale home-search focus after returning home.
+final dismissHomeKeyboardProvider = StateProvider<bool>((ref) => false);
+
 /// Filtered occasions based on search query.
 /// Matches against label (case-insensitive).
 final filteredOccasionsProvider = Provider<List<Occasion>>((ref) {

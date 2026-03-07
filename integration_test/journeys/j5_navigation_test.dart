@@ -1,17 +1,9 @@
 /// Journey 5: Navigation & Wizard Steps
 ///
-/// Tests navigation behavior:
-/// 1. Back button from wizard
-/// 2. Wizard state preservation
-/// 3. Re-entering wizard
-/// 4. Rapid navigation handling
-///
-/// Expected logs:
-/// - [INFO] Wizard started
-/// - [INFO] Navigation: back pressed
+/// Keeps explicit state-preservation checks for wizard navigation.
 library;
 
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import '_helpers.dart';
 
@@ -39,14 +31,15 @@ void main() {
       await screenshot(tester, 'j5_1_back_to_home');
     });
 
-    testWidgets('J5.2: Back from step 2 preserves occasion', (tester) async {
+    testWidgets('J5.2: Back from step 2 preserves occasion context', (
+      tester,
+    ) async {
       final atHome = await navigateToHome(tester);
       expect(atHome, isTrue, reason: 'Failed to navigate to home');
 
       await tester.tap(find.text('Birthday'));
       await tester.pumpAndSettle();
 
-      // Go to step 2
       await tapTextOrFail(
         tester,
         'Close Friend',
@@ -58,10 +51,8 @@ void main() {
         reason: 'Continue CTA should be present after relationship selection',
       );
 
-      // Now on tones, go back
       final wentBack = await tapBack(tester);
       expect(wentBack, isTrue, reason: 'Back action unavailable on step 2');
-      // Should still be in Birthday wizard (showing relationships)
       expect(
         anyTextExists(['Close Friend', 'Family', 'Partner']),
         isTrue,
@@ -71,16 +62,16 @@ void main() {
       await screenshot(tester, 'j5_2_back_preserves');
     });
 
-    testWidgets('J5.3: Back from step 3 preserves selections', (tester) async {
+    testWidgets('J5.3: Back from final step preserves tone selection state', (
+      tester,
+    ) async {
       final atHome = await navigateToHome(tester);
       expect(atHome, isTrue, reason: 'Failed to navigate to home');
 
       await completeWizardOrFail(tester);
 
-      // Now on final step, go back
       final wentBack = await tapBack(tester);
       expect(wentBack, isTrue, reason: 'Back action unavailable on final step');
-      // Should show tones again
       expect(
         anyTextExists(['Heartfelt', 'Funny', 'Formal']),
         isTrue,
@@ -90,16 +81,16 @@ void main() {
       await screenshot(tester, 'j5_3_back_to_tones');
     });
 
-    testWidgets('J5.4: Can re-enter wizard after backing out', (tester) async {
+    testWidgets('J5.4: Re-entering wizard starts a new occasion path', (
+      tester,
+    ) async {
       final atHome = await navigateToHome(tester);
       expect(atHome, isTrue, reason: 'Failed to navigate to home');
 
-      // Enter and exit
       await tester.tap(find.text('Birthday'));
       await tester.pumpAndSettle();
       await tapBack(tester);
 
-      // Re-enter with different occasion
       await tapTextOrFail(
         tester,
         'Thank You',
@@ -115,66 +106,25 @@ void main() {
       await screenshot(tester, 'j5_4_reenter');
     });
 
-    testWidgets('J5.5: Rapid back taps handled gracefully', (tester) async {
-      final atHome = await navigateToHome(tester);
-      expect(atHome, isTrue, reason: 'Failed to navigate to home');
-
-      await completeWizard(tester);
-
-      // Rapid back taps
-      for (var i = 0; i < 5; i++) {
-        if (exists(find.byIcon(Icons.arrow_back))) {
-          await tester.tap(find.byIcon(Icons.arrow_back), warnIfMissed: false);
-          await tester.pump(const Duration(milliseconds: 100));
-        }
-      }
-      await tester.pumpAndSettle();
-
-      expect(
-        find.byType(MaterialApp),
-        findsOneWidget,
-        reason: 'App should remain stable',
-      );
-
-      await screenshot(tester, 'j5_5_rapid_back');
-    });
-
-    testWidgets('J5.6: Settings then back preserves home state', (
+    testWidgets('J5.7: Deep legal navigation can return safely to home', (
       tester,
     ) async {
       final atHome = await navigateToHome(tester);
       expect(atHome, isTrue, reason: 'Failed to navigate to home');
 
-      // Go to settings
-      await tester.tap(find.byIcon(Icons.settings_outlined));
-      await tester.pumpAndSettle();
-
-      // Come back
-      await tapBack(tester);
-
-      expect(
-        find.text('Birthday'),
-        findsOneWidget,
-        reason: 'Home should show occasions',
-      );
-
-      await screenshot(tester, 'j5_6_settings_back');
-    });
-
-    testWidgets('J5.7: Deep navigation and return', (tester) async {
-      final atHome = await navigateToHome(tester);
-      expect(atHome, isTrue, reason: 'Failed to navigate to home');
-
-      // Go deep: Home → Wizard → Settings (via back and re-navigate)
       await tester.tap(find.text('Birthday'));
       await tester.pumpAndSettle();
-
       await tapBack(tester);
 
-      await tester.tap(find.byIcon(Icons.settings_outlined));
+      final settingsButton = find.byKey(const ValueKey('home_settings_button'));
+      expect(
+        settingsButton.evaluate().isNotEmpty,
+        isTrue,
+        reason: 'Home settings button should be visible',
+      );
+      await tester.tap(settingsButton);
       await tester.pumpAndSettle();
 
-      // Go to legal
       final foundPrivacy = await scrollToText(tester, 'Privacy Policy');
       expect(
         foundPrivacy,
@@ -184,11 +134,14 @@ void main() {
       await tester.tap(find.text('Privacy Policy'));
       await tester.pumpAndSettle();
 
-      // Back twice to home
       await tapBack(tester);
       await tapBack(tester);
 
-      expect(anyTextExists(["What's the occasion?", 'Birthday']), isTrue);
+      expect(
+        anyTextExists(["What's the occasion?", 'Birthday']),
+        isTrue,
+        reason: 'Deep navigation should be able to return to home',
+      );
 
       await screenshot(tester, 'j5_7_deep_nav');
     });

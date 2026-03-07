@@ -13,6 +13,7 @@ import '../../core/services/history_service.dart';
 import '../../shared/components/app_emoji.dart';
 import '../../shared/components/components.dart';
 import '../../shared/theme/app_colors.dart';
+import '../../shared/utils/keyboard_utils.dart';
 
 class HistoryScreen extends ConsumerStatefulWidget {
   const HistoryScreen({super.key});
@@ -219,8 +220,8 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                   keyboardType: TextInputType.text,
                   textCapitalization: TextCapitalization.words,
                   textInputAction: TextInputAction.done,
-                  onSubmitted: (_) => FocusScope.of(context).unfocus(),
-                  onTapOutside: (_) => FocusScope.of(context).unfocus(),
+                  onSubmitted: (_) => dismissKeyboard(context),
+                  onTapOutside: (_) => dismissKeyboard(context),
                   style: const TextStyle(
                     color: AppColors.textOnLight,
                     fontSize: 15,
@@ -252,7 +253,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                             onPressed: () {
                               _searchController.clear();
                               _onSearchChanged('');
-                              _searchFocusNode.unfocus();
+                              dismissKeyboard(context);
                             },
                           )
                         : null,

@@ -82,8 +82,12 @@ void main() {
 
       final title = tester.widget<Text>(find.text('Prosepal'));
       final subtitle = tester.widget<Text>(find.text('Tap to unlock'));
+      final buttonLabel = tester.widget<Text>(
+        find.textContaining('Unlock with'),
+      );
       expect(title.style?.color, AppColors.textPrimary);
       expect(subtitle.style?.color, AppColors.textSecondary);
+      expect(buttonLabel.style?.color, AppColors.textOnPrimary);
     });
 
     testWidgetsWithCleanup('shows retry hint after repeated failed attempts', (

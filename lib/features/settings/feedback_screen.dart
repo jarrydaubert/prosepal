@@ -12,6 +12,7 @@ import '../../core/services/diagnostic_service.dart';
 import '../../shared/components/components.dart';
 import '../../shared/theme/app_colors.dart';
 import '../../shared/theme/app_spacing.dart';
+import '../../shared/utils/keyboard_utils.dart';
 
 class FeedbackScreen extends ConsumerStatefulWidget {
   const FeedbackScreen({super.key});
@@ -36,8 +37,7 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
   }
 
   Future<void> _send() async {
-    // Dismiss keyboard
-    FocusScope.of(context).unfocus();
+    dismissKeyboard(context);
 
     final message = _controller.text.trim();
     if (message.isEmpty) {
@@ -182,7 +182,7 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
 
   @override
   Widget build(BuildContext context) => GestureDetector(
-    onTap: () => FocusScope.of(context).unfocus(),
+    onTap: () => dismissKeyboard(context),
     child: Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -234,8 +234,8 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
                   height: 1.4,
                   color: AppColors.textPrimary,
                 ),
-                onEditingComplete: () => FocusScope.of(context).unfocus(),
-                onTapOutside: (_) => FocusScope.of(context).unfocus(),
+                onEditingComplete: () => dismissKeyboard(context),
+                onTapOutside: (_) => dismissKeyboard(context),
                 decoration: InputDecoration(
                   hintText: 'Describe your issue or suggestion...',
                   hintStyle: const TextStyle(
@@ -295,7 +295,7 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
                   Switch.adaptive(
                     value: _includeLogs,
                     onChanged: (value) {
-                      FocusScope.of(context).unfocus();
+                      dismissKeyboard(context);
                       setState(() {
                         _includeLogs = value;
                         if (!value) _includeSensitiveLogs = false;
@@ -336,7 +336,7 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
                     Switch.adaptive(
                       value: _includeSensitiveLogs,
                       onChanged: (value) {
-                        FocusScope.of(context).unfocus();
+                        dismissKeyboard(context);
                         _toggleSensitiveLogs(value);
                       },
                     ),

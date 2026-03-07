@@ -21,6 +21,11 @@ Prefer one high-signal test with a strong oracle over many low-signal
 click-through tests. If a test cannot explain its bug target and failure
 contract, rewrite it or delete it.
 
+If a change affects runtime behavior, "done" must include regression
+protection. Preferred outcome: automated coverage at the right layer. If
+automation is not the right fit, the PR must still name the target bug, the
+pass/fail oracle, and the replacement evidence path.
+
 ## Commands
 
 ```bash
@@ -48,6 +53,8 @@ SUPABASE_DB_URL="postgresql://..." ./scripts/verify_supabase_readonly.sh
 
 # Integration smoke/e2e
 # Checked-in integration suites use Flutter's `integration_test` harness.
+# `integration_test/smoke_test.dart` is deterministic and mock-driven on purpose;
+# use it for app-behavior sanity, not live backend verification.
 flutter test integration_test/smoke_test.dart -d <device-id>
 flutter test integration_test/e2e_test.dart -d <device-id>
 flutter test integration_test/e2e_real_test.dart -d <android-device-id> --dart-define=REVENUECAT_USE_TEST_STORE=true
@@ -73,6 +80,7 @@ gcloud firebase test android run --type instrumentation --app build/app/outputs/
 ## Notes
 
 - Prefer simulator/emulator or wired devices for integration runs.
+- `flutter test integration_test/...` is not reliable on wirelessly connected iOS devices; use a USB-connected iPhone or a simulator for journey/smoke execution, or expect Flutter tooling to refuse app launch.
 - Use `./scripts/run_wired_evidence.sh` when you need a single artifact bundle with logs and screenshots from wired devices.
 - In-test integration screenshots are off by default for stability (`INTEGRATION_CAPTURE_SCREENSHOTS=false`); rely on wired evidence artifacts unless debugging screenshot APIs specifically.
 - iOS external screenshot capture is best-effort and depends on local `idevicescreenshot` pairing support.

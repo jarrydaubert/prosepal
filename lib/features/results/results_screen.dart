@@ -20,6 +20,7 @@ import '../../shared/components/app_emoji.dart';
 import '../../shared/components/app_surface_card.dart';
 import '../../shared/components/generation_loading_overlay.dart';
 import '../../shared/theme/app_colors.dart';
+import '../../shared/utils/keyboard_utils.dart';
 import '../paywall/paywall_sheet.dart';
 import 'save_to_calendar_dialog.dart';
 
@@ -354,9 +355,9 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
 
   void _returnHome() {
     resetGenerationForm(ref);
+    ref.read(dismissHomeKeyboardProvider.notifier).state = true;
     ref.read(occasionSearchProvider.notifier).state = '';
-    FocusManager.instance.primaryFocus?.unfocus();
-    SystemChannels.textInput.invokeMethod<void>('TextInput.hide');
+    dismissKeyboard(context);
     context.go('/home');
   }
 

@@ -5,16 +5,28 @@ Only open TODO items live here.
 Rules:
 - No status updates, progress notes, or completed work.
 - Every item must include a clear, testable Definition of Done (DoD).
+- If an item changes runtime behavior, its DoD must define regression
+  protection: automated coverage at the right layer or an explicit replacement
+  evidence path with a named bug target and oracle.
 - When an item is complete, remove it from this file.
+
+## Backlog Mantra
+
+- Open TODO items only.
+- Clear, testable DoD only.
+- Behavior changes must say how they stay fixed:
+  - automated coverage at the right layer, or
+  - explicit replacement evidence path with a named bug target and oracle.
 
 ## Global DoD Contract (Applies To Every Item)
 
 A backlog item is only considered complete when all conditions below are true:
 
 1. `Outcome delivered`: The row's feature/fix/docs scope is implemented exactly as written.
-2. `Deterministic validation passed`: Relevant validation commands pass with no manual interpretation required.
-3. `Evidence attached`: PR/release evidence includes concrete proof (logs, screenshots, CI run IDs, or artifact links) for the completed outcome.
-4. `Backlog hygiene`: The completed item is removed from this file in the same change set that provides outcome + validation + evidence.
+2. `Regression protection defined`: If the item changes behavior, completion adds or updates automated coverage at the right layer, or explicitly justifies why automation is the wrong layer. That justification must name the target bug, the pass/fail oracle, and the replacement evidence path.
+3. `Deterministic validation passed`: Relevant validation commands pass with no manual interpretation required.
+4. `Evidence attached`: PR/release evidence includes concrete proof (logs, screenshots, CI run IDs, or artifact links) for the completed outcome.
+5. `Backlog hygiene`: The completed item is removed from this file in the same change set that provides outcome + validation + evidence.
 
 If any condition is missing, the item remains open.
 
@@ -113,4 +125,5 @@ Process items in this order unless an explicit owner override is recorded in rel
 | `P2-14` | Re-evaluate custom-lint compatibility | On a scheduled toolchain review, verify whether the published `custom_lint`/`riverpod_lint` ecosystem is compatible with the current Flutter/Dart/Riverpod analyzer line, document the decision in `docs/DEVOPS.md`, and either reintroduce the lint stack with passing `flutter analyze`/`flutter test`/`./scripts/test_critical_smoke.sh` or explicitly keep it deferred with recorded evidence. |
 | `P2-16` | Public QA showcase packaging | `README.md` includes a concise risk-to-test-layer matrix, links to concrete evidence sources for local, wired-device, Patrol native-risk, and Firebase Test Lab runs, and describes Patrol/FTL usage honestly as selective native-risk coverage rather than the mainline harness. The public story must explicitly favor a small number of high-signal, bug-oriented tests over inflated test counts or threshold-chasing. `docs/DEVOPS.md` and linked runbooks expose runnable commands for collecting that evidence, the public wording is reviewed against the actual repo workflows/harnesses, and a repo-owner walkthrough confirms the showcase story is accurate and portfolio-ready. |
 | `P2-17` | RevenueCat transfer metadata hydration | `user_entitlements` rows created from RevenueCat `TRANSFER` flows preserve or recover canonical `product_id` and `expires_at` values instead of leaving them null. Delete-account/recreate/restore/sign-in validation proves the backend row contains `is_pro=true` plus non-null metadata, and the recovery path is documented in `docs/DEVOPS.md` if webhook/event ordering can still temporarily omit those fields. |
-| `P2-18` | AI technical-depth showcase | The repo and app make the AI system design legible and impressive without hand-waving: public docs explain the pinned-model strategy, Remote Config controls, App Check posture, structured JSON contract, fallback path, and typed error handling; diagnostics/support surfaces expose the active AI backend/model configuration without leaking secrets; and at least one reproducible evidence path demonstrates a non-happy-path AI behavior (for example fallback-model recovery, client-block triage, or blocked-content classification) with a clear oracle and captured artifact. |
+| `P2-18` | AI technical-depth showcase | The repo and app make the AI system design legible and impressive without hand-waving: public docs explain the pinned-model strategy, Remote Config controls, App Check posture, structured JSON contract, fallback path, and typed error handling; diagnostics/support surfaces expose the active AI runtime (backend, primary/fallback model, allowlist state, App Check token mode, config schema version) without leaking secrets; and at least one reproducible evidence path demonstrates a non-happy-path AI behavior (for example fallback-model recovery, client-block triage, or blocked-content classification) with a clear oracle and captured artifact. |
+| `P2-21` | Diagnostic auth-provider summary consistency | The support/diagnostic report shows `last_sign_in_provider`, `Most Recent Identity Provider`, and `current_session_source` values that match the actual authenticated session semantics after Apple/Google sign-in, linked-account reuse, and token refresh. DoD requires a clear provider precedence policy, deterministic unit coverage for linked-provider edge cases, and at least one real-device report sample where summary fields match the corresponding recent auth logs. |

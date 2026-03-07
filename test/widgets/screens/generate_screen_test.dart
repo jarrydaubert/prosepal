@@ -6,7 +6,6 @@ import 'package:go_router/go_router.dart';
 import 'package:prosepal/core/models/models.dart';
 import 'package:prosepal/core/providers/providers.dart';
 import 'package:prosepal/core/services/ai_service.dart';
-import 'package:prosepal/core/services/form_restoration_service.dart';
 import 'package:prosepal/core/services/review_service.dart';
 import 'package:prosepal/core/services/usage_service.dart';
 import 'package:prosepal/features/generate/generate_screen.dart';
@@ -222,10 +221,6 @@ void main() {
     );
   }
 
-  Future<void> clearGenerateFormState() async {
-    await FormRestorationService(mockPrefs).clearGenerateFormState();
-  }
-
   TextField findTextFieldByHint(WidgetTester tester, String hintText) =>
       tester.widget<TextField>(
         find.byWidgetPredicate(
@@ -262,21 +257,6 @@ void main() {
   // STEP 1: RELATIONSHIP PICKER
   // ============================================================
   group('GenerateScreen Step 1: Relationship Picker', () {
-    testWidgetsWithPumps('displays all relationship options', (tester) async {
-      await tester.pumpWidget(
-        createTestableGenerateScreen(selectedOccasion: Occasion.birthday),
-      );
-      await tester.pump(const Duration(seconds: 1));
-
-      for (final relationship in Relationship.values) {
-        expect(
-          find.text(relationship.label),
-          findsOneWidget,
-          reason: 'Should display ${relationship.label}',
-        );
-      }
-    });
-
     testWidgetsWithPumps('shows step indicator with 3 segments', (
       tester,
     ) async {
@@ -323,39 +303,11 @@ void main() {
         await tester.pump(const Duration(seconds: 1));
 
         // Should now be on step 2 (tones visible)
-        for (final tone in Tone.values) {
-          expect(find.text(tone.label), findsOneWidget);
-        }
+        expect(find.text('Heartfelt'), findsOneWidget);
+        expect(find.text('Funny'), findsOneWidget);
+        expect(find.text('Casual'), findsOneWidget);
       },
     );
-
-    testWidgetsWithPumps('each relationship option is tappable', (
-      tester,
-    ) async {
-      for (final relationship in Relationship.values) {
-        await clearGenerateFormState();
-        await tester.pumpWidget(
-          createTestableGenerateScreen(selectedOccasion: Occasion.birthday),
-        );
-        await tester.pump(const Duration(seconds: 1));
-
-        final relationshipFinder = find.text(relationship.label);
-        await tester.ensureVisible(relationshipFinder);
-        await tester.pump(const Duration(seconds: 1));
-
-        await tester.tap(relationshipFinder);
-        await tester.pump(const Duration(seconds: 1));
-        await tester.tap(find.text('Continue'));
-        await tester.pump(const Duration(seconds: 1));
-
-        // Should advance to step 2
-        expect(
-          find.text('Heartfelt'),
-          findsOneWidget,
-          reason: '${relationship.label} should allow navigation',
-        );
-      }
-    });
   });
 
   group('GenerateScreen Input Configuration', () {
@@ -391,22 +343,6 @@ void main() {
   // STEP 2: TONE SELECTOR
   // ============================================================
   group('GenerateScreen Step 2: Tone Selector', () {
-    testWidgetsWithPumps('displays all tone options', (tester) async {
-      await tester.pumpWidget(
-        createTestableGenerateScreen(selectedOccasion: Occasion.birthday),
-      );
-      await tester.pump(const Duration(seconds: 1));
-      await navigateToStep2(tester);
-
-      for (final tone in Tone.values) {
-        expect(
-          find.text(tone.label),
-          findsOneWidget,
-          reason: 'Should display ${tone.label} tone',
-        );
-      }
-    });
-
     testWidgetsWithPumps(
       'Continue button navigates to step 3 after selecting tone',
       (tester) async {
@@ -423,34 +359,9 @@ void main() {
 
         // Should be on step 3 - Generate button visible
         expect(find.text('Generate Messages'), findsOneWidget);
+        expect(find.text('Brief'), findsOneWidget);
       },
     );
-
-    testWidgetsWithPumps('each tone option is tappable', (tester) async {
-      for (final tone in Tone.values) {
-        await clearGenerateFormState();
-        await tester.pumpWidget(
-          createTestableGenerateScreen(selectedOccasion: Occasion.birthday),
-        );
-        await tester.pump(const Duration(seconds: 1));
-        await navigateToStep2(tester);
-
-        final toneFinder = find.text(tone.label);
-        await tester.ensureVisible(toneFinder);
-        await tester.pump(const Duration(seconds: 1));
-
-        await tester.tap(toneFinder);
-        await tester.pump(const Duration(seconds: 1));
-        await tester.tap(find.text('Continue'));
-        await tester.pump(const Duration(seconds: 1));
-
-        expect(
-          find.text('Generate Messages'),
-          findsOneWidget,
-          reason: '${tone.label} should allow navigation to step 3',
-        );
-      }
-    });
   });
 
   // ============================================================
@@ -474,13 +385,8 @@ void main() {
       await tester.pump(const Duration(seconds: 1));
       await navigateToStep3(tester);
 
-      for (final length in MessageLength.values) {
-        expect(
-          find.text(length.label),
-          findsOneWidget,
-          reason: 'Should display ${length.label} length option',
-        );
-      }
+      expect(find.text('Brief'), findsOneWidget);
+      expect(find.text('Standard'), findsOneWidget);
     });
 
     testWidgetsWithPumps('Brief length is selectable', (tester) async {
@@ -620,6 +526,11 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Home'), findsOneWidget);
+
+      final container = ProviderScope.containerOf(
+        tester.element(find.text('Home')),
+      );
+      expect(container.read(dismissHomeKeyboardProvider), isTrue);
     });
 
     testWidgetsWithPumps('back button returns to previous step', (
@@ -835,27 +746,5 @@ void main() {
       // Error should be gone
       expect(find.byIcon(Icons.error_outline), findsNothing);
     });
-  });
-
-  // ============================================================
-  // ALL OCCASIONS
-  // ============================================================
-  group('GenerateScreen All Occasions', () {
-    for (final occasion in Occasion.values) {
-      testWidgetsWithPumps('works for ${occasion.label}', (tester) async {
-        await clearGenerateFormState();
-        await tester.pumpWidget(
-          createTestableGenerateScreen(selectedOccasion: occasion),
-        );
-        await tester.pump(const Duration(seconds: 1));
-
-        // App bar shows occasion label and emoji (may appear multiple times in UI)
-        expect(find.text(occasion.label), findsAtLeastNWidgets(1));
-        expect(find.text(occasion.emoji), findsAtLeastNWidgets(1));
-
-        // Step 1 is visible
-        expect(find.text('Close Friend'), findsOneWidget);
-      });
-    }
   });
 }

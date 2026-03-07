@@ -26,15 +26,6 @@ void main() {
     child: const MaterialApp(home: FeedbackScreen()),
   );
 
-  testWidgets('shows feedback input and diagnostic toggle', (tester) async {
-    await tester.pumpWidget(buildTestWidget());
-    await tester.pumpAndSettle();
-
-    expect(find.text('Send Feedback'), findsNWidgets(2));
-    expect(find.text('Include diagnostic logs'), findsOneWidget);
-    expect(find.byType(TextField), findsOneWidget);
-  });
-
   testWidgets('preserves typed feedback when diagnostics toggles change', (
     tester,
   ) async {

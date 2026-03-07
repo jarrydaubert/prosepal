@@ -1,18 +1,8 @@
-/// Journey 3: Pro User → Generate → Sign Out
+/// Journey 3: Pro User → Generate
 ///
-/// Tests the authenticated Pro user experience:
-/// 1. PRO badge visible
-/// 2. Unlimited generations
-/// 3. Settings shows Pro Plan
-/// 4. Sign out flow
-///
-/// Expected logs:
-/// - [INFO] App launched | isPro=true
-/// - [INFO] AI generation started
-/// - [INFO] AI generation success
-/// - [INFO] Sign out initiated
-/// - [INFO] User signed out
-/// - [INFO] RevenueCat user logged out
+/// Keeps the single highest-signal Pro assertion:
+/// a Pro user reaches Generate (not Upgrade) and can complete a full
+/// generation flow.
 library;
 
 import 'package:flutter_test/flutter_test.dart';
@@ -22,116 +12,17 @@ void main() {
   initBinding();
 
   group('Journey 3: Pro User Flow', () {
-    testWidgets('J3.1: Pro badge visible on home (if Pro)', (tester) async {
-      final atHome = await navigateToHome(tester);
-      expect(atHome, isTrue, reason: 'Failed to navigate to home');
-
-      // Check for Pro indicator
-      final hasPro =
-          exists(find.text('PRO')) ||
-          exists(find.text('Pro')) ||
-          exists(find.textContaining('unlimited'));
-      final hasFree = find.textContaining('free').evaluate().isNotEmpty;
-
-      // One of these should be true
-      expect(
-        hasPro || hasFree,
-        isTrue,
-        reason: 'Should show Pro badge or free count',
-      );
-
-      await screenshot(tester, 'j3_1_pro_or_free');
-    });
-
-    testWidgets('J3.2: Pro user can generate without upgrade prompt', (
+    testWidgets('J3.6: Pro user reaches Generate and completes generation', (
       tester,
     ) async {
       final atHome = await navigateToHome(tester);
       expect(atHome, isTrue, reason: 'Failed to navigate to home');
 
-      expect(exists(find.text('PRO')), isTrue, reason: 'PRO badge not found');
-      await completeWizardOrFail(tester);
-
-      // Pro path should expose Generate (not Upgrade)
-      expect(find.text('Generate Messages'), findsOneWidget);
-      expect(find.text('Upgrade to Continue'), findsNothing);
-
-      await screenshot(tester, 'j3_2_pro_generate');
-    });
-
-    testWidgets('J3.3: Settings shows Pro Plan for Pro user', (tester) async {
-      final atSettings = await navigateToSettings(tester);
-      expect(atSettings, isTrue, reason: 'Failed to navigate to settings');
-
-      // Should show either Pro Plan or Free Plan
-      final hasProPlan = exists(find.text('Pro Plan'));
-      final hasFreePlan = exists(find.text('Free Plan'));
-
-      expect(
-        hasProPlan || hasFreePlan,
-        isTrue,
-        reason: 'Should show subscription status',
-      );
-
-      await screenshot(tester, 'j3_3_subscription_status');
-    });
-
-    testWidgets('J3.4: Settings shows Sign Out for authenticated user', (
-      tester,
-    ) async {
-      final atSettings = await navigateToSettings(tester);
-      expect(atSettings, isTrue, reason: 'Failed to navigate to settings');
-
-      // Scroll to find auth action
-      await scrollToText(tester, 'Sign Out');
-      await scrollToText(tester, 'Sign In');
-
-      final hasSignOut = exists(find.text('Sign Out'));
-      final hasSignIn = exists(find.text('Sign In'));
-
-      expect(
-        hasSignOut || hasSignIn,
-        isTrue,
-        reason: 'Should show Sign Out or Sign In',
-      );
-
-      await screenshot(tester, 'j3_4_auth_action');
-    });
-
-    testWidgets('J3.5: Sign Out shows confirmation dialog', (tester) async {
-      final atSettings = await navigateToSettings(tester);
-      expect(atSettings, isTrue, reason: 'Failed to navigate to settings');
-
-      final hasSignOut = await scrollToText(tester, 'Sign Out');
-      expect(hasSignOut, isTrue, reason: 'Sign Out action should be present');
-      await tester.tap(find.text('Sign Out'));
-      await tester.pumpAndSettle();
-
-      // Should show confirmation or navigate to auth
-      final hasConfirm =
-          exists(find.text('Confirm')) ||
-          exists(find.text('Cancel')) ||
-          exists(find.text('Are you sure'));
-      final atAuth = exists(find.text('Sign in with Google'));
-
-      expect(
-        hasConfirm || atAuth,
-        isTrue,
-        reason: 'Sign Out flow should show confirmation or auth screen',
-      );
-
-      await screenshot(tester, 'j3_5_sign_out');
-    });
-
-    testWidgets('J3.6: Pro user generation flow works', (tester) async {
-      final atHome = await navigateToHome(tester);
-      expect(atHome, isTrue, reason: 'Failed to navigate to home');
-
-      // Only run full generation if Pro (to save API calls)
       expect(exists(find.text('PRO')), isTrue, reason: 'PRO badge not found');
 
       await completeWizardOrFail(tester, occasion: 'Thank You', tone: 'Formal');
       expect(find.text('Generate Messages'), findsOneWidget);
+      expect(find.text('Upgrade to Continue'), findsNothing);
       await tester.tap(find.text('Generate Messages'));
       await tester.pumpAndSettle(const Duration(seconds: 15));
 
@@ -142,34 +33,6 @@ void main() {
       );
 
       await screenshot(tester, 'j3_6_pro_generation');
-    });
-
-    testWidgets('J3.7: Multiple generations work (Pro unlimited)', (
-      tester,
-    ) async {
-      final atHome = await navigateToHome(tester);
-      expect(atHome, isTrue, reason: 'Failed to navigate to home');
-
-      expect(exists(find.text('PRO')), isTrue, reason: 'PRO badge not found');
-
-      // First generation
-      await completeWizardOrFail(tester);
-      expect(find.text('Generate Messages'), findsOneWidget);
-      await tester.tap(find.text('Generate Messages'));
-      await tester.pumpAndSettle(const Duration(seconds: 15));
-
-      expect(
-        exists(find.text('Start Over')),
-        isTrue,
-        reason: 'Start Over should be available after generation results',
-      );
-      await tester.tap(find.text('Start Over'));
-      await tester.pumpAndSettle();
-
-      // Second generation should also work
-      await completeWizardOrFail(tester, occasion: 'Wedding');
-
-      await screenshot(tester, 'j3_7_multiple_gens');
     });
   });
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/models/message_length.dart';
 import '../../../shared/theme/app_colors.dart';
+import '../../../shared/utils/keyboard_utils.dart';
 
 class DetailsInput extends StatefulWidget {
   const DetailsInput({
@@ -70,7 +71,7 @@ class _DetailsInputState extends State<DetailsInput> {
 
   @override
   Widget build(BuildContext context) => GestureDetector(
-    onTap: () => FocusScope.of(context).unfocus(),
+    onTap: () => dismissKeyboard(context),
     child: SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -279,9 +280,9 @@ class _StyledTextFieldState extends State<_StyledTextField> {
         textInputAction: TextInputAction.done,
         scrollPadding: const EdgeInsets.only(bottom: 140),
         onChanged: widget.onChanged,
-        onSubmitted: (_) => FocusScope.of(context).unfocus(),
-        onEditingComplete: () => FocusScope.of(context).unfocus(),
-        onTapOutside: (_) => FocusScope.of(context).unfocus(),
+        onSubmitted: (_) => dismissKeyboard(context),
+        onEditingComplete: () => dismissKeyboard(context),
+        onTapOutside: (_) => dismissKeyboard(context),
         decoration: InputDecoration(
           hintText: widget.hintText,
           hintStyle: TextStyle(

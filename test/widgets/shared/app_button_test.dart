@@ -309,7 +309,14 @@ void main() {
       );
       await tester.pump(const Duration(milliseconds: 500));
 
-      await tester.tap(find.byType(AppGradientButton));
+      final inkWell = tester.widget<InkWell>(
+        find.descendant(
+          of: find.byType(AppGradientButton),
+          matching: find.byType(InkWell),
+        ),
+      );
+
+      expect(inkWell.onTap, isNull);
       expect(pressed, isFalse);
     });
   });

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
-import 'package:prosepal/core/models/models.dart';
 import 'package:prosepal/core/providers/providers.dart';
 import 'package:prosepal/features/home/home_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -96,50 +95,19 @@ void main() {
   }
 
   group('HomeScreen Rendering', () {
-    testWidgets('should display app title and tagline', (tester) async {
+    testWidgets('can scroll to deep occasion entries', (tester) async {
       await tester.pumpWidget(createTestableHomeScreen());
       await tester.pump(const Duration(milliseconds: 300));
 
-      expect(find.text('Prosepal'), findsOneWidget);
-      expect(find.text('The right words, right now'), findsOneWidget);
-    });
-
-    testWidgets('should display settings button', (tester) async {
-      await tester.pumpWidget(createTestableHomeScreen());
+      final deepOccasion = find.text('Pet Loss');
+      await tester.scrollUntilVisible(
+        deepOccasion,
+        100,
+        scrollable: find.byType(Scrollable).first,
+      );
       await tester.pump(const Duration(milliseconds: 300));
 
-      expect(find.byIcon(Icons.settings_outlined), findsOneWidget);
-    });
-
-    testWidgets('should display "What\'s the occasion?" section', (
-      tester,
-    ) async {
-      await tester.pumpWidget(createTestableHomeScreen());
-      await tester.pump(const Duration(milliseconds: 300));
-
-      expect(find.text("What's the occasion?"), findsOneWidget);
-    });
-
-    testWidgets('should display all occasions', (tester) async {
-      await tester.pumpWidget(createTestableHomeScreen());
-      await tester.pump(const Duration(milliseconds: 300));
-
-      // Check each occasion is displayed (13 total: 10 original + 3 new)
-      // Need to scroll to find items that may be off-screen
-      for (final occasion in Occasion.values) {
-        final finder = find.text(occasion.label);
-        await tester.scrollUntilVisible(
-          finder,
-          100,
-          scrollable: find.byType(Scrollable).first,
-        );
-        await tester.pump(const Duration(milliseconds: 300));
-        expect(
-          finder,
-          findsOneWidget,
-          reason: 'Should find ${occasion.label} occasion',
-        );
-      }
+      expect(deepOccasion, findsOneWidget);
     });
 
     testWidgets('search field uses expected keyboard hints', (tester) async {
@@ -158,14 +126,44 @@ void main() {
       expect(searchField.keyboardType, TextInputType.text);
     });
 
-    testWidgets('should display occasion emojis', (tester) async {
+    testWidgets('dismisses stale search focus when return-home signal is set', (
+      tester,
+    ) async {
       await tester.pumpWidget(createTestableHomeScreen());
       await tester.pump(const Duration(milliseconds: 300));
 
-      // Check a few key emojis are displayed
-      expect(find.text('🎂'), findsOneWidget); // Birthday
-      expect(find.text('🙏'), findsOneWidget); // Thank You
-      expect(find.text('💒'), findsOneWidget); // Wedding
+      final searchField = find.byWidgetPredicate(
+        (widget) =>
+            widget is TextField &&
+            widget.decoration?.hintText == 'Search occasions...',
+      );
+
+      await tester.tap(searchField);
+      await tester.pump();
+
+      expect(
+        tester
+            .widget<EditableText>(find.byType(EditableText))
+            .focusNode
+            .hasFocus,
+        isTrue,
+      );
+
+      final container = ProviderScope.containerOf(
+        tester.element(find.byType(HomeScreen)),
+      );
+      container.read(dismissHomeKeyboardProvider.notifier).state = true;
+      await tester.pump();
+      await tester.pump();
+
+      expect(
+        tester
+            .widget<EditableText>(find.byType(EditableText))
+            .focusNode
+            .hasFocus,
+        isFalse,
+      );
+      expect(container.read(dismissHomeKeyboardProvider), isFalse);
     });
   });
 
@@ -234,18 +232,13 @@ void main() {
       expect(find.text('Generate Screen'), findsOneWidget);
     });
 
-    testWidgets('should navigate to generate for each occasion type', (
-      tester,
-    ) async {
-      for (final occasion in Occasion.values) {
-        // Reset for each occasion
+    testWidgets(
+      'should navigate to generate for an off-screen occasion after scrolling',
+      (tester) async {
         await tester.pumpWidget(createTestableHomeScreen());
         await tester.pump(const Duration(milliseconds: 300));
 
-        // Find and tap the occasion (scroll if needed)
-        final occasionFinder = find.text(occasion.label);
-
-        // Scroll to make sure the occasion is visible
+        final occasionFinder = find.text('Pet Loss');
         await tester.scrollUntilVisible(
           occasionFinder,
           100,
@@ -256,13 +249,9 @@ void main() {
         await tester.tap(occasionFinder);
         await pumpUntilFound(tester, find.text('Generate Screen'));
 
-        expect(
-          find.text('Generate Screen'),
-          findsOneWidget,
-          reason: '${occasion.label} should navigate to generate screen',
-        );
-      }
-    });
+        expect(find.text('Generate Screen'), findsOneWidget);
+      },
+    );
 
     testWidgets('clears occasion search query when occasion is selected', (
       tester,

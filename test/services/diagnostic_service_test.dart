@@ -99,6 +99,25 @@ void main() {
     });
 
     test(
+      'report includes AI runtime section with safe configuration details',
+      () async {
+        final report = await DiagnosticService.generateReport();
+
+        expect(report, contains('--- AI Runtime ---'));
+        expect(report, contains('Backend:'));
+        expect(report, contains('Primary Model: gemini-2.5-flash'));
+        expect(report, contains('Fallback Model: gemini-2.5-flash-lite'));
+        expect(report, contains('Model Allowlist: Pass'));
+        expect(report, contains('AI Failure Triage:'));
+        expect(report, contains('CLIENT_APP_BLOCKED'));
+        expect(report, contains('APP_CHECK_FAILED'));
+        expect(report, contains('CONTENT_BLOCKED'));
+        expect(report, isNot(contains('AIza')));
+        expect(report, isNot(contains('secret')));
+      },
+    );
+
+    test(
       'advanced report keeps non-secret fields but still redacts secrets',
       () async {
         Log.info('Support context', {

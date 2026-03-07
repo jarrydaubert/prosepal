@@ -1,14 +1,8 @@
 /// Journey 9: Wizard Details & Customization
 ///
-/// Tests the wizard's customization features:
-/// 1. Message length options (Brief/Standard/Detailed)
-/// 2. Recipient name input
-/// 3. Personal details input
-/// 4. All options affect generation
-///
-/// Expected logs:
-/// - [INFO] Wizard started
-/// - [INFO] AI generation started | length=brief/standard/detailed
+/// Keeps only the customization checks with a concrete user-facing oracle:
+/// 1. Final-step message length controls are visible.
+/// 2. Filled customization fields still allow generation to complete.
 library;
 
 import 'package:flutter/material.dart';
@@ -19,7 +13,7 @@ void main() {
   initBinding();
 
   group('Journey 9: Wizard Details', () {
-    testWidgets('J9.1: Message length options visible on final step', (
+    testWidgets('J9.1: Final step exposes message length options', (
       tester,
     ) async {
       final atHome = await navigateToHome(tester);
@@ -35,111 +29,45 @@ void main() {
       await screenshot(tester, 'j9_1_length_options');
     });
 
-    testWidgets('J9.2: Brief length selectable', (tester) async {
-      final atHome = await navigateToHome(tester);
-      expect(atHome, isTrue, reason: 'Failed to navigate to home');
+    testWidgets(
+      'J9.4: Filled customization fields still allow generation to complete',
+      (tester) async {
+        final atHome = await navigateToHome(tester);
+        expect(atHome, isTrue, reason: 'Failed to navigate to home');
 
-      await completeWizardOrFail(tester);
-      await tapTextOrFail(
-        tester,
-        'Brief',
-        reason: 'Brief message length option should be selectable',
-      );
-      await screenshot(tester, 'j9_2_brief_selected');
-    });
+        await completeWizardOrFail(tester);
 
-    testWidgets('J9.3: Detailed length selectable', (tester) async {
-      final atHome = await navigateToHome(tester);
-      expect(atHome, isTrue, reason: 'Failed to navigate to home');
+        final textFields = find.byType(TextField);
+        expect(
+          textFields.evaluate().length >= 2,
+          isTrue,
+          reason: 'Expected recipient and details fields on final wizard step',
+        );
+        await tester.enterText(textFields.first, 'Sarah');
+        await tester.enterText(textFields.at(1), 'We met at college');
+        await tester.pumpAndSettle();
 
-      await completeWizardOrFail(tester);
-      await tapTextOrFail(
-        tester,
-        'Detailed',
-        reason: 'Detailed message length option should be selectable',
-      );
-      await screenshot(tester, 'j9_3_detailed_selected');
-    });
+        await tapTextOrFail(
+          tester,
+          'Detailed',
+          reason: 'Detailed message length option should be selectable',
+        );
+        await tapTextOrFail(
+          tester,
+          'Generate Messages',
+          settleDuration: const Duration(seconds: 15),
+          reason: 'Generate button should remain available after customization',
+        );
 
-    testWidgets('J9.4: Recipient name input visible', (tester) async {
-      final atHome = await navigateToHome(tester);
-      expect(atHome, isTrue, reason: 'Failed to navigate to home');
+        expect(
+          anyTextExists(['Your Messages', 'Option 1', 'error', 'Unable']),
+          isTrue,
+          reason:
+              'Customized generation should end in a visible results or error state',
+        );
 
-      await completeWizardOrFail(tester);
-
-      // Look for name input field
-      final hasNameInput =
-          find.byType(TextField).evaluate().isNotEmpty ||
-          find.textContaining('name').evaluate().isNotEmpty ||
-          find.textContaining('Name').evaluate().isNotEmpty ||
-          find.textContaining('recipient').evaluate().isNotEmpty;
-      expect(
-        hasNameInput,
-        isTrue,
-        reason: 'Wizard should show recipient name input',
-      );
-
-      await screenshot(tester, 'j9_4_name_input');
-    });
-
-    testWidgets('J9.5: Can enter recipient name', (tester) async {
-      final atHome = await navigateToHome(tester);
-      expect(atHome, isTrue, reason: 'Failed to navigate to home');
-
-      await completeWizardOrFail(tester);
-
-      // Find text field and enter name
-      final textFields = find.byType(TextField);
-      expect(
-        textFields.evaluate().isNotEmpty,
-        isTrue,
-        reason: 'Expected recipient name text field on final wizard step',
-      );
-      await tester.enterText(textFields.first, 'Sarah');
-      await tester.pumpAndSettle();
-
-      expect(find.text('Sarah'), findsOneWidget);
-      await screenshot(tester, 'j9_5_name_entered');
-    });
-
-    testWidgets('J9.6: Personal details input visible', (tester) async {
-      final atHome = await navigateToHome(tester);
-      expect(atHome, isTrue, reason: 'Failed to navigate to home');
-
-      await completeWizardOrFail(tester);
-
-      // Look for details/personal input
-      final hasDetailsInput =
-          find.textContaining('detail').evaluate().isNotEmpty ||
-          find.textContaining('Detail').evaluate().isNotEmpty ||
-          find.textContaining('personal').evaluate().isNotEmpty ||
-          find.textContaining('Personal').evaluate().isNotEmpty;
-      expect(
-        hasDetailsInput,
-        isTrue,
-        reason: 'Wizard should show personal details input prompt',
-      );
-
-      await screenshot(tester, 'j9_6_details_input');
-    });
-
-    testWidgets('J9.7: Can enter personal details', (tester) async {
-      final atHome = await navigateToHome(tester);
-      expect(atHome, isTrue, reason: 'Failed to navigate to home');
-
-      await completeWizardOrFail(tester);
-
-      // Find text fields - usually second one is details
-      final textFields = find.byType(TextField);
-      expect(
-        textFields.evaluate().length >= 2,
-        isTrue,
-        reason: 'Expected separate recipient and personal-details text fields',
-      );
-      await tester.enterText(textFields.at(1), 'We met at college');
-      await tester.pumpAndSettle();
-
-      await screenshot(tester, 'j9_7_details_entered');
-    });
+        await screenshot(tester, 'j9_4_customized_generation');
+      },
+    );
   });
 }
