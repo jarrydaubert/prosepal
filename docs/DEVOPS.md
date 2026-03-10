@@ -178,11 +178,12 @@ Policy:
 - Runs only when CI scope is not docs-only.
 - Uses first-party tooling on `macos-latest` with `xcrun simctl` to boot an available iPhone simulator.
 - Runs `flutter test -d <simulator-udid> integration_test/smoke_test.dart`.
+- CI simulator smoke keeps `INTEGRATION_CAPTURE_SCREENSHOTS=false` for stability; use wired evidence runs when screenshot artifacts matter.
 - Integration execution step is bounded with `timeout-minutes: 12` to prevent stalled simulator runs from consuming CI concurrency indefinitely.
 - CI Flutter version should track the current repo-supported stable toolchain so dependency solving stays aligned between local validation and GitHub Actions.
 - Uploads `integration-smoke-artifacts` containing:
   - `artifacts/integration-smoke/smoke.log`
-  - `integration_test/screenshots/**` (when produced)
+  - any additional smoke diagnostics emitted by the run
 - Publishes `GITHUB_STEP_SUMMARY` with pass/fail outcome and target details.
 
 Pass/fail semantics:

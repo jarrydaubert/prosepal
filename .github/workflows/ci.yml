@@ -246,8 +246,6 @@ jobs:
         id: smoke
         shell: bash
         timeout-minutes: 12
-        env:
-          INTEGRATION_CAPTURE_SCREENSHOTS: "true"
         run: |
           set -euo pipefail
           mkdir -p artifacts/integration-smoke
@@ -271,7 +269,6 @@ jobs:
           name: integration-smoke-artifacts
           path: |
             artifacts/integration-smoke/**
-            integration_test/screenshots/**
           if-no-files-found: warn
           retention-days: 14
 
