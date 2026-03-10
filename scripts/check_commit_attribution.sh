@@ -6,6 +6,8 @@ set -euo pipefail
 
 readonly ALLOW_MARKER='[allow-coauthor]'
 readonly TRAILER_PATTERN='^[[:space:]]*[Cc]o-[Aa]uthored-[Bb]y:'
+readonly DEPENDABOT_COAUTHOR_REGEX='^[[:space:]]*[Cc]o-[Aa]uthored-[Bb]y:[[:space:]]*dependabot\[bot\][[:space:]]*<49699333\+dependabot\[bot\]@users\.noreply\.github\.com>[[:space:]]*$'
+readonly DEPENDABOT_AUTHOR_REGEX='^dependabot\[bot\] <49699333\+dependabot\[bot\]@users\.noreply\.github\.com>$'
 
 usage() {
   cat <<'EOF'
@@ -27,6 +29,24 @@ contains_coauthor_trailer() {
 contains_allow_marker() {
   local input_file="$1"
   grep -Fq "$ALLOW_MARKER" "$input_file"
+}
+
+is_dependabot_only_coauthor() {
+  local input_file="$1"
+  local author_line="$2"
+  local trailer_count
+
+  if [[ ! "$author_line" =~ $DEPENDABOT_AUTHOR_REGEX ]]; then
+    return 1
+  fi
+
+  trailer_count="$(grep -Ec "$TRAILER_PATTERN" "$input_file" || true)"
+
+  if [[ "$trailer_count" -ne 1 ]]; then
+    return 1
+  fi
+
+  grep -Eq "$DEPENDABOT_COAUTHOR_REGEX" "$input_file"
 }
 
 check_single_message_file() {
@@ -59,10 +79,14 @@ check_commit_range() {
 
   while IFS= read -r commit_sha; do
     local tmp_file
+    local author_line
     tmp_file="$(mktemp)"
     git log -1 --pretty=%B "$commit_sha" > "$tmp_file"
+    author_line="$(git log -1 --pretty='%an <%ae>' "$commit_sha")"
 
-    if contains_coauthor_trailer "$tmp_file" && ! contains_allow_marker "$tmp_file"; then
+    if contains_coauthor_trailer "$tmp_file" \
+      && ! contains_allow_marker "$tmp_file" \
+      && ! is_dependabot_only_coauthor "$tmp_file" "$author_line"; then
       echo "Commit $commit_sha has Co-authored-by trailer without $ALLOW_MARKER" >&2
       failures=1
     fi
