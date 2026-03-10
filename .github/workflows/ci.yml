@@ -238,14 +238,20 @@ jobs:
           git clone https://github.com/flutter/flutter.git --depth 1 --branch 3.41.4 "$HOME/flutter"
           echo "$HOME/flutter/bin" >> "$GITHUB_PATH"
           "$HOME/flutter/bin/flutter" --version
+          "$HOME/flutter/bin/flutter" precache --ios
 
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Prepare iOS integration smoke build dependencies
+        run: |
+          cd ios
+          pod install
+
       - name: Run integration smoke target
         id: smoke
         shell: bash
-        timeout-minutes: 12
+        timeout-minutes: 20
         run: |
           set -euo pipefail
           mkdir -p artifacts/integration-smoke
