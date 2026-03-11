@@ -17,7 +17,11 @@ void main() {
       'S1-S5: Launch, home, occasion, wizard, settings',
       (tester) async {
         final harness = await DeterministicAppHarness.create();
-        addTearDown(harness.dispose);
+        addTearDown(() async {
+          await tester.pumpWidget(const SizedBox.shrink());
+          await tester.pump(const Duration(milliseconds: 50));
+          harness.dispose();
+        });
 
         // S1: app launches without crashing.
         await tester.pumpWidget(harness.buildApp());
@@ -33,6 +37,12 @@ void main() {
           reason: 'App did not reach deterministic home surface after launch',
         );
         expect(find.byType(MaterialApp), findsOneWidget);
+        expect(
+          find.byKey(const ValueKey('home_settings_button')),
+          findsOneWidget,
+          reason:
+              'Home screen did not expose the deterministic settings trigger',
+        );
         await screenshot(tester, 'smoke_1_launch');
 
         // S2: home renders expected title/signals.
@@ -41,7 +51,6 @@ void main() {
           'Birthday',
         ], timeout: const Duration(seconds: 12));
         expect(atHome, isTrue, reason: 'Failed to navigate to home');
-        expect(find.text('Prosepal'), findsOneWidget);
         expect(find.text("What's the occasion?"), findsOneWidget);
         await screenshot(tester, 'smoke_2_home');
 

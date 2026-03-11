@@ -20,7 +20,9 @@ const captureIntegrationScreenshots = bool.fromEnvironment(
 /// Initialize the test binding
 void initBinding() {
   binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
-  binding.framePolicy = LiveTestWidgetsFlutterBindingFramePolicy.benchmarkLive;
+  binding.framePolicy = captureIntegrationScreenshots
+      ? LiveTestWidgetsFlutterBindingFramePolicy.benchmarkLive
+      : LiveTestWidgetsFlutterBindingFramePolicy.onlyPumps;
 }
 
 /// Take a screenshot with the given name (Android requires convertFlutterSurfaceToImage first)

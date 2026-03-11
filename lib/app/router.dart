@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/config/preference_keys.dart';
@@ -776,9 +775,15 @@ class _SplashScreenState extends ConsumerState<_SplashScreen> {
         Log.warning('RevenueCat not configured - skipping anonymous Pro check');
         return false;
       }
-      final customerInfo = await Purchases.getCustomerInfo().timeout(
+      final customerInfo = await subscriptionService.getCustomerInfo().timeout(
         _anonymousProCheckTimeout,
       );
+      if (customerInfo == null) {
+        Log.warning(
+          'Anonymous Pro check returned no customer info - continuing without restore',
+        );
+        return false;
+      }
       final hasPro = customerInfo.entitlements.active.containsKey('pro');
       if (hasPro) {
         Log.info('Anonymous user has Pro - prompting sign-in to claim');
