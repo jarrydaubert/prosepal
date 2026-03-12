@@ -86,7 +86,7 @@ class TermsScreen extends StatelessWidget {
           'Last updated: December 28, 2025',
           style: Theme.of(
             context,
-          ).textTheme.bodySmall?.copyWith(color: AppColors.textHint),
+          ).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
           textAlign: TextAlign.center,
         ),
         const Gap(AppSpacing.md),
@@ -183,7 +183,7 @@ class PrivacyScreen extends StatelessWidget {
           'Last updated: December 28, 2025',
           style: Theme.of(
             context,
-          ).textTheme.bodySmall?.copyWith(color: AppColors.textHint),
+          ).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
           textAlign: TextAlign.center,
         ),
         const Gap(AppSpacing.md),
