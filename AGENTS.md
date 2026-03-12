@@ -21,6 +21,12 @@ Ship safely: reliability and security first, then feature work.
 - Do not log secrets, tokens, or sensitive user content.
 - Keep evergreen docs free of TODOs/status; move open work to backlog.
 
+## Verification
+
+- Do not present guesses as facts.
+- Verify files, commands, and behavior before claiming they exist or passed.
+- If something is uncertain or unverified, say so clearly.
+
 ## Required Validation Before Handoff
 
 Run what is relevant to the change:

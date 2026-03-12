@@ -3,6 +3,7 @@
 Claude-specific compatibility profile.
 
 Canonical agent rules live in `AGENTS.md`. If there is any conflict, `AGENTS.md` is the source of truth.
+Do not invent facts, files, or validation results; verify or state uncertainty.
 
 ## Quick Commands
 
