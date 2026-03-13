@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/config/preference_keys.dart';
+import '../core/interfaces/subscription_interface.dart';
 import '../core/providers/providers.dart';
 import '../core/services/log_service.dart';
 import '../features/auth/auth_screen.dart';
@@ -73,6 +74,40 @@ Future<StartupRouteResolution> resolveStartupRouteWithTimeout({
     return StartupRouteResolution(route: route, timedOut: false);
   } on TimeoutException {
     return StartupRouteResolution(route: fallbackRoute, timedOut: true);
+  }
+}
+
+/// Resolve anonymous Pro restore state without allowing startup to hang.
+@visibleForTesting
+Future<bool> resolveAnonymousProRestore({
+  required ISubscriptionService subscriptionService,
+  required Duration timeout,
+}) async {
+  try {
+    if (!subscriptionService.isConfigured) {
+      Log.warning('RevenueCat not configured - skipping anonymous Pro check');
+      return false;
+    }
+    final customerInfo = await subscriptionService.getCustomerInfo().timeout(
+      timeout,
+    );
+    if (customerInfo == null) {
+      Log.warning(
+        'Anonymous Pro check returned no customer info - continuing without restore',
+      );
+      return false;
+    }
+    final hasPro = customerInfo.entitlements.active.containsKey('pro');
+    if (hasPro) {
+      Log.info('Anonymous user has Pro - prompting sign-in to claim');
+    }
+    return hasPro;
+  } on TimeoutException {
+    Log.warning('Anonymous Pro check timed out - continuing without restore');
+    return false;
+  } on Exception catch (e) {
+    Log.warning('Failed to check anonymous Pro status', {'error': '$e'});
+    return false;
   }
 }
 
@@ -671,6 +706,11 @@ class _SplashScreenState extends ConsumerState<_SplashScreen> {
       if (!biometricsAvailable) {
         Log.warning('Biometrics enabled but unavailable - auto-disabling');
         await biometricService.setEnabled(false);
+        final prefs = ref.read(sharedPreferencesProvider);
+        await prefs.setBool(
+          PreferenceKeys.pendingBiometricAutoDisabledNotice,
+          true,
+        );
         if (!mounted) return '/init-error';
       }
     }
@@ -768,34 +808,11 @@ class _SplashScreenState extends ConsumerState<_SplashScreen> {
 
   Future<bool> _checkAnonymousProStatus() async {
     if (!mounted) return false;
-
-    try {
-      final subscriptionService = ref.read(subscriptionServiceProvider);
-      if (!subscriptionService.isConfigured) {
-        Log.warning('RevenueCat not configured - skipping anonymous Pro check');
-        return false;
-      }
-      final customerInfo = await subscriptionService.getCustomerInfo().timeout(
-        _anonymousProCheckTimeout,
-      );
-      if (customerInfo == null) {
-        Log.warning(
-          'Anonymous Pro check returned no customer info - continuing without restore',
-        );
-        return false;
-      }
-      final hasPro = customerInfo.entitlements.active.containsKey('pro');
-      if (hasPro) {
-        Log.info('Anonymous user has Pro - prompting sign-in to claim');
-      }
-      return hasPro;
-    } on TimeoutException {
-      Log.warning('Anonymous Pro check timed out - continuing without restore');
-      return false;
-    } on Exception catch (e) {
-      Log.warning('Failed to check anonymous Pro status', {'error': '$e'});
-      return false;
-    }
+    final subscriptionService = ref.read(subscriptionServiceProvider);
+    return resolveAnonymousProRestore(
+      subscriptionService: subscriptionService,
+      timeout: _anonymousProCheckTimeout,
+    );
   }
 
   @override

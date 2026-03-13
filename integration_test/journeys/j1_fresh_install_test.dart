@@ -19,15 +19,16 @@ void main() {
       await skipOnboarding(tester);
       await tester.pumpAndSettle(const Duration(seconds: 2));
 
+      final destination = await waitForCheckpoint(tester, {
+        'auth': ['Sign in with Google', 'Sign in with Apple'],
+        'home': ['Birthday', "What's the occasion?"],
+      });
+
       expect(
-        anyTextExists([
-          'Sign in with Google',
-          'Sign in with Apple',
-          'Birthday',
-          "What's the occasion?",
-        ]),
-        isTrue,
-        reason: 'Should reach auth or home after onboarding',
+        destination,
+        isNotNull,
+        reason:
+            'Expected onboarding to land on auth or home, but no supported destination became visible',
       );
 
       await screenshot(tester, 'j1_2_after_onboarding');
@@ -44,10 +45,16 @@ void main() {
         await tester.tap(find.text('Generate Messages'));
         await tester.pumpAndSettle(const Duration(seconds: 15));
 
+        final terminalState = await waitForCheckpoint(tester, {
+          'results': ['Your Messages', 'Option 1'],
+          'error': ['error', 'Unable'],
+        });
+
         expect(
-          anyTextExists(['Your Messages', 'Option 1', 'error', 'Unable']),
-          isTrue,
-          reason: 'Generation should end in a visible results or error state',
+          terminalState,
+          isNotNull,
+          reason:
+              'Generation should finish on a visible results or error surface',
         );
 
         await screenshot(tester, 'j1_8_generation_result');

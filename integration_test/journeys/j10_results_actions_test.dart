@@ -12,28 +12,33 @@ void main() {
   initBinding();
 
   group('Journey 10: Results Actions', () {
-    Future<bool> navigateToResults(WidgetTester tester) async {
+    Future<void> navigateToResults(WidgetTester tester) async {
       final atHome = await navigateToHome(tester);
       expect(atHome, isTrue, reason: 'Failed to navigate to home');
 
-      await completeWizard(tester);
-
-      expect(
-        exists(find.text('Generate Messages')),
-        isTrue,
-        reason: 'Generate Messages button not found',
+      await completeWizardOrFail(tester);
+      await tapTextOrFail(
+        tester,
+        'Generate Messages',
+        settleDuration: const Duration(seconds: 15),
+        reason: 'Generate Messages button not found on final wizard step',
       );
 
-      await tester.tap(find.text('Generate Messages'));
-      await tester.pumpAndSettle(const Duration(seconds: 15));
+      final terminalState = await waitForCheckpoint(tester, {
+        'results': ['Your Messages', 'Option 1'],
+        'error': ['error', 'Unable'],
+      });
 
-      return exists(find.text('Your Messages')) ||
-          exists(find.text('Option 1'));
+      expect(
+        terminalState,
+        equals('results'),
+        reason:
+            'Results-actions journey requires generated messages, but generation ended without a results surface',
+      );
     }
 
     testWidgets('J10.3: Copy first option shows confirmation', (tester) async {
-      final atResults = await navigateToResults(tester);
-      expect(atResults, isTrue, reason: 'Failed to navigate to results');
+      await navigateToResults(tester);
 
       expect(
         exists(find.text('Copy')),
@@ -53,8 +58,7 @@ void main() {
     });
 
     testWidgets('J10.6: Start Over returns to the home picker', (tester) async {
-      final atResults = await navigateToResults(tester);
-      expect(atResults, isTrue, reason: 'Failed to navigate to results');
+      await navigateToResults(tester);
 
       expect(
         exists(find.text('Start Over')),
