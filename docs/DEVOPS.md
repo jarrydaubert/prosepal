@@ -14,6 +14,7 @@ This runbook covers:
 - CI, CodeQL, flaky audit, and release workflows
 - Test execution model (local, CI, wired devices, Firebase Test Lab)
 - Supabase/Firebase/RevenueCat operational verification
+- external-service ownership and billing custody verification
 - AI abuse/cost controls and kill-switch handling
 - Incident response for leaked keys or suspicious activity
 
