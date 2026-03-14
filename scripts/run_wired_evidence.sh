@@ -197,6 +197,16 @@ append_result() {
   echo "| $platform | $suite_name | $status | \`$log_file\` |" >> "$SUMMARY_FILE"
 }
 
+redact_sensitive_log_file() {
+  local file_path="$1"
+  [[ -f "$file_path" ]] || return 0
+
+  sed -E \
+    's/(Enter this debug secret into the allow list in the Firebase Console for your project: )[A-Fa-f0-9-]+/\1[REDACTED_APP_CHECK_DEBUG_TOKEN]/g' \
+    "$file_path" > "${file_path}.redacted"
+  mv "${file_path}.redacted" "$file_path"
+}
+
 extract_signals() {
   local log_file="$1"
   local output_file="$2"
@@ -329,6 +339,7 @@ run_suite() {
 
   if [[ "$platform" == "android" ]]; then
     /opt/homebrew/share/android-commandlinetools/platform-tools/adb -s "$device_id" logcat -d > "$platform_dir/${suite_name}.logcat.txt" 2>/dev/null || true
+    redact_sensitive_log_file "$platform_dir/${suite_name}.logcat.txt"
     /opt/homebrew/share/android-commandlinetools/platform-tools/adb -s "$device_id" exec-out screencap -p > "$platform_dir/${suite_name}_final.png" 2>/dev/null || true
     mkdir -p "$platform_dir/${suite_name}_device_album"
     local remote_screenshots

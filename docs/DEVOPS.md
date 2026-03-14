@@ -544,6 +544,7 @@ Use this sequence when Vertex/Google AI calls fail with:
 2. Capture the current debug token from device logs:
   - `./scripts/run_android.sh`
   - Copy token from: `DebugAppCheckProvider ... Enter this debug secret into the allow list ...`
+  - `run_wired_evidence.sh` redacts the token in saved Android logcat artifacts; use a direct attached run when you need to read the raw token locally for console registration.
 3. Register token in Firebase Console:
   - Firebase Console → App Check → Apps → Android app → Manage debug tokens → Add token.
 4. Verify package/signature posture:
