@@ -347,6 +347,7 @@ Wired evidence runtime config:
 - `run_wired_evidence.sh` automatically passes `--dart-define-from-file=.env.local` when that file exists.
 - Override with `--dart-define-file <path>` for alternate environments.
 - Use `--no-dart-define-file` to run without dart-define injection.
+- Wired evidence pass/fail is anchored to the test's explicit oracle first. The wrapper still scans logs for hard failure signals, but it keeps a short per-suite allowlist for known handled noise so a user-visible, test-accepted terminal state does not get mislabeled as an evidence failure. Keep any such allowlist narrow, documented, and tied to a concrete journey/test.
 
 Firebase Test Lab deterministic critical suite:
 
