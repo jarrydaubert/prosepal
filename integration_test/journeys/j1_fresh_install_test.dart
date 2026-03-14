@@ -17,7 +17,7 @@ void main() {
     ) async {
       await launchApp(tester);
       await skipOnboarding(tester);
-      await tester.pumpAndSettle(const Duration(seconds: 2));
+      await tester.pump(const Duration(seconds: 2));
 
       final destination = await waitForCheckpoint(tester, {
         'auth': ['Sign in with Google', 'Sign in with Apple'],
@@ -34,31 +34,35 @@ void main() {
       await screenshot(tester, 'j1_2_after_onboarding');
     });
 
-    testWidgets(
-      'J1.8: Fresh user can generate and reach a concrete end state',
-      (tester) async {
-        final atHome = await navigateToHome(tester);
-        expect(atHome, isTrue, reason: 'Failed to navigate to home');
+    testWidgets('J1.8: Fresh user can generate and reach a concrete end state', (
+      tester,
+    ) async {
+      final atHome = await navigateToHome(tester);
+      expect(atHome, isTrue, reason: 'Failed to navigate to home');
 
-        await completeWizardOrFail(tester);
-        expect(find.text('Generate Messages'), findsOneWidget);
-        await tester.tap(find.text('Generate Messages'));
-        await tester.pumpAndSettle(const Duration(seconds: 15));
+      await completeWizardOrFail(tester);
+      expect(find.text('Generate Messages'), findsOneWidget);
+      await tester.tap(find.text('Generate Messages'));
+      await tester.pump(const Duration(seconds: 1));
 
-        final terminalState = await waitForCheckpoint(tester, {
-          'results': ['Your Messages', 'Option 1'],
-          'error': ['error', 'Unable'],
-        });
+      final terminalState = await waitForCheckpoint(tester, {
+        'results': ['Your Messages', 'Option 1'],
+        'error': [
+          'Security verification failed for this device. Please try again later.',
+          'No messages were generated. Please try again.',
+          'There was an issue processing the response. Please try again.',
+          'An unexpected error occurred. Please try again.',
+        ],
+      }, timeout: const Duration(seconds: 30));
 
-        expect(
-          terminalState,
-          isNotNull,
-          reason:
-              'Generation should finish on a visible results or error surface',
-        );
+      expect(
+        terminalState,
+        isNotNull,
+        reason:
+            'Generation should finish on a visible results or error surface',
+      );
 
-        await screenshot(tester, 'j1_8_generation_result');
-      },
-    );
+      await screenshot(tester, 'j1_8_generation_result');
+    });
   });
 }

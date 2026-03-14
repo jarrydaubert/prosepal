@@ -378,7 +378,7 @@ Future<bool> scrollToText(
 
   final scrollable = scrollables.first;
   for (var attempt = 0; attempt < maxScrolls; attempt++) {
-    await tester.drag(scrollable, Offset(0, -delta));
+    await tester.drag(scrollable, Offset(0, -delta), warnIfMissed: false);
     await _pumpFor(tester, const Duration(milliseconds: 300));
     if (target.evaluate().isNotEmpty) {
       return true;
