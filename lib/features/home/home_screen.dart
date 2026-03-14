@@ -50,6 +50,30 @@ class HomeScreen extends ConsumerWidget {
       });
     }
 
+    final showBiometricAutoDisabledNotice = ref.watch(
+      pendingBiometricAutoDisabledNoticeProvider,
+    );
+    if (showBiometricAutoDisabledNotice) {
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        final prefs = ref.read(sharedPreferencesProvider);
+        ref.read(pendingBiometricAutoDisabledNoticeProvider.notifier).state =
+            false;
+        await prefs.setBool(
+          PreferenceKeys.pendingBiometricAutoDisabledNotice,
+          false,
+        );
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Biometric lock was turned off because no enrolled biometrics are available on this device.',
+            ),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      });
+    }
+
     return GestureDetector(
       onTap: () => dismissKeyboard(context),
       child: Scaffold(

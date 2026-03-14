@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:prosepal/core/providers/providers.dart';
 import 'package:prosepal/features/settings/settings_screen.dart';
+import 'package:prosepal/shared/theme/app_colors.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../mocks/mock_auth_service.dart';
@@ -470,6 +471,31 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.text('Privacy'), findsOneWidget);
+      });
+
+      testWidgetsWithPumps('app version footer uses readable secondary text', (
+        tester,
+      ) async {
+        await tester.pumpWidget(buildTestWidget());
+        await tester.pumpAndSettle();
+
+        await tester.scrollUntilVisible(
+          find.textContaining('Prosepal'),
+          200,
+          scrollable: find.byType(Scrollable).first,
+        );
+        await tester.pumpAndSettle();
+
+        final versionFooter = tester.widget<Text>(
+          find.byWidgetPredicate(
+            (widget) =>
+                widget is Text &&
+                widget.data != null &&
+                widget.data!.startsWith('Prosepal ') &&
+                widget.style?.fontSize == 12,
+          ),
+        );
+        expect(versionFooter.style?.color, AppColors.textSecondary);
       });
     });
 

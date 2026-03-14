@@ -148,6 +148,10 @@ void main() {
         expect(() => AppConfig.revenueCatTestStoreKey, returnsNormally);
         expect(() => AppConfig.googleWebClientId, returnsNormally);
         expect(() => AppConfig.googleIosClientId, returnsNormally);
+        expect(
+          () => AppConfig.firebaseAppCheckAndroidDebugToken,
+          returnsNormally,
+        );
       });
 
       test('useRevenueCatTestStore defaults to false when not set', () {
@@ -179,6 +183,13 @@ void main() {
         'hasGoogleSignInConfig returns false when client ID is empty (test env)',
         () {
           expect(AppConfig.hasGoogleSignInConfig, isFalse);
+        },
+      );
+
+      test(
+        'firebaseAppCheckAndroidDebugToken defaults to empty when not set',
+        () {
+          expect(AppConfig.firebaseAppCheckAndroidDebugToken, isEmpty);
         },
       );
     });

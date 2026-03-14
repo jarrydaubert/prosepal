@@ -197,6 +197,16 @@ append_result() {
   echo "| $platform | $suite_name | $status | \`$log_file\` |" >> "$SUMMARY_FILE"
 }
 
+redact_sensitive_log_file() {
+  local file_path="$1"
+  [[ -f "$file_path" ]] || return 0
+
+  sed -E \
+    's/(Enter this debug secret into the allow list in the Firebase Console for your project: )[A-Fa-f0-9-]+/\1[REDACTED_APP_CHECK_DEBUG_TOKEN]/g' \
+    "$file_path" > "${file_path}.redacted"
+  mv "${file_path}.redacted" "$file_path"
+}
+
 extract_signals() {
   local log_file="$1"
   local output_file="$2"
@@ -207,7 +217,8 @@ extract_signals() {
 
 has_failure_signals() {
   local signals_file="$1"
-  local test_file="$2"
+  local log_file="$2"
+  local test_file="$3"
   local suite_name
   suite_name="$(basename "$test_file")"
 
@@ -222,6 +233,23 @@ has_failure_signals() {
       rm -f "${signals_file}.filtered"
     fi
     return 1
+  fi
+
+  # j1 is allowed to terminate on the user-visible App Check error banner during
+  # live-device runs. Firebase/Crashlytics still emits one generic
+  # "[ERROR] Unexpected AI error" log line before the handled banner state is
+  # rendered, so ignore that signal only when the concrete handled App Check
+  # failure is present in the same log.
+  if [[ "$suite_name" == "j1_fresh_install_test.dart" && -s "$signals_file" ]]; then
+    if rg -q "code=APP_CHECK_FAILED|Security verification failed for this device\\. Please try again later\\." "$log_file"; then
+      rg -v "\\[ERROR\\] Unexpected AI error \\| attempt=" "$signals_file" > "${signals_file}.filtered" || true
+      if [[ -s "${signals_file}.filtered" ]]; then
+        mv "${signals_file}.filtered" "$signals_file"
+        return 0
+      fi
+      rm -f "${signals_file}.filtered"
+      return 1
+    fi
   fi
 
   [[ -s "$signals_file" ]]
@@ -305,12 +333,13 @@ run_suite() {
 
   extract_signals "$log_file" "$signals_file"
   local has_signals=1
-  if has_failure_signals "$signals_file" "$test_file"; then
+  if has_failure_signals "$signals_file" "$log_file" "$test_file"; then
     has_signals=0
   fi
 
   if [[ "$platform" == "android" ]]; then
     /opt/homebrew/share/android-commandlinetools/platform-tools/adb -s "$device_id" logcat -d > "$platform_dir/${suite_name}.logcat.txt" 2>/dev/null || true
+    redact_sensitive_log_file "$platform_dir/${suite_name}.logcat.txt"
     /opt/homebrew/share/android-commandlinetools/platform-tools/adb -s "$device_id" exec-out screencap -p > "$platform_dir/${suite_name}_final.png" 2>/dev/null || true
     mkdir -p "$platform_dir/${suite_name}_device_album"
     local remote_screenshots

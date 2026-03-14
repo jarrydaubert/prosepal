@@ -530,6 +530,16 @@ final generationErrorProvider = StateProvider.autoDispose<String?>(
 /// Home screen checks this on build and shows paywall if non-null, then clears it.
 final pendingPaywallSourceProvider = StateProvider<String?>((ref) => null);
 
+/// One-shot home notice when startup auto-disables biometrics.
+///
+/// Seeded from SharedPreferences so startup logic can persist the notice before
+/// the home screen is built.
+final pendingBiometricAutoDisabledNoticeProvider = StateProvider<bool>((ref) {
+  final prefs = ref.watch(sharedPreferencesProvider);
+  return prefs.getBool(PreferenceKeys.pendingBiometricAutoDisabledNotice) ??
+      PreferenceKeys.pendingBiometricAutoDisabledNoticeDefault;
+});
+
 /// Interactive auth provider selected by the user for the current sign-in flow.
 ///
 /// Used to keep auth telemetry aligned with the explicit Apple/Google choice

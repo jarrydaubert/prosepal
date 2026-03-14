@@ -31,13 +31,21 @@ void main() {
           await tester.tap(find.text('Delete Account'));
           await tester.pumpAndSettle();
 
-          final hasWarning =
-              exists(find.text('Delete')) ||
-              exists(find.text('Cancel')) ||
-              exists(find.textContaining('permanent')) ||
-              exists(find.textContaining('sure'));
+          final warningState = await waitForCheckpoint(tester, {
+            'delete_confirmation': [
+              'Continue',
+              'Cancel',
+              'Manage Subscription',
+            ],
+            'delete_warning_copy': ['This permanently deletes your account'],
+          });
 
-          expect(hasWarning, isTrue, reason: 'Should show delete confirmation');
+          expect(
+            warningState,
+            isNotNull,
+            reason:
+                'Delete Account should open the destructive confirmation dialog with explicit warning copy and actions',
+          );
         } else {
           await tester.tap(find.text('Sign In'));
           await tester.pumpAndSettle();

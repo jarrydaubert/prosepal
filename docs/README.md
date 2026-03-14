@@ -22,9 +22,11 @@ This folder holds canonical product, engineering, and operations docs for the mo
    - Remote Config guardrails and runtime control policy.
 9. `LAUNCH_CHECKLIST.md`
    - Release execution and provider-console verification checklist.
-10. `ARCHITECTURE.md`
+10. `SERVICE_OWNERSHIP_MIGRATION.md`
+    - Service ownership, billing, and admin-account migration runbook.
+11. `ARCHITECTURE.md`
     - System architecture, core modules, and integration boundaries.
-11. `PRODUCT_STRATEGY.md`
+12. `PRODUCT_STRATEGY.md`
     - High-level product, growth, and experimentation direction.
 
 ## Working rules

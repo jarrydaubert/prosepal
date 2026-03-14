@@ -26,18 +26,16 @@ void main() {
         reason: 'Expected Upgrade gate for anonymous user with free tier used',
       );
 
-      final hasAuth = anyTextExists([
-        'Sign in with Apple',
-        'Sign in with Google',
-      ]);
-      final hasPaywall =
-          find.textContaining(r'$').evaluate().isNotEmpty ||
-          exists(find.text('Subscribe'));
+      final destination = await waitForCheckpoint(tester, {
+        'auth': ['Sign in with Apple', 'Sign in with Google'],
+        'paywall': ['Continue Creating', 'Restore Purchases', 'Maybe Later'],
+      });
 
       expect(
-        hasAuth || hasPaywall,
-        isTrue,
-        reason: 'Upgrade flow should show auth or paywall destination',
+        destination,
+        isNotNull,
+        reason:
+            'Upgrade flow should reach a named auth or paywall destination after the anonymous free-tier gate',
       );
 
       await screenshot(tester, 'j2_2_upgrade_destination');

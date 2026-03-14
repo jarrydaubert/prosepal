@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:prosepal/core/config/preference_keys.dart';
 import 'package:prosepal/core/providers/providers.dart';
 import 'package:prosepal/features/home/home_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -95,6 +96,40 @@ void main() {
   }
 
   group('HomeScreen Rendering', () {
+    testWidgets('shows and clears pending biometric auto-disabled notice', (
+      tester,
+    ) async {
+      await mockPrefs.setBool(
+        PreferenceKeys.pendingBiometricAutoDisabledNotice,
+        true,
+      );
+
+      await tester.pumpWidget(createTestableHomeScreen());
+      await tester.pump();
+      await tester.pump();
+
+      expect(
+        find.text(
+          'Biometric lock was turned off because no enrolled biometrics are available on this device.',
+        ),
+        findsOneWidget,
+      );
+
+      final container = ProviderScope.containerOf(
+        tester.element(find.byType(HomeScreen)),
+      );
+      expect(
+        container.read(pendingBiometricAutoDisabledNoticeProvider),
+        isFalse,
+      );
+      expect(
+        mockPrefs.getBool(PreferenceKeys.pendingBiometricAutoDisabledNotice),
+        isFalse,
+      );
+
+      await tester.pump(const Duration(seconds: 1));
+    });
+
     testWidgets('can scroll to deep occasion entries', (tester) async {
       await tester.pumpWidget(createTestableHomeScreen());
       await tester.pump(const Duration(milliseconds: 300));

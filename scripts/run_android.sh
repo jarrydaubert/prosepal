@@ -41,6 +41,12 @@ fi
 
 cd "$PROJECT_DIR"
 
+EXTRA_DEFINES=()
+
+if [ -n "${FIREBASE_APP_CHECK_ANDROID_DEBUG_TOKEN:-}" ]; then
+    EXTRA_DEFINES+=(--dart-define=FIREBASE_APP_CHECK_ANDROID_DEBUG_TOKEN="$FIREBASE_APP_CHECK_ANDROID_DEBUG_TOKEN")
+fi
+
 # Find Android device - extract device ID (second field separated by •)
 DEVICE=$(flutter devices | grep -i "android" | head -1 | awk -F'•' '{print $2}' | xargs)
 
@@ -56,4 +62,5 @@ flutter run -d "$DEVICE" \
     --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY" \
     --dart-define=REVENUECAT_ANDROID_KEY="$REVENUECAT_ANDROID_KEY" \
     --dart-define=GOOGLE_WEB_CLIENT_ID="$GOOGLE_WEB_CLIENT_ID" \
+    "${EXTRA_DEFINES[@]}" \
     "$@"
