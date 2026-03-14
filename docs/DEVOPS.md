@@ -541,21 +541,24 @@ Use this sequence when Vertex/Google AI calls fail with:
 
 1. Confirm debug provider is active in app logs:
   - `androidProvider=AndroidDebugProvider` for debug builds.
-2. Capture the current debug token from device logs:
+2. Prefer a pinned debug token for repeated wired runs:
+  - Add `FIREBASE_APP_CHECK_ANDROID_DEBUG_TOKEN=<registered-token>` to `.env.local`.
+  - `./scripts/run_android.sh` and `run_wired_evidence.sh` will pass it through automatically.
+3. If no pinned token is configured, capture the current debug token from device logs:
   - `./scripts/run_android.sh`
   - Copy token from: `DebugAppCheckProvider ... Enter this debug secret into the allow list ...`
   - `run_wired_evidence.sh` redacts the token in saved Android logcat artifacts; use a direct attached run when you need to read the raw token locally for console registration.
-3. Register token in Firebase Console:
+4. Register token in Firebase Console:
   - Firebase Console → App Check → Apps → Android app → Manage debug tokens → Add token.
-4. Verify package/signature posture:
+5. Verify package/signature posture:
   - Firebase Android app package matches `com.prosepal.prosepal`.
   - SHA-256 fingerprints in Firebase app config include active signing cert(s) for the running build.
-5. Verify App Check API status:
+6. Verify App Check API status:
   - App Check dashboard shows verified requests for Firebase AI Logic.
   - Enforcement mode aligns with current test phase (Monitoring or Enforced).
-6. Re-run wired Android generation:
+7. Re-run wired Android generation:
   - `./scripts/run_android.sh --dart-define=AI_BACKEND=vertex`
-7. If it still fails:
+8. If it still fails:
   - Collect log evidence with token redaction.
   - Record failure mode and config snapshot in release evidence and backlog.
 

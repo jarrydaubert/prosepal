@@ -37,25 +37,24 @@ Process items in this order unless an explicit owner override is recorded in rel
 1. `P0-08a` Core readability and contrast hardening
 2. `P0-08b` Navigation and input polish
 3. `P1-24` Deterministic integration journey assertions
-4. `P1-43` Firebase AI client-block regression hardening
-5. `P1-41` Network-independent smoke deterministic mode
-6. `VNEXT-10` AI cost/abuse controls
-7. `P0-08c` Launch and platform polish
-8. `P2-17` RevenueCat transfer metadata hydration
-9. `P2-16` Public QA showcase packaging
-10. `P2-18` AI technical-depth showcase
-11. `P1-48` Startup phase telemetry and budget visibility
-12. `P1-53` Telemetry adapter unification
-13. `P1-52` Biometric lifecycle debounce + single-flight guard
-14. `VNEXT-11` Canonical identity mapping
-15. `VNEXT-13` Device abuse-control compliance decision
-16. `VNEXT-12` UI parity with live baseline
-17. `P0-05` Billing budget alert controls
-18. `P0-04` Auth loading spinner after OAuth sheet
-19. `P0-01` Move Google setup to business account
-20. `P1-47` Server-side AI gateway rollout (post-launch trigger)
-21. `P2-13` Startup orchestration extraction, if justified by telemetry
-22. `P2-22` Remove legacy router fallback
+4. `P1-41` Network-independent smoke deterministic mode
+5. `VNEXT-10` AI cost/abuse controls
+6. `P0-08c` Launch and platform polish
+7. `P2-17` RevenueCat transfer metadata hydration
+8. `P2-16` Public QA showcase packaging
+9. `P2-18` AI technical-depth showcase
+10. `P1-48` Startup phase telemetry and budget visibility
+11. `P1-53` Telemetry adapter unification
+12. `P1-52` Biometric lifecycle debounce + single-flight guard
+13. `VNEXT-11` Canonical identity mapping
+14. `VNEXT-13` Device abuse-control compliance decision
+15. `VNEXT-12` UI parity with live baseline
+16. `P0-05` Billing budget alert controls
+17. `P0-04` Auth loading spinner after OAuth sheet
+18. `P0-01` Move Google setup to business account
+19. `P1-47` Server-side AI gateway rollout (post-launch trigger)
+20. `P2-13` Startup orchestration extraction, if justified by telemetry
+21. `P2-22` Remove legacy router fallback
 
 ## P0 - Launch Blockers
 
@@ -78,7 +77,6 @@ Process items in this order unless an explicit owner override is recorded in rel
 |----|------|--------------------|
 | `P1-48` | Startup phase telemetry and budget visibility | Existing startup flow emits structured phase telemetry (`init`, `identity`, `entitlements`, `routing`) with per-phase duration, timeout/fallback reason, and final terminal route outcome. Logs are queryable in Crashlytics/analytics, phase budgets are documented in `docs/DEVOPS.md`, and fault-injection runs prove telemetry captures degraded startup paths deterministically. |
 | `P1-53` | Telemetry adapter unification | Feature/domain code emits analytics, logs, and crash-report context through an interface-backed telemetry service or adapter layer rather than direct static calls. Existing redaction rules, event schemas, and operator-visible behavior remain intact unless explicitly documented. DoD requires: at least one startup event, one auth/paywall event, and one AI/runtime diagnostic event are covered by tests using fakes or spies; no secrets or sensitive user content are newly exposed; any operator-facing telemetry changes are documented in `docs/DEVOPS.md`; and `flutter analyze`, `flutter test`, and `./scripts/test_critical_smoke.sh` pass. |
-| `P1-43` | Firebase AI client-block regression hardening | Real-device AI generation succeeds on wired iOS and Android using the current Firebase AI + App Check setup, and failure classification distinguishes client/app-block configuration errors from true content-safety blocks. `docs/DEVOPS.md` includes a deterministic checklist for debugging `client application <empty> are blocked` responses. |
 | `P1-47` | Server-side AI gateway rollout (post-launch trigger) | A documented trigger policy exists for enabling a server-side AI gateway (abuse threshold, model-policy requirement, or provider-failover need). A non-production spike path exists behind a disabled feature flag, with parity tests proving no user-visible regression when enabled in staging. Production default remains client-direct until trigger criteria are met and approved. |
 | `P1-24` | Deterministic integration journey assertions | Journey tests in `integration_test/journeys/` stop using optional `if (exists(...))` branches for core checkpoints (auth entry, upgrade path, generation result, settings navigation) and fail explicitly when expected UI state is missing. Each retained journey test must justify its existence by targeting a concrete bug/failure mode, and low-signal click-through coverage should be removed rather than padded. DoD includes a keep/rewrite/delete review across the checked-in journey suite, representative journey execution on a real mobile target without silent skips, and clear failure reasons tied to both the missing checkpoint and the named bug the test is meant to catch. |
 | `P1-42` | Auth-screen layout flake elimination | The `AuthScreen shows error banner when Google sign-in fails` test no longer produces order-dependent `RenderFlex overflow` failures during randomized multi-file runs. Root cause is fixed (test harness isolation and/or responsive layout constraints), deterministic regression coverage is added, and `./scripts/test_flake_audit.sh` shows zero flakes for this case. |

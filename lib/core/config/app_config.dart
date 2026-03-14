@@ -90,6 +90,17 @@ abstract final class AppConfig {
   );
 
   // ===========================================================================
+  // Firebase App Check Debug Configuration
+  // ===========================================================================
+
+  /// Optional Android App Check debug token for stable wired-device runs.
+  ///
+  /// When set in debug builds, this pins the debug provider token so repeated
+  /// install/test cycles do not generate a fresh token every run.
+  static const String firebaseAppCheckAndroidDebugToken =
+      String.fromEnvironment('FIREBASE_APP_CHECK_ANDROID_DEBUG_TOKEN');
+
+  // ===========================================================================
   // Validation
   // ===========================================================================
 

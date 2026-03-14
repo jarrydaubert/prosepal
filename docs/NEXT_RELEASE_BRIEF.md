@@ -335,7 +335,7 @@ This lowers release risk and preserves the current design baseline while hardeni
 ### Must-ship for the next cycle
 - Visible UI polish and consistency (`P0-08`) so the app looks intentionally designed rather than merely functional.
 - Journey test quality hardening (`P1-24`) so green integration results are actually trustworthy.
-- AI reliability hardening (`P1-43`, `VNEXT-10`) so the Gemini/Firebase AI path remains defensible on real devices and in public portfolio review.
+- AI cost/abuse controls (`VNEXT-10`) so the Gemini/Firebase AI path remains defensible in production and public portfolio review.
 - Smoke determinism under weaker network conditions (`P1-41`) so the blocking story stays credible.
 - RevenueCat transfer metadata hydration (`P2-17`) so backend entitlement rows are complete, not merely permissive.
 
