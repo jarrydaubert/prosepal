@@ -7,6 +7,7 @@ import 'package:gap/gap.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/config/app_config.dart';
 import '../../core/providers/providers.dart';
 import '../../core/services/diagnostic_service.dart';
 import '../../shared/components/components.dart';
@@ -62,7 +63,7 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
     final subject = Uri.encodeComponent('Prosepal Feedback');
     final body = Uri.encodeComponent(fullMessage);
     final uri = Uri.parse(
-      'mailto:support@prosepal.app?subject=$subject&body=$body',
+      'mailto:${AppConfig.supportEmail}?subject=$subject&body=$body',
     );
 
     try {
@@ -95,7 +96,7 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
         content: Text(
           '${reason != null ? '$reason\n\n' : ''}'
           'Copy feedback to clipboard? You can paste it into your email app '
-          'and send to support@prosepal.app.',
+          'and send to ${AppConfig.supportEmail}.',
         ),
         actions: [
           TextButton(
@@ -114,7 +115,7 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
       await Clipboard.setData(
         ClipboardData(
           text:
-              'To: support@prosepal.app\nSubject: Prosepal Feedback\n\n'
+              'To: ${AppConfig.supportEmail}\nSubject: Prosepal Feedback\n\n'
               '$fullMessage',
         ),
       );

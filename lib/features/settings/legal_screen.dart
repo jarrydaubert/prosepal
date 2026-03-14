@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/config/app_config.dart';
 import '../../shared/components/components.dart';
 import '../../shared/theme/app_colors.dart';
 import '../../shared/theme/app_spacing.dart';
@@ -80,7 +81,7 @@ class TermsScreen extends StatelessWidget {
           content:
               'Prosepal is provided "as is" without warranties of any kind. We do not guarantee uninterrupted or error-free service.',
         ),
-        const _LegalSection(title: 'Contact', content: 'support@prosepal.app'),
+        const _LegalSection(title: 'Contact', content: AppConfig.supportEmail),
         const Gap(AppSpacing.lg),
         Text(
           'Last updated: December 28, 2025',
@@ -177,7 +178,7 @@ class PrivacyScreen extends StatelessWidget {
               '• Opt out of analytics\n\n'
               'Delete your account anytime from Settings.',
         ),
-        const _LegalSection(title: 'Contact', content: 'support@prosepal.app'),
+        const _LegalSection(title: 'Contact', content: AppConfig.supportEmail),
         const Gap(AppSpacing.lg),
         Text(
           'Last updated: December 28, 2025',

@@ -17,6 +17,9 @@ import 'package:flutter/foundation.dart';
 ///
 /// See `.env.example` for all required variables.
 abstract final class AppConfig {
+  /// Primary support/contact mailbox shown in the app.
+  static const String supportEmail = 'jarryd@prosepal.app';
+
   // ===========================================================================
   // Supabase Configuration
   // Dashboard: https://supabase.com/dashboard
