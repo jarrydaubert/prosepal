@@ -37,6 +37,61 @@ in provider consoles.
 | RevenueCat project path | `projects/a8bf92d5` | `docs/LAUNCH_CHECKLIST.md` |
 | App support mailbox in code | `jarryd@prosepal.app` | `lib/core/config/app_config.dart` |
 
+## Current Google / Firebase Ownership State
+
+Current verified Google/Firebase production state:
+- live Firebase project remains `prosepal-1a24b`
+- live project is still under Google Cloud org `jarrydaubert-org`
+- Workspace org `prosepal.app` exists separately in Google Cloud
+- Firebase public support email is `jarryd@prosepal.app`
+- Workspace identity `jarryd@prosepal.app` has production Firebase admin access
+- personal Gmail remains in place as backup owner/admin access
+- App Check enforcement is enabled for Firebase AI Logic
+- Firebase project alerts are enabled for App Distribution, Authentication,
+  Firestore, and Crashlytics
+- Google Analytics is enabled in Firebase
+- live Remote Config now publishes the expected production keys used by the app
+- Google Play is not currently linked through the Firebase integration tile
+
+Current verified Supabase production state:
+- production project remains `mwoxtqxzunsjmbdqezif`
+- Apple and Google auth providers are enabled
+- auth email delivery uses custom SMTP with sender address
+  `jarryd@prosepal.app`
+- hosted auth email templates and notification toggles are configured in the
+  dashboard
+- Workspace/business identity `jarryd@prosepal.app` has been added with
+  admin-level access
+
+Current verified Resend production state:
+- sending domain `prosepal.app` is verified
+- domain provider is Cloudflare
+- SMTP sender path is configured for `jarryd@prosepal.app`
+- Supabase integration is connected for SMTP-backed auth delivery
+- click tracking and open tracking are disabled
+- Workspace/business identity `jarryd@prosepal.app` has been added as admin
+- billing email is still personal Gmail
+
+Current verified RevenueCat production state:
+- project remains `Prosepal`
+- native app configs exist for App Store and Play Store
+- no web app configuration is currently in use
+- Supabase entitlement sync webhook is active for both Production and Sandbox
+- webhook scope is `All apps` / `All events`
+- recent webhook deliveries report successful send status
+- Workspace/business identity `jarryd@prosepal.app` has been added as an
+  `Administrator`
+- personal Gmail remains `Owner`
+- RevenueCat-hosted web domain remains on the default RevenueCat domain because
+  the current project does not use RevenueCat-hosted web billing
+- team-wide 2FA enforcement is available but not yet enabled because the
+  Workspace admin currently has 2FA disabled
+
+Public-repo constraint:
+- document provider ownership, project IDs, and high-level settings
+- do not store raw cert fingerprints, recovery details, service-account
+  inventories, or other secret-adjacent console values in this repo
+
 ## Working Rule
 
 For live Prosepal, preserve the existing production runtime stack wherever
@@ -50,6 +105,16 @@ Preferred order:
    is insufficient
 
 Do not clone production services just to improve admin cleanliness.
+
+Agent note:
+- when verifying live provider state, prefer the provider SDK, CLI, or API over
+  manual console inspection where possible
+- use console screenshots as supporting evidence or when provider tooling cannot
+  expose the needed state cleanly
+- this applies across providers used by Prosepal, including Firebase,
+  Google Cloud, Supabase, RevenueCat, GitHub, and similar admin surfaces
+- for config-style resources, prefer machine-readable exports because they are
+  easier to diff, safer to summarize, and less error-prone than screenshots
 
 ## Commands And Steps
 
@@ -91,6 +156,11 @@ Current desired direction:
 - app/domain mailbox for support and admin contact
 - personal Gmail only as backup/recovery
 
+Current verified state:
+- Firebase support email: `jarryd@prosepal.app`
+- Google Auth branding developer contact has been moved to the app/domain
+  mailbox
+
 ### 4) Treat Google Play Separately From Google/Firebase
 
 Google Cloud / Firebase ownership cleanup does not change Google Play developer
@@ -102,6 +172,9 @@ Before planning around Android production access:
    tester requirement by itself
 3. if organization conversion is considered, verify the account can satisfy the
    required organization-verification inputs before proceeding
+
+Current verified state:
+- Play Console developer account type is `Personal`
 
 ### 5) Move Other Production Services By Ownership First
 
@@ -116,6 +189,14 @@ Preferred approach:
 2. promote it to the highest required admin role
 3. move app-facing contact mailboxes to the business/domain mailbox
 4. keep personal identity only as backup until the new path is verified
+
+Current next ownership actions:
+- Resend: move billing email off personal Gmail
+- RevenueCat: decide whether to enable team-wide 2FA after the Workspace admin
+  has 2FA enabled
+- RevenueCat: review billing/account ownership path
+- Cloudflare: confirm whether the zone remains in the personal account or has
+  already been transferred
 
 ### 6) Re-Verify Runtime Wiring After Any Credential Or Ownership Change
 

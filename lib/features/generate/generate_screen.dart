@@ -378,30 +378,45 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
   }
 
   Future<void> _generate(BuildContext context) async {
+    final container = ProviderScope.containerOf(context);
+
     // Prevent concurrent generation (race condition from rapid taps)
-    if (ref.read(isGeneratingProvider)) return;
+    if (container.read(isGeneratingProvider)) return;
 
     // Dismiss keyboard before starting generation
     dismissKeyboard(context);
 
-    final occasion = ref.read(selectedOccasionProvider);
-    final relationship = ref.read(selectedRelationshipProvider);
-    final tone = ref.read(selectedToneProvider);
-    final length = ref.read(selectedLengthProvider);
-    final recipientName = ref.read(recipientNameProvider);
-    final personalDetails = ref.read(personalDetailsProvider);
+    final occasion = container.read(selectedOccasionProvider);
+    final relationship = container.read(selectedRelationshipProvider);
+    final tone = container.read(selectedToneProvider);
+    final length = container.read(selectedLengthProvider);
+    final recipientName = container.read(recipientNameProvider);
+    final personalDetails = container.read(personalDetailsProvider);
 
     if (occasion == null || relationship == null || tone == null) return;
 
-    ref.read(isGeneratingProvider.notifier).state = true;
-    ref.read(generationErrorProvider.notifier).state = null;
+    final isGeneratingNotifier = container.read(isGeneratingProvider.notifier);
+    final generationErrorNotifier = container.read(
+      generationErrorProvider.notifier,
+    );
+    final generationResultNotifier = container.read(
+      generationResultProvider.notifier,
+    );
+    final formRestorationService = container.read(
+      formRestorationServiceProvider,
+    );
+    final reviewService = container.read(reviewServiceProvider);
+    final historyService = container.read(historyServiceProvider);
+    final aiService = container.read(aiServiceProvider);
+    final usageService = container.read(usageServiceProvider);
+    final authService = container.read(authServiceProvider);
+    final isPro = container.read(isProProvider);
+    final useUkSpelling = container.read(isUkSpellingProvider);
+
+    isGeneratingNotifier.state = true;
+    generationErrorNotifier.state = null;
 
     try {
-      final aiService = ref.read(aiServiceProvider);
-      final usageService = ref.read(usageServiceProvider);
-      final authService = ref.read(authServiceProvider);
-      final isPro = ref.read(isProProvider);
-
       // Server-side usage check
       if (authService.isLoggedIn) {
         // Authenticated users: full server-side check and increment
@@ -410,21 +425,21 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
             isPro: isPro,
           );
           if (!usageResult.allowed) {
-            ref.read(isGeneratingProvider.notifier).state = false;
-            ref.read(generationErrorProvider.notifier).state =
+            isGeneratingNotifier.state = false;
+            generationErrorNotifier.state =
                 usageResult.errorMessage ?? 'Usage limit reached';
             return;
           }
         } on UsageCheckException catch (e) {
-          ref.read(isGeneratingProvider.notifier).state = false;
-          ref.read(generationErrorProvider.notifier).state = e.message;
+          isGeneratingNotifier.state = false;
+          generationErrorNotifier.state = e.message;
           return;
         }
       } else if (!isPro) {
         // Fast local guard prevents repeated free generations if server sync lags.
         if (!usageService.canGenerateFree()) {
-          ref.read(isGeneratingProvider.notifier).state = false;
-          ref.read(generationErrorProvider.notifier).state =
+          isGeneratingNotifier.state = false;
+          generationErrorNotifier.state =
               'Free message already used. Upgrade to Pro for more!';
           return;
         }
@@ -439,23 +454,22 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
                 ? 'Too many attempts. Please wait a moment and try again.'
                 : 'This device has already used its free message. '
                       'Upgrade to Pro for unlimited messages!';
-            ref.read(isGeneratingProvider.notifier).state = false;
-            ref.read(generationErrorProvider.notifier).state = errorMessage;
+            isGeneratingNotifier.state = false;
+            generationErrorNotifier.state = errorMessage;
             return;
           }
         } on Exception catch (e) {
           Log.warning('Device fingerprint check failed', {'error': '$e'});
           // Fall back to local check on network error
           if (!usageService.canGenerateFree()) {
-            ref.read(isGeneratingProvider.notifier).state = false;
-            ref.read(generationErrorProvider.notifier).state =
+            isGeneratingNotifier.state = false;
+            generationErrorNotifier.state =
                 'Free message already used. Upgrade to Pro!';
             return;
           }
         }
       }
 
-      final useUkSpelling = ref.read(isUkSpellingProvider);
       Log.event('generate_started', {
         'occasion': occasion.name,
         'has_personal_details': personalDetails.isNotEmpty,
@@ -480,50 +494,48 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
       }
 
       // Force Riverpod to re-read usage after recording
-      ref.invalidate(remainingGenerationsProvider);
-      ref.invalidate(totalUsageProvider);
+      container.invalidate(remainingGenerationsProvider);
+      container.invalidate(totalUsageProvider);
 
       // Save to history for later viewing
-      final historyService = ref.read(historyServiceProvider);
       await historyService.saveGeneration(result);
 
       // Check if we should request a review (after 3rd generation)
-      final reviewService = ref.read(reviewServiceProvider);
       final totalGenerations = usageService.getTotalCount();
       await reviewService.checkAndRequestReview(totalGenerations);
 
-      ref.read(generationResultProvider.notifier).state = result;
-      ref.read(isGeneratingProvider.notifier).state = false;
+      generationResultNotifier.state = result;
+      isGeneratingNotifier.state = false;
 
       // Clear form restoration state - generation successful
-      ref.read(formRestorationServiceProvider).clearGenerateFormState();
+      formRestorationService.clearGenerateFormState();
 
       if (!mounted) return;
       unawaited(context.pushNamed('results'));
     } on AiNetworkException catch (e) {
       Log.warning('AI generation failed: network', {'error': e.message});
-      ref.read(isGeneratingProvider.notifier).state = false;
-      ref.read(generationErrorProvider.notifier).state = e.message;
+      isGeneratingNotifier.state = false;
+      generationErrorNotifier.state = e.message;
     } on AiRateLimitException catch (e) {
       Log.warning('AI generation failed: rate limit', {'error': e.message});
-      ref.read(isGeneratingProvider.notifier).state = false;
-      ref.read(generationErrorProvider.notifier).state = e.message;
+      isGeneratingNotifier.state = false;
+      generationErrorNotifier.state = e.message;
     } on AiContentBlockedException catch (e) {
       Log.warning('AI generation failed: content blocked', {
         'error': e.message,
       });
-      ref.read(isGeneratingProvider.notifier).state = false;
-      ref.read(generationErrorProvider.notifier).state = e.message;
+      isGeneratingNotifier.state = false;
+      generationErrorNotifier.state = e.message;
     } on AiUnavailableException catch (e) {
       Log.warning('AI generation failed: service unavailable', {
         'error': e.message,
       });
-      ref.read(isGeneratingProvider.notifier).state = false;
-      ref.read(generationErrorProvider.notifier).state = e.message;
+      isGeneratingNotifier.state = false;
+      generationErrorNotifier.state = e.message;
     } on AiEmptyResponseException catch (e) {
       Log.warning('AI generation failed: empty response', {'error': e.message});
-      ref.read(isGeneratingProvider.notifier).state = false;
-      ref.read(generationErrorProvider.notifier).state =
+      isGeneratingNotifier.state = false;
+      generationErrorNotifier.state =
           'No messages were generated. Please try again.';
     } on AiParseException catch (e) {
       Log.warning('AI generation failed: parse error', {
@@ -531,20 +543,20 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
         'code': e.errorCode,
         'original': '${e.originalError}',
       });
-      ref.read(isGeneratingProvider.notifier).state = false;
-      ref.read(generationErrorProvider.notifier).state =
+      isGeneratingNotifier.state = false;
+      generationErrorNotifier.state =
           'There was an issue processing the response. Please try again.';
     } on AiServiceException catch (e) {
       Log.warning('AI generation failed: service error', {
         'error': e.message,
         'code': e.errorCode,
       });
-      ref.read(isGeneratingProvider.notifier).state = false;
-      ref.read(generationErrorProvider.notifier).state = e.message;
+      isGeneratingNotifier.state = false;
+      generationErrorNotifier.state = e.message;
     } on Exception catch (e, stackTrace) {
       Log.error('AI generation failed: unexpected', e, stackTrace);
-      ref.read(isGeneratingProvider.notifier).state = false;
-      ref.read(generationErrorProvider.notifier).state =
+      isGeneratingNotifier.state = false;
+      generationErrorNotifier.state =
           'An unexpected error occurred. Please try again.';
     }
   }

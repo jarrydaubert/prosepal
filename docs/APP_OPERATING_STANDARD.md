@@ -226,6 +226,13 @@ This can live in:
 - secure internal docs
 - 1Password secure notes
 
+For public repos, record only high-level operational facts. Do not commit:
+- raw certificate fingerprints
+- secret values or token-like identifiers
+- recovery codes or recovery email paths
+- detailed service-account inventories
+- private support-routing rules or personal phone numbers
+
 ## When This Standard Applies
 
 Use this standard by default for every new app unless there is a clear reason to

@@ -1,0 +1,66 @@
+{
+  "parameters": {
+    "config_schema_version": {
+      "defaultValue": {
+        "value": "1"
+      },
+      "valueType": "NUMBER"
+    },
+    "ai_enabled": {
+      "defaultValue": {
+        "value": "true"
+      },
+      "valueType": "BOOLEAN"
+    },
+    "paywall_enabled": {
+      "defaultValue": {
+        "value": "true"
+      },
+      "valueType": "BOOLEAN"
+    },
+    "premium_enabled": {
+      "defaultValue": {
+        "value": "true"
+      },
+      "valueType": "BOOLEAN"
+    },
+    "ai_model": {
+      "defaultValue": {
+        "value": "gemini-2.5-flash"
+      },
+      "valueType": "STRING"
+    },
+    "ai_model_fallback": {
+      "defaultValue": {
+        "value": "gemini-2.5-flash-lite"
+      },
+      "valueType": "STRING"
+    },
+    "ai_use_limited_app_check_tokens": {
+      "defaultValue": {
+        "value": "false"
+      },
+      "valueType": "BOOLEAN"
+    },
+    "force_update_enabled": {
+      "defaultValue": {
+        "value": "true"
+      },
+      "valueType": "BOOLEAN"
+    },
+    "min_app_version_ios": {
+      "defaultValue": {
+        "value": "1.0.0"
+      },
+      "description": "Force update threshold",
+      "valueType": "STRING"
+    },
+    "min_app_version_android": {
+      "defaultValue": {
+        "value": "1.0.0"
+      },
+      "description": "Force update threshold",
+      "valueType": "STRING"
+    }
+  }
+}
