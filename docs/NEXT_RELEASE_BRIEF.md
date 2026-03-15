@@ -13,15 +13,16 @@ Prosepal is a production Flutter mobile app for generating card messages with AI
 Current reality:
 - The app is live on iOS and has a substantial working feature set.
 - Core architecture and integrations (Supabase, RevenueCat, Firebase AI, Analytics/Crashlytics, Remote Config) are in place.
+- The `1.1.2` engineering/release-readiness cycle is complete from a config and validation standpoint; any remaining delay is App Store review / metadata handling, not missing core setup work.
 - Unit/widget testing is strong; integration testing exists but still needs hardening for deterministic reliability.
 - vNext UI baseline is a tokenized coral/navy/white theme direction (no ad-hoc per-screen color systems).
 - The current product design is the intended baseline for vNext, with only targeted quality and parity hardening.
 
 Recommendation for next release:
-- Treat `1.1.2` submission as the completed release-readiness cycle and stop spending backlog attention on already-finished gates.
-- Focus next on visible product polish, higher-signal journey tests, and AI reliability/technical depth.
-- Keep the current UX as baseline, but raise its consistency and contrast quality.
-- Avoid major UX or architecture rewrites until the current startup/auth/payment systems are better instrumented and easier to reason about.
+- Treat `1.1.2` as the outgoing release candidate and do not reopen already-completed config/setup work unless Apple review or live evidence exposes a concrete defect.
+- Use `1.1.3` to tighten operational control around Google/Firebase AI, production monitoring, and support/feedback delivery.
+- Keep the current UX as baseline; do not expand `1.1.3` into a broad redesign cycle.
+- Avoid major architecture rewrites until the current startup/auth/payment systems are better instrumented and easier to reason about.
 
 ---
 
@@ -321,99 +322,99 @@ Recommendation for next release:
 
 ### Recommended sequencing
 1. Keep the submitted `1.1.2` release stable unless Apple review finds a blocker.
-2. Use the next cycle to improve visible product polish and test credibility at the same time.
-3. Prefer fewer, sharper journey tests over broader click-through coverage.
+2. Treat the current provider/config audit as complete enough to stop re-checking the same surfaces manually without a concrete trigger.
+3. Use `1.1.3` for operational hardening, not a broad feature or visual expansion.
 4. Keep the app technically legible as an AI system, not just an app that happens to call Gemini.
 5. Avoid large architectural rewrites until the current startup/auth/payments boundaries have stronger telemetry and clearer test oracles.
 
-This lowers release risk and preserves the current design baseline while hardening release confidence.
+This lowers release risk while turning the just-completed config work into durable operating discipline.
 
 ---
 
-## 12) Proposed Next Release Scope (post-`1.1.2` submission)
+## 12) Outgoing `1.1.2` Closeout
 
-### Must-ship for the next cycle
-- Visible UI polish and consistency (`P0-08`) so the app looks intentionally designed rather than merely functional.
-- Journey test quality hardening (`P1-24`) so green integration results are actually trustworthy.
-- AI reliability hardening (`P1-43`, `VNEXT-10`) so the Gemini/Firebase AI path remains defensible on real devices and in public portfolio review.
-- Smoke determinism under weaker network conditions (`P1-41`) so the blocking story stays credible.
-- RevenueCat transfer metadata hydration (`P2-17`) so backend entitlement rows are complete, not merely permissive.
+### Completed for `1.1.2`
+- Firebase AI App Check is enforced on the live AI path.
+- Production Remote Config now publishes the expected AI/runtime control keys.
+- Supabase auth, SMTP, and provider configuration have been re-verified.
+- Resend delivery settings and admin access are in place for the current auth-mail path.
+- RevenueCat app configuration, webhook wiring, and collaborator/admin setup have been re-verified.
+- The current branch passes:
+  - `flutter analyze`
+  - `flutter test`
+  - `./scripts/test_critical_smoke.sh`
 
-### Strongly recommended for the same cycle
-- Public QA showcase packaging (`P2-16`) once the above quality work is in place.
-- AI technical-depth showcase (`P2-18`) so the repo demonstrates LLM engineering judgment, not just API usage.
-- Startup telemetry tightening (`P1-48`) if the next cycle still touches startup/auth/payment boundaries.
+### Remaining outside engineering control
+- App Store review outcome for `1.1.2`
+- Any metadata-only correction Apple still requests
 
-### Explicitly out-of-scope for the next cycle
-- Another rushed release-readiness push unless Apple review forces a hotfix.
-- Test-count inflation or broad new E2E suites without strong bug targets.
-- Large visual theme replacement disconnected from the current design baseline.
-- Server-side AI gateway as production default (`P1-47`) unless clear trigger criteria are met.
-- Startup orchestration/state-machine rewrite (`P2-13`) before the current system is better instrumented.
+### Do not carry forward as `1.1.3` work unless a real defect appears
+- repeating provider-by-provider console audits with no new trigger
+- reopening already-verified Firebase/Supabase/Resend/RevenueCat baseline setup
+- broad release-readiness chores already completed for `1.1.2`
 
 ---
 
-## 13) Go/No-Go Gates For The Next Engineering Cycle
+## 13) Proposed `1.1.3` Scope
 
-The next cycle is complete only if all are true:
+### Must-ship for `1.1.3`
+- `P0-01` Google/business-account finalization
+  - finish the intentionally unresolved Google ownership decisions rather than redoing completed Firebase setup
+- `VNEXT-10` AI cost/abuse controls
+  - convert the Firebase AI/App Check/Remote Config work into an operator-runbook with budget and kill-switch discipline
+- `P1-43` Firebase AI client-block regression hardening
+  - produce real-device evidence that the current AI path is not just configured, but robust
+- `P0-05` Billing budget alert controls
+  - make cost monitoring explicit rather than assumed
+- `P1-20` Post-release production pulse checks
+  - turn the verified provider surfaces into a repeatable production-check protocol
+
+### Strong candidate if scope allows
+- `P1-53` Direct in-app feedback delivery
+  - replaces the weak `mailto:` path with the Supabase + Resend architecture already available in production
+
+### Explicitly out-of-scope for `1.1.3`
+- broad visual redesign or theme replacement
+- large auth/startup/payment rewrites
+- expanding test count without a named failure mode
+- RevenueCat web billing/domain work; current app is native-store only
+- server-side AI gateway as the new production default
+
+---
+
+## 14) Go/No-Go Gates For `1.1.3`
+
+`1.1.3` is complete only if all are true:
 - Analyzer passes.
 - Unit/widget tests pass in CI and locally.
 - Critical smoke passes locally and in CI.
-- The journey suite keeps only tests with a named bug target and explicit oracle; low-signal tests are removed or rewritten.
-- Wired iOS smoke, Patrol pilot, and Firebase Test Lab critical Android suite still pass after any changes to startup/auth/payments/UI.
-- Core screens touched by the cycle are visually sane on physical iOS and Android devices with attached before/after evidence where applicable.
+- The chosen `1.1.3` backlog items are each closed with their documented DoD.
 - AI-critical flows still show correct behavior on real devices:
   - App Check active
   - generation succeeds when it should
   - failure classes remain distinguishable when it should not
-- RevenueCat/Supabase entitlement state remains aligned after purchase, restore, sign-in, sign-out, and delete/recreate edge paths.
+- Post-release checks are documented tightly enough that an operator can run them without guesswork.
+- Production cost/budget alerting is configured for the active AI path and evidenced.
 - Public docs remain honest about the actual harnesses and evidence available; no portfolio wording outruns the repo reality.
 
 ---
 
-## 14) Feedback Questions (For Sign-Off)
+## 15) Working Decisions For `1.1.3`
 
-Please comment directly on these points:
-
-1. Do we align on infra-first for the immediate next release?
-2. Are any user-facing features mandatory for this release beyond reliability?
-3. Which exact integration tests should become hard release gates?
-4. What dependency upgrade risk tolerance do we want (aggressive vs staged)?
-5. Do we confirm the current design remains the product baseline for vNext?
-6. For vNext visuals, do we require strict live-style parity on core screens (yes/no)?
-
-### Draft sign-off responses (recommended)
-1. Yes, align on infra-first for immediate release.
-2. No mandatory new user-facing features for vNext beyond reliability and safety hardening.
-3. Hard release gates should include:
-   - auth: Apple and Google sign-in success/cancellation/error paths
-   - generation: free-limit path, Pro path, error/retry path
-   - monetization: paywall display, purchase, restore, entitlement reconciliation
-   - settings: restore, delete-account orchestration, legal/support links
-4. Dependency strategy should be staged:
-   - batch A: low-risk toolchain/minor updates
-   - batch B: Riverpod/annotation ecosystem
-   - batch C: purchase/auth/device-regression pass after dependency movement
-   - each batch must pass analyzer/tests/integration smoke before merge
-5. Yes, keep the current design as the product baseline for vNext.
-6. Yes, enforce live-style parity for vNext core screens unless a delta is explicitly approved.
-
-### Additional recommendations from audit
-- Treat iOS build-script enforcement as a hard gate (no direct Xcode-only archive path).
-- Preserve App Store compliance guardrails that fixed prior rejection:
+- Keep the current design as the product baseline.
+- Prefer infra/ops hardening over new visible features.
+- Use staged dependency movement only when a concrete `1.1.3` item requires it.
+- Keep support diagnostics aligned with the canonical identity mapping doc and treat mismatches as release-blocking when touched.
+- Treat iOS build-script enforcement as a hard gate; do not reintroduce a direct Xcode-only archive path.
+- Preserve the App Store compliance guardrails already established:
   - no sign-in requirement before purchase
   - account deletion remains discoverable and functional in-app
-  - paid features and terms disclosures remain explicit
-- Integration flake policy:
-  - fix deterministic failures where possible
-  - quarantine unstable tests from hard gate until repaired
-  - keep a trusted critical-smoke suite as the blocking release gate
-- Keep support diagnostics aligned with the canonical identity mapping doc and treat mismatches as release-blocking.
+  - metadata must not make unsupported pricing claims
 
 ---
 
-## 15) Finalization
+## 16) Finalization
 
-- Freeze this document for the release candidate once sign-off is complete.
-- Record sign-off ownership and release version in the release record, not in this spec.
-- Move any unresolved item to `docs/BACKLOG.md` before release tagging.
+- Use this document as the planning source for `1.1.3`, not as a status log for ad-hoc work.
+- Record release ownership and final sign-off in the release record, not here.
+- Move any newly discovered unresolved work to `docs/BACKLOG.md` rather than adding TODOs to this brief.

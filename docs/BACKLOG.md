@@ -34,26 +34,28 @@ If any condition is missing, the item remains open.
 
 Process items in this order unless an explicit owner override is recorded in release planning.
 
-1. `P0-08a` Core readability and contrast hardening
-2. `P0-08b` Navigation and input polish
-3. `P1-24` Deterministic integration journey assertions
-4. `P1-43` Firebase AI client-block regression hardening
-5. `P1-41` Network-independent smoke deterministic mode
-6. `VNEXT-10` AI cost/abuse controls
-7. `P0-08c` Launch and platform polish
-8. `P2-17` RevenueCat transfer metadata hydration
-9. `P2-16` Public QA showcase packaging
-10. `P2-18` AI technical-depth showcase
-11. `P1-48` Startup phase telemetry and budget visibility
-12. `P1-52` Biometric lifecycle debounce + single-flight guard
-13. `VNEXT-11` Canonical identity mapping
-14. `VNEXT-13` Device abuse-control compliance decision
-15. `VNEXT-12` UI parity with live baseline
-16. `P0-05` Billing budget alert controls
-17. `P0-04` Auth loading spinner after OAuth sheet
-18. `P0-01` Move Google setup to business account
-19. `P1-47` Server-side AI gateway rollout (post-launch trigger)
-20. `P2-13` Startup orchestration refactor (post-launch)
+1. `P0-01` Move Google setup to business account
+2. `VNEXT-10` AI cost/abuse controls
+3. `P1-43` Firebase AI client-block regression hardening
+4. `P0-05` Billing budget alert controls
+5. `P1-20` Post-release production pulse checks
+6. `P1-53` Direct in-app feedback delivery
+7. `P0-08a` Core readability and contrast hardening
+8. `P0-08b` Navigation and input polish
+9. `P1-24` Deterministic integration journey assertions
+10. `P1-41` Network-independent smoke deterministic mode
+11. `P0-08c` Launch and platform polish
+12. `P2-17` RevenueCat transfer metadata hydration
+13. `P2-16` Public QA showcase packaging
+14. `P2-18` AI technical-depth showcase
+15. `P1-48` Startup phase telemetry and budget visibility
+16. `P1-52` Biometric lifecycle debounce + single-flight guard
+17. `VNEXT-11` Canonical identity mapping
+18. `VNEXT-13` Device abuse-control compliance decision
+19. `VNEXT-12` UI parity with live baseline
+20. `P0-04` Auth loading spinner after OAuth sheet
+21. `P1-47` Server-side AI gateway rollout (post-launch trigger)
+22. `P2-13` Startup orchestration refactor (post-launch)
 
 ## P0 - Launch Blockers
 
@@ -62,10 +64,10 @@ Process items in this order unless an explicit owner override is recorded in rel
 | `P0-08a` | Core readability and contrast hardening | Core screens and subflows in scope (`auth`, `lock`, `settings`, feedback, `history`, `calendar`, and any surfaced support/legal subflow touched by recent polish work) use shared semantic tokens only and have no readable dark-on-dark or light-on-light text regressions. DoD requires: updated widget/golden coverage where structure is stable, physical iOS + Android screenshots for each fixed surface, and an explicit WCAG AA manual verification note for primary text on the scoped screens. |
 | `P0-08b` | Navigation and input polish | Back navigation controls use the canonical chevron treatment across scoped screens, text-entry surfaces have consistent icon alignment and capitalization hints, and returning from generate/results/auth flows to home does not leave the search keyboard open. Dialog/input surfaces (delete, reauth, feedback, calendar entry, generate details) remain keyboard-safe and visually stable. DoD requires: regression coverage for each fixed bug path, explicit verification of the results-screen chevron and Gemini attribution spacing, and physical iOS + Android evidence for the named keyboard/navigation flows. |
 | `P0-08c` | Launch and platform polish | Launch surfaces look intentional on both platforms: iOS remains visually clean, Android launch treatment is explicitly designed for platform behavior rather than accidental fallback chrome, and any remaining platform differences are documented as deliberate. DoD requires: physical iOS + Android launch screenshots/video evidence, an explicit decision record for Android launch treatment, and no accidental icon/splash fallback behavior on the supported release devices. |
-| `P0-05` | Billing budget alert controls | Budget thresholds and notification channels are configured and verified through a dry-run alert path. |
+| `P0-05` | Billing budget alert controls | Production cost surfaces used by Prosepal have documented alert thresholds, owners, and notification channels. At minimum this includes the active Google/Firebase AI runtime path and any project-level budget used for Gemini/Firebase AI spending. DoD requires: the alert thresholds are recorded in `docs/DEVOPS.md`, notification destinations are verified from the business-managed admin path, and at least one dry-run or test alert path is evidenced so alert delivery is not assumed. |
 | `P0-04` | Auth loading spinner after OAuth sheet | After Apple/Google auth sheet closes, UI shows deterministic loading state until auth completion resolves or fails with user-visible error. |
-| `P0-01` | Move Google setup to business account | The live Google/Firebase project remains the existing production project (`prosepal-1a24b`) and is fully operable from the business Workspace identity. DoD requires: Workspace identity has the required org/project/OAuth roles for Firebase and Google Auth Platform, Firebase/Google Auth branding no longer uses the personal Gmail as the public support/developer contact, the Play Console account-type path is explicitly resolved (either verified organization-conversion path with required evidence or accepted personal-account testing path), and Android release execution no longer depends on undiscovered personal-account-only access. |
-| `VNEXT-10` | AI cost/abuse controls | API and app restrictions are verified, budget alerts are configured, App Check production posture is confirmed, release Remote Config kill-switch/model allowlist state is reviewed, kill-switch drill passes, and `docs/DEVOPS.md` reflects final policy. |
+| `P0-01` | Move Google setup to business account | The live Google/Firebase project remains the existing production project (`prosepal-1a24b`) and stays fully operable from the business Workspace identity without requiring undiscovered personal-account-only access. DoD requires: the already-granted Workspace Firebase/Google Auth access remains validated, any remaining Google admin dependency on the personal account is explicitly documented or removed, the Play Console path is resolved as an intentional policy decision (verified organization-conversion path with evidence, or explicit acceptance of the personal-account testing path), and `docs/SERVICE_OWNERSHIP_MIGRATION.md` reflects only the unresolved Google ownership gaps. |
+| `VNEXT-10` | AI cost/abuse controls | Firebase AI production posture is treated as an operational system, not just SDK wiring. DoD requires: App Check enforcement remains verified on the live AI path, Remote Config kill switches and pinned model defaults are reviewed against the active release config, the permitted production model IDs are documented as an allowlist, Google/Firebase budget alerts are configured and evidenced, at least one kill-switch drill or equivalent runtime-disable proof is captured, and `docs/DEVOPS.md` documents the final operator policy for AI runtime, rollback, and abuse/cost response. |
 | `VNEXT-11` | Canonical identity mapping | Supabase ID, RevenueCat App User ID, Analytics ID, and Crashlytics ID mapping is validated across sign-in/sign-out transitions and documented in `docs/IDENTITY_MAPPING.md`. |
 | `VNEXT-12` | UI parity with live baseline | Baseline screenshots exist for core screens and any styling delta is either matched to live or explicitly approved before release. |
 | `VNEXT-13` | Device abuse-control compliance decision | iOS/Android abuse-control approach is approved, documented, and reflected in release checklist and runtime configuration. |
@@ -75,13 +77,13 @@ Process items in this order unless an explicit owner override is recorded in rel
 | ID | Item | Definition of Done |
 |----|------|--------------------|
 | `P1-48` | Startup phase telemetry and budget visibility | Existing startup flow emits structured phase telemetry (`init`, `identity`, `entitlements`, `routing`) with per-phase duration, timeout/fallback reason, and final terminal route outcome. Logs are queryable in Crashlytics/analytics, phase budgets are documented in `docs/DEVOPS.md`, and fault-injection runs prove telemetry captures degraded startup paths deterministically. |
-| `P1-43` | Firebase AI client-block regression hardening | Real-device AI generation succeeds on wired iOS and Android using the current Firebase AI + App Check setup, and failure classification distinguishes client/app-block configuration errors from true content-safety blocks. `docs/DEVOPS.md` includes a deterministic checklist for debugging `client application <empty> are blocked` responses. |
+| `P1-43` | Firebase AI client-block regression hardening | Real-device AI generation succeeds on both wired iOS and wired Android using the current Firebase AI + App Check setup, and the evidence bundle captures the active model, backend, and App Check posture for each run. Failure classification must distinguish client/app-block configuration errors from true content-safety blocks, and `docs/DEVOPS.md` must include a deterministic triage checklist for `client application <empty> are blocked` style failures with a named oracle for "fixed" versus "still misconfigured". |
 | `P1-47` | Server-side AI gateway rollout (post-launch trigger) | A documented trigger policy exists for enabling a server-side AI gateway (abuse threshold, model-policy requirement, or provider-failover need). A non-production spike path exists behind a disabled feature flag, with parity tests proving no user-visible regression when enabled in staging. Production default remains client-direct until trigger criteria are met and approved. |
 | `P1-24` | Deterministic integration journey assertions | Journey tests in `integration_test/journeys/` stop using optional `if (exists(...))` branches for core checkpoints (auth entry, upgrade path, generation result, settings navigation) and fail explicitly when expected UI state is missing. Each retained journey test must justify its existence by targeting a concrete bug/failure mode, and low-signal click-through coverage should be removed rather than padded. DoD includes a keep/rewrite/delete review across the checked-in journey suite, representative journey execution on a real mobile target without silent skips, and clear failure reasons tied to both the missing checkpoint and the named bug the test is meant to catch. |
 | `P1-42` | Auth-screen layout flake elimination | The `AuthScreen shows error banner when Google sign-in fails` test no longer produces order-dependent `RenderFlex overflow` failures during randomized multi-file runs. Root cause is fixed (test harness isolation and/or responsive layout constraints), deterministic regression coverage is added, and `./scripts/test_flake_audit.sh` shows zero flakes for this case. |
 | `P1-40` | Startup/router timeout guard under network faults | Splash/startup routing reaches an explicit terminal route (`/onboarding`, `/home`, `/auth`, `/lock`, or init error surface) within a bounded timeout even when Supabase/RevenueCat DNS fails. Returning-user entitlement routing is deterministic under delayed RevenueCat init (no false `/onboarding` fallback followed by corrective auth/restore reroute). Integration tests cover both network-fault and delayed-entitlement scenarios with deterministic pass/fail assertions. |
 | `P1-52` | Biometric lifecycle debounce + single-flight guard | Biometric lock flow guarantees a single active prompt per foreground transition, ignores duplicate resume/inactive callbacks inside a bounded debounce window, and logs one stable lifecycle transition per lock attempt. Device tests on iOS confirm no rapid repeated `Biometric auth started` bursts during Face ID enable/disable and resume flows. |
-| `P1-53` | Direct in-app feedback delivery | Settings feedback no longer depends on `mailto:` or an external mail app for the primary path. An authenticated backend path (for example a Supabase Edge Function) accepts feedback plus optional diagnostics, relays it through Resend to `jarryd@prosepal.app`, and returns clear success/failure states to the app. Manual copy/share fallback remains available when backend delivery fails. DoD requires: `docs/DEVOPS.md` documents the delivery path and operational checks, regression coverage exists for successful submit plus backend-failure fallback, and release evidence proves a production-configured feedback submission reaches the Workspace inbox without opening the device mail client. |
+| `P1-53` | Direct in-app feedback delivery | Settings feedback no longer depends on `mailto:` or an external mail app for the primary path. An authenticated backend path (for example a Supabase Edge Function) accepts feedback plus optional diagnostics, relays it through Resend to `jarryd@prosepal.app`, and returns clear success/failure states to the app. Manual copy/share fallback remains available when backend delivery fails. DoD requires: the client never exposes a Resend secret, `docs/DEVOPS.md` documents the delivery path plus operator checks, regression coverage exists for successful submit plus backend-failure fallback, and release evidence proves a production-configured feedback submission reaches the Workspace inbox without opening the device mail client. |
 | `P1-41` | Network-independent smoke deterministic mode | `integration_test/smoke_test.dart` has a documented deterministic mode (or injected fakes) that removes dependency on live Supabase/RevenueCat reachability for core S1-S5 assertions. CI/device smoke remains stable when outbound network is unavailable or flaky, and the home/onboarding checkpoint does not depend on live backend timing to reach `What's the occasion?` or `Birthday`. |
 | `P1-36` | Journey launch readiness hardening | `integration_test/journeys/_helpers.dart` `launchApp()` waits for a concrete ready surface (onboarding/auth/home) with bounded timeout and clear failure reasons. `j1_fresh_install_test.dart` no longer produces `did not complete` behavior during wired-device execution. |
 | `P1-38` | E2E suite failure isolation | `integration_test/e2e_test.dart` execution is split or orchestrated so one early failure does not collapse the full suite into mass `did not complete` noise. Each shard outputs independent pass/fail and artifacts. |
@@ -109,7 +111,7 @@ Process items in this order unless an explicit owner override is recorded in rel
 | `P1-17` | Deployment safety guardrails verification | Deployment workflow validates target project/environment bindings before production path execution and documents tested rollback path. |
 | `P1-18` | Build-once promote release flow | Release pipeline promotes a previously built, checks-passed artifact (instead of rebuilding at release time), with artifact provenance linked to the exact CI run and commit SHA. |
 | `P1-19` | Protected production environments | GitHub environments (`staging`/`production`) gate production-key usage with required reviewers and environment-scoped secrets/variables documented in `docs/DEVOPS.md`. |
-| `P1-20` | Post-release production pulse checks | `docs/DEVOPS.md` defines a 0-60 minute post-release check protocol (Crashlytics, Supabase, AI cost/error signals, store console sanity) with explicit rollback trigger thresholds. |
+| `P1-20` | Post-release production pulse checks | `docs/DEVOPS.md` defines a 0-60 minute post-release check protocol with named owners, exact console/tooling surfaces, and explicit rollback trigger thresholds. At minimum the protocol must cover Crashlytics, Firebase AI/App Check health, Supabase auth + function health, RevenueCat webhook/entitlement sanity, and store-console release sanity. DoD requires: the protocol is runnable from the documented commands and dashboards, the pass/fail thresholds are concrete enough to avoid subjective interpretation, and at least one release or dry-run evidence bundle proves the checklist can actually be executed end to end. |
 | `P1-21` | Release evidence bundle automation | Release workflow publishes an evidence bundle artifact (checks summary, coverage/service-gate outputs, wired/FTL evidence links, Supabase/AI audit outputs, and run-ID traceability). |
 
 ## P2 - Lower Priority
