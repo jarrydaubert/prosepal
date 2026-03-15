@@ -30,6 +30,8 @@ This folder holds canonical product, engineering, and operations docs for the mo
     - System architecture, core modules, and integration boundaries.
 13. `PRODUCT_STRATEGY.md`
     - High-level product, growth, and experimentation direction.
+14. `RELATIONSHIP_ASSISTANT_VISION.md`
+    - Long-term product framing for Prosepal as a thoughtful relationship assistant.
 
 ## Working rules
 
