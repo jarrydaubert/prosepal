@@ -422,7 +422,39 @@ Supabase verification (manual + script-assisted):
 - Edge function behavior verified:
   - `delete-user` rejects invalid auth and completes cleanup path
   - `exchange-apple-token` fails safe on invalid/missing auth context
+  - `send-feedback` requires authenticated app sessions and fails safe when delivery is unavailable
   - `revenuecat-webhook` enforces secret and safely ignores invalid payloads
+
+### In-app feedback delivery
+
+Primary delivery path:
+- The app submits feedback through the authenticated Supabase Edge Function `send-feedback`.
+- The edge function relays mail through Resend to the support inbox without exposing any Resend secret to the client.
+- Manual copy/share fallback remains available in-app when direct delivery fails or the user is signed out.
+
+Required secrets/config:
+- `RESEND_API_KEY`
+- `FEEDBACK_TO_EMAIL`
+- `FEEDBACK_FROM_EMAIL`
+- Existing `SUPABASE_URL` and `SUPABASE_ANON_KEY`
+
+Deployment command:
+
+```bash
+supabase functions deploy send-feedback --project-ref mwoxtqxzunsjmbdqezif
+```
+
+Operator checks:
+- Confirm the function is deployed to the production Supabase project and returns `401` for missing/invalid auth instead of accepting anonymous requests.
+- Confirm Resend sender domain posture still matches policy: verified domain, DKIM/SPF healthy, tracking disabled, TLS enforced.
+- Confirm `FEEDBACK_TO_EMAIL` routes to the active support inbox and `FEEDBACK_FROM_EMAIL` is an approved sender on the verified domain.
+- Confirm at least one production-configured submission reaches the Workspace inbox without opening the device mail client.
+
+Failure handling:
+1. If the app shows the manual fallback sheet, verify whether the failure was auth-related or delivery-related.
+2. Check Supabase function logs for `send-feedback` and confirm whether the request reached the function.
+3. If the function reached Resend but delivery failed, inspect Resend activity/logs and sender-domain status before changing app code.
+4. If delivery cannot be restored quickly, keep the manual copy/share fallback as the temporary support path and track the outage/remediation in release evidence or `docs/BACKLOG.md` as appropriate.
 
 AI abuse/cost verification (manual + script-assisted):
 - Firebase AI keys restricted to required API targets.

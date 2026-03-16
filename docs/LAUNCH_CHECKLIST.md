@@ -175,8 +175,10 @@ open ios/Runner.xcworkspace
 - Current setup is suitable for transactional auth mail via Supabase.
 - Tracking is disabled, which avoids link rewriting and deliverability noise in auth emails.
 - Resend is currently used as the SMTP relay for Supabase auth/security mail.
-- The in-app feedback screen does not send through Resend yet; it still launches
-  the user's mail client via `mailto:` with clipboard fallback.
+- If the release includes direct in-app feedback delivery, verify the authenticated
+  `send-feedback` path reaches the Workspace inbox without opening the device
+  mail client, and verify the manual copy/share fallback still works when direct
+  delivery fails.
 - Public docs should record sender/domain posture, not API key values or SMTP secrets.
 
 ### RevenueCat ✅ VERIFIED 2026-03-15
