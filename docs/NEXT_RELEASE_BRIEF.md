@@ -13,15 +13,16 @@ Prosepal is a production Flutter mobile app for generating card messages with AI
 Current reality:
 - The app is live on iOS and has a substantial working feature set.
 - Core architecture and integrations (Supabase, RevenueCat, Firebase AI, Analytics/Crashlytics, Remote Config) are in place.
-- The `1.1.2` engineering/release-readiness cycle is complete from a config and validation standpoint; any remaining delay is App Store review / metadata handling, not missing core setup work.
+- `1.1.2` is the live App Store baseline for the next release cycle.
 - Unit/widget testing is strong; integration testing exists but still needs hardening for deterministic reliability.
 - vNext UI baseline is a tokenized coral/navy/white theme direction (no ad-hoc per-screen color systems).
 - The current product design is the intended baseline for vNext, with only targeted quality and parity hardening.
 
 Recommendation for next release:
-- Treat `1.1.2` as the outgoing release candidate and do not reopen already-completed config/setup work unless Apple review or live evidence exposes a concrete defect.
-- Use `1.1.3` to tighten operational control around Google/Firebase AI, production monitoring, and support/feedback delivery.
+- Treat live `1.1.2` as the production baseline and do not reopen already-completed config/setup work unless production evidence exposes a concrete defect.
+- Use `1.1.3` to tighten operational control around startup, Google/Firebase AI, production monitoring, and support/feedback delivery.
 - Keep the current UX as baseline; do not expand `1.1.3` into a broad redesign cycle.
+- Allow exactly one scoped user-facing addition in `1.1.3`: direct in-app feedback delivery.
 - Avoid major architecture rewrites until the current startup/auth/payment systems are better instrumented and easier to reason about.
 
 ---
@@ -321,9 +322,9 @@ Recommendation for next release:
 ## 11) Product Direction
 
 ### Recommended sequencing
-1. Keep the submitted `1.1.2` release stable unless Apple review finds a blocker.
+1. Keep live `1.1.2` stable unless production evidence finds a blocker.
 2. Treat the current provider/config audit as complete enough to stop re-checking the same surfaces manually without a concrete trigger.
-3. Use `1.1.3` for operational hardening, not a broad feature or visual expansion.
+3. Use `1.1.3` for operational hardening, not a broad feature or visual expansion, with one intentionally scoped exception: direct in-app feedback delivery.
 4. Keep the app technically legible as an AI system, not just an app that happens to call Gemini.
 5. Avoid large architectural rewrites until the current startup/auth/payments boundaries have stronger telemetry and clearer test oracles.
 
@@ -331,22 +332,16 @@ This lowers release risk while turning the just-completed config work into durab
 
 ---
 
-## 12) Outgoing `1.1.2` Closeout
+## 12) Live `1.1.2` Baseline
 
-### Completed for `1.1.2`
+`1.1.2` is now the live production baseline that `1.1.3` should inherit.
+
+### Baseline established by `1.1.2`
 - Firebase AI App Check is enforced on the live AI path.
 - Production Remote Config now publishes the expected AI/runtime control keys.
 - Supabase auth, SMTP, and provider configuration have been re-verified.
 - Resend delivery settings and admin access are in place for the current auth-mail path.
 - RevenueCat app configuration, webhook wiring, and collaborator/admin setup have been re-verified.
-- The current branch passes:
-  - `flutter analyze`
-  - `flutter test`
-  - `./scripts/test_critical_smoke.sh`
-
-### Remaining outside engineering control
-- App Store review outcome for `1.1.2`
-- Any metadata-only correction Apple still requests
 
 ### Do not carry forward as `1.1.3` work unless a real defect appears
 - repeating provider-by-provider console audits with no new trigger
@@ -355,23 +350,44 @@ This lowers release risk while turning the just-completed config work into durab
 
 ---
 
-## 13) Proposed `1.1.3` Scope
+## 13) Locked `1.1.3` Scope
 
-### Must-ship for `1.1.3`
-- `P0-01` Google/business-account finalization
-  - finish the intentionally unresolved Google ownership decisions rather than redoing completed Firebase setup
-- `VNEXT-10` AI cost/abuse controls
-  - convert the Firebase AI/App Check/Remote Config work into an operator-runbook with budget and kill-switch discipline
+Only the items below define the intended `1.1.3` release. Each item closes only when its backlog DoD is met exactly in [BACKLOG.md](./BACKLOG.md).
+
+### App/runtime must-ship
+- `P1-54` pre-Flutter startup timeout hardening
+  - exit criteria: pre-`runApp()` startup work reaches a bounded timeout/failure outcome with deterministic regression coverage and startup telemetry that distinguishes pre-Flutter timeouts
+- `P1-55` Apple token exchange recovery for delete compliance
+  - exit criteria: Apple token exchange no longer silently degrades later account deletion; retry/remediation path, user-facing failure handling, and evidence all exist
 - `P1-43` Firebase AI client-block regression hardening
-  - produce real-device evidence that the current AI path is not just configured, but robust
-- `P0-05` Billing budget alert controls
-  - make cost monitoring explicit rather than assumed
-- `P1-20` Post-release production pulse checks
-  - turn the verified provider surfaces into a repeatable production-check protocol
-
-### Strong candidate if scope allows
+  - exit criteria: wired iOS + Android evidence proves AI generation works on the live path and triage cleanly distinguishes client-block misconfig from content/safety failures
 - `P1-53` Direct in-app feedback delivery
-  - replaces the weak `mailto:` path with the Supabase + Resend architecture already available in production
+  - exit criteria: the app ships a native in-app feedback widget backed by the authenticated Supabase + Resend path, with success/failure handling, fallback behavior, operator docs, and real delivery evidence
+- `P1-56` AI error log sanitization
+  - exit criteria: production AI telemetry preserves actionable error buckets while redacting provider-internal details from Crashlytics
+- `P1-57` Pending usage sync ownership hardening
+  - exit criteria: queued usage data has explicit, documented ownership semantics across anonymous usage, sign-out, delete-account, and user switching, with regression coverage
+
+### Release-ops gates for the same cut
+- `P0-01` Google/business-account finalization
+  - exit criteria: production Google/Firebase ownership gaps are either removed or explicitly documented as the only remaining intentional exceptions
+- `VNEXT-10` AI cost/abuse controls
+  - exit criteria: AI operator policy is documented and evidenced for allowlist, kill switches, budget controls, rollback, and runtime-disable drills
+- `P0-05` Billing budget alert controls
+  - exit criteria: active spend alerts are configured, owned, documented, and test-evidenced
+- `P1-20` Post-release production pulse checks
+  - exit criteria: a concrete 0-60 minute production check protocol exists with named dashboards, thresholds, and evidence that it can actually be run end to end
+
+### Allowed polish if directly tied to a named bug
+- a narrow slice of `P0-08a` readability/contrast fixes
+- a narrow slice of `P0-08b` navigation/input fixes
+
+### Explicitly defer unless already nearly complete
+- `P1-24` deterministic integration journey assertions
+- `P1-41` network-independent smoke deterministic mode
+- `P0-08c` launch and platform polish
+- `P2-16` public QA showcase packaging
+- `P2-18` AI technical-depth showcase
 
 ### Explicitly out-of-scope for `1.1.3`
 - broad visual redesign or theme replacement
@@ -388,7 +404,7 @@ This lowers release risk while turning the just-completed config work into durab
 - Analyzer passes.
 - Unit/widget tests pass in CI and locally.
 - Critical smoke passes locally and in CI.
-- The chosen `1.1.3` backlog items are each closed with their documented DoD.
+- Every locked `1.1.3` item above is either closed with its backlog DoD or explicitly removed from the release cut in this document before ship.
 - AI-critical flows still show correct behavior on real devices:
   - App Check active
   - generation succeeds when it should

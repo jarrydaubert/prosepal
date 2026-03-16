@@ -140,6 +140,7 @@ void main() {
       await tester.pump();
 
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      expect(find.text('Finishing Google sign-in...'), findsOneWidget);
       expect(mockAuth.signInWithGoogleCallCount, 1);
 
       await tester.pump(const Duration(milliseconds: 400));
@@ -151,6 +152,29 @@ void main() {
       expect(exportedLog, contains('Auth method outcome'));
       expect(exportedLog, contains('method=google'));
       expect(exportedLog, contains('outcome=success'));
+    });
+
+    testWidgets('loading state hides dismiss button until auth resolves', (
+      tester,
+    ) async {
+      await prepareViewport(tester);
+      mockAuth.simulateDelay = const Duration(milliseconds: 300);
+
+      await tester.pumpWidget(createTestableAuthScreen(redirectTo: 'home'));
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(find.byIcon(Icons.close), findsOneWidget);
+
+      await tester.tap(find.text('Sign in with Google'));
+      await tester.pump();
+
+      expect(find.text('Finishing Google sign-in...'), findsOneWidget);
+      expect(find.byIcon(Icons.close), findsNothing);
+
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Home Screen'), findsOneWidget);
     });
 
     testWidgets('shows error banner when Google sign-in fails', (tester) async {
@@ -170,6 +194,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 200));
 
       expect(mockAuth.signInWithGoogleCallCount, 1);
+      expect(find.text('Finishing Google sign-in...'), findsNothing);
       expect(find.byIcon(Icons.error_outline_rounded), findsOneWidget);
       expect(find.text('Home Screen'), findsNothing);
       final exportedLog = Log.getExportableLog(includeSensitive: true);

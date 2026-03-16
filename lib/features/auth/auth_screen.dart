@@ -40,6 +40,12 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   String? _error;
   String? _authMethod;
 
+  String _loadingLabel() => switch (_authMethod) {
+    'apple' => 'Finishing Apple sign-in...',
+    'google' => 'Finishing Google sign-in...',
+    _ => 'Finishing sign-in...',
+  };
+
   @override
   void initState() {
     super.initState();
@@ -330,7 +336,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     // Payment flow requires auth - no escape
     final isPaywallRedirect = widget.redirectTo == 'paywall';
     final canDismiss =
-        !isPaywallRedirect && (widget.redirectTo != null || context.canPop());
+        !_isLoading &&
+        !isPaywallRedirect &&
+        (widget.redirectTo != null || context.canPop());
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -566,13 +574,27 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
 
                         // Loading indicator or legal text
                         if (_isLoading)
-                          const SizedBox(
-                            width: 28,
-                            height: 28,
-                            child: CircularProgressIndicator(
-                              color: AppColors.primary,
-                              strokeWidth: 2.5,
-                            ),
+                          Column(
+                            children: [
+                              const SizedBox(
+                                width: 28,
+                                height: 28,
+                                child: CircularProgressIndicator(
+                                  color: AppColors.primary,
+                                  strokeWidth: 2.5,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                _loadingLabel(),
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                            ],
                           )
                         else
                           _LegalText(
