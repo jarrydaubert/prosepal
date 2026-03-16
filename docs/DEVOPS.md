@@ -467,6 +467,7 @@ AI abuse/cost verification (manual + script-assisted):
 ### Startup Phase Telemetry And Budgets
 
 Startup reliability is validated from structured logs emitted by splash routing:
+- `Startup phase telemetry` for `pre_init` (pre-`runApp()` bootstrap) and post-splash phases
 - `Startup phase telemetry` (per phase)
 - `Startup routing summary` (terminal outcome)
 
@@ -475,6 +476,7 @@ The same fields are emitted to Firebase Analytics events for queryability:
 - `startup_routing_summary`
 
 Phases and budgets:
+- `pre_init`: max `4000ms` (pre-`runApp()` Firebase bootstrap budget; app must still reach Flutter if this times out or fails)
 - `init`: max `12000ms` (wait for critical init readiness)
 - `identity`: budget `4000ms` (auth + biometric checks)
 - `entitlements`: budget `3000ms` (anonymous Pro restore check; authenticated path is marked `authenticated_skipped`)
@@ -489,6 +491,7 @@ Analytics parameter keys:
 - `startup_routing_summary`: `init_wait_ms`, `splash_hold_ms`, `route_resolution_ms`, `init_phase_outcome`, `identity_phase_ms`, `identity_phase_outcome`, `entitlements_phase_ms`, `entitlements_phase_outcome`, `used_fallback`, `fallback_reason`, `resolved_route`
 
 Triage policy:
+- Treat any `pre_init` timeout/failure as distinct from splash `init` timeout. The required behavior is: native splash ends, Flutter mounts, and startup reaches the init error surface or later splash routing within budget instead of hanging before `runApp()`.
 - Investigate any `timedOut=true` phase on release-candidate builds.
 - Investigate repeated `usedFallback=true` startup summaries for the same route path or device cohort.
 - Treat `/onboarding` fallback for previously onboarded users as regression unless an explicit init error is present.

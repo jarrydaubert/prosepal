@@ -15,6 +15,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'app/app.dart';
 import 'app/router.dart';
+import 'app/startup_bootstrap.dart';
 import 'core/config/app_config.dart';
 import 'core/config/preference_keys.dart';
 import 'core/providers/providers.dart';
@@ -28,6 +29,8 @@ import 'core/services/review_service.dart';
 import 'core/services/subscription_service.dart';
 import 'core/services/supabase_auth_provider.dart';
 import 'firebase_options.dart';
+
+const _preFlutterFirebaseInitTimeout = Duration(seconds: 4);
 
 void main() async {
   // Preserve native splash until we're ready
@@ -63,10 +66,15 @@ Future<void> _initializeApp() async {
   // =========================================================================
   // PHASE 1: Firebase (required for crash reporting and remote config)
   // =========================================================================
-  try {
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
+  final firebaseInitResult = await runBoundedStartupPhase(
+    operation: () =>
+        Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform),
+    timeout: _preFlutterFirebaseInitTimeout,
+  );
+
+  _logPreFlutterStartupPhase(firebaseInitResult);
+
+  if (firebaseInitResult.isSuccess) {
     init.firebaseReady();
     Log.info('Firebase initialized', {'ms': stopwatch.elapsedMilliseconds});
 
@@ -79,9 +87,21 @@ Future<void> _initializeApp() async {
         return true;
       };
     }
-  } on Exception catch (e) {
-    Log.error('Firebase initialization failed', e);
-    init.firebaseFailed('$e');
+  } else if (firebaseInitResult.timedOut) {
+    Log.warning('Firebase initialization timed out', {
+      'timeoutMs': _preFlutterFirebaseInitTimeout.inMilliseconds,
+      'durationMs': firebaseInitResult.durationMs,
+    });
+    init.firebaseFailed(
+      'Timed out after ${_preFlutterFirebaseInitTimeout.inMilliseconds}ms',
+    );
+  } else {
+    Log.error(
+      'Firebase initialization failed',
+      firebaseInitResult.error,
+      firebaseInitResult.stackTrace,
+    );
+    init.firebaseFailed('${firebaseInitResult.error}');
   }
 
   // =========================================================================
@@ -123,6 +143,10 @@ Future<void> _initializeApp() async {
   // =========================================================================
   final subscriptionService = SubscriptionService();
   final initStatusNotifier = InitStatusNotifier();
+  final criticalInitError = init.criticalError;
+  if (criticalInitError != null) {
+    initStatusNotifier.setError(criticalInitError);
+  }
 
   // Create auth service early
   final authService = AuthService(
@@ -216,6 +240,25 @@ Future<void> _initializeApp() async {
   unawaited(reviewService.recordFirstLaunchIfNeeded());
   unawaited(_applyAnalyticsPreference(prefs));
   unawaited(authService.initializeProviders());
+}
+
+void _logPreFlutterStartupPhase<T>(StartupBootstrapPhaseResult<T> result) {
+  Log.info('Startup phase telemetry', {
+    'phase': 'pre_init',
+    'durationMs': result.durationMs,
+    'budgetMs': _preFlutterFirebaseInitTimeout.inMilliseconds,
+    'timedOut': result.timedOut,
+    'outcome': result.outcome,
+  });
+  unawaited(
+    Log.event('startup_phase', <String, Object>{
+      'phase': 'pre_init',
+      'duration_ms': result.durationMs,
+      'budget_ms': _preFlutterFirebaseInitTimeout.inMilliseconds,
+      'timed_out': result.timedOut,
+      'outcome': result.outcome,
+    }),
+  );
 }
 
 // =============================================================================
