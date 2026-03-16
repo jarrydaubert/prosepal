@@ -97,6 +97,17 @@ abstract class PreferenceKeys {
   static const paywallLastDismissed = 'paywall_last_dismissed';
 
   // ===========================================================================
+  // Auth Compliance Recovery
+  // ===========================================================================
+
+  /// Prefix for per-user Apple token-exchange remediation flags.
+  ///
+  /// When present for a user ID, account deletion must block with explicit
+  /// guidance until a later Apple token exchange succeeds.
+  static const appleTokenRecoveryPendingPrefix =
+      'apple_token_recovery_pending_';
+
+  // ===========================================================================
   // Spelling / Localization
   // ===========================================================================
 

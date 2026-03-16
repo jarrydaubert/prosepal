@@ -12,6 +12,7 @@ import 'package:in_app_review/in_app_review.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/config/preference_keys.dart';
@@ -516,6 +517,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         try {
           await authService.deleteAccount();
           Log.info('Delete account: Supabase delete successful');
+        } on AuthException catch (e) {
+          Log.error('Delete account: Supabase delete failed', e);
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(e.message),
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
+          return; // Don't continue if account deletion failed
         } on Exception catch (e) {
           Log.error('Delete account: Supabase delete failed', e);
           if (mounted) {

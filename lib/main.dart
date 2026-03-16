@@ -153,6 +153,7 @@ Future<void> _initializeApp() async {
     supabaseAuth: SupabaseAuthProvider(),
     appleAuth: AppleAuthProvider(),
     googleAuth: GoogleAuthProvider(),
+    preferences: prefs,
   );
 
   // Create router and container

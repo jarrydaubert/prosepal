@@ -6,6 +6,7 @@ import 'package:prosepal/core/providers/providers.dart';
 import 'package:prosepal/core/services/log_service.dart';
 import 'package:prosepal/features/auth/auth_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 import '../../mocks/mock_auth_service.dart';
 import '../../mocks/mock_biometric_service.dart';
@@ -152,6 +153,27 @@ void main() {
       expect(exportedLog, contains('Auth method outcome'));
       expect(exportedLog, contains('method=google'));
       expect(exportedLog, contains('outcome=success'));
+    });
+
+    testWidgets('shows post-auth notice after successful Apple sign-in', (
+      tester,
+    ) async {
+      await prepareViewport(tester);
+      mockAuth.postSignInNotice =
+          'Apple Sign In worked, but delete-account recovery needs support attention on this device.';
+
+      await tester.pumpWidget(createTestableAuthScreen());
+      await tester.pump(const Duration(milliseconds: 300));
+
+      await tester.tap(find.byType(SignInWithAppleButton));
+      await tester.pump();
+      await tester.pumpAndSettle();
+
+      expect(find.text('Home Screen'), findsOneWidget);
+      expect(
+        find.textContaining('delete-account recovery needs support attention'),
+        findsOneWidget,
+      );
     });
 
     testWidgets('loading state hides dismiss button until auth resolves', (

@@ -88,8 +88,19 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     return 'generic';
   }
 
-  Future<void> _navigateAfterAuth() async {
+  Future<void> _navigateAfterAuth({String? postAuthNotice}) async {
     if (!mounted) return;
+
+    if (postAuthNotice != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(postAuthNotice),
+          duration: const Duration(seconds: 6),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: AppColors.warning,
+        ),
+      );
+    }
 
     Log.event('auth_completed', {
       'method': _authMethod ?? 'social',
@@ -185,10 +196,12 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     // (feels contradictory to prompt for security right after authenticating)
     Log.info('Auth success: navigating to home');
     context.go('/home');
-    // Show welcome toast after navigation
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _showWelcomeToast();
-    });
+    if (postAuthNotice == null) {
+      // Show welcome toast after navigation
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _showWelcomeToast();
+      });
+    }
   }
 
   void _showWelcomeToast() {
@@ -227,6 +240,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
         onTimeout: () =>
             throw Exception('Sign in timed out. Please try again.'),
       );
+      final postAuthNotice = await authService.consumePostSignInNotice();
       if (response.user != null) {
         Log.event('auth_method_result', {
           'method': 'apple',
@@ -239,7 +253,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
           'source': widget.redirectTo ?? 'default',
         });
       }
-      if (mounted) await _navigateAfterAuth();
+      if (mounted) {
+        await _navigateAfterAuth(postAuthNotice: postAuthNotice);
+      }
     } on Exception catch (e) {
       ref.read(interactiveAuthMethodOverrideProvider.notifier).state = null;
       final authResult = AuthErrorHandler.getResult(e);
@@ -283,6 +299,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
         onTimeout: () =>
             throw Exception('Sign in timed out. Please try again.'),
       );
+      final postAuthNotice = await authService.consumePostSignInNotice();
       if (response.user != null) {
         Log.event('auth_method_result', {
           'method': 'google',
@@ -295,7 +312,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
           'source': widget.redirectTo ?? 'default',
         });
       }
-      if (mounted) await _navigateAfterAuth();
+      if (mounted) {
+        await _navigateAfterAuth(postAuthNotice: postAuthNotice);
+      }
     } on Exception catch (e) {
       ref.read(interactiveAuthMethodOverrideProvider.notifier).state = null;
       final authResult = AuthErrorHandler.getResult(e);

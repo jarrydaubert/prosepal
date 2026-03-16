@@ -210,6 +210,10 @@ class MockAuthService implements IAuthService {
   @visibleForTesting
   final Map<String, Exception> methodErrors = {};
 
+  /// Non-fatal post-auth notice returned once after sign-in.
+  @visibleForTesting
+  String? postSignInNotice;
+
   Exception? _getError(String method) => methodErrors[method] ?? errorToThrow;
 
   /// Simulate rate limiting (429)
@@ -279,6 +283,7 @@ class MockAuthService implements IAuthService {
     lastEmailUsed = null;
     lastPasswordUsed = null;
     errorToThrow = null;
+    postSignInNotice = null;
     methodErrors.clear();
   }
 
@@ -350,6 +355,13 @@ class MockAuthService implements IAuthService {
       emitAuthState(AuthState(AuthChangeEvent.signedIn, session));
     }
     return AuthResponse(session: session, user: user);
+  }
+
+  @override
+  Future<String?> consumePostSignInNotice() async {
+    final notice = postSignInNotice;
+    postSignInNotice = null;
+    return notice;
   }
 
   @override

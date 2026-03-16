@@ -244,7 +244,16 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
         onTimeout: () =>
             throw Exception('Sign in timed out. Please try again.'),
       );
+      final postAuthNotice = await authService.consumePostSignInNotice();
       if (response.user != null) {
+        if (mounted && postAuthNotice != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(postAuthNotice),
+              duration: const Duration(seconds: 6),
+            ),
+          );
+        }
         try {
           await usageService.syncFromServer();
         } on Exception catch (e) {
@@ -268,7 +277,7 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
 
         // No Pro restored - stay on paywall, user can tap Continue
         Log.info('PaywallSheet: Apple sign-in for sync complete');
-        if (mounted) {
+        if (mounted && postAuthNotice == null) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Signed in! Tap Continue to subscribe.'),
@@ -307,7 +316,16 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
         onTimeout: () =>
             throw Exception('Sign in timed out. Please try again.'),
       );
+      final postAuthNotice = await authService.consumePostSignInNotice();
       if (response.user != null) {
+        if (mounted && postAuthNotice != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(postAuthNotice),
+              duration: const Duration(seconds: 6),
+            ),
+          );
+        }
         try {
           await usageService.syncFromServer();
         } on Exception catch (e) {
@@ -328,7 +346,7 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
         }
 
         Log.info('PaywallSheet: Google sign-in for sync complete');
-        if (mounted) {
+        if (mounted && postAuthNotice == null) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Signed in! Tap Continue to subscribe.'),
