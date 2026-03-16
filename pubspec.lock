@@ -599,10 +599,10 @@ packages:
     dependency: "direct main"
     description:
       name: flutter_riverpod
-      sha256: e2026c72738a925a60db30258ff1f29974e40716749f3c9850aabf34ffc1a14c
+      sha256: "4e166be88e1dbbaa34a280bdb744aeae73b7ef25fdf8db7a3bb776760a3648e2"
       url: "https://pub.dev"
     source: hosted
-    version: "3.2.1"
+    version: "3.3.1"
   flutter_secure_storage:
     dependency: "direct main"
     description:
@@ -1267,18 +1267,18 @@ packages:
     dependency: "direct main"
     description:
       name: purchases_flutter
-      sha256: "3074eb68e8766bceabfbd7e8f5281304e0bb2e1f70004a5ad97747125117493d"
+      sha256: "88bd00ac44273d4782abc09453dffd8314be39764bc8f67f68a26325ea68b91f"
       url: "https://pub.dev"
     source: hosted
-    version: "9.13.1"
+    version: "9.14.0"
   purchases_ui_flutter:
     dependency: "direct main"
     description:
       name: purchases_ui_flutter
-      sha256: "0204e28b7775cb701c5a3abb4be59ea0744a884256e9d89afe0a8a140fc255bb"
+      sha256: edb15ab48fca177af0bd949aa20939aeafcaf90719903d52f3015ed1414a87f7
       url: "https://pub.dev"
     source: hosted
-    version: "9.13.1"
+    version: "9.14.0"
   realtime_client:
     dependency: transitive
     description:
