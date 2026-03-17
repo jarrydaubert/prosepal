@@ -10,6 +10,7 @@ import { createClient } from "npm:@supabase/supabase-js@2.95.3"
 const RESEND_API_URL = 'https://api.resend.com/emails'
 const MAX_MESSAGE_LENGTH = 4000
 const MAX_DIAGNOSTIC_LENGTH = 24000
+const RESEND_TIMEOUT_MS = 12000
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '',
@@ -27,7 +28,11 @@ function jsonResponse(body: Record<string, unknown>, status = 200): Response {
 function safeErrorMessage(error: unknown): string {
   if (error instanceof Error) {
     const message = error.message.toLowerCase()
-    if (message.includes('timeout') || message.includes('network')) {
+    if (
+      message.includes('timeout') ||
+      message.includes('network') ||
+      message.includes('abort')
+    ) {
       return 'Unable to submit feedback right now. Please try again.'
     }
   }
@@ -106,6 +111,14 @@ Deno.serve(async (req) => {
     if (userError || !user) {
       return jsonResponse({ error: 'Authentication required' }, 401)
     }
+    console.log(
+      'Feedback request authenticated',
+      JSON.stringify({
+        userId: `${user.id.substring(0, 8)}...`,
+        hasDiagnostics: diagnosticReport.length > 0,
+        includeSensitiveLogs,
+      }),
+    )
 
     const subject = `Prosepal Feedback (${user.id.substring(0, 8)})`
     const text = [
@@ -124,20 +137,30 @@ Deno.serve(async (req) => {
       .filter(Boolean)
       .join('\n')
 
-    const resendResponse = await fetch(RESEND_API_URL, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${resendApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        from: `Prosepal Support <${feedbackFromEmail}>`,
-        to: [feedbackToEmail],
-        reply_to: user.email ? [user.email] : undefined,
-        subject,
-        text,
-      }),
-    })
+    let resendResponse: Response
+    try {
+      resendResponse = await fetch(RESEND_API_URL, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${resendApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          from: `Prosepal Support <${feedbackFromEmail}>`,
+          to: [feedbackToEmail],
+          reply_to: user.email ? [user.email] : undefined,
+          subject,
+          text,
+        }),
+        signal: AbortSignal.timeout(RESEND_TIMEOUT_MS),
+      })
+    } catch (error) {
+      console.error('Resend feedback delivery request failed:', error)
+      return jsonResponse(
+        { error: 'Feedback delivery timed out. Please try again.' },
+        504,
+      )
+    }
 
     if (!resendResponse.ok) {
       const errorText = await resendResponse.text()

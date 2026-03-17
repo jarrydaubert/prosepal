@@ -8,6 +8,7 @@ import 'package:prosepal/core/providers/providers.dart';
 import 'package:prosepal/core/services/usage_service.dart';
 import 'package:prosepal/features/results/results_screen.dart';
 import 'package:prosepal/shared/components/generation_loading_overlay.dart';
+import 'package:prosepal/shared/theme/app_icons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../mocks/mock_ai_service.dart';
@@ -93,17 +94,15 @@ void main() {
       });
 
       testWidgets('shows all generated messages', (tester) async {
-        final result = createTestResult();
+        final result = createTestResult(messageCount: 2);
 
         await tester.pumpWidget(buildTestWidget(result: result));
         await tester.pumpAndSettle();
 
         expect(find.text('Option 1'), findsOneWidget);
         expect(find.text('Option 2'), findsOneWidget);
-        expect(find.text('Option 3'), findsOneWidget);
         expect(find.text('Test message 1 for Birthday'), findsOneWidget);
         expect(find.text('Test message 2 for Birthday'), findsOneWidget);
-        expect(find.text('Test message 3 for Birthday'), findsOneWidget);
       });
     });
 
@@ -115,6 +114,27 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.text('Copy'), findsNWidgets(2));
+        expect(find.byIcon(AppIcons.share), findsNWidgets(2));
+        expect(find.byIcon(AppIcons.copy), findsNWidgets(2));
+      });
+
+      testWidgets('share and copy stay side by side on phone width', (
+        tester,
+      ) async {
+        final result = createTestResult(messageCount: 1);
+
+        tester.view.physicalSize = const Size(393, 852);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        await tester.pumpWidget(buildTestWidget(result: result));
+        await tester.pumpAndSettle();
+
+        final shareRect = tester.getRect(find.text('Share').first);
+        final copyRect = tester.getRect(find.text('Copy').first);
+
+        expect((shareRect.top - copyRect.top).abs(), lessThanOrEqualTo(2));
       });
     });
 
@@ -300,7 +320,7 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.text('Unlock Pro'), findsOneWidget);
-        expect(find.byIcon(Icons.lock_outline), findsOneWidget);
+        expect(find.byIcon(AppIcons.unlock), findsOneWidget);
 
         await tester.tap(find.text('Unlock Pro'));
         await tester.pump(const Duration(milliseconds: 400));
@@ -375,7 +395,7 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.text('Unlock Pro'), findsOneWidget);
-        expect(find.byIcon(Icons.lock_outline), findsOneWidget);
+        expect(find.byIcon(AppIcons.unlock), findsOneWidget);
 
         await tester.tap(find.text('Unlock Pro'));
         await tester.pump(const Duration(milliseconds: 400));

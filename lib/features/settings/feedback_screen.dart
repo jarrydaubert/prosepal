@@ -156,6 +156,11 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
               ),
               const Gap(18),
               OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.textPrimary,
+                  side: const BorderSide(color: AppColors.borderMedium),
+                  textStyle: const TextStyle(fontWeight: FontWeight.w600),
+                ),
                 onPressed: () =>
                     Navigator.pop(context, _ManualFallbackAction.copy),
                 icon: const Icon(Icons.copy_rounded),
@@ -163,6 +168,11 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
               ),
               const Gap(10),
               OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.textPrimary,
+                  side: const BorderSide(color: AppColors.borderMedium),
+                  textStyle: const TextStyle(fontWeight: FontWeight.w600),
+                ),
                 onPressed: () =>
                     Navigator.pop(context, _ManualFallbackAction.share),
                 icon: const Icon(Icons.share_rounded),
@@ -170,6 +180,10 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
               ),
               const Gap(10),
               TextButton(
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.primary,
+                  textStyle: const TextStyle(fontWeight: FontWeight.w600),
+                ),
                 onPressed: () =>
                     Navigator.pop(context, _ManualFallbackAction.cancel),
                 child: const Text('Cancel'),
@@ -290,7 +304,7 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              "Questions, bugs, or feature requests? We'd love to hear from you.",
+              'Questions, bugs, or feature requests? Tell us what you were trying to do, what happened instead, and how often it reproduces.',
               style: Theme.of(
                 context,
               ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
@@ -317,7 +331,8 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
                 onEditingComplete: () => dismissKeyboard(context),
                 onTapOutside: (_) => dismissKeyboard(context),
                 decoration: InputDecoration(
-                  hintText: 'Describe your issue or suggestion...',
+                  hintText:
+                      'Example: Tried to share message 2 after generating a birthday card. The share sheet opened, then the app returned to home. Happened twice.',
                   hintStyle: const TextStyle(
                     color: AppColors.textHint,
                     height: 1.4,
@@ -354,7 +369,7 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Include diagnostic logs',
+                          'Attach diagnostic summary',
                           style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w500,
@@ -363,7 +378,7 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
                         ),
                         Gap(2),
                         Text(
-                          'Optional: app/version diagnostics for troubleshooting',
+                          'Adds app version, device, account, subscription, AI runtime, and recent redacted logs.',
                           style: TextStyle(
                             fontSize: 13,
                             color: AppColors.textSecondary,
@@ -406,7 +421,7 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
                   children: [
                     const Expanded(
                       child: Text(
-                        'Include full technical details (advanced)',
+                        'Include full technical details',
                         style: TextStyle(
                           fontSize: 13,
                           color: AppColors.textPrimary,
@@ -427,11 +442,22 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
             // View report link (only when logs enabled)
             if (_includeLogs) ...[
               const Gap(AppSpacing.sm),
+              Text(
+                _includeSensitiveLogs
+                    ? 'Full technical details adds expanded logs with identifiers and prompt/message context. Use it only when support asks.'
+                    : 'Diagnostic summary keeps the report support-focused without including your message/prompt content.',
+                style: const TextStyle(
+                  fontSize: 12,
+                  height: 1.4,
+                  color: AppColors.textHint,
+                ),
+              ),
+              const Gap(6),
               GestureDetector(
                 onTap: _shareDiagnostics,
                 child: const Text.rich(
                   TextSpan(
-                    text: 'Preview: ',
+                    text: 'Preview included report: ',
                     style: TextStyle(fontSize: 13, color: AppColors.textHint),
                     children: [
                       TextSpan(

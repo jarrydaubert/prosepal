@@ -7,10 +7,13 @@ import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/config/preference_keys.dart';
+import '../../core/models/occasion.dart';
 import '../../core/providers/providers.dart';
 import '../../core/services/log_service.dart';
 import '../../shared/components/components.dart';
 import '../../shared/theme/app_colors.dart';
+import '../../shared/theme/app_icons.dart';
+import '../../shared/theme/app_spacing.dart';
 import '../../shared/utils/keyboard_utils.dart';
 import '../paywall/paywall_sheet.dart';
 import 'widgets/occasion_grid.dart';
@@ -21,9 +24,11 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isCompactWidth = MediaQuery.of(context).size.width < 390;
-    final headerIconButtonSize = isCompactWidth ? 36.0 : 40.0;
-    final headerIconSize = isCompactWidth ? 20.0 : 22.0;
-    final headerIconSpacing = isCompactWidth ? 6.0 : 8.0;
+    final headerIconButtonSize = isCompactWidth ? 38.0 : 42.0;
+    final headerIconSize = isCompactWidth
+        ? AppSpacing.iconSizeSmall
+        : AppSpacing.iconSize;
+    final headerIconSpacing = isCompactWidth ? AppSpacing.sm : AppSpacing.md;
 
     final initStatus = ref.watch(initStatusProvider);
     final remaining = ref.watch(remainingGenerationsProvider);
@@ -130,7 +135,7 @@ class HomeScreen extends ConsumerWidget {
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     _IconButton(
-                                      icon: Icons.calendar_month_outlined,
+                                      icon: AppIcons.calendar,
                                       onPressed: () {
                                         dismissKeyboard(context);
                                         context.pushNamed('calendar');
@@ -141,7 +146,7 @@ class HomeScreen extends ConsumerWidget {
                                     ),
                                     SizedBox(width: headerIconSpacing),
                                     _IconButton(
-                                      icon: Icons.history,
+                                      icon: AppIcons.history,
                                       onPressed: () {
                                         dismissKeyboard(context);
                                         context.pushNamed('history');
@@ -155,7 +160,7 @@ class HomeScreen extends ConsumerWidget {
                                       key: const ValueKey(
                                         'home_settings_button',
                                       ),
-                                      icon: Icons.settings_outlined,
+                                      icon: AppIcons.settings,
                                       onPressed: () {
                                         dismissKeyboard(context);
                                         context.pushNamed('settings');
@@ -197,12 +202,71 @@ class HomeScreen extends ConsumerWidget {
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: const Text(
-                    "What's the occasion?",
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
+                  child: Container(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.lg,
+                      AppSpacing.md,
+                      AppSpacing.lg,
+                      AppSpacing.md,
+                    ),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [AppColors.surface, AppColors.bgDeep],
+                      ),
+                      borderRadius: BorderRadius.circular(
+                        AppSpacing.radiusLarge,
+                      ),
+                      border: Border.all(color: AppColors.borderLight),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.bgDeep.withValues(alpha: 0.28),
+                          blurRadius: 20,
+                          offset: const Offset(0, 12),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Row(
+                          children: [
+                            Text(
+                              'Choose the moment',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.primary,
+                                letterSpacing: 0.4,
+                              ),
+                            ),
+                            Spacer(),
+                            _OccasionCountPill(),
+                          ],
+                        ),
+                        const SizedBox(height: AppSpacing.xs),
+                        const Text(
+                          "What's the occasion?",
+                          style: TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.textPrimary,
+                            height: 1.05,
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+                        Text(
+                          showFirstActionHint
+                              ? 'Start with Birthday, then tune the tone until it sounds like you.'
+                              : 'Pick a moment and Prosepal turns it into a warm first draft in seconds.',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: AppColors.textSecondary,
+                            height: 1.45,
+                          ),
+                        ),
+                      ],
                     ),
                   ).animate().fadeIn(delay: 300.ms),
                 ),
@@ -251,9 +315,9 @@ class HomeScreen extends ConsumerWidget {
                       child: Row(
                         children: [
                           const Icon(
-                            Icons.touch_app,
+                            AppIcons.touch,
                             color: AppColors.primary,
-                            size: 20,
+                            size: AppSpacing.iconSizeSmall,
                           ),
                           const SizedBox(width: 8),
                           const Expanded(
@@ -269,9 +333,9 @@ class HomeScreen extends ConsumerWidget {
                           GestureDetector(
                             onTap: () => _dismissFirstActionHint(ref),
                             child: Icon(
-                              Icons.close,
+                              AppIcons.clear,
                               color: AppColors.primary.withValues(alpha: 0.6),
-                              size: 18,
+                              size: AppSpacing.iconSizeSmall,
                             ),
                           ),
                         ],
@@ -330,6 +394,32 @@ Future<void> _dismissFirstActionHint(WidgetRef ref) async {
   Log.info('First action hint dismissed');
 }
 
+class _OccasionCountPill extends StatelessWidget {
+  const _OccasionCountPill();
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(
+      horizontal: AppSpacing.sm,
+      vertical: AppSpacing.xs,
+    ),
+    decoration: BoxDecoration(
+      color: AppColors.primaryLight,
+      borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
+      border: Border.all(color: AppColors.primary.withValues(alpha: 0.24)),
+    ),
+    child: Text(
+      '${Occasion.values.length} ideas',
+      style: const TextStyle(
+        fontSize: 11,
+        fontWeight: FontWeight.w800,
+        color: AppColors.primaryDark,
+        letterSpacing: 0.3,
+      ),
+    ),
+  );
+}
+
 // =============================================================================
 // COMPONENTS
 // =============================================================================
@@ -361,8 +451,15 @@ class _IconButton extends StatelessWidget {
         height: size,
         decoration: BoxDecoration(
           color: AppColors.primaryLight,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
           border: Border.all(color: AppColors.primary, width: 1.5),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primary.withValues(alpha: 0.12),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
         child: Icon(icon, color: AppColors.primary, size: iconSize),
       ),
@@ -485,13 +582,17 @@ class _OccasionSearchFieldState extends State<_OccasionSearchField> {
     decoration: InputDecoration(
       hintText: 'Search occasions...',
       hintStyle: const TextStyle(color: AppColors.textOnLightHint),
-      prefixIcon: const Icon(Icons.search, color: AppColors.textOnLightHint),
+      prefixIcon: const Icon(
+        AppIcons.search,
+        color: AppColors.textOnLightHint,
+        size: AppSpacing.iconSizeSmall,
+      ),
       suffixIcon: _hasText
           ? IconButton(
               icon: const Icon(
-                Icons.clear,
+                AppIcons.clear,
                 color: AppColors.textOnLightHint,
-                size: 20,
+                size: AppSpacing.iconSizeSmall,
               ),
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints.tightFor(width: 40, height: 40),
@@ -502,8 +603,19 @@ class _OccasionSearchFieldState extends State<_OccasionSearchField> {
       filled: true,
       fillColor: AppColors.surfaceLight,
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppSpacing.radiusLarge),
         borderSide: BorderSide.none,
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(AppSpacing.radiusLarge),
+        borderSide: const BorderSide(
+          color: AppColors.borderOnLight,
+          width: 1.25,
+        ),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(AppSpacing.radiusLarge),
+        borderSide: const BorderSide(color: AppColors.primary, width: 1.75),
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
     ),

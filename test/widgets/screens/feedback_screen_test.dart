@@ -71,10 +71,7 @@ void main() {
     await tester.tap(find.byType(Switch).first);
     await tester.pumpAndSettle();
 
-    expect(
-      find.text('Include full technical details (advanced)'),
-      findsOneWidget,
-    );
+    expect(find.text('Include full technical details'), findsOneWidget);
 
     await tester.tap(find.byType(Switch).at(1));
     await tester.pumpAndSettle();
@@ -139,12 +136,53 @@ void main() {
     expect(find.text('Share feedback'), findsOneWidget);
   });
 
+  testWidgets('manual fallback actions use readable contrast on dark sheet', (
+    tester,
+  ) async {
+    fakeFeedbackService.errorToThrow = const FeedbackSubmissionException(
+      'Feedback delivery failed',
+    );
+
+    await tester.pumpWidget(buildTestWidget());
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField), 'Bug report');
+    await tester.pump();
+
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Send Feedback'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+
+    final copyButton = tester.widget<OutlinedButton>(
+      find.widgetWithText(OutlinedButton, 'Copy feedback'),
+    );
+    final shareButton = tester.widget<OutlinedButton>(
+      find.widgetWithText(OutlinedButton, 'Share feedback'),
+    );
+    final cancelButton = tester.widget<TextButton>(
+      find.widgetWithText(TextButton, 'Cancel'),
+    );
+
+    expect(
+      copyButton.style?.foregroundColor?.resolve(<WidgetState>{}),
+      AppColors.textPrimary,
+    );
+    expect(
+      shareButton.style?.foregroundColor?.resolve(<WidgetState>{}),
+      AppColors.textPrimary,
+    );
+    expect(
+      cancelButton.style?.foregroundColor?.resolve(<WidgetState>{}),
+      AppColors.primary,
+    );
+  });
+
   testWidgets('toggle labels use readable contrast colors', (tester) async {
     await tester.pumpWidget(buildTestWidget());
     await tester.pumpAndSettle();
 
     final diagnosticsLabel = tester.widget<Text>(
-      find.text('Include diagnostic logs'),
+      find.text('Attach diagnostic summary'),
     );
     expect(diagnosticsLabel.style?.color, AppColors.textPrimary);
 
@@ -152,7 +190,7 @@ void main() {
     await tester.pumpAndSettle();
 
     final technicalLabel = tester.widget<Text>(
-      find.text('Include full technical details (advanced)'),
+      find.text('Include full technical details'),
     );
     expect(technicalLabel.style?.color, AppColors.textPrimary);
   });

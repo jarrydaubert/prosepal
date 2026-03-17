@@ -27,6 +27,8 @@ Relays authenticated in-app feedback to the support inbox through Resend.
 - `FEEDBACK_TO_EMAIL`
 - `FEEDBACK_FROM_EMAIL`
 - existing `SUPABASE_URL` / `SUPABASE_ANON_KEY`
+- `supabase/config.toml` must include `[functions.send-feedback] verify_jwt = false`
+  because this function validates the Supabase user inside the function body.
 
 ### Deploy changes
 ```bash

@@ -23,6 +23,10 @@ Recommendation for next release:
 - Use `1.1.3` to tighten operational control around startup, Google/Firebase AI, production monitoring, and support/feedback delivery.
 - Keep the current UX as baseline; do not expand `1.1.3` into a broad redesign cycle.
 - Allow exactly one scoped user-facing addition in `1.1.3`: direct in-app feedback delivery.
+- If icon consistency work is pulled in during `1.1.3`, keep it to a small
+  occasion-first pilot with any necessary calendar/results follow-through only;
+  do not turn the release into a whole-app icon migration or component-API
+  redesign.
 - Avoid major architecture rewrites until the current startup/auth/payment systems are better instrumented and easier to reason about.
 
 ---

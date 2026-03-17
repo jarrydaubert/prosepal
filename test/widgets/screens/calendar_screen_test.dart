@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:prosepal/core/models/models.dart';
 import 'package:prosepal/core/providers/providers.dart';
 import 'package:prosepal/features/calendar/calendar_screen.dart';
+import 'package:prosepal/shared/components/app_emoji.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -54,6 +55,12 @@ void main() {
 
     expect(find.text('No upcoming occasions'), findsOneWidget);
     expect(find.text('Add Your First Occasion'), findsOneWidget);
+    expect(
+      find.byWidgetPredicate(
+        (widget) => widget is AppEmoji && widget.emoji == '📅',
+      ),
+      findsOneWidget,
+    );
     expect(find.byType(FloatingActionButton), findsNothing);
     expect(find.text('Add Occasion'), findsNothing);
   });
@@ -81,7 +88,7 @@ void main() {
     await tester.pumpWidget(buildHarness([sampleOccasion()]));
     await tester.pumpAndSettle();
 
-    expect(find.text('Generate'), findsOneWidget);
+    expect(find.text('Write a message'), findsOneWidget);
     expect(find.text('Export'), findsOneWidget);
     expect(find.text('Edit'), findsOneWidget);
     expect(find.text('Delete'), findsOneWidget);

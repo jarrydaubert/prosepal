@@ -54,6 +54,7 @@ dependencies:
   timezone: ^0.11.0
   freezed_annotation: ^3.1.0
   json_annotation: ^4.11.0
+  http: ^1.4.0
 
   firebase_app_check: ^0.4.1+3
   flutter_native_splash: ^2.4.7
@@ -72,7 +73,6 @@ dev_dependencies:
   # Testing packages
   mocktail: ^1.0.4  # Mocking without code generation
   mock_supabase_http_client: ^0.0.3  # Official Supabase mock client
-  http: ^1.4.0  # For HTTP mocking
   integration_test:
     sdk: flutter
 

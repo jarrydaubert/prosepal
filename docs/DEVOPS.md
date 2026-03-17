@@ -437,6 +437,8 @@ Required secrets/config:
 - `FEEDBACK_TO_EMAIL`
 - `FEEDBACK_FROM_EMAIL`
 - Existing `SUPABASE_URL` and `SUPABASE_ANON_KEY`
+- `supabase/config.toml` must keep `[functions.send-feedback] verify_jwt = false`
+  because the function verifies user auth internally via the passed Bearer token.
 
 Deployment command:
 
@@ -446,6 +448,9 @@ supabase functions deploy send-feedback --project-ref mwoxtqxzunsjmbdqezif
 
 Operator checks:
 - Confirm the function is deployed to the production Supabase project and returns `401` for missing/invalid auth instead of accepting anonymous requests.
+- Confirm the deployed function is using the current `supabase/config.toml` setting
+  with `verify_jwt = false`; otherwise the gateway can reject valid app sessions
+  before the function code runs with `401 Invalid JWT`.
 - Confirm Resend sender domain posture still matches policy: verified domain, DKIM/SPF healthy, tracking disabled, TLS enforced.
 - Confirm `FEEDBACK_TO_EMAIL` routes to the active support inbox and `FEEDBACK_FROM_EMAIL` is an approved sender on the verified domain.
 - Confirm at least one production-configured submission reaches the Workspace inbox without opening the device mail client.
