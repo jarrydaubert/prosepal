@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../../core/config/app_config.dart';
 import '../../core/providers/providers.dart';
 import '../../core/services/diagnostic_service.dart';
 import '../../core/services/feedback_service.dart';
@@ -99,7 +100,7 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
 
   String _manualFallbackText(String message, {String? diagnosticReport}) {
     final buffer = StringBuffer()
-      ..writeln('To: support@prosepal.app')
+      ..writeln('To: ${AppConfig.supportEmail}')
       ..writeln('Subject: Prosepal Feedback')
       ..writeln()
       ..writeln(message.trim());

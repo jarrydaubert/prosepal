@@ -89,6 +89,9 @@ abstract final class AppConfig {
     'GOOGLE_IOS_CLIENT_ID',
   );
 
+  /// Support mailbox surfaced in app-generated diagnostics and fallback copy.
+  static const String supportEmail = 'jarryd@prosepal.app';
+
   // ===========================================================================
   // Validation
   // ===========================================================================

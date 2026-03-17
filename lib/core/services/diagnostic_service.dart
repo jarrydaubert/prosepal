@@ -8,6 +8,7 @@ import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../config/ai_config.dart';
+import '../config/app_config.dart';
 import 'ai_service.dart';
 import 'auth_telemetry.dart';
 import 'log_service.dart';
@@ -256,7 +257,7 @@ abstract final class DiagnosticService {
       );
     }
     buffer.writeln(
-      'Share this with support@prosepal.app to help troubleshoot issues.',
+      'Share this with ${AppConfig.supportEmail} to help troubleshoot issues.',
     );
 
     final report = buffer.toString();

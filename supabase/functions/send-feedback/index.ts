@@ -55,7 +55,7 @@ Deno.serve(async (req) => {
     const feedbackToEmail =
       Deno.env.get('FEEDBACK_TO_EMAIL') ?? 'jarryd@prosepal.app'
     const feedbackFromEmail =
-      Deno.env.get('FEEDBACK_FROM_EMAIL') ?? 'support@prosepal.app'
+      Deno.env.get('FEEDBACK_FROM_EMAIL') ?? 'jarryd@prosepal.app'
 
     if (!supabaseUrl || !supabaseAnonKey || !resendApiKey) {
       console.error('Missing send-feedback configuration')
