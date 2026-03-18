@@ -58,6 +58,13 @@ void main() {
         ),
       );
 
+  Future<void> tapVisible(WidgetTester tester, Finder finder) async {
+    await tester.ensureVisible(finder);
+    await tester.pumpAndSettle();
+    await tester.tap(finder);
+    await tester.pump();
+  }
+
   testWidgets('preserves typed feedback when diagnostics toggles change', (
     tester,
   ) async {
@@ -68,12 +75,18 @@ void main() {
     await tester.enterText(find.byType(TextField), message);
     await tester.pump();
 
-    await tester.tap(find.byType(Switch).first);
+    await tapVisible(
+      tester,
+      find.byKey(const Key('feedback.include_app_details_switch')),
+    );
     await tester.pumpAndSettle();
 
-    expect(find.text('Include full technical details'), findsOneWidget);
+    expect(find.text('Add technical trace'), findsOneWidget);
 
-    await tester.tap(find.byType(Switch).at(1));
+    await tapVisible(
+      tester,
+      find.byKey(const Key('feedback.toggle_technical_trace_button')),
+    );
     await tester.pumpAndSettle();
 
     expect(find.text('Include Full Technical Details?'), findsOneWidget);
@@ -87,7 +100,10 @@ void main() {
     await tester.pumpWidget(buildTestWidget());
     await tester.pumpAndSettle();
 
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Send Feedback'));
+    await tapVisible(
+      tester,
+      find.widgetWithText(ElevatedButton, 'Send to support'),
+    );
     await tester.pump();
 
     expect(find.text('Please enter a message'), findsOneWidget);
@@ -105,7 +121,10 @@ void main() {
     await tester.enterText(find.byType(TextField), 'Feature idea');
     await tester.pump();
 
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Send Feedback'));
+    await tapVisible(
+      tester,
+      find.widgetWithText(ElevatedButton, 'Send to support'),
+    );
     await tester.pump();
     await tester.pumpAndSettle();
 
@@ -113,6 +132,33 @@ void main() {
     expect(fakeFeedbackService.lastMessage, 'Feature idea');
     expect(observer.popCount, 1);
     expect(find.text('Send manually'), findsNothing);
+  });
+
+  testWidgets('support package can be expanded into technical trace mode', (
+    tester,
+  ) async {
+    await tester.pumpWidget(buildTestWidget());
+    await tester.pumpAndSettle();
+
+    await tapVisible(
+      tester,
+      find.byKey(const Key('feedback.include_app_details_switch')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Preview report'), findsOneWidget);
+    expect(find.text('Support summary'), findsOneWidget);
+
+    await tapVisible(
+      tester,
+      find.byKey(const Key('feedback.toggle_technical_trace_button')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Enable'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Technical trace'), findsOneWidget);
+    expect(find.text('Remove technical trace'), findsOneWidget);
   });
 
   testWidgets('failed submit offers manual fallback actions', (tester) async {
@@ -126,7 +172,10 @@ void main() {
     await tester.enterText(find.byType(TextField), 'Bug report');
     await tester.pump();
 
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Send Feedback'));
+    await tapVisible(
+      tester,
+      find.widgetWithText(ElevatedButton, 'Send to support'),
+    );
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
 
@@ -149,7 +198,10 @@ void main() {
     await tester.enterText(find.byType(TextField), 'Bug report');
     await tester.pump();
 
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Send Feedback'));
+    await tapVisible(
+      tester,
+      find.widgetWithText(ElevatedButton, 'Send to support'),
+    );
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
 
@@ -177,22 +229,27 @@ void main() {
     );
   });
 
-  testWidgets('toggle labels use readable contrast colors', (tester) async {
+  testWidgets('support package labels use readable contrast colors', (
+    tester,
+  ) async {
     await tester.pumpWidget(buildTestWidget());
     await tester.pumpAndSettle();
 
-    final diagnosticsLabel = tester.widget<Text>(
-      find.text('Attach diagnostic summary'),
-    );
-    expect(diagnosticsLabel.style?.color, AppColors.textPrimary);
+    final diagnosticsLabel = tester.widget<Text>(find.text('Add app details'));
+    expect(diagnosticsLabel.style?.color, AppColors.textOnLight);
 
-    await tester.tap(find.byType(Switch).first);
+    await tapVisible(
+      tester,
+      find.byKey(const Key('feedback.include_app_details_switch')),
+    );
     await tester.pumpAndSettle();
 
-    final technicalLabel = tester.widget<Text>(
-      find.text('Include full technical details'),
+    final helperLabel = tester.widget<Text>(
+      find.text(
+        'The support summary avoids your message and prompt content while still giving us the app context needed to investigate.',
+      ),
     );
-    expect(technicalLabel.style?.color, AppColors.textPrimary);
+    expect(helperLabel.style?.color, AppColors.textOnLightSecondary);
   });
 }
 

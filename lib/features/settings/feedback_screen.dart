@@ -30,10 +30,23 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
   bool _includeSensitiveLogs = false;
 
   @override
+  void initState() {
+    super.initState();
+    _focusNode.addListener(_handleFocusChanged);
+  }
+
+  @override
   void dispose() {
+    _focusNode.removeListener(_handleFocusChanged);
     _focusNode.dispose();
     _controller.dispose();
     super.dispose();
+  }
+
+  void _handleFocusChanged() {
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   Future<void> _send() async {
@@ -274,6 +287,14 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
     }
   }
 
+  Future<void> _toggleTechnicalTrace() async {
+    if (!_includeSensitiveLogs) {
+      await _toggleSensitiveLogs(true);
+      return;
+    }
+    setState(() => _includeSensitiveLogs = false);
+  }
+
   @override
   Widget build(BuildContext context) => GestureDetector(
     onTap: () => dismissKeyboard(context),
@@ -303,178 +324,277 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
-              'Questions, bugs, or feature requests? Tell us what you were trying to do, what happened instead, and how often it reproduces.',
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
-            ),
-            const Gap(AppSpacing.lg),
-            Semantics(
-              label: 'Feedback message input',
-              hint: 'Enter your feedback, bug report, or feature request',
-              child: TextField(
-                controller: _controller,
-                focusNode: _focusNode,
-                minLines: 4,
-                maxLines: 6,
-                keyboardType: TextInputType.multiline,
-                textCapitalization: TextCapitalization.sentences,
-                textInputAction: TextInputAction.done,
-                textAlignVertical: TextAlignVertical.top,
-                scrollPadding: const EdgeInsets.only(bottom: 140),
-                style: const TextStyle(
-                  fontSize: 15,
-                  height: 1.4,
-                  color: AppColors.textPrimary,
-                ),
-                onEditingComplete: () => dismissKeyboard(context),
-                onTapOutside: (_) => dismissKeyboard(context),
-                decoration: InputDecoration(
-                  hintText:
-                      'Example: Tried to share message 2 after generating a birthday card. The share sheet opened, then the app returned to home. Happened twice.',
-                  hintStyle: const TextStyle(
-                    color: AppColors.textHint,
-                    height: 1.4,
-                  ),
-                  contentPadding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
-                  filled: true,
-                  fillColor: AppColors.surface,
-                  alignLabelWithHint: true,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(
-                      AppSpacing.radiusMedium,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            const Gap(AppSpacing.md),
-            // Toggle for including diagnostic logs
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(AppSpacing.lg),
               decoration: BoxDecoration(
-                color: AppColors.surface,
-                borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
-                border: Border.all(
-                  color: _includeLogs
-                      ? AppColors.primary.withValues(alpha: 0.3)
-                      : AppColors.textHint.withValues(alpha: 0.2),
+                gradient: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [AppColors.surface, AppColors.bgDeep],
                 ),
+                borderRadius: BorderRadius.circular(AppSpacing.radiusLarge),
+                border: Border.all(color: AppColors.borderMedium),
               ),
-              child: Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Attach diagnostic summary',
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w500,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                        Gap(2),
-                        Text(
-                          'Adds app version, device, account, subscription, AI runtime, and recent redacted logs.',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                      ],
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.sm,
+                      vertical: AppSpacing.xs,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.14),
+                      borderRadius: BorderRadius.circular(
+                        AppSpacing.radiusFull,
+                      ),
+                    ),
+                    child: const Text(
+                      'Support inbox',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.primaryLight,
+                      ),
                     ),
                   ),
-                  Switch.adaptive(
-                    value: _includeLogs,
-                    onChanged: (value) {
-                      dismissKeyboard(context);
-                      setState(() {
-                        _includeLogs = value;
-                        if (!value) _includeSensitiveLogs = false;
-                      });
-                    },
-                    activeTrackColor: AppColors.primary,
+                  const Gap(AppSpacing.md),
+                  const Text(
+                    'Tell us what you were doing, what went wrong, and whether it keeps happening.',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700,
+                      height: 1.2,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const Gap(AppSpacing.sm),
+                  Text(
+                    'Short reports are fine. Add app details only when they will help us reproduce the problem.',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: AppColors.textSecondary,
+                      height: 1.4,
+                    ),
                   ),
                 ],
               ),
             ),
-            if (_includeLogs) ...[
-              const Gap(AppSpacing.sm),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
-                  border: Border.all(
-                    color: _includeSensitiveLogs
-                        ? AppColors.error.withValues(alpha: 0.25)
-                        : AppColors.textHint.withValues(alpha: 0.2),
+            const Gap(AppSpacing.lg),
+            AppSurfaceCard(
+              borderColor: _focusNode.hasFocus
+                  ? AppColors.primary
+                  : AppColors.borderOnLight,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'What happened?',
+                    style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textOnLight,
+                    ),
                   ),
-                ),
-                child: Row(
-                  children: [
-                    const Expanded(
-                      child: Text(
-                        'Include full technical details',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: AppColors.textPrimary,
+                  const Gap(AppSpacing.xs),
+                  const Text(
+                    'Include what you expected, what happened instead, and how often you can reproduce it.',
+                    style: TextStyle(
+                      fontSize: 13,
+                      height: 1.4,
+                      color: AppColors.textOnLightSecondary,
+                    ),
+                  ),
+                  const Gap(AppSpacing.md),
+                  Semantics(
+                    label: 'Feedback message input',
+                    hint: 'Enter your feedback, bug report, or feature request',
+                    child: TextField(
+                      controller: _controller,
+                      focusNode: _focusNode,
+                      minLines: 5,
+                      maxLines: 7,
+                      keyboardType: TextInputType.multiline,
+                      textCapitalization: TextCapitalization.sentences,
+                      textInputAction: TextInputAction.done,
+                      textAlignVertical: TextAlignVertical.top,
+                      scrollPadding: const EdgeInsets.only(bottom: 140),
+                      style: const TextStyle(
+                        fontSize: 15,
+                        height: 1.45,
+                        color: AppColors.textOnLight,
+                      ),
+                      onEditingComplete: () => dismissKeyboard(context),
+                      onTapOutside: (_) => dismissKeyboard(context),
+                      decoration: InputDecoration(
+                        hintText:
+                            'Example: I generated a birthday message, tapped share, and the sheet flashed then disappeared. It has happened twice today.',
+                        hintStyle: const TextStyle(
+                          color: AppColors.textOnLightHint,
+                          height: 1.4,
+                        ),
+                        contentPadding: const EdgeInsets.fromLTRB(
+                          14,
+                          14,
+                          14,
+                          14,
+                        ),
+                        filled: true,
+                        fillColor: AppColors.surfaceLightMuted,
+                        alignLabelWithHint: true,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(
+                            AppSpacing.radiusMedium,
+                          ),
+                          borderSide: const BorderSide(
+                            color: AppColors.borderOnLight,
+                          ),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(
+                            AppSpacing.radiusMedium,
+                          ),
+                          borderSide: const BorderSide(
+                            color: AppColors.borderOnLight,
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(
+                            AppSpacing.radiusMedium,
+                          ),
+                          borderSide: const BorderSide(
+                            color: AppColors.primary,
+                            width: 2,
+                          ),
                         ),
                       ),
                     ),
-                    Switch.adaptive(
-                      value: _includeSensitiveLogs,
-                      onChanged: (value) {
-                        dismissKeyboard(context);
-                        _toggleSensitiveLogs(value);
-                      },
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ],
-            // View report link (only when logs enabled)
-            if (_includeLogs) ...[
-              const Gap(AppSpacing.sm),
-              Text(
-                _includeSensitiveLogs
-                    ? 'Full technical details adds expanded logs with identifiers and prompt/message context. Use it only when support asks.'
-                    : 'Diagnostic summary keeps the report support-focused without including your message/prompt content.',
-                style: const TextStyle(
-                  fontSize: 12,
-                  height: 1.4,
-                  color: AppColors.textHint,
-                ),
-              ),
-              const Gap(6),
-              GestureDetector(
-                onTap: _shareDiagnostics,
-                child: const Text.rich(
-                  TextSpan(
-                    text: 'Preview included report: ',
-                    style: TextStyle(fontSize: 13, color: AppColors.textHint),
+            ),
+            const Gap(AppSpacing.md),
+            AppSurfaceCard(
+              borderColor: _includeLogs
+                  ? AppColors.primary.withValues(alpha: 0.45)
+                  : AppColors.borderOnLight,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
                     children: [
-                      TextSpan(
-                        text: 'View diagnostic report',
-                        style: TextStyle(
-                          color: AppColors.primary,
-                          decoration: TextDecoration.underline,
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Add app details',
+                              style: TextStyle(
+                                fontSize: 17,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.textOnLight,
+                              ),
+                            ),
+                            const Gap(AppSpacing.xs),
+                            Text(
+                              _includeLogs
+                                  ? 'We will attach a support package with app version, device, account state, subscription state, AI runtime, and redacted recent logs.'
+                                  : 'Off by default. Turn this on when the issue is technical or hard to reproduce.',
+                              style: const TextStyle(
+                                fontSize: 13,
+                                height: 1.4,
+                                color: AppColors.textOnLightSecondary,
+                              ),
+                            ),
+                          ],
                         ),
+                      ),
+                      Switch.adaptive(
+                        key: const Key('feedback.include_app_details_switch'),
+                        value: _includeLogs,
+                        onChanged: (value) {
+                          dismissKeyboard(context);
+                          setState(() {
+                            _includeLogs = value;
+                            if (!value) _includeSensitiveLogs = false;
+                          });
+                        },
+                        activeTrackColor: AppColors.primary,
                       ),
                     ],
                   ),
-                ),
+                  AnimatedCrossFade(
+                    duration: const Duration(milliseconds: 220),
+                    crossFadeState: _includeLogs
+                        ? CrossFadeState.showSecond
+                        : CrossFadeState.showFirst,
+                    firstChild: const SizedBox.shrink(),
+                    secondChild: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Gap(AppSpacing.md),
+                        Wrap(
+                          spacing: AppSpacing.sm,
+                          runSpacing: AppSpacing.sm,
+                          children: [
+                            const _FeedbackModeChip(
+                              label: 'Support summary',
+                              color: AppColors.info,
+                            ),
+                            if (_includeSensitiveLogs)
+                              const _FeedbackModeChip(
+                                label: 'Technical trace',
+                                color: AppColors.warning,
+                              ),
+                          ],
+                        ),
+                        const Gap(AppSpacing.sm),
+                        Text(
+                          _includeSensitiveLogs
+                              ? 'Technical trace adds deeper logs, identifiers, and message-context diagnostics. Use it only when support asks for a deeper investigation.'
+                              : 'The support summary avoids your message and prompt content while still giving us the app context needed to investigate.',
+                          style: const TextStyle(
+                            fontSize: 13,
+                            height: 1.4,
+                            color: AppColors.textOnLightSecondary,
+                          ),
+                        ),
+                        const Gap(AppSpacing.md),
+                        Wrap(
+                          spacing: AppSpacing.sm,
+                          runSpacing: AppSpacing.sm,
+                          children: [
+                            OutlinedButton.icon(
+                              onPressed: _shareDiagnostics,
+                              icon: const Icon(Icons.visibility_rounded),
+                              label: const Text('Preview report'),
+                            ),
+                            TextButton.icon(
+                              key: const Key(
+                                'feedback.toggle_technical_trace_button',
+                              ),
+                              onPressed: _toggleTechnicalTrace,
+                              icon: Icon(
+                                _includeSensitiveLogs
+                                    ? Icons.remove_circle_outline_rounded
+                                    : Icons.data_object_rounded,
+                              ),
+                              label: Text(
+                                _includeSensitiveLogs
+                                    ? 'Remove technical trace'
+                                    : 'Add technical trace',
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
             const Gap(AppSpacing.lg),
             AppButton(
-              label: 'Send Feedback',
+              label: 'Send to support',
               onPressed: _isSending ? null : _send,
               isLoading: _isSending,
               icon: Icons.send_rounded,
@@ -489,6 +609,30 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
 enum _ManualFallbackAction { copy, share, cancel }
 
 // === COMPONENTS ===
+
+class _FeedbackModeChip extends StatelessWidget {
+  const _FeedbackModeChip({required this.label, required this.color});
+
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(
+      horizontal: AppSpacing.sm,
+      vertical: AppSpacing.xs,
+    ),
+    decoration: BoxDecoration(
+      color: color.withValues(alpha: 0.12),
+      borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
+      border: Border.all(color: color.withValues(alpha: 0.25)),
+    ),
+    child: Text(
+      label,
+      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: color),
+    ),
+  );
+}
 
 class _DiagnosticReportSheet extends StatelessWidget {
   const _DiagnosticReportSheet({

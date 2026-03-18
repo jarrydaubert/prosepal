@@ -436,6 +436,91 @@ void main() {
       });
     });
 
+    group('Privacy Controls', () {
+      testWidgetsWithPumps(
+        'shows separate analytics and crash report toggles',
+        (tester) async {
+          await tester.pumpWidget(buildTestWidget());
+          await tester.pumpAndSettle();
+
+          await tester.scrollUntilVisible(
+            find.text('Product Analytics'),
+            100,
+            scrollable: find.byType(Scrollable).first,
+          );
+          await tester.pumpAndSettle();
+
+          expect(find.text('Product Analytics'), findsOneWidget);
+          expect(find.text('Crash Reports'), findsOneWidget);
+          expect(
+            find.byKey(const Key('settings.analytics_switch')),
+            findsOneWidget,
+          );
+          expect(
+            find.byKey(const Key('settings.crash_reports_switch')),
+            findsOneWidget,
+          );
+        },
+      );
+
+      testWidgetsWithPumps(
+        'legacy analytics preference seeds crash reporting when dedicated pref is absent',
+        (tester) async {
+          await prefs.setBool('analytics_enabled', false);
+
+          await tester.pumpWidget(buildTestWidget());
+          await tester.pumpAndSettle();
+
+          await tester.scrollUntilVisible(
+            find.text('Product Analytics'),
+            100,
+            scrollable: find.byType(Scrollable).first,
+          );
+          await tester.pumpAndSettle();
+
+          final analyticsSwitch = tester.widget<Switch>(
+            find.byKey(const Key('settings.analytics_switch')),
+          );
+          final crashSwitch = tester.widget<Switch>(
+            find.byKey(const Key('settings.crash_reports_switch')),
+          );
+          expect(analyticsSwitch.value, isFalse);
+          expect(crashSwitch.value, isFalse);
+        },
+      );
+
+      testWidgetsWithPumps('privacy toggles persist independently', (
+        tester,
+      ) async {
+        await prefs.setBool('analytics_enabled', true);
+        await prefs.setBool('crash_reports_enabled', true);
+
+        await tester.pumpWidget(buildTestWidget());
+        await tester.pumpAndSettle();
+
+        await tester.scrollUntilVisible(
+          find.text('Product Analytics'),
+          100,
+          scrollable: find.byType(Scrollable).first,
+        );
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.byKey(const Key('settings.analytics_switch')));
+        await tester.pumpAndSettle();
+
+        expect(prefs.getBool('analytics_enabled'), isFalse);
+        expect(prefs.getBool('crash_reports_enabled'), isTrue);
+
+        await tester.tap(
+          find.byKey(const Key('settings.crash_reports_switch')),
+        );
+        await tester.pumpAndSettle();
+
+        expect(prefs.getBool('analytics_enabled'), isFalse);
+        expect(prefs.getBool('crash_reports_enabled'), isFalse);
+      });
+    });
+
     group('Legal Section', () {
       testWidgetsWithPumps('Terms navigates to terms screen', (tester) async {
         await tester.pumpWidget(buildTestWidget());

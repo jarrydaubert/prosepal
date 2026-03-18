@@ -42,6 +42,8 @@ class SettingsScreen extends ConsumerStatefulWidget {
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   static const _biometricToggleDebounce = Duration(seconds: 2);
+  static const _analyticsSwitchKey = Key('settings.analytics_switch');
+  static const _crashReportsSwitchKey = Key('settings.crash_reports_switch');
 
   bool _biometricsSupported = false;
   bool _biometricsEnabled = false;
@@ -51,6 +53,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _isRestoringPurchases = false;
   String _appVersion = '';
   bool _analyticsEnabled = true;
+  bool _crashReportsEnabled = true;
   bool _useUkSpelling = false;
 
   final InAppReview _inAppReview = InAppReview.instance;
@@ -62,7 +65,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     super.initState();
     _loadBiometricSettings();
     _loadAppVersion();
-    _loadAnalyticsSetting();
+    _loadPrivacySettings();
     _loadSpellingSetting();
   }
 
@@ -97,12 +100,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     }
   }
 
-  Future<void> _loadAnalyticsSetting() async {
+  Future<void> _loadPrivacySettings() async {
     final prefs = ref.read(sharedPreferencesProvider);
-    final enabled =
+    final analyticsEnabled =
         prefs.getBool(PreferenceKeys.analyticsEnabled) ?? !kDebugMode;
+    final crashReportsEnabled =
+        prefs.getBool(PreferenceKeys.crashReportsEnabled) ??
+        prefs.getBool(PreferenceKeys.analyticsEnabled) ??
+        !kDebugMode;
     if (mounted) {
-      setState(() => _analyticsEnabled = enabled);
+      setState(() {
+        _analyticsEnabled = analyticsEnabled;
+        _crashReportsEnabled = crashReportsEnabled;
+      });
     }
   }
 
@@ -134,17 +144,31 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final prefs = ref.read(sharedPreferencesProvider);
     await prefs.setBool(PreferenceKeys.analyticsEnabled, value);
 
-    // Update both Analytics and Crashlytics collection
     try {
       await FirebaseAnalytics.instance.setAnalyticsCollectionEnabled(value);
-      await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(value);
       Log.info('Analytics collection ${value ? 'enabled' : 'disabled'}');
     } on Exception catch (e) {
-      Log.warning('Failed to update analytics settings', {'error': '$e'});
+      Log.warning('Failed to update analytics setting', {'error': '$e'});
     }
 
     if (mounted) {
       setState(() => _analyticsEnabled = value);
+    }
+  }
+
+  Future<void> _toggleCrashReports(bool value) async {
+    final prefs = ref.read(sharedPreferencesProvider);
+    await prefs.setBool(PreferenceKeys.crashReportsEnabled, value);
+
+    try {
+      await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(value);
+      Log.info('Crash reporting ${value ? 'enabled' : 'disabled'}');
+    } on Exception catch (e) {
+      Log.warning('Failed to update crash reporting setting', {'error': '$e'});
+    }
+
+    if (mounted) {
+      setState(() => _crashReportsEnabled = value);
     }
   }
 
@@ -814,18 +838,32 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             title: 'Privacy Policy',
             onTap: () => context.pushNamed('privacy'),
           ),
-          SettingsTile(
+          SettingsToggleTile(
             leading: const Icon(
               Icons.analytics_outlined,
               color: AppColors.textSecondary,
             ),
-            title: 'Analytics & Crash Reports',
+            title: 'Product Analytics',
             subtitle: _analyticsEnabled
-                ? 'Help improve Prosepal'
-                : 'Disabled - no data collected',
+                ? 'Anonymous usage patterns that help improve the app'
+                : 'Off - no analytics events sent',
+            value: _analyticsEnabled,
+            onChanged: _toggleAnalytics,
+            switchKey: _analyticsSwitchKey,
+          ),
+          SettingsTile(
+            leading: const Icon(
+              Icons.bug_report_outlined,
+              color: AppColors.textSecondary,
+            ),
+            title: 'Crash Reports',
+            subtitle: _crashReportsEnabled
+                ? 'Automatic crash diagnostics so we can fix stability issues'
+                : 'Off - crashes stay only on this device',
             trailing: Switch.adaptive(
-              value: _analyticsEnabled,
-              onChanged: _toggleAnalytics,
+              key: _crashReportsSwitchKey,
+              value: _crashReportsEnabled,
+              onChanged: _toggleCrashReports,
             ),
           ),
 

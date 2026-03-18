@@ -143,8 +143,8 @@ class PrivacyScreen extends StatelessWidget {
           content:
               '• Account info: Email address and authentication credentials\n'
               '• Message inputs: Occasion, relationship, tone, and personal details (processed in real-time, not stored)\n'
-              '• Usage data: Anonymous statistics to improve our service\n'
-              '• Diagnostics: Crash logs to fix bugs',
+              '• Usage data: Product analytics, if enabled, to improve the service\n'
+              '• Diagnostics: Crash reports, if enabled, to fix bugs',
         ),
         const _LegalSection(
           title: 'How We Use Your Information',
@@ -175,7 +175,7 @@ class PrivacyScreen extends StatelessWidget {
           content:
               '• Access your personal data\n'
               '• Delete your account and all associated data\n'
-              '• Opt out of analytics\n\n'
+              '• Opt out of product analytics and crash reports\n\n'
               'Delete your account anytime from Settings.',
         ),
         const _LegalSection(title: 'Contact', content: AppConfig.supportEmail),

@@ -21,10 +21,15 @@ abstract class PreferenceKeys {
   // Analytics & Privacy (GDPR-sensitive)
   // ===========================================================================
 
-  /// Analytics opt-out preference (GDPR consent)
-  /// Controls both Firebase Analytics and Crashlytics
+  /// Product analytics opt-out preference (GDPR consent)
   static const analyticsEnabled = 'analytics_enabled';
   static const analyticsEnabledDefault = true;
+
+  /// Crash-reporting opt-out preference.
+  /// Falls back to the legacy analytics preference when absent so existing
+  /// installs keep their prior privacy choice after the split.
+  static const crashReportsEnabled = 'crash_reports_enabled';
+  static const crashReportsEnabledDefault = true;
 
   // ===========================================================================
   // Onboarding

@@ -239,7 +239,7 @@ Future<void> _initializeApp() async {
   // =========================================================================
   final reviewService = ReviewService(prefs);
   unawaited(reviewService.recordFirstLaunchIfNeeded());
-  unawaited(_applyAnalyticsPreference(prefs));
+  unawaited(_applyPrivacyPreferences(prefs));
   unawaited(authService.initializeProviders());
 }
 
@@ -352,17 +352,21 @@ Future<void> _initRevenueCat(
 }
 
 /// Apply GDPR analytics preference
-Future<void> _applyAnalyticsPreference(SharedPreferences prefs) async {
+Future<void> _applyPrivacyPreferences(SharedPreferences prefs) async {
   try {
     final analyticsEnabled =
         prefs.getBool(PreferenceKeys.analyticsEnabled) ?? !kDebugMode;
+    final crashReportsEnabled =
+        prefs.getBool(PreferenceKeys.crashReportsEnabled) ??
+        prefs.getBool(PreferenceKeys.analyticsEnabled) ??
+        !kDebugMode;
     await FirebaseAnalytics.instance.setAnalyticsCollectionEnabled(
       analyticsEnabled,
     );
     await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(
-      analyticsEnabled,
+      crashReportsEnabled,
     );
   } on Exception catch (e) {
-    Log.warning('Failed to apply analytics preference', {'error': '$e'});
+    Log.warning('Failed to apply privacy preferences', {'error': '$e'});
   }
 }
