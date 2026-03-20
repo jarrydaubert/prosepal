@@ -535,6 +535,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       Log.info('Delete account started');
       try {
         final authService = ref.read(authServiceProvider);
+        final deletedUserId = authService.currentUser?.id;
 
         // 1. Delete account FIRST while JWT is still valid
         // This calls the edge function which needs the access token
@@ -585,6 +586,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
         // 4. Mark device as used BEFORE clearing usage (prevents "1 free" after delete)
         final usageService = ref.read(usageServiceProvider);
+        if (deletedUserId != null) {
+          try {
+            await usageService.purgePendingSyncsForDeletedUser(deletedUserId);
+            Log.info('Delete account: Pending syncs purged for deleted user');
+          } on Exception catch (e) {
+            Log.warning('Delete account: Pending sync purge failed', {
+              'error': '$e',
+            });
+          }
+        }
+
         if (usageService.getTotalCount() > 0) {
           try {
             await usageService.markDeviceUsedFreeTier();
@@ -1192,6 +1204,8 @@ class _DeleteConfirmationDialogState extends State<_DeleteConfirmationDialog> {
         TextField(
           controller: _controller,
           autofocus: true,
+          autocorrect: false,
+          enableSuggestions: false,
           textCapitalization: TextCapitalization.characters,
           textInputAction: TextInputAction.done,
           scrollPadding: const EdgeInsets.only(bottom: 160),

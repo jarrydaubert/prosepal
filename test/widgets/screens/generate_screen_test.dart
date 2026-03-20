@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:prosepal/core/models/models.dart';
 import 'package:prosepal/core/providers/providers.dart';
 import 'package:prosepal/core/services/ai_service.dart';
+import 'package:prosepal/core/services/history_service.dart';
 import 'package:prosepal/core/services/review_service.dart';
 import 'package:prosepal/core/services/usage_service.dart';
 import 'package:prosepal/features/generate/generate_screen.dart';
@@ -14,7 +15,9 @@ import 'package:uuid/uuid.dart';
 
 import '../../mocks/mock_auth_service.dart';
 import '../../mocks/mock_device_fingerprint_service.dart';
+import '../../mocks/mock_history_service.dart';
 import '../../mocks/mock_rate_limit_service.dart';
+import '../../mocks/tracking_usage_service.dart';
 
 /// Mock AI Service that returns predictable results and tracks calls
 class MockAiService extends AiService {
@@ -115,6 +118,14 @@ class MockAiService extends AiService {
   }
 }
 
+class ThrowingHistoryService extends MockHistoryService {
+  @override
+  Future<void> saveGeneration(GenerationResult result) async {
+    saveGenerationCallCount++;
+    throw Exception('history save failed');
+  }
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -156,10 +167,20 @@ void main() {
     bool isLoggedIn = false,
     GoRouter? router,
     MockAiService? customAiService,
+    UsageService? customUsageService,
+    HistoryService? customHistoryService,
   }) {
     final mockAuthService = MockAuthService();
     mockAuthService.setLoggedIn(isLoggedIn);
     final aiService = customAiService ?? mockAiService;
+    final usageService =
+        customUsageService ??
+        UsageService(
+          mockPrefs,
+          MockDeviceFingerprintService(),
+          MockRateLimitService(),
+        );
+    final historyService = customHistoryService ?? MockHistoryService();
     final testRouter =
         router ??
         GoRouter(
@@ -201,13 +222,8 @@ void main() {
         sharedPreferencesProvider.overrideWithValue(mockPrefs),
         aiServiceProvider.overrideWithValue(aiService),
         authServiceProvider.overrideWithValue(mockAuthService),
-        usageServiceProvider.overrideWith(
-          (ref) => UsageService(
-            mockPrefs,
-            MockDeviceFingerprintService(),
-            MockRateLimitService(),
-          ),
-        ),
+        usageServiceProvider.overrideWithValue(usageService),
+        historyServiceProvider.overrideWithValue(historyService),
         reviewServiceProvider.overrideWith((ref) => ReviewService(mockPrefs)),
         isProProvider.overrideWith((ref) => isPro),
         remainingGenerationsProvider.overrideWith((ref) => remaining),
@@ -652,6 +668,59 @@ void main() {
       // Verify occasion
       expect(freshMock.lastOccasion, equals(Occasion.wedding));
     });
+
+    testWidgetsWithPumps(
+      'authenticated success consumes usage after AI succeeds',
+      (tester) async {
+        final freshMock = MockAiService();
+        final trackingUsage = TrackingUsageService(mockPrefs);
+
+        await tester.pumpWidget(
+          createTestableGenerateScreen(
+            selectedOccasion: Occasion.birthday,
+            isLoggedIn: true,
+            customAiService: freshMock,
+            customUsageService: trackingUsage,
+          ),
+        );
+        await tester.pump(const Duration(seconds: 1));
+        await navigateToStep3(tester);
+
+        await tester.tap(find.text('Generate Messages'));
+        await tester.pump(const Duration(seconds: 1));
+
+        expect(freshMock.generateCallCount, equals(1));
+        expect(trackingUsage.serverConsumeCalls, equals(1));
+      },
+    );
+
+    testWidgetsWithPumps(
+      'history save failure does not discard a successful result',
+      (tester) async {
+        final freshMock = MockAiService();
+        final trackingUsage = TrackingUsageService(mockPrefs);
+        final historyService = ThrowingHistoryService();
+
+        await tester.pumpWidget(
+          createTestableGenerateScreen(
+            selectedOccasion: Occasion.birthday,
+            isLoggedIn: true,
+            customAiService: freshMock,
+            customUsageService: trackingUsage,
+            customHistoryService: historyService,
+          ),
+        );
+        await tester.pump(const Duration(seconds: 1));
+        await navigateToStep3(tester);
+
+        await tester.tap(find.text('Generate Messages'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Results Screen'), findsOneWidget);
+        expect(trackingUsage.serverConsumeCalls, equals(1));
+        expect(historyService.saveGenerationCallCount, equals(1));
+      },
+    );
   });
 
   // ============================================================
@@ -746,5 +815,67 @@ void main() {
       // Error should be gone
       expect(find.byIcon(Icons.error_outline), findsNothing);
     });
+
+    testWidgetsWithPumps('authenticated AI failure does not consume usage', (
+      tester,
+    ) async {
+      final errorMock = MockAiService();
+      final trackingUsage = TrackingUsageService(mockPrefs);
+      errorMock.exceptionToThrow = const AiNetworkException('No internet');
+
+      await tester.pumpWidget(
+        createTestableGenerateScreen(
+          selectedOccasion: Occasion.birthday,
+          isLoggedIn: true,
+          customAiService: errorMock,
+          customUsageService: trackingUsage,
+        ),
+      );
+      await tester.pump(const Duration(seconds: 1));
+      await navigateToStep3(tester);
+
+      await tester.tap(find.text('Generate Messages'));
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+
+      expect(find.textContaining('internet'), findsOneWidget);
+      expect(trackingUsage.serverConsumeCalls, equals(0));
+    });
+
+    testWidgetsWithPumps(
+      'anonymous verification failure blocks free generation before AI runs',
+      (tester) async {
+        final aiMock = MockAiService();
+        final deviceFingerprint = MockDeviceFingerprintService()
+          ..simulateServerError();
+        final usageService = UsageService(
+          mockPrefs,
+          deviceFingerprint,
+          MockRateLimitService(),
+        );
+
+        await tester.pumpWidget(
+          createTestableGenerateScreen(
+            selectedOccasion: Occasion.birthday,
+            customAiService: aiMock,
+            customUsageService: usageService,
+          ),
+        );
+        await tester.pump(const Duration(seconds: 1));
+        await navigateToStep3(tester);
+
+        await tester.tap(find.text('Generate Messages'));
+        await tester.pump();
+        await tester.pump(const Duration(seconds: 1));
+
+        expect(
+          find.text(
+            "We can't verify your free message right now. Please try again later.",
+          ),
+          findsOneWidget,
+        );
+        expect(aiMock.generateCallCount, equals(0));
+      },
+    );
   });
 }

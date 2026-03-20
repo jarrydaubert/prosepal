@@ -130,28 +130,28 @@ class DeviceFingerprintService {
   /// Queries the server to check if the device fingerprint has already
   /// been used for a free generation.
   ///
-  /// Returns `true` if:
-  /// - Device has not used free tier before
-  /// - Unable to check server (graceful degradation)
+  /// Returns `true` only when the device has been verified as eligible for
+  /// a free generation.
   ///
   /// Returns `false` if:
   /// - Device has already used free tier
+  /// - Device verification cannot be completed
   Future<DeviceCheckResult> canUseFreeTier() async {
     final fingerprint = await getDeviceFingerprint();
 
     if (fingerprint == null) {
-      Log.warning('No device fingerprint available, allowing free tier');
+      Log.warning('No device fingerprint available, blocking free tier');
       return const DeviceCheckResult(
-        allowed: true,
+        allowed: false,
         reason: DeviceCheckReason.fingerprintUnavailable,
       );
     }
 
     final supabase = _supabase;
     if (supabase == null) {
-      Log.warning('Supabase not initialized, allowing free tier');
+      Log.warning('Supabase not initialized, blocking free tier');
       return const DeviceCheckResult(
-        allowed: true,
+        allowed: false,
         reason: DeviceCheckReason.serverUnavailable,
       );
     }
@@ -178,10 +178,7 @@ class DeviceFingerprintService {
         'reason': reason,
       });
 
-      if (!allowed &&
-          (reason == 'device_limit' ||
-              reason == 'user_limit' ||
-              reason == 'rate_limited')) {
+      if (!allowed && reason == 'rate_limited') {
         return const DeviceCheckResult(
           allowed: false,
           reason: DeviceCheckReason.rateLimited,
@@ -198,9 +195,14 @@ class DeviceFingerprintService {
       );
     } on PostgrestException catch (e) {
       Log.error('Device free tier check failed', e);
-      // Graceful degradation - allow on server error
       return const DeviceCheckResult(
-        allowed: true,
+        allowed: false,
+        reason: DeviceCheckReason.serverError,
+      );
+    } on Exception catch (e) {
+      Log.error('Unexpected device free tier check failure', e);
+      return const DeviceCheckResult(
+        allowed: false,
         reason: DeviceCheckReason.serverError,
       );
     }
@@ -345,12 +347,12 @@ enum DeviceCheckReason {
   /// Too many checks in a short period
   rateLimited,
 
-  /// Could not get device fingerprint, defaulting to allow
+  /// Could not get device fingerprint, so verification cannot proceed
   fingerprintUnavailable,
 
-  /// Supabase not initialized, defaulting to allow
+  /// Supabase not initialized, so verification cannot proceed
   serverUnavailable,
 
-  /// Server error during check, defaulting to allow
+  /// Server error during check, so verification cannot proceed
   serverError,
 }

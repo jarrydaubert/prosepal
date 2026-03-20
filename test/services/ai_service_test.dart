@@ -536,22 +536,22 @@ void main() {
         expect(result.errorCode, equals('CLIENT_APP_BLOCKED'));
       });
 
-      test('classifies App Check blocked as CLIENT_APP_BLOCKED', () {
+      test('keeps App Check blocked separate from CLIENT_APP_BLOCKED', () {
         final result = AiService.classifyFirebaseAIError(
           'App Check token blocked by backend policy',
         );
 
         expect(result.exceptionType, equals(AiServiceException));
-        expect(result.errorCode, equals('CLIENT_APP_BLOCKED'));
+        expect(result.errorCode, equals('APP_CHECK_FAILED'));
       });
 
-      test('classifies attestation failed as CLIENT_APP_BLOCKED', () {
+      test('classifies attestation failed as APP_CHECK_FAILED', () {
         final result = AiService.classifyFirebaseAIError(
           'App attestation failed.',
         );
 
         expect(result.exceptionType, equals(AiServiceException));
-        expect(result.errorCode, equals('CLIENT_APP_BLOCKED'));
+        expect(result.errorCode, equals('APP_CHECK_FAILED'));
       });
 
       test(
@@ -559,6 +559,18 @@ void main() {
         () {
           final result = AiService.classifyFirebaseAIError(
             'Requests from this Android client application <empty> are blocked.',
+          );
+
+          expect(result.exceptionType, equals(AiServiceException));
+          expect(result.errorCode, equals('CLIENT_APP_BLOCKED'));
+        },
+      );
+
+      test(
+        'keeps API-key/client restriction separate from App Check failures',
+        () {
+          final result = AiService.classifyFirebaseAIError(
+            'API key is blocked for this request',
           );
 
           expect(result.exceptionType, equals(AiServiceException));
@@ -851,6 +863,110 @@ void main() {
 
       expect(classification.isRetryable, isFalse);
     });
+  });
+
+  group('AI failure telemetry sanitization', () {
+    test('sanitizes Firebase AI telemetry for release logging', () {
+      const classification = AiErrorClassification(
+        exceptionType: AiServiceException,
+        message: 'The AI model is temporarily unavailable. Please try again.',
+        errorCode: 'MODEL_NOT_FOUND',
+        isRetryable: true,
+      );
+
+      final params = service.buildAiFailureLogParams(
+        classification: classification,
+        attempt: 2,
+        errorKind: 'firebase_ai',
+        rawDetail:
+            'Request failed at '
+            'https://firebasevertexai.googleapis.com/v1beta/'
+            'projects/prosepal-1a24b/locations/us-central1/publishers/google/'
+            'models/gemini-2.5-flash:generateContent',
+      );
+
+      expect(params['attempt'], equals(2));
+      expect(params['backend'], equals('vertexAI'));
+      expect(params['modelSlot'], equals('unknown'));
+      expect(params['errorKind'], equals('firebase_ai'));
+      expect(params['errorCode'], equals('MODEL_NOT_FOUND'));
+      expect(params['retryable'], isTrue);
+      expect(params['detail'], contains('[REDACTED_URL]'));
+      expect(params['detail'], isNot(contains('prosepal-1a24b')));
+      expect(params['detail'], isNot(contains('gemini-2.5-flash')));
+    });
+
+    test(
+      'sanitizes general exception telemetry but keeps user-facing bucket',
+      () {
+        const classification = AiErrorClassification(
+          exceptionType: AiServiceException,
+          message:
+              'Security verification failed for this device. Please try again later.',
+          errorCode: 'APP_CHECK_FAILED',
+        );
+
+        final params = service.buildAiFailureLogParams(
+          classification: classification,
+          attempt: 1,
+          errorKind: 'general_exception',
+          rawDetail:
+              '[firebase_app_check/unknown] Error returned from API: '
+              'models/gemini-2.5-flash in '
+              'projects/1234567890 body: App attestation failed.',
+        );
+
+        expect(params['errorKind'], equals('general_exception'));
+        expect(params['errorCode'], equals('APP_CHECK_FAILED'));
+        expect(params['retryable'], isFalse);
+        expect(params['detail'], contains('projects/[REDACTED_PROJECT]'));
+        expect(params['detail'], contains('models/[REDACTED_MODEL]'));
+        expect(params['detail'], isNot(contains('1234567890')));
+        expect(params['detail'], isNot(contains('gemini-2.5-flash')));
+      },
+    );
+
+    test('release telemetry error object drops raw provider detail', () {
+      const classification = AiErrorClassification(
+        exceptionType: AiServiceException,
+        message:
+            'The AI service is blocked for this app configuration. Please try again later.',
+        errorCode: 'CLIENT_APP_BLOCKED',
+      );
+
+      final sanitized = AiService.buildAiFailureLogError(
+        Exception(
+          'projects/prosepal-1a24b/models/gemini-2.5-flash blocked by policy',
+        ),
+        classification,
+      );
+
+      expect(sanitized, isA<AiServiceException>());
+      final error = sanitized as AiServiceException;
+      expect(error.errorCode, equals('CLIENT_APP_BLOCKED'));
+      expect(error.message, contains('blocked for this app configuration'));
+      expect(error.toString(), isNot(contains('gemini-2.5-flash')));
+      expect(error.toString(), isNot(contains('prosepal-1a24b')));
+    });
+
+    test(
+      'debug telemetry can keep explicit model detail for local debugging',
+      () {
+        final params = service.buildAiFailureLogParams(
+          classification: const AiErrorClassification(
+            exceptionType: AiServiceException,
+            message: 'Unable to generate messages right now. Please try again.',
+            errorCode: 'FIREBASE_AI_ERROR',
+          ),
+          attempt: 1,
+          errorKind: 'firebase_ai',
+          rawDetail: 'Model gemini-2.5-flash returned malformed data',
+          includeSensitive: true,
+        );
+
+        expect(params['detail'], contains('gemini-2.5-flash'));
+      },
+    );
   });
 
   // ============================================================

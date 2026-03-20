@@ -429,27 +429,6 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
         return;
       }
 
-      // Enforce usage limits for Pro users (server-side for authenticated).
-      if (authService.isLoggedIn) {
-        try {
-          final usageResult = await usageService.checkAndIncrementServerSide(
-            isPro: isPro,
-          );
-          if (!usageResult.allowed) {
-            _showRegenerationError(
-              usageResult.errorMessage ?? 'Usage limit reached',
-            );
-            if (!isPro && mounted) {
-              unawaited(showPaywall(context, source: 'regenerate_blocked'));
-            }
-            return;
-          }
-        } on UsageCheckException catch (e) {
-          _showRegenerationError(e.message);
-          return;
-        }
-      }
-
       final useUkSpelling = ref.read(isUkSpellingProvider);
       final result = await aiService.generateMessages(
         occasion: currentResult.occasion,
@@ -461,25 +440,45 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
         useUkSpelling: useUkSpelling,
       );
 
-      // For anonymous users, regenerate also consumes usage.
-      if (!authService.isLoggedIn) {
+      if (authService.isLoggedIn) {
+        try {
+          final usageResult = await usageService.checkAndIncrementServerSide(
+            isPro: isPro,
+          );
+          if (!usageResult.allowed) {
+            _showRegenerationError(
+              usageResult.errorMessage ?? 'Usage limit reached',
+            );
+            return;
+          }
+        } on UsageCheckException catch (e) {
+          _showRegenerationError(e.message);
+          return;
+        }
+      } else {
         await usageService.recordGeneration(isPro: isPro);
       }
-
-      // Save to history
-      await historyService.saveGeneration(result);
 
       // Force Riverpod to re-read usage
       ref.invalidate(remainingGenerationsProvider);
       ref.invalidate(totalUsageProvider);
 
-      // Check for review prompt
-      final reviewService = ref.read(reviewServiceProvider);
-      final totalGenerations = usageService.getTotalCount();
-      await reviewService.checkAndRequestReview(totalGenerations);
-
       // Update results
       ref.read(generationResultProvider.notifier).state = result;
+
+      try {
+        await historyService.saveGeneration(result);
+      } on Exception catch (e) {
+        Log.warning('Failed to save regenerated history', {'error': '$e'});
+      }
+
+      try {
+        final reviewService = ref.read(reviewServiceProvider);
+        final totalGenerations = usageService.getTotalCount();
+        await reviewService.checkAndRequestReview(totalGenerations);
+      } on Exception catch (e) {
+        Log.warning('Failed to evaluate review prompt', {'error': '$e'});
+      }
 
       Log.info('Regeneration success', {
         'messageCount': result.messages.length,

@@ -68,14 +68,14 @@ class MockDeviceFingerprintService extends DeviceFingerprintService {
 
   /// Simulate a server error during device check
   void simulateServerError() {
-    allowFreeTier = true;
+    allowFreeTier = false;
     deviceCheckReason = DeviceCheckReason.serverError;
   }
 
   /// Simulate no fingerprint available
   void simulateNoFingerprint() {
     mockFingerprint = null;
-    allowFreeTier = true;
+    allowFreeTier = false;
     deviceCheckReason = DeviceCheckReason.fingerprintUnavailable;
   }
 }

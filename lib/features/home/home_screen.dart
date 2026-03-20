@@ -180,7 +180,7 @@ class HomeScreen extends ConsumerWidget {
 
                       // Usage indicator for free users only (Pro badge is in header)
                       if (!isPro) ...[
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 16),
                         if (!initStatus.revenueCatReady && !initStatus.timedOut)
                           const _UsageIndicatorShimmer()
                         else
@@ -210,20 +210,16 @@ class HomeScreen extends ConsumerWidget {
                       AppSpacing.md,
                     ),
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [AppColors.surface, AppColors.bgDeep],
-                      ),
+                      gradient: AppColors.heroGradient,
                       borderRadius: BorderRadius.circular(
                         AppSpacing.radiusLarge,
                       ),
                       border: Border.all(color: AppColors.borderLight),
                       boxShadow: [
                         BoxShadow(
-                          color: AppColors.bgDeep.withValues(alpha: 0.28),
-                          blurRadius: 20,
-                          offset: const Offset(0, 12),
+                          color: AppColors.bgDeep.withValues(alpha: 0.2),
+                          blurRadius: 16,
+                          offset: const Offset(0, 8),
                         ),
                       ],
                     ),
@@ -237,7 +233,7 @@ class HomeScreen extends ConsumerWidget {
                               style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w700,
-                                color: AppColors.primary,
+                                color: AppColors.textSecondary,
                                 letterSpacing: 0.4,
                               ),
                             ),
@@ -258,7 +254,7 @@ class HomeScreen extends ConsumerWidget {
                         const SizedBox(height: AppSpacing.sm),
                         Text(
                           showFirstActionHint
-                              ? 'Start with Birthday, then tune the tone until it sounds like you.'
+                              ? 'Start with Birthday or search for a moment below.'
                               : 'Pick a moment and Prosepal turns it into a warm first draft in seconds.',
                           style: const TextStyle(
                             fontSize: 14,
@@ -272,7 +268,7 @@ class HomeScreen extends ConsumerWidget {
                 ),
               ),
 
-              const SliverToBoxAdapter(child: SizedBox(height: 12)),
+              const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.sm)),
 
               // Search field
               SliverToBoxAdapter(
@@ -296,53 +292,7 @@ class HomeScreen extends ConsumerWidget {
                 ),
               ),
 
-              const SliverToBoxAdapter(child: SizedBox(height: 16)),
-
-              // First action hint banner (shows once for new users)
-              if (showFirstActionHint)
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
-                    child: Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryLight,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: AppColors.primary.withValues(alpha: 0.3),
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(
-                            AppIcons.touch,
-                            color: AppColors.primary,
-                            size: AppSpacing.iconSizeSmall,
-                          ),
-                          const SizedBox(width: 8),
-                          const Expanded(
-                            child: Text(
-                              'Tap any occasion to create your first message!',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                                color: AppColors.primary,
-                              ),
-                            ),
-                          ),
-                          GestureDetector(
-                            onTap: () => _dismissFirstActionHint(ref),
-                            child: Icon(
-                              AppIcons.clear,
-                              color: AppColors.primary.withValues(alpha: 0.6),
-                              size: AppSpacing.iconSizeSmall,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
+              const SliverToBoxAdapter(child: SizedBox(height: 12)),
 
               // Occasion grid
               SliverPadding(
@@ -404,16 +354,16 @@ class _OccasionCountPill extends StatelessWidget {
       vertical: AppSpacing.xs,
     ),
     decoration: BoxDecoration(
-      color: AppColors.primaryLight,
+      color: AppColors.surfaceLight.withValues(alpha: 0.08),
       borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
-      border: Border.all(color: AppColors.primary.withValues(alpha: 0.24)),
+      border: Border.all(color: AppColors.borderLight),
     ),
     child: Text(
       '${Occasion.values.length} ideas',
       style: const TextStyle(
         fontSize: 11,
         fontWeight: FontWeight.w800,
-        color: AppColors.primaryDark,
+        color: AppColors.textSecondary,
         letterSpacing: 0.3,
       ),
     ),
@@ -450,18 +400,11 @@ class _IconButton extends StatelessWidget {
         width: size,
         height: size,
         decoration: BoxDecoration(
-          color: AppColors.primaryLight,
+          color: AppColors.surfaceVariant.withValues(alpha: 0.6),
           borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
-          border: Border.all(color: AppColors.primary, width: 1.5),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.primary.withValues(alpha: 0.12),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
+          border: Border.all(color: AppColors.borderLight),
         ),
-        child: Icon(icon, color: AppColors.primary, size: iconSize),
+        child: Icon(icon, color: AppColors.textPrimary, size: iconSize),
       ),
     ),
   );

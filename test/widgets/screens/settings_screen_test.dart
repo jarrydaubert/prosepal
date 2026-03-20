@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:prosepal/core/providers/providers.dart';
+import 'package:prosepal/core/services/reauth_service.dart';
 import 'package:prosepal/features/settings/settings_screen.dart';
 import 'package:prosepal/shared/theme/app_colors.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../mocks/mock_auth_service.dart';
 import '../../mocks/mock_biometric_service.dart';
@@ -16,6 +19,7 @@ void main() {
   late MockAuthService mockAuth;
   late MockBiometricService mockBiometric;
   late MockSubscriptionService mockSubscription;
+  late _MockReauthService mockReauth;
 
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
@@ -23,6 +27,7 @@ void main() {
     mockAuth = MockAuthService();
     mockBiometric = MockBiometricService();
     mockSubscription = MockSubscriptionService();
+    mockReauth = _MockReauthService();
   });
 
   tearDown(() {
@@ -52,6 +57,7 @@ void main() {
     int totalGenerated = 0,
     bool biometricsSupported = true,
     bool biometricsEnabled = false,
+    ReauthService? reauthService,
   }) {
     if (email != null) {
       mockAuth.setLoggedIn(true, email: email, displayName: displayName);
@@ -108,6 +114,7 @@ void main() {
         authServiceProvider.overrideWithValue(mockAuth),
         biometricServiceProvider.overrideWithValue(mockBiometric),
         subscriptionServiceProvider.overrideWithValue(mockSubscription),
+        reauthServiceProvider.overrideWithValue(reauthService),
         isProProvider.overrideWith((ref) => isPro),
       ],
       child: MaterialApp.router(routerConfig: router),
@@ -685,6 +692,59 @@ void main() {
 
         expect(find.textContaining('permanently delete'), findsNothing);
       });
+
+      testWidgetsWithPumps(
+        'Delete Account typed confirmation uses strict keyboard hints and gating',
+        (tester) async {
+          mockReauth.result = const ReauthResult(success: true);
+
+          await tester.pumpWidget(
+            buildTestWidget(
+              email: 'test@example.com',
+              reauthService: mockReauth,
+            ),
+          );
+          await tester.pumpAndSettle();
+
+          await tester.scrollUntilVisible(
+            find.text('Delete Account'),
+            100,
+            scrollable: find.byType(Scrollable).first,
+          );
+          await tester.pumpAndSettle();
+
+          await tester.tap(find.text('Delete Account'));
+          await tester.pumpAndSettle();
+
+          await tester.tap(find.text('Continue'));
+          await tester.pumpAndSettle();
+
+          expect(find.text('Type DELETE to confirm:'), findsOneWidget);
+
+          final confirmationField = tester.widget<TextField>(
+            find.byType(TextField),
+          );
+          expect(
+            confirmationField.textCapitalization,
+            TextCapitalization.characters,
+          );
+          expect(confirmationField.autocorrect, isFalse);
+          expect(confirmationField.enableSuggestions, isFalse);
+
+          final deleteButtonBefore = tester.widget<TextButton>(
+            find.widgetWithText(TextButton, 'Delete My Account'),
+          );
+          expect(deleteButtonBefore.onPressed, isNull);
+
+          await tester.enterText(find.byType(TextField), 'delete');
+          await tester.pumpAndSettle();
+
+          final deleteButtonAfter = tester.widget<TextButton>(
+            find.widgetWithText(TextButton, 'Delete My Account'),
+          );
+          expect(deleteButtonAfter.onPressed, isNotNull);
+        },
+      );
     });
 
     group('All Sections Scrollable', () {
@@ -709,3 +769,22 @@ void main() {
     });
   });
 }
+
+class _MockReauthService extends ReauthService {
+  _MockReauthService()
+    : super(
+        biometricService: MockBiometricService(),
+        supabaseAuth: _MockGoTrueClient(),
+        authService: MockAuthService(),
+      );
+
+  ReauthResult result = const ReauthResult(success: true);
+
+  @override
+  Future<ReauthResult> requireReauth({
+    required BuildContext context,
+    required String reason,
+  }) async => result;
+}
+
+class _MockGoTrueClient extends Mock implements GoTrueClient {}

@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:prosepal/core/providers/providers.dart';
 import 'package:prosepal/core/services/log_service.dart';
 import 'package:prosepal/features/auth/auth_screen.dart';
+import 'package:prosepal/shared/theme/app_colors.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
@@ -117,6 +118,25 @@ void main() {
       expect(find.byIcon(Icons.close), findsOneWidget);
     });
 
+    testWidgets('dismissing auth signals home keyboard dismissal', (
+      tester,
+    ) async {
+      await prepareViewport(tester);
+
+      await tester.pumpWidget(createTestableAuthScreen(redirectTo: 'home'));
+      await tester.pump(const Duration(milliseconds: 500));
+
+      await tester.tap(find.byIcon(Icons.close));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Home Screen'), findsOneWidget);
+
+      final container = ProviderScope.containerOf(
+        tester.element(find.text('Home Screen')),
+      );
+      expect(container.read(dismissHomeKeyboardProvider), isTrue);
+    });
+
     testWidgets('paywall redirect flow has NO dismiss button', (tester) async {
       // Paywall redirect requires auth - no escape (by design)
       await prepareViewport(tester);
@@ -126,6 +146,20 @@ void main() {
 
       // Close button should NOT be present for paywall redirect
       expect(find.byIcon(Icons.close), findsNothing);
+    });
+
+    testWidgets('paywall redirect banner uses readable support text', (
+      tester,
+    ) async {
+      await prepareViewport(tester);
+
+      await tester.pumpWidget(createTestableAuthScreen(redirectTo: 'paywall'));
+      await tester.pump(const Duration(milliseconds: 500));
+
+      final prompt = tester.widget<Text>(
+        find.text('Create an account to purchase a subscription'),
+      );
+      expect(prompt.style?.color, AppColors.textPrimary);
     });
 
     testWidgets('shows loading then navigates on successful Google sign-in', (
@@ -149,6 +183,10 @@ void main() {
 
       expect(find.text('Home Screen'), findsOneWidget);
       expect(find.byType(CircularProgressIndicator), findsNothing);
+      final container = ProviderScope.containerOf(
+        tester.element(find.text('Home Screen')),
+      );
+      expect(container.read(dismissHomeKeyboardProvider), isTrue);
       final exportedLog = Log.getExportableLog(includeSensitive: true);
       expect(exportedLog, contains('Auth method outcome'));
       expect(exportedLog, contains('method=google'));
@@ -257,6 +295,11 @@ void main() {
 
       expect(find.text('Pro subscription found!'), findsOneWidget);
       expect(find.text('Sign in to restore your Pro access'), findsOneWidget);
+
+      final restoreCopy = tester.widget<Text>(
+        find.text('Sign in to restore your Pro access'),
+      );
+      expect(restoreCopy.style?.color, AppColors.textPrimary);
     });
   });
 }

@@ -210,13 +210,28 @@ class AiService {
       );
     }
 
+    // App Check attestation/auth failures must stay distinct from
+    // generic client-application restriction errors.
+    if ((message.contains('app check') &&
+            (message.contains('blocked') ||
+                message.contains('failed') ||
+                message.contains('invalid') ||
+                message.contains('denied'))) ||
+        message.contains('attestation failed')) {
+      return const AiErrorClassification(
+        exceptionType: AiServiceException,
+        message:
+            'Security verification failed for this device. '
+            'Please try again later.',
+        errorCode: 'APP_CHECK_FAILED',
+      );
+    }
+
     // Client/app restriction or auth configuration blocks
     // Example: "Requests from this iOS client application <empty> are blocked."
     if ((message.contains('client application') &&
             message.contains('blocked')) ||
-        (message.contains('api key') && message.contains('blocked')) ||
-        (message.contains('app check') && message.contains('blocked')) ||
-        message.contains('attestation failed')) {
+        (message.contains('api key') && message.contains('blocked'))) {
       return const AiErrorClassification(
         exceptionType: AiServiceException,
         message:
@@ -390,9 +405,105 @@ class AiService {
     return '${normalized.substring(0, max)}...';
   }
 
+  static final RegExp _urlPattern = RegExp(
+    r'https?:\/\/[^\s)]+',
+    caseSensitive: false,
+  );
+  static final RegExp _projectPathPattern = RegExp(
+    r'projects\/[A-Za-z0-9:._-]+',
+    caseSensitive: false,
+  );
+  static final RegExp _locationPathPattern = RegExp(
+    r'locations\/[A-Za-z0-9._-]+',
+    caseSensitive: false,
+  );
+  static final RegExp _publisherPathPattern = RegExp(
+    r'publishers\/[A-Za-z0-9._-]+',
+    caseSensitive: false,
+  );
+  static final RegExp _modelPathPattern = RegExp(
+    r'models\/[A-Za-z0-9._-]+',
+    caseSensitive: false,
+  );
+  static final RegExp _geminiModelPattern = RegExp(
+    r'\bgemini[-a-z0-9._]+\b',
+    caseSensitive: false,
+  );
+
   /// Verbose diagnostics are for local debugging and should not pollute
   /// production Crashlytics logs.
   bool get _shouldLogVerboseDiagnostics => kDebugMode;
+
+  @visibleForTesting
+  static String sanitizeTelemetryDetail(
+    String value, {
+    bool includeSensitive = false,
+  }) {
+    if (includeSensitive) return value;
+
+    return value
+        .replaceAll(_urlPattern, '[REDACTED_URL]')
+        .replaceAll(_projectPathPattern, 'projects/[REDACTED_PROJECT]')
+        .replaceAll(_locationPathPattern, 'locations/[REDACTED_LOCATION]')
+        .replaceAll(_publisherPathPattern, 'publishers/[REDACTED_PUBLISHER]')
+        .replaceAll(_modelPathPattern, 'models/[REDACTED_MODEL]')
+        .replaceAll(_geminiModelPattern, '[REDACTED_MODEL]');
+  }
+
+  @visibleForTesting
+  String modelSlotForTelemetry(String? modelName) {
+    if (modelName == null || modelName.isEmpty) return 'unknown';
+    if (modelName == _modelName) return 'primary';
+    if (modelName == _fallbackModelName) return 'fallback';
+    return 'custom';
+  }
+
+  @visibleForTesting
+  Map<String, dynamic> buildAiFailureLogParams({
+    required AiErrorClassification classification,
+    required int attempt,
+    required String errorKind,
+    String? rawDetail,
+    bool includeSensitive = false,
+  }) {
+    final detail = rawDetail == null || rawDetail.isEmpty
+        ? null
+        : sanitizeTelemetryDetail(
+            _snippet(rawDetail),
+            includeSensitive: includeSensitive,
+          );
+    final params = <String, dynamic>{
+      'attempt': attempt,
+      'backend': configuredBackendLabel,
+      'modelSlot': modelSlotForTelemetry(_currentModelName),
+      'errorKind': errorKind,
+      'errorCode': classification.errorCode,
+      'retryable': classification.isRetryable,
+    };
+
+    if (detail != null) {
+      params['detail'] = detail;
+    }
+
+    if (includeSensitive && _currentModelName != null) {
+      params['model'] = _currentModelName;
+    }
+
+    return params;
+  }
+
+  @visibleForTesting
+  static Object buildAiFailureLogError(
+    Object error,
+    AiErrorClassification classification, {
+    bool includeSensitive = false,
+  }) {
+    if (includeSensitive) return error;
+    return AiServiceException(
+      classification.message,
+      errorCode: classification.errorCode,
+    );
+  }
 
   void _logRuntimeContextIfNeeded(String modelName) {
     if (_loggedRuntimeContext || !_shouldLogVerboseDiagnostics) return;
@@ -421,7 +532,10 @@ class AiService {
     if (_model == null || _currentModelName != modelName) {
       _currentModelName = modelName;
       _model = _createModel(modelName);
-      Log.info('AI model initialized', {'model': modelName});
+      Log.info('AI model initialized', {
+        'modelSlot': modelSlotForTelemetry(modelName),
+        if (_shouldLogVerboseDiagnostics) 'model': modelName,
+      });
       _logRuntimeContextIfNeeded(modelName);
     }
     return _model!;
@@ -475,8 +589,10 @@ class AiService {
     }
 
     Log.warning('Switching to fallback AI model', {
-      'from': _currentModelName,
-      'to': fallback,
+      'fromSlot': modelSlotForTelemetry(_currentModelName),
+      'toSlot': modelSlotForTelemetry(fallback),
+      if (_shouldLogVerboseDiagnostics) 'fromModel': _currentModelName,
+      if (_shouldLogVerboseDiagnostics) 'toModel': fallback,
     });
     _triedFallback = true;
     _currentModelName = fallback;
@@ -628,7 +744,8 @@ class AiService {
 
       Log.info('AI generation success', {
         'messageCount': messages.length,
-        'model': _currentModelName,
+        'modelSlot': modelSlotForTelemetry(_currentModelName),
+        if (_shouldLogVerboseDiagnostics) 'model': _currentModelName,
       });
 
       return GenerationResult(
@@ -652,13 +769,14 @@ class AiService {
       } on FirebaseAIException catch (e, stackTrace) {
         attempt++;
         final classification = classifyFirebaseAIError(e.message);
-        Log.warning('Firebase AI error classified', {
-          'attempt': attempt,
-          'model': _currentModelName,
-          'errorCode': classification.errorCode,
-          'retryable': classification.isRetryable,
-          'messageSnippet': _snippet(e.message),
-        });
+        final telemetryParams = buildAiFailureLogParams(
+          classification: classification,
+          attempt: attempt,
+          errorKind: 'firebase_ai',
+          rawDetail: e.message,
+          includeSensitive: _shouldLogVerboseDiagnostics,
+        );
+        Log.warning('Firebase AI error classified', telemetryParams);
 
         if (classification.isRetryable && attempt < AiConfig.maxRetries) {
           // Exponential backoff with jitter (0-20% of delay)
@@ -684,7 +802,16 @@ class AiService {
         }
 
         // Log and throw classified exception
-        Log.error('Firebase AI error', e, stackTrace, {'attempt': attempt});
+        Log.error(
+          'Firebase AI error',
+          buildAiFailureLogError(
+            e,
+            classification,
+            includeSensitive: _shouldLogVerboseDiagnostics,
+          ),
+          stackTrace,
+          telemetryParams,
+        );
         throw _createException(classification, e);
       } on AiTruncationException catch (e, stackTrace) {
         // Truncation is retryable - model may succeed on retry
@@ -710,6 +837,13 @@ class AiService {
 
         attempt++;
         final classification = classifyGeneralError(e.toString());
+        final telemetryParams = buildAiFailureLogParams(
+          classification: classification,
+          attempt: attempt,
+          errorKind: 'general_exception',
+          rawDetail: e.toString(),
+          includeSensitive: _shouldLogVerboseDiagnostics,
+        );
 
         if (classification.isRetryable && attempt < AiConfig.maxRetries) {
           // Exponential backoff with jitter (0-20% of delay)
@@ -728,7 +862,16 @@ class AiService {
         }
 
         // Log and throw classified exception
-        Log.error('Unexpected AI error', e, stackTrace, {'attempt': attempt});
+        Log.error(
+          'Unexpected AI error',
+          buildAiFailureLogError(
+            e,
+            classification,
+            includeSensitive: _shouldLogVerboseDiagnostics,
+          ),
+          stackTrace,
+          telemetryParams,
+        );
         throw _createException(classification, e);
       }
     }

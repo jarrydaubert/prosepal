@@ -347,6 +347,11 @@ class _ProsepalAppState extends ConsumerState<ProsepalApp>
           ref.invalidate(customerInfoProvider);
           ref.invalidate(remainingGenerationsProvider);
 
+          await ref
+              .read(usageServiceProvider)
+              .reconcilePendingSyncsForSignedOutState();
+          Log.info('Auth listener: Pending usage syncs reconciled (signedOut)');
+
           await ref.read(usageServiceProvider).clearSyncMarker();
           Log.info('Auth listener: Sync marker cleared (signedOut)');
         } on Exception catch (e) {

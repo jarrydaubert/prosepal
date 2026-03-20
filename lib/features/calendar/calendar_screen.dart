@@ -49,7 +49,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       body: occasionsAsync.when(
         data: _buildContent,
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error loading occasions: $e')),
+        error: (e, _) => _buildErrorState(e),
       ),
       floatingActionButton: showFloatingAddButton
           ? FloatingActionButton.extended(
@@ -140,6 +140,59 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
             onPressed: _showAddOccasion,
           ),
         ],
+      ),
+    ),
+  );
+
+  Widget _buildErrorState(Object error) => Center(
+    child: Padding(
+      padding: const EdgeInsets.all(AppSpacing.screenPadding),
+      child: AppSurfaceCard(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                color: AppColors.primaryLight,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: AppColors.primary, width: 2),
+              ),
+              child: const Icon(
+                Icons.event_busy_rounded,
+                color: AppColors.primary,
+                size: AppSpacing.iconSizeLarge,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            const Text(
+              'Could not load occasions',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textOnLight,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              error.toString(),
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 14,
+                height: 1.4,
+                color: AppColors.textOnLightSecondary,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            AppButton(
+              label: 'Try Again',
+              icon: AppIcons.refresh,
+              onPressed: () => ref.invalidate(upcomingOccasionsProvider),
+            ),
+          ],
+        ),
       ),
     ),
   );

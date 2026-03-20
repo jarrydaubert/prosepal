@@ -345,6 +345,9 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
                     ),
                     decoration: BoxDecoration(
                       color: AppColors.primary.withValues(alpha: 0.14),
+                      border: Border.all(
+                        color: AppColors.primary.withValues(alpha: 0.22),
+                      ),
                       borderRadius: BorderRadius.circular(
                         AppSpacing.radiusFull,
                       ),
@@ -354,7 +357,7 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.primaryLight,
+                        color: AppColors.textPrimary,
                       ),
                     ),
                   ),

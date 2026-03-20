@@ -2,15 +2,144 @@
 
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+MODE="full"
+if [ "${1:-}" = "--repo-only" ]; then
+  MODE="repo_only"
+  shift
+fi
+
 PROJECT_ID="${1:-$(gcloud config get-value project 2>/dev/null || true)}"
+
+remote_config_template="$REPO_ROOT/docs/REMOTE_CONFIG_TEMPLATE.json"
+firebase_remote_config_template="$REPO_ROOT/docs/REMOTE_CONFIG_TEMPLATE.firebase.json"
+ai_config_file="$REPO_ROOT/lib/core/config/ai_config.dart"
+
+required_remote_config_keys=(
+  config_schema_version
+  ai_enabled
+  paywall_enabled
+  premium_enabled
+  ai_model
+  ai_model_fallback
+  ai_use_limited_app_check_tokens
+  force_update_enabled
+  min_app_version_ios
+  min_app_version_android
+)
+
+extract_dart_string_constant() {
+  local constant_name="$1"
+  sed -nE "s/.*static const String ${constant_name} = '([^']+)'.*/\1/p" "$ai_config_file" | head -n1
+}
+
+repo_fail=0
+default_model="$(extract_dart_string_constant "defaultModel")"
+default_fallback_model="$(extract_dart_string_constant "defaultFallbackModel")"
+
+echo "Auditing AI cost/abuse controls (mode: $MODE)"
+echo ""
+echo "Repo config checks:"
+
+if [ -f "$remote_config_template" ]; then
+  echo "  [PASS] docs/REMOTE_CONFIG_TEMPLATE.json exists"
+else
+  echo "  [FAIL] docs/REMOTE_CONFIG_TEMPLATE.json missing"
+  repo_fail=1
+fi
+
+if [ -f "$firebase_remote_config_template" ]; then
+  echo "  [PASS] docs/REMOTE_CONFIG_TEMPLATE.firebase.json exists"
+else
+  echo "  [FAIL] docs/REMOTE_CONFIG_TEMPLATE.firebase.json missing"
+  repo_fail=1
+fi
+
+if [ -z "$default_model" ] || [ -z "$default_fallback_model" ]; then
+  echo "  [FAIL] Could not extract AI defaults from lib/core/config/ai_config.dart"
+  repo_fail=1
+fi
+
+if [ "$repo_fail" -eq 0 ]; then
+  for key in "${required_remote_config_keys[@]}"; do
+    if jq -e --arg key "$key" 'has($key)' "$remote_config_template" >/dev/null; then
+      echo "  [PASS] JSON template includes $key"
+    else
+      echo "  [FAIL] JSON template missing $key"
+      repo_fail=1
+    fi
+
+    if jq -e --arg key "$key" '.parameters | has($key)' "$firebase_remote_config_template" >/dev/null; then
+      echo "  [PASS] Firebase template includes $key"
+    else
+      echo "  [FAIL] Firebase template missing $key"
+      repo_fail=1
+    fi
+  done
+
+  if [ "$(jq -r '.ai_enabled' "$remote_config_template")" = "true" ] &&
+    [ "$(jq -r '.paywall_enabled' "$remote_config_template")" = "true" ] &&
+    [ "$(jq -r '.premium_enabled' "$remote_config_template")" = "true" ]; then
+    echo "  [PASS] JSON template keeps AI/paywall/premium kill switches enabled by default"
+  else
+    echo "  [FAIL] JSON template kill-switch defaults are not all enabled"
+    repo_fail=1
+  fi
+
+  if [ "$(jq -r '.parameters.ai_enabled.defaultValue.value' "$firebase_remote_config_template")" = "true" ] &&
+    [ "$(jq -r '.parameters.paywall_enabled.defaultValue.value' "$firebase_remote_config_template")" = "true" ] &&
+    [ "$(jq -r '.parameters.premium_enabled.defaultValue.value' "$firebase_remote_config_template")" = "true" ]; then
+    echo "  [PASS] Firebase template keeps AI/paywall/premium kill switches enabled by default"
+  else
+    echo "  [FAIL] Firebase template kill-switch defaults are not all enabled"
+    repo_fail=1
+  fi
+
+  json_model="$(jq -r '.ai_model' "$remote_config_template")"
+  firebase_model="$(jq -r '.parameters.ai_model.defaultValue.value' "$firebase_remote_config_template")"
+  if [ "$json_model" = "$default_model" ] && [ "$firebase_model" = "$default_model" ]; then
+    echo "  [PASS] Primary AI model is pinned to code default ($default_model)"
+  else
+    echo "  [FAIL] Primary AI model template/default mismatch"
+    repo_fail=1
+  fi
+
+  json_fallback_model="$(jq -r '.ai_model_fallback' "$remote_config_template")"
+  firebase_fallback_model="$(
+    jq -r '.parameters.ai_model_fallback.defaultValue.value' "$firebase_remote_config_template"
+  )"
+  if [ "$json_fallback_model" = "$default_fallback_model" ] &&
+    [ "$firebase_fallback_model" = "$default_fallback_model" ]; then
+    echo "  [PASS] Fallback AI model is pinned to code default ($default_fallback_model)"
+  else
+    echo "  [FAIL] Fallback AI model template/default mismatch"
+    repo_fail=1
+  fi
+fi
+
+if [ "$MODE" = "repo_only" ]; then
+  echo ""
+  if [ "$repo_fail" -eq 0 ]; then
+    echo "AI cost/abuse audit (repo-only): PASS"
+  else
+    echo "AI cost/abuse audit (repo-only): FAIL"
+  fi
+  exit "$repo_fail"
+fi
 
 if [ -z "$PROJECT_ID" ]; then
   echo "Error: no GCP project set. Pass project id or run:"
   echo "  gcloud config set project <project-id>"
+  echo "  ./scripts/audit_ai_cost_controls.sh --repo-only"
+  if [ "$repo_fail" -ne 0 ]; then
+    exit "$repo_fail"
+  fi
   exit 2
 fi
 
-echo "Auditing AI cost/abuse controls for project: $PROJECT_ID"
+echo "Live project checks for project: $PROJECT_ID"
 
 tmp_keys="$(mktemp)"
 tmp_services="$(mktemp)"
@@ -167,7 +296,10 @@ else
 fi
 
 overall_fail=0
-if [ "$service_fail" -ne 0 ] || [ "$key_fail" -ne 0 ] || [ "$budget_fail" -ne 0 ]; then
+if [ "$repo_fail" -ne 0 ] ||
+  [ "$service_fail" -ne 0 ] ||
+  [ "$key_fail" -ne 0 ] ||
+  [ "$budget_fail" -ne 0 ]; then
   overall_fail=1
 fi
 

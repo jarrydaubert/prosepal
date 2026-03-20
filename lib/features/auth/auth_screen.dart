@@ -11,6 +11,7 @@ import '../../core/providers/providers.dart';
 import '../../core/services/log_service.dart';
 import '../../shared/components/app_logo.dart';
 import '../../shared/theme/app_colors.dart';
+import '../../shared/utils/keyboard_utils.dart';
 import '../paywall/paywall_sheet.dart';
 
 class AuthScreen extends ConsumerStatefulWidget {
@@ -88,6 +89,11 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     return 'generic';
   }
 
+  void _signalHomeKeyboardDismiss() {
+    dismissKeyboard(context);
+    ref.read(dismissHomeKeyboardProvider.notifier).state = true;
+  }
+
   Future<void> _navigateAfterAuth({String? postAuthNotice}) async {
     if (!mounted) return;
 
@@ -134,11 +140,13 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
           // User has Pro - go to home, they can generate
           ref.invalidate(customerInfoProvider);
           Log.info('Auth success: Pro claim confirmed, navigating to home');
+          _signalHomeKeyboardDismiss();
           context.go('/home');
           return;
         } else {
           // No Pro found - go home and show paywall sheet
           Log.info('Auth success: No Pro found, showing paywall sheet');
+          _signalHomeKeyboardDismiss();
           context.go('/home');
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (mounted) {
@@ -153,6 +161,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
         });
         if (!mounted) return;
         // On error, go home and show paywall sheet
+        _signalHomeKeyboardDismiss();
         context.go('/home');
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
@@ -170,6 +179,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       });
       if (widget.redirectTo == 'paywall') {
         // Paywall is now a bottom sheet - go home and show it
+        _signalHomeKeyboardDismiss();
         context.go('/home');
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
@@ -187,6 +197,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     // (e.g., from settings restore purchases). If so, just pop back.
     if (context.canPop()) {
       Log.info('Auth success: popping back to previous screen');
+      _signalHomeKeyboardDismiss();
       context.pop();
       return;
     }
@@ -195,6 +206,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     // Biometric setup is offered after purchase, not after sign-in
     // (feels contradictory to prompt for security right after authenticating)
     Log.info('Auth success: navigating to home');
+    _signalHomeKeyboardDismiss();
     context.go('/home');
     if (postAuthNotice == null) {
       // Show welcome toast after navigation
@@ -373,8 +385,10 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                   onPressed: () {
                     Log.info('Auth dismissed', {'redirect': widget.redirectTo});
                     if (context.canPop()) {
+                      _signalHomeKeyboardDismiss();
                       context.pop();
                     } else {
+                      _signalHomeKeyboardDismiss();
                       context.go('/home');
                     }
                   },
@@ -477,7 +491,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                                     'Create an account to purchase a subscription',
                                     style: TextStyle(
                                       fontSize: 14,
-                                      color: AppColors.textSecondary,
+                                      color: AppColors.textPrimary,
                                       height: 1.4,
                                     ),
                                   ),
@@ -521,7 +535,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                                         'Sign in to restore your Pro access',
                                         style: TextStyle(
                                           fontSize: 13,
-                                          color: AppColors.textSecondary,
+                                          color: AppColors.textPrimary,
                                         ),
                                       ),
                                     ],

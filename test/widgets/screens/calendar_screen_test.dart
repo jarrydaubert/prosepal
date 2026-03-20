@@ -6,6 +6,7 @@ import 'package:prosepal/core/models/models.dart';
 import 'package:prosepal/core/providers/providers.dart';
 import 'package:prosepal/features/calendar/calendar_screen.dart';
 import 'package:prosepal/shared/components/app_emoji.dart';
+import 'package:prosepal/shared/theme/app_colors.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -42,6 +43,30 @@ void main() {
     return ProviderScope(
       overrides: [
         upcomingOccasionsProvider.overrideWith((ref) async => occasions),
+      ],
+      child: MaterialApp.router(routerConfig: router),
+    );
+  }
+
+  Widget buildErrorHarness(Exception error) {
+    final router = GoRouter(
+      initialLocation: '/calendar',
+      routes: [
+        GoRoute(
+          path: '/calendar',
+          builder: (context, state) => const CalendarScreen(),
+        ),
+        GoRoute(
+          path: '/home',
+          builder: (context, state) =>
+              const Scaffold(body: Text('Home Screen')),
+        ),
+      ],
+    );
+
+    return ProviderScope(
+      overrides: [
+        upcomingOccasionsProvider.overrideWith((ref) async => throw error),
       ],
       child: MaterialApp.router(routerConfig: router),
     );
@@ -93,5 +118,25 @@ void main() {
     expect(find.text('Edit'), findsOneWidget);
     expect(find.text('Delete'), findsOneWidget);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('error state uses readable light-surface text tokens', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      buildErrorHarness(Exception('Calendar sync offline')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Could not load occasions'), findsOneWidget);
+    expect(find.text('Exception: Calendar sync offline'), findsOneWidget);
+    expect(find.text('Try Again'), findsOneWidget);
+
+    final title = tester.widget<Text>(find.text('Could not load occasions'));
+    final detail = tester.widget<Text>(
+      find.text('Exception: Calendar sync offline'),
+    );
+    expect(title.style?.color, AppColors.textOnLight);
+    expect(detail.style?.color, AppColors.textOnLightSecondary);
   });
 }

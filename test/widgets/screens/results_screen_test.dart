@@ -16,6 +16,7 @@ import '../../mocks/mock_auth_service.dart';
 import '../../mocks/mock_device_fingerprint_service.dart';
 import '../../mocks/mock_history_service.dart';
 import '../../mocks/mock_rate_limit_service.dart';
+import '../../mocks/tracking_usage_service.dart';
 
 void main() {
   late SharedPreferences prefs;
@@ -415,6 +416,118 @@ void main() {
 
         await tester.pump(const Duration(seconds: 3));
       });
+
+      testWidgets(
+        'authenticated Pro AI failure does not consume usage on regenerate',
+        (tester) async {
+          await prefs.setBool(PreferenceKeys.reviewHasRequested, true);
+
+          final mockAi = MockAiService()..simulateNetworkError();
+          final mockAuth = MockAuthService()..setLoggedIn(true);
+          final usageService = TrackingUsageService(prefs);
+          final mockHistory = MockHistoryService();
+
+          await tester.pumpWidget(
+            ProviderScope(
+              overrides: [
+                sharedPreferencesProvider.overrideWithValue(prefs),
+                generationResultProvider.overrideWith(
+                  (ref) => createTestResult(),
+                ),
+                aiServiceProvider.overrideWithValue(mockAi),
+                authServiceProvider.overrideWithValue(mockAuth),
+                usageServiceProvider.overrideWithValue(usageService),
+                historyServiceProvider.overrideWithValue(mockHistory),
+                isProProvider.overrideWith((ref) => true),
+              ],
+              child: MaterialApp.router(
+                routerConfig: GoRouter(
+                  initialLocation: '/results',
+                  routes: [
+                    GoRoute(
+                      path: '/',
+                      builder: (context, state) =>
+                          const Scaffold(body: Text('Home')),
+                    ),
+                    GoRoute(
+                      path: '/results',
+                      builder: (context, state) => const ResultsScreen(),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+          await tester.pumpAndSettle();
+
+          await tester.tap(find.text('Regenerate'));
+          await tester.pump(const Duration(milliseconds: 400));
+
+          expect(mockAi.generateCallCount, 1);
+          expect(usageService.serverConsumeCalls, 0);
+          expect(
+            find.text('Failed to generate. Please try again.'),
+            findsOneWidget,
+          );
+
+          await tester.pump(const Duration(seconds: 3));
+        },
+      );
+
+      testWidgets(
+        'authenticated Pro success consumes usage after regenerate succeeds',
+        (tester) async {
+          await prefs.setBool(PreferenceKeys.reviewHasRequested, true);
+
+          final mockAi = MockAiService()
+            ..simulateDelay = const Duration(milliseconds: 300);
+          final mockAuth = MockAuthService()..setLoggedIn(true);
+          final usageService = TrackingUsageService(prefs);
+          final mockHistory = MockHistoryService();
+
+          await tester.pumpWidget(
+            ProviderScope(
+              overrides: [
+                sharedPreferencesProvider.overrideWithValue(prefs),
+                generationResultProvider.overrideWith(
+                  (ref) => createTestResult(),
+                ),
+                aiServiceProvider.overrideWithValue(mockAi),
+                authServiceProvider.overrideWithValue(mockAuth),
+                usageServiceProvider.overrideWithValue(usageService),
+                historyServiceProvider.overrideWithValue(mockHistory),
+                isProProvider.overrideWith((ref) => true),
+              ],
+              child: MaterialApp.router(
+                routerConfig: GoRouter(
+                  initialLocation: '/results',
+                  routes: [
+                    GoRoute(
+                      path: '/',
+                      builder: (context, state) =>
+                          const Scaffold(body: Text('Home')),
+                    ),
+                    GoRoute(
+                      path: '/results',
+                      builder: (context, state) => const ResultsScreen(),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+          await tester.pumpAndSettle();
+
+          await tester.tap(find.text('Regenerate'));
+          await tester.pump(const Duration(milliseconds: 1500));
+
+          expect(mockAi.generateCallCount, 1);
+          expect(usageService.serverConsumeCalls, 1);
+          expect(mockHistory.saveGenerationCallCount, 1);
+
+          await tester.pump(const Duration(seconds: 3));
+        },
+      );
     });
 
     group('Accessibility', () {

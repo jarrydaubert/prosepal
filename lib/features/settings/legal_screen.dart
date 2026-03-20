@@ -206,27 +206,24 @@ class _LegalSection extends StatelessWidget {
   final String content;
 
   @override
-  Widget build(BuildContext context) => Container(
+  Widget build(BuildContext context) => AppSurfaceCard(
     margin: const EdgeInsets.only(bottom: AppSpacing.md),
     padding: const EdgeInsets.all(AppSpacing.md),
-    decoration: BoxDecoration(
-      color: AppColors.surfaceVariant,
-      borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
-    ),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           title,
-          style: Theme.of(
-            context,
-          ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.w600,
+            color: AppColors.textOnLight,
+          ),
         ),
         const Gap(AppSpacing.sm),
         Text(
           content,
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: AppColors.textSecondary,
+            color: AppColors.textOnLightSecondary,
             height: 1.5,
           ),
         ),

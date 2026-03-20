@@ -406,8 +406,15 @@ SUPABASE_DB_URL="postgresql://..." ./scripts/verify_supabase_readonly.sh
 AI cost/abuse controls:
 
 ```bash
+./scripts/audit_ai_cost_controls.sh --repo-only
 ./scripts/audit_ai_cost_controls.sh
 ```
+
+- `--repo-only` validates the checked-in Remote Config templates, required AI
+  control keys, kill-switch defaults, and pinned model defaults without live
+  cloud access.
+- The full command additionally audits live GCP/Firebase service enablement,
+  key restrictions, and billing-budget posture for the active project.
 
 Supabase verification (manual + script-assisted):
 - Required table presence for usage/entitlement/rate-limit/auth-adjacent tables.
@@ -465,6 +472,7 @@ AI abuse/cost verification (manual + script-assisted):
 - Firebase AI keys restricted to required API targets.
 - Platform app restrictions verified (iOS bundle ID, Android package/SHA).
 - App Check enforced for production.
+- Anonymous free-tier device verification fails closed when fingerprint/server verification is unavailable.
 - Rate limits and quotas match policy.
 - Budget alerts configured (warning + critical).
 - Kill-switch drill passes (`ai_enabled=false` then recovery).
@@ -557,6 +565,18 @@ revealing secrets. Review the `AI Runtime` section for:
   - `CONTENT_BLOCKED`
   - `MODEL_NOT_FOUND`
 
+Release-mode Crashlytics AI failure telemetry should keep only the fields needed
+to triage behavior:
+
+- backend label (`vertexAI` or `googleAI`)
+- model slot (`primary`, `fallback`, or `custom`) rather than exact model ID
+- classified error bucket (`CLIENT_APP_BLOCKED`, `APP_CHECK_FAILED`, etc.)
+- retryability / attempt count
+
+Release logs must not emit provider URLs, exact model identifiers, or
+project/resource paths for AI failures. Exact model IDs belong in the in-app
+diagnostic report and local debug logs, not production failure telemetry.
+
 Deterministic no-device evidence paths:
 
 ```bash
@@ -565,12 +585,17 @@ flutter test test/services/ai_service_test.dart --plain-name "classifies Firebas
 flutter test test/services/ai_service_test.dart --plain-name "keeps safety-filter blocks as CONTENT_BLOCKED"
 flutter test test/services/ai_service_test.dart --plain-name "classifies firebase_app_check platform error as APP_CHECK_FAILED"
 flutter test test/services/ai_service_test.dart --plain-name "classifies \"404\" as MODEL_NOT_FOUND"
+flutter test test/services/ai_service_test.dart --plain-name "sanitizes Firebase AI telemetry for release logging"
+flutter test test/services/ai_service_test.dart --plain-name "sanitizes general exception telemetry but keeps user-facing bucket"
 ```
 
 Use these when you need to prove:
 
 - app-configuration/client-block failures are distinguished from safety blocks
 - App Check failures are classified separately from generic network errors
+- App Check verification failures bucket to `APP_CHECK_FAILED`, while
+  `client application <empty>` / API-key restriction failures bucket to
+  `CLIENT_APP_BLOCKED`
 - fallback-model behavior remains an explicit runtime concern, not hidden logic
 
 ### Firebase AI Android App Check triage (`App attestation failed`)
@@ -604,6 +629,7 @@ Required runtime controls:
 - Remote Config kill switches present: `ai_enabled`, `paywall_enabled`, `premium_enabled`.
 - Model allowlist validation enforced.
 - Server-side and client-side rate limiting both active.
+- Anonymous free-tier access requires a successful device-verification check; verification failures must block free generation rather than falling back to local-only allowance.
 - Budget alerts configured with warning + critical thresholds.
 
 Incident containment:

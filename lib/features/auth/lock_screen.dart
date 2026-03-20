@@ -93,7 +93,7 @@ class _LockScreenState extends State<LockScreen> {
         content: const Text(
           'Too many failed attempts. Please unlock your device with your '
           'passcode first, then try again.',
-          style: TextStyle(color: AppColors.textSecondary),
+          style: TextStyle(color: AppColors.textPrimary),
         ),
         actions: [
           TextButton(
@@ -248,7 +248,7 @@ class _LockScreenState extends State<LockScreen> {
                 'Having trouble? Make sure $_biometricType is set up in your device settings.',
                 style: const TextStyle(
                   fontSize: 12,
-                  color: AppColors.textSecondary,
+                  color: AppColors.textPrimary,
                 ),
                 textAlign: TextAlign.center,
               ).animate().fadeIn(),

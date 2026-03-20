@@ -29,6 +29,7 @@ void main() {
   Widget createTestableHomeScreen({
     bool isPro = false,
     int remaining = 3,
+    bool? showFirstActionHint,
     GoRouter? router,
   }) {
     final testRouter =
@@ -76,6 +77,10 @@ void main() {
         remainingGenerationsProvider.overrideWith((ref) => remaining),
         authServiceProvider.overrideWithValue(mockAuth),
         initStatusProvider.overrideWith((ref) => initStatusNotifier),
+        if (showFirstActionHint != null)
+          showFirstActionHintProvider.overrideWith(
+            (ref) => showFirstActionHint,
+          ),
       ],
       child: MaterialApp.router(routerConfig: testRouter),
     );
@@ -187,6 +192,25 @@ void main() {
       );
       expect(container.read(dismissHomeKeyboardProvider), isFalse);
     });
+
+    testWidgets(
+      'first-time guidance stays in hero instead of a separate hint banner',
+      (tester) async {
+        await tester.pumpWidget(
+          createTestableHomeScreen(showFirstActionHint: true),
+        );
+        await tester.pump(const Duration(milliseconds: 300));
+
+        expect(
+          find.text('Start with Birthday or search for a moment below.'),
+          findsOneWidget,
+        );
+        expect(
+          find.text('Tap any occasion to create your first message!'),
+          findsNothing,
+        );
+      },
+    );
   });
 
   group('HomeScreen Usage Indicator', () {

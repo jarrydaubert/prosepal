@@ -27,6 +27,27 @@ Define the canonical user-identity mapping across auth, subscriptions, and telem
 - RevenueCat identity transitions are handled in `lib/core/services/subscription_service.dart`.
 - Telemetry user-ID set/clear is handled in `lib/core/services/log_service.dart`.
 - User-sendable support snapshot is generated in `lib/core/services/diagnostic_service.dart`.
+- Pending usage queue ownership is enforced in `lib/core/services/usage_service.dart`.
+
+## Pending Usage Ownership
+
+- Authenticated pending usage syncs are owned by the exact Supabase user ID that
+  created them.
+- Signed-out state quarantines user-owned pending syncs by leaving them bound to
+  their original user ID; they are not reassigned to the next account that
+  signs in.
+- Anonymous pending syncs are device-local only. They must never be rebound to
+  whichever authenticated user signs in next.
+- Anonymous-to-authenticated usage convergence happens through
+  `syncFromServer()` local/server count reconciliation, not by reassigning
+  anonymous queue entries.
+- Sign out discards anonymous pending syncs and keeps authenticated pending
+  syncs quarantined for the same user to resume later.
+- Delete-account purges pending syncs owned by the deleted user and also drops
+  anonymous queue entries because there is no longer a safe owner to attach
+  them to.
+- Stale pending syncs expire after 7 days and are discarded rather than applied
+  to any later session.
 
 ## QA Validation Flow
 

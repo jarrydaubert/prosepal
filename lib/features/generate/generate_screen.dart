@@ -128,6 +128,19 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
     });
   }
 
+  String _anonymousFreeTierError(DeviceCheckReason reason) => switch (reason) {
+    DeviceCheckReason.rateLimited =>
+      'Too many attempts. Please wait a moment and try again.',
+    DeviceCheckReason.alreadyUsed =>
+      'This device has already used its free message. Upgrade to Pro for unlimited messages!',
+    DeviceCheckReason.fingerprintUnavailable ||
+    DeviceCheckReason.serverUnavailable ||
+    DeviceCheckReason.serverError =>
+      "We can't verify your free message right now. Please try again later.",
+    DeviceCheckReason.newDevice || DeviceCheckReason.notUsedYet =>
+      'Free message unavailable. Please try again.',
+  };
+
   @override
   Widget build(BuildContext context) {
     final occasion = ref.watch(selectedOccasionProvider);
@@ -417,25 +430,7 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
     generationErrorNotifier.state = null;
 
     try {
-      // Server-side usage check
-      if (authService.isLoggedIn) {
-        // Authenticated users: full server-side check and increment
-        try {
-          final usageResult = await usageService.checkAndIncrementServerSide(
-            isPro: isPro,
-          );
-          if (!usageResult.allowed) {
-            isGeneratingNotifier.state = false;
-            generationErrorNotifier.state =
-                usageResult.errorMessage ?? 'Usage limit reached';
-            return;
-          }
-        } on UsageCheckException catch (e) {
-          isGeneratingNotifier.state = false;
-          generationErrorNotifier.state = e.message;
-          return;
-        }
-      } else if (!isPro) {
+      if (!authService.isLoggedIn && !isPro) {
         // Fast local guard prevents repeated free generations if server sync lags.
         if (!usageService.canGenerateFree()) {
           isGeneratingNotifier.state = false;
@@ -449,24 +444,19 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
           final deviceCheck = await usageService
               .checkDeviceFreeTierServerSide();
           if (!deviceCheck.allowed) {
-            final errorMessage =
-                deviceCheck.reason == DeviceCheckReason.rateLimited
-                ? 'Too many attempts. Please wait a moment and try again.'
-                : 'This device has already used its free message. '
-                      'Upgrade to Pro for unlimited messages!';
             isGeneratingNotifier.state = false;
-            generationErrorNotifier.state = errorMessage;
+            generationErrorNotifier.state = _anonymousFreeTierError(
+              deviceCheck.reason,
+            );
             return;
           }
         } on Exception catch (e) {
           Log.warning('Device fingerprint check failed', {'error': '$e'});
-          // Fall back to local check on network error
-          if (!usageService.canGenerateFree()) {
-            isGeneratingNotifier.state = false;
-            generationErrorNotifier.state =
-                'Free message already used. Upgrade to Pro!';
-            return;
-          }
+          isGeneratingNotifier.state = false;
+          generationErrorNotifier.state = _anonymousFreeTierError(
+            DeviceCheckReason.serverError,
+          );
+          return;
         }
       }
 
@@ -483,13 +473,25 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
         personalDetails: personalDetails.isNotEmpty ? personalDetails : null,
         useUkSpelling: useUkSpelling,
       );
-      Log.event('generation_completed', {
-        'occasion': occasion.name,
-        'message_count': result.messages.length,
-      });
 
-      // For anonymous users, record generation client-side
-      if (!authService.isLoggedIn) {
+      // Only consume usage once the user actually has a successful result.
+      if (authService.isLoggedIn) {
+        try {
+          final usageResult = await usageService.checkAndIncrementServerSide(
+            isPro: isPro,
+          );
+          if (!usageResult.allowed) {
+            isGeneratingNotifier.state = false;
+            generationErrorNotifier.state =
+                usageResult.errorMessage ?? 'Usage limit reached';
+            return;
+          }
+        } on UsageCheckException catch (e) {
+          isGeneratingNotifier.state = false;
+          generationErrorNotifier.state = e.message;
+          return;
+        }
+      } else {
         await usageService.recordGeneration(isPro: isPro);
       }
 
@@ -497,18 +499,29 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
       container.invalidate(remainingGenerationsProvider);
       container.invalidate(totalUsageProvider);
 
-      // Save to history for later viewing
-      await historyService.saveGeneration(result);
-
-      // Check if we should request a review (after 3rd generation)
-      final totalGenerations = usageService.getTotalCount();
-      await reviewService.checkAndRequestReview(totalGenerations);
+      Log.event('generation_completed', {
+        'occasion': occasion.name,
+        'message_count': result.messages.length,
+      });
 
       generationResultNotifier.state = result;
       isGeneratingNotifier.state = false;
 
       // Clear form restoration state - generation successful
       formRestorationService.clearGenerateFormState();
+
+      try {
+        await historyService.saveGeneration(result);
+      } on Exception catch (e) {
+        Log.warning('Failed to save generation history', {'error': '$e'});
+      }
+
+      try {
+        final totalGenerations = usageService.getTotalCount();
+        await reviewService.checkAndRequestReview(totalGenerations);
+      } on Exception catch (e) {
+        Log.warning('Failed to evaluate review prompt', {'error': '$e'});
+      }
 
       if (!mounted) return;
       unawaited(context.pushNamed('results'));

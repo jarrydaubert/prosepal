@@ -22,4 +22,5 @@ abstract final class AppIcons {
   static const export = Icons.event_available_rounded;
   static const edit = Icons.edit_rounded;
   static const delete = Icons.delete_outline_rounded;
+  static const refresh = Icons.refresh_rounded;
 }

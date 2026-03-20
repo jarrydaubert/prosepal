@@ -109,6 +109,17 @@ void main() {
     expect(find.text('Please enter a message'), findsOneWidget);
   });
 
+  testWidgets('feedback input uses multiline sentence keyboard hints', (
+    tester,
+  ) async {
+    await tester.pumpWidget(buildTestWidget());
+    await tester.pumpAndSettle();
+
+    final field = tester.widget<TextField>(find.byType(TextField));
+    expect(field.keyboardType, TextInputType.multiline);
+    expect(field.textCapitalization, TextCapitalization.sentences);
+  });
+
   testWidgets('successful submit uses in-app delivery path', (tester) async {
     final observer = _TestNavigatorObserver();
 
@@ -234,6 +245,9 @@ void main() {
   ) async {
     await tester.pumpWidget(buildTestWidget());
     await tester.pumpAndSettle();
+
+    final supportInboxLabel = tester.widget<Text>(find.text('Support inbox'));
+    expect(supportInboxLabel.style?.color, AppColors.textPrimary);
 
     final diagnosticsLabel = tester.widget<Text>(find.text('Add app details'));
     expect(diagnosticsLabel.style?.color, AppColors.textOnLight);
