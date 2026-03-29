@@ -201,10 +201,7 @@ void main() {
         );
         await tester.pump(const Duration(milliseconds: 300));
 
-        expect(
-          find.text('Start with Birthday or search for a moment below.'),
-          findsOneWidget,
-        );
+        expect(find.text('Tap an occasion to get started.'), findsOneWidget);
         expect(
           find.text('Tap any occasion to create your first message!'),
           findsNothing,

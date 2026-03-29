@@ -64,10 +64,10 @@ class OccasionGrid extends StatelessWidget {
 
     return SliverGrid(
       gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: 220,
+        maxCrossAxisExtent: 210,
         mainAxisSpacing: AppSpacing.md,
         crossAxisSpacing: AppSpacing.md,
-        childAspectRatio: 0.9,
+        mainAxisExtent: 100,
       ),
       delegate: SliverChildBuilderDelegate((context, index) {
         final occasion = occasions[index];
@@ -217,9 +217,9 @@ class _OccasionTileState extends State<_OccasionTile>
               BoxShadow(
                 color:
                     (widget.highlighted ? AppColors.primary : AppColors.bgDeep)
-                        .withValues(alpha: widget.highlighted ? 0.22 : 0.18),
-                blurRadius: widget.highlighted ? 22 : 16,
-                offset: const Offset(0, 10),
+                        .withValues(alpha: widget.highlighted ? 0.18 : 0.14),
+                blurRadius: widget.highlighted ? 12 : 8,
+                offset: const Offset(0, 4),
               ),
             ],
           ),
@@ -229,128 +229,31 @@ class _OccasionTileState extends State<_OccasionTile>
               builder: (context, constraints) {
                 final compact = constraints.maxWidth < 170;
                 return Padding(
-                  padding: EdgeInsets.all(
-                    compact ? AppSpacing.md : AppSpacing.lg,
-                  ),
+                  padding: EdgeInsets.all(compact ? 8 : 10),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        children: [
-                          Container(
-                            width: compact ? 46 : 58,
-                            height: compact ? 46 : 58,
-                            decoration: BoxDecoration(
-                              color: AppColors.surfaceLight,
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: widget.occasion.borderColor,
-                                width: 1.5,
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: widget.occasion.borderColor.withValues(
-                                    alpha: 0.18,
-                                  ),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 5),
-                                ),
-                              ],
-                            ),
-                            child: Center(
-                              child: AppEmoji(
-                                emoji: widget.occasion.emoji,
-                                size: compact ? 24 : AppSpacing.iconSizeLarge,
-                              ),
-                            ),
-                          ),
-                          const Spacer(),
-                          Flexible(
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: AppSpacing.sm,
-                                vertical: AppSpacing.xs,
-                              ),
-                              decoration: BoxDecoration(
-                                color: AppColors.surfaceLight.withValues(
-                                  alpha: 0.92,
-                                ),
-                                borderRadius: BorderRadius.circular(
-                                  AppSpacing.radiusFull,
-                                ),
-                                border: Border.all(
-                                  color: widget.highlighted
-                                      ? AppColors.primary
-                                      : widget.occasion.borderColor.withValues(
-                                          alpha: 0.65,
-                                        ),
-                                ),
-                              ),
-                              child: Text(
-                                widget.highlighted
-                                    ? (compact ? 'Start' : 'Start here')
-                                    : 'Occasion',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontSize: compact ? 9 : 10,
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: compact ? 0.2 : 0.35,
-                                  color: widget.highlighted
-                                      ? AppColors.primaryDark
-                                      : AppColors.textOnLightSecondary,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
+                      Padding(
+                        padding: EdgeInsets.only(
+                          top: compact ? 2 : 0,
+                          left: compact ? 1 : 0,
+                        ),
+                        child: AppEmoji(
+                          emoji: widget.occasion.emoji,
+                          size: compact ? 30 : 36,
+                        ),
                       ),
-                      SizedBox(height: compact ? AppSpacing.sm : AppSpacing.md),
                       Text(
                         widget.occasion.label,
-                        maxLines: compact ? 2 : 1,
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                          fontSize: compact ? 16 : 17,
+                          fontSize: compact ? 15 : 17,
                           fontWeight: FontWeight.w800,
                           color: AppColors.textOnLight,
-                          height: 1.1,
+                          height: compact ? 1.05 : 1.1,
                         ),
-                      ),
-                      const SizedBox(height: AppSpacing.xs),
-                      Text(
-                        _occasionBlurb(widget.occasion),
-                        maxLines: compact ? 2 : 3,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: compact ? 12 : 12.5,
-                          height: 1.4,
-                          color: AppColors.textOnLightSecondary,
-                        ),
-                      ),
-                      const Spacer(),
-                      Row(
-                        children: [
-                          const Icon(
-                            AppIcons.touch,
-                            size: AppSpacing.iconSizeXS,
-                            color: AppColors.primaryDark,
-                          ),
-                          const SizedBox(width: AppSpacing.xs),
-                          Flexible(
-                            child: Text(
-                              compact ? 'Create' : 'Tap to create',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.primaryDark,
-                              ),
-                            ),
-                          ),
-                        ],
                       ),
                     ],
                   ),
@@ -385,12 +288,4 @@ class _OccasionEmptyStateIcon extends StatelessWidget {
       color: AppColors.primary,
     ),
   );
-}
-
-String _occasionBlurb(Occasion occasion) {
-  final prompt = occasion.prompt;
-  final parts = prompt.split(' - ');
-  final candidate = parts.length > 1 ? parts.last : prompt;
-  if (candidate.isEmpty) return 'Warm words for the moment that matters.';
-  return '${candidate[0].toUpperCase()}${candidate.substring(1)}';
 }

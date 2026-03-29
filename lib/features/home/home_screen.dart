@@ -7,7 +7,6 @@ import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/config/preference_keys.dart';
-import '../../core/models/occasion.dart';
 import '../../core/providers/providers.dart';
 import '../../core/services/log_service.dart';
 import '../../shared/components/components.dart';
@@ -65,7 +64,7 @@ class HomeScreen extends ConsumerWidget {
               // Header
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.all(20),
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -84,7 +83,7 @@ class HomeScreen extends ConsumerWidget {
                                           const Text(
                                             'Prosepal',
                                             style: TextStyle(
-                                              fontSize: 32,
+                                              fontSize: 30,
                                               fontWeight: FontWeight.bold,
                                               color: AppColors.primary,
                                             ),
@@ -116,13 +115,6 @@ class HomeScreen extends ConsumerWidget {
                                             ),
                                           ],
                                         ],
-                                      ),
-                                    ),
-                                    const Text(
-                                      'The right words, right now',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        color: AppColors.textSecondary,
                                       ),
                                     ),
                                   ],
@@ -180,7 +172,7 @@ class HomeScreen extends ConsumerWidget {
 
                       // Usage indicator for free users only (Pro badge is in header)
                       if (!isPro) ...[
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 12),
                         if (!initStatus.revenueCatReady && !initStatus.timedOut)
                           const _UsageIndicatorShimmer()
                         else
@@ -201,69 +193,31 @@ class HomeScreen extends ConsumerWidget {
               // Section header
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Container(
-                    padding: const EdgeInsets.fromLTRB(
-                      AppSpacing.lg,
-                      AppSpacing.md,
-                      AppSpacing.lg,
-                      AppSpacing.md,
-                    ),
-                    decoration: BoxDecoration(
-                      gradient: AppColors.heroGradient,
-                      borderRadius: BorderRadius.circular(
-                        AppSpacing.radiusLarge,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        "What's the occasion?",
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.textPrimary,
+                          height: 1.1,
+                        ),
                       ),
-                      border: Border.all(color: AppColors.borderLight),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.bgDeep.withValues(alpha: 0.2),
-                          blurRadius: 16,
-                          offset: const Offset(0, 8),
+                      const SizedBox(height: AppSpacing.sm),
+                      Text(
+                        showFirstActionHint
+                            ? 'Tap an occasion to get started.'
+                            : "Choose an occasion, and we'll write the first draft.",
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: AppColors.textSecondary,
+                          height: 1.45,
                         ),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Row(
-                          children: [
-                            Text(
-                              'Choose the moment',
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.textSecondary,
-                                letterSpacing: 0.4,
-                              ),
-                            ),
-                            Spacer(),
-                            _OccasionCountPill(),
-                          ],
-                        ),
-                        const SizedBox(height: AppSpacing.xs),
-                        const Text(
-                          "What's the occasion?",
-                          style: TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.textPrimary,
-                            height: 1.05,
-                          ),
-                        ),
-                        const SizedBox(height: AppSpacing.sm),
-                        Text(
-                          showFirstActionHint
-                              ? 'Start with Birthday or search for a moment below.'
-                              : 'Pick a moment and Prosepal turns it into a warm first draft in seconds.',
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: AppColors.textSecondary,
-                            height: 1.45,
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ).animate().fadeIn(delay: 300.ms),
                 ),
               ),
@@ -273,7 +227,7 @@ class HomeScreen extends ConsumerWidget {
               // Search field
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: _OccasionSearchField(
                     query: occasionSearchQuery,
                     onChanged: (value) {
@@ -292,11 +246,11 @@ class HomeScreen extends ConsumerWidget {
                 ),
               ),
 
-              const SliverToBoxAdapter(child: SizedBox(height: 12)),
+              const SliverToBoxAdapter(child: SizedBox(height: 8)),
 
               // Occasion grid
               SliverPadding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
                 sliver: OccasionGrid(
                   occasions: ref.watch(filteredOccasionsProvider),
                   showFirstActionHint: showFirstActionHint,
@@ -327,7 +281,7 @@ class HomeScreen extends ConsumerWidget {
                 ),
               ),
 
-              const SliverToBoxAdapter(child: SizedBox(height: 40)),
+              const SliverToBoxAdapter(child: SizedBox(height: 28)),
             ],
           ),
         ),
@@ -342,32 +296,6 @@ Future<void> _dismissFirstActionHint(WidgetRef ref) async {
   final prefs = await SharedPreferences.getInstance();
   await prefs.setBool(PreferenceKeys.hasSeenFirstActionHint, true);
   Log.info('First action hint dismissed');
-}
-
-class _OccasionCountPill extends StatelessWidget {
-  const _OccasionCountPill();
-
-  @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(
-      horizontal: AppSpacing.sm,
-      vertical: AppSpacing.xs,
-    ),
-    decoration: BoxDecoration(
-      color: AppColors.surfaceLight.withValues(alpha: 0.08),
-      borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
-      border: Border.all(color: AppColors.borderLight),
-    ),
-    child: Text(
-      '${Occasion.values.length} ideas',
-      style: const TextStyle(
-        fontSize: 11,
-        fontWeight: FontWeight.w800,
-        color: AppColors.textSecondary,
-        letterSpacing: 0.3,
-      ),
-    ),
-  );
 }
 
 // =============================================================================

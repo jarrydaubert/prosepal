@@ -99,7 +99,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
               // Messages
               Expanded(
                 child: ListView.builder(
-                  padding: const EdgeInsets.all(20),
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
                   itemCount: result.messages.length,
                   itemBuilder: (context, index) {
                     final message = result.messages[index];
@@ -149,7 +149,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
               // Bottom actions
               SafeArea(
                 child: Padding(
-                  padding: const EdgeInsets.all(20),
+                  padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
                   child: Row(
                     children: [
                       Expanded(
@@ -532,78 +532,28 @@ class _ContextHeader extends StatelessWidget {
         'Generated ${result.occasion.label} message for ${result.relationship.label} with ${result.tone.label} tone',
     child: Container(
       width: double.infinity,
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      padding: const EdgeInsets.all(18),
+      margin: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            result.occasion.backgroundColor,
-            result.occasion.borderColor.withValues(alpha: 0.55),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: result.occasion.borderColor, width: 3),
-        boxShadow: [
-          BoxShadow(
-            color: result.occasion.borderColor.withValues(alpha: 0.18),
-            blurRadius: 18,
-            offset: const Offset(0, 10),
-          ),
-        ],
+        color: result.occasion.backgroundColor,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: result.occasion.borderColor, width: 2),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceLight,
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: result.occasion.borderColor,
-                    width: 2,
-                  ),
-                ),
-                child: Center(
-                  child: AppEmoji(emoji: result.occasion.emoji, size: 26),
-                ),
-              ),
-              const SizedBox(width: 14),
+              AppEmoji(emoji: result.occasion.emoji, size: 28),
+              const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.sm,
-                        vertical: AppSpacing.xs,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.bgDeep.withValues(alpha: 0.72),
-                        borderRadius: BorderRadius.circular(
-                          AppSpacing.radiusFull,
-                        ),
-                      ),
-                      child: const Text(
-                        'READY TO USE',
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 0.7,
-                          color: AppColors.textOnPrimary,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
                     Text(
                       '${result.occasion.label} - ${result.relationship.label}',
                       style: const TextStyle(
-                        fontSize: 17,
+                        fontSize: 16,
                         fontWeight: FontWeight.w800,
                         color: AppColors.textPrimary,
                       ),
@@ -620,15 +570,6 @@ class _ContextHeader extends StatelessWidget {
                 ),
               ),
             ],
-          ),
-          const SizedBox(height: AppSpacing.md),
-          const Text(
-            'Pick the version that feels most like you, then copy it as-is or tweak a line before sending.',
-            style: TextStyle(
-              fontSize: 13,
-              height: 1.45,
-              color: AppColors.textOnLight,
-            ),
           ),
         ],
       ),
@@ -659,7 +600,7 @@ class _MessageCard extends StatelessWidget {
       padding: EdgeInsets.zero,
       clipBehavior: Clip.antiAlias,
       borderColor: AppColors.primary,
-      borderWidth: AppSurfaceTokens.emphasizedBorderWidth,
+      borderWidth: 2,
       boxShadow: [
         BoxShadow(
           color: AppColors.bgDeep.withValues(alpha: 0.12),
@@ -675,65 +616,23 @@ class _MessageCard extends StatelessWidget {
             margin: const EdgeInsets.fromLTRB(2, 2, 2, 0),
             padding: const EdgeInsets.symmetric(
               horizontal: AppSpacing.lg,
-              vertical: AppSpacing.md,
+              vertical: AppSpacing.sm + 2,
             ),
             decoration: const BoxDecoration(
               color: AppColors.primaryLight,
               borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Row(
               children: [
-                LayoutBuilder(
-                  builder: (context, constraints) {
-                    final showDescriptor = constraints.maxWidth >= 320;
-                    return Row(
-                      children: [
-                        Container(
-                          width: 30,
-                          height: 30,
-                          decoration: const BoxDecoration(
-                            color: AppColors.primary,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Center(
-                            child: Text(
-                              '${index + 1}',
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: AppColors.textOnPrimary,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            'Option ${index + 1}',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.textOnLight,
-                            ),
-                          ),
-                        ),
-                        if (showDescriptor) ...[
-                          const SizedBox(width: AppSpacing.sm),
-                          Text(
-                            index == 0 ? 'Most versatile' : 'Another direction',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.textOnLight.withValues(
-                                alpha: 0.65,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ],
-                    );
-                  },
+                Expanded(
+                  child: Text(
+                    'Option ${index + 1}',
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textOnLight,
+                    ),
+                  ),
                 ),
               ],
             ),

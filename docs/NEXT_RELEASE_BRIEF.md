@@ -358,31 +358,42 @@ This lowers release risk while turning the just-completed config work into durab
 
 Only the items below define the intended `1.1.3` release. Each item closes only when its backlog DoD is met exactly in [BACKLOG.md](./BACKLOG.md).
 
+### Required proof for every locked item
+- The outcome is stated as a user-visible or operator-visible invariant, not a vague implementation task.
+- One state owner is clear for each correctness-sensitive flow (for example startup outcome, Apple delete readiness, usage ownership, entitlement truth).
+- Regression protection is explicit at the right layer: service/widget/integration coverage where automation is the right fit, plus named manual/device evidence where automation is insufficient.
+- `docs/DEVOPS.md` and `docs/IDENTITY_MAPPING.md` stay aligned with the final runtime behavior for any item that changes operations, identity, entitlement, AI, or support handling.
+
 ### App/runtime must-ship
+- `P0-06` Generation charge semantics hardening
+  - exit criteria: usage is consumed only when a user-visible generation succeeds according to the documented contract, with deterministic signed-in and anonymous regression coverage across generate and regenerate flows
 - `P1-54` pre-Flutter startup timeout hardening
-  - exit criteria: pre-`runApp()` startup work reaches a bounded timeout/failure outcome with deterministic regression coverage and startup telemetry that distinguishes pre-Flutter timeouts
+  - exit criteria: pre-`runApp()` startup work reaches a bounded timeout/failure outcome, the app reaches a Flutter-controlled surface within the explicit launch budget (`target <= 2000 ms`, `hard upper bound <= 4000 ms` for pre-Flutter fallback) under degraded startup conditions, and deterministic regression coverage plus startup telemetry distinguish pre-Flutter timeouts from later startup failures
 - `P1-55` Apple token exchange recovery for delete compliance
-  - exit criteria: Apple token exchange no longer silently degrades later account deletion; retry/remediation path, user-facing failure handling, and evidence all exist
+  - exit criteria: Apple token exchange no longer silently degrades later account deletion; canonical recovery state is not device-local only; delete-account consults that canonical state; and if canonical state cannot be fetched at delete time the flow fails closed with explicit retry/support guidance rather than guessing
 - `P1-43` Firebase AI client-block regression hardening
-  - exit criteria: wired iOS + Android evidence proves AI generation works on the live path and triage cleanly distinguishes client-block misconfig from content/safety failures
+  - exit criteria: wired iOS + Android evidence proves AI generation works on the live path, operator telemetry captures backend/model-slot/App Check posture, and triage cleanly distinguishes client-block misconfig from content/safety failures
 - `P1-53` Direct in-app feedback delivery
-  - exit criteria: the app ships a native in-app feedback widget backed by the authenticated Supabase + Resend path, with success/failure handling, fallback behavior, operator docs, and real delivery evidence
+  - exit criteria: the app ships a native in-app feedback widget backed by the authenticated Supabase + Resend path, with success/failure/auth-required handling, duplicate-submit protection, fallback behavior, operator docs, and real delivery evidence
 - `P1-56` AI error log sanitization
-  - exit criteria: production AI telemetry preserves actionable error buckets while redacting provider-internal details from Crashlytics
+  - exit criteria: production AI telemetry preserves actionable error buckets plus a documented release telemetry contract while redacting provider-internal details from Crashlytics
 - `P1-57` Pending usage sync ownership hardening
-  - exit criteria: queued usage data has explicit, documented ownership semantics across anonymous usage, sign-out, delete-account, and user switching, with regression coverage
+  - exit criteria: queued usage data has explicit, documented ownership semantics across anonymous usage, sign-out, delete-account, and user switching; no anonymous pending usage can rebind to the wrong identity; lifecycle ordering is documented; queue persistence is crash-safe for ownership-tagged entries; and regression coverage proves the named ownership transitions
+- `P1-58` Entitlement convergence after anonymous purchase and sign-in
+  - exit criteria: purchase, sign-in, restore, and usage enforcement converge on one entitlement truth during the active session; newly-Pro users do not see false free-tier blocking due to client/server drift; post-auth RevenueCat identity reconciliation has one authoritative execution path per sign-in event; any entitlement-hold UI state has a bounded timeout/backstop; and deterministic regression coverage plus wired-device evidence prove the named purchase/sign-in/restore flows
 
 ### Release-ops gates for the same cut
 - `P0-01` Google/business-account finalization
   - exit criteria: production Google/Firebase ownership gaps are either removed or explicitly documented as the only remaining intentional exceptions
 - `VNEXT-10` AI cost/abuse controls
-  - exit criteria: AI operator policy is documented and evidenced for allowlist, kill switches, budget controls, rollback, and runtime-disable drills
+  - exit criteria: AI operator policy is documented and evidenced for allowlist, kill switches, runtime allowlist validation, budget controls, rollback target, runtime-disable drills, and any stronger automated containment path that exists
 - `P0-05` Billing budget alert controls
-  - exit criteria: active spend alerts are configured, owned, documented, and test-evidenced
+  - exit criteria: active spend alerts are configured, owned, documented, tied to an explicit operator action, and evidenced through a dry-run/replay/test path
 - `P1-20` Post-release production pulse checks
-  - exit criteria: a concrete 0-60 minute production check protocol exists with named dashboards, thresholds, and evidence that it can actually be run end to end
+  - exit criteria: a concrete 0-60 minute production check protocol exists with named dashboards, build/version-scoped thresholds where available, and evidence that it can actually be run end to end
 
 ### Allowed polish if directly tied to a named bug
+These items remain backlog `P0` items in the general product backlog, but for `1.1.3` only the narrow bug-fix slices below are admissible unless an explicit scope change is recorded here.
 - a narrow slice of `P0-08a` readability/contrast fixes
 - a narrow slice of `P0-08b` navigation/input fixes
 
