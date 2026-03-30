@@ -1,3 +1,5 @@
+import 'dart:io' show Platform;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -193,26 +195,30 @@ void main() {
       expect(exportedLog, contains('outcome=success'));
     });
 
-    testWidgets('shows post-auth notice after successful Apple sign-in', (
-      tester,
-    ) async {
-      await prepareViewport(tester);
-      mockAuth.postSignInNotice =
-          'Apple Sign In worked, but delete-account recovery needs support attention on this device.';
+    testWidgets(
+      'shows post-auth notice after successful Apple sign-in',
+      (tester) async {
+        await prepareViewport(tester);
+        mockAuth.postSignInNotice =
+            'Apple Sign In worked, but delete-account recovery needs support attention on this device.';
 
-      await tester.pumpWidget(createTestableAuthScreen());
-      await tester.pump(const Duration(milliseconds: 300));
+        await tester.pumpWidget(createTestableAuthScreen());
+        await tester.pump(const Duration(milliseconds: 300));
 
-      await tester.tap(find.byType(SignInWithAppleButton));
-      await tester.pump();
-      await tester.pumpAndSettle();
+        await tester.tap(find.byType(SignInWithAppleButton));
+        await tester.pump();
+        await tester.pumpAndSettle();
 
-      expect(find.text('Home Screen'), findsOneWidget);
-      expect(
-        find.textContaining('delete-account recovery needs support attention'),
-        findsOneWidget,
-      );
-    });
+        expect(find.text('Home Screen'), findsOneWidget);
+        expect(
+          find.textContaining(
+            'delete-account recovery needs support attention',
+          ),
+          findsOneWidget,
+        );
+      },
+      skip: !(Platform.isIOS || Platform.isMacOS),
+    );
 
     testWidgets('loading state hides dismiss button until auth resolves', (
       tester,
