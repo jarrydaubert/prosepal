@@ -41,6 +41,28 @@ Define the required Firebase Remote Config keys, safe defaults, and rollout rule
 - If errors/latency/cost regress, switch `ai_model` back immediately and republish.
 - Keep App Check enabled for AI and use limited-use tokens when rollout is complete.
 
+## Remote Config Change Policy
+
+Allowed via Remote Config only:
+- switch `ai_model` between already-allowlisted stable model IDs
+- switch `ai_model_fallback` between already-allowlisted stable model IDs
+- disable or re-enable AI via `ai_enabled`
+- roll limited-use App Check tokens on or off via `ai_use_limited_app_check_tokens`
+- change minimum supported app versions and paywall/premium kill switches
+
+Requires a new app release:
+- adding or removing entries from `AiConfig.allowedModelIds`
+- changing the production backend default (`vertex` vs `google`)
+- changing the structured response contract or system instruction in a way that old builds would not understand
+- relying on preview or `latest` model aliases for production traffic
+- changing App Check provider strategy or other build-time Firebase wiring
+
+Rollback order:
+1. If behavior or spend is abnormal, set `ai_enabled=false` to stop generation safely.
+2. Revert `ai_model` and `ai_model_fallback` to the repo-pinned defaults.
+3. If App Check rollout is implicated, revert `ai_use_limited_app_check_tokens` to the last known-good value.
+4. Re-enable AI only after the issue is understood and monitored.
+
 ## Rules
 
 - Do not store secrets in Remote Config.

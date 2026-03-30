@@ -143,8 +143,8 @@ class PrivacyScreen extends StatelessWidget {
           content:
               '• Account info: Email address and authentication credentials\n'
               '• Message inputs: Occasion, relationship, tone, and personal details (processed in real-time, not stored)\n'
-              '• Usage data: Anonymous statistics to improve our service\n'
-              '• Diagnostics: Crash logs to fix bugs',
+              '• Usage data: Product analytics, if enabled, to improve the service\n'
+              '• Diagnostics: Crash reports, if enabled, to fix bugs',
         ),
         const _LegalSection(
           title: 'How We Use Your Information',
@@ -175,7 +175,7 @@ class PrivacyScreen extends StatelessWidget {
           content:
               '• Access your personal data\n'
               '• Delete your account and all associated data\n'
-              '• Opt out of analytics\n\n'
+              '• Opt out of product analytics and crash reports\n\n'
               'Delete your account anytime from Settings.',
         ),
         const _LegalSection(title: 'Contact', content: AppConfig.supportEmail),
@@ -206,27 +206,24 @@ class _LegalSection extends StatelessWidget {
   final String content;
 
   @override
-  Widget build(BuildContext context) => Container(
+  Widget build(BuildContext context) => AppSurfaceCard(
     margin: const EdgeInsets.only(bottom: AppSpacing.md),
     padding: const EdgeInsets.all(AppSpacing.md),
-    decoration: BoxDecoration(
-      color: AppColors.surfaceVariant,
-      borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
-    ),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           title,
-          style: Theme.of(
-            context,
-          ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.w600,
+            color: AppColors.textOnLight,
+          ),
         ),
         const Gap(AppSpacing.sm),
         Text(
           content,
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: AppColors.textSecondary,
+            color: AppColors.textOnLightSecondary,
             height: 1.5,
           ),
         ),

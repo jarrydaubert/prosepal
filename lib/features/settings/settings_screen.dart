@@ -12,6 +12,7 @@ import 'package:in_app_review/in_app_review.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/config/preference_keys.dart';
@@ -41,6 +42,8 @@ class SettingsScreen extends ConsumerStatefulWidget {
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   static const _biometricToggleDebounce = Duration(seconds: 2);
+  static const _analyticsSwitchKey = Key('settings.analytics_switch');
+  static const _crashReportsSwitchKey = Key('settings.crash_reports_switch');
 
   bool _biometricsSupported = false;
   bool _biometricsEnabled = false;
@@ -50,6 +53,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _isRestoringPurchases = false;
   String _appVersion = '';
   bool _analyticsEnabled = true;
+  bool _crashReportsEnabled = true;
   bool _useUkSpelling = false;
 
   final InAppReview _inAppReview = InAppReview.instance;
@@ -61,7 +65,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     super.initState();
     _loadBiometricSettings();
     _loadAppVersion();
-    _loadAnalyticsSetting();
+    _loadPrivacySettings();
     _loadSpellingSetting();
   }
 
@@ -96,12 +100,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     }
   }
 
-  Future<void> _loadAnalyticsSetting() async {
+  Future<void> _loadPrivacySettings() async {
     final prefs = ref.read(sharedPreferencesProvider);
-    final enabled =
+    final analyticsEnabled =
         prefs.getBool(PreferenceKeys.analyticsEnabled) ?? !kDebugMode;
+    final crashReportsEnabled =
+        prefs.getBool(PreferenceKeys.crashReportsEnabled) ??
+        prefs.getBool(PreferenceKeys.analyticsEnabled) ??
+        !kDebugMode;
     if (mounted) {
-      setState(() => _analyticsEnabled = enabled);
+      setState(() {
+        _analyticsEnabled = analyticsEnabled;
+        _crashReportsEnabled = crashReportsEnabled;
+      });
     }
   }
 
@@ -133,17 +144,31 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final prefs = ref.read(sharedPreferencesProvider);
     await prefs.setBool(PreferenceKeys.analyticsEnabled, value);
 
-    // Update both Analytics and Crashlytics collection
     try {
       await FirebaseAnalytics.instance.setAnalyticsCollectionEnabled(value);
-      await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(value);
       Log.info('Analytics collection ${value ? 'enabled' : 'disabled'}');
     } on Exception catch (e) {
-      Log.warning('Failed to update analytics settings', {'error': '$e'});
+      Log.warning('Failed to update analytics setting', {'error': '$e'});
     }
 
     if (mounted) {
       setState(() => _analyticsEnabled = value);
+    }
+  }
+
+  Future<void> _toggleCrashReports(bool value) async {
+    final prefs = ref.read(sharedPreferencesProvider);
+    await prefs.setBool(PreferenceKeys.crashReportsEnabled, value);
+
+    try {
+      await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(value);
+      Log.info('Crash reporting ${value ? 'enabled' : 'disabled'}');
+    } on Exception catch (e) {
+      Log.warning('Failed to update crash reporting setting', {'error': '$e'});
+    }
+
+    if (mounted) {
+      setState(() => _crashReportsEnabled = value);
     }
   }
 
@@ -510,12 +535,24 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       Log.info('Delete account started');
       try {
         final authService = ref.read(authServiceProvider);
+        final deletedUserId = authService.currentUser?.id;
 
         // 1. Delete account FIRST while JWT is still valid
         // This calls the edge function which needs the access token
         try {
           await authService.deleteAccount();
           Log.info('Delete account: Supabase delete successful');
+        } on AuthException catch (e) {
+          Log.error('Delete account: Supabase delete failed', e);
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(e.message),
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
+          return; // Don't continue if account deletion failed
         } on Exception catch (e) {
           Log.error('Delete account: Supabase delete failed', e);
           if (mounted) {
@@ -549,6 +586,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
         // 4. Mark device as used BEFORE clearing usage (prevents "1 free" after delete)
         final usageService = ref.read(usageServiceProvider);
+        if (deletedUserId != null) {
+          try {
+            await usageService.purgePendingSyncsForDeletedUser(deletedUserId);
+            Log.info('Delete account: Pending syncs purged for deleted user');
+          } on Exception catch (e) {
+            Log.warning('Delete account: Pending sync purge failed', {
+              'error': '$e',
+            });
+          }
+        }
+
         if (usageService.getTotalCount() > 0) {
           try {
             await usageService.markDeviceUsedFreeTier();
@@ -802,18 +850,32 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             title: 'Privacy Policy',
             onTap: () => context.pushNamed('privacy'),
           ),
-          SettingsTile(
+          SettingsToggleTile(
             leading: const Icon(
               Icons.analytics_outlined,
               color: AppColors.textSecondary,
             ),
-            title: 'Analytics & Crash Reports',
+            title: 'Product Analytics',
             subtitle: _analyticsEnabled
-                ? 'Help improve Prosepal'
-                : 'Disabled - no data collected',
+                ? 'Anonymous usage patterns that help improve the app'
+                : 'Off - no analytics events sent',
+            value: _analyticsEnabled,
+            onChanged: _toggleAnalytics,
+            switchKey: _analyticsSwitchKey,
+          ),
+          SettingsTile(
+            leading: const Icon(
+              Icons.bug_report_outlined,
+              color: AppColors.textSecondary,
+            ),
+            title: 'Crash Reports',
+            subtitle: _crashReportsEnabled
+                ? 'Automatic crash diagnostics so we can fix stability issues'
+                : 'Off - crashes stay only on this device',
             trailing: Switch.adaptive(
-              value: _analyticsEnabled,
-              onChanged: _toggleAnalytics,
+              key: _crashReportsSwitchKey,
+              value: _crashReportsEnabled,
+              onChanged: _toggleCrashReports,
             ),
           ),
 
@@ -1142,6 +1204,8 @@ class _DeleteConfirmationDialogState extends State<_DeleteConfirmationDialog> {
         TextField(
           controller: _controller,
           autofocus: true,
+          autocorrect: false,
+          enableSuggestions: false,
           textCapitalization: TextCapitalization.characters,
           textInputAction: TextInputAction.done,
           scrollPadding: const EdgeInsets.only(bottom: 160),

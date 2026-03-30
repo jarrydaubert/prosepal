@@ -58,6 +58,22 @@ class PendingSync {
   );
 }
 
+class PendingSyncProcessPlan {
+  const PendingSyncProcessPlan({
+    required this.readyToProcess,
+    required this.retained,
+    this.discardedStale = 0,
+    this.discardedMaxRetries = 0,
+    this.discardedAnonymousForAuthenticatedSession = 0,
+  });
+
+  final List<PendingSync> readyToProcess;
+  final List<PendingSync> retained;
+  final int discardedStale;
+  final int discardedMaxRetries;
+  final int discardedAnonymousForAuthenticatedSession;
+}
+
 /// Tracks generation usage with server-side persistence via Supabase.
 ///
 /// Free tier usage is stored in Supabase to survive app reinstalls.
@@ -74,7 +90,7 @@ class PendingSync {
 ///
 /// ## Flow
 /// 1. User signs in -> syncFromServer() fetches their usage
-/// 2. User generates -> checkAndIncrementServerSide() validates + increments
+/// 2. User generation succeeds -> usage is consumed
 /// 3. Rate limit checked first -> Server RPC validates + increments
 /// 4. Local cache updated from RPC response
 /// 5. User reinstalls -> signs in -> gets their existing usage from server
@@ -123,6 +139,9 @@ class UsageService {
 
   @visibleForTesting
   bool get hasRetryTimer => _retryTimer?.isActive ?? false;
+
+  static String _shortUserId(String userId) =>
+      userId.length <= 8 ? userId : userId.substring(0, 8);
 
   // Supabase table and columns
   static const _table = 'user_usage';
@@ -265,16 +284,16 @@ class UsageService {
   // SERVER-SIDE ENFORCEMENT (REQUIRED for authenticated users)
   // ===========================================================================
 
-  /// Check limits and increment usage atomically on the server.
+  /// Consume usage atomically on the server after a successful generation.
   ///
-  /// This is the PRIMARY method for usage validation. It performs:
+  /// This is the PRIMARY method for authenticated usage consumption. It performs:
   /// 1. Rate limit check (prevents API abuse)
   /// 2. User-level usage check via Supabase RPC (with row-level locking)
   ///    Pro/free status is determined server-side from entitlements.
-  /// 4. Atomic increment if allowed
+  /// 3. Atomic increment if allowed
   ///
   /// Returns [UsageCheckResult] with:
-  /// - [allowed]: true if generation can proceed
+  /// - [allowed]: true if the successful generation can be consumed
   /// - [remaining]: remaining generations
   /// - [errorMessage]: user-friendly error if not allowed
   ///
@@ -484,7 +503,7 @@ class UsageService {
     await _savePendingSyncs(pending);
     Log.info('Added pending sync to queue', {
       'queueSize': pending.length,
-      'userId': sync.userId.substring(0, 8),
+      'userId': _shortUserId(sync.userId),
     });
 
     // Anonymous syncs can only be flushed after sign-in via syncFromServer().
@@ -515,6 +534,13 @@ class UsageService {
     await _prefs.setString(_keyPendingSyncs, json);
   }
 
+  @visibleForTesting
+  Future<List<PendingSync>> getPendingSyncsForTesting() => _getPendingSyncs();
+
+  @visibleForTesting
+  Future<void> setPendingSyncsForTesting(List<PendingSync> syncs) =>
+      _savePendingSyncs(syncs);
+
   /// Schedule retry processing with exponential backoff.
   void _scheduleRetryProcessing() {
     // Cancel existing timer to avoid duplicates
@@ -522,6 +548,108 @@ class UsageService {
 
     // Schedule retry after base delay
     _retryTimer = Timer(_baseRetryDelay, processPendingSyncs);
+  }
+
+  @visibleForTesting
+  PendingSyncProcessPlan planPendingSyncProcessing(
+    List<PendingSync> pending, {
+    required String? currentUserId,
+    DateTime? now,
+  }) {
+    final timestamp = now ?? DateTime.now().toUtc();
+    final readyToProcess = <PendingSync>[];
+    final retained = <PendingSync>[];
+    var discardedStale = 0;
+    var discardedMaxRetries = 0;
+    var discardedAnonymousForAuthenticatedSession = 0;
+
+    for (final sync in pending) {
+      if (timestamp.difference(sync.createdAt) > _maxPendingSyncAge) {
+        discardedStale++;
+        continue;
+      }
+
+      if (sync.retryCount >= _maxRetries) {
+        discardedMaxRetries++;
+        continue;
+      }
+
+      if (sync.userId == 'anonymous') {
+        if (currentUserId == null) {
+          retained.add(sync);
+        } else {
+          discardedAnonymousForAuthenticatedSession++;
+        }
+        continue;
+      }
+
+      if (sync.userId != currentUserId) {
+        retained.add(sync);
+        continue;
+      }
+
+      readyToProcess.add(sync);
+    }
+
+    return PendingSyncProcessPlan(
+      readyToProcess: readyToProcess,
+      retained: retained,
+      discardedStale: discardedStale,
+      discardedMaxRetries: discardedMaxRetries,
+      discardedAnonymousForAuthenticatedSession:
+          discardedAnonymousForAuthenticatedSession,
+    );
+  }
+
+  Future<void> _discardAnonymousPendingSyncs({
+    required String logMessage,
+  }) async {
+    final pending = await _getPendingSyncs();
+    if (pending.isEmpty) return;
+
+    final retained = pending
+        .where((sync) => sync.userId != 'anonymous')
+        .toList();
+    final discardedAnonymous = pending.length - retained.length;
+
+    await _savePendingSyncs(retained);
+    Log.info(logMessage, {
+      'discardedAnonymous': discardedAnonymous,
+      'remaining': retained.length,
+    });
+  }
+
+  /// Preserve user-owned pending syncs across sign-out, but discard anonymous
+  /// queue entries because they are device-local and should never be rebound to
+  /// the next authenticated user.
+  Future<void> reconcilePendingSyncsForSignedOutState() async {
+    _retryTimer?.cancel();
+    await _discardAnonymousPendingSyncs(
+      logMessage: 'Pending syncs reconciled for signed-out state',
+    );
+  }
+
+  /// Remove pending syncs that belong to a deleted account.
+  ///
+  /// Anonymous queue entries are also dropped because there is no longer a safe
+  /// owner to attach them to after account deletion.
+  Future<void> purgePendingSyncsForDeletedUser(String userId) async {
+    _retryTimer?.cancel();
+
+    final pending = await _getPendingSyncs();
+    if (pending.isEmpty) return;
+
+    final retained = pending
+        .where((sync) => sync.userId != userId && sync.userId != 'anonymous')
+        .toList();
+    final removed = pending.length - retained.length;
+
+    await _savePendingSyncs(retained);
+    Log.info('Pending syncs purged for deleted user', {
+      'deletedUserId': _shortUserId(userId),
+      'removed': removed,
+      'remaining': retained.length,
+    });
   }
 
   /// Process all pending syncs with retry logic.
@@ -542,49 +670,46 @@ class UsageService {
     Log.info('Processing pending syncs', {'count': pending.length});
 
     final now = DateTime.now().toUtc();
-    final stillPending = <PendingSync>[];
+    final currentUserId = _userId;
+    final plan = planPendingSyncProcessing(
+      pending,
+      currentUserId: currentUserId,
+      now: now,
+    );
+    final stillPending = <PendingSync>[...plan.retained];
     var successCount = 0;
-    var discardedCount = 0;
+    final discardedCount =
+        plan.discardedStale +
+        plan.discardedMaxRetries +
+        plan.discardedAnonymousForAuthenticatedSession;
 
     for (final sync in pending) {
-      // Discard stale syncs
       if (now.difference(sync.createdAt) > _maxPendingSyncAge) {
         Log.info('Discarding stale pending sync', {
-          'userId': sync.userId.substring(0, 8),
+          'userId': _shortUserId(sync.userId),
           'age': now.difference(sync.createdAt).inDays,
         });
-        discardedCount++;
         continue;
       }
 
-      // Discard after max retries
       if (sync.retryCount >= _maxRetries) {
         Log.warning('Discarding pending sync after max retries', {
-          'userId': sync.userId.substring(0, 8),
+          'userId': _shortUserId(sync.userId),
           'retries': sync.retryCount,
         });
-        discardedCount++;
         continue;
       }
 
-      // Skip syncs for other users (will process when they sign in)
-      final currentUserId = _userId;
-      if (sync.userId != currentUserId && sync.userId != 'anonymous') {
-        stillPending.add(sync);
-        continue;
+      if (sync.userId == 'anonymous' && currentUserId != null) {
+        Log.info(
+          'Discarding anonymous pending sync during authenticated sync',
+          {'reason': 'ownership_protected_by_local_reconciliation'},
+        );
       }
+    }
 
-      // Update anonymous syncs with current user ID
-      final effectiveUserId =
-          sync.userId == 'anonymous' && currentUserId != null
-          ? currentUserId
-          : sync.userId;
-
-      if (effectiveUserId == 'anonymous') {
-        // Still no user - keep in queue
-        stillPending.add(sync);
-        continue;
-      }
+    for (final sync in plan.readyToProcess) {
+      final effectiveUserId = sync.userId;
 
       // Attempt sync with exponential backoff delay
       final delay = _baseRetryDelay * (1 << sync.retryCount);
@@ -603,7 +728,7 @@ class UsageService {
 
         successCount++;
         Log.info('Pending sync succeeded', {
-          'userId': effectiveUserId.substring(0, 8),
+          'userId': _shortUserId(effectiveUserId),
           'totalCount': sync.totalCount,
           'retryCount': sync.retryCount,
         });
@@ -729,7 +854,14 @@ class UsageService {
       // Mark this user as synced
       await _prefs.setString(_keyLastSyncUserId, userId);
 
-      // Process any pending syncs that were queued while offline
+      // Anonymous local usage is reconciled via local/server count merge above.
+      // Never rebind anonymous queue entries to whichever user signed in next.
+      await _discardAnonymousPendingSyncs(
+        logMessage:
+            'Anonymous pending syncs discarded after authenticated restore',
+      );
+
+      // Process any user-owned pending syncs that were queued while offline.
       await processPendingSyncs();
     } on PostgrestException catch (e) {
       Log.error('Failed to sync usage from server', e);

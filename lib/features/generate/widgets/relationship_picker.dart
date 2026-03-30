@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../../core/models/relationship.dart';
-import '../../../shared/components/app_emoji.dart';
 import '../../../shared/theme/app_colors.dart';
 
 class RelationshipPicker extends StatelessWidget {
@@ -104,26 +103,6 @@ class _RelationshipTile extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: isSelected
-                    ? AppColors.primary.withValues(alpha: 0.15)
-                    : AppColors.surfaceLightMuted,
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: isSelected
-                      ? AppColors.primary
-                      : AppColors.borderOnLight,
-                  width: 2,
-                ),
-              ),
-              child: Center(
-                child: AppEmoji(emoji: relationship.emoji, size: 22),
-              ),
-            ),
-            const SizedBox(width: 16),
             Expanded(
               child: Text(
                 relationship.label,
@@ -135,18 +114,10 @@ class _RelationshipTile extends StatelessWidget {
               ),
             ),
             if (isSelected)
-              Container(
-                width: 28,
-                height: 28,
-                decoration: const BoxDecoration(
-                  color: AppColors.primary,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.check,
-                  color: AppColors.textOnPrimary,
-                  size: 16,
-                ),
+              const Icon(
+                Icons.check_rounded,
+                color: AppColors.primary,
+                size: 22,
               ),
           ],
         ),

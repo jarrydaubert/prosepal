@@ -11,6 +11,8 @@ import '../../core/providers/providers.dart';
 import '../../core/services/log_service.dart';
 import '../../shared/components/components.dart';
 import '../../shared/theme/app_colors.dart';
+import '../../shared/theme/app_icons.dart';
+import '../../shared/theme/app_spacing.dart';
 import '../../shared/utils/keyboard_utils.dart';
 import '../paywall/paywall_sheet.dart';
 import 'widgets/occasion_grid.dart';
@@ -21,9 +23,11 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isCompactWidth = MediaQuery.of(context).size.width < 390;
-    final headerIconButtonSize = isCompactWidth ? 36.0 : 40.0;
-    final headerIconSize = isCompactWidth ? 20.0 : 22.0;
-    final headerIconSpacing = isCompactWidth ? 6.0 : 8.0;
+    final headerIconButtonSize = isCompactWidth ? 38.0 : 42.0;
+    final headerIconSize = isCompactWidth
+        ? AppSpacing.iconSizeSmall
+        : AppSpacing.iconSize;
+    final headerIconSpacing = isCompactWidth ? AppSpacing.sm : AppSpacing.md;
 
     final initStatus = ref.watch(initStatusProvider);
     final remaining = ref.watch(remainingGenerationsProvider);
@@ -84,7 +88,7 @@ class HomeScreen extends ConsumerWidget {
               // Header
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.all(20),
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -103,7 +107,7 @@ class HomeScreen extends ConsumerWidget {
                                           const Text(
                                             'Prosepal',
                                             style: TextStyle(
-                                              fontSize: 32,
+                                              fontSize: 30,
                                               fontWeight: FontWeight.bold,
                                               color: AppColors.primary,
                                             ),
@@ -137,13 +141,6 @@ class HomeScreen extends ConsumerWidget {
                                         ],
                                       ),
                                     ),
-                                    const Text(
-                                      'The right words, right now',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        color: AppColors.textSecondary,
-                                      ),
-                                    ),
                                   ],
                                 ),
                               ),
@@ -154,7 +151,7 @@ class HomeScreen extends ConsumerWidget {
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     _IconButton(
-                                      icon: Icons.calendar_month_outlined,
+                                      icon: AppIcons.calendar,
                                       onPressed: () {
                                         dismissKeyboard(context);
                                         context.pushNamed('calendar');
@@ -165,7 +162,7 @@ class HomeScreen extends ConsumerWidget {
                                     ),
                                     SizedBox(width: headerIconSpacing),
                                     _IconButton(
-                                      icon: Icons.history,
+                                      icon: AppIcons.history,
                                       onPressed: () {
                                         dismissKeyboard(context);
                                         context.pushNamed('history');
@@ -179,7 +176,7 @@ class HomeScreen extends ConsumerWidget {
                                       key: const ValueKey(
                                         'home_settings_button',
                                       ),
-                                      icon: Icons.settings_outlined,
+                                      icon: AppIcons.settings,
                                       onPressed: () {
                                         dismissKeyboard(context);
                                         context.pushNamed('settings');
@@ -199,7 +196,7 @@ class HomeScreen extends ConsumerWidget {
 
                       // Usage indicator for free users only (Pro badge is in header)
                       if (!isPro) ...[
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 12),
                         if (!initStatus.revenueCatReady && !initStatus.timedOut)
                           const _UsageIndicatorShimmer()
                         else
@@ -220,24 +217,41 @@ class HomeScreen extends ConsumerWidget {
               // Section header
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: const Text(
-                    "What's the occasion?",
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
-                    ),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        "What's the occasion?",
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.textPrimary,
+                          height: 1.1,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      Text(
+                        showFirstActionHint
+                            ? 'Tap an occasion to get started.'
+                            : "Choose an occasion, and we'll write the first draft.",
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: AppColors.textSecondary,
+                          height: 1.45,
+                        ),
+                      ),
+                    ],
                   ).animate().fadeIn(delay: 300.ms),
                 ),
               ),
 
-              const SliverToBoxAdapter(child: SizedBox(height: 12)),
+              const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.sm)),
 
               // Search field
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: _OccasionSearchField(
                     query: occasionSearchQuery,
                     onChanged: (value) {
@@ -256,57 +270,11 @@ class HomeScreen extends ConsumerWidget {
                 ),
               ),
 
-              const SliverToBoxAdapter(child: SizedBox(height: 16)),
-
-              // First action hint banner (shows once for new users)
-              if (showFirstActionHint)
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
-                    child: Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryLight,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: AppColors.primary.withValues(alpha: 0.3),
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(
-                            Icons.touch_app,
-                            color: AppColors.primary,
-                            size: 20,
-                          ),
-                          const SizedBox(width: 8),
-                          const Expanded(
-                            child: Text(
-                              'Tap any occasion to create your first message!',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                                color: AppColors.primary,
-                              ),
-                            ),
-                          ),
-                          GestureDetector(
-                            onTap: () => _dismissFirstActionHint(ref),
-                            child: Icon(
-                              Icons.close,
-                              color: AppColors.primary.withValues(alpha: 0.6),
-                              size: 18,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
+              const SliverToBoxAdapter(child: SizedBox(height: 8)),
 
               // Occasion grid
               SliverPadding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
                 sliver: OccasionGrid(
                   occasions: ref.watch(filteredOccasionsProvider),
                   showFirstActionHint: showFirstActionHint,
@@ -337,7 +305,7 @@ class HomeScreen extends ConsumerWidget {
                 ),
               ),
 
-              const SliverToBoxAdapter(child: SizedBox(height: 40)),
+              const SliverToBoxAdapter(child: SizedBox(height: 28)),
             ],
           ),
         ),
@@ -384,11 +352,11 @@ class _IconButton extends StatelessWidget {
         width: size,
         height: size,
         decoration: BoxDecoration(
-          color: AppColors.primaryLight,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.primary, width: 1.5),
+          color: AppColors.surfaceVariant.withValues(alpha: 0.6),
+          borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
+          border: Border.all(color: AppColors.borderLight),
         ),
-        child: Icon(icon, color: AppColors.primary, size: iconSize),
+        child: Icon(icon, color: AppColors.textPrimary, size: iconSize),
       ),
     ),
   );
@@ -509,13 +477,17 @@ class _OccasionSearchFieldState extends State<_OccasionSearchField> {
     decoration: InputDecoration(
       hintText: 'Search occasions...',
       hintStyle: const TextStyle(color: AppColors.textOnLightHint),
-      prefixIcon: const Icon(Icons.search, color: AppColors.textOnLightHint),
+      prefixIcon: const Icon(
+        AppIcons.search,
+        color: AppColors.textOnLightHint,
+        size: AppSpacing.iconSizeSmall,
+      ),
       suffixIcon: _hasText
           ? IconButton(
               icon: const Icon(
-                Icons.clear,
+                AppIcons.clear,
                 color: AppColors.textOnLightHint,
-                size: 20,
+                size: AppSpacing.iconSizeSmall,
               ),
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints.tightFor(width: 40, height: 40),
@@ -526,8 +498,19 @@ class _OccasionSearchFieldState extends State<_OccasionSearchField> {
       filled: true,
       fillColor: AppColors.surfaceLight,
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppSpacing.radiusLarge),
         borderSide: BorderSide.none,
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(AppSpacing.radiusLarge),
+        borderSide: const BorderSide(
+          color: AppColors.borderOnLight,
+          width: 1.25,
+        ),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(AppSpacing.radiusLarge),
+        borderSide: const BorderSide(color: AppColors.primary, width: 1.75),
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
     ),

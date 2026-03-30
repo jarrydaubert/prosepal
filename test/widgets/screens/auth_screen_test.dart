@@ -1,3 +1,5 @@
+import 'dart:io' show Platform;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -5,7 +7,9 @@ import 'package:go_router/go_router.dart';
 import 'package:prosepal/core/providers/providers.dart';
 import 'package:prosepal/core/services/log_service.dart';
 import 'package:prosepal/features/auth/auth_screen.dart';
+import 'package:prosepal/shared/theme/app_colors.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 import '../../mocks/mock_auth_service.dart';
 import '../../mocks/mock_biometric_service.dart';
@@ -116,6 +120,25 @@ void main() {
       expect(find.byIcon(Icons.close), findsOneWidget);
     });
 
+    testWidgets('dismissing auth signals home keyboard dismissal', (
+      tester,
+    ) async {
+      await prepareViewport(tester);
+
+      await tester.pumpWidget(createTestableAuthScreen(redirectTo: 'home'));
+      await tester.pump(const Duration(milliseconds: 500));
+
+      await tester.tap(find.byIcon(Icons.close));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Home Screen'), findsOneWidget);
+
+      final container = ProviderScope.containerOf(
+        tester.element(find.text('Home Screen')),
+      );
+      expect(container.read(dismissHomeKeyboardProvider), isTrue);
+    });
+
     testWidgets('paywall redirect flow has NO dismiss button', (tester) async {
       // Paywall redirect requires auth - no escape (by design)
       await prepareViewport(tester);
@@ -125,6 +148,20 @@ void main() {
 
       // Close button should NOT be present for paywall redirect
       expect(find.byIcon(Icons.close), findsNothing);
+    });
+
+    testWidgets('paywall redirect banner uses readable support text', (
+      tester,
+    ) async {
+      await prepareViewport(tester);
+
+      await tester.pumpWidget(createTestableAuthScreen(redirectTo: 'paywall'));
+      await tester.pump(const Duration(milliseconds: 500));
+
+      final prompt = tester.widget<Text>(
+        find.text('Create an account to purchase a subscription'),
+      );
+      expect(prompt.style?.color, AppColors.textPrimary);
     });
 
     testWidgets('shows loading then navigates on successful Google sign-in', (
@@ -140,6 +177,7 @@ void main() {
       await tester.pump();
 
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      expect(find.text('Finishing Google sign-in...'), findsOneWidget);
       expect(mockAuth.signInWithGoogleCallCount, 1);
 
       await tester.pump(const Duration(milliseconds: 400));
@@ -147,10 +185,62 @@ void main() {
 
       expect(find.text('Home Screen'), findsOneWidget);
       expect(find.byType(CircularProgressIndicator), findsNothing);
+      final container = ProviderScope.containerOf(
+        tester.element(find.text('Home Screen')),
+      );
+      expect(container.read(dismissHomeKeyboardProvider), isTrue);
       final exportedLog = Log.getExportableLog(includeSensitive: true);
       expect(exportedLog, contains('Auth method outcome'));
       expect(exportedLog, contains('method=google'));
       expect(exportedLog, contains('outcome=success'));
+    });
+
+    testWidgets(
+      'shows post-auth notice after successful Apple sign-in',
+      (tester) async {
+        await prepareViewport(tester);
+        mockAuth.postSignInNotice =
+            'Apple Sign In worked, but delete-account recovery needs support attention on this device.';
+
+        await tester.pumpWidget(createTestableAuthScreen());
+        await tester.pump(const Duration(milliseconds: 300));
+
+        await tester.tap(find.byType(SignInWithAppleButton));
+        await tester.pump();
+        await tester.pumpAndSettle();
+
+        expect(find.text('Home Screen'), findsOneWidget);
+        expect(
+          find.textContaining(
+            'delete-account recovery needs support attention',
+          ),
+          findsOneWidget,
+        );
+      },
+      skip: !(Platform.isIOS || Platform.isMacOS),
+    );
+
+    testWidgets('loading state hides dismiss button until auth resolves', (
+      tester,
+    ) async {
+      await prepareViewport(tester);
+      mockAuth.simulateDelay = const Duration(milliseconds: 300);
+
+      await tester.pumpWidget(createTestableAuthScreen(redirectTo: 'home'));
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(find.byIcon(Icons.close), findsOneWidget);
+
+      await tester.tap(find.text('Sign in with Google'));
+      await tester.pump();
+
+      expect(find.text('Finishing Google sign-in...'), findsOneWidget);
+      expect(find.byIcon(Icons.close), findsNothing);
+
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Home Screen'), findsOneWidget);
     });
 
     testWidgets('shows error banner when Google sign-in fails', (tester) async {
@@ -170,6 +260,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 200));
 
       expect(mockAuth.signInWithGoogleCallCount, 1);
+      expect(find.text('Finishing Google sign-in...'), findsNothing);
       expect(find.byIcon(Icons.error_outline_rounded), findsOneWidget);
       expect(find.text('Home Screen'), findsNothing);
       final exportedLog = Log.getExportableLog(includeSensitive: true);
@@ -210,6 +301,11 @@ void main() {
 
       expect(find.text('Pro subscription found!'), findsOneWidget);
       expect(find.text('Sign in to restore your Pro access'), findsOneWidget);
+
+      final restoreCopy = tester.widget<Text>(
+        find.text('Sign in to restore your Pro access'),
+      );
+      expect(restoreCopy.style?.color, AppColors.textPrimary);
     });
   });
 }

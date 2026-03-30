@@ -61,7 +61,13 @@ In Supabase Console:
 4. Confirm required edge functions exist:
    - `delete-user`
    - `exchange-apple-token`
+   - `send-feedback`
    - `revenuecat-webhook`
+5. If direct in-app feedback is enabled for the release, confirm function secrets
+   are configured:
+   - `RESEND_API_KEY`
+   - `FEEDBACK_TO_EMAIL`
+   - `FEEDBACK_FROM_EMAIL`
 
 Optional script-assisted verification:
 
@@ -112,6 +118,9 @@ Configuration is considered valid only when all are true:
 4. RevenueCat entitlement/offering/key mapping is confirmed in console.
 5. Firebase App Check + Remote Config + analytics/crash services are confirmed.
 6. Analyzer/tests/smoke/wired evidence run successfully with configured keys.
+7. Any release-scoped edge functions are deployed to production with required
+   secrets present; for `send-feedback`, direct in-app submission must not 404
+   due to a missing function deployment.
 
 ## Failure Handling And Escalation
 

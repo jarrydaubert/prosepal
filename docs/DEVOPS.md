@@ -408,8 +408,15 @@ SUPABASE_DB_URL="postgresql://..." ./scripts/verify_supabase_readonly.sh
 AI cost/abuse controls:
 
 ```bash
+./scripts/audit_ai_cost_controls.sh --repo-only
 ./scripts/audit_ai_cost_controls.sh
 ```
+
+- `--repo-only` validates the checked-in Remote Config templates, required AI
+  control keys, kill-switch defaults, and pinned model defaults without live
+  cloud access.
+- The full command additionally audits live GCP/Firebase service enablement,
+  key restrictions, and billing-budget posture for the active project.
 
 Supabase verification (manual + script-assisted):
 - Required table presence for usage/entitlement/rate-limit/auth-adjacent tables.
@@ -424,19 +431,99 @@ Supabase verification (manual + script-assisted):
 - Edge function behavior verified:
   - `delete-user` rejects invalid auth and completes cleanup path
   - `exchange-apple-token` fails safe on invalid/missing auth context
+  - `send-feedback` requires authenticated app sessions and fails safe when delivery is unavailable
   - `revenuecat-webhook` enforces secret and safely ignores invalid payloads
+
+### In-app feedback delivery
+
+Primary delivery path:
+- The app submits feedback through the authenticated Supabase Edge Function `send-feedback`.
+- The edge function relays mail through Resend to the support inbox without exposing any Resend secret to the client.
+- Manual copy/share fallback remains available in-app when direct delivery fails or the user is signed out.
+
+Required secrets/config:
+- `RESEND_API_KEY`
+- `FEEDBACK_TO_EMAIL`
+- `FEEDBACK_FROM_EMAIL`
+- Existing `SUPABASE_URL` and `SUPABASE_ANON_KEY`
+- `supabase/config.toml` must keep `[functions.send-feedback] verify_jwt = false`
+  because the function verifies user auth internally via the passed Bearer token.
+
+Deployment command:
+
+```bash
+supabase functions deploy send-feedback --project-ref mwoxtqxzunsjmbdqezif
+```
+
+Operator checks:
+- Confirm the function is deployed to the production Supabase project and returns `401` for missing/invalid auth instead of accepting anonymous requests.
+- Confirm the deployed function is using the current `supabase/config.toml` setting
+  with `verify_jwt = false`; otherwise the gateway can reject valid app sessions
+  before the function code runs with `401 Invalid JWT`.
+- Confirm Resend sender domain posture still matches policy: verified domain, DKIM/SPF healthy, tracking disabled, TLS enforced.
+- Confirm `FEEDBACK_TO_EMAIL` routes to the active support inbox and `FEEDBACK_FROM_EMAIL` is an approved sender on the verified domain.
+- Confirm at least one production-configured submission reaches the Workspace inbox without opening the device mail client.
+
+Failure handling:
+1. If the app shows the manual fallback sheet, verify whether the failure was auth-related or delivery-related.
+2. Check Supabase function logs for `send-feedback` and confirm whether the request reached the function.
+3. If the function reached Resend but delivery failed, inspect Resend activity/logs and sender-domain status before changing app code.
+4. If delivery cannot be restored quickly, keep the manual copy/share fallback as the temporary support path and track the outage/remediation in release evidence or `docs/BACKLOG.md` as appropriate.
+
+### Generation charge semantics
+
+Canonical rule:
+- Usage is consumed only after the app has a user-presentable AI result.
+- AI failures must not consume usage. This includes network errors, rate limits, App Check/configuration blocks, parse/empty-response failures, and service-unavailable failures.
+- Post-success side effects such as history save or review-prompt evaluation must not discard a successful result after usage has been consumed.
+- If authenticated charge verification cannot be completed after AI success, the app fails closed: no charge is recorded and the result is not shown.
+
+Operational interpretation:
+- Authenticated sessions charge through `check_and_increment_usage` only after AI success.
+- Anonymous sessions record usage locally only after AI success, then sync asynchronously.
+- Generate and regenerate must follow the same rule; neither surface is allowed to "pre-charge" before the AI result exists.
 
 AI abuse/cost verification (manual + script-assisted):
 - Firebase AI keys restricted to required API targets.
 - Platform app restrictions verified (iOS bundle ID, Android package/SHA).
 - App Check enforced for production.
+- Anonymous free-tier device verification fails closed when fingerprint/server verification is unavailable.
 - Rate limits and quotas match policy.
 - Budget alerts configured (warning + critical).
 - Kill-switch drill passes (`ai_enabled=false` then recovery).
 
+Remote Config vs release decision policy:
+- Allowed via Remote Config:
+  - switching `ai_model` or `ai_model_fallback` between already-allowlisted stable model IDs
+  - toggling `ai_enabled`
+  - toggling `ai_use_limited_app_check_tokens`
+  - toggling `paywall_enabled` / `premium_enabled` for runtime containment
+- Requires a new app release:
+  - any change to `AiConfig.allowedModelIds`
+  - any move to preview or `latest` aliases for production traffic
+  - any change to the production backend default (`vertex` vs `google`)
+  - any change that would alter the AI response contract older builds expect
+
+Containment model:
+- Authoritative runtime containment:
+  - `ai_enabled=false` immediately disables generation on next config fetch / app launch
+  - Remote Config model allowlist rejection falls back to repo-pinned defaults instead of trusting unknown IDs
+  - anonymous device-verification failures block free generation rather than failing open
+- Advisory automated containment:
+  - client/server rate limits and budget alerts are early-warning controls, not proof that production is safe to leave enabled during an incident
+  - treat repeated `RATE_LIMIT`, `CLIENT_APP_BLOCKED`, `APP_CHECK_FAILED`, or abnormal spend alerts as triggers to evaluate `ai_enabled=false`
+
+Kill-switch drill evidence policy:
+1. Capture the active config snapshot before the drill.
+2. Publish `ai_enabled=false`.
+3. Verify the app reaches the expected disabled-AI user path without exposing raw provider failures.
+4. Restore the prior config and verify normal generation recovery.
+5. Store the drill artifact or run reference with release evidence; do not rely on memory or console history alone.
+
 ### Startup Phase Telemetry And Budgets
 
 Startup reliability is validated from structured logs emitted by splash routing:
+- `Startup phase telemetry` for `pre_init` (pre-`runApp()` bootstrap) and post-splash phases
 - `Startup phase telemetry` (per phase)
 - `Startup routing summary` (terminal outcome)
 
@@ -445,6 +532,7 @@ The same fields are emitted to Firebase Analytics events for queryability:
 - `startup_routing_summary`
 
 Phases and budgets:
+- `pre_init`: max `4000ms` (pre-`runApp()` Firebase bootstrap budget; app must still reach Flutter if this times out or fails)
 - `init`: max `12000ms` (wait for critical init readiness)
 - `identity`: budget `4000ms` (auth + biometric checks)
 - `entitlements`: budget `3000ms` (anonymous Pro restore check; authenticated path is marked `authenticated_skipped`)
@@ -459,6 +547,7 @@ Analytics parameter keys:
 - `startup_routing_summary`: `init_wait_ms`, `splash_hold_ms`, `route_resolution_ms`, `init_phase_outcome`, `identity_phase_ms`, `identity_phase_outcome`, `entitlements_phase_ms`, `entitlements_phase_outcome`, `used_fallback`, `fallback_reason`, `resolved_route`
 
 Triage policy:
+- Treat any `pre_init` timeout/failure as distinct from splash `init` timeout. The required behavior is: native splash ends, Flutter mounts, and startup reaches the init error surface or later splash routing within budget instead of hanging before `runApp()`.
 - Investigate any `timedOut=true` phase on release-candidate builds.
 - Investigate repeated `usedFallback=true` startup summaries for the same route path or device cohort.
 - Treat `/onboarding` fallback for previously onboarded users as regression unless an explicit init error is present.
@@ -519,6 +608,18 @@ revealing secrets. Review the `AI Runtime` section for:
   - `CONTENT_BLOCKED`
   - `MODEL_NOT_FOUND`
 
+Release-mode Crashlytics AI failure telemetry should keep only the fields needed
+to triage behavior:
+
+- backend label (`vertexAI` or `googleAI`)
+- model slot (`primary`, `fallback`, or `custom`) rather than exact model ID
+- classified error bucket (`CLIENT_APP_BLOCKED`, `APP_CHECK_FAILED`, etc.)
+- retryability / attempt count
+
+Release logs must not emit provider URLs, exact model identifiers, or
+project/resource paths for AI failures. Exact model IDs belong in the in-app
+diagnostic report and local debug logs, not production failure telemetry.
+
 Deterministic no-device evidence paths:
 
 ```bash
@@ -527,12 +628,17 @@ flutter test test/services/ai_service_test.dart --plain-name "classifies Firebas
 flutter test test/services/ai_service_test.dart --plain-name "keeps safety-filter blocks as CONTENT_BLOCKED"
 flutter test test/services/ai_service_test.dart --plain-name "classifies firebase_app_check platform error as APP_CHECK_FAILED"
 flutter test test/services/ai_service_test.dart --plain-name "classifies \"404\" as MODEL_NOT_FOUND"
+flutter test test/services/ai_service_test.dart --plain-name "sanitizes Firebase AI telemetry for release logging"
+flutter test test/services/ai_service_test.dart --plain-name "sanitizes general exception telemetry but keeps user-facing bucket"
 ```
 
 Use these when you need to prove:
 
 - app-configuration/client-block failures are distinguished from safety blocks
 - App Check failures are classified separately from generic network errors
+- App Check verification failures bucket to `APP_CHECK_FAILED`, while
+  `client application <empty>` / API-key restriction failures bucket to
+  `CLIENT_APP_BLOCKED`
 - fallback-model behavior remains an explicit runtime concern, not hidden logic
 
 ### Firebase AI Android App Check triage (`App attestation failed`)
@@ -570,6 +676,7 @@ Required runtime controls:
 - Remote Config kill switches present: `ai_enabled`, `paywall_enabled`, `premium_enabled`.
 - Model allowlist validation enforced.
 - Server-side and client-side rate limiting both active.
+- Anonymous free-tier access requires a successful device-verification check; verification failures must block free generation rather than falling back to local-only allowance.
 - Budget alerts configured with warning + critical thresholds.
 
 Incident containment:
@@ -577,6 +684,9 @@ Incident containment:
 2. Verify key restriction posture and rate-limit effectiveness.
 3. Re-enable progressively after stability validation.
 4. Track remediation actions in `docs/BACKLOG.md`.
+
+Operator note:
+- Budget-alert thresholds, notification destinations, and human response ownership still need live-console verification/evidence from the business-managed admin path. The repo can enforce policy wording and audit commands, but it cannot prove alert delivery by itself.
 
 ## Rollback And Recovery
 

@@ -21,9 +21,11 @@ class AppSpacing {
   // Component sizes
   static const double buttonHeight = 56;
   static const double buttonHeightSmall = 44;
+  static const double iconSizeXS = 14;
+  static const double iconSizeSmall = 18;
   static const double iconSize = 24;
-  static const double iconSizeSmall = 20;
   static const double iconSizeLarge = 32;
+  static const double iconSizeXL = 48;
 
   // Border radius
   static const double radiusSmall = 8;

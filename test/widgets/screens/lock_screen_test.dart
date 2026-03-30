@@ -105,7 +105,7 @@ void main() {
       final retryHint = tester.widget<Text>(
         find.textContaining('Having trouble?'),
       );
-      expect(retryHint.style?.color, AppColors.textSecondary);
+      expect(retryHint.style?.color, AppColors.textPrimary);
 
       // Flush auto-dismiss timer started by LockScreen.
       await tester.pump(const Duration(seconds: 5));

@@ -4,6 +4,8 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../../core/models/occasion.dart';
 import '../../../shared/components/app_emoji.dart';
 import '../../../shared/theme/app_colors.dart';
+import '../../../shared/theme/app_icons.dart';
+import '../../../shared/theme/app_spacing.dart';
 
 class OccasionGrid extends StatelessWidget {
   const OccasionGrid({
@@ -27,12 +29,15 @@ class OccasionGrid extends StatelessWidget {
     if (occasions.isEmpty) {
       return const SliverToBoxAdapter(
         child: Padding(
-          padding: EdgeInsets.symmetric(vertical: 40, horizontal: 20),
+          padding: EdgeInsets.symmetric(
+            vertical: AppSpacing.xxxl,
+            horizontal: AppSpacing.xl,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('🔍', style: TextStyle(fontSize: 48)),
-              SizedBox(height: 12),
+              _OccasionEmptyStateIcon(),
+              SizedBox(height: AppSpacing.md),
               Text(
                 'No occasions found',
                 style: TextStyle(
@@ -44,7 +49,11 @@ class OccasionGrid extends StatelessWidget {
               SizedBox(height: 8),
               Text(
                 'Try searching for "birthday" or "thank you"',
-                style: TextStyle(fontSize: 14, color: AppColors.textHint),
+                style: TextStyle(
+                  fontSize: 14,
+                  color: AppColors.textHint,
+                  height: 1.45,
+                ),
                 textAlign: TextAlign.center,
               ),
             ],
@@ -55,10 +64,10 @@ class OccasionGrid extends StatelessWidget {
 
     return SliverGrid(
       gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: 200,
-        mainAxisSpacing: 12,
-        crossAxisSpacing: 12,
-        childAspectRatio: 1.3,
+        maxCrossAxisExtent: 210,
+        mainAxisSpacing: AppSpacing.md,
+        crossAxisSpacing: AppSpacing.md,
+        mainAxisExtent: 100,
       ),
       delegate: SliverChildBuilderDelegate((context, index) {
         final occasion = occasions[index];
@@ -196,56 +205,87 @@ class _OccasionTileState extends State<_OccasionTile>
         onTapCancel: _handleTapCancel,
         child: DecoratedBox(
           decoration: BoxDecoration(
-            color: widget.occasion.backgroundColor,
-            borderRadius: BorderRadius.circular(16),
+            color: AppColors.surfaceLight,
+            borderRadius: BorderRadius.circular(22),
             border: Border.all(
               color: widget.highlighted
                   ? AppColors.primary
                   : widget.occasion.borderColor,
-              width: widget.highlighted ? 4 : 3,
+              width: widget.highlighted ? 3 : 2,
             ),
-            boxShadow: widget.highlighted
-                ? [
-                    BoxShadow(
-                      color: AppColors.primary.withValues(alpha: 0.3),
-                      blurRadius: 12,
-                      spreadRadius: 2,
-                    ),
-                  ]
-                : null,
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceLight,
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: widget.occasion.borderColor,
-                    width: 2,
-                  ),
-                ),
-                child: Center(
-                  child: AppEmoji(emoji: widget.occasion.emoji, size: 24),
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                widget.occasion.label,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
-                ),
-                textAlign: TextAlign.center,
+            boxShadow: [
+              BoxShadow(
+                color:
+                    (widget.highlighted ? AppColors.primary : AppColors.bgDeep)
+                        .withValues(alpha: widget.highlighted ? 0.18 : 0.14),
+                blurRadius: widget.highlighted ? 12 : 8,
+                offset: const Offset(0, 4),
               ),
             ],
           ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final compact = constraints.maxWidth < 170;
+                return Padding(
+                  padding: EdgeInsets.all(compact ? 8 : 10),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Padding(
+                        padding: EdgeInsets.only(
+                          top: compact ? 2 : 0,
+                          left: compact ? 1 : 0,
+                        ),
+                        child: AppEmoji(
+                          emoji: widget.occasion.emoji,
+                          size: compact ? 30 : 36,
+                        ),
+                      ),
+                      Text(
+                        widget.occasion.label,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: compact ? 15 : 17,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.textOnLight,
+                          height: compact ? 1.05 : 1.1,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
         ),
       ),
+    ),
+  );
+}
+
+class _OccasionEmptyStateIcon extends StatelessWidget {
+  const _OccasionEmptyStateIcon();
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: 72,
+    height: 72,
+    decoration: BoxDecoration(
+      color: AppColors.primaryLight,
+      borderRadius: BorderRadius.circular(AppSpacing.radiusXLarge),
+      border: Border.all(
+        color: AppColors.primary.withValues(alpha: 0.45),
+        width: 1.5,
+      ),
+    ),
+    child: const Icon(
+      AppIcons.search,
+      size: AppSpacing.iconSizeXL,
+      color: AppColors.primary,
     ),
   );
 }

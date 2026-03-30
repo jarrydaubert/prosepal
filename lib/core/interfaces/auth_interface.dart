@@ -54,6 +54,12 @@ abstract class IAuthService {
   /// Returns [AuthResponse] with session on success.
   Future<AuthResponse> signInWithGoogle();
 
+  /// Returns and clears any user-facing notice produced by the last auth flow.
+  ///
+  /// Used for non-fatal post-auth warnings where sign-in succeeded but the app
+  /// still needs to surface follow-up guidance.
+  Future<String?> consumePostSignInNotice();
+
   /// Update current user's email address.
   ///
   /// Requires active session. Throws [AuthException] if not logged in.

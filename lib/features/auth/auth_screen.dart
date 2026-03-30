@@ -11,6 +11,7 @@ import '../../core/providers/providers.dart';
 import '../../core/services/log_service.dart';
 import '../../shared/components/app_logo.dart';
 import '../../shared/theme/app_colors.dart';
+import '../../shared/utils/keyboard_utils.dart';
 import '../paywall/paywall_sheet.dart';
 
 class AuthScreen extends ConsumerStatefulWidget {
@@ -39,6 +40,12 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   bool _isLoading = false;
   String? _error;
   String? _authMethod;
+
+  String _loadingLabel() => switch (_authMethod) {
+    'apple' => 'Finishing Apple sign-in...',
+    'google' => 'Finishing Google sign-in...',
+    _ => 'Finishing sign-in...',
+  };
 
   @override
   void initState() {
@@ -82,8 +89,24 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     return 'generic';
   }
 
-  Future<void> _navigateAfterAuth() async {
+  void _signalHomeKeyboardDismiss() {
+    dismissKeyboard(context);
+    ref.read(dismissHomeKeyboardProvider.notifier).state = true;
+  }
+
+  Future<void> _navigateAfterAuth({String? postAuthNotice}) async {
     if (!mounted) return;
+
+    if (postAuthNotice != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(postAuthNotice),
+          duration: const Duration(seconds: 6),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: AppColors.warning,
+        ),
+      );
+    }
 
     Log.event('auth_completed', {
       'method': _authMethod ?? 'social',
@@ -117,11 +140,13 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
           // User has Pro - go to home, they can generate
           ref.invalidate(customerInfoProvider);
           Log.info('Auth success: Pro claim confirmed, navigating to home');
+          _signalHomeKeyboardDismiss();
           context.go('/home');
           return;
         } else {
           // No Pro found - go home and show paywall sheet
           Log.info('Auth success: No Pro found, showing paywall sheet');
+          _signalHomeKeyboardDismiss();
           context.go('/home');
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (mounted) {
@@ -136,6 +161,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
         });
         if (!mounted) return;
         // On error, go home and show paywall sheet
+        _signalHomeKeyboardDismiss();
         context.go('/home');
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
@@ -153,6 +179,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       });
       if (widget.redirectTo == 'paywall') {
         // Paywall is now a bottom sheet - go home and show it
+        _signalHomeKeyboardDismiss();
         context.go('/home');
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
@@ -170,6 +197,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     // (e.g., from settings restore purchases). If so, just pop back.
     if (context.canPop()) {
       Log.info('Auth success: popping back to previous screen');
+      _signalHomeKeyboardDismiss();
       context.pop();
       return;
     }
@@ -178,11 +206,14 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     // Biometric setup is offered after purchase, not after sign-in
     // (feels contradictory to prompt for security right after authenticating)
     Log.info('Auth success: navigating to home');
+    _signalHomeKeyboardDismiss();
     context.go('/home');
-    // Show welcome toast after navigation
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _showWelcomeToast();
-    });
+    if (postAuthNotice == null) {
+      // Show welcome toast after navigation
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _showWelcomeToast();
+      });
+    }
   }
 
   void _showWelcomeToast() {
@@ -221,6 +252,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
         onTimeout: () =>
             throw Exception('Sign in timed out. Please try again.'),
       );
+      final postAuthNotice = await authService.consumePostSignInNotice();
       if (response.user != null) {
         Log.event('auth_method_result', {
           'method': 'apple',
@@ -233,7 +265,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
           'source': widget.redirectTo ?? 'default',
         });
       }
-      if (mounted) await _navigateAfterAuth();
+      if (mounted) {
+        await _navigateAfterAuth(postAuthNotice: postAuthNotice);
+      }
     } on Exception catch (e) {
       ref.read(interactiveAuthMethodOverrideProvider.notifier).state = null;
       final authResult = AuthErrorHandler.getResult(e);
@@ -277,6 +311,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
         onTimeout: () =>
             throw Exception('Sign in timed out. Please try again.'),
       );
+      final postAuthNotice = await authService.consumePostSignInNotice();
       if (response.user != null) {
         Log.event('auth_method_result', {
           'method': 'google',
@@ -289,7 +324,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
           'source': widget.redirectTo ?? 'default',
         });
       }
-      if (mounted) await _navigateAfterAuth();
+      if (mounted) {
+        await _navigateAfterAuth(postAuthNotice: postAuthNotice);
+      }
     } on Exception catch (e) {
       ref.read(interactiveAuthMethodOverrideProvider.notifier).state = null;
       final authResult = AuthErrorHandler.getResult(e);
@@ -330,7 +367,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     // Payment flow requires auth - no escape
     final isPaywallRedirect = widget.redirectTo == 'paywall';
     final canDismiss =
-        !isPaywallRedirect && (widget.redirectTo != null || context.canPop());
+        !_isLoading &&
+        !isPaywallRedirect &&
+        (widget.redirectTo != null || context.canPop());
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -346,8 +385,10 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                   onPressed: () {
                     Log.info('Auth dismissed', {'redirect': widget.redirectTo});
                     if (context.canPop()) {
+                      _signalHomeKeyboardDismiss();
                       context.pop();
                     } else {
+                      _signalHomeKeyboardDismiss();
                       context.go('/home');
                     }
                   },
@@ -450,7 +491,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                                     'Create an account to purchase a subscription',
                                     style: TextStyle(
                                       fontSize: 14,
-                                      color: AppColors.textSecondary,
+                                      color: AppColors.textPrimary,
                                       height: 1.4,
                                     ),
                                   ),
@@ -494,7 +535,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                                         'Sign in to restore your Pro access',
                                         style: TextStyle(
                                           fontSize: 13,
-                                          color: AppColors.textSecondary,
+                                          color: AppColors.textPrimary,
                                         ),
                                       ),
                                     ],
@@ -566,13 +607,27 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
 
                         // Loading indicator or legal text
                         if (_isLoading)
-                          const SizedBox(
-                            width: 28,
-                            height: 28,
-                            child: CircularProgressIndicator(
-                              color: AppColors.primary,
-                              strokeWidth: 2.5,
-                            ),
+                          Column(
+                            children: [
+                              const SizedBox(
+                                width: 28,
+                                height: 28,
+                                child: CircularProgressIndicator(
+                                  color: AppColors.primary,
+                                  strokeWidth: 2.5,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                _loadingLabel(),
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                            ],
                           )
                         else
                           _LegalText(

@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:prosepal/core/services/auth_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -23,8 +24,11 @@ void main() {
   late MockAppleAuthProvider mockApple;
   late MockGoogleAuthProvider mockGoogle;
   late MockSupabaseAuthProvider mockSupabase;
+  late SharedPreferences prefs;
 
-  setUp(() {
+  setUp(() async {
+    SharedPreferences.setMockInitialValues({});
+    prefs = await SharedPreferences.getInstance();
     mockApple = MockAppleAuthProvider();
     mockGoogle = MockGoogleAuthProvider();
     mockSupabase = MockSupabaseAuthProvider();
@@ -33,6 +37,8 @@ void main() {
       supabaseAuth: mockSupabase,
       appleAuth: mockApple,
       googleAuth: mockGoogle,
+      preferences: prefs,
+      appleTokenExchangeRetryDelays: const [Duration.zero, Duration.zero],
     );
   });
 
@@ -155,6 +161,90 @@ void main() {
 
       expect(result, isA<AuthResponse>());
       expect(result.user, isNotNull);
+    });
+
+    test('retries Apple token exchange before succeeding', () async {
+      mockApple.credentialToReturn = createFakeAppleCredential(
+        authorizationCode: 'auth-code',
+      );
+      mockSupabase.exchangeAppleTokenErrors.addAll([
+        const AuthException('Temporary failure'),
+        const AuthException('Temporary failure 2'),
+      ]);
+
+      await authService.signInWithApple();
+
+      expect(mockSupabase.exchangeAppleTokenCalls, 3);
+      expect(mockSupabase.lastAuthorizationCode, 'auth-code');
+      expect(await authService.consumePostSignInNotice(), isNull);
+    });
+
+    test(
+      'persistent Apple token exchange failure creates notice and persists block',
+      () async {
+        mockApple.credentialToReturn = createFakeAppleCredential(
+          authorizationCode: 'auth-code',
+        );
+        mockSupabase.exchangeAppleTokenErrors.addAll([
+          const AuthException('Temporary failure'),
+          const AuthException('Temporary failure 2'),
+          const AuthException('Temporary failure 3'),
+        ]);
+
+        await authService.signInWithApple();
+
+        expect(mockSupabase.exchangeAppleTokenCalls, 3);
+        expect(
+          await authService.consumePostSignInNotice(),
+          contains('Apple Sign In worked'),
+        );
+
+        final reloadedService = AuthService(
+          supabaseAuth: mockSupabase,
+          appleAuth: mockApple,
+          googleAuth: mockGoogle,
+          preferences: prefs,
+          appleTokenExchangeRetryDelays: const [Duration.zero, Duration.zero],
+        );
+
+        expect(
+          reloadedService.deleteAccount,
+          throwsA(
+            isA<AuthException>().having(
+              (e) => e.message,
+              'message',
+              contains('temporarily unavailable'),
+            ),
+          ),
+        );
+        expect(mockSupabase.deleteUserCalls, 0);
+        expect(mockSupabase.signOutCalls, 0);
+      },
+    );
+
+    test('successful later exchange clears persisted delete block', () async {
+      mockApple.credentialToReturn = createFakeAppleCredential(
+        authorizationCode: 'auth-code',
+      );
+      mockSupabase.exchangeAppleTokenErrors.addAll([
+        const AuthException('Temporary failure'),
+        const AuthException('Temporary failure 2'),
+        const AuthException('Temporary failure 3'),
+      ]);
+
+      await authService.signInWithApple();
+      expect(() => authService.deleteAccount(), throwsA(isA<AuthException>()));
+
+      mockSupabase.exchangeAppleTokenErrors.clear();
+      mockApple.credentialToReturn = createFakeAppleCredential(
+        authorizationCode: 'auth-code-2',
+      );
+
+      await authService.signInWithApple();
+      await authService.deleteAccount();
+
+      expect(mockSupabase.deleteUserCalls, 1);
+      expect(mockSupabase.signOutCalls, 1);
     });
 
     test('converts cancellation to AuthException', () async {

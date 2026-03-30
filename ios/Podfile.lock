@@ -1,7 +1,7 @@
 PODS:
   - add_2_calendar (0.0.1):
     - Flutter
-  - app_links (6.4.1):
+  - app_links (7.0.0):
     - Flutter
   - AppAuth (2.0.0):
     - AppAuth/Core (= 2.0.0)
@@ -27,27 +27,29 @@ PODS:
   - Firebase/RemoteConfig (12.9.0):
     - Firebase/CoreOnly
     - FirebaseRemoteConfig (~> 12.9.0)
-  - firebase_analytics (12.1.3):
+  - firebase_ai (3.10.0):
+    - Flutter
+  - firebase_analytics (12.2.0):
     - firebase_core
     - FirebaseAnalytics (= 12.9.0)
     - Flutter
-  - firebase_app_check (0.4.1-5):
+  - firebase_app_check (0.4.2):
     - Firebase/CoreOnly (~> 12.9.0)
     - firebase_core
     - FirebaseAppCheck (~> 12.9.0)
     - Flutter
-  - firebase_auth (6.2.0):
+  - firebase_auth (6.3.0):
     - Firebase/Auth (= 12.9.0)
     - firebase_core
     - Flutter
-  - firebase_core (4.5.0):
+  - firebase_core (4.6.0):
     - Firebase/CoreOnly (= 12.9.0)
     - Flutter
-  - firebase_crashlytics (5.0.8):
+  - firebase_crashlytics (5.1.0):
     - Firebase/Crashlytics (= 12.9.0)
     - firebase_core
     - Flutter
-  - firebase_remote_config (6.2.0):
+  - firebase_remote_config (6.3.0):
     - Firebase/RemoteConfig (= 12.9.0)
     - firebase_core
     - Flutter
@@ -233,21 +235,21 @@ PODS:
   - PromisesObjC (2.4.0)
   - PromisesSwift (2.4.0):
     - PromisesObjC (= 2.4.0)
-  - purchases_flutter (9.13.1):
+  - purchases_flutter (9.15.1):
     - Flutter
-    - PurchasesHybridCommon (= 17.42.0)
-  - purchases_ui_flutter (9.13.1):
+    - PurchasesHybridCommon (= 17.53.0)
+  - purchases_ui_flutter (9.15.1):
     - Flutter
-    - PurchasesHybridCommonUI (= 17.42.0)
-  - PurchasesHybridCommon (17.42.0):
-    - RevenueCat (= 5.60.0)
-  - PurchasesHybridCommonUI (17.42.0):
-    - PurchasesHybridCommon (= 17.42.0)
-    - RevenueCatUI (= 5.60.0)
+    - PurchasesHybridCommonUI (= 17.53.0)
+  - PurchasesHybridCommon (17.53.0):
+    - RevenueCat (= 5.66.0)
+  - PurchasesHybridCommonUI (17.53.0):
+    - PurchasesHybridCommon (= 17.53.0)
+    - RevenueCatUI (= 5.66.0)
   - RecaptchaInterop (101.0.0)
-  - RevenueCat (5.60.0)
-  - RevenueCatUI (5.60.0):
-    - RevenueCat (= 5.60.0)
+  - RevenueCat (5.66.0)
+  - RevenueCatUI (5.66.0):
+    - RevenueCat (= 5.66.0)
   - share_plus (0.0.1):
     - Flutter
   - shared_preferences_foundation (0.0.1):
@@ -262,6 +264,7 @@ DEPENDENCIES:
   - add_2_calendar (from `.symlinks/plugins/add_2_calendar/ios`)
   - app_links (from `.symlinks/plugins/app_links/ios`)
   - device_info_plus (from `.symlinks/plugins/device_info_plus/ios`)
+  - firebase_ai (from `.symlinks/plugins/firebase_ai/ios`)
   - firebase_analytics (from `.symlinks/plugins/firebase_analytics/ios`)
   - firebase_app_check (from `.symlinks/plugins/firebase_app_check/ios`)
   - firebase_auth (from `.symlinks/plugins/firebase_auth/ios`)
@@ -329,6 +332,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/app_links/ios"
   device_info_plus:
     :path: ".symlinks/plugins/device_info_plus/ios"
+  firebase_ai:
+    :path: ".symlinks/plugins/firebase_ai/ios"
   firebase_analytics:
     :path: ".symlinks/plugins/firebase_analytics/ios"
   firebase_app_check:
@@ -376,18 +381,19 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   add_2_calendar: e626377f607d055070093cbd56abd1fafa1a02a5
-  app_links: 3dbc685f76b1693c66a6d9dd1e9ab6f73d97dc0a
+  app_links: a754cbec3c255bd4bbb4d236ecc06f28cd9a7ce8
   AppAuth: 1c1a8afa7e12f2ec3a294d9882dfa5ab7d3cb063
   AppCheckCore: cc8fd0a3a230ddd401f326489c99990b013f0c4f
   CocoaAsyncSocket: 065fd1e645c7abab64f7a6a2007a48038fdc6a99
   device_info_plus: 21fcca2080fbcd348be798aa36c3e5ed849eefbe
   Firebase: 065f2bb395062046623036d8e6dc857bc2521d56
-  firebase_analytics: 6903a46192a92993abde88152a14ce1df1c0de2f
-  firebase_app_check: 33f1df6830ec8ebadee0db0120956c44a65c7213
-  firebase_auth: eeb19010b5aa7c83cc85f23b6c4f009ea28461f1
-  firebase_core: afac1aac13c931e0401c7e74ed1276112030efab
-  firebase_crashlytics: a316d8dddba772359d93dc38d303ed964579b7a6
-  firebase_remote_config: 8fc76417b5b60cf25e6ce2c88a86a8a63c71370a
+  firebase_ai: db3e09570a9e9456d1c01c48c63fed46b770f511
+  firebase_analytics: 8288e2480a2b2a5eb2cc3c474e4a4327e8dc520b
+  firebase_app_check: 4d509b2df4dc9ad0aa7260a74443b4d32d852bff
+  firebase_auth: 323c64eedef33fc3fdf438d16c29d2624b2ce4f4
+  firebase_core: 8e6f58412ca227827c366b92e7cee047a2148c60
+  firebase_crashlytics: c399f9682c474beb06a89c11dfab04db537f3cd2
+  firebase_remote_config: cd42a29a61e8610230e7f74d5646d6392fd7368d
   FirebaseABTesting: a399ffe546392a39b19a5c2fb28bd8ea178a6f47
   FirebaseAnalytics: cd7d01d352f3c237c9a0e31552c257cd0b0c0352
   FirebaseAppCheck: 94dae4d9bb682bdef85a778b0c1024a4613f1e89
@@ -423,13 +429,13 @@ SPEC CHECKSUMS:
   patrol: cea8074f183a2a4232d0ebd10569ae05149ada42
   PromisesObjC: f5707f49cb48b9636751c5b2e7d227e43fba9f47
   PromisesSwift: 9d77319bbe72ebf6d872900551f7eeba9bce2851
-  purchases_flutter: 0c05be8e6d5afbd2dc581ce7f823015ff1b5831a
-  purchases_ui_flutter: acbcb4cbb7f1670c9c884a8f850b4f9ad388b8dc
-  PurchasesHybridCommon: c0a62a03bd15e40af1c3cd111f5f4f50cac751c7
-  PurchasesHybridCommonUI: b4ed664293091eb6f38f3c6549ded679d61b0625
+  purchases_flutter: eaa65afecf3a856e8729efceab7a01b8685e2eab
+  purchases_ui_flutter: a716603c97c961794aa03ed7bb734978e610fb45
+  PurchasesHybridCommon: 53d966ac5c39df13c3c759289bb3ef3e2f9f1622
+  PurchasesHybridCommonUI: c9ac2debefc5a098cfeca28bf05a9602eb49cb32
   RecaptchaInterop: 11e0b637842dfb48308d242afc3f448062325aba
-  RevenueCat: 88010b2d5fc8fb7405d2e11dacd65ac74c9d21d1
-  RevenueCatUI: 4947e99bffd02fee429202b70b14dd780b8884ea
+  RevenueCat: a3cf721ad8b1b56a930d748a40342aba16c09bbb
+  RevenueCatUI: 1091be7f4e7eb6068bc0c78d470af3a2a19d3a49
   share_plus: 50da8cb520a8f0f65671c6c6a99b3617ed10a58a
   shared_preferences_foundation: 7036424c3d8ec98dfe75ff1667cb0cd531ec82bb
   sign_in_with_apple: c5dcc141574c8c54d5ac99dd2163c0c72ad22418

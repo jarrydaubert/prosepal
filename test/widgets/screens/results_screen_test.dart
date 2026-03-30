@@ -8,6 +8,7 @@ import 'package:prosepal/core/providers/providers.dart';
 import 'package:prosepal/core/services/usage_service.dart';
 import 'package:prosepal/features/results/results_screen.dart';
 import 'package:prosepal/shared/components/generation_loading_overlay.dart';
+import 'package:prosepal/shared/theme/app_icons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../mocks/mock_ai_service.dart';
@@ -15,6 +16,7 @@ import '../../mocks/mock_auth_service.dart';
 import '../../mocks/mock_device_fingerprint_service.dart';
 import '../../mocks/mock_history_service.dart';
 import '../../mocks/mock_rate_limit_service.dart';
+import '../../mocks/tracking_usage_service.dart';
 
 void main() {
   late SharedPreferences prefs;
@@ -93,17 +95,15 @@ void main() {
       });
 
       testWidgets('shows all generated messages', (tester) async {
-        final result = createTestResult();
+        final result = createTestResult(messageCount: 2);
 
         await tester.pumpWidget(buildTestWidget(result: result));
         await tester.pumpAndSettle();
 
         expect(find.text('Option 1'), findsOneWidget);
         expect(find.text('Option 2'), findsOneWidget);
-        expect(find.text('Option 3'), findsOneWidget);
         expect(find.text('Test message 1 for Birthday'), findsOneWidget);
         expect(find.text('Test message 2 for Birthday'), findsOneWidget);
-        expect(find.text('Test message 3 for Birthday'), findsOneWidget);
       });
     });
 
@@ -115,6 +115,27 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.text('Copy'), findsNWidgets(2));
+        expect(find.byIcon(AppIcons.share), findsNWidgets(2));
+        expect(find.byIcon(AppIcons.copy), findsNWidgets(2));
+      });
+
+      testWidgets('share and copy stay side by side on phone width', (
+        tester,
+      ) async {
+        final result = createTestResult(messageCount: 1);
+
+        tester.view.physicalSize = const Size(393, 852);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        await tester.pumpWidget(buildTestWidget(result: result));
+        await tester.pumpAndSettle();
+
+        final shareRect = tester.getRect(find.text('Share').first);
+        final copyRect = tester.getRect(find.text('Copy').first);
+
+        expect((shareRect.top - copyRect.top).abs(), lessThanOrEqualTo(2));
       });
     });
 
@@ -300,7 +321,7 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.text('Unlock Pro'), findsOneWidget);
-        expect(find.byIcon(Icons.lock_outline), findsOneWidget);
+        expect(find.byIcon(AppIcons.unlock), findsOneWidget);
 
         await tester.tap(find.text('Unlock Pro'));
         await tester.pump(const Duration(milliseconds: 400));
@@ -375,7 +396,7 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.text('Unlock Pro'), findsOneWidget);
-        expect(find.byIcon(Icons.lock_outline), findsOneWidget);
+        expect(find.byIcon(AppIcons.unlock), findsOneWidget);
 
         await tester.tap(find.text('Unlock Pro'));
         await tester.pump(const Duration(milliseconds: 400));
@@ -395,6 +416,239 @@ void main() {
 
         await tester.pump(const Duration(seconds: 3));
       });
+
+      testWidgets(
+        'authenticated Pro AI failure does not consume usage on regenerate',
+        (tester) async {
+          await prefs.setBool(PreferenceKeys.reviewHasRequested, true);
+
+          final mockAi = MockAiService()..simulateNetworkError();
+          final mockAuth = MockAuthService()..setLoggedIn(true);
+          final usageService = TrackingUsageService(prefs);
+          final mockHistory = MockHistoryService();
+
+          await tester.pumpWidget(
+            ProviderScope(
+              overrides: [
+                sharedPreferencesProvider.overrideWithValue(prefs),
+                generationResultProvider.overrideWith(
+                  (ref) => createTestResult(),
+                ),
+                aiServiceProvider.overrideWithValue(mockAi),
+                authServiceProvider.overrideWithValue(mockAuth),
+                usageServiceProvider.overrideWithValue(usageService),
+                historyServiceProvider.overrideWithValue(mockHistory),
+                isProProvider.overrideWith((ref) => true),
+              ],
+              child: MaterialApp.router(
+                routerConfig: GoRouter(
+                  initialLocation: '/results',
+                  routes: [
+                    GoRoute(
+                      path: '/',
+                      builder: (context, state) =>
+                          const Scaffold(body: Text('Home')),
+                    ),
+                    GoRoute(
+                      path: '/results',
+                      builder: (context, state) => const ResultsScreen(),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+          await tester.pumpAndSettle();
+
+          await tester.tap(find.text('Regenerate'));
+          await tester.pump(const Duration(milliseconds: 400));
+
+          expect(mockAi.generateCallCount, 1);
+          expect(usageService.serverConsumeCalls, 0);
+          expect(
+            find.text('Failed to generate. Please try again.'),
+            findsOneWidget,
+          );
+
+          await tester.pump(const Duration(seconds: 3));
+        },
+      );
+
+      testWidgets(
+        'anonymous Pro AI failure does not consume usage on regenerate',
+        (tester) async {
+          await prefs.setBool(PreferenceKeys.reviewHasRequested, true);
+
+          final mockAi = MockAiService()
+            ..simulateUnavailable('App Check token blocked by backend policy');
+          final mockAuth = MockAuthService()..setLoggedIn(false);
+          final usageService = TrackingUsageService(prefs);
+          final mockHistory = MockHistoryService();
+
+          await tester.pumpWidget(
+            ProviderScope(
+              overrides: [
+                sharedPreferencesProvider.overrideWithValue(prefs),
+                generationResultProvider.overrideWith(
+                  (ref) => createTestResult(),
+                ),
+                aiServiceProvider.overrideWithValue(mockAi),
+                authServiceProvider.overrideWithValue(mockAuth),
+                usageServiceProvider.overrideWithValue(usageService),
+                historyServiceProvider.overrideWithValue(mockHistory),
+                isProProvider.overrideWith((ref) => true),
+              ],
+              child: MaterialApp.router(
+                routerConfig: GoRouter(
+                  initialLocation: '/results',
+                  routes: [
+                    GoRoute(
+                      path: '/',
+                      builder: (context, state) =>
+                          const Scaffold(body: Text('Home')),
+                    ),
+                    GoRoute(
+                      path: '/results',
+                      builder: (context, state) => const ResultsScreen(),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+          await tester.pumpAndSettle();
+
+          await tester.tap(find.text('Regenerate'));
+          await tester.pump(const Duration(milliseconds: 400));
+
+          expect(mockAi.generateCallCount, 1);
+          expect(usageService.recordGenerationCalls, 0);
+          expect(usageService.serverConsumeCalls, 0);
+          expect(
+            find.text('Failed to generate. Please try again.'),
+            findsOneWidget,
+          );
+
+          await tester.pump(const Duration(seconds: 3));
+        },
+      );
+
+      testWidgets(
+        'authenticated Pro success consumes usage after regenerate succeeds',
+        (tester) async {
+          await prefs.setBool(PreferenceKeys.reviewHasRequested, true);
+
+          final mockAi = MockAiService()
+            ..simulateDelay = const Duration(milliseconds: 300);
+          final mockAuth = MockAuthService()..setLoggedIn(true);
+          final usageService = TrackingUsageService(prefs);
+          final mockHistory = MockHistoryService();
+
+          await tester.pumpWidget(
+            ProviderScope(
+              overrides: [
+                sharedPreferencesProvider.overrideWithValue(prefs),
+                generationResultProvider.overrideWith(
+                  (ref) => createTestResult(),
+                ),
+                aiServiceProvider.overrideWithValue(mockAi),
+                authServiceProvider.overrideWithValue(mockAuth),
+                usageServiceProvider.overrideWithValue(usageService),
+                historyServiceProvider.overrideWithValue(mockHistory),
+                isProProvider.overrideWith((ref) => true),
+              ],
+              child: MaterialApp.router(
+                routerConfig: GoRouter(
+                  initialLocation: '/results',
+                  routes: [
+                    GoRoute(
+                      path: '/',
+                      builder: (context, state) =>
+                          const Scaffold(body: Text('Home')),
+                    ),
+                    GoRoute(
+                      path: '/results',
+                      builder: (context, state) => const ResultsScreen(),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+          await tester.pumpAndSettle();
+
+          await tester.tap(find.text('Regenerate'));
+          await tester.pump(const Duration(milliseconds: 1500));
+
+          expect(mockAi.generateCallCount, 1);
+          expect(usageService.serverConsumeCalls, 1);
+          expect(mockHistory.saveGenerationCallCount, 1);
+
+          await tester.pump(const Duration(seconds: 3));
+        },
+      );
+
+      testWidgets(
+        'authenticated charge verification failure after regenerate succeeds fails closed',
+        (tester) async {
+          await prefs.setBool(PreferenceKeys.reviewHasRequested, true);
+
+          final mockAi = MockAiService()
+            ..simulateDelay = const Duration(milliseconds: 300);
+          final mockAuth = MockAuthService()..setLoggedIn(true);
+          final usageService = TrackingUsageService(prefs)
+            ..serverException = const UsageCheckException(
+              'Unable to verify usage. Please check your connection.',
+            );
+          final mockHistory = MockHistoryService();
+
+          await tester.pumpWidget(
+            ProviderScope(
+              overrides: [
+                sharedPreferencesProvider.overrideWithValue(prefs),
+                generationResultProvider.overrideWith(
+                  (ref) => createTestResult(),
+                ),
+                aiServiceProvider.overrideWithValue(mockAi),
+                authServiceProvider.overrideWithValue(mockAuth),
+                usageServiceProvider.overrideWithValue(usageService),
+                historyServiceProvider.overrideWithValue(mockHistory),
+                isProProvider.overrideWith((ref) => true),
+              ],
+              child: MaterialApp.router(
+                routerConfig: GoRouter(
+                  initialLocation: '/results',
+                  routes: [
+                    GoRoute(
+                      path: '/',
+                      builder: (context, state) =>
+                          const Scaffold(body: Text('Home')),
+                    ),
+                    GoRoute(
+                      path: '/results',
+                      builder: (context, state) => const ResultsScreen(),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+          await tester.pumpAndSettle();
+
+          await tester.tap(find.text('Regenerate'));
+          await tester.pump(const Duration(milliseconds: 1500));
+
+          expect(mockAi.generateCallCount, 1);
+          expect(usageService.serverConsumeCalls, 1);
+          expect(mockHistory.saveGenerationCallCount, 0);
+          expect(
+            find.text('Unable to verify usage. Please check your connection.'),
+            findsOneWidget,
+          );
+
+          await tester.pump(const Duration(seconds: 3));
+        },
+      );
     });
 
     group('Accessibility', () {
