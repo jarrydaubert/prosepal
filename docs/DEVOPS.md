@@ -89,8 +89,10 @@ Rules:
 - `Co-authored-by:` trailers are allowed only when intentional and accurate.
 - Any intentional co-author trailer must include `[allow-coauthor]` in the same commit message body.
 - Commits with `Co-authored-by:` and no `[allow-coauthor]` fail local `commit-msg` hook and CI.
-- Exception: GitHub squash merges for Dependabot may retain the single bot-generated
-  `Co-authored-by: dependabot[bot] ...` trailer when the commit author is also `dependabot[bot]`.
+- Exception: GitHub-generated squash merges for Dependabot on `main` may retain
+  Dependabot's bot trailer and GitHub-added maintainer co-author trailers when
+  the commit author is `dependabot[bot]`, the committer is `GitHub <noreply@github.com>`,
+  and the generated message still carries Dependabot's signed-off trailer.
 
 Commands:
 

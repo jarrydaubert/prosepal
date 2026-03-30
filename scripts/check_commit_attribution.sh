@@ -8,6 +8,9 @@ readonly ALLOW_MARKER='[allow-coauthor]'
 readonly TRAILER_PATTERN='^[[:space:]]*[Cc]o-[Aa]uthored-[Bb]y:'
 readonly DEPENDABOT_COAUTHOR_REGEX='^[[:space:]]*[Cc]o-[Aa]uthored-[Bb]y:[[:space:]]*dependabot\[bot\][[:space:]]*<49699333\+dependabot\[bot\]@users\.noreply\.github\.com>[[:space:]]*$'
 readonly DEPENDABOT_AUTHOR_REGEX='^dependabot\[bot\] <49699333\+dependabot\[bot\]@users\.noreply\.github\.com>$'
+readonly GITHUB_COMMITTER_REGEX='^GitHub <noreply@github\.com>$'
+readonly DEPENDABOT_SIGNOFF_REGEX='^[[:space:]]*[Ss]igned-off-by:[[:space:]]*dependabot\[bot\][[:space:]]*<support@github\.com>[[:space:]]*$'
+readonly GITHUB_PR_SUBJECT_REGEX='^.+ \(#[0-9]+\)$'
 
 usage() {
   cat <<'EOF'
@@ -49,6 +52,32 @@ is_dependabot_only_coauthor() {
   grep -Eq "$DEPENDABOT_COAUTHOR_REGEX" "$input_file"
 }
 
+is_github_dependabot_squash_merge() {
+  local input_file="$1"
+  local author_line="$2"
+  local committer_line="$3"
+  local subject_line
+
+  if [[ ! "$author_line" =~ $DEPENDABOT_AUTHOR_REGEX ]]; then
+    return 1
+  fi
+
+  if [[ ! "$committer_line" =~ $GITHUB_COMMITTER_REGEX ]]; then
+    return 1
+  fi
+
+  if ! grep -Eq "$DEPENDABOT_COAUTHOR_REGEX" "$input_file"; then
+    return 1
+  fi
+
+  if ! grep -Eq "$DEPENDABOT_SIGNOFF_REGEX" "$input_file"; then
+    return 1
+  fi
+
+  subject_line="$(head -n1 "$input_file")"
+  [[ "$subject_line" =~ $GITHUB_PR_SUBJECT_REGEX ]]
+}
+
 check_single_message_file() {
   local message_file="$1"
 
@@ -80,13 +109,16 @@ check_commit_range() {
   while IFS= read -r commit_sha; do
     local tmp_file
     local author_line
+    local committer_line
     tmp_file="$(mktemp)"
     git log -1 --pretty=%B "$commit_sha" > "$tmp_file"
     author_line="$(git log -1 --pretty='%an <%ae>' "$commit_sha")"
+    committer_line="$(git log -1 --pretty='%cn <%ce>' "$commit_sha")"
 
     if contains_coauthor_trailer "$tmp_file" \
       && ! contains_allow_marker "$tmp_file" \
-      && ! is_dependabot_only_coauthor "$tmp_file" "$author_line"; then
+      && ! is_dependabot_only_coauthor "$tmp_file" "$author_line" \
+      && ! is_github_dependabot_squash_merge "$tmp_file" "$author_line" "$committer_line"; then
       echo "Commit $commit_sha has Co-authored-by trailer without $ALLOW_MARKER" >&2
       failures=1
     fi
