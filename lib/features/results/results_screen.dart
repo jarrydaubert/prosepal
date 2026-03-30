@@ -440,6 +440,9 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
         useUkSpelling: useUkSpelling,
       );
 
+      // Regenerate follows the same charge-on-success contract as initial
+      // generate: only consume after AI success, and fail closed if charge
+      // verification cannot complete.
       if (authService.isLoggedIn) {
         try {
           final usageResult = await usageService.checkAndIncrementServerSide(

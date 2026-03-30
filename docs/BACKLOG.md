@@ -34,35 +34,35 @@ If any condition is missing, the item remains open.
 
 Process items in this order unless an explicit owner override is recorded in release planning.
 
-1. `P0-01` Move Google setup to business account
-2. `P0-06` Generation charge semantics hardening
-3. `VNEXT-10` AI cost/abuse controls
-4. `P1-43` Firebase AI client-block regression hardening
-5. `P1-54` Pre-Flutter startup timeout hardening
-6. `P1-55` Apple token exchange recovery for delete compliance
-7. `P1-53` Direct in-app feedback delivery
-8. `P1-56` AI error log sanitization
-9. `P1-57` Pending usage sync ownership hardening
-10. `P1-58` Entitlement convergence after anonymous purchase and sign-in
-11. `P0-05` Billing budget alert controls
-12. `P1-20` Post-release production pulse checks
-13. `P0-08a` Core readability and contrast hardening
-14. `P0-08b` Navigation and input polish
-15. `P0-08d` Home hierarchy simplification
-16. `P1-24` Deterministic integration journey assertions
-17. `P1-41` Network-independent smoke deterministic mode
-18. `P0-08c` Launch and platform polish
-19. `P2-17` RevenueCat transfer metadata hydration
-20. `P2-16` Public QA showcase packaging
-21. `P2-18` AI technical-depth showcase
-22. `P1-48` Startup phase telemetry and budget visibility
-23. `P1-52` Biometric lifecycle debounce + single-flight guard
-24. `VNEXT-11` Canonical identity mapping
-25. `VNEXT-13` Device abuse-control compliance decision
-26. `VNEXT-12` UI parity with live baseline
-27. `P0-04` Auth loading spinner after OAuth sheet
-28. `P1-47` Server-side AI gateway rollout (post-launch trigger)
-29. `P2-13` Startup orchestration refactor (post-launch)
+1. `VNEXT-10` AI cost/abuse controls
+2. `P1-43` Firebase AI client-block regression hardening
+3. `P1-54` Pre-Flutter startup timeout hardening
+4. `P1-55` Apple token exchange recovery for delete compliance
+5. `P1-53` Direct in-app feedback delivery
+6. `P1-56` AI error log sanitization
+7. `P1-57` Pending usage sync ownership hardening
+8. `P1-58` Entitlement convergence after anonymous purchase and sign-in
+9. `P0-08a` Core readability and contrast hardening
+10. `P0-08b` Navigation and input polish
+11. `P0-08d` Home hierarchy simplification
+12. `P1-24` Deterministic integration journey assertions
+13. `P1-41` Network-independent smoke deterministic mode
+14. `P0-08c` Launch and platform polish
+15. `P2-17` RevenueCat transfer metadata hydration
+16. `P1-48` Startup phase telemetry and budget visibility
+17. `P1-52` Biometric lifecycle debounce + single-flight guard
+18. `VNEXT-11` Canonical identity mapping
+19. `VNEXT-13` Device abuse-control compliance decision
+20. `VNEXT-12` UI parity with live baseline
+21. `P0-04` Auth loading spinner after OAuth sheet
+22. `P1-47` Server-side AI gateway rollout (post-launch trigger)
+23. `P2-13` Startup orchestration refactor (post-launch)
+24. `P0-01` Move Google setup to business account
+25. `P0-05` Billing budget alert controls
+26. `P1-20` Post-release production pulse checks
+27. `P1-44` Full documentation walkthrough with repo owner
+28. `P2-16` Public QA showcase packaging
+29. `P2-18` AI technical-depth showcase
 
 ## P0 - Launch Blockers
 
@@ -73,7 +73,6 @@ Process items in this order unless an explicit owner override is recorded in rel
 | `P0-08d` | Home hierarchy simplification | The home screen gets users to occasion selection faster without losing the warm occasion-first framing. Header utility controls no longer compete visually with the primary action, first-time guidance no longer adds a redundant standalone tutorial container above the grid, and the hero/search/usage stack is visibly simpler on small mobile heights. DoD requires: updated widget and golden coverage for the touched home-screen states (at minimum free-tier first-visit and Pro/home-return variants), physical iOS + Android screenshots on supported release devices, and a short manual first-impression verification note confirming the occasion grid remains visible/prominent without relying on extra instructional chrome. |
 | `P0-08c` | Launch and platform polish | Launch surfaces look intentional on both platforms: iOS remains visually clean, Android launch treatment is explicitly designed for platform behavior rather than accidental fallback chrome, and any remaining platform differences are documented as deliberate. DoD requires: physical iOS + Android launch screenshots/video evidence, an explicit decision record for Android launch treatment, and no accidental icon/splash fallback behavior on the supported release devices. |
 | `P0-05` | Billing budget alert controls | Production cost surfaces used by Prosepal have documented alert thresholds, owners, notification channels, and an explicit operator action for warning versus critical spend. At minimum this includes the active Google/Firebase AI runtime path and any project-level budget used for Gemini/Firebase AI spending. DoD requires: the alert thresholds and response expectations are recorded in `docs/DEVOPS.md`; notification destinations are verified from the business-managed admin path; at least one dry-run, replay, or equivalent test alert path is evidenced so alert delivery is not assumed; and release evidence names the exact channel a human operator will see first when spend crosses threshold. |
-| `P0-06` | Generation charge semantics hardening | Usage is only consumed when a generation succeeds according to the app's user-visible contract, rather than being burned by upstream AI or transport failures. DoD requires: authenticated and anonymous flows use the same documented consumption rule across both initial generate and results regenerate surfaces; AI failures (network, App Check/config block, parse/empty response, service unavailable, rate-limit rejection) do not consume quota; post-generation persistence side effects such as history save or review prompt failure do not discard a successful result after quota has been consumed; regression coverage exists for signed-in and anonymous success/failure paths on both generate and regenerate flows; and operator-facing docs/comments describe the final charge-on-success rule unambiguously. |
 | `P0-04` | Auth loading spinner after OAuth sheet | After Apple/Google auth sheet closes, UI shows deterministic loading state until auth completion resolves or fails with user-visible error, and users cannot accidentally dismiss or double-submit the auth surface while completion is still in flight. DoD requires: widget coverage for success, failure, and cancellation paths; explicit verification that provider-specific loading copy/state appears after the native auth sheet returns control; and real-device evidence on the active social providers showing the post-sheet state is visible long enough to confirm the app is finalizing auth rather than appearing frozen. |
 | `P0-01` | Move Google setup to business account | The live Google/Firebase project remains the existing production project (`prosepal-1a24b`) and stays fully operable from the business Workspace identity without requiring undiscovered personal-account-only access. DoD requires: the already-granted Workspace Firebase/Google Auth access remains validated, any remaining Google admin dependency on the personal account is explicitly documented or removed, the Play Console path is resolved as an intentional policy decision (verified organization-conversion path with evidence, or explicit acceptance of the personal-account testing path), and `docs/SERVICE_OWNERSHIP_MIGRATION.md` reflects only the unresolved Google ownership gaps. |
 | `VNEXT-10` | AI cost/abuse controls | Firebase AI production posture is treated as an operational system, not just SDK wiring. DoD requires: App Check enforcement remains verified on the live AI path; Remote Config kill switches and pinned model defaults are reviewed against the active release config; the permitted production model IDs are documented as an allowlist; runtime validation rejects or safely degrades any Remote Config model selection that is outside the documented allowlist; the operator policy explicitly states which model changes can ship via Remote Config versus which changes require a new app release; Google/Firebase budget alerts are configured and evidenced; at least one kill-switch drill or equivalent runtime-disable proof is captured; any stronger automated containment path (if implemented) is documented as advisory or authoritative with a named trigger; and `docs/DEVOPS.md` documents the final operator policy for AI runtime, rollback target, and abuse/cost response. |

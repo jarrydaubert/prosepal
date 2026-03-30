@@ -26,6 +26,11 @@ void main() {
   });
 
   group('Remote Config templates', () {
+    bool isPinnedStableModelId(String modelId) =>
+        modelId.isNotEmpty &&
+        !modelId.contains('latest') &&
+        !modelId.contains('preview');
+
     test('plain template keeps required AI controls and pinned defaults', () {
       expect(
         jsonTemplate.keys,
@@ -58,6 +63,15 @@ void main() {
       expect(
         AiConfig.allowedModelIds,
         contains(jsonTemplate['ai_model_fallback']),
+      );
+      expect(
+        jsonTemplate['ai_model'],
+        isNot(equals(jsonTemplate['ai_model_fallback'])),
+      );
+      expect(isPinnedStableModelId(jsonTemplate['ai_model'] as String), isTrue);
+      expect(
+        isPinnedStableModelId(jsonTemplate['ai_model_fallback'] as String),
+        isTrue,
       );
     });
 
@@ -139,6 +153,26 @@ void main() {
         firebaseParameters['force_update_enabled']['valueType'],
         equals('BOOLEAN'),
       );
+
+      expect(
+        firebaseParameters['ai_model']['defaultValue']['value'],
+        isNot(
+          equals(
+            firebaseParameters['ai_model_fallback']['defaultValue']['value'],
+          ),
+        ),
+      );
+    });
+
+    test('allowlist contains only pinned stable production model ids', () {
+      expect(AiConfig.allowedModelIds, isNotEmpty);
+      expect(AiConfig.allowedModelIds.length, equals(2));
+      expect(AiConfig.allowedModelIds, contains(AiConfig.defaultModel));
+      expect(AiConfig.allowedModelIds, contains(AiConfig.defaultFallbackModel));
+
+      for (final modelId in AiConfig.allowedModelIds) {
+        expect(isPinnedStableModelId(modelId), isTrue);
+      }
     });
   });
 }

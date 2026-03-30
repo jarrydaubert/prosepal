@@ -38,6 +38,11 @@ Guardrails:
 - invalid or empty Remote Config values fall back to repo-defined defaults
 - kill switch exists for AI availability
 
+Remote control boundaries:
+- Remote Config may switch only between already-allowlisted stable model IDs.
+- Remote Config may disable AI or toggle limited-use App Check tokens for runtime containment.
+- Changes to the allowlist, backend default, or structured-response contract require a new app release.
+
 ## Response Contract
 
 Generation expects structured JSON, not arbitrary prose blobs.
@@ -102,6 +107,7 @@ AI requests are expected to run with:
 
 Operational triage is documented in:
 - `docs/DEVOPS.md`
+- `docs/REMOTE_CONFIG.md`
 
 ## Diagnostics
 

@@ -474,7 +474,9 @@ class _GenerateScreenState extends ConsumerState<GenerateScreen> {
         useUkSpelling: useUkSpelling,
       );
 
-      // Only consume usage once the user actually has a successful result.
+      // Canonical charge rule: only consume usage after AI returns a
+      // user-presentable result. If charge verification then fails, we fail
+      // closed and do not navigate to results.
       if (authService.isLoggedIn) {
         try {
           final usageResult = await usageService.checkAndIncrementServerSide(

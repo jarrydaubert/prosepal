@@ -475,6 +475,65 @@ void main() {
       );
 
       testWidgets(
+        'anonymous Pro AI failure does not consume usage on regenerate',
+        (tester) async {
+          await prefs.setBool(PreferenceKeys.reviewHasRequested, true);
+
+          final mockAi = MockAiService()
+            ..simulateUnavailable('App Check token blocked by backend policy');
+          final mockAuth = MockAuthService()..setLoggedIn(false);
+          final usageService = TrackingUsageService(prefs);
+          final mockHistory = MockHistoryService();
+
+          await tester.pumpWidget(
+            ProviderScope(
+              overrides: [
+                sharedPreferencesProvider.overrideWithValue(prefs),
+                generationResultProvider.overrideWith(
+                  (ref) => createTestResult(),
+                ),
+                aiServiceProvider.overrideWithValue(mockAi),
+                authServiceProvider.overrideWithValue(mockAuth),
+                usageServiceProvider.overrideWithValue(usageService),
+                historyServiceProvider.overrideWithValue(mockHistory),
+                isProProvider.overrideWith((ref) => true),
+              ],
+              child: MaterialApp.router(
+                routerConfig: GoRouter(
+                  initialLocation: '/results',
+                  routes: [
+                    GoRoute(
+                      path: '/',
+                      builder: (context, state) =>
+                          const Scaffold(body: Text('Home')),
+                    ),
+                    GoRoute(
+                      path: '/results',
+                      builder: (context, state) => const ResultsScreen(),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+          await tester.pumpAndSettle();
+
+          await tester.tap(find.text('Regenerate'));
+          await tester.pump(const Duration(milliseconds: 400));
+
+          expect(mockAi.generateCallCount, 1);
+          expect(usageService.recordGenerationCalls, 0);
+          expect(usageService.serverConsumeCalls, 0);
+          expect(
+            find.text('Failed to generate. Please try again.'),
+            findsOneWidget,
+          );
+
+          await tester.pump(const Duration(seconds: 3));
+        },
+      );
+
+      testWidgets(
         'authenticated Pro success consumes usage after regenerate succeeds',
         (tester) async {
           await prefs.setBool(PreferenceKeys.reviewHasRequested, true);
@@ -524,6 +583,68 @@ void main() {
           expect(mockAi.generateCallCount, 1);
           expect(usageService.serverConsumeCalls, 1);
           expect(mockHistory.saveGenerationCallCount, 1);
+
+          await tester.pump(const Duration(seconds: 3));
+        },
+      );
+
+      testWidgets(
+        'authenticated charge verification failure after regenerate succeeds fails closed',
+        (tester) async {
+          await prefs.setBool(PreferenceKeys.reviewHasRequested, true);
+
+          final mockAi = MockAiService()
+            ..simulateDelay = const Duration(milliseconds: 300);
+          final mockAuth = MockAuthService()..setLoggedIn(true);
+          final usageService = TrackingUsageService(prefs)
+            ..serverException = const UsageCheckException(
+              'Unable to verify usage. Please check your connection.',
+            );
+          final mockHistory = MockHistoryService();
+
+          await tester.pumpWidget(
+            ProviderScope(
+              overrides: [
+                sharedPreferencesProvider.overrideWithValue(prefs),
+                generationResultProvider.overrideWith(
+                  (ref) => createTestResult(),
+                ),
+                aiServiceProvider.overrideWithValue(mockAi),
+                authServiceProvider.overrideWithValue(mockAuth),
+                usageServiceProvider.overrideWithValue(usageService),
+                historyServiceProvider.overrideWithValue(mockHistory),
+                isProProvider.overrideWith((ref) => true),
+              ],
+              child: MaterialApp.router(
+                routerConfig: GoRouter(
+                  initialLocation: '/results',
+                  routes: [
+                    GoRoute(
+                      path: '/',
+                      builder: (context, state) =>
+                          const Scaffold(body: Text('Home')),
+                    ),
+                    GoRoute(
+                      path: '/results',
+                      builder: (context, state) => const ResultsScreen(),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+          await tester.pumpAndSettle();
+
+          await tester.tap(find.text('Regenerate'));
+          await tester.pump(const Duration(milliseconds: 1500));
+
+          expect(mockAi.generateCallCount, 1);
+          expect(usageService.serverConsumeCalls, 1);
+          expect(mockHistory.saveGenerationCallCount, 0);
+          expect(
+            find.text('Unable to verify usage. Please check your connection.'),
+            findsOneWidget,
+          );
 
           await tester.pump(const Duration(seconds: 3));
         },

@@ -468,6 +468,19 @@ Failure handling:
 3. If the function reached Resend but delivery failed, inspect Resend activity/logs and sender-domain status before changing app code.
 4. If delivery cannot be restored quickly, keep the manual copy/share fallback as the temporary support path and track the outage/remediation in release evidence or `docs/BACKLOG.md` as appropriate.
 
+### Generation charge semantics
+
+Canonical rule:
+- Usage is consumed only after the app has a user-presentable AI result.
+- AI failures must not consume usage. This includes network errors, rate limits, App Check/configuration blocks, parse/empty-response failures, and service-unavailable failures.
+- Post-success side effects such as history save or review-prompt evaluation must not discard a successful result after usage has been consumed.
+- If authenticated charge verification cannot be completed after AI success, the app fails closed: no charge is recorded and the result is not shown.
+
+Operational interpretation:
+- Authenticated sessions charge through `check_and_increment_usage` only after AI success.
+- Anonymous sessions record usage locally only after AI success, then sync asynchronously.
+- Generate and regenerate must follow the same rule; neither surface is allowed to "pre-charge" before the AI result exists.
+
 AI abuse/cost verification (manual + script-assisted):
 - Firebase AI keys restricted to required API targets.
 - Platform app restrictions verified (iOS bundle ID, Android package/SHA).
@@ -476,6 +489,34 @@ AI abuse/cost verification (manual + script-assisted):
 - Rate limits and quotas match policy.
 - Budget alerts configured (warning + critical).
 - Kill-switch drill passes (`ai_enabled=false` then recovery).
+
+Remote Config vs release decision policy:
+- Allowed via Remote Config:
+  - switching `ai_model` or `ai_model_fallback` between already-allowlisted stable model IDs
+  - toggling `ai_enabled`
+  - toggling `ai_use_limited_app_check_tokens`
+  - toggling `paywall_enabled` / `premium_enabled` for runtime containment
+- Requires a new app release:
+  - any change to `AiConfig.allowedModelIds`
+  - any move to preview or `latest` aliases for production traffic
+  - any change to the production backend default (`vertex` vs `google`)
+  - any change that would alter the AI response contract older builds expect
+
+Containment model:
+- Authoritative runtime containment:
+  - `ai_enabled=false` immediately disables generation on next config fetch / app launch
+  - Remote Config model allowlist rejection falls back to repo-pinned defaults instead of trusting unknown IDs
+  - anonymous device-verification failures block free generation rather than failing open
+- Advisory automated containment:
+  - client/server rate limits and budget alerts are early-warning controls, not proof that production is safe to leave enabled during an incident
+  - treat repeated `RATE_LIMIT`, `CLIENT_APP_BLOCKED`, `APP_CHECK_FAILED`, or abnormal spend alerts as triggers to evaluate `ai_enabled=false`
+
+Kill-switch drill evidence policy:
+1. Capture the active config snapshot before the drill.
+2. Publish `ai_enabled=false`.
+3. Verify the app reaches the expected disabled-AI user path without exposing raw provider failures.
+4. Restore the prior config and verify normal generation recovery.
+5. Store the drill artifact or run reference with release evidence; do not rely on memory or console history alone.
 
 ### Startup Phase Telemetry And Budgets
 
@@ -637,6 +678,9 @@ Incident containment:
 2. Verify key restriction posture and rate-limit effectiveness.
 3. Re-enable progressively after stability validation.
 4. Track remediation actions in `docs/BACKLOG.md`.
+
+Operator note:
+- Budget-alert thresholds, notification destinations, and human response ownership still need live-console verification/evidence from the business-managed admin path. The repo can enforce policy wording and audit commands, but it cannot prove alert delivery by itself.
 
 ## Rollback And Recovery
 

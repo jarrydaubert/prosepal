@@ -35,6 +35,22 @@ extract_dart_string_constant() {
   sed -nE "s/.*static const String ${constant_name} = '([^']+)'.*/\1/p" "$ai_config_file" | head -n1
 }
 
+is_pinned_stable_model_id() {
+  local model_id="$1"
+  if [ -z "$model_id" ]; then
+    return 1
+  fi
+
+  case "$model_id" in
+    *latest* | *preview*)
+      return 1
+      ;;
+    *)
+      return 0
+      ;;
+  esac
+}
+
 repo_fail=0
 default_model="$(extract_dart_string_constant "defaultModel")"
 default_fallback_model="$(extract_dart_string_constant "defaultFallbackModel")"
@@ -115,6 +131,24 @@ if [ "$repo_fail" -eq 0 ]; then
     echo "  [PASS] Fallback AI model is pinned to code default ($default_fallback_model)"
   else
     echo "  [FAIL] Fallback AI model template/default mismatch"
+    repo_fail=1
+  fi
+
+  if [ "$json_model" != "$json_fallback_model" ] &&
+    [ "$firebase_model" != "$firebase_fallback_model" ]; then
+    echo "  [PASS] Primary and fallback AI models stay distinct"
+  else
+    echo "  [FAIL] Primary and fallback AI models must not collapse to the same ID"
+    repo_fail=1
+  fi
+
+  if is_pinned_stable_model_id "$json_model" &&
+    is_pinned_stable_model_id "$json_fallback_model" &&
+    is_pinned_stable_model_id "$firebase_model" &&
+    is_pinned_stable_model_id "$firebase_fallback_model"; then
+    echo "  [PASS] AI model defaults use pinned stable IDs (no latest/preview aliases)"
+  else
+    echo "  [FAIL] AI model defaults must use pinned stable IDs (no latest/preview aliases)"
     repo_fail=1
   fi
 fi
