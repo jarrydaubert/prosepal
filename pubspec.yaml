@@ -21,8 +21,8 @@ dependencies:
   firebase_ai: ^3.8.0
 
   # Payments
-  purchases_flutter: 9.13.1
-  purchases_ui_flutter: 9.13.1
+  purchases_flutter: 9.15.1
+  purchases_ui_flutter: 9.15.1
 
   # Firebase (updated to latest)
   firebase_core: ^4.3.0
@@ -44,10 +44,10 @@ dependencies:
   sign_in_with_apple: ^7.0.1  # Native Apple Sign In + official button
   crypto: ^3.0.7
   local_auth: ^3.0.1
-  share_plus: ^12.0.1
-  package_info_plus: ^9.0.0
+  share_plus: ^12.0.2
+  package_info_plus: ^9.0.1
   path_provider: ^2.1.5
-  device_info_plus: ^12.3.0
+  device_info_plus: ^12.4.0
   in_app_review: ^2.0.11
   flutter_local_notifications: ^21.0.0
   add_2_calendar: ^3.0.1
