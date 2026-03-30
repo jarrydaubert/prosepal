@@ -117,8 +117,11 @@ COMMENT ON FUNCTION check_and_increment_usage IS
 -- Currently any authenticated user can read ANY device record.
 -- Restrict to only devices where the user's ID is in associated_user_ids.
 
--- Drop the overly permissive policy
+-- Drop existing policies so this migration remains safe to apply on projects
+-- where a stricter replacement policy was created outside migration history.
 DROP POLICY IF EXISTS "Authenticated users can check device usage" ON device_usage;
+DROP POLICY IF EXISTS "Users can only read their own device records" ON device_usage;
+DROP POLICY IF EXISTS "Service role can read all devices" ON device_usage;
 
 -- Create restricted policy - users can only see devices they've used
 CREATE POLICY "Users can only read their own device records"

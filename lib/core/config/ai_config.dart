@@ -25,10 +25,6 @@ abstract final class AiConfig {
     defaultFallbackModel,
   };
 
-  /// @deprecated Use RemoteConfigService.instance.aiModel instead
-  /// Kept for backward compatibility during migration
-  static const String model = defaultModel;
-
   /// Generation parameters
   /// Temperature 0.7 for consistent, reliable outputs (0.85 was too creative/random)
   static const double temperature = 0.7;

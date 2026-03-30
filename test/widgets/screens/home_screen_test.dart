@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:prosepal/core/config/preference_keys.dart';
 import 'package:prosepal/core/providers/providers.dart';
 import 'package:prosepal/features/home/home_screen.dart';
+import 'package:prosepal/shared/theme/app_icons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../mocks/mock_auth_service.dart';
@@ -29,6 +30,7 @@ void main() {
   Widget createTestableHomeScreen({
     bool isPro = false,
     int remaining = 3,
+    bool? showFirstActionHint,
     GoRouter? router,
   }) {
     final testRouter =
@@ -76,6 +78,10 @@ void main() {
         remainingGenerationsProvider.overrideWith((ref) => remaining),
         authServiceProvider.overrideWithValue(mockAuth),
         initStatusProvider.overrideWith((ref) => initStatusNotifier),
+        if (showFirstActionHint != null)
+          showFirstActionHintProvider.overrideWith(
+            (ref) => showFirstActionHint,
+          ),
       ],
       child: MaterialApp.router(routerConfig: testRouter),
     );
@@ -161,6 +167,27 @@ void main() {
       expect(searchField.keyboardType, TextInputType.text);
     });
 
+    testWidgets('empty search state uses canonical search icon chrome', (
+      tester,
+    ) async {
+      await tester.pumpWidget(createTestableHomeScreen());
+      await tester.pump(const Duration(milliseconds: 300));
+
+      await tester.enterText(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is TextField &&
+              widget.decoration?.hintText == 'Search occasions...',
+        ),
+        'zzzz',
+      );
+      await tester.pump();
+
+      expect(find.text('No occasions found'), findsOneWidget);
+      expect(find.byIcon(AppIcons.search), findsWidgets);
+      expect(find.text('🔍'), findsNothing);
+    });
+
     testWidgets('dismisses stale search focus when return-home signal is set', (
       tester,
     ) async {
@@ -200,6 +227,22 @@ void main() {
       );
       expect(container.read(dismissHomeKeyboardProvider), isFalse);
     });
+
+    testWidgets(
+      'first-time guidance stays in hero instead of a separate hint banner',
+      (tester) async {
+        await tester.pumpWidget(
+          createTestableHomeScreen(showFirstActionHint: true),
+        );
+        await tester.pump(const Duration(milliseconds: 300));
+
+        expect(find.text('Tap an occasion to get started.'), findsOneWidget);
+        expect(
+          find.text('Tap any occasion to create your first message!'),
+          findsNothing,
+        );
+      },
+    );
   });
 
   group('HomeScreen Usage Indicator', () {
@@ -248,7 +291,7 @@ void main() {
       await tester.pumpWidget(createTestableHomeScreen());
       await tester.pump(const Duration(milliseconds: 300));
 
-      await tester.tap(find.byIcon(Icons.settings_outlined));
+      await tester.tap(find.byIcon(AppIcons.settings));
       await pumpUntilFound(tester, find.text('Settings Screen'));
 
       expect(find.text('Settings Screen'), findsOneWidget);
@@ -261,7 +304,13 @@ void main() {
       await tester.pump(const Duration(milliseconds: 300));
 
       // Tap on Birthday occasion
-      await tester.tap(find.text('Birthday'));
+      final birthdayFinder = find.byKey(const ValueKey('occasion_birthday'));
+      await tester.scrollUntilVisible(
+        birthdayFinder,
+        100,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.tap(birthdayFinder);
       await pumpUntilFound(tester, find.text('Generate Screen'));
 
       expect(find.text('Generate Screen'), findsOneWidget);
@@ -302,7 +351,13 @@ void main() {
       await tester.pump();
       expect(container.read(occasionSearchProvider), 'birt');
 
-      await tester.tap(find.text('Birthday'));
+      final birthdayFinder = find.byKey(const ValueKey('occasion_birthday'));
+      await tester.scrollUntilVisible(
+        birthdayFinder,
+        100,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.tap(birthdayFinder);
       await pumpUntilFound(tester, find.text('Generate Screen'));
 
       expect(container.read(occasionSearchProvider), isEmpty);
@@ -314,7 +369,7 @@ void main() {
       await tester.pumpWidget(createTestableHomeScreen());
       await tester.pump(const Duration(milliseconds: 300));
 
-      final settingsButton = find.byIcon(Icons.settings_outlined);
+      final settingsButton = find.byIcon(AppIcons.settings);
       expect(settingsButton, findsOneWidget);
 
       // Button should be tappable (wrapped in GestureDetector)

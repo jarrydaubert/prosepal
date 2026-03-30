@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:collection';
 
 import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:prosepal/core/interfaces/supabase_auth_provider.dart';
@@ -131,6 +132,10 @@ class MockSupabaseAuthProvider implements ISupabaseAuthProvider {
   @visibleForTesting
   int deleteUserCalls = 0;
 
+  /// Number of times exchangeAppleToken() was called
+  @visibleForTesting
+  int exchangeAppleTokenCalls = 0;
+
   // ---------------------------------------------------------------------------
   // Parameter Tracking
   // ---------------------------------------------------------------------------
@@ -178,6 +183,18 @@ class MockSupabaseAuthProvider implements ISupabaseAuthProvider {
   /// Last query params passed to signInWithOAuth()
   @visibleForTesting
   Map<String, String>? lastQueryParams;
+
+  /// Last authorization code passed to exchangeAppleToken()
+  @visibleForTesting
+  String? lastAuthorizationCode;
+
+  /// Last access token passed to exchangeAppleToken()
+  @visibleForTesting
+  String? lastExchangeAppleAccessToken;
+
+  /// Queue of errors to throw on successive Apple token exchange attempts.
+  @visibleForTesting
+  final Queue<Exception> exchangeAppleTokenErrors = Queue<Exception>();
 
   /// Last user attributes passed to updateUser()
   @visibleForTesting
@@ -518,7 +535,17 @@ class MockSupabaseAuthProvider implements ISupabaseAuthProvider {
     String authorizationCode, {
     String? accessToken,
   }) async {
-    // No-op in mock - just track if needed
+    exchangeAppleTokenCalls++;
+    lastAuthorizationCode = authorizationCode;
+    lastExchangeAppleAccessToken = accessToken;
+    await _maybeDelay();
+
+    if (exchangeAppleTokenErrors.isNotEmpty) {
+      throw exchangeAppleTokenErrors.removeFirst();
+    }
+
+    final error = _getError('exchangeAppleToken');
+    if (error != null) throw error;
   }
 
   /// Mock always returns success
@@ -735,6 +762,7 @@ class MockSupabaseAuthProvider implements ISupabaseAuthProvider {
     updateUserCalls = 0;
     signOutCalls = 0;
     deleteUserCalls = 0;
+    exchangeAppleTokenCalls = 0;
     lastProvider = null;
     lastIdToken = null;
     lastNonce = null;
@@ -746,6 +774,9 @@ class MockSupabaseAuthProvider implements ISupabaseAuthProvider {
     lastCaptchaToken = null;
     lastData = null;
     lastQueryParams = null;
+    lastAuthorizationCode = null;
+    lastExchangeAppleAccessToken = null;
+    exchangeAppleTokenErrors.clear();
     lastUserAttributes = null;
     lastRefreshToken = null;
     // MFA

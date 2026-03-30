@@ -38,6 +38,11 @@ Guardrails:
 - invalid or empty Remote Config values fall back to repo-defined defaults
 - kill switch exists for AI availability
 
+Remote control boundaries:
+- Remote Config may switch only between already-allowlisted stable model IDs.
+- Remote Config may disable AI or toggle limited-use App Check tokens for runtime containment.
+- Changes to the allowlist, backend default, or structured-response contract require a new app release.
+
 ## Response Contract
 
 Generation expects structured JSON, not arbitrary prose blobs.
@@ -102,6 +107,7 @@ AI requests are expected to run with:
 
 Operational triage is documented in:
 - `docs/DEVOPS.md`
+- `docs/REMOTE_CONFIG.md`
 
 ## Diagnostics
 
@@ -118,6 +124,11 @@ Current diagnostic report includes:
 - limited-use App Check token mode
 - config schema version
 - built-in triage labels for key AI failure classes
+
+Production AI failure telemetry is intentionally narrower than the support
+report: release Crashlytics logs keep backend label, model slot
+(`primary`/`fallback`/`custom`), retryability, and classified error bucket, but
+do not keep provider URLs, project/resource paths, or exact model IDs.
 
 Implementation:
 - `lib/core/services/diagnostic_service.dart`
@@ -137,6 +148,7 @@ flutter test test/services/ai_service_test.dart --plain-name "classifies \"404\"
 These commands prove:
 - config/client-block failures are separated from safety blocks
 - App Check failures are classified explicitly
+- App Check verification failures stay distinct from `CLIENT_APP_BLOCKED`
 - model-unavailable behavior remains part of the tested contract
 
 Real-device evidence:

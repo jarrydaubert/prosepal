@@ -16,6 +16,30 @@ supabase functions deploy delete-user --project-ref mwoxtqxzunsjmbdqezif
 supabase functions serve delete-user
 ```
 
+## send-feedback
+
+Relays authenticated in-app feedback to the support inbox through Resend.
+
+**Deployed to:** `mwoxtqxzunsjmbdqezif`
+
+### Required secrets
+- `RESEND_API_KEY`
+- `FEEDBACK_TO_EMAIL`
+- `FEEDBACK_FROM_EMAIL`
+- existing `SUPABASE_URL` / `SUPABASE_ANON_KEY`
+- `supabase/config.toml` must include `[functions.send-feedback] verify_jwt = false`
+  because this function validates the Supabase user inside the function body.
+
+### Deploy changes
+```bash
+supabase functions deploy send-feedback --project-ref mwoxtqxzunsjmbdqezif
+```
+
+### Test locally
+```bash
+supabase functions serve send-feedback
+```
+
 ## Email Setup
 
 Currently using Supabase built-in email (rate limited for testing).

@@ -187,5 +187,161 @@ void main() {
 
       expect(monthKey, equals('2026-02'));
     });
+
+    test(
+      'same-user resume keeps owned pending sync eligible after sign out',
+      () {
+        final now = DateTime.utc(2026, 3, 18, 12);
+        final plan = usageService.planPendingSyncProcessing(
+          [
+            PendingSync(
+              userId: 'user-a',
+              totalCount: 2,
+              monthlyCount: 2,
+              monthKey: '2026-03',
+              createdAt: now,
+            ),
+          ],
+          currentUserId: 'user-a',
+          now: now,
+        );
+
+        expect(plan.readyToProcess, hasLength(1));
+        expect(plan.readyToProcess.single.userId, equals('user-a'));
+        expect(plan.retained, isEmpty);
+      },
+    );
+
+    test('different-user sign-in quarantines prior user pending sync', () {
+      final now = DateTime.utc(2026, 3, 18, 12);
+      final plan = usageService.planPendingSyncProcessing(
+        [
+          PendingSync(
+            userId: 'user-a',
+            totalCount: 2,
+            monthlyCount: 2,
+            monthKey: '2026-03',
+            createdAt: now,
+          ),
+        ],
+        currentUserId: 'user-b',
+        now: now,
+      );
+
+      expect(plan.readyToProcess, isEmpty);
+      expect(plan.retained, hasLength(1));
+      expect(plan.retained.single.userId, equals('user-a'));
+    });
+
+    test(
+      'anonymous pending sync is discarded instead of rebound on sign-in',
+      () {
+        final now = DateTime.utc(2026, 3, 18, 12);
+        final plan = usageService.planPendingSyncProcessing(
+          [
+            PendingSync(
+              userId: 'anonymous',
+              totalCount: 1,
+              monthlyCount: 1,
+              monthKey: '2026-03',
+              createdAt: now,
+            ),
+          ],
+          currentUserId: 'user-b',
+          now: now,
+        );
+
+        expect(plan.readyToProcess, isEmpty);
+        expect(plan.retained, isEmpty);
+        expect(plan.discardedAnonymousForAuthenticatedSession, equals(1));
+      },
+    );
+
+    test('stale pending sync is discarded during ownership planning', () {
+      final createdAt = DateTime.utc(2026, 3, 1, 12);
+      final now = createdAt.add(const Duration(days: 8));
+      final plan = usageService.planPendingSyncProcessing(
+        [
+          PendingSync(
+            userId: 'user-a',
+            totalCount: 2,
+            monthlyCount: 2,
+            monthKey: '2026-03',
+            createdAt: createdAt,
+          ),
+        ],
+        currentUserId: 'user-a',
+        now: now,
+      );
+
+      expect(plan.readyToProcess, isEmpty);
+      expect(plan.retained, isEmpty);
+      expect(plan.discardedStale, equals(1));
+    });
+
+    test(
+      'sign-out reconciliation drops anonymous queue but keeps owned syncs',
+      () async {
+        final now = DateTime.utc(2026, 3, 18, 12);
+        await usageService.setPendingSyncsForTesting([
+          PendingSync(
+            userId: 'anonymous',
+            totalCount: 1,
+            monthlyCount: 1,
+            monthKey: '2026-03',
+            createdAt: now,
+          ),
+          PendingSync(
+            userId: 'user-a',
+            totalCount: 2,
+            monthlyCount: 2,
+            monthKey: '2026-03',
+            createdAt: now,
+          ),
+        ]);
+
+        await usageService.reconcilePendingSyncsForSignedOutState();
+
+        final pending = await usageService.getPendingSyncsForTesting();
+        expect(pending, hasLength(1));
+        expect(pending.single.userId, equals('user-a'));
+      },
+    );
+
+    test(
+      'delete-account purge removes deleted user and anonymous pending syncs',
+      () async {
+        final now = DateTime.utc(2026, 3, 18, 12);
+        await usageService.setPendingSyncsForTesting([
+          PendingSync(
+            userId: 'anonymous',
+            totalCount: 1,
+            monthlyCount: 1,
+            monthKey: '2026-03',
+            createdAt: now,
+          ),
+          PendingSync(
+            userId: 'user-a',
+            totalCount: 2,
+            monthlyCount: 2,
+            monthKey: '2026-03',
+            createdAt: now,
+          ),
+          PendingSync(
+            userId: 'user-b',
+            totalCount: 3,
+            monthlyCount: 3,
+            monthKey: '2026-03',
+            createdAt: now,
+          ),
+        ]);
+
+        await usageService.purgePendingSyncsForDeletedUser('user-a');
+
+        final pending = await usageService.getPendingSyncsForTesting();
+        expect(pending, hasLength(1));
+        expect(pending.single.userId, equals('user-b'));
+      },
+    );
   });
 }

@@ -64,6 +64,7 @@ class SettingsToggleTile extends StatelessWidget {
     required this.value,
     required this.onChanged,
     this.subtitle,
+    this.switchKey,
   });
 
   final Widget leading;
@@ -71,13 +72,18 @@ class SettingsToggleTile extends StatelessWidget {
   final String? subtitle;
   final bool value;
   final ValueChanged<bool> onChanged;
+  final Key? switchKey;
 
   @override
   Widget build(BuildContext context) => SettingsTile(
     leading: leading,
     title: title,
     subtitle: subtitle,
-    trailing: Switch.adaptive(value: value, onChanged: onChanged),
+    trailing: Switch.adaptive(
+      key: switchKey,
+      value: value,
+      onChanged: onChanged,
+    ),
   );
 }
 

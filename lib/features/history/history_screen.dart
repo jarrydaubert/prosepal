@@ -301,11 +301,12 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                           label: Text('All (${_allHistory.length})'),
                           selected: _selectedOccasion == null,
                           onSelected: (_) => _onOccasionFilterChanged(null),
+                          backgroundColor: AppColors.surface,
                           selectedColor: AppColors.primaryLight,
                           checkmarkColor: AppColors.primary,
                           labelStyle: TextStyle(
                             color: _selectedOccasion == null
-                                ? AppColors.primary
+                                ? AppColors.textOnLight
                                 : AppColors.textSecondary,
                             fontWeight: _selectedOccasion == null
                                 ? FontWeight.w600
@@ -333,11 +334,12 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                             selected: _selectedOccasion == occasion,
                             onSelected: (_) =>
                                 _onOccasionFilterChanged(occasion),
+                            backgroundColor: AppColors.surface,
                             selectedColor: AppColors.primaryLight,
                             checkmarkColor: AppColors.primary,
                             labelStyle: TextStyle(
                               color: _selectedOccasion == occasion
-                                  ? AppColors.primary
+                                  ? AppColors.textOnLight
                                   : AppColors.textSecondary,
                               fontWeight: _selectedOccasion == occasion
                                   ? FontWeight.w600
@@ -618,7 +620,7 @@ class _HistoryCardState extends State<_HistoryCard> {
                             '${occasion.label} • ${_formatDate(widget.item.savedAt)}',
                             style: const TextStyle(
                               fontSize: 12,
-                              color: AppColors.textOnLight,
+                              color: AppColors.textOnLightSecondary,
                             ),
                           ),
                         ],
@@ -626,7 +628,7 @@ class _HistoryCardState extends State<_HistoryCard> {
                     ),
                     Icon(
                       _isExpanded ? Icons.expand_less : Icons.expand_more,
-                      color: AppColors.textSecondary,
+                      color: AppColors.textOnLightSecondary,
                     ),
                   ],
                 ),

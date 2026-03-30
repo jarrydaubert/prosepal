@@ -23,11 +23,15 @@ This folder holds canonical product, engineering, and operations docs for the mo
 9. `LAUNCH_CHECKLIST.md`
    - Release execution and provider-console verification checklist.
 10. `SERVICE_OWNERSHIP_MIGRATION.md`
-    - Service ownership, billing, and admin-account migration runbook.
-11. `ARCHITECTURE.md`
+    - Service ownership, admin-access, billing, and recovery migration runbook.
+11. `APP_OPERATING_STANDARD.md`
+    - Default operating model for keeping multiple apps operationally separate.
+12. `ARCHITECTURE.md`
     - System architecture, core modules, and integration boundaries.
-12. `PRODUCT_STRATEGY.md`
+13. `PRODUCT_STRATEGY.md`
     - High-level product, growth, and experimentation direction.
+14. `RELATIONSHIP_ASSISTANT_VISION.md`
+    - Long-term product framing for Prosepal as a thoughtful relationship assistant.
 
 ## Working rules
 

@@ -5,11 +5,11 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/config/app_config.dart';
 import '../../core/providers/providers.dart';
 import '../../core/services/diagnostic_service.dart';
+import '../../core/services/feedback_service.dart';
 import '../../shared/components/components.dart';
 import '../../shared/theme/app_colors.dart';
 import '../../shared/theme/app_spacing.dart';
@@ -23,7 +23,6 @@ class FeedbackScreen extends ConsumerStatefulWidget {
 }
 
 class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
-  static const _maxMailtoUriLength = 8000;
   final _controller = TextEditingController();
   final _focusNode = FocusNode();
   bool _isSending = false;
@@ -31,10 +30,23 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
   bool _includeSensitiveLogs = false;
 
   @override
+  void initState() {
+    super.initState();
+    _focusNode.addListener(_handleFocusChanged);
+  }
+
+  @override
   void dispose() {
+    _focusNode.removeListener(_handleFocusChanged);
     _focusNode.dispose();
     _controller.dispose();
     super.dispose();
+  }
+
+  void _handleFocusChanged() {
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   Future<void> _send() async {
@@ -50,78 +62,172 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
 
     setState(() => _isSending = true);
 
-    var fullMessage = message;
-    if (_includeLogs) {
-      final isRcConfigured = ref.read(subscriptionServiceProvider).isConfigured;
-      final diagnosticReport = await DiagnosticService.generateReport(
-        isRevenueCatConfigured: isRcConfigured,
-        includeSensitiveLogs: _includeSensitiveLogs,
-      );
-      fullMessage = '$message\n\n$diagnosticReport';
-    }
-
-    final subject = Uri.encodeComponent('Prosepal Feedback');
-    final body = Uri.encodeComponent(fullMessage);
-    final uri = Uri.parse(
-      'mailto:${AppConfig.supportEmail}?subject=$subject&body=$body',
-    );
+    String? diagnosticReport;
 
     try {
-      final uriTooLong = uri.toString().length > _maxMailtoUriLength;
-      if (!uriTooLong && await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-        if (mounted) Navigator.pop(context);
-      } else {
-        await _showCopyFallback(
-          fullMessage,
-          reason: uriTooLong
-              ? 'Diagnostics are too long for mailto on this device.'
-              : null,
+      if (_includeLogs) {
+        final isRcConfigured = ref
+            .read(subscriptionServiceProvider)
+            .isConfigured;
+        diagnosticReport = await DiagnosticService.generateReport(
+          isRevenueCatConfigured: isRcConfigured,
+          includeSensitiveLogs: _includeSensitiveLogs,
         );
       }
+
+      await ref
+          .read(feedbackServiceProvider)
+          .submitFeedback(
+            message: message,
+            diagnosticReport: diagnosticReport,
+            includeSensitiveLogs: _includeSensitiveLogs,
+          );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Feedback sent. Thanks for the report.')),
+      );
+      Navigator.pop(context);
+    } on FeedbackAuthRequiredException {
+      await _showManualFallback(
+        message,
+        diagnosticReport: diagnosticReport,
+        reason:
+            'Direct in-app delivery currently requires you to be signed in.',
+      );
+    } on FeedbackSubmissionException catch (e) {
+      await _showManualFallback(
+        message,
+        diagnosticReport: diagnosticReport,
+        reason: e.message,
+      );
     } on Exception {
-      await _showCopyFallback(fullMessage);
+      await _showManualFallback(
+        message,
+        diagnosticReport: diagnosticReport,
+        reason: 'Unable to submit feedback right now.',
+      );
     } finally {
       if (mounted) setState(() => _isSending = false);
     }
   }
 
-  Future<void> _showCopyFallback(String fullMessage, {String? reason}) async {
+  String _manualFallbackText(String message, {String? diagnosticReport}) {
+    final buffer = StringBuffer()
+      ..writeln('To: ${AppConfig.supportEmail}')
+      ..writeln('Subject: Prosepal Feedback')
+      ..writeln()
+      ..writeln(message.trim());
+    if (diagnosticReport != null && diagnosticReport.isNotEmpty) {
+      buffer
+        ..writeln()
+        ..writeln(diagnosticReport);
+    }
+    return buffer.toString().trimRight();
+  }
+
+  Future<void> _showManualFallback(
+    String message, {
+    String? diagnosticReport,
+    String? reason,
+  }) async {
     if (!mounted) return;
 
-    final shouldCopy = await showDialog<bool>(
+    final fullMessage = _manualFallbackText(
+      message,
+      diagnosticReport: diagnosticReport,
+    );
+
+    final action = await showModalBottomSheet<_ManualFallbackAction>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Send manually'),
-        content: Text(
-          '${reason != null ? '$reason\n\n' : ''}'
-          'Copy feedback to clipboard? You can paste it into your email app '
-          'and send to ${AppConfig.supportEmail}.',
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Text(
+                'Send manually',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const Gap(10),
+              Text(
+                reason ?? 'You can still copy or share your feedback manually.',
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: AppColors.textSecondary,
+                  height: 1.4,
+                ),
+              ),
+              const Gap(18),
+              OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.textPrimary,
+                  side: const BorderSide(color: AppColors.borderMedium),
+                  textStyle: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+                onPressed: () =>
+                    Navigator.pop(context, _ManualFallbackAction.copy),
+                icon: const Icon(Icons.copy_rounded),
+                label: const Text('Copy feedback'),
+              ),
+              const Gap(10),
+              OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.textPrimary,
+                  side: const BorderSide(color: AppColors.borderMedium),
+                  textStyle: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+                onPressed: () =>
+                    Navigator.pop(context, _ManualFallbackAction.share),
+                icon: const Icon(Icons.share_rounded),
+                label: const Text('Share feedback'),
+              ),
+              const Gap(10),
+              TextButton(
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.primary,
+                  textStyle: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+                onPressed: () =>
+                    Navigator.pop(context, _ManualFallbackAction.cancel),
+                child: const Text('Cancel'),
+              ),
+            ],
+          ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Copy'),
-          ),
-        ],
       ),
     );
 
-    if ((shouldCopy ?? false) && mounted) {
-      await Clipboard.setData(
-        ClipboardData(
-          text:
-              'To: ${AppConfig.supportEmail}\nSubject: Prosepal Feedback\n\n'
-              '$fullMessage',
-        ),
-      );
+    if (!mounted || action == null || action == _ManualFallbackAction.cancel) {
+      return;
+    }
+
+    if (action == _ManualFallbackAction.copy) {
+      await Clipboard.setData(ClipboardData(text: fullMessage));
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Copied! Paste into your email app')),
+        const SnackBar(content: Text('Copied. Paste into any message app.')),
       );
+      return;
+    }
+
+    if (action == _ManualFallbackAction.share) {
+      await SharePlus.instance.share(
+        ShareParams(text: fullMessage, subject: 'Prosepal Feedback'),
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Share sheet opened.')));
     }
   }
 
@@ -181,6 +287,14 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
     }
   }
 
+  Future<void> _toggleTechnicalTrace() async {
+    if (!_includeSensitiveLogs) {
+      await _toggleSensitiveLogs(true);
+      return;
+    }
+    setState(() => _includeSensitiveLogs = false);
+  }
+
   @override
   Widget build(BuildContext context) => GestureDetector(
     onTap: () => dismissKeyboard(context),
@@ -210,166 +324,280 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
-              "Questions, bugs, or feature requests? We'd love to hear from you.",
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
-            ),
-            const Gap(AppSpacing.lg),
-            Semantics(
-              label: 'Feedback message input',
-              hint: 'Enter your feedback, bug report, or feature request',
-              child: TextField(
-                controller: _controller,
-                focusNode: _focusNode,
-                minLines: 4,
-                maxLines: 6,
-                keyboardType: TextInputType.multiline,
-                textCapitalization: TextCapitalization.sentences,
-                textInputAction: TextInputAction.done,
-                textAlignVertical: TextAlignVertical.top,
-                scrollPadding: const EdgeInsets.only(bottom: 140),
-                style: const TextStyle(
-                  fontSize: 15,
-                  height: 1.4,
-                  color: AppColors.textPrimary,
-                ),
-                onEditingComplete: () => dismissKeyboard(context),
-                onTapOutside: (_) => dismissKeyboard(context),
-                decoration: InputDecoration(
-                  hintText: 'Describe your issue or suggestion...',
-                  hintStyle: const TextStyle(
-                    color: AppColors.textHint,
-                    height: 1.4,
-                  ),
-                  contentPadding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
-                  filled: true,
-                  fillColor: AppColors.surface,
-                  alignLabelWithHint: true,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(
-                      AppSpacing.radiusMedium,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            const Gap(AppSpacing.md),
-            // Toggle for including diagnostic logs
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(AppSpacing.lg),
               decoration: BoxDecoration(
-                color: AppColors.surface,
-                borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
-                border: Border.all(
-                  color: _includeLogs
-                      ? AppColors.primary.withValues(alpha: 0.3)
-                      : AppColors.textHint.withValues(alpha: 0.2),
+                gradient: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [AppColors.surface, AppColors.bgDeep],
                 ),
+                borderRadius: BorderRadius.circular(AppSpacing.radiusLarge),
+                border: Border.all(color: AppColors.borderMedium),
               ),
-              child: Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Include diagnostic logs',
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w500,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                        Gap(2),
-                        Text(
-                          'Optional: app/version diagnostics for troubleshooting',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                      ],
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.sm,
+                      vertical: AppSpacing.xs,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.14),
+                      border: Border.all(
+                        color: AppColors.primary.withValues(alpha: 0.22),
+                      ),
+                      borderRadius: BorderRadius.circular(
+                        AppSpacing.radiusFull,
+                      ),
+                    ),
+                    child: const Text(
+                      'Support inbox',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
                     ),
                   ),
-                  Switch.adaptive(
-                    value: _includeLogs,
-                    onChanged: (value) {
-                      dismissKeyboard(context);
-                      setState(() {
-                        _includeLogs = value;
-                        if (!value) _includeSensitiveLogs = false;
-                      });
-                    },
-                    activeTrackColor: AppColors.primary,
+                  const Gap(AppSpacing.md),
+                  const Text(
+                    'Tell us what you were doing, what went wrong, and whether it keeps happening.',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700,
+                      height: 1.2,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const Gap(AppSpacing.sm),
+                  Text(
+                    'Short reports are fine. Add app details only when they will help us reproduce the problem.',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: AppColors.textSecondary,
+                      height: 1.4,
+                    ),
                   ),
                 ],
               ),
             ),
-            if (_includeLogs) ...[
-              const Gap(AppSpacing.sm),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
-                  border: Border.all(
-                    color: _includeSensitiveLogs
-                        ? AppColors.error.withValues(alpha: 0.25)
-                        : AppColors.textHint.withValues(alpha: 0.2),
+            const Gap(AppSpacing.lg),
+            AppSurfaceCard(
+              borderColor: _focusNode.hasFocus
+                  ? AppColors.primary
+                  : AppColors.borderOnLight,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'What happened?',
+                    style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textOnLight,
+                    ),
                   ),
-                ),
-                child: Row(
-                  children: [
-                    const Expanded(
-                      child: Text(
-                        'Include full technical details (advanced)',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: AppColors.textPrimary,
+                  const Gap(AppSpacing.xs),
+                  const Text(
+                    'Include what you expected, what happened instead, and how often you can reproduce it.',
+                    style: TextStyle(
+                      fontSize: 13,
+                      height: 1.4,
+                      color: AppColors.textOnLightSecondary,
+                    ),
+                  ),
+                  const Gap(AppSpacing.md),
+                  Semantics(
+                    label: 'Feedback message input',
+                    hint: 'Enter your feedback, bug report, or feature request',
+                    child: TextField(
+                      controller: _controller,
+                      focusNode: _focusNode,
+                      minLines: 5,
+                      maxLines: 7,
+                      keyboardType: TextInputType.multiline,
+                      textCapitalization: TextCapitalization.sentences,
+                      textInputAction: TextInputAction.done,
+                      textAlignVertical: TextAlignVertical.top,
+                      scrollPadding: const EdgeInsets.only(bottom: 140),
+                      style: const TextStyle(
+                        fontSize: 15,
+                        height: 1.45,
+                        color: AppColors.textOnLight,
+                      ),
+                      onEditingComplete: () => dismissKeyboard(context),
+                      onTapOutside: (_) => dismissKeyboard(context),
+                      decoration: InputDecoration(
+                        hintText:
+                            'Example: I generated a birthday message, tapped share, and the sheet flashed then disappeared. It has happened twice today.',
+                        hintStyle: const TextStyle(
+                          color: AppColors.textOnLightHint,
+                          height: 1.4,
+                        ),
+                        contentPadding: const EdgeInsets.fromLTRB(
+                          14,
+                          14,
+                          14,
+                          14,
+                        ),
+                        filled: true,
+                        fillColor: AppColors.surfaceLightMuted,
+                        alignLabelWithHint: true,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(
+                            AppSpacing.radiusMedium,
+                          ),
+                          borderSide: const BorderSide(
+                            color: AppColors.borderOnLight,
+                          ),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(
+                            AppSpacing.radiusMedium,
+                          ),
+                          borderSide: const BorderSide(
+                            color: AppColors.borderOnLight,
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(
+                            AppSpacing.radiusMedium,
+                          ),
+                          borderSide: const BorderSide(
+                            color: AppColors.primary,
+                            width: 2,
+                          ),
                         ),
                       ),
                     ),
-                    Switch.adaptive(
-                      value: _includeSensitiveLogs,
-                      onChanged: (value) {
-                        dismissKeyboard(context);
-                        _toggleSensitiveLogs(value);
-                      },
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ],
-            // View report link (only when logs enabled)
-            if (_includeLogs) ...[
-              const Gap(AppSpacing.sm),
-              GestureDetector(
-                onTap: _shareDiagnostics,
-                child: const Text.rich(
-                  TextSpan(
-                    text: 'Preview: ',
-                    style: TextStyle(fontSize: 13, color: AppColors.textHint),
+            ),
+            const Gap(AppSpacing.md),
+            AppSurfaceCard(
+              borderColor: _includeLogs
+                  ? AppColors.primary.withValues(alpha: 0.45)
+                  : AppColors.borderOnLight,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
                     children: [
-                      TextSpan(
-                        text: 'View diagnostic report',
-                        style: TextStyle(
-                          color: AppColors.primary,
-                          decoration: TextDecoration.underline,
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Add app details',
+                              style: TextStyle(
+                                fontSize: 17,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.textOnLight,
+                              ),
+                            ),
+                            const Gap(AppSpacing.xs),
+                            Text(
+                              _includeLogs
+                                  ? 'We will attach a support package with app version, device, account state, subscription state, AI runtime, and redacted recent logs.'
+                                  : 'Off by default. Turn this on when the issue is technical or hard to reproduce.',
+                              style: const TextStyle(
+                                fontSize: 13,
+                                height: 1.4,
+                                color: AppColors.textOnLightSecondary,
+                              ),
+                            ),
+                          ],
                         ),
+                      ),
+                      Switch.adaptive(
+                        key: const Key('feedback.include_app_details_switch'),
+                        value: _includeLogs,
+                        onChanged: (value) {
+                          dismissKeyboard(context);
+                          setState(() {
+                            _includeLogs = value;
+                            if (!value) _includeSensitiveLogs = false;
+                          });
+                        },
+                        activeTrackColor: AppColors.primary,
                       ),
                     ],
                   ),
-                ),
+                  AnimatedCrossFade(
+                    duration: const Duration(milliseconds: 220),
+                    crossFadeState: _includeLogs
+                        ? CrossFadeState.showSecond
+                        : CrossFadeState.showFirst,
+                    firstChild: const SizedBox.shrink(),
+                    secondChild: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Gap(AppSpacing.md),
+                        Wrap(
+                          spacing: AppSpacing.sm,
+                          runSpacing: AppSpacing.sm,
+                          children: [
+                            const _FeedbackModeChip(
+                              label: 'Support summary',
+                              color: AppColors.info,
+                            ),
+                            if (_includeSensitiveLogs)
+                              const _FeedbackModeChip(
+                                label: 'Technical trace',
+                                color: AppColors.warning,
+                              ),
+                          ],
+                        ),
+                        const Gap(AppSpacing.sm),
+                        Text(
+                          _includeSensitiveLogs
+                              ? 'Technical trace adds deeper logs, identifiers, and message-context diagnostics. Use it only when support asks for a deeper investigation.'
+                              : 'The support summary avoids your message and prompt content while still giving us the app context needed to investigate.',
+                          style: const TextStyle(
+                            fontSize: 13,
+                            height: 1.4,
+                            color: AppColors.textOnLightSecondary,
+                          ),
+                        ),
+                        const Gap(AppSpacing.md),
+                        Wrap(
+                          spacing: AppSpacing.sm,
+                          runSpacing: AppSpacing.sm,
+                          children: [
+                            OutlinedButton.icon(
+                              onPressed: _shareDiagnostics,
+                              icon: const Icon(Icons.visibility_rounded),
+                              label: const Text('Preview report'),
+                            ),
+                            TextButton.icon(
+                              key: const Key(
+                                'feedback.toggle_technical_trace_button',
+                              ),
+                              onPressed: _toggleTechnicalTrace,
+                              icon: Icon(
+                                _includeSensitiveLogs
+                                    ? Icons.remove_circle_outline_rounded
+                                    : Icons.data_object_rounded,
+                              ),
+                              label: Text(
+                                _includeSensitiveLogs
+                                    ? 'Remove technical trace'
+                                    : 'Add technical trace',
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
             const Gap(AppSpacing.lg),
             AppButton(
-              label: 'Send Feedback',
+              label: 'Send to support',
               onPressed: _isSending ? null : _send,
               isLoading: _isSending,
               icon: Icons.send_rounded,
@@ -381,7 +609,33 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
   );
 }
 
+enum _ManualFallbackAction { copy, share, cancel }
+
 // === COMPONENTS ===
+
+class _FeedbackModeChip extends StatelessWidget {
+  const _FeedbackModeChip({required this.label, required this.color});
+
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(
+      horizontal: AppSpacing.sm,
+      vertical: AppSpacing.xs,
+    ),
+    decoration: BoxDecoration(
+      color: color.withValues(alpha: 0.12),
+      borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
+      border: Border.all(color: color.withValues(alpha: 0.25)),
+    ),
+    child: Text(
+      label,
+      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: color),
+    ),
+  );
+}
 
 class _DiagnosticReportSheet extends StatelessWidget {
   const _DiagnosticReportSheet({

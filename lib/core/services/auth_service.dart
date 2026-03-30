@@ -2,10 +2,12 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../config/app_config.dart';
+import '../config/preference_keys.dart';
 import '../interfaces/apple_auth_provider.dart';
 import '../interfaces/auth_interface.dart';
 import '../interfaces/google_auth_provider.dart';
@@ -52,15 +54,35 @@ class AuthService implements IAuthService {
     required ISupabaseAuthProvider supabaseAuth,
     required IAppleAuthProvider appleAuth,
     required IGoogleAuthProvider googleAuth,
+    SharedPreferences? preferences,
+    List<Duration> appleTokenExchangeRetryDelays = const [
+      Duration(milliseconds: 300),
+      Duration(milliseconds: 900),
+    ],
   }) : _supabase = supabaseAuth,
        _apple = appleAuth,
-       _google = googleAuth;
+       _google = googleAuth,
+       _preferences = preferences,
+       _appleTokenExchangeRetryDelays = appleTokenExchangeRetryDelays;
 
   final ISupabaseAuthProvider _supabase;
   final IAppleAuthProvider _apple;
   final IGoogleAuthProvider _google;
+  final SharedPreferences? _preferences;
+  final List<Duration> _appleTokenExchangeRetryDelays;
 
   bool _providersInitialized = false;
+  String? _pendingPostSignInNotice;
+
+  static final Map<String, Object?> _memoryFallback = <String, Object?>{};
+  static const _appleDeleteBlockedMessage =
+      'Account deletion is temporarily unavailable because Apple Sign In '
+      'token recovery did not finish. Please contact support from '
+      'Settings > Send Feedback and mention Apple token recovery.';
+  static const _appleRecoveryNotice =
+      'Apple Sign In worked, but delete-account recovery needs support '
+      'attention on this device. If you need to delete your account, use '
+      'Settings > Send Feedback and mention Apple token recovery.';
 
   // ===========================================================================
   // Provider Initialization
@@ -110,6 +132,19 @@ class AuthService implements IAuthService {
   Future<bool> isGoogleSignInAvailable() async {
     if (!_validateGoogleClientIds()) return false;
     return _google.isAvailable();
+  }
+
+  @override
+  Future<String?> consumePostSignInNotice() async {
+    final inMemoryNotice = _pendingPostSignInNotice;
+    _pendingPostSignInNotice = null;
+    if (inMemoryNotice != null) return inMemoryNotice;
+
+    final userId = currentUser?.id;
+    if (userId == null) return null;
+    return await _hasAppleTokenRecoveryPending(userId)
+        ? _appleRecoveryNotice
+        : null;
   }
 
   @override
@@ -202,21 +237,13 @@ class AuthService implements IAuthService {
       // CRITICAL: Awaited to ensure token is stored - required for App Store compliance
       final authCode = credential.authorizationCode;
       final accessToken = response.session?.accessToken;
-      if (accessToken != null) {
-        try {
-          await _supabase.exchangeAppleToken(
-            authCode,
-            accessToken: accessToken,
-          );
-          Log.info('Apple token exchange successful');
-        } on AuthException catch (e) {
-          // Log but don't fail sign-in - user can still use app
-          // Account deletion will fail, but that's a rare edge case
-          Log.error(
-            'Apple token exchange failed - account deletion may fail',
-            e,
-          );
-        }
+      final signedInUserId = response.user?.id ?? _supabase.currentUser?.id;
+      if (signedInUserId != null) {
+        await _completeAppleTokenExchangeRecovery(
+          authorizationCode: authCode,
+          accessToken: accessToken,
+          userId: signedInUserId,
+        );
       }
 
       Log.info('User signed in', {'provider': 'apple'});
@@ -325,6 +352,13 @@ class AuthService implements IAuthService {
       throw const AuthException('No user signed in');
     }
 
+    if (await _hasAppleTokenRecoveryPending(user.id)) {
+      Log.warning('Delete account blocked by pending Apple token recovery', {
+        'userId': _truncateUserId(user.id),
+      });
+      throw const AuthException(_appleDeleteBlockedMessage);
+    }
+
     // Call edge function to delete user (requires admin/service role)
     // Note: deleteUser() internally refreshes the session for fresh JWT
     // This MUST succeed before we proceed - do not sign out on failure
@@ -348,8 +382,98 @@ class AuthService implements IAuthService {
       // Non-fatal: may not be signed in with Google
     }
 
+    await _clearAppleTokenRecoveryPending(user.id);
     await _supabase.signOut();
     Log.clearBuffer(); // Clear logs for privacy
     Log.info('Delete account completed');
   }
+
+  Future<void> _completeAppleTokenExchangeRecovery({
+    required String authorizationCode,
+    required String? accessToken,
+    required String userId,
+  }) async {
+    if (accessToken == null || accessToken.isEmpty) {
+      await _markAppleTokenRecoveryPending(userId);
+      _pendingPostSignInNotice = _appleRecoveryNotice;
+      Log.error(
+        'Apple token exchange unavailable - missing access token',
+        null,
+        null,
+        {'userId': _truncateUserId(userId)},
+      );
+      return;
+    }
+
+    final attemptCount = _appleTokenExchangeRetryDelays.length + 1;
+    Object? lastError;
+    StackTrace? lastStackTrace;
+
+    for (var attempt = 0; attempt < attemptCount; attempt++) {
+      try {
+        await _supabase.exchangeAppleToken(
+          authorizationCode,
+          accessToken: accessToken,
+        );
+        await _clearAppleTokenRecoveryPending(userId);
+        Log.info('Apple token exchange successful', {
+          'attempt': attempt + 1,
+          'userId': _truncateUserId(userId),
+        });
+        return;
+      } on Exception catch (error, stackTrace) {
+        lastError = error;
+        lastStackTrace = stackTrace;
+        final isLastAttempt = attempt == attemptCount - 1;
+        Log.warning('Apple token exchange attempt failed', {
+          'attempt': attempt + 1,
+          'attempts': attemptCount,
+          'error': '$error',
+          'userId': _truncateUserId(userId),
+        });
+        if (!isLastAttempt) {
+          await Future<void>.delayed(_appleTokenExchangeRetryDelays[attempt]);
+        }
+      }
+    }
+
+    await _markAppleTokenRecoveryPending(userId);
+    _pendingPostSignInNotice = _appleRecoveryNotice;
+    Log.error(
+      'Apple token exchange failed after retries - delete compliance blocked',
+      lastError,
+      lastStackTrace,
+      {'attempts': attemptCount, 'userId': _truncateUserId(userId)},
+    );
+  }
+
+  Future<bool> _hasAppleTokenRecoveryPending(String userId) async {
+    final key = _appleTokenRecoveryKey(userId);
+    return (_preferences?.getBool(key) ?? _memoryFallback[key] as bool?) ??
+        false;
+  }
+
+  Future<void> _markAppleTokenRecoveryPending(String userId) async {
+    final key = _appleTokenRecoveryKey(userId);
+    if (_preferences != null) {
+      await _preferences.setBool(key, true);
+    } else {
+      _memoryFallback[key] = true;
+    }
+  }
+
+  Future<void> _clearAppleTokenRecoveryPending(String userId) async {
+    final key = _appleTokenRecoveryKey(userId);
+    if (_preferences != null) {
+      await _preferences.remove(key);
+    } else {
+      _memoryFallback.remove(key);
+    }
+  }
+
+  static String _appleTokenRecoveryKey(String userId) =>
+      '${PreferenceKeys.appleTokenRecoveryPendingPrefix}$userId';
+
+  static String _truncateUserId(String userId) =>
+      userId.length <= 8 ? userId : userId.substring(0, 8);
 }

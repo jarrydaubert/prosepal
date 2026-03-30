@@ -61,20 +61,17 @@ void main() {
         expect(service.canUseFreeTierCallCount, equals(2));
       });
 
-      test(
-        'returns allowed=true on server error (graceful degradation)',
-        () async {
-          service.simulateServerError();
-          final result = await service.canUseFreeTier();
-          expect(result.allowed, isTrue);
-          expect(result.reason, equals(DeviceCheckReason.serverError));
-        },
-      );
+      test('returns allowed=false on server error', () async {
+        service.simulateServerError();
+        final result = await service.canUseFreeTier();
+        expect(result.allowed, isFalse);
+        expect(result.reason, equals(DeviceCheckReason.serverError));
+      });
 
-      test('returns allowed=true when fingerprint unavailable', () async {
+      test('returns allowed=false when fingerprint unavailable', () async {
         service.simulateNoFingerprint();
         final result = await service.canUseFreeTier();
-        expect(result.allowed, isTrue);
+        expect(result.allowed, isFalse);
         expect(result.reason, equals(DeviceCheckReason.fingerprintUnavailable));
       });
     });
@@ -218,5 +215,35 @@ void main() {
         expect(secureStore.values.single, equals('generated-device-id'));
       },
     );
+  });
+
+  group('real service verification posture', () {
+    test('blocks free tier when Supabase is unavailable', () async {
+      final service = DeviceFingerprintService(
+        isIOS: () => true,
+        isAndroid: () => false,
+        iosIdentifierReader: (_) async => 'vendor-id-123',
+        secureRead: (_) async => null,
+        secureWrite: (key, value) async {},
+      );
+
+      final result = await service.canUseFreeTier();
+
+      expect(result.allowed, isFalse);
+      expect(result.reason, equals(DeviceCheckReason.serverUnavailable));
+    });
+
+    test('blocks free tier when fingerprint cannot be produced', () async {
+      final service = DeviceFingerprintService(
+        isIOS: () => false,
+        isAndroid: () => true,
+        androidIdentifierReader: (_) async => null,
+      );
+
+      final result = await service.canUseFreeTier();
+
+      expect(result.allowed, isFalse);
+      expect(result.reason, equals(DeviceCheckReason.fingerprintUnavailable));
+    });
   });
 }

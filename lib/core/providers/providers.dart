@@ -245,6 +245,11 @@ final dataExportServiceProvider = Provider<DataExportService>(
   ),
 );
 
+/// Feedback delivery service for in-app support submissions.
+final feedbackServiceProvider = Provider<FeedbackService>(
+  (ref) => FeedbackService(),
+);
+
 /// AI generation service (Firebase AI - no API key needed in client code)
 final aiServiceProvider = Provider<AiService>((ref) => AiService());
 

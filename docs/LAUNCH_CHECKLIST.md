@@ -46,7 +46,7 @@ open ios/Runner.xcworkspace
 
 | Platform | Status | Details |
 |----------|--------|---------|
-| iOS | **LIVE** | v1.1.0 Build 31 - https://apps.apple.com/app/id6757088726 |
+| iOS | **LIVE** | v1.1.2 - https://apps.apple.com/app/id6757088726 |
 | Android | Blocked | Requires 14-day closed testing with 12+ testers |
 
 ---
@@ -100,69 +100,166 @@ open ios/Runner.xcworkspace
 
 ## Phase 1: Pre-Submission (Backend & Code)
 
-### Supabase ✅ VERIFIED 2026-01-10
+### Supabase ✅ VERIFIED 2026-03-15
 
 **Dashboard:** https://supabase.com/dashboard/project/mwoxtqxzunsjmbdqezif
 
+**Verification surfaces**
+- Provider tooling:
+  - Supabase project URL
+  - Edge Function deployment status and versions
+  - Advisor warnings
+- Dashboard-only:
+  - Auth providers
+  - Auth URL configuration
+  - Auth email templates and notification toggles
+
 | Item | Location | Status | Details |
 |------|----------|--------|---------|
-| Security Advisor | Database > Tools > Security Advisor | ✅ | 0 errors, 0 warnings |
-| Email provider | Authentication > Sign In / Providers > Email | ⚠️ | Should be Disabled for social-only auth policy (owner action pending) |
-| Apple provider | Authentication > Sign In / Providers > Apple | ✅ | Client IDs: `com.prosepal.prosepal,com.prosepal.auth`, Secret key set |
-| Google provider | Authentication > Sign In / Providers > Google | ✅ | Client ID: `530092651798-n8u4cl643qkj8dhhkl496gd5elbmlk.apps.googleusercontent.com` |
+| Project URL | Project tools / dashboard | ✅ | `https://mwoxtqxzunsjmbdqezif.supabase.co` |
+| Security Advisor | Project tools / dashboard | ⚠️ | Warning: leaked password protection is disabled; low-signal while auth remains Apple/Google only |
+| Performance Advisor | Project tools / dashboard | ⚠️ | Warning: `public.device_usage` RLS policy re-evaluates auth/current_setting per row |
+| Edge Function: delete-user | Edge Functions | ✅ | Active, version `8`, platform JWT verification disabled by config |
+| Edge Function: exchange-apple-token | Edge Functions | ✅ | Active, version `6`, platform JWT verification disabled by config |
+| Edge Function: revenuecat-webhook | Edge Functions | ✅ | Active, version `7`, platform JWT verification disabled by config |
+| Apple provider | Authentication > Providers | ✅ | Enabled; OAuth callback uses Supabase `/auth/v1/callback` |
+| Apple OAuth secret | Authentication > Providers | ⚠️ | Secret key rotation required every 6 months |
+| Google provider | Authentication > Providers | ✅ | Enabled; `Skip nonce checks` is on for native iOS Google Sign-In compatibility |
 | Site URL | Authentication > URL Configuration | ✅ | `https://www.prosepal.app/` |
-| Redirect URLs | Authentication > URL Configuration | ⚠️ | Verify social-only callback URL remains: `https://prosepal.app/auth/login-callback` |
-| Edge Function: delete-user | Edge Functions | ✅ | `https://mwoxtqxzunsjmbdqezif.supabase.co/functions/v1/delete-user` (6 deployments) |
-| Edge Function: exchange-apple-token | Edge Functions | ✅ | `https://mwoxtqxzunsjmbdqezif.supabase.co/functions/v1/exchange-apple-token` (3 deployments) |
-| Leaked password protection | Authentication > Sign In / Providers > Email | N/A | Not applicable once email auth is disabled |
+| Redirect URLs | Authentication > URL Configuration | ✅ | `https://prosepal.app/auth/login-callback`, `https://prosepal.app/auth/reset-callback` |
+| Auth email templates | Authentication > Email | ⚠️ | Authentication templates still exist, but social-only sign-in means confirm-signup / magic-link / reset-password flows are expected to stay dormant unless email auth is re-enabled |
+| Security notification emails | Authentication > Email | ✅ | Account-change and identity/MFA notification toggles are enabled at project level |
+| Custom SMTP | Authentication > Email > SMTP Settings | ✅ | Custom SMTP enabled via Resend |
+| Supabase sender address | Authentication > Email > SMTP Settings | ✅ | `jarryd@prosepal.app` |
+| Supabase sender name | Authentication > Email > SMTP Settings | ✅ | `Prosepal` |
 
-#### Supabase Social-Only Auth Evidence (Owner-Run)
+#### Supabase Auth Email Notes
 
-Record evidence here whenever auth provider settings are changed or re-verified:
+- Current sign-in UX is Apple + Google only.
+- Security notifications are still useful because account email, linked identities, and MFA state can change at the Supabase account layer.
+- Keep auth email copy functional and support-oriented; do not rely on stale onboarding or pricing/promotional claims in templates.
+- Hosted-template verification and edits are currently dashboard-driven; high-level state is documented here, not full HTML bodies.
+- If email/password auth is ever re-enabled, re-verify:
+  - confirmation email copy
+  - reset-password flow copy
+  - magic-link / OTP template behavior
 
-- [ ] `Auth > Providers > Email` is disabled in production.
-- [ ] `Auth > Providers > Google` is enabled and credentials validate.
-- [ ] `Auth > Providers > Apple` is enabled and credentials validate.
-- [ ] `Auth > URL Configuration` includes only approved production callback URLs.
-- [ ] Evidence screenshots captured for Providers page + URL Configuration page.
-- [ ] Verification date and owner recorded below.
+### Resend ✅ VERIFIED 2026-03-15
 
-| Field | Value |
-|------|-------|
-| Verified by | |
-| Verified at (UTC) | |
-| Provider screenshot path | |
-| URL config screenshot path | |
-| Notes | |
+**Verification surfaces**
+- Dashboard-only:
+  - domain verification and delivery settings
+  - team membership
+  - billing email
+  - SMTP settings and integrations
 
-### RevenueCat ✅ VERIFIED 2026-01-10
+| Item | Location | Status | Details |
+|------|----------|--------|---------|
+| Sending domain | Domains | ✅ | `prosepal.app` verified |
+| Domain provider | Domains | ✅ | Cloudflare |
+| Region | Domains | ✅ | Ireland (`eu-west-1`) |
+| DKIM | Domains > Records | ✅ | Verified |
+| SPF / sending records | Domains > Records | ✅ | Sending enabled and verified |
+| DMARC record | Domains > Records | ✅ | Present |
+| Custom SMTP compatibility | Settings > SMTP | ✅ | `smtp.resend.com`, port `465`, username `resend` |
+| Supabase integration | Settings > Integrations | ✅ | Connected for Auth SMTP usage |
+| Click tracking | Domains > Configuration | ✅ | Disabled |
+| Open tracking | Domains > Configuration | ✅ | Disabled |
+| TLS mode | Domains > Configuration | ✅ | `Enforced` |
+| Sender mailbox in use | Supabase SMTP settings | ✅ | `jarryd@prosepal.app` |
+| Team membership | Settings > Team | ✅ | `jarrydaubert@gmail.com` and `jarryd@prosepal.app` are both admins |
+| Billing email | Settings > Billing | ⚠️ | Still `jarrydaubert@gmail.com` |
+
+#### Resend Notes
+
+- Current setup is suitable for transactional auth mail via Supabase.
+- Tracking is disabled, which avoids link rewriting and deliverability noise in auth emails.
+- Resend is currently used as the SMTP relay for Supabase auth/security mail.
+- If the release includes direct in-app feedback delivery, verify the authenticated
+  `send-feedback` path reaches the Workspace inbox without opening the device
+  mail client, and verify the manual copy/share fallback still works when direct
+  delivery fails.
+- Public docs should record sender/domain posture, not API key values or SMTP secrets.
+
+### RevenueCat ✅ VERIFIED 2026-03-15
 
 **Dashboard:** https://app.revenuecat.com/projects/a8bf92d5/apps
 
+**Verification surfaces**
+- Provider tooling / API, if project credentials are available:
+  - customer/subscriber state
+  - offerings / products / entitlements metadata
+  - charts / metrics exports
+- Dashboard-only:
+  - collaborators / project access
+  - billing owner / billing settings
+  - some app-store linking and project-level configuration
+- No dedicated RevenueCat CLI or MCP path is currently configured in this repo/session.
+
 | Item | Location | Status | Details |
 |------|----------|--------|---------|
-| iOS app | Apps & Projects | ✅ | Prosepal (App Store) configured |
-| Android app | Apps & Projects | ✅ | Prosepal (Play Store) configured |
+| iOS app | Apps & providers | ✅ | `Prosepal (App Store)` / RevenueCat App ID `appdc3ae33901` |
+| Android app | Apps & providers | ✅ | `Prosepal (Play Store)` / RevenueCat App ID `app4a84d9d5ff` |
+| Web app config | Apps & providers | ✅ | No web configuration / no public web API keys configured |
 | iOS Products | Product catalog > Products | ⚠️ | `com.prosepal.pro.weekly`, `.monthly`, `.yearly` - "Ready to Submit" in App Store Connect |
 | Android Products | Product catalog > Products | ✅ | `com.prosepal.pro.weekly:weekly`, `.monthly:monthly`, `.yearly:yearly` - Published |
 | Entitlement | Product catalog > Entitlements | ✅ | `pro` entitlement with 2 products |
 | Offering | Product catalog > Offerings | ✅ | `default` offering with 3 packages |
-| SDK API Keys | API Keys | ✅ | Keys for App Store + Play Store |
-| Test Store | Apps & Projects | ✅ | Sandbox testing configured |
+| Secret API keys | API Keys | ✅ | No secret API keys configured |
+| SDK API keys | API Keys | ✅ | Public SDK keys exist for `Test Store`, `Prosepal (App Store)`, and `Prosepal (Play Store)` |
+| Test Store | Apps & providers | ✅ | Sandbox testing configured with project test API key |
+| Webhooks | Integrations > Webhooks | ✅ | `Supabase Entitlements Sync` active against the Supabase `revenuecat-webhook` function |
+| Webhook environments | Integrations > Webhooks | ✅ | Sends both Production and Sandbox events |
+| Webhook scope | Integrations > Webhooks | ✅ | `All apps` / `All events` |
+| Webhook delivery | Integrations > Webhooks | ✅ | Recent deliveries show `Sent` status |
+| Scheduled data exports | Integrations | ✅ | Not configured |
+| Sandbox entitlement access | Project settings > General | ✅ | `Anybody` |
+| App User ID transfer behavior | Project settings > General | ✅ | `Transfer to new App User ID` |
+| RevenueCat-hosted web domain | Project settings > Domains | ✅ | RevenueCat default domain in use; no custom domain configured |
+| Workspace admin access | Project settings > Collaborators | ✅ | `jarryd@prosepal.app` accepted as `Administrator` |
+| Personal owner access | Project settings > Collaborators | ✅ | `jarrydaubert@gmail.com` remains `Owner` |
 
-### Firebase ✅ VERIFIED 2026-01-10
+#### RevenueCat Notes
 
-**Console:** https://console.firebase.google.com/project/prosepal-cda84
+- App runtime uses the RevenueCat mobile SDK directly; backend sync flows through the deployed `revenuecat-webhook` Supabase function.
+- Provider API access can help validate customer state and catalog configuration, but billing posture still requires dashboard verification.
+- Current project is native-store only. RevenueCat-hosted domains are only relevant if the app adopts RevenueCat web billing / hosted web funnels later.
+
+### Firebase ✅ VERIFIED 2026-03-15
+
+**Console:** https://console.firebase.google.com/project/prosepal-1a24b
 
 | Item | Location | Status | Details |
 |------|----------|--------|---------|
-| App Check | Build > App Check | ✅ | Firebase AI Logic in Monitoring mode (enforce after launch) |
-| Remote Config: `ai_model` | Run > Remote Config | ✅ | `gemini-2.5-flash` |
-| Remote Config: `ai_model_fallback` | Run > Remote Config | ✅ | `gemini-2.5-flash-lite` |
-| Remote Config: `min_app_version_ios` | Run > Remote Config | ✅ | `1.0.0` |
-| Remote Config: `min_app_version_android` | Run > Remote Config | ✅ | `1.0.0` |
-| Crashlytics | Run > Crashlytics | ✅ | Enabled, 100% crash-free |
-| Analytics | Analytics Dashboard | ✅ | Enabled, collecting data |
+| Live Firebase project | Project settings > General | ✅ | `Prosepal` / `prosepal-1a24b` |
+| Google Cloud parent org | Project settings > General | ✅ | `jarrydaubert-org` |
+| Public-facing name | Project settings > General | ✅ | `Prosepal` |
+| Support email | Project settings > General | ✅ | `jarryd@prosepal.app` |
+| Android app registration | Project settings > General | ✅ | `prosepal (android)` / `com.prosepal.prosepal` |
+| iOS app registration | Project settings > General | ✅ | `prosepal (ios)` / `com.prosepal.prosepal` |
+| App Check for Firebase AI Logic | App Check > APIs | ✅ | Enforced with 100% verified / 0% unverified requests |
+| Firebase Cloud Messaging API (V1) | Project settings > Cloud Messaging | ✅ | Enabled |
+| Cloud Messaging API (Legacy) | Project settings > Cloud Messaging | ✅ | Disabled |
+| Analytics integration | Project settings > Integration | ✅ | Google Analytics enabled |
+| Google Play integration | Project settings > Integration | ⚠️ | No matching Play app currently linked |
+| Firebase service-data sharing | Project settings > Data privacy | ✅ | Non-Firebase Google service-data option enabled |
+| Workspace admin access | Project settings > Users and permissions | ✅ | `jarryd@prosepal.app` has Firebase admin access |
+| Personal backup access | Project settings > Users and permissions | ✅ | `jarrydaubert@gmail.com` remains owner/backstop access |
+| Project alerts | Project settings > Alerts | ✅ | Project-level alerts enabled |
+| App Distribution alerts | Project settings > Alerts | ✅ | New tester device + tester feedback alerts enabled |
+| Authentication alerts | Project settings > Alerts | ✅ | Phone Auth plan-limit alert enabled |
+| Firestore alerts | Project settings > Alerts | ✅ | Insecure rules + expiring rules alerts enabled |
+| Crashlytics alerts | Project settings > Alerts | ✅ | Trending, regressions, and missing dSYM email alerts configured |
+| Live Remote Config template | `firebase remoteconfig:get -P prosepal-1a24b` | ✅ | All expected production keys are now published in version `3` |
+
+**Public repo note:** Do not record raw certificate fingerprints, service-account
+details, recovery codes, or other secret-adjacent console values here. Keep
+those in private operations notes only.
+
+**Remote Config note:** The live template now includes the expected production
+keys used by [remote_config_service.dart](/Users/jarrydaubert/Desktop/prosepal/lib/core/services/remote_config_service.dart),
+including AI model selection, kill switches, App Check token behavior, schema
+version, and minimum app versions.
 
 ### Code ✅ VERIFIED 2026-01-10
 

@@ -44,6 +44,7 @@ flutter test --exclude-tags flaky --coverage
 ./scripts/test_visual_regression.sh --update
 
 # AI cost/abuse control audit (ops verification)
+./scripts/audit_ai_cost_controls.sh --repo-only
 ./scripts/audit_ai_cost_controls.sh
 SUPABASE_DB_URL="postgresql://..." ./scripts/verify_supabase_readonly.sh
 

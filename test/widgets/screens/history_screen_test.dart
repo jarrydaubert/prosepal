@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:prosepal/core/models/models.dart';
 import 'package:prosepal/core/providers/providers.dart';
 import 'package:prosepal/features/history/history_screen.dart';
+import 'package:prosepal/shared/theme/app_colors.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../mocks/mock_history_service.dart';
@@ -298,6 +299,29 @@ void main() {
 
       // Should show "All" chip
       expect(find.widgetWithText(FilterChip, 'All (2)'), findsOneWidget);
+    });
+
+    testWidgets('selected filter chip uses readable light-surface tokens', (
+      tester,
+    ) async {
+      mockHistory.setHistory([
+        TestHistoryFactory.createItem(id: 'item-1'),
+        TestHistoryFactory.createItem(
+          id: 'item-2',
+          occasion: Occasion.sympathy,
+        ),
+      ]);
+
+      await tester.pumpWidget(createTestableHistoryScreen());
+      await tester.pumpAndSettle();
+
+      final allChip = tester.widget<FilterChip>(
+        find.widgetWithText(FilterChip, 'All (2)'),
+      );
+
+      expect(allChip.backgroundColor, AppColors.surface);
+      expect(allChip.selectedColor, AppColors.primaryLight);
+      expect(allChip.labelStyle?.color, AppColors.textOnLight);
     });
 
     testWidgets('hides filter chips when only one occasion type', (

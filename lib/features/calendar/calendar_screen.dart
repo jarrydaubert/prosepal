@@ -11,6 +11,8 @@ import '../../shared/components/app_button.dart';
 import '../../shared/components/app_emoji.dart';
 import '../../shared/components/app_surface_card.dart';
 import '../../shared/theme/app_colors.dart';
+import '../../shared/theme/app_icons.dart';
+import '../../shared/theme/app_spacing.dart';
 import 'add_occasion_sheet.dart';
 
 class CalendarScreen extends ConsumerStatefulWidget {
@@ -47,13 +49,17 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       body: occasionsAsync.when(
         data: _buildContent,
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error loading occasions: $e')),
+        error: (e, _) => _buildErrorState(e),
       ),
       floatingActionButton: showFloatingAddButton
           ? FloatingActionButton.extended(
               onPressed: _showAddOccasion,
               backgroundColor: AppColors.primary,
-              icon: const Icon(Icons.add, color: AppColors.textOnPrimary),
+              icon: const Icon(
+                AppIcons.add,
+                color: AppColors.textOnPrimary,
+                size: AppSpacing.iconSizeSmall,
+              ),
               label: const Text(
                 'Add Occasion',
                 style: TextStyle(
@@ -105,7 +111,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
               border: Border.all(color: AppColors.primary, width: 3),
             ),
             child: const Center(
-              child: Text('📅', style: TextStyle(fontSize: 48)),
+              child: AppEmoji(emoji: '📅', size: AppSpacing.iconSizeXL),
             ),
           ),
           const SizedBox(height: 24),
@@ -130,10 +136,63 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           const SizedBox(height: 32),
           AppButton(
             label: 'Add Your First Occasion',
-            icon: Icons.add,
+            icon: AppIcons.add,
             onPressed: _showAddOccasion,
           ),
         ],
+      ),
+    ),
+  );
+
+  Widget _buildErrorState(Object error) => Center(
+    child: Padding(
+      padding: const EdgeInsets.all(AppSpacing.screenPadding),
+      child: AppSurfaceCard(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                color: AppColors.primaryLight,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: AppColors.primary, width: 2),
+              ),
+              child: const Icon(
+                Icons.event_busy_rounded,
+                color: AppColors.primary,
+                size: AppSpacing.iconSizeLarge,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            const Text(
+              'Could not load occasions',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textOnLight,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              error.toString(),
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 14,
+                height: 1.4,
+                color: AppColors.textOnLightSecondary,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            AppButton(
+              label: 'Try Again',
+              icon: AppIcons.refresh,
+              onPressed: () => ref.invalidate(upcomingOccasionsProvider),
+            ),
+          ],
+        ),
       ),
     ),
   );
@@ -312,9 +371,16 @@ class _OccasionCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: isUrgent
-                    ? AppColors.warning.withValues(alpha: 0.1)
-                    : AppColors.primaryLight,
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: isUrgent
+                      ? [
+                          AppColors.warning.withValues(alpha: 0.16),
+                          AppColors.primaryLight,
+                        ]
+                      : [AppColors.primaryLight, AppColors.surfaceLight],
+                ),
                 borderRadius: const BorderRadius.vertical(
                   top: Radius.circular(14),
                 ),
@@ -456,8 +522,8 @@ class _OccasionCard extends StatelessWidget {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           const Icon(
-                            Icons.calendar_today,
-                            size: 16,
+                            AppIcons.date,
+                            size: AppSpacing.iconSizeXS,
                             color: AppColors.textOnLightSecondary,
                           ),
                           const SizedBox(width: 8),
@@ -475,8 +541,8 @@ class _OccasionCard extends StatelessWidget {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             const Icon(
-                              Icons.notifications_active,
-                              size: 16,
+                              AppIcons.reminder,
+                              size: AppSpacing.iconSizeXS,
                               color: AppColors.textOnLightSecondary,
                             ),
                             const SizedBox(width: 4),
@@ -511,81 +577,73 @@ class _OccasionCard extends StatelessWidget {
 
                   // Action buttons
                   LayoutBuilder(
-                    builder: (context, constraints) {
-                      final useSingleRow = constraints.maxWidth >= 340;
-                      if (useSingleRow) {
-                        return Row(
-                          children: [
-                            Expanded(
-                              child: _ActionChip(
-                                icon: Icons.auto_awesome,
-                                label: 'Generate',
-                                onTap: onTap,
-                                isPrimary: true,
-                                compact: true,
+                    builder: (context, constraints) => Column(
+                      children: [
+                        _ActionChip(
+                          icon: AppIcons.regenerate,
+                          label: 'Write a message',
+                          onTap: onTap,
+                          isPrimary: true,
+                          fullWidth: true,
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+                        if (constraints.maxWidth >= 340)
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _ActionChip(
+                                  icon: AppIcons.export,
+                                  label: 'Export',
+                                  onTap: onExport,
+                                  compact: true,
+                                ),
                               ),
-                            ),
-                            const SizedBox(width: 4),
-                            Expanded(
-                              child: _ActionChip(
-                                icon: Icons.event,
+                              const SizedBox(width: AppSpacing.sm),
+                              Expanded(
+                                child: _ActionChip(
+                                  icon: AppIcons.edit,
+                                  label: 'Edit',
+                                  onTap: onEdit,
+                                  compact: true,
+                                ),
+                              ),
+                              const SizedBox(width: AppSpacing.sm),
+                              Expanded(
+                                child: _ActionChip(
+                                  icon: AppIcons.delete,
+                                  label: 'Delete',
+                                  onTap: onDelete,
+                                  isDestructive: true,
+                                  compact: true,
+                                ),
+                              ),
+                            ],
+                          )
+                        else
+                          Wrap(
+                            spacing: AppSpacing.sm,
+                            runSpacing: AppSpacing.sm,
+                            children: [
+                              _ActionChip(
+                                icon: AppIcons.export,
                                 label: 'Export',
                                 onTap: onExport,
-                                compact: true,
                               ),
-                            ),
-                            const SizedBox(width: 4),
-                            Expanded(
-                              child: _ActionChip(
-                                icon: Icons.edit_outlined,
+                              _ActionChip(
+                                icon: AppIcons.edit,
                                 label: 'Edit',
                                 onTap: onEdit,
-                                compact: true,
                               ),
-                            ),
-                            const SizedBox(width: 4),
-                            Expanded(
-                              child: _ActionChip(
-                                icon: Icons.delete_outline,
+                              _ActionChip(
+                                icon: AppIcons.delete,
                                 label: 'Delete',
                                 onTap: onDelete,
                                 isDestructive: true,
-                                compact: true,
                               ),
-                            ),
-                          ],
-                        );
-                      }
-
-                      return Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: [
-                          _ActionChip(
-                            icon: Icons.auto_awesome,
-                            label: 'Generate',
-                            onTap: onTap,
-                            isPrimary: true,
+                            ],
                           ),
-                          _ActionChip(
-                            icon: Icons.event,
-                            label: 'Export',
-                            onTap: onExport,
-                          ),
-                          _ActionChip(
-                            icon: Icons.edit_outlined,
-                            label: 'Edit',
-                            onTap: onEdit,
-                          ),
-                          _ActionChip(
-                            icon: Icons.delete_outline,
-                            label: 'Delete',
-                            onTap: onDelete,
-                            isDestructive: true,
-                          ),
-                        ],
-                      );
-                    },
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -605,6 +663,7 @@ class _ActionChip extends StatelessWidget {
     this.isPrimary = false,
     this.isDestructive = false,
     this.compact = false,
+    this.fullWidth = false,
   });
 
   final IconData icon;
@@ -613,6 +672,7 @@ class _ActionChip extends StatelessWidget {
   final bool isPrimary;
   final bool isDestructive;
   final bool compact;
+  final bool fullWidth;
 
   @override
   Widget build(BuildContext context) {
@@ -626,33 +686,75 @@ class _ActionChip extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        constraints: BoxConstraints(minHeight: compact ? 32 : 32),
+        constraints: BoxConstraints(
+          minHeight: fullWidth ? 44 : 32,
+          minWidth: fullWidth ? double.infinity : 0,
+        ),
         padding: EdgeInsets.symmetric(
-          horizontal: compact ? 6 : 10,
-          vertical: compact ? 4 : 6,
+          horizontal: fullWidth
+              ? AppSpacing.md
+              : compact
+              ? AppSpacing.sm
+              : AppSpacing.md,
+          vertical: fullWidth
+              ? AppSpacing.sm
+              : compact
+              ? AppSpacing.xs
+              : AppSpacing.sm,
         ),
         decoration: BoxDecoration(
-          color: isPrimary
-              ? AppColors.primary.withValues(alpha: 0.1)
-              : AppColors.surfaceLightMuted,
-          borderRadius: BorderRadius.circular(compact ? 10 : 8),
-          border: Border.all(color: color.withValues(alpha: 0.45)),
+          gradient: isPrimary
+              ? const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [AppColors.primary, AppColors.primaryDark],
+                )
+              : null,
+          color: isPrimary ? null : AppColors.surfaceLightMuted,
+          borderRadius: BorderRadius.circular(
+            compact ? AppSpacing.radiusMedium : AppSpacing.radiusSmall,
+          ),
+          border: Border.all(
+            color: isPrimary
+                ? AppColors.primaryDark
+                : color.withValues(alpha: 0.45),
+            width: isPrimary ? 1.5 : 1,
+          ),
+          boxShadow: isPrimary
+              ? [
+                  BoxShadow(
+                    color: AppColors.primary.withValues(alpha: 0.2),
+                    blurRadius: 12,
+                    offset: const Offset(0, 6),
+                  ),
+                ]
+              : null,
         ),
         child: Row(
-          mainAxisSize: compact ? MainAxisSize.max : MainAxisSize.min,
+          mainAxisSize: fullWidth || compact
+              ? MainAxisSize.max
+              : MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             if (showIcon) ...[
-              Icon(icon, size: compact ? 13 : 14, color: color),
-              SizedBox(width: compact ? 3 : 4),
+              Icon(
+                icon,
+                size: compact ? AppSpacing.iconSizeXS : AppSpacing.iconSizeXS,
+                color: isPrimary ? AppColors.textOnPrimary : color,
+              ),
+              SizedBox(width: compact ? AppSpacing.xs : AppSpacing.xs),
             ],
             Flexible(
               child: Text(
                 label,
                 style: TextStyle(
-                  fontSize: compact ? 10.5 : 12,
-                  fontWeight: FontWeight.w600,
-                  color: color,
+                  fontSize: fullWidth
+                      ? 14
+                      : compact
+                      ? 10.5
+                      : 12,
+                  fontWeight: FontWeight.w700,
+                  color: isPrimary ? AppColors.textOnPrimary : color,
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,

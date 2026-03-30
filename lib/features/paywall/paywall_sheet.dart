@@ -244,7 +244,16 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
         onTimeout: () =>
             throw Exception('Sign in timed out. Please try again.'),
       );
+      final postAuthNotice = await authService.consumePostSignInNotice();
       if (response.user != null) {
+        if (mounted && postAuthNotice != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(postAuthNotice),
+              duration: const Duration(seconds: 6),
+            ),
+          );
+        }
         try {
           await usageService.syncFromServer();
         } on Exception catch (e) {
@@ -268,7 +277,7 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
 
         // No Pro restored - stay on paywall, user can tap Continue
         Log.info('PaywallSheet: Apple sign-in for sync complete');
-        if (mounted) {
+        if (mounted && postAuthNotice == null) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Signed in! Tap Continue to subscribe.'),
@@ -307,7 +316,16 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
         onTimeout: () =>
             throw Exception('Sign in timed out. Please try again.'),
       );
+      final postAuthNotice = await authService.consumePostSignInNotice();
       if (response.user != null) {
+        if (mounted && postAuthNotice != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(postAuthNotice),
+              duration: const Duration(seconds: 6),
+            ),
+          );
+        }
         try {
           await usageService.syncFromServer();
         } on Exception catch (e) {
@@ -328,7 +346,7 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
         }
 
         Log.info('PaywallSheet: Google sign-in for sync complete');
-        if (mounted) {
+        if (mounted && postAuthNotice == null) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Signed in! Tap Continue to subscribe.'),
@@ -378,26 +396,12 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
         Log.info('Purchase completed', {'package': package.identifier});
         HapticFeedback.heavyImpact();
         _purchaseCompleted = true;
+        final messenger = ScaffoldMessenger.of(context);
 
         // Close sheet with success
         Navigator.of(context).pop(true);
 
-        // Show success message
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Row(
-                children: [
-                  Icon(Icons.check_circle, color: AppColors.surfaceLight),
-                  Gap(AppSpacing.sm),
-                  Text('Welcome to Pro!'),
-                ],
-              ),
-              backgroundColor: AppColors.success,
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-        }
+        _showTopSuccessBanner(messenger, 'Welcome to Pro!');
       } else if (!hasPro && mounted) {
         // Purchase returned false - could be cancellation or failure
         // Service already logs the specific reason, just show generic message
@@ -446,24 +450,11 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
         ref.invalidate(customerInfoProvider);
         HapticFeedback.mediumImpact();
         _purchaseCompleted = true;
+        final messenger = ScaffoldMessenger.of(context);
 
         Navigator.of(context).pop(true);
 
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Row(
-                children: [
-                  Icon(Icons.check_circle, color: AppColors.surfaceLight),
-                  Gap(AppSpacing.sm),
-                  Text('Pro subscription restored!'),
-                ],
-              ),
-              backgroundColor: AppColors.success,
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-        }
+        _showTopSuccessBanner(messenger, 'Pro subscription restored!');
       } else if (mounted) {
         _showError('No active subscription found');
       }
@@ -479,6 +470,54 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
 
   void _showError(String message) {
     setState(() => _error = message);
+  }
+
+  void _showTopSuccessBanner(ScaffoldMessengerState messenger, String message) {
+    messenger
+      ..clearSnackBars()
+      ..clearMaterialBanners()
+      ..showMaterialBanner(
+        MaterialBanner(
+          backgroundColor: AppColors.success,
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.lg,
+            vertical: AppSpacing.sm,
+          ),
+          content: Row(
+            children: [
+              const Icon(Icons.check_circle, color: AppColors.surfaceLight),
+              const Gap(AppSpacing.sm),
+              Expanded(
+                child: Text(
+                  message,
+                  style: const TextStyle(
+                    color: AppColors.surfaceLight,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: messenger.hideCurrentMaterialBanner,
+              child: const Text(
+                'Dismiss',
+                style: TextStyle(
+                  color: AppColors.surfaceLight,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+
+    unawaited(
+      Future<void>.delayed(const Duration(seconds: 3)).then((_) {
+        messenger.hideCurrentMaterialBanner();
+      }),
+    );
   }
 
   void _dismissError() {

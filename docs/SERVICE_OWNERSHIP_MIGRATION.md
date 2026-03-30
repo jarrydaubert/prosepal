@@ -5,14 +5,19 @@
 Move operational ownership of production services from personal identities to
 business-managed identities while keeping the live app stable.
 
-This runbook covers service ownership, admin access, billing custody, recovery
-paths, and runtime verification for:
-- Google Cloud / Firebase / Google Play
-- Cloudflare
+This runbook is about control, billing, recovery, and clean service
+boundaries. It is not a runtime replatforming plan.
+
+## Scope
+
+This runbook covers:
+- Google Cloud / Firebase / Google Auth Platform / Google Play
+- Cloudflare / DNS
 - Supabase
 - RevenueCat
 - Apple Developer / App Store Connect
-- repo/runtime secret custody where service ownership changes require rotation
+- app-facing contact mailboxes
+- recovery/admin ownership and any secret rotation required by ownership moves
 
 Use this runbook when:
 - moving from a personal Google account to Google Workspace
@@ -46,6 +51,7 @@ provider-console state.
 | Firebase iOS bundle ID | `com.prosepal.prosepal` | `lib/firebase_options.dart` |
 | Firebase storage bucket | `prosepal-1a24b.firebasestorage.app` | `lib/firebase_options.dart` |
 | Google Cloud/Firebase org | `jarrydaubert-org` | provider console verification |
+| Workspace org visible in console | `prosepal.app` | provider console verification |
 | Supabase project ref | `mwoxtqxzunsjmbdqezif` | `docs/LAUNCH_CHECKLIST.md` |
 | RevenueCat project path | `projects/a8bf92d5` | `docs/LAUNCH_CHECKLIST.md` |
 | Support mailbox | `jarryd@prosepal.app` | `lib/core/config/app_config.dart` |
@@ -57,6 +63,86 @@ Runtime keys that must be preserved or re-issued during migration:
 - `REVENUECAT_ANDROID_KEY`
 - `GOOGLE_WEB_CLIENT_ID`
 - `GOOGLE_IOS_CLIENT_ID`
+
+## Current Verified Production State
+
+Current verified Google/Firebase production state:
+- live Firebase project remains `prosepal-1a24b`
+- live project is still under Google Cloud org `jarrydaubert-org`
+- Workspace org `prosepal.app` exists separately in Google Cloud
+- Firebase public support email is `jarryd@prosepal.app`
+- Workspace identity `jarryd@prosepal.app` has production Firebase admin access
+- personal Gmail remains in place as backup owner/admin access
+- App Check enforcement is enabled for Firebase AI Logic
+- Firebase project alerts are enabled for App Distribution, Authentication,
+  Firestore, and Crashlytics
+- Google Analytics is enabled in Firebase
+- live Remote Config now publishes the expected production keys used by the app
+- Google Play is not currently linked through the Firebase integration tile
+
+Current verified Supabase production state:
+- production project remains `mwoxtqxzunsjmbdqezif`
+- Apple and Google auth providers are enabled
+- auth email delivery uses custom SMTP with sender address
+  `jarryd@prosepal.app`
+- hosted auth email templates and notification toggles are configured in the
+  dashboard
+- Workspace/business identity `jarryd@prosepal.app` has been added with
+  admin-level access
+
+Current verified Resend production state:
+- sending domain `prosepal.app` is verified
+- domain provider is Cloudflare
+- SMTP sender path is configured for `jarryd@prosepal.app`
+- Supabase integration is connected for SMTP-backed auth delivery
+- click tracking and open tracking are disabled
+- Workspace/business identity `jarryd@prosepal.app` has been added as admin
+- billing email is still personal Gmail
+
+Current verified RevenueCat production state:
+- project remains `Prosepal`
+- native app configs exist for App Store and Play Store
+- no web app configuration is currently in use
+- Supabase entitlement sync webhook is active for both Production and Sandbox
+- webhook scope is `All apps` / `All events`
+- recent webhook deliveries report successful send status
+- Workspace/business identity `jarryd@prosepal.app` has been added as an
+  `Administrator`
+- personal Gmail remains `Owner`
+- RevenueCat-hosted web domain remains on the default RevenueCat domain because
+  the current project does not use RevenueCat-hosted web billing
+- team-wide 2FA enforcement is available but not yet enabled because the
+  Workspace admin currently has 2FA disabled
+
+Public-repo constraint:
+- document provider ownership, project IDs, and high-level settings
+- do not store raw cert fingerprints, recovery details, service-account
+  inventories, or other secret-adjacent console values in this repo
+
+## Working Rule
+
+For live Prosepal, preserve the existing production runtime stack wherever
+possible.
+
+Preferred order:
+1. capture inventory and recovery state
+2. migrate ownership and admin access
+3. normalize public contact details and billing custody
+4. verify runtime behavior
+5. only consider project/org moves or service replacement if ownership transfer
+   is insufficient
+
+Do not clone production services just to improve admin cleanliness.
+
+Agent note:
+- when verifying live provider state, prefer the provider SDK, CLI, or API over
+  manual console inspection where possible
+- use console screenshots as supporting evidence or when provider tooling cannot
+  expose the needed state cleanly
+- this applies across providers used by Prosepal, including Firebase,
+  Google Cloud, Supabase, RevenueCat, GitHub, and similar admin surfaces
+- for config-style resources, prefer machine-readable exports because they are
+  easier to diff, safer to summarize, and less error-prone than screenshots
 
 ## Commands And Steps
 
@@ -80,7 +166,17 @@ sed -n '100,220p' docs/LAUNCH_CHECKLIST.md
 Do not rotate or delete anything until the current production identifiers are
 captured.
 
-### 2) Migrate Google Cloud / Firebase / Google Play By Adding Access First
+### 2) Keep The Live Google Project As The Production Source Of Truth
+
+Treat this as the only live Google/Firebase project:
+- `Prosepal`
+- project ID `prosepal-1a24b`
+
+Do not use these for live production unless there is an explicit migration plan:
+- `friendly-art-490215-e8`
+- `flowing-castle-490219-h2`
+
+### 3) Migrate Google Cloud / Firebase / Google Play By Adding Access First
 
 Prefer adding the Workspace user to the existing production project before
 creating replacement projects.
@@ -111,7 +207,7 @@ Do not create a new Firebase project unless you explicitly intend to reissue
 all Firebase app config, App Check bindings, OAuth config, Remote Config, and
 Crashlytics history.
 
-### 2a) Check Google Play Account Type Before Assuming A Testing Exemption
+### 3a) Check Google Play Account Type Before Assuming A Testing Exemption
 
 Google Cloud / Firebase ownership cleanup does not change Google Play developer
 account type.
@@ -130,7 +226,10 @@ Before planning around Android production access:
 4. Prefer changing the existing Play account type over creating a second Play
    account unless there is a clear transfer plan.
 
-### 3) Move Domain/DNS Custody To A Business-Controlled Cloudflare Account
+Current verified state:
+- Play Console developer account type is `Personal`
+
+### 4) Move Domain/DNS Custody To A Business-Controlled Cloudflare Account
 
 The domain is the root dependency for mail, app-site links, support addresses,
 and public web verification records.
@@ -146,7 +245,7 @@ Preferred sequence:
    - any app-link / verification TXT or CNAME records
    - site records for `prosepal.app` and `www.prosepal.app`
 
-### 4) Transfer Supabase Ownership Without Replacing The Project
+### 5) Transfer Supabase Ownership Without Replacing The Project
 
 Preferred approach:
 1. Invite the business identity into the existing Supabase organization/project.
@@ -158,7 +257,7 @@ Preferred approach:
 The app should keep using the same `SUPABASE_URL` and project unless a full
 backend migration is intentionally planned.
 
-### 5) Transfer RevenueCat Ownership And Billing
+### 6) Transfer RevenueCat Ownership And Billing
 
 Preferred approach:
 1. Invite the business identity to the existing RevenueCat project.
@@ -170,7 +269,7 @@ Preferred approach:
 Do not create a new RevenueCat project for this migration unless you are also
 planning a product/catalog rebuild.
 
-### 6) Normalize Public And Admin Mailboxes
+### 7) Normalize Public And Admin Mailboxes
 
 Recommended mailbox model:
 - admin login: `jarryd@prosepal.app`
@@ -180,7 +279,15 @@ Recommended mailbox model:
 Use role-based aliases/groups for public-facing contacts so a later sale or
 handover does not depend on a named personal mailbox.
 
-### 7) Rotate Secrets And Recovery Paths After Ownership Moves
+Current next ownership actions:
+- Resend: move billing email off personal Gmail
+- RevenueCat: decide whether to enable team-wide 2FA after the Workspace admin
+  has 2FA enabled
+- RevenueCat: review billing/account ownership path
+- Cloudflare: confirm whether the zone remains in the personal account or has
+  already been transferred
+
+### 8) Rotate Secrets And Recovery Paths After Ownership Moves
 
 After each provider transfer, review and rotate as needed:
 - API keys
@@ -193,7 +300,7 @@ After each provider transfer, review and rotate as needed:
 Update local and CI/runtime configuration only after replacement values are
 confirmed valid.
 
-### 8) Re-Verify Runtime Wiring
+### 9) Re-Verify Runtime Wiring After Any Credential Or Ownership Change
 
 Run the baseline validation set after any config or credential change:
 
@@ -253,9 +360,10 @@ flutter test
 
 ## References
 
-- `docs/SERVICE_CONFIG.md`
+- `docs/APP_OPERATING_STANDARD.md`
 - `docs/LAUNCH_CHECKLIST.md`
 - `docs/DEVOPS.md`
 - `docs/IDENTITY_MAPPING.md`
+- `docs/BACKLOG.md`
 - `lib/firebase_options.dart`
 - `lib/core/config/app_config.dart`

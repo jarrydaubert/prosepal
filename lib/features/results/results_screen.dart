@@ -20,6 +20,8 @@ import '../../shared/components/app_emoji.dart';
 import '../../shared/components/app_surface_card.dart';
 import '../../shared/components/generation_loading_overlay.dart';
 import '../../shared/theme/app_colors.dart';
+import '../../shared/theme/app_icons.dart';
+import '../../shared/theme/app_spacing.dart';
 import '../../shared/utils/keyboard_utils.dart';
 import '../paywall/paywall_sheet.dart';
 import 'save_to_calendar_dialog.dart';
@@ -97,7 +99,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
               // Messages
               Expanded(
                 child: ListView.builder(
-                  padding: const EdgeInsets.all(20),
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
                   itemCount: result.messages.length,
                   itemBuilder: (context, index) {
                     final message = result.messages[index];
@@ -147,14 +149,14 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
               // Bottom actions
               SafeArea(
                 child: Padding(
-                  padding: const EdgeInsets.all(20),
+                  padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
                   child: Row(
                     children: [
                       Expanded(
                         child: AppButton(
                           label: 'Start Over',
                           style: AppButtonStyle.outline,
-                          icon: Icons.home_outlined,
+                          icon: AppIcons.startOver,
                           onPressed: _returnHome,
                         ),
                       ),
@@ -162,7 +164,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                       Expanded(
                         child: AppButton(
                           label: isPro ? 'Regenerate' : 'Unlock Pro',
-                          icon: isPro ? Icons.auto_awesome : Icons.lock_outline,
+                          icon: isPro ? AppIcons.regenerate : AppIcons.unlock,
                           isLoading: _isRegenerating,
                           onPressed: canRegenerate
                               ? () => isPro
@@ -266,9 +268,9 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
-                    Icons.celebration,
+                    AppIcons.celebrate,
                     color: AppColors.primary,
-                    size: 16,
+                    size: AppSpacing.iconSizeXS,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -322,9 +324,9 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
-                    Icons.check,
+                    AppIcons.copied,
                     color: AppColors.success,
-                    size: 16,
+                    size: AppSpacing.iconSizeXS,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -427,27 +429,6 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
         return;
       }
 
-      // Enforce usage limits for Pro users (server-side for authenticated).
-      if (authService.isLoggedIn) {
-        try {
-          final usageResult = await usageService.checkAndIncrementServerSide(
-            isPro: isPro,
-          );
-          if (!usageResult.allowed) {
-            _showRegenerationError(
-              usageResult.errorMessage ?? 'Usage limit reached',
-            );
-            if (!isPro && mounted) {
-              unawaited(showPaywall(context, source: 'regenerate_blocked'));
-            }
-            return;
-          }
-        } on UsageCheckException catch (e) {
-          _showRegenerationError(e.message);
-          return;
-        }
-      }
-
       final useUkSpelling = ref.read(isUkSpellingProvider);
       final result = await aiService.generateMessages(
         occasion: currentResult.occasion,
@@ -459,25 +440,48 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
         useUkSpelling: useUkSpelling,
       );
 
-      // For anonymous users, regenerate also consumes usage.
-      if (!authService.isLoggedIn) {
+      // Regenerate follows the same charge-on-success contract as initial
+      // generate: only consume after AI success, and fail closed if charge
+      // verification cannot complete.
+      if (authService.isLoggedIn) {
+        try {
+          final usageResult = await usageService.checkAndIncrementServerSide(
+            isPro: isPro,
+          );
+          if (!usageResult.allowed) {
+            _showRegenerationError(
+              usageResult.errorMessage ?? 'Usage limit reached',
+            );
+            return;
+          }
+        } on UsageCheckException catch (e) {
+          _showRegenerationError(e.message);
+          return;
+        }
+      } else {
         await usageService.recordGeneration(isPro: isPro);
       }
-
-      // Save to history
-      await historyService.saveGeneration(result);
 
       // Force Riverpod to re-read usage
       ref.invalidate(remainingGenerationsProvider);
       ref.invalidate(totalUsageProvider);
 
-      // Check for review prompt
-      final reviewService = ref.read(reviewServiceProvider);
-      final totalGenerations = usageService.getTotalCount();
-      await reviewService.checkAndRequestReview(totalGenerations);
-
       // Update results
       ref.read(generationResultProvider.notifier).state = result;
+
+      try {
+        await historyService.saveGeneration(result);
+      } on Exception catch (e) {
+        Log.warning('Failed to save regenerated history', {'error': '$e'});
+      }
+
+      try {
+        final reviewService = ref.read(reviewServiceProvider);
+        final totalGenerations = usageService.getTotalCount();
+        await reviewService.checkAndRequestReview(totalGenerations);
+      } on Exception catch (e) {
+        Log.warning('Failed to evaluate review prompt', {'error': '$e'});
+      }
 
       Log.info('Regeneration success', {
         'messageCount': result.messages.length,
@@ -531,50 +535,44 @@ class _ContextHeader extends StatelessWidget {
         'Generated ${result.occasion.label} message for ${result.relationship.label} with ${result.tone.label} tone',
     child: Container(
       width: double.infinity,
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      margin: const EdgeInsets.fromLTRB(16, 4, 16, 8),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: result.occasion.backgroundColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: result.occasion.borderColor, width: 3),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: result.occasion.borderColor, width: 2),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: AppColors.surfaceLight,
-              shape: BoxShape.circle,
-              border: Border.all(color: result.occasion.borderColor, width: 2),
-            ),
-            child: Center(
-              child: AppEmoji(emoji: result.occasion.emoji, size: 22),
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '${result.occasion.label} - ${result.relationship.label}',
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
-                  ),
+          Row(
+            children: [
+              AppEmoji(emoji: result.occasion.emoji, size: 28),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${result.occasion.label} - ${result.relationship.label}',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${result.tone.label} tone',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: AppColors.textPrimary.withValues(alpha: 0.78),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  '${result.tone.label} tone',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: AppColors.textPrimary.withValues(alpha: 0.78),
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ],
       ),
@@ -605,67 +603,38 @@ class _MessageCard extends StatelessWidget {
       padding: EdgeInsets.zero,
       clipBehavior: Clip.antiAlias,
       borderColor: AppColors.primary,
-      borderWidth: AppSurfaceTokens.emphasizedBorderWidth,
+      borderWidth: 2,
+      boxShadow: [
+        BoxShadow(
+          color: AppColors.bgDeep.withValues(alpha: 0.12),
+          blurRadius: 14,
+          offset: const Offset(0, 8),
+        ),
+      ],
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header with actions
+          // Header
           Container(
             margin: const EdgeInsets.fromLTRB(2, 2, 2, 0),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.lg,
+              vertical: AppSpacing.sm + 2,
+            ),
             decoration: const BoxDecoration(
               color: AppColors.primaryLight,
               borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
             ),
             child: Row(
               children: [
-                Container(
-                  width: 28,
-                  height: 28,
-                  decoration: const BoxDecoration(
-                    color: AppColors.primary,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Center(
-                    child: Text(
-                      '${index + 1}',
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: AppColors.textOnPrimary,
-                        fontWeight: FontWeight.bold,
-                      ),
+                Expanded(
+                  child: Text(
+                    'Option ${index + 1}',
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textOnLight,
                     ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Text(
-                  'Option ${index + 1}',
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textOnLight,
-                  ),
-                ),
-                const Spacer(),
-                Flexible(
-                  child: Wrap(
-                    spacing: 8,
-                    runSpacing: 6,
-                    alignment: WrapAlignment.end,
-                    children: [
-                      _ActionButton(
-                        icon: Icons.share_outlined,
-                        label: 'Share',
-                        onPressed: onShare,
-                      ),
-                      _ActionButton(
-                        icon: isCopied ? Icons.check : Icons.copy,
-                        label: isCopied ? 'Copied!' : 'Copy',
-                        isPrimary: true,
-                        isSuccess: isCopied,
-                        onPressed: onCopy,
-                      ),
-                    ],
                   ),
                 ),
               ],
@@ -678,10 +647,40 @@ class _MessageCard extends StatelessWidget {
             child: SelectableText(
               message.text,
               style: const TextStyle(
-                fontSize: 15,
-                height: 1.6,
+                fontSize: 16,
+                height: 1.72,
                 color: AppColors.textOnLight,
               ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.lg,
+              0,
+              AppSpacing.lg,
+              AppSpacing.lg,
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: _ActionButton(
+                    icon: AppIcons.share,
+                    label: 'Share',
+                    onPressed: onShare,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  flex: 2,
+                  child: _ActionButton(
+                    icon: isCopied ? AppIcons.copied : AppIcons.copy,
+                    label: isCopied ? 'Copied!' : 'Copy',
+                    isPrimary: true,
+                    isSuccess: isCopied,
+                    onPressed: onCopy,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -718,41 +717,64 @@ class _ActionButton extends StatelessWidget {
       button: true,
       child: GestureDetector(
         onTap: onPressed,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: isSuccess
-                ? AppColors.success.withValues(alpha: 0.15)
-                : isPrimary
-                ? AppColors.primary.withValues(alpha: 0.15)
-                : AppColors.surfaceLight,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: color, width: 2),
-          ),
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final showLabel = constraints.maxWidth >= 84;
-              return Row(
-                mainAxisSize: MainAxisSize.min,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final compact = constraints.maxWidth < 92;
+            final showLabel = constraints.maxWidth >= 72;
+            return Container(
+              width: double.infinity,
+              padding: EdgeInsets.symmetric(
+                horizontal: compact ? AppSpacing.sm : AppSpacing.md,
+                vertical: compact ? AppSpacing.sm : AppSpacing.md,
+              ),
+              decoration: BoxDecoration(
+                color: isSuccess
+                    ? AppColors.success.withValues(alpha: 0.15)
+                    : isPrimary
+                    ? AppColors.primary
+                    : AppColors.surfaceLight,
+                borderRadius: BorderRadius.circular(AppSpacing.radiusLarge),
+                border: Border.all(
+                  color: isPrimary ? AppColors.primaryDark : color,
+                  width: isPrimary ? 1.5 : 2,
+                ),
+                boxShadow: isPrimary
+                    ? [
+                        BoxShadow(
+                          color: AppColors.primary.withValues(alpha: 0.2),
+                          blurRadius: 12,
+                          offset: const Offset(0, 6),
+                        ),
+                      ]
+                    : null,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(icon, size: 16, color: color),
+                  Icon(
+                    icon,
+                    size: compact ? 12 : AppSpacing.iconSizeXS,
+                    color: isPrimary ? AppColors.textOnPrimary : color,
+                  ),
                   if (showLabel) ...[
-                    const SizedBox(width: 4),
-                    Text(
-                      label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: color,
+                    SizedBox(width: compact ? 2 : AppSpacing.xs),
+                    Flexible(
+                      child: Text(
+                        label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: compact ? 12 : 13,
+                          fontWeight: FontWeight.w700,
+                          color: isPrimary ? AppColors.textOnPrimary : color,
+                        ),
                       ),
                     ),
                   ],
                 ],
-              );
-            },
-          ),
+              ),
+            );
+          },
         ),
       ),
     );
