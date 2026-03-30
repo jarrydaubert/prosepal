@@ -5,8 +5,8 @@
 Move operational ownership of production services from personal identities to
 business-managed identities while keeping the live app stable.
 
-This runbook is about control, recovery, and clean service boundaries. It is
-not a runtime replatforming plan.
+This runbook is about control, billing, recovery, and clean service
+boundaries. It is not a runtime replatforming plan.
 
 ## Scope
 
@@ -15,13 +15,32 @@ This runbook covers:
 - Cloudflare / DNS
 - Supabase
 - RevenueCat
+- Apple Developer / App Store Connect
 - app-facing contact mailboxes
-- recovery and admin ownership
+- recovery/admin ownership and any secret rotation required by ownership moves
 
-## Current Production Identifiers
+Use this runbook when:
+- moving from a personal Google account to Google Workspace
+- preparing the app for sale or handover
+- reducing dependency on a personal inbox or personal billing profile
 
-These are the production identifiers currently visible in the repo and verified
-in provider consoles.
+## Prerequisites
+
+1. A Google Workspace admin user for the business domain.
+2. Working access to current personal-owner accounts for every provider.
+3. Access to the production repo checkout and local release scripts.
+4. Current runtime values available from local `.env.local` and provider
+   consoles before any transfer.
+5. A recovery plan:
+   - personal account retained as temporary backup admin
+   - 2FA devices available for both personal and business identities
+   - current billing methods available for re-entry if providers require it
+
+## Current Repo-Visible Identifiers To Verify
+
+Verify these before changing ownership. They are the current identifiers visible
+in the repo and checked-in generated config, not an assumption about current
+provider-console state.
 
 | Surface | Identifier | Source |
 |---------|------------|--------|
@@ -31,13 +50,21 @@ in provider consoles.
 | Firebase Android app ID | `1:530026851718:android:71029bf2c74548436bd007` | `lib/firebase_options.dart` |
 | Firebase iOS bundle ID | `com.prosepal.prosepal` | `lib/firebase_options.dart` |
 | Firebase storage bucket | `prosepal-1a24b.firebasestorage.app` | `lib/firebase_options.dart` |
-| Verified live Google Cloud org | `jarrydaubert-org` | provider console verification |
+| Google Cloud/Firebase org | `jarrydaubert-org` | provider console verification |
 | Workspace org visible in console | `prosepal.app` | provider console verification |
 | Supabase project ref | `mwoxtqxzunsjmbdqezif` | `docs/LAUNCH_CHECKLIST.md` |
 | RevenueCat project path | `projects/a8bf92d5` | `docs/LAUNCH_CHECKLIST.md` |
-| App support mailbox in code | `jarryd@prosepal.app` | `lib/core/config/app_config.dart` |
+| Support mailbox | `jarryd@prosepal.app` | `lib/core/config/app_config.dart` |
 
-## Current Google / Firebase Ownership State
+Runtime keys that must be preserved or re-issued during migration:
+- `SUPABASE_URL`
+- `SUPABASE_ANON_KEY`
+- `REVENUECAT_IOS_KEY`
+- `REVENUECAT_ANDROID_KEY`
+- `GOOGLE_WEB_CLIENT_ID`
+- `GOOGLE_IOS_CLIENT_ID`
+
+## Current Verified Production State
 
 Current verified Google/Firebase production state:
 - live Firebase project remains `prosepal-1a24b`
@@ -98,10 +125,11 @@ For live Prosepal, preserve the existing production runtime stack wherever
 possible.
 
 Preferred order:
-1. migrate ownership and admin access
-2. normalize public contact details
-3. verify runtime behavior
-4. only consider project/org moves or service replacement if ownership transfer
+1. capture inventory and recovery state
+2. migrate ownership and admin access
+3. normalize public contact details and billing custody
+4. verify runtime behavior
+5. only consider project/org moves or service replacement if ownership transfer
    is insufficient
 
 Do not clone production services just to improve admin cleanliness.
@@ -118,7 +146,27 @@ Agent note:
 
 ## Commands And Steps
 
-### 1) Keep The Live Google Project As The Production Source Of Truth
+### 1) Capture A Production Inventory Before Changing Ownership
+
+In each provider console, record:
+- current owner/admin users
+- billing owner and billing account name
+- recovery email / backup admin path
+- project/app identifiers
+- OAuth client IDs, API keys, webhook endpoints, and bundle/package bindings
+
+Local references:
+
+```bash
+sed -n '1,120p' lib/firebase_options.dart
+sed -n '1,120p' .env.example
+sed -n '100,220p' docs/LAUNCH_CHECKLIST.md
+```
+
+Do not rotate or delete anything until the current production identifiers are
+captured.
+
+### 2) Keep The Live Google Project As The Production Source Of Truth
 
 Treat this as the only live Google/Firebase project:
 - `Prosepal`
@@ -128,67 +176,108 @@ Do not use these for live production unless there is an explicit migration plan:
 - `friendly-art-490215-e8`
 - `flowing-castle-490219-h2`
 
-### 2) Grant Business-Identity Access To The Existing Production Project
+### 3) Migrate Google Cloud / Firebase / Google Play By Adding Access First
 
-Preferred approach:
-1. keep the live project where it is
-2. add the Workspace identity to the existing project
-3. avoid creating a parallel production project
+Prefer adding the Workspace user to the existing production project before
+creating replacement projects.
 
-If organization policy blocks project-level `Owner`, grant:
-- organization role: `Organization Administrator`
-- project roles:
-  - `Firebase Admin`
-  - `Project IAM Admin`
-  - `Service Usage Admin`
-  - `OAuth Config Editor (beta)`
+In Google Cloud Console for the production project:
+1. Confirm the project ID matches `prosepal-1a24b`.
+2. Prefer granting organization-level access first if the project is governed
+   by a Google Cloud organization policy.
+3. If project-level `Owner` assignment is blocked by org policy, grant the
+   Workspace admin user:
+   - organization role: `Organization Administrator`
+   - project roles: `Firebase Admin`, `Project IAM Admin`,
+     `Service Usage Admin`, `OAuth Config Editor (beta)`
+4. Confirm the project sits under the intended organization; if it is under
+   `No organization`, move it into the business-controlled org before treating
+   the migration as complete.
+5. Attach or confirm the intended billing account.
+6. In Firebase, confirm the iOS and Android apps still match:
+   - `com.prosepal.prosepal`
+   - `1:530026851718:ios:0dab14080ea6f8be6bd007`
+   - `1:530026851718:android:71029bf2c74548436bd007`
+7. In `APIs & Services > Credentials`, record the Google OAuth web and iOS
+   client IDs currently used by the app.
+8. In Google Auth Platform, verify the OAuth branding contact fields use the
+   business mailbox rather than a personal Gmail account.
 
-This provides operational control without forcing a production replatform.
+Do not create a new Firebase project unless you explicitly intend to reissue
+all Firebase app config, App Check bindings, OAuth config, Remote Config, and
+Crashlytics history.
 
-### 3) Normalize Google/Firebase Public Contact Fields
-
-In Google Auth Platform / Firebase:
-1. ensure the live project is accessible from the Workspace identity
-2. move public support/developer contact fields away from personal Gmail
-3. use the app/domain mailbox instead
-
-Current desired direction:
-- app/domain mailbox for support and admin contact
-- personal Gmail only as backup/recovery
-
-Current verified state:
-- Firebase support email: `jarryd@prosepal.app`
-- Google Auth branding developer contact has been moved to the app/domain
-  mailbox
-
-### 4) Treat Google Play Separately From Google/Firebase
+### 3a) Check Google Play Account Type Before Assuming A Testing Exemption
 
 Google Cloud / Firebase ownership cleanup does not change Google Play developer
 account type.
 
 Before planning around Android production access:
-1. check whether the Play Console account is `Personal` or `Organization`
-2. do not assume a Workspace identity or business-domain email changes the
-   tester requirement by itself
-3. if organization conversion is considered, verify the account can satisfy the
-   required organization-verification inputs before proceeding
+1. Check whether the Play Console developer account is `Personal` or
+   `Organization`.
+2. If it is `Personal`, do not assume a business email or Workspace admin setup
+   changes the testing requirement.
+3. If `Organization` conversion is desired, verify the account can satisfy the
+   required organization-verification inputs before proceeding:
+   - D-U-N-S number
+   - developer profile phone and email
+   - Google contact phone and email
+   - any supporting organization document requested during verification
+4. Prefer changing the existing Play account type over creating a second Play
+   account unless there is a clear transfer plan.
 
 Current verified state:
 - Play Console developer account type is `Personal`
 
-### 5) Move Other Production Services By Ownership First
+### 4) Move Domain/DNS Custody To A Business-Controlled Cloudflare Account
 
-For each of the following, prefer ownership/admin transfer before considering
-replacement:
-- Cloudflare
-- Supabase
-- RevenueCat
+The domain is the root dependency for mail, app-site links, support addresses,
+and public web verification records.
+
+Preferred sequence:
+1. Create or designate the business-controlled Cloudflare account.
+2. Add the business identity with the highest required admin role.
+3. Move the zone to the business-controlled account if Cloudflare account
+   ownership is still personal.
+4. Re-verify:
+   - MX records for Google Workspace
+   - SPF, DKIM, DMARC
+   - any app-link / verification TXT or CNAME records
+   - site records for `prosepal.app` and `www.prosepal.app`
+
+### 5) Transfer Supabase Ownership Without Replacing The Project
 
 Preferred approach:
-1. invite the business identity into the existing project/org/account
-2. promote it to the highest required admin role
-3. move app-facing contact mailboxes to the business/domain mailbox
-4. keep personal identity only as backup until the new path is verified
+1. Invite the business identity into the existing Supabase organization/project.
+2. Promote it to admin/owner.
+3. Move billing custody if applicable.
+4. Verify the existing project ref and URLs remain unchanged.
+5. Verify social auth provider credentials, callback URLs, and Edge Functions.
+
+The app should keep using the same `SUPABASE_URL` and project unless a full
+backend migration is intentionally planned.
+
+### 6) Transfer RevenueCat Ownership And Billing
+
+Preferred approach:
+1. Invite the business identity to the existing RevenueCat project.
+2. Promote it to the highest required admin/owner role.
+3. Move billing and webhook-operating custody.
+4. Verify products, entitlements, offering mappings, and app-store bindings are
+   unchanged.
+
+Do not create a new RevenueCat project for this migration unless you are also
+planning a product/catalog rebuild.
+
+### 7) Normalize Public And Admin Mailboxes
+
+Recommended mailbox model:
+- admin login: `jarryd@prosepal.app`
+- public support alias: `support@prosepal.app`
+- billing/admin aliases or groups: `billing@prosepal.app`, `admin@prosepal.app`
+
+Use role-based aliases/groups for public-facing contacts so a later sale or
+handover does not depend on a named personal mailbox.
 
 Current next ownership actions:
 - Resend: move billing email off personal Gmail
@@ -198,7 +287,20 @@ Current next ownership actions:
 - Cloudflare: confirm whether the zone remains in the personal account or has
   already been transferred
 
-### 6) Re-Verify Runtime Wiring After Any Credential Or Ownership Change
+### 8) Rotate Secrets And Recovery Paths After Ownership Moves
+
+After each provider transfer, review and rotate as needed:
+- API keys
+- OAuth client secrets
+- webhook secrets
+- service-account keys
+- recovery emails
+- 2FA devices / passkeys
+
+Update local and CI/runtime configuration only after replacement values are
+confirmed valid.
+
+### 9) Re-Verify Runtime Wiring After Any Credential Or Ownership Change
 
 Run the baseline validation set after any config or credential change:
 
@@ -210,43 +312,58 @@ flutter test
 ```
 
 Then verify on physical devices:
-1. Apple sign-in works
-2. Google sign-in works
-3. RevenueCat offerings load
-4. existing subscription state resolves correctly
-5. Crashlytics/Analytics continue to flow
-6. Firebase Remote Config fetch succeeds
+1. Apple sign-in works.
+2. Google sign-in works.
+3. RevenueCat offerings load.
+4. Existing subscription state resolves correctly.
+5. Crashlytics/Analytics events continue to flow.
+6. Firebase Remote Config fetch succeeds.
 
 ## Pass Criteria
 
-The migration is complete only when all are true:
+Migration is complete only when all are true:
 
-1. the Workspace/business identity can fully administer the live production
-   stack
-2. personal Gmail is no longer the primary public/admin identity for production
-   services
-3. the live app continues using the intended production runtime stack
-4. app-facing support/admin contact paths use the app/domain mailbox
-5. relevant validation commands pass after any config changes
-6. provider-console checks confirm auth, purchases, crash reporting, and
-   configuration still function
+1. Business identity is the primary owner/admin for Google, Cloudflare,
+   Supabase, and RevenueCat.
+2. Personal identity is no longer the only owner on any production service.
+3. Billing custody and recovery paths no longer depend on the personal inbox as
+   the sole admin route.
+4. Runtime identifiers still match the production app configuration, or any
+   intentional replacements are applied and verified.
+5. Analyzer/tests/smoke/preflight commands pass after any key changes.
+6. Manual provider-console checks confirm auth, purchases, crash reporting, and
+   Remote Config still function in production.
 
-## Failure Handling
+## Failure Handling And Escalation
 
 If any service transfer fails:
-1. stop before deleting or demoting the personal account
-2. capture provider-console evidence
-3. keep the personal account as backup admin until the replacement path is
-   verified
-4. do not create a replacement production project impulsively
-5. if a true project move is required, treat it as a separate migration with
-   explicit cutover planning
+
+1. Stop before rotating or deleting the old owner.
+2. Capture evidence:
+   - console screenshots
+   - project/app IDs
+   - failing step text
+   - current owner/admin list
+3. Keep the personal identity as backup admin until the replacement path is
+   verified.
+4. If runtime behavior changes, re-run:
+
+```bash
+flutter analyze
+flutter test
+./scripts/test_critical_smoke.sh
+```
+
+5. If a provider requires a new project rather than owner transfer, treat that
+   as a full migration with explicit app-config regeneration, credential
+   rotation, and post-cutover verification before removing the old project.
 
 ## References
 
 - `docs/APP_OPERATING_STANDARD.md`
 - `docs/LAUNCH_CHECKLIST.md`
 - `docs/DEVOPS.md`
+- `docs/IDENTITY_MAPPING.md`
 - `docs/BACKLOG.md`
 - `lib/firebase_options.dart`
 - `lib/core/config/app_config.dart`

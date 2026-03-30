@@ -47,6 +47,11 @@ abstract class PreferenceKeys {
   static const hasSeenFirstActionHint = 'has_seen_first_action_hint';
   static const hasSeenFirstActionHintDefault = false;
 
+  /// One-shot notice that biometrics were auto-disabled at startup
+  static const pendingBiometricAutoDisabledNotice =
+      'pending_biometric_auto_disabled_notice';
+  static const pendingBiometricAutoDisabledNoticeDefault = false;
+
   // ===========================================================================
   // App Review
   // ===========================================================================

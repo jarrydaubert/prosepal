@@ -14,6 +14,7 @@ This runbook covers:
 - CI, CodeQL, flaky audit, and release workflows
 - Test execution model (local, CI, wired devices, Firebase Test Lab)
 - Supabase/Firebase/RevenueCat operational verification
+- external-service ownership and billing custody verification
 - AI abuse/cost controls and kill-switch handling
 - Incident response for leaked keys or suspicious activity
 
@@ -347,6 +348,7 @@ Wired evidence runtime config:
 - `run_wired_evidence.sh` automatically passes `--dart-define-from-file=.env.local` when that file exists.
 - Override with `--dart-define-file <path>` for alternate environments.
 - Use `--no-dart-define-file` to run without dart-define injection.
+- Wired evidence pass/fail is anchored to the test's explicit oracle first. The wrapper still scans logs for hard failure signals, but it keeps a short per-suite allowlist for known handled noise so a user-visible, test-accepted terminal state does not get mislabeled as an evidence failure. Keep any such allowlist narrow, documented, and tied to a concrete journey/test.
 
 Firebase Test Lab deterministic critical suite:
 
@@ -646,20 +648,24 @@ Use this sequence when Vertex/Google AI calls fail with:
 
 1. Confirm debug provider is active in app logs:
   - `androidProvider=AndroidDebugProvider` for debug builds.
-2. Capture the current debug token from device logs:
+2. Prefer a pinned debug token for repeated wired runs:
+  - Add `FIREBASE_APP_CHECK_ANDROID_DEBUG_TOKEN=<registered-token>` to `.env.local`.
+  - `./scripts/run_android.sh` and `run_wired_evidence.sh` will pass it through automatically.
+3. If no pinned token is configured, capture the current debug token from device logs:
   - `./scripts/run_android.sh`
   - Copy token from: `DebugAppCheckProvider ... Enter this debug secret into the allow list ...`
-3. Register token in Firebase Console:
+  - `run_wired_evidence.sh` redacts the token in saved Android logcat artifacts; use a direct attached run when you need to read the raw token locally for console registration.
+4. Register token in Firebase Console:
   - Firebase Console → App Check → Apps → Android app → Manage debug tokens → Add token.
-4. Verify package/signature posture:
+5. Verify package/signature posture:
   - Firebase Android app package matches `com.prosepal.prosepal`.
   - SHA-256 fingerprints in Firebase app config include active signing cert(s) for the running build.
-5. Verify App Check API status:
+6. Verify App Check API status:
   - App Check dashboard shows verified requests for Firebase AI Logic.
   - Enforcement mode aligns with current test phase (Monitoring or Enforced).
-6. Re-run wired Android generation:
+7. Re-run wired Android generation:
   - `./scripts/run_android.sh --dart-define=AI_BACKEND=vertex`
-7. If it still fails:
+8. If it still fails:
   - Collect log evidence with token redaction.
   - Record failure mode and config snapshot in release evidence and backlog.
 

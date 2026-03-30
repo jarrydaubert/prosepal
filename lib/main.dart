@@ -269,9 +269,12 @@ void _logPreFlutterStartupPhase<T>(StartupBootstrapPhaseResult<T> result) {
 /// Initialize Firebase App Check
 Future<void> _initAppCheck() async {
   try {
-    const providerAndroid = kDebugMode
-        ? AndroidDebugProvider()
-        : AndroidPlayIntegrityProvider();
+    const pinnedAndroidDebugToken = AppConfig.firebaseAppCheckAndroidDebugToken;
+    final providerAndroid = kDebugMode
+        ? (pinnedAndroidDebugToken.isEmpty
+              ? const AndroidDebugProvider()
+              : const AndroidDebugProvider(debugToken: pinnedAndroidDebugToken))
+        : const AndroidPlayIntegrityProvider();
     const providerApple = kDebugMode
         ? AppleDebugProvider()
         : AppleAppAttestWithDeviceCheckFallbackProvider();
@@ -283,6 +286,8 @@ Future<void> _initAppCheck() async {
     Log.info('Firebase App Check activated', {
       'androidProvider': providerAndroid.runtimeType.toString(),
       'appleProvider': providerApple.runtimeType.toString(),
+      'androidDebugTokenPinned':
+          kDebugMode && pinnedAndroidDebugToken.isNotEmpty,
     });
   } on Exception catch (e) {
     Log.warning('Firebase App Check activation failed', {'error': '$e'});

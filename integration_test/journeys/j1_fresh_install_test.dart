@@ -17,41 +17,52 @@ void main() {
     ) async {
       await launchApp(tester);
       await skipOnboarding(tester);
-      await tester.pumpAndSettle(const Duration(seconds: 2));
+      await tester.pump(const Duration(seconds: 2));
+
+      final destination = await waitForCheckpoint(tester, {
+        'auth': ['Sign in with Google', 'Sign in with Apple'],
+        'home': ['Birthday', "What's the occasion?"],
+      });
 
       expect(
-        anyTextExists([
-          'Sign in with Google',
-          'Sign in with Apple',
-          'Birthday',
-          "What's the occasion?",
-        ]),
-        isTrue,
-        reason: 'Should reach auth or home after onboarding',
+        destination,
+        isNotNull,
+        reason:
+            'Expected onboarding to land on auth or home, but no supported destination became visible',
       );
 
       await screenshot(tester, 'j1_2_after_onboarding');
     });
 
-    testWidgets(
-      'J1.8: Fresh user can generate and reach a concrete end state',
-      (tester) async {
-        final atHome = await navigateToHome(tester);
-        expect(atHome, isTrue, reason: 'Failed to navigate to home');
+    testWidgets('J1.8: Fresh user can generate and reach a concrete end state', (
+      tester,
+    ) async {
+      final atHome = await navigateToHome(tester);
+      expect(atHome, isTrue, reason: 'Failed to navigate to home');
 
-        await completeWizardOrFail(tester);
-        expect(find.text('Generate Messages'), findsOneWidget);
-        await tester.tap(find.text('Generate Messages'));
-        await tester.pumpAndSettle(const Duration(seconds: 15));
+      await completeWizardOrFail(tester);
+      expect(find.text('Generate Messages'), findsOneWidget);
+      await tester.tap(find.text('Generate Messages'));
+      await tester.pump(const Duration(seconds: 1));
 
-        expect(
-          anyTextExists(['Your Messages', 'Option 1', 'error', 'Unable']),
-          isTrue,
-          reason: 'Generation should end in a visible results or error state',
-        );
+      final terminalState = await waitForCheckpoint(tester, {
+        'results': ['Your Messages', 'Option 1'],
+        'error': [
+          'Security verification failed for this device. Please try again later.',
+          'No messages were generated. Please try again.',
+          'There was an issue processing the response. Please try again.',
+          'An unexpected error occurred. Please try again.',
+        ],
+      }, timeout: const Duration(seconds: 30));
 
-        await screenshot(tester, 'j1_8_generation_result');
-      },
-    );
+      expect(
+        terminalState,
+        isNotNull,
+        reason:
+            'Generation should finish on a visible results or error surface',
+      );
+
+      await screenshot(tester, 'j1_8_generation_result');
+    });
   });
 }

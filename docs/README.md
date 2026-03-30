@@ -23,7 +23,7 @@ This folder holds canonical product, engineering, and operations docs for the mo
 9. `LAUNCH_CHECKLIST.md`
    - Release execution and provider-console verification checklist.
 10. `SERVICE_OWNERSHIP_MIGRATION.md`
-    - Service ownership, admin-access, and recovery migration runbook.
+    - Service ownership, admin-access, billing, and recovery migration runbook.
 11. `APP_OPERATING_STANDARD.md`
     - Default operating model for keeping multiple apps operationally separate.
 12. `ARCHITECTURE.md`

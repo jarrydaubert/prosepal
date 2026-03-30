@@ -17,6 +17,9 @@ import 'package:flutter/foundation.dart';
 ///
 /// See `.env.example` for all required variables.
 abstract final class AppConfig {
+  /// Primary support/contact mailbox shown in the app.
+  static const String supportEmail = 'jarryd@prosepal.app';
+
   // ===========================================================================
   // Supabase Configuration
   // Dashboard: https://supabase.com/dashboard
@@ -89,8 +92,16 @@ abstract final class AppConfig {
     'GOOGLE_IOS_CLIENT_ID',
   );
 
-  /// Support mailbox surfaced in app-generated diagnostics and fallback copy.
-  static const String supportEmail = 'jarryd@prosepal.app';
+  // ===========================================================================
+  // Firebase App Check Debug Configuration
+  // ===========================================================================
+
+  /// Optional Android App Check debug token for stable wired-device runs.
+  ///
+  /// When set in debug builds, this pins the debug provider token so repeated
+  /// install/test cycles do not generate a fresh token every run.
+  static const String firebaseAppCheckAndroidDebugToken =
+      String.fromEnvironment('FIREBASE_APP_CHECK_ANDROID_DEBUG_TOKEN');
 
   // ===========================================================================
   // Validation

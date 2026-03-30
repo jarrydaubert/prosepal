@@ -33,7 +33,7 @@ pass/fail oracle, and the replacement evidence path.
 flutter analyze
 ./scripts/test_release_preflight.sh
 ./scripts/test_critical_smoke.sh
-flutter test
+flutter test --exclude-tags flaky --coverage
 ./scripts/check_service_coverage.sh coverage/lcov.info
 
 # Flake audit
@@ -86,4 +86,4 @@ gcloud firebase test android run --type instrumentation --app build/app/outputs/
 - In-test integration screenshots are off by default for stability (`INTEGRATION_CAPTURE_SCREENSHOTS=false`); rely on wired evidence artifacts unless debugging screenshot APIs specifically.
 - iOS external screenshot capture is best-effort and depends on local `idevicescreenshot` pairing support.
 - Keep unstable tests out of blocking gates until fixed.
-- Visual regression failures emit expected/actual/diff artifacts to `test/failures/`.
+- Visual regression failures emit expected/actual/diff artifacts to `test/widgets/goldens/failures/`.

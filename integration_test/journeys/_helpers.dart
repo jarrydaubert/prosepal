@@ -297,6 +297,16 @@ Future<void> completeWizardOrFail(
 bool anyTextExists(List<String> texts) =>
     texts.any((text) => find.text(text).evaluate().isNotEmpty);
 
+/// Returns the first checkpoint label whose expected text is currently visible.
+String? visibleCheckpointLabel(Map<String, List<String>> checkpoints) {
+  for (final entry in checkpoints.entries) {
+    if (anyTextExists(entry.value)) {
+      return entry.key;
+    }
+  }
+  return null;
+}
+
 /// Wait until [text] appears, polling for up to [timeout].
 Future<bool> waitForText(
   WidgetTester tester,
@@ -329,6 +339,26 @@ Future<bool> waitForAnyText(
   return anyTextExists(texts);
 }
 
+/// Wait until one named checkpoint becomes visible and return its label.
+Future<String?> waitForCheckpoint(
+  WidgetTester tester,
+  Map<String, List<String>> checkpoints, {
+  Duration timeout = const Duration(seconds: 10),
+  Duration pollInterval = const Duration(milliseconds: 250),
+}) async {
+  final intervalMs = pollInterval.inMilliseconds;
+  final safeIntervalMs = intervalMs <= 0 ? 1 : intervalMs;
+  final maxAttempts = timeout.inMilliseconds ~/ safeIntervalMs;
+  for (var attempt = 0; attempt < maxAttempts; attempt++) {
+    final visibleLabel = visibleCheckpointLabel(checkpoints);
+    if (visibleLabel != null) {
+      return visibleLabel;
+    }
+    await _pumpFor(tester, pollInterval);
+  }
+  return visibleCheckpointLabel(checkpoints);
+}
+
 /// Scroll until text is visible, returns true if found
 Future<bool> scrollToText(
   WidgetTester tester,
@@ -348,7 +378,7 @@ Future<bool> scrollToText(
 
   final scrollable = scrollables.first;
   for (var attempt = 0; attempt < maxScrolls; attempt++) {
-    await tester.drag(scrollable, Offset(0, -delta));
+    await tester.drag(scrollable, Offset(0, -delta), warnIfMissed: false);
     await _pumpFor(tester, const Duration(milliseconds: 300));
     if (target.evaluate().isNotEmpty) {
       return true;
