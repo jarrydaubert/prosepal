@@ -157,7 +157,7 @@ jobs:
 
       - name: Upload coverage artifact
         if: always() && steps.scope.outputs.docs_only != 'true'
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: coverage-lcov
           path: coverage/lcov.info
@@ -195,7 +195,7 @@ jobs:
 
       - name: Upload visual diff artifacts
         if: always()
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: visual-regression-diffs
           path: |
@@ -270,7 +270,7 @@ jobs:
 
       - name: Upload integration smoke artifacts
         if: always()
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: integration-smoke-artifacts
           path: |
