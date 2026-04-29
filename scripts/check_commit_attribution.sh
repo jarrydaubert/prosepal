@@ -54,15 +54,21 @@ is_dependabot_only_coauthor() {
 
 is_github_dependabot_squash_merge() {
   local input_file="$1"
-  local author_line="$2"
+  local _author_line="$2"
   local committer_line="$3"
   local subject_line
+  local trailer_count
 
-  if [[ ! "$author_line" =~ $DEPENDABOT_AUTHOR_REGEX ]]; then
+  if [[ ! "$committer_line" =~ $GITHUB_COMMITTER_REGEX ]]; then
     return 1
   fi
 
-  if [[ ! "$committer_line" =~ $GITHUB_COMMITTER_REGEX ]]; then
+  # GitHub squash merges of Dependabot-derived PRs may keep Dependabot as the
+  # only co-author even when the squash commit author is the maintainer who
+  # opened the replacement PR.
+  trailer_count="$(grep -Ec "$TRAILER_PATTERN" "$input_file" || true)"
+
+  if [[ "$trailer_count" -ne 1 ]]; then
     return 1
   fi
 
