@@ -4,7 +4,7 @@
 
 set -e
 
-# Allow bypass for emergencies: SKIP_HOOKS=1 git commit -m "WIP"
+# Allow bypass for emergencies: SKIP_HOOKS=1 git commit -m "urgent fix"
 if [ "$SKIP_HOOKS" = "1" ]; then
   echo "⚠️  Skipping pre-commit hooks (SKIP_HOOKS=1)"
   exit 0

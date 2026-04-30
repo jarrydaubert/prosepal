@@ -184,8 +184,7 @@ GoRouter createAppRouter(SharedPreferences prefs) => GoRouter(
   routes: _routes,
 );
 
-/// Legacy router without guards (for backward compatibility during transition)
-/// TODO: Remove once all usages migrate to createAppRouter
+/// Fallback router without guards for tests and callers that inject route state.
 final appRouter = GoRouter(
   initialLocation: '/splash',
   errorBuilder: (context, state) => _ErrorScreen(error: state.error),
