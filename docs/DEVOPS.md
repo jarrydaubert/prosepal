@@ -163,7 +163,10 @@ Purpose:
 - Detect unintended UI drift on core golden baselines without blocking merge velocity.
 
 Policy:
-- Runs only when CI scope is not docs-only.
+- Runs only when CI detects mobile app, integration-test, Flutter test,
+  platform, or Flutter dependency/tooling changes.
+- Does not run for docs, workflow-only, backend-only, shell-script-only, or
+  other housekeeping changes that do not affect the iOS simulator smoke target.
 - Uses `./scripts/test_visual_regression.sh`.
 - Uploads `visual-regression-diffs` artifact (from `test/widgets/goldens/failures/**`) on every run.
 - Publishes `GITHUB_STEP_SUMMARY` guidance with local baseline update command:
@@ -185,7 +188,8 @@ Policy:
 - Pre-caches iOS artifacts and runs `pod install` before the smoke command so the smoke step budget is spent on the test, not cold iOS setup.
 - Runs `flutter test -d <simulator-udid> integration_test/smoke_test.dart`.
 - CI simulator smoke keeps `INTEGRATION_CAPTURE_SCREENSHOTS=false` for stability; use wired evidence runs when screenshot artifacts matter.
-- Integration execution step is bounded with `timeout-minutes: 20` to prevent stalled simulator runs from consuming CI concurrency indefinitely.
+- Integration execution step is bounded with `timeout-minutes: 30` to prevent stalled simulator runs from consuming CI concurrency indefinitely while allowing cold Xcode builds enough time to finish.
+- The companion job has a `timeout-minutes: 45` outer bound, including simulator boot, dependency prep, test execution, artifact upload, and summary publication.
 - CI Flutter version should track the current repo-supported stable toolchain so dependency solving stays aligned between local validation and GitHub Actions.
 - Uploads `integration-smoke-artifacts` containing:
   - `artifacts/integration-smoke/smoke.log`

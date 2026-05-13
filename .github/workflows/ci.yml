@@ -17,6 +17,7 @@ jobs:
     timeout-minutes: 25
     outputs:
       docs_only: ${{ steps.scope.outputs.docs_only }}
+      integration_smoke_needed: ${{ steps.scope.outputs.integration_smoke_needed }}
     permissions:
       contents: read
     steps:
@@ -64,9 +65,15 @@ jobs:
           git diff --name-only "$BASE_SHA" "${{ github.sha }}" > /tmp/changed_files.txt
 
           docs_only=true
+          integration_smoke_needed=false
           while IFS= read -r file; do
             if [[ -z "$file" ]]; then
               continue
+            fi
+
+            if [[ "$file" =~ ^(android|integration_test|ios|lib|test)/ ]] ||
+               [[ "$file" =~ ^(analysis_options\.yaml|pubspec\.lock|pubspec\.yaml)$ ]]; then
+              integration_smoke_needed=true
             fi
 
             if [[ "$file" =~ ^docs/ ]]; then
@@ -86,6 +93,7 @@ jobs:
           done < /tmp/changed_files.txt
 
           echo "docs_only=$docs_only" >> "$GITHUB_OUTPUT"
+          echo "integration_smoke_needed=$integration_smoke_needed" >> "$GITHUB_OUTPUT"
 
       - name: Docs-only fast path
         if: steps.scope.outputs.docs_only == 'true'
@@ -223,9 +231,9 @@ jobs:
   integration_smoke:
     name: Integration Smoke (non-blocking)
     runs-on: macos-latest
-    timeout-minutes: 35
+    timeout-minutes: 45
     needs: quality
-    if: needs.quality.outputs.docs_only != 'true'
+    if: needs.quality.outputs.integration_smoke_needed == 'true'
     continue-on-error: true
     permissions:
       contents: read
@@ -251,7 +259,7 @@ jobs:
       - name: Run integration smoke target
         id: smoke
         shell: bash
-        timeout-minutes: 20
+        timeout-minutes: 30
         run: |
           set -euo pipefail
           mkdir -p artifacts/integration-smoke
