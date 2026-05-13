@@ -29,8 +29,7 @@ BEGIN
   IF FOUND THEN
     v_pro_source := 'server';
   ELSE
-    -- Fallback to client hint during migration period
-    -- TODO: Remove this fallback after webhook is deployed and all users synced
+    -- Temporary migration fallback tracked by backlog entitlement/usage hardening.
     v_server_is_pro := p_is_pro;
     v_pro_source := 'client_hint';
   END IF;

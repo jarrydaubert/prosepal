@@ -66,32 +66,27 @@
 - iOS 15.0+
 - Android API 23+
 
----
+## Verification Matrix
 
-## Test Checklist
+Use the commands and evidence paths in [DEVOPS.md](./DEVOPS.md) for runnable
+validation. Each row names the behavior that needs an explicit pass/fail oracle
+when it is changed.
 
-**Happy Path**
-- [ ] Fresh install → onboarding → free gen → copy
-- [ ] Sign in → Pro upgrade → generate
-- [ ] Regenerate → copy different option
-- [ ] History → copy old message
-
-**Edge Cases**
-- [ ] No network → error state
-- [ ] Free exhausted → paywall
-- [ ] Rate limited → message shown
-- [ ] Long details → truncated
-
-**Settings**
-- [ ] British spelling → reflected in output
-- [ ] Biometrics toggle works
-- [ ] Analytics opt-out respected
-- [ ] Data export → valid JSON
-- [ ] Delete account → cleanup
-
-**Subscription**
-- [ ] Purchase → immediate access
-- [ ] Restore → finds subscription
-- [ ] Expires → reverts to free
-
-*Updated: 2026-02-11*
+| Area | Behavior |
+|------|----------|
+| Happy path | Fresh install reaches onboarding, free generation completes, and copy works. |
+| Happy path | Sign-in, Pro upgrade, and generation converge on the expected entitlement state. |
+| Happy path | Regenerate returns a different generated option for the same inputs. |
+| Happy path | History exposes previous messages and copy remains available. |
+| Edge cases | No-network conditions show a deterministic error state. |
+| Edge cases | Exhausted free quota opens the paywall path. |
+| Edge cases | Rate limits show user-facing guidance without consuming usage incorrectly. |
+| Edge cases | Long details input remains bounded and does not break generation or layout. |
+| Settings | British spelling preference is reflected in output behavior. |
+| Settings | Biometric lock can be enabled, disabled, and exercised through app lifecycle transitions. |
+| Settings | Analytics opt-out is respected by telemetry setup and event emission. |
+| Settings | Data export produces valid JSON for the current user state. |
+| Settings | Delete account removes app-owned user data through the supported cleanup path. |
+| Subscription | Purchase grants access after entitlement reconciliation. |
+| Subscription | Restore finds an existing subscription and updates app state. |
+| Subscription | Expired entitlement returns the user to the correct free-tier behavior. |
