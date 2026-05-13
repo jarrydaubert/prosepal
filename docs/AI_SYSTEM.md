@@ -158,4 +158,5 @@ Real-device evidence:
 
 See:
 - `docs/DEVOPS.md`
+- `docs/AI_OUTPUT_QUALITY.md`
 - `README.md`
