@@ -36,37 +36,38 @@ Process items in this order unless an explicit owner override is recorded in rel
 
 1. `VNEXT-10` AI cost/abuse controls
 2. `P1-43` Firebase AI client-block regression hardening
-3. `P1-54` Pre-Flutter startup timeout hardening
-4. `P1-55` Apple token exchange recovery for delete compliance
-5. `P1-60` Direct in-app feedback delivery
-6. `P1-56` AI error log sanitization
-7. `P1-57` Pending usage sync ownership hardening
-8. `P1-58` Entitlement convergence after anonymous purchase and sign-in
-9. `P0-08a` Core readability and contrast hardening
-10. `P0-08b` Navigation and input polish
-11. `P0-08d` Home hierarchy simplification
-12. `P1-24` Deterministic integration journey assertions
-13. `P1-41` Network-independent smoke deterministic mode
-14. `P0-08c` Launch and platform polish
-15. `P2-17` RevenueCat transfer metadata hydration
-16. `P1-48` Startup phase telemetry and budget visibility
-17. `P1-52` Biometric lifecycle debounce + single-flight guard
-18. `VNEXT-11` Canonical identity mapping
-19. `VNEXT-13` Device abuse-control compliance decision
-20. `VNEXT-12` UI parity with live baseline
-21. `P0-04` Auth loading spinner after OAuth sheet
-22. `P1-53` Telemetry adapter unification
-23. `P1-47` Server-side AI gateway rollout (post-launch trigger)
-24. `P2-13` Startup orchestration refactor (post-launch)
-25. `P2-22` Remove legacy router fallback
-26. `P2-25` Mobile app SAST coverage decision
-27. `P0-01` Move Google setup to business account
-28. `P0-05` Billing budget alert controls
-29. `P1-20` Post-release production pulse checks
-30. `P1-44` Full documentation walkthrough with repo owner
-31. `P1-61` Firebase Apple SDK CocoaPods sunset migration
-32. `P2-16` Public QA showcase packaging
-33. `P2-18` AI technical-depth showcase
+3. `P1-62` AI output quality release audit
+4. `P1-54` Pre-Flutter startup timeout hardening
+5. `P1-55` Apple token exchange recovery for delete compliance
+6. `P1-60` Direct in-app feedback delivery
+7. `P1-56` AI error log sanitization
+8. `P1-57` Pending usage sync ownership hardening
+9. `P1-58` Entitlement convergence after anonymous purchase and sign-in
+10. `P0-08a` Core readability and contrast hardening
+11. `P0-08b` Navigation and input polish
+12. `P0-08d` Home hierarchy simplification
+13. `P1-24` Deterministic integration journey assertions
+14. `P1-41` Network-independent smoke deterministic mode
+15. `P0-08c` Launch and platform polish
+16. `P2-17` RevenueCat transfer metadata hydration
+17. `P1-48` Startup phase telemetry and budget visibility
+18. `P1-52` Biometric lifecycle debounce + single-flight guard
+19. `VNEXT-11` Canonical identity mapping
+20. `VNEXT-13` Device abuse-control compliance decision
+21. `VNEXT-12` UI parity with live baseline
+22. `P0-04` Auth loading spinner after OAuth sheet
+23. `P1-53` Telemetry adapter unification
+24. `P1-47` Server-side AI gateway rollout (post-launch trigger)
+25. `P2-13` Startup orchestration refactor (post-launch)
+26. `P2-22` Remove legacy router fallback
+27. `P2-25` Mobile app SAST coverage decision
+28. `P0-01` Move Google setup to business account
+29. `P0-05` Billing budget alert controls
+30. `P1-20` Post-release production pulse checks
+31. `P1-44` Full documentation walkthrough with repo owner
+32. `P1-61` Firebase Apple SDK CocoaPods sunset migration
+33. `P2-16` Public QA showcase packaging
+34. `P2-18` AI technical-depth showcase
 
 ## P0 - Launch Blockers
 
@@ -90,6 +91,7 @@ Process items in this order unless an explicit owner override is recorded in rel
 |----|------|--------------------|
 | `P1-48` | Startup phase telemetry and budget visibility | Existing startup flow emits structured phase telemetry (`init`, `identity`, `entitlements`, `routing`) with per-phase duration, timeout/fallback reason, and final terminal route outcome. Logs are queryable in Crashlytics/analytics, phase budgets are documented in `docs/DEVOPS.md`, and fault-injection runs prove telemetry captures degraded startup paths deterministically. |
 | `P1-43` | Firebase AI client-block regression hardening | Real-device AI generation succeeds on both wired iOS and wired Android using the current Firebase AI + App Check setup, and operator telemetry can distinguish configuration failure from policy/content failure without reading raw provider strings. DoD requires: the evidence bundle captures the active backend, model slot, and App Check posture for each run; failure classification distinguishes client/app-block configuration errors from true content-safety blocks; regression coverage exercises the classifier against representative provider failures at the service layer; and `docs/DEVOPS.md` includes a deterministic triage checklist for `client application <empty> are blocked` style failures with a named oracle for "fixed" versus "still misconfigured". |
+| `P1-62` | AI output quality release audit | Prosepal has release-grade evidence that real AI-generated messages are usable, warm, specific, tone-appropriate, length-appropriate, safe, and not generic across representative card-writing scenarios. DoD requires: a documented AI output quality rubric covering warmth, specificity, occasion fit, relationship fit, tone fit, length fit, no generic filler, no hallucinated personal facts, UK English where requested, and sensitive-occasion appropriateness; a representative scenario matrix covering birthday, wedding, sympathy, apology, thank you, new baby, anniversary/romantic, work colleague, close family, distant/awkward, funny, heartfelt, brief/simple, and formal cases; deterministic automated checks for prompt contracts, schema parsing, fixture linting, banned generic phrases, hallucinated-user-fact patterns, and fallback execution where practical; manual reviewed live or staging generation evidence captured only after explicit approval, including model/backend/config snapshot, sampled outputs, reviewer scores, failures, and final pass/fail decision; and any prompt/model/config changes required by the audit are covered by tests or documented evidence before release. |
 | `P1-53` | Telemetry adapter unification | Feature/domain code emits analytics, logs, and crash-report context through an interface-backed telemetry service or adapter layer rather than direct static calls. Existing redaction rules, event schemas, and operator-visible behavior remain intact unless explicitly documented. DoD requires: at least one startup event, one auth/paywall event, and one AI/runtime diagnostic event are covered by tests using fakes or spies; no secrets or sensitive user content are newly exposed; any operator-facing telemetry changes are documented in `docs/DEVOPS.md`; and `flutter analyze`, `flutter test`, and `./scripts/test_critical_smoke.sh` pass. |
 | `P1-54` | Pre-Flutter startup timeout hardening | Any initialization that occurs before `runApp()` reaches a bounded outcome instead of waiting indefinitely on remote services, and the app reaches a Flutter-controlled surface within a documented launch budget under degraded startup conditions. DoD requires: Firebase init and any other pre-Flutter network-dependent startup work use explicit timeout/failure handling; pre-Flutter work is limited to the minimum needed to mount the app safely; the launch budget is explicit and testable (`target <= 2000 ms` to a Flutter-controlled surface on supported release devices under degraded init, `hard upper bound <= 4000 ms` before fallback from pre-Flutter waits); the app deterministically reaches either the Flutter splash or init error surface within that budget under injected hung/degraded init conditions; startup telemetry distinguishes pre-Flutter timeout from post-splash startup timeout; and regression coverage exists for the timeout + graceful-degradation path without relying on ambient real-network failure. |
 | `P1-55` | Apple token exchange recovery for delete compliance | Apple sign-in no longer silently leaves account deletion non-compliant when authorization-code exchange fails, and the unresolved recovery state is not device-local only. DoD requires: the exchange path uses bounded retry during sign-in; a persistent remediation state or equivalent recovery path exists when all retries fail, with server-side state acting as the canonical delete-compliance truth and any client-side flag treated as UX cache only; delete-account flow checks the canonical recovery state and either completes revocation successfully or blocks with explicit actionable guidance instead of failing silently; if canonical recovery state cannot be fetched at delete time, the flow fails closed with explicit retry/support guidance rather than allowing optimistic deletion; regression coverage exists for transient and persistent exchange-failure paths including second-device or reinstall recovery; and real-device/manual evidence proves the app does not end in a silent "delete will fail later" state. |
