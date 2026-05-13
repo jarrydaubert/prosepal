@@ -235,21 +235,21 @@ PODS:
   - PromisesObjC (2.4.0)
   - PromisesSwift (2.4.0):
     - PromisesObjC (= 2.4.0)
-  - purchases_flutter (9.16.1):
+  - purchases_flutter (10.0.2):
     - Flutter
-    - PurchasesHybridCommon (= 17.55.1)
-  - purchases_ui_flutter (9.16.1):
+    - PurchasesHybridCommon (= 18.4.0)
+  - purchases_ui_flutter (10.0.2):
     - Flutter
-    - PurchasesHybridCommonUI (= 17.55.1)
-  - PurchasesHybridCommon (17.55.1):
-    - RevenueCat (= 5.67.1)
-  - PurchasesHybridCommonUI (17.55.1):
-    - PurchasesHybridCommon (= 17.55.1)
-    - RevenueCatUI (= 5.67.1)
+    - PurchasesHybridCommonUI (= 18.4.0)
+  - PurchasesHybridCommon (18.4.0):
+    - RevenueCat (= 5.70.0)
+  - PurchasesHybridCommonUI (18.4.0):
+    - PurchasesHybridCommon (= 18.4.0)
+    - RevenueCatUI (= 5.70.0)
   - RecaptchaInterop (101.0.0)
-  - RevenueCat (5.67.1)
-  - RevenueCatUI (5.67.1):
-    - RevenueCat (= 5.67.1)
+  - RevenueCat (5.70.0)
+  - RevenueCatUI (5.70.0):
+    - RevenueCat (= 5.70.0)
   - share_plus (0.0.1):
     - Flutter
   - shared_preferences_foundation (0.0.1):
@@ -257,6 +257,7 @@ PODS:
     - FlutterMacOS
   - sign_in_with_apple (0.0.1):
     - Flutter
+    - FlutterMacOS
   - url_launcher_ios (0.0.1):
     - Flutter
 
@@ -285,7 +286,7 @@ DEPENDENCIES:
   - purchases_ui_flutter (from `.symlinks/plugins/purchases_ui_flutter/ios`)
   - share_plus (from `.symlinks/plugins/share_plus/ios`)
   - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/darwin`)
-  - sign_in_with_apple (from `.symlinks/plugins/sign_in_with_apple/ios`)
+  - sign_in_with_apple (from `.symlinks/plugins/sign_in_with_apple/darwin`)
   - url_launcher_ios (from `.symlinks/plugins/url_launcher_ios/ios`)
 
 SPEC REPOS:
@@ -375,7 +376,7 @@ EXTERNAL SOURCES:
   shared_preferences_foundation:
     :path: ".symlinks/plugins/shared_preferences_foundation/darwin"
   sign_in_with_apple:
-    :path: ".symlinks/plugins/sign_in_with_apple/ios"
+    :path: ".symlinks/plugins/sign_in_with_apple/darwin"
   url_launcher_ios:
     :path: ".symlinks/plugins/url_launcher_ios/ios"
 
@@ -429,16 +430,16 @@ SPEC CHECKSUMS:
   patrol: cea8074f183a2a4232d0ebd10569ae05149ada42
   PromisesObjC: f5707f49cb48b9636751c5b2e7d227e43fba9f47
   PromisesSwift: 9d77319bbe72ebf6d872900551f7eeba9bce2851
-  purchases_flutter: b44fcb4ff5e68a4dfe53fd0c339683803b04dd2c
-  purchases_ui_flutter: 64afab2a2adc79a73ed5ca77f416c8d360a12734
-  PurchasesHybridCommon: ecd9d7c586287625f1225b8de5e24c1021502270
-  PurchasesHybridCommonUI: 3056a3d261529f6adb8f74ecc3ab7f1cc0d3fab4
+  purchases_flutter: 93c46839a7edc925d1e9478584b3d3e1cd6eebe2
+  purchases_ui_flutter: 2eb2f9ed736bf76be61cc5e049032c67a744124c
+  PurchasesHybridCommon: 2cd3e4b74c60f5a61603d78e4071274217cd9f6b
+  PurchasesHybridCommonUI: 3b62fb69d17b6f8b6855b38d26a4c62c269bff49
   RecaptchaInterop: 11e0b637842dfb48308d242afc3f448062325aba
-  RevenueCat: 9357239a9f0978285e68983637b8a602e65c94f0
-  RevenueCatUI: 6f9291da540f98baf405b5bdfc46b2d5547b704a
+  RevenueCat: f30d8ee4fd36ce56afa40923d314239761eb58a2
+  RevenueCatUI: f7e36aa08d5d8de905c0c864c1523d4f39708be3
   share_plus: 50da8cb520a8f0f65671c6c6a99b3617ed10a58a
   shared_preferences_foundation: 7036424c3d8ec98dfe75ff1667cb0cd531ec82bb
-  sign_in_with_apple: c5dcc141574c8c54d5ac99dd2163c0c72ad22418
+  sign_in_with_apple: 5e34677a4e74c5f42760f41b3bbe05343e84d171
   url_launcher_ios: 7a95fa5b60cc718a708b8f2966718e93db0cef1b
 
 PODFILE CHECKSUM: 63cfa2877fcf1f2c92dff46006bc2e3326e24394
