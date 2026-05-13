@@ -11,6 +11,7 @@ readonly DEPENDABOT_AUTHOR_REGEX='^dependabot\[bot\] <49699333\+dependabot\[bot\
 readonly GITHUB_COMMITTER_REGEX='^GitHub <noreply@github\.com>$'
 readonly DEPENDABOT_SIGNOFF_REGEX='^[[:space:]]*[Ss]igned-off-by:[[:space:]]*dependabot\[bot\][[:space:]]*<support@github\.com>[[:space:]]*$'
 readonly GITHUB_PR_SUBJECT_REGEX='^.+ \(#[0-9]+\)$'
+readonly GITHUB_NOREPLY_COAUTHOR_REGEX='^[[:space:]]*[Cc]o-[Aa]uthored-[Bb]y:[[:space:]]*.+[[:space:]]*<[0-9]+\+[^<>[:space:]]+@users\.noreply\.github\.com>[[:space:]]*$'
 
 usage() {
   cat <<'EOF'
@@ -63,18 +64,24 @@ is_github_dependabot_squash_merge() {
     return 1
   fi
 
-  # GitHub squash merges of Dependabot-derived PRs may keep Dependabot as the
-  # only co-author even when the squash commit author is the maintainer who
-  # opened the replacement PR.
+  # GitHub squash merges of Dependabot-derived PRs may keep GitHub-generated
+  # noreply co-author trailers for Dependabot and the maintainer who merged it.
   trailer_count="$(grep -Ec "$TRAILER_PATTERN" "$input_file" || true)"
 
-  if [[ "$trailer_count" -ne 1 ]]; then
+  if [[ "$trailer_count" -lt 1 ]]; then
     return 1
   fi
 
   if ! grep -Eq "$DEPENDABOT_COAUTHOR_REGEX" "$input_file"; then
     return 1
   fi
+
+  while IFS= read -r trailer_line; do
+    if [[ ! "$trailer_line" =~ $DEPENDABOT_COAUTHOR_REGEX ]] \
+      && [[ ! "$trailer_line" =~ $GITHUB_NOREPLY_COAUTHOR_REGEX ]]; then
+      return 1
+    fi
+  done < <(grep -E "$TRAILER_PATTERN" "$input_file")
 
   if ! grep -Eq "$DEPENDABOT_SIGNOFF_REGEX" "$input_file"; then
     return 1

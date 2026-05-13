@@ -90,8 +90,8 @@ Rules:
 - Any intentional co-author trailer must include `[allow-coauthor]` in the same commit message body.
 - Commits with `Co-authored-by:` and no `[allow-coauthor]` fail local `commit-msg` hook and CI.
 - Exception: GitHub-generated squash merges for Dependabot on `main` may retain
-  Dependabot's bot trailer when Dependabot is the only co-author, the committer
-  is `GitHub <noreply@github.com>`, the subject is a PR squash subject, and the
+  Dependabot and GitHub noreply co-author trailers when the committer is
+  `GitHub <noreply@github.com>`, the subject is a PR squash subject, and the
   generated message still carries Dependabot's signed-off trailer. This covers
   both direct Dependabot PR squash merges and maintainer replacement PRs that
   re-apply Dependabot updates with required native lockfile or CI fixes.
