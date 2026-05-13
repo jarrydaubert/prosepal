@@ -63,6 +63,9 @@ TARGETS=(
   "$PROJECT_DIR/coverage"
   "$PROJECT_DIR/artifacts/wired"
   "$PROJECT_DIR/custom_lint.log"
+  "$PROJECT_DIR/test/widgets/goldens/failures"
+  "$PROJECT_DIR/test/failures"
+  "$PROJECT_DIR/integration_test/test_bundle.dart"
 )
 
 for target in "${TARGETS[@]}"; do
