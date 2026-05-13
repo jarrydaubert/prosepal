@@ -32,6 +32,8 @@ This folder holds canonical product, engineering, and operations docs for the mo
     - High-level product, growth, and experimentation direction.
 14. `RELATIONSHIP_ASSISTANT_VISION.md`
     - Long-term product framing for Prosepal as a thoughtful relationship assistant.
+15. `AI_OUTPUT_QUALITY.md`
+    - AI output quality rubric, synthetic scenario matrix, and evidence approval workflow.
 
 ## Working rules
 
