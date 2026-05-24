@@ -93,6 +93,66 @@ check_policy_exists() {
   fi
 }
 
+check_table_privilege_absent() {
+  local role_name="$1"
+  local table_name="$2"
+  local privilege="$3"
+  local has_privilege
+  has_privilege="$(
+    query_scalar "SELECT has_table_privilege('$role_name', '$SCHEMA.$table_name', '$privilege');"
+  )"
+  if [[ "$has_privilege" == "f" || "$has_privilege" == "false" ]]; then
+    echo "[PASS] $role_name lacks $privilege on $SCHEMA.$table_name"
+  else
+    echo "[FAIL] $role_name has $privilege on $SCHEMA.$table_name"
+    FAILURES=$((FAILURES + 1))
+  fi
+}
+
+check_function_execute_absent() {
+  local role_name="$1"
+  local function_signature="$2"
+  local has_privilege
+  has_privilege="$(
+    query_scalar "SELECT has_function_privilege('$role_name', '$SCHEMA.$function_signature', 'EXECUTE');"
+  )"
+  if [[ "$has_privilege" == "f" || "$has_privilege" == "false" ]]; then
+    echo "[PASS] $role_name lacks EXECUTE on $SCHEMA.$function_signature"
+  else
+    echo "[FAIL] $role_name has EXECUTE on $SCHEMA.$function_signature"
+    FAILURES=$((FAILURES + 1))
+  fi
+}
+
+check_public_function_execute_absent() {
+  local function_signature="$1"
+  local has_privilege
+  has_privilege="$(
+    query_scalar "SELECT COALESCE(bool_or(acl.grantee = 0 AND acl.privilege_type = 'EXECUTE'), false) FROM pg_proc p CROSS JOIN LATERAL aclexplode(COALESCE(p.proacl, acldefault('f', p.proowner))) acl WHERE p.oid = '$SCHEMA.$function_signature'::regprocedure;"
+  )"
+  if [[ "$has_privilege" == "f" || "$has_privilege" == "false" ]]; then
+    echo "[PASS] PUBLIC lacks EXECUTE on $SCHEMA.$function_signature"
+  else
+    echo "[FAIL] PUBLIC has EXECUTE on $SCHEMA.$function_signature"
+    FAILURES=$((FAILURES + 1))
+  fi
+}
+
+check_function_execute_present() {
+  local role_name="$1"
+  local function_signature="$2"
+  local has_privilege
+  has_privilege="$(
+    query_scalar "SELECT has_function_privilege('$role_name', '$SCHEMA.$function_signature', 'EXECUTE');"
+  )"
+  if [[ "$has_privilege" == "t" || "$has_privilege" == "true" ]]; then
+    echo "[PASS] $role_name can EXECUTE $SCHEMA.$function_signature"
+  else
+    echo "[FAIL] $role_name cannot EXECUTE $SCHEMA.$function_signature"
+    FAILURES=$((FAILURES + 1))
+  fi
+}
+
 echo "Running Supabase read-only verification against schema: $SCHEMA"
 echo
 
@@ -123,6 +183,62 @@ RLS_TABLES=(
   "apple_credentials"
 )
 
+ANON_NO_SELECT_TABLES=(
+  "user_usage"
+  "user_entitlements"
+  "device_usage"
+  "rate_limit_log"
+  "rate_limit_config"
+  "apple_credentials"
+)
+
+AUTH_NO_SELECT_TABLES=(
+  "user_entitlements"
+  "device_usage"
+  "rate_limit_log"
+  "rate_limit_config"
+  "apple_credentials"
+)
+
+PUBLIC_NO_EXECUTE_FUNCTIONS=(
+  "check_and_increment_usage(uuid, boolean, text)"
+  "check_device_free_tier(text, text, uuid, boolean)"
+  "check_rate_limit(uuid, text, text)"
+  "cleanup_rate_limit_logs()"
+  "is_user_pro(uuid)"
+  "save_apple_authorization_code(text)"
+  "sync_user_usage(uuid, integer, integer, text)"
+  "update_updated_at_column()"
+)
+
+ANON_NO_EXECUTE_FUNCTIONS=(
+  "check_and_increment_usage(uuid, boolean, text)"
+  "cleanup_rate_limit_logs()"
+  "is_user_pro(uuid)"
+  "save_apple_authorization_code(text)"
+  "sync_user_usage(uuid, integer, integer, text)"
+  "update_updated_at_column()"
+)
+
+AUTH_NO_EXECUTE_FUNCTIONS=(
+  "cleanup_rate_limit_logs()"
+  "is_user_pro(uuid)"
+  "save_apple_authorization_code(text)"
+  "update_updated_at_column()"
+)
+
+AUTH_EXECUTE_FUNCTIONS=(
+  "check_and_increment_usage(uuid, boolean, text)"
+  "check_device_free_tier(text, text, uuid, boolean)"
+  "check_rate_limit(uuid, text, text)"
+  "sync_user_usage(uuid, integer, integer, text)"
+)
+
+ANON_EXECUTE_FUNCTIONS=(
+  "check_device_free_tier(text, text, uuid, boolean)"
+  "check_rate_limit(uuid, text, text)"
+)
+
 echo "== Tables =="
 for table in "${REQUIRED_TABLES[@]}"; do
   check_table_exists "$table"
@@ -139,6 +255,33 @@ echo "== RLS + Policies =="
 for table in "${RLS_TABLES[@]}"; do
   check_rls_enabled "$table"
   check_policy_exists "$table"
+done
+
+echo
+echo "== Client role table privileges =="
+for table in "${ANON_NO_SELECT_TABLES[@]}"; do
+  check_table_privilege_absent "anon" "$table" "SELECT"
+done
+for table in "${AUTH_NO_SELECT_TABLES[@]}"; do
+  check_table_privilege_absent "authenticated" "$table" "SELECT"
+done
+
+echo
+echo "== Function execute privileges =="
+for function_signature in "${PUBLIC_NO_EXECUTE_FUNCTIONS[@]}"; do
+  check_public_function_execute_absent "$function_signature"
+done
+for function_signature in "${ANON_NO_EXECUTE_FUNCTIONS[@]}"; do
+  check_function_execute_absent "anon" "$function_signature"
+done
+for function_signature in "${AUTH_NO_EXECUTE_FUNCTIONS[@]}"; do
+  check_function_execute_absent "authenticated" "$function_signature"
+done
+for function_signature in "${AUTH_EXECUTE_FUNCTIONS[@]}"; do
+  check_function_execute_present "authenticated" "$function_signature"
+done
+for function_signature in "${ANON_EXECUTE_FUNCTIONS[@]}"; do
+  check_function_execute_present "anon" "$function_signature"
 done
 
 echo

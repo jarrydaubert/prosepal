@@ -413,6 +413,28 @@ Supabase read-only verification:
 SUPABASE_DB_URL="postgresql://..." ./scripts/verify_supabase_readonly.sh
 ```
 
+Supabase 0-60 minute production pulse:
+- Purpose: detect a paused, unreachable, degraded, or misrouted production
+  Supabase project before users hit auth, API, or edge-function failures.
+- Prerequisites: production Supabase dashboard access, production project URL,
+  production anon key, and release evidence folder.
+- Steps:
+  - Confirm the dashboard shows the production project as active, with no
+    auth, database, or edge-function incidents.
+  - Send read-only API probes to the production URL and require expected
+    `2xx`/`401` responses, not DNS failures, timeouts, `5xx`,
+    project-paused, or gateway-unreachable errors.
+  - Send a read-only Auth health/settings request; do not create users or test
+    sign-in during this pulse.
+  - Probe deployed edge functions without valid auth and require expected
+    `401`/`405` responses instead of timeouts or deployment-not-found errors.
+- Pass criteria: dashboard active, API reachable, Auth reachable, and edge
+  functions reachable with expected rejection responses.
+- Failure handling: capture redacted evidence, pause rollout/monitoring
+  sign-off, and escalate to the release owner before continuing.
+- Evidence: record command output or dashboard screenshots in the release pulse
+  bundle, with tokens, project secrets, and user content redacted.
+
 AI cost/abuse controls:
 
 ```bash
@@ -430,6 +452,10 @@ Supabase verification (manual + script-assisted):
 - Required table presence for usage/entitlement/rate-limit/auth-adjacent tables.
 - Required RPC/function presence for entitlement, usage, and rate-limit paths.
 - RLS enabled with user-scoped policy checks on protected tables.
+- Client role privileges checked against the expected API surface:
+  anonymous users must not have direct table reads; signed-in users may keep the
+  direct `user_usage` read required by app sign-in sync; SECURITY DEFINER
+  functions must not retain PostgreSQL's default `PUBLIC` execute grant.
 - Critical RPC behavior verified:
   - entitlement lookup
   - check/increment usage
