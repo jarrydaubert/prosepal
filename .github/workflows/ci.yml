@@ -135,6 +135,10 @@ jobs:
         if: steps.scope.outputs.docs_only != 'true'
         run: flutter pub get
 
+      - name: Format check
+        if: steps.scope.outputs.docs_only != 'true'
+        run: dart format --output=none --set-exit-if-changed .
+
       - name: Static analysis
         if: steps.scope.outputs.docs_only != 'true'
         run: flutter analyze --no-fatal-infos
