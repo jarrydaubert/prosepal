@@ -33,7 +33,14 @@ flutter test --exclude-tags flaky --coverage
 ./scripts/check_service_coverage.sh coverage/lcov.info
 ```
 
-5. Canonical operations source: this file (`docs/DEVOPS.md`).
+5. Native iOS rewrite local gate when `prosepal-ios/` changes:
+
+```bash
+cd prosepal-ios
+swift test
+```
+
+6. Canonical operations source: this file (`docs/DEVOPS.md`).
 
 ## Repository Security Baseline
 
@@ -150,12 +157,30 @@ Steps:
 - Unit/widget test suite with flaky tests excluded.
 - Service coverage gate.
 - Debug bundle build sanity check.
+- Non-blocking native iOS Swift package job runs `swift test` from
+  `prosepal-ios/` when that folder changes.
 - Non-blocking visual regression companion job runs `./scripts/test_visual_regression.sh` and uploads `visual-regression-diffs` artifact on any diff/failure.
 - Non-blocking integration smoke companion job runs `integration_test/smoke_test.dart` on iOS Simulator (`macos-latest`) and uploads `integration-smoke-artifacts`.
 
 Free-tier optimization:
 - Docs-only changes use a fast path that skips Flutter install/build/test while still running as a required check.
 - `concurrency.cancel-in-progress` prevents duplicate runs on rapid pushes.
+
+### Native iOS Swift Package Companion (`.github/workflows/ci.yml` -> `Native iOS Swift Package (non-blocking)`)
+
+Purpose:
+- Validate the SwiftUI rewrite's package contracts without changing the current
+  Flutter production gate.
+
+Policy:
+- Runs only when files under `prosepal-ios/` change.
+- Uses macOS GitHub-hosted runners and Swift Package Manager.
+- Runs `swift test` from `prosepal-ios/`.
+- Remains non-blocking while the native rewrite is R&D. Before any native App
+  Store candidate, promote the relevant native build and test checks to blocking
+  release gates.
+- Must not introduce Firebase AI or provider-specific generation SDK validation
+  because the native app targets the ProsePal gateway contract.
 
 ### Visual Regression Companion (`.github/workflows/ci.yml` → `Visual Regression (non-blocking)`)
 

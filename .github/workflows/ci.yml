@@ -16,8 +16,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     outputs:
-      docs_only: ${{ steps.scope.outputs.docs_only }}
-      integration_smoke_needed: ${{ steps.scope.outputs.integration_smoke_needed }}
+      docs_only: "${{ steps.scope.outputs.docs_only }}"
+      integration_smoke_needed: "${{ steps.scope.outputs.integration_smoke_needed }}"
+      native_ios_needed: "${{ steps.scope.outputs.native_ios_needed }}"
     permissions:
       contents: read
     steps:
@@ -66,9 +67,14 @@ jobs:
 
           docs_only=true
           integration_smoke_needed=false
+          native_ios_needed=false
           while IFS= read -r file; do
             if [[ -z "$file" ]]; then
               continue
+            fi
+
+            if [[ "$file" =~ ^prosepal-ios/ ]]; then
+              native_ios_needed=true
             fi
 
             if [[ "$file" =~ ^(android|integration_test|ios|lib|test)/ ]] ||
@@ -94,6 +100,7 @@ jobs:
 
           echo "docs_only=$docs_only" >> "$GITHUB_OUTPUT"
           echo "integration_smoke_needed=$integration_smoke_needed" >> "$GITHUB_OUTPUT"
+          echo "native_ios_needed=$native_ios_needed" >> "$GITHUB_OUTPUT"
 
       - name: Docs-only fast path
         if: steps.scope.outputs.docs_only == 'true'
@@ -175,6 +182,41 @@ jobs:
           path: coverage/lcov.info
           if-no-files-found: warn
           retention-days: 14
+
+  native_ios:
+    name: Native iOS Swift Package (non-blocking)
+    runs-on: macos-latest
+    timeout-minutes: 15
+    needs: quality
+    if: needs.quality.outputs.native_ios_needed == 'true'
+    continue-on-error: true
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+      - name: Swift version
+        run: swift --version
+
+      - name: Run native Swift package tests
+        id: swift
+        working-directory: prosepal-ios
+        run: swift test
+
+      - name: Native Swift summary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "## Native iOS Swift Package"
+            if [[ "${{ steps.swift.outcome }}" == "success" ]]; then
+              echo "- Status: passed"
+            else
+              echo "- Status: failed (non-blocking while native rewrite is R&D)"
+            fi
+            echo "- Command: \`cd prosepal-ios && swift test\`"
+          } >> "$GITHUB_STEP_SUMMARY"
 
   visual_regression:
     name: Visual Regression (non-blocking)
