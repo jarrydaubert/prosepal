@@ -95,7 +95,6 @@ jobs:
             fi
 
             docs_only=false
-            break
           done < /tmp/changed_files.txt
 
           echo "docs_only=$docs_only" >> "$GITHUB_OUTPUT"
@@ -184,7 +183,7 @@ jobs:
           retention-days: 14
 
   native_ios:
-    name: Native iOS Swift Package (non-blocking)
+    name: Native iOS App (non-blocking)
     runs-on: macos-latest
     timeout-minutes: 15
     needs: quality
@@ -204,18 +203,29 @@ jobs:
         working-directory: prosepal-ios
         run: swift test
 
-      - name: Native Swift summary
+      - name: Build native simulator app
+        id: app_build
+        working-directory: prosepal-ios
+        run: xcodebuild -project ProsePal.xcodeproj -target ProsePal -sdk iphonesimulator CODE_SIGNING_ALLOWED=NO build
+
+      - name: Native iOS summary
         if: always()
         shell: bash
         run: |
           {
-            echo "## Native iOS Swift Package"
+            echo "## Native iOS App"
             if [[ "${{ steps.swift.outcome }}" == "success" ]]; then
-              echo "- Status: passed"
+              echo "- Swift package tests: passed"
             else
-              echo "- Status: failed (non-blocking while native rewrite is R&D)"
+              echo "- Swift package tests: failed (non-blocking while native rewrite is R&D)"
+            fi
+            if [[ "${{ steps.app_build.outcome }}" == "success" ]]; then
+              echo "- Simulator app build: passed"
+            else
+              echo "- Simulator app build: failed (non-blocking while native rewrite is R&D)"
             fi
             echo "- Command: \`cd prosepal-ios && swift test\`"
+            echo "- Command: \`cd prosepal-ios && xcodebuild -project ProsePal.xcodeproj -target ProsePal -sdk iphonesimulator CODE_SIGNING_ALLOWED=NO build\`"
           } >> "$GITHUB_STEP_SUMMARY"
 
   visual_regression:

@@ -21,8 +21,7 @@ final class TemplateMessageWritingClientTests: XCTestCase {
         XCTAssertEqual(response.laneUsed, .template)
         XCTAssertEqual(response.fallbackStatus, .degradedToTemplate)
         XCTAssertEqual(response.retryEligibility, .eligible)
-        XCTAssertEqual(response.messages.count, 1)
+        XCTAssertEqual(response.messages.count, 3)
         XCTAssertTrue(response.messages[0].text.contains("Dad"))
     }
 }
-

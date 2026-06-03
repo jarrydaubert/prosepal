@@ -38,6 +38,7 @@ flutter test --exclude-tags flaky --coverage
 ```bash
 cd prosepal-ios
 swift test
+xcodebuild -project ProsePal.xcodeproj -target ProsePal -sdk iphonesimulator CODE_SIGNING_ALLOWED=NO build
 ```
 
 6. Canonical operations source: this file (`docs/DEVOPS.md`).
@@ -157,8 +158,8 @@ Steps:
 - Unit/widget test suite with flaky tests excluded.
 - Service coverage gate.
 - Debug bundle build sanity check.
-- Non-blocking native iOS Swift package job runs `swift test` from
-  `prosepal-ios/` when that folder changes.
+- Non-blocking native iOS app job runs `swift test` and a simulator app target
+  build from `prosepal-ios/` when that folder changes.
 - Non-blocking visual regression companion job runs `./scripts/test_visual_regression.sh` and uploads `visual-regression-diffs` artifact on any diff/failure.
 - Non-blocking integration smoke companion job runs `integration_test/smoke_test.dart` on iOS Simulator (`macos-latest`) and uploads `integration-smoke-artifacts`.
 
@@ -166,16 +167,17 @@ Free-tier optimization:
 - Docs-only changes use a fast path that skips Flutter install/build/test while still running as a required check.
 - `concurrency.cancel-in-progress` prevents duplicate runs on rapid pushes.
 
-### Native iOS Swift Package Companion (`.github/workflows/ci.yml` -> `Native iOS Swift Package (non-blocking)`)
+### Native iOS App Companion (`.github/workflows/ci.yml` -> `Native iOS App (non-blocking)`)
 
 Purpose:
-- Validate the SwiftUI rewrite's package contracts without changing the current
-  Flutter production gate.
+- Validate the SwiftUI rewrite's package contracts and simulator app build
+  without changing the current Flutter production gate.
 
 Policy:
 - Runs only when files under `prosepal-ios/` change.
 - Uses macOS GitHub-hosted runners and Swift Package Manager.
 - Runs `swift test` from `prosepal-ios/`.
+- Builds the `ProsePal` iOS simulator app target with `xcodebuild`.
 - Remains non-blocking while the native rewrite is R&D. Before any native App
   Store candidate, promote the relevant native build and test checks to blocking
   release gates.

@@ -15,6 +15,40 @@ public enum Occasion: String, Codable, CaseIterable, Sendable, Identifiable {
     case thinkingOfYou
 
     public var id: String { rawValue }
+
+    public var displayName: String {
+        switch self {
+        case .birthday: "Birthday"
+        case .anniversary: "Anniversary"
+        case .sympathy: "Sympathy"
+        case .apology: "Apology"
+        case .thankYou: "Thank You"
+        case .congratulations: "Congratulations"
+        case .wedding: "Wedding"
+        case .newBaby: "New Baby"
+        case .friendship: "Friendship"
+        case .work: "Work"
+        case .getWell: "Get Well"
+        case .thinkingOfYou: "Thinking of You"
+        }
+    }
+
+    public var symbolName: String {
+        switch self {
+        case .birthday: "birthday.cake"
+        case .anniversary: "heart"
+        case .sympathy: "hands.sparkles"
+        case .apology: "arrow.uturn.backward.heart"
+        case .thankYou: "gift"
+        case .congratulations: "sparkles"
+        case .wedding: "heart.circle"
+        case .newBaby: "figure.and.child.holdinghands"
+        case .friendship: "person.2"
+        case .work: "briefcase"
+        case .getWell: "cross.case"
+        case .thinkingOfYou: "paperplane"
+        }
+    }
 }
 
 public enum Relationship: String, Codable, CaseIterable, Sendable, Identifiable {
@@ -30,6 +64,21 @@ public enum Relationship: String, Codable, CaseIterable, Sendable, Identifiable 
     case other
 
     public var id: String { rawValue }
+
+    public var displayName: String {
+        switch self {
+        case .parent: "Parent"
+        case .partner: "Partner"
+        case .friend: "Friend"
+        case .sibling: "Sibling"
+        case .child: "Child"
+        case .colleague: "Colleague"
+        case .manager: "Manager"
+        case .extendedFamily: "Extended Family"
+        case .acquaintance: "Acquaintance"
+        case .other: "Other"
+        }
+    }
 }
 
 public enum Tone: String, Codable, CaseIterable, Sendable, Identifiable {
@@ -44,6 +93,20 @@ public enum Tone: String, Codable, CaseIterable, Sendable, Identifiable {
     case apologetic
 
     public var id: String { rawValue }
+
+    public var displayName: String {
+        switch self {
+        case .warm: "Warm"
+        case .heartfelt: "Heartfelt"
+        case .funny: "Funny"
+        case .formal: "Formal"
+        case .simple: "Simple"
+        case .romantic: "Romantic"
+        case .encouraging: "Encouraging"
+        case .thoughtful: "Thoughtful"
+        case .apologetic: "Apologetic"
+        }
+    }
 }
 
 public enum MessageLength: String, Codable, CaseIterable, Sendable, Identifiable {
@@ -52,6 +115,14 @@ public enum MessageLength: String, Codable, CaseIterable, Sendable, Identifiable
     case longer
 
     public var id: String { rawValue }
+
+    public var displayName: String {
+        switch self {
+        case .short: "Short"
+        case .standard: "Standard"
+        case .longer: "Longer"
+        }
+    }
 }
 
 public enum GenerationLane: String, Codable, CaseIterable, Sendable {
@@ -60,6 +131,18 @@ public enum GenerationLane: String, Codable, CaseIterable, Sendable {
     case premium
     case local
     case template
+}
+
+public extension GenerationLane {
+    var displayName: String {
+        switch self {
+        case .automatic: "Auto"
+        case .standard: "Standard"
+        case .premium: "Premium"
+        case .local: "Local"
+        case .template: "Template"
+        }
+    }
 }
 
 public enum FallbackStatus: String, Codable, Sendable {
@@ -231,4 +314,3 @@ public struct CardResponse: Codable, Equatable, Sendable {
         self.outputContractVersion = outputContractVersion
     }
 }
-

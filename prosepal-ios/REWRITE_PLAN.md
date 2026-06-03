@@ -27,9 +27,11 @@ SDKs.
 
 Outcome:
 
-- SwiftUI app shell exists in `prosepal-ios/`.
+- SwiftUI app shell exists in `prosepal-ios/` as a runnable Xcode app target.
 - Domain and API contracts compile under Swift Package Manager.
 - Mock and template generation let the UI be developed without a live gateway.
+- Native compose, drafts, saved messages, and settings surfaces use SwiftUI
+  platform conventions instead of copying Flutter screens.
 - No production services or provider keys are required.
 
 Validation:
@@ -37,6 +39,7 @@ Validation:
 ```bash
 cd prosepal-ios
 swift test
+xcodebuild -project ProsePal.xcodeproj -target ProsePal -sdk iphonesimulator CODE_SIGNING_ALLOWED=NO build
 ```
 
 ## Phase 2: Product Parity Map
@@ -119,4 +122,3 @@ Validation:
   free-user production experience.
 - Premium shows measurable uplift over Standard.
 - Entitlement enforcement is server-side and verified.
-

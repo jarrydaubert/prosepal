@@ -34,21 +34,27 @@ SwiftUI app
 Provider names, model names, provider payloads, provider SDK response shapes,
 and routing policy stay behind the ProsePal API boundary.
 
-## Current Scaffold
+## App Structure
 
-The checked-in package is intentionally small:
+The checked-in native app is split into a small Xcode app target and Swift
+package modules:
 
+- `ProsePal`: SwiftUI iOS app target in `ProsePal.xcodeproj`.
 - `ProsePalDomain`: provider-agnostic product and API contract models.
 - `ProsePalAPI`: message-writing client protocol, gateway client, mock client,
   and deterministic template fallback client.
-- `ProsePalUI`: early SwiftUI surfaces that depend only on the
+- `ProsePalUI`: modern SwiftUI app surfaces that depend only on the
   `MessageWritingClient` contract.
 
-Run the native contract tests from this folder:
+Run the native contract tests and simulator build from this folder:
 
 ```bash
 swift test
+xcodebuild -project ProsePal.xcodeproj -target ProsePal -sdk iphonesimulator CODE_SIGNING_ALLOWED=NO build
 ```
+
+To run interactively, open `ProsePal.xcodeproj` in Xcode and choose the
+`ProsePal` scheme on an iOS simulator.
 
 ## Non-Goals For This First Slice
 
@@ -56,5 +62,4 @@ swift test
 - No Firebase AI client-direct integration.
 - No provider keys.
 - No model/provider names in user-facing UI.
-- No App Store release target decision encoded in project settings yet.
-
+- No final App Store release target decision encoded in project settings yet.
