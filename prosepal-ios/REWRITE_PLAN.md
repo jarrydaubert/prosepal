@@ -48,6 +48,8 @@ Outcome:
 
 - Flutter occasions, relationships, tones, lengths, and spelling preferences
   are mapped to native domain models.
+- The first native create slice carries the full Flutter catalogue shape into
+  Swift while presenting it through a searchable, grouped iOS picker.
 - Generation, results, history, paywall, auth, settings, and support flows have
   parity notes against the Flutter reference.
 - Local data migration risks are documented before choosing same-bundle release.
@@ -55,6 +57,8 @@ Outcome:
 Validation:
 
 - Domain contract tests cover encoded request/response shapes.
+- Request construction tests prove the compose draft maps native fields into
+  `CardIntent`.
 - UI previews use only mock/template clients.
 
 ## Phase 3: Auth And Entitlement Continuity

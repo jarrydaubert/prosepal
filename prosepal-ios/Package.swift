@@ -30,7 +30,10 @@ let package = Package(
         .testTarget(
             name: "ProsePalAPITests",
             dependencies: ["ProsePalAPI", "ProsePalDomain"]
+        ),
+        .testTarget(
+            name: "ProsePalUITests",
+            dependencies: ["ProsePalUI", "ProsePalDomain"]
         )
     ]
 )
-

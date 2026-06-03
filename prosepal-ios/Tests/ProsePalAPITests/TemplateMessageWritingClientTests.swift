@@ -7,10 +7,15 @@ final class TemplateMessageWritingClientTests: XCTestCase {
         let client = TemplateMessageWritingClient()
         let request = CardRequest(
             intent: CardIntent(
-                occasion: .birthday,
-                relationship: .parent,
-                tone: .warm,
-                recipientName: "Dad"
+                occasion: .diwali,
+                relationship: .teacher,
+                tone: .poetic,
+                length: .detailed,
+                spellingPreference: .uk,
+                recipientName: "Dad",
+                thingsToInclude: ["festival lights"],
+                thingsToAvoid: ["cliches"],
+                userContext: "Keep it grateful."
             ),
             requestedLane: .premium,
             clientContext: ClientContext(appVersion: "2.0.0", buildNumber: "100")
@@ -23,5 +28,9 @@ final class TemplateMessageWritingClientTests: XCTestCase {
         XCTAssertEqual(response.retryEligibility, .eligible)
         XCTAssertEqual(response.messages.count, 3)
         XCTAssertTrue(response.messages[0].text.contains("Dad"))
+        XCTAssertTrue(response.messages[0].text.contains("Diwali"))
+        XCTAssertTrue(response.messages[0].text.contains("teacher"))
+        XCTAssertTrue(response.messages[0].text.contains("poetic"))
+        XCTAssertTrue(response.messages[0].text.contains("UK English"))
     }
 }

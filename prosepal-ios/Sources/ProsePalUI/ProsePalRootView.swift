@@ -89,14 +89,14 @@ public final class ProsePalAppModel: ObservableObject {
 public struct MessageDraft: Equatable, Sendable {
     public var occasion: Occasion = .birthday
     public var relationship: Relationship = .parent
-    public var tone: Tone = .warm
+    public var tone: Tone = .heartfelt
     public var length: MessageLength = .standard
+    public var spellingPreference: SpellingPreference = .automatic
     public var requestedLane: GenerationLane = .automatic
     public var recipientName = ""
     public var thingsToInclude = ""
     public var thingsToAvoid = ""
     public var personalContext = ""
-    public var useBritishEnglish = true
 
     var intent: CardIntent {
         CardIntent(
@@ -104,7 +104,8 @@ public struct MessageDraft: Equatable, Sendable {
             relationship: relationship,
             tone: tone,
             length: length,
-            localeIdentifier: useBritishEnglish ? "en_GB" : "en_US",
+            spellingPreference: spellingPreference,
+            localeIdentifier: spellingPreference.localeIdentifier,
             recipientName: recipientName.nilIfBlank,
             thingsToInclude: thingsToInclude.commaSeparatedValues,
             thingsToAvoid: thingsToAvoid.commaSeparatedValues,
@@ -160,13 +161,14 @@ public struct ProsePalRootView: View {
 struct ComposeView: View {
     @EnvironmentObject private var model: ProsePalAppModel
     @FocusState private var focusedField: ComposeField?
+    @State private var isShowingOccasionPicker = false
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 22) {
                     intentHeader
-                    occasionStrip
+                    occasionSelector
                     recipientFields
                     styleControls
                     detailFields
@@ -177,7 +179,7 @@ struct ComposeView: View {
             }
             .background(Color.prosePalGroupedBackground)
             .scrollDismissesKeyboard(.interactively)
-            .navigationTitle("New Message")
+            .navigationTitle("What are you writing?")
             .toolbar {
                 ToolbarItemGroup(placement: .keyboard) {
                     Spacer()
@@ -186,6 +188,9 @@ struct ComposeView: View {
             }
             .safeAreaInset(edge: .bottom) {
                 generateButton
+            }
+            .sheet(isPresented: $isShowingOccasionPicker) {
+                OccasionPickerSheet(selection: $model.draft.occasion)
             }
         }
     }
@@ -220,14 +225,47 @@ struct ComposeView: View {
         return "\(model.draft.tone.displayName) \(model.draft.length.displayName.lowercased()) note for \(recipient)"
     }
 
-    private var occasionStrip: some View {
+    private var occasionSelector: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Occasion")
-                .font(.headline)
+            HStack {
+                Text("Occasion")
+                    .font(.headline)
+                Spacer()
+                Button("Browse") {
+                    isShowingOccasionPicker = true
+                }
+                .font(.callout.weight(.semibold))
+            }
+
+            Button {
+                isShowingOccasionPicker = true
+            } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: model.draft.occasion.symbolName)
+                        .font(.title2)
+                        .frame(width: 34, height: 34)
+                        .foregroundStyle(.indigo)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(model.draft.occasion.displayName)
+                            .font(.headline)
+                            .foregroundStyle(.primary)
+                        Text(model.draft.occasion.group.displayName)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.up.chevron.down")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                }
+                .padding(16)
+                .background(Color.prosePalSecondaryGroupedBackground, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+            }
+            .buttonStyle(.plain)
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 10) {
-                    ForEach(Occasion.allCases) { occasion in
+                    ForEach(Occasion.featuredCases) { occasion in
                         Button {
                             model.draft.occasion = occasion
                         } label: {
@@ -260,7 +298,8 @@ struct ComposeView: View {
 
             Picker("Relationship", selection: $model.draft.relationship) {
                 ForEach(Relationship.allCases) { relationship in
-                    Text(relationship.displayName).tag(relationship)
+                    Label(relationship.displayName, systemImage: relationship.symbolName)
+                        .tag(relationship)
                 }
             }
         }
@@ -270,11 +309,17 @@ struct ComposeView: View {
         VStack(spacing: 14) {
             Picker("Tone", selection: $model.draft.tone) {
                 ForEach(Tone.allCases) { tone in
-                    Text(tone.displayName).tag(tone)
+                    Label(tone.displayName, systemImage: tone.symbolName)
+                        .tag(tone)
                 }
             }
             .pickerStyle(.menu)
             .frame(maxWidth: .infinity, alignment: .leading)
+
+            Text(model.draft.tone.description)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
 
             Picker("Length", selection: $model.draft.length) {
                 ForEach(MessageLength.allCases) { length in
@@ -289,6 +334,11 @@ struct ComposeView: View {
                 Text("Premium").tag(GenerationLane.premium)
             }
             .pickerStyle(.segmented)
+
+            Label("Standard drafts available. Premium unlocks enhanced drafts later.", systemImage: "gauge")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(16)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
@@ -310,9 +360,16 @@ struct ComposeView: View {
                 .lineLimit(3...6)
                 .focused($focusedField, equals: .context)
 
-            Toggle(isOn: $model.draft.useBritishEnglish) {
-                Label("UK English", systemImage: "textformat")
+            Picker("Spelling", selection: $model.draft.spellingPreference) {
+                ForEach(SpellingPreference.allCases) { preference in
+                    Text(preference.displayName).tag(preference)
+                }
             }
+            .pickerStyle(.segmented)
+
+            Text(model.draft.spellingPreference.exampleText)
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
         .padding(16)
         .background(Color.prosePalSecondaryGroupedBackground, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
@@ -351,6 +408,88 @@ struct ComposeView: View {
         .padding(.top, 10)
         .padding(.bottom, 12)
         .background(.ultraThinMaterial)
+    }
+}
+
+struct OccasionPickerSheet: View {
+    @Binding var selection: Occasion
+    @Environment(\.dismiss) private var dismiss
+    @State private var searchText = ""
+
+    var body: some View {
+        NavigationStack {
+            List {
+                ForEach(OccasionGroup.allCases) { group in
+                    let occasions = filteredOccasions(in: group)
+                    if !occasions.isEmpty {
+                        Section(group.displayName) {
+                            ForEach(occasions) { occasion in
+                                Button {
+                                    selection = occasion
+                                    dismiss()
+                                } label: {
+                                    OccasionPickerRow(
+                                        occasion: occasion,
+                                        isSelected: occasion == selection
+                                    )
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                    }
+                }
+            }
+            .searchable(text: $searchText, prompt: "Search occasions")
+            .navigationTitle("Occasion")
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Close") { dismiss() }
+                }
+            }
+        }
+    }
+
+    private func filteredOccasions(in group: OccasionGroup) -> [Occasion] {
+        let groupOccasions = Occasion.allCases.filter { $0.group == group }
+        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty else { return groupOccasions }
+
+        return groupOccasions.filter {
+            $0.searchText.localizedCaseInsensitiveContains(query)
+        }
+    }
+}
+
+struct OccasionPickerRow: View {
+    let occasion: Occasion
+    let isSelected: Bool
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: occasion.symbolName)
+                .font(.headline)
+                .frame(width: 28, height: 28)
+                .foregroundStyle(.indigo)
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(occasion.displayName)
+                    .font(.body.weight(.medium))
+                    .foregroundStyle(.primary)
+                Text(occasion.generationHint)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+            }
+
+            Spacer()
+
+            if isSelected {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundStyle(.indigo)
+            }
+        }
+        .contentShape(Rectangle())
+        .padding(.vertical, 4)
     }
 }
 
@@ -483,7 +622,11 @@ struct SettingsView: View {
         NavigationStack {
             List {
                 Section("Writing") {
-                    Toggle("UK English", isOn: $model.draft.useBritishEnglish)
+                    Picker("Spelling", selection: $model.draft.spellingPreference) {
+                        ForEach(SpellingPreference.allCases) { preference in
+                            Text(preference.displayName).tag(preference)
+                        }
+                    }
                     Picker("Default Lane", selection: $model.draft.requestedLane) {
                         Text("Auto").tag(GenerationLane.automatic)
                         Text("Standard").tag(GenerationLane.standard)
