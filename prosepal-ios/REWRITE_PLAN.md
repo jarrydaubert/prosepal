@@ -53,12 +53,16 @@ Outcome:
 - Generation, results, history, paywall, auth, settings, and support flows have
   parity notes against the Flutter reference.
 - Local data migration risks are documented before choosing same-bundle release.
+- Draft results and local saved-message flows are implemented as native list,
+  detail, edit, copy, share, save, and delete surfaces.
 
 Validation:
 
 - Domain contract tests cover encoded request/response shapes.
 - Request construction tests prove the compose draft maps native fields into
   `CardIntent`.
+- Saved-message tests cover metadata capture, duplicate prevention, local
+  persistence, update, and delete.
 - UI previews use only mock/template clients.
 
 ## Phase 3: Auth And Entitlement Continuity

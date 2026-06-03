@@ -11,20 +11,31 @@ public final class ProsePalAppModel: ObservableObject {
     @Published var draft = MessageDraft()
     @Published var generatedMessages: [GeneratedMessage] = []
     @Published var savedMessages: [SavedMessage] = []
+    @Published var notice: AppNotice?
+    @Published var isShowingResults = false
     @Published var isGenerating = false
     @Published var errorMessage: String?
     @Published var fallbackStatus: FallbackStatus = .none
     @Published var laneUsed: GenerationLane?
     @Published var selectedTab: AppTab = .compose
 
-    private static let savedMessagesKey = "prosepal.native.savedMessages.v1"
+    public nonisolated static let defaultSavedMessagesKey = "prosepal.native.savedMessages.v1"
     private let client: MessageWritingClient
     private let clientContext: ClientContext
+    private let savedMessagesStore: UserDefaults
+    private let savedMessagesKey: String
 
-    public init(client: MessageWritingClient, clientContext: ClientContext) {
+    public init(
+        client: MessageWritingClient,
+        clientContext: ClientContext,
+        savedMessagesStore: UserDefaults = .standard,
+        savedMessagesKey: String = ProsePalAppModel.defaultSavedMessagesKey
+    ) {
         self.client = client
         self.clientContext = clientContext
-        self.savedMessages = Self.loadSavedMessages()
+        self.savedMessagesStore = savedMessagesStore
+        self.savedMessagesKey = savedMessagesKey
+        self.savedMessages = Self.loadSavedMessages(from: savedMessagesStore, key: savedMessagesKey)
     }
 
     func generate() async {
@@ -44,7 +55,7 @@ public final class ProsePalAppModel: ObservableObject {
             generatedMessages = response.messages
             fallbackStatus = response.fallbackStatus
             laneUsed = response.laneUsed
-            selectedTab = .results
+            isShowingResults = true
         } catch let error as GenerationError {
             errorMessage = error.userSafeMessage
         } catch {
@@ -54,22 +65,104 @@ public final class ProsePalAppModel: ObservableObject {
         isGenerating = false
     }
 
-    func save(_ message: GeneratedMessage) {
-        guard !savedMessages.contains(where: { $0.text == message.text }) else { return }
+    @discardableResult
+    func save(_ message: GeneratedMessage) -> Bool {
+        saveText(message.text)
+    }
+
+    @discardableResult
+    func saveText(_ text: String) -> Bool {
+        let trimmedText = text.trimmedForSaving
+        guard !trimmedText.isEmpty else {
+            showNotice("Nothing to save", systemImage: "exclamationmark.circle")
+            return false
+        }
+
+        guard !savedMessages.contains(where: { $0.text == trimmedText }) else {
+            showNotice("Already saved", systemImage: "bookmark.fill")
+            return false
+        }
+
         savedMessages.insert(
-            SavedMessage(text: message.text, occasion: draft.occasion, savedAt: .now),
+            SavedMessage(
+                text: trimmedText,
+                occasion: draft.occasion,
+                relationship: draft.relationship,
+                tone: draft.tone,
+                length: draft.length,
+                recipientName: draft.recipientName.nilIfBlank,
+                savedAt: .now
+            ),
             at: 0
         )
         persistSavedMessages()
+        showNotice("Saved", systemImage: "bookmark.fill")
+        playSuccessFeedback()
+        return true
+    }
+
+    @discardableResult
+    func updateSaved(_ message: SavedMessage, text: String) -> Bool {
+        let trimmedText = text.trimmedForSaving
+        guard !trimmedText.isEmpty else {
+            showNotice("Nothing to save", systemImage: "exclamationmark.circle")
+            return false
+        }
+
+        guard let index = savedMessages.firstIndex(where: { $0.id == message.id }) else {
+            showNotice("Message not found", systemImage: "exclamationmark.circle")
+            return false
+        }
+
+        guard !savedMessages.contains(where: { $0.id != message.id && $0.text == trimmedText }) else {
+            showNotice("Already saved", systemImage: "bookmark.fill")
+            return false
+        }
+
+        savedMessages[index].text = trimmedText
+        persistSavedMessages()
+        showNotice("Updated", systemImage: "checkmark.circle.fill")
+        playSuccessFeedback()
+        return true
     }
 
     func deleteSaved(_ message: SavedMessage) {
         savedMessages.removeAll { $0.id == message.id }
         persistSavedMessages()
+        showNotice("Deleted", systemImage: "trash")
     }
 
-    private static func loadSavedMessages() -> [SavedMessage] {
-        guard let data = UserDefaults.standard.data(forKey: savedMessagesKey) else {
+    func deleteSaved(at offsets: IndexSet) {
+        let ids = Set(offsets.map { savedMessages[$0].id })
+        savedMessages.removeAll { ids.contains($0.id) }
+        persistSavedMessages()
+        showNotice("Deleted", systemImage: "trash")
+    }
+
+    func isSaved(_ message: GeneratedMessage) -> Bool {
+        savedMessages.contains { $0.text == message.text.trimmedForSaving }
+    }
+
+    func copyText(_ text: String) {
+        copyToPasteboard(text)
+        showNotice("Copied", systemImage: "doc.on.doc")
+        playSelectionFeedback()
+    }
+
+    func showNotice(_ title: String, systemImage: String) {
+        let notice = AppNotice(title: title, systemImage: systemImage)
+        self.notice = notice
+
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 1_700_000_000)
+            if self.notice?.id == notice.id {
+                self.notice = nil
+            }
+        }
+    }
+
+    private static func loadSavedMessages(from store: UserDefaults, key: String) -> [SavedMessage] {
+        guard let data = store.data(forKey: key) else {
             return []
         }
 
@@ -82,7 +175,7 @@ public final class ProsePalAppModel: ObservableObject {
 
     private func persistSavedMessages() {
         guard let data = try? JSONEncoder().encode(savedMessages) else { return }
-        UserDefaults.standard.set(data, forKey: Self.savedMessagesKey)
+        savedMessagesStore.set(data, forKey: savedMessagesKey)
     }
 }
 
@@ -114,16 +207,62 @@ public struct MessageDraft: Equatable, Sendable {
     }
 }
 
-public struct SavedMessage: Codable, Identifiable, Equatable, Sendable {
-    public var id = UUID()
+public struct SavedMessage: Codable, Identifiable, Equatable, Hashable, Sendable {
+    public var id: UUID
     public var text: String
     public var occasion: Occasion
+    public var relationship: Relationship
+    public var tone: Tone
+    public var length: MessageLength
+    public var recipientName: String?
     public var savedAt: Date
+
+    public init(
+        id: UUID = UUID(),
+        text: String,
+        occasion: Occasion,
+        relationship: Relationship,
+        tone: Tone,
+        length: MessageLength,
+        recipientName: String? = nil,
+        savedAt: Date = .now
+    ) {
+        self.id = id
+        self.text = text
+        self.occasion = occasion
+        self.relationship = relationship
+        self.tone = tone
+        self.length = length
+        self.recipientName = recipientName
+        self.savedAt = savedAt
+    }
+
+    public var title: String {
+        guard let recipientName = recipientName?.trimmedForSaving, !recipientName.isEmpty else {
+            return occasion.displayName
+        }
+        return recipientName
+    }
+
+    public var subtitle: String {
+        "\(occasion.displayName) / \(relationship.displayName) / \(tone.displayName)"
+    }
+}
+
+public struct AppNotice: Identifiable, Equatable, Sendable {
+    public var id: UUID
+    public var title: String
+    public var systemImage: String
+
+    public init(id: UUID = UUID(), title: String, systemImage: String) {
+        self.id = id
+        self.title = title
+        self.systemImage = systemImage
+    }
 }
 
 enum AppTab: Hashable {
     case compose
-    case results
     case saved
     case settings
 }
@@ -141,10 +280,6 @@ public struct ProsePalRootView: View {
                 .tabItem { Label("Create", systemImage: "square.and.pencil") }
                 .tag(AppTab.compose)
 
-            ResultsView()
-                .tabItem { Label("Drafts", systemImage: "text.page") }
-                .tag(AppTab.results)
-
             SavedMessagesView()
                 .tabItem { Label("Saved", systemImage: "bookmark") }
                 .tag(AppTab.saved)
@@ -155,6 +290,15 @@ public struct ProsePalRootView: View {
         }
         .tint(.indigo)
         .environmentObject(model)
+        .overlay(alignment: .top) {
+            if let notice = model.notice {
+                NoticeBanner(notice: notice)
+                    .padding(.top, 8)
+                    .padding(.horizontal, 18)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+            }
+        }
+        .animation(.spring(response: 0.34, dampingFraction: 0.86), value: model.notice?.id)
     }
 }
 
@@ -191,6 +335,9 @@ struct ComposeView: View {
             }
             .sheet(isPresented: $isShowingOccasionPicker) {
                 OccasionPickerSheet(selection: $model.draft.occasion)
+            }
+            .navigationDestination(isPresented: $model.isShowingResults) {
+                ResultsView()
             }
         }
     }
@@ -495,30 +642,60 @@ struct OccasionPickerRow: View {
 
 struct ResultsView: View {
     @EnvironmentObject private var model: ProsePalAppModel
+    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
-        NavigationStack {
-            VStack {
-                if model.generatedMessages.isEmpty {
-                    EmptyStateView(
-                        title: "No Drafts",
-                        systemImage: "text.page",
-                        detail: "Create a message to see drafts here."
-                    )
-                } else {
-                    ScrollView {
-                        VStack(spacing: 16) {
-                            generationStatus
-                            ForEach(model.generatedMessages) { message in
-                                ResultCard(message: message)
-                            }
+        Group {
+            if model.generatedMessages.isEmpty {
+                EmptyStateView(
+                    title: "No Drafts",
+                    systemImage: "text.page",
+                    detail: "Create a message to see drafts here."
+                )
+            } else {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 16) {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("Pick one to copy, edit, save, or share.")
+                                .font(.callout)
+                                .foregroundStyle(.secondary)
+                            Text("\(model.draft.occasion.displayName) / \(model.draft.tone.displayName) / \(model.draft.length.displayName)")
+                                .font(.caption.weight(.medium))
+                                .foregroundStyle(.secondary)
                         }
-                        .padding(20)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+
+                        generationStatus
+
+                        ForEach(Array(model.generatedMessages.enumerated()), id: \.element.id) { index, message in
+                            ResultCard(message: message, draftNumber: index + 1)
+                        }
+
+                        Button {
+                            dismiss()
+                        } label: {
+                            Label("Start over", systemImage: "arrow.uturn.backward")
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.large)
+                        .padding(.top, 4)
                     }
-                    .background(Color.prosePalGroupedBackground)
+                    .padding(20)
                 }
+                .background(Color.prosePalGroupedBackground)
             }
-            .navigationTitle("Drafts")
+        }
+        .navigationTitle("Drafts")
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    Task { await model.generate() }
+                } label: {
+                    Label("Regenerate", systemImage: "arrow.clockwise")
+                }
+                .disabled(model.isGenerating)
+            }
         }
     }
 
@@ -543,17 +720,32 @@ struct ResultsView: View {
 struct ResultCard: View {
     @EnvironmentObject private var model: ProsePalAppModel
     let message: GeneratedMessage
+    let draftNumber: Int
+    @State private var editedText = ""
+    @State private var isEditing = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                Label("Draft \(draftNumber)", systemImage: "text.page")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                Spacer()
+                if model.isSaved(message) {
+                    Label("Saved", systemImage: "bookmark.fill")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.indigo)
+                }
+            }
+
             Text(message.text)
                 .font(.body)
                 .lineSpacing(4)
                 .textSelection(.enabled)
 
-            HStack {
+            HStack(spacing: 10) {
                 Button {
-                    copyToPasteboard(message.text)
+                    model.copyText(message.text)
                 } label: {
                     Label("Copy", systemImage: "doc.on.doc")
                 }
@@ -562,25 +754,133 @@ struct ResultCard: View {
                     Label("Share", systemImage: "square.and.arrow.up")
                 }
 
-                Spacer()
+                Button {
+                    editedText = message.text
+                    isEditing = true
+                } label: {
+                    Label("Edit", systemImage: "square.and.pencil")
+                }
+
+                Spacer(minLength: 0)
 
                 Button {
                     model.save(message)
                 } label: {
-                    Image(systemName: "bookmark")
-                        .accessibilityLabel("Save")
+                    Label(model.isSaved(message) ? "Saved" : "Save", systemImage: model.isSaved(message) ? "bookmark.fill" : "bookmark")
+                        .labelStyle(.iconOnly)
                 }
+                .accessibilityLabel(model.isSaved(message) ? "Saved" : "Save")
+                .disabled(model.isSaved(message))
             }
             .buttonStyle(.bordered)
             .controlSize(.small)
         }
         .padding(18)
-        .background(Color.prosePalSecondaryGroupedBackground, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .background(Color.prosePalSecondaryGroupedBackground, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .contextMenu {
+            Button {
+                model.copyText(message.text)
+            } label: {
+                Label("Copy", systemImage: "doc.on.doc")
+            }
+
+            Button {
+                editedText = message.text
+                isEditing = true
+            } label: {
+                Label("Edit", systemImage: "square.and.pencil")
+            }
+
+            Button {
+                model.save(message)
+            } label: {
+                Label("Save", systemImage: "bookmark")
+            }
+            .disabled(model.isSaved(message))
+        }
+        .sheet(isPresented: $isEditing) {
+            DraftEditorSheet(
+                title: "Edit Draft \(draftNumber)",
+                text: $editedText,
+                onCopy: { model.copyText(editedText) },
+                onSave: {
+                    if model.saveText(editedText) {
+                        isEditing = false
+                    }
+                }
+            )
+        }
+        .onAppear {
+            editedText = message.text
+        }
+    }
+}
+
+struct DraftEditorSheet: View {
+    var title: String
+    @Binding var text: String
+    var onCopy: () -> Void
+    var onSave: () -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 16) {
+                TextEditor(text: $text)
+                    .font(.body)
+                    .lineSpacing(4)
+                    .padding(12)
+                    .frame(minHeight: 240)
+                    .background(Color.prosePalSecondaryGroupedBackground, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+
+                HStack {
+                    Button {
+                        onCopy()
+                    } label: {
+                        Label("Copy", systemImage: "doc.on.doc")
+                    }
+
+                    ShareLink(item: text) {
+                        Label("Share", systemImage: "square.and.arrow.up")
+                    }
+
+                    Spacer()
+
+                    Button {
+                        onSave()
+                    } label: {
+                        Label("Save", systemImage: "bookmark")
+                    }
+                    .buttonStyle(.borderedProminent)
+                }
+                .buttonStyle(.bordered)
+            }
+            .padding(20)
+            .background(Color.prosePalGroupedBackground)
+            .navigationTitle(title)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Done") { dismiss() }
+                }
+            }
+        }
     }
 }
 
 struct SavedMessagesView: View {
     @EnvironmentObject private var model: ProsePalAppModel
+    @State private var searchText = ""
+
+    private var filteredSavedMessages: [SavedMessage] {
+        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty else { return model.savedMessages }
+
+        return model.savedMessages.filter { saved in
+            saved.title.localizedCaseInsensitiveContains(query) ||
+            saved.subtitle.localizedCaseInsensitiveContains(query) ||
+            saved.text.localizedCaseInsensitiveContains(query)
+        }
+    }
 
     var body: some View {
         NavigationStack {
@@ -593,24 +893,154 @@ struct SavedMessagesView: View {
                     )
                 } else {
                     List {
-                        ForEach(model.savedMessages) { saved in
-                            VStack(alignment: .leading, spacing: 8) {
-                                Label(saved.occasion.displayName, systemImage: saved.occasion.symbolName)
-                                    .font(.caption.weight(.semibold))
-                                    .foregroundStyle(.secondary)
-                                Text(saved.text)
-                                    .font(.body)
-                                    .textSelection(.enabled)
+                        if filteredSavedMessages.isEmpty {
+                            ContentUnavailableView.search(text: searchText)
+                        } else {
+                            ForEach(filteredSavedMessages) { saved in
+                                NavigationLink {
+                                    SavedMessageDetailView(saved: saved)
+                                } label: {
+                                    SavedMessageRow(saved: saved)
+                                }
                             }
-                            .padding(.vertical, 8)
-                        }
-                        .onDelete { offsets in
-                            offsets.map { model.savedMessages[$0] }.forEach(model.deleteSaved)
+                            .onDelete { offsets in
+                                offsets
+                                    .map { filteredSavedMessages[$0] }
+                                    .forEach(model.deleteSaved)
+                            }
                         }
                     }
                 }
             }
             .navigationTitle("Saved")
+            .searchable(text: $searchText, prompt: "Search saved messages")
+        }
+    }
+}
+
+struct SavedMessageRow: View {
+    let saved: SavedMessage
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 7) {
+            HStack {
+                Label(saved.title, systemImage: saved.occasion.symbolName)
+                    .font(.headline)
+                    .lineLimit(1)
+                Spacer()
+                Text(saved.savedAt.formatted(date: .abbreviated, time: .omitted))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Text(saved.text)
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .lineLimit(2)
+
+            Text(saved.subtitle)
+                .font(.caption.weight(.medium))
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+        }
+        .padding(.vertical, 6)
+    }
+}
+
+struct SavedMessageDetailView: View {
+    @EnvironmentObject private var model: ProsePalAppModel
+    @Environment(\.dismiss) private var dismiss
+    let saved: SavedMessage
+    @State private var editedText: String
+    @State private var isEditing = false
+    @State private var isConfirmingDelete = false
+
+    init(saved: SavedMessage) {
+        self.saved = saved
+        _editedText = State(initialValue: saved.text)
+    }
+
+    private var currentSaved: SavedMessage {
+        model.savedMessages.first { $0.id == saved.id } ?? saved
+    }
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 18) {
+                VStack(alignment: .leading, spacing: 12) {
+                    Label(currentSaved.occasion.displayName, systemImage: currentSaved.occasion.symbolName)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+
+                    Text(currentSaved.text)
+                        .font(.body)
+                        .lineSpacing(5)
+                        .textSelection(.enabled)
+                }
+                .padding(18)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color.prosePalSecondaryGroupedBackground, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+
+                ModernPanel {
+                    LabeledContent("Recipient", value: currentSaved.recipientName ?? "Not set")
+                    LabeledContent("Occasion", value: currentSaved.occasion.displayName)
+                    LabeledContent("Relationship", value: currentSaved.relationship.displayName)
+                    LabeledContent("Tone", value: currentSaved.tone.displayName)
+                    LabeledContent("Length", value: currentSaved.length.displayName)
+                    LabeledContent("Saved", value: currentSaved.savedAt.formatted(date: .abbreviated, time: .shortened))
+                }
+
+                HStack(spacing: 10) {
+                    Button {
+                        model.copyText(currentSaved.text)
+                    } label: {
+                        Label("Copy", systemImage: "doc.on.doc")
+                    }
+
+                    ShareLink(item: currentSaved.text) {
+                        Label("Share", systemImage: "square.and.arrow.up")
+                    }
+
+                    Button {
+                        editedText = currentSaved.text
+                        isEditing = true
+                    } label: {
+                        Label("Edit", systemImage: "square.and.pencil")
+                    }
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.large)
+            }
+            .padding(20)
+        }
+        .background(Color.prosePalGroupedBackground)
+        .navigationTitle(currentSaved.title)
+        .toolbar {
+            ToolbarItem(placement: .destructiveAction) {
+                Button(role: .destructive) {
+                    isConfirmingDelete = true
+                } label: {
+                    Label("Delete", systemImage: "trash")
+                }
+            }
+        }
+        .confirmationDialog("Delete saved message?", isPresented: $isConfirmingDelete, titleVisibility: .visible) {
+            Button("Delete", role: .destructive) {
+                model.deleteSaved(currentSaved)
+                dismiss()
+            }
+        }
+        .sheet(isPresented: $isEditing) {
+            DraftEditorSheet(
+                title: "Edit Saved Message",
+                text: $editedText,
+                onCopy: { model.copyText(editedText) },
+                onSave: {
+                    if model.updateSaved(currentSaved, text: editedText) {
+                        isEditing = false
+                    }
+                }
+            )
         }
     }
 }
@@ -661,6 +1091,20 @@ struct ModernPanel<Content: View>: View {
     }
 }
 
+struct NoticeBanner: View {
+    let notice: AppNotice
+
+    var body: some View {
+        Label(notice.title, systemImage: notice.systemImage)
+            .font(.callout.weight(.semibold))
+            .foregroundStyle(.primary)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .background(.regularMaterial, in: Capsule(style: .continuous))
+            .shadow(color: .black.opacity(0.12), radius: 18, x: 0, y: 8)
+    }
+}
+
 enum ComposeField: Hashable {
     case recipient
     case include
@@ -679,11 +1123,27 @@ private extension String {
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty }
     }
+
+    var trimmedForSaving: String {
+        trimmingCharacters(in: .whitespacesAndNewlines)
+    }
 }
 
 private func copyToPasteboard(_ text: String) {
     #if os(iOS)
     UIPasteboard.general.string = text
+    #endif
+}
+
+private func playSuccessFeedback() {
+    #if os(iOS)
+    UINotificationFeedbackGenerator().notificationOccurred(.success)
+    #endif
+}
+
+private func playSelectionFeedback() {
+    #if os(iOS)
+    UISelectionFeedbackGenerator().selectionChanged()
     #endif
 }
 

@@ -67,6 +67,11 @@ to the Flutter reference while keeping the iOS design direction:
   fields.
 - The template gateway client still returns fake deterministic drafts, but now
   respects the expanded intent fields.
+- Draft results are reached from the Create flow rather than as a permanent
+  major tab.
+- Result cards support copy, share, edit, save, and context-menu actions.
+- Saved messages persist locally with occasion, relationship, tone, length,
+  recipient, date, list search, detail view, edit, copy, share, and delete.
 
 No RevenueCat, Supabase, Firebase, Sentry, analytics, or provider SDKs are
 included in this slice.
