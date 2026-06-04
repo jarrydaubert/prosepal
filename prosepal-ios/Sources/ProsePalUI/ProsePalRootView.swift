@@ -439,12 +439,23 @@ struct ComposeView: View {
             .navigationTitle("What are you writing?")
             .toolbar {
                 ToolbarItemGroup(placement: .keyboard) {
+                    Button {
+                        focusedField = nil
+                        Task { await model.generate() }
+                    } label: {
+                        Label("Generate", systemImage: "sparkles")
+                    }
+                    .disabled(model.isGenerating)
+
                     Spacer()
+
                     Button("Done") { focusedField = nil }
                 }
             }
             .safeAreaInset(edge: .bottom) {
-                generateButton
+                if focusedField == nil {
+                    generateButton
+                }
             }
             .sheet(isPresented: $isShowingOccasionPicker) {
                 OccasionPickerSheet(selection: $model.draft.occasion)
@@ -695,21 +706,22 @@ struct OccasionPickerSheet: View {
     var body: some View {
         NavigationStack {
             List {
-                ForEach(OccasionGroup.allCases) { group in
+                if searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    Section("Most Used") {
+                        ForEach(Occasion.featuredCases) { occasion in
+                            occasionButton(for: occasion)
+                        }
+                    }
+                } else if !hasSearchResults {
+                    ContentUnavailableView.search(text: searchText)
+                }
+
+                ForEach(displayedGroups) { group in
                     let occasions = filteredOccasions(in: group)
                     if !occasions.isEmpty {
                         Section(group.displayName) {
                             ForEach(occasions) { occasion in
-                                Button {
-                                    selection = occasion
-                                    dismiss()
-                                } label: {
-                                    OccasionPickerRow(
-                                        occasion: occasion,
-                                        isSelected: occasion == selection
-                                    )
-                                }
-                                .buttonStyle(.plain)
+                                occasionButton(for: occasion)
                             }
                         }
                     }
@@ -725,6 +737,18 @@ struct OccasionPickerSheet: View {
         }
     }
 
+    private var displayedGroups: [OccasionGroup] {
+        if searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return OccasionGroup.allCases.filter { $0 != .mostUsed }
+        }
+
+        return OccasionGroup.allCases
+    }
+
+    private var hasSearchResults: Bool {
+        OccasionGroup.allCases.contains { !filteredOccasions(in: $0).isEmpty }
+    }
+
     private func filteredOccasions(in group: OccasionGroup) -> [Occasion] {
         let groupOccasions = Occasion.allCases.filter { $0.group == group }
         let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -733,6 +757,19 @@ struct OccasionPickerSheet: View {
         return groupOccasions.filter {
             $0.searchText.localizedCaseInsensitiveContains(query)
         }
+    }
+
+    private func occasionButton(for occasion: Occasion) -> some View {
+        Button {
+            selection = occasion
+            dismiss()
+        } label: {
+            OccasionPickerRow(
+                occasion: occasion,
+                isSelected: occasion == selection
+            )
+        }
+        .buttonStyle(.plain)
     }
 }
 
@@ -800,8 +837,8 @@ struct GenerationModeSelector: View {
                                 .lineLimit(1)
                                 .minimumScaleFactor(0.8)
                         }
-                        .frame(maxWidth: .infinity, minHeight: 72)
-                        .padding(.horizontal, 8)
+                        .frame(maxWidth: .infinity, minHeight: 64)
+                        .padding(.horizontal, 6)
                         .background(
                             RoundedRectangle(cornerRadius: 16, style: .continuous)
                                 .fill(lane == selectedLane ? Color.indigo : Color.prosePalSecondaryGroupedBackground)
@@ -867,6 +904,7 @@ struct UsageStatusRow: View {
         }
         .padding(12)
         .background(Color.prosePalSecondaryGroupedBackground, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .accessibilityElement(children: .combine)
     }
 }
 
@@ -1388,12 +1426,41 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             List {
+                Section("Account") {
+                    Button {
+                        model.showNotice("Sign in is not connected yet", systemImage: "apple.logo")
+                    } label: {
+                        Label("Sign in with Apple", systemImage: "apple.logo")
+                    }
+
+                    Button {
+                        model.isShowingPaywall = true
+                    } label: {
+                        Label("Subscription", systemImage: "star")
+                    }
+
+                    Button {
+                        model.restorePurchasesPlaceholder()
+                    } label: {
+                        Label("Restore purchases", systemImage: "arrow.clockwise")
+                    }
+                }
+
                 Section("Writing") {
                     Picker("Spelling", selection: $model.draft.spellingPreference) {
                         ForEach(SpellingPreference.allCases) { preference in
                             Text(preference.displayName).tag(preference)
                         }
                     }
+
+                    Picker("Default tone", selection: $model.draft.tone) {
+                        ForEach(Tone.allCases) { tone in
+                            Text(tone.displayName).tag(tone)
+                        }
+                    }
+                }
+
+                Section("Generation") {
                     ForEach([GenerationLane.automatic, .standard, .premium], id: \.rawValue) { lane in
                         Button {
                             model.selectLane(lane)
@@ -1411,24 +1478,33 @@ struct SettingsView: View {
                             }
                         }
                     }
-                }
 
-                Section("Account") {
-                    Label("Sign in with Apple", systemImage: "apple.logo")
-                    Button {
-                        model.isShowingPaywall = true
-                    } label: {
-                        Label("Subscription", systemImage: "star")
-                    }
-                    Button {
-                        model.restorePurchasesPlaceholder()
-                    } label: {
-                        Label("Restore purchases", systemImage: "arrow.clockwise")
-                    }
-                }
-
-                Section("Usage") {
                     UsageStatusRow(usageStatus: model.usageStatus)
+                }
+
+                Section("Privacy") {
+                    Button {
+                        model.showNotice("Export is not connected yet", systemImage: "square.and.arrow.up")
+                    } label: {
+                        Label("Export data", systemImage: "square.and.arrow.up")
+                    }
+
+                    Button(role: .destructive) {
+                        model.showNotice("Account deletion is not connected yet", systemImage: "trash")
+                    } label: {
+                        Label("Delete account", systemImage: "trash")
+                    }
+                }
+
+                Section("Support") {
+                    Button {
+                        model.showNotice("Feedback is not connected yet", systemImage: "envelope")
+                    } label: {
+                        Label("Send feedback", systemImage: "envelope")
+                    }
+
+                    Label("Terms", systemImage: "doc.text")
+                    Label("Privacy Policy", systemImage: "hand.raised")
                 }
 
                 Section("Runtime") {

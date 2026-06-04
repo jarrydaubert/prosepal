@@ -57,6 +57,12 @@ Outcome:
   detail, edit, copy, share, save, and delete surfaces.
 - Usage display, Premium selection, placeholder paywall, restore placeholder,
   and retry/degraded actions are represented without real entitlement SDKs.
+- Create uses keyboard-safe generation controls so the sticky bottom action does
+  not fight the keyboard on real devices.
+- Settings is split into native grouped sections instead of mixing spelling,
+  generation, account, and usage controls together.
+- The occasion picker prioritizes Most Used occasions while retaining the full
+  searchable catalogue.
 
 Validation:
 
@@ -68,6 +74,14 @@ Validation:
 - Usage-policy tests cover Premium lock behavior, displayed allowance
   consumption, limit blocking, and failed-generation non-consumption.
 - UI previews use only mock/template clients.
+
+Setup notes:
+
+- `.xcconfig` files, environment-specific schemes, SwiftData, AppIntents, and
+  newer visual material effects are candidates for later hardening, not
+  requirements for the fake-gateway R&D slice.
+- The current code should remain Apple-native and dependency-light until a real
+  backend, auth, entitlement, or release environment requires more configuration.
 
 ## Phase 3: Auth And Entitlement Continuity
 

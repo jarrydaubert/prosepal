@@ -76,6 +76,29 @@ to the Flutter reference while keeping the iOS design direction:
 - Premium selection opens a native placeholder sheet instead of importing a
   subscription SDK.
 - Retry and degraded-generation states now have visible, user-safe actions.
+- The Create Generate action is keyboard-aware: the large bottom action hides
+  while typing and a compact keyboard toolbar action remains available.
+- Settings now uses clearer grouped sections for Account, Writing, Generation,
+  Privacy, Support, and Runtime.
+- The occasion picker leads with Most Used options and keeps the full catalogue
+  in searchable grouped sections.
+
+## Apple-Native Setup Notes
+
+The app is intentionally dependency-light and SwiftUI-first. It uses
+`NavigationStack`, `TabView`, Swift concurrency, system materials, searchable
+lists, native sheets, and `#Preview`.
+
+Some "modern Apple" capabilities are deliberately deferred:
+
+- `.xcconfig` files and environment-specific schemes should be added when there
+  are real staging/production gateway endpoints or signing environments.
+- SwiftData should wait until local history, migration, and cloud-sync ownership
+  are decided.
+- AppIntents/Siri shortcuts should wait until the core create/save flows are
+  stable enough to expose as system actions.
+- Newer visual material effects should stay compatible with the iOS 17 minimum
+  target and should not push ProsePal into a techy visual style.
 
 No RevenueCat, Supabase, Firebase, Sentry, analytics, or provider SDKs are
 included in this slice.
