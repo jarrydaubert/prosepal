@@ -3,8 +3,8 @@
  *
  * This is the first non-production gateway slice for the native iOS rewrite.
  * It accepts the ProsePal-owned CardRequest contract, keeps provider/model
- * details behind the server boundary, and can run either deterministic template
- * generation or an OpenAI-compatible development provider.
+ * details behind the server boundary, and can run an OpenAI-compatible
+ * development provider. It does not fabricate client-side/template drafts.
  */
 
 import { createClient } from "npm:@supabase/supabase-js@2.95.3";
@@ -62,12 +62,10 @@ type GenerationLane =
   | "automatic"
   | "standard"
   | "premium"
-  | "local"
-  | "template";
+  | "local";
 type FallbackStatus =
   | "none"
   | "degradedToStandard"
-  | "degradedToTemplate"
   | "failed";
 type RetryEligibility = "eligible" | "ineligible" | "waitBeforeRetry";
 type SpellingPreference = "automatic" | "us" | "uk";
@@ -142,7 +140,7 @@ type ValidationResult =
   | { ok: false; status: number; error: string; code: string };
 
 type ProviderConfig =
-  | { mode: "template"; slot: string }
+  | { mode: "unconfigured"; slot: string }
   | {
     mode: "openai-compatible";
     slot: string;
@@ -668,11 +666,7 @@ function parseRequest(payload: unknown): ValidationResult {
 
   const requestedLane =
     readWireString(payload, "requested_lane", "requestedLane") ?? "automatic";
-  if (
-    !["automatic", "standard", "premium", "local", "template"].includes(
-      requestedLane,
-    )
-  ) {
+  if (!["automatic", "standard", "premium", "local"].includes(requestedLane)) {
     return {
       ok: false,
       status: 400,
@@ -776,11 +770,11 @@ function parseRequest(payload: unknown): ValidationResult {
 
 function providerConfig(getEnv: EnvGetter): ProviderConfig {
   const mode = getEnv("PROSEPAL_AI_PROVIDER")?.trim().toLowerCase() ??
-    "template";
+    "unconfigured";
   const slot = getEnv("PROSEPAL_AI_PROVIDER_SLOT")?.trim() || "standard_dev";
 
   if (mode !== "openai-compatible") {
-    return { mode: "template", slot };
+    return { mode: "unconfigured", slot };
   }
 
   const url = getEnv("PROSEPAL_AI_PROVIDER_URL")?.trim();
@@ -788,7 +782,7 @@ function providerConfig(getEnv: EnvGetter): ProviderConfig {
   const model = getEnv("PROSEPAL_AI_PROVIDER_MODEL")?.trim();
 
   if (!url || !apiKey || !model) {
-    return { mode: "template", slot };
+    return { mode: "unconfigured", slot };
   }
 
   return {
@@ -1026,213 +1020,6 @@ function extractOpenAICompatibleContent(payload: unknown): string {
   throw new ProviderGenerationError("Provider payload missing content");
 }
 
-function recipientName(request: CardRequest): string | undefined {
-  return request.intent.recipient_name;
-}
-
-function nameSuffix(request: CardRequest): string {
-  const name = recipientName(request);
-  return name ? `, ${name}` : "";
-}
-
-function occasionOpening(request: CardRequest): string {
-  const suffix = nameSuffix(request);
-  switch (request.intent.occasion) {
-    case "birthday":
-    case "kidsBirthday":
-    case "petBirthday":
-      return `Happy birthday${suffix}.`;
-    case "thankYou":
-    case "thankYouTeacher":
-    case "thankYouHealthcare":
-    case "thankYouService":
-      return `Thank you${suffix}.`;
-    case "sympathy":
-      return `I'm so sorry you're going through this${suffix}.`;
-    case "petSympathy":
-      return `I'm so sorry for the loss of such a loved companion${suffix}.`;
-    case "wedding":
-      return `What a beautiful start to married life${suffix}.`;
-    case "christmas":
-      return `Merry Christmas${suffix}.`;
-    case "getWell":
-      return `I hope each day brings a little more comfort${suffix}.`;
-    case "congrats":
-      return `Congratulations${suffix}.`;
-    case "mothersDay":
-      return `Happy Mother's Day${suffix}.`;
-    case "fathersDay":
-      return `Happy Father's Day${suffix}.`;
-    case "baby":
-      return `Congratulations on this lovely new arrival${suffix}.`;
-    case "graduation":
-      return `Congratulations on graduating${suffix}.`;
-    case "anniversary":
-      return `Happy anniversary${suffix}.`;
-    case "valentinesDay":
-      return `Happy Valentine's Day${suffix}.`;
-    case "newYear":
-      return `Happy New Year${suffix}.`;
-    case "engagement":
-      return `Congratulations on your engagement${suffix}.`;
-    case "housewarming":
-      return `Congratulations on your new home${suffix}.`;
-    case "retirement":
-      return `Congratulations on your retirement${suffix}.`;
-    case "newJob":
-      return `Congratulations on the new job${suffix}.`;
-    case "easter":
-      return `Happy Easter${suffix}.`;
-    case "thanksgiving":
-      return `Happy Thanksgiving${suffix}.`;
-    case "halloween":
-      return `Happy Halloween${suffix}.`;
-    case "apology":
-      return `I'm sorry${suffix}.`;
-    case "farewell":
-      return `Wishing you well as you move into what comes next${suffix}.`;
-    case "goodLuck":
-      return `Good luck${suffix}.`;
-    case "promotion":
-      return `Congratulations on the promotion${suffix}.`;
-    case "hanukkah":
-      return `Happy Hanukkah${suffix}.`;
-    case "diwali":
-      return `Happy Diwali${suffix}.`;
-    case "eid":
-      return `Eid Mubarak${suffix}.`;
-    case "lunarNewYear":
-      return `Happy Lunar New Year${suffix}.`;
-    case "kwanzaa":
-      return `Happy Kwanzaa${suffix}.`;
-    case "newPet":
-      return `Congratulations on the new addition${suffix}.`;
-    case "thinkingOfYou":
-    case "justBecause":
-    case "encouragement":
-    default:
-      return `I wanted to send you something kind${suffix}.`;
-  }
-}
-
-function relationshipWarmth(request: CardRequest): string {
-  switch (request.intent.relationship) {
-    case "parent":
-      return "Your steadiness, care, and quiet support mean more than I probably say.";
-    case "child":
-      return "I am proud of you in ways that are hard to fit into ordinary words.";
-    case "sibling":
-      return "No one else quite understands the history, humor, and loyalty we share.";
-    case "romantic":
-      return "You make ordinary days feel warmer, lighter, and more ours.";
-    case "colleague":
-    case "boss":
-      return "Your work, leadership, and presence are genuinely appreciated.";
-    case "teacher":
-    case "mentor":
-      return "Your guidance has made a real difference.";
-    case "grandparent":
-    case "grandchild":
-      return "There is so much affection and pride wrapped into this note.";
-    case "neighbor":
-    case "acquaintance":
-      return "I hope this feels warm, respectful, and easy to receive.";
-    default:
-      return "I am grateful for the place you have in my life.";
-  }
-}
-
-function includeSentence(request: CardRequest): string | undefined {
-  const include = request.intent.things_to_include[0];
-  if (include) return `I especially wanted to include ${include}.`;
-  if (request.intent.user_context) return request.intent.user_context;
-  return undefined;
-}
-
-function wishSentence(request: CardRequest): string {
-  switch (request.intent.occasion) {
-    case "sympathy":
-    case "petSympathy":
-      return "I hope you can take things one moment at a time and feel supported by the people around you.";
-    case "apology":
-      return "I understand that words only matter if they are followed by care, and I want to do better.";
-    case "getWell":
-    case "encouragement":
-      return "I hope today gives you even a small pocket of ease.";
-    case "farewell":
-      return "I will be cheering for you from here.";
-    case "goodLuck":
-      return "You have put in the work, and I hope you can step into it with confidence.";
-    default:
-      return "I hope this moment brings you warmth, joy, and a reminder of how much you matter.";
-  }
-}
-
-function toneSentence(request: CardRequest): string {
-  const occasion = OCCASIONS[request.intent.occasion];
-  const sensitive = "sensitive" in occasion && occasion.sensitive;
-  if (
-    sensitive && ["funny", "playful", "sarcastic"].includes(request.intent.tone)
-  ) {
-    return "I kept this gentle because the moment deserves care.";
-  }
-
-  switch (request.intent.tone) {
-    case "funny":
-      return "Consider this my attempt at being charming without overdoing the speech.";
-    case "formal":
-      return "Please accept this with sincere respect and appreciation.";
-    case "inspirational":
-      return "You have more strength and grace than you may realize.";
-    case "playful":
-      return "I hope it lands with a smile and just the right amount of mischief.";
-    case "sarcastic":
-      return "Naturally, I am being very normal and restrained about how much you deserve this.";
-    case "nostalgic":
-      return "It also makes me think about all the moments that brought us here.";
-    case "poetic":
-      return "Some people leave a little more light in the room, and you are one of them.";
-    case "casual":
-      return "Mostly, I just wanted to say it plainly and warmly.";
-    case "heartfelt":
-    default:
-      return "I mean this with real affection.";
-  }
-}
-
-function buildTemplateMessage(request: CardRequest, angle: number): string {
-  const sentences = [
-    occasionOpening(request),
-    angle === 0 ? relationshipWarmth(request) : undefined,
-    angle === 1 ? includeSentence(request) : undefined,
-    angle === 2 ? toneSentence(request) : undefined,
-    wishSentence(request),
-  ].filter((sentence): sentence is string =>
-    !!sentence && sentence.trim().length > 0
-  );
-
-  if (request.intent.length === "brief") {
-    return sentences.slice(0, 2).join(" ");
-  }
-  if (request.intent.length === "detailed") {
-    return [
-      ...sentences,
-      includeSentence(request),
-      toneSentence(request),
-    ]
-      .filter((sentence, index, all) =>
-        sentence && all.indexOf(sentence) === index
-      )
-      .slice(0, 6)
-      .join(" ");
-  }
-  return sentences.slice(0, 4).join(" ");
-}
-
-function generateTemplateMessages(request: CardRequest): string[] {
-  return [0, 1, 2].map((angle) => buildTemplateMessage(request, angle));
-}
-
 function responseBody(options: {
   messages: string[];
   laneUsed: GenerationLane;
@@ -1409,92 +1196,128 @@ export async function handleGenerateCard(
     );
   }
 
+  if (!["automatic", "standard"].includes(request.requested_lane)) {
+    logger.log(
+      "generate-card lane unavailable",
+      JSON.stringify({
+        ...requestLog,
+        providerSlot: config.slot,
+        latencyMs: now().getTime() - startedAt,
+      }),
+    );
+    return jsonResponse(
+      {
+        error: "Generation lane unavailable",
+        user_safe_error: {
+          code: "lane_unavailable",
+          message:
+            "That generation mode is not available in this development gateway yet.",
+        },
+      },
+      503,
+    );
+  }
+
+  if (config.mode !== "openai-compatible") {
+    logger.error(
+      "generate-card provider unconfigured",
+      JSON.stringify({
+        ...requestLog,
+        providerSlot: config.slot,
+        latencyMs: now().getTime() - startedAt,
+      }),
+    );
+    return jsonResponse(
+      {
+        error: "Generation provider unconfigured",
+        user_safe_error: {
+          code: "gateway_provider_unconfigured",
+          message:
+            "Message generation is not configured yet. Connect the ProsePal gateway provider and try again.",
+        },
+      },
+      503,
+    );
+  }
+
   const prompt = buildPrompt(request);
-  const canUseProvider = config.mode === "openai-compatible" &&
-    ["automatic", "standard"].includes(request.requested_lane);
 
-  if (canUseProvider) {
-    try {
-      const providerMessages = await callOpenAICompatibleProvider(
-        config,
-        prompt,
-        fetcher,
-      );
-      const quality = qualityCheck(providerMessages, request);
+  try {
+    const providerMessages = await callOpenAICompatibleProvider(
+      config,
+      prompt,
+      fetcher,
+    );
+    const quality = qualityCheck(providerMessages, request);
 
-      if (quality.passed) {
-        logger.log(
-          "generate-card completed",
-          JSON.stringify({
-            ...requestLog,
-            laneUsed: "standard",
-            fallbackStatus: "none",
-            providerSlot: config.slot,
-            latencyMs: now().getTime() - startedAt,
-          }),
-        );
-
-        return jsonResponse(
-          responseBody({
-            messages: providerMessages,
-            laneUsed: "standard",
-            fallbackStatus: "none",
-            retryEligibility: "ineligible",
-            qualityPassed: true,
-          }),
-        );
-      }
-
+    if (!quality.passed) {
       logger.warn(
-        "generate-card quality fallback",
+        "generate-card quality failed",
         JSON.stringify({
           ...requestLog,
           providerSlot: config.slot,
           reason: quality.note,
+          latencyMs: now().getTime() - startedAt,
         }),
       );
-    } catch (error) {
-      logger.warn(
-        "generate-card provider fallback",
-        JSON.stringify({
-          ...requestLog,
-          providerSlot: config.slot,
-          error: error instanceof ProviderGenerationError
-            ? error.message
-            : "provider error",
-        }),
+      return jsonResponse(
+        {
+          error: "Generation failed quality checks",
+          user_safe_error: {
+            code: "gateway_quality_failed",
+            message:
+              "Message generation is temporarily unavailable. Please try again shortly.",
+          },
+        },
+        502,
       );
     }
+
+    logger.log(
+      "generate-card completed",
+      JSON.stringify({
+        ...requestLog,
+        laneUsed: "standard",
+        fallbackStatus: "none",
+        providerSlot: config.slot,
+        latencyMs: now().getTime() - startedAt,
+      }),
+    );
+
+    return jsonResponse(
+      responseBody({
+        messages: providerMessages,
+        laneUsed: "standard",
+        fallbackStatus: "none",
+        retryEligibility: "ineligible",
+        qualityPassed: true,
+      }),
+    );
+  } catch (error) {
+    logger.warn(
+      "generate-card provider failed",
+      JSON.stringify({
+        ...requestLog,
+        providerSlot: config.slot,
+        error: error instanceof ProviderGenerationError
+          ? error.message
+          : "provider error",
+        latencyMs: now().getTime() - startedAt,
+      }),
+    );
+
+    return jsonResponse(
+      {
+        error: "Generation provider failed",
+        user_safe_error: {
+          code: "gateway_provider_failed",
+          message:
+            "Message generation is temporarily unavailable. Please try again shortly.",
+        },
+      },
+      502,
+    );
   }
-
-  const templateMessages = generateTemplateMessages(request);
-  const fallbackStatus = request.requested_lane === "template"
-    ? "none"
-    : "degradedToTemplate";
-
-  logger.log(
-    "generate-card completed",
-    JSON.stringify({
-      ...requestLog,
-      laneUsed: "template",
-      fallbackStatus,
-      providerSlot: config.slot,
-      latencyMs: now().getTime() - startedAt,
-    }),
-  );
-
-  return jsonResponse(
-    responseBody({
-      messages: templateMessages,
-      laneUsed: "template",
-      fallbackStatus,
-      retryEligibility: fallbackStatus === "none" ? "ineligible" : "eligible",
-      qualityPassed: true,
-      qualityNote: fallbackStatus === "none"
-        ? undefined
-        : "Simple fallback message",
-    }),
-  );
 }
 
 if (import.meta.main) {

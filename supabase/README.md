@@ -63,10 +63,6 @@ Explicit local anonymous mode is available for native R&D:
 
 - `GATEWAY_DEV_ALLOW_ANONYMOUS=true`
 
-Template mode needs no provider secrets:
-
-- `PROSEPAL_AI_PROVIDER=template`
-
 OpenAI-compatible dev-provider mode uses a full chat-completions style endpoint:
 
 - `PROSEPAL_AI_PROVIDER=openai-compatible`
@@ -92,12 +88,6 @@ supabase functions deploy generate-card --project-ref <dev-or-staging-project-re
 ```
 
 ### Test locally
-
-Template fallback mode:
-
-```bash
-GATEWAY_DEV_ALLOW_ANONYMOUS=true PROSEPAL_AI_PROVIDER=template supabase functions serve generate-card
-```
 
 Dev-provider mode:
 

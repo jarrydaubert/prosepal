@@ -375,7 +375,7 @@ public struct UsageStatus: Equatable, Sendable {
 
     private func isStandardLike(_ lane: GenerationLane) -> Bool {
         switch lane {
-        case .automatic, .standard, .template:
+        case .automatic, .standard:
             true
         case .premium, .local:
             false
@@ -1047,7 +1047,6 @@ struct GenerationModeSelector: View {
         case .standard: "sparkles"
         case .premium: "star.fill"
         case .local: "iphone"
-        case .template: "doc.text"
         }
     }
 
@@ -1058,7 +1057,6 @@ struct GenerationModeSelector: View {
         case .premium:
             usageStatus.isPremiumUnlocked ? "Active" : "Locked"
         case .local: "On device"
-        case .template: "Fallback"
         }
     }
 }
@@ -1933,7 +1931,14 @@ struct EmptyStateView: View {
 #Preview {
     ProsePalRootView(
         model: ProsePalAppModel(
-            client: TemplateMessageWritingClient(),
+            client: MockMessageWritingClient(
+                response: CardResponse(
+                    messages: [
+                        GeneratedMessage(text: "A preview draft from the mock gateway client.")
+                    ],
+                    laneUsed: .standard
+                )
+            ),
             clientContext: ClientContext(appVersion: "0.0.0", buildNumber: "1")
         )
     )

@@ -198,8 +198,8 @@ Policy:
 - `supabase/functions/generate-card` may run in explicit anonymous dev mode for
   R&D by setting `GATEWAY_DEV_ALLOW_ANONYMOUS=true`.
 - Provider/model names and keys stay in the Edge Function environment. The
-  mobile client receives only Standard, Premium, local, or template lane
-  metadata.
+  mobile client receives only product-lane metadata, never provider/model
+  details.
 - Gateway logs must not include raw prompts, generated messages, secrets,
   tokens, or sensitive user content.
 

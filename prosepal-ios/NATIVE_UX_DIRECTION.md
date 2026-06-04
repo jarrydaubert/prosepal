@@ -305,9 +305,9 @@ details:
 Simple draft used this time. You can retry shortly.
 ```
 
-Template/fake messages are acceptable while the gateway is not built, but the
-final product should make results feel more personal and less obviously
-templated.
+Runtime generation should be gateway-or-unavailable. Tests and previews may use
+mock responses, but the native app should not generate fake/template drafts when
+the gateway is not configured.
 
 ## 9. Saved And History Structure
 
@@ -457,7 +457,7 @@ Generation should have explicit state handling:
 - succeeded
 - usage limited
 - timed out
-- degraded to template or Standard
+- degraded by the gateway/router
 - failed
 
 The user-facing message should be calm and actionable:
@@ -603,7 +603,7 @@ Scope:
 - tone/length refinement actions
 - saved-message filters
 - clearer degraded-generation state
-- more polished template output while the gateway is fake
+- gateway-backed output quality iteration
 
 Exit criteria:
 

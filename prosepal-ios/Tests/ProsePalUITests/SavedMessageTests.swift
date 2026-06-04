@@ -79,7 +79,9 @@ private struct SavedMessageHarness {
 
     func makeModel() -> ProsePalAppModel {
         ProsePalAppModel(
-            client: TemplateMessageWritingClient(),
+            client: MockMessageWritingClient(
+                response: CardResponse(messages: [], laneUsed: .standard)
+            ),
             clientContext: ClientContext(appVersion: "0.0.0", buildNumber: "1"),
             savedMessagesStore: defaults,
             savedMessagesKey: key

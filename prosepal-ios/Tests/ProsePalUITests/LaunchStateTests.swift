@@ -35,7 +35,9 @@ private struct LaunchStateHarness {
 
     func makeModel() -> ProsePalAppModel {
         ProsePalAppModel(
-            client: TemplateMessageWritingClient(),
+            client: MockMessageWritingClient(
+                response: CardResponse(messages: [], laneUsed: .standard)
+            ),
             clientContext: ClientContext(appVersion: "0.0.0", buildNumber: "1"),
             onboardingStore: defaults,
             onboardingCompletionKey: onboardingKey

@@ -77,9 +77,9 @@ final class UsagePolicyTests: XCTestCase {
     private func sampleResponse() -> CardResponse {
         CardResponse(
             messages: [GeneratedMessage(id: "draft-1", text: "A thoughtful draft.")],
-            laneUsed: .template,
-            fallbackStatus: .degradedToTemplate,
-            retryEligibility: .eligible
+            laneUsed: .standard,
+            fallbackStatus: .none,
+            retryEligibility: .ineligible
         )
     }
 }

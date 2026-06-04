@@ -51,7 +51,7 @@ function makeDeps(options: {
         case "GATEWAY_DEV_ALLOW_ANONYMOUS":
           return options.anonymous ? "true" : undefined;
         case "PROSEPAL_AI_PROVIDER":
-          return options.provider ? "openai-compatible" : "template";
+          return options.provider ? "openai-compatible" : "unconfigured";
         case "PROSEPAL_AI_PROVIDER_URL":
           return options.provider
             ? "https://provider.example/v1/chat/completions"
@@ -140,18 +140,17 @@ Deno.test("requires authentication unless anonymous dev mode is explicitly enabl
   assertEquals(body.error, "Authentication required");
 });
 
-Deno.test("returns deterministic template fallback when no provider is configured", async () => {
+Deno.test("returns service unavailable when no provider is configured", async () => {
   const res = await handleGenerateCard(
     makeRequest(),
     makeDeps({ anonymous: true }),
   );
 
-  assertEquals(res.status, 200);
+  assertEquals(res.status, 503);
   const body = await res.json() as Record<string, unknown>;
-  assertEquals(body.lane_used, "template");
-  assertEquals(body.fallback_status, "degradedToTemplate");
-  assertEquals(body.retry_eligibility, "eligible");
-  assertEquals((body.messages as unknown[]).length, 3);
+  const userSafeError = body.user_safe_error as Record<string, unknown>;
+  assertEquals(userSafeError.code, "gateway_provider_unconfigured");
+  assertEquals(body.messages, undefined);
 });
 
 Deno.test("calls OpenAI-compatible provider and returns CardResponse without provider details", async () => {
@@ -179,7 +178,7 @@ Deno.test("calls OpenAI-compatible provider and returns CardResponse without pro
   assertEquals(providerBodies[0].response_format, { type: "json_object" });
 });
 
-Deno.test("falls back to template when provider response is malformed", async () => {
+Deno.test("returns gateway error when provider response is malformed", async () => {
   const res = await handleGenerateCard(
     makeRequest(),
     makeDeps({
@@ -191,11 +190,10 @@ Deno.test("falls back to template when provider response is malformed", async ()
     }),
   );
 
-  assertEquals(res.status, 200);
+  assertEquals(res.status, 502);
   const body = await res.json() as Record<string, unknown>;
-  assertEquals(body.lane_used, "template");
-  assertEquals(body.fallback_status, "degradedToTemplate");
-  assertEquals(body.retry_eligibility, "eligible");
+  const userSafeError = body.user_safe_error as Record<string, unknown>;
+  assertEquals(userSafeError.code, "gateway_provider_failed");
 });
 
 Deno.test("rejects Premium lane until entitlement policy exists", async () => {
@@ -220,4 +218,16 @@ Deno.test("rejects unsupported contract versions", async () => {
   const body = await res.json() as Record<string, unknown>;
   const userSafeError = body.user_safe_error as Record<string, unknown>;
   assertEquals(userSafeError.code, "unsupported_contract_version");
+});
+
+Deno.test("rejects template lane requests", async () => {
+  const res = await handleGenerateCard(
+    makeRequest({ ...fixedRequest, requested_lane: "template" }),
+    makeDeps({ anonymous: true }),
+  );
+
+  assertEquals(res.status, 400);
+  const body = await res.json() as Record<string, unknown>;
+  const userSafeError = body.user_safe_error as Record<string, unknown>;
+  assertEquals(userSafeError.code, "invalid_lane");
 });

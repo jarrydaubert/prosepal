@@ -15,7 +15,8 @@ SwiftUI View
 ```
 
 The gateway decides whether a request is served by Standard, Premium, local,
-template, or future provider-backed lanes.
+or future provider-backed lanes. The native client does not generate template
+drafts when the gateway is unavailable.
 
 ## Product Lanes
 
@@ -67,4 +68,3 @@ Disallowed telemetry fields without explicit privacy approval:
 - provider URLs
 - provider model IDs
 - tokens or secrets
-

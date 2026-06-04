@@ -16,7 +16,7 @@ Client app
   -> entitlement and usage policy
   -> AI Gateway / Model Router
   -> provider adapters
-  -> Standard, Premium, local, or template generation lane
+  -> Standard, Premium, local, or future gateway fallback lane
 ```
 
 The SwiftUI app should send structured intent and render `CardResponse`. It
@@ -29,7 +29,7 @@ Outcome:
 
 - SwiftUI app shell exists in `prosepal-ios/` as a runnable Xcode app target.
 - Domain and API contracts compile under Swift Package Manager.
-- Mock and template generation let the UI be developed without a live gateway.
+- UI tests and previews use mocks; runtime generation requires the gateway.
 - Native compose, drafts, saved messages, and settings surfaces use SwiftUI
   platform conventions instead of copying Flutter screens.
 - No production services or provider keys are required.
@@ -76,13 +76,13 @@ Validation:
 - Usage-policy tests cover Premium lock behavior, displayed allowance
   consumption, limit blocking, and failed-generation non-consumption.
 - Launch-state tests cover onboarding completion persistence.
-- UI previews use only mock/template clients.
+- UI previews use only mock clients.
 
 Setup notes:
 
 - `.xcconfig` files, environment-specific schemes, SwiftData, AppIntents, and
   newer visual material effects are candidates for later hardening, not
-  requirements for the fake-gateway R&D slice.
+  requirements for the native R&D slice.
 - The current code should remain Apple-native and dependency-light until a real
   backend, auth, entitlement, or release environment requires more configuration.
 

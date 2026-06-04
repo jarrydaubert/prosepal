@@ -37,14 +37,15 @@ and routing policy stay behind the ProsePal API boundary.
 
 ## Gateway Development
 
-The app target now chooses its message-writing client at launch:
+The app target is gateway-first at launch:
 
 - if `PROSEPAL_GATEWAY_URL` is set in the Xcode scheme environment or app
   Info.plist, the app uses `GatewayMessageWritingClient`;
-- otherwise it uses `TemplateMessageWritingClient`.
+- otherwise generation fails with a user-safe unavailable state.
 
 This switch is for native R&D and review builds. It does not add Firebase AI,
-Vertex AI, provider SDKs, provider keys, or model names to the iOS app.
+Vertex AI, provider SDKs, provider keys, model names, or local/template
+generation to the iOS app.
 
 Simulator local endpoint:
 
@@ -70,8 +71,8 @@ package modules:
 
 - `ProsePal`: SwiftUI iOS app target in `ProsePal.xcodeproj`.
 - `ProsePalDomain`: provider-agnostic product and API contract models.
-- `ProsePalAPI`: message-writing client protocol, gateway client, mock client,
-  and deterministic template fallback client.
+- `ProsePalAPI`: message-writing client protocol, gateway client, and mock
+  client for tests/previews.
 - `ProsePalUI`: modern SwiftUI app surfaces that depend only on the
   `MessageWritingClient` contract.
 
@@ -93,8 +94,8 @@ to the Flutter reference while keeping the iOS design direction:
 - The compose form builds a structured `CardIntent` from occasion,
   relationship, tone, length, spelling, recipient, include, avoid, and context
   fields.
-- The template gateway client still returns fake deterministic drafts, but now
-  respects the expanded intent fields.
+- Runtime generation is gateway-only; tests and previews use mock responses
+  rather than template generation.
 - Draft results are reached from the Create flow rather than as a permanent
   major tab.
 - Result cards support copy, share, edit, save, and context-menu actions.

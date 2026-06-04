@@ -489,7 +489,6 @@ public enum GenerationLane: String, Codable, CaseIterable, Sendable {
     case standard
     case premium
     case local
-    case template
 }
 
 public extension GenerationLane {
@@ -499,7 +498,6 @@ public extension GenerationLane {
         case .standard: "Standard"
         case .premium: "Premium"
         case .local: "Local"
-        case .template: "Template"
         }
     }
 }
@@ -507,7 +505,6 @@ public extension GenerationLane {
 public enum FallbackStatus: String, Codable, Sendable {
     case none
     case degradedToStandard
-    case degradedToTemplate
     case failed
 }
 

@@ -1,6 +1,7 @@
 import ProsePalAPI
 import ProsePalDomain
 import ProsePalUI
+import Foundation
 import SwiftUI
 
 @main
@@ -26,7 +27,7 @@ private enum MessageWritingClientFactory {
             return GatewayMessageWritingClient(endpoint: endpoint)
         }
 
-        return TemplateMessageWritingClient()
+        return UnconfiguredGatewayMessageWritingClient()
     }
 
     private static var gatewayEndpoint: URL? {
@@ -43,5 +44,13 @@ private enum MessageWritingClientFactory {
         }
 
         return nil
+    }
+}
+
+private struct UnconfiguredGatewayMessageWritingClient: MessageWritingClient {
+    func generateCard(request: CardRequest) async throws -> CardResponse {
+        throw GenerationError.serviceUnavailable(
+            message: "Message generation is not connected. Configure the ProsePal gateway endpoint before generating."
+        )
     }
 }
