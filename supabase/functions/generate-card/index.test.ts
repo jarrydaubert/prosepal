@@ -270,6 +270,82 @@ Deno.test("tries configured provider fallback models without exposing them to th
   assert(!combinedLogs.includes("Happy birthday"));
 });
 
+Deno.test("tries fallback model when primary output fails quality checks", async () => {
+  const providerBodies: Array<Record<string, unknown>> = [];
+  const logLines: string[] = [];
+  const logger = {
+    log: (...args: unknown[]) => logLines.push(args.join(" ")),
+    warn: (...args: unknown[]) => logLines.push(args.join(" ")),
+    error: (...args: unknown[]) => logLines.push(args.join(" ")),
+  };
+
+  const res = await handleGenerateCard(
+    makeRequest(),
+    makeDeps({
+      anonymous: true,
+      provider: true,
+      providerFallbackModels: "fallback-free-model",
+      providerResponses: [
+        {
+          choices: [{
+            message: {
+              content: JSON.stringify({
+                messages: [
+                  { text: "Wishing you all the best on your special day." },
+                  { text: "Hope your day is special." },
+                  { text: "May your day be filled with joy." },
+                ],
+              }),
+            },
+          }],
+        },
+        {
+          choices: [{
+            message: {
+              content: JSON.stringify({
+                messages: [
+                  {
+                    text:
+                      "Happy birthday, Dad. Your kindness has shaped so many good things in my life.",
+                  },
+                  {
+                    text:
+                      "Dad, I hope today gives you the quiet cup of tea and calm happiness you deserve.",
+                  },
+                  {
+                    text:
+                      "Your steady love means more than I can say, and I hope your birthday feels properly appreciated.",
+                  },
+                ],
+              }),
+            },
+          }],
+        },
+      ],
+      captureProviderBodies: providerBodies,
+      logger,
+    }),
+  );
+
+  assertEquals(res.status, 200);
+  const responseText = await res.text();
+  const body = JSON.parse(responseText) as Record<string, unknown>;
+  assertEquals(body.lane_used, "standard");
+  assertEquals(body.fallback_status, "none");
+  assertEquals((body.messages as unknown[]).length, 3);
+  assertEquals(providerBodies.length, 2);
+  assertEquals(providerBodies[0].model, "free-dev-model");
+  assertEquals(providerBodies[1].model, "fallback-free-model");
+  assert(!responseText.includes("free-dev-model"));
+  assert(!responseText.includes("fallback-free-model"));
+
+  const combinedLogs = logLines.join("\n");
+  assertStringIncludes(combinedLogs, "generate-card provider quality failed");
+  assertStringIncludes(combinedLogs, "generate-card provider fallback succeeded");
+  assert(!combinedLogs.includes("quiet cup of tea"));
+  assert(!combinedLogs.includes("Your kindness has shaped"));
+});
+
 Deno.test("logs operator metadata without raw user prompt or generated messages", async () => {
   const logLines: string[] = [];
   const logger = {

@@ -164,6 +164,13 @@ class ProviderGenerationError extends Error {
   }
 }
 
+class ProviderQualityError extends Error {
+  constructor(readonly note: string) {
+    super(note);
+    this.name = "ProviderQualityError";
+  }
+}
+
 const OCCASIONS = {
   birthday: {
     label: "Birthday",
@@ -1058,6 +1065,7 @@ async function callOpenAICompatibleProvider(
 async function callOpenAICompatibleProviderWithFallbacks(
   config: Extract<ProviderConfig, { mode: "openai-compatible" }>,
   prompt: PromptParts,
+  request: CardRequest,
   fetcher: Fetcher,
   logger: Logger,
   requestLog: Record<string, unknown>,
@@ -1075,6 +1083,25 @@ async function callOpenAICompatibleProviderWithFallbacks(
         fetcher,
         model,
       );
+      const quality = qualityCheck(messages, request);
+      if (!quality.passed) {
+        lastError = new ProviderQualityError(
+          quality.note ?? "Output failed quality checks",
+        );
+        logger.warn(
+          "generate-card provider quality failed",
+          JSON.stringify({
+            ...requestLog,
+            providerSlot: config.slot,
+            modelId: model,
+            attemptIndex,
+            hasMoreAttempts: attemptIndex < models.length - 1,
+            reason: quality.note,
+            latencyMs: now().getTime() - startedAt,
+          }),
+        );
+        continue;
+      }
 
       if (attemptIndex > 0) {
         logger.warn(
@@ -1388,6 +1415,7 @@ export async function handleGenerateCard(
     const providerMessages = await callOpenAICompatibleProviderWithFallbacks(
       config,
       prompt,
+      request,
       fetcher,
       logger,
       requestLog,
@@ -1440,6 +1468,29 @@ export async function handleGenerateCard(
       }),
     );
   } catch (error) {
+    if (error instanceof ProviderQualityError) {
+      logger.warn(
+        "generate-card quality failed",
+        JSON.stringify({
+          ...requestLog,
+          providerSlot: config.slot,
+          reason: error.note,
+          latencyMs: now().getTime() - startedAt,
+        }),
+      );
+      return jsonResponse(
+        {
+          error: "Generation failed quality checks",
+          user_safe_error: {
+            code: "gateway_quality_failed",
+            message:
+              "Message generation is temporarily unavailable. Please try again shortly.",
+          },
+        },
+        502,
+      );
+    }
+
     logger.warn(
       "generate-card provider failed",
       JSON.stringify({
