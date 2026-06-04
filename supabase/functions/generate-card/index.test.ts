@@ -43,7 +43,10 @@ function makeDeps(options: {
   provider?: boolean;
   providerJsonMode?: boolean;
   providerResponse?: unknown;
+  providerResponses?: unknown[];
   fetchStatus?: number;
+  fetchStatuses?: number[];
+  providerFallbackModels?: string;
   captureProviderBodies?: Array<Record<string, unknown>>;
   devGatewaySecret?: string;
   logger?: {
@@ -69,6 +72,8 @@ function makeDeps(options: {
           return options.provider ? "provider-key" : undefined;
         case "PROSEPAL_AI_PROVIDER_MODEL":
           return options.provider ? "free-dev-model" : undefined;
+        case "PROSEPAL_AI_PROVIDER_FALLBACK_MODELS":
+          return options.providerFallbackModels;
         case "PROSEPAL_AI_PROVIDER_JSON_MODE":
           return options.providerJsonMode ? "true" : undefined;
         case "PROSEPAL_DEV_GATEWAY_SECRET":
@@ -81,6 +86,7 @@ function makeDeps(options: {
       _input: RequestInfo | URL,
       init?: RequestInit,
     ): Promise<Response> => {
+      const attemptIndex = captureProviderBodies.length;
       const body = init?.body;
       if (typeof body === "string") {
         captureProviderBodies.push(JSON.parse(body) as Record<string, unknown>);
@@ -88,7 +94,8 @@ function makeDeps(options: {
 
       return new Response(
         JSON.stringify(
-          options.providerResponse ?? {
+          options.providerResponses?.[attemptIndex] ??
+            options.providerResponse ?? {
             choices: [
               {
                 message: {
@@ -114,7 +121,8 @@ function makeDeps(options: {
           },
         ),
         {
-          status: options.fetchStatus ?? 200,
+          status: options.fetchStatuses?.[attemptIndex] ??
+            options.fetchStatus ?? 200,
           headers: { "Content-Type": "application/json" },
         },
       );
@@ -216,6 +224,48 @@ Deno.test("calls OpenAI-compatible provider and returns CardResponse without pro
   assert(!responseText.includes("free-dev-model"));
   assertEquals(providerBodies.length, 1);
   assertEquals(providerBodies[0].response_format, { type: "json_object" });
+});
+
+Deno.test("tries configured provider fallback models without exposing them to the client", async () => {
+  const providerBodies: Array<Record<string, unknown>> = [];
+  const logLines: string[] = [];
+  const logger = {
+    log: (...args: unknown[]) => logLines.push(args.join(" ")),
+    warn: (...args: unknown[]) => logLines.push(args.join(" ")),
+    error: (...args: unknown[]) => logLines.push(args.join(" ")),
+  };
+
+  const res = await handleGenerateCard(
+    makeRequest(),
+    makeDeps({
+      anonymous: true,
+      provider: true,
+      providerFallbackModels: "free-dev-model, fallback-free-model",
+      fetchStatuses: [502, 200],
+      captureProviderBodies: providerBodies,
+      logger,
+    }),
+  );
+
+  assertEquals(res.status, 200);
+  const responseText = await res.text();
+  const body = JSON.parse(responseText) as Record<string, unknown>;
+  assertEquals(body.lane_used, "standard");
+  assertEquals(body.fallback_status, "none");
+  assertEquals((body.messages as unknown[]).length, 3);
+  assertEquals(providerBodies.length, 2);
+  assertEquals(providerBodies[0].model, "free-dev-model");
+  assertEquals(providerBodies[1].model, "fallback-free-model");
+  assert(!responseText.includes("free-dev-model"));
+  assert(!responseText.includes("fallback-free-model"));
+
+  const combinedLogs = logLines.join("\n");
+  assertStringIncludes(combinedLogs, "generate-card provider attempt failed");
+  assertStringIncludes(combinedLogs, "generate-card provider fallback succeeded");
+  assertStringIncludes(combinedLogs, "fallback-free-model");
+  assert(!combinedLogs.includes("Dad"));
+  assert(!combinedLogs.includes("quiet cup of tea"));
+  assert(!combinedLogs.includes("Happy birthday"));
 });
 
 Deno.test("logs operator metadata without raw user prompt or generated messages", async () => {

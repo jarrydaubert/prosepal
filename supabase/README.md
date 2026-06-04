@@ -70,6 +70,7 @@ OpenAI-compatible dev-provider mode uses a full chat-completions style endpoint:
 - `PROSEPAL_AI_PROVIDER_URL`
 - `PROSEPAL_AI_PROVIDER_API_KEY`
 - `PROSEPAL_AI_PROVIDER_MODEL`
+- optional `PROSEPAL_AI_PROVIDER_FALLBACK_MODELS`
 - optional `PROSEPAL_AI_PROVIDER_JSON_MODE=true`
 - optional `PROSEPAL_AI_PROVIDER_TIMEOUT_MS`
 - optional `PROSEPAL_AI_PROVIDER_MAX_TOKENS`
@@ -103,6 +104,7 @@ PROSEPAL_AI_PROVIDER=openai-compatible \
 PROSEPAL_AI_PROVIDER_URL=https://<dev-provider-host>/v1/chat/completions \
 PROSEPAL_AI_PROVIDER_API_KEY=<secret> \
 PROSEPAL_AI_PROVIDER_MODEL=<dev-model-id> \
+PROSEPAL_AI_PROVIDER_FALLBACK_MODELS=<fallback-model-id-1,fallback-model-id-2> \
 supabase functions serve generate-card
 ```
 
@@ -142,6 +144,7 @@ Required Supabase secrets, names only:
 - `PROSEPAL_AI_PROVIDER_URL`
 - `PROSEPAL_AI_PROVIDER_API_KEY`
 - `PROSEPAL_AI_PROVIDER_MODEL`
+- optional `PROSEPAL_AI_PROVIDER_FALLBACK_MODELS`
 - optional `PROSEPAL_AI_PROVIDER_JSON_MODE`
 - optional `PROSEPAL_AI_PROVIDER_TIMEOUT_MS`
 - optional `PROSEPAL_AI_PROVIDER_MAX_TOKENS`

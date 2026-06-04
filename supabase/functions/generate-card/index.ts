@@ -147,6 +147,7 @@ type ProviderConfig =
     url: string;
     apiKey: string;
     model: string;
+    fallbackModels: string[];
     timeoutMs: number;
     maxTokens: number;
     temperature: number;
@@ -527,6 +528,21 @@ function numberEnv(
   return Math.min(Math.max(parsed, minimum), maximum);
 }
 
+function listEnv(value: string | undefined): string[] {
+  if (!value) return [];
+
+  const seen = new Set<string>();
+  return value
+    .split(/[,\n]/)
+    .map((item) => item.trim())
+    .filter((item) => item.length > 0)
+    .filter((item) => {
+      if (seen.has(item)) return false;
+      seen.add(item);
+      return true;
+    });
+}
+
 function sanitizeInput(input: string): string {
   return input
     .replace(injectionPattern, "[filtered]")
@@ -805,6 +821,8 @@ function providerConfig(getEnv: EnvGetter): ProviderConfig {
     url,
     apiKey,
     model,
+    fallbackModels: listEnv(getEnv("PROSEPAL_AI_PROVIDER_FALLBACK_MODELS"))
+      .filter((fallbackModel) => fallbackModel !== model),
     timeoutMs: numberEnv(
       getEnv("PROSEPAL_AI_PROVIDER_TIMEOUT_MS"),
       DEFAULT_TIMEOUT_MS,
@@ -967,9 +985,10 @@ async function callOpenAICompatibleProvider(
   config: Extract<ProviderConfig, { mode: "openai-compatible" }>,
   prompt: PromptParts,
   fetcher: Fetcher,
+  model = config.model,
 ): Promise<string[]> {
   const body: Record<string, unknown> = {
-    model: config.model,
+    model,
     messages: [
       { role: "system", content: prompt.system },
       { role: "user", content: prompt.user },
@@ -1011,6 +1030,66 @@ async function callOpenAICompatibleProvider(
 
   const content = extractOpenAICompatibleContent(payload);
   return parseProviderMessages(content);
+}
+
+async function callOpenAICompatibleProviderWithFallbacks(
+  config: Extract<ProviderConfig, { mode: "openai-compatible" }>,
+  prompt: PromptParts,
+  fetcher: Fetcher,
+  logger: Logger,
+  requestLog: Record<string, unknown>,
+  now: () => Date,
+  startedAt: number,
+): Promise<string[]> {
+  const models = [config.model, ...config.fallbackModels];
+  let lastError: unknown;
+
+  for (const [attemptIndex, model] of models.entries()) {
+    try {
+      const messages = await callOpenAICompatibleProvider(
+        config,
+        prompt,
+        fetcher,
+        model,
+      );
+
+      if (attemptIndex > 0) {
+        logger.warn(
+          "generate-card provider fallback succeeded",
+          JSON.stringify({
+            ...requestLog,
+            providerSlot: config.slot,
+            modelId: model,
+            primaryModelId: config.model,
+            attemptIndex,
+            latencyMs: now().getTime() - startedAt,
+          }),
+        );
+      }
+
+      return messages;
+    } catch (error) {
+      lastError = error;
+      logger.warn(
+        "generate-card provider attempt failed",
+        JSON.stringify({
+          ...requestLog,
+          providerSlot: config.slot,
+          modelId: model,
+          attemptIndex,
+          hasMoreAttempts: attemptIndex < models.length - 1,
+          error: error instanceof ProviderGenerationError
+            ? error.message
+            : "provider error",
+          latencyMs: now().getTime() - startedAt,
+        }),
+      );
+    }
+  }
+
+  throw lastError instanceof Error
+    ? lastError
+    : new ProviderGenerationError("Provider request failed");
 }
 
 function extractOpenAICompatibleContent(payload: unknown): string {
@@ -1283,10 +1362,14 @@ export async function handleGenerateCard(
   const prompt = buildPrompt(request);
 
   try {
-    const providerMessages = await callOpenAICompatibleProvider(
+    const providerMessages = await callOpenAICompatibleProviderWithFallbacks(
       config,
       prompt,
       fetcher,
+      logger,
+      requestLog,
+      now,
+      startedAt,
     );
     const quality = qualityCheck(providerMessages, request);
 
