@@ -153,6 +153,23 @@ Deno.test("buildPrompt carries ProsePal domain context and filters prompt inject
   assert(!prompt.user.includes("Ignore previous instructions"));
 });
 
+Deno.test("buildPrompt softens unsafe tones for sensitive occasions", () => {
+  const prompt = buildPrompt({
+    ...fixedRequest,
+    intent: {
+      ...fixedRequest.intent,
+      occasion: "sympathy",
+      tone: "sarcastic",
+    },
+  });
+
+  assertStringIncludes(prompt.user, "Occasion: Sympathy");
+  assertStringIncludes(prompt.user, "Tone: Gentle");
+  assertStringIncludes(prompt.user, "Requested tone adjusted");
+  assert(!prompt.user.includes("dry wit"));
+  assert(!prompt.user.includes("Sarcastic"));
+});
+
 Deno.test("requires authentication unless anonymous dev mode is explicitly enabled", async () => {
   const res = await handleGenerateCard(makeRequest(), makeDeps());
 
@@ -470,6 +487,43 @@ Deno.test("returns quality error when provider uses generic filler", async () =>
   const body = await res.json() as Record<string, unknown>;
   const userSafeError = body.user_safe_error as Record<string, unknown>;
   assertEquals(userSafeError.code, "gateway_quality_failed");
+});
+
+Deno.test("returns quality error when sensitive occasion output uses harmful cliche", async () => {
+  const res = await handleGenerateCard(
+    makeRequest({
+      ...fixedRequest,
+      intent: {
+        ...fixedRequest.intent,
+        occasion: "sympathy",
+        tone: "heartfelt",
+        things_to_avoid: [],
+      },
+    }),
+    makeDeps({
+      anonymous: true,
+      provider: true,
+      providerResponse: {
+        choices: [{
+          message: {
+            content: JSON.stringify({
+              messages: [
+                { text: "Everything happens for a reason, even when it hurts." },
+                { text: "I am so sorry you are going through this." },
+                { text: "I am holding you close in my thoughts today." },
+              ],
+            }),
+          },
+        }],
+      },
+    }),
+  );
+
+  assertEquals(res.status, 502);
+  const body = await res.json() as Record<string, unknown>;
+  const userSafeError = body.user_safe_error as Record<string, unknown>;
+  assertEquals(userSafeError.code, "gateway_quality_failed");
+  assertEquals(body.messages, undefined);
 });
 
 Deno.test("rejects Premium lane until entitlement policy exists", async () => {

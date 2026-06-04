@@ -493,6 +493,9 @@ const internalTermPattern =
 const genericFillerPattern =
   /\b(wishing you all the best|hope your day is special|hope you have a wonderful day|may your day be filled with|sending lots of love and best wishes)\b/i;
 
+const sensitiveClichePattern =
+  /\b(everything happens for a reason|they(?:'|’)re in a better place|they are in a better place|at least (?:they|he|she|you)|time heals all wounds|stay strong|it was meant to be|cheer up)\b/i;
+
 const defaultCreateUserClient: CreateUserClient = (
   supabaseUrl: string,
   supabaseAnonKey: string,
@@ -861,10 +864,39 @@ function compactPromptList(items: string[]): string {
     : "- None provided";
 }
 
+function isSensitiveOccasionValue(occasion: OccasionValue): boolean {
+  const occasionConfig = OCCASIONS[occasion];
+  return "sensitive" in occasionConfig && occasionConfig.sensitive === true;
+}
+
+function toneGuidance(
+  toneValue: ToneValue,
+  isSensitiveOccasion: boolean,
+): { label: string; hint: string; adjustedForSensitive: boolean } {
+  const tone = TONES[toneValue];
+  const unsafeSensitiveTone = ["funny", "playful", "sarcastic"].includes(
+    toneValue,
+  );
+
+  if (isSensitiveOccasion && unsafeSensitiveTone) {
+    return {
+      label: "Gentle",
+      hint:
+        "warm, plain, and careful; avoid jokes, teasing, irony, sarcasm, or forced cheer",
+      adjustedForSensitive: true,
+    };
+  }
+
+  return {
+    label: tone.label,
+    hint: tone.hint,
+    adjustedForSensitive: false,
+  };
+}
+
 export function buildPrompt(request: CardRequest): PromptParts {
   const occasion = OCCASIONS[request.intent.occasion];
   const relationship = RELATIONSHIPS[request.intent.relationship];
-  const tone = TONES[request.intent.tone];
   const length = MESSAGE_LENGTHS[request.intent.length];
   const spelling = SPELLING_HINTS[request.intent.spelling_preference];
   const safeRecipientName = request.intent.recipient_name
@@ -878,7 +910,11 @@ export function buildPrompt(request: CardRequest): PromptParts {
     ? sanitizeInput(request.intent.user_context)
     : undefined;
 
-  const isSensitiveOccasion = "sensitive" in occasion && occasion.sensitive;
+  const isSensitiveOccasion = isSensitiveOccasionValue(request.intent.occasion);
+  const effectiveTone = toneGuidance(
+    request.intent.tone,
+    isSensitiveOccasion,
+  );
   const isReligiousByOccasion = "religiousByOccasion" in occasion &&
     occasion.religiousByOccasion;
   const sensitiveNote = isSensitiveOccasion
@@ -904,7 +940,10 @@ export function buildPrompt(request: CardRequest): PromptParts {
   const user = [
     `Occasion: ${occasion.label} - ${occasion.hint}`,
     `Relationship: ${relationship.label} - recipient is my ${relationship.label.toLowerCase()}; ${relationship.hint}`,
-    `Tone: ${tone.label} - ${tone.hint}`,
+    `Tone: ${effectiveTone.label} - ${effectiveTone.hint}`,
+    effectiveTone.adjustedForSensitive
+      ? "Requested tone adjusted for this sensitive occasion: do not use jokes, sarcasm, irony, teasing, or forced positivity."
+      : "",
     `Length: ${length.label} - ${length.hint}`,
     `Locale: ${request.intent.locale_identifier}`,
     `Spelling: ${spelling}`,
@@ -994,6 +1033,12 @@ function qualityCheck(
   }
   if (messages.some((message) => genericFillerPattern.test(message))) {
     return { passed: false, note: "Output used generic filler" };
+  }
+  if (
+    isSensitiveOccasionValue(request.intent.occasion) &&
+    messages.some((message) => sensitiveClichePattern.test(message))
+  ) {
+    return { passed: false, note: "Output used a sensitive-occasion cliche" };
   }
 
   const avoidItems = request.intent.things_to_avoid.map((item) =>
