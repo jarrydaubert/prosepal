@@ -483,6 +483,9 @@ const injectionPattern = new RegExp(
 const internalTermPattern =
   /\b(ChatGPT|Gemini|Claude|OpenAI|Anthropic|Vertex|Firebase AI|Google AI|provider|model|AI-generated|artificial intelligence)\b/i;
 
+const genericFillerPattern =
+  /\b(wishing you all the best|hope your day is special|hope you have a wonderful day|may your day be filled with|sending lots of love and best wishes)\b/i;
+
 const defaultCreateUserClient: CreateUserClient = (
   supabaseUrl: string,
   supabaseAnonKey: string,
@@ -879,9 +882,10 @@ export function buildPrompt(request: CardRequest): PromptParts {
     : "Do not add religious references unless the supplied details ask for them.";
 
   const system = [
-    "You are ProsePal, a careful message-writing capability for greeting cards and real-life notes.",
+    "You are ProsePal, a careful message-writing capability for greeting cards, texts, WhatsApp messages, and short real-life notes.",
     'Write exactly 3 unique message options as JSON: {"messages":[{"text":"..."},{"text":"..."},{"text":"..."}]}.',
     "Each option should take a different emotional angle.",
+    "Write only the message body someone could copy into the card, text, WhatsApp message, or note.",
     "Sound human, specific, and natural. Do not mention AI, providers, models, prompts, systems, or tools.",
     "Use only the supplied details. Do not invent memories, events, jokes, facts, diagnoses, deaths, or relationship details.",
     "No greetings such as Dear, Hi, or Hey. No sign-offs such as Love, Best wishes, or Sincerely.",
@@ -955,15 +959,34 @@ function parseProviderMessages(content: string): string[] {
     .slice(0, 3);
 }
 
+function normalizedMessageFingerprint(message: string): string {
+  return message
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s]/gu, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function qualityCheck(
   messages: string[],
   request: CardRequest,
 ): { passed: boolean; note?: string } {
-  if (messages.length < 1) {
-    return { passed: false, note: "No usable messages returned" };
+  if (messages.length < 3) {
+    return { passed: false, note: "Fewer than three usable messages returned" };
   }
+
+  const uniqueMessageCount = new Set(
+    messages.map(normalizedMessageFingerprint),
+  ).size;
+  if (uniqueMessageCount < messages.length) {
+    return { passed: false, note: "Output repeated message options" };
+  }
+
   if (messages.some((message) => internalTermPattern.test(message))) {
     return { passed: false, note: "Output exposed implementation details" };
+  }
+  if (messages.some((message) => genericFillerPattern.test(message))) {
+    return { passed: false, note: "Output used generic filler" };
   }
 
   const avoidItems = request.intent.things_to_avoid.map((item) =>

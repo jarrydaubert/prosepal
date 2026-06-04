@@ -140,6 +140,8 @@ Deno.test("buildPrompt carries ProsePal domain context and filters prompt inject
   const prompt = buildPrompt(fixedRequest);
 
   assertStringIncludes(prompt.system, "Write exactly 3 unique message options");
+  assertStringIncludes(prompt.system, "WhatsApp messages");
+  assertStringIncludes(prompt.system, "Write only the message body");
   assertStringIncludes(prompt.system, "Do not mention AI, providers, models");
   assertStringIncludes(prompt.user, "Occasion: Birthday");
   assertStringIncludes(prompt.user, "Relationship: Parent");
@@ -310,6 +312,88 @@ Deno.test("returns gateway error when provider response is malformed", async () 
   const body = await res.json() as Record<string, unknown>;
   const userSafeError = body.user_safe_error as Record<string, unknown>;
   assertEquals(userSafeError.code, "gateway_provider_failed");
+});
+
+Deno.test("returns quality error when provider returns fewer than three messages", async () => {
+  const res = await handleGenerateCard(
+    makeRequest(),
+    makeDeps({
+      anonymous: true,
+      provider: true,
+      providerResponse: {
+        choices: [{
+          message: {
+            content: JSON.stringify({
+              messages: [{ text: "Happy birthday, Dad. I hope today is gentle." }],
+            }),
+          },
+        }],
+      },
+    }),
+  );
+
+  assertEquals(res.status, 502);
+  const body = await res.json() as Record<string, unknown>;
+  const userSafeError = body.user_safe_error as Record<string, unknown>;
+  assertEquals(userSafeError.code, "gateway_quality_failed");
+  assertEquals(body.messages, undefined);
+});
+
+Deno.test("returns quality error when provider repeats message options", async () => {
+  const repeatedText = "Happy birthday, Dad. Your kindness means so much.";
+  const res = await handleGenerateCard(
+    makeRequest(),
+    makeDeps({
+      anonymous: true,
+      provider: true,
+      providerResponse: {
+        choices: [{
+          message: {
+            content: JSON.stringify({
+              messages: [
+                { text: repeatedText },
+                { text: repeatedText },
+                { text: "Dad, I hope today brings warmth and a quiet cup of tea." },
+              ],
+            }),
+          },
+        }],
+      },
+    }),
+  );
+
+  assertEquals(res.status, 502);
+  const body = await res.json() as Record<string, unknown>;
+  const userSafeError = body.user_safe_error as Record<string, unknown>;
+  assertEquals(userSafeError.code, "gateway_quality_failed");
+});
+
+Deno.test("returns quality error when provider uses generic filler", async () => {
+  const res = await handleGenerateCard(
+    makeRequest(),
+    makeDeps({
+      anonymous: true,
+      provider: true,
+      providerResponse: {
+        choices: [{
+          message: {
+            content: JSON.stringify({
+              messages: [
+                { text: "Wishing you all the best on your special day." },
+                { text: "Dad, I hope today brings warmth and a quiet cup of tea." },
+                { text: "You deserve a birthday that feels calm, loved, and yours." },
+              ],
+            }),
+          },
+        }],
+      },
+    }),
+  );
+
+  assertEquals(res.status, 502);
+  const body = await res.json() as Record<string, unknown>;
+  const userSafeError = body.user_safe_error as Record<string, unknown>;
+  assertEquals(userSafeError.code, "gateway_quality_failed");
 });
 
 Deno.test("rejects Premium lane until entitlement policy exists", async () => {
