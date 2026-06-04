@@ -28,12 +28,19 @@ The visual direction should be:
 - premium
 - simple
 - human
+- rooted in the existing ProsePal navy, coral, and white brand palette
 
 The app can feel modern and polished, including strong dark mode support, but it
 should not drift into a cyber, neon, or command-console aesthetic. ProsePal helps
 people write thoughtful messages for real relationships, including sensitive
 moments. The interface should feel like a beautiful writing assistant, not a
 model playground.
+
+The Flutter app's visual assets remain valuable brand source material. Reuse the
+existing logo, app icon direction, splash artwork, onboarding artwork, and
+navy/coral/white palette where they help the native app feel recognizably
+ProsePal. Reinterpret the layout with SwiftUI and platform conventions rather
+than copying old Flutter screens directly.
 
 ## Principles
 

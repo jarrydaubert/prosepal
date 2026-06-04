@@ -4,6 +4,8 @@ import SwiftUI
 
 #if os(iOS)
 import UIKit
+#elseif os(macOS)
+import AppKit
 #endif
 
 @MainActor
@@ -402,7 +404,7 @@ public struct ProsePalRootView: View {
                 OnboardingView(onStart: model.completeOnboarding)
             }
         }
-        .tint(.indigo)
+        .tint(Color.prosePalCoral)
         .environmentObject(model)
         .sheet(isPresented: $model.isShowingPaywall) {
             PaywallPlaceholderSheet(
@@ -452,15 +454,19 @@ struct OnboardingView: View {
     var body: some View {
         NavigationStack {
             onboardingPages
-                .background(Color.prosePalGroupedBackground)
-                .navigationTitle("ProsePal")
+                .background(ProsePalBrandBackdrop())
+                .navigationTitle("")
+                .prosePalOnboardingToolbarStyle()
                 .toolbar {
                     ToolbarItem(placement: .primaryAction) {
                         Button("Skip", action: onStart)
+                            .foregroundStyle(.white)
                     }
                 }
                 .safeAreaInset(edge: .bottom) {
-                    VStack(spacing: 10) {
+                    VStack(spacing: 12) {
+                        OnboardingPageDots(count: steps.count, selectedIndex: selectedStep)
+
                         Button {
                             if selectedStep == steps.count - 1 {
                                 onStart()
@@ -478,7 +484,7 @@ struct OnboardingView: View {
 
                         Text("No account or subscription required to try Standard drafts.")
                             .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Color.prosePalTextSecondary)
                             .multilineTextAlignment(.center)
                     }
                     .padding(.horizontal, 22)
@@ -487,13 +493,14 @@ struct OnboardingView: View {
                     .background(.ultraThinMaterial)
                 }
         }
+        .preferredColorScheme(.dark)
     }
 
     @ViewBuilder
     private var onboardingPages: some View {
         #if os(iOS)
         onboardingPageContent
-            .tabViewStyle(.page(indexDisplayMode: .always))
+            .tabViewStyle(.page(indexDisplayMode: .never))
         #else
         onboardingPageContent
         #endif
@@ -509,22 +516,35 @@ struct OnboardingView: View {
     }
 
     private func onboardingPage(_ step: OnboardingStep) -> some View {
-        VStack(spacing: 22) {
-            Image(systemName: step.systemImage)
-                .font(.system(size: 52, weight: .semibold))
-                .foregroundStyle(.indigo)
-                .frame(width: 82, height: 82)
-                .background(.regularMaterial, in: Circle())
+        VStack(spacing: 24) {
+            VStack(spacing: 14) {
+                PackageResourceImage(name: "logo")
+                    .scaledToFit()
+                    .frame(width: 68, height: 68)
+                    .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                    .shadow(color: Color.prosePalCoral.opacity(0.28), radius: 18, x: 0, y: 8)
+
+                PackageResourceImage(name: step.imageName)
+                    .scaledToFit()
+                    .frame(maxWidth: 292)
+                    .clipShape(RoundedRectangle(cornerRadius: 30, style: .continuous))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 30, style: .continuous)
+                            .strokeBorder(Color.white.opacity(0.20), lineWidth: 1)
+                    }
+                    .shadow(color: .black.opacity(0.22), radius: 26, x: 0, y: 14)
+            }
 
             VStack(spacing: 10) {
                 Text(step.title)
                     .font(.largeTitle.weight(.bold))
+                    .foregroundStyle(.white)
                     .multilineTextAlignment(.center)
                     .minimumScaleFactor(0.82)
 
                 Text(step.detail)
                     .font(.body)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.prosePalTextSecondary)
                     .multilineTextAlignment(.center)
                     .lineSpacing(3)
             }
@@ -533,30 +553,46 @@ struct OnboardingView: View {
     }
 }
 
+private struct OnboardingPageDots: View {
+    let count: Int
+    let selectedIndex: Int
+
+    var body: some View {
+        HStack(spacing: 8) {
+            ForEach(0..<count, id: \.self) { index in
+                Circle()
+                    .fill(index == selectedIndex ? Color.white : Color.prosePalTextSecondary.opacity(0.48))
+                    .frame(width: index == selectedIndex ? 8 : 7, height: index == selectedIndex ? 8 : 7)
+            }
+        }
+        .accessibilityLabel("Onboarding step \(selectedIndex + 1) of \(count)")
+    }
+}
+
 private struct OnboardingStep: Identifiable {
     let id: String
     let title: String
     let detail: String
-    let systemImage: String
+    let imageName: String
 
     static let all: [OnboardingStep] = [
         OnboardingStep(
             id: "real-moments",
-            title: "Write better messages for real moments",
-            detail: "Birthdays, thank-yous, apologies, sympathy, and the awkward ones too.",
-            systemImage: "heart.text.square"
+            title: "The Right Words, Right Now",
+            detail: "Stop staring at blank cards. Start with thoughtful drafts for birthdays, thank-yous, apologies, sympathy, and more.",
+            imageName: "slide_1"
         ),
         OnboardingStep(
             id: "give-context",
-            title: "Give it the context",
-            detail: "Choose the occasion, relationship, tone, and details. ProsePal turns that into drafts you can edit.",
-            systemImage: "text.bubble"
+            title: "Pick. Tap. Done.",
+            detail: "Choose the occasion, relationship, tone, and a few personal details. ProsePal turns that into drafts you can edit.",
+            imageName: "slide_2"
         ),
         OnboardingStep(
             id: "standard-premium",
-            title: "Start simple, unlock more later",
-            detail: "Standard drafts help you get started. Premium will add enhanced drafts and higher limits when subscriptions are connected.",
-            systemImage: "sparkles"
+            title: "Try It Free",
+            detail: "Start with Standard drafts. Premium unlocks enhanced generation and higher limits when subscriptions are connected.",
+            imageName: "slide_3"
         )
     ]
 }
@@ -626,7 +662,7 @@ struct ComposeView: View {
         .background(
             RoundedRectangle(cornerRadius: 24, style: .continuous)
                 .fill(.linearGradient(
-                    colors: [Color.indigo.opacity(0.14), Color.teal.opacity(0.12), Color.prosePalSecondaryGroupedBackground],
+                    colors: [Color.prosePalCoral.opacity(0.18), Color.prosePalNavy.opacity(0.10), Color.prosePalSecondaryGroupedBackground],
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
                 ))
@@ -661,7 +697,7 @@ struct ComposeView: View {
                     Image(systemName: model.draft.occasion.symbolName)
                         .font(.title2)
                         .frame(width: 34, height: 34)
-                        .foregroundStyle(.indigo)
+                        .foregroundStyle(Color.prosePalCoral)
                     VStack(alignment: .leading, spacing: 2) {
                         Text(model.draft.occasion.displayName)
                             .font(.headline)
@@ -694,7 +730,7 @@ struct ComposeView: View {
                                 .padding(.vertical, 10)
                                 .background(
                                     Capsule(style: .continuous)
-                                        .fill(isSelected ? Color.indigo : Color.prosePalSecondaryGroupedBackground)
+                                        .fill(isSelected ? Color.prosePalCoral : Color.prosePalSecondaryGroupedBackground)
                                 )
                                 .foregroundStyle(isSelected ? .white : .primary)
                         }
@@ -928,7 +964,7 @@ struct OccasionPickerRow: View {
             Image(systemName: occasion.symbolName)
                 .font(.headline)
                 .frame(width: 28, height: 28)
-                .foregroundStyle(.indigo)
+                .foregroundStyle(Color.prosePalCoral)
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(occasion.displayName)
@@ -944,7 +980,7 @@ struct OccasionPickerRow: View {
 
             if isSelected {
                 Image(systemName: "checkmark.circle.fill")
-                    .foregroundStyle(.indigo)
+                    .foregroundStyle(Color.prosePalCoral)
             }
         }
         .contentShape(Rectangle())
@@ -987,7 +1023,7 @@ struct GenerationModeSelector: View {
                         .padding(.horizontal, 6)
                         .background(
                             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                .fill(lane == selectedLane ? Color.indigo : Color.prosePalSecondaryGroupedBackground)
+                                .fill(lane == selectedLane ? Color.prosePalCoral : Color.prosePalSecondaryGroupedBackground)
                         )
                         .foregroundStyle(lane == selectedLane ? .white : .primary)
                         .overlay(alignment: .topTrailing) {
@@ -1034,7 +1070,7 @@ struct UsageStatusRow: View {
         HStack(alignment: .top, spacing: 10) {
             Image(systemName: usageStatus.isPremiumUnlocked ? "checkmark.seal.fill" : "gauge")
                 .font(.callout.weight(.semibold))
-                .foregroundStyle(.indigo)
+                .foregroundStyle(Color.prosePalCoral)
                 .frame(width: 24)
 
             VStack(alignment: .leading, spacing: 3) {
@@ -1131,7 +1167,7 @@ struct ResultsView: View {
                 .disabled(model.isGenerating)
             }
             .padding(12)
-            .background(Color.orange.opacity(0.12), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .background(Color.prosePalProGold.opacity(0.14), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         } else if let lane = model.laneUsed {
             Label("\(lane.displayName) generation", systemImage: "checkmark.seal")
                 .font(.footnote.weight(.medium))
@@ -1158,7 +1194,7 @@ struct ResultCard: View {
                 if model.isSaved(message) {
                     Label("Saved", systemImage: "bookmark.fill")
                         .font(.caption.weight(.semibold))
-                        .foregroundStyle(.indigo)
+                        .foregroundStyle(Color.prosePalCoral)
                 }
             }
 
@@ -1303,7 +1339,7 @@ struct PaywallPlaceholderSheet: View {
                 VStack(alignment: .leading, spacing: 10) {
                     Image(systemName: "star.circle.fill")
                         .font(.system(size: 50, weight: .semibold))
-                        .foregroundStyle(.indigo)
+                        .foregroundStyle(Color.prosePalCoral)
 
                     Text("Premium generation")
                         .font(.largeTitle.weight(.bold))
@@ -1371,7 +1407,7 @@ struct PremiumFeatureRow: View {
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: systemImage)
                 .font(.headline)
-                .foregroundStyle(.indigo)
+                .foregroundStyle(Color.prosePalCoral)
                 .frame(width: 28)
 
             VStack(alignment: .leading, spacing: 3) {
@@ -1616,7 +1652,7 @@ struct SettingsView: View {
                                 Spacer()
                                 if model.draft.requestedLane == lane {
                                     Image(systemName: "checkmark")
-                                        .foregroundStyle(.indigo)
+                                        .foregroundStyle(Color.prosePalCoral)
                                 } else if model.usageStatus.isPremiumLocked(lane) {
                                     Image(systemName: "lock.fill")
                                         .foregroundStyle(.secondary)
@@ -1689,6 +1725,84 @@ struct NoticeBanner: View {
     }
 }
 
+private struct ProsePalBrandBackdrop: View {
+    var body: some View {
+        LinearGradient(
+            colors: [
+                Color.prosePalDeepNavy,
+                Color.prosePalNavy,
+                Color.prosePalSurface
+            ],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+        .overlay {
+            LinearGradient(
+                colors: [
+                    Color.prosePalCoral.opacity(0.16),
+                    Color.clear,
+                    Color.prosePalNavy.opacity(0.26)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        }
+        .ignoresSafeArea()
+    }
+}
+
+private struct PackageResourceImage: View {
+    let name: String
+    var fileExtension = "png"
+    var subdirectory: String?
+
+    var body: some View {
+        content
+            .accessibilityHidden(true)
+    }
+
+    @ViewBuilder
+    private var content: some View {
+        #if os(iOS)
+        if let url = Bundle.module.url(forResource: name, withExtension: fileExtension, subdirectory: subdirectory),
+           let image = UIImage(contentsOfFile: url.path) {
+            Image(uiImage: image)
+                .resizable()
+        } else {
+            fallback
+        }
+        #elseif os(macOS)
+        if let url = Bundle.module.url(forResource: name, withExtension: fileExtension, subdirectory: subdirectory),
+           let image = NSImage(contentsOf: url) {
+            Image(nsImage: image)
+                .resizable()
+        } else {
+            fallback
+        }
+        #else
+        fallback
+        #endif
+    }
+
+    private var fallback: some View {
+        Image(systemName: "photo")
+            .resizable()
+            .scaledToFit()
+            .foregroundStyle(Color.prosePalTextSecondary)
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func prosePalOnboardingToolbarStyle() -> some View {
+        #if os(iOS)
+        self.toolbarColorScheme(.dark, for: .navigationBar)
+        #else
+        self
+        #endif
+    }
+}
+
 enum ComposeField: Hashable {
     case recipient
     case include
@@ -1732,6 +1846,42 @@ private func playSelectionFeedback() {
 }
 
 private extension Color {
+    static var prosePalDeepNavy: Color {
+        prosePalHex(0x151C26)
+    }
+
+    static var prosePalNavy: Color {
+        prosePalHex(0x1D2633)
+    }
+
+    static var prosePalSurface: Color {
+        prosePalHex(0x222E3D)
+    }
+
+    static var prosePalSurfaceElevated: Color {
+        prosePalHex(0x283648)
+    }
+
+    static var prosePalCoral: Color {
+        prosePalHex(0xD4736B)
+    }
+
+    static var prosePalCoralLight: Color {
+        prosePalHex(0xFCE9E7)
+    }
+
+    static var prosePalCoralDark: Color {
+        prosePalHex(0xA5564F)
+    }
+
+    static var prosePalProGold: Color {
+        prosePalHex(0xFBBF24)
+    }
+
+    static var prosePalTextSecondary: Color {
+        prosePalHex(0xB1BBC8)
+    }
+
     static var prosePalGroupedBackground: Color {
         #if os(iOS)
         Color(uiColor: .systemGroupedBackground)
@@ -1746,6 +1896,15 @@ private extension Color {
         #else
         Color.white.opacity(0.72)
         #endif
+    }
+
+    private static func prosePalHex(_ value: Int, opacity: Double = 1) -> Color {
+        Color(
+            red: Double((value >> 16) & 0xFF) / 255,
+            green: Double((value >> 8) & 0xFF) / 255,
+            blue: Double(value & 0xFF) / 255,
+            opacity: opacity
+        )
     }
 }
 

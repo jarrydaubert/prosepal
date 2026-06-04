@@ -84,6 +84,29 @@ to the Flutter reference while keeping the iOS design direction:
   in searchable grouped sections.
 - First launch now routes through a lightweight three-step onboarding flow that
   can be skipped or completed locally before entering Create.
+- The native onboarding flow now reuses the Flutter reference logo and
+  onboarding artwork from Swift Package resources.
+- The native UI accent palette is aligned with the Flutter brand direction:
+  navy backgrounds, coral primary actions, warm premium gold, and white-forward
+  onboarding typography.
+
+## Brand Assets
+
+The native SwiftUI package intentionally copies shared brand assets from the
+Flutter reference app into `ProsePalUI` resources so the rewrite can use them
+without changing production Flutter files:
+
+- `Sources/ProsePalUI/Resources/Brand/logo.png`
+- `Sources/ProsePalUI/Resources/Brand/splash_transparent.png`
+- `Sources/ProsePalUI/Resources/Onboarding/slide_1.png`
+- `Sources/ProsePalUI/Resources/Onboarding/slide_2.png`
+- `Sources/ProsePalUI/Resources/Onboarding/slide_3.png`
+
+The current palette source is the Flutter reference in
+`../lib/shared/theme/app_colors.dart`. Native tokens are mirrored in
+`ProsePalRootView.swift` for this first slice. A later project-configuration
+PR should move the app icon and launch screen into a native asset catalogue
+once signing/build-setting changes can be reviewed cleanly.
 
 ## Apple-Native Setup Notes
 
