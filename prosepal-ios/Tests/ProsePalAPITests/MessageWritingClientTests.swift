@@ -79,6 +79,95 @@ final class MessageWritingClientTests: XCTestCase {
         XCTAssertEqual(generated.fallbackStatus, .none)
     }
 
+    func testGatewayClientDoesNotSendBlankDevGatewaySecretHeader() async throws {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [CapturingURLProtocol.self]
+        let session = URLSession(configuration: configuration)
+        let endpoint = try XCTUnwrap(URL(string: "https://gateway.example/functions/v1/generate-card"))
+        let client = GatewayMessageWritingClient(
+            endpoint: endpoint,
+            session: session,
+            devGatewaySecret: "  \n  "
+        )
+        let request = CardRequest(
+            idempotencyKey: "fixed-key",
+            intent: CardIntent(
+                occasion: .birthday,
+                relationship: .parent,
+                tone: .heartfelt
+            ),
+            requestedLane: .standard,
+            clientContext: ClientContext(appVersion: "0.0.0", buildNumber: "1")
+        )
+
+        CapturingURLProtocol.requestHandler = { request in
+            XCTAssertNil(request.value(forHTTPHeaderField: "X-ProsePal-Dev-Gateway-Secret"))
+
+            let response = try XCTUnwrap(HTTPURLResponse(
+                url: endpoint,
+                statusCode: 200,
+                httpVersion: nil,
+                headerFields: ["Content-Type": "application/json"]
+            ))
+            let data = """
+            {
+              "messages": [
+                { "id": "message-1", "text": "A gateway-shaped message." }
+              ],
+              "lane_used": "standard",
+              "fallback_status": "none",
+              "retry_eligibility": "ineligible",
+              "prompt_contract_version": 1,
+              "output_contract_version": 1
+            }
+            """.data(using: .utf8)!
+            return (response, data)
+        }
+        defer { CapturingURLProtocol.requestHandler = nil }
+
+        _ = try await client.generateCard(request: request)
+    }
+
+    func testGatewayClientMapsUnauthorizedResponseToConfigurationMessage() async throws {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [CapturingURLProtocol.self]
+        let session = URLSession(configuration: configuration)
+        let endpoint = try XCTUnwrap(URL(string: "https://gateway.example/functions/v1/generate-card"))
+        let client = GatewayMessageWritingClient(
+            endpoint: endpoint,
+            session: session
+        )
+        let request = CardRequest(
+            intent: CardIntent(
+                occasion: .birthday,
+                relationship: .parent,
+                tone: .heartfelt
+            ),
+            requestedLane: .standard,
+            clientContext: ClientContext(appVersion: "0.0.0", buildNumber: "1")
+        )
+
+        CapturingURLProtocol.requestHandler = { _ in
+            let response = try XCTUnwrap(HTTPURLResponse(
+                url: endpoint,
+                statusCode: 401,
+                httpVersion: nil,
+                headerFields: ["Content-Type": "application/json"]
+            ))
+            return (response, Data("{}".utf8))
+        }
+        defer { CapturingURLProtocol.requestHandler = nil }
+
+        do {
+            _ = try await client.generateCard(request: request)
+            XCTFail("Expected unauthorized gateway response to fail.")
+        } catch GenerationError.unexpectedResponse(let message) {
+            XCTAssertEqual(message, "Message generation is not configured for this build.")
+        } catch {
+            XCTFail("Expected unexpectedResponse, got \(error).")
+        }
+    }
+
     func testRouterSendsStandardRequestsToStandardClient() async throws {
         let standardClient = RecordingMessageWritingClient(response: CardResponse(
             messages: [GeneratedMessage(id: "standard-1", text: "Standard draft.")],

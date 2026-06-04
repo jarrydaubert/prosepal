@@ -57,6 +57,11 @@
             value = "https://llolwgqphwnhbiqewmcq.supabase.co/functions/v1/generate-card"
             isEnabled = "YES">
          </EnvironmentVariable>
+         <EnvironmentVariable
+            key = "PROSEPAL_DEV_GATEWAY_SECRET"
+            value = ""
+            isEnabled = "NO">
+         </EnvironmentVariable>
       </EnvironmentVariables>
    </LaunchAction>
    <ProfileAction

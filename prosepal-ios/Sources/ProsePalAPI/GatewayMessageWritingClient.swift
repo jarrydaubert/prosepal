@@ -29,7 +29,8 @@ public struct GatewayMessageWritingClient: MessageWritingClient {
         GatewayDiagnosticsLogger.shared.requestStarted(
             requestID: requestID,
             lane: cardRequest.requestedLane,
-            endpointHost: endpoint.host
+            endpointHost: endpoint.host,
+            hasDevGatewaySecret: hasConfiguredDevGatewaySecret
         )
 
         var request = URLRequest(url: endpoint)
@@ -39,9 +40,8 @@ public struct GatewayMessageWritingClient: MessageWritingClient {
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         request.setValue(cardRequest.idempotencyKey, forHTTPHeaderField: "Idempotency-Key")
 
-        if let devGatewaySecret = devGatewaySecret?.trimmingCharacters(in: .whitespacesAndNewlines),
-           !devGatewaySecret.isEmpty {
-            request.setValue(devGatewaySecret, forHTTPHeaderField: "X-ProsePal-Dev-Gateway-Secret")
+        if let configuredDevGatewaySecret {
+            request.setValue(configuredDevGatewaySecret, forHTTPHeaderField: "X-ProsePal-Dev-Gateway-Secret")
         }
 
         do {
@@ -71,6 +71,16 @@ public struct GatewayMessageWritingClient: MessageWritingClient {
                     durationMs: startedAt.elapsedMilliseconds
                 )
                 return response
+            case 401:
+                GatewayDiagnosticsLogger.shared.requestFailed(
+                    requestID: requestID,
+                    statusCode: httpResponse.statusCode,
+                    category: "gateway_auth",
+                    durationMs: startedAt.elapsedMilliseconds
+                )
+                throw GenerationError.unexpectedResponse(
+                    message: "Message generation is not configured for this build."
+                )
             case 402, 403:
                 GatewayDiagnosticsLogger.shared.requestFailed(
                     requestID: requestID,
@@ -168,6 +178,16 @@ public struct GatewayMessageWritingClient: MessageWritingClient {
             )
         }
     }
+
+    private var configuredDevGatewaySecret: String? {
+        let trimmedSecret = devGatewaySecret?.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let trimmedSecret, !trimmedSecret.isEmpty else { return nil }
+        return trimmedSecret
+    }
+
+    private var hasConfiguredDevGatewaySecret: Bool {
+        configuredDevGatewaySecret != nil
+    }
 }
 
 private struct GatewayDiagnosticsLogger: Sendable {
@@ -175,9 +195,14 @@ private struct GatewayDiagnosticsLogger: Sendable {
 
     private let logger = Logger(subsystem: "com.prosepal.native", category: "gateway")
 
-    func requestStarted(requestID: String, lane: GenerationLane, endpointHost: String?) {
+    func requestStarted(
+        requestID: String,
+        lane: GenerationLane,
+        endpointHost: String?,
+        hasDevGatewaySecret: Bool
+    ) {
         logger.info(
-            "gateway_request_started request_id=\(requestID, privacy: .public) lane=\(lane.rawValue, privacy: .public) endpoint_host=\(endpointHost ?? "unknown", privacy: .public)"
+            "gateway_request_started request_id=\(requestID, privacy: .public) lane=\(lane.rawValue, privacy: .public) endpoint_host=\(endpointHost ?? "unknown", privacy: .public) dev_secret_configured=\(hasDevGatewaySecret, privacy: .public)"
         )
     }
 
