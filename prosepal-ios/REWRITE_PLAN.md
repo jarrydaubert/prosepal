@@ -63,6 +63,8 @@ Outcome:
   generation, account, and usage controls together.
 - The occasion picker prioritizes Most Used occasions while retaining the full
   searchable catalogue.
+- First-launch routing and lightweight onboarding are represented locally, with
+  returning launches entering the Create tab after completion.
 
 Validation:
 
@@ -73,6 +75,7 @@ Validation:
   persistence, update, and delete.
 - Usage-policy tests cover Premium lock behavior, displayed allowance
   consumption, limit blocking, and failed-generation non-consumption.
+- Launch-state tests cover onboarding completion persistence.
 - UI previews use only mock/template clients.
 
 Setup notes:

@@ -19,27 +19,36 @@ public final class ProsePalAppModel: ObservableObject {
     @Published var fallbackStatus: FallbackStatus = .none
     @Published var laneUsed: GenerationLane?
     @Published var usageStatus: UsageStatus
+    @Published var hasCompletedOnboarding: Bool
     @Published var selectedTab: AppTab = .compose
 
     public nonisolated static let defaultSavedMessagesKey = "prosepal.native.savedMessages.v1"
+    public nonisolated static let defaultOnboardingCompletionKey = "prosepal.native.onboardingCompleted.v1"
     private let client: MessageWritingClient
     private let clientContext: ClientContext
     private let savedMessagesStore: UserDefaults
     private let savedMessagesKey: String
+    private let onboardingStore: UserDefaults
+    private let onboardingCompletionKey: String
 
     public init(
         client: MessageWritingClient,
         clientContext: ClientContext,
         usageStatus: UsageStatus = UsageStatus(),
         savedMessagesStore: UserDefaults = .standard,
-        savedMessagesKey: String = ProsePalAppModel.defaultSavedMessagesKey
+        savedMessagesKey: String = ProsePalAppModel.defaultSavedMessagesKey,
+        onboardingStore: UserDefaults = .standard,
+        onboardingCompletionKey: String = ProsePalAppModel.defaultOnboardingCompletionKey
     ) {
         self.client = client
         self.clientContext = clientContext
         self.usageStatus = usageStatus
         self.savedMessagesStore = savedMessagesStore
         self.savedMessagesKey = savedMessagesKey
+        self.onboardingStore = onboardingStore
+        self.onboardingCompletionKey = onboardingCompletionKey
         self.savedMessages = Self.loadSavedMessages(from: savedMessagesStore, key: savedMessagesKey)
+        self.hasCompletedOnboarding = onboardingStore.bool(forKey: onboardingCompletionKey)
     }
 
     func generate() async {
@@ -90,6 +99,11 @@ public final class ProsePalAppModel: ObservableObject {
 
     func restorePurchasesPlaceholder() {
         showNotice("Restore is not connected yet", systemImage: "arrow.clockwise")
+    }
+
+    func completeOnboarding() {
+        hasCompletedOnboarding = true
+        onboardingStore.set(true, forKey: onboardingCompletionKey)
     }
 
     private func prepareForGeneration() -> Bool {
@@ -381,18 +395,12 @@ public struct ProsePalRootView: View {
     }
 
     public var body: some View {
-        TabView(selection: $model.selectedTab) {
-            ComposeView()
-                .tabItem { Label("Create", systemImage: "square.and.pencil") }
-                .tag(AppTab.compose)
-
-            SavedMessagesView()
-                .tabItem { Label("Saved", systemImage: "bookmark") }
-                .tag(AppTab.saved)
-
-            SettingsView()
-                .tabItem { Label("Settings", systemImage: "gearshape") }
-                .tag(AppTab.settings)
+        Group {
+            if model.hasCompletedOnboarding {
+                AppTabsView()
+            } else {
+                OnboardingView(onStart: model.completeOnboarding)
+            }
         }
         .tint(.indigo)
         .environmentObject(model)
@@ -413,6 +421,144 @@ public struct ProsePalRootView: View {
         }
         .animation(.spring(response: 0.34, dampingFraction: 0.86), value: model.notice?.id)
     }
+}
+
+struct AppTabsView: View {
+    @EnvironmentObject private var model: ProsePalAppModel
+
+    var body: some View {
+        TabView(selection: $model.selectedTab) {
+            ComposeView()
+                .tabItem { Label("Create", systemImage: "square.and.pencil") }
+                .tag(AppTab.compose)
+
+            SavedMessagesView()
+                .tabItem { Label("Saved", systemImage: "bookmark") }
+                .tag(AppTab.saved)
+
+            SettingsView()
+                .tabItem { Label("Settings", systemImage: "gearshape") }
+                .tag(AppTab.settings)
+        }
+    }
+}
+
+struct OnboardingView: View {
+    var onStart: () -> Void
+    @State private var selectedStep = 0
+
+    private let steps = OnboardingStep.all
+
+    var body: some View {
+        NavigationStack {
+            onboardingPages
+                .background(Color.prosePalGroupedBackground)
+                .navigationTitle("ProsePal")
+                .toolbar {
+                    ToolbarItem(placement: .primaryAction) {
+                        Button("Skip", action: onStart)
+                    }
+                }
+                .safeAreaInset(edge: .bottom) {
+                    VStack(spacing: 10) {
+                        Button {
+                            if selectedStep == steps.count - 1 {
+                                onStart()
+                            } else {
+                                withAnimation(.spring(response: 0.32, dampingFraction: 0.86)) {
+                                    selectedStep += 1
+                                }
+                            }
+                        } label: {
+                            Label(selectedStep == steps.count - 1 ? "Start writing" : "Continue", systemImage: "arrow.right")
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .controlSize(.large)
+
+                        Text("No account or subscription required to try Standard drafts.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                    }
+                    .padding(.horizontal, 22)
+                    .padding(.top, 12)
+                    .padding(.bottom, 10)
+                    .background(.ultraThinMaterial)
+                }
+        }
+    }
+
+    @ViewBuilder
+    private var onboardingPages: some View {
+        #if os(iOS)
+        onboardingPageContent
+            .tabViewStyle(.page(indexDisplayMode: .always))
+        #else
+        onboardingPageContent
+        #endif
+    }
+
+    private var onboardingPageContent: some View {
+        TabView(selection: $selectedStep) {
+            ForEach(Array(steps.enumerated()), id: \.element.id) { index, step in
+                onboardingPage(step)
+                    .tag(index)
+            }
+        }
+    }
+
+    private func onboardingPage(_ step: OnboardingStep) -> some View {
+        VStack(spacing: 22) {
+            Image(systemName: step.systemImage)
+                .font(.system(size: 52, weight: .semibold))
+                .foregroundStyle(.indigo)
+                .frame(width: 82, height: 82)
+                .background(.regularMaterial, in: Circle())
+
+            VStack(spacing: 10) {
+                Text(step.title)
+                    .font(.largeTitle.weight(.bold))
+                    .multilineTextAlignment(.center)
+                    .minimumScaleFactor(0.82)
+
+                Text(step.detail)
+                    .font(.body)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .lineSpacing(3)
+            }
+        }
+        .padding(.horizontal, 28)
+    }
+}
+
+private struct OnboardingStep: Identifiable {
+    let id: String
+    let title: String
+    let detail: String
+    let systemImage: String
+
+    static let all: [OnboardingStep] = [
+        OnboardingStep(
+            id: "real-moments",
+            title: "Write better messages for real moments",
+            detail: "Birthdays, thank-yous, apologies, sympathy, and the awkward ones too.",
+            systemImage: "heart.text.square"
+        ),
+        OnboardingStep(
+            id: "give-context",
+            title: "Give it the context",
+            detail: "Choose the occasion, relationship, tone, and details. ProsePal turns that into drafts you can edit.",
+            systemImage: "text.bubble"
+        ),
+        OnboardingStep(
+            id: "standard-premium",
+            title: "Start simple, unlock more later",
+            detail: "Standard drafts help you get started. Premium will add enhanced drafts and higher limits when subscriptions are connected.",
+            systemImage: "sparkles"
+        )
+    ]
 }
 
 struct ComposeView: View {

@@ -82,6 +82,8 @@ to the Flutter reference while keeping the iOS design direction:
   Privacy, Support, and Runtime.
 - The occasion picker leads with Most Used options and keeps the full catalogue
   in searchable grouped sections.
+- First launch now routes through a lightweight three-step onboarding flow that
+  can be skipped or completed locally before entering Create.
 
 ## Apple-Native Setup Notes
 
