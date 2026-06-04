@@ -55,6 +55,8 @@ Outcome:
 - Local data migration risks are documented before choosing same-bundle release.
 - Draft results and local saved-message flows are implemented as native list,
   detail, edit, copy, share, save, and delete surfaces.
+- Usage display, Premium selection, placeholder paywall, restore placeholder,
+  and retry/degraded actions are represented without real entitlement SDKs.
 
 Validation:
 
@@ -63,6 +65,8 @@ Validation:
   `CardIntent`.
 - Saved-message tests cover metadata capture, duplicate prevention, local
   persistence, update, and delete.
+- Usage-policy tests cover Premium lock behavior, displayed allowance
+  consumption, limit blocking, and failed-generation non-consumption.
 - UI previews use only mock/template clients.
 
 ## Phase 3: Auth And Entitlement Continuity

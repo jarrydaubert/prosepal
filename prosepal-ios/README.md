@@ -72,6 +72,10 @@ to the Flutter reference while keeping the iOS design direction:
 - Result cards support copy, share, edit, save, and context-menu actions.
 - Saved messages persist locally with occasion, relationship, tone, length,
   recipient, date, list search, detail view, edit, copy, share, and delete.
+- Standard usage is represented with a local placeholder state.
+- Premium selection opens a native placeholder sheet instead of importing a
+  subscription SDK.
+- Retry and degraded-generation states now have visible, user-safe actions.
 
 No RevenueCat, Supabase, Firebase, Sentry, analytics, or provider SDKs are
 included in this slice.

@@ -13,10 +13,12 @@ public final class ProsePalAppModel: ObservableObject {
     @Published var savedMessages: [SavedMessage] = []
     @Published var notice: AppNotice?
     @Published var isShowingResults = false
+    @Published var isShowingPaywall = false
     @Published var isGenerating = false
     @Published var errorMessage: String?
     @Published var fallbackStatus: FallbackStatus = .none
     @Published var laneUsed: GenerationLane?
+    @Published var usageStatus: UsageStatus
     @Published var selectedTab: AppTab = .compose
 
     public nonisolated static let defaultSavedMessagesKey = "prosepal.native.savedMessages.v1"
@@ -28,11 +30,13 @@ public final class ProsePalAppModel: ObservableObject {
     public init(
         client: MessageWritingClient,
         clientContext: ClientContext,
+        usageStatus: UsageStatus = UsageStatus(),
         savedMessagesStore: UserDefaults = .standard,
         savedMessagesKey: String = ProsePalAppModel.defaultSavedMessagesKey
     ) {
         self.client = client
         self.clientContext = clientContext
+        self.usageStatus = usageStatus
         self.savedMessagesStore = savedMessagesStore
         self.savedMessagesKey = savedMessagesKey
         self.savedMessages = Self.loadSavedMessages(from: savedMessagesStore, key: savedMessagesKey)
@@ -40,13 +44,15 @@ public final class ProsePalAppModel: ObservableObject {
 
     func generate() async {
         if isGenerating { return }
+        guard prepareForGeneration() else { return }
 
         isGenerating = true
         errorMessage = nil
+        let requestedLane = draft.requestedLane
 
         let request = CardRequest(
             intent: draft.intent,
-            requestedLane: draft.requestedLane,
+            requestedLane: requestedLane,
             clientContext: clientContext
         )
 
@@ -55,6 +61,7 @@ public final class ProsePalAppModel: ObservableObject {
             generatedMessages = response.messages
             fallbackStatus = response.fallbackStatus
             laneUsed = response.laneUsed
+            usageStatus.recordSuccessfulGeneration(requestedLane: requestedLane, laneUsed: response.laneUsed)
             isShowingResults = true
         } catch let error as GenerationError {
             errorMessage = error.userSafeMessage
@@ -63,6 +70,41 @@ public final class ProsePalAppModel: ObservableObject {
         }
 
         isGenerating = false
+    }
+
+    func selectLane(_ lane: GenerationLane) {
+        if usageStatus.isPremiumLocked(lane) {
+            isShowingPaywall = true
+            showNotice("Premium is locked", systemImage: "lock")
+            return
+        }
+
+        draft.requestedLane = lane
+    }
+
+    func useStandardLaneFromPaywall() {
+        draft.requestedLane = .standard
+        isShowingPaywall = false
+        showNotice("Standard selected", systemImage: "checkmark.circle.fill")
+    }
+
+    func restorePurchasesPlaceholder() {
+        showNotice("Restore is not connected yet", systemImage: "arrow.clockwise")
+    }
+
+    private func prepareForGeneration() -> Bool {
+        if usageStatus.isPremiumLocked(draft.requestedLane) {
+            isShowingPaywall = true
+            return false
+        }
+
+        if usageStatus.isStandardLimitReached(for: draft.requestedLane) {
+            errorMessage = "You've used your Standard drafts for today."
+            isShowingPaywall = true
+            return false
+        }
+
+        return true
     }
 
     @discardableResult
@@ -261,6 +303,70 @@ public struct AppNotice: Identifiable, Equatable, Sendable {
     }
 }
 
+public struct UsageStatus: Equatable, Sendable {
+    public var standardLimit: Int
+    public var standardRemaining: Int
+    public var isPremiumUnlocked: Bool
+    public var resetDescription: String
+
+    public init(
+        standardLimit: Int = 3,
+        standardRemaining: Int = 2,
+        isPremiumUnlocked: Bool = false,
+        resetDescription: String = "today"
+    ) {
+        self.standardLimit = max(0, standardLimit)
+        self.standardRemaining = max(0, min(standardRemaining, standardLimit))
+        self.isPremiumUnlocked = isPremiumUnlocked
+        self.resetDescription = resetDescription
+    }
+
+    public var usageText: String {
+        if isPremiumUnlocked {
+            return "Premium generation active"
+        }
+
+        return "\(standardRemaining) of \(standardLimit) Standard drafts left \(resetDescription)"
+    }
+
+    public var detailText: String {
+        if isPremiumUnlocked {
+            return "Enhanced drafts and higher limits are available."
+        }
+
+        if standardRemaining == 0 {
+            return "Premium will unlock enhanced drafts and higher limits."
+        }
+
+        return "Premium unlocks enhanced drafts and higher limits later."
+    }
+
+    public func isPremiumLocked(_ lane: GenerationLane) -> Bool {
+        lane == .premium && !isPremiumUnlocked
+    }
+
+    public func isStandardLimitReached(for lane: GenerationLane) -> Bool {
+        !isPremiumUnlocked && isStandardLike(lane) && standardRemaining <= 0
+    }
+
+    public mutating func recordSuccessfulGeneration(requestedLane: GenerationLane, laneUsed: GenerationLane) {
+        guard !isPremiumUnlocked, isStandardLike(requestedLane) || isStandardLike(laneUsed) else {
+            return
+        }
+
+        standardRemaining = max(0, standardRemaining - 1)
+    }
+
+    private func isStandardLike(_ lane: GenerationLane) -> Bool {
+        switch lane {
+        case .automatic, .standard, .template:
+            true
+        case .premium, .local:
+            false
+        }
+    }
+}
+
 enum AppTab: Hashable {
     case compose
     case saved
@@ -290,6 +396,13 @@ public struct ProsePalRootView: View {
         }
         .tint(.indigo)
         .environmentObject(model)
+        .sheet(isPresented: $model.isShowingPaywall) {
+            PaywallPlaceholderSheet(
+                usageStatus: model.usageStatus,
+                onUseStandard: model.useStandardLaneFromPaywall,
+                onRestore: model.restorePurchasesPlaceholder
+            )
+        }
         .overlay(alignment: .top) {
             if let notice = model.notice {
                 NoticeBanner(notice: notice)
@@ -475,17 +588,13 @@ struct ComposeView: View {
             }
             .pickerStyle(.segmented)
 
-            Picker("Lane", selection: $model.draft.requestedLane) {
-                Text("Auto").tag(GenerationLane.automatic)
-                Text("Standard").tag(GenerationLane.standard)
-                Text("Premium").tag(GenerationLane.premium)
-            }
-            .pickerStyle(.segmented)
+            GenerationModeSelector(
+                selectedLane: model.draft.requestedLane,
+                usageStatus: model.usageStatus,
+                onSelect: model.selectLane
+            )
 
-            Label("Standard drafts available. Premium unlocks enhanced drafts later.", systemImage: "gauge")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity, alignment: .leading)
+            UsageStatusRow(usageStatus: model.usageStatus)
         }
         .padding(16)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
@@ -525,11 +634,31 @@ struct ComposeView: View {
     private var generationControls: some View {
         VStack(alignment: .leading, spacing: 10) {
             if let errorMessage = model.errorMessage {
-                Label(errorMessage, systemImage: "exclamationmark.triangle")
-                    .font(.footnote)
-                    .foregroundStyle(.red)
-                    .padding(12)
-                    .background(Color.red.opacity(0.08), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                VStack(alignment: .leading, spacing: 10) {
+                    Label(errorMessage, systemImage: "exclamationmark.triangle")
+                        .font(.footnote)
+                        .foregroundStyle(.red)
+
+                    HStack {
+                        Button {
+                            Task { await model.generate() }
+                        } label: {
+                            Label("Try again", systemImage: "arrow.clockwise")
+                        }
+                        .disabled(model.isGenerating)
+
+                        if model.usageStatus.isStandardLimitReached(for: model.draft.requestedLane) {
+                            Button {
+                                model.isShowingPaywall = true
+                            } label: {
+                                Label("View Premium", systemImage: "star")
+                            }
+                        }
+                    }
+                    .font(.footnote.weight(.semibold))
+                }
+                .padding(12)
+                .background(Color.red.opacity(0.08), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
             }
         }
     }
@@ -640,6 +769,107 @@ struct OccasionPickerRow: View {
     }
 }
 
+struct GenerationModeSelector: View {
+    let selectedLane: GenerationLane
+    let usageStatus: UsageStatus
+    let onSelect: (GenerationLane) -> Void
+
+    private let lanes: [GenerationLane] = [.automatic, .standard, .premium]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Generation")
+                .font(.headline)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            HStack(spacing: 8) {
+                ForEach(lanes, id: \.rawValue) { lane in
+                    Button {
+                        onSelect(lane)
+                    } label: {
+                        VStack(spacing: 6) {
+                            Image(systemName: symbolName(for: lane))
+                                .font(.headline)
+                            Text(lane.displayName)
+                                .font(.caption.weight(.semibold))
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.8)
+                            Text(subtitle(for: lane))
+                                .font(.caption2)
+                                .foregroundStyle(lane == selectedLane ? .white.opacity(0.82) : .secondary)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.8)
+                        }
+                        .frame(maxWidth: .infinity, minHeight: 72)
+                        .padding(.horizontal, 8)
+                        .background(
+                            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                .fill(lane == selectedLane ? Color.indigo : Color.prosePalSecondaryGroupedBackground)
+                        )
+                        .foregroundStyle(lane == selectedLane ? .white : .primary)
+                        .overlay(alignment: .topTrailing) {
+                            if usageStatus.isPremiumLocked(lane) {
+                                Image(systemName: "lock.fill")
+                                    .font(.caption2.weight(.bold))
+                                    .foregroundStyle(lane == selectedLane ? .white : .secondary)
+                                    .padding(8)
+                            }
+                        }
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+    }
+
+    private func symbolName(for lane: GenerationLane) -> String {
+        switch lane {
+        case .automatic: "wand.and.stars"
+        case .standard: "sparkles"
+        case .premium: "star.fill"
+        case .local: "iphone"
+        case .template: "doc.text"
+        }
+    }
+
+    private func subtitle(for lane: GenerationLane) -> String {
+        switch lane {
+        case .automatic: "Choose"
+        case .standard: "Included"
+        case .premium:
+            usageStatus.isPremiumUnlocked ? "Active" : "Locked"
+        case .local: "On device"
+        case .template: "Fallback"
+        }
+    }
+}
+
+struct UsageStatusRow: View {
+    let usageStatus: UsageStatus
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: usageStatus.isPremiumUnlocked ? "checkmark.seal.fill" : "gauge")
+                .font(.callout.weight(.semibold))
+                .foregroundStyle(.indigo)
+                .frame(width: 24)
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(usageStatus.usageText)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.primary)
+                Text(usageStatus.detailText)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(12)
+        .background(Color.prosePalSecondaryGroupedBackground, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+    }
+}
+
 struct ResultsView: View {
     @EnvironmentObject private var model: ProsePalAppModel
     @Environment(\.dismiss) private var dismiss
@@ -702,12 +932,22 @@ struct ResultsView: View {
     @ViewBuilder
     private var generationStatus: some View {
         if model.fallbackStatus != .none {
-            Label("Simple draft used this time. You can retry shortly.", systemImage: "wand.and.stars.inverse")
-                .font(.footnote.weight(.medium))
-                .foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(12)
-                .background(Color.orange.opacity(0.12), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            VStack(alignment: .leading, spacing: 10) {
+                Label("Simple draft used this time. You can retry shortly.", systemImage: "wand.and.stars.inverse")
+                    .font(.footnote.weight(.medium))
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                Button {
+                    Task { await model.generate() }
+                } label: {
+                    Label("Retry generation", systemImage: "arrow.clockwise")
+                }
+                .font(.footnote.weight(.semibold))
+                .disabled(model.isGenerating)
+            }
+            .padding(12)
+            .background(Color.orange.opacity(0.12), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         } else if let lane = model.laneUsed {
             Label("\(lane.displayName) generation", systemImage: "checkmark.seal")
                 .font(.footnote.weight(.medium))
@@ -864,6 +1104,103 @@ struct DraftEditorSheet: View {
                 }
             }
         }
+    }
+}
+
+struct PaywallPlaceholderSheet: View {
+    let usageStatus: UsageStatus
+    let onUseStandard: () -> Void
+    let onRestore: () -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            VStack(alignment: .leading, spacing: 22) {
+                VStack(alignment: .leading, spacing: 10) {
+                    Image(systemName: "star.circle.fill")
+                        .font(.system(size: 50, weight: .semibold))
+                        .foregroundStyle(.indigo)
+
+                    Text("Premium generation")
+                        .font(.largeTitle.weight(.bold))
+                        .minimumScaleFactor(0.75)
+
+                    Text("Better drafts for harder moments, higher limits, and priority generation when it is available.")
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                }
+
+                VStack(spacing: 12) {
+                    PremiumFeatureRow(systemImage: "heart.text.square", title: "Enhanced drafts", detail: "More help for nuanced or sensitive messages.")
+                    PremiumFeatureRow(systemImage: "gauge", title: "Higher limits", detail: "More writing room once subscriptions are connected.")
+                    PremiumFeatureRow(systemImage: "arrow.clockwise.circle", title: "Regenerate more", detail: "Try another angle without losing your draft.")
+                }
+
+                UsageStatusRow(usageStatus: usageStatus)
+
+                Spacer(minLength: 0)
+
+                VStack(spacing: 10) {
+                    Button {
+                        onUseStandard()
+                        dismiss()
+                    } label: {
+                        Label("Use Standard", systemImage: "sparkles")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.large)
+
+                    Button {
+                        onRestore()
+                    } label: {
+                        Label("Restore purchases", systemImage: "arrow.clockwise")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.large)
+
+                    Button("Not now") {
+                        dismiss()
+                    }
+                    .font(.callout.weight(.semibold))
+                }
+            }
+            .padding(22)
+            .background(Color.prosePalGroupedBackground)
+            .navigationTitle("Premium")
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Close") { dismiss() }
+                }
+            }
+        }
+    }
+}
+
+struct PremiumFeatureRow: View {
+    let systemImage: String
+    let title: String
+    let detail: String
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: systemImage)
+                .font(.headline)
+                .foregroundStyle(.indigo)
+                .frame(width: 28)
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title)
+                    .font(.headline)
+                Text(detail)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(14)
+        .background(Color.prosePalSecondaryGroupedBackground, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 }
 
@@ -1057,16 +1394,41 @@ struct SettingsView: View {
                             Text(preference.displayName).tag(preference)
                         }
                     }
-                    Picker("Default Lane", selection: $model.draft.requestedLane) {
-                        Text("Auto").tag(GenerationLane.automatic)
-                        Text("Standard").tag(GenerationLane.standard)
-                        Text("Premium").tag(GenerationLane.premium)
+                    ForEach([GenerationLane.automatic, .standard, .premium], id: \.rawValue) { lane in
+                        Button {
+                            model.selectLane(lane)
+                        } label: {
+                            HStack {
+                                Label(lane.displayName, systemImage: lane == .premium ? "star" : "sparkles")
+                                Spacer()
+                                if model.draft.requestedLane == lane {
+                                    Image(systemName: "checkmark")
+                                        .foregroundStyle(.indigo)
+                                } else if model.usageStatus.isPremiumLocked(lane) {
+                                    Image(systemName: "lock.fill")
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                        }
                     }
                 }
 
                 Section("Account") {
                     Label("Sign in with Apple", systemImage: "apple.logo")
-                    Label("Subscription restore", systemImage: "arrow.clockwise")
+                    Button {
+                        model.isShowingPaywall = true
+                    } label: {
+                        Label("Subscription", systemImage: "star")
+                    }
+                    Button {
+                        model.restorePurchasesPlaceholder()
+                    } label: {
+                        Label("Restore purchases", systemImage: "arrow.clockwise")
+                    }
+                }
+
+                Section("Usage") {
+                    UsageStatusRow(usageStatus: model.usageStatus)
                 }
 
                 Section("Runtime") {
