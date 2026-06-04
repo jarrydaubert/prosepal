@@ -62,6 +62,7 @@ Authenticated mode is the default:
 Explicit local anonymous mode is available for native R&D:
 
 - `GATEWAY_DEV_ALLOW_ANONYMOUS=true`
+- optional `PROSEPAL_DEV_GATEWAY_SECRET`
 
 OpenAI-compatible dev-provider mode uses a full chat-completions style endpoint:
 
@@ -77,6 +78,11 @@ OpenAI-compatible dev-provider mode uses a full chat-completions style endpoint:
 
 `PROSEPAL_AI_PROVIDER_SLOT` is internal operational metadata only. Do not show
 provider or model names in user-facing app UI.
+
+When `PROSEPAL_DEV_GATEWAY_SECRET` is configured, anonymous dev requests must
+include the matching `X-ProsePal-Dev-Gateway-Secret` header. This is a staging
+guard only; production rollout still requires real auth, entitlement, abuse
+controls, and the gateway approval gates.
 
 ### Deploy changes
 
@@ -105,6 +111,119 @@ Run the handler tests:
 ```bash
 deno test --allow-env supabase/functions/generate-card/index.test.ts
 ```
+
+### Staging gateway runbook
+
+Staging project:
+
+- Project ref: `llolwgqphwnhbiqewmcq`
+- Function URL:
+  `https://llolwgqphwnhbiqewmcq.supabase.co/functions/v1/generate-card`
+- Deploy source worktree: `/private/tmp/prosepal-ios-native-worktree`
+
+Native iOS Xcode scheme environment variable:
+
+```text
+PROSEPAL_GATEWAY_URL=https://llolwgqphwnhbiqewmcq.supabase.co/functions/v1/generate-card
+```
+
+Optional staging guard Xcode scheme environment variable, required only when
+the matching Supabase secret is configured:
+
+```text
+PROSEPAL_DEV_GATEWAY_SECRET=<staging-only-secret>
+```
+
+Required Supabase secrets, names only:
+
+- `GATEWAY_DEV_ALLOW_ANONYMOUS`
+- optional `PROSEPAL_DEV_GATEWAY_SECRET`
+- `PROSEPAL_AI_PROVIDER`
+- `PROSEPAL_AI_PROVIDER_URL`
+- `PROSEPAL_AI_PROVIDER_API_KEY`
+- `PROSEPAL_AI_PROVIDER_MODEL`
+- optional `PROSEPAL_AI_PROVIDER_JSON_MODE`
+- optional `PROSEPAL_AI_PROVIDER_TIMEOUT_MS`
+- optional `PROSEPAL_AI_PROVIDER_MAX_TOKENS`
+- optional `PROSEPAL_AI_PROVIDER_TEMPERATURE`
+- optional `PROSEPAL_AI_PROVIDER_SLOT`
+
+`GATEWAY_DEV_ALLOW_ANONYMOUS=true` is for staging/native R&D only. Do not use
+anonymous generation for production rollout.
+
+Empty-body validation smoke:
+
+```bash
+curl -sS -X POST \
+  'https://llolwgqphwnhbiqewmcq.supabase.co/functions/v1/generate-card' \
+  -H 'Content-Type: application/json' \
+  -H 'X-ProsePal-Dev-Gateway-Secret: <staging-only-secret-if-configured>' \
+  -d '{}'
+```
+
+Expected shape:
+
+```json
+{
+  "error": "Card intent is required",
+  "user_safe_error": {
+    "code": "missing_intent",
+    "message": "Those message details could not be used. Try adjusting them."
+  }
+}
+```
+
+Synthetic generation smoke:
+
+```bash
+curl -sS -X POST \
+  'https://llolwgqphwnhbiqewmcq.supabase.co/functions/v1/generate-card' \
+  -H 'Content-Type: application/json' \
+  -H 'X-ProsePal-Dev-Gateway-Secret: <staging-only-secret-if-configured>' \
+  -d '{
+    "idempotency_key": "staging-smoke-001",
+    "requested_lane": "standard",
+    "prompt_contract_version": 1,
+    "output_contract_version": 1,
+    "client_context": {
+      "app_version": "0.1.0",
+      "build_number": "1",
+      "platform": "ios"
+    },
+    "intent": {
+      "occasion": "birthday",
+      "relationship": "parent",
+      "tone": "heartfelt",
+      "length": "brief",
+      "spelling_preference": "uk",
+      "locale_identifier": "en_GB",
+      "recipient_name": "Alex",
+      "things_to_include": ["a quiet cup of tea"],
+      "things_to_avoid": ["age jokes"],
+      "user_context": "Keep it warm and simple."
+    }
+  }'
+```
+
+Expected success shape:
+
+- HTTP `200`
+- `messages` has 3 generated message objects
+- `lane_used` is `standard`
+- `fallback_status` is `none`
+- `quality_check.passed` is `true`
+- `prompt_contract_version` is `1`
+- `output_contract_version` is `1`
+
+If `PROSEPAL_DEV_GATEWAY_SECRET` is configured and the request omits or sends a
+wrong `X-ProsePal-Dev-Gateway-Secret` header, the function returns HTTP `401`
+with `user_safe_error.code` set to `dev_gateway_secret_required`.
+
+Operator logs for `generate-card` include request id prefix, requested lane,
+contract versions, app version, platform, redacted user id, auth mode, provider
+slot, server-side model id, fallback status, and latency. They intentionally do
+not log raw user prompt/card content, generated message text, provider API keys,
+authorization tokens, or provider payloads.
 
 ## Email Setup
 

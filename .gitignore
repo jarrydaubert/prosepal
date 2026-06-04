@@ -8,6 +8,7 @@
 .build/
 .buildlog/
 DerivedData/
+**/xcuserdata/
 .history
 .svn/
 .swiftpm/
@@ -56,6 +57,9 @@ key.properties
 custom_lint.log
 .crashlytics/
 artifacts/
+
+# Supabase local CLI/link state
+supabase/.temp/
 
 # Golden test generated diffs (local diagnostics only)
 test/widgets/goldens/failures/

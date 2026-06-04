@@ -22,6 +22,7 @@ in this folder.
 The source of truth is:
 
 - `../docs/architecture/AI_GATEWAY_STRATEGY.md`
+- `ARCHITECTURE.md` for the native Standard/Premium AI client direction
 
 The SwiftUI client must depend on a ProsePal-owned message-writing capability:
 
@@ -64,6 +65,39 @@ Local anonymous gateway mode requires the function environment variable
 `GATEWAY_DEV_ALLOW_ANONYMOUS=true`. Authenticated mode will be the default once
 the native auth path is connected.
 
+Staging anonymous gateway traffic can be guarded with a shared development
+secret. When the Supabase function has `PROSEPAL_DEV_GATEWAY_SECRET` configured,
+set the same value in the Xcode scheme environment so the native client sends
+the `X-ProsePal-Dev-Gateway-Secret` header:
+
+```text
+PROSEPAL_DEV_GATEWAY_SECRET=<staging-only-secret>
+```
+
+Do not put provider keys, model names, or production secrets in the app target.
+
+## Native Diagnostics
+
+The native app uses local Apple `OSLog` diagnostics for tethered-device work.
+Filter Xcode Console or Console.app by subsystem:
+
+```text
+com.prosepal.native
+```
+
+Categories:
+
+- `flow`: launch, onboarding, tab changes, picker choices, generation lifecycle,
+  paywall boundaries, copy/share/edit/save/delete actions.
+- `gateway`: gateway request start, response status, lane used, fallback status,
+  message counts, total generated character count, and latency.
+
+These diagnostics intentionally do not log recipient names, personal details,
+raw prompt text, generated message text, authorization tokens, provider API
+keys, or provider payloads. Gateway operator logs may include the configured
+server-side model id for debugging, but model/provider names must stay out of
+the user-facing UI and client response contract.
+
 ## App Structure
 
 The checked-in native app is split into a small Xcode app target and Swift
@@ -71,8 +105,8 @@ package modules:
 
 - `ProsePal`: SwiftUI iOS app target in `ProsePal.xcodeproj`.
 - `ProsePalDomain`: provider-agnostic product and API contract models.
-- `ProsePalAPI`: message-writing client protocol, gateway client, and mock
-  client for tests/previews.
+- `ProsePalAPI`: message-writing client protocol, lane router, gateway client,
+  and mock client for tests/previews.
 - `ProsePalUI`: modern SwiftUI app surfaces that depend only on the
   `MessageWritingClient` contract.
 
@@ -87,16 +121,19 @@ to the Flutter reference while keeping the iOS design direction:
 - Message length uses the Flutter-aligned `Brief`, `Standard`, and `Detailed`
   naming and sentence guidance.
 - Spelling preference is represented as `Automatic`, `US English`, and
-  `UK English`.
-- The Create surface uses a compact selected occasion card, popular shortcuts,
-  and a searchable grouped occasion sheet instead of copying the Flutter
-  occasion grid.
+  `UK English`; it lives in Settings and silently shapes the gateway request.
+- The Create surface is recipient-first, then occasion-led, with one selected
+  occasion card and a searchable grouped occasion sheet instead of copying the
+  Flutter occasion grid.
+- Relationship and tone expose selected native summary rows on Create, with the
+  full Flutter option sets available in searchable native sheets rather than
+  oversized dropdowns or visible grids.
 - The compose form builds a structured `CardIntent` from occasion,
   relationship, tone, length, spelling, recipient, include, avoid, and context
   fields.
 - Runtime generation is gateway-only; tests and previews use mock responses
   rather than template generation.
-- Draft results are reached from the Create flow rather than as a permanent
+- Message results are reached from the Create flow rather than as a permanent
   major tab.
 - Result cards support copy, share, edit, save, and context-menu actions.
 - Saved messages persist locally with occasion, relationship, tone, length,
@@ -105,16 +142,18 @@ to the Flutter reference while keeping the iOS design direction:
 - Premium selection opens a native placeholder sheet instead of importing a
   subscription SDK.
 - Retry and degraded-generation states now have visible, user-safe actions.
-- The Create Generate action is keyboard-aware: the large bottom action hides
+- The Create Write Message action is keyboard-aware: the large bottom action hides
   while typing and a compact keyboard toolbar action remains available.
 - Settings now uses clearer grouped sections for Account, Writing, Generation,
-  Privacy, Support, and Runtime.
+  Privacy, Support, and About.
 - The occasion picker leads with Most Used options and keeps the full catalogue
   in searchable grouped sections.
 - First launch now routes through a lightweight three-step onboarding flow that
   can be skipped or completed locally before entering Create.
-- The native onboarding flow now reuses the Flutter reference logo and
-  onboarding artwork from Swift Package resources.
+- The native onboarding flow reuses the Flutter reference onboarding artwork
+  without placing the logo on onboarding screens.
+- The launch storyboard is intentionally plain navy with no logo or marketing
+  copy.
 - The native UI accent palette is aligned with the Flutter brand direction:
   navy backgrounds, coral primary actions, warm premium gold, and white-forward
   onboarding typography.
@@ -134,11 +173,14 @@ without changing production Flutter files:
 - `App/Assets.xcassets/LaunchLogo.imageset`
 - `App/LaunchScreen.storyboard`
 
+The logo and launch-logo assets are retained for brand continuity, but the
+current launch screen and onboarding screens deliberately do not display a logo.
+
 The current palette source is the Flutter reference in
 `../lib/shared/theme/app_colors.dart`. Native tokens are mirrored in
 `ProsePalRootView.swift` for this first slice. The app target now uses the
-Flutter iOS AppIcon set and a native launch storyboard with a navy background
-and centered ProsePal icon.
+Flutter iOS AppIcon set and a native launch storyboard with a plain navy
+background.
 
 ## Apple-Native Setup Notes
 

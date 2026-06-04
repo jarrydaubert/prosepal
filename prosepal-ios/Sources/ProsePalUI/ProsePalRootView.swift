@@ -32,6 +32,7 @@ public final class ProsePalAppModel: ObservableObject {
     private let savedMessagesKey: String
     private let onboardingStore: UserDefaults
     private let onboardingCompletionKey: String
+    private let diagnostics: NativeDiagnosticsLogger
 
     public init(
         client: MessageWritingClient,
@@ -40,7 +41,8 @@ public final class ProsePalAppModel: ObservableObject {
         savedMessagesStore: UserDefaults = .standard,
         savedMessagesKey: String = ProsePalAppModel.defaultSavedMessagesKey,
         onboardingStore: UserDefaults = .standard,
-        onboardingCompletionKey: String = ProsePalAppModel.defaultOnboardingCompletionKey
+        onboardingCompletionKey: String = ProsePalAppModel.defaultOnboardingCompletionKey,
+        diagnostics: NativeDiagnosticsLogger = .shared
     ) {
         self.client = client
         self.clientContext = clientContext
@@ -49,8 +51,13 @@ public final class ProsePalAppModel: ObservableObject {
         self.savedMessagesKey = savedMessagesKey
         self.onboardingStore = onboardingStore
         self.onboardingCompletionKey = onboardingCompletionKey
+        self.diagnostics = diagnostics
         self.savedMessages = Self.loadSavedMessages(from: savedMessagesStore, key: savedMessagesKey)
         self.hasCompletedOnboarding = onboardingStore.bool(forKey: onboardingCompletionKey)
+        diagnostics.appStarted(
+            hasCompletedOnboarding: self.hasCompletedOnboarding,
+            savedMessageCount: self.savedMessages.count
+        )
     }
 
     func generate() async {
@@ -60,12 +67,14 @@ public final class ProsePalAppModel: ObservableObject {
         isGenerating = true
         errorMessage = nil
         let requestedLane = draft.requestedLane
+        let startedAt = Date()
 
         let request = CardRequest(
             intent: draft.intent,
             requestedLane: requestedLane,
             clientContext: clientContext
         )
+        diagnostics.generationStarted(requestID: request.idempotencyKey, draft: draft)
 
         do {
             let response = try await client.generateCard(request: request)
@@ -73,10 +82,28 @@ public final class ProsePalAppModel: ObservableObject {
             fallbackStatus = response.fallbackStatus
             laneUsed = response.laneUsed
             usageStatus.recordSuccessfulGeneration(requestedLane: requestedLane, laneUsed: response.laneUsed)
+            diagnostics.generationSucceeded(
+                requestID: request.idempotencyKey,
+                laneUsed: response.laneUsed,
+                fallbackStatus: response.fallbackStatus,
+                messageCount: response.messages.count,
+                totalMessageCharacters: response.messages.reduce(0) { $0 + $1.text.count },
+                durationMs: startedAt.elapsedMilliseconds
+            )
             isShowingResults = true
         } catch let error as GenerationError {
+            diagnostics.generationFailed(
+                requestID: request.idempotencyKey,
+                category: error.diagnosticsCategory,
+                durationMs: startedAt.elapsedMilliseconds
+            )
             errorMessage = error.userSafeMessage
         } catch {
+            diagnostics.generationFailed(
+                requestID: request.idempotencyKey,
+                category: "unexpected_error",
+                durationMs: startedAt.elapsedMilliseconds
+            )
             errorMessage = "Message generation failed. Please try again."
         }
 
@@ -85,37 +112,56 @@ public final class ProsePalAppModel: ObservableObject {
 
     func selectLane(_ lane: GenerationLane) {
         if usageStatus.isPremiumLocked(lane) {
+            diagnostics.paywallShown(
+                trigger: "premium_lane_selected",
+                requestedLane: lane,
+                standardRemaining: usageStatus.standardRemaining
+            )
             isShowingPaywall = true
             showNotice("Premium is locked", systemImage: "lock")
             return
         }
 
         draft.requestedLane = lane
+        diagnostics.selectionChanged(kind: "generation_lane", value: lane.rawValue)
     }
 
     func useStandardLaneFromPaywall() {
         draft.requestedLane = .standard
         isShowingPaywall = false
+        diagnostics.selectionChanged(kind: "generation_lane", value: GenerationLane.standard.rawValue)
         showNotice("Standard selected", systemImage: "checkmark.circle.fill")
     }
 
     func restorePurchasesPlaceholder() {
-        showNotice("Restore is not connected yet", systemImage: "arrow.clockwise")
+        diagnostics.messageAction("restore_purchases", source: "settings_or_paywall", messageCharacters: 0)
+        showNotice("Nothing to restore yet", systemImage: "arrow.clockwise")
     }
 
     func completeOnboarding() {
         hasCompletedOnboarding = true
         onboardingStore.set(true, forKey: onboardingCompletionKey)
+        diagnostics.onboardingCompleted()
     }
 
     private func prepareForGeneration() -> Bool {
         if usageStatus.isPremiumLocked(draft.requestedLane) {
+            diagnostics.paywallShown(
+                trigger: "premium_lane_generate",
+                requestedLane: draft.requestedLane,
+                standardRemaining: usageStatus.standardRemaining
+            )
             isShowingPaywall = true
             return false
         }
 
         if usageStatus.isStandardLimitReached(for: draft.requestedLane) {
             errorMessage = "You've used your Standard drafts for today."
+            diagnostics.paywallShown(
+                trigger: "standard_limit_reached",
+                requestedLane: draft.requestedLane,
+                standardRemaining: usageStatus.standardRemaining
+            )
             isShowingPaywall = true
             return false
         }
@@ -154,6 +200,7 @@ public final class ProsePalAppModel: ObservableObject {
             at: 0
         )
         persistSavedMessages()
+        diagnostics.messageAction("save", source: "generated_or_editor", messageCharacters: trimmedText.count)
         showNotice("Saved", systemImage: "bookmark.fill")
         playSuccessFeedback()
         return true
@@ -179,6 +226,7 @@ public final class ProsePalAppModel: ObservableObject {
 
         savedMessages[index].text = trimmedText
         persistSavedMessages()
+        diagnostics.messageAction("update_saved", source: "saved_editor", messageCharacters: trimmedText.count)
         showNotice("Updated", systemImage: "checkmark.circle.fill")
         playSuccessFeedback()
         return true
@@ -187,13 +235,18 @@ public final class ProsePalAppModel: ObservableObject {
     func deleteSaved(_ message: SavedMessage) {
         savedMessages.removeAll { $0.id == message.id }
         persistSavedMessages()
+        diagnostics.messageAction("delete_saved", source: "saved_detail", messageCharacters: message.text.count)
         showNotice("Deleted", systemImage: "trash")
     }
 
     func deleteSaved(at offsets: IndexSet) {
+        let deletedCharacterCount = offsets.reduce(0) { total, offset in
+            total + savedMessages[offset].text.count
+        }
         let ids = Set(offsets.map { savedMessages[$0].id })
         savedMessages.removeAll { ids.contains($0.id) }
         persistSavedMessages()
+        diagnostics.messageAction("delete_saved", source: "saved_list", messageCharacters: deletedCharacterCount)
         showNotice("Deleted", systemImage: "trash")
     }
 
@@ -202,9 +255,42 @@ public final class ProsePalAppModel: ObservableObject {
     }
 
     func copyText(_ text: String) {
+        diagnostics.messageAction("copy", source: "message", messageCharacters: text.count)
         copyToPasteboard(text)
         showNotice("Copied", systemImage: "doc.on.doc")
         playSelectionFeedback()
+    }
+
+    func logTabSelected(_ tab: AppTab) {
+        diagnostics.tabSelected(tab.rawValue)
+    }
+
+    func logComposeFieldFocused(_ field: ComposeField?) {
+        diagnostics.composeFieldFocused(field?.rawValue)
+    }
+
+    func logOccasionPickerOpened() {
+        diagnostics.pickerOpened("occasion")
+    }
+
+    func logSelectionChanged(kind: String, value: String) {
+        diagnostics.selectionChanged(kind: kind, value: value)
+    }
+
+    func logPaywallOpened(trigger: String) {
+        diagnostics.paywallShown(
+            trigger: trigger,
+            requestedLane: draft.requestedLane,
+            standardRemaining: usageStatus.standardRemaining
+        )
+    }
+
+    func logEditStarted(_ text: String, source: String) {
+        diagnostics.messageAction("edit_started", source: source, messageCharacters: text.count)
+    }
+
+    func logShareText(_ text: String, source: String) {
+        diagnostics.messageAction("share", source: source, messageCharacters: text.count)
     }
 
     func showNotice(_ title: String, systemImage: String) {
@@ -243,7 +329,7 @@ public struct MessageDraft: Equatable, Sendable {
     public var tone: Tone = .heartfelt
     public var length: MessageLength = .standard
     public var spellingPreference: SpellingPreference = .automatic
-    public var requestedLane: GenerationLane = .automatic
+    public var requestedLane: GenerationLane = .standard
     public var recipientName = ""
     public var thingsToInclude = ""
     public var thingsToAvoid = ""
@@ -354,7 +440,7 @@ public struct UsageStatus: Equatable, Sendable {
             return "Premium will unlock enhanced drafts and higher limits."
         }
 
-        return "Premium unlocks enhanced drafts and higher limits later."
+        return "Premium unlocks enhanced drafts and higher limits."
     }
 
     public func isPremiumLocked(_ lane: GenerationLane) -> Bool {
@@ -383,7 +469,7 @@ public struct UsageStatus: Equatable, Sendable {
     }
 }
 
-enum AppTab: Hashable {
+enum AppTab: String, Hashable {
     case compose
     case saved
     case settings
@@ -412,6 +498,8 @@ public struct ProsePalRootView: View {
                 onUseStandard: model.useStandardLaneFromPaywall,
                 onRestore: model.restorePurchasesPlaceholder
             )
+            .presentationDetents([.medium, .large])
+            .presentationDragIndicator(.visible)
         }
         .overlay(alignment: .top) {
             if let notice = model.notice {
@@ -421,7 +509,14 @@ public struct ProsePalRootView: View {
                     .transition(.move(edge: .top).combined(with: .opacity))
             }
         }
+        .overlay {
+            if model.isGenerating {
+                WritingProgressOverlay()
+                    .transition(.opacity)
+            }
+        }
         .animation(.spring(response: 0.34, dampingFraction: 0.86), value: model.notice?.id)
+        .animation(.easeInOut(duration: 0.18), value: model.isGenerating)
     }
 }
 
@@ -441,6 +536,9 @@ struct AppTabsView: View {
             SettingsView()
                 .tabItem { Label("Settings", systemImage: "gearshape") }
                 .tag(AppTab.settings)
+        }
+        .onChange(of: model.selectedTab) { _, tab in
+            model.logTabSelected(tab)
         }
     }
 }
@@ -482,7 +580,7 @@ struct OnboardingView: View {
                         .buttonStyle(.borderedProminent)
                         .controlSize(.large)
 
-                        Text("No account or subscription required to try Standard drafts.")
+                        Text("No account required to try Standard drafts.")
                             .font(.caption)
                             .foregroundStyle(Color.prosePalTextSecondary)
                             .multilineTextAlignment(.center)
@@ -516,40 +614,39 @@ struct OnboardingView: View {
     }
 
     private func onboardingPage(_ step: OnboardingStep) -> some View {
-        VStack(spacing: 24) {
-            VStack(spacing: 14) {
-                PackageResourceImage(name: "logo")
-                    .scaledToFit()
-                    .frame(width: 68, height: 68)
-                    .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-                    .shadow(color: Color.prosePalCoral.opacity(0.28), radius: 18, x: 0, y: 8)
+        ScrollView {
+            VStack(spacing: 24) {
+                VStack(spacing: 14) {
+                    PackageResourceImage(name: step.imageName)
+                        .scaledToFit()
+                        .frame(maxWidth: 292, maxHeight: 360)
+                        .clipShape(RoundedRectangle(cornerRadius: 30, style: .continuous))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 30, style: .continuous)
+                                .strokeBorder(Color.white.opacity(0.20), lineWidth: 1)
+                        }
+                        .shadow(color: .black.opacity(0.22), radius: 26, x: 0, y: 14)
+                }
 
-                PackageResourceImage(name: step.imageName)
-                    .scaledToFit()
-                    .frame(maxWidth: 292)
-                    .clipShape(RoundedRectangle(cornerRadius: 30, style: .continuous))
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 30, style: .continuous)
-                            .strokeBorder(Color.white.opacity(0.20), lineWidth: 1)
-                    }
-                    .shadow(color: .black.opacity(0.22), radius: 26, x: 0, y: 14)
+                VStack(spacing: 10) {
+                    Text(step.title)
+                        .font(.largeTitle.weight(.bold))
+                        .foregroundStyle(.white)
+                        .multilineTextAlignment(.center)
+                        .minimumScaleFactor(0.82)
+
+                    Text(step.detail)
+                        .font(.body)
+                        .foregroundStyle(Color.prosePalTextSecondary)
+                        .multilineTextAlignment(.center)
+                        .lineSpacing(3)
+                }
             }
-
-            VStack(spacing: 10) {
-                Text(step.title)
-                    .font(.largeTitle.weight(.bold))
-                    .foregroundStyle(.white)
-                    .multilineTextAlignment(.center)
-                    .minimumScaleFactor(0.82)
-
-                Text(step.detail)
-                    .font(.body)
-                    .foregroundStyle(Color.prosePalTextSecondary)
-                    .multilineTextAlignment(.center)
-                    .lineSpacing(3)
-            }
+            .frame(maxWidth: .infinity)
+            .padding(.horizontal, 28)
+            .padding(.top, 18)
+            .padding(.bottom, 118)
         }
-        .padding(.horizontal, 28)
     }
 }
 
@@ -578,20 +675,20 @@ private struct OnboardingStep: Identifiable {
     static let all: [OnboardingStep] = [
         OnboardingStep(
             id: "real-moments",
-            title: "The Right Words, Right Now",
-            detail: "Stop staring at blank cards. Start with thoughtful drafts for birthdays, thank-yous, apologies, sympathy, and more.",
+            title: "Find the right words",
+            detail: "For cards, texts, notes, and the moments where a blank box feels bigger than it should.",
             imageName: "slide_1"
         ),
         OnboardingStep(
             id: "give-context",
-            title: "Pick. Tap. Done.",
-            detail: "Choose the occasion, relationship, tone, and a few personal details. ProsePal turns that into drafts you can edit.",
+            title: "Add the human details",
+            detail: "Say who it is for, what the moment is, how close you are, and how it should feel.",
             imageName: "slide_2"
         ),
         OnboardingStep(
             id: "standard-premium",
-            title: "Try It Free",
-            detail: "Start with Standard drafts. Premium unlocks enhanced generation and higher limits when subscriptions are connected.",
+            title: "Start simple",
+            detail: "Standard helps with everyday messages. Premium is there for harder moments and higher limits.",
             imageName: "slide_3"
         )
     ]
@@ -601,61 +698,98 @@ struct ComposeView: View {
     @EnvironmentObject private var model: ProsePalAppModel
     @FocusState private var focusedField: ComposeField?
     @State private var isShowingOccasionPicker = false
+    @State private var isShowingRelationshipPicker = false
+    @State private var isShowingTonePicker = false
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 22) {
                     intentHeader
-                    occasionSelector
                     recipientFields
-                    styleControls
+                    occasionSelector
+                    relationshipSection
+                    toneSection
                     detailFields
+                    styleControls
                     generationControls
                 }
                 .padding(.horizontal, 20)
-                .padding(.vertical, 18)
+                .padding(.top, 18)
+                .padding(.bottom, focusedField == nil ? 118 : 34)
             }
             .background(Color.prosePalGroupedBackground)
             .scrollDismissesKeyboard(.interactively)
-            .navigationTitle("What are you writing?")
+            .navigationTitle("Create")
             .toolbar {
                 ToolbarItemGroup(placement: .keyboard) {
                     Button {
                         focusedField = nil
                         Task { await model.generate() }
                     } label: {
-                        Label("Generate", systemImage: "sparkles")
+                        Text(model.isGenerating ? "Writing" : "Write")
+                            .fontWeight(.semibold)
                     }
                     .disabled(model.isGenerating)
 
-                    Spacer()
+                    Spacer(minLength: 16)
 
                     Button("Done") { focusedField = nil }
                 }
             }
-            .safeAreaInset(edge: .bottom) {
+            .safeAreaInset(edge: .bottom, spacing: 0) {
                 if focusedField == nil {
                     generateButton
                 }
             }
             .sheet(isPresented: $isShowingOccasionPicker) {
                 OccasionPickerSheet(selection: $model.draft.occasion)
+                    .presentationDetents([.medium, .large])
+                    .presentationDragIndicator(.visible)
+            }
+            .sheet(isPresented: $isShowingRelationshipPicker) {
+                RelationshipPickerSheet(selection: $model.draft.relationship)
+                    .presentationDetents([.medium, .large])
+                    .presentationDragIndicator(.visible)
+            }
+            .sheet(isPresented: $isShowingTonePicker) {
+                TonePickerSheet(selection: $model.draft.tone)
+                    .presentationDetents([.medium, .large])
+                    .presentationDragIndicator(.visible)
             }
             .navigationDestination(isPresented: $model.isShowingResults) {
                 ResultsView()
+            }
+            .onChange(of: focusedField) { _, field in
+                model.logComposeFieldFocused(field)
+            }
+            .onChange(of: model.draft.occasion) { _, occasion in
+                model.logSelectionChanged(kind: "occasion", value: occasion.rawValue)
+            }
+            .onChange(of: model.draft.relationship) { _, relationship in
+                model.logSelectionChanged(kind: "relationship", value: relationship.rawValue)
+            }
+            .onChange(of: model.draft.tone) { _, tone in
+                model.logSelectionChanged(kind: "tone", value: tone.rawValue)
+            }
+            .onChange(of: model.draft.length) { _, length in
+                model.logSelectionChanged(kind: "length", value: length.rawValue)
             }
         }
     }
 
     private var intentHeader: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Label(model.draft.occasion.displayName, systemImage: model.draft.occasion.symbolName)
+            Text("Find the right words")
                 .font(.system(.title, design: .rounded, weight: .bold))
                 .foregroundStyle(.primary)
-            Text(summaryText)
+            Text("For a card, text, note, or the message you have not quite found yet.")
                 .font(.callout)
                 .foregroundStyle(.secondary)
+            Text(summaryText)
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(Color.prosePalCoral)
+                .padding(.top, 2)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(18)
@@ -674,23 +808,29 @@ struct ComposeView: View {
     }
 
     private var summaryText: String {
-        let recipient = model.draft.recipientName.nilIfBlank ?? "someone"
-        return "\(model.draft.tone.displayName) \(model.draft.length.displayName.lowercased()) note for \(recipient)"
+        let length = model.draft.length == .standard ? "" : "\(model.draft.length.displayName.lowercased()) "
+        let base = "\(model.draft.tone.displayName) \(length)message"
+        guard let recipient = model.draft.recipientName.nilIfBlank else {
+            return base
+        }
+        return "\(base) for \(recipient)"
     }
 
     private var occasionSelector: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text("Occasion")
+                Text("What is the occasion?")
                     .font(.headline)
                 Spacer()
                 Button("Browse") {
+                    model.logOccasionPickerOpened()
                     isShowingOccasionPicker = true
                 }
                 .font(.callout.weight(.semibold))
             }
 
             Button {
+                model.logOccasionPickerOpened()
                 isShowingOccasionPicker = true
             } label: {
                 HStack(spacing: 12) {
@@ -715,64 +855,50 @@ struct ComposeView: View {
                 .background(Color.prosePalSecondaryGroupedBackground, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
             }
             .buttonStyle(.plain)
-
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 10) {
-                    ForEach(Occasion.featuredCases) { occasion in
-                        Button {
-                            model.draft.occasion = occasion
-                        } label: {
-                            let isSelected = model.draft.occasion == occasion
-                            Label(occasion.displayName, systemImage: occasion.symbolName)
-                                .font(.callout.weight(.semibold))
-                                .labelStyle(.titleAndIcon)
-                                .padding(.horizontal, 14)
-                                .padding(.vertical, 10)
-                                .background(
-                                    Capsule(style: .continuous)
-                                        .fill(isSelected ? Color.prosePalCoral : Color.prosePalSecondaryGroupedBackground)
-                                )
-                                .foregroundStyle(isSelected ? .white : .primary)
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-                .padding(.vertical, 2)
-            }
         }
     }
 
     private var recipientFields: some View {
         ModernPanel {
-            TextField("Recipient", text: $model.draft.recipientName)
-                .focused($focusedField, equals: ComposeField.recipient)
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Who is it for?")
+                    .font(.headline)
+                TextField("Name or person", text: $model.draft.recipientName, prompt: Text("Alex, Mum, my manager"))
+                    .focused($focusedField, equals: ComposeField.recipient)
+            }
+        }
+    }
 
-            Divider()
+    private var relationshipSection: some View {
+        ModernPanel {
+            SelectionSummaryButton(
+                title: "Who are they to you?",
+                value: model.draft.relationship.displayName,
+                detail: model.draft.relationship.pickerDescription,
+                systemImage: model.draft.relationship.symbolName
+            ) {
+                isShowingRelationshipPicker = true
+            }
+        }
+    }
 
-            Picker("Relationship", selection: $model.draft.relationship) {
-                ForEach(Relationship.allCases) { relationship in
-                    Label(relationship.displayName, systemImage: relationship.symbolName)
-                        .tag(relationship)
-                }
+    private var toneSection: some View {
+        ModernPanel {
+            SelectionSummaryButton(
+                title: "How should it feel?",
+                value: model.draft.tone.displayName,
+                detail: model.draft.tone.description,
+                systemImage: model.draft.tone.symbolName
+            ) {
+                isShowingTonePicker = true
             }
         }
     }
 
     private var styleControls: some View {
-        VStack(spacing: 14) {
-            Picker("Tone", selection: $model.draft.tone) {
-                ForEach(Tone.allCases) { tone in
-                    Label(tone.displayName, systemImage: tone.symbolName)
-                        .tag(tone)
-                }
-            }
-            .pickerStyle(.menu)
-            .frame(maxWidth: .infinity, alignment: .leading)
-
-            Text(model.draft.tone.description)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity, alignment: .leading)
+        VStack(alignment: .leading, spacing: 14) {
+            Text("Length")
+                .font(.headline)
 
             Picker("Length", selection: $model.draft.length) {
                 ForEach(MessageLength.allCases) { length in
@@ -795,30 +921,22 @@ struct ComposeView: View {
 
     private var detailFields: some View {
         VStack(alignment: .leading, spacing: 14) {
-            TextField("Include", text: $model.draft.thingsToInclude, prompt: Text("quiet cup of tea, old photos"))
+            Text("Personal touches")
+                .font(.headline)
+
+            TextField("Anything to include?", text: $model.draft.thingsToInclude, prompt: Text("quiet cup of tea, old photos"))
                 .focused($focusedField, equals: .include)
 
             Divider()
 
-            TextField("Avoid", text: $model.draft.thingsToAvoid, prompt: Text("inside jokes, formal wording"))
+            TextField("Anything to avoid?", text: $model.draft.thingsToAvoid, prompt: Text("age jokes, formal wording"))
                 .focused($focusedField, equals: .avoid)
 
             Divider()
 
-            TextField("Context", text: $model.draft.personalContext, axis: .vertical)
+            TextField("Extra context", text: $model.draft.personalContext, axis: .vertical)
                 .lineLimit(3...6)
                 .focused($focusedField, equals: .context)
-
-            Picker("Spelling", selection: $model.draft.spellingPreference) {
-                ForEach(SpellingPreference.allCases) { preference in
-                    Text(preference.displayName).tag(preference)
-                }
-            }
-            .pickerStyle(.segmented)
-
-            Text(model.draft.spellingPreference.exampleText)
-                .font(.caption)
-                .foregroundStyle(.secondary)
         }
         .padding(16)
         .background(Color.prosePalSecondaryGroupedBackground, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
@@ -842,6 +960,7 @@ struct ComposeView: View {
 
                         if model.usageStatus.isStandardLimitReached(for: model.draft.requestedLane) {
                             Button {
+                                model.logPaywallOpened(trigger: "create_error_view_premium")
                                 model.isShowingPaywall = true
                             } label: {
                                 Label("View Premium", systemImage: "star")
@@ -865,7 +984,7 @@ struct ComposeView: View {
                     ProgressView()
                         .tint(.white)
                 }
-                Text(model.isGenerating ? "Writing" : "Generate")
+                Text(model.isGenerating ? "Writing" : "Write message")
                     .font(.headline)
             }
             .frame(maxWidth: .infinity)
@@ -876,7 +995,53 @@ struct ComposeView: View {
         .padding(.horizontal, 20)
         .padding(.top, 10)
         .padding(.bottom, 12)
-        .background(.ultraThinMaterial)
+        .background(Color.prosePalGroupedBackground)
+        .overlay(alignment: .top) {
+            Divider()
+        }
+    }
+}
+
+private struct SelectionSummaryButton: View {
+    let title: String
+    let value: String
+    let detail: String
+    let systemImage: String
+    var action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 12) {
+                Image(systemName: systemImage)
+                    .font(.headline)
+                    .foregroundStyle(Color.prosePalCoral)
+                    .frame(width: 28, height: 28)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    Text(value)
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.86)
+                    Text(detail)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                }
+
+                Spacer(minLength: 8)
+
+                Image(systemName: "chevron.up.chevron.down")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("\(title), \(value)")
     }
 }
 
@@ -970,7 +1135,7 @@ struct OccasionPickerRow: View {
                 Text(occasion.displayName)
                     .font(.body.weight(.medium))
                     .foregroundStyle(.primary)
-                Text(occasion.generationHint)
+                Text(occasion.pickerDescription)
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .lineLimit(2)
@@ -988,56 +1153,290 @@ struct OccasionPickerRow: View {
     }
 }
 
+private extension Occasion {
+    var pickerDescription: String {
+        switch self {
+        case .birthday: "Birthday wishes for their day."
+        case .thankYou: "A thoughtful note of thanks."
+        case .sympathy: "Warm support and condolences."
+        case .wedding: "Wishes for a couple's big day."
+        case .christmas: "Warm festive wishes."
+        case .getWell: "Encouragement while they recover."
+        case .congrats: "Celebrate a win or achievement."
+        case .mothersDay: "Appreciation for Mother's Day."
+        case .fathersDay: "Appreciation for Father's Day."
+        case .baby: "Welcome a new baby."
+        case .graduation: "Celebrate graduation."
+        case .anniversary: "Mark a special anniversary."
+        case .valentinesDay: "A romantic or affectionate note."
+        case .thinkingOfYou: "Let someone know you care."
+        case .newYear: "Good wishes for the year ahead."
+        case .engagement: "Celebrate an engagement."
+        case .kidsBirthday: "A fun birthday note for a child."
+        case .justBecause: "A warm note for no special reason."
+        case .housewarming: "Congratulate someone on a new home."
+        case .retirement: "Celebrate a new chapter."
+        case .newJob: "Wish them well in a new role."
+        case .encouragement: "Support them through a challenge."
+        case .easter: "Spring and Easter wishes."
+        case .thanksgiving: "Gratitude and holiday warmth."
+        case .halloween: "A playful Halloween greeting."
+        case .apology: "Say sorry with care."
+        case .farewell: "A goodbye or leaving message."
+        case .goodLuck: "Wish them luck for what's next."
+        case .promotion: "Celebrate a promotion."
+        case .thankYouTeacher: "Thank a teacher."
+        case .thankYouHealthcare: "Thank someone for care."
+        case .thankYouService: "Thank someone for service."
+        case .hanukkah: "Warm Hanukkah wishes."
+        case .diwali: "Bright Diwali wishes."
+        case .eid: "Warm Eid wishes."
+        case .lunarNewYear: "Lunar New Year wishes."
+        case .kwanzaa: "Warm Kwanzaa wishes."
+        case .petBirthday: "Celebrate a beloved pet."
+        case .newPet: "Welcome a new pet."
+        case .petSympathy: "Comfort after pet loss."
+        }
+    }
+}
+
+struct RelationshipPickerSheet: View {
+    @Binding var selection: Relationship
+    @Environment(\.dismiss) private var dismiss
+    @State private var searchText = ""
+
+    var body: some View {
+        NavigationStack {
+            List {
+                if !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                   !hasSearchResults {
+                    ContentUnavailableView.search(text: searchText)
+                }
+
+                ForEach(RelationshipGroup.allCases) { group in
+                    let relationships = filteredRelationships(in: group)
+                    if !relationships.isEmpty {
+                        Section(group.displayName) {
+                            ForEach(relationships) { relationship in
+                                Button {
+                                    selection = relationship
+                                    playSelectionFeedback()
+                                    dismiss()
+                                } label: {
+                                    RelationshipPickerRow(
+                                        relationship: relationship,
+                                        isSelected: relationship == selection
+                                    )
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                    }
+                }
+            }
+            .searchable(text: $searchText, prompt: "Search relationships")
+            .navigationTitle("Relationship")
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Close") { dismiss() }
+                }
+            }
+        }
+    }
+
+    private var hasSearchResults: Bool {
+        RelationshipGroup.allCases.contains { !filteredRelationships(in: $0).isEmpty }
+    }
+
+    private func filteredRelationships(in group: RelationshipGroup) -> [Relationship] {
+        let groupRelationships = Relationship.allCases.filter { $0.group == group }
+        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty else { return groupRelationships }
+
+        return groupRelationships.filter {
+            $0.searchText.localizedCaseInsensitiveContains(query)
+        }
+    }
+}
+
+private extension Relationship {
+    var searchText: String {
+        "\(displayName) \(pickerDescription) \(generationHint)"
+    }
+}
+
+private struct RelationshipPickerRow: View {
+    let relationship: Relationship
+    let isSelected: Bool
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: relationship.symbolName)
+                .font(.headline)
+                .frame(width: 28, height: 28)
+                .foregroundStyle(Color.prosePalCoral)
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(relationship.displayName)
+                    .font(.body.weight(.medium))
+                    .foregroundStyle(.primary)
+                Text(relationship.pickerDescription)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+            }
+
+            Spacer(minLength: 8)
+
+            if isSelected {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundStyle(Color.prosePalCoral)
+            }
+        }
+        .contentShape(Rectangle())
+        .padding(.vertical, 4)
+    }
+}
+
+private extension Relationship {
+    var pickerDescription: String {
+        switch self {
+        case .closeFriend: "Close, familiar, and easygoing."
+        case .family: "Warm and familiar."
+        case .parent: "Loving, grateful, and respectful."
+        case .child: "Proud, encouraging, and affectionate."
+        case .sibling: "Familiar, loyal, and lightly teasing when it fits."
+        case .grandparent: "Respectful, warm, and appreciative."
+        case .grandchild: "Affectionate, proud, and encouraging."
+        case .romantic: "Loving, personal, and intimate."
+        case .colleague: "Friendly and work-appropriate."
+        case .boss: "Respectful and professional."
+        case .mentor: "Grateful and appreciative."
+        case .teacher: "Thankful, respectful, and specific."
+        case .neighbor: "Friendly and neighbourly."
+        case .acquaintance: "Polite and not too familiar."
+        }
+    }
+}
+
+struct TonePickerSheet: View {
+    @Binding var selection: Tone
+    @Environment(\.dismiss) private var dismiss
+    @State private var searchText = ""
+
+    var body: some View {
+        NavigationStack {
+            List {
+                if !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                   filteredTones.isEmpty {
+                    ContentUnavailableView.search(text: searchText)
+                }
+
+                Section("Tone") {
+                    ForEach(filteredTones) { tone in
+                        Button {
+                            selection = tone
+                            playSelectionFeedback()
+                            dismiss()
+                        } label: {
+                            TonePickerRow(tone: tone, isSelected: tone == selection)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+            .searchable(text: $searchText, prompt: "Search tones")
+            .navigationTitle("Tone")
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Close") { dismiss() }
+                }
+            }
+        }
+    }
+
+    private var filteredTones: [Tone] {
+        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty else { return Tone.allCases }
+
+        return Tone.allCases.filter {
+            $0.searchText.localizedCaseInsensitiveContains(query)
+        }
+    }
+}
+
+private extension Tone {
+    var searchText: String {
+        "\(displayName) \(description) \(generationHint)"
+    }
+}
+
+private struct TonePickerRow: View {
+    let tone: Tone
+    let isSelected: Bool
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: tone.symbolName)
+                .font(.headline)
+                .frame(width: 28, height: 28)
+                .foregroundStyle(Color.prosePalCoral)
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(tone.displayName)
+                    .font(.body.weight(.medium))
+                    .foregroundStyle(.primary)
+                Text(tone.description)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+            }
+
+            Spacer(minLength: 8)
+
+            if isSelected {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundStyle(Color.prosePalCoral)
+            }
+        }
+        .contentShape(Rectangle())
+        .padding(.vertical, 4)
+    }
+}
 struct GenerationModeSelector: View {
     let selectedLane: GenerationLane
     let usageStatus: UsageStatus
     let onSelect: (GenerationLane) -> Void
 
-    private let lanes: [GenerationLane] = [.automatic, .standard, .premium]
+    private let lanes: [GenerationLane] = [.standard, .premium]
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Generation")
                 .font(.headline)
                 .frame(maxWidth: .infinity, alignment: .leading)
+            Text(usageStatus.isPremiumUnlocked ? "Premium is active. Standard remains available." : "Standard is included. Premium is locked until you upgrade.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
 
-            HStack(spacing: 8) {
-                ForEach(lanes, id: \.rawValue) { lane in
-                    Button {
-                        onSelect(lane)
-                    } label: {
-                        VStack(spacing: 6) {
-                            Image(systemName: symbolName(for: lane))
-                                .font(.headline)
-                            Text(lane.displayName)
-                                .font(.caption.weight(.semibold))
-                                .lineLimit(1)
-                                .minimumScaleFactor(0.8)
-                            Text(subtitle(for: lane))
-                                .font(.caption2)
-                                .foregroundStyle(lane == selectedLane ? .white.opacity(0.82) : .secondary)
-                                .lineLimit(1)
-                                .minimumScaleFactor(0.8)
-                        }
-                        .frame(maxWidth: .infinity, minHeight: 64)
-                        .padding(.horizontal, 6)
-                        .background(
-                            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                .fill(lane == selectedLane ? Color.prosePalCoral : Color.prosePalSecondaryGroupedBackground)
-                        )
-                        .foregroundStyle(lane == selectedLane ? .white : .primary)
-                        .overlay(alignment: .topTrailing) {
-                            if usageStatus.isPremiumLocked(lane) {
-                                Image(systemName: "lock.fill")
-                                    .font(.caption2.weight(.bold))
-                                    .foregroundStyle(lane == selectedLane ? .white : .secondary)
-                                    .padding(8)
-                            }
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(lanes, id: \.rawValue) { lane in
+                        GenerationLaneButton(
+                            lane: lane,
+                            symbolName: symbolName(for: lane),
+                            subtitle: subtitle(for: lane),
+                            isSelected: lane == selectedLane,
+                            isLocked: usageStatus.isPremiumLocked(lane)
+                        ) {
+                            onSelect(lane)
                         }
                     }
-                    .buttonStyle(.plain)
                 }
+                .padding(.vertical, 2)
             }
+            .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
         }
     }
 
@@ -1052,12 +1451,58 @@ struct GenerationModeSelector: View {
 
     private func subtitle(for lane: GenerationLane) -> String {
         switch lane {
-        case .automatic: "Choose"
+        case .automatic: "Best fit"
         case .standard: "Included"
         case .premium:
             usageStatus.isPremiumUnlocked ? "Active" : "Locked"
         case .local: "On device"
         }
+    }
+}
+
+private struct GenerationLaneButton: View {
+    let lane: GenerationLane
+    let symbolName: String
+    let subtitle: String
+    let isSelected: Bool
+    let isLocked: Bool
+    var onSelect: () -> Void
+
+    var body: some View {
+        Button(action: onSelect) {
+            VStack(spacing: 6) {
+                Image(systemName: symbolName)
+                    .font(.headline)
+                Text(lane.displayName)
+                    .font(.caption.weight(.semibold))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.86)
+                Text(subtitle)
+                    .font(.caption2)
+                    .foregroundStyle(isSelected ? .white.opacity(0.82) : .secondary)
+                    .lineLimit(2)
+                    .multilineTextAlignment(.center)
+            }
+            .frame(width: 116)
+            .frame(minHeight: 68)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 8)
+            .background(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(isSelected ? Color.prosePalCoral : Color.prosePalSecondaryGroupedBackground)
+            )
+            .foregroundStyle(isSelected ? .white : .primary)
+            .overlay(alignment: .topTrailing) {
+                if isLocked {
+                    Image(systemName: "lock.fill")
+                        .font(.caption2.weight(.bold))
+                        .foregroundStyle(isSelected ? .white : .secondary)
+                        .padding(8)
+                }
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("\(lane.displayName), \(subtitle)")
     }
 }
 
@@ -1096,9 +1541,9 @@ struct ResultsView: View {
         Group {
             if model.generatedMessages.isEmpty {
                 EmptyStateView(
-                    title: "No Drafts",
+                    title: "No Messages",
                     systemImage: "text.page",
-                    detail: "Create a message to see drafts here."
+                    detail: "Write a message to see options here."
                 )
             } else {
                 ScrollView {
@@ -1107,7 +1552,7 @@ struct ResultsView: View {
                             Text("Pick one to copy, edit, save, or share.")
                                 .font(.callout)
                                 .foregroundStyle(.secondary)
-                            Text("\(model.draft.occasion.displayName) / \(model.draft.tone.displayName) / \(model.draft.length.displayName)")
+                            Text(resultContextText)
                                 .font(.caption.weight(.medium))
                                 .foregroundStyle(.secondary)
                         }
@@ -1134,7 +1579,7 @@ struct ResultsView: View {
                 .background(Color.prosePalGroupedBackground)
             }
         }
-        .navigationTitle("Drafts")
+        .navigationTitle(resultsTitle)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button {
@@ -1151,7 +1596,7 @@ struct ResultsView: View {
     private var generationStatus: some View {
         if model.fallbackStatus != .none {
             VStack(alignment: .leading, spacing: 10) {
-                Label("Simple draft used this time. You can retry shortly.", systemImage: "wand.and.stars.inverse")
+                Label("Generation used a backup route. You can retry shortly.", systemImage: "wand.and.stars.inverse")
                     .font(.footnote.weight(.medium))
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -1173,6 +1618,17 @@ struct ResultsView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
+
+    private var resultsTitle: String {
+        guard let recipient = model.draft.recipientName.nilIfBlank else {
+            return "Your messages"
+        }
+        return "Messages for \(recipient)"
+    }
+
+    private var resultContextText: String {
+        "\(model.draft.occasion.displayName) / \(model.draft.relationship.displayName) / \(model.draft.tone.displayName) / \(model.draft.length.displayName)"
+    }
 }
 
 struct ResultCard: View {
@@ -1185,7 +1641,7 @@ struct ResultCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
-                Label("Draft \(draftNumber)", systemImage: "text.page")
+                Label("Option \(draftNumber)", systemImage: "text.page")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
                 Spacer()
@@ -1201,35 +1657,7 @@ struct ResultCard: View {
                 .lineSpacing(4)
                 .textSelection(.enabled)
 
-            HStack(spacing: 10) {
-                Button {
-                    model.copyText(message.text)
-                } label: {
-                    Label("Copy", systemImage: "doc.on.doc")
-                }
-
-                ShareLink(item: message.text) {
-                    Label("Share", systemImage: "square.and.arrow.up")
-                }
-
-                Button {
-                    editedText = message.text
-                    isEditing = true
-                } label: {
-                    Label("Edit", systemImage: "square.and.pencil")
-                }
-
-                Spacer(minLength: 0)
-
-                Button {
-                    model.save(message)
-                } label: {
-                    Label(model.isSaved(message) ? "Saved" : "Save", systemImage: model.isSaved(message) ? "bookmark.fill" : "bookmark")
-                        .labelStyle(.iconOnly)
-                }
-                .accessibilityLabel(model.isSaved(message) ? "Saved" : "Save")
-                .disabled(model.isSaved(message))
-            }
+            resultActions
             .buttonStyle(.bordered)
             .controlSize(.small)
         }
@@ -1242,10 +1670,11 @@ struct ResultCard: View {
                 Label("Copy", systemImage: "doc.on.doc")
             }
 
-            Button {
-                editedText = message.text
-                isEditing = true
-            } label: {
+                    Button {
+                        model.logEditStarted(message.text, source: "result_context_menu")
+                        editedText = message.text
+                        isEditing = true
+                    } label: {
                 Label("Edit", systemImage: "square.and.pencil")
             }
 
@@ -1258,19 +1687,80 @@ struct ResultCard: View {
         }
         .sheet(isPresented: $isEditing) {
             DraftEditorSheet(
-                title: "Edit Draft \(draftNumber)",
+                title: "Edit Option \(draftNumber)",
                 text: $editedText,
                 onCopy: { model.copyText(editedText) },
+                onShare: { model.logShareText(editedText, source: "result_editor") },
                 onSave: {
                     if model.saveText(editedText) {
                         isEditing = false
                     }
                 }
             )
+            .presentationDetents([.medium, .large])
+            .presentationDragIndicator(.visible)
         }
         .onAppear {
             editedText = message.text
         }
+    }
+
+    @ViewBuilder
+    private var resultActions: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 10) {
+                copyButton
+                shareLink
+                editButton
+                Spacer(minLength: 0)
+                saveButton
+            }
+
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 10) {
+                    copyButton
+                    shareLink
+                    editButton
+                }
+                saveButton
+            }
+        }
+    }
+
+    private var copyButton: some View {
+        Button {
+            model.copyText(message.text)
+        } label: {
+            Label("Copy", systemImage: "doc.on.doc")
+        }
+    }
+
+    private var shareLink: some View {
+        ShareLink(item: message.text) {
+            Label("Share", systemImage: "square.and.arrow.up")
+        }
+        .simultaneousGesture(TapGesture().onEnded {
+            model.logShareText(message.text, source: "result_card")
+        })
+    }
+
+    private var editButton: some View {
+        Button {
+            model.logEditStarted(message.text, source: "result_card")
+            editedText = message.text
+            isEditing = true
+        } label: {
+            Label("Edit", systemImage: "square.and.pencil")
+        }
+    }
+
+    private var saveButton: some View {
+        Button {
+            model.save(message)
+        } label: {
+            Label(model.isSaved(message) ? "Saved" : "Save", systemImage: model.isSaved(message) ? "bookmark.fill" : "bookmark")
+        }
+        .disabled(model.isSaved(message))
     }
 }
 
@@ -1278,6 +1768,7 @@ struct DraftEditorSheet: View {
     var title: String
     @Binding var text: String
     var onCopy: () -> Void
+    var onShare: () -> Void = {}
     var onSave: () -> Void
     @Environment(\.dismiss) private var dismiss
 
@@ -1288,10 +1779,58 @@ struct DraftEditorSheet: View {
                     .font(.body)
                     .lineSpacing(4)
                     .padding(12)
-                    .frame(minHeight: 240)
+                    .frame(minHeight: 220)
                     .background(Color.prosePalSecondaryGroupedBackground, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+            }
+            .padding(20)
+            .padding(.bottom, 68)
+            .background(Color.prosePalGroupedBackground)
+            .navigationTitle(title)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Done") { dismiss() }
+                }
+            }
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                editorActions
+                    .padding(.horizontal, 20)
+                    .padding(.top, 10)
+                    .padding(.bottom, 12)
+                    .background(.bar)
+                    .overlay(alignment: .top) {
+                        Divider()
+                    }
+            }
+        }
+    }
 
-                HStack {
+    private var editorActions: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 10) {
+                Button {
+                    onCopy()
+                } label: {
+                    Label("Copy", systemImage: "doc.on.doc")
+                }
+
+                ShareLink(item: text) {
+                    Label("Share", systemImage: "square.and.arrow.up")
+                }
+                .simultaneousGesture(TapGesture().onEnded(onShare))
+
+                Spacer(minLength: 8)
+
+                Button {
+                    onSave()
+                } label: {
+                    Label("Save", systemImage: "bookmark")
+                }
+                .buttonStyle(.borderedProminent)
+            }
+            .buttonStyle(.bordered)
+
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 10) {
                     Button {
                         onCopy()
                     } label: {
@@ -1301,26 +1840,18 @@ struct DraftEditorSheet: View {
                     ShareLink(item: text) {
                         Label("Share", systemImage: "square.and.arrow.up")
                     }
-
-                    Spacer()
-
-                    Button {
-                        onSave()
-                    } label: {
-                        Label("Save", systemImage: "bookmark")
-                    }
-                    .buttonStyle(.borderedProminent)
+                    .simultaneousGesture(TapGesture().onEnded(onShare))
                 }
-                .buttonStyle(.bordered)
-            }
-            .padding(20)
-            .background(Color.prosePalGroupedBackground)
-            .navigationTitle(title)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Done") { dismiss() }
+
+                Button {
+                    onSave()
+                } label: {
+                    Label("Save", systemImage: "bookmark")
+                        .frame(maxWidth: .infinity)
                 }
+                .buttonStyle(.borderedProminent)
             }
+            .buttonStyle(.bordered)
         }
     }
 }
@@ -1333,58 +1864,58 @@ struct PaywallPlaceholderSheet: View {
 
     var body: some View {
         NavigationStack {
-            VStack(alignment: .leading, spacing: 22) {
-                VStack(alignment: .leading, spacing: 10) {
-                    Image(systemName: "star.circle.fill")
-                        .font(.system(size: 50, weight: .semibold))
-                        .foregroundStyle(Color.prosePalCoral)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 22) {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Image(systemName: "star.circle.fill")
+                            .font(.system(size: 50, weight: .semibold))
+                            .foregroundStyle(Color.prosePalCoral)
 
-                    Text("Premium generation")
-                        .font(.largeTitle.weight(.bold))
-                        .minimumScaleFactor(0.75)
+                        Text("Premium generation")
+                            .font(.largeTitle.weight(.bold))
+                            .minimumScaleFactor(0.75)
 
-                    Text("Better drafts for harder moments, higher limits, and priority generation when it is available.")
-                        .font(.callout)
-                        .foregroundStyle(.secondary)
-                }
-
-                VStack(spacing: 12) {
-                    PremiumFeatureRow(systemImage: "heart.text.square", title: "Enhanced drafts", detail: "More help for nuanced or sensitive messages.")
-                    PremiumFeatureRow(systemImage: "gauge", title: "Higher limits", detail: "More writing room once subscriptions are connected.")
-                    PremiumFeatureRow(systemImage: "arrow.clockwise.circle", title: "Regenerate more", detail: "Try another angle without losing your draft.")
-                }
-
-                UsageStatusRow(usageStatus: usageStatus)
-
-                Spacer(minLength: 0)
-
-                VStack(spacing: 10) {
-                    Button {
-                        onUseStandard()
-                        dismiss()
-                    } label: {
-                        Label("Use Standard", systemImage: "sparkles")
-                            .frame(maxWidth: .infinity)
+                        Text("Better drafts for harder moments, higher limits, and priority generation when available.")
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
                     }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.large)
 
-                    Button {
-                        onRestore()
-                    } label: {
-                        Label("Restore purchases", systemImage: "arrow.clockwise")
-                            .frame(maxWidth: .infinity)
+                    VStack(spacing: 12) {
+                        PremiumFeatureRow(systemImage: "heart.text.square", title: "Enhanced drafts", detail: "More help for nuanced or sensitive messages.")
+                        PremiumFeatureRow(systemImage: "gauge", title: "Higher limits", detail: "More writing room for Standard and Premium drafts.")
+                        PremiumFeatureRow(systemImage: "arrow.clockwise.circle", title: "Regenerate more", detail: "Try another angle without losing your draft.")
                     }
-                    .buttonStyle(.bordered)
-                    .controlSize(.large)
 
-                    Button("Not now") {
-                        dismiss()
+                    UsageStatusRow(usageStatus: usageStatus)
+
+                    VStack(spacing: 10) {
+                        Button {
+                            onUseStandard()
+                            dismiss()
+                        } label: {
+                            Label("Use Standard", systemImage: "sparkles")
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .controlSize(.large)
+
+                        Button {
+                            onRestore()
+                        } label: {
+                            Label("Restore purchases", systemImage: "arrow.clockwise")
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.large)
+
+                        Button("Not now") {
+                            dismiss()
+                        }
+                        .font(.callout.weight(.semibold))
                     }
-                    .font(.callout.weight(.semibold))
                 }
+                .padding(22)
             }
-            .padding(22)
             .background(Color.prosePalGroupedBackground)
             .navigationTitle("Premium")
             .toolbar {
@@ -1537,7 +2068,7 @@ struct SavedMessageDetailView: View {
                 .background(Color.prosePalSecondaryGroupedBackground, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
 
                 ModernPanel {
-                    LabeledContent("Recipient", value: currentSaved.recipientName ?? "Not set")
+                    LabeledContent("Recipient", value: currentSaved.recipientName ?? "Not specified")
                     LabeledContent("Occasion", value: currentSaved.occasion.displayName)
                     LabeledContent("Relationship", value: currentSaved.relationship.displayName)
                     LabeledContent("Tone", value: currentSaved.tone.displayName)
@@ -1555,8 +2086,12 @@ struct SavedMessageDetailView: View {
                     ShareLink(item: currentSaved.text) {
                         Label("Share", systemImage: "square.and.arrow.up")
                     }
+                    .simultaneousGesture(TapGesture().onEnded {
+                        model.logShareText(currentSaved.text, source: "saved_detail")
+                    })
 
                     Button {
+                        model.logEditStarted(currentSaved.text, source: "saved_detail")
                         editedText = currentSaved.text
                         isEditing = true
                     } label: {
@@ -1590,12 +2125,15 @@ struct SavedMessageDetailView: View {
                 title: "Edit Saved Message",
                 text: $editedText,
                 onCopy: { model.copyText(editedText) },
+                onShare: { model.logShareText(editedText, source: "saved_editor") },
                 onSave: {
                     if model.updateSaved(currentSaved, text: editedText) {
                         isEditing = false
                     }
                 }
             )
+            .presentationDetents([.medium, .large])
+            .presentationDragIndicator(.visible)
         }
     }
 }
@@ -1608,12 +2146,13 @@ struct SettingsView: View {
             List {
                 Section("Account") {
                     Button {
-                        model.showNotice("Sign in is not connected yet", systemImage: "apple.logo")
+                        model.showNotice("Sign in is unavailable in this preview", systemImage: "apple.logo")
                     } label: {
                         Label("Sign in with Apple", systemImage: "apple.logo")
                     }
 
                     Button {
+                        model.logPaywallOpened(trigger: "settings_subscription")
                         model.isShowingPaywall = true
                     } label: {
                         Label("Subscription", systemImage: "star")
@@ -1627,10 +2166,20 @@ struct SettingsView: View {
                 }
 
                 Section("Writing") {
-                    Picker("Spelling", selection: $model.draft.spellingPreference) {
-                        ForEach(SpellingPreference.allCases) { preference in
-                            Text(preference.displayName).tag(preference)
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Spelling")
+                            .font(.headline)
+
+                        Picker("Spelling", selection: $model.draft.spellingPreference) {
+                            ForEach(SpellingPreference.allCases) { preference in
+                                Text(preference.displayName).tag(preference)
+                            }
                         }
+                        .pickerStyle(.segmented)
+
+                        Text(model.draft.spellingPreference.exampleText)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                     }
 
                     Picker("Default tone", selection: $model.draft.tone) {
@@ -1641,7 +2190,7 @@ struct SettingsView: View {
                 }
 
                 Section("Generation") {
-                    ForEach([GenerationLane.automatic, .standard, .premium], id: \.rawValue) { lane in
+                    ForEach([GenerationLane.standard, .premium], id: \.rawValue) { lane in
                         Button {
                             model.selectLane(lane)
                         } label: {
@@ -1664,13 +2213,13 @@ struct SettingsView: View {
 
                 Section("Privacy") {
                     Button {
-                        model.showNotice("Export is not connected yet", systemImage: "square.and.arrow.up")
+                        model.showNotice("Export is unavailable in this preview", systemImage: "square.and.arrow.up")
                     } label: {
                         Label("Export data", systemImage: "square.and.arrow.up")
                     }
 
                     Button(role: .destructive) {
-                        model.showNotice("Account deletion is not connected yet", systemImage: "trash")
+                        model.showNotice("Account deletion requires sign-in", systemImage: "trash")
                     } label: {
                         Label("Delete account", systemImage: "trash")
                     }
@@ -1678,7 +2227,7 @@ struct SettingsView: View {
 
                 Section("Support") {
                     Button {
-                        model.showNotice("Feedback is not connected yet", systemImage: "envelope")
+                        model.showNotice("Feedback is unavailable in this preview", systemImage: "envelope")
                     } label: {
                         Label("Send feedback", systemImage: "envelope")
                     }
@@ -1687,12 +2236,18 @@ struct SettingsView: View {
                     Label("Privacy Policy", systemImage: "hand.raised")
                 }
 
-                Section("Runtime") {
-                    LabeledContent("Generation", value: "Gateway contract v1")
-                    LabeledContent("Build", value: "Native R&D")
+                Section("About") {
+                    LabeledContent("Writing", value: "Online generation")
+                    LabeledContent("Version", value: "Native preview")
                 }
             }
             .navigationTitle("Settings")
+            .onChange(of: model.draft.spellingPreference) { _, preference in
+                model.logSelectionChanged(kind: "spelling", value: preference.rawValue)
+            }
+            .onChange(of: model.draft.tone) { _, tone in
+                model.logSelectionChanged(kind: "tone", value: tone.rawValue)
+            }
         }
     }
 }
@@ -1720,6 +2275,67 @@ struct NoticeBanner: View {
             .padding(.vertical, 12)
             .background(.regularMaterial, in: Capsule(style: .continuous))
             .shadow(color: .black.opacity(0.12), radius: 18, x: 0, y: 8)
+    }
+}
+
+private struct WritingProgressOverlay: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var messageIndex = 0
+
+    private let messages = [
+        "Finding the right words...",
+        "Shaping the tone...",
+        "Adding the details...",
+        "Almost ready..."
+    ]
+
+    var body: some View {
+        ZStack {
+            ProsePalBrandBackdrop()
+
+            VStack(spacing: 22) {
+                ZStack {
+                    Circle()
+                        .fill(Color.white.opacity(0.14))
+                        .frame(width: 96, height: 96)
+                    Circle()
+                        .strokeBorder(Color.white.opacity(0.22), lineWidth: 1)
+                        .frame(width: 96, height: 96)
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 34, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .scaleEffect(reduceMotion ? 1 : (messageIndex.isMultiple(of: 2) ? 1 : 1.05))
+                        .animation(.easeInOut(duration: 0.22), value: messageIndex)
+                }
+
+                VStack(spacing: 8) {
+                    Text("Writing")
+                        .font(.title.weight(.bold))
+                        .foregroundStyle(.white)
+                    Text(messages[messageIndex])
+                        .font(.callout)
+                        .foregroundStyle(Color.prosePalTextSecondary)
+                        .contentTransition(.opacity)
+                }
+
+                ProgressView()
+                    .tint(.white)
+                    .controlSize(.large)
+            }
+            .padding(28)
+        }
+        .ignoresSafeArea()
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Writing message. Please wait.")
+        .task {
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 1_900_000_000)
+                guard !Task.isCancelled else { return }
+                withAnimation(.easeInOut(duration: reduceMotion ? 0 : 0.22)) {
+                    messageIndex = (messageIndex + 1) % messages.count
+                }
+            }
+        }
     }
 }
 
@@ -1801,7 +2417,7 @@ private extension View {
     }
 }
 
-enum ComposeField: Hashable {
+enum ComposeField: String, Hashable {
     case recipient
     case include
     case avoid
@@ -1829,6 +2445,33 @@ private func copyToPasteboard(_ text: String) {
     #if os(iOS)
     UIPasteboard.general.string = text
     #endif
+}
+
+private extension Date {
+    var elapsedMilliseconds: Int {
+        max(0, Int(Date().timeIntervalSince(self) * 1000))
+    }
+}
+
+private extension GenerationError {
+    var diagnosticsCategory: String {
+        switch self {
+        case .offline:
+            "offline"
+        case .timedOut:
+            "timeout"
+        case .rateLimited:
+            "rate_limited"
+        case .usageLimitReached:
+            "usage_limit"
+        case .contentBlocked:
+            "content_blocked"
+        case .serviceUnavailable:
+            "service_unavailable"
+        case .unexpectedResponse:
+            "unexpected_response"
+        }
+    }
 }
 
 private func playSuccessFeedback() {
@@ -1934,7 +2577,7 @@ struct EmptyStateView: View {
             client: MockMessageWritingClient(
                 response: CardResponse(
                     messages: [
-                        GeneratedMessage(text: "A preview draft from the mock gateway client.")
+                        GeneratedMessage(text: "A preview draft from ProsePal.")
                     ],
                     laneUsed: .standard
                 )

@@ -3,6 +3,11 @@
 This document defines the intended product shape for the SwiftUI rewrite in
 `prosepal-ios/`. It is the UX guardrail before more implementation work happens.
 
+For the screen-by-screen translation of current Flutter behavior into the
+SwiftUI-native target, read `NATIVE_PRODUCT_NORTH_STAR.md`. That document is the
+product bridge: Flutter defines the behavior to preserve, SwiftUI defines the
+native implementation shape.
+
 The existing Flutter app remains the production and behavior reference. The
 native app must reach functional parity before it can replace production, but it
 should not copy Flutter screen-for-screen. Flutter defines what ProsePal does.
@@ -37,10 +42,11 @@ moments. The interface should feel like a beautiful writing assistant, not a
 model playground.
 
 The Flutter app's visual assets remain valuable brand source material. Reuse the
-existing logo, app icon direction, splash artwork, onboarding artwork, and
-navy/coral/white palette where they help the native app feel recognizably
-ProsePal. Reinterpret the layout with SwiftUI and platform conventions rather
-than copying old Flutter screens directly.
+app icon direction, onboarding artwork, and navy/coral/white palette where they
+help the native app feel recognizably ProsePal. Logo assets can remain available
+for brand continuity, but the current native launch and onboarding screens
+should not display a logo. Reinterpret the layout with SwiftUI and platform
+conventions rather than copying old Flutter screens directly.
 
 ## Principles
 
@@ -140,15 +146,18 @@ The first working screen should help the user start writing immediately.
 Recommended shape:
 
 ```text
-Large title: What are you writing?
-Subtitle: Pick an occasion or describe it yourself.
+Large title: Find the right words
+Subtitle: For a card, text, note, or the message you have not quite found yet.
 
+Who is it for?
 Selected occasion
 Browse/search occasions
-Popular suggestions
-Compose details
-Generation mode
-Generate
+Relationship options
+Tone options
+Details
+Length
+Standard/Premium
+Write message
 ```
 
 Keep:
@@ -156,14 +165,15 @@ Keep:
 - big Create focus
 - selected occasion card
 - Browse occasion sheet
-- relationship, tone, and length controls
+- relationship and tone as calm selected rows with searchable native sheets
+- length control
 - include, avoid, and context fields
 - Standard and Premium state
-- Generate action
+- Write Message action
 
 Avoid:
 
-- giant occasion grid on the home screen
+- cloning the Flutter occasion grid as-is
 - dense wizard steps for the default path
 - first-screen marketing content
 - decorative cards that compete with the writing task
@@ -171,14 +181,14 @@ Avoid:
 ## 5. Occasion Picker And Catalogue Treatment
 
 The full Flutter occasion catalogue should exist in the native domain layer.
-It should not be shown as a giant grid or forty visible chips on the default
-Create screen.
+Flutter proves that occasion-first selection matters. Native should preserve
+that clarity without copying the grid screen-for-screen or showing forty visible
+chips on the default Create screen.
 
 Native treatment:
 
 - search-first occasion picker
 - grouped sections
-- popular suggestions on Create
 - recent and favorites later
 - "Something else" free-text option later
 
@@ -248,16 +258,16 @@ Use native controls:
 
 Complex guided mode can come later as an optional sheet or alternate flow.
 
-## 7. Keyboard And Generate Button Behavior
+## 7. Keyboard And Write Button Behavior
 
-The Generate action must never collide with the keyboard, the tab bar, or input
+The Write Message action must never collide with the keyboard, the tab bar, or input
 fields on real devices.
 
 Preferred behavior:
 
-- Generate appears only on the Create tab.
-- When the keyboard is hidden, Generate can be a sticky bottom action.
-- When the keyboard is visible, Generate either moves cleanly above the keyboard
+- Write Message appears only on the Create tab.
+- When the keyboard is hidden, Write Message can be a sticky bottom action.
+- When the keyboard is visible, Write either moves cleanly above the keyboard
   or becomes a keyboard toolbar action.
 - The tab bar remains stable and lower priority than the compose task.
 - Text fields must remain scrollable above the keyboard.
@@ -272,12 +282,12 @@ Results are the product payoff and should feel polished.
 Results shape:
 
 ```text
-Drafts
+Messages for Alex
 Pick one to copy, edit, save, or share.
 
-Draft 1
-Draft 2
-Draft 3
+Option 1
+Option 2
+Option 3
 ```
 
 Each draft should support:
@@ -493,7 +503,7 @@ The SwiftUI app should intentionally differ from Flutter in these ways:
 
 - no old-style splash before every session
 - no forced first-run paywall by default
-- no huge home occasion grid as the main screen
+- no screen-for-screen clone of the Flutter home occasion grid
 - no screen-for-screen wizard clone
 - no Firebase AI or Vertex AI client-direct generation path
 - no provider/model names in user-facing UI
@@ -528,7 +538,7 @@ Required before replacing Flutter production:
 - saved messages
 - history decision: separate list or Saved filter
 - local persistence
-- keyboard-safe Generate action
+- keyboard-safe Write Message action
 - native grouped Settings structure
 - auth strategy, likely Sign in with Apple first
 - subscription strategy, likely RevenueCat initially only if it earns continuity
@@ -564,7 +574,7 @@ Exit criteria:
 
 Scope:
 
-- fix keyboard and Generate-button overlap
+- fix keyboard and Write Message overlap
 - separate spelling from generation settings
 - mature Settings into a grouped iOS settings structure
 - improve occasion picker grouping and most-used treatment

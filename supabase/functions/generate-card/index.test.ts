@@ -27,10 +27,13 @@ const fixedRequest: Parameters<typeof buildPrompt>[0] = {
   },
 };
 
-function makeRequest(payload: unknown = fixedRequest): Request {
+function makeRequest(
+  payload: unknown = fixedRequest,
+  headers: Record<string, string> = {},
+): Request {
   return new Request("https://example.supabase.co/functions/v1/generate-card", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...headers },
     body: JSON.stringify(payload),
   });
 }
@@ -42,6 +45,12 @@ function makeDeps(options: {
   providerResponse?: unknown;
   fetchStatus?: number;
   captureProviderBodies?: Array<Record<string, unknown>>;
+  devGatewaySecret?: string;
+  logger?: {
+    log: (...args: unknown[]) => void;
+    warn: (...args: unknown[]) => void;
+    error: (...args: unknown[]) => void;
+  };
 } = {}) {
   const captureProviderBodies = options.captureProviderBodies ?? [];
 
@@ -62,6 +71,8 @@ function makeDeps(options: {
           return options.provider ? "free-dev-model" : undefined;
         case "PROSEPAL_AI_PROVIDER_JSON_MODE":
           return options.providerJsonMode ? "true" : undefined;
+        case "PROSEPAL_DEV_GATEWAY_SECRET":
+          return options.devGatewaySecret;
         default:
           return undefined;
       }
@@ -108,7 +119,7 @@ function makeDeps(options: {
         },
       );
     },
-    logger: {
+    logger: options.logger ?? {
       log: () => {},
       warn: () => {},
       error: () => {},
@@ -138,6 +149,35 @@ Deno.test("requires authentication unless anonymous dev mode is explicitly enabl
   assertEquals(res.status, 401);
   const body = await res.json() as Record<string, unknown>;
   assertEquals(body.error, "Authentication required");
+});
+
+Deno.test("requires dev gateway secret when anonymous dev guard is configured", async () => {
+  const res = await handleGenerateCard(
+    makeRequest(),
+    makeDeps({ anonymous: true, devGatewaySecret: "dev-secret" }),
+  );
+
+  assertEquals(res.status, 401);
+  const body = await res.json() as Record<string, unknown>;
+  const userSafeError = body.user_safe_error as Record<string, unknown>;
+  assertEquals(userSafeError.code, "dev_gateway_secret_required");
+});
+
+Deno.test("allows anonymous dev request when dev gateway secret matches", async () => {
+  const res = await handleGenerateCard(
+    makeRequest(fixedRequest, {
+      "X-ProsePal-Dev-Gateway-Secret": "dev-secret",
+    }),
+    makeDeps({
+      anonymous: true,
+      provider: true,
+      devGatewaySecret: "dev-secret",
+    }),
+  );
+
+  assertEquals(res.status, 200);
+  const body = await res.json() as Record<string, unknown>;
+  assertEquals(body.lane_used, "standard");
 });
 
 Deno.test("returns service unavailable when no provider is configured", async () => {
@@ -176,6 +216,32 @@ Deno.test("calls OpenAI-compatible provider and returns CardResponse without pro
   assert(!responseText.includes("free-dev-model"));
   assertEquals(providerBodies.length, 1);
   assertEquals(providerBodies[0].response_format, { type: "json_object" });
+});
+
+Deno.test("logs operator metadata without raw user prompt or generated messages", async () => {
+  const logLines: string[] = [];
+  const logger = {
+    log: (...args: unknown[]) => logLines.push(args.join(" ")),
+    warn: (...args: unknown[]) => logLines.push(args.join(" ")),
+    error: (...args: unknown[]) => logLines.push(args.join(" ")),
+  };
+
+  const res = await handleGenerateCard(
+    makeRequest(),
+    makeDeps({
+      anonymous: true,
+      provider: true,
+      logger,
+    }),
+  );
+
+  assertEquals(res.status, 200);
+  const combinedLogs = logLines.join("\n");
+  assertStringIncludes(combinedLogs, "generate-card completed");
+  assertStringIncludes(combinedLogs, "free-dev-model");
+  assert(!combinedLogs.includes("Dad"));
+  assert(!combinedLogs.includes("quiet cup of tea"));
+  assert(!combinedLogs.includes("Happy birthday"));
 });
 
 Deno.test("returns gateway error when provider response is malformed", async () => {

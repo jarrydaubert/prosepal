@@ -8,11 +8,11 @@ final class UsagePolicyTests: XCTestCase {
     func testPremiumSelectionShowsPaywallWithoutChangingLane() {
         let model = makeModel()
 
-        XCTAssertEqual(model.draft.requestedLane, .automatic)
+        XCTAssertEqual(model.draft.requestedLane, .standard)
         model.selectLane(.premium)
 
         XCTAssertTrue(model.isShowingPaywall)
-        XCTAssertEqual(model.draft.requestedLane, .automatic)
+        XCTAssertEqual(model.draft.requestedLane, .standard)
 
         model.useStandardLaneFromPaywall()
 

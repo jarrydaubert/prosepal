@@ -18,7 +18,7 @@ const DEFAULT_TEMPERATURE = 0.7;
 const corsHeaders = {
   "Access-Control-Allow-Origin": "",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, idempotency-key",
+    "authorization, x-client-info, apikey, content-type, idempotency-key, x-prosepal-dev-gateway-secret",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
@@ -500,6 +500,20 @@ function jsonResponse(body: Record<string, unknown>, status = 200): Response {
 
 function boolEnv(value: string | undefined): boolean {
   return value?.trim().toLowerCase() === "true";
+}
+
+function constantTimeEquals(left: string, right: string): boolean {
+  const encoder = new TextEncoder();
+  const leftBytes = encoder.encode(left);
+  const rightBytes = encoder.encode(right);
+  const maxLength = Math.max(leftBytes.length, rightBytes.length);
+  let diff = leftBytes.length ^ rightBytes.length;
+
+  for (let index = 0; index < maxLength; index += 1) {
+    diff |= (leftBytes[index] ?? 0) ^ (rightBytes[index] ?? 0);
+  }
+
+  return diff === 0;
 }
 
 function numberEnv(
@@ -1053,6 +1067,31 @@ async function authenticate(
   | { ok: false; response: Response }
 > {
   if (boolEnv(deps.getEnv("GATEWAY_DEV_ALLOW_ANONYMOUS"))) {
+    const requiredDevSecret = deps.getEnv("PROSEPAL_DEV_GATEWAY_SECRET")
+      ?.trim();
+    if (requiredDevSecret) {
+      const providedDevSecret = req.headers.get(
+        "X-ProsePal-Dev-Gateway-Secret",
+      )?.trim() ?? "";
+
+      if (!constantTimeEquals(providedDevSecret, requiredDevSecret)) {
+        return {
+          ok: false,
+          response: jsonResponse(
+            {
+              error: "Development gateway access required",
+              user_safe_error: {
+                code: "dev_gateway_secret_required",
+                message:
+                  "Message generation is not configured for this app build.",
+              },
+            },
+            401,
+          ),
+        };
+      }
+    }
+
     return { ok: true, userId: null, mode: "anonymous_dev" };
   }
 
@@ -1179,6 +1218,7 @@ export async function handleGenerateCard(
     platform: request.client_context.platform,
     userId: redactedUserId(auth.userId),
     authMode: auth.mode,
+    modelId: config.mode === "openai-compatible" ? config.model : undefined,
   };
 
   if (request.requested_lane === "premium") {
