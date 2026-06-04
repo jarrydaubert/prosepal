@@ -101,12 +101,15 @@ without changing production Flutter files:
 - `Sources/ProsePalUI/Resources/Onboarding/slide_1.png`
 - `Sources/ProsePalUI/Resources/Onboarding/slide_2.png`
 - `Sources/ProsePalUI/Resources/Onboarding/slide_3.png`
+- `App/Assets.xcassets/AppIcon.appiconset`
+- `App/Assets.xcassets/LaunchLogo.imageset`
+- `App/LaunchScreen.storyboard`
 
 The current palette source is the Flutter reference in
 `../lib/shared/theme/app_colors.dart`. Native tokens are mirrored in
-`ProsePalRootView.swift` for this first slice. A later project-configuration
-PR should move the app icon and launch screen into a native asset catalogue
-once signing/build-setting changes can be reviewed cleanly.
+`ProsePalRootView.swift` for this first slice. The app target now uses the
+Flutter iOS AppIcon set and a native launch storyboard with a navy background
+and centered ProsePal icon.
 
 ## Apple-Native Setup Notes
 

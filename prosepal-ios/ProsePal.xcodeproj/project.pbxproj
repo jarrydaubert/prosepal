@@ -9,11 +9,15 @@
 /* Begin PBXBuildFile section */
 		PP0000000000000000000010 /* ProsePalNativeApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = PP0000000000000000000009 /* ProsePalNativeApp.swift */; };
 		PP0000000000000000000011 /* ProsePalUI in Frameworks */ = {isa = PBXBuildFile; productRef = PP0000000000000000000030 /* ProsePalUI */; };
+		PP0000000000000000000031 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = PP0000000000000000000032 /* Assets.xcassets */; };
+		PP0000000000000000000033 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = PP0000000000000000000034 /* LaunchScreen.storyboard */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		PP0000000000000000000001 /* ProsePal.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ProsePal.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		PP0000000000000000000009 /* ProsePalNativeApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProsePalNativeApp.swift; sourceTree = "<group>"; };
+		PP0000000000000000000032 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		PP0000000000000000000034 /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -48,6 +52,8 @@
 			isa = PBXGroup;
 			children = (
 				PP0000000000000000000009 /* ProsePalNativeApp.swift */,
+				PP0000000000000000000032 /* Assets.xcassets */,
+				PP0000000000000000000034 /* LaunchScreen.storyboard */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -116,6 +122,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				PP0000000000000000000031 /* Assets.xcassets in Resources */,
+				PP0000000000000000000033 /* LaunchScreen.storyboard in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -260,6 +268,7 @@
 		PP0000000000000000000017 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -271,7 +280,7 @@
 				INFOPLIST_KEY_LSRequiresIPhoneOS = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -296,6 +305,7 @@
 		PP0000000000000000000018 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -307,7 +317,7 @@
 				INFOPLIST_KEY_LSRequiresIPhoneOS = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
