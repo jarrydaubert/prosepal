@@ -184,6 +184,31 @@ Policy:
 - Must not introduce Firebase AI or provider-specific generation SDK validation
   because the native app targets the ProsePal gateway contract.
 
+### Native AI Gateway R&D
+
+Purpose:
+- Validate the ProsePal-owned `CardRequest` / `CardResponse` contract for the
+  SwiftUI rewrite without changing Flutter production AI routing.
+
+Policy:
+- Flutter production remains client-direct Firebase AI / Vertex AI until the
+  gateway rollout gates in `docs/architecture/AI_GATEWAY_STRATEGY.md` are met.
+- The native app must not import provider generation SDKs. It may call a
+  ProsePal-owned gateway URL through `GatewayMessageWritingClient`.
+- `supabase/functions/generate-card` may run in explicit anonymous dev mode for
+  R&D by setting `GATEWAY_DEV_ALLOW_ANONYMOUS=true`.
+- Provider/model names and keys stay in the Edge Function environment. The
+  mobile client receives only Standard, Premium, local, or template lane
+  metadata.
+- Gateway logs must not include raw prompts, generated messages, secrets,
+  tokens, or sensitive user content.
+
+Validation:
+- Run `deno test --allow-env supabase/functions/generate-card/index.test.ts`
+  after changing the gateway handler.
+- Run `swift test` and the native simulator `xcodebuild` command from
+  `prosepal-ios/` after changing native gateway wiring.
+
 ### Visual Regression Companion (`.github/workflows/ci.yml` → `Visual Regression (non-blocking)`)
 
 Purpose:

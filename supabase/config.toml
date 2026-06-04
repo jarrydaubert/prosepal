@@ -14,6 +14,11 @@ verify_jwt = false
 [functions.send-feedback]
 verify_jwt = false
 
+[functions.generate-card]
+# Gateway validates Supabase auth internally and can be run in explicit
+# anonymous dev mode with GATEWAY_DEV_ALLOW_ANONYMOUS=true.
+verify_jwt = false
+
 [functions.revenuecat-webhook]
 # RevenueCat sends its own shared-secret Authorization header, not a Supabase JWT.
 # The function validates REVENUECAT_WEBHOOK_SECRET internally.

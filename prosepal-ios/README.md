@@ -35,6 +35,34 @@ SwiftUI app
 Provider names, model names, provider payloads, provider SDK response shapes,
 and routing policy stay behind the ProsePal API boundary.
 
+## Gateway Development
+
+The app target now chooses its message-writing client at launch:
+
+- if `PROSEPAL_GATEWAY_URL` is set in the Xcode scheme environment or app
+  Info.plist, the app uses `GatewayMessageWritingClient`;
+- otherwise it uses `TemplateMessageWritingClient`.
+
+This switch is for native R&D and review builds. It does not add Firebase AI,
+Vertex AI, provider SDKs, provider keys, or model names to the iOS app.
+
+Simulator local endpoint:
+
+```text
+PROSEPAL_GATEWAY_URL=http://127.0.0.1:54321/functions/v1/generate-card
+```
+
+Physical devices cannot use the Mac's `127.0.0.1`. For tethered-device testing,
+prefer an HTTPS development/staging Supabase function URL:
+
+```text
+PROSEPAL_GATEWAY_URL=https://<project-ref>.supabase.co/functions/v1/generate-card
+```
+
+Local anonymous gateway mode requires the function environment variable
+`GATEWAY_DEV_ALLOW_ANONYMOUS=true`. Authenticated mode will be the default once
+the native auth path is connected.
+
 ## App Structure
 
 The checked-in native app is split into a small Xcode app target and Swift
