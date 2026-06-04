@@ -622,7 +622,7 @@ struct OnboardingView: View {
                     VStack(alignment: .leading, spacing: 0) {
                         welcomeTitle
                             .frame(maxWidth: .infinity)
-                            .padding(.top, max(96, proxy.size.height * 0.23))
+                            .padding(.top, max(82, proxy.size.height * 0.20))
 
                         VStack(spacing: 26) {
                             ForEach(benefits) { benefit in
@@ -676,11 +676,16 @@ struct OnboardingView: View {
                 .font(.system(size: 48, weight: .bold, design: .rounded))
                 .foregroundStyle(
                     LinearGradient(
-                        colors: [Color.prosePalCoralLight, Color.prosePalCoral],
+                        colors: [
+                            Color.prosePalCoralLight,
+                            Color(red: 1.0, green: 0.67, blue: 0.60),
+                            Color.prosePalCoral
+                        ],
                         startPoint: .leading,
                         endPoint: .trailing
                     )
                 )
+                .shadow(color: Color.prosePalCoral.opacity(0.24), radius: 18, x: 0, y: 8)
                 .minimumScaleFactor(0.78)
                 .lineLimit(1)
         }
