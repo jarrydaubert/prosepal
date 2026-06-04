@@ -106,7 +106,7 @@ package modules:
 - `ProsePal`: SwiftUI iOS app target in `ProsePal.xcodeproj`.
 - `ProsePalDomain`: provider-agnostic product and API contract models.
 - `ProsePalAPI`: message-writing client protocol, lane router, gateway client,
-  and mock client for tests/previews.
+  local model storage shell, and mock client for tests/previews.
 - `ProsePalUI`: modern SwiftUI app surfaces that depend only on the
   `MessageWritingClient` contract.
 
@@ -133,6 +133,8 @@ to the Flutter reference while keeping the iOS design direction:
   fields.
 - Runtime generation is gateway-only; tests and previews use mock responses
   rather than template generation.
+- Future local Standard generation now has a storage shell for app-private
+  Application Support model files; it does not download or run a model yet.
 - Message results are reached from the Create flow rather than as a permanent
   major tab.
 - Result cards support copy, share, edit, save, and context-menu actions.

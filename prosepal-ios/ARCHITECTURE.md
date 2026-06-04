@@ -124,6 +124,16 @@ Storage rules:
 - Keep the active model version separate from partially downloaded versions.
 - Never commit model binaries to the repository.
 
+Current native foundation:
+
+- `LocalModelStore` defines the app-private Application Support directory
+  shape for future Standard model files.
+- It can create versioned model directories, mark them as excluded from backup,
+  write/read a manifest, track the active version, list installed versions, and
+  delete versions.
+- It does not download model files, validate real checksums, run LiteRT-LM, or
+  change current gateway behavior.
+
 ## Error Handling
 
 The client handles user-safe failure categories:
