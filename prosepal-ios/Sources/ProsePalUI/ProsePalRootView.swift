@@ -23,6 +23,11 @@ public final class ProsePalAppModel: ObservableObject {
     @Published var usageStatus: UsageStatus
     @Published var hasCompletedOnboarding: Bool
     @Published var selectedTab: AppTab = .compose
+    @Published var isSignedIn = false
+    @Published var analyticsEnabled = false
+    @Published var crashReportsEnabled = false
+    @Published var biometricLockEnabled = false
+    @Published var totalGeneratedCount = 0
 
     public nonisolated static let defaultSavedMessagesKey = "prosepal.native.savedMessages.v1"
     public nonisolated static let defaultOnboardingCompletionKey = "prosepal.native.onboardingCompleted.v1"
@@ -82,6 +87,7 @@ public final class ProsePalAppModel: ObservableObject {
             fallbackStatus = response.fallbackStatus
             laneUsed = response.laneUsed
             usageStatus.recordSuccessfulGeneration(requestedLane: requestedLane, laneUsed: response.laneUsed)
+            totalGeneratedCount += response.messages.count
             diagnostics.generationSucceeded(
                 requestID: request.idempotencyKey,
                 laneUsed: response.laneUsed,
@@ -135,7 +141,64 @@ public final class ProsePalAppModel: ObservableObject {
 
     func restorePurchasesPlaceholder() {
         diagnostics.messageAction("restore_purchases", source: "settings_or_paywall", messageCharacters: 0)
-        showNotice("Nothing to restore yet", systemImage: "arrow.clockwise")
+        showNotice("Purchases are unavailable right now", systemImage: "arrow.clockwise")
+    }
+
+    func continueWithApplePlaceholder(source: String) {
+        diagnostics.messageAction("auth_apple_selected", source: source, messageCharacters: 0)
+        showNotice("Apple sign-in is unavailable right now", systemImage: "apple.logo")
+    }
+
+    func purchasePremiumPlaceholder(source: String) {
+        diagnostics.messageAction("purchase_premium_selected", source: source, messageCharacters: 0)
+        showNotice("Purchases are unavailable right now", systemImage: "star")
+    }
+
+    func manageSubscriptionPlaceholder() {
+        diagnostics.messageAction("manage_subscription", source: "settings", messageCharacters: 0)
+        showNotice("Manage this in App Store settings", systemImage: "creditcard")
+    }
+
+    func rateAppPlaceholder() {
+        diagnostics.messageAction("rate_app", source: "settings", messageCharacters: 0)
+        showNotice("Reviews are unavailable right now", systemImage: "star")
+    }
+
+    func exportDataPlaceholder() {
+        diagnostics.messageAction("export_data", source: "settings", messageCharacters: 0)
+        showNotice("Sign in before exporting data", systemImage: "square.and.arrow.up")
+    }
+
+    func deleteAccountPlaceholder() {
+        diagnostics.messageAction("delete_account_requested", source: "settings", messageCharacters: 0)
+        showNotice("Sign in before deleting an account", systemImage: "trash")
+    }
+
+    func signOutPlaceholder() {
+        diagnostics.messageAction("sign_out_requested", source: "settings", messageCharacters: 0)
+        showNotice("No signed-in account", systemImage: "rectangle.portrait.and.arrow.right")
+    }
+
+    func setAnalyticsEnabled(_ enabled: Bool) {
+        analyticsEnabled = enabled
+        diagnostics.selectionChanged(kind: "analytics", value: enabled ? "enabled" : "disabled")
+    }
+
+    func setCrashReportsEnabled(_ enabled: Bool) {
+        crashReportsEnabled = enabled
+        diagnostics.selectionChanged(kind: "crash_reports", value: enabled ? "enabled" : "disabled")
+    }
+
+    func setBiometricLockEnabled(_ enabled: Bool) {
+        guard isSignedIn || !enabled else {
+            biometricLockEnabled = false
+            diagnostics.selectionChanged(kind: "biometric_lock", value: "blocked_requires_sign_in")
+            showNotice("Sign in before enabling Face ID", systemImage: "faceid")
+            return
+        }
+
+        biometricLockEnabled = enabled
+        diagnostics.selectionChanged(kind: "biometric_lock", value: enabled ? "enabled" : "disabled")
     }
 
     func completeOnboarding() {
@@ -496,6 +559,8 @@ public struct ProsePalRootView: View {
             PaywallPlaceholderSheet(
                 usageStatus: model.usageStatus,
                 onUseStandard: model.useStandardLaneFromPaywall,
+                onContinuePremium: { model.purchasePremiumPlaceholder(source: "paywall") },
+                onContinueWithApple: { model.continueWithApplePlaceholder(source: "paywall") },
                 onRestore: model.restorePurchasesPlaceholder
             )
             .presentationDetents([.medium, .large])
@@ -545,151 +610,134 @@ struct AppTabsView: View {
 
 struct OnboardingView: View {
     var onStart: () -> Void
-    @State private var selectedStep = 0
 
-    private let steps = OnboardingStep.all
+    private let benefits = OnboardingBenefit.all
 
     var body: some View {
-        NavigationStack {
-            onboardingPages
-                .background(ProsePalBrandBackdrop())
-                .navigationTitle("")
-                .prosePalOnboardingToolbarStyle()
-                .toolbar {
-                    ToolbarItem(placement: .primaryAction) {
-                        Button("Skip", action: onStart)
-                            .foregroundStyle(.white)
-                    }
-                }
-                .safeAreaInset(edge: .bottom) {
-                    VStack(spacing: 12) {
-                        OnboardingPageDots(count: steps.count, selectedIndex: selectedStep)
+        GeometryReader { proxy in
+            ZStack {
+                Color.black.ignoresSafeArea()
 
-                        Button {
-                            if selectedStep == steps.count - 1 {
-                                onStart()
-                            } else {
-                                withAnimation(.spring(response: 0.32, dampingFraction: 0.86)) {
-                                    selectedStep += 1
-                                }
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 0) {
+                        welcomeTitle
+                            .frame(maxWidth: .infinity)
+                            .padding(.top, max(96, proxy.size.height * 0.23))
+
+                        VStack(spacing: 26) {
+                            ForEach(benefits) { benefit in
+                                OnboardingBenefitRow(benefit: benefit)
                             }
-                        } label: {
-                            Label(selectedStep == steps.count - 1 ? "Start writing" : "Continue", systemImage: "arrow.right")
-                                .frame(maxWidth: .infinity)
                         }
-                        .buttonStyle(.borderedProminent)
-                        .controlSize(.large)
+                        .padding(.top, 54)
 
-                        Text("No account required to try Standard drafts.")
-                            .font(.caption)
-                            .foregroundStyle(Color.prosePalTextSecondary)
-                            .multilineTextAlignment(.center)
+                        Spacer(minLength: 132)
                     }
-                    .padding(.horizontal, 22)
-                    .padding(.top, 12)
-                    .padding(.bottom, 10)
-                    .background(.ultraThinMaterial)
+                    .padding(.horizontal, 30)
+                    .frame(minHeight: proxy.size.height, alignment: .top)
                 }
+                .scrollIndicators(.hidden)
+            }
+            .safeAreaInset(edge: .bottom) {
+                Button(action: onStart) {
+                    Text("Continue")
+                        .font(.headline.weight(.bold))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 18)
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.black)
+                .background(Color.white, in: Capsule())
+                .padding(.horizontal, 30)
+                .padding(.top, 12)
+                .padding(.bottom, 16)
+                .background(
+                    LinearGradient(
+                        colors: [.black.opacity(0), .black, .black],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    .ignoresSafeArea()
+                )
+            }
         }
         .preferredColorScheme(.dark)
     }
 
-    @ViewBuilder
-    private var onboardingPages: some View {
-        #if os(iOS)
-        onboardingPageContent
-            .tabViewStyle(.page(indexDisplayMode: .never))
-        #else
-        onboardingPageContent
-        #endif
-    }
+    private var welcomeTitle: some View {
+        VStack(spacing: 8) {
+            Text("Welcome to")
+                .font(.system(size: 45, weight: .bold, design: .rounded))
+                .foregroundStyle(.white)
+                .minimumScaleFactor(0.78)
+                .lineLimit(1)
 
-    private var onboardingPageContent: some View {
-        TabView(selection: $selectedStep) {
-            ForEach(Array(steps.enumerated()), id: \.element.id) { index, step in
-                onboardingPage(step)
-                    .tag(index)
-            }
+            Text("ProsePal")
+                .font(.system(size: 48, weight: .bold, design: .rounded))
+                .foregroundStyle(
+                    LinearGradient(
+                        colors: [Color.prosePalCoralLight, Color.prosePalCoral],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+                .minimumScaleFactor(0.78)
+                .lineLimit(1)
         }
-    }
-
-    private func onboardingPage(_ step: OnboardingStep) -> some View {
-        ScrollView {
-            VStack(spacing: 24) {
-                VStack(spacing: 14) {
-                    PackageResourceImage(name: step.imageName)
-                        .scaledToFit()
-                        .frame(maxWidth: 292, maxHeight: 360)
-                        .clipShape(RoundedRectangle(cornerRadius: 30, style: .continuous))
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 30, style: .continuous)
-                                .strokeBorder(Color.white.opacity(0.20), lineWidth: 1)
-                        }
-                        .shadow(color: .black.opacity(0.22), radius: 26, x: 0, y: 14)
-                }
-
-                VStack(spacing: 10) {
-                    Text(step.title)
-                        .font(.largeTitle.weight(.bold))
-                        .foregroundStyle(.white)
-                        .multilineTextAlignment(.center)
-                        .minimumScaleFactor(0.82)
-
-                    Text(step.detail)
-                        .font(.body)
-                        .foregroundStyle(Color.prosePalTextSecondary)
-                        .multilineTextAlignment(.center)
-                        .lineSpacing(3)
-                }
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.horizontal, 28)
-            .padding(.top, 18)
-            .padding(.bottom, 118)
-        }
+        .multilineTextAlignment(.center)
     }
 }
 
-private struct OnboardingPageDots: View {
-    let count: Int
-    let selectedIndex: Int
+private struct OnboardingBenefitRow: View {
+    let benefit: OnboardingBenefit
 
     var body: some View {
-        HStack(spacing: 8) {
-            ForEach(0..<count, id: \.self) { index in
-                Circle()
-                    .fill(index == selectedIndex ? Color.white : Color.prosePalTextSecondary.opacity(0.48))
-                    .frame(width: index == selectedIndex ? 8 : 7, height: index == selectedIndex ? 8 : 7)
+        HStack(alignment: .top, spacing: 24) {
+            Image(systemName: benefit.systemImage)
+                .font(.system(size: 29, weight: .semibold))
+                .foregroundStyle(.white)
+                .frame(width: 42, height: 42)
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text(benefit.title)
+                    .font(.title3.weight(.bold))
+                    .foregroundStyle(.white)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Text(benefit.detail)
+                    .font(.callout)
+                    .lineSpacing(3)
+                    .foregroundStyle(.white.opacity(0.52))
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
-        .accessibilityLabel("Onboarding step \(selectedIndex + 1) of \(count)")
     }
 }
 
-private struct OnboardingStep: Identifiable {
+private struct OnboardingBenefit: Identifiable {
     let id: String
     let title: String
     let detail: String
-    let imageName: String
+    let systemImage: String
 
-    static let all: [OnboardingStep] = [
-        OnboardingStep(
-            id: "real-moments",
-            title: "Find the right words",
-            detail: "For cards, texts, notes, and the moments where a blank box feels bigger than it should.",
-            imageName: "slide_1"
+    static let all: [OnboardingBenefit] = [
+        OnboardingBenefit(
+            id: "real-messages",
+            title: "For cards, texts, and notes",
+            detail: "Write something that sounds like you, even when the blank space feels awkward.",
+            systemImage: "sparkles"
         ),
-        OnboardingStep(
-            id: "give-context",
-            title: "Add the human details",
-            detail: "Say who it is for, what the moment is, how close you are, and how it should feel.",
-            imageName: "slide_2"
+        OnboardingBenefit(
+            id: "human-context",
+            title: "Built around the person",
+            detail: "Add who it is for, what the occasion is, and the details that should make it feel personal.",
+            systemImage: "person.crop.circle"
         ),
-        OnboardingStep(
+        OnboardingBenefit(
             id: "standard-premium",
-            title: "Start simple",
-            detail: "Standard helps with everyday messages. Premium is there for harder moments and higher limits.",
-            imageName: "slide_3"
+            title: "Standard and Premium",
+            detail: "Start with Standard drafts. Premium adds help for harder messages, higher limits, and more rewrites.",
+            systemImage: "star"
         )
     ]
 }
@@ -1859,45 +1907,57 @@ struct DraftEditorSheet: View {
 struct PaywallPlaceholderSheet: View {
     let usageStatus: UsageStatus
     let onUseStandard: () -> Void
+    let onContinuePremium: () -> Void
+    let onContinueWithApple: () -> Void
     let onRestore: () -> Void
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 22) {
-                    VStack(alignment: .leading, spacing: 10) {
-                        Image(systemName: "star.circle.fill")
-                            .font(.system(size: 50, weight: .semibold))
-                            .foregroundStyle(Color.prosePalCoral)
+                VStack(alignment: .leading, spacing: 20) {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Label("ProsePal Pro", systemImage: "star.fill")
+                            .font(.headline.weight(.semibold))
+                            .foregroundStyle(Color.prosePalProGold)
 
-                        Text("Premium generation")
+                        Text("Keep the words flowing")
                             .font(.largeTitle.weight(.bold))
-                            .minimumScaleFactor(0.75)
+                            .minimumScaleFactor(0.78)
 
-                        Text("Better drafts for harder moments, higher limits, and priority generation when available.")
+                        Text("Premium generation gives you enhanced drafts for harder moments, higher limits, and more room to regenerate.")
                             .font(.callout)
                             .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
 
                     VStack(spacing: 12) {
-                        PremiumFeatureRow(systemImage: "heart.text.square", title: "Enhanced drafts", detail: "More help for nuanced or sensitive messages.")
-                        PremiumFeatureRow(systemImage: "gauge", title: "Higher limits", detail: "More writing room for Standard and Premium drafts.")
-                        PremiumFeatureRow(systemImage: "arrow.clockwise.circle", title: "Regenerate more", detail: "Try another angle without losing your draft.")
+                        PremiumFeatureRow(systemImage: "heart.text.square", title: "Enhanced drafts", detail: "More support for nuanced, sensitive, or high-stakes messages.")
+                        PremiumFeatureRow(systemImage: "infinity", title: "Higher limits", detail: "More room for everyday cards, notes, and texts.")
+                        PremiumFeatureRow(systemImage: "arrow.triangle.2.circlepath", title: "More rewrites", detail: "Try a warmer, shorter, or clearer version when the first draft is not quite right.")
                     }
 
                     UsageStatusRow(usageStatus: usageStatus)
 
                     VStack(spacing: 10) {
+                        PaywallPlanRow(title: "Annual", subtitle: "Best value", price: "App Store price", isSelected: true)
+                        PaywallPlanRow(title: "Monthly", subtitle: "Flexible access", price: "App Store price", isSelected: false)
+                    }
+
+                    VStack(spacing: 10) {
                         Button {
-                            onUseStandard()
-                            dismiss()
+                            onContinuePremium()
                         } label: {
-                            Label("Use Standard", systemImage: "sparkles")
+                            Label("Continue with Premium", systemImage: "star.fill")
                                 .frame(maxWidth: .infinity)
                         }
                         .buttonStyle(.borderedProminent)
                         .controlSize(.large)
+
+                        Text("Auto-renews. Cancel anytime in App Store settings.")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
 
                         Button {
                             onRestore()
@@ -1908,11 +1968,51 @@ struct PaywallPlaceholderSheet: View {
                         .buttonStyle(.bordered)
                         .controlSize(.large)
 
+                        Button {
+                            onUseStandard()
+                            dismiss()
+                        } label: {
+                            Label("Use Standard", systemImage: "sparkles")
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.large)
+
                         Button("Not now") {
                             dismiss()
                         }
                         .font(.callout.weight(.semibold))
                     }
+
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("Sync across devices")
+                            .font(.headline)
+
+                        Text("Sign in with Apple to keep purchases and saved messages connected to you.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+
+                        Button {
+                            onContinueWithApple()
+                        } label: {
+                            Label("Continue with Apple", systemImage: "apple.logo")
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.large)
+                    }
+                    .padding(14)
+                    .background(Color.prosePalSecondaryGroupedBackground, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+
+                    HStack(spacing: 8) {
+                        Text("Terms")
+                        Text("/")
+                        Text("Privacy Policy")
+                    }
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity)
                 }
                 .padding(22)
             }
@@ -1923,6 +2023,52 @@ struct PaywallPlaceholderSheet: View {
                     Button("Close") { dismiss() }
                 }
             }
+        }
+    }
+}
+
+struct PaywallPlanRow: View {
+    let title: String
+    let subtitle: String
+    let price: String
+    let isSelected: Bool
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                .foregroundStyle(isSelected ? Color.prosePalCoral : .secondary)
+                .font(.title3)
+
+            VStack(alignment: .leading, spacing: 3) {
+                HStack(spacing: 8) {
+                    Text(title)
+                        .font(.headline)
+                    if isSelected {
+                        Text("Best value")
+                            .font(.caption2.weight(.bold))
+                            .padding(.horizontal, 7)
+                            .padding(.vertical, 3)
+                            .background(Color.prosePalCoralLight, in: Capsule())
+                            .foregroundStyle(Color.prosePalCoralDark)
+                    }
+                }
+
+                Text(subtitle)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer(minLength: 10)
+
+            Text(price)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+        }
+        .padding(14)
+        .background(Color.prosePalSecondaryGroupedBackground, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .strokeBorder(isSelected ? Color.prosePalCoral.opacity(0.55) : Color.clear, lineWidth: 1.4)
         }
     }
 }
@@ -2140,113 +2286,458 @@ struct SavedMessageDetailView: View {
 
 struct SettingsView: View {
     @EnvironmentObject private var model: ProsePalAppModel
+    @State private var isShowingAccountSheet = false
 
     var body: some View {
         NavigationStack {
             List {
-                Section("Account") {
-                    Button {
-                        model.showNotice("Sign in is unavailable in this preview", systemImage: "apple.logo")
-                    } label: {
-                        Label("Sign in with Apple", systemImage: "apple.logo")
-                    }
-
-                    Button {
-                        model.logPaywallOpened(trigger: "settings_subscription")
-                        model.isShowingPaywall = true
-                    } label: {
-                        Label("Subscription", systemImage: "star")
-                    }
-
-                    Button {
-                        model.restorePurchasesPlaceholder()
-                    } label: {
-                        Label("Restore purchases", systemImage: "arrow.clockwise")
-                    }
-                }
-
-                Section("Writing") {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Spelling")
-                            .font(.headline)
-
-                        Picker("Spelling", selection: $model.draft.spellingPreference) {
-                            ForEach(SpellingPreference.allCases) { preference in
-                                Text(preference.displayName).tag(preference)
-                            }
-                        }
-                        .pickerStyle(.segmented)
-
-                        Text(model.draft.spellingPreference.exampleText)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-
-                    Picker("Default tone", selection: $model.draft.tone) {
-                        ForEach(Tone.allCases) { tone in
-                            Text(tone.displayName).tag(tone)
-                        }
-                    }
-                }
-
-                Section("Generation") {
-                    ForEach([GenerationLane.standard, .premium], id: \.rawValue) { lane in
-                        Button {
-                            model.selectLane(lane)
-                        } label: {
-                            HStack {
-                                Label(lane.displayName, systemImage: lane == .premium ? "star" : "sparkles")
-                                Spacer()
-                                if model.draft.requestedLane == lane {
-                                    Image(systemName: "checkmark")
-                                        .foregroundStyle(Color.prosePalCoral)
-                                } else if model.usageStatus.isPremiumLocked(lane) {
-                                    Image(systemName: "lock.fill")
-                                        .foregroundStyle(.secondary)
-                                }
-                            }
-                        }
-                    }
-
-                    UsageStatusRow(usageStatus: model.usageStatus)
-                }
-
-                Section("Privacy") {
-                    Button {
-                        model.showNotice("Export is unavailable in this preview", systemImage: "square.and.arrow.up")
-                    } label: {
-                        Label("Export data", systemImage: "square.and.arrow.up")
-                    }
-
-                    Button(role: .destructive) {
-                        model.showNotice("Account deletion requires sign-in", systemImage: "trash")
-                    } label: {
-                        Label("Delete account", systemImage: "trash")
-                    }
-                }
-
-                Section("Support") {
-                    Button {
-                        model.showNotice("Feedback is unavailable in this preview", systemImage: "envelope")
-                    } label: {
-                        Label("Send feedback", systemImage: "envelope")
-                    }
-
-                    Label("Terms", systemImage: "doc.text")
-                    Label("Privacy Policy", systemImage: "hand.raised")
-                }
-
-                Section("About") {
-                    LabeledContent("Writing", value: "Online generation")
-                    LabeledContent("Version", value: "Native preview")
-                }
+                accountSection
+                subscriptionSection
+                securitySection
+                writingSection
+                statsSection
+                supportSection
+                privacySection
+                accountActionsSection
+                aboutSection
             }
             .navigationTitle("Settings")
+            .sheet(isPresented: $isShowingAccountSheet) {
+                AccountSignInSheet(
+                    onContinueWithApple: {
+                        model.continueWithApplePlaceholder(source: "settings")
+                    }
+                )
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+            }
             .onChange(of: model.draft.spellingPreference) { _, preference in
                 model.logSelectionChanged(kind: "spelling", value: preference.rawValue)
             }
             .onChange(of: model.draft.tone) { _, tone in
                 model.logSelectionChanged(kind: "tone", value: tone.rawValue)
+            }
+        }
+    }
+
+    private var accountSection: some View {
+        Section("Account") {
+            if model.isSignedIn {
+                SettingsRow(
+                    systemImage: "person.crop.circle.fill",
+                    title: "Apple account",
+                    subtitle: "Signed in with Apple",
+                    trailingText: model.usageStatus.isPremiumUnlocked ? "Pro" : "Free",
+                    tint: Color.prosePalCoral
+                )
+            } else {
+                Button {
+                    isShowingAccountSheet = true
+                } label: {
+                    SettingsRow(
+                        systemImage: "apple.logo",
+                        title: "Sign in with Apple",
+                        subtitle: "Sync saved messages, purchases, and preferences",
+                        trailingSystemImage: "chevron.right",
+                        tint: .primary
+                    )
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+
+    private var subscriptionSection: some View {
+        Section("Subscription") {
+            Button {
+                model.logPaywallOpened(trigger: "settings_subscription")
+                model.isShowingPaywall = true
+            } label: {
+                SettingsRow(
+                    systemImage: model.usageStatus.isPremiumUnlocked ? "star.fill" : "star",
+                    title: model.usageStatus.isPremiumUnlocked ? "ProsePal Pro" : "Free Plan",
+                    subtitle: model.usageStatus.usageText,
+                    trailingText: model.usageStatus.isPremiumUnlocked ? "Active" : "Buy Pro",
+                    tint: model.usageStatus.isPremiumUnlocked ? Color.prosePalProGold : Color.prosePalCoral
+                )
+            }
+            .buttonStyle(.plain)
+
+            Button {
+                model.manageSubscriptionPlaceholder()
+            } label: {
+                SettingsRow(
+                    systemImage: "creditcard",
+                    title: "Manage Subscription",
+                    subtitle: "Open Apple subscription settings",
+                    trailingSystemImage: "chevron.right"
+                )
+            }
+            .buttonStyle(.plain)
+
+            Button {
+                model.restorePurchasesPlaceholder()
+            } label: {
+                SettingsRow(
+                    systemImage: "arrow.clockwise",
+                    title: "Restore Purchases",
+                    subtitle: "Reinstalled? Restore your Pro access"
+                )
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    private var securitySection: some View {
+        Section("Security") {
+            Toggle(
+                isOn: Binding(
+                    get: { model.biometricLockEnabled },
+                    set: { model.setBiometricLockEnabled($0) }
+                )
+            ) {
+                SettingsToggleLabel(
+                    systemImage: "faceid",
+                    title: "Face ID",
+                    subtitle: model.isSignedIn ? "Require Face ID to open ProsePal" : "Sign in before enabling app lock"
+                )
+            }
+        }
+    }
+
+    private var writingSection: some View {
+        Section("Writing") {
+            VStack(alignment: .leading, spacing: 10) {
+                SettingsToggleLabel(
+                    systemImage: "translate",
+                    title: "Spelling",
+                    subtitle: model.draft.spellingPreference.exampleText
+                )
+
+                Picker("Spelling", selection: $model.draft.spellingPreference) {
+                    ForEach(SpellingPreference.allCases) { preference in
+                        Text(preference.displayName).tag(preference)
+                    }
+                }
+                .pickerStyle(.segmented)
+            }
+            .padding(.vertical, 4)
+
+            Picker("Default tone", selection: $model.draft.tone) {
+                ForEach(Tone.allCases) { tone in
+                    Text(tone.displayName).tag(tone)
+                }
+            }
+
+            ForEach([GenerationLane.standard, .premium], id: \.rawValue) { lane in
+                Button {
+                    model.selectLane(lane)
+                } label: {
+                    SettingsRow(
+                        systemImage: lane == .premium ? "star" : "sparkles",
+                        title: lane == .standard ? "Standard generation" : "Premium generation",
+                        subtitle: lane == .standard ? "Included for everyday messages" : "Enhanced drafts and higher limits",
+                        trailingSystemImage: model.draft.requestedLane == lane ? "checkmark" : (model.usageStatus.isPremiumLocked(lane) ? "lock.fill" : nil),
+                        tint: model.draft.requestedLane == lane ? Color.prosePalCoral : .secondary
+                    )
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+
+    private var statsSection: some View {
+        Section("Your Stats") {
+            LabeledContent("Generated drafts", value: "\(model.totalGeneratedCount)")
+            LabeledContent("Saved messages", value: "\(model.savedMessages.count)")
+            LabeledContent("Standard left", value: "\(model.usageStatus.standardRemaining) of \(model.usageStatus.standardLimit)")
+        }
+    }
+
+    private var supportSection: some View {
+        Section("Support") {
+            NavigationLink {
+                SettingsInfoScreen(
+                    title: "Help & FAQ",
+                    systemImage: "questionmark.circle",
+                    detail: "Find guidance for writing, saving, sharing, subscriptions, and account support."
+                )
+            } label: {
+                SettingsRow(
+                    systemImage: "questionmark.circle",
+                    title: "Help & FAQ",
+                    subtitle: "Common questions and support"
+                )
+            }
+
+            Button {
+                model.showNotice("Feedback is unavailable right now", systemImage: "envelope")
+            } label: {
+                SettingsRow(
+                    systemImage: "envelope",
+                    title: "Send Feedback",
+                    subtitle: "Questions, bugs, or feature requests"
+                )
+            }
+            .buttonStyle(.plain)
+
+            Button {
+                model.rateAppPlaceholder()
+            } label: {
+                SettingsRow(
+                    systemImage: "star",
+                    title: "Rate ProsePal",
+                    subtitle: "Love the app? Leave a review"
+                )
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    private var privacySection: some View {
+        Section("Privacy & Legal") {
+            NavigationLink {
+                SettingsInfoScreen(
+                    title: "Terms of Service",
+                    systemImage: "doc.text",
+                    detail: "Terms of Service for using ProsePal."
+                )
+            } label: {
+                SettingsRow(systemImage: "doc.text", title: "Terms of Service")
+            }
+
+            NavigationLink {
+                SettingsInfoScreen(
+                    title: "Privacy Policy",
+                    systemImage: "hand.raised",
+                    detail: "How ProsePal handles privacy, accounts, purchases, and saved messages."
+                )
+            } label: {
+                SettingsRow(systemImage: "hand.raised", title: "Privacy Policy")
+            }
+
+            Toggle(
+                isOn: Binding(
+                    get: { model.analyticsEnabled },
+                    set: { model.setAnalyticsEnabled($0) }
+                )
+            ) {
+                SettingsToggleLabel(
+                    systemImage: "chart.line.uptrend.xyaxis",
+                    title: "Product Analytics",
+                    subtitle: model.analyticsEnabled ? "Anonymous usage patterns help improve the app" : "Off - no product analytics events sent"
+                )
+            }
+
+            Toggle(
+                isOn: Binding(
+                    get: { model.crashReportsEnabled },
+                    set: { model.setCrashReportsEnabled($0) }
+                )
+            ) {
+                SettingsToggleLabel(
+                    systemImage: "exclamationmark.triangle",
+                    title: "Crash Reports",
+                    subtitle: model.crashReportsEnabled ? "Automatic diagnostics help fix stability issues" : "Off - crashes stay only on this device"
+                )
+            }
+        }
+    }
+
+    private var accountActionsSection: some View {
+        Section("Account Actions") {
+            Button {
+                model.exportDataPlaceholder()
+            } label: {
+                SettingsRow(
+                    systemImage: "square.and.arrow.up",
+                    title: "Export My Data",
+                    subtitle: "Download a copy of your data"
+                )
+            }
+            .buttonStyle(.plain)
+
+            Button {
+                model.signOutPlaceholder()
+            } label: {
+                SettingsRow(
+                    systemImage: "rectangle.portrait.and.arrow.right",
+                    title: "Sign Out",
+                    subtitle: model.isSignedIn ? nil : "No account signed in",
+                    tint: .secondary
+                )
+            }
+            .buttonStyle(.plain)
+
+            Button(role: .destructive) {
+                model.deleteAccountPlaceholder()
+            } label: {
+                SettingsRow(
+                    systemImage: "trash",
+                    title: "Delete Account",
+                    subtitle: "Permanently delete your account and data",
+                    tint: .red
+                )
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    private var aboutSection: some View {
+        Section("About") {
+            LabeledContent("Writing", value: "Online generation")
+            LabeledContent("Version", value: "Native iOS")
+        }
+    }
+}
+
+struct AccountSignInSheet: View {
+    let onContinueWithApple: () -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 22) {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("Sign in with Apple")
+                            .font(.largeTitle.weight(.bold))
+                            .minimumScaleFactor(0.78)
+
+                        Text("Keep your saved messages, purchases, and writing preferences connected to you.")
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    VStack(spacing: 12) {
+                        PremiumFeatureRow(systemImage: "bookmark", title: "Saved messages", detail: "Keep your favourites with you across devices.")
+                        PremiumFeatureRow(systemImage: "arrow.clockwise", title: "Purchase restore", detail: "Connect Pro access to your Apple account.")
+                        PremiumFeatureRow(systemImage: "lock.shield", title: "Account protection", detail: "Use Apple sign-in for sensitive account actions.")
+                    }
+
+                    Button {
+                        onContinueWithApple()
+                    } label: {
+                        Label("Continue with Apple", systemImage: "apple.logo")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.large)
+
+                    Text("By continuing, you agree to the Terms and Privacy Policy.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity)
+                        .multilineTextAlignment(.center)
+                }
+                .padding(22)
+            }
+            .background(Color.prosePalGroupedBackground)
+            .navigationTitle("Account")
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Close") { dismiss() }
+                }
+            }
+        }
+    }
+}
+
+struct SettingsInfoScreen: View {
+    let title: String
+    let systemImage: String
+    let detail: String
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                Image(systemName: systemImage)
+                    .font(.system(size: 42, weight: .semibold))
+                    .foregroundStyle(Color.prosePalCoral)
+
+                Text(title)
+                    .font(.largeTitle.weight(.bold))
+
+                Text(detail)
+                    .font(.body)
+                    .foregroundStyle(.secondary)
+                    .lineSpacing(4)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(22)
+        }
+        .background(Color.prosePalGroupedBackground)
+        .navigationTitle(title)
+    }
+}
+
+struct SettingsRow: View {
+    let systemImage: String
+    let title: String
+    var subtitle: String?
+    var trailingText: String?
+    var trailingSystemImage: String?
+    var tint: Color = .secondary
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: systemImage)
+                .font(.body.weight(.semibold))
+                .foregroundStyle(tint)
+                .frame(width: 24)
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title)
+                    .font(.body)
+                    .foregroundStyle(.primary)
+                if let subtitle {
+                    Text(subtitle)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+
+            Spacer(minLength: 10)
+
+            if let trailingText {
+                Text(trailingText)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(tint)
+                    .lineLimit(1)
+            }
+
+            if let trailingSystemImage {
+                Image(systemName: trailingSystemImage)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(tint)
+            }
+        }
+        .accessibilityElement(children: .combine)
+    }
+}
+
+struct SettingsToggleLabel: View {
+    let systemImage: String
+    let title: String
+    let subtitle: String
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: systemImage)
+                .font(.body.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .frame(width: 24)
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title)
+                    .font(.body)
+                Text(subtitle)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
     }
