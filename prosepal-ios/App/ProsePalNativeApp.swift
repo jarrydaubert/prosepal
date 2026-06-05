@@ -6,11 +6,17 @@ import SwiftUI
 
 @main
 struct ProsePalNativeApp: App {
+    private let authSessionController = AuthSessionController(
+        store: KeychainAuthSessionStore(service: "com.prosepal.native.auth")
+    )
+
     var body: some Scene {
         WindowGroup {
             ProsePalRootView(
                 model: ProsePalAppModel(
-                    client: MessageWritingClientFactory.makeClient(),
+                    client: MessageWritingClientFactory.makeClient(
+                        authSessionController: authSessionController
+                    ),
                     clientContext: ClientContext(
                         appVersion: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0.1.0",
                         buildNumber: Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
@@ -22,11 +28,15 @@ struct ProsePalNativeApp: App {
 }
 
 private enum MessageWritingClientFactory {
-    static func makeClient() -> MessageWritingClient {
+    static func makeClient(authSessionController: AuthSessionController?) -> MessageWritingClient {
         if let endpoint = gatewayEndpoint {
             let gatewayClient = GatewayMessageWritingClient(
                 endpoint: endpoint,
-                devGatewaySecret: gatewayDevSecret
+                devGatewaySecret: gatewayDevSecret,
+                authorizationTokenProvider: {
+                    guard let authSessionController else { return nil }
+                    return try await authSessionController.currentAccessToken()
+                }
             )
 
             return MessageWritingRouter(

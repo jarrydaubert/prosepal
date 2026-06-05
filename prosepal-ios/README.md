@@ -195,6 +195,21 @@ The app is intentionally dependency-light and SwiftUI-first. It uses
 `NavigationStack`, `TabView`, Swift concurrency, system materials, searchable
 lists, native sheets, and `#Preview`.
 
+Native auth plumbing has started without adding a third-party SDK:
+
+- `AuthSessionController` owns the current session and exposes the gateway
+  access-token provider.
+- `KeychainAuthSessionStore` keeps Supabase session tokens in the app keychain,
+  not `UserDefaults`.
+- `SupabaseAuthClient` implements only the Apple ID-token exchange needed to
+  turn a native Apple credential into a Supabase session.
+- `GatewayMessageWritingClient` receives an Authorization bearer token from the
+  session controller when a valid session exists.
+
+The Sign in with Apple button is still a placeholder in the UI until the native
+Apple credential request, entitlement/capability setup, and wired-device proof
+are completed.
+
 Some "modern Apple" capabilities are deliberately deferred:
 
 - `.xcconfig` files and environment-specific schemes should be added when there
@@ -206,8 +221,8 @@ Some "modern Apple" capabilities are deliberately deferred:
 - Newer visual material effects should stay compatible with the iOS 17 minimum
   target and should not push ProsePal into a techy visual style.
 
-No RevenueCat, Supabase, Firebase, Sentry, analytics, or provider SDKs are
-included in this slice.
+No RevenueCat, Supabase SDK, Firebase, Sentry, analytics, provider SDKs, or
+StoreKit purchase SDKs are included in this slice.
 
 Run the native contract tests and simulator build from this folder:
 

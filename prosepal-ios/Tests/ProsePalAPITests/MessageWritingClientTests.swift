@@ -128,6 +128,55 @@ final class MessageWritingClientTests: XCTestCase {
         _ = try await client.generateCard(request: request)
     }
 
+    func testGatewayClientAddsAuthorizationHeaderFromTokenProvider() async throws {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [CapturingURLProtocol.self]
+        let session = URLSession(configuration: configuration)
+        let endpoint = try XCTUnwrap(URL(string: "https://gateway.example/functions/v1/generate-card"))
+        let client = GatewayMessageWritingClient(
+            endpoint: endpoint,
+            session: session,
+            authorizationTokenProvider: { "supabase-access-token" }
+        )
+        let request = CardRequest(
+            idempotencyKey: "fixed-key",
+            intent: CardIntent(
+                occasion: .birthday,
+                relationship: .parent,
+                tone: .heartfelt
+            ),
+            requestedLane: .standard,
+            clientContext: ClientContext(appVersion: "0.0.0", buildNumber: "1")
+        )
+
+        CapturingURLProtocol.requestHandler = { request in
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer supabase-access-token")
+
+            let response = try XCTUnwrap(HTTPURLResponse(
+                url: endpoint,
+                statusCode: 200,
+                httpVersion: nil,
+                headerFields: ["Content-Type": "application/json"]
+            ))
+            let data = """
+            {
+              "messages": [
+                { "id": "message-1", "text": "A gateway-shaped message." }
+              ],
+              "lane_used": "standard",
+              "fallback_status": "none",
+              "retry_eligibility": "ineligible",
+              "prompt_contract_version": 1,
+              "output_contract_version": 1
+            }
+            """.data(using: .utf8)!
+            return (response, data)
+        }
+        defer { CapturingURLProtocol.requestHandler = nil }
+
+        _ = try await client.generateCard(request: request)
+    }
+
     func testGatewayClientMapsUnauthorizedResponseToConfigurationMessage() async throws {
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [CapturingURLProtocol.self]
