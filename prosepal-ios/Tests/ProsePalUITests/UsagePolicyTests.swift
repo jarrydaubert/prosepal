@@ -63,6 +63,43 @@ final class UsagePolicyTests: XCTestCase {
         XCTAssertEqual(model.errorMessage, "This is taking longer than expected. Please try again.")
     }
 
+    func testAdjustCurrentMessageReturnsToComposeWithoutDroppingDraft() {
+        let model = makeModel()
+        model.draft.occasion = .christmas
+        model.draft.recipientName = "Sam"
+        model.generatedMessages = [GeneratedMessage(id: "draft-1", text: "A thoughtful draft.")]
+        model.isShowingResults = true
+
+        model.adjustCurrentMessage()
+
+        XCTAssertFalse(model.isShowingResults)
+        XCTAssertEqual(model.draft.occasion, .christmas)
+        XCTAssertEqual(model.draft.recipientName, "Sam")
+        XCTAssertEqual(model.generatedMessages.count, 1)
+    }
+
+    func testStartNewMessageResetsDraftResultsAndErrors() {
+        let model = makeModel()
+        model.draft.occasion = .christmas
+        model.draft.relationship = .colleague
+        model.draft.recipientName = "Sam"
+        model.generatedMessages = [GeneratedMessage(id: "draft-1", text: "A thoughtful draft.")]
+        model.errorMessage = "Try again."
+        model.fallbackStatus = .degradedToStandard
+        model.laneUsed = .standard
+        model.isShowingResults = true
+
+        model.startNewMessage()
+
+        XCTAssertFalse(model.isShowingResults)
+        XCTAssertTrue(model.generatedMessages.isEmpty)
+        XCTAssertNil(model.errorMessage)
+        XCTAssertEqual(model.fallbackStatus, .none)
+        XCTAssertNil(model.laneUsed)
+        XCTAssertEqual(model.draft, MessageDraft())
+        XCTAssertEqual(model.selectedTab, .compose)
+    }
+
     private func makeModel(
         usageStatus: UsageStatus = UsageStatus(),
         client: MessageWritingClient? = nil

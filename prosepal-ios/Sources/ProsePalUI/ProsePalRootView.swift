@@ -211,6 +211,31 @@ public final class ProsePalAppModel: ObservableObject {
         diagnostics.onboardingShown()
     }
 
+    func adjustCurrentMessage() {
+        diagnostics.messageAction(
+            "adjust_message",
+            source: "results",
+            messageCharacters: generatedMessages.reduce(0) { $0 + $1.text.count }
+        )
+        isShowingResults = false
+    }
+
+    func startNewMessage() {
+        diagnostics.messageAction(
+            "start_new_message",
+            source: "results",
+            messageCharacters: generatedMessages.reduce(0) { $0 + $1.text.count }
+        )
+        draft = MessageDraft()
+        generatedMessages = []
+        errorMessage = nil
+        fallbackStatus = .none
+        laneUsed = nil
+        isShowingResults = false
+        selectedTab = .compose
+        showNotice("Ready for a new message", systemImage: "square.and.pencil")
+    }
+
     private func prepareForGeneration() -> Bool {
         if usageStatus.isPremiumLocked(draft.requestedLane) {
             diagnostics.paywallShown(
@@ -828,18 +853,16 @@ struct ComposeView: View {
             .navigationTitle("Create")
             .toolbar {
                 ToolbarItemGroup(placement: .keyboard) {
+                    Button("Done") { focusedField = nil }
+
                     Button {
                         focusedField = nil
                         Task { await model.generate() }
                     } label: {
-                        Text(model.isGenerating ? "Writing" : "Write")
-                            .fontWeight(.semibold)
+                        Label(model.isGenerating ? "Writing" : "Write message", systemImage: "sparkles")
                     }
+                    .fontWeight(.semibold)
                     .disabled(model.isGenerating)
-
-                    Spacer(minLength: 16)
-
-                    Button("Done") { focusedField = nil }
                 }
             }
             .safeAreaInset(edge: .bottom, spacing: 0) {
@@ -914,9 +937,11 @@ struct ComposeView: View {
 
     private var summaryText: String {
         let length = model.draft.length == .standard ? "" : "\(model.draft.length.displayName.lowercased()) "
-        let base = "\(model.draft.tone.displayName) \(length)message"
+        let tone = model.draft.tone.displayName.lowercased()
+        let occasion = model.draft.occasion.displayName.lowercased()
+        let base = "\(tone) \(length)\(occasion) message"
         guard let recipient = model.draft.recipientName.nilIfBlank else {
-            return base
+            return "\(base) for \(model.draft.relationship.summaryObjectText)"
         }
         return "\(base) for \(recipient)"
     }
@@ -970,6 +995,8 @@ struct ComposeView: View {
                     .font(.headline)
                 TextField("Name or person", text: $model.draft.recipientName, prompt: Text("Alex, Mum, my manager"))
                     .focused($focusedField, equals: ComposeField.recipient)
+                    .submitLabel(.done)
+                    .onSubmit { focusedField = nil }
             }
         }
     }
@@ -1031,17 +1058,23 @@ struct ComposeView: View {
 
             TextField("Anything to include?", text: $model.draft.thingsToInclude, prompt: Text("quiet cup of tea, old photos"))
                 .focused($focusedField, equals: .include)
+                .submitLabel(.done)
+                .onSubmit { focusedField = nil }
 
             Divider()
 
             TextField("Anything to avoid?", text: $model.draft.thingsToAvoid, prompt: Text("age jokes, formal wording"))
                 .focused($focusedField, equals: .avoid)
+                .submitLabel(.done)
+                .onSubmit { focusedField = nil }
 
             Divider()
 
             TextField("Extra context", text: $model.draft.personalContext, axis: .vertical)
                 .lineLimit(3...6)
                 .focused($focusedField, equals: .context)
+                .submitLabel(.done)
+                .onSubmit { focusedField = nil }
         }
         .padding(16)
         .background(Color.prosePalSecondaryGroupedBackground, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
@@ -1082,6 +1115,7 @@ struct ComposeView: View {
 
     private var generateButton: some View {
         Button {
+            focusedField = nil
             Task { await model.generate() }
         } label: {
             HStack {
@@ -1098,8 +1132,8 @@ struct ComposeView: View {
         .controlSize(.large)
         .disabled(model.isGenerating)
         .padding(.horizontal, 20)
-        .padding(.top, 10)
-        .padding(.bottom, 12)
+        .padding(.top, 8)
+        .padding(.bottom, 8)
         .background(Color.prosePalGroupedBackground)
         .overlay(alignment: .top) {
             Divider()
@@ -1365,6 +1399,25 @@ struct RelationshipPickerSheet: View {
 }
 
 private extension Relationship {
+    var summaryObjectText: String {
+        switch self {
+        case .closeFriend: "a close friend"
+        case .family: "family"
+        case .parent: "a parent"
+        case .child: "your child"
+        case .sibling: "a sibling"
+        case .grandparent: "a grandparent"
+        case .grandchild: "a grandchild"
+        case .romantic: "your partner"
+        case .colleague: "a colleague"
+        case .boss: "your boss"
+        case .mentor: "a mentor"
+        case .teacher: "a teacher"
+        case .neighbor: "a neighbor"
+        case .acquaintance: "an acquaintance"
+        }
+    }
+
     var searchText: String {
         "\(displayName) \(pickerDescription) \(generationHint)"
     }
@@ -1640,7 +1693,6 @@ struct UsageStatusRow: View {
 
 struct ResultsView: View {
     @EnvironmentObject private var model: ProsePalAppModel
-    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         Group {
@@ -1654,6 +1706,9 @@ struct ResultsView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 16) {
                         VStack(alignment: .leading, spacing: 6) {
+                            Text("Here are three options shaped around your details.")
+                                .font(.headline)
+                                .foregroundStyle(.primary)
                             Text("Pick one to copy, edit, save, or share.")
                                 .font(.callout)
                                 .foregroundStyle(.secondary)
@@ -1668,33 +1723,76 @@ struct ResultsView: View {
                         ForEach(Array(model.generatedMessages.enumerated()), id: \.element.id) { index, message in
                             ResultCard(message: message, draftNumber: index + 1)
                         }
-
-                        Button {
-                            dismiss()
-                        } label: {
-                            Label("Start over", systemImage: "arrow.uturn.backward")
-                                .frame(maxWidth: .infinity)
-                        }
-                        .buttonStyle(.bordered)
-                        .controlSize(.large)
-                        .padding(.top, 4)
                     }
                     .padding(20)
+                    .padding(.bottom, 96)
                 }
                 .background(Color.prosePalGroupedBackground)
+                .safeAreaInset(edge: .bottom, spacing: 0) {
+                    resultsActionBar
+                }
             }
         }
         .navigationTitle(resultsTitle)
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Button {
-                    Task { await model.generate() }
-                } label: {
-                    Label("Regenerate", systemImage: "arrow.clockwise")
+    }
+
+    private var resultsActionBar: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 10) {
+                adjustButton
+                startNewButton
+                regenerateButton
+            }
+
+            VStack(spacing: 10) {
+                HStack(spacing: 10) {
+                    adjustButton
+                    startNewButton
                 }
-                .disabled(model.isGenerating)
+                regenerateButton
             }
         }
+        .padding(.horizontal, 20)
+        .padding(.top, 10)
+        .padding(.bottom, 12)
+        .background(.bar)
+        .overlay(alignment: .top) {
+            Divider()
+        }
+    }
+
+    private var adjustButton: some View {
+        Button {
+            model.adjustCurrentMessage()
+        } label: {
+            Label("Adjust", systemImage: "slider.horizontal.3")
+                .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.bordered)
+        .controlSize(.large)
+    }
+
+    private var startNewButton: some View {
+        Button {
+            model.startNewMessage()
+        } label: {
+            Label("Start new", systemImage: "square.and.pencil")
+                .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.bordered)
+        .controlSize(.large)
+    }
+
+    private var regenerateButton: some View {
+        Button {
+            Task { await model.generate() }
+        } label: {
+            Label(model.isGenerating ? "Writing" : "Regenerate", systemImage: "arrow.clockwise")
+                .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.borderedProminent)
+        .controlSize(.large)
+        .disabled(model.isGenerating)
     }
 
     @ViewBuilder
@@ -1742,6 +1840,7 @@ struct ResultCard: View {
     let draftNumber: Int
     @State private var editedText = ""
     @State private var isEditing = false
+    @State private var isCopied = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -1763,14 +1862,13 @@ struct ResultCard: View {
                 .textSelection(.enabled)
 
             resultActions
-            .buttonStyle(.bordered)
-            .controlSize(.small)
+                .controlSize(.regular)
         }
         .padding(18)
         .background(Color.prosePalSecondaryGroupedBackground, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
         .contextMenu {
             Button {
-                model.copyText(message.text)
+                copyMessage()
             } label: {
                 Label("Copy", systemImage: "doc.on.doc")
             }
@@ -1814,30 +1912,32 @@ struct ResultCard: View {
     private var resultActions: some View {
         ViewThatFits(in: .horizontal) {
             HStack(spacing: 10) {
-                copyButton
                 shareLink
                 editButton
-                Spacer(minLength: 0)
                 saveButton
+                copyButton
             }
 
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 10) {
                 HStack(spacing: 10) {
-                    copyButton
                     shareLink
                     editButton
+                    saveButton
                 }
-                saveButton
+                copyButton
             }
         }
     }
 
     private var copyButton: some View {
         Button {
-            model.copyText(message.text)
+            copyMessage()
         } label: {
-            Label("Copy", systemImage: "doc.on.doc")
+            Label(isCopied ? "Copied" : "Copy", systemImage: isCopied ? "checkmark" : "doc.on.doc")
+                .frame(maxWidth: .infinity)
         }
+        .buttonStyle(.borderedProminent)
+        .layoutPriority(1)
     }
 
     private var shareLink: some View {
@@ -1847,6 +1947,7 @@ struct ResultCard: View {
         .simultaneousGesture(TapGesture().onEnded {
             model.logShareText(message.text, source: "result_card")
         })
+        .buttonStyle(.bordered)
     }
 
     private var editButton: some View {
@@ -1857,6 +1958,7 @@ struct ResultCard: View {
         } label: {
             Label("Edit", systemImage: "square.and.pencil")
         }
+        .buttonStyle(.bordered)
     }
 
     private var saveButton: some View {
@@ -1866,6 +1968,17 @@ struct ResultCard: View {
             Label(model.isSaved(message) ? "Saved" : "Save", systemImage: model.isSaved(message) ? "bookmark.fill" : "bookmark")
         }
         .disabled(model.isSaved(message))
+        .buttonStyle(.bordered)
+    }
+
+    private func copyMessage() {
+        model.copyText(message.text)
+        isCopied = true
+
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 1_700_000_000)
+            isCopied = false
+        }
     }
 }
 
