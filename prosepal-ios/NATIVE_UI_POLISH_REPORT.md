@@ -13,7 +13,7 @@ This pass intentionally did not change production AI routing, add SDKs, add prov
 
 | Area | Before | After |
 | --- | --- | --- |
-| Onboarding | Artwork and copy could crowd the lower CTA on smaller/tall-safe-area layouts. | Onboarding pages now scroll and artwork has a max height so the CTA remains reachable. |
+| Onboarding | Welcome copy and the lower CTA could feel cramped on smaller/tall-safe-area layouts. | The single welcome screen scrolls, keeps the CTA in a bottom safe-area inset, and no longer depends on bitmap artwork. |
 | Create keyboard state | Sticky Generate was hidden while typing, but scroll content had limited keyboard/CTA buffer. | Create content now reserves more bottom scroll space, keeps Write in the keyboard toolbar while typing, and keeps the sticky CTA above the tab bar when the keyboard is closed. |
 | Relationship picker | Visible relationship cards made Create feel busy as more Flutter taxonomy moved over. | Relationship is a compact selected row with the full taxonomy in a searchable grouped sheet. |
 | Tone picker | Visible tone cards competed with the writing fields. | Tone is a compact selected row with every tone available in a searchable sheet. |
@@ -26,7 +26,7 @@ This pass intentionally did not change production AI routing, add SDKs, add prov
 | Loading state | Native generation only changed the button to Writing. | A full-screen native writing overlay now mirrors Flutter's waiting-state reassurance without provider/model wording. |
 | Results actions | Copy, Share, Edit, and Save were forced into a single row. | Draft actions adapt between one-row and stacked layouts so buttons remain visible. |
 | Results language | Results used Drafts as the primary title. | Results now use Messages/Options language to match the broader card/text/note use case. |
-| Launch/onboarding logo | The launch storyboard and onboarding used logo treatment. | Launch is plain navy, and onboarding uses artwork without placing the logo on screen. |
+| Launch/onboarding logo | Earlier native passes carried launch-logo/onboarding artwork assets forward. | Launch is plain navy, and the first-run welcome uses brand color, type, and SF Symbols without shipping unused logo/artwork assets. |
 | Edit draft sheet | Actions lived inside the main sheet content and could be cramped with the keyboard. | Edit actions sit in a bottom safe-area bar with adaptive layout and sheet detents. |
 | Paywall sheet | Medium-height presentation could crowd content. | Paywall content scrolls and supports medium/large detents. |
 | Visible copy | Some copy exposed setup/roadmap wording such as contract/build language. | Settings and notices now use user-facing wording and avoid provider/model terminology. |

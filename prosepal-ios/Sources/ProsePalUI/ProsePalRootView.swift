@@ -207,6 +207,10 @@ public final class ProsePalAppModel: ObservableObject {
         diagnostics.onboardingCompleted()
     }
 
+    func logOnboardingShown() {
+        diagnostics.onboardingShown()
+    }
+
     private func prepareForGeneration() -> Bool {
         if usageStatus.isPremiumLocked(draft.requestedLane) {
             diagnostics.paywallShown(
@@ -539,6 +543,7 @@ enum AppTab: String, Hashable {
 }
 
 public struct ProsePalRootView: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @StateObject private var model: ProsePalAppModel
 
     public init(model: @autoclosure @escaping () -> ProsePalAppModel) {
@@ -549,12 +554,18 @@ public struct ProsePalRootView: View {
         Group {
             if model.hasCompletedOnboarding {
                 AppTabsView()
+                    .transition(.opacity)
             } else {
-                OnboardingView(onStart: model.completeOnboarding)
+                OnboardingView(
+                    onStart: model.completeOnboarding,
+                    onShown: model.logOnboardingShown
+                )
+                .transition(.opacity)
             }
         }
         .tint(Color.prosePalCoral)
         .environmentObject(model)
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.22), value: model.hasCompletedOnboarding)
         .sheet(isPresented: $model.isShowingPaywall) {
             PaywallPlaceholderSheet(
                 usageStatus: model.usageStatus,
@@ -610,13 +621,17 @@ struct AppTabsView: View {
 
 struct OnboardingView: View {
     var onStart: () -> Void
+    var onShown: () -> Void = {}
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @ScaledMetric(relativeTo: .largeTitle) private var welcomeTitleSize: CGFloat = 45
+    @ScaledMetric(relativeTo: .largeTitle) private var brandTitleSize: CGFloat = 48
 
     private let benefits = OnboardingBenefit.all
 
     var body: some View {
         GeometryReader { proxy in
             ZStack {
-                Color.black.ignoresSafeArea()
+                onboardingBackground
 
                 ScrollView {
                     VStack(alignment: .leading, spacing: 0) {
@@ -645,15 +660,17 @@ struct OnboardingView: View {
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 18)
                 }
-                .buttonStyle(.plain)
-                .foregroundStyle(.black)
-                .background(Color.white, in: Capsule())
+                .buttonStyle(OnboardingPrimaryButtonStyle(reduceMotion: reduceMotion))
                 .padding(.horizontal, 30)
                 .padding(.top, 12)
                 .padding(.bottom, 16)
                 .background(
                     LinearGradient(
-                        colors: [.black.opacity(0), .black, .black],
+                        colors: [
+                            Color.prosePalNavy.opacity(0),
+                            Color.prosePalNavy,
+                            Color.prosePalNavy
+                        ],
                         startPoint: .top,
                         endPoint: .bottom
                     )
@@ -662,18 +679,19 @@ struct OnboardingView: View {
             }
         }
         .preferredColorScheme(.dark)
+        .onAppear(perform: onShown)
     }
 
     private var welcomeTitle: some View {
         VStack(spacing: 8) {
             Text("Welcome to")
-                .font(.system(size: 45, weight: .bold, design: .rounded))
+                .font(.system(size: welcomeTitleSize, weight: .bold, design: .rounded).leading(.tight))
                 .foregroundStyle(.white)
                 .minimumScaleFactor(0.78)
                 .lineLimit(1)
 
             Text("ProsePal")
-                .font(.system(size: 48, weight: .bold, design: .rounded))
+                .font(.system(size: brandTitleSize, weight: .bold, design: .rounded).leading(.tight))
                 .foregroundStyle(
                     LinearGradient(
                         colors: [
@@ -690,18 +708,39 @@ struct OnboardingView: View {
                 .lineLimit(1)
         }
         .multilineTextAlignment(.center)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Welcome to ProsePal")
+        .accessibilityAddTraits(.isHeader)
+    }
+
+    private var onboardingBackground: some View {
+        Color.prosePalNavy
+            .overlay {
+                LinearGradient(
+                    colors: [
+                        Color.prosePalNavy,
+                        Color.prosePalDeepNavy.opacity(0.96),
+                        Color.prosePalNavy
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            }
+            .ignoresSafeArea()
     }
 }
 
 private struct OnboardingBenefitRow: View {
     let benefit: OnboardingBenefit
+    @ScaledMetric(relativeTo: .title2) private var iconSize: CGFloat = 29
+    @ScaledMetric(relativeTo: .title2) private var iconFrameSize: CGFloat = 42
 
     var body: some View {
         HStack(alignment: .top, spacing: 24) {
             Image(systemName: benefit.systemImage)
-                .font(.system(size: 29, weight: .semibold))
+                .font(.system(size: iconSize, weight: .semibold))
                 .foregroundStyle(.white)
-                .frame(width: 42, height: 42)
+                .frame(width: max(42, iconFrameSize), height: max(42, iconFrameSize))
 
             VStack(alignment: .leading, spacing: 6) {
                 Text(benefit.title)
@@ -716,6 +755,19 @@ private struct OnboardingBenefitRow: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
+        .accessibilityElement(children: .combine)
+    }
+}
+
+private struct OnboardingPrimaryButtonStyle: ButtonStyle {
+    var reduceMotion: Bool
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .foregroundStyle(.black)
+            .background(Color.white.opacity(configuration.isPressed ? 0.86 : 1), in: Capsule())
+            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.985 : 1)
+            .animation(reduceMotion ? nil : .easeOut(duration: 0.12), value: configuration.isPressed)
     }
 }
 
@@ -2653,12 +2705,13 @@ struct SettingsInfoScreen: View {
     let title: String
     let systemImage: String
     let detail: String
+    @ScaledMetric(relativeTo: .largeTitle) private var iconSize: CGFloat = 42
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 Image(systemName: systemImage)
-                    .font(.system(size: 42, weight: .semibold))
+                    .font(.system(size: iconSize, weight: .semibold))
                     .foregroundStyle(Color.prosePalCoral)
 
                 Text(title)
@@ -2777,6 +2830,7 @@ struct NoticeBanner: View {
 private struct WritingProgressOverlay: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var messageIndex = 0
+    @ScaledMetric(relativeTo: .largeTitle) private var sparklesSize: CGFloat = 34
 
     private let messages = [
         "Finding the right words...",
@@ -2798,7 +2852,7 @@ private struct WritingProgressOverlay: View {
                         .strokeBorder(Color.white.opacity(0.22), lineWidth: 1)
                         .frame(width: 96, height: 96)
                     Image(systemName: "sparkles")
-                        .font(.system(size: 34, weight: .semibold))
+                        .font(.system(size: sparklesSize, weight: .semibold))
                         .foregroundStyle(.white)
                         .scaleEffect(reduceMotion ? 1 : (messageIndex.isMultiple(of: 2) ? 1 : 1.05))
                         .animation(.easeInOut(duration: 0.22), value: messageIndex)
@@ -2858,47 +2912,6 @@ private struct ProsePalBrandBackdrop: View {
             )
         }
         .ignoresSafeArea()
-    }
-}
-
-private struct PackageResourceImage: View {
-    let name: String
-    var fileExtension = "png"
-    var subdirectory: String?
-
-    var body: some View {
-        content
-            .accessibilityHidden(true)
-    }
-
-    @ViewBuilder
-    private var content: some View {
-        #if os(iOS)
-        if let url = Bundle.module.url(forResource: name, withExtension: fileExtension, subdirectory: subdirectory),
-           let image = UIImage(contentsOfFile: url.path) {
-            Image(uiImage: image)
-                .resizable()
-        } else {
-            fallback
-        }
-        #elseif os(macOS)
-        if let url = Bundle.module.url(forResource: name, withExtension: fileExtension, subdirectory: subdirectory),
-           let image = NSImage(contentsOf: url) {
-            Image(nsImage: image)
-                .resizable()
-        } else {
-            fallback
-        }
-        #else
-        fallback
-        #endif
-    }
-
-    private var fallback: some View {
-        Image(systemName: "photo")
-            .resizable()
-            .scaledToFit()
-            .foregroundStyle(Color.prosePalTextSecondary)
     }
 }
 
@@ -3049,11 +3062,12 @@ struct EmptyStateView: View {
     var title: String
     var systemImage: String
     var detail: String
+    @ScaledMetric(relativeTo: .title) private var iconSize: CGFloat = 44
 
     var body: some View {
         VStack(spacing: 12) {
             Image(systemName: systemImage)
-                .font(.system(size: 44, weight: .semibold))
+                .font(.system(size: iconSize, weight: .semibold))
                 .foregroundStyle(.secondary)
             Text(title)
                 .font(.title3.weight(.semibold))

@@ -21,10 +21,7 @@ let package = Package(
         ),
         .target(
             name: "ProsePalUI",
-            dependencies: ["ProsePalAPI", "ProsePalDomain"],
-            resources: [
-                .process("Resources")
-            ]
+            dependencies: ["ProsePalAPI", "ProsePalDomain"]
         ),
         .testTarget(
             name: "ProsePalDomainTests",

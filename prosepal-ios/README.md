@@ -150,10 +150,10 @@ to the Flutter reference while keeping the iOS design direction:
   Privacy, Support, and About.
 - The occasion picker leads with Most Used options and keeps the full catalogue
   in searchable grouped sections.
-- First launch now routes through a lightweight three-step onboarding flow that
-  can be skipped or completed locally before entering Create.
-- The native onboarding flow reuses the Flutter reference onboarding artwork
-  without placing the logo on onboarding screens.
+- First launch now routes through a lightweight single-screen welcome flow that
+  can be completed locally before entering Create.
+- The native welcome flow uses brand color, typography, and SF Symbols rather
+  than logo or artwork-led screens.
 - The launch storyboard is intentionally plain navy with no logo or marketing
   copy.
 - The native UI accent palette is aligned with the Flutter brand direction:
@@ -162,21 +162,14 @@ to the Flutter reference while keeping the iOS design direction:
 
 ## Brand Assets
 
-The native SwiftUI package intentionally copies shared brand assets from the
-Flutter reference app into `ProsePalUI` resources so the rewrite can use them
-without changing production Flutter files:
+The native app keeps the Flutter iOS app icon set for brand continuity:
 
-- `Sources/ProsePalUI/Resources/Brand/logo.png`
-- `Sources/ProsePalUI/Resources/Brand/splash_transparent.png`
-- `Sources/ProsePalUI/Resources/Onboarding/slide_1.png`
-- `Sources/ProsePalUI/Resources/Onboarding/slide_2.png`
-- `Sources/ProsePalUI/Resources/Onboarding/slide_3.png`
 - `App/Assets.xcassets/AppIcon.appiconset`
-- `App/Assets.xcassets/LaunchLogo.imageset`
 - `App/LaunchScreen.storyboard`
 
-The logo and launch-logo assets are retained for brand continuity, but the
-current launch screen and onboarding screens deliberately do not display a logo.
+The current launch screen and first-run welcome screen deliberately do not
+display a logo. Unused onboarding and launch-logo bitmap assets are not shipped
+in the native target.
 
 The current palette source is the Flutter reference in
 `../lib/shared/theme/app_colors.dart`. Native tokens are mirrored in

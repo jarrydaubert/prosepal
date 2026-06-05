@@ -15,6 +15,10 @@ public struct NativeDiagnosticsLogger: Sendable {
         )
     }
 
+    public func onboardingShown() {
+        logger.info("onboarding_shown")
+    }
+
     public func tabSelected(_ tab: String) {
         logger.info("tab_selected tab=\(tab, privacy: .public)")
     }
