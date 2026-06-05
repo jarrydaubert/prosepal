@@ -34,6 +34,42 @@ final class UsagePolicyTests: XCTestCase {
         XCTAssertEqual(model.usageStatus.standardRemaining, 1)
     }
 
+    func testGatewayUsageSummaryOverridesLocalDisplayedAllowance() async {
+        let model = makeModel(
+            usageStatus: UsageStatus(standardLimit: 3, standardRemaining: 2),
+            client: MockMessageWritingClient(
+                response: sampleResponse(
+                    usage: UsageSummary(remaining: 7, limit: 10)
+                )
+            )
+        )
+        model.draft.requestedLane = .standard
+
+        await model.generate()
+
+        XCTAssertTrue(model.isShowingResults)
+        XCTAssertEqual(model.usageStatus.standardRemaining, 7)
+        XCTAssertEqual(model.usageStatus.standardLimit, 10)
+    }
+
+    func testGatewayUsageSummaryClampsRemainingToServerLimit() {
+        var usageStatus = UsageStatus(standardLimit: 3, standardRemaining: 1)
+
+        usageStatus.applyGatewayUsageSummary(UsageSummary(remaining: 14, limit: 8))
+
+        XCTAssertEqual(usageStatus.standardRemaining, 8)
+        XCTAssertEqual(usageStatus.standardLimit, 8)
+    }
+
+    func testGatewayUsageSummaryClampsExistingRemainingWhenOnlyLimitChanges() {
+        var usageStatus = UsageStatus(standardLimit: 10, standardRemaining: 9)
+
+        usageStatus.applyGatewayUsageSummary(UsageSummary(limit: 4))
+
+        XCTAssertEqual(usageStatus.standardRemaining, 4)
+        XCTAssertEqual(usageStatus.standardLimit, 4)
+    }
+
     func testStandardLimitBlocksGenerationAndShowsPaywall() async {
         let model = makeModel(
             usageStatus: UsageStatus(standardLimit: 3, standardRemaining: 0),
@@ -111,11 +147,12 @@ final class UsagePolicyTests: XCTestCase {
         )
     }
 
-    private func sampleResponse() -> CardResponse {
+    private func sampleResponse(usage: UsageSummary? = nil) -> CardResponse {
         CardResponse(
             messages: [GeneratedMessage(id: "draft-1", text: "A thoughtful draft.")],
             laneUsed: .standard,
             fallbackStatus: .none,
+            usage: usage,
             retryEligibility: .ineligible
         )
     }

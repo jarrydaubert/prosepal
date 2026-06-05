@@ -140,7 +140,9 @@ to the Flutter reference while keeping the iOS design direction:
 - Result cards support copy, share, edit, save, and context-menu actions.
 - Saved messages persist locally with occasion, relationship, tone, length,
   recipient, date, list search, detail view, edit, copy, share, and delete.
-- Standard usage is represented with a local placeholder state.
+- Standard usage uses gateway-provided `CardResponse.usage` when present; the
+  local decrement remains a temporary development placeholder until the gateway
+  owns usage and entitlement policy end to end.
 - Premium selection opens a native placeholder sheet instead of importing a
   subscription SDK.
 - Retry and degraded-generation states now have visible, user-safe actions.

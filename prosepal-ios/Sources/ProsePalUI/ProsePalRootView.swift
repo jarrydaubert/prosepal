@@ -86,7 +86,14 @@ public final class ProsePalAppModel: ObservableObject {
             generatedMessages = response.messages
             fallbackStatus = response.fallbackStatus
             laneUsed = response.laneUsed
-            usageStatus.recordSuccessfulGeneration(requestedLane: requestedLane, laneUsed: response.laneUsed)
+            let usageSource: String
+            if let usageSummary = response.usage {
+                usageStatus.applyGatewayUsageSummary(usageSummary)
+                usageSource = "gateway"
+            } else {
+                usageStatus.recordSuccessfulGeneration(requestedLane: requestedLane, laneUsed: response.laneUsed)
+                usageSource = "local_placeholder"
+            }
             totalGeneratedCount += response.messages.count
             diagnostics.generationSucceeded(
                 requestID: request.idempotencyKey,
@@ -94,6 +101,8 @@ public final class ProsePalAppModel: ObservableObject {
                 fallbackStatus: response.fallbackStatus,
                 messageCount: response.messages.count,
                 totalMessageCharacters: response.messages.reduce(0) { $0 + $1.text.count },
+                usageSource: usageSource,
+                standardRemaining: usageStatus.standardRemaining,
                 durationMs: startedAt.elapsedMilliseconds
             )
             isShowingResults = true
@@ -551,6 +560,22 @@ public struct UsageStatus: Equatable, Sendable {
         standardRemaining = max(0, standardRemaining - 1)
     }
 
+    public mutating func applyGatewayUsageSummary(_ summary: UsageSummary, now: Date = .now) {
+        if let limit = summary.limit {
+            standardLimit = max(0, limit)
+        }
+
+        if let remaining = summary.remaining {
+            standardRemaining = max(0, min(remaining, standardLimit))
+        } else {
+            standardRemaining = min(standardRemaining, standardLimit)
+        }
+
+        if let resetsAt = summary.resetsAt {
+            resetDescription = Self.resetDescription(for: resetsAt, now: now)
+        }
+    }
+
     private func isStandardLike(_ lane: GenerationLane) -> Bool {
         switch lane {
         case .automatic, .standard:
@@ -558,6 +583,15 @@ public struct UsageStatus: Equatable, Sendable {
         case .premium, .local:
             false
         }
+    }
+
+    private static func resetDescription(for resetsAt: Date, now: Date) -> String {
+        let calendar = Calendar.current
+        if calendar.isDate(resetsAt, inSameDayAs: now) {
+            return "until \(resetsAt.formatted(date: .omitted, time: .shortened))"
+        }
+
+        return "until \(resetsAt.formatted(date: .abbreviated, time: .shortened))"
     }
 }
 

@@ -43,6 +43,7 @@ final class CardContractTests: XCTestCase {
             messages: [GeneratedMessage(id: "1", text: "Happy birthday.")],
             laneUsed: .premium,
             fallbackStatus: .degradedToStandard,
+            usage: UsageSummary(remaining: 4, limit: 10),
             retryEligibility: .eligible
         )
 
@@ -52,6 +53,9 @@ final class CardContractTests: XCTestCase {
         XCTAssertEqual(object["laneUsed"] as? String, "premium")
         XCTAssertEqual(object["fallbackStatus"] as? String, "degradedToStandard")
         XCTAssertEqual(object["retryEligibility"] as? String, "eligible")
+        let usage = try XCTUnwrap(object["usage"] as? [String: Any])
+        XCTAssertEqual(usage["remaining"] as? Int, 4)
+        XCTAssertEqual(usage["limit"] as? Int, 10)
         XCTAssertNil(object["model"])
         XCTAssertNil(object["provider"])
     }

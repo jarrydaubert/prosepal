@@ -57,10 +57,12 @@ public struct NativeDiagnosticsLogger: Sendable {
         fallbackStatus: FallbackStatus,
         messageCount: Int,
         totalMessageCharacters: Int,
+        usageSource: String,
+        standardRemaining: Int,
         durationMs: Int
     ) {
         logger.info(
-            "generation_succeeded request_id=\(requestID.diagnosticsPrefix, privacy: .public) lane_used=\(laneUsed.rawValue, privacy: .public) fallback=\(fallbackStatus.rawValue, privacy: .public) message_count=\(messageCount, privacy: .public) total_message_chars=\(totalMessageCharacters, privacy: .public) duration_ms=\(durationMs, privacy: .public)"
+            "generation_succeeded request_id=\(requestID.diagnosticsPrefix, privacy: .public) lane_used=\(laneUsed.rawValue, privacy: .public) fallback=\(fallbackStatus.rawValue, privacy: .public) message_count=\(messageCount, privacy: .public) total_message_chars=\(totalMessageCharacters, privacy: .public) usage_source=\(usageSource, privacy: .public) standard_remaining=\(standardRemaining, privacy: .public) duration_ms=\(durationMs, privacy: .public)"
         )
     }
 
