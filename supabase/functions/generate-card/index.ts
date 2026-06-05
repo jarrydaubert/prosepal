@@ -50,12 +50,34 @@ type CreateUserClient = (
   authHeader: string,
 ) => UserClient;
 
+type RpcError = {
+  message?: string;
+  code?: string;
+};
+
+type UsageClient = {
+  rpc: (
+    functionName: string,
+    params: Record<string, unknown>,
+  ) => Promise<{
+    data: unknown;
+    error: RpcError | null;
+  }>;
+};
+
+type CreateUsageClient = (
+  supabaseUrl: string,
+  supabaseAnonKey: string,
+  authHeader: string,
+) => UsageClient;
+
 export interface GenerateCardDeps {
   getEnv?: EnvGetter;
   fetch?: Fetcher;
   logger?: Logger;
   now?: () => Date;
   createUserClient?: CreateUserClient;
+  createUsageClient?: CreateUsageClient;
 }
 
 type GenerationLane =
@@ -505,6 +527,15 @@ const defaultCreateUserClient: CreateUserClient = (
     global: { headers: { Authorization: authHeader } },
   }) as unknown as UserClient;
 
+const defaultCreateUsageClient: CreateUsageClient = (
+  supabaseUrl: string,
+  supabaseAnonKey: string,
+  authHeader: string,
+) =>
+  createClient(supabaseUrl, supabaseAnonKey, {
+    global: { headers: { Authorization: authHeader } },
+  }) as unknown as UsageClient;
+
 function jsonResponse(body: Record<string, unknown>, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,
@@ -597,6 +628,15 @@ function readWireNumber(
 ): number | undefined {
   const value = readWireValue(object, snakeKey, camelKey);
   return typeof value === "number" ? value : undefined;
+}
+
+function readWireBoolean(
+  object: Record<string, unknown>,
+  snakeKey: string,
+  camelKey: string,
+): boolean | undefined {
+  const value = readWireValue(object, snakeKey, camelKey);
+  return typeof value === "boolean" ? value : undefined;
 }
 
 function readWireObject(
@@ -1215,6 +1255,7 @@ function responseBody(options: {
   retryEligibility: RetryEligibility;
   qualityPassed: boolean;
   qualityNote?: string;
+  usage?: CardResponse["usage"];
 }): CardResponse {
   return {
     messages: options.messages.slice(0, 3).map((text) => ({
@@ -1227,6 +1268,7 @@ function responseBody(options: {
       passed: options.qualityPassed,
       user_safe_note: options.qualityNote,
     },
+    usage: options.usage,
     retry_eligibility: options.retryEligibility,
     prompt_contract_version: PROMPT_CONTRACT_VERSION,
     output_contract_version: OUTPUT_CONTRACT_VERSION,
@@ -1237,7 +1279,12 @@ async function authenticate(
   req: Request,
   deps: Required<Pick<GenerateCardDeps, "getEnv" | "createUserClient">>,
 ): Promise<
-  | { ok: true; userId: string | null; mode: "authenticated" | "anonymous_dev" }
+  | {
+    ok: true;
+    userId: string | null;
+    mode: "authenticated" | "anonymous_dev";
+    authHeader?: string;
+  }
   | { ok: false; response: Response }
 > {
   if (boolEnv(deps.getEnv("GATEWAY_DEV_ALLOW_ANONYMOUS"))) {
@@ -1330,11 +1377,248 @@ async function authenticate(
     };
   }
 
-  return { ok: true, userId: user.id, mode: "authenticated" };
+  return { ok: true, userId: user.id, mode: "authenticated", authHeader };
 }
 
 function redactedUserId(userId: string | null): string | null {
   return userId ? `${userId.substring(0, 8)}...` : null;
+}
+
+function monthKeyFor(date: Date): string {
+  const utcMonth = date.getUTCMonth() + 1;
+  return `${date.getUTCFullYear()}-${utcMonth.toString().padStart(2, "0")}`;
+}
+
+function nextMonthResetAt(date: Date): string {
+  return new Date(
+    Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 1, 0, 0, 0, 0),
+  ).toISOString();
+}
+
+async function consumeUsageForAuthenticatedGeneration(
+  auth: {
+    userId: string | null;
+    mode: "authenticated" | "anonymous_dev";
+    authHeader?: string;
+  },
+  deps: {
+    getEnv: EnvGetter;
+    createUsageClient: CreateUsageClient;
+    logger: Logger;
+    now: () => Date;
+  },
+  requestLog: Record<string, unknown>,
+  startedAt: number,
+): Promise<
+  | {
+    ok: true;
+    usage?: CardResponse["usage"];
+    source: "authenticated_rpc" | "anonymous_dev";
+  }
+  | { ok: false; response: Response }
+> {
+  if (auth.mode === "anonymous_dev") {
+    return { ok: true, source: "anonymous_dev" };
+  }
+
+  if (!auth.userId || !auth.authHeader) {
+    deps.logger.error(
+      "generate-card usage auth state invalid",
+      JSON.stringify({
+        ...requestLog,
+        latencyMs: deps.now().getTime() - startedAt,
+      }),
+    );
+    return {
+      ok: false,
+      response: jsonResponse(
+        {
+          error: "Gateway usage policy failed",
+          user_safe_error: {
+            code: "gateway_usage_failed",
+            message: "Message generation could not be completed. Try again.",
+          },
+        },
+        500,
+      ),
+    };
+  }
+
+  const supabaseUrl = deps.getEnv("SUPABASE_URL");
+  const supabaseAnonKey = deps.getEnv("SUPABASE_ANON_KEY");
+  if (!supabaseUrl || !supabaseAnonKey) {
+    deps.logger.error(
+      "generate-card usage unconfigured",
+      JSON.stringify({
+        ...requestLog,
+        latencyMs: deps.now().getTime() - startedAt,
+      }),
+    );
+    return {
+      ok: false,
+      response: jsonResponse(
+        {
+          error: "Gateway usage policy unconfigured",
+          user_safe_error: {
+            code: "gateway_usage_unconfigured",
+            message: "Message generation is not configured yet.",
+          },
+        },
+        500,
+      ),
+    };
+  }
+
+  const usageClient = deps.createUsageClient(
+    supabaseUrl,
+    supabaseAnonKey,
+    auth.authHeader,
+  );
+
+  let rpcResult: Awaited<ReturnType<UsageClient["rpc"]>>;
+  try {
+    rpcResult = await usageClient.rpc("check_and_increment_usage", {
+      p_user_id: auth.userId,
+      p_is_pro: false,
+      p_month_key: monthKeyFor(deps.now()),
+    });
+  } catch {
+    deps.logger.warn(
+      "generate-card usage rpc threw",
+      JSON.stringify({
+        ...requestLog,
+        latencyMs: deps.now().getTime() - startedAt,
+      }),
+    );
+    return {
+      ok: false,
+      response: jsonResponse(
+        {
+          error: "Gateway usage policy failed",
+          user_safe_error: {
+            code: "gateway_usage_failed",
+            message: "Message generation could not be completed. Try again.",
+          },
+        },
+        503,
+      ),
+    };
+  }
+
+  if (rpcResult.error) {
+    deps.logger.warn(
+      "generate-card usage rpc failed",
+      JSON.stringify({
+        ...requestLog,
+        errorCode: rpcResult.error.code,
+        latencyMs: deps.now().getTime() - startedAt,
+      }),
+    );
+    return {
+      ok: false,
+      response: jsonResponse(
+        {
+          error: "Gateway usage policy failed",
+          user_safe_error: {
+            code: "gateway_usage_failed",
+            message: "Message generation could not be completed. Try again.",
+          },
+        },
+        503,
+      ),
+    };
+  }
+
+  if (!isRecord(rpcResult.data)) {
+    deps.logger.warn(
+      "generate-card usage rpc malformed",
+      JSON.stringify({
+        ...requestLog,
+        latencyMs: deps.now().getTime() - startedAt,
+      }),
+    );
+    return {
+      ok: false,
+      response: jsonResponse(
+        {
+          error: "Gateway usage policy failed",
+          user_safe_error: {
+            code: "gateway_usage_failed",
+            message: "Message generation could not be completed. Try again.",
+          },
+        },
+        503,
+      ),
+    };
+  }
+
+  const allowed = readWireBoolean(rpcResult.data, "allowed", "allowed") ??
+    false;
+  const remaining = readWireNumber(rpcResult.data, "remaining", "remaining");
+  const limit = readWireNumber(rpcResult.data, "limit", "limit");
+  const serverIsPro = readWireBoolean(rpcResult.data, "is_pro", "isPro") ??
+    false;
+
+  if (!allowed) {
+    deps.logger.log(
+      "generate-card usage limit reached",
+      JSON.stringify({
+        ...requestLog,
+        usageRemaining: remaining ?? 0,
+        usageLimit: limit,
+        isPro: serverIsPro,
+        latencyMs: deps.now().getTime() - startedAt,
+      }),
+    );
+    return {
+      ok: false,
+      response: jsonResponse(
+        {
+          error: "Usage limit reached",
+          user_safe_error: {
+            code: "usage_limit_reached",
+            message: serverIsPro
+              ? "You've reached this month's generation limit."
+              : "You've used your included Standard generation. Premium unlocks more messages.",
+          },
+        },
+        402,
+      ),
+    };
+  }
+
+  if (remaining === undefined || limit === undefined) {
+    deps.logger.warn(
+      "generate-card usage rpc incomplete",
+      JSON.stringify({
+        ...requestLog,
+        latencyMs: deps.now().getTime() - startedAt,
+      }),
+    );
+    return {
+      ok: false,
+      response: jsonResponse(
+        {
+          error: "Gateway usage policy failed",
+          user_safe_error: {
+            code: "gateway_usage_failed",
+            message: "Message generation could not be completed. Try again.",
+          },
+        },
+        503,
+      ),
+    };
+  }
+
+  return {
+    ok: true,
+    source: "authenticated_rpc",
+    usage: {
+      remaining,
+      limit,
+      resets_at: nextMonthResetAt(deps.now()),
+    },
+  };
 }
 
 export async function handleGenerateCard(
@@ -1346,6 +1630,8 @@ export async function handleGenerateCard(
   const logger = deps.logger ?? console;
   const now = deps.now ?? (() => new Date());
   const createUserClient = deps.createUserClient ?? defaultCreateUserClient;
+  const createUsageClient = deps.createUsageClient ??
+    defaultCreateUsageClient;
   const startedAt = now().getTime();
 
   if (req.method === "OPTIONS") {
@@ -1492,6 +1778,19 @@ export async function handleGenerateCard(
       );
     }
 
+    const usageResult = await consumeUsageForAuthenticatedGeneration(
+      auth,
+      {
+        getEnv,
+        createUsageClient,
+        logger,
+        now,
+      },
+      requestLog,
+      startedAt,
+    );
+    if (!usageResult.ok) return usageResult.response;
+
     logger.log(
       "generate-card completed",
       JSON.stringify({
@@ -1499,6 +1798,9 @@ export async function handleGenerateCard(
         laneUsed: "standard",
         fallbackStatus: "none",
         providerSlot: config.slot,
+        usageSource: usageResult.source,
+        usageRemaining: usageResult.usage?.remaining,
+        usageLimit: usageResult.usage?.limit,
         latencyMs: now().getTime() - startedAt,
       }),
     );
@@ -1510,6 +1812,7 @@ export async function handleGenerateCard(
         fallbackStatus: "none",
         retryEligibility: "ineligible",
         qualityPassed: true,
+        usage: usageResult.usage,
       }),
     );
   } catch (error) {

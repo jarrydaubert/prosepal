@@ -197,6 +197,13 @@ Policy:
   ProsePal-owned gateway URL through `GatewayMessageWritingClient`.
 - `supabase/functions/generate-card` may run in explicit anonymous dev mode for
   R&D by setting `GATEWAY_DEV_ALLOW_ANONYMOUS=true`.
+- Authenticated native gateway requests use the existing Supabase
+  `check_and_increment_usage` RPC after a successful, quality-checked
+  generation. The RPC enforces caller identity and server entitlement state;
+  allowed responses include `CardResponse.usage`, while usage-limit or usage-RPC
+  failures return a user-safe error and no generated messages.
+- Anonymous gateway development mode does not call the authenticated usage RPC
+  and must remain staging/local only.
 - Provider/model names and keys stay in the Edge Function environment. The
   mobile client receives only product-lane metadata, never provider/model
   details.

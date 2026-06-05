@@ -65,6 +65,14 @@ Local anonymous gateway mode requires the function environment variable
 `GATEWAY_DEV_ALLOW_ANONYMOUS=true`. Authenticated mode will be the default once
 the native auth path is connected.
 
+Authenticated gateway requests use the existing Supabase
+`check_and_increment_usage` RPC after a successful, quality-checked generation.
+The RPC enforces caller identity with `auth.uid()` and verifies entitlement from
+server state. Successful authenticated responses include `CardResponse.usage`;
+usage-limit or usage-RPC failures fail closed with a user-safe error and no
+generated messages in the client response. Anonymous development mode does not
+call this authenticated usage RPC.
+
 Staging anonymous gateway traffic can be guarded with a shared development
 secret. When the Supabase function has `PROSEPAL_DEV_GATEWAY_SECRET` configured,
 set the same value in the Xcode scheme environment so the native client sends
@@ -141,8 +149,10 @@ to the Flutter reference while keeping the iOS design direction:
 - Saved messages persist locally with occasion, relationship, tone, length,
   recipient, date, list search, detail view, edit, copy, share, and delete.
 - Standard usage uses gateway-provided `CardResponse.usage` when present; the
-  local decrement remains a temporary development placeholder until the gateway
-  owns usage and entitlement policy end to end.
+  staging gateway now returns that summary for authenticated requests after the
+  existing Supabase usage RPC allows and increments the generation. The local
+  decrement remains a temporary development placeholder for anonymous native
+  R&D builds.
 - Premium selection opens a native placeholder sheet instead of importing a
   subscription SDK.
 - Retry and degraded-generation states now have visible, user-safe actions.

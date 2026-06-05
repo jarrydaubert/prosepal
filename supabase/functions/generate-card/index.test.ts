@@ -48,6 +48,14 @@ function makeDeps(options: {
   fetchStatuses?: number[];
   providerFallbackModels?: string;
   captureProviderBodies?: Array<Record<string, unknown>>;
+  authUserId?: string;
+  usageResponse?: Record<string, unknown>;
+  usageError?: { message?: string; code?: string };
+  captureUsageCalls?: Array<{
+    functionName: string;
+    params: Record<string, unknown>;
+    authHeader: string;
+  }>;
   devGatewaySecret?: string;
   logger?: {
     log: (...args: unknown[]) => void;
@@ -56,10 +64,15 @@ function makeDeps(options: {
   };
 } = {}) {
   const captureProviderBodies = options.captureProviderBodies ?? [];
+  const captureUsageCalls = options.captureUsageCalls ?? [];
 
   return {
     getEnv: (key: string): string | undefined => {
       switch (key) {
+        case "SUPABASE_URL":
+          return options.authUserId ? "https://example.supabase.co" : undefined;
+        case "SUPABASE_ANON_KEY":
+          return options.authUserId ? "anon-key" : undefined;
         case "GATEWAY_DEV_ALLOW_ANONYMOUS":
           return options.anonymous ? "true" : undefined;
         case "PROSEPAL_AI_PROVIDER":
@@ -133,6 +146,45 @@ function makeDeps(options: {
       error: () => {},
     },
     now: () => new Date("2026-06-04T12:00:00.000Z"),
+    createUserClient: (
+      _supabaseUrl: string,
+      _supabaseAnonKey: string,
+      _authHeader: string,
+    ) => ({
+      auth: {
+        getUser: async () => ({
+          data: {
+            user: options.authUserId
+              ? { id: options.authUserId, email: "test@example.com" }
+              : null,
+          },
+          error: options.authUserId ? null : { message: "unauthenticated" },
+        }),
+      },
+    }),
+    createUsageClient: (
+      _supabaseUrl: string,
+      _supabaseAnonKey: string,
+      authHeader: string,
+    ) => ({
+      rpc: async (
+        functionName: string,
+        params: Record<string, unknown>,
+      ) => {
+        captureUsageCalls.push({ functionName, params, authHeader });
+        return {
+          data: options.usageResponse ?? {
+            allowed: true,
+            total_count: 1,
+            monthly_count: 1,
+            remaining: 0,
+            limit: 1,
+            is_pro: false,
+          },
+          error: options.usageError ?? null,
+        };
+      },
+    }),
   };
 }
 
@@ -245,6 +297,111 @@ Deno.test("calls OpenAI-compatible provider and returns CardResponse without pro
   assertEquals(providerBodies[0].response_format, { type: "json_object" });
 });
 
+Deno.test("authenticated generation consumes server usage and returns usage summary", async () => {
+  const usageCalls: Array<{
+    functionName: string;
+    params: Record<string, unknown>;
+    authHeader: string;
+  }> = [];
+  const res = await handleGenerateCard(
+    makeRequest(fixedRequest, { Authorization: "Bearer user-token" }),
+    makeDeps({
+      authUserId: "00000000-0000-4000-8000-000000000001",
+      provider: true,
+      captureUsageCalls: usageCalls,
+      usageResponse: {
+        allowed: true,
+        total_count: 1,
+        monthly_count: 1,
+        remaining: 12,
+        limit: 20,
+        is_pro: true,
+      },
+    }),
+  );
+
+  assertEquals(res.status, 200);
+  const responseText = await res.text();
+  const body = JSON.parse(responseText) as Record<string, unknown>;
+  const usage = body.usage as Record<string, unknown>;
+  assertEquals(usage.remaining, 12);
+  assertEquals(usage.limit, 20);
+  assertEquals(usage.resets_at, "2026-07-01T00:00:00.000Z");
+  assertEquals(usageCalls.length, 1);
+  assertEquals(usageCalls[0].functionName, "check_and_increment_usage");
+  assertEquals(usageCalls[0].authHeader, "Bearer user-token");
+  assertEquals(
+    usageCalls[0].params.p_user_id,
+    "00000000-0000-4000-8000-000000000001",
+  );
+  assertEquals(usageCalls[0].params.p_is_pro, false);
+  assertEquals(usageCalls[0].params.p_month_key, "2026-06");
+  assert(!responseText.includes("free-dev-model"));
+  assert(!responseText.includes("provider-key"));
+});
+
+Deno.test("anonymous dev generation does not call authenticated usage RPC", async () => {
+  const usageCalls: Array<{
+    functionName: string;
+    params: Record<string, unknown>;
+    authHeader: string;
+  }> = [];
+  const res = await handleGenerateCard(
+    makeRequest(),
+    makeDeps({
+      anonymous: true,
+      provider: true,
+      captureUsageCalls: usageCalls,
+    }),
+  );
+
+  assertEquals(res.status, 200);
+  const body = await res.json() as Record<string, unknown>;
+  assertEquals(body.usage, undefined);
+  assertEquals(usageCalls.length, 0);
+});
+
+Deno.test("authenticated generation fails closed when usage limit is reached", async () => {
+  const res = await handleGenerateCard(
+    makeRequest(fixedRequest, { Authorization: "Bearer user-token" }),
+    makeDeps({
+      authUserId: "00000000-0000-4000-8000-000000000001",
+      provider: true,
+      usageResponse: {
+        allowed: false,
+        total_count: 1,
+        monthly_count: 1,
+        remaining: 0,
+        limit: 1,
+        is_pro: false,
+      },
+    }),
+  );
+
+  assertEquals(res.status, 402);
+  const body = await res.json() as Record<string, unknown>;
+  const userSafeError = body.user_safe_error as Record<string, unknown>;
+  assertEquals(userSafeError.code, "usage_limit_reached");
+  assertEquals(body.messages, undefined);
+});
+
+Deno.test("authenticated generation fails closed when usage RPC fails", async () => {
+  const res = await handleGenerateCard(
+    makeRequest(fixedRequest, { Authorization: "Bearer user-token" }),
+    makeDeps({
+      authUserId: "00000000-0000-4000-8000-000000000001",
+      provider: true,
+      usageError: { message: "RPC unavailable", code: "rpc_failed" },
+    }),
+  );
+
+  assertEquals(res.status, 503);
+  const body = await res.json() as Record<string, unknown>;
+  const userSafeError = body.user_safe_error as Record<string, unknown>;
+  assertEquals(userSafeError.code, "gateway_usage_failed");
+  assertEquals(body.messages, undefined);
+});
+
 Deno.test("tries configured provider fallback models without exposing them to the client", async () => {
   const providerBodies: Array<Record<string, unknown>> = [];
   const logLines: string[] = [];
@@ -280,7 +437,10 @@ Deno.test("tries configured provider fallback models without exposing them to th
 
   const combinedLogs = logLines.join("\n");
   assertStringIncludes(combinedLogs, "generate-card provider attempt failed");
-  assertStringIncludes(combinedLogs, "generate-card provider fallback succeeded");
+  assertStringIncludes(
+    combinedLogs,
+    "generate-card provider fallback succeeded",
+  );
   assertStringIncludes(combinedLogs, "fallback-free-model");
   assert(!combinedLogs.includes("Dad"));
   assert(!combinedLogs.includes("quiet cup of tea"));
@@ -358,7 +518,10 @@ Deno.test("tries fallback model when primary output fails quality checks", async
 
   const combinedLogs = logLines.join("\n");
   assertStringIncludes(combinedLogs, "generate-card provider quality failed");
-  assertStringIncludes(combinedLogs, "generate-card provider fallback succeeded");
+  assertStringIncludes(
+    combinedLogs,
+    "generate-card provider fallback succeeded",
+  );
   assert(!combinedLogs.includes("quiet cup of tea"));
   assert(!combinedLogs.includes("Your kindness has shaped"));
 });
@@ -417,7 +580,9 @@ Deno.test("returns quality error when provider returns fewer than three messages
         choices: [{
           message: {
             content: JSON.stringify({
-              messages: [{ text: "Happy birthday, Dad. I hope today is gentle." }],
+              messages: [{
+                text: "Happy birthday, Dad. I hope today is gentle.",
+              }],
             }),
           },
         }],
@@ -446,7 +611,10 @@ Deno.test("returns quality error when provider repeats message options", async (
               messages: [
                 { text: repeatedText },
                 { text: repeatedText },
-                { text: "Dad, I hope today brings warmth and a quiet cup of tea." },
+                {
+                  text:
+                    "Dad, I hope today brings warmth and a quiet cup of tea.",
+                },
               ],
             }),
           },
@@ -473,8 +641,14 @@ Deno.test("returns quality error when provider uses generic filler", async () =>
             content: JSON.stringify({
               messages: [
                 { text: "Wishing you all the best on your special day." },
-                { text: "Dad, I hope today brings warmth and a quiet cup of tea." },
-                { text: "You deserve a birthday that feels calm, loved, and yours." },
+                {
+                  text:
+                    "Dad, I hope today brings warmth and a quiet cup of tea.",
+                },
+                {
+                  text:
+                    "You deserve a birthday that feels calm, loved, and yours.",
+                },
               ],
             }),
           },
@@ -508,7 +682,9 @@ Deno.test("returns quality error when sensitive occasion output uses harmful cli
           message: {
             content: JSON.stringify({
               messages: [
-                { text: "Everything happens for a reason, even when it hurts." },
+                {
+                  text: "Everything happens for a reason, even when it hurts.",
+                },
                 { text: "I am so sorry you are going through this." },
                 { text: "I am holding you close in my thoughts today." },
               ],
