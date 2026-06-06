@@ -2,22 +2,77 @@
 
 ## Purpose
 
-Provide one reproducible configuration runbook for required external services:
-- Supabase
-- RevenueCat
-- Firebase (AI/App Check/Analytics/Crashlytics)
+Provide one reproducible configuration runbook for external services.
+
+There are two different service contexts:
+
+- native iOS staging/rewrite services;
+- Flutter production/reference services.
 
 Use this before release builds and when onboarding a new environment.
 
 ## Prerequisites
 
-1. Access to project provider consoles:
-   - Supabase project dashboard
-   - RevenueCat project dashboard
-   - Firebase project console
+1. Access to the provider consoles for the context being changed:
+   - Supabase dashboard for native staging/gateway or Flutter production
+   - App Store Connect for native StoreKit/App Store product work
+   - RevenueCat dashboard when preserving Flutter entitlement continuity
+   - Firebase console only for Flutter production/reference work
 2. Local repo checkout with scripts available.
 3. A local env file copied from `.env.example` to `.env.local`.
 4. GitHub Actions secret access for release workflow configuration.
+
+## Native iOS Staging Configuration
+
+Native staging configuration must not touch production.
+
+Required local Xcode environment names:
+
+- `PROSEPAL_GATEWAY_URL`
+- `PROSEPAL_DEV_GATEWAY_SECRET`
+- `PROSEPAL_SUPABASE_URL` or `SUPABASE_URL`
+- `PROSEPAL_SUPABASE_ANON_KEY` or `SUPABASE_ANON_KEY`
+- `PROSEPAL_PREMIUM_PRODUCT_IDS`
+- `PROSEPAL_RECOMMENDED_PREMIUM_PRODUCT_ID`
+
+Required Supabase staging secrets by name:
+
+- `PROSEPAL_DEV_GATEWAY_SECRET`
+- provider API key secret for the gateway provider
+- `PROSEPAL_AI_PROVIDER`
+- `PROSEPAL_AI_PROVIDER_BASE_URL`
+- `PROSEPAL_AI_PROVIDER_MODEL`
+- `PROSEPAL_AI_PROVIDER_FALLBACK_MODELS`
+- `PROSEPAL_AI_PROVIDER_JSON_MODE`
+
+Additional staging secrets/config may be required before full auth, feedback,
+purchase, and entitlement testing:
+
+- Apple Sign-In/Supabase Auth provider configuration
+- `REVENUECAT_WEBHOOK_SECRET`, if RevenueCat continuity is selected
+- Resend feedback relay secrets, if direct feedback is enabled
+
+Validation:
+
+```bash
+./scripts/prosepal-staging-smoke.sh
+cd prosepal-ios
+swift test
+xcodebuild -project ProsePal.xcodeproj -target ProsePal -sdk iphonesimulator CODE_SIGNING_ALLOWED=NO build
+```
+
+Pass criteria:
+
+- valid staging gateway request returns three drafts;
+- no-secret or invalid-secret gateway request fails closed;
+- provider/model fields are not exposed to the client response;
+- no local Xcode scheme secrets, Supabase `.temp`, screenshots, receipts, or
+  evidence files are committed.
+
+## Flutter Production Reference Configuration
+
+Use this section only for Flutter production changes or live production
+maintenance.
 
 ## Commands And Steps
 

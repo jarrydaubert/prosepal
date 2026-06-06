@@ -4,6 +4,13 @@
 
 Define the required Firebase Remote Config keys, safe defaults, and rollout rules.
 
+Scope note:
+
+- This is a Flutter production-reference runbook.
+- Native iOS must not inherit Firebase Remote Config by default.
+- Native runtime configuration should stay explicit through the gateway,
+  environment, StoreKit/App Store, or a future approved native config layer.
+
 ## Prerequisites
 
 - Firebase project access with Remote Config edit/publish permissions.

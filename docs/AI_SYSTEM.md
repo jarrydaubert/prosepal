@@ -2,10 +2,19 @@
 
 ## Purpose
 
-Document the actual AI runtime design in Prosepal so the repo shows clear LLM
-engineering judgment instead of a vague "calls Gemini" story.
+Document the Flutter production AI runtime design in ProsePal so the repo shows
+clear LLM engineering judgment instead of a vague "calls Gemini" story.
 
 This document is evergreen. Open work belongs in `docs/BACKLOG.md`.
+
+For the active native iOS direction, use:
+
+- `docs/architecture/AI_GATEWAY_STRATEGY.md`
+- `prosepal-ios/ARCHITECTURE.md`
+- `prosepal-ios/NATIVE_PRODUCT_NORTH_STAR.md`
+
+The native SwiftUI app must remain gateway-first and must not use Firebase AI,
+Vertex AI, or provider SDKs directly.
 
 ## Runtime Architecture
 

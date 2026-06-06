@@ -1,5 +1,12 @@
 # Native UI Polish Report
 
+Historical note:
+
+This file is a local implementation/evidence report, not an active source of
+truth. Open work belongs in `../docs/BACKLOG.md`; native product direction
+belongs in `NATIVE_PRODUCT_NORTH_STAR.md`, `NATIVE_UX_DIRECTION.md`, and
+`../docs/NEXT_RELEASE_BRIEF.md`.
+
 Date: 2026-06-06
 Branch: `ios-native-rewrite-prosepal-ios`
 

@@ -2,7 +2,8 @@
 
 ## Purpose
 
-Define one canonical, evergreen DevOps runbook for repository security, CI/CD, release execution, and validation.
+Define one canonical, evergreen DevOps runbook for repository security, CI/CD,
+release execution, and validation.
 
 All DevOps process changes must be documented here in the same change.
 
@@ -11,19 +12,43 @@ All DevOps process changes must be documented here in the same change.
 This runbook covers:
 - GitHub repository hardening
 - GitHub Actions security and workflow policy
-- CI, CodeQL, flaky audit, and release workflows
-- Test execution model (local, CI, wired devices, Firebase Test Lab)
-- Supabase/Firebase/RevenueCat operational verification
+- CI, CodeQL, native iOS checks, Flutter production-reference checks, flaky
+  audit, and release workflows
+- Test execution model for native iOS, Flutter production-reference work, CI,
+  wired devices, and Firebase Test Lab where still relevant
+- Supabase staging gateway verification for the native rewrite
+- Supabase/Firebase/RevenueCat operational verification for the live Flutter
+  production app
 - external-service ownership and billing custody verification
 - AI abuse/cost controls and kill-switch handling
 - Incident response for leaked keys or suspicious activity
+
+## Active Development Modes
+
+| Mode | Scope | Primary gate |
+|------|-------|--------------|
+| Native iOS rewrite | `prosepal-ios/` SwiftUI app, native staging gateway, native auth/purchase/testing slices | `swift test`, simulator `xcodebuild`, and wired iPhone evidence for auth, purchase, keyboard, and gateway flows |
+| Flutter production/reference | Existing Flutter iOS/Android app and live production hotfixes | `flutter analyze`, `flutter test`, and `./scripts/test_critical_smoke.sh` |
+| Backend/gateway | Supabase Edge Functions, gateway contract, usage/entitlement policy | Deno function tests and staging smoke commands |
+
+Do not use Flutter production docs or commands as approval to change the native
+architecture away from the gateway-first SwiftUI direction.
 
 ## Operational Baseline
 
 1. Default branch: `main` (protected).
 2. Merge model: pull-request only.
 3. Required checks on `main`: `Flutter Quality Gate`, `CodeQL`.
-4. Primary local quality gate:
+4. Primary native iOS local gate when `prosepal-ios/` changes:
+
+```bash
+cd prosepal-ios
+swift test
+xcodebuild -project ProsePal.xcodeproj -target ProsePal -sdk iphonesimulator CODE_SIGNING_ALLOWED=NO build
+```
+
+5. Primary Flutter production/reference local gate when Flutter app code
+   changes:
 
 ```bash
 flutter analyze
@@ -33,15 +58,15 @@ flutter test --exclude-tags flaky --coverage
 ./scripts/check_service_coverage.sh coverage/lcov.info
 ```
 
-5. Native iOS rewrite local gate when `prosepal-ios/` changes:
+6. Gateway local/staging gate when Supabase generation code or native gateway
+   configuration changes:
 
 ```bash
-cd prosepal-ios
-swift test
-xcodebuild -project ProsePal.xcodeproj -target ProsePal -sdk iphonesimulator CODE_SIGNING_ALLOWED=NO build
+deno test --allow-env supabase/functions/generate-card/index.test.ts
+./scripts/prosepal-staging-smoke.sh
 ```
 
-6. Canonical operations source: this file (`docs/DEVOPS.md`).
+7. Canonical operations source: this file (`docs/DEVOPS.md`).
 
 ## Repository Security Baseline
 
@@ -184,7 +209,7 @@ Policy:
 - Must not introduce Firebase AI or provider-specific generation SDK validation
   because the native app targets the ProsePal gateway contract.
 
-### Native AI Gateway R&D
+### Native AI Gateway And Staging
 
 Purpose:
 - Validate the ProsePal-owned `CardRequest` / `CardResponse` contract for the
@@ -195,8 +220,12 @@ Policy:
   gateway rollout gates in `docs/architecture/AI_GATEWAY_STRATEGY.md` are met.
 - The native app must not import provider generation SDKs. It may call a
   ProsePal-owned gateway URL through `GatewayMessageWritingClient`.
-- `supabase/functions/generate-card` may run in explicit anonymous dev mode for
-  R&D by setting `GATEWAY_DEV_ALLOW_ANONYMOUS=true`.
+- `supabase/functions/generate-card` may run in explicit anonymous staging/dev
+  mode for native R&D by setting `GATEWAY_DEV_ALLOW_ANONYMOUS=true`.
+- Anonymous staging traffic must be protected with
+  `PROSEPAL_DEV_GATEWAY_SECRET` when the function is reachable from devices.
+- Native Xcode testing must provide the staging gateway URL and shared dev
+  secret through local scheme environment values, not tracked shared schemes.
 - Authenticated native gateway requests use the existing Supabase
   `check_and_increment_usage` RPC after a successful, quality-checked
   generation. The RPC enforces caller identity and server entitlement state;
@@ -225,6 +254,15 @@ Validation:
   after changing the gateway handler.
 - Run `swift test` and the native simulator `xcodebuild` command from
   `prosepal-ios/` after changing native gateway wiring.
+- Run `./scripts/prosepal-staging-smoke.sh` after changing staging gateway
+  configuration or native gateway request headers.
+
+Secret safety:
+- Do not touch the production Supabase project from native staging work.
+- Do not print or commit provider keys, Supabase service-role keys, dev gateway
+  secrets, auth tokens, receipts, local Xcode schemes, or Supabase `.temp`
+  state.
+- Do not commit local screenshots or evidence under `prosepal-ios/evidence/`.
 
 ### Visual Regression Companion (`.github/workflows/ci.yml` → `Visual Regression (non-blocking)`)
 
@@ -857,18 +895,6 @@ A DevOps change is complete only when:
 - Any new scripts/steps are reproducible from command line.
 - Security impact is documented.
 - Open issues are tracked in `docs/BACKLOG.md` (not in evergreen docs).
-
-## Proposed Improvements (External Review)
-
-Planned DevOps improvements for external review are tracked in `docs/BACKLOG.md` and currently include:
-- `P1-10` Monthly governance audit automation with run-ID evidence and trend fields.
-- `P1-11` Automated semantic release flow from `main` merges.
-- `P1-12` Troubleshooting playbooks (API outage, stale evidence, token rotation, rollback).
-- `P1-13` Scoped Dependabot auto-merge pilot for low-risk updates.
-- `P1-14` Structured `GITHUB_STEP_SUMMARY` output for key workflows.
-- `P1-15` CI dependency caching optimization with measured runtime impact.
-- `P1-16` Deterministic artifact controls for reproducibility.
-- `P1-17` Deployment safety guardrails verification and rollback path validation.
 
 ## Related References
 

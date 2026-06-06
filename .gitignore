@@ -65,5 +65,8 @@ supabase/.temp/
 test/widgets/goldens/failures/
 test/failures/
 
+# Native local evidence/screenshots
+prosepal-ios/evidence/
+
 # Patrol-generated local test bundle
 integration_test/test_bundle.dart

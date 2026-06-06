@@ -1,5 +1,19 @@
 # Prosepal Architecture Overview
 
+## Scope Note
+
+This document is the Flutter production architecture reference.
+
+The active native iOS architecture lives in:
+
+- `prosepal-ios/ARCHITECTURE.md`
+- `prosepal-ios/NATIVE_PRODUCT_NORTH_STAR.md`
+- `docs/architecture/AI_GATEWAY_STRATEGY.md`
+
+Do not use this document as approval to add Flutter, Firebase AI, Vertex AI,
+provider SDKs, Riverpod, GoRouter, or RevenueCat directly to the native SwiftUI
+rewrite.
+
 ---
 **Document Control**
 

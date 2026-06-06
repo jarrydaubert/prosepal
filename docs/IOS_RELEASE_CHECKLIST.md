@@ -1,123 +1,69 @@
-# iOS Release Checklist
+# Native iOS Release Checklist
 
 ## Purpose
 
-Define the required pre-release iOS gates for `P0-07` using deterministic commands and evidence paths.
+Define the required gates for native iOS TestFlight and release-candidate work.
+
+This checklist applies to `prosepal-ios/`. Flutter production release commands
+remain in `docs/DEVOPS.md` and should be used only for Flutter production
+changes.
 
 ## Prerequisites
 
-1. Release candidate branch and tag candidate are identified.
-2. `.env.local` contains non-placeholder runtime values.
-3. Physical iOS device is available for wired validation.
-4. App Store Connect release metadata draft is prepared.
+1. Native release objective is approved in `docs/NEXT_RELEASE_BRIEF.md`.
+2. Relevant native backlog gates in `docs/BACKLOG.md` are complete or explicitly
+   scoped out of the candidate.
+3. Physical iPhone is available for wired validation.
+4. Staging or production gateway target is selected without committing secrets.
+5. App Store Connect strategy is approved: bundle ID, listing, product IDs,
+   subscription terms, privacy policy, and rollback path.
 
-## Evidence Location Contract
+## Evidence Folder Contract
 
-Use one release folder per cut:
+Use one evidence folder per native cut:
 
-```bash
-artifacts/release/<release-tag>/P0-07/
+```text
+artifacts/release/<release-tag>/native-ios/
 ```
 
 Required evidence files:
+
 - `01-version-build.txt`
-- `02-flutter-analyze.log`
-- `03-flutter-test.log`
-- `04-critical-smoke.log`
-- `05-wired-ios-summary.md`
-- `06-ios-archive.log`
-- `07-crashlytics-dsym.txt`
-- `08-firebase-appcheck-ai-ios.md`
-- `09-revenuecat-entitlement-paywall-ios.md`
-- `10-supabase-auth-provider-ios.md`
-- `11-app-store-connect-review.md`
-- `12-testflight-sanity.md`
-- `13-secret-audit.log`
-- `14-rollback-plan.md`
+- `02-swift-test.log`
+- `03-xcodebuild-simulator.log`
+- `04-wired-iphone-smoke.md`
+- `05-gateway-config-summary.md`
+- `06-auth-sign-in-with-apple.md`
+- `07-purchase-restore-entitlement.md`
+- `08-settings-support-legal.md`
+- `09-app-store-connect-review.md`
+- `10-testflight-sanity.md`
+- `11-secret-audit.log`
+- `12-rollback-plan.md`
 - `signoff.md`
 
-## Release Gates
+## Gates
 
-1. Version/build bump recorded.
-Command:
-```bash
-rg '^version:' pubspec.yaml
-xcodebuild -workspace ios/Runner.xcworkspace -scheme Runner -configuration Release -showBuildSettings | rg 'CURRENT_PROJECT_VERSION ='
-```
-Pass criteria: marketing version from `pubspec.yaml` and build number from Xcode build settings match intended release notes and are recorded in `01-version-build.txt`. Do not rely on literal `Info.plist` values here because this app uses Flutter build-variable substitution (`$(FLUTTER_BUILD_NAME)` / `$(FLUTTER_BUILD_NUMBER)`).
-
-2. Analyzer gate.
-Command:
-```bash
-flutter analyze | tee artifacts/release/<release-tag>/P0-07/02-flutter-analyze.log
-```
-Pass criteria: no analyzer errors.
-
-3. Unit/widget test gate.
-Command:
-```bash
-flutter test | tee artifacts/release/<release-tag>/P0-07/03-flutter-test.log
-```
-Pass criteria: test command exits `0`.
-
-4. Critical smoke gate.
-Command:
-```bash
-./scripts/test_critical_smoke.sh | tee artifacts/release/<release-tag>/P0-07/04-critical-smoke.log
-```
-Pass criteria: smoke suite exits `0`.
-
-5. Wired iOS smoke/journey evidence.
-Command:
-```bash
-./scripts/run_wired_evidence.sh --suite smoke
-```
-Pass criteria: latest wired run summary is copied or linked into `05-wired-ios-summary.md`.
-
-6. Scripted iOS archive gate.
-Command:
-```bash
-./scripts/release_preflight.sh ios
-./scripts/build_ios.sh | tee artifacts/release/<release-tag>/P0-07/06-ios-archive.log
-```
-Pass criteria: archive/build path succeeds using scripted flow.
-
-7. Crashlytics dSYM upload verification.
-Pass criteria: upload confirmation is captured in `07-crashlytics-dsym.txt` with timestamp and build reference.
-
-8. Firebase App Check and AI generation verification on physical iOS.
-Pass criteria: successful generation plus App Check-verified request evidence recorded in `08-firebase-appcheck-ai-ios.md`.
-
-9. RevenueCat entitlement/paywall verification on physical iOS.
-Pass criteria: purchase/restore/entitlement checks are recorded in `09-revenuecat-entitlement-paywall-ios.md`.
-
-10. Supabase auth/provider verification on physical iOS.
-Pass criteria: Apple/Google sign-in and callback behavior are recorded in `10-supabase-auth-provider-ios.md`.
-
-11. App Store Connect metadata/release notes/screenshots review.
-Pass criteria: metadata review outcome and any deltas are recorded in `11-app-store-connect-review.md`.
-
-12. TestFlight sanity pass.
-Pass criteria: install + launch + generate + auth + paywall sanity is recorded in `12-testflight-sanity.md`.
-
-13. Git history secret audit.
-Command:
-```bash
-git log --all -- .env.local | tee artifacts/release/<release-tag>/P0-07/13-secret-audit.log
-./scripts/security_history_guard.sh | tee -a artifacts/release/<release-tag>/P0-07/13-secret-audit.log
-```
-Pass criteria: no secret-leak findings blocking release.
-
-14. Rollback path confirmation.
-Pass criteria: rollback operator, trigger criteria, and rollback steps are recorded in `14-rollback-plan.md`.
-
-15. Owner sign-off.
-Pass criteria: signed approval is recorded in `signoff.md` in the same folder.
+| Gate | Pass Criteria |
+|------|---------------|
+| Version/build | Version and build values match the intended candidate and are recorded. |
+| Swift tests | `cd prosepal-ios && swift test` exits `0`. |
+| Simulator build | `cd prosepal-ios && xcodebuild -project ProsePal.xcodeproj -target ProsePal -sdk iphonesimulator CODE_SIGNING_ALLOWED=NO build` exits `0`. |
+| Wired iPhone smoke | Launch, welcome, Create, keyboard, gateway generation, Drafts, Copy, Share, Edit, Save, Saved, and Settings are exercised on device. |
+| Gateway config | The build targets the intended gateway environment; no provider keys, model IDs, dev secrets, or auth tokens are committed or printed. |
+| Auth | Sign in with Apple succeeds, cancellation/failure is safe, sign-out clears state, and authenticated gateway token wiring is verified without logging tokens. |
+| Purchase/restore | Purchase is available without mandatory app sign-in, restore works from Paywall and Settings, entitlement state is reconciled, and Premium gateway access remains server-authorized. |
+| Settings/support/legal | Account, subscription, writing preferences, privacy, support, legal, and about surfaces are present and honest. |
+| App Store Connect | Bundle ID/listing/product/subscription/privacy decisions are reviewed against App Review lessons. |
+| TestFlight | Install, launch, generate, auth, paywall, restore, settings, and support sanity pass from TestFlight. |
+| Secret audit | Git status and repository scans show no local schemes, Supabase `.temp`, secrets, tokens, receipts, screenshots, evidence, or model binaries committed. |
+| Rollback | Rollback to the current Flutter production baseline is documented until native replacement is approved. |
 
 ## Failure Handling
 
 If any gate fails:
+
 1. Stop release promotion.
-2. Attach failing logs/evidence in the same `P0-07` folder.
-3. Open/update a backlog item with deterministic fix DoD.
-4. Re-run only after fix commit and updated evidence.
+2. Attach the failing evidence to the release evidence folder.
+3. Add or update a native backlog item with a deterministic Definition of Done.
+4. Re-run only after a fix commit and updated evidence.

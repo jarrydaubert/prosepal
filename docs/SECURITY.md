@@ -1,5 +1,20 @@
 # Prosepal Security Overview
 
+## Scope Note
+
+This document includes the live Flutter production security posture and the
+security principles the native iOS rewrite must preserve.
+
+Native iOS security direction:
+
+- gateway-first AI generation;
+- no provider keys or provider SDKs in the app;
+- no raw prompt/card/generated content in client logs;
+- Sign in with Apple first for native identity;
+- server/gateway entitlement and usage policy for Premium generation;
+- third-party telemetry or crash SDKs only after explicit privacy and
+  operational review.
+
 ---
 **Document Control**
 
@@ -338,8 +353,8 @@ release {
 | Supabase | Auth, Database, Functions | SOC 2 Type II | [Trust Center](https://supabase.com/security) |
 | Firebase/Google | AI, Analytics, Crashlytics | ISO 27001, SOC 2 | [Security Page](https://firebase.google.com/support/privacy) |
 | RevenueCat | Payments, Subscriptions | SOC 2 Type II | [Security Page](https://www.revenuecat.com/security) |
-| Apple | Sign In, App Store | Platform security | N/A (platform) |
-| Google | Sign In, Play Store | Platform security | N/A (platform) |
+| Apple | Sign In, App Store | Platform security | Platform-owned review |
+| Google | Sign In, Play Store | Platform security | Platform-owned review |
 
 ### Dependency Management
 

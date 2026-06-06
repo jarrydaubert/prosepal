@@ -402,6 +402,9 @@ This lane may be lower quality initially. It should not be promoted to productio
 
 Emergency template generation is the last-resort lane.
 
+This is server-side router policy only. It is not approval to add client-side
+template generation or app-side fallback drafting to the native SwiftUI app.
+
 Purpose:
 
 * provider outage
@@ -1268,7 +1271,7 @@ It supports:
 
 The target client should call a ProsePal-owned generation contract rather than embedding model/provider logic.
 
-If a SwiftUI rewrite is considered, the preferred direction is:
+For the active SwiftUI rewrite, the required direction is:
 
 ```text
 SwiftUI app
@@ -1282,19 +1285,22 @@ SwiftUI app
   -> Firebase AI / Vertex AI directly
 ```
 
-This does not mean a SwiftUI rewrite is approved by this document.
+This does not change Flutter production routing. Native iOS work remains
+gateway-first; Flutter production remains client-direct until a separate
+production replacement decision is made.
 
 ## Relationship To Existing Backlog
 
-This strategy document does not close or change any backlog item. It provides architecture context for existing and future AI work.
+This strategy document provides architecture context for native and future AI
+work. Open implementation work lives in `docs/BACKLOG.md`.
 
 Relevant backlog relationships:
 
-* `VNEXT-10`: current AI operational safety gate for Firebase AI cost, abuse, App Check, Remote Config, allowlist, kill-switch, budget, and rollback controls
-* `P1-43`: current real-device AI reliability and diagnostics gate for the Firebase AI + App Check path
-* `P1-62`: current output-quality evidence gate for release-grade card-message quality
-* `P1-47`: future server-side AI gateway rollout trigger; production remains client-direct until trigger criteria are met and approved
-* `P2-18`: future AI technical-depth showcase that can explain the current system and this target direction without claiming unimplemented runtime behaviour
+* `N-IOS-02`: staging gateway reliability and operator runbook.
+* `N-IOS-03`: native auth token path into gateway requests.
+* `N-IOS-04`: server-authoritative usage and entitlement state.
+* `N-IOS-11`: native privacy, logging, and diagnostics hardening.
+* `N-IOS-12`: future local Standard generation spike.
 
 ## Candidate Backlog Items
 

@@ -1,17 +1,22 @@
-# AI Output Quality Release Audit
+# AI Output Quality Audit
 
 ## Purpose
 
-Define the release evidence workflow for `P1-62` AI output quality review.
+Define the evidence workflow for reviewing ProsePal generated-message quality.
 
-This document uses synthetic scenarios only. Real live or staging generation
-sampling requires explicit repo-owner approval before any provider call is made.
+This document applies to the native gateway path and can also be used as a
+Flutter production-reference rubric. Open implementation work belongs in
+`docs/BACKLOG.md`.
+
+This document uses synthetic scenarios only. Real staging or production
+generation sampling requires explicit repo-owner approval before any provider
+call is made.
 
 ## Scope
 
-The audit proves whether generated card messages are usable before release. It
-does not by itself authorize prompt, model, Remote Config, Firebase, Supabase,
-or production-setting changes.
+The audit proves whether generated card/personal-message drafts are usable
+before release. It does not by itself authorize prompt, model, gateway,
+provider, Firebase, Supabase, Remote Config, or production-setting changes.
 
 In scope:
 - rubric-based review of generated message quality
@@ -20,9 +25,9 @@ In scope:
 - manual review process for approved live or staging output samples
 
 Out of scope without separate approval:
-- live or staging generation runs
+- staging or production generation runs
 - production Remote Config changes
-- prompt, model ID, generation parameter, Firebase, or Supabase changes
+- prompt, model ID, generation parameter, gateway, Firebase, or Supabase changes
 - real user content capture
 
 ## Rubric
@@ -127,7 +132,7 @@ or private billing/project data in public evidence.
 Use:
 
 ```text
-artifacts/release/v1.1.3/P1-62-ai-output-quality/
+artifacts/release/<release-tag>/ai-output-quality/
 ```
 
 Suggested files:
@@ -147,7 +152,8 @@ The `artifacts/` path is for release evidence, not evergreen docs.
 Stop and get explicit repo-owner approval before:
 
 1. Running live or staging generation.
-2. Using production Firebase AI, Remote Config, App Check, or paid model quota.
+2. Using production Firebase AI, Remote Config, App Check, gateway quota, or paid
+   provider quota.
 3. Capturing sampled provider outputs into evidence.
 4. Testing safety, prompt-injection, or inappropriate-details scenarios against a real provider.
 5. Changing prompts, model IDs, generation config, Remote Config, Firebase,

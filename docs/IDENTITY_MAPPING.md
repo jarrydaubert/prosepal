@@ -4,6 +4,15 @@
 
 Define the canonical user-identity mapping across auth, subscriptions, and telemetry.
 
+Scope note:
+
+- Existing Flutter production identity uses Supabase, RevenueCat, Firebase
+  Analytics, and Firebase Crashlytics.
+- Native iOS should preserve the ownership rules, not automatically inherit
+  every telemetry or subscription SDK.
+- Native Premium generation must be authorized by gateway/server entitlement
+  state, not by local UI or stale local purchase cache alone.
+
 ## Canonical IDs
 
 | Surface | Canonical ID |

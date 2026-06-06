@@ -4,6 +4,16 @@
 
 Define identity and restore behavior for subscriptions.
 
+Scope note:
+
+- This is the existing Flutter production RevenueCat continuity policy.
+- Native iOS may retain RevenueCat for entitlement continuity, but that decision
+  must be made deliberately before production replacement.
+- The current native R&D path may use StoreKit 2 locally without treating local
+  purchase state as authorization for Premium gateway access.
+- Gateway/server entitlement policy remains authoritative for Premium
+  generation.
+
 ## Restore Behavior Setting
 
 - Project setting target: `Transfer to new App User ID`.

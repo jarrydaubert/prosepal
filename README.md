@@ -1,6 +1,23 @@
-# Prosepal
+# ProsePal
 
-Prosepal is a Flutter iOS/Android app that generates personalised greeting-card messages with Gemini via Firebase AI. It is also a public quality-engineering portfolio project: the repo is structured to show how auth, subscriptions, AI, lifecycle, and release risk can be tested and evidenced in a modern mobile app.
+ProsePal is a greeting-card and personal-message writing app.
+
+The repository currently contains two mobile app surfaces:
+
+- the existing Flutter iOS/Android app, which remains the live
+  production/reference implementation;
+- the native SwiftUI rewrite in `prosepal-ios/`, which is the active product
+  direction.
+
+The native rewrite is iOS-first, SwiftUI-first, dependency-light, and
+gateway-first. It must not become another Firebase AI / Vertex AI client-direct
+app. The client collects structured message intent, calls a ProsePal-owned
+gateway contract, renders generated drafts, and leaves provider/model routing
+behind the server boundary.
+
+This repo is also a public quality-engineering portfolio project: it shows how
+auth, subscriptions, AI, lifecycle, and release risk can be tested and evidenced
+in a modern mobile app.
 
 ## Quality Engineering Showcase
 
@@ -13,11 +30,25 @@ This repo is intended to demonstrate:
 - pragmatic automation choices: standard `integration_test` for core flows, selective Patrol adoption for true native/system interactions
 - operational discipline through runbooks, cleanup scripts, evidence capture, and backlog hygiene
 
+## Active Direction
+
+Read these first:
+
+- [docs/NEXT_RELEASE_BRIEF.md](docs/NEXT_RELEASE_BRIEF.md) - native iOS
+  readiness brief.
+- [docs/BACKLOG.md](docs/BACKLOG.md) - active native open work.
+- [prosepal-ios/NATIVE_PRODUCT_NORTH_STAR.md](prosepal-ios/NATIVE_PRODUCT_NORTH_STAR.md)
+  - native product shape and Flutter parity lessons.
+- [prosepal-ios/REWRITE_PLAN.md](prosepal-ios/REWRITE_PLAN.md) - detailed native
+  delivery gates.
+- [docs/architecture/AI_GATEWAY_STRATEGY.md](docs/architecture/AI_GATEWAY_STRATEGY.md)
+  - gateway-first AI direction.
+
 ## App Risk Surface
 
 The app is intentionally not trivial. It includes:
 
-- AI generation through Firebase AI / Gemini
+- AI generation through the Flutter production path and the native gateway path
 - anonymous-first and signed-in auth flows
 - RevenueCat entitlements, restore, and identity transfer
 - biometric lock and lifecycle transitions
@@ -28,7 +59,17 @@ Those domains are where mobile apps usually become flaky, stateful, and hard to 
 
 ## Test Strategy
 
-### 1. Deterministic Flutter Gate
+### 1. Native iOS Gate
+
+Run these when `prosepal-ios/` changes:
+
+```bash
+cd prosepal-ios
+swift test
+xcodebuild -project ProsePal.xcodeproj -target ProsePal -sdk iphonesimulator CODE_SIGNING_ALLOWED=NO build
+```
+
+### 2. Deterministic Flutter Gate
 
 Fast local and CI confidence for logic, UI, and routing:
 
@@ -43,7 +84,7 @@ What this covers:
 - screen-level regressions on the most critical flows
 - deterministic checks that should pass without real devices or live stores
 
-### 2. Wired Device Validation
+### 3. Wired Device Validation
 
 Physical iOS and Android runs are first-class, not an afterthought.
 
@@ -65,7 +106,7 @@ What this is for:
 - launch/auth visual parity
 - real rendering differences between iOS and Android
 
-### 3. Cloud / Native-Risk Coverage
+### 4. Cloud / Native-Risk Coverage
 
 Two different tools serve different purposes:
 
@@ -103,7 +144,18 @@ That split is intentional. It is the test strategy I would use on a real mobile 
 
 ## AI Engineering Depth
 
-The AI path is intentionally more than a single SDK call.
+Native direction:
+
+- provider-agnostic `MessageWritingClient`
+- ProsePal gateway contract
+- Standard and Premium as product lanes
+- no provider/model names in user-facing UI
+- no raw prompt/card/generated content in logs
+
+Flutter production reference:
+
+The current Flutter production AI path is intentionally more than a single SDK
+call.
 
 - pinned primary and fallback model IDs, not vague `latest` aliases
 - Remote Config allowlist validation for model selection
@@ -134,6 +186,16 @@ Examples:
 - open quality work with explicit Definition of Done in [docs/BACKLOG.md](docs/BACKLOG.md)
 
 ## Quick Start
+
+Native iOS:
+
+```bash
+cd prosepal-ios
+swift test
+xcodebuild -project ProsePal.xcodeproj -target ProsePal -sdk iphonesimulator CODE_SIGNING_ALLOWED=NO build
+```
+
+Flutter production/reference:
 
 ```bash
 flutter pub get
@@ -183,10 +245,11 @@ Where work remains, it is tracked in [docs/BACKLOG.md](docs/BACKLOG.md) with exp
 - `AGENTS.md` - Canonical working rules for repo changes
 - `CLAUDE.md` - Claude compatibility profile
 - [docs/DEVOPS.md](docs/DEVOPS.md) - Testing, CI/CD, release, and operational runbooks
-- [docs/NEXT_RELEASE_BRIEF.md](docs/NEXT_RELEASE_BRIEF.md) - Release scope and gates
+- [docs/NEXT_RELEASE_BRIEF.md](docs/NEXT_RELEASE_BRIEF.md) - Native iOS readiness scope and gates
 - [docs/BACKLOG.md](docs/BACKLOG.md) - Open work only, with Definition of Done
 - [docs/SECURITY.md](docs/SECURITY.md) - Security posture and reporting rules
-- [docs/AI_SYSTEM.md](docs/AI_SYSTEM.md) - AI runtime design, failure taxonomy, and evidence paths
+- [docs/architecture/AI_GATEWAY_STRATEGY.md](docs/architecture/AI_GATEWAY_STRATEGY.md) - Native gateway-first AI direction
+- [docs/AI_SYSTEM.md](docs/AI_SYSTEM.md) - Flutter production AI runtime reference
 - [docs/REVENUECAT_POLICY.md](docs/REVENUECAT_POLICY.md) - Subscription identity and restore policy
 - [docs/IDENTITY_MAPPING.md](docs/IDENTITY_MAPPING.md) - Auth / subscription / telemetry identity map
 - [docs/DOCS_POLICY.md](docs/DOCS_POLICY.md) - Evergreen documentation rules

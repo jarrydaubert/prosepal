@@ -4,6 +4,26 @@ Purpose: document the SDK methods Prosepal calls, grouped by integration area.
 
 For open gaps, flaky behavior, or pending improvements, use `docs/BACKLOG.md` only.
 
+## Native iOS Staging
+
+The native SwiftUI rewrite should keep a narrow service surface:
+
+- `URLSession` request to the ProsePal gateway contract:
+  - `POST /functions/v1/generate-card`
+- Supabase Auth REST exchange for Sign in with Apple:
+  - token exchange through the configured Supabase Auth endpoint
+- StoreKit 2 for local native purchase/restore R&D:
+  - product loading
+  - purchase
+  - restore/sync
+  - transaction entitlement state
+
+The native app must not call Firebase AI, Vertex AI, or provider generation SDKs.
+
+## Flutter Production Reference
+
+The sections below document the live Flutter production/reference SDK surfaces.
+
 ## Supabase Auth
 
 - `auth.currentUser`

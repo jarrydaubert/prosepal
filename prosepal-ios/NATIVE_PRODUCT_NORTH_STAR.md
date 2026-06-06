@@ -490,7 +490,7 @@ SwiftUI client
 -> entitlement and usage policy
 -> AI Gateway / Model Router
 -> provider adapters
--> Standard, Premium, local, or template lane as backend policy
+-> server-selected Standard, Premium, local, or fallback lane
 ```
 
 Client responsibilities:
@@ -513,21 +513,6 @@ Gateway responsibilities:
 - provider secrets
 - model/version experimentation
 
-## Current Native Drift To Correct
-
-The current native prototype is promising, but this drift should be corrected:
-
-- Create duplicates occasion selection through hero, selector row, and chip
-  carousel.
-- Results expose many actions equally; Copy should regain primary hierarchy.
-- Native Create is form-forward; Flutter proves occasion-first matters.
-- Keyboard behavior is improved but should be treated as a core test oracle.
-- Settings copy is cleaner, but full auth/subscription/privacy behavior is not
-  there yet.
-
-The next native UI implementation slice should remove occasion duplication and
-reshape Create around a single occasion-first path.
-
 ## Review Oracles
 
 Use these as pass/fail checks for native UI work:
@@ -549,36 +534,3 @@ Use these as pass/fail checks for native UI work:
 - Regenerate/Premium boundaries are product-lane based, not provider based.
 - No provider/model names appear in user-facing UI.
 - No raw prompt or user card content is logged.
-
-## Near-Term Native Direction
-
-The next few native PRs should move in this order:
-
-1. Create occasion-first cleanup
-   - remove main-screen occasion chip duplication
-   - keep one selected occasion summary
-   - make search/browse the primary catalogue path
-   - preserve full catalogue in the picker
-
-2. Results hierarchy pass
-   - restore Copy as primary
-   - keep Share secondary
-   - move Edit/Save into secondary/context actions where appropriate
-   - add a stronger context header
-   - add bottom Start Over + Regenerate/Unlock lane action
-
-3. Keyboard/device oracle pass
-   - add explicit focus dismissal checks
-   - test home/create return focus
-   - validate on tethered iPhone
-   - capture screenshots for keyboard-open fields and results actions
-
-4. Saved/history decision pass
-   - decide Saved-only, History-only, or Saved with History filter
-   - implement local persistence behavior that maps to the chosen product model
-
-5. Entitlement/auth/subscription slice
-   - keep dependency-light until the boundary is chosen
-   - prefer Sign in with Apple first
-   - evaluate RevenueCat only for entitlement continuity
-   - keep gateway in charge of usage policy
