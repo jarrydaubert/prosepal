@@ -1,0 +1,179 @@
+{
+  "appPolicies" : {
+    "eula" : "",
+    "policies" : [
+      {
+        "locale" : "en_GB",
+        "policyText" : "",
+        "policyURL" : ""
+      }
+    ]
+  },
+  "identifier" : "PROSEPAL-STAGING",
+  "nonRenewingSubscriptions" : [
+
+  ],
+  "products" : [
+
+  ],
+  "settings" : {
+    "_askToBuyEnabled" : false,
+    "_billingGracePeriodEnabled" : false,
+    "_billingIssuesEnabled" : false,
+    "_disableDialogs" : false,
+    "_failTransactionsEnabled" : false,
+    "_locale" : "en_GB",
+    "_renewalBillingIssuesEnabled" : false,
+    "_storefront" : "GBR",
+    "_storeKitErrors" : [
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Load Products"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Purchase"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Verification"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "App Store Sync"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Subscription Status"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "App Transaction"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Manage Subscriptions Sheet"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Refund Request Sheet"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Offer Code Redeem Sheet"
+      }
+    ],
+    "_timeRate" : 0
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "PROSEPAL-PRO",
+      "localizations" : [
+        {
+          "displayName" : "ProsePal Pro",
+          "locale" : "en_GB"
+        }
+      ],
+      "name" : "ProsePal Pro",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "29.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "PROSEPAL-PRO-YEARLY",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Enhanced ProsePal drafts and higher limits.",
+              "displayName" : "ProsePal Pro Yearly",
+              "locale" : "en_GB"
+            }
+          ],
+          "productID" : "com.prosepal.pro.yearly",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "ProsePal Pro Yearly",
+          "subscriptionGroupID" : "PROSEPAL-PRO",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "4.99",
+          "familyShareable" : false,
+          "groupNumber" : 2,
+          "internalID" : "PROSEPAL-PRO-MONTHLY",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Enhanced ProsePal drafts and higher limits.",
+              "displayName" : "ProsePal Pro Monthly",
+              "locale" : "en_GB"
+            }
+          ],
+          "productID" : "com.prosepal.pro.monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "ProsePal Pro Monthly",
+          "subscriptionGroupID" : "PROSEPAL-PRO",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "1.99",
+          "familyShareable" : false,
+          "groupNumber" : 3,
+          "internalID" : "PROSEPAL-PRO-WEEKLY",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Enhanced ProsePal drafts and higher limits.",
+              "displayName" : "ProsePal Pro Weekly",
+              "locale" : "en_GB"
+            }
+          ],
+          "productID" : "com.prosepal.pro.weekly",
+          "recurringSubscriptionPeriod" : "P1W",
+          "referenceName" : "ProsePal Pro Weekly",
+          "subscriptionGroupID" : "PROSEPAL-PRO",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        }
+      ]
+    }
+  ],
+  "version" : {
+    "major" : 4,
+    "minor" : 0
+  }
+}

@@ -18,6 +18,7 @@
 		PP0000000000000000000009 /* ProsePalNativeApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProsePalNativeApp.swift; sourceTree = "<group>"; };
 		PP0000000000000000000032 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		PP0000000000000000000034 /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
+		PP0000000000000000000035 /* ProsePalStaging.storekit */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = ProsePalStaging.storekit; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -54,6 +55,7 @@
 				PP0000000000000000000009 /* ProsePalNativeApp.swift */,
 				PP0000000000000000000032 /* Assets.xcassets */,
 				PP0000000000000000000034 /* LaunchScreen.storyboard */,
+				PP0000000000000000000035 /* ProsePalStaging.storekit */,
 			);
 			path = App;
 			sourceTree = "<group>";

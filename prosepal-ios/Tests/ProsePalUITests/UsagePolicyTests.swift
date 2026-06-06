@@ -20,7 +20,7 @@ final class UsagePolicyTests: XCTestCase {
         XCTAssertEqual(model.draft.requestedLane, .standard)
     }
 
-    func testStandardGenerationConsumesDisplayedAllowance() async {
+    func testStandardGenerationWithoutGatewayUsageDoesNotConsumeLocalPlaceholderAllowance() async {
         let model = makeModel(
             usageStatus: UsageStatus(standardLimit: 3, standardRemaining: 2),
             client: MockMessageWritingClient(response: sampleResponse())
@@ -31,7 +31,8 @@ final class UsagePolicyTests: XCTestCase {
 
         XCTAssertTrue(model.isShowingResults)
         XCTAssertEqual(model.generatedMessages.count, 1)
-        XCTAssertEqual(model.usageStatus.standardRemaining, 1)
+        XCTAssertEqual(model.usageStatus.standardRemaining, 2)
+        XCTAssertFalse(model.usageStatus.hasAuthoritativeUsage)
     }
 
     func testGatewayUsageSummaryOverridesLocalDisplayedAllowance() async {
@@ -50,6 +51,7 @@ final class UsagePolicyTests: XCTestCase {
         XCTAssertTrue(model.isShowingResults)
         XCTAssertEqual(model.usageStatus.standardRemaining, 7)
         XCTAssertEqual(model.usageStatus.standardLimit, 10)
+        XCTAssertTrue(model.usageStatus.hasAuthoritativeUsage)
     }
 
     func testGatewayUsageSummaryClampsRemainingToServerLimit() {
@@ -59,6 +61,7 @@ final class UsagePolicyTests: XCTestCase {
 
         XCTAssertEqual(usageStatus.standardRemaining, 8)
         XCTAssertEqual(usageStatus.standardLimit, 8)
+        XCTAssertTrue(usageStatus.hasAuthoritativeUsage)
     }
 
     func testGatewayUsageSummaryClampsExistingRemainingWhenOnlyLimitChanges() {
@@ -70,9 +73,13 @@ final class UsagePolicyTests: XCTestCase {
         XCTAssertEqual(usageStatus.standardLimit, 4)
     }
 
-    func testStandardLimitBlocksGenerationAndShowsPaywall() async {
+    func testAuthoritativeStandardLimitBlocksGenerationAndShowsPaywall() async {
         let model = makeModel(
-            usageStatus: UsageStatus(standardLimit: 3, standardRemaining: 0),
+            usageStatus: UsageStatus(
+                standardLimit: 3,
+                standardRemaining: 0,
+                hasAuthoritativeUsage: true
+            ),
             client: MockMessageWritingClient(response: sampleResponse())
         )
         model.draft.requestedLane = .standard
@@ -83,6 +90,20 @@ final class UsagePolicyTests: XCTestCase {
         XCTAssertFalse(model.isShowingResults)
         XCTAssertTrue(model.generatedMessages.isEmpty)
         XCTAssertEqual(model.errorMessage, "You've used your Standard drafts for today.")
+    }
+
+    func testPlaceholderStandardLimitDoesNotBlockGatewayGeneration() async {
+        let model = makeModel(
+            usageStatus: UsageStatus(standardLimit: 3, standardRemaining: 0),
+            client: MockMessageWritingClient(response: sampleResponse())
+        )
+        model.draft.requestedLane = .standard
+
+        await model.generate()
+
+        XCTAssertFalse(model.isShowingPaywall)
+        XCTAssertTrue(model.isShowingResults)
+        XCTAssertEqual(model.generatedMessages.count, 1)
     }
 
     func testFailedGenerationDoesNotConsumeDisplayedAllowance() async {

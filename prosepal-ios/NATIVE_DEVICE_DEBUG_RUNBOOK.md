@@ -6,19 +6,40 @@ findings into tests, screenshots, or release notes after each pass.
 
 ## Local Xcode Environment
 
-Set these in the `ProsePal` scheme Run environment for staging/device work:
+Use the local-only `ProsePal Local Staging` scheme for staging/device work.
+Keep it under `xcuserdata`; do not copy its secret values into the shared
+scheme. It should include:
 
 ```text
-PROSEPAL_GATEWAY_URL=https://<staging-project-ref>.supabase.co/functions/v1/generate-card
+PROSEPAL_GATEWAY_URL=https://llolwgqphwnhbiqewmcq.supabase.co/functions/v1/generate-card
 PROSEPAL_DEV_GATEWAY_SECRET=<staging-only-secret>
-PROSEPAL_SUPABASE_URL=https://<staging-project-ref>.supabase.co
+PROSEPAL_SUPABASE_URL=https://llolwgqphwnhbiqewmcq.supabase.co
 PROSEPAL_SUPABASE_ANON_KEY=<supabase-anon-key>
 PROSEPAL_PREMIUM_PRODUCT_IDS=com.prosepal.pro.yearly,com.prosepal.pro.monthly,com.prosepal.pro.weekly
 PROSEPAL_RECOMMENDED_PREMIUM_PRODUCT_ID=com.prosepal.pro.yearly
 ```
 
+For local paywall product and purchase testing before App Store Connect products
+are attached to the native bundle ID, select this StoreKit configuration in the
+local staging scheme:
+
+```text
+App/ProsePalStaging.storekit
+```
+
 Do not commit Xcode scheme secrets, Supabase `.temp` link state, provider keys,
 StoreKit receipts, auth tokens, or screenshots under tracked paths.
+
+## Staging Support Status
+
+| Surface | Staging status |
+|---------|----------------|
+| Standard generation, signed out | Supported through the staging gateway dev-secret guard. |
+| Standard generation, signed in | Supported when Supabase Auth is configured and a valid access token is present; usage is enforced by the gateway RPC. |
+| Sign in with Apple | Native entitlement and Supabase Auth REST client are present. Requires Apple Developer bundle setup and Supabase Auth Apple provider setup for `com.prosepal.prosepal.native`. |
+| Paywall product loading | Supported through StoreKit 2 using configured product IDs. Use `App/ProsePalStaging.storekit` for local testing if App Store Connect products are not ready for the native bundle. |
+| Purchase / restore UI | Supported through StoreKit 2 for local StoreKit testing and App Store sandbox once products exist. |
+| Premium generation | Not yet supported by the staging gateway; Premium requests currently fail closed server-side. This needs a gateway/entitlement PR before full Premium generation testing. |
 
 ## OSLog Filters
 

@@ -858,22 +858,29 @@ public struct UsageStatus: Equatable, Sendable {
     public var standardRemaining: Int
     public var isPremiumUnlocked: Bool
     public var resetDescription: String
+    public var hasAuthoritativeUsage: Bool
 
     public init(
         standardLimit: Int = 3,
         standardRemaining: Int = 2,
         isPremiumUnlocked: Bool = false,
-        resetDescription: String = "today"
+        resetDescription: String = "today",
+        hasAuthoritativeUsage: Bool = false
     ) {
         self.standardLimit = max(0, standardLimit)
         self.standardRemaining = max(0, min(standardRemaining, standardLimit))
         self.isPremiumUnlocked = isPremiumUnlocked
         self.resetDescription = resetDescription
+        self.hasAuthoritativeUsage = hasAuthoritativeUsage
     }
 
     public var usageText: String {
         if isPremiumUnlocked {
             return "Premium generation active"
+        }
+
+        if !hasAuthoritativeUsage {
+            return "Standard generation available"
         }
 
         return "\(standardRemaining) of \(standardLimit) Standard drafts left \(resetDescription)"
@@ -882,6 +889,10 @@ public struct UsageStatus: Equatable, Sendable {
     public var detailText: String {
         if isPremiumUnlocked {
             return "Enhanced drafts and higher limits are available."
+        }
+
+        if !hasAuthoritativeUsage {
+            return "Limits are checked by ProsePal when you generate."
         }
 
         if standardRemaining == 0 {
@@ -896,18 +907,18 @@ public struct UsageStatus: Equatable, Sendable {
     }
 
     public func isStandardLimitReached(for lane: GenerationLane) -> Bool {
-        !isPremiumUnlocked && isStandardLike(lane) && standardRemaining <= 0
+        hasAuthoritativeUsage && !isPremiumUnlocked && isStandardLike(lane) && standardRemaining <= 0
     }
 
     public mutating func recordSuccessfulGeneration(requestedLane: GenerationLane, laneUsed: GenerationLane) {
-        guard !isPremiumUnlocked, isStandardLike(requestedLane) || isStandardLike(laneUsed) else {
-            return
-        }
-
-        standardRemaining = max(0, standardRemaining - 1)
+        // The gateway is the source of truth for usage. Anonymous staging
+        // responses may omit usage while still being valid; do not invent a
+        // client-side limit in that path.
     }
 
     public mutating func applyGatewayUsageSummary(_ summary: UsageSummary, now: Date = .now) {
+        hasAuthoritativeUsage = true
+
         if let limit = summary.limit {
             standardLimit = max(0, limit)
         }
@@ -2079,6 +2090,7 @@ struct ResultsView: View {
             }
         }
         .navigationTitle(resultsTitle)
+        .hideTabBarOnIOS()
     }
 
     private var resultsActionBar: some View {
@@ -2304,36 +2316,46 @@ struct ResultCard: View {
         VStack(spacing: 10) {
             HStack(spacing: 10) {
                 shareLink
+                    .frame(maxWidth: .infinity)
                 editButton
+                    .frame(maxWidth: .infinity)
             }
 
             HStack(spacing: 10) {
                 saveButton
+                    .frame(maxWidth: .infinity)
                 copyButton
+                    .frame(maxWidth: .infinity)
             }
         }
+        .frame(maxWidth: .infinity)
     }
 
     private var copyButton: some View {
         Button {
             copyMessage()
         } label: {
-            Label(isCopied ? "Copied" : "Copy", systemImage: isCopied ? "checkmark" : "doc.on.doc")
-                .frame(maxWidth: .infinity)
+            ResultActionLabel(
+                title: isCopied ? "Copied" : "Copy",
+                systemImage: isCopied ? "checkmark" : "doc.on.doc",
+                prominence: .primary
+            )
         }
-        .buttonStyle(.borderedProminent)
-        .layoutPriority(1)
+        .buttonStyle(.plain)
     }
 
     private var shareLink: some View {
         ShareLink(item: message.text) {
-            Label("Share", systemImage: "square.and.arrow.up")
-                .frame(maxWidth: .infinity)
+            ResultActionLabel(
+                title: "Share",
+                systemImage: "square.and.arrow.up",
+                prominence: .secondary
+            )
         }
         .simultaneousGesture(TapGesture().onEnded {
             model.logShareText(message.text, source: "result_card")
         })
-        .buttonStyle(.bordered)
+        .buttonStyle(.plain)
     }
 
     private var editButton: some View {
@@ -2342,21 +2364,27 @@ struct ResultCard: View {
             editedText = message.text
             isEditing = true
         } label: {
-            Label("Edit", systemImage: "square.and.pencil")
-                .frame(maxWidth: .infinity)
+            ResultActionLabel(
+                title: "Edit",
+                systemImage: "square.and.pencil",
+                prominence: .secondary
+            )
         }
-        .buttonStyle(.bordered)
+        .buttonStyle(.plain)
     }
 
     private var saveButton: some View {
         Button {
             model.save(message)
         } label: {
-            Label(model.isSaved(message) ? "Saved" : "Save", systemImage: model.isSaved(message) ? "bookmark.fill" : "bookmark")
-                .frame(maxWidth: .infinity)
+            ResultActionLabel(
+                title: model.isSaved(message) ? "Saved" : "Save",
+                systemImage: model.isSaved(message) ? "bookmark.fill" : "bookmark",
+                prominence: model.isSaved(message) ? .disabled : .secondary
+            )
         }
         .disabled(model.isSaved(message))
-        .buttonStyle(.bordered)
+        .buttonStyle(.plain)
     }
 
     private func copyMessage() {
@@ -2366,6 +2394,75 @@ struct ResultCard: View {
         Task { @MainActor in
             try? await Task.sleep(nanoseconds: 1_700_000_000)
             isCopied = false
+        }
+    }
+}
+
+private struct ResultActionLabel: View {
+    enum Prominence {
+        case primary
+        case secondary
+        case disabled
+    }
+
+    let title: String
+    let systemImage: String
+    let prominence: Prominence
+
+    var body: some View {
+        HStack(spacing: 7) {
+            Image(systemName: systemImage)
+                .font(.subheadline.weight(.semibold))
+                .frame(width: 18)
+
+            Text(title)
+                .font(.subheadline.weight(.semibold))
+                .lineLimit(1)
+                .minimumScaleFactor(0.78)
+        }
+        .frame(maxWidth: .infinity, minHeight: 46)
+        .padding(.horizontal, 8)
+        .multilineTextAlignment(.center)
+        .foregroundStyle(foregroundStyle)
+        .background(backgroundStyle, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .strokeBorder(borderStyle, lineWidth: 1)
+        }
+        .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .accessibilityLabel(title)
+    }
+
+    private var foregroundStyle: Color {
+        switch prominence {
+        case .primary:
+            .white
+        case .secondary:
+            Color.prosePalCoral
+        case .disabled:
+            .secondary
+        }
+    }
+
+    private var backgroundStyle: Color {
+        switch prominence {
+        case .primary:
+            Color.prosePalCoral
+        case .secondary:
+            Color.prosePalGroupedBackground
+        case .disabled:
+            Color.prosePalGroupedBackground.opacity(0.72)
+        }
+    }
+
+    private var borderStyle: Color {
+        switch prominence {
+        case .primary:
+            Color.prosePalCoral.opacity(0)
+        case .secondary:
+            Color.prosePalCoral.opacity(0.18)
+        case .disabled:
+            Color.primary.opacity(0.06)
         }
     }
 }
@@ -3558,6 +3655,15 @@ private extension View {
     func prosePalOnboardingToolbarStyle() -> some View {
         #if os(iOS)
         self.toolbarColorScheme(.dark, for: .navigationBar)
+        #else
+        self
+        #endif
+    }
+
+    @ViewBuilder
+    func hideTabBarOnIOS() -> some View {
+        #if os(iOS)
+        self.toolbar(.hidden, for: .tabBar)
         #else
         self
         #endif
