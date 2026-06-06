@@ -267,6 +267,11 @@ No RevenueCat, Supabase SDK, Firebase, Sentry, analytics, provider SDKs, or
 model/provider SDKs are included in this slice. StoreKit 2 is an Apple platform
 framework used behind the native subscription boundary.
 
+Native Settings should stay honest while the rewrite is R&D: support, legal,
+review, and Apple subscription-management rows use platform/web actions, while
+analytics and crash-reporting switches are omitted until those systems actually
+exist in the native target.
+
 Run the native contract tests and simulator build from this folder:
 
 ```bash

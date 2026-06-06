@@ -161,20 +161,16 @@ final class SettingsParityStateTests: XCTestCase {
         XCTAssertNotNil(model.notice)
     }
 
-    func testPrivacyTogglesUpdateLocalPreferences() {
+    func testSettingsExternalActionsDoNotChangeAccountOrPremiumState() {
         let model = makeModel()
 
-        model.setAnalyticsEnabled(true)
-        model.setCrashReportsEnabled(true)
+        model.openSettingsLink("support")
+        model.openSettingsLink("privacy")
+        model.requestAppReview()
 
-        XCTAssertTrue(model.analyticsEnabled)
-        XCTAssertTrue(model.crashReportsEnabled)
-
-        model.setAnalyticsEnabled(false)
-        model.setCrashReportsEnabled(false)
-
-        XCTAssertFalse(model.analyticsEnabled)
-        XCTAssertFalse(model.crashReportsEnabled)
+        XCTAssertFalse(model.isSignedIn)
+        XCTAssertFalse(model.usageStatus.isPremiumUnlocked)
+        XCTAssertNil(model.signedInEmail)
     }
 
     func testBiometricLockRequiresSignedInAccount() {

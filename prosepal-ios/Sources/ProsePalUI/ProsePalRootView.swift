@@ -6,6 +6,10 @@ import SwiftUI
 import AuthenticationServices
 #endif
 
+#if canImport(StoreKit)
+import StoreKit
+#endif
+
 #if os(iOS)
 import UIKit
 #elseif os(macOS)
@@ -37,8 +41,6 @@ public final class ProsePalAppModel: ObservableObject {
     @Published var isPurchasingPremium = false
     @Published var isRestoringPurchases = false
     @Published var subscriptionErrorMessage: String?
-    @Published var analyticsEnabled = false
-    @Published var crashReportsEnabled = false
     @Published var biometricLockEnabled = false
     @Published var totalGeneratedCount = 0
 
@@ -455,14 +457,12 @@ public final class ProsePalAppModel: ObservableObject {
         showNotice("Apple sign-in failed. Please try again.", systemImage: "exclamationmark.triangle")
     }
 
-    func manageSubscriptionPlaceholder() {
-        diagnostics.messageAction("manage_subscription", source: "settings", messageCharacters: 0)
-        showNotice("Manage this in App Store settings", systemImage: "creditcard")
+    func openSettingsLink(_ link: String) {
+        diagnostics.messageAction("settings_link_opened", source: link, messageCharacters: 0)
     }
 
-    func rateAppPlaceholder() {
-        diagnostics.messageAction("rate_app", source: "settings", messageCharacters: 0)
-        showNotice("Reviews are unavailable right now", systemImage: "star")
+    func requestAppReview() {
+        diagnostics.messageAction("rate_app_requested", source: "settings", messageCharacters: 0)
     }
 
     func exportDataPlaceholder() {
@@ -495,16 +495,6 @@ public final class ProsePalAppModel: ObservableObject {
         } catch {
             showNotice("Could not finish signing out. Please try again.", systemImage: "exclamationmark.triangle")
         }
-    }
-
-    func setAnalyticsEnabled(_ enabled: Bool) {
-        analyticsEnabled = enabled
-        diagnostics.selectionChanged(kind: "analytics", value: enabled ? "enabled" : "disabled")
-    }
-
-    func setCrashReportsEnabled(_ enabled: Bool) {
-        crashReportsEnabled = enabled
-        diagnostics.selectionChanged(kind: "crash_reports", value: enabled ? "enabled" : "disabled")
     }
 
     func setBiometricLockEnabled(_ enabled: Bool) {
@@ -3005,8 +2995,20 @@ struct SavedMessageDetailView: View {
     }
 }
 
+private enum SettingsExternalLinks {
+    static let appleSubscriptions = URL(string: "https://apps.apple.com/account/subscriptions")!
+    static let support = URL(string: "https://www.prosepal.app/support.html")!
+    static let terms = URL(string: "https://www.prosepal.app/terms.html")!
+    static let privacy = URL(string: "https://www.prosepal.app/privacy.html")!
+    static let feedbackEmail = URL(string: "mailto:jarryd@prosepal.app?subject=ProsePal%20Feedback")!
+}
+
 struct SettingsView: View {
     @EnvironmentObject private var model: ProsePalAppModel
+    @Environment(\.openURL) private var openURL
+#if canImport(StoreKit)
+    @Environment(\.requestReview) private var requestReview
+#endif
     @State private var isShowingAccountSheet = false
 
     var body: some View {
@@ -3082,7 +3084,8 @@ struct SettingsView: View {
             .buttonStyle(.plain)
 
             Button {
-                model.manageSubscriptionPlaceholder()
+                model.openSettingsLink("manage_subscription")
+                openURL(SettingsExternalLinks.appleSubscriptions)
             } label: {
                 SettingsRow(
                     systemImage: "creditcard",
@@ -3177,12 +3180,9 @@ struct SettingsView: View {
 
     private var supportSection: some View {
         Section("Support") {
-            NavigationLink {
-                SettingsInfoScreen(
-                    title: "Help & FAQ",
-                    systemImage: "questionmark.circle",
-                    detail: "Find guidance for writing, saving, sharing, subscriptions, and account support."
-                )
+            Button {
+                model.openSettingsLink("support")
+                openURL(SettingsExternalLinks.support)
             } label: {
                 SettingsRow(
                     systemImage: "questionmark.circle",
@@ -3190,9 +3190,11 @@ struct SettingsView: View {
                     subtitle: "Common questions and support"
                 )
             }
+            .buttonStyle(.plain)
 
             Button {
-                model.showNotice("Feedback is unavailable right now", systemImage: "envelope")
+                model.openSettingsLink("feedback")
+                openURL(SettingsExternalLinks.feedbackEmail)
             } label: {
                 SettingsRow(
                     systemImage: "envelope",
@@ -3203,7 +3205,10 @@ struct SettingsView: View {
             .buttonStyle(.plain)
 
             Button {
-                model.rateAppPlaceholder()
+                model.requestAppReview()
+#if canImport(StoreKit)
+                requestReview()
+#endif
             } label: {
                 SettingsRow(
                     systemImage: "star",
@@ -3217,51 +3222,31 @@ struct SettingsView: View {
 
     private var privacySection: some View {
         Section("Privacy & Legal") {
-            NavigationLink {
-                SettingsInfoScreen(
-                    title: "Terms of Service",
+            Button {
+                model.openSettingsLink("terms")
+                openURL(SettingsExternalLinks.terms)
+            } label: {
+                SettingsRow(
                     systemImage: "doc.text",
-                    detail: "Terms of Service for using ProsePal."
+                    title: "Terms of Service",
+                    subtitle: "Read the current terms on prosepal.app",
+                    trailingSystemImage: "arrow.up.right"
                 )
-            } label: {
-                SettingsRow(systemImage: "doc.text", title: "Terms of Service")
             }
+            .buttonStyle(.plain)
 
-            NavigationLink {
-                SettingsInfoScreen(
-                    title: "Privacy Policy",
+            Button {
+                model.openSettingsLink("privacy")
+                openURL(SettingsExternalLinks.privacy)
+            } label: {
+                SettingsRow(
                     systemImage: "hand.raised",
-                    detail: "How ProsePal handles privacy, accounts, purchases, and saved messages."
-                )
-            } label: {
-                SettingsRow(systemImage: "hand.raised", title: "Privacy Policy")
-            }
-
-            Toggle(
-                isOn: Binding(
-                    get: { model.analyticsEnabled },
-                    set: { model.setAnalyticsEnabled($0) }
-                )
-            ) {
-                SettingsToggleLabel(
-                    systemImage: "chart.line.uptrend.xyaxis",
-                    title: "Product Analytics",
-                    subtitle: model.analyticsEnabled ? "Anonymous usage patterns help improve the app" : "Off - no product analytics events sent"
+                    title: "Privacy Policy",
+                    subtitle: "How ProsePal handles messages, accounts, and purchases",
+                    trailingSystemImage: "arrow.up.right"
                 )
             }
-
-            Toggle(
-                isOn: Binding(
-                    get: { model.crashReportsEnabled },
-                    set: { model.setCrashReportsEnabled($0) }
-                )
-            ) {
-                SettingsToggleLabel(
-                    systemImage: "exclamationmark.triangle",
-                    title: "Crash Reports",
-                    subtitle: model.crashReportsEnabled ? "Automatic diagnostics help fix stability issues" : "Off - crashes stay only on this device"
-                )
-            }
+            .buttonStyle(.plain)
         }
     }
 
@@ -3363,36 +3348,6 @@ struct AccountSignInSheet: View {
                 }
             }
         }
-    }
-}
-
-struct SettingsInfoScreen: View {
-    let title: String
-    let systemImage: String
-    let detail: String
-    @ScaledMetric(relativeTo: .largeTitle) private var iconSize: CGFloat = 42
-
-    var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                Image(systemName: systemImage)
-                    .font(.system(size: iconSize, weight: .semibold))
-                    .foregroundStyle(Color.prosePalCoral)
-
-                Text(title)
-                    .font(.largeTitle.weight(.bold))
-
-                Text(detail)
-                    .font(.body)
-                    .foregroundStyle(.secondary)
-                    .lineSpacing(4)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(22)
-        }
-        .background(Color.prosePalGroupedBackground)
-        .navigationTitle(title)
     }
 }
 
