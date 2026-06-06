@@ -77,6 +77,17 @@ public struct NativeDiagnosticsLogger: Sendable {
             "message_action action=\(action, privacy: .public) source=\(source, privacy: .public) message_chars=\(messageCharacters, privacy: .public)"
         )
     }
+
+    public func subscriptionEvent(
+        _ event: String,
+        source: String,
+        productCount: Int = 0,
+        outcome: String = "none"
+    ) {
+        logger.info(
+            "subscription_event event=\(event, privacy: .public) source=\(source, privacy: .public) product_count=\(productCount, privacy: .public) outcome=\(outcome, privacy: .public)"
+        )
+    }
 }
 
 private extension String {

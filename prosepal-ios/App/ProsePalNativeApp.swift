@@ -10,6 +10,7 @@ struct ProsePalNativeApp: App {
         store: KeychainAuthSessionStore(service: "com.prosepal.native.auth")
     )
     private let authClient = AuthClientFactory.makeClient()
+    private let subscriptionClient = SubscriptionClientFactory.makeClient()
 
     var body: some Scene {
         WindowGroup {
@@ -23,7 +24,8 @@ struct ProsePalNativeApp: App {
                         buildNumber: Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
                     ),
                     authSessionController: authSessionController,
-                    authClient: authClient
+                    authClient: authClient,
+                    subscriptionClient: subscriptionClient
                 )
             )
         }
@@ -79,6 +81,22 @@ private enum MessageWritingClientFactory {
     }
 }
 
+private enum SubscriptionClientFactory {
+    static func makeClient() -> (any SubscriptionClient)? {
+        let productIDs = NativeConfig.list(named: "PROSEPAL_PREMIUM_PRODUCT_IDS")
+        guard !productIDs.isEmpty else { return nil }
+
+        #if canImport(StoreKit)
+        return StoreKitSubscriptionClient(
+            productIDs: productIDs,
+            recommendedProductID: NativeConfig.value(named: "PROSEPAL_RECOMMENDED_PREMIUM_PRODUCT_ID")
+        )
+        #else
+        return nil
+        #endif
+    }
+}
+
 private enum NativeConfig {
     static func value(named key: String) -> String? {
         if let environmentValue = ProcessInfo.processInfo.environment[key]?.trimmingCharacters(in: .whitespacesAndNewlines),
@@ -94,6 +112,22 @@ private enum NativeConfig {
         }
 
         return nil
+    }
+
+    static func list(named key: String) -> [String] {
+        guard let rawValue = value(named: key) else { return [] }
+
+        var seen = Set<String>()
+        return rawValue
+            .split { character in
+                character == "," || character == "\n" || character == " "
+            }
+            .compactMap { item -> String? in
+                let trimmed = item.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard !trimmed.isEmpty, !seen.contains(trimmed) else { return nil }
+                seen.insert(trimmed)
+                return trimmed
+            }
     }
 }
 

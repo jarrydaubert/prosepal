@@ -86,13 +86,78 @@ final class SettingsParityStateTests: XCTestCase {
         XCTAssertEqual(signOutTokens, ["saved-token"])
     }
 
-    func testPremiumPurchasePlaceholderDoesNotUnlockPremium() {
+    func testPremiumPurchaseWhenUnconfiguredDoesNotUnlockPremium() async {
         let model = makeModel()
 
-        model.purchasePremiumPlaceholder(source: "paywall")
+        await model.purchasePremium(source: "paywall")
 
         XCTAssertFalse(model.usageStatus.isPremiumUnlocked)
         XCTAssertEqual(model.draft.requestedLane, .standard)
+        XCTAssertNotNil(model.notice)
+    }
+
+    func testLoadingSubscriptionProductsSelectsRecommendedPlan() async {
+        let subscriptionClient = RecordingSubscriptionClient(
+            products: [
+                SubscriptionProduct(id: "monthly", displayName: "Monthly", displayPrice: "$4.99", durationLabel: "Every 1 month"),
+                SubscriptionProduct(id: "yearly", displayName: "Yearly", displayPrice: "$39.99", durationLabel: "Every 1 year", isRecommended: true)
+            ]
+        )
+        let model = makeModel(subscriptionClient: subscriptionClient)
+
+        await model.loadSubscriptionProducts(source: "paywall")
+
+        XCTAssertEqual(model.subscriptionProducts.count, 2)
+        XCTAssertEqual(model.selectedSubscriptionProductID, "yearly")
+        XCTAssertNil(model.subscriptionErrorMessage)
+    }
+
+    func testCancelledPremiumPurchaseDoesNotUnlockPremium() async {
+        let subscriptionClient = RecordingSubscriptionClient(
+            products: [
+                SubscriptionProduct(id: "monthly", displayName: "Monthly", displayPrice: "$4.99")
+            ],
+            purchaseResult: SubscriptionPurchaseResult(status: .cancelled)
+        )
+        let model = makeModel(subscriptionClient: subscriptionClient)
+
+        await model.loadSubscriptionProducts(source: "paywall")
+        await model.purchasePremium(source: "paywall")
+
+        let purchasedProductIDs = await subscriptionClient.purchasedProductIDs
+        XCTAssertEqual(purchasedProductIDs, ["monthly"])
+        XCTAssertFalse(model.usageStatus.isPremiumUnlocked)
+        XCTAssertTrue(model.isShowingPaywall == false || model.notice != nil)
+    }
+
+    func testConfirmedPremiumPurchaseUpdatesPremiumState() async {
+        let subscriptionClient = RecordingSubscriptionClient(
+            products: [
+                SubscriptionProduct(id: "yearly", displayName: "Yearly", displayPrice: "$39.99", isRecommended: true)
+            ],
+            purchaseResult: SubscriptionPurchaseResult(
+                status: .purchased,
+                entitlement: SubscriptionEntitlement(isActive: true, productID: "yearly")
+            )
+        )
+        let model = makeModel(subscriptionClient: subscriptionClient)
+
+        await model.loadSubscriptionProducts(source: "paywall")
+        await model.purchasePremium(source: "paywall")
+
+        XCTAssertTrue(model.usageStatus.isPremiumUnlocked)
+        XCTAssertFalse(model.isShowingPaywall)
+    }
+
+    func testRestoreWithoutActiveSubscriptionDoesNotUnlockPremium() async {
+        let subscriptionClient = RecordingSubscriptionClient(
+            restoreResult: SubscriptionPurchaseResult(status: .notEntitled)
+        )
+        let model = makeModel(subscriptionClient: subscriptionClient)
+
+        await model.restorePurchases(source: "settings")
+
+        XCTAssertFalse(model.usageStatus.isPremiumUnlocked)
         XCTAssertNotNil(model.notice)
     }
 
@@ -147,7 +212,8 @@ final class SettingsParityStateTests: XCTestCase {
     private func makeModel(
         client: MessageWritingClient? = nil,
         authSessionController: AuthSessionController? = nil,
-        authClient: (any AuthClient)? = nil
+        authClient: (any AuthClient)? = nil,
+        subscriptionClient: (any SubscriptionClient)? = nil
     ) -> ProsePalAppModel {
         ProsePalAppModel(
             client: client ?? MockMessageWritingClient(
@@ -155,7 +221,8 @@ final class SettingsParityStateTests: XCTestCase {
             ),
             clientContext: ClientContext(appVersion: "0.0.0", buildNumber: "1"),
             authSessionController: authSessionController,
-            authClient: authClient
+            authClient: authClient,
+            subscriptionClient: subscriptionClient
         )
     }
 }
@@ -206,5 +273,44 @@ private actor RecordingAuthClient: AuthClient {
 
     func signOut(accessToken: String) async throws {
         signOutTokens.append(accessToken)
+    }
+}
+
+private actor RecordingSubscriptionClient: SubscriptionClient {
+    private let products: [SubscriptionProduct]
+    private let entitlement: SubscriptionEntitlement
+    private let purchaseResult: SubscriptionPurchaseResult
+    private let restoreResult: SubscriptionPurchaseResult
+    private(set) var purchasedProductIDs: [String] = []
+    private(set) var restoreCallCount = 0
+
+    init(
+        products: [SubscriptionProduct] = [],
+        entitlement: SubscriptionEntitlement = .inactive,
+        purchaseResult: SubscriptionPurchaseResult = SubscriptionPurchaseResult(status: .cancelled),
+        restoreResult: SubscriptionPurchaseResult = SubscriptionPurchaseResult(status: .notEntitled)
+    ) {
+        self.products = products
+        self.entitlement = entitlement
+        self.purchaseResult = purchaseResult
+        self.restoreResult = restoreResult
+    }
+
+    func loadProducts() async throws -> [SubscriptionProduct] {
+        products
+    }
+
+    func currentEntitlement() async throws -> SubscriptionEntitlement {
+        entitlement
+    }
+
+    func purchase(productID: String) async throws -> SubscriptionPurchaseResult {
+        purchasedProductIDs.append(productID)
+        return purchaseResult
+    }
+
+    func restorePurchases() async throws -> SubscriptionPurchaseResult {
+        restoreCallCount += 1
+        return restoreResult
     }
 }

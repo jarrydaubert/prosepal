@@ -73,6 +73,19 @@ The anon key is a public Supabase client key, but it should still live in local
 scheme/environment configuration for this R&D branch rather than being committed
 to source.
 
+Native Premium purchase/restore uses an Apple StoreKit 2 boundary without adding
+a third-party purchase SDK. To load subscription products in local/Xcode builds,
+set:
+
+```text
+PROSEPAL_PREMIUM_PRODUCT_IDS=com.prosepal.pro.yearly,com.prosepal.pro.monthly
+PROSEPAL_RECOMMENDED_PREMIUM_PRODUCT_ID=com.prosepal.pro.yearly
+```
+
+Use the existing App Store Connect product identifiers where viable. The client
+does not commit product IDs into source, and server/gateway entitlement policy
+remains authoritative for Premium generation.
+
 Local anonymous gateway mode requires the function environment variable
 `GATEWAY_DEV_ALLOW_ANONYMOUS=true`. Authenticated mode will be the default once
 the native auth path is connected.
@@ -165,8 +178,9 @@ to the Flutter reference while keeping the iOS design direction:
   existing Supabase usage RPC allows and increments the generation. The local
   decrement remains a temporary development placeholder for anonymous native
   R&D builds.
-- Premium selection opens a native placeholder sheet instead of importing a
-  subscription SDK.
+- Premium selection opens a native paywall sheet backed by a narrow StoreKit 2
+  protocol boundary when `PROSEPAL_PREMIUM_PRODUCT_IDS` is configured; it stays
+  honest and unavailable when products are not configured.
 - Retry and degraded-generation states now have visible, user-safe actions.
 - The Create Write Message action is keyboard-aware: the large bottom action hides
   while typing and a compact keyboard toolbar action remains available.
@@ -220,6 +234,16 @@ Native auth plumbing has started without adding a third-party SDK:
 - `GatewayMessageWritingClient` receives an Authorization bearer token from the
   session controller when a valid session exists.
 
+Native subscription plumbing has started without adding RevenueCat:
+
+- `SubscriptionClient` defines the purchase/restore/product-loading boundary.
+- `StoreKitSubscriptionClient` loads configured App Store subscription products,
+  starts purchases, restores transactions, and surfaces active local
+  entitlements.
+- Paywall and Settings restore actions use this boundary when configured.
+- Premium gateway access still requires server-side entitlement policy; local
+  StoreKit state must not become the only production truth.
+
 Live Sign in with Apple still requires the Apple capability to be enabled for
 the bundle identifier in the Apple Developer portal, a matching provisioning
 profile, and the Supabase Apple provider configured for the same app identity.
@@ -236,7 +260,8 @@ Some "modern Apple" capabilities are deliberately deferred:
   target and should not push ProsePal into a techy visual style.
 
 No RevenueCat, Supabase SDK, Firebase, Sentry, analytics, provider SDKs, or
-StoreKit purchase SDKs are included in this slice.
+model/provider SDKs are included in this slice. StoreKit 2 is an Apple platform
+framework used behind the native subscription boundary.
 
 Run the native contract tests and simulator build from this folder:
 

@@ -79,7 +79,10 @@ public struct GatewayMessageWritingClient: MessageWritingClient {
                     durationMs: startedAt.elapsedMilliseconds
                 )
                 throw GenerationError.unexpectedResponse(
-                    message: "Message generation is not configured for this build."
+                    message: userSafeGatewayMessage(
+                        from: data,
+                        fallback: "Message generation is not configured for this build."
+                    )
                 )
             case 402, 403:
                 GatewayDiagnosticsLogger.shared.requestFailed(
@@ -89,7 +92,10 @@ public struct GatewayMessageWritingClient: MessageWritingClient {
                     durationMs: startedAt.elapsedMilliseconds
                 )
                 throw GenerationError.usageLimitReached(
-                    message: "You have reached your current generation limit."
+                    message: userSafeGatewayMessage(
+                        from: data,
+                        fallback: "You have reached your current generation limit."
+                    )
                 )
             case 408:
                 GatewayDiagnosticsLogger.shared.requestFailed(
@@ -107,7 +113,10 @@ public struct GatewayMessageWritingClient: MessageWritingClient {
                     durationMs: startedAt.elapsedMilliseconds
                 )
                 throw GenerationError.rateLimited(
-                    message: "Generation is busy right now. Please wait a moment and try again."
+                    message: userSafeGatewayMessage(
+                        from: data,
+                        fallback: "Generation is busy right now. Please wait a moment and try again."
+                    )
                 )
             case 422:
                 GatewayDiagnosticsLogger.shared.requestFailed(
@@ -117,7 +126,10 @@ public struct GatewayMessageWritingClient: MessageWritingClient {
                     durationMs: startedAt.elapsedMilliseconds
                 )
                 throw GenerationError.contentBlocked(
-                    message: "Those message details could not be used. Try adjusting the wording."
+                    message: userSafeGatewayMessage(
+                        from: data,
+                        fallback: "Those message details could not be used. Try adjusting the wording."
+                    )
                 )
             case 500..<600:
                 GatewayDiagnosticsLogger.shared.requestFailed(
@@ -127,7 +139,10 @@ public struct GatewayMessageWritingClient: MessageWritingClient {
                     durationMs: startedAt.elapsedMilliseconds
                 )
                 throw GenerationError.serviceUnavailable(
-                    message: "Message generation is temporarily unavailable. Please try again shortly."
+                    message: userSafeGatewayMessage(
+                        from: data,
+                        fallback: "Message generation is temporarily unavailable. Please try again shortly."
+                    )
                 )
             default:
                 GatewayDiagnosticsLogger.shared.requestFailed(
@@ -137,7 +152,10 @@ public struct GatewayMessageWritingClient: MessageWritingClient {
                     durationMs: startedAt.elapsedMilliseconds
                 )
                 throw GenerationError.unexpectedResponse(
-                    message: "Message generation failed. Please try again."
+                    message: userSafeGatewayMessage(
+                        from: data,
+                        fallback: "Message generation failed. Please try again."
+                    )
                 )
             }
         } catch let error as GenerationError {
@@ -188,6 +206,27 @@ public struct GatewayMessageWritingClient: MessageWritingClient {
     private var hasConfiguredDevGatewaySecret: Bool {
         configuredDevGatewaySecret != nil
     }
+}
+
+private struct GatewayErrorResponse: Decodable {
+    var userSafeError: UserSafeError?
+
+    struct UserSafeError: Decodable {
+        var code: String?
+        var message: String?
+    }
+}
+
+private func userSafeGatewayMessage(from data: Data, fallback: String) -> String {
+    guard
+        let response = try? JSONDecoder.prosePal.decode(GatewayErrorResponse.self, from: data),
+        let message = response.userSafeError?.message?.trimmingCharacters(in: .whitespacesAndNewlines),
+        !message.isEmpty
+    else {
+        return fallback
+    }
+
+    return message
 }
 
 private struct GatewayDiagnosticsLogger: Sendable {

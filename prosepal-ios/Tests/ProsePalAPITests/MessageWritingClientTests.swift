@@ -217,6 +217,55 @@ final class MessageWritingClientTests: XCTestCase {
         }
     }
 
+    func testGatewayClientUsesServerSafeMessageForEntitlementFailures() async throws {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [CapturingURLProtocol.self]
+        let session = URLSession(configuration: configuration)
+        let endpoint = try XCTUnwrap(URL(string: "https://gateway.example/functions/v1/generate-card"))
+        let client = GatewayMessageWritingClient(
+            endpoint: endpoint,
+            session: session
+        )
+        let request = CardRequest(
+            intent: CardIntent(
+                occasion: .birthday,
+                relationship: .parent,
+                tone: .heartfelt
+            ),
+            requestedLane: .premium,
+            clientContext: ClientContext(appVersion: "0.0.0", buildNumber: "1")
+        )
+
+        CapturingURLProtocol.requestHandler = { _ in
+            let response = try XCTUnwrap(HTTPURLResponse(
+                url: endpoint,
+                statusCode: 403,
+                httpVersion: nil,
+                headerFields: ["Content-Type": "application/json"]
+            ))
+            let data = """
+            {
+              "error": "Premium generation unavailable",
+              "user_safe_error": {
+                "code": "premium_unavailable",
+                "message": "Premium generation is not available in this development gateway yet."
+              }
+            }
+            """.data(using: .utf8)!
+            return (response, data)
+        }
+        defer { CapturingURLProtocol.requestHandler = nil }
+
+        do {
+            _ = try await client.generateCard(request: request)
+            XCTFail("Expected gateway entitlement response to fail.")
+        } catch GenerationError.usageLimitReached(let message) {
+            XCTAssertEqual(message, "Premium generation is not available in this development gateway yet.")
+        } catch {
+            XCTFail("Expected usageLimitReached, got \(error).")
+        }
+    }
+
     func testRouterSendsStandardRequestsToStandardClient() async throws {
         let standardClient = RecordingMessageWritingClient(response: CardResponse(
             messages: [GeneratedMessage(id: "standard-1", text: "Standard draft.")],

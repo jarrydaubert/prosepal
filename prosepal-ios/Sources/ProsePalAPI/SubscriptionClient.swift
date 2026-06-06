@@ -1,0 +1,267 @@
+import Foundation
+
+#if canImport(StoreKit)
+import StoreKit
+#endif
+
+public struct SubscriptionProduct: Equatable, Identifiable, Sendable {
+    public var id: String
+    public var displayName: String
+    public var displayPrice: String
+    public var durationLabel: String?
+    public var isRecommended: Bool
+
+    public init(
+        id: String,
+        displayName: String,
+        displayPrice: String,
+        durationLabel: String? = nil,
+        isRecommended: Bool = false
+    ) {
+        self.id = id
+        self.displayName = displayName
+        self.displayPrice = displayPrice
+        self.durationLabel = durationLabel
+        self.isRecommended = isRecommended
+    }
+}
+
+public struct SubscriptionEntitlement: Equatable, Sendable {
+    public var isActive: Bool
+    public var productID: String?
+    public var expiresAt: Date?
+
+    public init(isActive: Bool, productID: String? = nil, expiresAt: Date? = nil) {
+        self.isActive = isActive
+        self.productID = productID
+        self.expiresAt = expiresAt
+    }
+
+    public static let inactive = SubscriptionEntitlement(isActive: false)
+}
+
+public enum SubscriptionPurchaseStatus: String, Equatable, Sendable {
+    case purchased
+    case restored
+    case pending
+    case cancelled
+    case notEntitled
+}
+
+public struct SubscriptionPurchaseResult: Equatable, Sendable {
+    public var status: SubscriptionPurchaseStatus
+    public var entitlement: SubscriptionEntitlement
+
+    public init(status: SubscriptionPurchaseStatus, entitlement: SubscriptionEntitlement = .inactive) {
+        self.status = status
+        self.entitlement = entitlement
+    }
+}
+
+public enum SubscriptionError: Error, Equatable, Sendable {
+    case notConfigured
+    case productsUnavailable
+    case productUnavailable
+    case purchaseCancelled
+    case purchasePending
+    case verificationFailed
+    case storeUnavailable
+    case unexpectedResponse
+
+    public var userSafeMessage: String {
+        switch self {
+        case .notConfigured:
+            "Subscriptions are not configured for this build."
+        case .productsUnavailable:
+            "Subscription options could not be loaded. Please try again shortly."
+        case .productUnavailable:
+            "That subscription option is unavailable right now."
+        case .purchaseCancelled:
+            "Purchase cancelled."
+        case .purchasePending:
+            "Purchase pending approval."
+        case .verificationFailed:
+            "Purchase verification failed. Please try again."
+        case .storeUnavailable:
+            "The App Store is unavailable right now. Please try again shortly."
+        case .unexpectedResponse:
+            "Subscriptions are unavailable right now. Please try again shortly."
+        }
+    }
+}
+
+public protocol SubscriptionClient: Sendable {
+    func loadProducts() async throws -> [SubscriptionProduct]
+    func currentEntitlement() async throws -> SubscriptionEntitlement
+    func purchase(productID: String) async throws -> SubscriptionPurchaseResult
+    func restorePurchases() async throws -> SubscriptionPurchaseResult
+}
+
+#if canImport(StoreKit)
+public struct StoreKitSubscriptionClient: SubscriptionClient {
+    private let productIDs: [String]
+    private let recommendedProductID: String?
+
+    public init(productIDs: [String], recommendedProductID: String? = nil) {
+        self.productIDs = productIDs.uniqueTrimmedValues
+        self.recommendedProductID = recommendedProductID?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfBlank
+    }
+
+    public func loadProducts() async throws -> [SubscriptionProduct] {
+        guard !productIDs.isEmpty else { throw SubscriptionError.notConfigured }
+
+        let products = try await Product.products(for: productIDs)
+        guard !products.isEmpty else { throw SubscriptionError.productsUnavailable }
+
+        return products
+            .sorted { left, right in
+                let leftRank = sortRank(for: left)
+                let rightRank = sortRank(for: right)
+                if leftRank != rightRank { return leftRank < rightRank }
+                return left.displayName < right.displayName
+            }
+            .map { product in
+                SubscriptionProduct(
+                    id: product.id,
+                    displayName: product.displayName,
+                    displayPrice: product.displayPrice,
+                    durationLabel: product.prosePalDurationLabel,
+                    isRecommended: product.id == recommendedProductID
+                )
+            }
+    }
+
+    public func currentEntitlement() async throws -> SubscriptionEntitlement {
+        guard !productIDs.isEmpty else { throw SubscriptionError.notConfigured }
+
+        for await result in Transaction.currentEntitlements {
+            let transaction = try verified(result)
+            guard productIDs.contains(transaction.productID) else { continue }
+            guard transaction.revocationDate == nil else { continue }
+            if let expirationDate = transaction.expirationDate, expirationDate < Date() {
+                continue
+            }
+            return SubscriptionEntitlement(
+                isActive: true,
+                productID: transaction.productID,
+                expiresAt: transaction.expirationDate
+            )
+        }
+
+        return .inactive
+    }
+
+    public func purchase(productID: String) async throws -> SubscriptionPurchaseResult {
+        guard productIDs.contains(productID) else { throw SubscriptionError.productUnavailable }
+
+        let products = try await Product.products(for: [productID])
+        guard let product = products.first else { throw SubscriptionError.productUnavailable }
+
+        let result = try await product.purchase()
+        switch result {
+        case .success(let verificationResult):
+            let transaction = try verified(verificationResult)
+            await transaction.finish()
+            return SubscriptionPurchaseResult(
+                status: .purchased,
+                entitlement: try await currentEntitlement()
+            )
+        case .pending:
+            return SubscriptionPurchaseResult(
+                status: .pending,
+                entitlement: (try? await currentEntitlement()) ?? .inactive
+            )
+        case .userCancelled:
+            return SubscriptionPurchaseResult(
+                status: .cancelled,
+                entitlement: (try? await currentEntitlement()) ?? .inactive
+            )
+        @unknown default:
+            throw SubscriptionError.unexpectedResponse
+        }
+    }
+
+    public func restorePurchases() async throws -> SubscriptionPurchaseResult {
+        guard !productIDs.isEmpty else { throw SubscriptionError.notConfigured }
+
+        do {
+            try await AppStore.sync()
+        } catch {
+            throw SubscriptionError.storeUnavailable
+        }
+
+        let entitlement = try await currentEntitlement()
+        return SubscriptionPurchaseResult(
+            status: entitlement.isActive ? .restored : .notEntitled,
+            entitlement: entitlement
+        )
+    }
+
+    private func sortRank(for product: Product) -> Int {
+        if product.id == recommendedProductID { return 0 }
+        guard let period = product.subscription?.subscriptionPeriod else { return 50 }
+
+        switch period.unit {
+        case .year:
+            return 10
+        case .month:
+            return 20
+        case .week:
+            return 30
+        case .day:
+            return 40
+        @unknown default:
+            return 50
+        }
+    }
+}
+
+private func verified<T>(_ result: VerificationResult<T>) throws -> T {
+    switch result {
+    case .verified(let value):
+        return value
+    case .unverified:
+        throw SubscriptionError.verificationFailed
+    }
+}
+
+private extension Product {
+    var prosePalDurationLabel: String? {
+        guard let period = subscription?.subscriptionPeriod else { return nil }
+
+        let unit: String
+        switch period.unit {
+        case .day:
+            unit = period.value == 1 ? "day" : "days"
+        case .week:
+            unit = period.value == 1 ? "week" : "weeks"
+        case .month:
+            unit = period.value == 1 ? "month" : "months"
+        case .year:
+            unit = period.value == 1 ? "year" : "years"
+        @unknown default:
+            return nil
+        }
+
+        return "Every \(period.value) \(unit)"
+    }
+}
+#endif
+
+private extension Array where Element == String {
+    var uniqueTrimmedValues: [String] {
+        var seen = Set<String>()
+        return compactMap { value in
+            let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmed.isEmpty, !seen.contains(trimmed) else { return nil }
+            seen.insert(trimmed)
+            return trimmed
+        }
+    }
+}
+
+private extension String {
+    var nilIfBlank: String? {
+        isEmpty ? nil : self
+    }
+}

@@ -30,6 +30,12 @@ public final class ProsePalAppModel: ObservableObject {
     @Published var isSignedIn = false
     @Published var signedInEmail: String?
     @Published var isSigningIn = false
+    @Published var subscriptionProducts: [SubscriptionProduct] = []
+    @Published var selectedSubscriptionProductID: String?
+    @Published var isLoadingSubscriptions = false
+    @Published var isPurchasingPremium = false
+    @Published var isRestoringPurchases = false
+    @Published var subscriptionErrorMessage: String?
     @Published var analyticsEnabled = false
     @Published var crashReportsEnabled = false
     @Published var biometricLockEnabled = false
@@ -46,6 +52,7 @@ public final class ProsePalAppModel: ObservableObject {
     private let diagnostics: NativeDiagnosticsLogger
     private let authSessionController: AuthSessionController?
     private let authClient: (any AuthClient)?
+    private let subscriptionClient: (any SubscriptionClient)?
     private var pendingAppleSignInNonce: AppleSignInNonce?
 
     public init(
@@ -58,6 +65,7 @@ public final class ProsePalAppModel: ObservableObject {
         onboardingCompletionKey: String = ProsePalAppModel.defaultOnboardingCompletionKey,
         authSessionController: AuthSessionController? = nil,
         authClient: (any AuthClient)? = nil,
+        subscriptionClient: (any SubscriptionClient)? = nil,
         diagnostics: NativeDiagnosticsLogger = .shared
     ) {
         self.client = client
@@ -69,6 +77,7 @@ public final class ProsePalAppModel: ObservableObject {
         self.onboardingCompletionKey = onboardingCompletionKey
         self.authSessionController = authSessionController
         self.authClient = authClient
+        self.subscriptionClient = subscriptionClient
         self.diagnostics = diagnostics
         self.savedMessages = Self.loadSavedMessages(from: savedMessagesStore, key: savedMessagesKey)
         self.hasCompletedOnboarding = onboardingStore.bool(forKey: onboardingCompletionKey)
@@ -80,6 +89,10 @@ public final class ProsePalAppModel: ObservableObject {
 
     var isAppleSignInConfigured: Bool {
         authSessionController != nil && authClient != nil
+    }
+
+    var isSubscriptionConfigured: Bool {
+        subscriptionClient != nil
     }
 
     func loadAuthSession() async {
@@ -182,9 +195,171 @@ public final class ProsePalAppModel: ObservableObject {
         showNotice("Standard selected", systemImage: "checkmark.circle.fill")
     }
 
-    func restorePurchasesPlaceholder() {
-        diagnostics.messageAction("restore_purchases", source: "settings_or_paywall", messageCharacters: 0)
-        showNotice("Purchases are unavailable right now", systemImage: "arrow.clockwise")
+    func loadSubscriptionProducts(source: String) async {
+        guard !isLoadingSubscriptions else { return }
+        guard let subscriptionClient else {
+            subscriptionProducts = []
+            selectedSubscriptionProductID = nil
+            subscriptionErrorMessage = SubscriptionError.notConfigured.userSafeMessage
+            diagnostics.subscriptionEvent(
+                "subscription_products_unconfigured",
+                source: source,
+                productCount: 0,
+                outcome: "not_configured"
+            )
+            return
+        }
+
+        isLoadingSubscriptions = true
+        subscriptionErrorMessage = nil
+        diagnostics.subscriptionEvent("subscription_products_loading", source: source)
+
+        do {
+            let products = try await subscriptionClient.loadProducts()
+            subscriptionProducts = products
+            if selectedSubscriptionProductID == nil || !products.contains(where: { $0.id == selectedSubscriptionProductID }) {
+                selectedSubscriptionProductID = products.first(where: \.isRecommended)?.id ?? products.first?.id
+            }
+            diagnostics.subscriptionEvent(
+                "subscription_products_loaded",
+                source: source,
+                productCount: products.count,
+                outcome: "success"
+            )
+        } catch let error as SubscriptionError {
+            subscriptionProducts = []
+            selectedSubscriptionProductID = nil
+            subscriptionErrorMessage = error.userSafeMessage
+            diagnostics.subscriptionEvent(
+                "subscription_products_failed",
+                source: source,
+                productCount: 0,
+                outcome: error.diagnosticsOutcome
+            )
+        } catch {
+            subscriptionProducts = []
+            selectedSubscriptionProductID = nil
+            subscriptionErrorMessage = SubscriptionError.unexpectedResponse.userSafeMessage
+            diagnostics.subscriptionEvent(
+                "subscription_products_failed",
+                source: source,
+                productCount: 0,
+                outcome: "unexpected_error"
+            )
+        }
+
+        isLoadingSubscriptions = false
+    }
+
+    func selectSubscriptionProduct(_ product: SubscriptionProduct) {
+        selectedSubscriptionProductID = product.id
+        diagnostics.selectionChanged(kind: "subscription_plan", value: product.durationLabel?.diagnosticsSelectionValue ?? "configured")
+    }
+
+    func purchasePremium(source: String) async {
+        guard !isPurchasingPremium else { return }
+        guard let subscriptionClient else {
+            subscriptionErrorMessage = SubscriptionError.notConfigured.userSafeMessage
+            showNotice(SubscriptionError.notConfigured.userSafeMessage, systemImage: "exclamationmark.triangle")
+            diagnostics.subscriptionEvent(
+                "subscription_purchase_unconfigured",
+                source: source,
+                productCount: 0,
+                outcome: "not_configured"
+            )
+            return
+        }
+
+        if subscriptionProducts.isEmpty {
+            await loadSubscriptionProducts(source: source)
+        }
+
+        guard let productID = selectedSubscriptionProductID ?? subscriptionProducts.first?.id else {
+            subscriptionErrorMessage = SubscriptionError.productsUnavailable.userSafeMessage
+            showNotice(SubscriptionError.productsUnavailable.userSafeMessage, systemImage: "exclamationmark.triangle")
+            diagnostics.subscriptionEvent(
+                "subscription_purchase_failed",
+                source: source,
+                productCount: subscriptionProducts.count,
+                outcome: "no_product"
+            )
+            return
+        }
+
+        isPurchasingPremium = true
+        subscriptionErrorMessage = nil
+        diagnostics.subscriptionEvent(
+            "subscription_purchase_started",
+            source: source,
+            productCount: subscriptionProducts.count
+        )
+
+        do {
+            let result = try await subscriptionClient.purchase(productID: productID)
+            applySubscriptionPurchaseResult(result, source: source)
+        } catch let error as SubscriptionError {
+            subscriptionErrorMessage = error.userSafeMessage
+            showNotice(error.userSafeMessage, systemImage: "exclamationmark.triangle")
+            diagnostics.subscriptionEvent(
+                "subscription_purchase_failed",
+                source: source,
+                productCount: subscriptionProducts.count,
+                outcome: error.diagnosticsOutcome
+            )
+        } catch {
+            subscriptionErrorMessage = SubscriptionError.unexpectedResponse.userSafeMessage
+            showNotice(SubscriptionError.unexpectedResponse.userSafeMessage, systemImage: "exclamationmark.triangle")
+            diagnostics.subscriptionEvent(
+                "subscription_purchase_failed",
+                source: source,
+                productCount: subscriptionProducts.count,
+                outcome: "unexpected_error"
+            )
+        }
+
+        isPurchasingPremium = false
+    }
+
+    func restorePurchases(source: String) async {
+        guard !isRestoringPurchases else { return }
+        guard let subscriptionClient else {
+            subscriptionErrorMessage = SubscriptionError.notConfigured.userSafeMessage
+            showNotice(SubscriptionError.notConfigured.userSafeMessage, systemImage: "exclamationmark.triangle")
+            diagnostics.subscriptionEvent(
+                "subscription_restore_unconfigured",
+                source: source,
+                productCount: 0,
+                outcome: "not_configured"
+            )
+            return
+        }
+
+        isRestoringPurchases = true
+        subscriptionErrorMessage = nil
+        diagnostics.subscriptionEvent("subscription_restore_started", source: source)
+
+        do {
+            let result = try await subscriptionClient.restorePurchases()
+            applySubscriptionPurchaseResult(result, source: source)
+        } catch let error as SubscriptionError {
+            subscriptionErrorMessage = error.userSafeMessage
+            showNotice(error.userSafeMessage, systemImage: "exclamationmark.triangle")
+            diagnostics.subscriptionEvent(
+                "subscription_restore_failed",
+                source: source,
+                outcome: error.diagnosticsOutcome
+            )
+        } catch {
+            subscriptionErrorMessage = SubscriptionError.unexpectedResponse.userSafeMessage
+            showNotice(SubscriptionError.unexpectedResponse.userSafeMessage, systemImage: "exclamationmark.triangle")
+            diagnostics.subscriptionEvent(
+                "subscription_restore_failed",
+                source: source,
+                outcome: "unexpected_error"
+            )
+        }
+
+        isRestoringPurchases = false
     }
 
     func beginAppleSignInRequest(source: String) -> String? {
@@ -269,11 +444,6 @@ public final class ProsePalAppModel: ObservableObject {
         isSigningIn = false
         diagnostics.messageAction("auth_apple_failed", source: source, messageCharacters: 0)
         showNotice("Apple sign-in failed. Please try again.", systemImage: "exclamationmark.triangle")
-    }
-
-    func purchasePremiumPlaceholder(source: String) {
-        diagnostics.messageAction("purchase_premium_selected", source: source, messageCharacters: 0)
-        showNotice("Purchases are unavailable right now", systemImage: "star")
     }
 
     func manageSubscriptionPlaceholder() {
@@ -546,6 +716,36 @@ public final class ProsePalAppModel: ObservableObject {
         }
     }
 
+    private func applySubscriptionPurchaseResult(_ result: SubscriptionPurchaseResult, source: String) {
+        if result.entitlement.isActive {
+            usageStatus.isPremiumUnlocked = true
+        }
+
+        diagnostics.subscriptionEvent(
+            "subscription_result",
+            source: source,
+            productCount: subscriptionProducts.count,
+            outcome: result.status.rawValue
+        )
+
+        switch result.status {
+        case .purchased:
+            showNotice("Premium purchase completed", systemImage: "checkmark.seal.fill")
+            isShowingPaywall = false
+        case .restored:
+            showNotice(result.entitlement.isActive ? "Premium restored" : "No active subscription found", systemImage: "arrow.clockwise")
+            if result.entitlement.isActive {
+                isShowingPaywall = false
+            }
+        case .pending:
+            showNotice("Purchase pending approval", systemImage: "clock")
+        case .cancelled:
+            showNotice("Purchase cancelled", systemImage: "xmark.circle")
+        case .notEntitled:
+            showNotice("No active subscription found", systemImage: "arrow.clockwise")
+        }
+    }
+
     private static func loadSavedMessages(from store: UserDefaults, key: String) -> [SavedMessage] {
         guard let data = store.data(forKey: key) else {
             return []
@@ -769,11 +969,9 @@ public struct ProsePalRootView: View {
         }
         .animation(reduceMotion ? nil : .easeInOut(duration: 0.22), value: model.hasCompletedOnboarding)
         .sheet(isPresented: $model.isShowingPaywall) {
-            PaywallPlaceholderSheet(
+            PaywallSheet(
                 usageStatus: model.usageStatus,
-                onUseStandard: model.useStandardLaneFromPaywall,
-                onContinuePremium: { model.purchasePremiumPlaceholder(source: "paywall") },
-                onRestore: model.restorePurchasesPlaceholder
+                onUseStandard: model.useStandardLaneFromPaywall
             )
             .presentationDetents([.medium, .large])
             .presentationDragIndicator(.visible)
@@ -2250,12 +2448,10 @@ struct DraftEditorSheet: View {
     }
 }
 
-struct PaywallPlaceholderSheet: View {
+struct PaywallSheet: View {
     @EnvironmentObject private var model: ProsePalAppModel
     let usageStatus: UsageStatus
     let onUseStandard: () -> Void
-    let onContinuePremium: () -> Void
-    let onRestore: () -> Void
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -2285,20 +2481,20 @@ struct PaywallPlaceholderSheet: View {
 
                     UsageStatusRow(usageStatus: usageStatus)
 
-                    VStack(spacing: 10) {
-                        PaywallPlanRow(title: "Annual", subtitle: "Best value", price: "App Store price", isSelected: true)
-                        PaywallPlanRow(title: "Monthly", subtitle: "Flexible access", price: "App Store price", isSelected: false)
-                    }
+                    productSection
 
                     VStack(spacing: 10) {
                         Button {
-                            onContinuePremium()
+                            Task {
+                                await model.purchasePremium(source: "paywall")
+                            }
                         } label: {
-                            Label("Continue with Premium", systemImage: "star.fill")
+                            Label(model.isPurchasingPremium ? "Working..." : "Continue with Premium", systemImage: "star.fill")
                                 .frame(maxWidth: .infinity)
                         }
                         .buttonStyle(.borderedProminent)
                         .controlSize(.large)
+                        .disabled(model.isPurchasingPremium || model.isLoadingSubscriptions || model.subscriptionProducts.isEmpty)
 
                         Text("Auto-renews. Cancel anytime in App Store settings.")
                             .font(.caption2)
@@ -2306,13 +2502,16 @@ struct PaywallPlaceholderSheet: View {
                             .multilineTextAlignment(.center)
 
                         Button {
-                            onRestore()
+                            Task {
+                                await model.restorePurchases(source: "paywall")
+                            }
                         } label: {
-                            Label("Restore purchases", systemImage: "arrow.clockwise")
+                            Label(model.isRestoringPurchases ? "Restoring..." : "Restore purchases", systemImage: "arrow.clockwise")
                                 .frame(maxWidth: .infinity)
                         }
                         .buttonStyle(.bordered)
                         .controlSize(.large)
+                        .disabled(model.isRestoringPurchases)
 
                         Button {
                             onUseStandard()
@@ -2363,6 +2562,42 @@ struct PaywallPlaceholderSheet: View {
                     Button("Close") { dismiss() }
                 }
             }
+            .task {
+                await model.loadSubscriptionProducts(source: "paywall")
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var productSection: some View {
+        if model.isLoadingSubscriptions {
+            PaywallLoadingRow()
+        } else if model.subscriptionProducts.isEmpty {
+            PaywallUnavailableRow(
+                message: model.subscriptionErrorMessage ?? SubscriptionError.notConfigured.userSafeMessage,
+                onRetry: {
+                    Task {
+                        await model.loadSubscriptionProducts(source: "paywall_retry")
+                    }
+                }
+            )
+        } else {
+            VStack(spacing: 10) {
+                ForEach(model.subscriptionProducts) { product in
+                    Button {
+                        model.selectSubscriptionProduct(product)
+                    } label: {
+                        PaywallPlanRow(
+                            title: product.displayName,
+                            subtitle: product.durationLabel ?? "Premium access",
+                            price: product.displayPrice,
+                            badge: product.isRecommended ? "Best value" : nil,
+                            isSelected: model.selectedSubscriptionProductID == product.id
+                        )
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
         }
     }
 }
@@ -2371,6 +2606,7 @@ struct PaywallPlanRow: View {
     let title: String
     let subtitle: String
     let price: String
+    let badge: String?
     let isSelected: Bool
 
     var body: some View {
@@ -2383,8 +2619,8 @@ struct PaywallPlanRow: View {
                 HStack(spacing: 8) {
                     Text(title)
                         .font(.headline)
-                    if isSelected {
-                        Text("Best value")
+                    if let badge {
+                        Text(badge)
                             .font(.caption2.weight(.bold))
                             .padding(.horizontal, 7)
                             .padding(.vertical, 3)
@@ -2410,6 +2646,64 @@ struct PaywallPlanRow: View {
             RoundedRectangle(cornerRadius: 18, style: .continuous)
                 .strokeBorder(isSelected ? Color.prosePalCoral.opacity(0.55) : Color.clear, lineWidth: 1.4)
         }
+    }
+}
+
+struct PaywallLoadingRow: View {
+    var body: some View {
+        HStack(spacing: 12) {
+            ProgressView()
+                .controlSize(.regular)
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text("Loading subscription options")
+                    .font(.headline)
+                Text("This should only take a moment.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(14)
+        .background(Color.prosePalSecondaryGroupedBackground, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .accessibilityElement(children: .combine)
+    }
+}
+
+struct PaywallUnavailableRow: View {
+    let message: String
+    let onRetry: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .top, spacing: 12) {
+                Image(systemName: "exclamationmark.triangle")
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(Color.prosePalCoral)
+                    .frame(width: 24)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Subscription options unavailable")
+                        .font(.headline)
+                    Text(message)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+
+            Button {
+                onRetry()
+            } label: {
+                Label("Retry", systemImage: "arrow.clockwise")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.bordered)
+        }
+        .padding(14)
+        .background(Color.prosePalSecondaryGroupedBackground, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .accessibilityElement(children: .combine)
     }
 }
 
@@ -2783,15 +3077,18 @@ struct SettingsView: View {
             .buttonStyle(.plain)
 
             Button {
-                model.restorePurchasesPlaceholder()
+                Task {
+                    await model.restorePurchases(source: "settings")
+                }
             } label: {
                 SettingsRow(
                     systemImage: "arrow.clockwise",
                     title: "Restore Purchases",
-                    subtitle: "Reinstalled? Restore your Pro access"
+                    subtitle: model.isRestoringPurchases ? "Restoring..." : "Reinstalled? Restore your Pro access"
                 )
             }
             .buttonStyle(.plain)
+            .disabled(model.isRestoringPurchases)
         }
     }
 
@@ -3299,6 +3596,12 @@ private extension String {
     var trimmedForSaving: String {
         trimmingCharacters(in: .whitespacesAndNewlines)
     }
+
+    var diagnosticsSelectionValue: String {
+        trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
+            .replacingOccurrences(of: " ", with: "_")
+    }
 }
 
 private func copyToPasteboard(_ text: String) {
@@ -3328,6 +3631,29 @@ private extension GenerationError {
             "content_blocked"
         case .serviceUnavailable:
             "service_unavailable"
+        case .unexpectedResponse:
+            "unexpected_response"
+        }
+    }
+}
+
+private extension SubscriptionError {
+    var diagnosticsOutcome: String {
+        switch self {
+        case .notConfigured:
+            "not_configured"
+        case .productsUnavailable:
+            "products_unavailable"
+        case .productUnavailable:
+            "product_unavailable"
+        case .purchaseCancelled:
+            "cancelled"
+        case .purchasePending:
+            "pending"
+        case .verificationFailed:
+            "verification_failed"
+        case .storeUnavailable:
+            "store_unavailable"
         case .unexpectedResponse:
             "unexpected_response"
         }

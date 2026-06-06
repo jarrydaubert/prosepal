@@ -44,8 +44,10 @@ Real today:
 - Swift package modules: `ProsePalDomain`, `ProsePalAPI`, `ProsePalUI`.
 - iOS 17+ target, SwiftUI, async/await, Swift Package Manager.
 - No external package dependencies.
-- No RevenueCat, Supabase client SDK, Firebase, Sentry, analytics, StoreKit, or
-  provider SDK dependency in the native code.
+- No RevenueCat, Supabase client SDK, Firebase, Sentry, analytics, external
+  purchase SDK, or provider SDK dependency in the native code.
+- StoreKit 2 is present behind a narrow native subscription protocol for
+  configured product loading, purchase, and restore R&D.
 - Domain parity for core writing vocabulary: occasions, relationships, tones,
   lengths, and spelling preference.
 - Gateway HTTP client using `CardRequest` and `CardResponse`.
@@ -57,9 +59,10 @@ Real today:
 
 Placeholder or shell today:
 
-- Sign in with Apple UI.
-- Account state.
-- Purchase, restore, manage subscription, and paywall fulfillment.
+- Wired-device Sign in with Apple proof.
+- Production-ready account state and account switching.
+- Server-synced purchase, restore, manage subscription, and paywall
+  fulfillment.
 - Server-authoritative usage/entitlement display.
 - Authenticated gateway token wiring.
 - Account deletion/export.
@@ -212,6 +215,65 @@ Evidence that matters:
 - purchase/restore/entitlement state;
 - settings/legal/support surfaces;
 - TestFlight install and smoke.
+
+## Auth, Purchase, And Entitlement Scenario Matrix
+
+This matrix is the native implementation oracle for auth/purchase work. It is
+derived from Flutter release docs and tests, especially:
+
+- `docs/LAUNCH_CHECKLIST.md` App Review 5.1.1 notes;
+- `docs/IDENTITY_MAPPING.md`;
+- `docs/IOS_RELEASE_CHECKLIST.md`;
+- `docs/SERVICE_CONFIG.md`;
+- `lib/features/paywall/paywall_sheet.dart`;
+- `lib/app/auth_identity_sync.dart`;
+- `test/widgets/screens/auth_screen_test.dart`;
+- `test/widgets/screens/settings_screen_test.dart`;
+- `test/services/subscription_service_test.dart`;
+- `test/app/auth_identity_sync_test.dart`;
+- `integration_test/journeys/j2_upgrade_flow_test.dart`;
+- `integration_test/journeys/j4_settings_test.dart`;
+- `integration_test/journeys/j11_auth_entitlement_edges_test.dart`.
+
+### Native Policy Decisions
+
+| Topic | Native decision |
+|-------|-----------------|
+| Required account before purchase | No. Apple previously rejected the app for forcing sign-in before purchase. Native purchase must be possible without mandatory account creation. |
+| Sign in with Apple role | First-class identity for sync, restore continuity, support, account deletion, and authenticated gateway usage. It is not a pre-purchase wall. |
+| Google sign-in | Not included initially. Add only if existing-account continuity proves it is required. |
+| Entitlement truth | Server/gateway entitlement policy is authoritative for Premium generation. Local StoreKit or RevenueCat state can inform UI, but gateway access must not rely only on local client truth. |
+| Subscription implementation | Current R&D slice uses a narrow StoreKit 2 boundary for Apple-native dependency-light handling. Before production replacement, decide explicitly whether to keep StoreKit 2 direct handling or retain RevenueCat for existing entitlement continuity. Do not mix accidentally. |
+| Anonymous purchase | Allowed. Must be reconciled to Sign in with Apple later without losing or leaking entitlement state. |
+| Logging | No raw names, user card content, prompt text, generated message text, identity tokens, bearer tokens, provider keys, receipts, product payloads, or secrets. |
+
+### Scenarios To Cover Before TestFlight
+
+| Scenario | Expected native behavior | Flutter reference |
+|----------|--------------------------|-------------------|
+| First launch, signed out | Welcome/onboarding leads to Create; no forced auth or paywall. | `docs/LAUNCH_CHECKLIST.md`, onboarding flow |
+| Returning launch, no account | Route to Create; Standard generation allowed within gateway policy. | `docs/USER_JOURNEYS.md`, `j1_fresh_install_test.dart` |
+| Sign in from Settings | Official Sign in with Apple button shows loading/finalizing state, prevents duplicate submits, persists session, updates Settings, and routes back cleanly. | `auth_screen_test.dart`, `auth_service_test.dart` |
+| Sign in cancellation/failure | User-safe error or silent cancellation; app is not stuck in loading and no fake account state appears. | `auth_screen_test.dart`, `auth_service_test.dart` |
+| Auth token to gateway | Authenticated generation sends bearer token; gateway logs authenticated usage without exposing token or content. | `docs/DEVOPS.md`, native gateway tests |
+| Sign out | Clears local session, disables biometric lock, removes stale account/entitlement UI, keeps saved local data rules explicit. | `IDENTITY_MAPPING.md`, `settings_screen_test.dart` |
+| Account switch | New user must not inherit stale entitlement, usage, telemetry, or pending-sync state from prior user. | `IDENTITY_MAPPING.md`, `j11_auth_entitlement_edges_test.dart` |
+| Paywall opened from Premium | Shows Premium value, product/loading/error state, Standard fallback action, restore, legal links, and optional Apple sign-in for sync. | `paywall_sheet.dart`, App Review notes |
+| Purchase while signed out | Allowed. Purchase action cannot be blocked behind mandatory sign-in. After purchase, prompt to sign in for sync/restore continuity. | `LAUNCH_CHECKLIST.md` 5.1.1 fix |
+| Purchase while signed in | Purchase identifies/reconciles with account before/after the store transaction and refreshes entitlement state. | `paywall_sheet.dart`, `auth_identity_sync.dart` |
+| Purchase cancelled | No entitlement granted; no error panic; paywall remains usable. | `subscription_service.dart`, paywall tests |
+| Purchase pending | Show pending/approval state; do not grant Premium until entitlement becomes active. | `subscription_service.dart` |
+| Product loading fails | Show user-safe unavailable state with retry/close/Standard path; app does not crash or trap the user. | `subscription_service_test.dart`, `settings_screen_test.dart` |
+| Restore from paywall | Works without mandatory app sign-in because Apple restore is tied to Apple ID; if restored, refresh entitlement and offer sign-in for continuity. | `paywall_sheet.dart`, App Review notes |
+| Restore from Settings | Shows progress and honest success/no-active-subscription/failure result. | `settings_screen_test.dart` |
+| Anonymous purchase then sign in | Reconcile store-backed entitlement to the signed-in identity; if entitlement disappears after identify, perform targeted purchase sync/restore. | `auth_identity_sync.dart`, `auth_identity_sync_test.dart` |
+| Stale Pro cache | Never grants Premium by itself. Server/store entitlement must validate current user context. | `j11_auth_entitlement_edges_test.dart` |
+| Free limit reached | User is routed to a Premium boundary; generation does not continue silently. | `j2_upgrade_flow_test.dart`, usage tests |
+| Premium generation request | Gateway must authorize entitlement; local Premium UI alone is insufficient. Gateway-safe 402/403 states render as paywall/usage UX. | `docs/DEVOPS.md`, native gateway contract |
+| Delete account | Signed-out users see sign-in gate; signed-in users see explicit destructive warning and subscription-management reminder. | `j4_settings_test.dart`, `settings_screen_test.dart` |
+| Biometric lock | Only available after sign-in; no first-launch lockout; prompt is single-flight/debounced. | `biometric_service_test.dart`, settings tests |
+| Privacy toggles | Analytics/crash controls are shown only if those systems exist; toggles must not claim disabled telemetry that is not implemented. | `settings_screen_test.dart` |
+| Release evidence | Physical iPhone evidence is required for purchase/restore/auth/paywall. Simulator-only success is insufficient. | `IOS_RELEASE_CHECKLIST.md` |
 
 ## Delivery Gates
 
