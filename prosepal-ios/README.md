@@ -131,6 +131,10 @@ keys, or provider payloads. Gateway operator logs may include the configured
 server-side model id for debugging, but model/provider names must stay out of
 the user-facing UI and client response contract.
 
+For first-pass tethered-device auth, purchase, restore, and gateway proof, use
+`NATIVE_DEVICE_DEBUG_RUNBOOK.md`. It lists the local Xcode environment values,
+privacy-safe log filters, suggested breakpoints, and manual flow checklist.
+
 ## App Structure
 
 The checked-in native app is split into a small Xcode app target and Swift

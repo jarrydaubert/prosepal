@@ -28,6 +28,7 @@ public final class ProsePalAppModel: ObservableObject {
     @Published var hasCompletedOnboarding: Bool
     @Published var selectedTab: AppTab = .compose
     @Published var isSignedIn = false
+    @Published var signedInUserID: String?
     @Published var signedInEmail: String?
     @Published var isSigningIn = false
     @Published var subscriptionProducts: [SubscriptionProduct] = []
@@ -216,6 +217,9 @@ public final class ProsePalAppModel: ObservableObject {
 
         do {
             let products = try await subscriptionClient.loadProducts()
+            guard !products.isEmpty else {
+                throw SubscriptionError.productsUnavailable
+            }
             subscriptionProducts = products
             if selectedSubscriptionProductID == nil || !products.contains(where: { $0.id == selectedSubscriptionProductID }) {
                 selectedSubscriptionProductID = products.first(where: \.isRecommended)?.id ?? products.first?.id
@@ -363,6 +367,11 @@ public final class ProsePalAppModel: ObservableObject {
     }
 
     func beginAppleSignInRequest(source: String) -> String? {
+        guard !isSigningIn else {
+            diagnostics.messageAction("auth_apple_ignored_inflight", source: source, messageCharacters: 0)
+            return nil
+        }
+
         guard isAppleSignInConfigured else {
             diagnostics.messageAction("auth_apple_unconfigured", source: source, messageCharacters: 0)
             showNotice("Sign in is not configured for this build", systemImage: "exclamationmark.triangle")
@@ -708,11 +717,19 @@ public final class ProsePalAppModel: ObservableObject {
 
     private func applyAuthSession(_ session: AuthSession?) {
         let usableSession = session?.isUsable() == true ? session : nil
+        let previousUserID = signedInUserID
+        let nextUserID = usableSession?.user?.id
         isSignedIn = usableSession != nil
+        signedInUserID = nextUserID
         signedInEmail = usableSession?.user?.email
 
         if usableSession == nil {
             biometricLockEnabled = false
+            if previousUserID != nil {
+                usageStatus.isPremiumUnlocked = false
+            }
+        } else if let previousUserID, previousUserID != nextUserID {
+            usageStatus.isPremiumUnlocked = false
         }
     }
 
