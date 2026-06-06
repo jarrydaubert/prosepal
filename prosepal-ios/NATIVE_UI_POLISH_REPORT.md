@@ -1,6 +1,6 @@
 # Native UI Polish Report
 
-Date: 2026-06-05
+Date: 2026-06-06
 Branch: `ios-native-rewrite-prosepal-ios`
 
 ## Scope
@@ -9,7 +9,7 @@ Focused UI audit and P0/P1 polish pass across onboarding, create form, occasion 
 
 This pass intentionally did not change production AI routing, add SDKs, add provider/model UI, or add template generation.
 
-The 2026-06-05 follow-up continued Gate 2 from `REWRITE_PLAN.md`: improve Create -> Generate -> Results quality while preserving gateway-only generation.
+The 2026-06-06 follow-up continued Gate 2 from `REWRITE_PLAN.md`: improve Create -> Generate -> Results quality while preserving gateway-only generation.
 
 ## Before / After Notes
 
@@ -18,21 +18,21 @@ The 2026-06-05 follow-up continued Gate 2 from `REWRITE_PLAN.md`: improve Create
 | Onboarding | Welcome copy and the lower CTA could feel cramped on smaller/tall-safe-area layouts. | The single welcome screen scrolls, keeps the CTA in a bottom safe-area inset, and no longer depends on bitmap artwork. |
 | Create keyboard state | Sticky Generate was hidden while typing, but scroll content had limited keyboard/CTA buffer. | Create content now reserves more bottom scroll space, keeps Write in the keyboard toolbar while typing, and keeps the sticky CTA above the tab bar when the keyboard is closed. |
 | Create bottom action | The sticky Write action could feel visually heavy above the tab bar. | The bottom action keeps the same placement but uses tighter vertical padding so Create has more breathing room. |
-| Keyboard toolbar | The keyboard toolbar used a spacer between Done and Write, which could contribute to zero-width bar-button constraint warnings on device. | The toolbar now uses compact Done and Write Message actions without spacer layout pressure. |
+| Keyboard toolbar | The keyboard toolbar used a longer Write Message label and could contribute to bar-button layout pressure on device. | The toolbar now keeps a short trailing Done / Write action set while the keyboard is open. |
 | Create summary | The summary could read as a generic message without enough occasion/relationship context. | The summary now reads as a tone/length/occasion message for the named recipient or selected relationship. |
 | Relationship picker | Visible relationship cards made Create feel busy as more Flutter taxonomy moved over. | Relationship is a compact selected row with the full taxonomy in a searchable grouped sheet. |
 | Tone picker | Visible tone cards competed with the writing fields. | Tone is a compact selected row with every tone available in a searchable sheet. |
 | Relationship/tone tap parity | Core Flutter options were present, but the screen paid for them with visual weight. | Relationship and tone remain one tap away while keeping Create calmer and more iOS-native. |
 | Occasion browser | Rows displayed generation-oriented hints. | Rows now show short user-facing descriptions while keeping the full catalogue/search data underneath. |
-| Home/Create duplication | Create had a selected occasion control plus a featured occasion chip strip. | Create now has one selected occasion summary and one Browse path; Most Used lives in the searchable sheet. |
+| Home/Create duplication | Create had a selected occasion control plus repeated occasion discovery below it. | Create now has one selected occasion summary row; Most Used lives inside the searchable occasion sheet. |
 | Spelling | Spelling appeared inside the generation form. | Spelling is now a Settings writing preference: Automatic, US English, or UK English. |
 | Generation selector | Three cards were forced into the available width and could truncate awkwardly. | Generation modes are horizontal, compact cards with stable widths and Dynamic Type breathing room. |
 | Generation language | UI exposed Auto as a generation option. | Create and Settings show Standard and Premium only. |
-| Loading state | Native generation only changed the button to Writing. | A full-screen native writing overlay now mirrors Flutter's waiting-state reassurance without provider/model wording. |
-| Results actions | Copy, Share, Edit, and Save were forced into a single row. | Draft actions adapt between one-row and stacked layouts so buttons remain visible. |
+| Loading state | Native generation only changed the button to Writing. | A full-screen native writing overlay now shows the selected occasion, tone, and length without provider/model wording. |
+| Results context | Results opened with generic explanatory copy. | Results now lead with a native context card and compact occasion/relationship/tone chips. |
+| Results actions | Copy, Share, Edit, and Save were forced into a single row. | Draft actions use a stable two-row layout so buttons remain visible with Dynamic Type pressure. |
 | Results hierarchy | Copy was visually equal to secondary actions, even though Flutter treated copy as the main success action. | Copy is now the primary action with an in-card Copied state; Share, Edit, and Save remain visible as secondary actions. |
-| Results follow-up actions | Start Over lived at the end of the scroll and Regenerate lived in the toolbar. | Results now keep Adjust, Start new, and Regenerate in a bottom safe-area action bar. |
-| Results language | Results used Drafts as the primary title. | Results now use Messages/Options language to match the broader card/text/note use case. |
+| Results follow-up actions | Start Over lived at the end of the scroll and Regenerate lived in the toolbar. | Results now keep Adjust, Start new, and Regenerate in a bottom action bar with less horizontal crowding. |
 | Launch/onboarding logo | Earlier native passes carried launch-logo/onboarding artwork assets forward. | Launch is plain navy, and the first-run welcome uses brand color, type, and SF Symbols without shipping unused logo/artwork assets. |
 | Edit draft sheet | Actions lived inside the main sheet content and could be cramped with the keyboard. | Edit actions sit in a bottom safe-area bar with adaptive layout and sheet detents. |
 | Paywall sheet | Medium-height presentation could crowd content. | Paywall content scrolls and supports medium/large detents. |
@@ -46,7 +46,6 @@ The 2026-06-05 follow-up continued Gate 2 from `REWRITE_PLAN.md`: improve Create
 Current Gate 2 follow-up:
 
 - `prosepal-ios/Sources/ProsePalUI/ProsePalRootView.swift`
-- `prosepal-ios/Tests/ProsePalUITests/UsagePolicyTests.swift`
 - `prosepal-ios/NATIVE_UI_POLISH_REPORT.md`
 
 Earlier native UI/staging passes referenced by this report:
@@ -68,15 +67,10 @@ Earlier native UI/staging passes referenced by this report:
 - `supabase/functions/generate-card/index.test.ts`
 - `supabase/README.md`
 
-Pre-existing local changes still present and not part of this UI pass:
+Local evidence screenshots remain under `prosepal-ios/evidence/` and are not committed.
 
-- `prosepal-ios/ProsePal.xcodeproj/project.pbxproj`
-- `prosepal-ios/ProsePal.xcodeproj/xcshareddata/xcschemes/ProsePal.xcscheme`
-- `prosepal-ios/ProsePal.xcodeproj/xcuserdata/`
-- `supabase/.temp/*`
-- `supabase/README.md`
-
-Do not commit Supabase `.temp` files or local Supabase link state.
+Do not commit Supabase `.temp` files, local Supabase link state, Xcode
+`xcuserdata`, Xcode Run environment secrets, or local evidence screenshots.
 
 ## Gateway Safety Check
 
@@ -100,10 +94,13 @@ Do not commit Supabase `.temp` files or local Supabase link state.
 
 Latest Gate 2 follow-up validation:
 
-- `cd prosepal-ios && swift test` passed, 29 tests.
+- `cd prosepal-ios && swift test` passed, 66 tests.
 - `cd prosepal-ios && xcodebuild -project ProsePal.xcodeproj -target ProsePal -sdk iphonesimulator CODE_SIGNING_ALLOWED=NO build` passed.
 - `git diff --check` passed.
 - iPhone 17 Pro simulator smoke launch passed with bundle id `com.prosepal.prosepal.native`.
+- Results screenshot was not captured in this pass because local simulator launch
+  intentionally had no gateway URL configured, and the app has no client-side
+  template fallback by design.
 
 Earlier staging gateway validation retained by this report:
 
@@ -118,6 +115,7 @@ Screenshots captured:
 - `prosepal-ios/build/screenshots/native-router-picker-smoke.png`
 - `prosepal-ios/evidence/gate2-create-results-smoke.png` (local only, not committed)
 - `prosepal-ios/evidence/gate2-create-smoke.png` (local only, not committed)
+- `prosepal-ios/evidence/gate2-create-results-quality-create-after.png` (local only, not committed)
 
 ## Manual Test Checklist
 

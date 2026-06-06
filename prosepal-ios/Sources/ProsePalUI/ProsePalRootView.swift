@@ -993,7 +993,7 @@ public struct ProsePalRootView: View {
         }
         .overlay {
             if model.isGenerating {
-                WritingProgressOverlay()
+                WritingProgressOverlay(draft: model.draft)
                     .transition(.opacity)
             }
         }
@@ -1214,41 +1214,44 @@ struct ComposeView: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 22) {
-                    intentHeader
-                    recipientFields
-                    occasionSelector
-                    relationshipSection
-                    toneSection
-                    detailFields
-                    styleControls
-                    generationControls
+            VStack(spacing: 0) {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 22) {
+                        intentHeader
+                        recipientFields
+                        occasionSelector
+                        relationshipSection
+                        toneSection
+                        detailFields
+                        styleControls
+                        generationControls
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 18)
+                    .padding(.bottom, focusedField == nil ? 24 : 34)
                 }
-                .padding(.horizontal, 20)
-                .padding(.top, 18)
-                .padding(.bottom, focusedField == nil ? 118 : 34)
+                .scrollDismissesKeyboard(.interactively)
+
+                if focusedField == nil {
+                    generateButton
+                }
             }
             .background(Color.prosePalGroupedBackground)
-            .scrollDismissesKeyboard(.interactively)
             .navigationTitle("Create")
             .toolbar {
                 ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+
                     Button("Done") { focusedField = nil }
 
                     Button {
                         focusedField = nil
                         Task { await model.generate() }
                     } label: {
-                        Label(model.isGenerating ? "Writing" : "Write message", systemImage: "sparkles")
+                        Text(model.isGenerating ? "Writing..." : "Write")
                     }
                     .fontWeight(.semibold)
                     .disabled(model.isGenerating)
-                }
-            }
-            .safeAreaInset(edge: .bottom, spacing: 0) {
-                if focusedField == nil {
-                    generateButton
                 }
             }
             .sheet(isPresented: $isShowingOccasionPicker) {
@@ -1328,51 +1331,23 @@ struct ComposeView: View {
     }
 
     private var occasionSelector: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Text("What is the occasion?")
-                    .font(.headline)
-                Spacer()
-                Button("Browse") {
-                    model.logOccasionPickerOpened()
-                    isShowingOccasionPicker = true
-                }
-                .font(.callout.weight(.semibold))
-            }
-
-            Button {
+        ModernPanel {
+            SelectionSummaryButton(
+                title: "Occasion",
+                value: model.draft.occasion.displayName,
+                detail: "\(model.draft.occasion.group.displayName) - \(model.draft.occasion.pickerDescription)",
+                systemImage: model.draft.occasion.symbolName
+            ) {
                 model.logOccasionPickerOpened()
                 isShowingOccasionPicker = true
-            } label: {
-                HStack(spacing: 12) {
-                    Image(systemName: model.draft.occasion.symbolName)
-                        .font(.title2)
-                        .frame(width: 34, height: 34)
-                        .foregroundStyle(Color.prosePalCoral)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(model.draft.occasion.displayName)
-                            .font(.headline)
-                            .foregroundStyle(.primary)
-                        Text(model.draft.occasion.group.displayName)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                    Spacer()
-                    Image(systemName: "chevron.up.chevron.down")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                }
-                .padding(16)
-                .background(Color.prosePalSecondaryGroupedBackground, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
             }
-            .buttonStyle(.plain)
         }
     }
 
     private var recipientFields: some View {
         ModernPanel {
             VStack(alignment: .leading, spacing: 8) {
-                Text("Who is it for?")
+                Text("Who is this for?")
                     .font(.headline)
                 TextField("Name or person", text: $model.draft.recipientName, prompt: Text("Alex, Mum, my manager"))
                     .focused($focusedField, equals: ComposeField.recipient)
@@ -1451,7 +1426,7 @@ struct ComposeView: View {
 
             Divider()
 
-            TextField("Extra context", text: $model.draft.personalContext, axis: .vertical)
+            TextField("What should this message know?", text: $model.draft.personalContext, axis: .vertical)
                 .lineLimit(3...6)
                 .focused($focusedField, equals: .context)
                 .submitLabel(.done)
@@ -1515,7 +1490,7 @@ struct ComposeView: View {
         .padding(.horizontal, 20)
         .padding(.top, 8)
         .padding(.bottom, 8)
-        .background(Color.prosePalGroupedBackground)
+        .background(.bar)
         .overlay(alignment: .top) {
             Divider()
         }
@@ -2086,18 +2061,7 @@ struct ResultsView: View {
             } else {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 16) {
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text("Here are three options shaped around your details.")
-                                .font(.headline)
-                                .foregroundStyle(.primary)
-                            Text("Pick one to copy, edit, save, or share.")
-                                .font(.callout)
-                                .foregroundStyle(.secondary)
-                            Text(resultContextText)
-                                .font(.caption.weight(.medium))
-                                .foregroundStyle(.secondary)
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                        resultsContextCard
 
                         generationStatus
 
@@ -2118,18 +2082,10 @@ struct ResultsView: View {
     }
 
     private var resultsActionBar: some View {
-        ViewThatFits(in: .horizontal) {
+        VStack(spacing: 10) {
+            adjustButton
             HStack(spacing: 10) {
-                adjustButton
                 startNewButton
-                regenerateButton
-            }
-
-            VStack(spacing: 10) {
-                HStack(spacing: 10) {
-                    adjustButton
-                    startNewButton
-                }
                 regenerateButton
             }
         }
@@ -2140,6 +2096,48 @@ struct ResultsView: View {
         .overlay(alignment: .top) {
             Divider()
         }
+    }
+
+    private var resultsContextCard: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(alignment: .top, spacing: 12) {
+                Image(systemName: model.draft.occasion.symbolName)
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(Color.prosePalCoral)
+                    .frame(width: 36, height: 36)
+                    .background(Color.prosePalCoral.opacity(0.12), in: Circle())
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Drafts")
+                        .font(.title2.weight(.bold))
+                    Text("Pick one to copy, edit, save, or share.")
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Spacer(minLength: 0)
+            }
+
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 8) {
+                    ResultContextPill(text: model.draft.occasion.displayName, systemImage: "calendar")
+                    ResultContextPill(text: model.draft.relationship.displayName, systemImage: "person.2")
+                    ResultContextPill(text: model.draft.tone.displayName, systemImage: "slider.horizontal.3")
+                }
+
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(spacing: 8) {
+                        ResultContextPill(text: model.draft.occasion.displayName, systemImage: "calendar")
+                        ResultContextPill(text: model.draft.relationship.displayName, systemImage: "person.2")
+                    }
+                    ResultContextPill(text: model.draft.tone.displayName, systemImage: "slider.horizontal.3")
+                }
+            }
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.prosePalSecondaryGroupedBackground, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
     }
 
     private var adjustButton: some View {
@@ -2210,8 +2208,20 @@ struct ResultsView: View {
         return "Messages for \(recipient)"
     }
 
-    private var resultContextText: String {
-        "\(model.draft.occasion.displayName) / \(model.draft.relationship.displayName) / \(model.draft.tone.displayName) / \(model.draft.length.displayName)"
+}
+
+private struct ResultContextPill: View {
+    let text: String
+    let systemImage: String
+
+    var body: some View {
+        Label(text, systemImage: systemImage)
+            .font(.caption.weight(.semibold))
+            .lineLimit(1)
+            .minimumScaleFactor(0.82)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 7)
+            .background(.regularMaterial, in: Capsule())
     }
 }
 
@@ -2254,11 +2264,11 @@ struct ResultCard: View {
                 Label("Copy", systemImage: "doc.on.doc")
             }
 
-                    Button {
-                        model.logEditStarted(message.text, source: "result_context_menu")
-                        editedText = message.text
-                        isEditing = true
-                    } label: {
+            Button {
+                model.logEditStarted(message.text, source: "result_context_menu")
+                editedText = message.text
+                isEditing = true
+            } label: {
                 Label("Edit", systemImage: "square.and.pencil")
             }
 
@@ -2291,20 +2301,14 @@ struct ResultCard: View {
 
     @ViewBuilder
     private var resultActions: some View {
-        ViewThatFits(in: .horizontal) {
+        VStack(spacing: 10) {
             HStack(spacing: 10) {
                 shareLink
                 editButton
-                saveButton
-                copyButton
             }
 
-            VStack(alignment: .leading, spacing: 10) {
-                HStack(spacing: 10) {
-                    shareLink
-                    editButton
-                    saveButton
-                }
+            HStack(spacing: 10) {
+                saveButton
                 copyButton
             }
         }
@@ -2324,6 +2328,7 @@ struct ResultCard: View {
     private var shareLink: some View {
         ShareLink(item: message.text) {
             Label("Share", systemImage: "square.and.arrow.up")
+                .frame(maxWidth: .infinity)
         }
         .simultaneousGesture(TapGesture().onEnded {
             model.logShareText(message.text, source: "result_card")
@@ -2338,6 +2343,7 @@ struct ResultCard: View {
             isEditing = true
         } label: {
             Label("Edit", systemImage: "square.and.pencil")
+                .frame(maxWidth: .infinity)
         }
         .buttonStyle(.bordered)
     }
@@ -2347,6 +2353,7 @@ struct ResultCard: View {
             model.save(message)
         } label: {
             Label(model.isSaved(message) ? "Saved" : "Save", systemImage: model.isSaved(message) ? "bookmark.fill" : "bookmark")
+                .frame(maxWidth: .infinity)
         }
         .disabled(model.isSaved(message))
         .buttonStyle(.bordered)
@@ -3448,6 +3455,7 @@ struct NoticeBanner: View {
 }
 
 private struct WritingProgressOverlay: View {
+    let draft: MessageDraft
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var messageIndex = 0
     @ScaledMetric(relativeTo: .largeTitle) private var sparklesSize: CGFloat = 34
@@ -3482,6 +3490,11 @@ private struct WritingProgressOverlay: View {
                     Text("Writing")
                         .font(.title.weight(.bold))
                         .foregroundStyle(.white)
+                    Text(progressContext)
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(.white.opacity(0.72))
+                        .lineLimit(2)
+                        .multilineTextAlignment(.center)
                     Text(messages[messageIndex])
                         .font(.callout)
                         .foregroundStyle(Color.prosePalTextSecondary)
@@ -3496,7 +3509,7 @@ private struct WritingProgressOverlay: View {
         }
         .ignoresSafeArea()
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Writing message. Please wait.")
+        .accessibilityLabel("Writing \(draft.occasion.displayName) message. Please wait.")
         .task {
             while !Task.isCancelled {
                 try? await Task.sleep(nanoseconds: 1_900_000_000)
@@ -3506,6 +3519,11 @@ private struct WritingProgressOverlay: View {
                 }
             }
         }
+    }
+
+    private var progressContext: String {
+        let length = draft.length == .standard ? "" : "\(draft.length.displayName) "
+        return "\(draft.tone.displayName) \(length)\(draft.occasion.displayName) message"
     }
 }
 
