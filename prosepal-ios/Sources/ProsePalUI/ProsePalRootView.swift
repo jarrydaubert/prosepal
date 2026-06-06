@@ -2,6 +2,10 @@ import ProsePalAPI
 import ProsePalDomain
 import SwiftUI
 
+#if canImport(AuthenticationServices)
+import AuthenticationServices
+#endif
+
 #if os(iOS)
 import UIKit
 #elseif os(macOS)
@@ -24,6 +28,8 @@ public final class ProsePalAppModel: ObservableObject {
     @Published var hasCompletedOnboarding: Bool
     @Published var selectedTab: AppTab = .compose
     @Published var isSignedIn = false
+    @Published var signedInEmail: String?
+    @Published var isSigningIn = false
     @Published var analyticsEnabled = false
     @Published var crashReportsEnabled = false
     @Published var biometricLockEnabled = false
@@ -38,6 +44,9 @@ public final class ProsePalAppModel: ObservableObject {
     private let onboardingStore: UserDefaults
     private let onboardingCompletionKey: String
     private let diagnostics: NativeDiagnosticsLogger
+    private let authSessionController: AuthSessionController?
+    private let authClient: (any AuthClient)?
+    private var pendingAppleSignInNonce: AppleSignInNonce?
 
     public init(
         client: MessageWritingClient,
@@ -47,6 +56,8 @@ public final class ProsePalAppModel: ObservableObject {
         savedMessagesKey: String = ProsePalAppModel.defaultSavedMessagesKey,
         onboardingStore: UserDefaults = .standard,
         onboardingCompletionKey: String = ProsePalAppModel.defaultOnboardingCompletionKey,
+        authSessionController: AuthSessionController? = nil,
+        authClient: (any AuthClient)? = nil,
         diagnostics: NativeDiagnosticsLogger = .shared
     ) {
         self.client = client
@@ -56,6 +67,8 @@ public final class ProsePalAppModel: ObservableObject {
         self.savedMessagesKey = savedMessagesKey
         self.onboardingStore = onboardingStore
         self.onboardingCompletionKey = onboardingCompletionKey
+        self.authSessionController = authSessionController
+        self.authClient = authClient
         self.diagnostics = diagnostics
         self.savedMessages = Self.loadSavedMessages(from: savedMessagesStore, key: savedMessagesKey)
         self.hasCompletedOnboarding = onboardingStore.bool(forKey: onboardingCompletionKey)
@@ -63,6 +76,27 @@ public final class ProsePalAppModel: ObservableObject {
             hasCompletedOnboarding: self.hasCompletedOnboarding,
             savedMessageCount: self.savedMessages.count
         )
+    }
+
+    var isAppleSignInConfigured: Bool {
+        authSessionController != nil && authClient != nil
+    }
+
+    func loadAuthSession() async {
+        guard let authSessionController else { return }
+
+        do {
+            let session = try await authSessionController.loadPersistedSession()
+            if session?.isUsable() == true {
+                applyAuthSession(session)
+            } else {
+                try? await authSessionController.clearSession()
+                applyAuthSession(nil)
+            }
+        } catch {
+            applyAuthSession(nil)
+            diagnostics.messageAction("auth_session_load_failed", source: "launch", messageCharacters: 0)
+        }
     }
 
     func generate() async {
@@ -153,9 +187,88 @@ public final class ProsePalAppModel: ObservableObject {
         showNotice("Purchases are unavailable right now", systemImage: "arrow.clockwise")
     }
 
-    func continueWithApplePlaceholder(source: String) {
-        diagnostics.messageAction("auth_apple_selected", source: source, messageCharacters: 0)
-        showNotice("Apple sign-in is unavailable right now", systemImage: "apple.logo")
+    func beginAppleSignInRequest(source: String) -> String? {
+        guard isAppleSignInConfigured else {
+            diagnostics.messageAction("auth_apple_unconfigured", source: source, messageCharacters: 0)
+            showNotice("Sign in is not configured for this build", systemImage: "exclamationmark.triangle")
+            return nil
+        }
+
+        do {
+            let nonce = try AppleSignInNonce.make()
+            pendingAppleSignInNonce = nonce
+            isSigningIn = true
+            diagnostics.messageAction("auth_apple_started", source: source, messageCharacters: 0)
+            return nonce.sha256Value
+        } catch let error as AuthError {
+            isSigningIn = false
+            diagnostics.messageAction("auth_apple_nonce_failed", source: source, messageCharacters: 0)
+            showNotice(error.userSafeMessage, systemImage: "exclamationmark.triangle")
+            return nil
+        } catch {
+            isSigningIn = false
+            diagnostics.messageAction("auth_apple_nonce_failed", source: source, messageCharacters: 0)
+            showNotice("Apple sign-in could not start securely. Please try again.", systemImage: "exclamationmark.triangle")
+            return nil
+        }
+    }
+
+    func completeAppleSignIn(idToken: String?, source: String) async {
+        defer {
+            pendingAppleSignInNonce = nil
+            isSigningIn = false
+        }
+
+        guard let authSessionController, let authClient else {
+            diagnostics.messageAction("auth_apple_unconfigured", source: source, messageCharacters: 0)
+            showNotice("Sign in is not configured for this build", systemImage: "exclamationmark.triangle")
+            return
+        }
+
+        guard let nonce = pendingAppleSignInNonce else {
+            diagnostics.messageAction("auth_apple_missing_nonce", source: source, messageCharacters: 0)
+            showNotice(AuthError.missingNonce.userSafeMessage, systemImage: "exclamationmark.triangle")
+            return
+        }
+
+        guard let idToken, !idToken.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            diagnostics.messageAction("auth_apple_missing_token", source: source, messageCharacters: 0)
+            showNotice(AuthError.missingIdentityToken.userSafeMessage, systemImage: "exclamationmark.triangle")
+            return
+        }
+
+        do {
+            let session = try await authClient.signInWithIDToken(
+                provider: .apple,
+                idToken: idToken,
+                nonce: nonce.rawValue
+            )
+            try await authSessionController.replaceSession(session)
+            applyAuthSession(session)
+            diagnostics.messageAction("auth_apple_succeeded", source: source, messageCharacters: 0)
+            showNotice("Signed in with Apple", systemImage: "checkmark.circle.fill")
+        } catch let error as AuthError {
+            applyAuthSession(nil)
+            diagnostics.messageAction("auth_apple_failed", source: source, messageCharacters: 0)
+            showNotice(error.userSafeMessage, systemImage: "exclamationmark.triangle")
+        } catch {
+            applyAuthSession(nil)
+            diagnostics.messageAction("auth_apple_failed", source: source, messageCharacters: 0)
+            showNotice("Apple sign-in failed. Please try again.", systemImage: "exclamationmark.triangle")
+        }
+    }
+
+    func cancelAppleSignIn(source: String) {
+        pendingAppleSignInNonce = nil
+        isSigningIn = false
+        diagnostics.messageAction("auth_apple_cancelled", source: source, messageCharacters: 0)
+    }
+
+    func failAppleSignIn(source: String) {
+        pendingAppleSignInNonce = nil
+        isSigningIn = false
+        diagnostics.messageAction("auth_apple_failed", source: source, messageCharacters: 0)
+        showNotice("Apple sign-in failed. Please try again.", systemImage: "exclamationmark.triangle")
     }
 
     func purchasePremiumPlaceholder(source: String) {
@@ -183,9 +296,26 @@ public final class ProsePalAppModel: ObservableObject {
         showNotice("Sign in before deleting an account", systemImage: "trash")
     }
 
-    func signOutPlaceholder() {
+    func signOut() async {
+        guard isSignedIn else {
+            diagnostics.messageAction("sign_out_requested", source: "settings", messageCharacters: 0)
+            showNotice("No signed-in account", systemImage: "rectangle.portrait.and.arrow.right")
+            return
+        }
+
         diagnostics.messageAction("sign_out_requested", source: "settings", messageCharacters: 0)
-        showNotice("No signed-in account", systemImage: "rectangle.portrait.and.arrow.right")
+
+        if let accessToken = try? await authSessionController?.currentAccessToken() {
+            try? await authClient?.signOut(accessToken: accessToken)
+        }
+
+        do {
+            try await authSessionController?.clearSession()
+            applyAuthSession(nil)
+            showNotice("Signed out", systemImage: "rectangle.portrait.and.arrow.right")
+        } catch {
+            showNotice("Could not finish signing out. Please try again.", systemImage: "exclamationmark.triangle")
+        }
     }
 
     func setAnalyticsEnabled(_ enabled: Bool) {
@@ -403,6 +533,16 @@ public final class ProsePalAppModel: ObservableObject {
             if self.notice?.id == notice.id {
                 self.notice = nil
             }
+        }
+    }
+
+    private func applyAuthSession(_ session: AuthSession?) {
+        let usableSession = session?.isUsable() == true ? session : nil
+        isSignedIn = usableSession != nil
+        signedInEmail = usableSession?.user?.email
+
+        if usableSession == nil {
+            biometricLockEnabled = false
         }
     }
 
@@ -624,13 +764,15 @@ public struct ProsePalRootView: View {
         }
         .tint(Color.prosePalCoral)
         .environmentObject(model)
+        .task {
+            await model.loadAuthSession()
+        }
         .animation(reduceMotion ? nil : .easeInOut(duration: 0.22), value: model.hasCompletedOnboarding)
         .sheet(isPresented: $model.isShowingPaywall) {
             PaywallPlaceholderSheet(
                 usageStatus: model.usageStatus,
                 onUseStandard: model.useStandardLaneFromPaywall,
                 onContinuePremium: { model.purchasePremiumPlaceholder(source: "paywall") },
-                onContinueWithApple: { model.continueWithApplePlaceholder(source: "paywall") },
                 onRestore: model.restorePurchasesPlaceholder
             )
             .presentationDetents([.medium, .large])
@@ -2109,10 +2251,10 @@ struct DraftEditorSheet: View {
 }
 
 struct PaywallPlaceholderSheet: View {
+    @EnvironmentObject private var model: ProsePalAppModel
     let usageStatus: UsageStatus
     let onUseStandard: () -> Void
     let onContinuePremium: () -> Void
-    let onContinueWithApple: () -> Void
     let onRestore: () -> Void
     @Environment(\.dismiss) private var dismiss
 
@@ -2197,14 +2339,8 @@ struct PaywallPlaceholderSheet: View {
                             .foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
 
-                        Button {
-                            onContinueWithApple()
-                        } label: {
-                            Label("Continue with Apple", systemImage: "apple.logo")
-                                .frame(maxWidth: .infinity)
-                        }
-                        .buttonStyle(.bordered)
-                        .controlSize(.large)
+                        AppleSignInControl(source: "paywall")
+                            .environmentObject(model)
                     }
                     .padding(14)
                     .background(Color.prosePalSecondaryGroupedBackground, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
@@ -2275,6 +2411,76 @@ struct PaywallPlanRow: View {
                 .strokeBorder(isSelected ? Color.prosePalCoral.opacity(0.55) : Color.clear, lineWidth: 1.4)
         }
     }
+}
+
+struct AppleSignInControl: View {
+    @EnvironmentObject private var model: ProsePalAppModel
+    let source: String
+
+    var body: some View {
+        #if canImport(AuthenticationServices)
+        if model.isAppleSignInConfigured {
+            SignInWithAppleButton(.continue) { request in
+                request.requestedScopes = [.email, .fullName]
+                request.nonce = model.beginAppleSignInRequest(source: source)
+            } onCompletion: { result in
+                handle(result)
+            }
+            .signInWithAppleButtonStyle(.black)
+            .frame(maxWidth: .infinity, minHeight: 52, maxHeight: 52)
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .disabled(model.isSigningIn)
+            .accessibilityLabel("Continue with Apple")
+        } else {
+            Button {
+                _ = model.beginAppleSignInRequest(source: source)
+            } label: {
+                Label("Continue with Apple", systemImage: "apple.logo")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.large)
+        }
+        #else
+        Button {
+            _ = model.beginAppleSignInRequest(source: source)
+        } label: {
+            Label("Continue with Apple", systemImage: "apple.logo")
+                .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.bordered)
+        .controlSize(.large)
+        #endif
+    }
+
+    #if canImport(AuthenticationServices)
+    private func handle(_ result: Result<ASAuthorization, Error>) {
+        switch result {
+        case .success(let authorization):
+            guard
+                let credential = authorization.credential as? ASAuthorizationAppleIDCredential,
+                let tokenData = credential.identityToken,
+                let token = String(data: tokenData, encoding: .utf8)
+            else {
+                Task { @MainActor in
+                    await model.completeAppleSignIn(idToken: nil, source: source)
+                }
+                return
+            }
+
+            Task { @MainActor in
+                await model.completeAppleSignIn(idToken: token, source: source)
+            }
+        case .failure(let error):
+            if let authorizationError = error as? ASAuthorizationError,
+               authorizationError.code == .canceled {
+                model.cancelAppleSignIn(source: source)
+            } else {
+                model.failAppleSignIn(source: source)
+            }
+        }
+    }
+    #endif
 }
 
 struct PremiumFeatureRow: View {
@@ -2507,11 +2713,8 @@ struct SettingsView: View {
             }
             .navigationTitle("Settings")
             .sheet(isPresented: $isShowingAccountSheet) {
-                AccountSignInSheet(
-                    onContinueWithApple: {
-                        model.continueWithApplePlaceholder(source: "settings")
-                    }
-                )
+                AccountSignInSheet()
+                    .environmentObject(model)
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
             }
@@ -2530,7 +2733,7 @@ struct SettingsView: View {
                 SettingsRow(
                     systemImage: "person.crop.circle.fill",
                     title: "Apple account",
-                    subtitle: "Signed in with Apple",
+                    subtitle: model.signedInEmail ?? "Signed in with Apple",
                     trailingText: model.usageStatus.isPremiumUnlocked ? "Pro" : "Free",
                     tint: Color.prosePalCoral
                 )
@@ -2762,7 +2965,9 @@ struct SettingsView: View {
             .buttonStyle(.plain)
 
             Button {
-                model.signOutPlaceholder()
+                Task {
+                    await model.signOut()
+                }
             } label: {
                 SettingsRow(
                     systemImage: "rectangle.portrait.and.arrow.right",
@@ -2796,7 +3001,7 @@ struct SettingsView: View {
 }
 
 struct AccountSignInSheet: View {
-    let onContinueWithApple: () -> Void
+    @EnvironmentObject private var model: ProsePalAppModel
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -2820,14 +3025,8 @@ struct AccountSignInSheet: View {
                         PremiumFeatureRow(systemImage: "lock.shield", title: "Account protection", detail: "Use Apple sign-in for sensitive account actions.")
                     }
 
-                    Button {
-                        onContinueWithApple()
-                    } label: {
-                        Label("Continue with Apple", systemImage: "apple.logo")
-                            .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.large)
+                    AppleSignInControl(source: "settings")
+                        .environmentObject(model)
 
                     Text("By continuing, you agree to the Terms and Privacy Policy.")
                         .font(.caption)
@@ -2839,6 +3038,11 @@ struct AccountSignInSheet: View {
             }
             .background(Color.prosePalGroupedBackground)
             .navigationTitle("Account")
+            .onChange(of: model.isSignedIn) { _, isSignedIn in
+                if isSignedIn {
+                    dismiss()
+                }
+            }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Close") { dismiss() }

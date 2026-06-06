@@ -51,6 +51,15 @@ final class AuthSessionTests: XCTestCase {
         XCTAssertNil(clearedStoredSession)
         XCTAssertNil(clearedCurrentSession)
     }
+
+    func testAppleSignInNonceHashesRawValue() {
+        let nonce = AppleSignInNonce(rawValue: "raw-nonce")
+
+        XCTAssertEqual(
+            nonce.sha256Value,
+            "2c5d107938053a2275f022c153c9a71f65ee07754b8bca543ee97a0c3cc66990"
+        )
+    }
 }
 
 final class SupabaseAuthClientTests: XCTestCase {
@@ -149,6 +158,36 @@ final class SupabaseAuthClientTests: XCTestCase {
         } catch {
             XCTFail("Expected requestFailed, got \(error).")
         }
+    }
+
+    func testSignOutPostsLogoutWithBearerToken() async throws {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [AuthCapturingURLProtocol.self]
+        let session = URLSession(configuration: configuration)
+        let projectURL = try XCTUnwrap(URL(string: "https://project.supabase.co"))
+        let client = SupabaseAuthClient(
+            projectURL: projectURL,
+            anonKey: "anon-key",
+            session: session
+        )
+
+        AuthCapturingURLProtocol.requestHandler = { request in
+            XCTAssertEqual(request.url?.path, "/auth/v1/logout")
+            XCTAssertEqual(request.httpMethod, "POST")
+            XCTAssertEqual(request.value(forHTTPHeaderField: "apikey"), "anon-key")
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer supabase-access-token")
+
+            let response = try XCTUnwrap(HTTPURLResponse(
+                url: projectURL,
+                statusCode: 204,
+                httpVersion: nil,
+                headerFields: nil
+            ))
+            return (response, Data())
+        }
+        defer { AuthCapturingURLProtocol.requestHandler = nil }
+
+        try await client.signOut(accessToken: " supabase-access-token ")
     }
 }
 

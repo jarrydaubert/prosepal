@@ -202,11 +202,13 @@ Policy:
   generation. The RPC enforces caller identity and server entitlement state;
   allowed responses include `CardResponse.usage`, while usage-limit or usage-RPC
   failures return a user-safe error and no generated messages.
-- The native app's first auth slice is dependency-light: Apple ID-token exchange
-  is represented by a narrow REST client, session tokens are stored in Keychain,
-  and `GatewayMessageWritingClient` receives bearer tokens from the session
-  controller. The Sign in with Apple UI/capability proof is still a separate
-  native auth gate item.
+- The native app's auth slice is dependency-light: Apple ID-token exchange is
+  represented by a narrow REST client, session tokens are stored in Keychain,
+  Settings/Paywall use Apple's native `SignInWithAppleButton`, and
+  `GatewayMessageWritingClient` receives bearer tokens from the session
+  controller.
+- Live Sign in with Apple proof requires the Apple capability/provisioning
+  profile and Supabase Apple provider to match the native bundle identity.
 - Anonymous gateway development mode does not call the authenticated usage RPC
   and must remain staging/local only.
 - Provider/model names and keys stay in the Edge Function environment. The

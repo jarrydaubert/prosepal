@@ -1,6 +1,6 @@
 import Foundation
 
-public struct SupabaseAuthClient: Sendable {
+public struct SupabaseAuthClient: AuthClient {
     public var projectURL: URL
     public var anonKey: String
     public var session: URLSession
@@ -74,6 +74,38 @@ public struct SupabaseAuthClient: Sendable {
             expiresAt: tokenResponse.resolvedExpiresAt(now: now()),
             user: tokenResponse.user.map { AuthUser(id: $0.id, email: $0.email) }
         )
+    }
+
+    public func signOut(accessToken: String) async throws {
+        guard !anonKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            throw AuthError.configurationMissing
+        }
+
+        let trimmedAccessToken = accessToken.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedAccessToken.isEmpty else { return }
+
+        let endpoint = projectURL
+            .appendingPathComponent("auth")
+            .appendingPathComponent("v1")
+            .appendingPathComponent("logout")
+
+        var request = URLRequest(url: endpoint)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue(anonKey, forHTTPHeaderField: "apikey")
+        request.setValue("Bearer \(trimmedAccessToken)", forHTTPHeaderField: "Authorization")
+
+        let (data, response) = try await session.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw AuthError.invalidResponse
+        }
+
+        guard (200..<300).contains(httpResponse.statusCode) else {
+            throw AuthError.requestFailed(
+                statusCode: httpResponse.statusCode,
+                message: decodeErrorMessage(from: data)
+            )
+        }
     }
 
     private func decodeErrorMessage(from data: Data) -> String {

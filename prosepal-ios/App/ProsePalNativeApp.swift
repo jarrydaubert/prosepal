@@ -9,6 +9,7 @@ struct ProsePalNativeApp: App {
     private let authSessionController = AuthSessionController(
         store: KeychainAuthSessionStore(service: "com.prosepal.native.auth")
     )
+    private let authClient = AuthClientFactory.makeClient()
 
     var body: some Scene {
         WindowGroup {
@@ -20,10 +21,26 @@ struct ProsePalNativeApp: App {
                     clientContext: ClientContext(
                         appVersion: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0.1.0",
                         buildNumber: Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
-                    )
+                    ),
+                    authSessionController: authSessionController,
+                    authClient: authClient
                 )
             )
         }
+    }
+}
+
+private enum AuthClientFactory {
+    static func makeClient() -> (any AuthClient)? {
+        guard
+            let projectURLString = NativeConfig.value(named: "PROSEPAL_SUPABASE_URL") ?? NativeConfig.value(named: "SUPABASE_URL"),
+            let projectURL = URL(string: projectURLString),
+            let anonKey = NativeConfig.value(named: "PROSEPAL_SUPABASE_ANON_KEY") ?? NativeConfig.value(named: "SUPABASE_ANON_KEY")
+        else {
+            return nil
+        }
+
+        return SupabaseAuthClient(projectURL: projectURL, anonKey: anonKey)
     }
 }
 
@@ -49,15 +66,8 @@ private enum MessageWritingClientFactory {
     }
 
     private static var gatewayEndpoint: URL? {
-        if let environmentValue = ProcessInfo.processInfo.environment["PROSEPAL_GATEWAY_URL"],
-           let url = URL(string: environmentValue),
-           !environmentValue.isEmpty {
-            return url
-        }
-
-        if let infoValue = Bundle.main.object(forInfoDictionaryKey: "PROSEPAL_GATEWAY_URL") as? String,
-           let url = URL(string: infoValue),
-           !infoValue.isEmpty {
+        if let configValue = NativeConfig.value(named: "PROSEPAL_GATEWAY_URL"),
+           let url = URL(string: configValue) {
             return url
         }
 
@@ -65,10 +75,12 @@ private enum MessageWritingClientFactory {
     }
 
     private static var gatewayDevSecret: String? {
-        configValue(named: "PROSEPAL_DEV_GATEWAY_SECRET")
+        NativeConfig.value(named: "PROSEPAL_DEV_GATEWAY_SECRET")
     }
+}
 
-    private static func configValue(named key: String) -> String? {
+private enum NativeConfig {
+    static func value(named key: String) -> String? {
         if let environmentValue = ProcessInfo.processInfo.environment[key]?.trimmingCharacters(in: .whitespacesAndNewlines),
            !environmentValue.isEmpty {
             return environmentValue

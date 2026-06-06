@@ -1,4 +1,6 @@
 import Foundation
+import CryptoKit
+import Security
 
 public struct AuthUser: Codable, Equatable, Sendable, Identifiable {
     public var id: String
@@ -48,9 +50,41 @@ public enum AuthProvider: String, Codable, Equatable, Sendable {
 public enum AuthError: Error, Equatable, Sendable {
     case configurationMissing
     case missingIdentityToken
+    case missingNonce
+    case nonceGenerationFailed
     case invalidResponse
     case requestFailed(statusCode: Int, message: String)
     case storageFailed(message: String)
+}
+
+public extension AuthError {
+    var userSafeMessage: String {
+        switch self {
+        case .configurationMissing:
+            "Sign in is not configured for this build."
+        case .missingIdentityToken:
+            "Apple sign-in did not return the information needed. Please try again."
+        case .missingNonce:
+            "Apple sign-in could not be completed. Please try again."
+        case .nonceGenerationFailed:
+            "Apple sign-in could not start securely. Please try again."
+        case .invalidResponse:
+            "Sign in returned an unexpected response. Please try again."
+        case .requestFailed(_, let message),
+             .storageFailed(let message):
+            message
+        }
+    }
+}
+
+public protocol AuthClient: Sendable {
+    func signInWithIDToken(
+        provider: AuthProvider,
+        idToken: String,
+        nonce: String?
+    ) async throws -> AuthSession
+
+    func signOut(accessToken: String) async throws
 }
 
 public protocol AuthSessionStore: Sendable {
@@ -108,5 +142,32 @@ public actor AuthSessionController {
         }
 
         return cachedSession
+    }
+}
+
+public struct AppleSignInNonce: Equatable, Sendable {
+    public var rawValue: String
+    public var sha256Value: String
+
+    public init(rawValue: String) {
+        self.rawValue = rawValue
+        self.sha256Value = Self.sha256(rawValue)
+    }
+
+    public static func make(length: Int = 32) throws -> AppleSignInNonce {
+        let allowedCharacters = Array("0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._")
+        var randomBytes = [UInt8](repeating: 0, count: length)
+        let status = SecRandomCopyBytes(kSecRandomDefault, randomBytes.count, &randomBytes)
+        guard status == errSecSuccess else {
+            throw AuthError.nonceGenerationFailed
+        }
+
+        let rawValue = String(randomBytes.map { allowedCharacters[Int($0) % allowedCharacters.count] })
+        return AppleSignInNonce(rawValue: rawValue)
+    }
+
+    private static func sha256(_ input: String) -> String {
+        let digest = SHA256.hash(data: Data(input.utf8))
+        return digest.map { String(format: "%02x", $0) }.joined()
     }
 }

@@ -61,6 +61,18 @@ prefer an HTTPS development/staging Supabase function URL:
 PROSEPAL_GATEWAY_URL=https://<project-ref>.supabase.co/functions/v1/generate-card
 ```
 
+Native Sign in with Apple uses a narrow Supabase Auth REST exchange. To enable
+it in a local/Xcode build, set:
+
+```text
+PROSEPAL_SUPABASE_URL=https://<project-ref>.supabase.co
+PROSEPAL_SUPABASE_ANON_KEY=<supabase-anon-key>
+```
+
+The anon key is a public Supabase client key, but it should still live in local
+scheme/environment configuration for this R&D branch rather than being committed
+to source.
+
 Local anonymous gateway mode requires the function environment variable
 `GATEWAY_DEV_ALLOW_ANONYMOUS=true`. Authenticated mode will be the default once
 the native auth path is connected.
@@ -203,12 +215,14 @@ Native auth plumbing has started without adding a third-party SDK:
   not `UserDefaults`.
 - `SupabaseAuthClient` implements only the Apple ID-token exchange needed to
   turn a native Apple credential into a Supabase session.
+- The Settings and Paywall account surfaces use Apple's native
+  `SignInWithAppleButton` when Supabase auth config is present.
 - `GatewayMessageWritingClient` receives an Authorization bearer token from the
   session controller when a valid session exists.
 
-The Sign in with Apple button is still a placeholder in the UI until the native
-Apple credential request, entitlement/capability setup, and wired-device proof
-are completed.
+Live Sign in with Apple still requires the Apple capability to be enabled for
+the bundle identifier in the Apple Developer portal, a matching provisioning
+profile, and the Supabase Apple provider configured for the same app identity.
 
 Some "modern Apple" capabilities are deliberately deferred:
 

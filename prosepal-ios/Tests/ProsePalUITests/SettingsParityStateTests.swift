@@ -5,13 +5,85 @@ import ProsePalDomain
 
 @MainActor
 final class SettingsParityStateTests: XCTestCase {
-    func testAppleSignInPlaceholderDoesNotFakeSignedInState() {
+    func testAppleSignInWhenUnconfiguredDoesNotFakeSignedInState() {
         let model = makeModel()
 
-        model.continueWithApplePlaceholder(source: "settings")
+        let nonce = model.beginAppleSignInRequest(source: "settings")
 
+        XCTAssertNil(nonce)
         XCTAssertFalse(model.isSignedIn)
         XCTAssertNotNil(model.notice)
+    }
+
+    func testLoadPersistedAuthSessionUpdatesSignedInState() async throws {
+        let store = InMemoryAuthSessionStore(
+            session: AuthSession(
+                accessToken: "saved-token",
+                user: AuthUser(id: "user-1", email: "user@example.com")
+            )
+        )
+        let model = makeModel(
+            authSessionController: AuthSessionController(store: store),
+            authClient: RecordingAuthClient(session: AuthSession(accessToken: "unused"))
+        )
+
+        await model.loadAuthSession()
+
+        XCTAssertTrue(model.isSignedIn)
+        XCTAssertEqual(model.signedInEmail, "user@example.com")
+    }
+
+    func testCompletingAppleSignInStoresSessionAndMarksSignedIn() async throws {
+        let store = InMemoryAuthSessionStore()
+        let authClient = RecordingAuthClient(
+            session: AuthSession(
+                accessToken: "supabase-access-token",
+                user: AuthUser(id: "user-1", email: "user@example.com")
+            )
+        )
+        let model = makeModel(
+            authSessionController: AuthSessionController(store: store),
+            authClient: authClient
+        )
+
+        let nonce = model.beginAppleSignInRequest(source: "settings")
+        XCTAssertNotNil(nonce)
+        await model.completeAppleSignIn(idToken: "apple-id-token", source: "settings")
+
+        let request = await authClient.signInRequests.first
+        let storedSession = try await store.loadSession()
+        XCTAssertEqual(request?.provider, .apple)
+        XCTAssertEqual(request?.idToken, "apple-id-token")
+        XCTAssertNotNil(request?.nonce)
+        XCTAssertEqual(storedSession?.accessToken, "supabase-access-token")
+        XCTAssertTrue(model.isSignedIn)
+        XCTAssertEqual(model.signedInEmail, "user@example.com")
+        XCTAssertFalse(model.isSigningIn)
+    }
+
+    func testSignOutClearsAuthSessionAndBiometricState() async throws {
+        let store = InMemoryAuthSessionStore(
+            session: AuthSession(accessToken: "saved-token", user: AuthUser(id: "user-1"))
+        )
+        let authClient = RecordingAuthClient(session: AuthSession(accessToken: "unused"))
+        let model = makeModel(
+            authSessionController: AuthSessionController(store: store),
+            authClient: authClient
+        )
+
+        await model.loadAuthSession()
+        model.setBiometricLockEnabled(true)
+        XCTAssertTrue(model.isSignedIn)
+        XCTAssertTrue(model.biometricLockEnabled)
+
+        await model.signOut()
+
+        let clearedSession = try await store.loadSession()
+        let signOutTokens = await authClient.signOutTokens
+        XCTAssertFalse(model.isSignedIn)
+        XCTAssertFalse(model.biometricLockEnabled)
+        XCTAssertNil(clearedSession)
+        XCTAssertEqual(signOutTokens, ["saved-token"])
     }
 
     func testPremiumPurchasePlaceholderDoesNotUnlockPremium() {
@@ -72,12 +144,67 @@ final class SettingsParityStateTests: XCTestCase {
         XCTAssertEqual(model.totalGeneratedCount, 2)
     }
 
-    private func makeModel(client: MessageWritingClient? = nil) -> ProsePalAppModel {
+    private func makeModel(
+        client: MessageWritingClient? = nil,
+        authSessionController: AuthSessionController? = nil,
+        authClient: (any AuthClient)? = nil
+    ) -> ProsePalAppModel {
         ProsePalAppModel(
             client: client ?? MockMessageWritingClient(
                 response: CardResponse(messages: [], laneUsed: .standard)
             ),
-            clientContext: ClientContext(appVersion: "0.0.0", buildNumber: "1")
+            clientContext: ClientContext(appVersion: "0.0.0", buildNumber: "1"),
+            authSessionController: authSessionController,
+            authClient: authClient
         )
+    }
+}
+
+private actor InMemoryAuthSessionStore: AuthSessionStore {
+    private var session: AuthSession?
+
+    init(session: AuthSession? = nil) {
+        self.session = session
+    }
+
+    func loadSession() async throws -> AuthSession? {
+        session
+    }
+
+    func saveSession(_ session: AuthSession) async throws {
+        self.session = session
+    }
+
+    func clearSession() async throws {
+        session = nil
+    }
+}
+
+private actor RecordingAuthClient: AuthClient {
+    struct SignInRequest: Equatable {
+        var provider: AuthProvider
+        var idToken: String
+        var nonce: String?
+    }
+
+    private let session: AuthSession
+    private(set) var signInRequests: [SignInRequest] = []
+    private(set) var signOutTokens: [String] = []
+
+    init(session: AuthSession) {
+        self.session = session
+    }
+
+    func signInWithIDToken(
+        provider: AuthProvider,
+        idToken: String,
+        nonce: String?
+    ) async throws -> AuthSession {
+        signInRequests.append(SignInRequest(provider: provider, idToken: idToken, nonce: nonce))
+        return session
+    }
+
+    func signOut(accessToken: String) async throws {
+        signOutTokens.append(accessToken)
     }
 }
