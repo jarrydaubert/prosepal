@@ -54,6 +54,56 @@ final class UsagePolicyTests: XCTestCase {
         XCTAssertTrue(model.usageStatus.hasAuthoritativeUsage)
     }
 
+    func testGenerateSendsCurrentDraftAsStructuredGatewayRequest() async throws {
+        let client = RecordingMessageWritingClient(response: sampleResponse())
+        let model = makeModel(client: client)
+        model.draft.occasion = .apology
+        model.draft.relationship = .closeFriend
+        model.draft.tone = .heartfelt
+        model.draft.length = .detailed
+        model.draft.spellingPreference = .uk
+        model.draft.recipientName = "Alex"
+        model.draft.thingsToInclude = "I was late, I should have called"
+        model.draft.thingsToAvoid = "making excuses"
+        model.draft.personalContext = "We missed dinner plans."
+
+        await model.generate()
+
+        let requests = await client.recordedRequests()
+        let request = try XCTUnwrap(requests.first)
+        XCTAssertEqual(request.requestedLane, .standard)
+        XCTAssertEqual(request.clientContext.platform, "ios")
+        XCTAssertEqual(request.intent.occasion, .apology)
+        XCTAssertEqual(request.intent.relationship, .closeFriend)
+        XCTAssertEqual(request.intent.tone, .heartfelt)
+        XCTAssertEqual(request.intent.length, .detailed)
+        XCTAssertEqual(request.intent.spellingPreference, .uk)
+        XCTAssertEqual(request.intent.localeIdentifier, "en_GB")
+        XCTAssertEqual(request.intent.recipientName, "Alex")
+        XCTAssertEqual(request.intent.thingsToInclude, ["I was late", "I should have called"])
+        XCTAssertEqual(request.intent.thingsToAvoid, ["making excuses"])
+        XCTAssertEqual(request.intent.userContext, "We missed dinner plans.")
+    }
+
+    func testRegenerateReusesSameDraftInputsWithFreshRequestID() async {
+        let client = RecordingMessageWritingClient(response: sampleResponse())
+        let model = makeModel(client: client)
+        model.draft.occasion = .christmas
+        model.draft.relationship = .family
+        model.draft.tone = .casual
+        model.draft.recipientName = "Nan"
+
+        await model.generate()
+        await model.generate()
+
+        let requests = await client.recordedRequests()
+        XCTAssertEqual(requests.count, 2)
+        XCTAssertEqual(requests[0].intent, requests[1].intent)
+        XCTAssertEqual(requests[0].requestedLane, requests[1].requestedLane)
+        XCTAssertNotEqual(requests[0].idempotencyKey, requests[1].idempotencyKey)
+        XCTAssertTrue(model.isShowingResults)
+    }
+
     func testGatewayUsageSummaryClampsRemainingToServerLimit() {
         var usageStatus = UsageStatus(standardLimit: 3, standardRemaining: 1)
 
@@ -184,5 +234,23 @@ private struct FailingMessageWritingClient: MessageWritingClient {
 
     func generateCard(request: CardRequest) async throws -> CardResponse {
         throw error
+    }
+}
+
+private actor RecordingMessageWritingClient: MessageWritingClient {
+    let response: CardResponse
+    private var capturedRequests: [CardRequest] = []
+
+    init(response: CardResponse) {
+        self.response = response
+    }
+
+    func recordedRequests() -> [CardRequest] {
+        capturedRequests
+    }
+
+    func generateCard(request: CardRequest) async throws -> CardResponse {
+        capturedRequests.append(request)
+        return response
     }
 }

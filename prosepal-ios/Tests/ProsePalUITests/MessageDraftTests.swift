@@ -28,4 +28,19 @@ final class MessageDraftTests: XCTestCase {
         XCTAssertEqual(intent.thingsToAvoid, ["generic phrases"])
         XCTAssertEqual(intent.userContext, "She helped me after school.")
     }
+
+    func testDraftTrimsOptionalFieldsBeforeBuildingIntent() {
+        var draft = MessageDraft()
+        draft.recipientName = "  "
+        draft.thingsToInclude = " quiet tea, , old photos "
+        draft.thingsToAvoid = " age jokes,  "
+        draft.personalContext = "  "
+
+        let intent = draft.intent
+
+        XCTAssertNil(intent.recipientName)
+        XCTAssertEqual(intent.thingsToInclude, ["quiet tea", "old photos"])
+        XCTAssertEqual(intent.thingsToAvoid, ["age jokes"])
+        XCTAssertNil(intent.userContext)
+    }
 }

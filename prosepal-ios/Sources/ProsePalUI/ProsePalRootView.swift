@@ -142,7 +142,7 @@ public final class ProsePalAppModel: ObservableObject {
                 usageSource = "gateway"
             } else {
                 usageStatus.recordSuccessfulGeneration(requestedLane: requestedLane, laneUsed: response.laneUsed)
-                usageSource = "local_placeholder"
+                usageSource = "gateway_omitted"
             }
             totalGeneratedCount += response.messages.count
             diagnostics.generationSucceeded(
@@ -888,7 +888,7 @@ public struct UsageStatus: Equatable, Sendable {
 
     public var detailText: String {
         if isPremiumUnlocked {
-            return "Enhanced drafts and higher limits are available."
+            return "Extra help for harder moments and higher limits are available."
         }
 
         if !hasAuthoritativeUsage {
@@ -896,10 +896,10 @@ public struct UsageStatus: Equatable, Sendable {
         }
 
         if standardRemaining == 0 {
-            return "Premium will unlock enhanced drafts and higher limits."
+            return "Premium adds help for harder moments, higher limits, and more rewrites."
         }
 
-        return "Premium unlocks enhanced drafts and higher limits."
+        return "Premium adds help for harder moments, higher limits, and more rewrites."
     }
 
     public func isPremiumLocked(_ lane: GenerationLane) -> Bool {
@@ -1227,19 +1227,16 @@ struct ComposeView: View {
         NavigationStack {
             VStack(spacing: 0) {
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 22) {
+                    VStack(alignment: .leading, spacing: 18) {
                         intentHeader
-                        recipientFields
-                        occasionSelector
-                        relationshipSection
-                        toneSection
+                        basicsSection
                         detailFields
                         styleControls
                         generationControls
                     }
                     .padding(.horizontal, 20)
                     .padding(.top, 18)
-                    .padding(.bottom, focusedField == nil ? 24 : 34)
+                    .padding(.bottom, focusedField == nil ? 24 : 180)
                 }
                 .scrollDismissesKeyboard(.interactively)
 
@@ -1306,7 +1303,7 @@ struct ComposeView: View {
             Text("Find the right words")
                 .font(.system(.title, design: .rounded, weight: .bold))
                 .foregroundStyle(.primary)
-            Text("For a card, text, note, or the message you have not quite found yet.")
+            Text("Tell ProsePal who it is for, what is happening, and how it should feel.")
                 .font(.callout)
                 .foregroundStyle(.secondary)
             Text(summaryText)
@@ -1341,57 +1338,77 @@ struct ComposeView: View {
         return "\(base) for \(recipient)"
     }
 
-    private var occasionSelector: some View {
+    private var basicsSection: some View {
         ModernPanel {
-            SelectionSummaryButton(
-                title: "Occasion",
-                value: model.draft.occasion.displayName,
-                detail: "\(model.draft.occasion.group.displayName) - \(model.draft.occasion.pickerDescription)",
-                systemImage: model.draft.occasion.symbolName
-            ) {
-                model.logOccasionPickerOpened()
-                isShowingOccasionPicker = true
+            VStack(alignment: .leading, spacing: 14) {
+                recipientFields
+
+                fieldDivider
+
+                relationshipSection
+
+                fieldDivider
+
+                occasionSelector
+
+                fieldDivider
+
+                toneSection
             }
         }
     }
 
     private var recipientFields: some View {
-        ModernPanel {
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Who is this for?")
-                    .font(.headline)
-                TextField("Name or person", text: $model.draft.recipientName, prompt: Text("Alex, Mum, my manager"))
-                    .focused($focusedField, equals: ComposeField.recipient)
-                    .submitLabel(.done)
-                    .onSubmit { focusedField = nil }
-            }
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Who is this for?")
+                .font(.headline)
+            Text("Optional, but it helps the draft feel more personal.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            TextField("Name or person", text: $model.draft.recipientName, prompt: Text("Alex, Mum, my manager, a group"))
+                .focused($focusedField, equals: ComposeField.recipient)
+                .submitLabel(.done)
+                .onSubmit { focusedField = nil }
         }
     }
 
     private var relationshipSection: some View {
-        ModernPanel {
-            SelectionSummaryButton(
-                title: "Who are they to you?",
-                value: model.draft.relationship.displayName,
-                detail: model.draft.relationship.pickerDescription,
-                systemImage: model.draft.relationship.symbolName
-            ) {
-                isShowingRelationshipPicker = true
-            }
+        SelectionSummaryButton(
+            title: "Who are they to you?",
+            value: model.draft.relationship.displayName,
+            detail: model.draft.relationship.pickerDescription,
+            systemImage: model.draft.relationship.symbolName
+        ) {
+            isShowingRelationshipPicker = true
+        }
+    }
+
+    private var occasionSelector: some View {
+        SelectionSummaryButton(
+            title: "What is the moment?",
+            value: model.draft.occasion.displayName,
+            detail: "\(model.draft.occasion.group.displayName) - \(model.draft.occasion.pickerDescription)",
+            systemImage: model.draft.occasion.symbolName
+        ) {
+            model.logOccasionPickerOpened()
+            isShowingOccasionPicker = true
         }
     }
 
     private var toneSection: some View {
-        ModernPanel {
-            SelectionSummaryButton(
-                title: "How should it feel?",
-                value: model.draft.tone.displayName,
-                detail: model.draft.tone.description,
-                systemImage: model.draft.tone.symbolName
-            ) {
-                isShowingTonePicker = true
-            }
+        SelectionSummaryButton(
+            title: "How should it feel?",
+            value: model.draft.tone.displayName,
+            detail: model.draft.tone.description,
+            systemImage: model.draft.tone.symbolName
+        ) {
+            isShowingTonePicker = true
         }
+    }
+
+    private var fieldDivider: some View {
+        Divider()
+            .padding(.leading, 40)
     }
 
     private var styleControls: some View {
@@ -1527,11 +1544,12 @@ private struct SelectionSummaryButton: View {
                     Text(title)
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.secondary)
+                        .lineLimit(2)
                     Text(value)
                         .font(.body.weight(.semibold))
                         .foregroundStyle(.primary)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.86)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.88)
                     Text(detail)
                         .font(.caption)
                         .foregroundStyle(.secondary)
@@ -1580,8 +1598,8 @@ struct OccasionPickerSheet: View {
                     }
                 }
             }
-            .searchable(text: $searchText, prompt: "Search occasions")
-            .navigationTitle("Occasion")
+            .searchable(text: $searchText, prompt: "Search moments")
+            .navigationTitle("Moment")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Close") { dismiss() }
@@ -1940,7 +1958,7 @@ struct GenerationModeSelector: View {
             Text("Generation")
                 .font(.headline)
                 .frame(maxWidth: .infinity, alignment: .leading)
-            Text(usageStatus.isPremiumUnlocked ? "Premium is active. Standard remains available." : "Standard is included. Premium is locked until you upgrade.")
+            Text(usageStatus.isPremiumUnlocked ? "Premium is active. Standard remains available for everyday messages." : "Standard is for everyday messages. Premium helps with harder moments and higher limits.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -1977,9 +1995,9 @@ struct GenerationModeSelector: View {
     private func subtitle(for lane: GenerationLane) -> String {
         switch lane {
         case .automatic: "Best fit"
-        case .standard: "Included"
+        case .standard: "Everyday"
         case .premium:
-            usageStatus.isPremiumUnlocked ? "Active" : "Locked"
+            usageStatus.isPremiumUnlocked ? "Active" : "Harder moments"
         case .local: "On device"
         }
     }
@@ -2065,9 +2083,9 @@ struct ResultsView: View {
         Group {
             if model.generatedMessages.isEmpty {
                 EmptyStateView(
-                    title: "No Messages",
+                    title: "No drafts yet",
                     systemImage: "text.page",
-                    detail: "Write a message to see options here."
+                    detail: "Write a message and your drafts will appear here."
                 )
             } else {
                 ScrollView {
@@ -2096,9 +2114,16 @@ struct ResultsView: View {
     private var resultsActionBar: some View {
         VStack(spacing: 10) {
             adjustButton
-            HStack(spacing: 10) {
-                startNewButton
-                regenerateButton
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 10) {
+                    startNewButton
+                    regenerateButton
+                }
+
+                VStack(spacing: 10) {
+                    startNewButton
+                    regenerateButton
+                }
             }
         }
         .padding(.horizontal, 20)
@@ -2122,7 +2147,7 @@ struct ResultsView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Drafts")
                         .font(.title2.weight(.bold))
-                    Text("Pick one to copy, edit, save, or share.")
+                    Text("Pick one to copy, or adjust the details and try again.")
                         .font(.callout)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -2156,7 +2181,7 @@ struct ResultsView: View {
         Button {
             model.adjustCurrentMessage()
         } label: {
-            Label("Adjust", systemImage: "slider.horizontal.3")
+            Label("Adjust details", systemImage: "slider.horizontal.3")
                 .frame(maxWidth: .infinity)
         }
         .buttonStyle(.bordered)
@@ -2314,18 +2339,20 @@ struct ResultCard: View {
     @ViewBuilder
     private var resultActions: some View {
         VStack(spacing: 10) {
-            HStack(spacing: 10) {
-                shareLink
-                    .frame(maxWidth: .infinity)
-                editButton
-                    .frame(maxWidth: .infinity)
-            }
+            copyButton
 
-            HStack(spacing: 10) {
-                saveButton
-                    .frame(maxWidth: .infinity)
-                copyButton
-                    .frame(maxWidth: .infinity)
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 8) {
+                    shareLink
+                    editButton
+                    saveButton
+                }
+
+                VStack(spacing: 8) {
+                    shareLink
+                    editButton
+                    saveButton
+                }
             }
         }
         .frame(maxWidth: .infinity)
@@ -2338,7 +2365,8 @@ struct ResultCard: View {
             ResultActionLabel(
                 title: isCopied ? "Copied" : "Copy",
                 systemImage: isCopied ? "checkmark" : "doc.on.doc",
-                prominence: .primary
+                prominence: .primary,
+                isPrimary: true
             )
         }
         .buttonStyle(.plain)
@@ -2408,6 +2436,7 @@ private struct ResultActionLabel: View {
     let title: String
     let systemImage: String
     let prominence: Prominence
+    var isPrimary = false
 
     var body: some View {
         HStack(spacing: 7) {
@@ -2420,7 +2449,7 @@ private struct ResultActionLabel: View {
                 .lineLimit(1)
                 .minimumScaleFactor(0.78)
         }
-        .frame(maxWidth: .infinity, minHeight: 46)
+        .frame(maxWidth: .infinity, minHeight: isPrimary ? 48 : 44)
         .padding(.horizontal, 8)
         .multilineTextAlignment(.center)
         .foregroundStyle(foregroundStyle)
@@ -2578,15 +2607,15 @@ struct PaywallSheet: View {
                             .font(.largeTitle.weight(.bold))
                             .minimumScaleFactor(0.78)
 
-                        Text("Premium generation gives you enhanced drafts for harder moments, higher limits, and more room to regenerate.")
+                        Text("Premium generation adds help for harder moments, higher limits, and more room to rewrite.")
                             .font(.callout)
                             .foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
                     }
 
                     VStack(spacing: 12) {
-                        PremiumFeatureRow(systemImage: "heart.text.square", title: "Enhanced drafts", detail: "More support for nuanced, sensitive, or high-stakes messages.")
-                        PremiumFeatureRow(systemImage: "infinity", title: "Higher limits", detail: "More room for everyday cards, notes, and texts.")
+                        PremiumFeatureRow(systemImage: "heart.text.square", title: "Harder moments", detail: "More support for nuanced, sensitive, or high-stakes messages.")
+                        PremiumFeatureRow(systemImage: "infinity", title: "Higher limits", detail: "More room for everyday messages.")
                         PremiumFeatureRow(systemImage: "arrow.triangle.2.circlepath", title: "More rewrites", detail: "Try a warmer, shorter, or clearer version when the first draft is not quite right.")
                     }
 
@@ -2936,7 +2965,7 @@ struct SavedMessagesView: View {
                     EmptyStateView(
                         title: "No Saved Messages",
                         systemImage: "bookmark",
-                        detail: "Saved drafts appear here."
+                        detail: "When a draft feels right, save it here for later."
                     )
                 } else {
                     List {
@@ -3264,7 +3293,7 @@ struct SettingsView: View {
                     SettingsRow(
                         systemImage: lane == .premium ? "star" : "sparkles",
                         title: lane == .standard ? "Standard generation" : "Premium generation",
-                        subtitle: lane == .standard ? "Included for everyday messages" : "Enhanced drafts and higher limits",
+                        subtitle: lane == .standard ? "Everyday messages" : "Harder moments and higher limits",
                         trailingSystemImage: model.draft.requestedLane == lane ? "checkmark" : (model.usageStatus.isPremiumLocked(lane) ? "lock.fill" : nil),
                         tint: model.draft.requestedLane == lane ? Color.prosePalCoral : .secondary
                     )
