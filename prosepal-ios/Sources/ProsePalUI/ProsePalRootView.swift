@@ -2263,6 +2263,7 @@ private struct ResultContextPill: View {
 }
 
 struct ResultCard: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @EnvironmentObject private var model: ProsePalAppModel
     let message: GeneratedMessage
     let draftNumber: Int
@@ -2341,21 +2342,43 @@ struct ResultCard: View {
         VStack(spacing: 10) {
             copyButton
 
+            secondaryResultActions
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    @ViewBuilder
+    private var secondaryResultActions: some View {
+        if dynamicTypeSize.isAccessibilitySize {
+            VStack(spacing: 8) {
+                shareLink
+                    .frame(maxWidth: .infinity)
+                editButton
+                    .frame(maxWidth: .infinity)
+                saveButton
+                    .frame(maxWidth: .infinity)
+            }
+        } else {
             ViewThatFits(in: .horizontal) {
                 HStack(spacing: 8) {
                     shareLink
+                        .frame(maxWidth: .infinity)
                     editButton
+                        .frame(maxWidth: .infinity)
                     saveButton
+                        .frame(maxWidth: .infinity)
                 }
 
                 VStack(spacing: 8) {
                     shareLink
+                        .frame(maxWidth: .infinity)
                     editButton
+                        .frame(maxWidth: .infinity)
                     saveButton
+                        .frame(maxWidth: .infinity)
                 }
             }
         }
-        .frame(maxWidth: .infinity)
     }
 
     private var copyButton: some View {
