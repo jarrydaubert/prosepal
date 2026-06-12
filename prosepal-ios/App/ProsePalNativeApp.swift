@@ -34,10 +34,10 @@ struct ProsePalNativeApp: App {
 
 private enum AuthClientFactory {
     static func makeClient() -> (any AuthClient)? {
+        let config = NativeRuntimeConfig()
         guard
-            let projectURLString = NativeConfig.value(named: "PROSEPAL_SUPABASE_URL") ?? NativeConfig.value(named: "SUPABASE_URL"),
-            let projectURL = URL(string: projectURLString),
-            let anonKey = NativeConfig.value(named: "PROSEPAL_SUPABASE_ANON_KEY") ?? NativeConfig.value(named: "SUPABASE_ANON_KEY")
+            let projectURL = config.url(named: "PROSEPAL_SUPABASE_URL", fallback: "SUPABASE_URL"),
+            let anonKey = config.value(named: "PROSEPAL_SUPABASE_ANON_KEY", fallback: "SUPABASE_ANON_KEY")
         else {
             return nil
         }
@@ -48,10 +48,11 @@ private enum AuthClientFactory {
 
 private enum MessageWritingClientFactory {
     static func makeClient(authSessionController: AuthSessionController?) -> MessageWritingClient {
+        let config = NativeRuntimeConfig()
         if let endpoint = gatewayEndpoint {
             let gatewayClient = GatewayMessageWritingClient(
                 endpoint: endpoint,
-                devGatewaySecret: gatewayDevSecret,
+                devGatewaySecret: config.value(named: "PROSEPAL_DEV_GATEWAY_SECRET"),
                 authorizationTokenProvider: {
                     guard let authSessionController else { return nil }
                     return try await authSessionController.currentAccessToken()
@@ -68,66 +69,24 @@ private enum MessageWritingClientFactory {
     }
 
     private static var gatewayEndpoint: URL? {
-        if let configValue = NativeConfig.value(named: "PROSEPAL_GATEWAY_URL"),
-           let url = URL(string: configValue) {
-            return url
-        }
-
-        return nil
-    }
-
-    private static var gatewayDevSecret: String? {
-        NativeConfig.value(named: "PROSEPAL_DEV_GATEWAY_SECRET")
+        NativeRuntimeConfig().url(named: "PROSEPAL_GATEWAY_URL")
     }
 }
 
 private enum SubscriptionClientFactory {
     static func makeClient() -> (any SubscriptionClient)? {
-        let productIDs = NativeConfig.list(named: "PROSEPAL_PREMIUM_PRODUCT_IDS")
+        let config = NativeRuntimeConfig()
+        let productIDs = config.list(named: "PROSEPAL_PREMIUM_PRODUCT_IDS")
         guard !productIDs.isEmpty else { return nil }
 
         #if canImport(StoreKit)
         return StoreKitSubscriptionClient(
             productIDs: productIDs,
-            recommendedProductID: NativeConfig.value(named: "PROSEPAL_RECOMMENDED_PREMIUM_PRODUCT_ID")
+            recommendedProductID: config.value(named: "PROSEPAL_RECOMMENDED_PREMIUM_PRODUCT_ID")
         )
         #else
         return nil
         #endif
-    }
-}
-
-private enum NativeConfig {
-    static func value(named key: String) -> String? {
-        if let environmentValue = ProcessInfo.processInfo.environment[key]?.trimmingCharacters(in: .whitespacesAndNewlines),
-           !environmentValue.isEmpty {
-            return environmentValue
-        }
-
-        if let infoValue = Bundle.main.object(forInfoDictionaryKey: key) as? String {
-            let trimmedValue = infoValue.trimmingCharacters(in: .whitespacesAndNewlines)
-            if !trimmedValue.isEmpty {
-                return trimmedValue
-            }
-        }
-
-        return nil
-    }
-
-    static func list(named key: String) -> [String] {
-        guard let rawValue = value(named: key) else { return [] }
-
-        var seen = Set<String>()
-        return rawValue
-            .split { character in
-                character == "," || character == "\n" || character == " "
-            }
-            .compactMap { item -> String? in
-                let trimmed = item.trimmingCharacters(in: .whitespacesAndNewlines)
-                guard !trimmed.isEmpty, !seen.contains(trimmed) else { return nil }
-                seen.insert(trimmed)
-                return trimmed
-            }
     }
 }
 

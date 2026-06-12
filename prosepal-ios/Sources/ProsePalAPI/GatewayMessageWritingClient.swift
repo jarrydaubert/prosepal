@@ -64,17 +64,7 @@ public struct GatewayMessageWritingClient: MessageWritingClient {
             switch httpResponse.statusCode {
             case 200..<300:
                 let response = try JSONDecoder.prosePal.decode(CardResponse.self, from: data)
-                guard !response.messages.isEmpty else {
-                    GatewayDiagnosticsLogger.shared.requestFailed(
-                        requestID: requestID,
-                        statusCode: httpResponse.statusCode,
-                        category: "empty_response",
-                        durationMs: startedAt.elapsedMilliseconds
-                    )
-                    throw GenerationError.unexpectedResponse(
-                        message: "Message generation returned no drafts. Please try again."
-                    )
-                }
+                try validate(response, statusCode: httpResponse.statusCode, requestID: requestID, startedAt: startedAt)
                 GatewayDiagnosticsLogger.shared.requestSucceeded(
                     requestID: requestID,
                     statusCode: httpResponse.statusCode,
@@ -219,6 +209,50 @@ public struct GatewayMessageWritingClient: MessageWritingClient {
 
     private var hasConfiguredDevGatewaySecret: Bool {
         configuredDevGatewaySecret != nil
+    }
+
+    private func validate(
+        _ response: CardResponse,
+        statusCode: Int,
+        requestID: String,
+        startedAt: Date
+    ) throws {
+        guard response.promptContractVersion == CardRequest.currentPromptContractVersion,
+              response.outputContractVersion == CardRequest.currentOutputContractVersion else {
+            GatewayDiagnosticsLogger.shared.requestFailed(
+                requestID: requestID,
+                statusCode: statusCode,
+                category: "unsupported_contract_version",
+                durationMs: startedAt.elapsedMilliseconds
+            )
+            throw GenerationError.unexpectedResponse(
+                message: "This version of ProsePal cannot read the generation response. Please update the app."
+            )
+        }
+
+        guard !response.messages.isEmpty else {
+            GatewayDiagnosticsLogger.shared.requestFailed(
+                requestID: requestID,
+                statusCode: statusCode,
+                category: "empty_response",
+                durationMs: startedAt.elapsedMilliseconds
+            )
+            throw GenerationError.unexpectedResponse(
+                message: "Message generation returned no drafts. Please try again."
+            )
+        }
+
+        guard response.messages.allSatisfy({ !$0.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }) else {
+            GatewayDiagnosticsLogger.shared.requestFailed(
+                requestID: requestID,
+                statusCode: statusCode,
+                category: "blank_message",
+                durationMs: startedAt.elapsedMilliseconds
+            )
+            throw GenerationError.unexpectedResponse(
+                message: "Message generation returned an empty draft. Please try again."
+            )
+        }
     }
 }
 

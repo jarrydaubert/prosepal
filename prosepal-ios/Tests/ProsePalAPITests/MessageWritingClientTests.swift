@@ -307,6 +307,123 @@ final class MessageWritingClientTests: XCTestCase {
         }
     }
 
+    func testGatewayClientRejectsSuccessfulResponseWithBlankMessageText() async throws {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [CapturingURLProtocol.self]
+        let session = URLSession(configuration: configuration)
+        let endpoint = try XCTUnwrap(URL(string: "https://gateway.example/functions/v1/generate-card"))
+        let client = GatewayMessageWritingClient(
+            endpoint: endpoint,
+            session: session
+        )
+
+        CapturingURLProtocol.requestHandler = { _ in
+            let response = try XCTUnwrap(HTTPURLResponse(
+                url: endpoint,
+                statusCode: 200,
+                httpVersion: nil,
+                headerFields: ["Content-Type": "application/json"]
+            ))
+            let data = """
+            {
+              "messages": [
+                { "id": "message-1", "text": "  " }
+              ],
+              "lane_used": "standard",
+              "fallback_status": "none",
+              "retry_eligibility": "ineligible",
+              "prompt_contract_version": 1,
+              "output_contract_version": 1
+            }
+            """.data(using: .utf8)!
+            return (response, data)
+        }
+        defer { CapturingURLProtocol.requestHandler = nil }
+
+        do {
+            _ = try await client.generateCard(request: request(requestedLane: .standard))
+            XCTFail("Expected blank gateway message to fail.")
+        } catch GenerationError.unexpectedResponse(let message) {
+            XCTAssertEqual(message, "Message generation returned an empty draft. Please try again.")
+        } catch {
+            XCTFail("Expected unexpectedResponse, got \(error).")
+        }
+    }
+
+    func testGatewayClientRejectsUnsupportedContractVersion() async throws {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [CapturingURLProtocol.self]
+        let session = URLSession(configuration: configuration)
+        let endpoint = try XCTUnwrap(URL(string: "https://gateway.example/functions/v1/generate-card"))
+        let client = GatewayMessageWritingClient(
+            endpoint: endpoint,
+            session: session
+        )
+
+        CapturingURLProtocol.requestHandler = { _ in
+            let response = try XCTUnwrap(HTTPURLResponse(
+                url: endpoint,
+                statusCode: 200,
+                httpVersion: nil,
+                headerFields: ["Content-Type": "application/json"]
+            ))
+            let data = """
+            {
+              "messages": [
+                { "id": "message-1", "text": "A gateway-shaped message." }
+              ],
+              "lane_used": "standard",
+              "fallback_status": "none",
+              "retry_eligibility": "ineligible",
+              "prompt_contract_version": 1,
+              "output_contract_version": 99
+            }
+            """.data(using: .utf8)!
+            return (response, data)
+        }
+        defer { CapturingURLProtocol.requestHandler = nil }
+
+        do {
+            _ = try await client.generateCard(request: request(requestedLane: .standard))
+            XCTFail("Expected unsupported contract version to fail.")
+        } catch GenerationError.unexpectedResponse(let message) {
+            XCTAssertEqual(message, "This version of ProsePal cannot read the generation response. Please update the app.")
+        } catch {
+            XCTFail("Expected unexpectedResponse, got \(error).")
+        }
+    }
+
+    func testGatewayClientMapsMalformedSuccessBodyToUnexpectedResponse() async throws {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [CapturingURLProtocol.self]
+        let session = URLSession(configuration: configuration)
+        let endpoint = try XCTUnwrap(URL(string: "https://gateway.example/functions/v1/generate-card"))
+        let client = GatewayMessageWritingClient(
+            endpoint: endpoint,
+            session: session
+        )
+
+        CapturingURLProtocol.requestHandler = { _ in
+            let response = try XCTUnwrap(HTTPURLResponse(
+                url: endpoint,
+                statusCode: 200,
+                httpVersion: nil,
+                headerFields: ["Content-Type": "application/json"]
+            ))
+            return (response, Data("{not json".utf8))
+        }
+        defer { CapturingURLProtocol.requestHandler = nil }
+
+        do {
+            _ = try await client.generateCard(request: request(requestedLane: .standard))
+            XCTFail("Expected malformed gateway response to fail.")
+        } catch GenerationError.unexpectedResponse(let message) {
+            XCTAssertEqual(message, "Message generation failed. Please try again.")
+        } catch {
+            XCTFail("Expected unexpectedResponse, got \(error).")
+        }
+    }
+
     func testGatewayClientMapsGatewayFailureStatusBuckets() async throws {
         try await assertGatewayFailure(
             statusCode: 408,
