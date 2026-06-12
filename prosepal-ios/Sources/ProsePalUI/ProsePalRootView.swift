@@ -39,6 +39,7 @@ public final class ProsePalAppModel: ObservableObject {
     @Published var subscriptionProducts: [SubscriptionProduct] = []
     @Published var selectedSubscriptionProductID: String?
     @Published var isLoadingSubscriptions = false
+    @Published var isRefreshingSubscriptionEntitlement = false
     @Published var isPurchasingPremium = false
     @Published var isRestoringPurchases = false
     @Published var subscriptionErrorMessage: String?
@@ -259,6 +260,50 @@ public final class ProsePalAppModel: ObservableObject {
         isLoadingSubscriptions = false
     }
 
+    func refreshSubscriptionEntitlement(source: String) async {
+        guard !isRefreshingSubscriptionEntitlement else { return }
+        guard let subscriptionClient else {
+            usageStatus.isPremiumUnlocked = false
+            diagnostics.subscriptionEvent(
+                "subscription_entitlement_unconfigured",
+                source: source,
+                outcome: "not_configured"
+            )
+            return
+        }
+
+        isRefreshingSubscriptionEntitlement = true
+        defer { isRefreshingSubscriptionEntitlement = false }
+        diagnostics.subscriptionEvent("subscription_entitlement_refresh_started", source: source)
+
+        do {
+            let entitlement = try await subscriptionClient.currentEntitlement()
+            usageStatus.isPremiumUnlocked = entitlement.isActive
+            subscriptionErrorMessage = nil
+            diagnostics.subscriptionEvent(
+                "subscription_entitlement_refresh_succeeded",
+                source: source,
+                outcome: entitlement.isActive ? "active" : "inactive"
+            )
+        } catch let error as SubscriptionError {
+            usageStatus.isPremiumUnlocked = false
+            subscriptionErrorMessage = error.userSafeMessage
+            diagnostics.subscriptionEvent(
+                "subscription_entitlement_refresh_failed",
+                source: source,
+                outcome: error.diagnosticsOutcome
+            )
+        } catch {
+            usageStatus.isPremiumUnlocked = false
+            subscriptionErrorMessage = SubscriptionError.unexpectedResponse.userSafeMessage
+            diagnostics.subscriptionEvent(
+                "subscription_entitlement_refresh_failed",
+                source: source,
+                outcome: "unexpected_error"
+            )
+        }
+    }
+
     func selectSubscriptionProduct(_ product: SubscriptionProduct) {
         selectedSubscriptionProductID = product.id
         diagnostics.selectionChanged(kind: "subscription_plan", value: product.durationLabel?.diagnosticsSelectionValue ?? "configured")
@@ -434,6 +479,7 @@ public final class ProsePalAppModel: ObservableObject {
             try await authSessionController.replaceSession(session)
             applyAuthSession(session)
             diagnostics.messageAction("auth_apple_succeeded", source: source, messageCharacters: 0)
+            await refreshSubscriptionEntitlement(source: "auth_apple_success")
             showNotice("Signed in with Apple", systemImage: "checkmark.circle.fill")
         } catch let error as AuthError {
             diagnostics.messageAction("auth_apple_failed", source: source, messageCharacters: 0)
@@ -1024,6 +1070,7 @@ public struct ProsePalRootView: View {
         .environmentObject(model)
         .task {
             await model.loadAuthSession()
+            await model.refreshSubscriptionEntitlement(source: "launch")
         }
         .animation(reduceMotion ? nil : .easeInOut(duration: 0.22), value: model.hasCompletedOnboarding)
         .sheet(isPresented: $model.isShowingPaywall) {
@@ -3272,7 +3319,7 @@ struct SettingsView: View {
                 SettingsRow(
                     systemImage: model.usageStatus.isPremiumUnlocked ? "star.fill" : "star",
                     title: model.usageStatus.isPremiumUnlocked ? "ProsePal Pro" : "Free Plan",
-                    subtitle: model.usageStatus.usageText,
+                    subtitle: model.isRefreshingSubscriptionEntitlement ? "Checking your subscription..." : model.usageStatus.usageText,
                     trailingText: model.usageStatus.isPremiumUnlocked ? "Active" : "Buy Pro",
                     tint: model.usageStatus.isPremiumUnlocked ? Color.prosePalProGold : Color.prosePalCoral
                 )

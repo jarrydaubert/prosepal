@@ -240,6 +240,62 @@ final class AuthPurchaseFlowTests: XCTestCase {
         XCTAssertEqual(model.subscriptionErrorMessage, SubscriptionError.storeUnavailable.userSafeMessage)
     }
 
+    func testLaunchEntitlementRefreshUnlocksActivePremium() async {
+        let subscriptionClient = FlowSubscriptionClient(
+            restoreResult: SubscriptionPurchaseResult(
+                status: .restored,
+                entitlement: SubscriptionEntitlement(isActive: true, productID: "yearly")
+            )
+        )
+        let model = makeModel(subscriptionClient: subscriptionClient)
+
+        await model.refreshSubscriptionEntitlement(source: "launch")
+
+        let currentEntitlementCalls = await subscriptionClient.currentEntitlementCalls()
+        XCTAssertEqual(currentEntitlementCalls, 1)
+        XCTAssertTrue(model.usageStatus.isPremiumUnlocked)
+        XCTAssertFalse(model.isRefreshingSubscriptionEntitlement)
+        XCTAssertNil(model.subscriptionErrorMessage)
+    }
+
+    func testLaunchEntitlementRefreshClearsInactivePremiumState() async {
+        let subscriptionClient = FlowSubscriptionClient(
+            restoreResult: SubscriptionPurchaseResult(status: .notEntitled)
+        )
+        let model = makeModel(
+            usageStatus: UsageStatus(isPremiumUnlocked: true),
+            subscriptionClient: subscriptionClient
+        )
+
+        await model.refreshSubscriptionEntitlement(source: "launch")
+
+        XCTAssertFalse(model.usageStatus.isPremiumUnlocked)
+        XCTAssertFalse(model.isRefreshingSubscriptionEntitlement)
+    }
+
+    func testEntitlementRefreshFailureFailsClosedToFreeState() async {
+        let subscriptionClient = FlowSubscriptionClient(currentEntitlementError: .storeUnavailable)
+        let model = makeModel(
+            usageStatus: UsageStatus(isPremiumUnlocked: true),
+            subscriptionClient: subscriptionClient
+        )
+
+        await model.refreshSubscriptionEntitlement(source: "launch")
+
+        XCTAssertFalse(model.usageStatus.isPremiumUnlocked)
+        XCTAssertFalse(model.isRefreshingSubscriptionEntitlement)
+        XCTAssertEqual(model.subscriptionErrorMessage, SubscriptionError.storeUnavailable.userSafeMessage)
+    }
+
+    func testEntitlementRefreshWhenUnconfiguredClearsStalePremiumState() async {
+        let model = makeModel(usageStatus: UsageStatus(isPremiumUnlocked: true))
+
+        await model.refreshSubscriptionEntitlement(source: "launch")
+
+        XCTAssertFalse(model.usageStatus.isPremiumUnlocked)
+        XCTAssertFalse(model.isRefreshingSubscriptionEntitlement)
+    }
+
     func testAppleSignInStartIsSingleFlightAndCancellationClearsState() {
         let model = makeModel(
             authSessionController: AuthSessionController(store: FlowAuthSessionStore()),
@@ -345,6 +401,35 @@ final class AuthPurchaseFlowTests: XCTestCase {
         XCTAssertTrue(model.isSignedIn)
         XCTAssertEqual(model.signedInUserID, "user-1")
         XCTAssertEqual(model.signedInEmail, "user@example.com")
+    }
+
+    func testAppleSignInSuccessRefreshesSubscriptionEntitlement() async throws {
+        let store = FlowAuthSessionStore()
+        let authClient = FlowAuthClient(
+            session: AuthSession(
+                accessToken: "supabase-access-token",
+                user: AuthUser(id: "user-1", email: "user@example.com")
+            )
+        )
+        let subscriptionClient = FlowSubscriptionClient(
+            restoreResult: SubscriptionPurchaseResult(
+                status: .restored,
+                entitlement: SubscriptionEntitlement(isActive: true, productID: "yearly")
+            )
+        )
+        let model = makeModel(
+            authSessionController: AuthSessionController(store: store),
+            authClient: authClient,
+            subscriptionClient: subscriptionClient
+        )
+
+        XCTAssertNotNil(model.beginAppleSignInRequest(source: "settings"))
+        await model.completeAppleSignIn(idToken: "apple-id-token", source: "settings")
+
+        let currentEntitlementCalls = await subscriptionClient.currentEntitlementCalls()
+        XCTAssertEqual(currentEntitlementCalls, 1)
+        XCTAssertTrue(model.isSignedIn)
+        XCTAssertTrue(model.usageStatus.isPremiumUnlocked)
     }
 
     func testSignOutClearsSignedInStateBiometricAndPremiumUi() async throws {
@@ -505,7 +590,9 @@ private actor FlowSubscriptionClient: SubscriptionClient {
     private let purchaseError: SubscriptionError?
     private let restoreResult: SubscriptionPurchaseResult
     private let restoreError: SubscriptionError?
+    private let currentEntitlementError: SubscriptionError?
     private(set) var loadProductsCallCount = 0
+    private(set) var currentEntitlementCallCount = 0
     private(set) var purchasedProductIDs: [String] = []
     private(set) var restoreCallCount = 0
 
@@ -515,7 +602,8 @@ private actor FlowSubscriptionClient: SubscriptionClient {
         purchaseResult: SubscriptionPurchaseResult = SubscriptionPurchaseResult(status: .cancelled),
         purchaseError: SubscriptionError? = nil,
         restoreResult: SubscriptionPurchaseResult = SubscriptionPurchaseResult(status: .notEntitled),
-        restoreError: SubscriptionError? = nil
+        restoreError: SubscriptionError? = nil,
+        currentEntitlementError: SubscriptionError? = nil
     ) {
         self.products = products
         self.loadProductsError = loadProductsError
@@ -523,6 +611,7 @@ private actor FlowSubscriptionClient: SubscriptionClient {
         self.purchaseError = purchaseError
         self.restoreResult = restoreResult
         self.restoreError = restoreError
+        self.currentEntitlementError = currentEntitlementError
     }
 
     func setLoadProductsError(_ error: SubscriptionError?) {
@@ -531,6 +620,10 @@ private actor FlowSubscriptionClient: SubscriptionClient {
 
     func loadProductsCalls() -> Int {
         loadProductsCallCount
+    }
+
+    func currentEntitlementCalls() -> Int {
+        currentEntitlementCallCount
     }
 
     func purchasedProducts() -> [String] {
@@ -550,7 +643,11 @@ private actor FlowSubscriptionClient: SubscriptionClient {
     }
 
     func currentEntitlement() async throws -> SubscriptionEntitlement {
-        purchaseResult.entitlement.isActive ? purchaseResult.entitlement : restoreResult.entitlement
+        currentEntitlementCallCount += 1
+        if let currentEntitlementError {
+            throw currentEntitlementError
+        }
+        return purchaseResult.entitlement.isActive ? purchaseResult.entitlement : restoreResult.entitlement
     }
 
     func purchase(productID: String) async throws -> SubscriptionPurchaseResult {
