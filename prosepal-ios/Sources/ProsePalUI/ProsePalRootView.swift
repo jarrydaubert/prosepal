@@ -1,5 +1,6 @@
 import ProsePalAPI
 import ProsePalDomain
+import Foundation
 import SwiftUI
 
 #if canImport(AuthenticationServices)
@@ -50,6 +51,7 @@ public final class ProsePalAppModel: ObservableObject {
     private let clientContext: ClientContext
     private let savedMessagesStore: UserDefaults
     private let savedMessagesKey: String
+    private var savedMessagesScopeID = "anonymous"
     private let onboardingStore: UserDefaults
     private let onboardingCompletionKey: String
     private let diagnostics: NativeDiagnosticsLogger
@@ -707,9 +709,11 @@ public final class ProsePalAppModel: ObservableObject {
         let usableSession = session?.isUsable() == true ? session : nil
         let previousUserID = signedInUserID
         let nextUserID = usableSession?.user?.id
+        let nextSavedScopeID = Self.savedMessagesScopeID(for: nextUserID)
         isSignedIn = usableSession != nil
         signedInUserID = nextUserID
         signedInEmail = usableSession?.user?.email
+        switchSavedMessagesScope(to: nextSavedScopeID)
 
         if usableSession == nil {
             biometricLockEnabled = false
@@ -719,6 +723,37 @@ public final class ProsePalAppModel: ObservableObject {
         } else if let previousUserID, previousUserID != nextUserID {
             usageStatus.isPremiumUnlocked = false
         }
+    }
+
+    private static let anonymousSavedMessagesScopeID = "anonymous"
+
+    private var activeSavedMessagesKey: String {
+        Self.savedMessagesKey(baseKey: savedMessagesKey, scopeID: savedMessagesScopeID)
+    }
+
+    private static func savedMessagesScopeID(for userID: String?) -> String {
+        guard let userID = userID?.trimmedForSaving, !userID.isEmpty else {
+            return anonymousSavedMessagesScopeID
+        }
+
+        let encodedUserID = Data(userID.utf8)
+            .base64EncodedString()
+            .replacingOccurrences(of: "+", with: "-")
+            .replacingOccurrences(of: "/", with: "_")
+            .replacingOccurrences(of: "=", with: "")
+        return "user.\(encodedUserID)"
+    }
+
+    private static func savedMessagesKey(baseKey: String, scopeID: String) -> String {
+        scopeID == anonymousSavedMessagesScopeID ? baseKey : "\(baseKey).\(scopeID)"
+    }
+
+    private func switchSavedMessagesScope(to nextScopeID: String) {
+        guard savedMessagesScopeID != nextScopeID else { return }
+
+        persistSavedMessages()
+        savedMessagesScopeID = nextScopeID
+        savedMessages = Self.loadSavedMessages(from: savedMessagesStore, key: activeSavedMessagesKey)
     }
 
     private func applySubscriptionPurchaseResult(_ result: SubscriptionPurchaseResult, source: String) {
@@ -772,7 +807,7 @@ public final class ProsePalAppModel: ObservableObject {
 
     private func persistSavedMessages() {
         guard let data = try? JSONEncoder().encode(savedMessages) else { return }
-        savedMessagesStore.set(data, forKey: savedMessagesKey)
+        savedMessagesStore.set(data, forKey: activeSavedMessagesKey)
     }
 }
 

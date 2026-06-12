@@ -63,6 +63,94 @@ final class SavedMessageTests: XCTestCase {
         XCTAssertTrue(reloadedAfterDelete.savedMessages.isEmpty)
     }
 
+    func testSavedMessagesAreScopedAcrossAnonymousAndSignedInUsers() async throws {
+        let harness = try makeHarness()
+        defer { harness.cleanup() }
+
+        let sessionStore = SavedMessagesAuthSessionStore()
+        let authClient = SavedMessagesAuthClient(
+            session: AuthSession(
+                accessToken: "user-a-token",
+                user: AuthUser(id: "user-a", email: "a@example.com")
+            )
+        )
+        let model = harness.makeModel(
+            authSessionController: AuthSessionController(store: sessionStore),
+            authClient: authClient
+        )
+
+        XCTAssertTrue(model.save(GeneratedMessage(id: "anonymous", text: "Anonymous saved draft.")))
+        XCTAssertEqual(model.savedMessages.map(\.text), ["Anonymous saved draft."])
+
+        XCTAssertNotNil(model.beginAppleSignInRequest(source: "settings"))
+        await model.completeAppleSignIn(idToken: "apple-id-token", source: "settings")
+        XCTAssertEqual(model.signedInUserID, "user-a")
+        XCTAssertTrue(model.savedMessages.isEmpty)
+
+        XCTAssertTrue(model.save(GeneratedMessage(id: "user-a", text: "User A saved draft.")))
+        XCTAssertEqual(model.savedMessages.map(\.text), ["User A saved draft."])
+
+        await authClient.setSession(
+            AuthSession(
+                accessToken: "user-b-token",
+                user: AuthUser(id: "user-b", email: "b@example.com")
+            )
+        )
+        XCTAssertNotNil(model.beginAppleSignInRequest(source: "settings"))
+        await model.completeAppleSignIn(idToken: "apple-id-token", source: "settings")
+        XCTAssertEqual(model.signedInUserID, "user-b")
+        XCTAssertTrue(model.savedMessages.isEmpty)
+
+        XCTAssertTrue(model.save(GeneratedMessage(id: "user-b", text: "User B saved draft.")))
+        XCTAssertEqual(model.savedMessages.map(\.text), ["User B saved draft."])
+
+        await authClient.setSession(
+            AuthSession(
+                accessToken: "user-a-token",
+                user: AuthUser(id: "user-a", email: "a@example.com")
+            )
+        )
+        XCTAssertNotNil(model.beginAppleSignInRequest(source: "settings"))
+        await model.completeAppleSignIn(idToken: "apple-id-token", source: "settings")
+        XCTAssertEqual(model.savedMessages.map(\.text), ["User A saved draft."])
+
+        await model.signOut()
+        XCTAssertFalse(model.isSignedIn)
+        XCTAssertEqual(model.savedMessages.map(\.text), ["Anonymous saved draft."])
+    }
+
+    func testPersistedSignedInSessionLoadsItsOwnSavedMessagesAfterRelaunch() async throws {
+        let harness = try makeHarness()
+        defer { harness.cleanup() }
+
+        let session = AuthSession(
+            accessToken: "user-a-token",
+            user: AuthUser(id: "user-a", email: "a@example.com")
+        )
+        let sessionStore = SavedMessagesAuthSessionStore()
+        let authClient = SavedMessagesAuthClient(session: session)
+        let model = harness.makeModel(
+            authSessionController: AuthSessionController(store: sessionStore),
+            authClient: authClient
+        )
+
+        XCTAssertTrue(model.save(GeneratedMessage(id: "anonymous", text: "Anonymous saved draft.")))
+        XCTAssertNotNil(model.beginAppleSignInRequest(source: "settings"))
+        await model.completeAppleSignIn(idToken: "apple-id-token", source: "settings")
+        XCTAssertTrue(model.save(GeneratedMessage(id: "user-a", text: "User A saved draft.")))
+
+        let relaunched = harness.makeModel(
+            authSessionController: AuthSessionController(store: sessionStore),
+            authClient: authClient
+        )
+        XCTAssertEqual(relaunched.savedMessages.map(\.text), ["Anonymous saved draft."])
+
+        await relaunched.loadAuthSession()
+
+        XCTAssertEqual(relaunched.signedInUserID, "user-a")
+        XCTAssertEqual(relaunched.savedMessages.map(\.text), ["User A saved draft."])
+    }
+
     private func makeHarness() throws -> SavedMessageHarness {
         let suiteName = "prosepal.saved.tests.\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
@@ -77,18 +165,61 @@ private struct SavedMessageHarness {
     let defaults: UserDefaults
     let key = "saved-messages"
 
-    func makeModel() -> ProsePalAppModel {
+    func makeModel(
+        authSessionController: AuthSessionController? = nil,
+        authClient: (any AuthClient)? = nil
+    ) -> ProsePalAppModel {
         ProsePalAppModel(
             client: MockMessageWritingClient(
                 response: CardResponse(messages: [], laneUsed: .standard)
             ),
             clientContext: ClientContext(appVersion: "0.0.0", buildNumber: "1"),
             savedMessagesStore: defaults,
-            savedMessagesKey: key
+            savedMessagesKey: key,
+            authSessionController: authSessionController,
+            authClient: authClient
         )
     }
 
     func cleanup() {
         defaults.removePersistentDomain(forName: suiteName)
     }
+}
+
+private actor SavedMessagesAuthSessionStore: AuthSessionStore {
+    private var session: AuthSession?
+
+    func loadSession() async throws -> AuthSession? {
+        session
+    }
+
+    func saveSession(_ session: AuthSession) async throws {
+        self.session = session
+    }
+
+    func clearSession() async throws {
+        session = nil
+    }
+}
+
+private actor SavedMessagesAuthClient: AuthClient {
+    private var session: AuthSession
+
+    init(session: AuthSession) {
+        self.session = session
+    }
+
+    func setSession(_ session: AuthSession) {
+        self.session = session
+    }
+
+    func signInWithIDToken(
+        provider: AuthProvider,
+        idToken: String,
+        nonce: String?
+    ) async throws -> AuthSession {
+        session
+    }
+
+    func signOut(accessToken: String) async throws {}
 }
