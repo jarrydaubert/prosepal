@@ -46,9 +46,8 @@ public struct NativeDiagnosticsLogger: Sendable {
     }
 
     public func generationStarted(requestID: String, draft: MessageDraft) {
-        logger.info(
-            "generation_started request_id=\(requestID.diagnosticsPrefix, privacy: .public) lane=\(draft.requestedLane.rawValue, privacy: .public) occasion=\(draft.occasion.rawValue, privacy: .public) relationship=\(draft.relationship.rawValue, privacy: .public) tone=\(draft.tone.rawValue, privacy: .public) length=\(draft.length.rawValue, privacy: .public) spelling=\(draft.spellingPreference.rawValue, privacy: .public) recipient_present=\(draft.recipientName.hasDiagnosticsText, privacy: .public) include_count=\(draft.thingsToInclude.diagnosticsCommaCount, privacy: .public) avoid_count=\(draft.thingsToAvoid.diagnosticsCommaCount, privacy: .public) context_chars=\(draft.personalContext.diagnosticsTextCount, privacy: .public)"
-        )
+        let payload = NativeDiagnosticsPayload.generationStarted(requestID: requestID, draft: draft)
+        logger.info("\(payload, privacy: .public)")
     }
 
     public func generationSucceeded(
@@ -61,21 +60,35 @@ public struct NativeDiagnosticsLogger: Sendable {
         standardRemaining: Int,
         durationMs: Int
     ) {
-        logger.info(
-            "generation_succeeded request_id=\(requestID.diagnosticsPrefix, privacy: .public) lane_used=\(laneUsed.rawValue, privacy: .public) fallback=\(fallbackStatus.rawValue, privacy: .public) message_count=\(messageCount, privacy: .public) total_message_chars=\(totalMessageCharacters, privacy: .public) usage_source=\(usageSource, privacy: .public) standard_remaining=\(standardRemaining, privacy: .public) duration_ms=\(durationMs, privacy: .public)"
+        let payload = NativeDiagnosticsPayload.generationSucceeded(
+            requestID: requestID,
+            laneUsed: laneUsed,
+            fallbackStatus: fallbackStatus,
+            messageCount: messageCount,
+            totalMessageCharacters: totalMessageCharacters,
+            usageSource: usageSource,
+            standardRemaining: standardRemaining,
+            durationMs: durationMs
         )
+        logger.info("\(payload, privacy: .public)")
     }
 
     public func generationFailed(requestID: String?, category: String, durationMs: Int) {
-        logger.warning(
-            "generation_failed request_id=\((requestID ?? "none").diagnosticsPrefix, privacy: .public) category=\(category, privacy: .public) duration_ms=\(durationMs, privacy: .public)"
+        let payload = NativeDiagnosticsPayload.generationFailed(
+            requestID: requestID,
+            category: category,
+            durationMs: durationMs
         )
+        logger.warning("\(payload, privacy: .public)")
     }
 
     public func messageAction(_ action: String, source: String, messageCharacters: Int) {
-        logger.info(
-            "message_action action=\(action, privacy: .public) source=\(source, privacy: .public) message_chars=\(messageCharacters, privacy: .public)"
+        let payload = NativeDiagnosticsPayload.messageAction(
+            action: action,
+            source: source,
+            messageCharacters: messageCharacters
         )
+        logger.info("\(payload, privacy: .public)")
     }
 
     public func subscriptionEvent(
@@ -90,7 +103,34 @@ public struct NativeDiagnosticsLogger: Sendable {
     }
 }
 
-private extension String {
+enum NativeDiagnosticsPayload {
+    static func generationStarted(requestID: String, draft: MessageDraft) -> String {
+        "generation_started request_id=\(requestID.diagnosticsPrefix) lane=\(draft.requestedLane.rawValue) occasion=\(draft.occasion.rawValue) relationship=\(draft.relationship.rawValue) tone=\(draft.tone.rawValue) length=\(draft.length.rawValue) spelling=\(draft.spellingPreference.rawValue) recipient_present=\(draft.recipientName.hasDiagnosticsText) include_count=\(draft.thingsToInclude.diagnosticsCommaCount) avoid_count=\(draft.thingsToAvoid.diagnosticsCommaCount) context_chars=\(draft.personalContext.diagnosticsTextCount)"
+    }
+
+    static func generationSucceeded(
+        requestID: String,
+        laneUsed: GenerationLane,
+        fallbackStatus: FallbackStatus,
+        messageCount: Int,
+        totalMessageCharacters: Int,
+        usageSource: String,
+        standardRemaining: Int,
+        durationMs: Int
+    ) -> String {
+        "generation_succeeded request_id=\(requestID.diagnosticsPrefix) lane_used=\(laneUsed.rawValue) fallback=\(fallbackStatus.rawValue) message_count=\(messageCount) total_message_chars=\(totalMessageCharacters) usage_source=\(usageSource) standard_remaining=\(standardRemaining) duration_ms=\(durationMs)"
+    }
+
+    static func generationFailed(requestID: String?, category: String, durationMs: Int) -> String {
+        "generation_failed request_id=\((requestID ?? "none").diagnosticsPrefix) category=\(category) duration_ms=\(durationMs)"
+    }
+
+    static func messageAction(action: String, source: String, messageCharacters: Int) -> String {
+        "message_action action=\(action) source=\(source) message_chars=\(messageCharacters)"
+    }
+}
+
+extension String {
     var diagnosticsPrefix: String {
         if count <= 12 { return self }
         return "\(prefix(12))..."
