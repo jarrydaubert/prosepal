@@ -11,6 +11,7 @@ struct ProsePalNativeApp: App {
     )
     private let authClient = AuthClientFactory.makeClient()
     private let subscriptionClient = SubscriptionClientFactory.makeClient()
+    private let runtimeReadiness = RuntimeReadinessFactory.make()
 
     var body: some Scene {
         WindowGroup {
@@ -25,10 +26,27 @@ struct ProsePalNativeApp: App {
                     ),
                     authSessionController: authSessionController,
                     authClient: authClient,
-                    subscriptionClient: subscriptionClient
+                    subscriptionClient: subscriptionClient,
+                    runtimeReadiness: runtimeReadiness
                 )
             )
         }
+    }
+}
+
+private enum RuntimeReadinessFactory {
+    static func make() -> NativeRuntimeReadiness {
+        let config = NativeRuntimeConfig()
+        let premiumProductIDs = config.list(named: "PROSEPAL_PREMIUM_PRODUCT_IDS")
+        return NativeRuntimeReadiness(
+            isGenerationConfigured: config.url(named: "PROSEPAL_GATEWAY_URL") != nil,
+            isDevGatewaySecretConfigured: config.value(named: "PROSEPAL_DEV_GATEWAY_SECRET") != nil,
+            isAccountConfigured: config.url(named: "PROSEPAL_SUPABASE_URL", fallback: "SUPABASE_URL") != nil &&
+                config.value(named: "PROSEPAL_SUPABASE_ANON_KEY", fallback: "SUPABASE_ANON_KEY") != nil,
+            isSubscriptionConfigured: !premiumProductIDs.isEmpty,
+            premiumProductCount: premiumProductIDs.count,
+            isRecommendedPremiumProductConfigured: config.value(named: "PROSEPAL_RECOMMENDED_PREMIUM_PRODUCT_ID") != nil
+        )
     }
 }
 

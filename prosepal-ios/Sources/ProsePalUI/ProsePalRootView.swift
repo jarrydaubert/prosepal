@@ -48,6 +48,7 @@ public final class ProsePalAppModel: ObservableObject {
 
     public nonisolated static let defaultSavedMessagesKey = "prosepal.native.savedMessages.v1"
     public nonisolated static let defaultOnboardingCompletionKey = "prosepal.native.onboardingCompleted.v1"
+    public let runtimeReadiness: NativeRuntimeReadiness
     private let client: MessageWritingClient
     private let clientContext: ClientContext
     private let savedMessagesStore: UserDefaults
@@ -72,10 +73,12 @@ public final class ProsePalAppModel: ObservableObject {
         authSessionController: AuthSessionController? = nil,
         authClient: (any AuthClient)? = nil,
         subscriptionClient: (any SubscriptionClient)? = nil,
+        runtimeReadiness: NativeRuntimeReadiness = .unconfigured,
         diagnostics: NativeDiagnosticsLogger = .shared
     ) {
         self.client = client
         self.clientContext = clientContext
+        self.runtimeReadiness = runtimeReadiness
         self.usageStatus = usageStatus
         self.savedMessagesStore = savedMessagesStore
         self.savedMessagesKey = savedMessagesKey
@@ -91,6 +94,7 @@ public final class ProsePalAppModel: ObservableObject {
             hasCompletedOnboarding: self.hasCompletedOnboarding,
             savedMessageCount: self.savedMessages.count
         )
+        diagnostics.runtimeReadiness(runtimeReadiness)
     }
 
     var isAppleSignInConfigured: Bool {
@@ -3266,6 +3270,9 @@ struct SettingsView: View {
                 privacySection
                 accountActionsSection
                 aboutSection
+#if DEBUG
+                runtimeReadinessSection
+#endif
             }
             .navigationTitle("Settings")
             .sheet(isPresented: $isShowingAccountSheet) {
@@ -3538,6 +3545,20 @@ struct SettingsView: View {
         Section("About") {
             LabeledContent("Writing", value: "Online generation")
             LabeledContent("Version", value: "Native iOS")
+        }
+    }
+
+    private var runtimeReadinessSection: some View {
+        Section("Staging Setup") {
+            ForEach(model.runtimeReadiness.settingsItems) { item in
+                SettingsRow(
+                    systemImage: item.systemImage,
+                    title: item.title,
+                    subtitle: item.detail,
+                    trailingText: item.statusText,
+                    tint: item.isReady ? .green : Color.prosePalCoral
+                )
+            }
         }
     }
 }

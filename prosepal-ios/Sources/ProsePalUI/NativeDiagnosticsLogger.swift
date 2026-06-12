@@ -15,6 +15,10 @@ public struct NativeDiagnosticsLogger: Sendable {
         )
     }
 
+    public func runtimeReadiness(_ readiness: NativeRuntimeReadiness) {
+        logger.info("\(readiness.diagnosticsPayload, privacy: .public)")
+    }
+
     public func onboardingShown() {
         logger.info("onboarding_shown")
     }
