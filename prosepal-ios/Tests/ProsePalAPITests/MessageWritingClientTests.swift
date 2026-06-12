@@ -136,7 +136,7 @@ final class MessageWritingClientTests: XCTestCase {
         let client = GatewayMessageWritingClient(
             endpoint: endpoint,
             session: session,
-            authorizationTokenProvider: { "supabase-access-token" }
+            authorizationTokenProvider: { "  supabase-access-token\n" }
         )
         let request = CardRequest(
             idempotencyKey: "fixed-key",
@@ -151,6 +151,55 @@ final class MessageWritingClientTests: XCTestCase {
 
         CapturingURLProtocol.requestHandler = { request in
             XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer supabase-access-token")
+
+            let response = try XCTUnwrap(HTTPURLResponse(
+                url: endpoint,
+                statusCode: 200,
+                httpVersion: nil,
+                headerFields: ["Content-Type": "application/json"]
+            ))
+            let data = """
+            {
+              "messages": [
+                { "id": "message-1", "text": "A gateway-shaped message." }
+              ],
+              "lane_used": "standard",
+              "fallback_status": "none",
+              "retry_eligibility": "ineligible",
+              "prompt_contract_version": 1,
+              "output_contract_version": 1
+            }
+            """.data(using: .utf8)!
+            return (response, data)
+        }
+        defer { CapturingURLProtocol.requestHandler = nil }
+
+        _ = try await client.generateCard(request: request)
+    }
+
+    func testGatewayClientDoesNotSendBlankAuthorizationHeaderFromTokenProvider() async throws {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [CapturingURLProtocol.self]
+        let session = URLSession(configuration: configuration)
+        let endpoint = try XCTUnwrap(URL(string: "https://gateway.example/functions/v1/generate-card"))
+        let client = GatewayMessageWritingClient(
+            endpoint: endpoint,
+            session: session,
+            authorizationTokenProvider: { "  \n  " }
+        )
+        let request = CardRequest(
+            idempotencyKey: "fixed-key",
+            intent: CardIntent(
+                occasion: .birthday,
+                relationship: .parent,
+                tone: .heartfelt
+            ),
+            requestedLane: .standard,
+            clientContext: ClientContext(appVersion: "0.0.0", buildNumber: "1")
+        )
+
+        CapturingURLProtocol.requestHandler = { request in
+            XCTAssertNil(request.value(forHTTPHeaderField: "Authorization"))
 
             let response = try XCTUnwrap(HTTPURLResponse(
                 url: endpoint,
@@ -215,6 +264,86 @@ final class MessageWritingClientTests: XCTestCase {
         } catch {
             XCTFail("Expected unexpectedResponse, got \(error).")
         }
+    }
+
+    func testGatewayClientRejectsSuccessfulResponseWithNoMessages() async throws {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [CapturingURLProtocol.self]
+        let session = URLSession(configuration: configuration)
+        let endpoint = try XCTUnwrap(URL(string: "https://gateway.example/functions/v1/generate-card"))
+        let client = GatewayMessageWritingClient(
+            endpoint: endpoint,
+            session: session
+        )
+
+        CapturingURLProtocol.requestHandler = { _ in
+            let response = try XCTUnwrap(HTTPURLResponse(
+                url: endpoint,
+                statusCode: 200,
+                httpVersion: nil,
+                headerFields: ["Content-Type": "application/json"]
+            ))
+            let data = """
+            {
+              "messages": [],
+              "lane_used": "standard",
+              "fallback_status": "none",
+              "retry_eligibility": "ineligible",
+              "prompt_contract_version": 1,
+              "output_contract_version": 1
+            }
+            """.data(using: .utf8)!
+            return (response, data)
+        }
+        defer { CapturingURLProtocol.requestHandler = nil }
+
+        do {
+            _ = try await client.generateCard(request: request(requestedLane: .standard))
+            XCTFail("Expected empty gateway response to fail.")
+        } catch GenerationError.unexpectedResponse(let message) {
+            XCTAssertEqual(message, "Message generation returned no drafts. Please try again.")
+        } catch {
+            XCTFail("Expected unexpectedResponse, got \(error).")
+        }
+    }
+
+    func testGatewayClientMapsGatewayFailureStatusBuckets() async throws {
+        try await assertGatewayFailure(
+            statusCode: 408,
+            expectedError: .timedOut
+        )
+        try await assertGatewayFailure(
+            statusCode: 429,
+            body: """
+            {
+              "user_safe_error": {
+                "code": "rate_limited",
+                "message": "Please wait a moment before trying again."
+              }
+            }
+            """,
+            expectedError: .rateLimited(message: "Please wait a moment before trying again.")
+        )
+        try await assertGatewayFailure(
+            statusCode: 422,
+            body: """
+            {
+              "user_safe_error": {
+                "code": "content_blocked",
+                "message": "Try changing a few details before writing this message."
+              }
+            }
+            """,
+            expectedError: .contentBlocked(message: "Try changing a few details before writing this message.")
+        )
+        try await assertGatewayFailure(
+            statusCode: 502,
+            expectedError: .serviceUnavailable(message: "Message generation is temporarily unavailable. Please try again shortly.")
+        )
+        try await assertGatewayFailure(
+            statusCode: 418,
+            expectedError: .unexpectedResponse(message: "Message generation failed. Please try again.")
+        )
     }
 
     func testGatewayClientUsesServerSafeMessageForEntitlementFailures() async throws {
@@ -346,6 +475,43 @@ final class MessageWritingClientTests: XCTestCase {
             requestedLane: requestedLane,
             clientContext: ClientContext(appVersion: "0.0.0", buildNumber: "1")
         )
+    }
+
+    private func assertGatewayFailure(
+        statusCode: Int,
+        body: String = "{}",
+        expectedError: GenerationError,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) async throws {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [CapturingURLProtocol.self]
+        let session = URLSession(configuration: configuration)
+        let endpoint = try XCTUnwrap(URL(string: "https://gateway.example/functions/v1/generate-card"))
+        let client = GatewayMessageWritingClient(
+            endpoint: endpoint,
+            session: session
+        )
+
+        CapturingURLProtocol.requestHandler = { _ in
+            let response = try XCTUnwrap(HTTPURLResponse(
+                url: endpoint,
+                statusCode: statusCode,
+                httpVersion: nil,
+                headerFields: ["Content-Type": "application/json"]
+            ))
+            return (response, Data(body.utf8))
+        }
+        defer { CapturingURLProtocol.requestHandler = nil }
+
+        do {
+            _ = try await client.generateCard(request: request(requestedLane: .standard))
+            XCTFail("Expected gateway status \(statusCode) to fail.", file: file, line: line)
+        } catch let error as GenerationError {
+            XCTAssertEqual(error, expectedError, file: file, line: line)
+        } catch {
+            XCTFail("Expected GenerationError, got \(error).", file: file, line: line)
+        }
     }
 }
 

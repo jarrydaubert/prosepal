@@ -45,8 +45,11 @@ public struct GatewayMessageWritingClient: MessageWritingClient {
         }
 
         do {
-            if let token = try await authorizationTokenProvider?(), !token.isEmpty {
-                request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            if let token = try await authorizationTokenProvider?() {
+                let trimmedToken = token.trimmingCharacters(in: .whitespacesAndNewlines)
+                if !trimmedToken.isEmpty {
+                    request.setValue("Bearer \(trimmedToken)", forHTTPHeaderField: "Authorization")
+                }
             }
 
             request.httpBody = try JSONEncoder.prosePal.encode(cardRequest)
@@ -61,6 +64,17 @@ public struct GatewayMessageWritingClient: MessageWritingClient {
             switch httpResponse.statusCode {
             case 200..<300:
                 let response = try JSONDecoder.prosePal.decode(CardResponse.self, from: data)
+                guard !response.messages.isEmpty else {
+                    GatewayDiagnosticsLogger.shared.requestFailed(
+                        requestID: requestID,
+                        statusCode: httpResponse.statusCode,
+                        category: "empty_response",
+                        durationMs: startedAt.elapsedMilliseconds
+                    )
+                    throw GenerationError.unexpectedResponse(
+                        message: "Message generation returned no drafts. Please try again."
+                    )
+                }
                 GatewayDiagnosticsLogger.shared.requestSucceeded(
                     requestID: requestID,
                     statusCode: httpResponse.statusCode,

@@ -4,7 +4,7 @@ set -euo pipefail
 SECRET_FILE="$HOME/.config/prosepal/staging-gateway-secret"
 PROJECT_REF="llolwgqphwnhbiqewmcq"
 ENDPOINT="https://${PROJECT_REF}.supabase.co/functions/v1/generate-card"
-RESPONSE_FILE="$(mktemp "${TMPDIR:-/tmp}/prosepal-staging-smoke-response.XXXXXX.json")"
+RESPONSE_FILE="$(mktemp "${TMPDIR:-/tmp}/prosepal-staging-smoke-response.XXXXXX")"
 
 cleanup() {
   if [ "${KEEP_PROSEPAL_SMOKE_RESPONSE:-0}" != "1" ] && [ -f "$RESPONSE_FILE" ]; then
