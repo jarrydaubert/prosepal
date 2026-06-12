@@ -434,11 +434,9 @@ public final class ProsePalAppModel: ObservableObject {
             diagnostics.messageAction("auth_apple_succeeded", source: source, messageCharacters: 0)
             showNotice("Signed in with Apple", systemImage: "checkmark.circle.fill")
         } catch let error as AuthError {
-            applyAuthSession(nil)
             diagnostics.messageAction("auth_apple_failed", source: source, messageCharacters: 0)
             showNotice(error.userSafeMessage, systemImage: "exclamationmark.triangle")
         } catch {
-            applyAuthSession(nil)
             diagnostics.messageAction("auth_apple_failed", source: source, messageCharacters: 0)
             showNotice("Apple sign-in failed. Please try again.", systemImage: "exclamationmark.triangle")
         }
@@ -726,6 +724,8 @@ public final class ProsePalAppModel: ObservableObject {
     private func applySubscriptionPurchaseResult(_ result: SubscriptionPurchaseResult, source: String) {
         if result.entitlement.isActive {
             usageStatus.isPremiumUnlocked = true
+        } else if result.status == .restored || result.status == .notEntitled {
+            usageStatus.isPremiumUnlocked = false
         }
 
         diagnostics.subscriptionEvent(
@@ -737,8 +737,13 @@ public final class ProsePalAppModel: ObservableObject {
 
         switch result.status {
         case .purchased:
-            showNotice("Premium purchase completed", systemImage: "checkmark.seal.fill")
-            isShowingPaywall = false
+            if result.entitlement.isActive {
+                showNotice("Premium purchase completed", systemImage: "checkmark.seal.fill")
+                isShowingPaywall = false
+            } else {
+                subscriptionErrorMessage = SubscriptionError.verificationFailed.userSafeMessage
+                showNotice("Purchase needs verification", systemImage: "exclamationmark.triangle")
+            }
         case .restored:
             showNotice(result.entitlement.isActive ? "Premium restored" : "No active subscription found", systemImage: "arrow.clockwise")
             if result.entitlement.isActive {

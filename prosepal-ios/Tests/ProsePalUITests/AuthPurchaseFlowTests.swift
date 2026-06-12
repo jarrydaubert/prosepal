@@ -160,6 +160,25 @@ final class AuthPurchaseFlowTests: XCTestCase {
         XCTAssertEqual(model.subscriptionErrorMessage, SubscriptionError.verificationFailed.userSafeMessage)
     }
 
+    func testPurchasedStatusWithoutActiveEntitlementDoesNotUnlockOrClosePaywall() async {
+        let subscriptionClient = FlowSubscriptionClient(
+            products: [
+                SubscriptionProduct(id: "yearly", displayName: "Yearly", displayPrice: "$39.99", isRecommended: true)
+            ],
+            purchaseResult: SubscriptionPurchaseResult(status: .purchased, entitlement: .inactive)
+        )
+        let model = makeModel(subscriptionClient: subscriptionClient)
+        model.isShowingPaywall = true
+
+        await model.loadSubscriptionProducts(source: "paywall")
+        await model.purchasePremium(source: "paywall")
+
+        XCTAssertFalse(model.usageStatus.isPremiumUnlocked)
+        XCTAssertTrue(model.isShowingPaywall)
+        XCTAssertEqual(model.subscriptionErrorMessage, SubscriptionError.verificationFailed.userSafeMessage)
+        XCTAssertEqual(model.notice?.title, "Purchase needs verification")
+    }
+
     func testRestoreWithActiveEntitlementUnlocksAndClosesPaywall() async {
         let subscriptionClient = FlowSubscriptionClient(
             restoreResult: SubscriptionPurchaseResult(
@@ -192,6 +211,21 @@ final class AuthPurchaseFlowTests: XCTestCase {
         XCTAssertEqual(restoreCallCount, 1)
         XCTAssertFalse(model.usageStatus.isPremiumUnlocked)
         XCTAssertTrue(model.isShowingPaywall)
+        XCTAssertEqual(model.notice?.title, "No active subscription found")
+    }
+
+    func testRestoreWithoutEntitlementClearsStalePremiumUi() async {
+        let subscriptionClient = FlowSubscriptionClient(
+            restoreResult: SubscriptionPurchaseResult(status: .notEntitled)
+        )
+        let model = makeModel(
+            usageStatus: UsageStatus(isPremiumUnlocked: true),
+            subscriptionClient: subscriptionClient
+        )
+
+        await model.restorePurchases(source: "settings")
+
+        XCTAssertFalse(model.usageStatus.isPremiumUnlocked)
         XCTAssertEqual(model.notice?.title, "No active subscription found")
     }
 
@@ -256,6 +290,35 @@ final class AuthPurchaseFlowTests: XCTestCase {
         XCTAssertFalse(model.isSignedIn)
         let storedSession = try await store.loadSession()
         XCTAssertNil(storedSession)
+        XCTAssertEqual(model.notice?.title, AuthError.invalidResponse.userSafeMessage)
+    }
+
+    func testAppleSignInFailurePreservesExistingSignedInSession() async throws {
+        let store = FlowAuthSessionStore(
+            session: AuthSession(
+                accessToken: "user-a-token",
+                user: AuthUser(id: "user-a", email: "a@example.com")
+            )
+        )
+        let authClient = FlowAuthClient(error: .invalidResponse)
+        let model = makeModel(
+            usageStatus: UsageStatus(isPremiumUnlocked: true),
+            authSessionController: AuthSessionController(store: store),
+            authClient: authClient
+        )
+
+        await model.loadAuthSession()
+        XCTAssertTrue(model.isSignedIn)
+        XCTAssertEqual(model.signedInUserID, "user-a")
+
+        XCTAssertNotNil(model.beginAppleSignInRequest(source: "settings"))
+        await model.completeAppleSignIn(idToken: "apple-id-token", source: "settings")
+
+        let storedSession = try await store.loadSession()
+        XCTAssertTrue(model.isSignedIn)
+        XCTAssertEqual(model.signedInUserID, "user-a")
+        XCTAssertEqual(storedSession?.accessToken, "user-a-token")
+        XCTAssertTrue(model.usageStatus.isPremiumUnlocked)
         XCTAssertEqual(model.notice?.title, AuthError.invalidResponse.userSafeMessage)
     }
 
