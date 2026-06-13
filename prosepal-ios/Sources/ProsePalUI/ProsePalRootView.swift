@@ -2175,23 +2175,32 @@ struct GenerationModeSelector: View {
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-            ScrollView(.horizontal, showsIndicators: false) {
+            ViewThatFits(in: .horizontal) {
                 HStack(spacing: 8) {
                     ForEach(lanes, id: \.rawValue) { lane in
-                        GenerationLaneButton(
-                            lane: lane,
-                            symbolName: symbolName(for: lane),
-                            subtitle: subtitle(for: lane),
-                            isSelected: lane == selectedLane,
-                            isLocked: usageStatus.isPremiumLocked(lane)
-                        ) {
-                            onSelect(lane)
-                        }
+                        laneButton(for: lane)
                     }
                 }
-                .padding(.vertical, 2)
+
+                VStack(spacing: 8) {
+                    ForEach(lanes, id: \.rawValue) { lane in
+                        laneButton(for: lane)
+                    }
+                }
             }
-            .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
+            .padding(.vertical, 2)
+        }
+    }
+
+    private func laneButton(for lane: GenerationLane) -> some View {
+        GenerationLaneButton(
+            lane: lane,
+            symbolName: symbolName(for: lane),
+            subtitle: subtitle(for: lane),
+            isSelected: lane == selectedLane,
+            isLocked: usageStatus.isPremiumLocked(lane)
+        ) {
+            onSelect(lane)
         }
     }
 
@@ -2238,7 +2247,7 @@ private struct GenerationLaneButton: View {
                     .lineLimit(2)
                     .multilineTextAlignment(.center)
             }
-            .frame(width: 116)
+            .frame(maxWidth: .infinity)
             .frame(minHeight: 68)
             .padding(.horizontal, 6)
             .padding(.vertical, 8)
