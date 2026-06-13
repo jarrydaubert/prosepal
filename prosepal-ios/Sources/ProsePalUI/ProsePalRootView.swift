@@ -2675,13 +2675,29 @@ struct DraftEditorSheet: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 16) {
-                TextEditor(text: $text)
-                    .font(.body)
-                    .lineSpacing(4)
-                    .padding(12)
-                    .frame(minHeight: 220)
-                    .background(Color.prosePalSecondaryGroupedBackground, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+            VStack(alignment: .leading, spacing: 8) {
+                ZStack(alignment: .topLeading) {
+                    TextEditor(text: $text)
+                        .font(.body)
+                        .lineSpacing(4)
+                        .padding(12)
+                        .frame(minHeight: 220)
+
+                    if text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        Text("Write your message here")
+                            .font(.body)
+                            .foregroundStyle(.secondary)
+                            .padding(.horizontal, 17)
+                            .padding(.vertical, 20)
+                            .allowsHitTesting(false)
+                    }
+                }
+                .background(Color.prosePalSecondaryGroupedBackground, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+
+                Text("\(text.count) characters")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .trailing)
             }
             .padding(20)
             .padding(.bottom, 68)
