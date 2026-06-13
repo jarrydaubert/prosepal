@@ -1909,7 +1909,7 @@ struct OccasionPickerRow: View {
             Image(systemName: occasion.symbolName)
                 .font(.headline)
                 .frame(width: 28, height: 28)
-                .foregroundStyle(Color.prosePalCoral)
+                .foregroundStyle(Color.prosePalCoralDark)
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(occasion.displayName)
@@ -1925,7 +1925,7 @@ struct OccasionPickerRow: View {
 
             if isSelected {
                 Image(systemName: "checkmark.circle.fill")
-                    .foregroundStyle(Color.prosePalCoral)
+                    .foregroundStyle(Color.prosePalCoralDark)
             }
         }
         .contentShape(Rectangle())
@@ -2073,7 +2073,7 @@ private struct RelationshipPickerRow: View {
             Image(systemName: relationship.symbolName)
                 .font(.headline)
                 .frame(width: 28, height: 28)
-                .foregroundStyle(Color.prosePalCoral)
+                .foregroundStyle(Color.prosePalCoralDark)
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(relationship.displayName)
@@ -2089,7 +2089,7 @@ private struct RelationshipPickerRow: View {
 
             if isSelected {
                 Image(systemName: "checkmark.circle.fill")
-                    .foregroundStyle(Color.prosePalCoral)
+                    .foregroundStyle(Color.prosePalCoralDark)
             }
         }
         .contentShape(Rectangle())
@@ -2179,7 +2179,7 @@ private struct TonePickerRow: View {
             Image(systemName: tone.symbolName)
                 .font(.headline)
                 .frame(width: 28, height: 28)
-                .foregroundStyle(Color.prosePalCoral)
+                .foregroundStyle(Color.prosePalCoralDark)
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(tone.displayName)
@@ -2195,7 +2195,7 @@ private struct TonePickerRow: View {
 
             if isSelected {
                 Image(systemName: "checkmark.circle.fill")
-                    .foregroundStyle(Color.prosePalCoral)
+                    .foregroundStyle(Color.prosePalCoralDark)
             }
         }
         .contentShape(Rectangle())
@@ -2321,7 +2321,7 @@ struct UsageStatusRow: View {
         HStack(alignment: .top, spacing: 10) {
             Image(systemName: usageStatus.isPremiumUnlocked ? "checkmark.seal.fill" : "gauge")
                 .font(.callout.weight(.semibold))
-                .foregroundStyle(Color.prosePalCoral)
+                .foregroundStyle(Color.prosePalCoralDark)
                 .frame(width: 24)
 
             VStack(alignment: .leading, spacing: 3) {
@@ -2405,7 +2405,7 @@ struct ResultsView: View {
             HStack(alignment: .top, spacing: 12) {
                 Image(systemName: model.draft.occasion.symbolName)
                     .font(.title3.weight(.semibold))
-                    .foregroundStyle(Color.prosePalCoral)
+                    .foregroundStyle(Color.prosePalCoralDark)
                     .frame(width: 36, height: 36)
                     .background(Color.prosePalCoral.opacity(0.12), in: Circle())
 
@@ -2546,7 +2546,7 @@ struct ResultCard: View {
                 if model.isSaved(message) {
                     Label("Saved", systemImage: "bookmark.fill")
                         .font(.caption.weight(.semibold))
-                        .foregroundStyle(Color.prosePalCoral)
+                        .foregroundStyle(Color.prosePalCoralDark)
                 }
             }
 
@@ -3049,7 +3049,7 @@ struct PaywallUnavailableRow: View {
             HStack(alignment: .top, spacing: 12) {
                 Image(systemName: "exclamationmark.triangle")
                     .font(.body.weight(.semibold))
-                    .foregroundStyle(Color.prosePalCoral)
+                    .foregroundStyle(Color.prosePalCoralDark)
                     .frame(width: 24)
 
                 VStack(alignment: .leading, spacing: 4) {
@@ -3155,7 +3155,7 @@ struct PremiumFeatureRow: View {
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: systemImage)
                 .font(.headline)
-                .foregroundStyle(Color.prosePalCoral)
+                .foregroundStyle(Color.prosePalCoralDark)
                 .frame(width: 28)
 
             VStack(alignment: .leading, spacing: 3) {
@@ -3412,7 +3412,7 @@ struct SettingsView: View {
                     title: "Apple account",
                     subtitle: model.signedInEmail ?? "Signed in with Apple",
                     trailingText: model.usageStatus.isPremiumUnlocked ? "Pro" : "Free",
-                    tint: Color.prosePalCoral
+                    tint: Color.prosePalCoralDark
                 )
             } else {
                 Button {

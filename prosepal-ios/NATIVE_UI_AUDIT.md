@@ -49,7 +49,7 @@ Decisions from the user that frame this audit:
 | Generation mode selector | Done | `f7cda58` | Two-option selector no longer uses a horizontal scroll view. |
 | Settings external destinations | Done | `115129f` | External rows use native `Link` while preserving safe diagnostics. |
 | Settings row native-ness | Partial | `115129f` | Link rows improved; remaining action rows still use custom `SettingsRow`/plain buttons. |
-| Coral contrast on small foreground text | Partial | `4b1902f`, `0dd4fa3`, `1c8bbb8` | Remaining foreground uses should be checked with Accessibility Inspector. |
+| Coral contrast on small foreground text | Done | `4b1902f`, `0dd4fa3`, `1c8bbb8`, this slice | Explicit small coral foreground uses now use `prosePalCoralDark`; verify with Accessibility Inspector before release. |
 | Sticky action bars / Liquid Glass migration | Open | Not implemented | Needs iOS 26 visual pass; keep content opaque, glass/control treatment only. |
 | Compose form native structure | Open | Not implemented | Needs careful product pass before replacing the current custom scroll layout. |
 | Create header duplication | Open | Not implemented | Needs visual/device review before changing hierarchy. |
