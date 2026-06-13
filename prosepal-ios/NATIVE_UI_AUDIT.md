@@ -6,7 +6,7 @@ Goal: a full UX/UI audit of the **native SwiftUI rewrite** (branch `ios-native-r
 
 Decisions from the user that frame this audit:
 - **Design bar = iOS 26 Liquid Glass** (the current Apple design language), with iOS 17 kept as the deployment floor.
-- **Deliverable = a written audit only.** No code changes. This plan file *is* the audit; the only action on approval is to save it into the repo (see "Execution").
+- This began as a written audit and is now the living implementation tracker for the native UI polish work.
 
 ### What was reviewed
 - `prosepal-ios/Sources/ProsePalUI/ProsePalRootView.swift` — **4,031 lines, the entire UI lives in this one file** (app model + every screen + design tokens).
@@ -31,12 +31,39 @@ Decisions from the user that frame this audit:
 
 ---
 
+## Implementation tracker
+
+| Area | Status | Evidence | Notes |
+| --- | --- | --- | --- |
+| Paywall Terms and Privacy links | Done | `387d6f0`, `115129f` | Paywall and sign-in/settings legal destinations use real `Link`s. |
+| Paywall selected price/period disclosure | Done | `387d6f0`; `SettingsParityStateTests.testPremiumRenewalDisclosureIncludesSelectedPlanPriceAndPeriod` | Still needs visual verification with real StoreKit products. |
+| About Version + Build | Done | `SettingsParityStateTests.testAboutUsesClientContextVersionAndGatewayRuntime` | Uses app `ClientContext` instead of placeholder copy. |
+| Account action honesty | Done | `311ad17` | Export/Delete no longer pretend to complete; real deletion remains a release gate. |
+| Real in-app account deletion | Open | Not implemented | Requires ProsePal-owned backend/Supabase function. Do not put service-role power in the app. |
+| Cancellable writing overlay | Done | `609354b`; `UsagePolicyTests.testCancelGenerationStopsInFlightRequestWithoutShowingResults` | Slow gateway calls can be cancelled from the blocking overlay. |
+| Notice/VoiceOver announcement | Done | `4b1902f`; `announceAccessibilityNotice(_:)` | Notices announce title only; no user content. |
+| Onboarding contrast | Done | `1c8bbb8` | Benefit detail contrast raised on the navy onboarding background. |
+| Result actions use native buttons | Done | `0dd4fa3` | Removed bespoke `ResultActionLabel` chrome. |
+| Picker affordance and haptics | Done | `fc078d1` | Sheet affordance uses disclosure chevron; occasion picker haptics aligned. |
+| Draft editor cancel/placeholder/count | Done | `32526f4` | Avoids destructive "Done" ambiguity and gives editing context. |
+| Generation mode selector | Done | `f7cda58` | Two-option selector no longer uses a horizontal scroll view. |
+| Settings external destinations | Done | `115129f` | External rows use native `Link` while preserving safe diagnostics. |
+| Settings row native-ness | Partial | `115129f` | Link rows improved; remaining action rows still use custom `SettingsRow`/plain buttons. |
+| Coral contrast on small foreground text | Partial | `4b1902f`, `0dd4fa3`, `1c8bbb8` | Remaining foreground uses should be checked with Accessibility Inspector. |
+| Sticky action bars / Liquid Glass migration | Open | Not implemented | Needs iOS 26 visual pass; keep content opaque, glass/control treatment only. |
+| Compose form native structure | Open | Not implemented | Needs careful product pass before replacing the current custom scroll layout. |
+| Create header duplication | Open | Not implemented | Needs visual/device review before changing hierarchy. |
+| Compose error placement | Open | Not implemented | Move/alert strategy still to decide. |
+| Multiline context newline behavior | Open | Not implemented | Confirm intended behavior; current field uses `.submitLabel(.done)`. |
+
+---
+
 ## P0 — Release blockers / compliance
 
-1. **Paywall Terms & Privacy are non-tappable text.** `PaywallSheet` renders `Text("Terms") / Text("Privacy Policy")` as a plain non-interactive HStack (~L2801–2807). App Review 3.1.2 requires *functional* links to Terms (EULA) and Privacy Policy on the paywall. → Make them tappable `Link`s to `SettingsExternalLinks.terms` / `.privacy` (those URLs already exist, L3248–3249).
-2. **Subscription disclosure completeness.** The paywall shows "Auto-renews. Cancel anytime in App Store settings." (good) but **price + billing period must be unmistakable adjacent to the CTA**. Today price/period live only inside the selectable plan rows (`product.displayPrice` + `durationLabel`). → Surface the selected plan's "price / period" directly beside "Continue with Premium," and confirm `displayPrice` includes the period. **[verify on device]**
-3. **Delete Account is a placeholder.** `deleteAccountPlaceholder()` only shows a notice (L523–526, wired at L3530). With Sign in with Apple present, **5.1.1(v) requires real in-app account deletion** before App Store release. (Likely tracked as `N-IOS-07`; flagged here as a release gate.)
-4. **About section is dishonest / placeholder.** `aboutSection` shows `Version = "Native iOS"` and `Writing = "Online generation"` (L3544–3549). The north-star doc explicitly wants real **Version + Build**. → Bind to `CFBundleShortVersionString` / `CFBundleVersion`.
+1. **Done — Paywall Terms & Privacy are tappable.** `PaywallSheet` now uses `Link`s to `SettingsExternalLinks.terms` / `.privacy`.
+2. **Done — Subscription disclosure completeness.** Selected plan price/period is surfaced adjacent to the CTA via `premiumRenewalDisclosureText`. **[verify on device with real StoreKit products]**
+3. **Open — Delete Account requires real backend support.** The UI now fails honestly, but App Review 5.1.1(v) requires real in-app account deletion before release.
+4. **Done — About section uses real runtime values.** `aboutSection` binds to `appVersionDisplayText` and `writingRuntimeDisplayText`.
 
 ---
 
