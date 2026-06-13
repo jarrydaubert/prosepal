@@ -118,6 +118,14 @@ public final class ProsePalAppModel: ObservableObject {
         "ProsePal Gateway"
     }
 
+    var dataExportStatusText: String {
+        isSignedIn ? "Export is unavailable right now" : "Sign in before exporting data"
+    }
+
+    var accountDeletionStatusText: String {
+        isSignedIn ? "Deletion is unavailable right now" : "Sign in before deleting your account"
+    }
+
     var selectedSubscriptionProduct: SubscriptionProduct? {
         if let selectedSubscriptionProductID,
            let selectedProduct = subscriptionProducts.first(where: { $0.id == selectedSubscriptionProductID }) {
@@ -634,14 +642,24 @@ public final class ProsePalAppModel: ObservableObject {
         diagnostics.messageAction("rate_app_requested", source: "settings", messageCharacters: 0)
     }
 
-    func exportDataPlaceholder() {
-        diagnostics.messageAction("export_data", source: "settings", messageCharacters: 0)
-        showNotice("Sign in before exporting data", systemImage: "square.and.arrow.up")
+    func requestDataExport() {
+        diagnostics.messageAction("export_data_requested", source: "settings", messageCharacters: 0)
+        guard isSignedIn else {
+            showNotice("Sign in before exporting data", systemImage: "square.and.arrow.up")
+            return
+        }
+
+        showNotice("Data export is unavailable right now", systemImage: "square.and.arrow.up")
     }
 
-    func deleteAccountPlaceholder() {
+    func requestAccountDeletion() {
         diagnostics.messageAction("delete_account_requested", source: "settings", messageCharacters: 0)
-        showNotice("Sign in before deleting an account", systemImage: "trash")
+        guard isSignedIn else {
+            showNotice("Sign in before deleting your account", systemImage: "trash")
+            return
+        }
+
+        showNotice("Account deletion is unavailable right now", systemImage: "trash")
     }
 
     func signOut() async {
@@ -3574,12 +3592,12 @@ struct SettingsView: View {
     private var accountActionsSection: some View {
         Section("Account Actions") {
             Button {
-                model.exportDataPlaceholder()
+                model.requestDataExport()
             } label: {
                 SettingsRow(
                     systemImage: "square.and.arrow.up",
                     title: "Export My Data",
-                    subtitle: "Download a copy of your data"
+                    subtitle: model.dataExportStatusText
                 )
             }
             .buttonStyle(.plain)
@@ -3599,12 +3617,12 @@ struct SettingsView: View {
             .buttonStyle(.plain)
 
             Button(role: .destructive) {
-                model.deleteAccountPlaceholder()
+                model.requestAccountDeletion()
             } label: {
                 SettingsRow(
                     systemImage: "trash",
                     title: "Delete Account",
-                    subtitle: "Permanently delete your account and data",
+                    subtitle: model.accountDeletionStatusText,
                     tint: .red
                 )
             }
@@ -3662,11 +3680,19 @@ struct AccountSignInSheet: View {
                     AppleSignInControl(source: "settings")
                         .environmentObject(model)
 
-                    Text("By continuing, you agree to the Terms and Privacy Policy.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity)
-                        .multilineTextAlignment(.center)
+                    VStack(spacing: 4) {
+                        Text("By continuing, you agree to the")
+                        HStack(spacing: 4) {
+                            Link("Terms", destination: SettingsExternalLinks.terms)
+                            Text("and")
+                            Link("Privacy Policy", destination: SettingsExternalLinks.privacy)
+                        }
+                    }
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .tint(Color.prosePalCoralDark)
+                    .frame(maxWidth: .infinity)
+                    .multilineTextAlignment(.center)
                 }
                 .padding(22)
             }

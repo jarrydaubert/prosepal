@@ -204,6 +204,35 @@ final class SettingsParityStateTests: XCTestCase {
         XCTAssertNil(model.signedInEmail)
     }
 
+    func testAccountActionsGuideSignedOutUsersWithoutChangingState() {
+        let model = makeModel()
+
+        XCTAssertEqual(model.dataExportStatusText, "Sign in before exporting data")
+        XCTAssertEqual(model.accountDeletionStatusText, "Sign in before deleting your account")
+
+        model.requestDataExport()
+        XCTAssertEqual(model.notice?.title, "Sign in before exporting data")
+
+        model.requestAccountDeletion()
+        XCTAssertEqual(model.notice?.title, "Sign in before deleting your account")
+        XCTAssertFalse(model.isSignedIn)
+    }
+
+    func testAccountActionsDoNotPretendUnavailableSignedInActionsCompleted() {
+        let model = makeModel()
+        model.isSignedIn = true
+
+        XCTAssertEqual(model.dataExportStatusText, "Export is unavailable right now")
+        XCTAssertEqual(model.accountDeletionStatusText, "Deletion is unavailable right now")
+
+        model.requestDataExport()
+        XCTAssertEqual(model.notice?.title, "Data export is unavailable right now")
+
+        model.requestAccountDeletion()
+        XCTAssertEqual(model.notice?.title, "Account deletion is unavailable right now")
+        XCTAssertTrue(model.isSignedIn)
+    }
+
     func testAboutUsesClientContextVersionAndGatewayRuntime() {
         let model = makeModel(
             clientContext: ClientContext(appVersion: "1.2.3", buildNumber: "45")
