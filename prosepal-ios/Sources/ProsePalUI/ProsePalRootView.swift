@@ -1475,6 +1475,7 @@ struct ComposeView: View {
             }
             .background(Color.prosePalGroupedBackground)
             .navigationTitle("Create")
+            .prosePalInlineNavigationTitle()
             .toolbar {
                 ToolbarItemGroup(placement: .keyboard) {
                     Spacer()
@@ -3960,6 +3961,15 @@ private extension View {
     func hideTabBarOnIOS() -> some View {
         #if os(iOS)
         self.toolbar(.hidden, for: .tabBar)
+        #else
+        self
+        #endif
+    }
+
+    @ViewBuilder
+    func prosePalInlineNavigationTitle() -> some View {
+        #if os(iOS)
+        self.navigationBarTitleDisplayMode(.inline)
         #else
         self
         #endif
