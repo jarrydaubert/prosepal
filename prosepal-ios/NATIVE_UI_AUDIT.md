@@ -50,7 +50,7 @@ Decisions from the user that frame this audit:
 | Settings external destinations | Done | `115129f` | External rows use native `Link` while preserving safe diagnostics. |
 | Settings row native-ness | Done | `115129f`, this slice | Settings links and action rows now use native `Link`/`Button` row behavior instead of suppressing it with plain styling. |
 | Coral contrast on small foreground text | Done | `4b1902f`, `0dd4fa3`, `1c8bbb8`, this slice | Explicit small coral foreground uses now use `prosePalCoralDark`; verify with Accessibility Inspector before release. |
-| Sticky action bars / Liquid Glass migration | Open | Not implemented | Needs iOS 26 visual pass; keep content opaque, glass/control treatment only. |
+| Sticky action bars / Liquid Glass migration | Partial | This slice | Sticky controls now use adaptive glass/glassProminent styles on iOS 26 with iOS 17 fallbacks; still needs iOS 26 visual QA and tab-bar review. |
 | Compose form native structure | Open | Not implemented | Needs careful product pass before replacing the current custom scroll layout. |
 | Create header duplication | Done | This slice | Create keeps its navigation identity but uses inline display so the content header owns the screen. |
 | Compose error placement | Done | This slice | Generation failures now show a short top notice while preserving the inline retry card. |
@@ -72,7 +72,7 @@ Decisions from the user that frame this audit:
 ### Liquid Glass readiness (the headline strategic finding)
 The app is currently built in a **pre-Liquid-Glass idiom** and much of its bespoke chrome will *fight* the new design language rather than inherit it:
 - **Hand-rolled buttons everywhere** (`.buttonStyle(.plain)` on selection rows, lane cards, result actions via `ResultActionLabel`, paywall plan rows, every Settings row). These bypass the system styling that would otherwise pick up Liquid Glass automatically.
-- **Sticky action bars use `.background(.bar)` + a manual `Divider` overlay** (Compose `generateButton` L1612–1615, Results `resultsActionBar` L2223–2226, `DraftEditorSheet` L2645–2648). On iOS 26 a `.safeAreaInset` bar of native buttons floats as glass; the `.bar` + Divider pattern is the old look.
+- **Partial — Sticky action bars now adapt toward Liquid Glass.** Compose, Results, and Draft Editor controls use shared adaptive styles: `glass` / `glassProminent` on iOS 26 and bordered fallbacks on iOS 17. This still needs iOS 26 visual QA before the broader glass migration is considered complete.
 - **`TabView` uses the legacy `.tabItem`/`.tag` API** (L1111–1123). iOS 26 floats the tab bar as glass and supports scroll-minimize behavior; verify under the new SDK and consider the modern `Tab` API.
 - **Mixed, inconsistent container materials** on one screen (Compose stacks a custom coral-gradient card, `ModernPanel`, `.regularMaterial`, and `secondarySystemGroupedBackground` cards — L1407, 1526, 1555, 3696).
 

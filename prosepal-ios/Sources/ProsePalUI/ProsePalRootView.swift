@@ -1773,16 +1773,13 @@ struct ComposeView: View {
             }
             .frame(maxWidth: .infinity)
         }
-        .buttonStyle(.borderedProminent)
+        .prosePalProminentControlButtonStyle()
         .controlSize(.large)
         .disabled(model.isGenerating)
         .padding(.horizontal, 20)
         .padding(.top, 8)
         .padding(.bottom, 8)
-        .background(.bar)
-        .overlay(alignment: .top) {
-            Divider()
-        }
+        .prosePalControlBarSurface()
     }
 }
 
@@ -2400,10 +2397,7 @@ struct ResultsView: View {
         .padding(.horizontal, 20)
         .padding(.top, 10)
         .padding(.bottom, 12)
-        .background(.bar)
-        .overlay(alignment: .top) {
-            Divider()
-        }
+        .prosePalControlBarSurface()
     }
 
     private var resultsContextCard: some View {
@@ -2455,7 +2449,7 @@ struct ResultsView: View {
             Label("Adjust details", systemImage: "slider.horizontal.3")
                 .frame(maxWidth: .infinity)
         }
-        .buttonStyle(.bordered)
+        .prosePalSecondaryControlButtonStyle()
         .controlSize(.large)
     }
 
@@ -2466,7 +2460,7 @@ struct ResultsView: View {
             Label("Start new", systemImage: "square.and.pencil")
                 .frame(maxWidth: .infinity)
         }
-        .buttonStyle(.bordered)
+        .prosePalSecondaryControlButtonStyle()
         .controlSize(.large)
     }
 
@@ -2477,7 +2471,7 @@ struct ResultsView: View {
             Label(model.isGenerating ? "Writing" : "Regenerate", systemImage: "arrow.clockwise")
                 .frame(maxWidth: .infinity)
         }
-        .buttonStyle(.borderedProminent)
+        .prosePalProminentControlButtonStyle()
         .controlSize(.large)
         .disabled(model.isGenerating)
     }
@@ -2763,10 +2757,7 @@ struct DraftEditorSheet: View {
                     .padding(.horizontal, 20)
                     .padding(.top, 10)
                     .padding(.bottom, 12)
-                    .background(.bar)
-                    .overlay(alignment: .top) {
-                        Divider()
-                    }
+                    .prosePalControlBarSurface()
             }
         }
     }
@@ -2779,11 +2770,13 @@ struct DraftEditorSheet: View {
                 } label: {
                     Label("Copy", systemImage: "doc.on.doc")
                 }
+                .prosePalSecondaryControlButtonStyle()
 
                 ShareLink(item: text) {
                     Label("Share", systemImage: "square.and.arrow.up")
                 }
                 .simultaneousGesture(TapGesture().onEnded(onShare))
+                .prosePalSecondaryControlButtonStyle()
 
                 Spacer(minLength: 8)
 
@@ -2792,9 +2785,8 @@ struct DraftEditorSheet: View {
                 } label: {
                     Label("Save", systemImage: "bookmark")
                 }
-                .buttonStyle(.borderedProminent)
+                .prosePalProminentControlButtonStyle()
             }
-            .buttonStyle(.bordered)
 
             VStack(alignment: .leading, spacing: 8) {
                 HStack(spacing: 10) {
@@ -2803,11 +2795,13 @@ struct DraftEditorSheet: View {
                     } label: {
                         Label("Copy", systemImage: "doc.on.doc")
                     }
+                    .prosePalSecondaryControlButtonStyle()
 
                     ShareLink(item: text) {
                         Label("Share", systemImage: "square.and.arrow.up")
                     }
                     .simultaneousGesture(TapGesture().onEnded(onShare))
+                    .prosePalSecondaryControlButtonStyle()
                 }
 
                 Button {
@@ -2816,9 +2810,8 @@ struct DraftEditorSheet: View {
                     Label("Save", systemImage: "bookmark")
                         .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.borderedProminent)
+                .prosePalProminentControlButtonStyle()
             }
-            .buttonStyle(.bordered)
         }
     }
 }
@@ -3975,6 +3968,53 @@ private extension View {
         self.navigationBarTitleDisplayMode(.inline)
         #else
         self
+        #endif
+    }
+
+    @ViewBuilder
+    func prosePalProminentControlButtonStyle() -> some View {
+        #if os(iOS) || os(macOS) || os(tvOS) || os(watchOS)
+        if #available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, *) {
+            self.buttonStyle(.glassProminent)
+        } else {
+            self.buttonStyle(.borderedProminent)
+        }
+        #else
+        self.buttonStyle(.borderedProminent)
+        #endif
+    }
+
+    @ViewBuilder
+    func prosePalSecondaryControlButtonStyle() -> some View {
+        #if os(iOS) || os(macOS) || os(tvOS) || os(watchOS)
+        if #available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, *) {
+            self.buttonStyle(.glass)
+        } else {
+            self.buttonStyle(.bordered)
+        }
+        #else
+        self.buttonStyle(.bordered)
+        #endif
+    }
+
+    @ViewBuilder
+    func prosePalControlBarSurface() -> some View {
+        #if os(iOS) || os(macOS) || os(tvOS) || os(watchOS)
+        if #available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, *) {
+            self.background(.clear)
+        } else {
+            self
+                .background(.bar)
+                .overlay(alignment: .top) {
+                    Divider()
+                }
+        }
+        #else
+        self
+            .background(.bar)
+            .overlay(alignment: .top) {
+                Divider()
+            }
         #endif
     }
 }
