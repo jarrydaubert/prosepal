@@ -112,6 +112,37 @@ final class SettingsParityStateTests: XCTestCase {
         XCTAssertNil(model.subscriptionErrorMessage)
     }
 
+    func testPremiumRenewalDisclosureIncludesSelectedPlanPriceAndPeriod() async {
+        let subscriptionClient = RecordingSubscriptionClient(
+            products: [
+                SubscriptionProduct(id: "monthly", displayName: "Monthly", displayPrice: "$4.99", durationLabel: "Every 1 month"),
+                SubscriptionProduct(id: "yearly", displayName: "Yearly", displayPrice: "$39.99", durationLabel: "Every 1 year", isRecommended: true)
+            ]
+        )
+        let model = makeModel(subscriptionClient: subscriptionClient)
+
+        XCTAssertEqual(
+            model.premiumRenewalDisclosureText,
+            "Choose a plan to continue. Auto-renews. Cancel anytime in App Store settings."
+        )
+
+        await model.loadSubscriptionProducts(source: "paywall")
+
+        XCTAssertEqual(model.selectedPremiumPlanDisclosureText, "$39.99 / Every 1 year")
+        XCTAssertEqual(
+            model.premiumRenewalDisclosureText,
+            "Selected plan: $39.99 / Every 1 year. Auto-renews. Cancel anytime in App Store settings."
+        )
+
+        model.selectSubscriptionProduct(model.subscriptionProducts[0])
+
+        XCTAssertEqual(model.selectedPremiumPlanDisclosureText, "$4.99 / Every 1 month")
+        XCTAssertEqual(
+            model.premiumRenewalDisclosureText,
+            "Selected plan: $4.99 / Every 1 month. Auto-renews. Cancel anytime in App Store settings."
+        )
+    }
+
     func testCancelledPremiumPurchaseDoesNotUnlockPremium() async {
         let subscriptionClient = RecordingSubscriptionClient(
             products: [
@@ -173,6 +204,15 @@ final class SettingsParityStateTests: XCTestCase {
         XCTAssertNil(model.signedInEmail)
     }
 
+    func testAboutUsesClientContextVersionAndGatewayRuntime() {
+        let model = makeModel(
+            clientContext: ClientContext(appVersion: "1.2.3", buildNumber: "45")
+        )
+
+        XCTAssertEqual(model.appVersionDisplayText, "1.2.3 (45)")
+        XCTAssertEqual(model.writingRuntimeDisplayText, "ProsePal Gateway")
+    }
+
     func testBiometricLockRequiresSignedInAccount() {
         let model = makeModel()
 
@@ -207,6 +247,7 @@ final class SettingsParityStateTests: XCTestCase {
 
     private func makeModel(
         client: MessageWritingClient? = nil,
+        clientContext: ClientContext = ClientContext(appVersion: "0.0.0", buildNumber: "1"),
         authSessionController: AuthSessionController? = nil,
         authClient: (any AuthClient)? = nil,
         subscriptionClient: (any SubscriptionClient)? = nil
@@ -215,7 +256,7 @@ final class SettingsParityStateTests: XCTestCase {
             client: client ?? MockMessageWritingClient(
                 response: CardResponse(messages: [], laneUsed: .standard)
             ),
-            clientContext: ClientContext(appVersion: "0.0.0", buildNumber: "1"),
+            clientContext: clientContext,
             authSessionController: authSessionController,
             authClient: authClient,
             subscriptionClient: subscriptionClient

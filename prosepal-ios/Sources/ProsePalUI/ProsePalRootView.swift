@@ -105,6 +105,44 @@ public final class ProsePalAppModel: ObservableObject {
         subscriptionClient != nil
     }
 
+    var appVersionDisplayText: String {
+        "\(clientContext.appVersion) (\(clientContext.buildNumber))"
+    }
+
+    var writingRuntimeDisplayText: String {
+        "ProsePal Gateway"
+    }
+
+    var selectedSubscriptionProduct: SubscriptionProduct? {
+        if let selectedSubscriptionProductID,
+           let selectedProduct = subscriptionProducts.first(where: { $0.id == selectedSubscriptionProductID }) {
+            return selectedProduct
+        }
+
+        return subscriptionProducts.first
+    }
+
+    var selectedPremiumPlanDisclosureText: String? {
+        guard let selectedSubscriptionProduct else { return nil }
+        let price = selectedSubscriptionProduct.displayPrice.trimmingCharacters(in: .whitespacesAndNewlines)
+        let duration = selectedSubscriptionProduct.durationLabel?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let displayPrice = price.isEmpty ? selectedSubscriptionProduct.displayName : price
+
+        if let duration, !duration.isEmpty {
+            return "\(displayPrice) / \(duration)"
+        }
+
+        return displayPrice
+    }
+
+    var premiumRenewalDisclosureText: String {
+        if let selectedPremiumPlanDisclosureText {
+            return "Selected plan: \(selectedPremiumPlanDisclosureText). Auto-renews. Cancel anytime in App Store settings."
+        }
+
+        return "Choose a plan to continue. Auto-renews. Cancel anytime in App Store settings."
+    }
+
     func loadAuthSession() async {
         guard let authSessionController else { return }
 
@@ -2750,7 +2788,7 @@ struct PaywallSheet: View {
                         .controlSize(.large)
                         .disabled(model.isPurchasingPremium || model.isLoadingSubscriptions || model.subscriptionProducts.isEmpty)
 
-                        Text("Auto-renews. Cancel anytime in App Store settings.")
+                        Text(model.premiumRenewalDisclosureText)
                             .font(.caption2)
                             .foregroundStyle(.secondary)
                             .multilineTextAlignment(.center)
@@ -2799,9 +2837,9 @@ struct PaywallSheet: View {
                     .background(Color.prosePalSecondaryGroupedBackground, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
 
                     HStack(spacing: 8) {
-                        Text("Terms")
+                        Link("Terms", destination: SettingsExternalLinks.terms)
                         Text("/")
-                        Text("Privacy Policy")
+                        Link("Privacy Policy", destination: SettingsExternalLinks.privacy)
                     }
                     .font(.caption.weight(.medium))
                     .foregroundStyle(.secondary)
@@ -3543,8 +3581,8 @@ struct SettingsView: View {
 
     private var aboutSection: some View {
         Section("About") {
-            LabeledContent("Writing", value: "Online generation")
-            LabeledContent("Version", value: "Native iOS")
+            LabeledContent("Writing", value: model.writingRuntimeDisplayText)
+            LabeledContent("Version", value: model.appVersionDisplayText)
         }
     }
 
