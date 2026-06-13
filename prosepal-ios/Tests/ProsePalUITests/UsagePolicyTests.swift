@@ -168,6 +168,8 @@ final class UsagePolicyTests: XCTestCase {
         XCTAssertFalse(model.isShowingResults)
         XCTAssertEqual(model.usageStatus.standardRemaining, 1)
         XCTAssertEqual(model.errorMessage, "This is taking longer than expected. Please try again.")
+        XCTAssertEqual(model.notice?.title, "We couldn't write that yet")
+        XCTAssertEqual(model.notice?.systemImage, "exclamationmark.triangle")
     }
 
     func testCancelGenerationStopsInFlightRequestWithoutShowingResults() async throws {

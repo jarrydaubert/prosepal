@@ -53,7 +53,7 @@ Decisions from the user that frame this audit:
 | Sticky action bars / Liquid Glass migration | Open | Not implemented | Needs iOS 26 visual pass; keep content opaque, glass/control treatment only. |
 | Compose form native structure | Open | Not implemented | Needs careful product pass before replacing the current custom scroll layout. |
 | Create header duplication | Done | This slice | Create keeps its navigation identity but uses inline display so the content header owns the screen. |
-| Compose error placement | Open | Not implemented | Move/alert strategy still to decide. |
+| Compose error placement | Done | This slice | Generation failures now show a short top notice while preserving the inline retry card. |
 | Multiline context newline behavior | Done | This slice | Context now uses a compact `TextEditor`; include/avoid remain quick single-line fields. |
 
 ---
@@ -109,7 +109,7 @@ Recommended direction (no opt-out flag):
 
 - **Generation-mode selector is a horizontal `ScrollView` for only 2 items** (Standard/Premium, L2057). A segmented control or two inline cards reads better and avoids an unexpected scroll affordance.
 - **Done — Three stacked headers on Create reduced.** The Create tab keeps its navigation identity, but the nav title uses inline display so the content header owns the screen.
-- **Inline error block placement.** The Compose error/"Try again" card renders mid-scroll between style controls and the sticky button (L1558–1589), where it's easy to miss. Consider surfacing nearer the action or as an alert.
+- **Done — Generation errors surface immediately.** Failures still show the inline retry card, and now also raise a short top notice so the user is not left hunting mid-scroll for the problem.
 - **`DraftEditor` / `TextEditor`** has no placeholder and no character/length indicator (L2624).
 - **Done — Compose context supports multiline entry.** The context field now uses a compact `TextEditor`, while include/avoid stay as quick single-line fields.
 

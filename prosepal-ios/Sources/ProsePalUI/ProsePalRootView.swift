@@ -228,7 +228,7 @@ public final class ProsePalAppModel: ObservableObject {
                     category: error.diagnosticsCategory,
                     durationMs: startedAt.elapsedMilliseconds
                 )
-                errorMessage = error.userSafeMessage
+                presentGenerationError(error.userSafeMessage)
             }
         } catch {
             if Task.isCancelled {
@@ -239,7 +239,7 @@ public final class ProsePalAppModel: ObservableObject {
                     category: "unexpected_error",
                     durationMs: startedAt.elapsedMilliseconds
                 )
-                errorMessage = "Message generation failed. Please try again."
+                presentGenerationError("Message generation failed. Please try again.")
             }
         }
 
@@ -891,6 +891,11 @@ public final class ProsePalAppModel: ObservableObject {
                 self.notice = nil
             }
         }
+    }
+
+    private func presentGenerationError(_ message: String) {
+        errorMessage = message
+        showNotice("We couldn't write that yet", systemImage: "exclamationmark.triangle")
     }
 
     private func applyAuthSession(_ session: AuthSession?) {
