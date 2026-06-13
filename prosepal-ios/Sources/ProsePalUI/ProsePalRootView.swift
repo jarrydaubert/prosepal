@@ -784,6 +784,7 @@ public final class ProsePalAppModel: ObservableObject {
     func showNotice(_ title: String, systemImage: String) {
         let notice = AppNotice(title: title, systemImage: systemImage)
         self.notice = notice
+        announceAccessibilityNotice(title)
 
         Task { @MainActor in
             try? await Task.sleep(nanoseconds: 1_700_000_000)
@@ -1297,7 +1298,7 @@ private struct OnboardingBenefitRow: View {
                 Text(benefit.detail)
                     .font(.callout)
                     .lineSpacing(3)
-                    .foregroundStyle(.white.opacity(0.52))
+                    .foregroundStyle(.white.opacity(0.78))
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
@@ -1437,7 +1438,7 @@ struct ComposeView: View {
                 .foregroundStyle(.secondary)
             Text(summaryText)
                 .font(.footnote.weight(.semibold))
-                .foregroundStyle(Color.prosePalCoral)
+                .foregroundStyle(Color.prosePalCoralDark)
                 .padding(.top, 2)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -1666,7 +1667,7 @@ private struct SelectionSummaryButton: View {
             HStack(spacing: 12) {
                 Image(systemName: systemImage)
                     .font(.headline)
-                    .foregroundStyle(Color.prosePalCoral)
+                    .foregroundStyle(Color.prosePalCoralDark)
                     .frame(width: 28, height: 28)
 
                 VStack(alignment: .leading, spacing: 2) {
@@ -2619,7 +2620,7 @@ private struct ResultActionLabel: View {
         case .primary:
             .white
         case .secondary:
-            Color.prosePalCoral
+            Color.prosePalCoralDark
         case .disabled:
             .secondary
         }
@@ -3787,7 +3788,7 @@ private struct WritingProgressOverlay: View {
                         .foregroundStyle(.white)
                     Text(progressContext)
                         .font(.footnote.weight(.semibold))
-                        .foregroundStyle(.white.opacity(0.72))
+                        .foregroundStyle(.white.opacity(0.84))
                         .lineLimit(2)
                         .multilineTextAlignment(.center)
                     Text(messages[messageIndex])
@@ -3901,6 +3902,12 @@ private extension String {
 private func copyToPasteboard(_ text: String) {
     #if os(iOS)
     UIPasteboard.general.string = text
+    #endif
+}
+
+private func announceAccessibilityNotice(_ title: String) {
+    #if os(iOS)
+    UIAccessibility.post(notification: .announcement, argument: title)
     #endif
 }
 
