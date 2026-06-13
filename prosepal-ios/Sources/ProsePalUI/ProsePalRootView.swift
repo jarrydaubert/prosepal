@@ -3421,37 +3421,31 @@ struct SettingsView: View {
                     tint: Color.prosePalCoralDark
                 )
             } else {
-                Button {
+                settingsActionButton(
+                    systemImage: "apple.logo",
+                    title: "Sign in with Apple",
+                    subtitle: "Sync saved messages, purchases, and preferences",
+                    trailingSystemImage: "chevron.right",
+                    tint: .primary
+                ) {
                     isShowingAccountSheet = true
-                } label: {
-                    SettingsRow(
-                        systemImage: "apple.logo",
-                        title: "Sign in with Apple",
-                        subtitle: "Sync saved messages, purchases, and preferences",
-                        trailingSystemImage: "chevron.right",
-                        tint: .primary
-                    )
                 }
-                .buttonStyle(.plain)
             }
         }
     }
 
     private var subscriptionSection: some View {
         Section("Subscription") {
-            Button {
+            settingsActionButton(
+                systemImage: model.usageStatus.isPremiumUnlocked ? "star.fill" : "star",
+                title: model.usageStatus.isPremiumUnlocked ? "ProsePal Pro" : "Free Plan",
+                subtitle: model.isRefreshingSubscriptionEntitlement ? "Checking your subscription..." : model.usageStatus.usageText,
+                trailingText: model.usageStatus.isPremiumUnlocked ? "Active" : "Buy Pro",
+                tint: model.usageStatus.isPremiumUnlocked ? Color.prosePalProGold : Color.prosePalCoral
+            ) {
                 model.logPaywallOpened(trigger: "settings_subscription")
                 model.isShowingPaywall = true
-            } label: {
-                SettingsRow(
-                    systemImage: model.usageStatus.isPremiumUnlocked ? "star.fill" : "star",
-                    title: model.usageStatus.isPremiumUnlocked ? "ProsePal Pro" : "Free Plan",
-                    subtitle: model.isRefreshingSubscriptionEntitlement ? "Checking your subscription..." : model.usageStatus.usageText,
-                    trailingText: model.usageStatus.isPremiumUnlocked ? "Active" : "Buy Pro",
-                    tint: model.usageStatus.isPremiumUnlocked ? Color.prosePalProGold : Color.prosePalCoral
-                )
             }
-            .buttonStyle(.plain)
 
             externalSettingsLink(
                 id: "manage_subscription",
@@ -3461,18 +3455,15 @@ struct SettingsView: View {
                 subtitle: "Open Apple subscription settings"
             )
 
-            Button {
+            settingsActionButton(
+                systemImage: "arrow.clockwise",
+                title: "Restore Purchases",
+                subtitle: model.isRestoringPurchases ? "Restoring..." : "Reinstalled? Restore your Pro access"
+            ) {
                 Task {
                     await model.restorePurchases(source: "settings")
                 }
-            } label: {
-                SettingsRow(
-                    systemImage: "arrow.clockwise",
-                    title: "Restore Purchases",
-                    subtitle: model.isRestoringPurchases ? "Restoring..." : "Reinstalled? Restore your Pro access"
-                )
             }
-            .buttonStyle(.plain)
             .disabled(model.isRestoringPurchases)
         }
     }
@@ -3519,18 +3510,15 @@ struct SettingsView: View {
             }
 
             ForEach([GenerationLane.standard, .premium], id: \.rawValue) { lane in
-                Button {
+                settingsActionButton(
+                    systemImage: lane == .premium ? "star" : "sparkles",
+                    title: lane == .standard ? "Standard generation" : "Premium generation",
+                    subtitle: lane == .standard ? "Everyday messages" : "Harder moments and higher limits",
+                    trailingSystemImage: model.draft.requestedLane == lane ? "checkmark" : (model.usageStatus.isPremiumLocked(lane) ? "lock.fill" : nil),
+                    tint: model.draft.requestedLane == lane ? Color.prosePalCoral : .secondary
+                ) {
                     model.selectLane(lane)
-                } label: {
-                    SettingsRow(
-                        systemImage: lane == .premium ? "star" : "sparkles",
-                        title: lane == .standard ? "Standard generation" : "Premium generation",
-                        subtitle: lane == .standard ? "Everyday messages" : "Harder moments and higher limits",
-                        trailingSystemImage: model.draft.requestedLane == lane ? "checkmark" : (model.usageStatus.isPremiumLocked(lane) ? "lock.fill" : nil),
-                        tint: model.draft.requestedLane == lane ? Color.prosePalCoral : .secondary
-                    )
                 }
-                .buttonStyle(.plain)
             }
         }
     }
@@ -3561,19 +3549,16 @@ struct SettingsView: View {
                 subtitle: "Questions, bugs, or feature requests"
             )
 
-            Button {
+            settingsActionButton(
+                systemImage: "star",
+                title: "Rate ProsePal",
+                subtitle: "Love the app? Leave a review"
+            ) {
                 model.requestAppReview()
 #if canImport(StoreKit)
                 requestReview()
 #endif
-            } label: {
-                SettingsRow(
-                    systemImage: "star",
-                    title: "Rate ProsePal",
-                    subtitle: "Love the app? Leave a review"
-                )
             }
-            .buttonStyle(.plain)
         }
     }
 
@@ -3601,42 +3586,34 @@ struct SettingsView: View {
 
     private var accountActionsSection: some View {
         Section("Account Actions") {
-            Button {
+            settingsActionButton(
+                systemImage: "square.and.arrow.up",
+                title: "Export My Data",
+                subtitle: model.dataExportStatusText
+            ) {
                 model.requestDataExport()
-            } label: {
-                SettingsRow(
-                    systemImage: "square.and.arrow.up",
-                    title: "Export My Data",
-                    subtitle: model.dataExportStatusText
-                )
             }
-            .buttonStyle(.plain)
 
-            Button {
+            settingsActionButton(
+                systemImage: "rectangle.portrait.and.arrow.right",
+                title: "Sign Out",
+                subtitle: model.isSignedIn ? nil : "No account signed in",
+                tint: .secondary
+            ) {
                 Task {
                     await model.signOut()
                 }
-            } label: {
-                SettingsRow(
-                    systemImage: "rectangle.portrait.and.arrow.right",
-                    title: "Sign Out",
-                    subtitle: model.isSignedIn ? nil : "No account signed in",
-                    tint: .secondary
-                )
             }
-            .buttonStyle(.plain)
 
-            Button(role: .destructive) {
+            settingsActionButton(
+                role: .destructive,
+                systemImage: "trash",
+                title: "Delete Account",
+                subtitle: model.accountDeletionStatusText,
+                tint: .red
+            ) {
                 model.requestAccountDeletion()
-            } label: {
-                SettingsRow(
-                    systemImage: "trash",
-                    title: "Delete Account",
-                    subtitle: model.accountDeletionStatusText,
-                    tint: .red
-                )
             }
-            .buttonStyle(.plain)
         }
     }
 
@@ -3680,7 +3657,28 @@ struct SettingsView: View {
         .simultaneousGesture(TapGesture().onEnded {
             model.openSettingsLink(id)
         })
-        .buttonStyle(.plain)
+    }
+
+    private func settingsActionButton(
+        role: ButtonRole? = nil,
+        systemImage: String,
+        title: String,
+        subtitle: String? = nil,
+        trailingText: String? = nil,
+        trailingSystemImage: String? = nil,
+        tint: Color = .secondary,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(role: role, action: action) {
+            SettingsRow(
+                systemImage: systemImage,
+                title: title,
+                subtitle: subtitle,
+                trailingText: trailingText,
+                trailingSystemImage: trailingSystemImage,
+                tint: tint
+            )
+        }
     }
 }
 

@@ -48,7 +48,7 @@ Decisions from the user that frame this audit:
 | Draft editor cancel/placeholder/count | Done | `32526f4` | Avoids destructive "Done" ambiguity and gives editing context. |
 | Generation mode selector | Done | `f7cda58` | Two-option selector no longer uses a horizontal scroll view. |
 | Settings external destinations | Done | `115129f` | External rows use native `Link` while preserving safe diagnostics. |
-| Settings row native-ness | Partial | `115129f` | Link rows improved; remaining action rows still use custom `SettingsRow`/plain buttons. |
+| Settings row native-ness | Done | `115129f`, this slice | Settings links and action rows now use native `Link`/`Button` row behavior instead of suppressing it with plain styling. |
 | Coral contrast on small foreground text | Done | `4b1902f`, `0dd4fa3`, `1c8bbb8`, this slice | Explicit small coral foreground uses now use `prosePalCoralDark`; verify with Accessibility Inspector before release. |
 | Sticky action bars / Liquid Glass migration | Open | Not implemented | Needs iOS 26 visual pass; keep content opaque, glass/control treatment only. |
 | Compose form native structure | Open | Not implemented | Needs careful product pass before replacing the current custom scroll layout. |
@@ -96,7 +96,7 @@ Recommended direction (no opt-out flag):
 ## P2 — Native-ness & consistency
 
 - **Compose is a hand-built form, not a native `Form`.** The whole Create screen is custom panels inside a `ScrollView` (L1320–1331). A native `Form`/inset-grouped `List` would give consistent spacing, dividers, and automatic Liquid Glass grouping. Bare `TextField`s sit inside custom panels separated by manual `Divider`s (L1452–1556).
-- **Settings rows are bespoke.** `SettingsView` correctly uses a native `List` + `Section`s, but every row is a custom `SettingsRow` inside `Button(.plain)` (L3618), losing native chevrons, row highlight, and glass treatment. → Prefer `NavigationLink` / native `Label` rows; reserve custom rows for genuinely custom content.
+- **Done — Settings rows lean further into native list behavior.** `SettingsView` keeps its compact `SettingsRow` content, but links/actions now use native `Link`/`Button` row behavior instead of suppressing it with plain styling.
 - **Selection affordance mismatch.** `SelectionSummaryButton` shows a `chevron.up.chevron.down` (a *menu/stepper* glyph) but opens a **sheet** (L1652). → Use a disclosure `chevron.right`, or make it an actual `Menu`.
 - **Haptic inconsistency.** Relationship and Tone pickers fire `playSelectionFeedback()` on choose (L1838, 1972); the **Occasion** picker does not (L1724–1735). → Align.
 - **`DraftEditorSheet` "Done" doesn't commit.** The toolbar `Button("Done")` is in `.cancellationAction` and only dismisses (L2636–2638); Save is a separate button. "Done" implying discard is confusing. → Rename to "Cancel," or make "Done" save.
