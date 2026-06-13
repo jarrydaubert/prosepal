@@ -1251,6 +1251,40 @@ struct AppTabsView: View {
     @EnvironmentObject private var model: ProsePalAppModel
 
     var body: some View {
+        tabs
+            .onChange(of: model.selectedTab) { _, tab in
+                model.logTabSelected(tab)
+            }
+    }
+
+    @ViewBuilder
+    private var tabs: some View {
+        if #available(iOS 18.0, macOS 15.0, tvOS 18.0, watchOS 11.0, *) {
+            modernTabs
+        } else {
+            legacyTabs
+        }
+    }
+
+    @available(iOS 18.0, macOS 15.0, tvOS 18.0, watchOS 11.0, *)
+    private var modernTabs: some View {
+        TabView(selection: $model.selectedTab) {
+            Tab("Create", systemImage: "square.and.pencil", value: AppTab.compose) {
+                ComposeView()
+            }
+
+            Tab("Saved", systemImage: "bookmark", value: AppTab.saved) {
+                SavedMessagesView()
+            }
+
+            Tab("Settings", systemImage: "gearshape", value: AppTab.settings) {
+                SettingsView()
+            }
+        }
+        .prosePalTabBarMinimizeBehavior()
+    }
+
+    private var legacyTabs: some View {
         TabView(selection: $model.selectedTab) {
             ComposeView()
                 .tabItem { Label("Create", systemImage: "square.and.pencil") }
@@ -1263,9 +1297,6 @@ struct AppTabsView: View {
             SettingsView()
                 .tabItem { Label("Settings", systemImage: "gearshape") }
                 .tag(AppTab.settings)
-        }
-        .onChange(of: model.selectedTab) { _, tab in
-            model.logTabSelected(tab)
         }
     }
 }
@@ -4015,6 +4046,19 @@ private extension View {
             .overlay(alignment: .top) {
                 Divider()
             }
+        #endif
+    }
+
+    @ViewBuilder
+    func prosePalTabBarMinimizeBehavior() -> some View {
+        #if os(iOS)
+        if #available(iOS 26.0, *) {
+            self.tabBarMinimizeBehavior(.onScrollDown)
+        } else {
+            self
+        }
+        #else
+        self
         #endif
     }
 }
