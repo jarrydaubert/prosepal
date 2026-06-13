@@ -3341,7 +3341,6 @@ private enum SettingsExternalLinks {
 
 struct SettingsView: View {
     @EnvironmentObject private var model: ProsePalAppModel
-    @Environment(\.openURL) private var openURL
 #if canImport(StoreKit)
     @Environment(\.requestReview) private var requestReview
 #endif
@@ -3422,18 +3421,13 @@ struct SettingsView: View {
             }
             .buttonStyle(.plain)
 
-            Button {
-                model.openSettingsLink("manage_subscription")
-                openURL(SettingsExternalLinks.appleSubscriptions)
-            } label: {
-                SettingsRow(
-                    systemImage: "creditcard",
-                    title: "Manage Subscription",
-                    subtitle: "Open Apple subscription settings",
-                    trailingSystemImage: "chevron.right"
-                )
-            }
-            .buttonStyle(.plain)
+            externalSettingsLink(
+                id: "manage_subscription",
+                destination: SettingsExternalLinks.appleSubscriptions,
+                systemImage: "creditcard",
+                title: "Manage Subscription",
+                subtitle: "Open Apple subscription settings"
+            )
 
             Button {
                 Task {
@@ -3519,29 +3513,21 @@ struct SettingsView: View {
 
     private var supportSection: some View {
         Section("Support") {
-            Button {
-                model.openSettingsLink("support")
-                openURL(SettingsExternalLinks.support)
-            } label: {
-                SettingsRow(
-                    systemImage: "questionmark.circle",
-                    title: "Help & FAQ",
-                    subtitle: "Common questions and support"
-                )
-            }
-            .buttonStyle(.plain)
+            externalSettingsLink(
+                id: "support",
+                destination: SettingsExternalLinks.support,
+                systemImage: "questionmark.circle",
+                title: "Help & FAQ",
+                subtitle: "Common questions and support"
+            )
 
-            Button {
-                model.openSettingsLink("feedback")
-                openURL(SettingsExternalLinks.feedbackEmail)
-            } label: {
-                SettingsRow(
-                    systemImage: "envelope",
-                    title: "Send Feedback",
-                    subtitle: "Questions, bugs, or feature requests"
-                )
-            }
-            .buttonStyle(.plain)
+            externalSettingsLink(
+                id: "feedback",
+                destination: SettingsExternalLinks.feedbackEmail,
+                systemImage: "envelope",
+                title: "Send Feedback",
+                subtitle: "Questions, bugs, or feature requests"
+            )
 
             Button {
                 model.requestAppReview()
@@ -3561,31 +3547,23 @@ struct SettingsView: View {
 
     private var privacySection: some View {
         Section("Privacy & Legal") {
-            Button {
-                model.openSettingsLink("terms")
-                openURL(SettingsExternalLinks.terms)
-            } label: {
-                SettingsRow(
-                    systemImage: "doc.text",
-                    title: "Terms of Service",
-                    subtitle: "Read the current terms on prosepal.app",
-                    trailingSystemImage: "arrow.up.right"
-                )
-            }
-            .buttonStyle(.plain)
+            externalSettingsLink(
+                id: "terms",
+                destination: SettingsExternalLinks.terms,
+                systemImage: "doc.text",
+                title: "Terms of Service",
+                subtitle: "Read the current terms on prosepal.app",
+                trailingSystemImage: "arrow.up.right"
+            )
 
-            Button {
-                model.openSettingsLink("privacy")
-                openURL(SettingsExternalLinks.privacy)
-            } label: {
-                SettingsRow(
-                    systemImage: "hand.raised",
-                    title: "Privacy Policy",
-                    subtitle: "How ProsePal handles messages, accounts, and purchases",
-                    trailingSystemImage: "arrow.up.right"
-                )
-            }
-            .buttonStyle(.plain)
+            externalSettingsLink(
+                id: "privacy",
+                destination: SettingsExternalLinks.privacy,
+                systemImage: "hand.raised",
+                title: "Privacy Policy",
+                subtitle: "How ProsePal handles messages, accounts, and purchases",
+                trailingSystemImage: "arrow.up.right"
+            )
         }
     }
 
@@ -3649,6 +3627,28 @@ struct SettingsView: View {
                 )
             }
         }
+    }
+
+    private func externalSettingsLink(
+        id: String,
+        destination: URL,
+        systemImage: String,
+        title: String,
+        subtitle: String?,
+        trailingSystemImage: String? = "arrow.up.right"
+    ) -> some View {
+        Link(destination: destination) {
+            SettingsRow(
+                systemImage: systemImage,
+                title: title,
+                subtitle: subtitle,
+                trailingSystemImage: trailingSystemImage
+            )
+        }
+        .simultaneousGesture(TapGesture().onEnded {
+            model.openSettingsLink(id)
+        })
+        .buttonStyle(.plain)
     }
 }
 
