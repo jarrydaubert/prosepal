@@ -1397,7 +1397,7 @@ private struct OnboardingBenefitRow: View {
                 Text(benefit.detail)
                     .font(.callout)
                     .lineSpacing(3)
-                    .foregroundStyle(.white.opacity(0.78))
+                    .foregroundStyle(.white.opacity(0.88))
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
