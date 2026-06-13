@@ -61,6 +61,11 @@ public final class ProsePalAppModel: ObservableObject {
     private let authClient: (any AuthClient)?
     private let subscriptionClient: (any SubscriptionClient)?
     private var pendingAppleSignInNonce: AppleSignInNonce?
+    private var generationTask: Task<Void, Never>?
+    private var generationTaskID: UUID?
+    private var activeGenerationRequestID: String?
+    private var activeGenerationStartedAt: Date?
+    private var cancelledGenerationRequestIDs: Set<String> = []
 
     public init(
         client: MessageWritingClient,
@@ -175,9 +180,12 @@ public final class ProsePalAppModel: ObservableObject {
             clientContext: clientContext
         )
         diagnostics.generationStarted(requestID: request.idempotencyKey, draft: draft)
+        activeGenerationRequestID = request.idempotencyKey
+        activeGenerationStartedAt = startedAt
 
         do {
             let response = try await client.generateCard(request: request)
+            try Task.checkCancellation()
             generatedMessages = response.messages
             fallbackStatus = response.fallbackStatus
             laneUsed = response.laneUsed
@@ -201,22 +209,95 @@ public final class ProsePalAppModel: ObservableObject {
                 durationMs: startedAt.elapsedMilliseconds
             )
             isShowingResults = true
+        } catch is CancellationError {
+            handleGenerationCancellation(requestID: request.idempotencyKey, startedAt: startedAt)
         } catch let error as GenerationError {
-            diagnostics.generationFailed(
-                requestID: request.idempotencyKey,
-                category: error.diagnosticsCategory,
-                durationMs: startedAt.elapsedMilliseconds
-            )
-            errorMessage = error.userSafeMessage
+            if Task.isCancelled {
+                handleGenerationCancellation(requestID: request.idempotencyKey, startedAt: startedAt)
+            } else {
+                diagnostics.generationFailed(
+                    requestID: request.idempotencyKey,
+                    category: error.diagnosticsCategory,
+                    durationMs: startedAt.elapsedMilliseconds
+                )
+                errorMessage = error.userSafeMessage
+            }
         } catch {
-            diagnostics.generationFailed(
-                requestID: request.idempotencyKey,
-                category: "unexpected_error",
-                durationMs: startedAt.elapsedMilliseconds
-            )
-            errorMessage = "Message generation failed. Please try again."
+            if Task.isCancelled {
+                handleGenerationCancellation(requestID: request.idempotencyKey, startedAt: startedAt)
+            } else {
+                diagnostics.generationFailed(
+                    requestID: request.idempotencyKey,
+                    category: "unexpected_error",
+                    durationMs: startedAt.elapsedMilliseconds
+                )
+                errorMessage = "Message generation failed. Please try again."
+            }
         }
 
+        finishGeneration(requestID: request.idempotencyKey)
+    }
+
+    func startGeneration() {
+        guard generationTask == nil, !isGenerating else { return }
+
+        let taskID = UUID()
+        generationTaskID = taskID
+        generationTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            await self.generate()
+            if self.generationTaskID == taskID {
+                self.generationTask = nil
+                self.generationTaskID = nil
+            }
+        }
+    }
+
+    func cancelGeneration() {
+        guard isGenerating || generationTask != nil else { return }
+
+        let requestID = activeGenerationRequestID
+        let durationMs = activeGenerationStartedAt?.elapsedMilliseconds ?? 0
+        if let requestID {
+            cancelledGenerationRequestIDs.insert(requestID)
+        }
+
+        generationTask?.cancel()
+        generationTask = nil
+        generationTaskID = nil
+        isGenerating = false
+        errorMessage = nil
+        diagnostics.generationFailed(
+            requestID: requestID,
+            category: "cancelled",
+            durationMs: durationMs
+        )
+        clearActiveGeneration(requestID: requestID)
+        showNotice("Writing cancelled", systemImage: "xmark.circle")
+    }
+
+    private func handleGenerationCancellation(requestID: String, startedAt: Date) {
+        let wasAlreadyReported = cancelledGenerationRequestIDs.remove(requestID) != nil
+        if !wasAlreadyReported {
+            diagnostics.generationFailed(
+                requestID: requestID,
+                category: "cancelled",
+                durationMs: startedAt.elapsedMilliseconds
+            )
+            showNotice("Writing cancelled", systemImage: "xmark.circle")
+        }
+    }
+
+    private func clearActiveGeneration(requestID: String?) {
+        guard activeGenerationRequestID == requestID else { return }
+        activeGenerationRequestID = nil
+        activeGenerationStartedAt = nil
+    }
+
+    private func finishGeneration(requestID: String) {
+        guard activeGenerationRequestID == requestID else { return }
+        activeGenerationRequestID = nil
+        activeGenerationStartedAt = nil
         isGenerating = false
     }
 
@@ -1134,7 +1215,7 @@ public struct ProsePalRootView: View {
         }
         .overlay {
             if model.isGenerating {
-                WritingProgressOverlay(draft: model.draft)
+                WritingProgressOverlay(draft: model.draft, onCancel: model.cancelGeneration)
                     .transition(.opacity)
             }
         }
@@ -1384,7 +1465,7 @@ struct ComposeView: View {
 
                     Button {
                         focusedField = nil
-                        Task { await model.generate() }
+                        model.startGeneration()
                     } label: {
                         Text(model.isGenerating ? "Writing..." : "Write")
                     }
@@ -1604,7 +1685,7 @@ struct ComposeView: View {
 
                     HStack {
                         Button {
-                            Task { await model.generate() }
+                            model.startGeneration()
                         } label: {
                             Label("Try again", systemImage: "arrow.clockwise")
                         }
@@ -1630,7 +1711,7 @@ struct ComposeView: View {
     private var generateButton: some View {
         Button {
             focusedField = nil
-            Task { await model.generate() }
+            model.startGeneration()
         } label: {
             HStack {
                 if model.isGenerating {
@@ -2331,7 +2412,7 @@ struct ResultsView: View {
 
     private var regenerateButton: some View {
         Button {
-            Task { await model.generate() }
+            model.startGeneration()
         } label: {
             Label(model.isGenerating ? "Writing" : "Regenerate", systemImage: "arrow.clockwise")
                 .frame(maxWidth: .infinity)
@@ -2351,7 +2432,7 @@ struct ResultsView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
 
                 Button {
-                    Task { await model.generate() }
+                    model.startGeneration()
                 } label: {
                     Label("Retry generation", systemImage: "arrow.clockwise")
                 }
@@ -3752,6 +3833,7 @@ struct NoticeBanner: View {
 
 private struct WritingProgressOverlay: View {
     let draft: MessageDraft
+    let onCancel: () -> Void
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var messageIndex = 0
     @ScaledMetric(relativeTo: .largeTitle) private var sparklesSize: CGFloat = 34
@@ -3768,44 +3850,56 @@ private struct WritingProgressOverlay: View {
             ProsePalBrandBackdrop()
 
             VStack(spacing: 22) {
-                ZStack {
-                    Circle()
-                        .fill(Color.white.opacity(0.14))
-                        .frame(width: 96, height: 96)
-                    Circle()
-                        .strokeBorder(Color.white.opacity(0.22), lineWidth: 1)
-                        .frame(width: 96, height: 96)
-                    Image(systemName: "sparkles")
-                        .font(.system(size: sparklesSize, weight: .semibold))
-                        .foregroundStyle(.white)
-                        .scaleEffect(reduceMotion ? 1 : (messageIndex.isMultiple(of: 2) ? 1 : 1.05))
-                        .animation(.easeInOut(duration: 0.22), value: messageIndex)
-                }
+                VStack(spacing: 22) {
+                    ZStack {
+                        Circle()
+                            .fill(Color.white.opacity(0.14))
+                            .frame(width: 96, height: 96)
+                        Circle()
+                            .strokeBorder(Color.white.opacity(0.22), lineWidth: 1)
+                            .frame(width: 96, height: 96)
+                        Image(systemName: "sparkles")
+                            .font(.system(size: sparklesSize, weight: .semibold))
+                            .foregroundStyle(.white)
+                            .scaleEffect(reduceMotion ? 1 : (messageIndex.isMultiple(of: 2) ? 1 : 1.05))
+                            .animation(.easeInOut(duration: 0.22), value: messageIndex)
+                    }
 
-                VStack(spacing: 8) {
-                    Text("Writing")
-                        .font(.title.weight(.bold))
-                        .foregroundStyle(.white)
-                    Text(progressContext)
-                        .font(.footnote.weight(.semibold))
-                        .foregroundStyle(.white.opacity(0.84))
-                        .lineLimit(2)
-                        .multilineTextAlignment(.center)
-                    Text(messages[messageIndex])
-                        .font(.callout)
-                        .foregroundStyle(Color.prosePalTextSecondary)
-                        .contentTransition(.opacity)
-                }
+                    VStack(spacing: 8) {
+                        Text("Writing")
+                            .font(.title.weight(.bold))
+                            .foregroundStyle(.white)
+                        Text(progressContext)
+                            .font(.footnote.weight(.semibold))
+                            .foregroundStyle(.white.opacity(0.84))
+                            .lineLimit(2)
+                            .multilineTextAlignment(.center)
+                        Text(messages[messageIndex])
+                            .font(.callout)
+                            .foregroundStyle(Color.prosePalTextSecondary)
+                            .contentTransition(.opacity)
+                    }
 
-                ProgressView()
-                    .tint(.white)
-                    .controlSize(.large)
+                    ProgressView()
+                        .tint(.white)
+                        .controlSize(.large)
+                }
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("Writing \(draft.occasion.displayName) message. Please wait.")
+
+                Button(role: .cancel, action: onCancel) {
+                    Label("Cancel", systemImage: "xmark.circle")
+                        .font(.callout.weight(.semibold))
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.large)
+                .tint(.white)
+                .foregroundStyle(.white)
+                .accessibilityHint("Stops writing and returns to the compose screen.")
             }
             .padding(28)
         }
         .ignoresSafeArea()
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("Writing \(draft.occasion.displayName) message. Please wait.")
         .task {
             while !Task.isCancelled {
                 try? await Task.sleep(nanoseconds: 1_900_000_000)

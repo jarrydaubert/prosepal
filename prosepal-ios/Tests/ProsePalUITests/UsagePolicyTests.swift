@@ -170,6 +170,62 @@ final class UsagePolicyTests: XCTestCase {
         XCTAssertEqual(model.errorMessage, "This is taking longer than expected. Please try again.")
     }
 
+    func testCancelGenerationStopsInFlightRequestWithoutShowingResults() async throws {
+        let client = DelayedCancellableMessageWritingClient(response: sampleResponse())
+        let model = makeModel(client: client)
+
+        model.startGeneration()
+        try await Task.sleep(nanoseconds: 50_000_000)
+
+        let didStartRequest = await client.didStartRequest()
+        XCTAssertTrue(didStartRequest)
+        XCTAssertTrue(model.isGenerating)
+
+        model.cancelGeneration()
+        try await Task.sleep(nanoseconds: 50_000_000)
+
+        XCTAssertFalse(model.isGenerating)
+        XCTAssertFalse(model.isShowingResults)
+        XCTAssertTrue(model.generatedMessages.isEmpty)
+        XCTAssertNil(model.errorMessage)
+        XCTAssertEqual(model.notice?.title, "Writing cancelled")
+        let didObserveCancellation = await client.didObserveCancellation()
+        XCTAssertTrue(didObserveCancellation)
+    }
+
+    func testStartGenerationIgnoresSecondTapWhileRequestIsInFlight() async throws {
+        let client = DelayedCancellableMessageWritingClient(response: sampleResponse())
+        let model = makeModel(client: client)
+
+        model.startGeneration()
+        model.startGeneration()
+        try await Task.sleep(nanoseconds: 50_000_000)
+
+        let requestCount = await client.requestCount()
+        XCTAssertEqual(requestCount, 1)
+
+        model.cancelGeneration()
+    }
+
+    func testCancellingOneGenerationDoesNotClearNextInFlightGeneration() async throws {
+        let client = DelayedCancellableMessageWritingClient(response: sampleResponse())
+        let model = makeModel(client: client)
+
+        model.startGeneration()
+        try await Task.sleep(nanoseconds: 50_000_000)
+        model.cancelGeneration()
+
+        model.startGeneration()
+        try await Task.sleep(nanoseconds: 50_000_000)
+
+        let requestCount = await client.requestCount()
+        XCTAssertEqual(requestCount, 2)
+        XCTAssertTrue(model.isGenerating)
+        XCTAssertFalse(model.isShowingResults)
+
+        model.cancelGeneration()
+    }
+
     func testAdjustCurrentMessageReturnsToComposeWithoutDroppingDraft() {
         let model = makeModel()
         model.draft.occasion = .christmas
@@ -251,6 +307,41 @@ private actor RecordingMessageWritingClient: MessageWritingClient {
 
     func generateCard(request: CardRequest) async throws -> CardResponse {
         capturedRequests.append(request)
+        return response
+    }
+}
+
+private actor DelayedCancellableMessageWritingClient: MessageWritingClient {
+    let response: CardResponse
+    private var capturedRequests: [CardRequest] = []
+    private var observedCancellation = false
+
+    init(response: CardResponse) {
+        self.response = response
+    }
+
+    func didStartRequest() -> Bool {
+        !capturedRequests.isEmpty
+    }
+
+    func didObserveCancellation() -> Bool {
+        observedCancellation
+    }
+
+    func requestCount() -> Int {
+        capturedRequests.count
+    }
+
+    func generateCard(request: CardRequest) async throws -> CardResponse {
+        capturedRequests.append(request)
+
+        do {
+            try await Task.sleep(nanoseconds: 5_000_000_000)
+        } catch {
+            observedCancellation = true
+            throw error
+        }
+
         return response
     }
 }
