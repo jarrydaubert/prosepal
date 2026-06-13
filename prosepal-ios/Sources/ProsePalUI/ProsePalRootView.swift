@@ -1769,7 +1769,7 @@ private struct SelectionSummaryButton: View {
 
                 Spacer(minLength: 8)
 
-                Image(systemName: "chevron.up.chevron.down")
+                Image(systemName: "chevron.right")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
             }
@@ -1844,6 +1844,7 @@ struct OccasionPickerSheet: View {
     private func occasionButton(for occasion: Occasion) -> some View {
         Button {
             selection = occasion
+            playSelectionFeedback()
             dismiss()
         } label: {
             OccasionPickerRow(
@@ -2754,7 +2755,7 @@ struct DraftEditorSheet: View {
             .navigationTitle(title)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Done") { dismiss() }
+                    Button("Cancel") { dismiss() }
                 }
             }
             .safeAreaInset(edge: .bottom, spacing: 0) {
