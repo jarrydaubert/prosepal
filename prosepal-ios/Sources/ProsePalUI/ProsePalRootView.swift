@@ -1683,14 +1683,40 @@ struct ComposeView: View {
 
             Divider()
 
-            TextField("What should this message know?", text: $model.draft.personalContext, axis: .vertical)
-                .lineLimit(3...6)
-                .focused($focusedField, equals: .context)
-                .submitLabel(.done)
-                .onSubmit { focusedField = nil }
+            contextNotesField
         }
         .padding(16)
         .background(Color.prosePalSecondaryGroupedBackground, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+    }
+
+    private var contextNotesField: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("What should this message know?")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.secondary)
+
+            ZStack(alignment: .topLeading) {
+                TextEditor(text: $model.draft.personalContext)
+                    .focused($focusedField, equals: .context)
+                    .font(.body)
+                    .lineSpacing(3)
+                    .frame(minHeight: 92, maxHeight: 148)
+                    .scrollContentBackground(.hidden)
+
+                if model.draft.personalContext.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    Text("A few lines of context, memory, or wording they would recognise")
+                        .font(.body)
+                        .foregroundStyle(.secondary)
+                        .padding(.top, 8)
+                        .padding(.leading, 5)
+                        .allowsHitTesting(false)
+                }
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 6)
+            .background(Color.prosePalGroupedBackground, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .accessibilityLabel("What should this message know?")
+        }
     }
 
     private var generationControls: some View {

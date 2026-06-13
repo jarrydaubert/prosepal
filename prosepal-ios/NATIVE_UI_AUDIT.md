@@ -54,7 +54,7 @@ Decisions from the user that frame this audit:
 | Compose form native structure | Open | Not implemented | Needs careful product pass before replacing the current custom scroll layout. |
 | Create header duplication | Open | Not implemented | Needs visual/device review before changing hierarchy. |
 | Compose error placement | Open | Not implemented | Move/alert strategy still to decide. |
-| Multiline context newline behavior | Open | Not implemented | Confirm intended behavior; current field uses `.submitLabel(.done)`. |
+| Multiline context newline behavior | Done | This slice | Context now uses a compact `TextEditor`; include/avoid remain quick single-line fields. |
 
 ---
 
@@ -111,7 +111,7 @@ Recommended direction (no opt-out flag):
 - **Three stacked headers on Create**: tab label "Create" + nav title "Create" + `intentHeader` "Find the right words" (L1113, 1339, 1394). Consider dropping the redundant nav title or the tab/intent duplication.
 - **Inline error block placement.** The Compose error/"Try again" card renders mid-scroll between style controls and the sticky button (L1558–1589), where it's easy to miss. Consider surfacing nearer the action or as an alert.
 - **`DraftEditor` / `TextEditor`** has no placeholder and no character/length indicator (L2624).
-- **Compose detail `TextField`s** all use `.submitLabel(.done)` and dismiss on submit, but the multiline context field (L1548) with `.done` can't easily insert newlines — confirm that's intended.
+- **Done — Compose context supports multiline entry.** The context field now uses a compact `TextEditor`, while include/avoid stay as quick single-line fields.
 
 ---
 
