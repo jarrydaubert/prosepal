@@ -2606,28 +2606,25 @@ struct ResultCard: View {
         Button {
             copyMessage()
         } label: {
-            ResultActionLabel(
-                title: isCopied ? "Copied" : "Copy",
-                systemImage: isCopied ? "checkmark" : "doc.on.doc",
-                prominence: .primary,
-                isPrimary: true
-            )
+            Label(isCopied ? "Copied" : "Copy", systemImage: isCopied ? "checkmark" : "doc.on.doc")
+                .font(.subheadline.weight(.semibold))
+                .frame(maxWidth: .infinity, minHeight: 48)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.borderedProminent)
+        .tint(Color.prosePalCoral)
     }
 
     private var shareLink: some View {
         ShareLink(item: message.text) {
-            ResultActionLabel(
-                title: "Share",
-                systemImage: "square.and.arrow.up",
-                prominence: .secondary
-            )
+            Label("Share", systemImage: "square.and.arrow.up")
+                .font(.subheadline.weight(.semibold))
+                .frame(maxWidth: .infinity, minHeight: 44)
         }
         .simultaneousGesture(TapGesture().onEnded {
             model.logShareText(message.text, source: "result_card")
         })
-        .buttonStyle(.plain)
+        .buttonStyle(.bordered)
+        .tint(Color.prosePalCoralDark)
     }
 
     private var editButton: some View {
@@ -2636,27 +2633,25 @@ struct ResultCard: View {
             editedText = message.text
             isEditing = true
         } label: {
-            ResultActionLabel(
-                title: "Edit",
-                systemImage: "square.and.pencil",
-                prominence: .secondary
-            )
+            Label("Edit", systemImage: "square.and.pencil")
+                .font(.subheadline.weight(.semibold))
+                .frame(maxWidth: .infinity, minHeight: 44)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.bordered)
+        .tint(Color.prosePalCoralDark)
     }
 
     private var saveButton: some View {
         Button {
             model.save(message)
         } label: {
-            ResultActionLabel(
-                title: model.isSaved(message) ? "Saved" : "Save",
-                systemImage: model.isSaved(message) ? "bookmark.fill" : "bookmark",
-                prominence: model.isSaved(message) ? .disabled : .secondary
-            )
+            Label(model.isSaved(message) ? "Saved" : "Save", systemImage: model.isSaved(message) ? "bookmark.fill" : "bookmark")
+                .font(.subheadline.weight(.semibold))
+                .frame(maxWidth: .infinity, minHeight: 44)
         }
         .disabled(model.isSaved(message))
-        .buttonStyle(.plain)
+        .buttonStyle(.bordered)
+        .tint(Color.prosePalCoralDark)
     }
 
     private func copyMessage() {
@@ -2666,76 +2661,6 @@ struct ResultCard: View {
         Task { @MainActor in
             try? await Task.sleep(nanoseconds: 1_700_000_000)
             isCopied = false
-        }
-    }
-}
-
-private struct ResultActionLabel: View {
-    enum Prominence {
-        case primary
-        case secondary
-        case disabled
-    }
-
-    let title: String
-    let systemImage: String
-    let prominence: Prominence
-    var isPrimary = false
-
-    var body: some View {
-        HStack(spacing: 7) {
-            Image(systemName: systemImage)
-                .font(.subheadline.weight(.semibold))
-                .frame(width: 18)
-
-            Text(title)
-                .font(.subheadline.weight(.semibold))
-                .lineLimit(1)
-                .minimumScaleFactor(0.78)
-        }
-        .frame(maxWidth: .infinity, minHeight: isPrimary ? 48 : 44)
-        .padding(.horizontal, 8)
-        .multilineTextAlignment(.center)
-        .foregroundStyle(foregroundStyle)
-        .background(backgroundStyle, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .strokeBorder(borderStyle, lineWidth: 1)
-        }
-        .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .accessibilityLabel(title)
-    }
-
-    private var foregroundStyle: Color {
-        switch prominence {
-        case .primary:
-            .white
-        case .secondary:
-            Color.prosePalCoralDark
-        case .disabled:
-            .secondary
-        }
-    }
-
-    private var backgroundStyle: Color {
-        switch prominence {
-        case .primary:
-            Color.prosePalCoral
-        case .secondary:
-            Color.prosePalGroupedBackground
-        case .disabled:
-            Color.prosePalGroupedBackground.opacity(0.72)
-        }
-    }
-
-    private var borderStyle: Color {
-        switch prominence {
-        case .primary:
-            Color.prosePalCoral.opacity(0)
-        case .secondary:
-            Color.prosePalCoral.opacity(0.18)
-        case .disabled:
-            Color.primary.opacity(0.06)
         }
     }
 }
