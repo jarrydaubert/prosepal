@@ -1552,19 +1552,7 @@ struct ComposeView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 18) {
-                        intentHeader
-                        basicsSection
-                        detailFields
-                        styleControls
-                        generationControls
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 18)
-                    .padding(.bottom, focusedField == nil ? 24 : 180)
-                }
-                .scrollDismissesKeyboard(.interactively)
+                composeForm
 
                 if focusedField == nil {
                     generateButton
@@ -1625,6 +1613,26 @@ struct ComposeView: View {
         }
     }
 
+    private var composeForm: some View {
+        Form {
+            intentHeader
+                .listRowInsets(EdgeInsets(top: 12, leading: 20, bottom: 8, trailing: 20))
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
+
+            basicsSection
+            detailFields
+            styleControls
+            if model.errorMessage != nil {
+                generationControls
+            }
+        }
+        .formStyle(.grouped)
+        .scrollDismissesKeyboard(.interactively)
+        .scrollContentBackground(.hidden)
+        .background(Color.prosePalGroupedBackground)
+    }
+
     private var intentHeader: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Find the right words")
@@ -1666,22 +1674,11 @@ struct ComposeView: View {
     }
 
     private var basicsSection: some View {
-        ModernPanel {
-            VStack(alignment: .leading, spacing: 14) {
-                recipientFields
-
-                fieldDivider
-
-                relationshipSection
-
-                fieldDivider
-
-                occasionSelector
-
-                fieldDivider
-
-                toneSection
-            }
+        Section {
+            recipientFields
+            relationshipSection
+            occasionSelector
+            toneSection
         }
     }
 
@@ -1697,6 +1694,7 @@ struct ComposeView: View {
                 .submitLabel(.done)
                 .onSubmit { focusedField = nil }
         }
+        .padding(.vertical, 4)
     }
 
     private var relationshipSection: some View {
@@ -1733,16 +1731,8 @@ struct ComposeView: View {
         }
     }
 
-    private var fieldDivider: some View {
-        Divider()
-            .padding(.leading, 40)
-    }
-
     private var styleControls: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text("Length")
-                .font(.headline)
-
+        Section("Style") {
             Picker("Length", selection: $model.draft.length) {
                 ForEach(MessageLength.allCases) { length in
                     Text(length.displayName).tag(length)
@@ -1758,33 +1748,22 @@ struct ComposeView: View {
 
             UsageStatusRow(usageStatus: model.usageStatus)
         }
-        .padding(16)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
     }
 
     private var detailFields: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text("Personal touches")
-                .font(.headline)
-
+        Section("Personal touches") {
             TextField("Anything to include?", text: $model.draft.thingsToInclude, prompt: Text("quiet cup of tea, old photos"))
                 .focused($focusedField, equals: .include)
                 .submitLabel(.done)
                 .onSubmit { focusedField = nil }
-
-            Divider()
 
             TextField("Anything to avoid?", text: $model.draft.thingsToAvoid, prompt: Text("age jokes, formal wording"))
                 .focused($focusedField, equals: .avoid)
                 .submitLabel(.done)
                 .onSubmit { focusedField = nil }
 
-            Divider()
-
             contextNotesField
         }
-        .padding(16)
-        .background(Color.prosePalSecondaryGroupedBackground, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
     }
 
     private var contextNotesField: some View {
@@ -1818,7 +1797,7 @@ struct ComposeView: View {
     }
 
     private var generationControls: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        Section {
             if let errorMessage = model.errorMessage {
                 VStack(alignment: .leading, spacing: 10) {
                     Label(errorMessage, systemImage: "exclamationmark.triangle")
