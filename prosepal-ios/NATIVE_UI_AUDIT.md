@@ -51,7 +51,7 @@ Decisions from the user that frame this audit:
 | Settings row native-ness | Done | `115129f`, this slice | Settings links and action rows now use native `Link`/`Button` row behavior instead of suppressing it with plain styling. |
 | Coral contrast on small foreground text | Done | `4b1902f`, `0dd4fa3`, `1c8bbb8`, this slice | Explicit small coral foreground uses now use `prosePalCoralDark`; verify with Accessibility Inspector before release. |
 | Sticky action bars / Liquid Glass migration | Partial | This slice | Sticky controls use adaptive glass/glassProminent styles and tabs use the modern Tab API where available; still needs iOS 26 visual QA. |
-| Compose form native structure | Done | This slice | Create now uses grouped native `Form` sections for inputs/style/error state while preserving the same recipient-first flow and sticky Write action. |
+| Compose form native structure | Done | This slice | Create now uses grouped native `Form` sections for inputs/style/error state while preserving the same recipient-first flow; accessibility Dynamic Type uses an inline Write action to avoid CTA overlap. |
 | Create header duplication | Done | This slice | Create keeps its navigation identity but uses inline display so the content header owns the screen. |
 | Compose error placement | Done | This slice | Generation failures now show a short top notice while preserving the inline retry card. |
 | Multiline context newline behavior | Done | This slice | Context now uses a compact `TextEditor`; include/avoid remain quick single-line fields. |

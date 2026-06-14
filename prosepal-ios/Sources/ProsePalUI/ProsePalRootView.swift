@@ -1544,6 +1544,7 @@ private struct OnboardingBenefit: Identifiable {
 
 struct ComposeView: View {
     @EnvironmentObject private var model: ProsePalAppModel
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @FocusState private var focusedField: ComposeField?
     @State private var isShowingOccasionPicker = false
     @State private var isShowingRelationshipPicker = false
@@ -1551,32 +1552,31 @@ struct ComposeView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 0) {
-                composeForm
-
-                if focusedField == nil {
-                    generateButton
-                }
-            }
-            .background(Color.prosePalGroupedBackground)
-            .navigationTitle("Create")
-            .prosePalInlineNavigationTitle()
-            .toolbar {
-                ToolbarItemGroup(placement: .keyboard) {
-                    Spacer()
-
-                    Button("Done") { focusedField = nil }
-
-                    Button {
-                        focusedField = nil
-                        model.startGeneration()
-                    } label: {
-                        Text(model.isGenerating ? "Writing..." : "Write")
+            composeForm
+                .safeAreaInset(edge: .bottom) {
+                    if focusedField == nil && !usesInlineWriteButton {
+                        generateButton
                     }
-                    .fontWeight(.semibold)
-                    .disabled(model.isGenerating)
                 }
-            }
+                .background(Color.prosePalGroupedBackground)
+                .navigationTitle("Create")
+                .prosePalInlineNavigationTitle()
+                .toolbar {
+                    ToolbarItemGroup(placement: .keyboard) {
+                        Spacer()
+
+                        Button("Done") { focusedField = nil }
+
+                        Button {
+                            focusedField = nil
+                            model.startGeneration()
+                        } label: {
+                            Text(model.isGenerating ? "Writing..." : "Write")
+                        }
+                        .fontWeight(.semibold)
+                        .disabled(model.isGenerating)
+                    }
+                }
             .sheet(isPresented: $isShowingOccasionPicker) {
                 OccasionPickerSheet(selection: $model.draft.occasion)
                     .presentationDetents([.medium, .large])
@@ -1626,11 +1626,18 @@ struct ComposeView: View {
             if model.errorMessage != nil {
                 generationControls
             }
+            if usesInlineWriteButton {
+                inlineGenerateButton
+            }
         }
         .formStyle(.grouped)
         .scrollDismissesKeyboard(.interactively)
         .scrollContentBackground(.hidden)
         .background(Color.prosePalGroupedBackground)
+    }
+
+    private var usesInlineWriteButton: Bool {
+        dynamicTypeSize.isAccessibilitySize
     }
 
     private var intentHeader: some View {
@@ -1830,6 +1837,21 @@ struct ComposeView: View {
     }
 
     private var generateButton: some View {
+        generateButtonCore
+            .padding(.horizontal, 20)
+            .padding(.top, 8)
+            .padding(.bottom, 8)
+            .prosePalControlBarSurface()
+    }
+
+    private var inlineGenerateButton: some View {
+        Section {
+            generateButtonCore
+                .padding(.vertical, 4)
+        }
+    }
+
+    private var generateButtonCore: some View {
         Button {
             focusedField = nil
             model.startGeneration()
@@ -1847,10 +1869,6 @@ struct ComposeView: View {
         .prosePalProminentControlButtonStyle()
         .controlSize(.large)
         .disabled(model.isGenerating)
-        .padding(.horizontal, 20)
-        .padding(.top, 8)
-        .padding(.bottom, 8)
-        .prosePalControlBarSurface()
     }
 }
 
