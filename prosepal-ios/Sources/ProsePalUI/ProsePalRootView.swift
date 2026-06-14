@@ -626,10 +626,14 @@ public final class ProsePalAppModel: ObservableObject {
             await refreshSubscriptionEntitlement(source: "auth_apple_success")
             showNotice("Signed in with Apple", systemImage: "checkmark.circle.fill")
         } catch let error as AuthError {
-            diagnostics.messageAction("auth_apple_failed", source: source, messageCharacters: 0)
+            diagnostics.messageAction(
+                "auth_apple_failed_\(error.diagnosticsOutcome)",
+                source: source,
+                messageCharacters: 0
+            )
             showNotice(error.userSafeMessage, systemImage: "exclamationmark.triangle")
         } catch {
-            diagnostics.messageAction("auth_apple_failed", source: source, messageCharacters: 0)
+            diagnostics.messageAction("auth_apple_failed_unexpected_error", source: source, messageCharacters: 0)
             showNotice("Apple sign-in failed. Please try again.", systemImage: "exclamationmark.triangle")
         }
     }
@@ -640,10 +644,10 @@ public final class ProsePalAppModel: ObservableObject {
         diagnostics.messageAction("auth_apple_cancelled", source: source, messageCharacters: 0)
     }
 
-    func failAppleSignIn(source: String) {
+    func failAppleSignIn(source: String, category: String = "authorization_error") {
         pendingAppleSignInNonce = nil
         isSigningIn = false
-        diagnostics.messageAction("auth_apple_failed", source: source, messageCharacters: 0)
+        diagnostics.messageAction("auth_apple_failed_\(category)", source: source, messageCharacters: 0)
         showNotice("Apple sign-in failed. Please try again.", systemImage: "exclamationmark.triangle")
     }
 
@@ -3228,7 +3232,7 @@ struct AppleSignInControl: View {
                authorizationError.code == .canceled {
                 model.cancelAppleSignIn(source: source)
             } else {
-                model.failAppleSignIn(source: source)
+                model.failAppleSignIn(source: source, category: "authorization_error")
             }
         }
     }

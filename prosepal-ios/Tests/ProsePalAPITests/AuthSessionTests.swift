@@ -60,6 +60,31 @@ final class AuthSessionTests: XCTestCase {
             "2c5d107938053a2275f022c153c9a71f65ee07754b8bca543ee97a0c3cc66990"
         )
     }
+
+    func testAuthErrorsExposePrivacySafeDiagnosticsOutcomes() {
+        XCTAssertEqual(AuthError.configurationMissing.diagnosticsOutcome, "configuration_missing")
+        XCTAssertEqual(AuthError.missingIdentityToken.diagnosticsOutcome, "missing_identity_token")
+        XCTAssertEqual(AuthError.missingNonce.diagnosticsOutcome, "missing_nonce")
+        XCTAssertEqual(AuthError.nonceGenerationFailed.diagnosticsOutcome, "nonce_generation_failed")
+        XCTAssertEqual(AuthError.invalidResponse.diagnosticsOutcome, "supabase_invalid_response")
+        XCTAssertEqual(
+            AuthError.requestFailed(statusCode: 401, message: "safe").diagnosticsOutcome,
+            "supabase_rejected"
+        )
+        XCTAssertEqual(
+            AuthError.requestFailed(statusCode: 429, message: "safe").diagnosticsOutcome,
+            "supabase_rate_limited"
+        )
+        XCTAssertEqual(
+            AuthError.requestFailed(statusCode: 502, message: "safe").diagnosticsOutcome,
+            "supabase_unavailable"
+        )
+        XCTAssertEqual(
+            AuthError.requestFailed(statusCode: 418, message: "safe").diagnosticsOutcome,
+            "supabase_http_error"
+        )
+        XCTAssertEqual(AuthError.storageFailed(message: "safe").diagnosticsOutcome, "session_storage_failed")
+    }
 }
 
 final class SupabaseAuthClientTests: XCTestCase {

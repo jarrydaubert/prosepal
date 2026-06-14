@@ -75,6 +75,34 @@ public extension AuthError {
             message
         }
     }
+
+    var diagnosticsOutcome: String {
+        switch self {
+        case .configurationMissing:
+            "configuration_missing"
+        case .missingIdentityToken:
+            "missing_identity_token"
+        case .missingNonce:
+            "missing_nonce"
+        case .nonceGenerationFailed:
+            "nonce_generation_failed"
+        case .invalidResponse:
+            "supabase_invalid_response"
+        case .requestFailed(let statusCode, _):
+            switch statusCode {
+            case 400, 401, 403:
+                "supabase_rejected"
+            case 429:
+                "supabase_rate_limited"
+            case 500...599:
+                "supabase_unavailable"
+            default:
+                "supabase_http_error"
+            }
+        case .storageFailed:
+            "session_storage_failed"
+        }
+    }
 }
 
 public protocol AuthClient: Sendable {
