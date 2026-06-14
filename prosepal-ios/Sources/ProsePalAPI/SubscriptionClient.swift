@@ -1,4 +1,5 @@
 import Foundation
+import OSLog
 
 #if canImport(StoreKit)
 import StoreKit
@@ -110,7 +111,27 @@ public struct StoreKitSubscriptionClient: SubscriptionClient {
     public func loadProducts() async throws -> [SubscriptionProduct] {
         guard !productIDs.isEmpty else { throw SubscriptionError.notConfigured }
 
-        let products = try await Product.products(for: productIDs)
+        let diagnosticsContext = SubscriptionStoreDiagnosticsContext.storeKit2(
+            requestedProductIDs: productIDs,
+            recommendedProductID: recommendedProductID
+        )
+        SubscriptionDiagnosticsLogger.shared.productsLoadStarted(diagnosticsContext)
+
+        let products: [Product]
+        do {
+            products = try await Product.products(for: productIDs)
+        } catch {
+            SubscriptionDiagnosticsLogger.shared.productsLoadFailed(
+                diagnosticsContext,
+                error: error
+            )
+            throw error
+        }
+
+        SubscriptionDiagnosticsLogger.shared.productsLoadReturned(
+            diagnosticsContext,
+            returnedProductIDs: products.map(\.id)
+        )
         guard !products.isEmpty else { throw SubscriptionError.productsUnavailable }
 
         return products
@@ -248,6 +269,64 @@ private extension Product {
 }
 #endif
 
+private struct SubscriptionStoreDiagnosticsContext: Sendable {
+    var implementation: String
+    var buildConfiguration: String
+    var scheme: String
+    var mockStoreActive: Bool
+    var requestedProductIDs: [String]
+    var recommendedProductID: String?
+
+    static func storeKit2(requestedProductIDs: [String], recommendedProductID: String?) -> Self {
+        SubscriptionStoreDiagnosticsContext(
+            implementation: "storekit2",
+            buildConfiguration: currentBuildConfiguration,
+            scheme: "not_detectable",
+            mockStoreActive: false,
+            requestedProductIDs: requestedProductIDs,
+            recommendedProductID: recommendedProductID
+        )
+    }
+
+    private static var currentBuildConfiguration: String {
+        #if DEBUG
+        "debug"
+        #else
+        "release"
+        #endif
+    }
+}
+
+private struct SubscriptionDiagnosticsLogger: Sendable {
+    static let shared = SubscriptionDiagnosticsLogger()
+
+    private let logger = Logger(subsystem: "com.prosepal.native", category: "subscription")
+
+    func productsLoadStarted(_ context: SubscriptionStoreDiagnosticsContext) {
+        logger.info(
+            "subscription_store event=products_request_started implementation=\(context.implementation, privacy: .public) build_configuration=\(context.buildConfiguration, privacy: .public) scheme=\(context.scheme, privacy: .public) mock_store_active=\(context.mockStoreActive, privacy: .public) requested_product_count=\(context.requestedProductIDs.count, privacy: .public) requested_product_ids=\(context.requestedProductIDs.diagnosticsList, privacy: .public) recommended_product_configured=\((context.recommendedProductID != nil), privacy: .public)"
+        )
+    }
+
+    func productsLoadReturned(
+        _ context: SubscriptionStoreDiagnosticsContext,
+        returnedProductIDs: [String]
+    ) {
+        logger.info(
+            "subscription_store event=products_request_returned implementation=\(context.implementation, privacy: .public) returned_product_count=\(returnedProductIDs.count, privacy: .public) returned_product_ids=\(returnedProductIDs.diagnosticsList, privacy: .public) outcome=\(returnedProductIDs.isEmpty ? "empty" : "success", privacy: .public)"
+        )
+    }
+
+    func productsLoadFailed(
+        _ context: SubscriptionStoreDiagnosticsContext,
+        error: Error
+    ) {
+        logger.warning(
+            "subscription_store event=products_request_threw implementation=\(context.implementation, privacy: .public) error_type=\(String(describing: type(of: error)), privacy: .public) error_message=\(error.localizedDescription.diagnosticsSingleLine, privacy: .public)"
+        )
+    }
+}
+
 private extension Array where Element == String {
     var uniqueTrimmedValues: [String] {
         var seen = Set<String>()
@@ -258,9 +337,18 @@ private extension Array where Element == String {
             return trimmed
         }
     }
+
+    var diagnosticsList: String {
+        isEmpty ? "none" : joined(separator: ",")
+    }
 }
 
 private extension String {
+    var diagnosticsSingleLine: String {
+        replacingOccurrences(of: "\n", with: " ")
+            .replacingOccurrences(of: "\r", with: " ")
+    }
+
     var nilIfBlank: String? {
         isEmpty ? nil : self
     }
