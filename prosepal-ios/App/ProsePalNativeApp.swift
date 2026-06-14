@@ -10,6 +10,7 @@ struct ProsePalNativeApp: App {
         store: KeychainAuthSessionStore(service: "com.prosepal.native.auth")
     )
     private let authClient = AuthClientFactory.makeClient()
+    private let accountMaintenanceClient = AccountMaintenanceClientFactory.makeClient()
     private let subscriptionClient = SubscriptionClientFactory.makeClient()
     private let runtimeReadiness = RuntimeReadinessFactory.make()
 
@@ -27,6 +28,7 @@ struct ProsePalNativeApp: App {
                     authSessionController: authSessionController,
                     authClient: authClient,
                     subscriptionClient: subscriptionClient,
+                    accountMaintenanceClient: accountMaintenanceClient,
                     runtimeReadiness: runtimeReadiness
                 )
             )
@@ -61,6 +63,20 @@ private enum AuthClientFactory {
         }
 
         return SupabaseAuthClient(projectURL: projectURL, anonKey: anonKey)
+    }
+}
+
+private enum AccountMaintenanceClientFactory {
+    static func makeClient() -> (any AccountMaintenanceClient)? {
+        let config = NativeRuntimeConfig()
+        guard
+            let projectURL = config.url(named: "PROSEPAL_SUPABASE_URL", fallback: "SUPABASE_URL"),
+            let anonKey = config.value(named: "PROSEPAL_SUPABASE_ANON_KEY", fallback: "SUPABASE_ANON_KEY")
+        else {
+            return nil
+        }
+
+        return SupabaseAccountMaintenanceClient(projectURL: projectURL, anonKey: anonKey)
     }
 }
 

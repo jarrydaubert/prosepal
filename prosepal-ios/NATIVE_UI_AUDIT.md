@@ -39,7 +39,7 @@ Decisions from the user that frame this audit:
 | Paywall selected price/period disclosure | Done | `387d6f0`; `SettingsParityStateTests.testPremiumRenewalDisclosureIncludesSelectedPlanPriceAndPeriod` | Still needs visual verification with real StoreKit products. |
 | About Version + Build | Done | `SettingsParityStateTests.testAboutUsesClientContextVersionAndGatewayRuntime` | Uses app `ClientContext` instead of placeholder copy. |
 | Account action honesty | Done | `311ad17` | Export/Delete no longer pretend to complete; real deletion remains a release gate. |
-| Real in-app account deletion | Open | Not implemented | Requires ProsePal-owned backend/Supabase function. Do not put service-role power in the app. |
+| Real in-app account deletion | Partial | This slice | Native client now calls the ProsePal `delete-user` Edge Function and clears local signed-in state after success; still needs staging/prod deployment verification and Apple revocation secret checks. |
 | Cancellable writing overlay | Done | `609354b`; `UsagePolicyTests.testCancelGenerationStopsInFlightRequestWithoutShowingResults` | Slow gateway calls can be cancelled from the blocking overlay. |
 | Notice/VoiceOver announcement | Done | `4b1902f`; `announceAccessibilityNotice(_:)` | Notices announce title only; no user content. |
 | Onboarding contrast | Done | `1c8bbb8` | Benefit detail contrast raised on the navy onboarding background. |
@@ -62,7 +62,7 @@ Decisions from the user that frame this audit:
 
 1. **Done — Paywall Terms & Privacy are tappable.** `PaywallSheet` now uses `Link`s to `SettingsExternalLinks.terms` / `.privacy`.
 2. **Done — Subscription disclosure completeness.** Selected plan price/period is surfaced adjacent to the CTA via `premiumRenewalDisclosureText`. **[verify on device with real StoreKit products]**
-3. **Open — Delete Account requires real backend support.** The UI now fails honestly, but App Review 5.1.1(v) requires real in-app account deletion before release.
+3. **Partial — Delete Account has native client support.** The app now confirms deletion, calls the ProsePal `delete-user` Edge Function with the signed-in user token, and clears local signed-in state after success. App Review readiness still requires deployed backend verification and Apple token-revocation secret checks.
 4. **Done — About section uses real runtime values.** `aboutSection` binds to `appVersionDisplayText` and `writingRuntimeDisplayText`.
 
 ---

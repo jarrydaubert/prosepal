@@ -151,6 +151,42 @@ final class SavedMessageTests: XCTestCase {
         XCTAssertEqual(relaunched.savedMessages.map(\.text), ["User A saved draft."])
     }
 
+    func testAccountDeletionRemovesSignedInSavedMessagesAndReturnsToAnonymousScope() async throws {
+        let harness = try makeHarness()
+        defer { harness.cleanup() }
+
+        let sessionStore = SavedMessagesAuthSessionStore()
+        let authClient = SavedMessagesAuthClient(
+            session: AuthSession(
+                accessToken: "user-a-token",
+                user: AuthUser(id: "user-a", email: "a@example.com")
+            )
+        )
+        let accountMaintenanceClient = SavedMessagesAccountMaintenanceClient()
+        let model = harness.makeModel(
+            authSessionController: AuthSessionController(store: sessionStore),
+            authClient: authClient,
+            accountMaintenanceClient: accountMaintenanceClient
+        )
+
+        XCTAssertTrue(model.save(GeneratedMessage(id: "anonymous", text: "Anonymous saved draft.")))
+        XCTAssertNotNil(model.beginAppleSignInRequest(source: "settings"))
+        await model.completeAppleSignIn(idToken: "apple-id-token", source: "settings")
+        XCTAssertTrue(model.save(GeneratedMessage(id: "user-a", text: "User A saved draft.")))
+
+        model.requestAccountDeletion()
+        await model.confirmAccountDeletion()
+
+        let deletedTokens = await accountMaintenanceClient.deletedTokens
+        XCTAssertEqual(deletedTokens, ["user-a-token"])
+        XCTAssertFalse(model.isSignedIn)
+        XCTAssertEqual(model.savedMessages.map(\.text), ["Anonymous saved draft."])
+
+        XCTAssertNotNil(model.beginAppleSignInRequest(source: "settings"))
+        await model.completeAppleSignIn(idToken: "apple-id-token", source: "settings")
+        XCTAssertTrue(model.savedMessages.isEmpty)
+    }
+
     private func makeHarness() throws -> SavedMessageHarness {
         let suiteName = "prosepal.saved.tests.\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
@@ -167,7 +203,8 @@ private struct SavedMessageHarness {
 
     func makeModel(
         authSessionController: AuthSessionController? = nil,
-        authClient: (any AuthClient)? = nil
+        authClient: (any AuthClient)? = nil,
+        accountMaintenanceClient: (any AccountMaintenanceClient)? = nil
     ) -> ProsePalAppModel {
         ProsePalAppModel(
             client: MockMessageWritingClient(
@@ -177,7 +214,8 @@ private struct SavedMessageHarness {
             savedMessagesStore: defaults,
             savedMessagesKey: key,
             authSessionController: authSessionController,
-            authClient: authClient
+            authClient: authClient,
+            accountMaintenanceClient: accountMaintenanceClient
         )
     }
 
@@ -222,4 +260,12 @@ private actor SavedMessagesAuthClient: AuthClient {
     }
 
     func signOut(accessToken: String) async throws {}
+}
+
+private actor SavedMessagesAccountMaintenanceClient: AccountMaintenanceClient {
+    private(set) var deletedTokens: [String] = []
+
+    func deleteAccount(accessToken: String) async throws {
+        deletedTokens.append(accessToken)
+    }
 }

@@ -233,6 +233,67 @@ final class SettingsParityStateTests: XCTestCase {
         XCTAssertTrue(model.isSignedIn)
     }
 
+    func testConfiguredAccountDeletionConfirmsThenClearsSignedInState() async throws {
+        let store = InMemoryAuthSessionStore(
+            session: AuthSession(accessToken: "saved-token", user: AuthUser(id: "user-1", email: "user@example.com"))
+        )
+        let deletionClient = RecordingAccountMaintenanceClient()
+        let model = makeModel(
+            authSessionController: AuthSessionController(store: store),
+            authClient: RecordingAuthClient(session: AuthSession(accessToken: "unused")),
+            accountMaintenanceClient: deletionClient
+        )
+
+        await model.loadAuthSession()
+        model.usageStatus.isPremiumUnlocked = true
+        model.setBiometricLockEnabled(true)
+
+        XCTAssertEqual(model.accountDeletionStatusText, "Delete your account and ProsePal app data")
+
+        model.requestAccountDeletion()
+
+        XCTAssertTrue(model.isConfirmingAccountDeletion)
+        XCTAssertTrue(model.isSignedIn)
+
+        await model.confirmAccountDeletion()
+
+        let deletedTokens = await deletionClient.deletedTokens
+        let storedSession = try await store.loadSession()
+        XCTAssertEqual(deletedTokens, ["saved-token"])
+        XCTAssertNil(storedSession)
+        XCTAssertFalse(model.isSignedIn)
+        XCTAssertFalse(model.usageStatus.isPremiumUnlocked)
+        XCTAssertFalse(model.biometricLockEnabled)
+        XCTAssertFalse(model.isConfirmingAccountDeletion)
+        XCTAssertEqual(model.notice?.title, "Account deleted")
+    }
+
+    func testAccountDeletionFailurePreservesSignedInState() async throws {
+        let store = InMemoryAuthSessionStore(
+            session: AuthSession(accessToken: "saved-token", user: AuthUser(id: "user-1"))
+        )
+        let deletionClient = RecordingAccountMaintenanceClient(
+            error: .requestFailed(statusCode: 500, message: "Connection error. Please try again.")
+        )
+        let model = makeModel(
+            authSessionController: AuthSessionController(store: store),
+            authClient: RecordingAuthClient(session: AuthSession(accessToken: "unused")),
+            accountMaintenanceClient: deletionClient
+        )
+
+        await model.loadAuthSession()
+        model.requestAccountDeletion()
+        await model.confirmAccountDeletion()
+
+        let deletedTokens = await deletionClient.deletedTokens
+        let storedSession = try await store.loadSession()
+        XCTAssertEqual(deletedTokens, ["saved-token"])
+        XCTAssertNotNil(storedSession)
+        XCTAssertTrue(model.isSignedIn)
+        XCTAssertTrue(model.isConfirmingAccountDeletion)
+        XCTAssertEqual(model.notice?.title, "Connection error. Please try again.")
+    }
+
     func testAboutUsesClientContextVersionAndGatewayRuntime() {
         let model = makeModel(
             clientContext: ClientContext(appVersion: "1.2.3", buildNumber: "45")
@@ -279,7 +340,8 @@ final class SettingsParityStateTests: XCTestCase {
         clientContext: ClientContext = ClientContext(appVersion: "0.0.0", buildNumber: "1"),
         authSessionController: AuthSessionController? = nil,
         authClient: (any AuthClient)? = nil,
-        subscriptionClient: (any SubscriptionClient)? = nil
+        subscriptionClient: (any SubscriptionClient)? = nil,
+        accountMaintenanceClient: (any AccountMaintenanceClient)? = nil
     ) -> ProsePalAppModel {
         ProsePalAppModel(
             client: client ?? MockMessageWritingClient(
@@ -288,7 +350,8 @@ final class SettingsParityStateTests: XCTestCase {
             clientContext: clientContext,
             authSessionController: authSessionController,
             authClient: authClient,
-            subscriptionClient: subscriptionClient
+            subscriptionClient: subscriptionClient,
+            accountMaintenanceClient: accountMaintenanceClient
         )
     }
 }
@@ -378,5 +441,21 @@ private actor RecordingSubscriptionClient: SubscriptionClient {
     func restorePurchases() async throws -> SubscriptionPurchaseResult {
         restoreCallCount += 1
         return restoreResult
+    }
+}
+
+private actor RecordingAccountMaintenanceClient: AccountMaintenanceClient {
+    private let error: AccountMaintenanceError?
+    private(set) var deletedTokens: [String] = []
+
+    init(error: AccountMaintenanceError? = nil) {
+        self.error = error
+    }
+
+    func deleteAccount(accessToken: String) async throws {
+        deletedTokens.append(accessToken)
+        if let error {
+            throw error
+        }
     }
 }

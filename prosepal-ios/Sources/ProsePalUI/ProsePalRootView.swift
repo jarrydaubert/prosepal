@@ -42,6 +42,8 @@ public final class ProsePalAppModel: ObservableObject {
     @Published var isRefreshingSubscriptionEntitlement = false
     @Published var isPurchasingPremium = false
     @Published var isRestoringPurchases = false
+    @Published var isConfirmingAccountDeletion = false
+    @Published var isDeletingAccount = false
     @Published var subscriptionErrorMessage: String?
     @Published var biometricLockEnabled = false
     @Published var totalGeneratedCount = 0
@@ -60,6 +62,7 @@ public final class ProsePalAppModel: ObservableObject {
     private let authSessionController: AuthSessionController?
     private let authClient: (any AuthClient)?
     private let subscriptionClient: (any SubscriptionClient)?
+    private let accountMaintenanceClient: (any AccountMaintenanceClient)?
     private var pendingAppleSignInNonce: AppleSignInNonce?
     private var generationTask: Task<Void, Never>?
     private var generationTaskID: UUID?
@@ -78,6 +81,7 @@ public final class ProsePalAppModel: ObservableObject {
         authSessionController: AuthSessionController? = nil,
         authClient: (any AuthClient)? = nil,
         subscriptionClient: (any SubscriptionClient)? = nil,
+        accountMaintenanceClient: (any AccountMaintenanceClient)? = nil,
         runtimeReadiness: NativeRuntimeReadiness = .unconfigured,
         diagnostics: NativeDiagnosticsLogger = .shared
     ) {
@@ -92,6 +96,7 @@ public final class ProsePalAppModel: ObservableObject {
         self.authSessionController = authSessionController
         self.authClient = authClient
         self.subscriptionClient = subscriptionClient
+        self.accountMaintenanceClient = accountMaintenanceClient
         self.diagnostics = diagnostics
         self.savedMessages = Self.loadSavedMessages(from: savedMessagesStore, key: savedMessagesKey)
         self.hasCompletedOnboarding = onboardingStore.bool(forKey: onboardingCompletionKey)
@@ -123,7 +128,15 @@ public final class ProsePalAppModel: ObservableObject {
     }
 
     var accountDeletionStatusText: String {
-        isSignedIn ? "Deletion is unavailable right now" : "Sign in before deleting your account"
+        if !isSignedIn {
+            return "Sign in before deleting your account"
+        }
+
+        if accountMaintenanceClient == nil {
+            return "Deletion is unavailable right now"
+        }
+
+        return isDeletingAccount ? "Deleting..." : "Delete your account and ProsePal app data"
     }
 
     var selectedSubscriptionProduct: SubscriptionProduct? {
@@ -659,7 +672,50 @@ public final class ProsePalAppModel: ObservableObject {
             return
         }
 
-        showNotice("Account deletion is unavailable right now", systemImage: "trash")
+        guard accountMaintenanceClient != nil else {
+            showNotice("Account deletion is unavailable right now", systemImage: "trash")
+            return
+        }
+
+        isConfirmingAccountDeletion = true
+    }
+
+    func confirmAccountDeletion() async {
+        guard !isDeletingAccount else { return }
+
+        guard isSignedIn else {
+            showNotice("Sign in before deleting your account", systemImage: "trash")
+            return
+        }
+
+        guard let accountMaintenanceClient else {
+            showNotice("Account deletion is unavailable right now", systemImage: "trash")
+            return
+        }
+
+        guard let accessToken = try? await authSessionController?.currentAccessToken() else {
+            showNotice(AccountMaintenanceError.authenticationRequired.userSafeMessage, systemImage: "exclamationmark.triangle")
+            return
+        }
+
+        isDeletingAccount = true
+        defer {
+            isDeletingAccount = false
+        }
+
+        do {
+            try await accountMaintenanceClient.deleteAccount(accessToken: accessToken)
+            removeActiveSavedMessagesScope()
+            try? await authSessionController?.clearSession()
+            isShowingPaywall = false
+            isConfirmingAccountDeletion = false
+            applyAuthSession(nil)
+            showNotice("Account deleted", systemImage: "checkmark.circle.fill")
+        } catch let error as AccountMaintenanceError {
+            showNotice(error.userSafeMessage, systemImage: "exclamationmark.triangle")
+        } catch {
+            showNotice("Account deletion failed. Please try again.", systemImage: "exclamationmark.triangle")
+        }
     }
 
     func signOut() async {
@@ -947,6 +1003,11 @@ public final class ProsePalAppModel: ObservableObject {
         persistSavedMessages()
         savedMessagesScopeID = nextScopeID
         savedMessages = Self.loadSavedMessages(from: savedMessagesStore, key: activeSavedMessagesKey)
+    }
+
+    private func removeActiveSavedMessagesScope() {
+        savedMessagesStore.removeObject(forKey: activeSavedMessagesKey)
+        savedMessages = []
     }
 
     private func applySubscriptionPurchaseResult(_ result: SubscriptionPurchaseResult, source: String) {
@@ -3425,6 +3486,21 @@ struct SettingsView: View {
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
             }
+            .confirmationDialog(
+                "Delete account?",
+                isPresented: $model.isConfirmingAccountDeletion,
+                titleVisibility: .visible
+            ) {
+                Button("Delete Account", role: .destructive) {
+                    Task {
+                        await model.confirmAccountDeletion()
+                    }
+                }
+
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("This removes your ProsePal account and app data. This cannot be undone.")
+            }
             .onChange(of: model.draft.spellingPreference) { _, preference in
                 model.logSelectionChanged(kind: "spelling", value: preference.rawValue)
             }
@@ -3638,6 +3714,7 @@ struct SettingsView: View {
             ) {
                 model.requestAccountDeletion()
             }
+            .disabled(model.isDeletingAccount)
         }
     }
 
