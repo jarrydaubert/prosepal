@@ -12,7 +12,7 @@ public struct GatewayMessageWritingClient: MessageWritingClient {
     public init(
         endpoint: URL,
         session: URLSession = .shared,
-        timeoutSeconds: TimeInterval = 20,
+        timeoutSeconds: TimeInterval = 45,
         devGatewaySecret: String? = nil,
         authorizationTokenProvider: (@Sendable () async throws -> String?)? = nil
     ) {
@@ -171,7 +171,15 @@ public struct GatewayMessageWritingClient: MessageWritingClient {
                 category: "cancelled",
                 durationMs: startedAt.elapsedMilliseconds
             )
-            throw GenerationError.timedOut
+            throw CancellationError()
+        } catch let error as URLError where error.code == .cancelled {
+            GatewayDiagnosticsLogger.shared.requestFailed(
+                requestID: requestID,
+                statusCode: nil,
+                category: "cancelled",
+                durationMs: startedAt.elapsedMilliseconds
+            )
+            throw CancellationError()
         } catch let error as URLError where error.code == .notConnectedToInternet {
             GatewayDiagnosticsLogger.shared.requestFailed(
                 requestID: requestID,
