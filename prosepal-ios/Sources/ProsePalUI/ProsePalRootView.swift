@@ -1286,6 +1286,7 @@ public struct ProsePalRootView: View {
                 usageStatus: model.usageStatus,
                 onUseStandard: model.useStandardLaneFromPaywall
             )
+            .environmentObject(model)
             .presentationDetents([.medium, .large])
             .presentationDragIndicator(.visible)
         }
