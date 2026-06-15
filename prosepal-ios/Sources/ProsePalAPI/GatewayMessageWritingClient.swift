@@ -246,7 +246,7 @@ public struct GatewayMessageWritingClient: MessageWritingClient {
                 durationMs: startedAt.elapsedMilliseconds
             )
             throw GenerationError.unexpectedResponse(
-                message: "Message generation returned no drafts. Please try again."
+                message: "Message generation returned no messages. Please try again."
             )
         }
 
@@ -258,7 +258,7 @@ public struct GatewayMessageWritingClient: MessageWritingClient {
                 durationMs: startedAt.elapsedMilliseconds
             )
             throw GenerationError.unexpectedResponse(
-                message: "Message generation returned an empty draft. Please try again."
+                message: "Message generation returned an empty message. Please try again."
             )
         }
     }

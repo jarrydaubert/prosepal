@@ -27,6 +27,31 @@ local staging scheme:
 App/ProsePalStaging.storekit
 ```
 
+If `Product.products(for:)` returns zero products even though
+`PROSEPAL_PREMIUM_PRODUCT_IDS` is configured, check the local scheme XML before
+debugging StoreKit code. The local-only scheme should contain a StoreKit
+reference that resolves from the `.xcscheme` file to the tracked config:
+
+```text
+StoreKitConfigurationFileReference identifier="../../../../App/ProsePalStaging.storekit"
+```
+
+The path above is for:
+
+```text
+ProsePal.xcodeproj/xcuserdata/<user>.xcuserdatad/xcschemes/ProsePal Local Staging.xcscheme
+```
+
+Do not commit that local scheme, because it also carries staging environment
+values. If Xcode's dropdown shows two `ProsePalStaging.storekit` entries, choose
+the one that persists to the local scheme and resolves to
+`prosepal-ios/App/ProsePalStaging.storekit`.
+
+The StoreKit file has an empty top-level `products` array because these are
+auto-renewable subscriptions. The product IDs live under
+`subscriptionGroups[].subscriptions[]`; the expected local count is three:
+yearly, monthly, and weekly.
+
 Do not commit Xcode scheme secrets, Supabase `.temp` link state, provider keys,
 StoreKit receipts, auth tokens, or screenshots under tracked paths.
 

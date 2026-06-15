@@ -99,7 +99,7 @@
           "introductoryOffer" : null,
           "localizations" : [
             {
-              "description" : "Enhanced ProsePal drafts and higher limits.",
+              "description" : "Enhanced ProsePal messages and higher limits.",
               "displayName" : "ProsePal Pro Yearly",
               "locale" : "en_GB"
             }
@@ -127,7 +127,7 @@
           "introductoryOffer" : null,
           "localizations" : [
             {
-              "description" : "Enhanced ProsePal drafts and higher limits.",
+              "description" : "Enhanced ProsePal messages and higher limits.",
               "displayName" : "ProsePal Pro Monthly",
               "locale" : "en_GB"
             }
@@ -155,7 +155,7 @@
           "introductoryOffer" : null,
           "localizations" : [
             {
-              "description" : "Enhanced ProsePal drafts and higher limits.",
+              "description" : "Enhanced ProsePal messages and higher limits.",
               "displayName" : "ProsePal Pro Weekly",
               "locale" : "en_GB"
             }

@@ -368,7 +368,7 @@ final class MessageWritingClientTests: XCTestCase {
             _ = try await client.generateCard(request: request(requestedLane: .standard))
             XCTFail("Expected empty gateway response to fail.")
         } catch GenerationError.unexpectedResponse(let message) {
-            XCTAssertEqual(message, "Message generation returned no drafts. Please try again.")
+            XCTAssertEqual(message, "Message generation returned no messages. Please try again.")
         } catch {
             XCTFail("Expected unexpectedResponse, got \(error).")
         }
@@ -411,7 +411,7 @@ final class MessageWritingClientTests: XCTestCase {
             _ = try await client.generateCard(request: request(requestedLane: .standard))
             XCTFail("Expected blank gateway message to fail.")
         } catch GenerationError.unexpectedResponse(let message) {
-            XCTAssertEqual(message, "Message generation returned an empty draft. Please try again.")
+            XCTAssertEqual(message, "Message generation returned an empty message. Please try again.")
         } catch {
             XCTFail("Expected unexpectedResponse, got \(error).")
         }
