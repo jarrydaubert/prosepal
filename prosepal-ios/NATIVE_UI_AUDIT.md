@@ -45,7 +45,7 @@ Decisions from the user that frame this audit:
 | Onboarding contrast | Done | `1c8bbb8` | Benefit detail contrast raised on the navy onboarding background. |
 | Result actions use native buttons | Done | `0dd4fa3` | Removed bespoke `ResultActionLabel` chrome. |
 | Picker affordance and haptics | Done | `fc078d1` | Sheet affordance uses disclosure chevron; occasion picker haptics aligned. |
-| Draft editor cancel/placeholder/count | Done | `32526f4` | Avoids destructive "Done" ambiguity and gives editing context. |
+| Message editor cancel/placeholder/count | Done | `32526f4`, this slice | Avoids destructive "Done" ambiguity, uses "Message Editor", and gives editing context. |
 | Generation mode selector | Done | `f7cda58` | Two-option selector no longer uses a horizontal scroll view. |
 | Settings external destinations | Done | `115129f` | External rows use native `Link` while preserving safe diagnostics. |
 | Settings row native-ness | Done | `115129f`, this slice | Settings links and action rows now use native `Link`/`Button` row behavior instead of suppressing it with plain styling. |
@@ -55,6 +55,10 @@ Decisions from the user that frame this audit:
 | Create header duplication | Done | This slice | Create keeps its navigation identity but uses inline display so the content header owns the screen. |
 | Compose error placement | Done | This slice | Generation failures now show a short top notice while preserving the inline retry card. |
 | Multiline context newline behavior | Done | This slice | Context now uses a compact `TextEditor`; include/avoid remain quick single-line fields. |
+| Messages/versions terminology | Done | This slice | User-facing quota/result/editor copy now uses messages, versions, and Message Editor. Internal model names still use `MessageDraft` until a safe refactor. |
+| Tone safety | Done | This slice; `UsagePolicyTests` | Sensitive occasions show gentle/work-safe tones first and place risky tones behind "More tones." |
+| Paywall Standard escape hatch | Done | This slice; `UsagePolicyTests` | The paywall hides "Use Standard" when the authoritative free-message limit is exhausted. |
+| Starter occasion duplication | Done | This slice | Starter chips no longer duplicate the currently selected moment. |
 
 ---
 
@@ -70,11 +74,11 @@ Decisions from the user that frame this audit:
 ## P1 — High: accessibility & design-language readiness
 
 ### Liquid Glass readiness (the headline strategic finding)
-The app is currently built in a **pre-Liquid-Glass idiom** and much of its bespoke chrome will *fight* the new design language rather than inherit it:
-- **Hand-rolled buttons everywhere** (`.buttonStyle(.plain)` on selection rows, lane cards, result actions via `ResultActionLabel`, paywall plan rows, every Settings row). These bypass the system styling that would otherwise pick up Liquid Glass automatically.
+The app is part-way through the Liquid Glass migration:
+- **Mostly addressed — bespoke control chrome has been reduced.** Results, sticky bars, settings actions, paywall plan rows, and the Create action zone now lean on native button styles/adaptive control surfaces. Picker rows still use custom row content inside native lists, which is acceptable if iOS 26 visual QA confirms the result.
 - **Partial — Sticky action bars now adapt toward Liquid Glass.** Compose, Results, and Draft Editor controls use shared adaptive styles: `glass` / `glassProminent` on iOS 26 and bordered fallbacks on iOS 17. This still needs iOS 26 visual QA before the broader glass migration is considered complete.
 - **Partial — Tabs use the modern API where available.** `AppTabsView` now uses the Tab content-builder API on supported OS versions, keeps the iOS 17 fallback, and enables scroll-down minimisation on iOS 26. Visual behavior still needs iOS 26 device/simulator QA.
-- **Mixed, inconsistent container materials** on one screen (Compose stacks a custom coral-gradient card, `ModernPanel`, `.regularMaterial`, and `secondarySystemGroupedBackground` cards — L1407, 1526, 1555, 3696).
+- **Mostly addressed — Create content is now opaque grouped form content.** Reserve future glass work for the control layer, tab/navigation surfaces, and transient overlays.
 
 Recommended direction (no opt-out flag):
 - Build on the **Xcode 26 SDK**, keep iOS 17 floor, do **not** set `UIDesignRequiresCompatibility`.
@@ -83,12 +87,12 @@ Recommended direction (no opt-out flag):
 - Verify **Reduce Transparency** and **Increase Contrast** fallbacks for all glass/material surfaces. **[verify on device]**
 
 ### Color & contrast (WCAG AA)
-- **Coral `#D4736B` on light backgrounds is used for small text and icons** — `summaryText` footnote (L1402), `ResultActionLabel` secondary text/icon (coral on `prosePalGroupedBackground`, L2584/2595), `SelectionSummaryButton` icon. `#D4736B` on white ≈ **3.3:1**, which **fails AA (4.5:1) for normal text**. → Use coral only for large text / fills / tint; darken to `prosePalCoralDark` (`#A5564F`) for small-text foreground, or pair with a darker surface. **[verify with contrast checker]**
-- **Onboarding low-contrast text**: benefit detail at `.white.opacity(0.52)` on navy (L1262) and progress context at `.white.opacity(0.72)` likely fail AA. → Raise opacity / use a semantic secondary that meets contrast.
+- **Mostly addressed — small foreground coral uses have moved to `prosePalCoralDark`.** Keep verifying with Accessibility Inspector because native tint rendering can shift under glass/vibrancy.
+- **Done — onboarding low-contrast text raised.** Benefit detail/progress text now use stronger white opacity on the navy launch/onboarding surface.
 
 ### Other P1
-- **Writing overlay cannot be cancelled.** `WritingProgressOverlay` (L3714) is a full-screen blocking overlay with a spinner and no Cancel/abort. A slow gateway leaves the user trapped until success/timeout. → Add a Cancel affordance that aborts the in-flight `generate()` task.
-- **Toast (`NoticeBanner`) isn't announced to VoiceOver.** It's a top overlay that auto-dismisses in 1.7s (L746–756, 3700) with no accessibility announcement, so screen-reader users miss "Copied/Saved/Signed in." → Post a `.announcement`/`AccessibilityNotification`. Also reconsider redundancy: cards already show inline "Copied"/"Saved" states.
+- **Done — Writing overlay can be cancelled.** `WritingProgressOverlay` includes a Cancel affordance and tests cover cancellation.
+- **Done — Toast notices announce to VoiceOver.** Notices post privacy-safe accessibility announcements.
 - **Onboarding forces `.preferredColorScheme(.dark)`** (L1189) and the brand backdrops are always dark regardless of system appearance. Acceptable as a branded launch, but confirm it's intentional and that the hardcoded coral/navy palette has no light-mode-only assumptions elsewhere.
 
 ---
@@ -97,20 +101,20 @@ Recommended direction (no opt-out flag):
 
 - **Done — Compose now uses a native grouped `Form`.** The Create screen keeps its custom emotional header, but the functional inputs now live in native `Section`s so iOS owns row spacing, dividers, scrolling, and keyboard behavior.
 - **Done — Settings rows lean further into native list behavior.** `SettingsView` keeps its compact `SettingsRow` content, but links/actions now use native `Link`/`Button` row behavior instead of suppressing it with plain styling.
-- **Selection affordance mismatch.** `SelectionSummaryButton` shows a `chevron.up.chevron.down` (a *menu/stepper* glyph) but opens a **sheet** (L1652). → Use a disclosure `chevron.right`, or make it an actual `Menu`.
-- **Haptic inconsistency.** Relationship and Tone pickers fire `playSelectionFeedback()` on choose (L1838, 1972); the **Occasion** picker does not (L1724–1735). → Align.
-- **`DraftEditorSheet` "Done" doesn't commit.** The toolbar `Button("Done")` is in `.cancellationAction` and only dismisses (L2636–2638); Save is a separate button. "Done" implying discard is confusing. → Rename to "Cancel," or make "Done" save.
-- **Result actions reimplement button chrome.** `ResultActionLabel` (L2543) hand-draws fills/borders/sizing for Copy/Share/Edit/Save instead of native button styles — the main reason these won't inherit Liquid Glass and the source of the coral-contrast issue above.
-- **Settings "Writing" section mixes three control idioms** (segmented Spelling picker, a default-tone `Picker`, lane-selection buttons) in one section (L3382–3421) — visually inconsistent.
+- **Done — Selection affordance mismatch fixed.** Summary rows open sheets and use a disclosure chevron.
+- **Done — Picker haptics aligned.** Occasion, relationship, and tone/style pickers all fire selection feedback.
+- **Done — Message editor avoids destructive Done ambiguity.** The editor uses Cancel plus explicit Copy/Share/Save actions.
+- **Done — Result actions use native button styles.** Copy remains primary; Share/Edit/Save adapt across width and Dynamic Type.
+- **Done — Settings Writing section simplified.** Spelling and default tone remain; generation lane controls live in the Create action zone where they belong.
 
 ---
 
 ## P3 — Polish
 
-- **Generation-mode selector is a horizontal `ScrollView` for only 2 items** (Standard/Premium, L2057). A segmented control or two inline cards reads better and avoids an unexpected scroll affordance.
+- **Done — Generation mode no longer appears as a locked peer control.** Free users see Standard as implied; Premium users get the real Standard/Premium segmented control in the action zone.
 - **Done — Three stacked headers on Create reduced.** The Create tab keeps its navigation identity, but the nav title uses inline display so the content header owns the screen.
 - **Done — Generation errors surface immediately.** Failures still show the inline retry card, and now also raise a short top notice so the user is not left hunting mid-scroll for the problem.
-- **`DraftEditor` / `TextEditor`** has no placeholder and no character/length indicator (L2624).
+- **Done — Message editor has placeholder and character count.**
 - **Done — Compose context supports multiline entry.** The context field now uses a compact `TextEditor`, while include/avoid stay as quick single-line fields.
 
 ---
@@ -126,11 +130,11 @@ Recommended direction (no opt-out flag):
 ---
 
 ## Suggested remediation sequencing (for a later, separate effort)
-1. **P0 compliance** (paywall links + price/period disclosure, real Version/Build, account deletion) — gates any App Store submission.
-2. **P1 accessibility** (coral & onboarding contrast, toast announcement, cancellable writing overlay) — independent of the glass migration, do first.
-3. **Liquid Glass migration** (build on Xcode 26 SDK; convert sticky bars, buttons, tab bar; reconcile coral with vibrancy/contrast; verify Reduce Transparency) — the largest track.
-4. **P2 native-ness** (Compose → `Form`, Settings rows, affordance/haptic/label fixes) — best folded into the glass migration.
-5. **P3 polish.**
+1. **Device QA pass** — iPhone 14 Pro/real device, Dynamic Type, keyboard, VoiceOver, Reduce Motion/Transparency.
+2. **StoreKit product-loading fix** — products still need to load locally before the paywall can be fully validated.
+3. **Backend release gates** — deployed account deletion verification, entitlement usage truth, and App Review notes.
+4. **Liquid Glass visual QA** — build with the current SDK, verify native controls/glass on supported OS, and keep iOS 17 fallback readable.
+5. **File split/refactor** — reduce `ProsePalRootView.swift` after the visual direction is stable.
 - Worth noting as an enabler: the entire UI is one 4,031-line file. Splitting per-screen files would materially de-risk all of the above.
 
 ## Verification (when fixes are eventually made)

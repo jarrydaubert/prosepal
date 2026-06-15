@@ -49,6 +49,37 @@ final class UsagePolicyTests: XCTestCase {
         XCTAssertTrue(state.showsLaneControl)
     }
 
+    func testUseStandardFromPaywallDoesNotDismissWhenOutOfMessages() {
+        let model = makeModel(
+            usageStatus: UsageStatus(
+                standardLimit: 3,
+                standardRemaining: 0,
+                hasAuthoritativeUsage: true
+            )
+        )
+        model.isShowingPaywall = true
+
+        model.useStandardLaneFromPaywall()
+
+        XCTAssertTrue(model.isShowingPaywall)
+        XCTAssertEqual(model.draft.requestedLane, .standard)
+        XCTAssertEqual(model.notice?.title, "Out of free messages today")
+    }
+
+    func testToneSafetyPolicyShowsGentleTonesFirstForSympathy() {
+        XCTAssertEqual(
+            ToneSafetyPolicy.recommendedTones(for: .sympathy),
+            [.heartfelt, .formal, .poetic, .nostalgic]
+        )
+        XCTAssertTrue(ToneSafetyPolicy.additionalTones(for: .sympathy).contains(.funny))
+        XCTAssertTrue(ToneSafetyPolicy.additionalTones(for: .sympathy).contains(.sarcastic))
+    }
+
+    func testToneSafetyPolicyLeavesEverydayOccasionsOpen() {
+        XCTAssertEqual(ToneSafetyPolicy.recommendedTones(for: .birthday), Tone.allCases)
+        XCTAssertTrue(ToneSafetyPolicy.additionalTones(for: .birthday).isEmpty)
+    }
+
     func testPremiumSelectionShowsPaywallWithoutChangingLane() {
         let model = makeModel()
 
