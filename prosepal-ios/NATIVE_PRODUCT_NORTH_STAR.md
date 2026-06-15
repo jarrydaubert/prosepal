@@ -1,5 +1,8 @@
 # ProsePal iOS Native Product North Star
 
+> Current implementation brief: `NATIVE_UX_IMPLEMENTATION_HANDOFF.md`. This
+> north star remains useful background, but the handoff owns the next UI slices.
+
 This document translates the current Flutter app into the target shape for the
 SwiftUI rewrite.
 

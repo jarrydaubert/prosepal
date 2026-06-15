@@ -803,7 +803,7 @@ public final class ProsePalAppModel: ObservableObject {
         }
 
         if usageStatus.isStandardLimitReached(for: draft.requestedLane) {
-            errorMessage = "You've used your Standard drafts for today."
+            errorMessage = "Out of free messages today."
             diagnostics.paywallShown(
                 trigger: "standard_limit_reached",
                 requestedLane: draft.requestedLane,
@@ -1160,7 +1160,7 @@ public struct UsageStatus: Equatable, Sendable {
 
     public init(
         standardLimit: Int = 3,
-        standardRemaining: Int = 2,
+        standardRemaining: Int = 3,
         isPremiumUnlocked: Bool = false,
         resetDescription: String = "today",
         hasAuthoritativeUsage: Bool = false
@@ -1174,14 +1174,22 @@ public struct UsageStatus: Equatable, Sendable {
 
     public var usageText: String {
         if isPremiumUnlocked {
-            return "Premium generation active"
+            return "Premium active"
         }
 
         if !hasAuthoritativeUsage {
-            return "Standard generation available"
+            return "\(standardLimit) free \(Self.messageWord(for: standardLimit)) daily"
         }
 
-        return "\(standardRemaining) of \(standardLimit) Standard drafts left \(resetDescription)"
+        if standardRemaining == 0 {
+            return "Out of free messages today"
+        }
+
+        if standardRemaining == standardLimit {
+            return "\(standardLimit) free \(Self.messageWord(for: standardLimit)) daily"
+        }
+
+        return "\(standardRemaining) free \(Self.messageWord(for: standardRemaining)) left \(resetDescription)"
     }
 
     public var detailText: String {
@@ -1190,14 +1198,48 @@ public struct UsageStatus: Equatable, Sendable {
         }
 
         if !hasAuthoritativeUsage {
-            return "Limits are checked by ProsePal when you generate."
+            return "ProsePal checks your message limit when you write."
         }
 
         if standardRemaining == 0 {
-            return "Premium adds help for harder moments, higher limits, and more rewrites."
+            return "Premium unlocks more messages and extra rewrites."
         }
 
-        return "Premium adds help for harder moments, higher limits, and more rewrites."
+        return "Premium adds more messages and extra rewrites."
+    }
+
+    public func actionZoneState(requestedLane: GenerationLane) -> MessageActionZoneState {
+        if isPremiumUnlocked {
+            return MessageActionZoneState(
+                statusLine: "Premium active",
+                primaryButtonTitle: "Write message",
+                primaryAction: .writeMessage,
+                showsTryPremium: false,
+                showsLaneControl: true
+            )
+        }
+
+        if isStandardLimitReached(for: requestedLane) {
+            return MessageActionZoneState(
+                statusLine: "Out of free messages today",
+                primaryButtonTitle: "Unlock more messages",
+                primaryAction: .openPaywall,
+                showsTryPremium: false,
+                showsLaneControl: false
+            )
+        }
+
+        return MessageActionZoneState(
+            statusLine: usageText,
+            primaryButtonTitle: "Write message",
+            primaryAction: .writeMessage,
+            showsTryPremium: true,
+            showsLaneControl: false
+        )
+    }
+
+    private static func messageWord(for count: Int) -> String {
+        count == 1 ? "message" : "messages"
     }
 
     public func isPremiumLocked(_ lane: GenerationLane) -> Bool {
@@ -1248,6 +1290,33 @@ public struct UsageStatus: Equatable, Sendable {
         }
 
         return "until \(resetsAt.formatted(date: .abbreviated, time: .shortened))"
+    }
+}
+
+public struct MessageActionZoneState: Equatable, Sendable {
+    public enum PrimaryAction: Equatable, Sendable {
+        case writeMessage
+        case openPaywall
+    }
+
+    public var statusLine: String
+    public var primaryButtonTitle: String
+    public var primaryAction: PrimaryAction
+    public var showsTryPremium: Bool
+    public var showsLaneControl: Bool
+
+    public init(
+        statusLine: String,
+        primaryButtonTitle: String,
+        primaryAction: PrimaryAction,
+        showsTryPremium: Bool,
+        showsLaneControl: Bool
+    ) {
+        self.statusLine = statusLine
+        self.primaryButtonTitle = primaryButtonTitle
+        self.primaryAction = primaryAction
+        self.showsTryPremium = showsTryPremium
+        self.showsLaneControl = showsLaneControl
     }
 }
 
@@ -1540,8 +1609,8 @@ private struct OnboardingBenefit: Identifiable {
         ),
         OnboardingBenefit(
             id: "standard-premium",
-            title: "Standard and Premium",
-            detail: "Start with Standard drafts. Premium adds help for harder messages, higher limits, and more rewrites.",
+            title: "Three versions every time",
+            detail: "Start with free messages. Premium adds help for harder moments, higher limits, and more rewrites.",
             systemImage: "star"
         )
     ]
@@ -1553,7 +1622,9 @@ struct ComposeView: View {
     @FocusState private var focusedField: ComposeField?
     @State private var isShowingOccasionPicker = false
     @State private var isShowingRelationshipPicker = false
-    @State private var isShowingTonePicker = false
+    @State private var isShowingStylePicker = false
+    @State private var hasInteractedWithOccasion = false
+    @State private var areDetailsExpanded = false
 
     var body: some View {
         NavigationStack {
@@ -1574,9 +1645,9 @@ struct ComposeView: View {
 
                         Button {
                             focusedField = nil
-                            model.startGeneration()
+                            performPrimaryWriteAction()
                         } label: {
-                            Text(model.isGenerating ? "Writing..." : "Write")
+                            Text(model.isGenerating ? "Writing..." : keyboardActionTitle)
                         }
                         .fontWeight(.semibold)
                         .disabled(model.isGenerating)
@@ -1592,8 +1663,8 @@ struct ComposeView: View {
                     .presentationDetents([.medium, .large])
                     .presentationDragIndicator(.visible)
             }
-            .sheet(isPresented: $isShowingTonePicker) {
-                TonePickerSheet(selection: $model.draft.tone)
+            .sheet(isPresented: $isShowingStylePicker) {
+                StylePickerSheet(tone: $model.draft.tone, length: $model.draft.length)
                     .presentationDetents([.medium, .large])
                     .presentationDragIndicator(.visible)
             }
@@ -1604,6 +1675,7 @@ struct ComposeView: View {
                 model.logComposeFieldFocused(field)
             }
             .onChange(of: model.draft.occasion) { _, occasion in
+                hasInteractedWithOccasion = true
                 model.logSelectionChanged(kind: "occasion", value: occasion.rawValue)
             }
             .onChange(of: model.draft.relationship) { _, relationship in
@@ -1625,9 +1697,12 @@ struct ComposeView: View {
                 .listRowBackground(Color.clear)
                 .listRowSeparator(.hidden)
 
-            basicsSection
-            detailFields
-            styleControls
+            recipientFields
+            if shouldShowStarterOccasions {
+                starterOccasionChips
+            }
+            messageSetupSection
+            detailsDisclosureSection
             if model.errorMessage != nil {
                 generationControls
             }
@@ -1645,68 +1720,99 @@ struct ComposeView: View {
         dynamicTypeSize.isAccessibilitySize
     }
 
+    private var actionState: MessageActionZoneState {
+        model.usageStatus.actionZoneState(requestedLane: model.draft.requestedLane)
+    }
+
+    private var keyboardActionTitle: String {
+        actionState.primaryAction == .openPaywall ? "Unlock" : "Write"
+    }
+
+    private var shouldShowStarterOccasions: Bool {
+        !hasInteractedWithOccasion && model.totalGeneratedCount == 0
+    }
+
     private var intentHeader: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Find the right words")
-                .font(.system(.title, design: .rounded, weight: .bold))
-                .foregroundStyle(.primary)
-            Text("Tell ProsePal who it is for, what is happening, and how it should feel.")
-                .font(.callout)
-                .foregroundStyle(.secondary)
-            Text(summaryText)
-                .font(.footnote.weight(.semibold))
-                .foregroundStyle(Color.prosePalCoralDark)
-                .padding(.top, 2)
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .firstTextBaseline, spacing: 12) {
+                Text("ProsePal")
+                    .font(.system(.largeTitle, design: .rounded, weight: .bold))
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [Color.prosePalCoral, Color.prosePalProGold],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+
+                Spacer(minLength: 8)
+
+                UsageRingView(usageStatus: model.usageStatus)
+            }
+
+            if model.totalGeneratedCount == 0 {
+                Text("For cards, texts, notes, and the message you have not quite found yet.")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(18)
-        .background(
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .fill(.linearGradient(
-                    colors: [Color.prosePalCoral.opacity(0.18), Color.prosePalNavy.opacity(0.10), Color.prosePalSecondaryGroupedBackground],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                ))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .strokeBorder(.white.opacity(0.72), lineWidth: 1)
-        )
-    }
-
-    private var summaryText: String {
-        let length = model.draft.length == .standard ? "" : "\(model.draft.length.displayName.lowercased()) "
-        let tone = model.draft.tone.displayName.lowercased()
-        let occasion = model.draft.occasion.displayName.lowercased()
-        let base = "\(tone) \(length)\(occasion) message"
-        guard let recipient = model.draft.recipientName.nilIfBlank else {
-            return "\(base) for \(model.draft.relationship.summaryObjectText)"
-        }
-        return "\(base) for \(recipient)"
-    }
-
-    private var basicsSection: some View {
-        Section {
-            recipientFields
-            relationshipSection
-            occasionSelector
-            toneSection
-        }
     }
 
     private var recipientFields: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Who is this for?")
-                .font(.headline)
-            Text("Optional, but it helps the draft feel more personal.")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            TextField("Name or person", text: $model.draft.recipientName, prompt: Text("Alex, Mum, my manager, a group"))
-                .focused($focusedField, equals: ComposeField.recipient)
-                .submitLabel(.done)
-                .onSubmit { focusedField = nil }
+        Section {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Who is this for?")
+                    .font(.headline)
+                TextField("Name or person", text: $model.draft.recipientName, prompt: Text("Alex, Mum, my manager, a group"))
+                    .focused($focusedField, equals: ComposeField.recipient)
+                    .font(.title3.weight(.semibold))
+                    .submitLabel(.done)
+                    .onSubmit { focusedField = nil }
+            }
+            .padding(.vertical, 8)
         }
-        .padding(.vertical, 4)
+    }
+
+    private var starterOccasionChips: some View {
+        Section {
+            VStack(alignment: .leading, spacing: 10) {
+                Text("Popular moments")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(Array(Occasion.featuredCases.prefix(6))) { occasion in
+                            Button {
+                                model.draft.occasion = occasion
+                                hasInteractedWithOccasion = true
+                                playSelectionFeedback()
+                            } label: {
+                                Label(occasion.displayName, systemImage: occasion.symbolName)
+                                    .font(.subheadline.weight(.semibold))
+                                    .lineLimit(1)
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 9)
+                            }
+                            .buttonStyle(.bordered)
+                            .tint(Color.prosePalCoralDark)
+                        }
+                    }
+                    .padding(.vertical, 2)
+                }
+            }
+            .padding(.vertical, 4)
+        }
+    }
+
+    private var messageSetupSection: some View {
+        Section {
+            occasionSelector
+            relationshipSection
+            styleSelector
+        }
     }
 
     private var relationshipSection: some View {
@@ -1732,49 +1838,45 @@ struct ComposeView: View {
         }
     }
 
-    private var toneSection: some View {
+    private var styleSelector: some View {
         SelectionSummaryButton(
-            title: "How should it feel?",
-            value: model.draft.tone.displayName,
-            detail: model.draft.tone.description,
-            systemImage: model.draft.tone.symbolName
+            title: "Tone + length",
+            value: "\(model.draft.tone.displayName) · \(model.draft.length.displayName)",
+            detail: "Adjust how the message should sound.",
+            systemImage: "slider.horizontal.3"
         ) {
-            isShowingTonePicker = true
+            isShowingStylePicker = true
         }
     }
 
-    private var styleControls: some View {
-        Section("Style") {
-            Picker("Length", selection: $model.draft.length) {
-                ForEach(MessageLength.allCases) { length in
-                    Text(length.displayName).tag(length)
+    private var detailsDisclosureSection: some View {
+        Section {
+            DisclosureGroup(isExpanded: $areDetailsExpanded) {
+                VStack(alignment: .leading, spacing: 14) {
+                    Text("Details help personalize the message. You control what you include.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    TextField("Anything to include?", text: $model.draft.thingsToInclude, prompt: Text("quiet cup of tea, old photos"))
+                        .focused($focusedField, equals: .include)
+                        .submitLabel(.done)
+                        .onSubmit { focusedField = nil }
+
+                    TextField("Anything to avoid?", text: $model.draft.thingsToAvoid, prompt: Text("age jokes, formal wording"))
+                        .focused($focusedField, equals: .avoid)
+                        .submitLabel(.done)
+                        .onSubmit { focusedField = nil }
+
+                    contextNotesField
                 }
+                .padding(.top, 10)
+            } label: {
+                Label("Add details", systemImage: areDetailsExpanded ? "minus.circle" : "plus.circle")
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(.primary)
             }
-            .pickerStyle(.segmented)
-
-            GenerationModeSelector(
-                selectedLane: model.draft.requestedLane,
-                usageStatus: model.usageStatus,
-                onSelect: model.selectLane
-            )
-
-            UsageStatusRow(usageStatus: model.usageStatus)
-        }
-    }
-
-    private var detailFields: some View {
-        Section("Personal touches") {
-            TextField("Anything to include?", text: $model.draft.thingsToInclude, prompt: Text("quiet cup of tea, old photos"))
-                .focused($focusedField, equals: .include)
-                .submitLabel(.done)
-                .onSubmit { focusedField = nil }
-
-            TextField("Anything to avoid?", text: $model.draft.thingsToAvoid, prompt: Text("age jokes, formal wording"))
-                .focused($focusedField, equals: .avoid)
-                .submitLabel(.done)
-                .onSubmit { focusedField = nil }
-
-            contextNotesField
+            .padding(.vertical, 4)
         }
     }
 
@@ -1829,7 +1931,7 @@ struct ComposeView: View {
                                 model.logPaywallOpened(trigger: "create_error_view_premium")
                                 model.isShowingPaywall = true
                             } label: {
-                                Label("View Premium", systemImage: "star")
+                                Label("Unlock more messages", systemImage: "star")
                             }
                         }
                     }
@@ -1857,23 +1959,110 @@ struct ComposeView: View {
     }
 
     private var generateButtonCore: some View {
-        Button {
-            focusedField = nil
-            model.startGeneration()
-        } label: {
-            HStack {
-                if model.isGenerating {
-                    ProgressView()
-                        .tint(.white)
+        VStack(spacing: 10) {
+            if actionState.showsLaneControl {
+                Picker("Generation", selection: Binding(
+                    get: { model.draft.requestedLane },
+                    set: { model.selectLane($0) }
+                )) {
+                    Text("Standard").tag(GenerationLane.standard)
+                    Text("Premium").tag(GenerationLane.premium)
                 }
-                Text(model.isGenerating ? "Writing" : "Write message")
-                    .font(.headline)
+                .pickerStyle(.segmented)
+                .accessibilityLabel("Generation mode")
             }
-            .frame(maxWidth: .infinity)
+
+            Text(actionState.statusLine)
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .center)
+
+            Button {
+                focusedField = nil
+                performPrimaryWriteAction()
+            } label: {
+                HStack {
+                    if model.isGenerating {
+                        ProgressView()
+                            .tint(.white)
+                    }
+                    Text(model.isGenerating ? "Writing" : actionState.primaryButtonTitle)
+                        .font(.headline)
+                }
+                .frame(maxWidth: .infinity)
+            }
+            .prosePalProminentControlButtonStyle()
+            .controlSize(.large)
+            .disabled(model.isGenerating)
+
+            if actionState.showsTryPremium {
+                Button {
+                    openPremium(trigger: "create_try_premium")
+                } label: {
+                    Label("Try Premium", systemImage: "star")
+                        .font(.footnote.weight(.semibold))
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(Color.prosePalCoralDark)
+                .disabled(model.isGenerating)
+            }
         }
-        .prosePalProminentControlButtonStyle()
-        .controlSize(.large)
-        .disabled(model.isGenerating)
+    }
+
+    private func performPrimaryWriteAction() {
+        switch actionState.primaryAction {
+        case .writeMessage:
+            model.startGeneration()
+        case .openPaywall:
+            openPremium(trigger: "create_primary_unlock")
+        }
+    }
+
+    private func openPremium(trigger: String) {
+        model.logPaywallOpened(trigger: trigger)
+        model.isShowingPaywall = true
+    }
+}
+
+private struct UsageRingView: View {
+    let usageStatus: UsageStatus
+
+    private var displayedRemaining: Int {
+        if usageStatus.isPremiumUnlocked || !usageStatus.hasAuthoritativeUsage {
+            return usageStatus.standardLimit
+        }
+
+        return usageStatus.standardRemaining
+    }
+
+    private var accessibilityText: String {
+        if usageStatus.isPremiumUnlocked {
+            return "Premium active"
+        }
+
+        return "\(displayedRemaining) of \(usageStatus.standardLimit) free messages remaining today"
+    }
+
+    var body: some View {
+        HStack(spacing: 5) {
+            if usageStatus.isPremiumUnlocked {
+                Image(systemName: "star.fill")
+                    .font(.caption.weight(.bold))
+            } else {
+                Text("\(displayedRemaining)")
+                    .font(.caption.weight(.bold))
+                Text("/")
+                    .font(.caption2.weight(.medium))
+                Text("\(usageStatus.standardLimit)")
+                    .font(.caption2.weight(.semibold))
+            }
+        }
+        .foregroundStyle(usageStatus.isPremiumUnlocked ? Color.prosePalProGold : Color.prosePalCoralDark)
+        .frame(minWidth: 44, minHeight: 44)
+        .padding(.horizontal, 10)
+        .background(Color.prosePalSecondaryGroupedBackground, in: Capsule())
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(accessibilityText)
     }
 }
 
@@ -2137,25 +2326,6 @@ struct RelationshipPickerSheet: View {
 }
 
 private extension Relationship {
-    var summaryObjectText: String {
-        switch self {
-        case .closeFriend: "a close friend"
-        case .family: "family"
-        case .parent: "a parent"
-        case .child: "your child"
-        case .sibling: "a sibling"
-        case .grandparent: "a grandparent"
-        case .grandchild: "a grandchild"
-        case .romantic: "your partner"
-        case .colleague: "a colleague"
-        case .boss: "your boss"
-        case .mentor: "a mentor"
-        case .teacher: "a teacher"
-        case .neighbor: "a neighbor"
-        case .acquaintance: "an acquaintance"
-        }
-    }
-
     var searchText: String {
         "\(displayName) \(pickerDescription) \(generationHint)"
     }
@@ -2215,34 +2385,44 @@ private extension Relationship {
     }
 }
 
-struct TonePickerSheet: View {
-    @Binding var selection: Tone
+struct StylePickerSheet: View {
+    @Binding var tone: Tone
+    @Binding var length: MessageLength
     @Environment(\.dismiss) private var dismiss
     @State private var searchText = ""
 
     var body: some View {
         NavigationStack {
             List {
+                Section("Length") {
+                    Picker("Length", selection: $length) {
+                        ForEach(MessageLength.allCases) { length in
+                            Text(length.displayName).tag(length)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                }
+
                 if !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
                    filteredTones.isEmpty {
                     ContentUnavailableView.search(text: searchText)
                 }
 
                 Section("Tone") {
-                    ForEach(filteredTones) { tone in
+                    ForEach(filteredTones) { option in
                         Button {
-                            selection = tone
+                            tone = option
                             playSelectionFeedback()
                             dismiss()
                         } label: {
-                            TonePickerRow(tone: tone, isSelected: tone == selection)
+                            TonePickerRow(tone: option, isSelected: option == tone)
                         }
                         .buttonStyle(.plain)
                     }
                 }
             }
             .searchable(text: $searchText, prompt: "Search tones")
-            .navigationTitle("Tone")
+            .navigationTitle("Tone + Length")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Close") { dismiss() }
@@ -2299,118 +2479,6 @@ private struct TonePickerRow: View {
         .padding(.vertical, 4)
     }
 }
-struct GenerationModeSelector: View {
-    let selectedLane: GenerationLane
-    let usageStatus: UsageStatus
-    let onSelect: (GenerationLane) -> Void
-
-    private let lanes: [GenerationLane] = [.standard, .premium]
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("Generation")
-                .font(.headline)
-                .frame(maxWidth: .infinity, alignment: .leading)
-            Text(usageStatus.isPremiumUnlocked ? "Premium is active. Standard remains available for everyday messages." : "Standard is for everyday messages. Premium helps with harder moments and higher limits.")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-            ViewThatFits(in: .horizontal) {
-                HStack(spacing: 8) {
-                    ForEach(lanes, id: \.rawValue) { lane in
-                        laneButton(for: lane)
-                    }
-                }
-
-                VStack(spacing: 8) {
-                    ForEach(lanes, id: \.rawValue) { lane in
-                        laneButton(for: lane)
-                    }
-                }
-            }
-            .padding(.vertical, 2)
-        }
-    }
-
-    private func laneButton(for lane: GenerationLane) -> some View {
-        GenerationLaneButton(
-            lane: lane,
-            symbolName: symbolName(for: lane),
-            subtitle: subtitle(for: lane),
-            isSelected: lane == selectedLane,
-            isLocked: usageStatus.isPremiumLocked(lane)
-        ) {
-            onSelect(lane)
-        }
-    }
-
-    private func symbolName(for lane: GenerationLane) -> String {
-        switch lane {
-        case .automatic: "wand.and.stars"
-        case .standard: "sparkles"
-        case .premium: "star.fill"
-        case .local: "iphone"
-        }
-    }
-
-    private func subtitle(for lane: GenerationLane) -> String {
-        switch lane {
-        case .automatic: "Best fit"
-        case .standard: "Everyday"
-        case .premium:
-            usageStatus.isPremiumUnlocked ? "Active" : "Harder moments"
-        case .local: "On device"
-        }
-    }
-}
-
-private struct GenerationLaneButton: View {
-    let lane: GenerationLane
-    let symbolName: String
-    let subtitle: String
-    let isSelected: Bool
-    let isLocked: Bool
-    var onSelect: () -> Void
-
-    var body: some View {
-        Button(action: onSelect) {
-            VStack(spacing: 6) {
-                Image(systemName: symbolName)
-                    .font(.headline)
-                Text(lane.displayName)
-                    .font(.caption.weight(.semibold))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.86)
-                Text(subtitle)
-                    .font(.caption2)
-                    .foregroundStyle(isSelected ? .white.opacity(0.82) : .secondary)
-                    .lineLimit(2)
-                    .multilineTextAlignment(.center)
-            }
-            .frame(maxWidth: .infinity)
-            .frame(minHeight: 68)
-            .padding(.horizontal, 6)
-            .padding(.vertical, 8)
-            .background(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(isSelected ? Color.prosePalCoral : Color.prosePalSecondaryGroupedBackground)
-            )
-            .foregroundStyle(isSelected ? .white : .primary)
-            .overlay(alignment: .topTrailing) {
-                if isLocked {
-                    Image(systemName: "lock.fill")
-                        .font(.caption2.weight(.bold))
-                        .foregroundStyle(isSelected ? .white : .secondary)
-                        .padding(8)
-                }
-            }
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("\(lane.displayName), \(subtitle)")
-    }
-}
-
 struct UsageStatusRow: View {
     let usageStatus: UsageStatus
 
@@ -2445,9 +2513,9 @@ struct ResultsView: View {
         Group {
             if model.generatedMessages.isEmpty {
                 EmptyStateView(
-                    title: "No drafts yet",
+                    title: "No versions yet",
                     systemImage: "text.page",
-                    detail: "Write a message and your drafts will appear here."
+                    detail: "Write a message and your versions will appear here."
                 )
             } else {
                 ScrollView {
@@ -2504,7 +2572,7 @@ struct ResultsView: View {
                     .background(Color.prosePalCoral.opacity(0.12), in: Circle())
 
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Drafts")
+                    Text("\(model.generatedMessages.count) versions")
                         .font(.title2.weight(.bold))
                     Text("Pick one to copy, or adjust the details and try again.")
                         .font(.callout)
@@ -2938,7 +3006,7 @@ struct PaywallSheet: View {
                     VStack(spacing: 12) {
                         PremiumFeatureRow(systemImage: "heart.text.square", title: "Harder moments", detail: "More support for nuanced, sensitive, or high-stakes messages.")
                         PremiumFeatureRow(systemImage: "infinity", title: "Higher limits", detail: "More room for everyday messages.")
-                        PremiumFeatureRow(systemImage: "arrow.triangle.2.circlepath", title: "More rewrites", detail: "Try a warmer, shorter, or clearer version when the first draft is not quite right.")
+                        PremiumFeatureRow(systemImage: "arrow.triangle.2.circlepath", title: "More rewrites", detail: "Try a warmer, shorter, or clearer version when the first message is not quite right.")
                     }
 
                     UsageStatusRow(usageStatus: usageStatus)
@@ -3287,7 +3355,7 @@ struct SavedMessagesView: View {
                     EmptyStateView(
                         title: "No Saved Messages",
                         systemImage: "bookmark",
-                        detail: "When a draft feels right, save it here for later."
+                        detail: "When a version feels right, save it here for later."
                     )
                 } else {
                     List {
@@ -3610,26 +3678,14 @@ struct SettingsView: View {
                     Text(tone.displayName).tag(tone)
                 }
             }
-
-            ForEach([GenerationLane.standard, .premium], id: \.rawValue) { lane in
-                settingsActionButton(
-                    systemImage: lane == .premium ? "star" : "sparkles",
-                    title: lane == .standard ? "Standard generation" : "Premium generation",
-                    subtitle: lane == .standard ? "Everyday messages" : "Harder moments and higher limits",
-                    trailingSystemImage: model.draft.requestedLane == lane ? "checkmark" : (model.usageStatus.isPremiumLocked(lane) ? "lock.fill" : nil),
-                    tint: model.draft.requestedLane == lane ? Color.prosePalCoral : .secondary
-                ) {
-                    model.selectLane(lane)
-                }
-            }
         }
     }
 
     private var statsSection: some View {
         Section("Your Stats") {
-            LabeledContent("Generated drafts", value: "\(model.totalGeneratedCount)")
+            LabeledContent("Messages written", value: "\(model.totalGeneratedCount)")
             LabeledContent("Saved messages", value: "\(model.savedMessages.count)")
-            LabeledContent("Standard left", value: "\(model.usageStatus.standardRemaining) of \(model.usageStatus.standardLimit)")
+            LabeledContent("Free messages left", value: "\(model.usageStatus.standardRemaining) of \(model.usageStatus.standardLimit)")
         }
     }
 
@@ -4338,7 +4394,7 @@ struct EmptyStateView: View {
             client: MockMessageWritingClient(
                 response: CardResponse(
                     messages: [
-                        GeneratedMessage(text: "A preview draft from ProsePal.")
+                        GeneratedMessage(text: "A preview message from ProsePal.")
                     ],
                     laneUsed: .standard
                 )

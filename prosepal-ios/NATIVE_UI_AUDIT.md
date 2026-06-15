@@ -138,5 +138,7 @@ Recommended direction (no opt-out flag):
 - Accessibility Inspector: contrast audit, VoiceOver pass on toast + paywall, Dynamic Type at AX5, Reduce Transparency + Increase Contrast.
 - App Review dry-run against the 3.1.2 subscription checklist and 5.1.1(v) account-deletion requirement.
 
-## Execution (this task)
-Deliverable is the audit document above. On approval, save it verbatim to **`prosepal-ios/NATIVE_UI_AUDIT.md`** on the `ios-native-rewrite-prosepal-ios` branch (alongside the existing `NATIVE_UI_POLISH_REPORT.md`). **No source/code changes.**
+## Current Implementation Brief
+- Use `NATIVE_UX_IMPLEMENTATION_HANDOFF.md` for the next native UI slices.
+- Keep this audit as the implementation tracker for previously identified
+  UI/accessibility/App Review risks.

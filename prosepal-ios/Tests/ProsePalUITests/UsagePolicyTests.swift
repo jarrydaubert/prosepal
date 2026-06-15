@@ -5,6 +5,50 @@ import ProsePalDomain
 
 @MainActor
 final class UsagePolicyTests: XCTestCase {
+    func testFreeActionZoneShowsMessagesAndNoPeerPremiumControl() {
+        let usageStatus = UsageStatus(
+            standardLimit: 3,
+            standardRemaining: 3,
+            hasAuthoritativeUsage: false
+        )
+
+        let state = usageStatus.actionZoneState(requestedLane: .standard)
+
+        XCTAssertEqual(state.statusLine, "3 free messages daily")
+        XCTAssertEqual(state.primaryButtonTitle, "Write message")
+        XCTAssertEqual(state.primaryAction, .writeMessage)
+        XCTAssertTrue(state.showsTryPremium)
+        XCTAssertFalse(state.showsLaneControl)
+    }
+
+    func testOutOfMessagesActionZoneUsesHonestUnlockCTA() {
+        let usageStatus = UsageStatus(
+            standardLimit: 3,
+            standardRemaining: 0,
+            hasAuthoritativeUsage: true
+        )
+
+        let state = usageStatus.actionZoneState(requestedLane: .standard)
+
+        XCTAssertEqual(state.statusLine, "Out of free messages today")
+        XCTAssertEqual(state.primaryButtonTitle, "Unlock more messages")
+        XCTAssertEqual(state.primaryAction, .openPaywall)
+        XCTAssertFalse(state.showsTryPremium)
+        XCTAssertFalse(state.showsLaneControl)
+    }
+
+    func testPremiumActionZoneShowsRealLaneControl() {
+        let usageStatus = UsageStatus(isPremiumUnlocked: true)
+
+        let state = usageStatus.actionZoneState(requestedLane: .premium)
+
+        XCTAssertEqual(state.statusLine, "Premium active")
+        XCTAssertEqual(state.primaryButtonTitle, "Write message")
+        XCTAssertEqual(state.primaryAction, .writeMessage)
+        XCTAssertFalse(state.showsTryPremium)
+        XCTAssertTrue(state.showsLaneControl)
+    }
+
     func testPremiumSelectionShowsPaywallWithoutChangingLane() {
         let model = makeModel()
 
@@ -139,7 +183,7 @@ final class UsagePolicyTests: XCTestCase {
         XCTAssertTrue(model.isShowingPaywall)
         XCTAssertFalse(model.isShowingResults)
         XCTAssertTrue(model.generatedMessages.isEmpty)
-        XCTAssertEqual(model.errorMessage, "You've used your Standard drafts for today.")
+        XCTAssertEqual(model.errorMessage, "Out of free messages today.")
     }
 
     func testPlaceholderStandardLimitDoesNotBlockGatewayGeneration() async {

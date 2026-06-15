@@ -1,5 +1,8 @@
 # ProsePal iOS Native UX Direction
 
+> Current implementation brief: `NATIVE_UX_IMPLEMENTATION_HANDOFF.md`. If this
+> background direction conflicts with that handoff, follow the handoff.
+
 This document defines the intended product shape for the SwiftUI rewrite in
 `prosepal-ios/`. It is the UX guardrail before more implementation work happens.
 

@@ -11,7 +11,9 @@ in this folder.
 - iOS-first, Android deferred.
 - Swift, SwiftUI, async/await, Swift Package Manager.
 - Minimum app target: iOS 17.
-- Native UX direction: `NATIVE_UX_DIRECTION.md`.
+- Native UX implementation source of truth: `NATIVE_UX_IMPLEMENTATION_HANDOFF.md`.
+- Background UX direction: `NATIVE_UX_DIRECTION.md` and
+  `NATIVE_PRODUCT_NORTH_STAR.md`.
 - Keep RevenueCat initially for entitlement continuity unless an ADR chooses
   otherwise.
 - Keep Supabase where it remains useful for auth, backend, and data continuity.
