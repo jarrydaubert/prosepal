@@ -55,6 +55,40 @@ func crisisInputDoesNotStartMomentDrafting() async throws {
     #expect(await client.draftCallCount == 0)
 }
 
+@Test
+@MainActor
+func takeMoreCareReplacesPrivateDraftWithCarefulDraft() async throws {
+    let privateClient = CountingMomentDraftClient()
+    let carefulClient = MomentModelRefiningClient(
+        bundle: MomentDraftBundle(
+            messageText: "A more careful draft.",
+            lane: .takeMoreCare
+        )
+    )
+    let service = RoutingMessageWritingService(
+        privateClient: privateClient,
+        carefulClient: carefulClient
+    )
+    let model = MomentModel(service: service)
+
+    model.personName = "Alex"
+    model.bundle = MomentDraftBundle(
+        messageText: "A quick private draft.",
+        lane: .privateDraft
+    )
+
+    model.takeMoreCare()
+
+    for _ in 0..<40 {
+        if model.bundle?.lane == .takeMoreCare { break }
+        try await Task.sleep(for: .milliseconds(5))
+    }
+
+    #expect(model.bundle?.messageText == "A more careful draft.")
+    #expect(model.bundle?.lane == .takeMoreCare)
+    #expect(await carefulClient.lastCurrentMessage == "A quick private draft.")
+}
+
 private actor ControlledMomentDraftClient: MomentDraftClient {
     private struct PendingDraft {
         var moment: MomentInput
@@ -109,5 +143,34 @@ private actor CountingMomentDraftClient: MomentDraftClient {
         moment: MomentInput
     ) async throws -> MomentDraftBundle {
         try await draft(for: moment)
+    }
+}
+
+private actor MomentModelRefiningClient: MomentDraftRefinementClient {
+    private let bundle: MomentDraftBundle
+    private(set) var lastCurrentMessage: String?
+
+    init(bundle: MomentDraftBundle) {
+        self.bundle = bundle
+    }
+
+    func draft(for moment: MomentInput) async throws -> MomentDraftBundle {
+        bundle
+    }
+
+    func adjust(
+        _ bundle: MomentDraftBundle,
+        with adjustment: MomentAdjustment,
+        moment: MomentInput
+    ) async throws -> MomentDraftBundle {
+        self.bundle
+    }
+
+    func refine(
+        currentMessage: String?,
+        moment: MomentInput
+    ) async throws -> MomentDraftBundle {
+        lastCurrentMessage = currentMessage
+        return bundle
     }
 }

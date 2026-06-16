@@ -1,7 +1,7 @@
 import Foundation
 import ProsePalDomain
 
-public struct GatewayCarefulMomentClient: MomentDraftClient {
+public struct GatewayCarefulMomentClient: MomentDraftRefinementClient {
     private let client: any MessageWritingClient
     private let clientContext: ClientContext
 
@@ -26,6 +26,17 @@ public struct GatewayCarefulMomentClient: MomentDraftClient {
             moment: moment,
             adjustment: adjustment,
             currentMessage: bundle.messageText
+        )
+    }
+
+    public func refine(
+        currentMessage: String?,
+        moment: MomentInput
+    ) async throws -> MomentDraftBundle {
+        try await generate(
+            moment: moment,
+            adjustment: nil,
+            currentMessage: currentMessage
         )
     }
 

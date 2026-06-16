@@ -134,6 +134,39 @@ func crisisMomentDoesNotCallAnyDraftClient() async {
 }
 
 @Test
+func takeMoreCareUsesCarefulRefinementWithCurrentDraft() async throws {
+    let privateClient = RecordingMomentDraftClient(
+        bundle: MomentDraftBundle(messageText: "Private hello.", lane: .privateDraft)
+    )
+    let carefulClient = RefiningMomentDraftClient(
+        bundle: MomentDraftBundle(messageText: "Careful hello.", lane: .takeMoreCare)
+    )
+    let service = RoutingMessageWritingService(
+        privateClient: privateClient,
+        carefulClient: carefulClient
+    )
+    let currentBundle = MomentDraftBundle(
+        messageText: "Happy birthday. I hope today is lovely.",
+        lane: .privateDraft
+    )
+
+    let bundle = try await service.takeMoreCare(
+        currentBundle,
+        moment: MomentInput(
+            personName: "Alex",
+            relationship: .closeFriend,
+            occasion: .birthday
+        )
+    )
+
+    #expect(bundle.messageText == "Careful hello.")
+    #expect(bundle.lane == .takeMoreCare)
+    #expect(await privateClient.draftCallCount == 0)
+    #expect(await carefulClient.refineCallCount == 1)
+    #expect(await carefulClient.lastCurrentMessage == "Happy birthday. I hope today is lovely.")
+}
+
+@Test
 func savedMomentDraftRecordPreservesMomentMetadata() {
     let createdAt = Date(timeIntervalSince1970: 1_800_000_000)
     let moment = MomentInput(
@@ -201,5 +234,36 @@ private struct FailingMomentDraftClient: MomentDraftClient {
         moment: MomentInput
     ) async throws -> MomentDraftBundle {
         throw error
+    }
+}
+
+private actor RefiningMomentDraftClient: MomentDraftRefinementClient {
+    private let bundle: MomentDraftBundle
+    private(set) var refineCallCount = 0
+    private(set) var lastCurrentMessage: String?
+
+    init(bundle: MomentDraftBundle) {
+        self.bundle = bundle
+    }
+
+    func draft(for moment: MomentInput) async throws -> MomentDraftBundle {
+        bundle
+    }
+
+    func adjust(
+        _ bundle: MomentDraftBundle,
+        with adjustment: MomentAdjustment,
+        moment: MomentInput
+    ) async throws -> MomentDraftBundle {
+        self.bundle
+    }
+
+    func refine(
+        currentMessage: String?,
+        moment: MomentInput
+    ) async throws -> MomentDraftBundle {
+        refineCallCount += 1
+        lastCurrentMessage = currentMessage
+        return bundle
     }
 }

@@ -106,6 +106,16 @@ public final class MomentModel {
         }
     }
 
+    public func takeMoreCare() {
+        guard canDraft else { return }
+        draftTask?.cancel()
+        let generation = nextDraftGeneration()
+        let currentBundle = bundle
+        draftTask = Task { [weak self, currentBundle] in
+            await self?.takeMoreCareNow(currentBundle, generation: generation)
+        }
+    }
+
     private func adjustNow(
         _ bundle: MomentDraftBundle,
         adjustment: MomentAdjustment,
@@ -130,6 +140,32 @@ public final class MomentModel {
         } catch {
             guard isCurrentGeneration(generation) else { return }
             errorMessage = "ProsePal could not reshape this yet."
+        }
+    }
+
+    private func takeMoreCareNow(
+        _ bundle: MomentDraftBundle?,
+        generation: Int
+    ) async {
+        let input = moment
+        isDrafting = true
+        errorMessage = nil
+        defer {
+            finishDrafting(generation: generation)
+        }
+
+        do {
+            let nextBundle = try await service.takeMoreCare(bundle, moment: input)
+            guard isCurrentGeneration(generation) else { return }
+            self.bundle = nextBundle
+        } catch is CancellationError {
+            return
+        } catch let error as GenerationError {
+            guard isCurrentGeneration(generation) else { return }
+            errorMessage = error.userSafeMessage
+        } catch {
+            guard isCurrentGeneration(generation) else { return }
+            errorMessage = "ProsePal could not take more care with this yet."
         }
     }
 
@@ -190,7 +226,7 @@ public struct MomentAppRootView: View {
     private var tabs: some View {
         TabView(selection: $selectedTab) {
             NavigationStack {
-                MomentSheetView(model: model)
+                MomentSheetView(model: model, account: account)
                     .navigationTitle("ProsePal")
                     .toolbarTitleDisplayMode(.inline)
             }
@@ -338,6 +374,7 @@ private struct MomentWelcomeRow: View {
 
 private struct MomentSheetView: View {
     @Bindable var model: MomentModel
+    @Bindable var account: MomentAccountModel
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \RelationshipTruthBeadRecord.updatedAt, order: .reverse)
     private var truthBeads: [RelationshipTruthBeadRecord]
@@ -345,6 +382,7 @@ private struct MomentSheetView: View {
     @State private var saveNotice: String?
     @State private var isShowingRelationshipPicker = false
     @State private var isShowingMomentPicker = false
+    @State private var isShowingPaywall = false
     @State private var newTruthBeadText = ""
 
     private enum Field: Hashable {
@@ -408,6 +446,9 @@ private struct MomentSheetView: View {
             MomentOccasionPickerSheet(selection: $model.occasion)
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $isShowingPaywall) {
+            MomentPaywallSheet(account: account)
         }
         .onChange(of: model.personName) { _, _ in model.scheduleDraft() }
         .onChange(of: model.relationship) { _, _ in model.scheduleDraft() }
@@ -694,6 +735,18 @@ private struct MomentSheetView: View {
 
     private func actionRail(bundle: MomentDraftBundle) -> some View {
         VStack(spacing: 10) {
+            if bundle.lane != .takeMoreCare {
+                Button {
+                    takeMoreCare()
+                } label: {
+                    Label("Take more care", systemImage: "heart.text.square")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
+                .disabled(model.isDrafting)
+            }
+
             HStack(spacing: 10) {
                 ForEach(MomentAdjustment.allCases) { adjustment in
                     Button(adjustment.displayName) {
@@ -729,6 +782,14 @@ private struct MomentSheetView: View {
                 .buttonStyle(.bordered)
             }
             .controlSize(.large)
+        }
+    }
+
+    private func takeMoreCare() {
+        if account.isPremiumUnlocked {
+            model.takeMoreCare()
+        } else {
+            isShowingPaywall = true
         }
     }
 
