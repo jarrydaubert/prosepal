@@ -44,7 +44,7 @@ func momentLaunchStoreConsumesPendingLaunchOnce() {
 
 @Test
 func momentDeepLinkBuildsLaunchRequestFromQueryParameters() throws {
-    let url = try #require(URL(string: "prosepal://moment?person=Alex%20Morgan&occasion=thankYou&source=widget"))
+    let url = try #require(URL(string: "prosepal://moment?person=Alex%20Morgan&occasion=Thank%20You&source=widget"))
 
     let deepLink = try #require(MomentDeepLink(url: url))
 
@@ -61,6 +61,15 @@ func momentDeepLinkBuildsLaunchRequestFromPathPerson() throws {
 
     #expect(deepLink.launchRequest.personName == "Alex Morgan")
     #expect(deepLink.launchRequest.source == "deep_link")
+}
+
+@Test
+func momentDeepLinkAcceptsRawOccasionIdentifiers() throws {
+    let url = try #require(URL(string: "prosepal://moment?person=Alex&moment=petSympathy"))
+
+    let deepLink = try #require(MomentDeepLink(url: url))
+
+    #expect(deepLink.launchRequest.occasion == .petSympathy)
 }
 
 @Test
@@ -99,7 +108,7 @@ func momentLaunchStorePreservesSafeOccasionWhenProvided() throws {
     let launchStore = MomentLaunchStore(store: store)
     launchStore.save(MomentLaunchRequest(
         personName: "Alex",
-        occasion: Occasion.sympathy,
+        occasion: .sympathy,
         source: "app_intent"
     ))
 

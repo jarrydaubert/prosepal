@@ -120,7 +120,22 @@ private extension String {
     var occasionValue: Occasion? {
         let normalized = trimmingCharacters(in: .whitespacesAndNewlines)
         guard !normalized.isEmpty else { return nil }
-        return Occasion(rawValue: normalized)
+        if let rawValueMatch = Occasion(rawValue: normalized) {
+            return rawValueMatch
+        }
+
+        let key = normalized.momentParameterKey
+        return Occasion.allCases.first {
+            $0.rawValue.momentParameterKey == key ||
+                $0.displayName.momentParameterKey == key
+        }
+    }
+
+    private var momentParameterKey: String {
+        String(
+            folding(options: [.caseInsensitive, .diacriticInsensitive], locale: .current)
+                .filter { $0.isLetter || $0.isNumber }
+        )
     }
 }
 
