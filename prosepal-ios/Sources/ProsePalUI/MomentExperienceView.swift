@@ -206,6 +206,8 @@ private struct MomentSheetView: View {
     @Environment(\.modelContext) private var modelContext
     @FocusState private var focusedField: Field?
     @State private var saveNotice: String?
+    @State private var isShowingRelationshipPicker = false
+    @State private var isShowingMomentPicker = false
 
     private enum Field: Hashable {
         case person
@@ -248,6 +250,16 @@ private struct MomentSheetView: View {
                 }
             }
         }
+        .sheet(isPresented: $isShowingRelationshipPicker) {
+            MomentRelationshipPickerSheet(selection: $model.relationship)
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $isShowingMomentPicker) {
+            MomentOccasionPickerSheet(selection: $model.occasion)
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+        }
         .onChange(of: model.personName) { _, _ in model.scheduleDraft() }
         .onChange(of: model.relationship) { _, _ in model.scheduleDraft() }
         .onChange(of: model.occasion) { _, _ in model.scheduleDraft() }
@@ -282,12 +294,18 @@ private struct MomentSheetView: View {
                 .padding(16)
                 .background(Color.momentSecondaryGroupedBackground, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
 
-            Picker("Relationship", selection: $model.relationship) {
-                ForEach(Relationship.allCases) { relationship in
-                    Text(relationship.displayName).tag(relationship)
-                }
+            Button {
+                focusedField = nil
+                isShowingRelationshipPicker = true
+            } label: {
+                MomentSelectionRow(
+                    title: "Who they are to you",
+                    value: model.relationship.displayName,
+                    detail: model.relationship.group.displayName,
+                    systemImage: model.relationship.symbolName
+                )
             }
-            .pickerStyle(.menu)
+            .buttonStyle(.plain)
         }
         .prosePalMomentCard()
     }
@@ -297,12 +315,18 @@ private struct MomentSheetView: View {
             Text("Moment")
                 .font(.headline)
 
-            Picker("Moment", selection: $model.occasion) {
-                ForEach(Occasion.allCases) { occasion in
-                    Text(occasion.displayName).tag(occasion)
-                }
+            Button {
+                focusedField = nil
+                isShowingMomentPicker = true
+            } label: {
+                MomentSelectionRow(
+                    title: "What is the moment?",
+                    value: model.occasion.displayName,
+                    detail: model.occasion.group.displayName,
+                    systemImage: model.occasion.symbolName
+                )
             }
-            .pickerStyle(.menu)
+            .buttonStyle(.plain)
 
             Picker("Care", selection: $model.register) {
                 ForEach(MomentRegister.allCases) { register in
@@ -471,6 +495,265 @@ private struct MomentSheetView: View {
                 saveNotice = nil
             }
         }
+    }
+}
+
+private struct MomentSelectionRow: View {
+    let title: String
+    let value: String
+    let detail: String
+    let systemImage: String
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: systemImage)
+                .font(.headline)
+                .symbolRenderingMode(.hierarchical)
+                .frame(width: 30, height: 30)
+                .foregroundStyle(.tint)
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                Text(value)
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(.primary)
+                    .lineLimit(2)
+
+                Text(detail)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+
+            Spacer(minLength: 10)
+
+            Image(systemName: "chevron.right")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.tertiary)
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.momentSecondaryGroupedBackground, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(.isButton)
+    }
+}
+
+private struct MomentRelationshipPickerSheet: View {
+    @Binding var selection: Relationship
+    @Environment(\.dismiss) private var dismiss
+    @State private var searchText = ""
+
+    var body: some View {
+        NavigationStack {
+            List {
+                if isSearching && !hasSearchResults {
+                    ContentUnavailableView.search(text: searchText)
+                }
+
+                ForEach(RelationshipGroup.allCases) { group in
+                    let relationships = filteredRelationships(in: group)
+                    if !relationships.isEmpty {
+                        Section(group.displayName) {
+                            ForEach(relationships) { relationship in
+                                Button {
+                                    selection = relationship
+                                    playMomentSelectionFeedback()
+                                    dismiss()
+                                } label: {
+                                    MomentRelationshipPickerRow(
+                                        relationship: relationship,
+                                        isSelected: relationship == selection
+                                    )
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                    }
+                }
+            }
+            .searchable(text: $searchText, prompt: "Search relationships")
+            .navigationTitle("Who they are")
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Close") {
+                        dismiss()
+                    }
+                }
+            }
+        }
+    }
+
+    private var isSearching: Bool {
+        !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    private var hasSearchResults: Bool {
+        RelationshipGroup.allCases.contains { !filteredRelationships(in: $0).isEmpty }
+    }
+
+    private func filteredRelationships(in group: RelationshipGroup) -> [Relationship] {
+        let groupRelationships = Relationship.allCases.filter { $0.group == group }
+        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty else { return groupRelationships }
+
+        return groupRelationships.filter {
+            $0.momentSearchText.localizedCaseInsensitiveContains(query)
+        }
+    }
+}
+
+private struct MomentRelationshipPickerRow: View {
+    let relationship: Relationship
+    let isSelected: Bool
+
+    var body: some View {
+        MomentPickerRow(
+            systemImage: relationship.symbolName,
+            title: relationship.displayName,
+            subtitle: relationship.group.displayName,
+            isSelected: isSelected
+        )
+    }
+}
+
+private struct MomentOccasionPickerSheet: View {
+    @Binding var selection: Occasion
+    @Environment(\.dismiss) private var dismiss
+    @State private var searchText = ""
+
+    var body: some View {
+        NavigationStack {
+            List {
+                if !isSearching {
+                    Section("Often used") {
+                        ForEach(Occasion.featuredCases) { occasion in
+                            occasionButton(for: occasion)
+                        }
+                    }
+                } else if !hasSearchResults {
+                    ContentUnavailableView.search(text: searchText)
+                }
+
+                ForEach(displayedGroups) { group in
+                    let occasions = filteredOccasions(in: group)
+                    if !occasions.isEmpty {
+                        Section(group.displayName) {
+                            ForEach(occasions) { occasion in
+                                occasionButton(for: occasion)
+                            }
+                        }
+                    }
+                }
+            }
+            .searchable(text: $searchText, prompt: "Search moments")
+            .navigationTitle("Moment")
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Close") {
+                        dismiss()
+                    }
+                }
+            }
+        }
+    }
+
+    private var isSearching: Bool {
+        !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    private var displayedGroups: [OccasionGroup] {
+        if isSearching {
+            return OccasionGroup.allCases
+        }
+
+        return OccasionGroup.allCases.filter { $0 != .mostUsed }
+    }
+
+    private var hasSearchResults: Bool {
+        OccasionGroup.allCases.contains { !filteredOccasions(in: $0).isEmpty }
+    }
+
+    private func filteredOccasions(in group: OccasionGroup) -> [Occasion] {
+        let groupOccasions = Occasion.allCases.filter { $0.group == group }
+        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty else { return groupOccasions }
+
+        return groupOccasions.filter {
+            $0.searchText.localizedCaseInsensitiveContains(query)
+        }
+    }
+
+    private func occasionButton(for occasion: Occasion) -> some View {
+        Button {
+            selection = occasion
+            playMomentSelectionFeedback()
+            dismiss()
+        } label: {
+            MomentOccasionPickerRow(
+                occasion: occasion,
+                isSelected: occasion == selection
+            )
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+private struct MomentOccasionPickerRow: View {
+    let occasion: Occasion
+    let isSelected: Bool
+
+    var body: some View {
+        MomentPickerRow(
+            systemImage: occasion.symbolName,
+            title: occasion.displayName,
+            subtitle: occasion.group.displayName,
+            isSelected: isSelected
+        )
+    }
+}
+
+private struct MomentPickerRow: View {
+    let systemImage: String
+    let title: String
+    let subtitle: String
+    let isSelected: Bool
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: systemImage)
+                .font(.headline)
+                .symbolRenderingMode(.hierarchical)
+                .frame(width: 28, height: 28)
+                .foregroundStyle(.tint)
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title)
+                    .font(.body.weight(.medium))
+                    .foregroundStyle(.primary)
+                    .lineLimit(2)
+
+                Text(subtitle)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+
+            Spacer(minLength: 8)
+
+            if isSelected {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(.tint)
+            }
+        }
+        .padding(.vertical, 4)
+        .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
     }
 }
 
@@ -1070,6 +1353,18 @@ private struct MomentPaywallUnavailableRow: View {
 private enum MomentSettingsExternalLinks {
     static let terms = URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!
     static let privacy = URL(string: "https://prosepal.app/privacy")!
+}
+
+private extension Relationship {
+    var momentSearchText: String {
+        "\(displayName) \(group.displayName) \(generationHint)"
+    }
+}
+
+private func playMomentSelectionFeedback() {
+    #if canImport(UIKit)
+    UISelectionFeedbackGenerator().selectionChanged()
+    #endif
 }
 
 private extension View {
