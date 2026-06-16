@@ -1030,6 +1030,165 @@ private struct SavedMomentDraftDetailView: View {
     }
 }
 
+private struct RelationshipMemoryVaultView: View {
+    @Environment(\.modelContext) private var modelContext
+    @Query(sort: \RelationshipTruthBeadRecord.updatedAt, order: .reverse)
+    private var beads: [RelationshipTruthBeadRecord]
+    @State private var searchText = ""
+
+    private var filteredBeads: [RelationshipTruthBeadRecord] {
+        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty else { return beads }
+
+        return beads.filter {
+            $0.personName.localizedCaseInsensitiveContains(query)
+                || $0.text.localizedCaseInsensitiveContains(query)
+        }
+    }
+
+    var body: some View {
+        List {
+            if filteredBeads.isEmpty {
+                ContentUnavailableView(
+                    searchText.isEmpty ? "No relationship memory yet" : "No matching details",
+                    systemImage: "checkmark.seal",
+                    description: Text(searchText.isEmpty ? "Save details from the Moment screen when they should help future drafts." : "Try another person or phrase.")
+                )
+                .listRowBackground(Color.clear)
+            } else {
+                ForEach(filteredBeads) { bead in
+                    NavigationLink {
+                        RelationshipMemoryDetailView(bead: bead)
+                    } label: {
+                        RelationshipMemoryRow(bead: bead)
+                    }
+                }
+                .onDelete(perform: delete)
+            }
+        }
+        .navigationTitle("Memory")
+        .searchable(text: $searchText, prompt: "Search memory")
+    }
+
+    private func delete(at offsets: IndexSet) {
+        for index in offsets {
+            modelContext.delete(filteredBeads[index])
+        }
+        try? modelContext.save()
+    }
+}
+
+private struct RelationshipMemoryRow: View {
+    let bead: RelationshipTruthBeadRecord
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            HStack(spacing: 8) {
+                Text(bead.personName)
+                    .font(.headline)
+
+                if !bead.isUserApproved {
+                    Text("Paused")
+                        .font(.caption2.weight(.bold))
+                        .padding(.horizontal, 7)
+                        .padding(.vertical, 3)
+                        .background(.secondary.opacity(0.12), in: Capsule())
+                }
+            }
+
+            Text(bead.text)
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .lineLimit(2)
+        }
+        .padding(.vertical, 4)
+    }
+}
+
+private struct RelationshipMemoryDetailView: View {
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
+    let bead: RelationshipTruthBeadRecord
+    @State private var personName: String
+    @State private var text: String
+    @State private var isUserApproved: Bool
+    @State private var notice: String?
+
+    init(bead: RelationshipTruthBeadRecord) {
+        self.bead = bead
+        _personName = State(initialValue: bead.personName)
+        _text = State(initialValue: bead.text)
+        _isUserApproved = State(initialValue: bead.isUserApproved)
+    }
+
+    var body: some View {
+        Form {
+            if let notice {
+                Section {
+                    Label(notice, systemImage: "checkmark.circle")
+                }
+            }
+
+            Section("Person") {
+                TextField("Name", text: $personName)
+                    .momentNameInputBehavior()
+            }
+
+            Section {
+                TextField("What should ProsePal remember?", text: $text, axis: .vertical)
+                    .lineLimit(3...6)
+            } header: {
+                Text("Detail")
+            } footer: {
+                Text("Correct this whenever it becomes stale or wrong.")
+            }
+
+            Section {
+                Toggle("Use this in drafts", isOn: $isUserApproved)
+            } header: {
+                Text("Use")
+            } footer: {
+                Text("Why am I seeing this? You saved this detail for \(bead.personName). ProsePal uses approved details only when drafting for that person, and does not log the text.")
+            }
+
+            Section {
+                Button("Delete detail", role: .destructive) {
+                    modelContext.delete(bead)
+                    try? modelContext.save()
+                    dismiss()
+                }
+            }
+        }
+        .navigationTitle("Memory Detail")
+        .toolbarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .confirmationAction) {
+                Button("Save") {
+                    save()
+                }
+                .disabled(!canSave)
+            }
+        }
+    }
+
+    private var canSave: Bool {
+        !personName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
+            !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    private func save() {
+        bead.personName = personName.trimmingCharacters(in: .whitespacesAndNewlines)
+        bead.text = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        bead.isUserApproved = isUserApproved
+        bead.updatedAt = Date()
+        try? modelContext.save()
+
+        withAnimation(.easeInOut(duration: 0.18)) {
+            notice = "Saved"
+        }
+    }
+}
+
 private struct MomentSettingsView: View {
     @Bindable var account: MomentAccountModel
     @State private var isShowingPaywall = false
@@ -1095,7 +1254,11 @@ private struct MomentSettingsView: View {
 
             Section("Privacy") {
                 Label("Saved drafts are only created when you tap Save", systemImage: "bookmark")
-                Label("Relationship memory stays user-approved", systemImage: "checkmark.seal")
+                NavigationLink {
+                    RelationshipMemoryVaultView()
+                } label: {
+                    Label("Relationship memory", systemImage: "checkmark.seal")
+                }
             }
 
             Section("About") {
