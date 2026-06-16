@@ -95,6 +95,37 @@ public struct NativeDiagnosticsLogger: Sendable {
         logger.info("\(payload, privacy: .public)")
     }
 
+    public func momentDraftStarted(requestID: String, moment: MomentInput, trigger: String) {
+        let payload = NativeDiagnosticsPayload.momentDraftStarted(
+            requestID: requestID,
+            moment: moment,
+            trigger: trigger
+        )
+        logger.info("\(payload, privacy: .public)")
+    }
+
+    public func momentDraftSucceeded(
+        requestID: String,
+        bundle: MomentDraftBundle,
+        durationMs: Int
+    ) {
+        let payload = NativeDiagnosticsPayload.momentDraftSucceeded(
+            requestID: requestID,
+            bundle: bundle,
+            durationMs: durationMs
+        )
+        logger.info("\(payload, privacy: .public)")
+    }
+
+    public func momentDraftFailed(requestID: String, category: String, durationMs: Int) {
+        let payload = NativeDiagnosticsPayload.momentDraftFailed(
+            requestID: requestID,
+            category: category,
+            durationMs: durationMs
+        )
+        logger.warning("\(payload, privacy: .public)")
+    }
+
     public func subscriptionEvent(
         _ event: String,
         source: String,
@@ -131,6 +162,22 @@ enum NativeDiagnosticsPayload {
 
     static func messageAction(action: String, source: String, messageCharacters: Int) -> String {
         "message_action action=\(action) source=\(source) message_chars=\(messageCharacters)"
+    }
+
+    static func momentDraftStarted(requestID: String, moment: MomentInput, trigger: String) -> String {
+        "moment_draft_started request_id=\(requestID.diagnosticsPrefix) trigger=\(trigger) register=\(moment.register.rawValue) occasion=\(moment.occasion.rawValue) relationship=\(moment.relationship.rawValue) tone=\(moment.tone.rawValue) length=\(moment.length.rawValue) spelling=\(moment.spellingPreference.rawValue) person_present=\(moment.personName.hasDiagnosticsText) true_chars=\(moment.trueThing.diagnosticsTextCount) safety=\(moment.safetySignal.rawValue)"
+    }
+
+    static func momentDraftSucceeded(
+        requestID: String,
+        bundle: MomentDraftBundle,
+        durationMs: Int
+    ) -> String {
+        "moment_draft_succeeded request_id=\(requestID.diagnosticsPrefix) lane=\(bundle.lane.rawValue) pressure_findings=\(bundle.pressureCheck.hasFindings) truth_bead_count=\(bundle.truthBeads.count) missing_count=\(bundle.missingInformation.count) risk_count=\(bundle.riskNotes.count) message_chars=\(bundle.messageText.diagnosticsTextCount) duration_ms=\(durationMs)"
+    }
+
+    static func momentDraftFailed(requestID: String, category: String, durationMs: Int) -> String {
+        "moment_draft_failed request_id=\(requestID.diagnosticsPrefix) category=\(category) duration_ms=\(durationMs)"
     }
 }
 

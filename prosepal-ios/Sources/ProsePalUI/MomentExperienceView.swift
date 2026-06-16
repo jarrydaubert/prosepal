@@ -24,11 +24,16 @@ public final class MomentModel {
     public var errorMessage: String?
 
     @ObservationIgnored private let service: any MessageWritingService
+    @ObservationIgnored private let diagnostics: NativeDiagnosticsLogger
     @ObservationIgnored private var draftTask: Task<Void, Never>?
     @ObservationIgnored private var draftGeneration = 0
 
-    public init(service: any MessageWritingService) {
+    public init(
+        service: any MessageWritingService,
+        diagnostics: NativeDiagnosticsLogger = .shared
+    ) {
         self.service = service
+        self.diagnostics = diagnostics
     }
 
     public var moment: MomentInput {
@@ -70,14 +75,21 @@ public final class MomentModel {
     }
 
     public func draftNow() async {
-        await draftNow(generation: nextDraftGeneration())
+        await draftNow(generation: nextDraftGeneration(), trigger: "manual")
     }
 
-    private func draftNow(generation: Int) async {
+    private func draftNow(generation: Int, trigger: String = "automatic") async {
         guard canDraft else { return }
         let input = moment
+        let requestID = UUID().uuidString
+        let startedAt = Date()
         isDrafting = true
         errorMessage = nil
+        diagnostics.momentDraftStarted(
+            requestID: requestID,
+            moment: input,
+            trigger: trigger
+        )
         defer {
             finishDrafting(generation: generation)
         }
@@ -86,14 +98,29 @@ public final class MomentModel {
             let nextBundle = try await service.draft(for: input)
             guard isCurrentGeneration(generation) else { return }
             bundle = nextBundle
+            diagnostics.momentDraftSucceeded(
+                requestID: requestID,
+                bundle: nextBundle,
+                durationMs: Self.durationMs(since: startedAt)
+            )
         } catch is CancellationError {
             return
         } catch let error as GenerationError {
             guard isCurrentGeneration(generation) else { return }
             errorMessage = error.userSafeMessage
+            diagnostics.momentDraftFailed(
+                requestID: requestID,
+                category: error.diagnosticsCategory,
+                durationMs: Self.durationMs(since: startedAt)
+            )
         } catch {
             guard isCurrentGeneration(generation) else { return }
             errorMessage = "ProsePal could not write this yet."
+            diagnostics.momentDraftFailed(
+                requestID: requestID,
+                category: "unexpected_error",
+                durationMs: Self.durationMs(since: startedAt)
+            )
         }
     }
 
@@ -122,8 +149,15 @@ public final class MomentModel {
         generation: Int
     ) async {
         let input = moment
+        let requestID = UUID().uuidString
+        let startedAt = Date()
         isDrafting = true
         errorMessage = nil
+        diagnostics.momentDraftStarted(
+            requestID: requestID,
+            moment: input,
+            trigger: "adjust_\(adjustment.rawValue)"
+        )
         defer {
             finishDrafting(generation: generation)
         }
@@ -132,14 +166,29 @@ public final class MomentModel {
             let nextBundle = try await service.adjust(bundle, with: adjustment, moment: input)
             guard isCurrentGeneration(generation) else { return }
             self.bundle = nextBundle
+            diagnostics.momentDraftSucceeded(
+                requestID: requestID,
+                bundle: nextBundle,
+                durationMs: Self.durationMs(since: startedAt)
+            )
         } catch is CancellationError {
             return
         } catch let error as GenerationError {
             guard isCurrentGeneration(generation) else { return }
             errorMessage = error.userSafeMessage
+            diagnostics.momentDraftFailed(
+                requestID: requestID,
+                category: error.diagnosticsCategory,
+                durationMs: Self.durationMs(since: startedAt)
+            )
         } catch {
             guard isCurrentGeneration(generation) else { return }
             errorMessage = "ProsePal could not reshape this yet."
+            diagnostics.momentDraftFailed(
+                requestID: requestID,
+                category: "unexpected_error",
+                durationMs: Self.durationMs(since: startedAt)
+            )
         }
     }
 
@@ -148,8 +197,15 @@ public final class MomentModel {
         generation: Int
     ) async {
         let input = moment
+        let requestID = UUID().uuidString
+        let startedAt = Date()
         isDrafting = true
         errorMessage = nil
+        diagnostics.momentDraftStarted(
+            requestID: requestID,
+            moment: input,
+            trigger: "take_more_care"
+        )
         defer {
             finishDrafting(generation: generation)
         }
@@ -158,14 +214,29 @@ public final class MomentModel {
             let nextBundle = try await service.takeMoreCare(bundle, moment: input)
             guard isCurrentGeneration(generation) else { return }
             self.bundle = nextBundle
+            diagnostics.momentDraftSucceeded(
+                requestID: requestID,
+                bundle: nextBundle,
+                durationMs: Self.durationMs(since: startedAt)
+            )
         } catch is CancellationError {
             return
         } catch let error as GenerationError {
             guard isCurrentGeneration(generation) else { return }
             errorMessage = error.userSafeMessage
+            diagnostics.momentDraftFailed(
+                requestID: requestID,
+                category: error.diagnosticsCategory,
+                durationMs: Self.durationMs(since: startedAt)
+            )
         } catch {
             guard isCurrentGeneration(generation) else { return }
             errorMessage = "ProsePal could not take more care with this yet."
+            diagnostics.momentDraftFailed(
+                requestID: requestID,
+                category: "unexpected_error",
+                durationMs: Self.durationMs(since: startedAt)
+            )
         }
     }
 
@@ -188,6 +259,10 @@ public final class MomentModel {
         if isCurrentGeneration(generation) && isDrafting {
             isDrafting = false
         }
+    }
+
+    private static func durationMs(since startedAt: Date) -> Int {
+        max(0, Int(Date().timeIntervalSince(startedAt) * 1_000))
     }
 }
 
@@ -385,6 +460,8 @@ private struct MomentSheetView: View {
     @State private var isShowingPaywall = false
     @State private var newTruthBeadText = ""
 
+    private let diagnostics = NativeDiagnosticsLogger.shared
+
     private enum Field: Hashable {
         case person
         case truth
@@ -451,9 +528,18 @@ private struct MomentSheetView: View {
             MomentPaywallSheet(account: account)
         }
         .onChange(of: model.personName) { _, _ in model.scheduleDraft() }
-        .onChange(of: model.relationship) { _, _ in model.scheduleDraft() }
-        .onChange(of: model.occasion) { _, _ in model.scheduleDraft() }
-        .onChange(of: model.register) { _, _ in model.scheduleDraft() }
+        .onChange(of: model.relationship) { _, newValue in
+            diagnostics.selectionChanged(kind: "moment_relationship", value: newValue.rawValue)
+            model.scheduleDraft()
+        }
+        .onChange(of: model.occasion) { _, newValue in
+            diagnostics.selectionChanged(kind: "moment", value: newValue.rawValue)
+            model.scheduleDraft()
+        }
+        .onChange(of: model.register) { _, newValue in
+            diagnostics.selectionChanged(kind: "moment_register", value: newValue.rawValue)
+            model.scheduleDraft()
+        }
         .onChange(of: model.trueThing) { _, _ in model.scheduleDraft() }
     }
 
@@ -498,6 +584,7 @@ private struct MomentSheetView: View {
 
             Button {
                 focusedField = nil
+                diagnostics.pickerOpened("relationship")
                 isShowingRelationshipPicker = true
             } label: {
                 MomentSelectionRow(
@@ -519,6 +606,7 @@ private struct MomentSheetView: View {
 
             Button {
                 focusedField = nil
+                diagnostics.pickerOpened("moment")
                 isShowingMomentPicker = true
             } label: {
                 MomentSelectionRow(
@@ -787,8 +875,18 @@ private struct MomentSheetView: View {
 
     private func takeMoreCare() {
         if account.isPremiumUnlocked {
+            diagnostics.messageAction(
+                "take_more_care",
+                source: "moment_draft",
+                messageCharacters: model.bundle?.messageText.count ?? 0
+            )
             model.takeMoreCare()
         } else {
+            diagnostics.messageAction(
+                "take_more_care_locked",
+                source: "moment_draft",
+                messageCharacters: model.bundle?.messageText.count ?? 0
+            )
             isShowingPaywall = true
         }
     }
@@ -797,6 +895,7 @@ private struct MomentSheetView: View {
         #if canImport(UIKit)
         UIPasteboard.general.string = text
         #endif
+        diagnostics.messageAction("copy", source: "moment_draft", messageCharacters: text.count)
     }
 
     private func save(_ bundle: MomentDraftBundle) {
@@ -809,6 +908,7 @@ private struct MomentSheetView: View {
 
         do {
             try modelContext.save()
+            diagnostics.messageAction("save", source: "moment_draft", messageCharacters: bundle.messageText.count)
             withAnimation(.easeInOut(duration: 0.18)) {
                 saveNotice = "Saved"
             }
@@ -839,6 +939,7 @@ private struct MomentSheetView: View {
 
         do {
             try modelContext.save()
+            diagnostics.messageAction("truth_bead_added", source: "moment", messageCharacters: 0)
             newTruthBeadText = ""
             focusedField = nil
             model.scheduleDraft()
@@ -852,6 +953,7 @@ private struct MomentSheetView: View {
     private func deleteTruthBead(_ bead: RelationshipTruthBeadRecord) {
         modelContext.delete(bead)
         try? modelContext.save()
+        diagnostics.messageAction("truth_bead_deleted", source: "moment", messageCharacters: 0)
         model.scheduleDraft()
     }
 }

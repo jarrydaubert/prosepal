@@ -25,5 +25,23 @@ public extension GenerationError {
             message
         }
     }
-}
 
+    var diagnosticsCategory: String {
+        switch self {
+        case .offline:
+            "offline"
+        case .timedOut:
+            "timeout"
+        case .rateLimited:
+            "rate_limited"
+        case .usageLimitReached:
+            "usage_limit"
+        case .contentBlocked:
+            "content_blocked"
+        case .serviceUnavailable:
+            "service_unavailable"
+        case .unexpectedResponse:
+            "unexpected_response"
+        }
+    }
+}
