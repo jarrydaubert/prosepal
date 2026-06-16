@@ -524,7 +524,7 @@ private struct MomentSheetView: View {
         }
         .background(Color.momentGroupedBackground)
         .safeAreaInset(edge: .bottom) {
-            if let bundle = model.bundle {
+            if let bundle = model.bundle, focusedField == nil {
                 actionRail(bundle: bundle)
                     .padding(.horizontal, 16)
                     .padding(.vertical, 10)
@@ -860,42 +860,73 @@ private struct MomentSheetView: View {
                 .disabled(model.isDrafting)
             }
 
-            HStack(spacing: 10) {
-                ForEach(MomentAdjustment.allCases) { adjustment in
-                    Button(adjustment.displayName) {
-                        model.adjust(adjustment)
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 10) {
+                    ForEach(MomentAdjustment.allCases) { adjustment in
+                        adjustmentButton(adjustment)
                     }
-                    .buttonStyle(.bordered)
-                    .controlSize(.small)
-                    .disabled(model.isDrafting)
+                }
+
+                VStack(spacing: 8) {
+                    ForEach(MomentAdjustment.allCases) { adjustment in
+                        adjustmentButton(adjustment)
+                    }
                 }
             }
 
-            HStack(spacing: 10) {
-                Button {
-                    copy(bundle.messageText)
-                } label: {
-                    Label("Copy", systemImage: "doc.on.doc")
-                        .frame(maxWidth: .infinity)
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 10) {
+                    copyButton(text: bundle.messageText)
+                    shareButton(text: bundle.messageText)
+                    saveButton(bundle: bundle)
                 }
-                .buttonStyle(.bordered)
 
-                ShareLink(item: bundle.messageText) {
-                    Label("Share", systemImage: "square.and.arrow.up")
-                        .frame(maxWidth: .infinity)
+                VStack(spacing: 8) {
+                    copyButton(text: bundle.messageText)
+                    shareButton(text: bundle.messageText)
+                    saveButton(bundle: bundle)
                 }
-                .buttonStyle(.borderedProminent)
-
-                Button {
-                    save(bundle)
-                } label: {
-                    Label("Save", systemImage: "bookmark")
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.bordered)
             }
             .controlSize(.large)
         }
+    }
+
+    private func adjustmentButton(_ adjustment: MomentAdjustment) -> some View {
+        Button(adjustment.displayName) {
+            model.adjust(adjustment)
+        }
+        .buttonStyle(.bordered)
+        .controlSize(.small)
+        .frame(maxWidth: .infinity)
+        .disabled(model.isDrafting)
+    }
+
+    private func copyButton(text: String) -> some View {
+        Button {
+            copy(text)
+        } label: {
+            Label("Copy", systemImage: "doc.on.doc")
+                .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.bordered)
+    }
+
+    private func shareButton(text: String) -> some View {
+        ShareLink(item: text) {
+            Label("Share", systemImage: "square.and.arrow.up")
+                .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.borderedProminent)
+    }
+
+    private func saveButton(bundle: MomentDraftBundle) -> some View {
+        Button {
+            save(bundle)
+        } label: {
+            Label("Save", systemImage: "bookmark")
+                .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.bordered)
     }
 
     private func takeMoreCare() {
