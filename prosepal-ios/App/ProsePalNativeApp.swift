@@ -104,33 +104,6 @@ private enum AccountMaintenanceClientFactory {
     }
 }
 
-private enum MessageWritingClientFactory {
-    static func makeClient(authSessionController: AuthSessionController?) -> MessageWritingClient {
-        let config = NativeRuntimeConfig()
-        if let endpoint = gatewayEndpoint {
-            let gatewayClient = GatewayMessageWritingClient(
-                endpoint: endpoint,
-                devGatewaySecret: config.value(named: "PROSEPAL_DEV_GATEWAY_SECRET"),
-                authorizationTokenProvider: {
-                    guard let authSessionController else { return nil }
-                    return try await authSessionController.currentAccessToken()
-                }
-            )
-
-            return MessageWritingRouter(
-                standardClient: gatewayClient,
-                premiumClient: gatewayClient
-            )
-        }
-
-        return UnconfiguredGatewayMessageWritingClient()
-    }
-
-    private static var gatewayEndpoint: URL? {
-        NativeRuntimeConfig().url(named: "PROSEPAL_GATEWAY_URL")
-    }
-}
-
 private enum MessageWritingServiceFactory {
     static func makeService(
         authSessionController: AuthSessionController?,
@@ -185,13 +158,5 @@ private enum SubscriptionClientFactory {
         #else
         return nil
         #endif
-    }
-}
-
-private struct UnconfiguredGatewayMessageWritingClient: MessageWritingClient {
-    func generateCard(request: CardRequest) async throws -> CardResponse {
-        throw GenerationError.serviceUnavailable(
-            message: "Message generation is not available in this build. Add the ProsePal generation URL to continue."
-        )
     }
 }
