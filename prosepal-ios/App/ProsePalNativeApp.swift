@@ -3,6 +3,7 @@ import ProsePalDomain
 import ProsePalUI
 import Foundation
 import SwiftUI
+import SwiftData
 
 @main
 struct ProsePalNativeApp: App {
@@ -16,23 +17,22 @@ struct ProsePalNativeApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ProsePalRootView(
-                model: ProsePalAppModel(
-                    client: MessageWritingClientFactory.makeClient(
-                        authSessionController: authSessionController
-                    ),
-                    clientContext: ClientContext(
-                        appVersion: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0.1.0",
-                        buildNumber: Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
-                    ),
+            let context = clientContext
+            MomentAppRootView(
+                service: MessageWritingServiceFactory.makeService(
                     authSessionController: authSessionController,
-                    authClient: authClient,
-                    subscriptionClient: subscriptionClient,
-                    accountMaintenanceClient: accountMaintenanceClient,
-                    runtimeReadiness: runtimeReadiness
+                    clientContext: context
                 )
             )
+            .modelContainer(for: RelationshipTruthBeadRecord.self)
         }
+    }
+
+    private var clientContext: ClientContext {
+        ClientContext(
+            appVersion: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0.1.0",
+            buildNumber: Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
+        )
     }
 }
 
@@ -100,6 +100,43 @@ private enum MessageWritingClientFactory {
         }
 
         return UnconfiguredGatewayMessageWritingClient()
+    }
+
+    private static var gatewayEndpoint: URL? {
+        NativeRuntimeConfig().url(named: "PROSEPAL_GATEWAY_URL")
+    }
+}
+
+private enum MessageWritingServiceFactory {
+    static func makeService(
+        authSessionController: AuthSessionController?,
+        clientContext: ClientContext
+    ) -> any MessageWritingService {
+        let privateClient = FoundationModelsPrivateDraftClient()
+        let carefulClient: any MomentDraftClient
+
+        if let gatewayEndpoint {
+            let config = NativeRuntimeConfig()
+            let gatewayClient = GatewayMessageWritingClient(
+                endpoint: gatewayEndpoint,
+                devGatewaySecret: config.value(named: "PROSEPAL_DEV_GATEWAY_SECRET"),
+                authorizationTokenProvider: {
+                    guard let authSessionController else { return nil }
+                    return try await authSessionController.currentAccessToken()
+                }
+            )
+            carefulClient = GatewayCarefulMomentClient(
+                client: gatewayClient,
+                clientContext: clientContext
+            )
+        } else {
+            carefulClient = UnconfiguredMomentDraftClient()
+        }
+
+        return RoutingMessageWritingService(
+            privateClient: privateClient,
+            carefulClient: carefulClient
+        )
     }
 
     private static var gatewayEndpoint: URL? {

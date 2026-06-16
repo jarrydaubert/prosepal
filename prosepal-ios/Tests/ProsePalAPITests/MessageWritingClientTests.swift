@@ -724,7 +724,7 @@ private actor RecordingMessageWritingClient: MessageWritingClient {
 private final class CapturingURLProtocol: URLProtocol {
     typealias Handler = (URLRequest) throws -> (HTTPURLResponse, Data)
 
-    static var requestHandler: Handler?
+    nonisolated(unsafe) static var requestHandler: Handler?
 
     override class func canInit(with request: URLRequest) -> Bool {
         true

@@ -1,0 +1,140 @@
+import ProsePalAPI
+import ProsePalDomain
+import Testing
+
+@Test
+func everydayMomentRoutesToPrivateClient() async throws {
+    let privateClient = RecordingMomentDraftClient(
+        bundle: MomentDraftBundle(messageText: "Private hello.", lane: .privateDraft)
+    )
+    let carefulClient = RecordingMomentDraftClient(
+        bundle: MomentDraftBundle(messageText: "Careful hello.", lane: .takeMoreCare)
+    )
+    let service = RoutingMessageWritingService(
+        privateClient: privateClient,
+        carefulClient: carefulClient
+    )
+
+    let bundle = try await service.draft(for: MomentInput(
+        personName: "Alex",
+        relationship: .closeFriend,
+        occasion: .birthday
+    ))
+
+    #expect(bundle.messageText == "Private hello.")
+    #expect(bundle.lane == .privateDraft)
+    #expect(await privateClient.draftCallCount == 1)
+    #expect(await carefulClient.draftCallCount == 0)
+}
+
+@Test
+func sensitiveMomentRoutesDirectlyToCarefulClient() async throws {
+    let privateClient = RecordingMomentDraftClient(
+        bundle: MomentDraftBundle(messageText: "Private sympathy.", lane: .privateDraft)
+    )
+    let carefulClient = RecordingMomentDraftClient(
+        bundle: MomentDraftBundle(messageText: "Careful sympathy.", lane: .takeMoreCare)
+    )
+    let service = RoutingMessageWritingService(
+        privateClient: privateClient,
+        carefulClient: carefulClient
+    )
+
+    let bundle = try await service.draft(for: MomentInput(
+        personName: "Sam",
+        relationship: .family,
+        occasion: .sympathy
+    ))
+
+    #expect(bundle.messageText == "Careful sympathy.")
+    #expect(bundle.lane == .takeMoreCare)
+    #expect(await privateClient.draftCallCount == 0)
+    #expect(await carefulClient.draftCallCount == 1)
+}
+
+@Test
+func privateUnavailabilityFallsThroughToCarefulClient() async throws {
+    let privateClient = FailingMomentDraftClient(
+        error: GenerationError.serviceUnavailable(message: "Private draft unavailable.")
+    )
+    let carefulClient = RecordingMomentDraftClient(
+        bundle: MomentDraftBundle(messageText: "Careful fallback.", lane: .takeMoreCare)
+    )
+    let service = RoutingMessageWritingService(
+        privateClient: privateClient,
+        carefulClient: carefulClient
+    )
+
+    let bundle = try await service.draft(for: MomentInput(
+        personName: "Taylor",
+        relationship: .colleague,
+        occasion: .newJob
+    ))
+
+    #expect(bundle.messageText == "Careful fallback.")
+    #expect(bundle.lane == .takeMoreCare)
+    #expect(await carefulClient.draftCallCount == 1)
+}
+
+@Test
+func emptyPersonDoesNotStartDrafting() async {
+    let service = RoutingMessageWritingService(
+        privateClient: RecordingMomentDraftClient(
+            bundle: MomentDraftBundle(messageText: "Private.", lane: .privateDraft)
+        ),
+        carefulClient: RecordingMomentDraftClient(
+            bundle: MomentDraftBundle(messageText: "Careful.", lane: .takeMoreCare)
+        )
+    )
+
+    do {
+        _ = try await service.draft(for: MomentInput(
+            personName: " ",
+            relationship: .closeFriend,
+            occasion: .birthday
+        ))
+        Issue.record("Expected empty person to fail before calling clients.")
+    } catch let error as GenerationError {
+        #expect(error.userSafeMessage == "Add who this is for to begin.")
+    } catch {
+        Issue.record("Expected GenerationError, got \(error).")
+    }
+}
+
+private actor RecordingMomentDraftClient: MomentDraftClient {
+    private let bundle: MomentDraftBundle
+    private(set) var draftCallCount = 0
+
+    init(bundle: MomentDraftBundle) {
+        self.bundle = bundle
+    }
+
+    func draft(for moment: MomentInput) async throws -> MomentDraftBundle {
+        draftCallCount += 1
+        return bundle
+    }
+
+    func adjust(
+        _ bundle: MomentDraftBundle,
+        with adjustment: MomentAdjustment,
+        moment: MomentInput
+    ) async throws -> MomentDraftBundle {
+        self.bundle
+    }
+}
+
+private struct FailingMomentDraftClient: MomentDraftClient {
+    let error: GenerationError
+
+    func draft(for moment: MomentInput) async throws -> MomentDraftBundle {
+        throw error
+    }
+
+    func adjust(
+        _ bundle: MomentDraftBundle,
+        with adjustment: MomentAdjustment,
+        moment: MomentInput
+    ) async throws -> MomentDraftBundle {
+        throw error
+    }
+}
