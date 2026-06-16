@@ -58,6 +58,9 @@ public final class MomentModel {
         if let personName = request.personName {
             self.personName = personName
         }
+        if let occasion = request.occasion {
+            self.occasion = occasion
+        }
         scheduleDraft()
     }
 

@@ -147,7 +147,7 @@ final class NativeDiagnosticsTests: XCTestCase {
             MomentLaunchRequest(personName: "Private Person", source: "app_intent")
         )
 
-        XCTAssertEqual(payload, "moment_launch_consumed source=app_intent person_present=true")
+        XCTAssertEqual(payload, "moment_launch_consumed source=app_intent person_present=true occasion=none")
         XCTAssertFalse(payload.contains("Private Person"))
     }
 }

@@ -18,10 +18,12 @@ func prosePalShortcutsExposeStartMomentEntryPoint() {
 func momentLaunchRequestTrimsPersonAndSource() {
     let request = MomentLaunchRequest(
         personName: "  Alex  ",
+        occasion: .birthday,
         source: "  app_intent  "
     )
 
     #expect(request.personName == "Alex")
+    #expect(request.occasion == .birthday)
     #expect(request.source == "app_intent")
 }
 
@@ -42,11 +44,12 @@ func momentLaunchStoreConsumesPendingLaunchOnce() {
 
 @Test
 func momentDeepLinkBuildsLaunchRequestFromQueryParameters() throws {
-    let url = try #require(URL(string: "prosepal://moment?person=Alex%20Morgan&source=widget"))
+    let url = try #require(URL(string: "prosepal://moment?person=Alex%20Morgan&occasion=thankYou&source=widget"))
 
     let deepLink = try #require(MomentDeepLink(url: url))
 
     #expect(deepLink.launchRequest.personName == "Alex Morgan")
+    #expect(deepLink.launchRequest.occasion == .thankYou)
     #expect(deepLink.launchRequest.source == "widget")
 }
 
@@ -77,13 +80,48 @@ func momentDeepLinkDoesNotTrustArbitrarySourceText() throws {
 }
 
 @Test
+func momentDeepLinkIgnoresUnknownOccasionText() throws {
+    let url = try #require(URL(string: "prosepal://moment?person=Alex&moment=Private%20raw%20text"))
+
+    let deepLink = try #require(MomentDeepLink(url: url))
+
+    #expect(deepLink.launchRequest.occasion == nil)
+}
+
+@Test
+func momentLaunchStorePreservesSafeOccasionWhenProvided() throws {
+    let suiteName = "prosepal.startMomentIntent.\(UUID().uuidString)"
+    let store = UserDefaults(suiteName: suiteName)!
+    defer {
+        store.removePersistentDomain(forName: suiteName)
+    }
+
+    let launchStore = MomentLaunchStore(store: store)
+    launchStore.save(MomentLaunchRequest(
+        personName: "Alex",
+        occasion: Occasion.sympathy,
+        source: "app_intent"
+    ))
+
+    let request = try #require(launchStore.consume())
+    #expect(request.personName == "Alex")
+    #expect(request.occasion == .sympathy)
+    #expect(request.source == "app_intent")
+}
+
+@Test
 @MainActor
 func momentModelAppliesLaunchRequest() {
     let model = MomentModel(service: NoOpMomentWritingService())
 
-    model.applyLaunchRequest(MomentLaunchRequest(personName: "Alex", source: "app_intent"))
+    model.applyLaunchRequest(MomentLaunchRequest(
+        personName: "Alex",
+        occasion: .wedding,
+        source: "app_intent"
+    ))
 
     #expect(model.personName == "Alex")
+    #expect(model.occasion == .wedding)
     #expect(model.canDraft)
 }
 

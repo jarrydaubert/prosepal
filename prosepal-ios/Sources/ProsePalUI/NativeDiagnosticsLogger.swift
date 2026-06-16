@@ -186,7 +186,7 @@ enum NativeDiagnosticsPayload {
     }
 
     static func momentLaunchConsumed(_ request: MomentLaunchRequest) -> String {
-        "moment_launch_consumed source=\(request.source) person_present=\(request.personName?.hasDiagnosticsText == true)"
+        "moment_launch_consumed source=\(request.source) person_present=\(request.personName?.hasDiagnosticsText == true) occasion=\(request.occasion?.rawValue ?? "none")"
     }
 }
 

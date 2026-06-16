@@ -1,20 +1,24 @@
 import AppIntents
 import Foundation
+import ProsePalDomain
 
 public struct MomentLaunchRequest: Codable, Equatable, Sendable {
     public static let defaultSource = "unknown"
 
     public var personName: String?
+    public var occasion: Occasion?
     public var source: String
     public var createdAt: Date
 
     public init(
         personName: String? = nil,
+        occasion: Occasion? = nil,
         source: String = MomentLaunchRequest.defaultSource,
         createdAt: Date = Date()
     ) {
         let trimmedName = personName?.trimmingCharacters(in: .whitespacesAndNewlines)
         self.personName = trimmedName?.isEmpty == false ? trimmedName : nil
+        self.occasion = occasion
         self.source = source.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             ? Self.defaultSource
             : source.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -66,10 +70,13 @@ public struct MomentDeepLink: Equatable, Sendable {
         let personName = components?.queryItems?.firstValue(named: "person")
             ?? components?.queryItems?.firstValue(named: "personName")
             ?? url.personPathComponent
+        let occasion = components?.queryItems?.firstValue(named: "occasion")?.occasionValue
+            ?? components?.queryItems?.firstValue(named: "moment")?.occasionValue
         let source = components?.queryItems?.firstValue(named: "source")?.safeMomentLaunchSource ?? "deep_link"
 
         launchRequest = MomentLaunchRequest(
             personName: personName,
+            occasion: occasion,
             source: source
         )
     }
@@ -109,6 +116,12 @@ private extension String {
         ]
         return allowedSources.contains(normalized) ? normalized : nil
     }
+
+    var occasionValue: Occasion? {
+        let normalized = trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !normalized.isEmpty else { return nil }
+        return Occasion(rawValue: normalized)
+    }
 }
 
 public struct StartMomentIntent: AppIntent {
@@ -122,15 +135,20 @@ public struct StartMomentIntent: AppIntent {
     @Parameter(title: "Who is this for?")
     public var personName: String?
 
+    @Parameter(title: "Moment")
+    public var occasion: String?
+
     public init() {}
 
-    public init(personName: String?) {
+    public init(personName: String?, occasion: String? = nil) {
         self.personName = personName
+        self.occasion = occasion
     }
 
     public func perform() async throws -> some IntentResult {
         MomentLaunchStore().save(MomentLaunchRequest(
             personName: personName,
+            occasion: occasion?.occasionValue,
             source: "app_intent"
         ))
         return .result(dialog: "Opening ProsePal.")
