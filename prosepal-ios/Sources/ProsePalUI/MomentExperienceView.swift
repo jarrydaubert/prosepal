@@ -494,14 +494,19 @@ private struct MomentSheetView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \RelationshipTruthBeadRecord.updatedAt, order: .reverse)
     private var truthBeads: [RelationshipTruthBeadRecord]
+    @Query(sort: \RelationshipVoiceCardRecord.updatedAt, order: .reverse)
+    private var voiceCards: [RelationshipVoiceCardRecord]
     @FocusState private var focusedField: Field?
     @State private var saveNotice: String?
     @State private var isShowingRelationshipPicker = false
     @State private var isShowingMomentPicker = false
     @State private var isShowingPaywall = false
     @State private var newTruthBeadText = ""
+    @State private var newVoiceCardSummary = ""
     @State private var editingTruthBead: RelationshipTruthBeadRecord?
+    @State private var editingVoiceCard: RelationshipVoiceCardRecord?
     @State private var isShowingMemoryExplanation = false
+    @State private var isShowingVoiceCardExplanation = false
 
     private let diagnostics = NativeDiagnosticsLogger.shared
 
@@ -509,6 +514,7 @@ private struct MomentSheetView: View {
         case person
         case truth
         case memory
+        case voice
     }
 
     var body: some View {
@@ -577,10 +583,22 @@ private struct MomentSheetView: View {
                 RelationshipMemoryDetailView(bead: bead)
             }
         }
+        .sheet(item: $editingVoiceCard, onDismiss: {
+            model.scheduleDraft()
+        }) { voiceCard in
+            NavigationStack {
+                RelationshipVoiceCardDetailView(voiceCard: voiceCard)
+            }
+        }
         .alert("Why this appears", isPresented: $isShowingMemoryExplanation) {
             Button("OK", role: .cancel) {}
         } message: {
             Text("You saved this detail for \(currentPersonName). ProsePal uses approved memory only when drafting for this person, and does not log the text.")
+        }
+        .alert("Why this appears", isPresented: $isShowingVoiceCardExplanation) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("You saved this voice card for \(currentPersonName). ProsePal uses it as style guidance only, and does not log the text.")
         }
         .onChange(of: model.personName) { _, _ in model.scheduleDraft() }
         .onChange(of: model.relationship) { _, newValue in
@@ -607,6 +625,14 @@ private struct MomentSheetView: View {
         guard !normalizedName.isEmpty else { return [] }
         return truthBeads.filter {
             $0.isUserApproved && $0.personName.momentNormalizedSearchKey == normalizedName
+        }
+    }
+
+    private var voiceCardForCurrentPerson: RelationshipVoiceCardRecord? {
+        let normalizedName = currentPersonName.momentNormalizedSearchKey
+        guard !normalizedName.isEmpty else { return nil }
+        return voiceCards.first {
+            $0.personName.momentNormalizedSearchKey == normalizedName
         }
     }
 
@@ -762,8 +788,63 @@ private struct MomentSheetView: View {
                     }
                 }
             }
+
+            Divider()
+                .padding(.vertical, 2)
+
+            voiceCardControls
         }
         .prosePalMomentCard()
+    }
+
+    private var voiceCardControls: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: 3) {
+                Label("Voice card", systemImage: "waveform")
+                    .font(.subheadline.weight(.semibold))
+
+                Text("How messages to \(currentPersonName) should sound.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+
+            if let voiceCard = voiceCardForCurrentPerson {
+                MomentVoiceCardRow(
+                    voiceCard: voiceCard,
+                    onEdit: {
+                        editingVoiceCard = voiceCard
+                    },
+                    onExplain: {
+                        isShowingVoiceCardExplanation = true
+                    },
+                    onDelete: {
+                        deleteVoiceCard(voiceCard)
+                    }
+                )
+            } else {
+                HStack(spacing: 10) {
+                    TextField("Warm, short, no fuss", text: $newVoiceCardSummary, prompt: Text("Warm, short, no fuss"))
+                        .focused($focusedField, equals: .voice)
+                        .submitLabel(.done)
+                        .padding(14)
+                        .background(Color.momentSecondaryGroupedBackground, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                        .onSubmit {
+                            addVoiceCard()
+                        }
+
+                    Button {
+                        addVoiceCard()
+                    } label: {
+                        Image(systemName: "plus")
+                            .font(.headline.weight(.semibold))
+                            .frame(width: 42, height: 42)
+                    }
+                    .buttonStyle(.bordered)
+                    .disabled(newVoiceCardSummary.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    .accessibilityLabel("Add voice card")
+                }
+            }
+        }
     }
 
     private var crisisSupportSection: some View {
@@ -1049,6 +1130,37 @@ private struct MomentSheetView: View {
         modelContext.delete(bead)
         try? modelContext.save()
         diagnostics.messageAction("truth_bead_deleted", source: "moment", messageCharacters: 0)
+        model.scheduleDraft()
+    }
+
+    private func addVoiceCard() {
+        let summary = newVoiceCardSummary.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !currentPersonName.isEmpty, !summary.isEmpty else { return }
+
+        let record = RelationshipVoiceCardRecord(
+            personName: currentPersonName,
+            summary: summary,
+            isUserApproved: true
+        )
+        modelContext.insert(record)
+
+        do {
+            try modelContext.save()
+            diagnostics.messageAction("voice_card_added", source: "moment", messageCharacters: 0)
+            newVoiceCardSummary = ""
+            focusedField = nil
+            model.scheduleDraft()
+        } catch {
+            withAnimation(.easeInOut(duration: 0.18)) {
+                saveNotice = "Could not save this voice card."
+            }
+        }
+    }
+
+    private func deleteVoiceCard(_ voiceCard: RelationshipVoiceCardRecord) {
+        modelContext.delete(voiceCard)
+        try? modelContext.save()
+        diagnostics.messageAction("voice_card_deleted", source: "moment", messageCharacters: 0)
         model.scheduleDraft()
     }
 }
@@ -1363,6 +1475,66 @@ private struct MomentTruthBeadRow: View {
     }
 }
 
+private struct MomentVoiceCardRow: View {
+    let voiceCard: RelationshipVoiceCardRecord
+    let onEdit: () -> Void
+    let onExplain: () -> Void
+    let onDelete: () -> Void
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: voiceCard.isUserApproved ? "waveform.circle.fill" : "pause.circle.fill")
+                .font(.subheadline)
+                .foregroundStyle(.tint)
+                .padding(.top, 2)
+
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 8) {
+                    Text(voiceCard.isUserApproved ? "Used in drafts" : "Paused")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    Spacer(minLength: 0)
+                }
+
+                Text(voiceCard.summary)
+                    .font(.callout)
+                    .foregroundStyle(.primary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Spacer(minLength: 8)
+
+            Menu {
+                Button {
+                    onEdit()
+                } label: {
+                    Label("Edit voice card", systemImage: "pencil")
+                }
+
+                Button {
+                    onExplain()
+                } label: {
+                    Label("Why this appears", systemImage: "info.circle")
+                }
+
+                Button(role: .destructive) {
+                    onDelete()
+                } label: {
+                    Label("Delete voice card", systemImage: "trash")
+                }
+            } label: {
+                Image(systemName: "ellipsis.circle")
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 32, height: 32)
+            }
+            .accessibilityLabel("Voice card actions")
+        }
+        .padding(12)
+        .background(Color.momentSecondaryGroupedBackground, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+    }
+}
+
 private struct SavedMomentDraftsView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \SavedMomentDraftRecord.createdAt, order: .reverse)
@@ -1654,6 +1826,91 @@ private struct RelationshipMemoryDetailView: View {
         bead.update(
             personName: personName,
             text: text,
+            isUserApproved: isUserApproved
+        )
+        try? modelContext.save()
+
+        withAnimation(.easeInOut(duration: 0.18)) {
+            notice = "Saved"
+        }
+    }
+}
+
+private struct RelationshipVoiceCardDetailView: View {
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
+    let voiceCard: RelationshipVoiceCardRecord
+    @State private var personName: String
+    @State private var summary: String
+    @State private var isUserApproved: Bool
+    @State private var notice: String?
+
+    init(voiceCard: RelationshipVoiceCardRecord) {
+        self.voiceCard = voiceCard
+        _personName = State(initialValue: voiceCard.personName)
+        _summary = State(initialValue: voiceCard.summary)
+        _isUserApproved = State(initialValue: voiceCard.isUserApproved)
+    }
+
+    var body: some View {
+        Form {
+            if let notice {
+                Section {
+                    Label(notice, systemImage: "checkmark.circle")
+                }
+            }
+
+            Section("Person") {
+                TextField("Name", text: $personName)
+                    .momentNameInputBehavior()
+            }
+
+            Section {
+                TextField("How should ProsePal sound with this person?", text: $summary, axis: .vertical)
+                    .lineLimit(3...6)
+            } header: {
+                Text("Voice")
+            } footer: {
+                Text("Use this for style only, not as a fact to quote.")
+            }
+
+            Section {
+                Toggle("Use this in drafts", isOn: $isUserApproved)
+            } header: {
+                Text("Use")
+            } footer: {
+                Text("Why am I seeing this? You saved this voice card for \(voiceCard.personName). ProsePal uses approved voice cards only when drafting for that person, and does not log the text.")
+            }
+
+            Section {
+                Button("Delete voice card", role: .destructive) {
+                    modelContext.delete(voiceCard)
+                    try? modelContext.save()
+                    dismiss()
+                }
+            }
+        }
+        .navigationTitle("Voice Card")
+        .toolbarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .confirmationAction) {
+                Button("Save") {
+                    save()
+                }
+                .disabled(!canSave)
+            }
+        }
+    }
+
+    private var canSave: Bool {
+        !personName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
+            !summary.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    private func save() {
+        voiceCard.update(
+            personName: personName,
+            summary: summary,
             isUserApproved: isUserApproved
         )
         try? modelContext.save()

@@ -161,6 +161,28 @@ public struct TruthBead: Codable, Equatable, Identifiable, Sendable {
     }
 }
 
+public struct RelationshipVoiceCard: Codable, Equatable, Identifiable, Sendable {
+    public var id: UUID
+    public var personName: String
+    public var summary: String
+    public var isUserApproved: Bool
+    public var createdAt: Date
+
+    public init(
+        id: UUID = UUID(),
+        personName: String,
+        summary: String,
+        isUserApproved: Bool = true,
+        createdAt: Date = Date()
+    ) {
+        self.id = id
+        self.personName = personName
+        self.summary = summary
+        self.isUserApproved = isUserApproved
+        self.createdAt = createdAt
+    }
+}
+
 public struct PressureCheck: Codable, Equatable, Sendable {
     public var asksForReassurance: Bool
     public var explainsBeforeApology: Bool

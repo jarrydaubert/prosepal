@@ -45,6 +45,35 @@ final class RelationshipVaultTests: XCTestCase {
         XCTAssertTrue(beads.isEmpty)
     }
 
+    func testRelationshipMemoryProviderReturnsOnlyApprovedVoiceCardForPerson() async throws {
+        let container = try makeContainer()
+        let context = ModelContext(container)
+        context.insert(RelationshipVoiceCardRecord(
+            personName: "Jose",
+            summary: "Warm and direct",
+            isUserApproved: true,
+            updatedAt: Date(timeIntervalSince1970: 2_000)
+        ))
+        context.insert(RelationshipVoiceCardRecord(
+            personName: "Jose",
+            summary: "Paused style",
+            isUserApproved: false,
+            updatedAt: Date(timeIntervalSince1970: 3_000)
+        ))
+        context.insert(RelationshipVoiceCardRecord(
+            personName: "Asha",
+            summary: "More formal",
+            isUserApproved: true,
+            updatedAt: Date(timeIntervalSince1970: 4_000)
+        ))
+        try context.save()
+
+        let provider = SwiftDataRelationshipMemoryProvider(container: container)
+        let voiceCard = try await provider.approvedVoiceCard(for: "  JOSE  ")
+
+        XCTAssertEqual(voiceCard?.summary, "Warm and direct")
+    }
+
     func testRelationshipTruthBeadRecordUpdateTrimsAndTouchesTimestamp() {
         let originalDate = Date(timeIntervalSince1970: 1_000)
         let updatedDate = Date(timeIntervalSince1970: 2_000)
@@ -64,6 +93,29 @@ final class RelationshipVaultTests: XCTestCase {
 
         XCTAssertEqual(record.personName, "Asha")
         XCTAssertEqual(record.text, "Prefers short notes")
+        XCTAssertFalse(record.isUserApproved)
+        XCTAssertEqual(record.updatedAt, updatedDate)
+    }
+
+    func testRelationshipVoiceCardRecordUpdateTrimsAndTouchesTimestamp() {
+        let originalDate = Date(timeIntervalSince1970: 1_000)
+        let updatedDate = Date(timeIntervalSince1970: 2_000)
+        let record = RelationshipVoiceCardRecord(
+            personName: " Alex ",
+            summary: " Short and funny ",
+            isUserApproved: true,
+            updatedAt: originalDate
+        )
+
+        record.update(
+            personName: "  Asha  ",
+            summary: "  Gentle and simple  ",
+            isUserApproved: false,
+            updatedAt: updatedDate
+        )
+
+        XCTAssertEqual(record.personName, "Asha")
+        XCTAssertEqual(record.summary, "Gentle and simple")
         XCTAssertFalse(record.isUserApproved)
         XCTAssertEqual(record.updatedAt, updatedDate)
     }

@@ -50,10 +50,59 @@ public final class RelationshipTruthBeadRecord {
     }
 }
 
+@Model
+public final class RelationshipVoiceCardRecord {
+    public var id: UUID
+    public var personName: String
+    public var summary: String
+    public var isUserApproved: Bool
+    public var createdAt: Date
+    public var updatedAt: Date
+
+    public init(
+        id: UUID = UUID(),
+        personName: String,
+        summary: String,
+        isUserApproved: Bool = true,
+        createdAt: Date = Date(),
+        updatedAt: Date = Date()
+    ) {
+        self.id = id
+        self.personName = personName
+        self.summary = summary
+        self.isUserApproved = isUserApproved
+        self.createdAt = createdAt
+        self.updatedAt = updatedAt
+    }
+
+    public var voiceCard: RelationshipVoiceCard {
+        RelationshipVoiceCard(
+            id: id,
+            personName: personName,
+            summary: summary,
+            isUserApproved: isUserApproved,
+            createdAt: createdAt
+        )
+    }
+
+    public func update(
+        personName: String,
+        summary: String,
+        isUserApproved: Bool,
+        updatedAt: Date = Date()
+    ) {
+        self.personName = personName.trimmingCharacters(in: .whitespacesAndNewlines)
+        self.summary = summary.trimmingCharacters(in: .whitespacesAndNewlines)
+        self.isUserApproved = isUserApproved
+        self.updatedAt = updatedAt
+    }
+}
+
 public enum RelationshipVaultSchema {
     public static var models: [any PersistentModel.Type] {
         [
             RelationshipTruthBeadRecord.self,
+            RelationshipVoiceCardRecord.self,
             SavedMomentDraftRecord.self
         ]
     }
@@ -79,6 +128,21 @@ public actor SwiftDataRelationshipMemoryProvider: RelationshipMemoryProviding {
         return try context.fetch(descriptor)
             .filter { Self.normalized($0.personName) == normalizedName }
             .map(\.truthBead)
+    }
+
+    public func approvedVoiceCard(for personName: String) async throws -> RelationshipVoiceCard? {
+        let normalizedName = Self.normalized(personName)
+        guard !normalizedName.isEmpty else { return nil }
+
+        let context = ModelContext(container)
+        let descriptor = FetchDescriptor<RelationshipVoiceCardRecord>(
+            predicate: #Predicate { $0.isUserApproved },
+            sortBy: [SortDescriptor(\.updatedAt, order: .reverse)]
+        )
+
+        return try context.fetch(descriptor)
+            .first { Self.normalized($0.personName) == normalizedName }
+            .map(\.voiceCard)
     }
 
     private static func normalized(_ value: String) -> String {
