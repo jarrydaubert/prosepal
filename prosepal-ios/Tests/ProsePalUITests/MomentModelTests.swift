@@ -35,6 +35,26 @@ func staleDraftResultDoesNotReplaceLatestMomentDraft() async throws {
     #expect(model.isDrafting == false)
 }
 
+@Test
+@MainActor
+func crisisInputDoesNotStartMomentDrafting() async throws {
+    let client = CountingMomentDraftClient()
+    let service = RoutingMessageWritingService(
+        privateClient: client,
+        carefulClient: client
+    )
+    let model = MomentModel(service: service)
+
+    model.personName = "Alex"
+    model.trueThing = "I want to end my life."
+    await model.draftNow()
+
+    #expect(model.canDraft == false)
+    #expect(model.safetySignal == .crisisSupport)
+    #expect(model.bundle == nil)
+    #expect(await client.draftCallCount == 0)
+}
+
 private actor ControlledMomentDraftClient: MomentDraftClient {
     private struct PendingDraft {
         var moment: MomentInput
@@ -72,5 +92,22 @@ private actor ControlledMomentDraftClient: MomentDraftClient {
             messageText: text,
             lane: .privateDraft
         ))
+    }
+}
+
+private actor CountingMomentDraftClient: MomentDraftClient {
+    private(set) var draftCallCount = 0
+
+    func draft(for moment: MomentInput) async throws -> MomentDraftBundle {
+        draftCallCount += 1
+        return MomentDraftBundle(messageText: "Draft.", lane: .privateDraft)
+    }
+
+    func adjust(
+        _ bundle: MomentDraftBundle,
+        with adjustment: MomentAdjustment,
+        moment: MomentInput
+    ) async throws -> MomentDraftBundle {
+        try await draft(for: moment)
     }
 }

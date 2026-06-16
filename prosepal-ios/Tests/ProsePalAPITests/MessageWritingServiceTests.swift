@@ -103,6 +103,37 @@ func emptyPersonDoesNotStartDrafting() async {
 }
 
 @Test
+func crisisMomentDoesNotCallAnyDraftClient() async {
+    let privateClient = RecordingMomentDraftClient(
+        bundle: MomentDraftBundle(messageText: "Private.", lane: .privateDraft)
+    )
+    let carefulClient = RecordingMomentDraftClient(
+        bundle: MomentDraftBundle(messageText: "Careful.", lane: .takeMoreCare)
+    )
+    let service = RoutingMessageWritingService(
+        privateClient: privateClient,
+        carefulClient: carefulClient
+    )
+
+    do {
+        _ = try await service.draft(for: MomentInput(
+            personName: "Alex",
+            relationship: .closeFriend,
+            occasion: .thinkingOfYou,
+            trueThing: "I want to die."
+        ))
+        Issue.record("Expected crisis moment to stop before drafting.")
+    } catch let error as GenerationError {
+        #expect(error.userSafeMessage == "This needs immediate support, not a draft.")
+    } catch {
+        Issue.record("Expected GenerationError, got \(error).")
+    }
+
+    #expect(await privateClient.draftCallCount == 0)
+    #expect(await carefulClient.draftCallCount == 0)
+}
+
+@Test
 func savedMomentDraftRecordPreservesMomentMetadata() {
     let createdAt = Date(timeIntervalSince1970: 1_800_000_000)
     let moment = MomentInput(

@@ -37,6 +37,11 @@ public struct RoutingMessageWritingService: MessageWritingService {
                 message: "Add who this is for to begin."
             )
         }
+        guard moment.safetySignal.allowsDrafting else {
+            throw GenerationError.contentBlocked(
+                message: "This needs immediate support, not a draft."
+            )
+        }
 
         if moment.requiresCarefulLane {
             return try await carefulClient.draft(for: moment)
@@ -55,6 +60,12 @@ public struct RoutingMessageWritingService: MessageWritingService {
         with adjustment: MomentAdjustment,
         moment: MomentInput
     ) async throws -> MomentDraftBundle {
+        guard moment.safetySignal.allowsDrafting else {
+            throw GenerationError.contentBlocked(
+                message: "This needs immediate support, not a draft."
+            )
+        }
+
         switch bundle.lane {
         case .privateDraft, .mock:
             do {

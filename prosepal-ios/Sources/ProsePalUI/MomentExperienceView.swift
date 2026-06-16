@@ -42,7 +42,11 @@ public final class MomentModel {
     }
 
     public var canDraft: Bool {
-        moment.hasEnoughContextForDraft
+        moment.allowsDrafting
+    }
+
+    public var safetySignal: MomentSafetySignal {
+        moment.safetySignal
     }
 
     public func scheduleDraft() {
@@ -225,10 +229,17 @@ private struct MomentSheetView: View {
                 personSection
                 momentSection
                 truthSection
-                if !currentPersonName.isEmpty {
+                if model.safetySignal == .crisisSupport {
+                    crisisSupportSection
+                } else if !currentPersonName.isEmpty {
                     memorySection
+                    if model.moment.isCarefulMode {
+                        carefulModeSection
+                    }
+                    draftSection
+                } else {
+                    draftSection
                 }
-                draftSection
                 if let saveNotice {
                     Text(saveNotice)
                         .font(.footnote.weight(.semibold))
@@ -426,6 +437,62 @@ private struct MomentSheetView: View {
                         }
                     }
                 }
+            }
+        }
+        .prosePalMomentCard()
+    }
+
+    private var crisisSupportSection: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Label("This needs immediate support", systemImage: "exclamationmark.triangle.fill")
+                .font(.headline)
+
+            Text("ProsePal will not draft this as a message. If you or someone else is in immediate danger, call local emergency services now.")
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            VStack(alignment: .leading, spacing: 8) {
+                Text("UK and Ireland: Samaritans, 116 123.")
+                Text("US and Canada: 988 Suicide & Crisis Lifeline.")
+                Text("If you can, stay near another person or contact someone you trust.")
+            }
+            .font(.footnote.weight(.medium))
+            .foregroundStyle(.primary)
+
+            HStack(spacing: 10) {
+                Link(destination: URL(string: "tel:116123")!) {
+                    Label("Call 116 123", systemImage: "phone")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+
+                Link(destination: URL(string: "tel:988")!) {
+                    Label("Call 988", systemImage: "phone")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+            }
+            .controlSize(.large)
+        }
+        .prosePalMomentCard()
+    }
+
+    private var carefulModeSection: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: "heart.text.square")
+                .font(.headline)
+                .foregroundStyle(.tint)
+                .frame(width: 28, height: 28)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Careful mode")
+                    .font(.headline)
+
+                Text("For this moment, ProsePal leans on your words, keeps the tone quieter, and avoids inventing feelings.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
         .prosePalMomentCard()

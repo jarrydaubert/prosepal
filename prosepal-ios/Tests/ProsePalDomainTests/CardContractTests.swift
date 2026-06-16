@@ -105,4 +105,30 @@ final class CardContractTests: XCTestCase {
         XCTAssertEqual(MessageLength.detailed.generationHint, "5-7 sentences")
         XCTAssertEqual(SpellingPreference.uk.localeIdentifier, "en_GB")
     }
+
+    func testMomentSafetySignalBlocksCrisisDrafting() {
+        let moment = MomentInput(
+            personName: "Alex",
+            relationship: .closeFriend,
+            occasion: .thinkingOfYou,
+            trueThing: "I want to kill myself tonight."
+        )
+
+        XCTAssertEqual(moment.safetySignal, .crisisSupport)
+        XCTAssertFalse(moment.allowsDrafting)
+    }
+
+    func testMomentSafetySignalAllowsOrdinaryHardMoments() {
+        let moment = MomentInput(
+            personName: "Alex",
+            relationship: .closeFriend,
+            occasion: .apology,
+            register: .confess,
+            trueThing: "I explained before I apologised."
+        )
+
+        XCTAssertEqual(moment.safetySignal, .none)
+        XCTAssertTrue(moment.allowsDrafting)
+        XCTAssertTrue(moment.isCarefulMode)
+    }
 }

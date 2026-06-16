@@ -49,6 +49,20 @@ public enum MomentAdjustment: String, Codable, CaseIterable, Sendable, Identifia
     }
 }
 
+public enum MomentSafetySignal: String, Codable, Sendable, Equatable {
+    case none
+    case crisisSupport
+
+    public var allowsDrafting: Bool {
+        switch self {
+        case .none:
+            true
+        case .crisisSupport:
+            false
+        }
+    }
+}
+
 public struct MomentInput: Codable, Equatable, Sendable {
     public var personName: String
     public var relationship: Relationship
@@ -84,6 +98,18 @@ public struct MomentInput: Codable, Equatable, Sendable {
 
     public var hasEnoughContextForDraft: Bool {
         !personName.isEmpty
+    }
+
+    public var safetySignal: MomentSafetySignal {
+        trueThing.indicatesCrisisSupportNeed ? .crisisSupport : .none
+    }
+
+    public var allowsDrafting: Bool {
+        hasEnoughContextForDraft && safetySignal.allowsDrafting
+    }
+
+    public var isCarefulMode: Bool {
+        register == .assemble || requiresCarefulLane || occasion == .apology
     }
 
     public var requiresCarefulLane: Bool {
@@ -190,5 +216,30 @@ private extension String {
     var nilIfBlank: String? {
         let trimmed = trimmingCharacters(in: .whitespacesAndNewlines)
         return trimmed.isEmpty ? nil : trimmed
+    }
+
+    var indicatesCrisisSupportNeed: Bool {
+        let normalized = folding(options: [.caseInsensitive, .diacriticInsensitive], locale: .current)
+            .replacingOccurrences(of: "’", with: "'")
+
+        let phrases = [
+            "kill myself",
+            "killing myself",
+            "end my life",
+            "take my own life",
+            "suicide",
+            "suicidal",
+            "want to die",
+            "wanna die",
+            "wish i was dead",
+            "hurt myself",
+            "harm myself",
+            "self harm",
+            "self-harm",
+            "can't go on",
+            "cannot go on"
+        ]
+
+        return phrases.contains { normalized.contains($0) }
     }
 }
