@@ -2,6 +2,8 @@ import Foundation
 
 public struct NativeRuntimeReadiness: Equatable, Sendable {
     public var isGenerationConfigured: Bool
+    public var isPrivateDraftConfigured: Bool
+    public var isCarefulGatewayConfigured: Bool
     public var isDevGatewaySecretConfigured: Bool
     public var isAccountConfigured: Bool
     public var isSubscriptionConfigured: Bool
@@ -10,13 +12,19 @@ public struct NativeRuntimeReadiness: Equatable, Sendable {
 
     public init(
         isGenerationConfigured: Bool = false,
+        isPrivateDraftConfigured: Bool? = nil,
+        isCarefulGatewayConfigured: Bool? = nil,
         isDevGatewaySecretConfigured: Bool = false,
         isAccountConfigured: Bool = false,
         isSubscriptionConfigured: Bool = false,
         premiumProductCount: Int = 0,
         isRecommendedPremiumProductConfigured: Bool = false
     ) {
-        self.isGenerationConfigured = isGenerationConfigured
+        let privateDraftConfigured = isPrivateDraftConfigured ?? isGenerationConfigured
+        let carefulGatewayConfigured = isCarefulGatewayConfigured ?? isGenerationConfigured
+        self.isPrivateDraftConfigured = privateDraftConfigured
+        self.isCarefulGatewayConfigured = carefulGatewayConfigured
+        self.isGenerationConfigured = privateDraftConfigured || carefulGatewayConfigured
         self.isDevGatewaySecretConfigured = isDevGatewaySecretConfigured
         self.isAccountConfigured = isAccountConfigured
         self.isSubscriptionConfigured = isSubscriptionConfigured
@@ -29,12 +37,20 @@ public struct NativeRuntimeReadiness: Equatable, Sendable {
     var settingsItems: [NativeRuntimeReadinessItem] {
         [
             NativeRuntimeReadinessItem(
-                id: "generation",
-                title: "Generation",
-                detail: isGenerationConfigured ? "Gateway URL configured" : "Add PROSEPAL_GATEWAY_URL to this scheme",
-                statusText: isGenerationConfigured ? "Ready" : "Missing",
+                id: "private-draft",
+                title: "Private Draft",
+                detail: isPrivateDraftConfigured ? "On-device writing client included" : "Private draft client is not included",
+                statusText: isPrivateDraftConfigured ? "Ready" : "Missing",
                 systemImage: "sparkles",
-                isReady: isGenerationConfigured
+                isReady: isPrivateDraftConfigured
+            ),
+            NativeRuntimeReadinessItem(
+                id: "take-more-care",
+                title: "Take More Care",
+                detail: isCarefulGatewayConfigured ? "Gateway URL configured" : "Add PROSEPAL_GATEWAY_URL to this scheme",
+                statusText: isCarefulGatewayConfigured ? "Ready" : "Missing",
+                systemImage: "heart.text.square",
+                isReady: isCarefulGatewayConfigured
             ),
             NativeRuntimeReadinessItem(
                 id: "dev-guard",
@@ -64,7 +80,7 @@ public struct NativeRuntimeReadiness: Equatable, Sendable {
     }
 
     var diagnosticsPayload: String {
-        "runtime_readiness generation_configured=\(isGenerationConfigured) dev_secret_configured=\(isDevGatewaySecretConfigured) account_configured=\(isAccountConfigured) subscription_configured=\(isSubscriptionConfigured) premium_product_count=\(premiumProductCount) recommended_plan_configured=\(isRecommendedPremiumProductConfigured)"
+        "runtime_readiness generation_configured=\(isGenerationConfigured) private_draft_configured=\(isPrivateDraftConfigured) take_more_care_configured=\(isCarefulGatewayConfigured) dev_secret_configured=\(isDevGatewaySecretConfigured) account_configured=\(isAccountConfigured) subscription_configured=\(isSubscriptionConfigured) premium_product_count=\(premiumProductCount) recommended_plan_configured=\(isRecommendedPremiumProductConfigured)"
     }
 
     private var subscriptionDetail: String {

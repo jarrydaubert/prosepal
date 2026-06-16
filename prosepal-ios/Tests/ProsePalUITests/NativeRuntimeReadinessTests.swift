@@ -10,7 +10,7 @@ final class NativeRuntimeReadinessTests: XCTestCase {
 
         let items = readiness.settingsItems
 
-        XCTAssertEqual(items.map(\.id), ["generation", "dev-guard", "account", "subscriptions"])
+        XCTAssertEqual(items.map(\.id), ["private-draft", "take-more-care", "dev-guard", "account", "subscriptions"])
         XCTAssertTrue(items.allSatisfy { !$0.isReady })
         XCTAssertTrue(items.allSatisfy { $0.statusText == "Missing" })
         XCTAssertFalse(items.contains { item in
@@ -55,11 +55,24 @@ final class NativeRuntimeReadinessTests: XCTestCase {
 
         XCTAssertEqual(
             payload,
-            "runtime_readiness generation_configured=true dev_secret_configured=true account_configured=false subscription_configured=true premium_product_count=1 recommended_plan_configured=false"
+            "runtime_readiness generation_configured=true private_draft_configured=true take_more_care_configured=true dev_secret_configured=true account_configured=false subscription_configured=true premium_product_count=1 recommended_plan_configured=false"
         )
         XCTAssertFalse(payload.contains("http"))
         XCTAssertFalse(payload.contains("secret="))
         XCTAssertFalse(payload.contains("product_id="))
+    }
+
+    func testPrivateDraftAndTakeMoreCareReadinessAreSeparate() {
+        let readiness = NativeRuntimeReadiness(
+            isPrivateDraftConfigured: true,
+            isCarefulGatewayConfigured: false
+        )
+
+        XCTAssertTrue(readiness.isGenerationConfigured)
+        XCTAssertTrue(readiness.isPrivateDraftConfigured)
+        XCTAssertFalse(readiness.isCarefulGatewayConfigured)
+        XCTAssertEqual(readiness.settingsItems.first { $0.id == "private-draft" }?.statusText, "Ready")
+        XCTAssertEqual(readiness.settingsItems.first { $0.id == "take-more-care" }?.statusText, "Missing")
     }
 
     func testAppModelStoresRuntimeReadinessForSettings() {

@@ -2068,7 +2068,15 @@ private struct MomentSettingsView: View {
             }
 
             Section("Writing") {
-                Label("Private draft starts on device when available", systemImage: "lock")
+                LabeledContent(
+                    "Private Draft",
+                    value: account.runtimeReadiness.isPrivateDraftConfigured ? "Ready" : "Needs setup"
+                )
+                LabeledContent(
+                    "Take more care",
+                    value: account.runtimeReadiness.isCarefulGatewayConfigured ? "Ready" : "Needs setup"
+                )
+                Label("Private drafts start on device when available", systemImage: "lock")
                 Label("Take more care is used for harder moments", systemImage: "heart.text.square")
             }
 

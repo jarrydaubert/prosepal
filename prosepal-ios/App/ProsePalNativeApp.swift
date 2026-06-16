@@ -61,9 +61,11 @@ private enum RelationshipVaultContainerFactory {
 private enum RuntimeReadinessFactory {
     static func make() -> NativeRuntimeReadiness {
         let config = NativeRuntimeConfig()
+        let gatewayURL = config.url(named: "PROSEPAL_GATEWAY_URL")
         let premiumProductIDs = config.list(named: "PROSEPAL_PREMIUM_PRODUCT_IDS")
         return NativeRuntimeReadiness(
-            isGenerationConfigured: config.url(named: "PROSEPAL_GATEWAY_URL") != nil,
+            isPrivateDraftConfigured: true,
+            isCarefulGatewayConfigured: gatewayURL != nil,
             isDevGatewaySecretConfigured: config.value(named: "PROSEPAL_DEV_GATEWAY_SECRET") != nil,
             isAccountConfigured: config.url(named: "PROSEPAL_SUPABASE_URL", fallback: "SUPABASE_URL") != nil &&
                 config.value(named: "PROSEPAL_SUPABASE_ANON_KEY", fallback: "SUPABASE_ANON_KEY") != nil,
