@@ -204,14 +204,18 @@ private enum MomentRootTab: Hashable {
 private struct MomentSheetView: View {
     @Bindable var model: MomentModel
     @Environment(\.modelContext) private var modelContext
+    @Query(sort: \RelationshipTruthBeadRecord.updatedAt, order: .reverse)
+    private var truthBeads: [RelationshipTruthBeadRecord]
     @FocusState private var focusedField: Field?
     @State private var saveNotice: String?
     @State private var isShowingRelationshipPicker = false
     @State private var isShowingMomentPicker = false
+    @State private var newTruthBeadText = ""
 
     private enum Field: Hashable {
         case person
         case truth
+        case memory
     }
 
     var body: some View {
@@ -221,6 +225,9 @@ private struct MomentSheetView: View {
                 personSection
                 momentSection
                 truthSection
+                if !currentPersonName.isEmpty {
+                    memorySection
+                }
                 draftSection
                 if let saveNotice {
                     Text(saveNotice)
@@ -265,6 +272,18 @@ private struct MomentSheetView: View {
         .onChange(of: model.occasion) { _, _ in model.scheduleDraft() }
         .onChange(of: model.register) { _, _ in model.scheduleDraft() }
         .onChange(of: model.trueThing) { _, _ in model.scheduleDraft() }
+    }
+
+    private var currentPersonName: String {
+        model.personName.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private var approvedBeadsForCurrentPerson: [RelationshipTruthBeadRecord] {
+        let normalizedName = currentPersonName.momentNormalizedSearchKey
+        guard !normalizedName.isEmpty else { return [] }
+        return truthBeads.filter {
+            $0.isUserApproved && $0.personName.momentNormalizedSearchKey == normalizedName
+        }
     }
 
     private var header: some View {
@@ -357,6 +376,57 @@ private struct MomentSheetView: View {
             Text("Optional for easy moments. Essential for harder ones.")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
+        }
+        .prosePalMomentCard()
+    }
+
+    private var memorySection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 4) {
+                Label("Relationship memory", systemImage: "checkmark.seal")
+                    .font(.headline)
+
+                Text("Only details you save here are reused for \(currentPersonName).")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            HStack(spacing: 10) {
+                TextField("A detail to remember", text: $newTruthBeadText, prompt: Text("Loves Sunday walks"))
+                    .focused($focusedField, equals: .memory)
+                    .submitLabel(.done)
+                    .padding(14)
+                    .background(Color.momentSecondaryGroupedBackground, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .onSubmit {
+                        addTruthBead()
+                    }
+
+                Button {
+                    addTruthBead()
+                } label: {
+                    Image(systemName: "plus")
+                        .font(.headline.weight(.semibold))
+                        .frame(width: 42, height: 42)
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(newTruthBeadText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                .accessibilityLabel("Add relationship memory")
+            }
+
+            if approvedBeadsForCurrentPerson.isEmpty {
+                Text("No saved details yet.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            } else {
+                VStack(spacing: 8) {
+                    ForEach(approvedBeadsForCurrentPerson) { bead in
+                        MomentTruthBeadRow(bead: bead) {
+                            deleteTruthBead(bead)
+                        }
+                    }
+                }
+            }
         }
         .prosePalMomentCard()
     }
@@ -495,6 +565,35 @@ private struct MomentSheetView: View {
                 saveNotice = nil
             }
         }
+    }
+
+    private func addTruthBead() {
+        let text = newTruthBeadText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !currentPersonName.isEmpty, !text.isEmpty else { return }
+
+        let record = RelationshipTruthBeadRecord(
+            personName: currentPersonName,
+            text: text,
+            isUserApproved: true
+        )
+        modelContext.insert(record)
+
+        do {
+            try modelContext.save()
+            newTruthBeadText = ""
+            focusedField = nil
+            model.scheduleDraft()
+        } catch {
+            withAnimation(.easeInOut(duration: 0.18)) {
+                saveNotice = "Could not save this detail."
+            }
+        }
+    }
+
+    private func deleteTruthBead(_ bead: RelationshipTruthBeadRecord) {
+        modelContext.delete(bead)
+        try? modelContext.save()
+        model.scheduleDraft()
     }
 }
 
@@ -754,6 +853,39 @@ private struct MomentPickerRow: View {
         .padding(.vertical, 4)
         .contentShape(Rectangle())
         .accessibilityElement(children: .combine)
+    }
+}
+
+private struct MomentTruthBeadRow: View {
+    let bead: RelationshipTruthBeadRecord
+    let onDelete: () -> Void
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: "checkmark.seal.fill")
+                .font(.subheadline)
+                .foregroundStyle(.tint)
+                .padding(.top, 2)
+
+            Text(bead.text)
+                .font(.callout)
+                .foregroundStyle(.primary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Spacer(minLength: 8)
+
+            Button(role: .destructive) {
+                onDelete()
+            } label: {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.body)
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(.secondary)
+            .accessibilityLabel("Delete relationship memory")
+        }
+        .padding(12)
+        .background(Color.momentSecondaryGroupedBackground, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
     }
 }
 
@@ -1358,6 +1490,13 @@ private enum MomentSettingsExternalLinks {
 private extension Relationship {
     var momentSearchText: String {
         "\(displayName) \(group.displayName) \(generationHint)"
+    }
+}
+
+private extension String {
+    var momentNormalizedSearchKey: String {
+        trimmingCharacters(in: .whitespacesAndNewlines)
+            .folding(options: [.caseInsensitive, .diacriticInsensitive], locale: .current)
     }
 }
 

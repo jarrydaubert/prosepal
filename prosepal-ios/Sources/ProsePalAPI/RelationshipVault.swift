@@ -47,6 +47,35 @@ public enum RelationshipVaultSchema {
     }
 }
 
+public actor SwiftDataRelationshipMemoryProvider: RelationshipMemoryProviding {
+    private let container: ModelContainer
+
+    public init(container: ModelContainer) {
+        self.container = container
+    }
+
+    public func approvedTruthBeads(for personName: String) async throws -> [TruthBead] {
+        let normalizedName = Self.normalized(personName)
+        guard !normalizedName.isEmpty else { return [] }
+
+        let context = ModelContext(container)
+        let descriptor = FetchDescriptor<RelationshipTruthBeadRecord>(
+            predicate: #Predicate { $0.isUserApproved },
+            sortBy: [SortDescriptor(\.updatedAt, order: .reverse)]
+        )
+
+        return try context.fetch(descriptor)
+            .filter { Self.normalized($0.personName) == normalizedName }
+            .map(\.truthBead)
+    }
+
+    private static func normalized(_ value: String) -> String {
+        value
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .folding(options: [.caseInsensitive, .diacriticInsensitive], locale: .current)
+    }
+}
+
 @Model
 public final class SavedMomentDraftRecord {
     public var id: UUID

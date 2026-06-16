@@ -10,6 +10,7 @@ struct ProsePalNativeApp: App {
     private let authSessionController = AuthSessionController(
         store: KeychainAuthSessionStore(service: "com.prosepal.native.auth")
     )
+    private let relationshipVaultContainer = RelationshipVaultContainerFactory.make()
     private let authClient = AuthClientFactory.makeClient()
     private let accountMaintenanceClient = AccountMaintenanceClientFactory.makeClient()
     private let subscriptionClient = SubscriptionClientFactory.makeClient()
@@ -21,7 +22,8 @@ struct ProsePalNativeApp: App {
             MomentAppRootView(
                 service: MessageWritingServiceFactory.makeService(
                     authSessionController: authSessionController,
-                    clientContext: context
+                    clientContext: context,
+                    relationshipVaultContainer: relationshipVaultContainer
                 ),
                 account: MomentAccountModel(
                     clientContext: context,
@@ -32,7 +34,7 @@ struct ProsePalNativeApp: App {
                     runtimeReadiness: runtimeReadiness
                 )
             )
-            .modelContainer(for: RelationshipVaultSchema.models)
+            .modelContainer(relationshipVaultContainer)
         }
     }
 
@@ -41,6 +43,18 @@ struct ProsePalNativeApp: App {
             appVersion: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0.1.0",
             buildNumber: Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
         )
+    }
+}
+
+private enum RelationshipVaultContainerFactory {
+    static func make() -> ModelContainer {
+        do {
+            let schema = Schema(RelationshipVaultSchema.models)
+            let configuration = ModelConfiguration(schema: schema)
+            return try ModelContainer(for: schema, configurations: [configuration])
+        } catch {
+            fatalError("Unable to create ProsePal relationship vault: \(error.localizedDescription)")
+        }
     }
 }
 
@@ -118,9 +132,12 @@ private enum MessageWritingClientFactory {
 private enum MessageWritingServiceFactory {
     static func makeService(
         authSessionController: AuthSessionController?,
-        clientContext: ClientContext
+        clientContext: ClientContext,
+        relationshipVaultContainer: ModelContainer
     ) -> any MessageWritingService {
-        let privateClient = FoundationModelsPrivateDraftClient()
+        let privateClient = FoundationModelsPrivateDraftClient(
+            memoryProvider: SwiftDataRelationshipMemoryProvider(container: relationshipVaultContainer)
+        )
         let carefulClient: any MomentDraftClient
 
         if let gatewayEndpoint {
