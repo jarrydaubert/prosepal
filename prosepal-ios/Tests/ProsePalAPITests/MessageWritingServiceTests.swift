@@ -78,6 +78,35 @@ func privateUnavailabilityFallsThroughToCarefulClient() async throws {
 }
 
 @Test
+func privateContentBlockDoesNotFallThroughToCarefulClient() async {
+    let privateClient = FailingMomentDraftClient(
+        error: GenerationError.contentBlocked(message: "This needs a different kind of support.")
+    )
+    let carefulClient = RecordingMomentDraftClient(
+        bundle: MomentDraftBundle(messageText: "Careful fallback.", lane: .takeMoreCare)
+    )
+    let service = RoutingMessageWritingService(
+        privateClient: privateClient,
+        carefulClient: carefulClient
+    )
+
+    do {
+        _ = try await service.draft(for: MomentInput(
+            personName: "Alex",
+            relationship: .closeFriend,
+            occasion: .birthday
+        ))
+        Issue.record("Expected content blocked errors to stay blocked.")
+    } catch let error as GenerationError {
+        #expect(error == .contentBlocked(message: "This needs a different kind of support."))
+    } catch {
+        Issue.record("Expected GenerationError, got \(error).")
+    }
+
+    #expect(await carefulClient.draftCallCount == 0)
+}
+
+@Test
 func serviceAppliesLocalPressureCheckToReturnedDraft() async throws {
     let privateClient = RecordingMomentDraftClient(
         bundle: MomentDraftBundle(
@@ -194,6 +223,66 @@ func takeMoreCareUsesCarefulRefinementWithCurrentDraft() async throws {
 }
 
 @Test
+func takeMoreCareFallsBackToCarefulDraftWhenClientCannotRefine() async throws {
+    let privateClient = RecordingMomentDraftClient(
+        bundle: MomentDraftBundle(messageText: "Private hello.", lane: .privateDraft)
+    )
+    let carefulClient = RecordingMomentDraftClient(
+        bundle: MomentDraftBundle(messageText: "Careful new draft.", lane: .takeMoreCare)
+    )
+    let service = RoutingMessageWritingService(
+        privateClient: privateClient,
+        carefulClient: carefulClient
+    )
+    let currentBundle = MomentDraftBundle(
+        messageText: "Happy birthday. I hope today is lovely.",
+        lane: .privateDraft
+    )
+
+    let bundle = try await service.takeMoreCare(
+        currentBundle,
+        moment: MomentInput(
+            personName: "Alex",
+            relationship: .closeFriend,
+            occasion: .birthday
+        )
+    )
+
+    #expect(bundle.messageText == "Careful new draft.")
+    #expect(bundle.lane == .takeMoreCare)
+    #expect(await privateClient.draftCallCount == 0)
+    #expect(await carefulClient.draftCallCount == 1)
+}
+
+@Test
+func adjustPrivateDraftFallsThroughToCarefulClientWhenPrivateIsUnavailable() async throws {
+    let privateClient = FailingMomentDraftClient(
+        error: GenerationError.serviceUnavailable(message: "Private draft unavailable.")
+    )
+    let carefulClient = RecordingMomentDraftClient(
+        bundle: MomentDraftBundle(messageText: "Careful warmer draft.", lane: .takeMoreCare)
+    )
+    let service = RoutingMessageWritingService(
+        privateClient: privateClient,
+        carefulClient: carefulClient
+    )
+
+    let bundle = try await service.adjust(
+        MomentDraftBundle(messageText: "A first draft.", lane: .privateDraft),
+        with: .warmer,
+        moment: MomentInput(
+            personName: "Alex",
+            relationship: .closeFriend,
+            occasion: .birthday
+        )
+    )
+
+    #expect(bundle.messageText == "Careful warmer draft.")
+    #expect(bundle.lane == .takeMoreCare)
+    #expect(await carefulClient.adjustCallCount == 1)
+}
+
+@Test
 func savedMomentDraftRecordPreservesMomentMetadata() {
     let createdAt = Date(timeIntervalSince1970: 1_800_000_000)
     let moment = MomentInput(
@@ -229,6 +318,7 @@ func savedMomentDraftRecordPreservesMomentMetadata() {
 private actor RecordingMomentDraftClient: MomentDraftClient {
     private let bundle: MomentDraftBundle
     private(set) var draftCallCount = 0
+    private(set) var adjustCallCount = 0
 
     init(bundle: MomentDraftBundle) {
         self.bundle = bundle
@@ -244,7 +334,8 @@ private actor RecordingMomentDraftClient: MomentDraftClient {
         with adjustment: MomentAdjustment,
         moment: MomentInput
     ) async throws -> MomentDraftBundle {
-        self.bundle
+        adjustCallCount += 1
+        return self.bundle
     }
 }
 
