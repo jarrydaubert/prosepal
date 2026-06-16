@@ -158,14 +158,36 @@ public final class MomentModel {
 public struct MomentAppRootView: View {
     @State private var model: MomentModel
     @State private var account: MomentAccountModel
+    @State private var welcomeState: MomentWelcomeState
     @State private var selectedTab: MomentRootTab = .moment
 
-    public init(service: any MessageWritingService, account: MomentAccountModel) {
+    public init(
+        service: any MessageWritingService,
+        account: MomentAccountModel,
+        welcomeState: @autoclosure @escaping () -> MomentWelcomeState = MomentWelcomeState()
+    ) {
         _model = State(initialValue: MomentModel(service: service))
         _account = State(initialValue: account)
+        _welcomeState = State(initialValue: welcomeState())
     }
 
     public var body: some View {
+        Group {
+            if welcomeState.hasCompletedWelcome {
+                tabs
+            } else {
+                MomentWelcomeView {
+                    welcomeState.completeWelcome()
+                }
+            }
+        }
+        .animation(.easeInOut(duration: 0.22), value: welcomeState.hasCompletedWelcome)
+        .task {
+            await account.loadInitialState()
+        }
+    }
+
+    private var tabs: some View {
         TabView(selection: $selectedTab) {
             NavigationStack {
                 MomentSheetView(model: model)
@@ -193,9 +215,31 @@ public struct MomentAppRootView: View {
             }
             .tag(MomentRootTab.settings)
         }
-        .task {
-            await account.loadInitialState()
-        }
+    }
+}
+
+@MainActor
+@Observable
+public final class MomentWelcomeState {
+    public nonisolated static let defaultCompletionKey = "prosepal.native.momentWelcomeCompleted.v1"
+
+    public private(set) var hasCompletedWelcome: Bool
+
+    @ObservationIgnored private let store: UserDefaults
+    @ObservationIgnored private let completionKey: String
+
+    public init(
+        store: UserDefaults = .standard,
+        completionKey: String = MomentWelcomeState.defaultCompletionKey
+    ) {
+        self.store = store
+        self.completionKey = completionKey
+        self.hasCompletedWelcome = store.bool(forKey: completionKey)
+    }
+
+    public func completeWelcome() {
+        hasCompletedWelcome = true
+        store.set(true, forKey: completionKey)
     }
 }
 
@@ -203,6 +247,93 @@ private enum MomentRootTab: Hashable {
     case moment
     case saved
     case settings
+}
+
+private struct MomentWelcomeView: View {
+    let onStart: () -> Void
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 28) {
+                Spacer(minLength: 44)
+
+                VStack(alignment: .leading, spacing: 14) {
+                    Text("Words for the moment.")
+                        .font(.system(.largeTitle, design: .serif).weight(.bold))
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    Text("Start with who this is for. ProsePal keeps a private draft nearby, then helps you take more care when the moment needs it.")
+                        .font(.title3)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                VStack(spacing: 12) {
+                    MomentWelcomeRow(
+                        systemImage: "person.crop.circle",
+                        title: "Person first",
+                        detail: "Begin with someone real, not a blank prompt."
+                    )
+                    MomentWelcomeRow(
+                        systemImage: "lock",
+                        title: "Private by default",
+                        detail: "Relationship details are saved only when you choose."
+                    )
+                    MomentWelcomeRow(
+                        systemImage: "heart.text.square",
+                        title: "Care for harder moments",
+                        detail: "Sensitive messages stay quieter and lean on your words."
+                    )
+                }
+
+                Spacer(minLength: 96)
+            }
+            .padding(.horizontal, 24)
+            .padding(.top, 34)
+        }
+        .background(Color.momentGroupedBackground)
+        .safeAreaInset(edge: .bottom) {
+            Button {
+                onStart()
+            } label: {
+                Label("Start with someone", systemImage: "arrow.right")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.large)
+            .padding(.horizontal, 20)
+            .padding(.vertical, 12)
+            .momentControlBarSurface()
+        }
+    }
+}
+
+private struct MomentWelcomeRow: View {
+    let systemImage: String
+    let title: String
+    let detail: String
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 14) {
+            Image(systemName: systemImage)
+                .font(.title3)
+                .foregroundStyle(.tint)
+                .frame(width: 32, height: 32)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.headline)
+                Text(detail)
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.prosePalCard, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .accessibilityElement(children: .combine)
+    }
 }
 
 private struct MomentSheetView: View {
