@@ -54,6 +54,13 @@ public final class MomentModel {
         moment.safetySignal
     }
 
+    public func applyLaunchRequest(_ request: MomentLaunchRequest) {
+        if let personName = request.personName {
+            self.personName = personName
+        }
+        scheduleDraft()
+    }
+
     public func scheduleDraft() {
         draftTask?.cancel()
         let generation = nextDraftGeneration()
@@ -272,14 +279,18 @@ public struct MomentAppRootView: View {
     @State private var welcomeState: MomentWelcomeState
     @State private var selectedTab: MomentRootTab = .moment
 
+    private let launchStore: MomentLaunchStore
+
     public init(
         service: any MessageWritingService,
         account: MomentAccountModel,
-        welcomeState: @autoclosure @escaping () -> MomentWelcomeState = MomentWelcomeState()
+        welcomeState: @autoclosure @escaping () -> MomentWelcomeState = MomentWelcomeState(),
+        launchStore: MomentLaunchStore = MomentLaunchStore()
     ) {
         _model = State(initialValue: MomentModel(service: service))
         _account = State(initialValue: account)
         _welcomeState = State(initialValue: welcomeState())
+        self.launchStore = launchStore
     }
 
     public var body: some View {
@@ -293,9 +304,23 @@ public struct MomentAppRootView: View {
             }
         }
         .animation(.easeInOut(duration: 0.22), value: welcomeState.hasCompletedWelcome)
+        .onAppear {
+            consumePendingLaunch()
+        }
+        .onChange(of: welcomeState.hasCompletedWelcome) { _, completed in
+            if completed {
+                consumePendingLaunch()
+            }
+        }
         .task {
             await account.loadInitialState()
         }
+    }
+
+    private func consumePendingLaunch() {
+        guard let request = launchStore.consume() else { return }
+        selectedTab = .moment
+        model.applyLaunchRequest(request)
     }
 
     private var tabs: some View {
