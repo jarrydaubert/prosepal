@@ -45,6 +45,29 @@ final class RelationshipVaultTests: XCTestCase {
         XCTAssertTrue(beads.isEmpty)
     }
 
+    func testRelationshipTruthBeadRecordUpdateTrimsAndTouchesTimestamp() {
+        let originalDate = Date(timeIntervalSince1970: 1_000)
+        let updatedDate = Date(timeIntervalSince1970: 2_000)
+        let record = RelationshipTruthBeadRecord(
+            personName: " Alex ",
+            text: " Likes long walks ",
+            isUserApproved: true,
+            updatedAt: originalDate
+        )
+
+        record.update(
+            personName: "  Asha  ",
+            text: "  Prefers short notes  ",
+            isUserApproved: false,
+            updatedAt: updatedDate
+        )
+
+        XCTAssertEqual(record.personName, "Asha")
+        XCTAssertEqual(record.text, "Prefers short notes")
+        XCTAssertFalse(record.isUserApproved)
+        XCTAssertEqual(record.updatedAt, updatedDate)
+    }
+
     private func makeContainer() throws -> ModelContainer {
         let schema = Schema(RelationshipVaultSchema.models)
         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)

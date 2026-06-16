@@ -36,6 +36,18 @@ public final class RelationshipTruthBeadRecord {
             createdAt: createdAt
         )
     }
+
+    public func update(
+        personName: String,
+        text: String,
+        isUserApproved: Bool,
+        updatedAt: Date = Date()
+    ) {
+        self.personName = personName.trimmingCharacters(in: .whitespacesAndNewlines)
+        self.text = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        self.isUserApproved = isUserApproved
+        self.updatedAt = updatedAt
+    }
 }
 
 public enum RelationshipVaultSchema {

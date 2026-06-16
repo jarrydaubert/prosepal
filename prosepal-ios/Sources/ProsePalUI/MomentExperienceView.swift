@@ -500,6 +500,8 @@ private struct MomentSheetView: View {
     @State private var isShowingMomentPicker = false
     @State private var isShowingPaywall = false
     @State private var newTruthBeadText = ""
+    @State private var editingTruthBead: RelationshipTruthBeadRecord?
+    @State private var isShowingMemoryExplanation = false
 
     private let diagnostics = NativeDiagnosticsLogger.shared
 
@@ -567,6 +569,18 @@ private struct MomentSheetView: View {
         }
         .sheet(isPresented: $isShowingPaywall) {
             MomentPaywallSheet(account: account)
+        }
+        .sheet(item: $editingTruthBead, onDismiss: {
+            model.scheduleDraft()
+        }) { bead in
+            NavigationStack {
+                RelationshipMemoryDetailView(bead: bead)
+            }
+        }
+        .alert("Why this appears", isPresented: $isShowingMemoryExplanation) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("You saved this detail for \(currentPersonName). ProsePal uses approved memory only when drafting for this person, and does not log the text.")
         }
         .onChange(of: model.personName) { _, _ in model.scheduleDraft() }
         .onChange(of: model.relationship) { _, newValue in
@@ -733,9 +747,18 @@ private struct MomentSheetView: View {
             } else {
                 VStack(spacing: 8) {
                     ForEach(approvedBeadsForCurrentPerson) { bead in
-                        MomentTruthBeadRow(bead: bead) {
-                            deleteTruthBead(bead)
-                        }
+                        MomentTruthBeadRow(
+                            bead: bead,
+                            onEdit: {
+                                editingTruthBead = bead
+                            },
+                            onExplain: {
+                                isShowingMemoryExplanation = true
+                            },
+                            onDelete: {
+                                deleteTruthBead(bead)
+                            }
+                        )
                     }
                 }
             }
@@ -1291,6 +1314,8 @@ private struct MomentPickerRow: View {
 
 private struct MomentTruthBeadRow: View {
     let bead: RelationshipTruthBeadRecord
+    let onEdit: () -> Void
+    let onExplain: () -> Void
     let onDelete: () -> Void
 
     var body: some View {
@@ -1307,15 +1332,31 @@ private struct MomentTruthBeadRow: View {
 
             Spacer(minLength: 8)
 
-            Button(role: .destructive) {
-                onDelete()
+            Menu {
+                Button {
+                    onEdit()
+                } label: {
+                    Label("Edit detail", systemImage: "pencil")
+                }
+
+                Button {
+                    onExplain()
+                } label: {
+                    Label("Why this appears", systemImage: "info.circle")
+                }
+
+                Button(role: .destructive) {
+                    onDelete()
+                } label: {
+                    Label("Delete detail", systemImage: "trash")
+                }
             } label: {
-                Image(systemName: "xmark.circle.fill")
-                    .font(.body)
+                Image(systemName: "ellipsis.circle")
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 32, height: 32)
             }
-            .buttonStyle(.plain)
-            .foregroundStyle(.secondary)
-            .accessibilityLabel("Delete relationship memory")
+            .accessibilityLabel("Relationship memory actions")
         }
         .padding(12)
         .background(Color.momentSecondaryGroupedBackground, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
@@ -1610,10 +1651,11 @@ private struct RelationshipMemoryDetailView: View {
     }
 
     private func save() {
-        bead.personName = personName.trimmingCharacters(in: .whitespacesAndNewlines)
-        bead.text = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        bead.isUserApproved = isUserApproved
-        bead.updatedAt = Date()
+        bead.update(
+            personName: personName,
+            text: text,
+            isUserApproved: isUserApproved
+        )
         try? modelContext.save()
 
         withAnimation(.easeInOut(duration: 0.18)) {
