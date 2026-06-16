@@ -131,4 +131,76 @@ final class CardContractTests: XCTestCase {
         XCTAssertTrue(moment.allowsDrafting)
         XCTAssertTrue(moment.isCarefulMode)
     }
+
+    func testLocalPressureCheckFindsReassuranceAsking() {
+        let moment = MomentInput(
+            personName: "Alex",
+            relationship: .romantic,
+            occasion: .thinkingOfYou,
+            trueThing: "Please tell me you still love me."
+        )
+
+        let check = PressureCheck.local(
+            messageText: "I miss you. Are we okay?",
+            moment: moment
+        )
+
+        XCTAssertTrue(check.asksForReassurance)
+        XCTAssertFalse(check.explainsBeforeApology)
+        XCTAssertTrue(check.userVisibleNotes.contains("This asks them to reassure you. Consider making the message easier to receive."))
+    }
+
+    func testLocalPressureCheckFindsConditionalApology() {
+        let moment = MomentInput(
+            personName: "Mum",
+            relationship: .parent,
+            occasion: .apology,
+            register: .confess
+        )
+
+        let check = PressureCheck.local(
+            messageText: "I'm sorry if what I said upset you.",
+            moment: moment
+        )
+
+        XCTAssertTrue(check.explainsBeforeApology)
+        XCTAssertTrue(check.userVisibleNotes.contains("This apology may sound conditional. Lead with the apology before explaining."))
+    }
+
+    func testLocalPressureCheckFindsHeavyEverydayLanguage() {
+        let moment = MomentInput(
+            personName: "Sam",
+            relationship: .closeFriend,
+            occasion: .birthday,
+            register: .react
+        )
+
+        let check = PressureCheck.local(
+            messageText: "Happy birthday. You're all I have.",
+            moment: moment
+        )
+
+        XCTAssertTrue(check.mayFeelTooHeavy)
+        XCTAssertTrue(check.userVisibleNotes.contains("This may feel heavy for this moment. Consider making it lighter or more specific."))
+    }
+
+    func testMomentDraftBundleMergesLocalPressureCheckWithoutDroppingModelNotes() {
+        let bundle = MomentDraftBundle(
+            messageText: "I'm sorry but I was tired.",
+            lane: .privateDraft,
+            pressureCheck: PressureCheck(notes: ["Keep this short."])
+        )
+        let moment = MomentInput(
+            personName: "Dad",
+            relationship: .parent,
+            occasion: .apology,
+            register: .confess
+        )
+
+        let checked = bundle.applyingLocalPressureCheck(for: moment)
+
+        XCTAssertTrue(checked.pressureCheck.explainsBeforeApology)
+        XCTAssertTrue(checked.pressureCheck.userVisibleNotes.contains("Keep this short."))
+        XCTAssertTrue(checked.pressureCheck.userVisibleNotes.contains("This apology may sound conditional. Lead with the apology before explaining."))
+    }
 }

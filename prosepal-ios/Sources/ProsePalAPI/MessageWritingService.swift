@@ -56,13 +56,16 @@ public struct RoutingMessageWritingService: MessageWritingService {
 
         if moment.requiresCarefulLane {
             return try await carefulClient.draft(for: moment)
+                .applyingLocalPressureCheck(for: moment)
         }
 
         do {
             return try await privateClient.draft(for: moment)
+                .applyingLocalPressureCheck(for: moment)
         } catch let error as GenerationError {
             guard error.shouldRouteToCarefulLane else { throw error }
             return try await carefulClient.draft(for: moment)
+                .applyingLocalPressureCheck(for: moment)
         }
     }
 
@@ -81,12 +84,15 @@ public struct RoutingMessageWritingService: MessageWritingService {
         case .privateDraft, .mock:
             do {
                 return try await privateClient.adjust(bundle, with: adjustment, moment: moment)
+                    .applyingLocalPressureCheck(for: moment)
             } catch let error as GenerationError {
                 guard error.shouldRouteToCarefulLane else { throw error }
                 return try await carefulClient.adjust(bundle, with: adjustment, moment: moment)
+                    .applyingLocalPressureCheck(for: moment)
             }
         case .takeMoreCare:
             return try await carefulClient.adjust(bundle, with: adjustment, moment: moment)
+                .applyingLocalPressureCheck(for: moment)
         }
     }
 
@@ -110,9 +116,11 @@ public struct RoutingMessageWritingService: MessageWritingService {
                 currentMessage: bundle?.messageText,
                 moment: moment
             )
+            .applyingLocalPressureCheck(for: moment)
         }
 
         return try await carefulClient.draft(for: moment)
+            .applyingLocalPressureCheck(for: moment)
     }
 }
 

@@ -204,6 +204,80 @@ public struct PressureCheck: Codable, Equatable, Sendable {
     public var hasFindings: Bool {
         asksForReassurance || explainsBeforeApology || mayFeelTooHeavy || !notes.isEmpty
     }
+
+    public var userVisibleNotes: [String] {
+        var output = notes.nonEmptyTrimmed
+
+        if asksForReassurance {
+            output.appendIfMissing("This asks them to reassure you. Consider making the message easier to receive.")
+        }
+
+        if explainsBeforeApology {
+            output.appendIfMissing("This apology may sound conditional. Lead with the apology before explaining.")
+        }
+
+        if mayFeelTooHeavy {
+            output.appendIfMissing("This may feel heavy for this moment. Consider making it lighter or more specific.")
+        }
+
+        return output
+    }
+
+    public func merged(with other: PressureCheck) -> PressureCheck {
+        PressureCheck(
+            asksForReassurance: asksForReassurance || other.asksForReassurance,
+            explainsBeforeApology: explainsBeforeApology || other.explainsBeforeApology,
+            mayFeelTooHeavy: mayFeelTooHeavy || other.mayFeelTooHeavy,
+            notes: notes.mergingUserSafeNotes(with: other.notes)
+        )
+    }
+
+    public static func local(messageText: String, moment: MomentInput) -> PressureCheck {
+        let combined = [messageText, moment.trueThing]
+            .joined(separator: "\n")
+            .momentPressureNormalized
+
+        let asksForReassurance = [
+            "please tell me",
+            "tell me im",
+            "tell me i'm",
+            "need you to tell me",
+            "do you still",
+            "are we okay",
+            "you dont hate me",
+            "you don't hate me",
+            "you still love me"
+        ].contains { combined.contains($0) }
+
+        let explainsBeforeApology = [
+            "sorry but",
+            "sorry, but",
+            "i'm sorry but",
+            "im sorry but",
+            "i am sorry but",
+            "sorry if",
+            "i'm sorry if",
+            "im sorry if",
+            "i am sorry if"
+        ].contains { combined.contains($0) }
+
+        let mayFeelTooHeavy = moment.register == .react && !moment.requiresCarefulLane && [
+            "cant live without you",
+            "can't live without you",
+            "you are all i have",
+            "youre all i have",
+            "you're all i have",
+            "i need you in my life",
+            "i dont know what i would do without you",
+            "i don't know what i would do without you"
+        ].contains { combined.contains($0) }
+
+        return PressureCheck(
+            asksForReassurance: asksForReassurance,
+            explainsBeforeApology: explainsBeforeApology,
+            mayFeelTooHeavy: mayFeelTooHeavy
+        )
+    }
 }
 
 public struct MomentDraftBundle: Codable, Equatable, Identifiable, Sendable {
@@ -231,6 +305,18 @@ public struct MomentDraftBundle: Codable, Equatable, Identifiable, Sendable {
         self.truthBeads = truthBeads
         self.missingInformation = missingInformation
         self.riskNotes = riskNotes
+    }
+
+    public func applyingLocalPressureCheck(for moment: MomentInput) -> MomentDraftBundle {
+        MomentDraftBundle(
+            id: id,
+            messageText: messageText,
+            lane: lane,
+            pressureCheck: pressureCheck.merged(with: .local(messageText: messageText, moment: moment)),
+            truthBeads: truthBeads,
+            missingInformation: missingInformation,
+            riskNotes: riskNotes
+        )
     }
 }
 
@@ -263,5 +349,35 @@ private extension String {
         ]
 
         return phrases.contains { normalized.contains($0) }
+    }
+
+    var momentPressureNormalized: String {
+        folding(options: [.caseInsensitive, .diacriticInsensitive], locale: .current)
+            .replacingOccurrences(of: "’", with: "'")
+            .replacingOccurrences(of: "‘", with: "'")
+            .replacingOccurrences(of: "“", with: "\"")
+            .replacingOccurrences(of: "”", with: "\"")
+            .replacingOccurrences(of: "\n", with: " ")
+            .replacingOccurrences(of: "\t", with: " ")
+    }
+}
+
+private extension Array where Element == String {
+    var nonEmptyTrimmed: [String] {
+        map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+    }
+
+    mutating func appendIfMissing(_ value: String) {
+        guard !contains(value) else { return }
+        append(value)
+    }
+
+    func mergingUserSafeNotes(with other: [String]) -> [String] {
+        var merged = nonEmptyTrimmed
+        for note in other.nonEmptyTrimmed where !merged.contains(note) {
+            merged.append(note)
+        }
+        return merged
     }
 }

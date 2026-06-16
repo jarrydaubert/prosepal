@@ -78,6 +78,33 @@ func privateUnavailabilityFallsThroughToCarefulClient() async throws {
 }
 
 @Test
+func serviceAppliesLocalPressureCheckToReturnedDraft() async throws {
+    let privateClient = RecordingMomentDraftClient(
+        bundle: MomentDraftBundle(
+            messageText: "I'm sorry but I was trying to help.",
+            lane: .privateDraft
+        )
+    )
+    let carefulClient = RecordingMomentDraftClient(
+        bundle: MomentDraftBundle(messageText: "Careful.", lane: .takeMoreCare)
+    )
+    let service = RoutingMessageWritingService(
+        privateClient: privateClient,
+        carefulClient: carefulClient
+    )
+
+    let bundle = try await service.draft(for: MomentInput(
+        personName: "Dad",
+        relationship: .parent,
+        occasion: .apology,
+        register: .react
+    ))
+
+    #expect(bundle.pressureCheck.explainsBeforeApology)
+    #expect(bundle.pressureCheck.userVisibleNotes.contains("This apology may sound conditional. Lead with the apology before explaining."))
+}
+
+@Test
 func emptyPersonDoesNotStartDrafting() async {
     let service = RoutingMessageWritingService(
         privateClient: RecordingMomentDraftClient(

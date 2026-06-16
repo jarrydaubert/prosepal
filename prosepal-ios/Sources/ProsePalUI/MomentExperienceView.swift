@@ -956,7 +956,7 @@ private struct MomentSheetView: View {
             Label("Pressure check", systemImage: "checkmark.seal")
                 .font(.subheadline.weight(.semibold))
 
-            ForEach(check.notes, id: \.self) { note in
+            ForEach(check.userVisibleNotes, id: \.self) { note in
                 Text(note)
                     .font(.footnote)
                     .foregroundStyle(.secondary)
