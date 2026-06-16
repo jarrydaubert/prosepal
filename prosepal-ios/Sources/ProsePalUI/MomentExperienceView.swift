@@ -278,6 +278,9 @@ public struct MomentAppRootView: View {
     @State private var account: MomentAccountModel
     @State private var welcomeState: MomentWelcomeState
     @State private var selectedTab: MomentRootTab = .moment
+    @State private var didLogStartup = false
+    @Query(sort: \SavedMomentDraftRecord.createdAt, order: .reverse)
+    private var savedDrafts: [SavedMomentDraftRecord]
 
     private let launchStore: MomentLaunchStore
     private let diagnostics: NativeDiagnosticsLogger
@@ -308,6 +311,7 @@ public struct MomentAppRootView: View {
         }
         .animation(.easeInOut(duration: 0.22), value: welcomeState.hasCompletedWelcome)
         .onAppear {
+            logStartupIfNeeded()
             consumePendingLaunch()
         }
         .onChange(of: welcomeState.hasCompletedWelcome) { _, completed in
@@ -321,6 +325,16 @@ public struct MomentAppRootView: View {
         .task {
             await account.loadInitialState()
         }
+    }
+
+    private func logStartupIfNeeded() {
+        guard !didLogStartup else { return }
+        didLogStartup = true
+        diagnostics.appStarted(
+            hasCompletedOnboarding: welcomeState.hasCompletedWelcome,
+            savedMessageCount: savedDrafts.count
+        )
+        diagnostics.runtimeReadiness(account.runtimeReadiness)
     }
 
     private func consumePendingLaunch() {
