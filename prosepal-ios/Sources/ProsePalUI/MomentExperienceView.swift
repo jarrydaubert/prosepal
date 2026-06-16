@@ -315,6 +315,9 @@ public struct MomentAppRootView: View {
                 consumePendingLaunch()
             }
         }
+        .onOpenURL { url in
+            consumeDeepLink(url)
+        }
         .task {
             await account.loadInitialState()
         }
@@ -322,6 +325,15 @@ public struct MomentAppRootView: View {
 
     private func consumePendingLaunch() {
         guard let request = launchStore.consume() else { return }
+        applyLaunchRequest(request)
+    }
+
+    private func consumeDeepLink(_ url: URL) {
+        guard let deepLink = MomentDeepLink(url: url) else { return }
+        applyLaunchRequest(deepLink.launchRequest)
+    }
+
+    private func applyLaunchRequest(_ request: MomentLaunchRequest) {
         selectedTab = .moment
         diagnostics.momentLaunchConsumed(request)
         model.applyLaunchRequest(request)

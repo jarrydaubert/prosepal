@@ -1,7 +1,7 @@
 import AppIntents
 import Foundation
 
-public struct MomentLaunchRequest: Codable, Equatable {
+public struct MomentLaunchRequest: Codable, Equatable, Sendable {
     public static let defaultSource = "unknown"
 
     public var personName: String?
@@ -50,9 +50,64 @@ public struct MomentLaunchStore {
     }
 }
 
+public struct MomentDeepLink: Equatable, Sendable {
+    public static let scheme = "prosepal"
+    public static let momentHost = "moment"
+
+    public var launchRequest: MomentLaunchRequest
+
+    public init?(url: URL) {
+        guard url.scheme == Self.scheme else { return nil }
+        guard url.host == Self.momentHost || url.pathComponents.dropFirst().first == Self.momentHost else {
+            return nil
+        }
+
+        let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
+        let personName = components?.queryItems?.firstValue(named: "person")
+            ?? components?.queryItems?.firstValue(named: "personName")
+            ?? url.personPathComponent
+        let source = components?.queryItems?.firstValue(named: "source")?.safeMomentLaunchSource ?? "deep_link"
+
+        launchRequest = MomentLaunchRequest(
+            personName: personName,
+            source: source
+        )
+    }
+}
+
 public struct ProsePalIntentsPackage: AppIntentsPackage {
     public static var includedPackages: [any AppIntentsPackage.Type] {
         []
+    }
+}
+
+private extension Array where Element == URLQueryItem {
+    func firstValue(named name: String) -> String? {
+        first { $0.name == name }?.value
+    }
+}
+
+private extension URL {
+    var personPathComponent: String? {
+        let components = pathComponents
+            .filter { $0 != "/" && $0 != MomentDeepLink.momentHost }
+        guard let rawName = components.first else { return nil }
+        return rawName.removingPercentEncoding ?? rawName
+    }
+}
+
+private extension String {
+    var safeMomentLaunchSource: String? {
+        let normalized = trimmingCharacters(in: .whitespacesAndNewlines)
+        let allowedSources: Set<String> = [
+            "app_intent",
+            "control_center",
+            "deep_link",
+            "share_extension",
+            "shortcut",
+            "widget"
+        ]
+        return allowedSources.contains(normalized) ? normalized : nil
     }
 }
 

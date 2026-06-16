@@ -41,6 +41,42 @@ func momentLaunchStoreConsumesPendingLaunchOnce() {
 }
 
 @Test
+func momentDeepLinkBuildsLaunchRequestFromQueryParameters() throws {
+    let url = try #require(URL(string: "prosepal://moment?person=Alex%20Morgan&source=widget"))
+
+    let deepLink = try #require(MomentDeepLink(url: url))
+
+    #expect(deepLink.launchRequest.personName == "Alex Morgan")
+    #expect(deepLink.launchRequest.source == "widget")
+}
+
+@Test
+func momentDeepLinkBuildsLaunchRequestFromPathPerson() throws {
+    let url = try #require(URL(string: "prosepal://moment/Alex%20Morgan"))
+
+    let deepLink = try #require(MomentDeepLink(url: url))
+
+    #expect(deepLink.launchRequest.personName == "Alex Morgan")
+    #expect(deepLink.launchRequest.source == "deep_link")
+}
+
+@Test
+func momentDeepLinkRejectsUnrelatedURLs() throws {
+    let url = try #require(URL(string: "prosepal://settings?person=Alex"))
+
+    #expect(MomentDeepLink(url: url) == nil)
+}
+
+@Test
+func momentDeepLinkDoesNotTrustArbitrarySourceText() throws {
+    let url = try #require(URL(string: "prosepal://moment?person=Alex&source=Private%20raw%20text"))
+
+    let deepLink = try #require(MomentDeepLink(url: url))
+
+    #expect(deepLink.launchRequest.source == "deep_link")
+}
+
+@Test
 @MainActor
 func momentModelAppliesLaunchRequest() {
     let model = MomentModel(service: NoOpMomentWritingService())
