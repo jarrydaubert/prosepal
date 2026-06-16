@@ -22,6 +22,14 @@ struct ProsePalNativeApp: App {
                 service: MessageWritingServiceFactory.makeService(
                     authSessionController: authSessionController,
                     clientContext: context
+                ),
+                account: MomentAccountModel(
+                    clientContext: context,
+                    authSessionController: authSessionController,
+                    authClient: authClient,
+                    subscriptionClient: subscriptionClient,
+                    accountMaintenanceClient: accountMaintenanceClient,
+                    runtimeReadiness: runtimeReadiness
                 )
             )
             .modelContainer(for: RelationshipVaultSchema.models)

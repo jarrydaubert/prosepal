@@ -2,6 +2,9 @@ import ProsePalAPI
 import ProsePalDomain
 import SwiftData
 import SwiftUI
+#if canImport(AuthenticationServices)
+import AuthenticationServices
+#endif
 #if canImport(UIKit)
 import UIKit
 #elseif canImport(AppKit)
@@ -150,10 +153,12 @@ public final class MomentModel {
 
 public struct MomentAppRootView: View {
     @State private var model: MomentModel
+    @State private var account: MomentAccountModel
     @State private var selectedTab: MomentRootTab = .moment
 
-    public init(service: any MessageWritingService) {
+    public init(service: any MessageWritingService, account: MomentAccountModel) {
         _model = State(initialValue: MomentModel(service: service))
+        _account = State(initialValue: account)
     }
 
     public var body: some View {
@@ -177,12 +182,15 @@ public struct MomentAppRootView: View {
             .tag(MomentRootTab.saved)
 
             NavigationStack {
-                MomentSettingsView()
+                MomentSettingsView(account: account)
             }
             .tabItem {
                 Label("Settings", systemImage: "gearshape")
             }
             .tag(MomentRootTab.settings)
+        }
+        .task {
+            await account.loadInitialState()
         }
     }
 }
@@ -608,8 +616,63 @@ private struct SavedMomentDraftDetailView: View {
 }
 
 private struct MomentSettingsView: View {
+    @Bindable var account: MomentAccountModel
+    @State private var isShowingPaywall = false
+
     var body: some View {
         List {
+            if let notice = account.notice {
+                Section {
+                    Label(notice.title, systemImage: notice.systemImage)
+                        .font(.callout.weight(.semibold))
+                }
+            }
+
+            Section("Account") {
+                if account.isSignedIn {
+                    LabeledContent("Signed in", value: account.signedInEmail ?? "Apple account")
+
+                    Button {
+                        Task {
+                            await account.signOut()
+                        }
+                    } label: {
+                        Label("Sign out", systemImage: "rectangle.portrait.and.arrow.right")
+                    }
+
+                    Button(role: .destructive) {
+                        account.requestAccountDeletion()
+                    } label: {
+                        Label(
+                            account.isDeletingAccount ? "Deleting..." : "Delete account",
+                            systemImage: "trash"
+                        )
+                    }
+                    .disabled(account.isDeletingAccount)
+                } else {
+                    MomentAppleSignInControl(account: account, source: "settings")
+                }
+            }
+
+            Section("Premium") {
+                LabeledContent("Status", value: account.isPremiumUnlocked ? "Active" : "Not active")
+
+                Button {
+                    isShowingPaywall = true
+                } label: {
+                    Label("View Premium", systemImage: "star")
+                }
+
+                Button {
+                    Task {
+                        await account.restorePurchases(source: "settings")
+                    }
+                } label: {
+                    Label(account.isRestoringPurchases ? "Restoring..." : "Restore purchases", systemImage: "arrow.clockwise")
+                }
+                .disabled(account.isRestoringPurchases)
+            }
+
             Section("Writing") {
                 Label("Private draft starts on device when available", systemImage: "lock")
                 Label("Take more care is used for harder moments", systemImage: "heart.text.square")
@@ -626,14 +689,387 @@ private struct MomentSettingsView: View {
             }
         }
         .navigationTitle("Settings")
+        .sheet(isPresented: $isShowingPaywall) {
+            MomentPaywallSheet(account: account)
+        }
+        .confirmationDialog(
+            "Delete account?",
+            isPresented: Binding(
+                get: { account.isConfirmingAccountDeletion },
+                set: { if !$0 { account.cancelAccountDeletion() } }
+            ),
+            titleVisibility: .visible
+        ) {
+            Button("Delete account", role: .destructive) {
+                Task {
+                    await account.confirmAccountDeletion()
+                }
+            }
+            Button("Cancel", role: .cancel) {
+                account.cancelAccountDeletion()
+            }
+        } message: {
+            Text("This deletes your ProsePal account and app data connected to it.")
+        }
     }
 
     private var versionText: String {
-        let info = Bundle.main.infoDictionary
-        let version = info?["CFBundleShortVersionString"] as? String ?? "0.1.0"
-        let build = info?["CFBundleVersion"] as? String ?? "1"
-        return "\(version) (\(build))"
+        account.appVersionDisplayText
     }
+}
+
+private struct MomentAppleSignInControl: View {
+    @Bindable var account: MomentAccountModel
+    let source: String
+
+    var body: some View {
+        #if canImport(AuthenticationServices)
+        if account.isAppleSignInConfigured {
+            SignInWithAppleButton(.continue) { request in
+                request.requestedScopes = [.email, .fullName]
+                request.nonce = account.beginAppleSignInRequest(source: source)
+            } onCompletion: { result in
+                handle(result)
+            }
+            .signInWithAppleButtonStyle(.black)
+            .frame(maxWidth: .infinity, minHeight: 52, maxHeight: 52)
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .disabled(account.isSigningIn)
+            .accessibilityLabel("Continue with Apple")
+        } else {
+            fallbackButton
+        }
+        #else
+        fallbackButton
+        #endif
+    }
+
+    private var fallbackButton: some View {
+        Button {
+            _ = account.beginAppleSignInRequest(source: source)
+        } label: {
+            Label("Continue with Apple", systemImage: "apple.logo")
+                .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.bordered)
+        .controlSize(.large)
+        .disabled(account.isSigningIn)
+    }
+
+    #if canImport(AuthenticationServices)
+    private func handle(_ result: Result<ASAuthorization, Error>) {
+        switch result {
+        case .success(let authorization):
+            guard
+                let credential = authorization.credential as? ASAuthorizationAppleIDCredential,
+                let tokenData = credential.identityToken,
+                let token = String(data: tokenData, encoding: .utf8)
+            else {
+                Task { @MainActor in
+                    await account.completeAppleSignIn(idToken: nil, source: source)
+                }
+                return
+            }
+
+            Task { @MainActor in
+                await account.completeAppleSignIn(idToken: token, source: source)
+            }
+        case .failure(let error):
+            if let authorizationError = error as? ASAuthorizationError,
+               authorizationError.code == .canceled {
+                account.cancelAppleSignIn(source: source)
+            } else {
+                account.failAppleSignIn(source: source, category: "authorization_error")
+            }
+        }
+    }
+    #endif
+}
+
+private struct MomentPaywallSheet: View {
+    @Bindable var account: MomentAccountModel
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Label("Premium", systemImage: "star.fill")
+                            .font(.headline.weight(.semibold))
+
+                        Text("Take more care")
+                            .font(.largeTitle.weight(.bold))
+
+                        Text("Extra support for harder moments, higher limits, and more room to reshape a draft.")
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    VStack(spacing: 12) {
+                        MomentPremiumFeatureRow(
+                            systemImage: "heart.text.square",
+                            title: "Harder moments",
+                            detail: "More support for nuanced, sensitive, or high-stakes messages."
+                        )
+                        MomentPremiumFeatureRow(
+                            systemImage: "arrow.triangle.2.circlepath",
+                            title: "More rewrites",
+                            detail: "Try warmer, shorter, or clearer versions when the first draft is not quite right."
+                        )
+                        MomentPremiumFeatureRow(
+                            systemImage: "infinity",
+                            title: "Higher limits",
+                            detail: "More room for everyday messages."
+                        )
+                    }
+
+                    productSection
+
+                    VStack(spacing: 10) {
+                        Button {
+                            Task {
+                                await account.purchasePremium(source: "paywall")
+                                if account.isPremiumUnlocked {
+                                    dismiss()
+                                }
+                            }
+                        } label: {
+                            Label(account.isPurchasingPremium ? "Working..." : "Continue with Premium", systemImage: "star.fill")
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .controlSize(.large)
+                        .disabled(account.isPurchasingPremium || account.isLoadingSubscriptions || account.subscriptionProducts.isEmpty)
+
+                        Text(account.premiumRenewalDisclosureText)
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+
+                        Button {
+                            Task {
+                                await account.restorePurchases(source: "paywall")
+                                if account.isPremiumUnlocked {
+                                    dismiss()
+                                }
+                            }
+                        } label: {
+                            Label(account.isRestoringPurchases ? "Restoring..." : "Restore purchases", systemImage: "arrow.clockwise")
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.large)
+                        .disabled(account.isRestoringPurchases)
+                    }
+
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("Account")
+                            .font(.headline)
+
+                        Text(account.isSignedIn ? "Purchases are connected to your Apple account." : "Sign in with Apple to connect purchases to you.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+
+                        if !account.isSignedIn {
+                            MomentAppleSignInControl(account: account, source: "paywall")
+                        }
+                    }
+                    .padding(14)
+                    .background(Color.momentSecondaryGroupedBackground, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+
+                    HStack(spacing: 8) {
+                        Link("Terms", destination: MomentSettingsExternalLinks.terms)
+                        Text("/")
+                        Link("Privacy Policy", destination: MomentSettingsExternalLinks.privacy)
+                    }
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity)
+                }
+                .padding(22)
+            }
+            .background(Color.momentGroupedBackground)
+            .navigationTitle("Premium")
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Close") { dismiss() }
+                }
+            }
+            .task {
+                await account.loadSubscriptionProducts(source: "paywall")
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var productSection: some View {
+        if account.isLoadingSubscriptions {
+            MomentPaywallLoadingRow()
+        } else if account.subscriptionProducts.isEmpty {
+            MomentPaywallUnavailableRow(
+                message: account.subscriptionErrorMessage ?? SubscriptionError.notConfigured.userSafeMessage,
+                onRetry: {
+                    Task {
+                        await account.loadSubscriptionProducts(source: "paywall_retry")
+                    }
+                }
+            )
+        } else {
+            VStack(spacing: 10) {
+                ForEach(account.subscriptionProducts) { product in
+                    Button {
+                        account.selectSubscriptionProduct(product)
+                    } label: {
+                        MomentPaywallPlanRow(
+                            title: product.displayName,
+                            subtitle: product.durationLabel ?? "Premium access",
+                            price: product.displayPrice,
+                            badge: product.isRecommended ? "Best value" : nil,
+                            isSelected: account.selectedSubscriptionProductID == product.id
+                        )
+                    }
+                    .buttonStyle(.bordered)
+                }
+            }
+        }
+    }
+}
+
+private struct MomentPremiumFeatureRow: View {
+    let systemImage: String
+    let title: String
+    let detail: String
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: systemImage)
+                .font(.headline)
+                .frame(width: 28)
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title)
+                    .font(.headline)
+                Text(detail)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(14)
+        .background(Color.momentSecondaryGroupedBackground, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+    }
+}
+
+private struct MomentPaywallPlanRow: View {
+    let title: String
+    let subtitle: String
+    let price: String
+    let badge: String?
+    let isSelected: Bool
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                .font(.title3)
+                .foregroundStyle(isSelected ? Color.accentColor : Color.secondary)
+
+            VStack(alignment: .leading, spacing: 3) {
+                HStack(spacing: 8) {
+                    Text(title)
+                        .font(.headline)
+
+                    if let badge {
+                        Text(badge)
+                            .font(.caption2.weight(.bold))
+                            .padding(.horizontal, 7)
+                            .padding(.vertical, 3)
+                            .background(.tint.opacity(0.14), in: Capsule())
+                    }
+                }
+
+                Text(subtitle)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer(minLength: 10)
+
+            Text(price)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+        }
+        .padding(14)
+        .background(Color.momentSecondaryGroupedBackground, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .strokeBorder(isSelected ? Color.accentColor.opacity(0.55) : Color.clear, lineWidth: 1.4)
+        }
+        .frame(maxWidth: .infinity)
+    }
+}
+
+private struct MomentPaywallLoadingRow: View {
+    var body: some View {
+        HStack(spacing: 12) {
+            ProgressView()
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text("Loading subscription options")
+                    .font(.headline)
+                Text("This should only take a moment.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(14)
+        .background(Color.momentSecondaryGroupedBackground, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .accessibilityElement(children: .combine)
+    }
+}
+
+private struct MomentPaywallUnavailableRow: View {
+    let message: String
+    let onRetry: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .top, spacing: 12) {
+                Image(systemName: "exclamationmark.triangle")
+                    .font(.body.weight(.semibold))
+                    .frame(width: 24)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Subscription options unavailable")
+                        .font(.headline)
+                    Text(message)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+
+            Button {
+                onRetry()
+            } label: {
+                Label("Retry", systemImage: "arrow.clockwise")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.bordered)
+        }
+        .padding(14)
+        .background(Color.momentSecondaryGroupedBackground, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .accessibilityElement(children: .combine)
+    }
+}
+
+private enum MomentSettingsExternalLinks {
+    static let terms = URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!
+    static let privacy = URL(string: "https://prosepal.app/privacy")!
 }
 
 private extension View {
