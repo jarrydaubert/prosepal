@@ -1680,33 +1680,36 @@ private struct RelationshipMemoryVaultView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \RelationshipTruthBeadRecord.updatedAt, order: .reverse)
     private var beads: [RelationshipTruthBeadRecord]
+    @Query(sort: \RelationshipVoiceCardRecord.updatedAt, order: .reverse)
+    private var voiceCards: [RelationshipVoiceCardRecord]
     @State private var searchText = ""
 
-    private var filteredBeads: [RelationshipTruthBeadRecord] {
+    private var filteredItems: [RelationshipMemoryVaultItem] {
         let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !query.isEmpty else { return beads }
+        let items = (beads.map(RelationshipMemoryVaultItem.detail) + voiceCards.map(RelationshipMemoryVaultItem.voice))
+            .sorted { $0.updatedAt > $1.updatedAt }
+        guard !query.isEmpty else { return items }
 
-        return beads.filter {
-            $0.personName.localizedCaseInsensitiveContains(query)
-                || $0.text.localizedCaseInsensitiveContains(query)
+        return items.filter {
+            $0.searchText.localizedCaseInsensitiveContains(query)
         }
     }
 
     var body: some View {
         List {
-            if filteredBeads.isEmpty {
+            if filteredItems.isEmpty {
                 ContentUnavailableView(
-                    searchText.isEmpty ? "No relationship memory yet" : "No matching details",
+                    searchText.isEmpty ? "No relationship memory yet" : "No matching memory",
                     systemImage: "checkmark.seal",
-                    description: Text(searchText.isEmpty ? "Save details from the Moment screen when they should help future drafts." : "Try another person or phrase.")
+                    description: Text(searchText.isEmpty ? "Save details or voice cards from the Moment screen when they should help future drafts." : "Try another person or phrase.")
                 )
                 .listRowBackground(Color.clear)
             } else {
-                ForEach(filteredBeads) { bead in
+                ForEach(filteredItems) { item in
                     NavigationLink {
-                        RelationshipMemoryDetailView(bead: bead)
+                        destination(for: item)
                     } label: {
-                        RelationshipMemoryRow(bead: bead)
+                        RelationshipMemoryVaultRow(item: item)
                     }
                 }
                 .onDelete(perform: delete)
@@ -1718,22 +1721,107 @@ private struct RelationshipMemoryVaultView: View {
 
     private func delete(at offsets: IndexSet) {
         for index in offsets {
-            modelContext.delete(filteredBeads[index])
+            switch filteredItems[index] {
+            case .detail(let bead):
+                modelContext.delete(bead)
+            case .voice(let voiceCard):
+                modelContext.delete(voiceCard)
+            }
         }
         try? modelContext.save()
     }
+
+    @ViewBuilder
+    private func destination(for item: RelationshipMemoryVaultItem) -> some View {
+        switch item {
+        case .detail(let bead):
+            RelationshipMemoryDetailView(bead: bead)
+        case .voice(let voiceCard):
+            RelationshipVoiceCardDetailView(voiceCard: voiceCard)
+        }
+    }
 }
 
-private struct RelationshipMemoryRow: View {
-    let bead: RelationshipTruthBeadRecord
+private enum RelationshipMemoryVaultItem: Identifiable {
+    case detail(RelationshipTruthBeadRecord)
+    case voice(RelationshipVoiceCardRecord)
+
+    var id: String {
+        switch self {
+        case .detail(let bead):
+            "detail-\(bead.id.uuidString)"
+        case .voice(let voiceCard):
+            "voice-\(voiceCard.id.uuidString)"
+        }
+    }
+
+    var personName: String {
+        switch self {
+        case .detail(let bead):
+            bead.personName
+        case .voice(let voiceCard):
+            voiceCard.personName
+        }
+    }
+
+    var bodyText: String {
+        switch self {
+        case .detail(let bead):
+            bead.text
+        case .voice(let voiceCard):
+            voiceCard.summary
+        }
+    }
+
+    var kindLabel: String {
+        switch self {
+        case .detail:
+            "Detail"
+        case .voice:
+            "Voice"
+        }
+    }
+
+    var isUserApproved: Bool {
+        switch self {
+        case .detail(let bead):
+            bead.isUserApproved
+        case .voice(let voiceCard):
+            voiceCard.isUserApproved
+        }
+    }
+
+    var updatedAt: Date {
+        switch self {
+        case .detail(let bead):
+            bead.updatedAt
+        case .voice(let voiceCard):
+            voiceCard.updatedAt
+        }
+    }
+
+    var searchText: String {
+        "\(personName) \(kindLabel) \(bodyText)"
+    }
+}
+
+private struct RelationshipMemoryVaultRow: View {
+    let item: RelationshipMemoryVaultItem
 
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
             HStack(spacing: 8) {
-                Text(bead.personName)
+                Text(item.personName)
                     .font(.headline)
 
-                if !bead.isUserApproved {
+                Text(item.kindLabel)
+                    .font(.caption2.weight(.bold))
+                    .padding(.horizontal, 7)
+                    .padding(.vertical, 3)
+                    .background(.tint.opacity(0.14), in: Capsule())
+                    .foregroundStyle(.tint)
+
+                if !item.isUserApproved {
                     Text("Paused")
                         .font(.caption2.weight(.bold))
                         .padding(.horizontal, 7)
@@ -1742,7 +1830,7 @@ private struct RelationshipMemoryRow: View {
                 }
             }
 
-            Text(bead.text)
+            Text(item.bodyText)
                 .font(.callout)
                 .foregroundStyle(.secondary)
                 .lineLimit(2)
