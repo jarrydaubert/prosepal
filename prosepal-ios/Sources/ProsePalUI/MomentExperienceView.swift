@@ -280,17 +280,20 @@ public struct MomentAppRootView: View {
     @State private var selectedTab: MomentRootTab = .moment
 
     private let launchStore: MomentLaunchStore
+    private let diagnostics: NativeDiagnosticsLogger
 
     public init(
         service: any MessageWritingService,
         account: MomentAccountModel,
         welcomeState: @autoclosure @escaping () -> MomentWelcomeState = MomentWelcomeState(),
-        launchStore: MomentLaunchStore = MomentLaunchStore()
+        launchStore: MomentLaunchStore = MomentLaunchStore(),
+        diagnostics: NativeDiagnosticsLogger = .shared
     ) {
         _model = State(initialValue: MomentModel(service: service))
         _account = State(initialValue: account)
         _welcomeState = State(initialValue: welcomeState())
         self.launchStore = launchStore
+        self.diagnostics = diagnostics
     }
 
     public var body: some View {
@@ -320,6 +323,7 @@ public struct MomentAppRootView: View {
     private func consumePendingLaunch() {
         guard let request = launchStore.consume() else { return }
         selectedTab = .moment
+        diagnostics.momentLaunchConsumed(request)
         model.applyLaunchRequest(request)
     }
 

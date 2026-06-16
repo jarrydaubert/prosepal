@@ -126,6 +126,11 @@ public struct NativeDiagnosticsLogger: Sendable {
         logger.warning("\(payload, privacy: .public)")
     }
 
+    public func momentLaunchConsumed(_ request: MomentLaunchRequest) {
+        let payload = NativeDiagnosticsPayload.momentLaunchConsumed(request)
+        logger.info("\(payload, privacy: .public)")
+    }
+
     public func subscriptionEvent(
         _ event: String,
         source: String,
@@ -178,6 +183,10 @@ enum NativeDiagnosticsPayload {
 
     static func momentDraftFailed(requestID: String, category: String, durationMs: Int) -> String {
         "moment_draft_failed request_id=\(requestID.diagnosticsPrefix) category=\(category) duration_ms=\(durationMs)"
+    }
+
+    static func momentLaunchConsumed(_ request: MomentLaunchRequest) -> String {
+        "moment_launch_consumed source=\(request.source) person_present=\(request.personName?.hasDiagnosticsText == true)"
     }
 }
 

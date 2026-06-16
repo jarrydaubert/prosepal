@@ -141,4 +141,13 @@ final class NativeDiagnosticsTests: XCTestCase {
         XCTAssertFalse(payload.contains("Missing private context"))
         XCTAssertFalse(payload.contains("Private risk note"))
     }
+
+    func testMomentLaunchConsumedPayloadDoesNotIncludeRawPerson() {
+        let payload = NativeDiagnosticsPayload.momentLaunchConsumed(
+            MomentLaunchRequest(personName: "Private Person", source: "app_intent")
+        )
+
+        XCTAssertEqual(payload, "moment_launch_consumed source=app_intent person_present=true")
+        XCTAssertFalse(payload.contains("Private Person"))
+    }
 }
