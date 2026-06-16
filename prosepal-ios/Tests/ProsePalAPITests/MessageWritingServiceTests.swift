@@ -1,3 +1,4 @@
+import Foundation
 import ProsePalAPI
 import ProsePalDomain
 import Testing
@@ -99,6 +100,39 @@ func emptyPersonDoesNotStartDrafting() async {
     } catch {
         Issue.record("Expected GenerationError, got \(error).")
     }
+}
+
+@Test
+func savedMomentDraftRecordPreservesMomentMetadata() {
+    let createdAt = Date(timeIntervalSince1970: 1_800_000_000)
+    let moment = MomentInput(
+        personName: "Mum",
+        relationship: .parent,
+        occasion: .mothersDay,
+        register: .confess,
+        trueThing: "You always show up.",
+        tone: .heartfelt,
+        length: .brief,
+        spellingPreference: .uk
+    )
+
+    let record = SavedMomentDraftRecord(
+        moment: moment,
+        messageText: "Thank you for always showing up.",
+        lane: .takeMoreCare,
+        createdAt: createdAt
+    )
+
+    #expect(record.title == "Mum")
+    #expect(record.subtitle == "Mother's Day · Parent")
+    #expect(record.relationship == Relationship.parent)
+    #expect(record.occasion == Occasion.mothersDay)
+    #expect(record.register == MomentRegister.confess)
+    #expect(record.tone == Tone.heartfelt)
+    #expect(record.length == MessageLength.brief)
+    #expect(record.lane == MomentDraftLane.takeMoreCare)
+    #expect(record.trueThing == "You always show up.")
+    #expect(record.createdAt == createdAt)
 }
 
 private actor RecordingMomentDraftClient: MomentDraftClient {

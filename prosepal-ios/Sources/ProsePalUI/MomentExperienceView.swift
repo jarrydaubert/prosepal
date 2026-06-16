@@ -1,5 +1,6 @@
 import ProsePalAPI
 import ProsePalDomain
+import SwiftData
 import SwiftUI
 #if canImport(UIKit)
 import UIKit
@@ -149,23 +150,54 @@ public final class MomentModel {
 
 public struct MomentAppRootView: View {
     @State private var model: MomentModel
+    @State private var selectedTab: MomentRootTab = .moment
 
     public init(service: any MessageWritingService) {
         _model = State(initialValue: MomentModel(service: service))
     }
 
     public var body: some View {
-        NavigationStack {
-            MomentSheetView(model: model)
-                .navigationTitle("ProsePal")
-                .toolbarTitleDisplayMode(.inline)
+        TabView(selection: $selectedTab) {
+            NavigationStack {
+                MomentSheetView(model: model)
+                    .navigationTitle("ProsePal")
+                    .toolbarTitleDisplayMode(.inline)
+            }
+            .tabItem {
+                Label("Moment", systemImage: "square.and.pencil")
+            }
+            .tag(MomentRootTab.moment)
+
+            NavigationStack {
+                SavedMomentDraftsView()
+            }
+            .tabItem {
+                Label("Saved", systemImage: "bookmark")
+            }
+            .tag(MomentRootTab.saved)
+
+            NavigationStack {
+                MomentSettingsView()
+            }
+            .tabItem {
+                Label("Settings", systemImage: "gearshape")
+            }
+            .tag(MomentRootTab.settings)
         }
     }
 }
 
+private enum MomentRootTab: Hashable {
+    case moment
+    case saved
+    case settings
+}
+
 private struct MomentSheetView: View {
     @Bindable var model: MomentModel
+    @Environment(\.modelContext) private var modelContext
     @FocusState private var focusedField: Field?
+    @State private var saveNotice: String?
 
     private enum Field: Hashable {
         case person
@@ -180,6 +212,13 @@ private struct MomentSheetView: View {
                 momentSection
                 truthSection
                 draftSection
+                if let saveNotice {
+                    Text(saveNotice)
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .transition(.opacity)
+                }
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 22)
@@ -381,8 +420,10 @@ private struct MomentSheetView: View {
                 }
                 .buttonStyle(.borderedProminent)
 
-                ShareLink(item: bundle.messageText) {
-                    Label("Send", systemImage: "paperplane")
+                Button {
+                    save(bundle)
+                } label: {
+                    Label("Save", systemImage: "bookmark")
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.bordered)
@@ -395,6 +436,203 @@ private struct MomentSheetView: View {
         #if canImport(UIKit)
         UIPasteboard.general.string = text
         #endif
+    }
+
+    private func save(_ bundle: MomentDraftBundle) {
+        let record = SavedMomentDraftRecord(
+            moment: model.moment,
+            messageText: bundle.messageText,
+            lane: bundle.lane
+        )
+        modelContext.insert(record)
+
+        do {
+            try modelContext.save()
+            withAnimation(.easeInOut(duration: 0.18)) {
+                saveNotice = "Saved"
+            }
+        } catch {
+            withAnimation(.easeInOut(duration: 0.18)) {
+                saveNotice = "Could not save this draft."
+            }
+        }
+
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(1.4))
+            withAnimation(.easeInOut(duration: 0.18)) {
+                saveNotice = nil
+            }
+        }
+    }
+}
+
+private struct SavedMomentDraftsView: View {
+    @Environment(\.modelContext) private var modelContext
+    @Query(sort: \SavedMomentDraftRecord.createdAt, order: .reverse)
+    private var drafts: [SavedMomentDraftRecord]
+    @State private var searchText = ""
+
+    private var filteredDrafts: [SavedMomentDraftRecord] {
+        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty else { return drafts }
+        return drafts.filter { draft in
+            draft.title.localizedCaseInsensitiveContains(query)
+                || draft.subtitle.localizedCaseInsensitiveContains(query)
+                || draft.messageText.localizedCaseInsensitiveContains(query)
+        }
+    }
+
+    var body: some View {
+        List {
+            if filteredDrafts.isEmpty {
+                ContentUnavailableView(
+                    searchText.isEmpty ? "No saved drafts yet" : "No saved drafts found",
+                    systemImage: "bookmark",
+                    description: Text(searchText.isEmpty ? "When a message feels right, save it here for later." : "Try another person, moment, or phrase.")
+                )
+                .listRowBackground(Color.clear)
+            } else {
+                ForEach(filteredDrafts) { draft in
+                    NavigationLink {
+                        SavedMomentDraftDetailView(draft: draft)
+                    } label: {
+                        SavedMomentDraftRow(draft: draft)
+                    }
+                }
+                .onDelete(perform: delete)
+            }
+        }
+        .navigationTitle("Saved")
+        .searchable(text: $searchText, prompt: "Search saved drafts")
+    }
+
+    private func delete(at offsets: IndexSet) {
+        for index in offsets {
+            modelContext.delete(filteredDrafts[index])
+        }
+        try? modelContext.save()
+    }
+}
+
+private struct SavedMomentDraftRow: View {
+    let draft: SavedMomentDraftRecord
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Text(draft.title)
+                    .font(.headline)
+                Spacer(minLength: 12)
+                Text(draft.createdAt, style: .date)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Text(draft.subtitle)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+
+            Text(draft.messageText)
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .lineLimit(2)
+        }
+        .padding(.vertical, 4)
+    }
+}
+
+private struct SavedMomentDraftDetailView: View {
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
+    let draft: SavedMomentDraftRecord
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 18) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(draft.title)
+                        .font(.largeTitle.weight(.bold))
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    Text(draft.subtitle)
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                }
+
+                Text(draft.messageText)
+                    .font(.system(.title3, design: .serif))
+                    .lineSpacing(5)
+                    .textSelection(.enabled)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(18)
+                    .background(Color.prosePalPaper, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+
+                HStack(spacing: 12) {
+                    Button {
+                        copy(draft.messageText)
+                    } label: {
+                        Label("Copy", systemImage: "doc.on.doc")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.bordered)
+
+                    ShareLink(item: draft.messageText) {
+                        Label("Share", systemImage: "square.and.arrow.up")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderedProminent)
+                }
+                .controlSize(.large)
+            }
+            .padding(20)
+        }
+        .background(Color.momentGroupedBackground)
+        .navigationTitle("Draft")
+        .toolbarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .destructiveAction) {
+                Button("Delete", role: .destructive) {
+                    modelContext.delete(draft)
+                    try? modelContext.save()
+                    dismiss()
+                }
+            }
+        }
+    }
+
+    private func copy(_ text: String) {
+        #if canImport(UIKit)
+        UIPasteboard.general.string = text
+        #endif
+    }
+}
+
+private struct MomentSettingsView: View {
+    var body: some View {
+        List {
+            Section("Writing") {
+                Label("Private draft starts on device when available", systemImage: "lock")
+                Label("Take more care is used for harder moments", systemImage: "heart.text.square")
+            }
+
+            Section("Privacy") {
+                Label("Saved drafts are only created when you tap Save", systemImage: "bookmark")
+                Label("Relationship memory stays user-approved", systemImage: "checkmark.seal")
+            }
+
+            Section("About") {
+                LabeledContent("Version", value: versionText)
+                LabeledContent("Direction", value: "Native iOS")
+            }
+        }
+        .navigationTitle("Settings")
+    }
+
+    private var versionText: String {
+        let info = Bundle.main.infoDictionary
+        let version = info?["CFBundleShortVersionString"] as? String ?? "0.1.0"
+        let build = info?["CFBundleVersion"] as? String ?? "1"
+        return "\(version) (\(build))"
     }
 }
 

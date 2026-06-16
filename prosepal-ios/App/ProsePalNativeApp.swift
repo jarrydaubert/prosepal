@@ -24,7 +24,7 @@ struct ProsePalNativeApp: App {
                     clientContext: context
                 )
             )
-            .modelContainer(for: RelationshipTruthBeadRecord.self)
+            .modelContainer(for: RelationshipVaultSchema.models)
         }
     }
 
