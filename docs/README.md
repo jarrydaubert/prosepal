@@ -5,10 +5,9 @@ mobile app repository.
 
 Active direction: native iOS SwiftUI rewrite in `prosepal-ios/`.
 
-The Flutter app remains the live production/reference implementation. Flutter
-docs are still useful where they describe production operations or lessons the
-native rewrite must preserve, but they are not the active product direction
-unless explicitly named by `docs/BACKLOG.md`.
+Flutter docs are still useful where they describe production operations or
+service ownership, but Flutter screens are not the active native product
+direction unless explicitly named by `docs/BACKLOG.md`.
 
 ## Start Here
 
@@ -20,27 +19,22 @@ unless explicitly named by `docs/BACKLOG.md`.
    - Open native work only, with Definition of Done.
 4. `DEVOPS.md`
    - Validation, CI, release operations, and service runbooks.
-5. `../prosepal-ios/NATIVE_PRODUCT_NORTH_STAR.md`
-   - Product/UX bridge from Flutter behavior to native iOS shape.
-6. `../prosepal-ios/REWRITE_PLAN.md`
-   - Detailed native delivery gates and scenario matrix.
+5. `../prosepal-ios/NATIVE_2026_TECHNICAL_DIRECTION.md`
+   - Native product, design, and technical direction.
+6. `../prosepal-ios/NATIVE_DEVICE_DEBUG_RUNBOOK.md`
+   - Local staging and physical-device proof.
 7. `architecture/AI_GATEWAY_STRATEGY.md`
-   - Long-term AI gateway and model-router direction.
+   - Cloud/careful gateway and model-router direction.
 
 ## Native iOS Docs
 
 - `../prosepal-ios/README.md`
   - Native app setup and module overview.
-- `../prosepal-ios/NATIVE_UX_DIRECTION.md`
-  - Native navigation, onboarding, create, results, settings, paywall, and
-    parity direction.
-- `../prosepal-ios/ARCHITECTURE.md`
-  - Native AI architecture, Standard/Premium routing, and local-model direction.
+- `../prosepal-ios/NATIVE_2026_TECHNICAL_DIRECTION.md`
+  - Native Moment Sheet, iOS 26, AI, design, StoreKit, and safety direction.
 - `../prosepal-ios/NATIVE_DEVICE_DEBUG_RUNBOOK.md`
   - Tethered-device debug runbook for native auth, purchase, restore, and
     gateway legs.
-- `../prosepal-ios/MIGRATION_NOTES.md`
-  - Native replacement and legacy Flutter data migration considerations.
 
 ## Production Reference Docs
 

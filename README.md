@@ -4,16 +4,16 @@ ProsePal is a greeting-card and personal-message writing app.
 
 The repository currently contains two mobile app surfaces:
 
-- the existing Flutter iOS/Android app, which remains the live
-  production/reference implementation;
+- the existing Flutter iOS/Android app;
 - the native SwiftUI rewrite in `prosepal-ios/`, which is the active product
   direction.
 
-The native rewrite is iOS-first, SwiftUI-first, dependency-light, and
-gateway-first. It must not become another Firebase AI / Vertex AI client-direct
-app. The client collects structured message intent, calls a ProsePal-owned
-gateway contract, renders generated drafts, and leaves provider/model routing
-behind the server boundary.
+The native rewrite is iOS 26-first, SwiftUI-first, dependency-light, and
+centered on a person-first Moment Sheet. Everyday writing should use a private
+native drafting lane where device capability allows; harder moments use a
+careful/cloud lane behind a ProsePal-owned service boundary. The native app must
+not become another Firebase AI / Vertex AI client-direct app, and provider/model
+names must stay out of user-facing UI.
 
 This repo is also a public quality-engineering portfolio project: it shows how
 auth, subscriptions, AI, lifecycle, and release risk can be tested and evidenced
@@ -37,12 +37,12 @@ Read these first:
 - [docs/NEXT_RELEASE_BRIEF.md](docs/NEXT_RELEASE_BRIEF.md) - native iOS
   readiness brief.
 - [docs/BACKLOG.md](docs/BACKLOG.md) - active native open work.
-- [prosepal-ios/NATIVE_PRODUCT_NORTH_STAR.md](prosepal-ios/NATIVE_PRODUCT_NORTH_STAR.md)
-  - native product shape and Flutter parity lessons.
-- [prosepal-ios/REWRITE_PLAN.md](prosepal-ios/REWRITE_PLAN.md) - detailed native
-  delivery gates.
+- [prosepal-ios/NATIVE_2026_TECHNICAL_DIRECTION.md](prosepal-ios/NATIVE_2026_TECHNICAL_DIRECTION.md)
+  - native product, design, and technical direction.
+- [prosepal-ios/NATIVE_DEVICE_DEBUG_RUNBOOK.md](prosepal-ios/NATIVE_DEVICE_DEBUG_RUNBOOK.md)
+  - local staging, device, auth, gateway, and StoreKit proof.
 - [docs/architecture/AI_GATEWAY_STRATEGY.md](docs/architecture/AI_GATEWAY_STRATEGY.md)
-  - gateway-first AI direction.
+  - cloud/careful gateway strategy.
 
 ## App Risk Surface
 
@@ -50,7 +50,7 @@ The app is intentionally not trivial. It includes:
 
 - AI generation through the Flutter production path and the native gateway path
 - anonymous-first and signed-in auth flows
-- RevenueCat entitlements, restore, and identity transfer
+- Flutter RevenueCat entitlements plus native StoreKit 2 subscription work
 - biometric lock and lifecycle transitions
 - onboarding, routing, history, paywall, and calendar flows
 - Remote Config and App Check safety controls
@@ -248,7 +248,7 @@ Where work remains, it is tracked in [docs/BACKLOG.md](docs/BACKLOG.md) with exp
 - [docs/NEXT_RELEASE_BRIEF.md](docs/NEXT_RELEASE_BRIEF.md) - Native iOS readiness scope and gates
 - [docs/BACKLOG.md](docs/BACKLOG.md) - Open work only, with Definition of Done
 - [docs/SECURITY.md](docs/SECURITY.md) - Security posture and reporting rules
-- [docs/architecture/AI_GATEWAY_STRATEGY.md](docs/architecture/AI_GATEWAY_STRATEGY.md) - Native gateway-first AI direction
+- [docs/architecture/AI_GATEWAY_STRATEGY.md](docs/architecture/AI_GATEWAY_STRATEGY.md) - Native private/careful AI direction
 - [docs/AI_SYSTEM.md](docs/AI_SYSTEM.md) - Flutter production AI runtime reference
 - [docs/REVENUECAT_POLICY.md](docs/REVENUECAT_POLICY.md) - Subscription identity and restore policy
 - [docs/IDENTITY_MAPPING.md](docs/IDENTITY_MAPPING.md) - Auth / subscription / telemetry identity map

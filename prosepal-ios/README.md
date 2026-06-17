@@ -1,293 +1,129 @@
-# ProsePal iOS Native Rewrite
+# ProsePal Native iOS
 
-This folder is the native SwiftUI rewrite area for ProsePal.
+This folder contains the native SwiftUI rebuild for ProsePal.
 
-The existing Flutter app remains the current production and reference
-implementation. Do not delete, move, or replace the Flutter app while working
-in this folder.
+The active product direction is greenfield, iOS-first, and craft-first. The
+native app is no longer trying to clone the Flutter flow or preserve Flutter
+parity as a UI constraint. The old grouped Create/Saved/Settings prototype is
+scaffolding; the target product is the person-first Moment Sheet.
 
-## Direction
+## Read First
 
-- iOS-first, Android deferred.
-- Swift, SwiftUI, async/await, Swift Package Manager.
-- Minimum app target: iOS 17.
-- Native UX implementation source of truth: `NATIVE_UX_IMPLEMENTATION_HANDOFF.md`.
-- Background UX direction: `NATIVE_UX_DIRECTION.md` and
-  `NATIVE_PRODUCT_NORTH_STAR.md`.
-- Keep RevenueCat initially for entitlement continuity unless an ADR chooses
-  otherwise.
-- Keep Supabase where it remains useful for auth, backend, and data continuity.
-- Do not add Firebase AI or any client-direct model provider SDK here.
+- `NATIVE_2026_TECHNICAL_DIRECTION.md` - active native product, design, and
+  technical direction.
+- `NATIVE_DEVICE_DEBUG_RUNBOOK.md` - local staging, tethered-device, StoreKit,
+  auth, and gateway proof.
+- `../docs/BACKLOG.md` - open work and Definitions of Done.
+- `../docs/architecture/AI_GATEWAY_STRATEGY.md` - server gateway strategy for
+  cloud/careful generation.
 
-## AI Architecture
+Superseded planning, audit, and parity reports are intentionally removed from
+this folder. Git history preserves them; new work should not use them as active
+handoff material.
 
-The source of truth is:
+## Locked Direction
 
-- `../docs/architecture/AI_GATEWAY_STRATEGY.md`
-- `ARCHITECTURE.md` for the native Standard/Premium AI client direction
+- Public name: ProsePal.
+- Internal concept name: Near.
+- Deployment floor: iOS 26.
+- Primary flow: person-first Moment Sheet.
+- Product spine: `person -> moment -> what is true -> draft -> adjust -> send`.
+- AI lanes: `Private draft` and `Take more care`.
+- Subscriptions: StoreKit 2 only in the native client.
+- Identity: Sign in with Apple first.
+- Storage: SwiftData for the on-device relationship vault.
+- UI: Liquid Glass on control/navigation surfaces; opaque, paper-like content.
+- Architecture: one `MessageWritingService` boundary between UI and generation.
 
-The SwiftUI client must depend on a ProsePal-owned message-writing capability:
-
-```text
-SwiftUI app
-  -> MessageWritingClient
-  -> ProsePal API / AI Gateway contract
-  -> CardRequest / CardResponse
-```
-
-Provider names, model names, provider payloads, provider SDK response shapes,
-and routing policy stay behind the ProsePal API boundary.
-
-## Gateway Development
-
-The app target is gateway-first at launch:
-
-- if `PROSEPAL_GATEWAY_URL` is set in the Xcode scheme environment or app
-  Info.plist, the app uses `GatewayMessageWritingClient`;
-- otherwise generation fails with a user-safe unavailable state.
-
-This switch is for native R&D and review builds. It does not add Firebase AI,
-Vertex AI, provider SDKs, provider keys, model names, or local/template
-generation to the iOS app.
-
-Simulator local endpoint:
+## Native App Shape
 
 ```text
-PROSEPAL_GATEWAY_URL=http://127.0.0.1:54321/functions/v1/generate-card
+Launch
+  -> first-run welcome
+  -> Moment Sheet
+  -> private draft appears when enough context exists
+  -> warmer / shorter / more direct / take more care
+  -> copy / share / send / save
+
+Supporting surfaces
+  -> relationship vault and Truth Beads
+  -> saved local messages
+  -> settings, account, subscription, privacy, legal
+  -> App Intents, WidgetKit, Control Center, Share extension
 ```
 
-Physical devices cannot use the Mac's `127.0.0.1`. For tethered-device testing,
-prefer an HTTPS development/staging Supabase function URL:
+The occasion catalogue remains useful product intelligence, but it sits beneath
+the person-first flow. It is not the visual structure of the app.
+
+## Architecture Boundary
+
+```text
+SwiftUI Moment Sheet
+  -> MomentModel
+  -> MessageWritingService
+      -> PrivateDraftClient
+      -> CarefulClient
+      -> MockClient
+```
+
+The UI must not depend on provider SDKs, provider payloads, model IDs, gateway
+internals, or StoreKit receipt details. Product copy must not expose provider or
+model names.
+
+## Local Staging Configuration
+
+Use the untracked `ProsePal Local Staging` Xcode scheme for tethered-device and
+simulator work. Keep secrets in the local scheme or local files only.
 
 ```text
 PROSEPAL_GATEWAY_URL=https://<project-ref>.supabase.co/functions/v1/generate-card
-```
-
-Native Sign in with Apple uses a narrow Supabase Auth REST exchange. To enable
-it in a local/Xcode build, set:
-
-```text
+PROSEPAL_DEV_GATEWAY_SECRET=<staging-only-secret>
 PROSEPAL_SUPABASE_URL=https://<project-ref>.supabase.co
 PROSEPAL_SUPABASE_ANON_KEY=<supabase-anon-key>
-```
-
-The anon key is a public Supabase client key, but it should still live in local
-scheme/environment configuration for this R&D branch rather than being committed
-to source.
-
-Native Premium purchase/restore uses an Apple StoreKit 2 boundary without adding
-a third-party purchase SDK. To load subscription products in local/Xcode builds,
-set:
-
-```text
-PROSEPAL_PREMIUM_PRODUCT_IDS=com.prosepal.pro.yearly,com.prosepal.pro.monthly
+PROSEPAL_PREMIUM_PRODUCT_IDS=com.prosepal.pro.yearly,com.prosepal.pro.monthly,com.prosepal.pro.weekly
 PROSEPAL_RECOMMENDED_PREMIUM_PRODUCT_ID=com.prosepal.pro.yearly
 ```
 
-Use the existing App Store Connect product identifiers where viable. The client
-does not commit product IDs into source, and server/gateway entitlement policy
-remains authoritative for Premium generation.
+Do not commit local Xcode schemes, Supabase `.temp` link state, provider keys,
+StoreKit receipts, auth tokens, screenshots, generated evidence, or model
+assets.
 
-Local anonymous gateway mode requires the function environment variable
-`GATEWAY_DEV_ALLOW_ANONYMOUS=true`. Authenticated mode will be the default once
-the native auth path is connected.
+## Diagnostics
 
-Authenticated gateway requests use the existing Supabase
-`check_and_increment_usage` RPC after a successful, quality-checked generation.
-The RPC enforces caller identity with `auth.uid()` and verifies entitlement from
-server state. Successful authenticated responses include `CardResponse.usage`;
-usage-limit or usage-RPC failures fail closed with a user-safe error and no
-generated messages in the client response. Anonymous development mode does not
-call this authenticated usage RPC.
-
-Staging anonymous gateway traffic can be guarded with a shared development
-secret. When the Supabase function has `PROSEPAL_DEV_GATEWAY_SECRET` configured,
-set the same value in the Xcode scheme environment so the native client sends
-the `X-ProsePal-Dev-Gateway-Secret` header:
-
-```text
-PROSEPAL_DEV_GATEWAY_SECRET=<staging-only-secret>
-```
-
-Do not put provider keys, model names, or production secrets in the app target.
-
-## Native Diagnostics
-
-The native app uses local Apple `OSLog` diagnostics for tethered-device work.
-Filter Xcode Console or Console.app by subsystem:
+Native diagnostics use Apple `OSLog` with subsystem:
 
 ```text
 com.prosepal.native
 ```
 
-Categories:
+Logs may include event names, lane names, response categories, request IDs,
+counts, and latency buckets. Logs must not include raw recipient names, user
+details, prompt text, generated message text, tokens, receipts, provider
+payloads, provider keys, or provider/model IDs.
 
-- `flow`: launch, onboarding, tab changes, picker choices, generation lifecycle,
-  paywall boundaries, copy/share/edit/save/delete actions.
-- `gateway`: gateway request start, response status, lane used, fallback status,
-  message counts, total generated character count, and latency.
+## Package Layout
 
-These diagnostics intentionally do not log recipient names, personal details,
-raw prompt text, generated message text, authorization tokens, provider API
-keys, or provider payloads. Gateway operator logs may include the configured
-server-side model id for debugging, but model/provider names must stay out of
-the user-facing UI and client response contract.
+- `App/` - SwiftUI app target, launch storyboard, app assets, StoreKit config.
+- `Sources/ProsePalDomain` - product and API contract models.
+- `Sources/ProsePalAPI` - message-writing services, gateway, auth, StoreKit,
+  runtime config, and platform clients.
+- `Sources/ProsePalUI` - native SwiftUI surfaces.
+- `Tests/` - Swift Testing and XCTest coverage.
 
-For first-pass tethered-device auth, purchase, restore, and gateway proof, use
-`NATIVE_DEVICE_DEBUG_RUNBOOK.md`. It lists the local Xcode environment values,
-privacy-safe log filters, suggested breakpoints, and manual flow checklist.
+## Validation
 
-## App Structure
-
-The checked-in native app is split into a small Xcode app target and Swift
-package modules:
-
-- `ProsePal`: SwiftUI iOS app target in `ProsePal.xcodeproj`.
-- `ProsePalDomain`: provider-agnostic product and API contract models.
-- `ProsePalAPI`: message-writing client protocol, lane router, gateway client,
-  local model storage shell, and mock client for tests/previews.
-- `ProsePalUI`: modern SwiftUI app surfaces that depend only on the
-  `MessageWritingClient` contract.
-
-## Native Parity Progress
-
-The first functional parity slice brings the native product vocabulary closer
-to the Flutter reference while keeping the iOS design direction:
-
-- 40 Flutter occasions are represented in the native domain layer.
-- 14 Flutter relationship types are represented.
-- 9 Flutter tones are represented.
-- Message length uses the Flutter-aligned `Brief`, `Standard`, and `Detailed`
-  naming and sentence guidance.
-- Spelling preference is represented as `Automatic`, `US English`, and
-  `UK English`; it lives in Settings and silently shapes the gateway request.
-- The Create surface is recipient-first, then occasion-led, with one selected
-  occasion card and a searchable grouped occasion sheet instead of copying the
-  Flutter occasion grid.
-- Relationship and tone expose selected native summary rows on Create, with the
-  full Flutter option sets available in searchable native sheets rather than
-  oversized dropdowns or visible grids.
-- The compose form builds a structured `CardIntent` from occasion,
-  relationship, tone, length, spelling, recipient, include, avoid, and context
-  fields.
-- Runtime generation is gateway-only; tests and previews use mock responses
-  rather than template generation.
-- Future local Standard generation now has a storage shell for app-private
-  Application Support model files; it does not download or run a model yet.
-- Message results are reached from the Create flow rather than as a permanent
-  major tab.
-- Result cards support copy, share, edit, save, and context-menu actions.
-- Saved messages persist locally with occasion, relationship, tone, length,
-  recipient, date, list search, detail view, edit, copy, share, and delete.
-- Standard usage uses gateway-provided `CardResponse.usage` when present; the
-  staging gateway now returns that summary for authenticated requests after the
-  existing Supabase usage RPC allows and increments the generation. The local
-  decrement remains a temporary development placeholder for anonymous native
-  R&D builds.
-- Premium selection opens a native paywall sheet backed by a narrow StoreKit 2
-  protocol boundary when `PROSEPAL_PREMIUM_PRODUCT_IDS` is configured; it stays
-  honest and unavailable when products are not configured.
-- Retry and degraded-generation states now have visible, user-safe actions.
-- The Create Write Message action is keyboard-aware: the large bottom action hides
-  while typing and a compact keyboard toolbar action remains available.
-- Settings now uses clearer grouped sections for Account, Writing, Generation,
-  Privacy, Support, and About.
-- The occasion picker leads with Most Used options and keeps the full catalogue
-  in searchable grouped sections.
-- First launch now routes through a lightweight single-screen welcome flow that
-  can be completed locally before entering Create.
-- The native welcome flow uses brand color, typography, and SF Symbols rather
-  than logo or artwork-led screens.
-- The launch storyboard is intentionally plain navy with no logo or marketing
-  copy.
-- The native UI accent palette is aligned with the Flutter brand direction:
-  navy backgrounds, coral primary actions, warm premium gold, and white-forward
-  onboarding typography.
-
-## Brand Assets
-
-The native app keeps the Flutter iOS app icon set for brand continuity:
-
-- `App/Assets.xcassets/AppIcon.appiconset`
-- `App/LaunchScreen.storyboard`
-
-The current launch screen and first-run welcome screen deliberately do not
-display a logo. Unused onboarding and launch-logo bitmap assets are not shipped
-in the native target.
-
-The current palette source is the Flutter reference in
-`../lib/shared/theme/app_colors.dart`. Native tokens are mirrored in
-`ProsePalRootView.swift` for this first slice. The app target now uses the
-Flutter iOS AppIcon set and a native launch storyboard with a plain navy
-background.
-
-## Apple-Native Setup Notes
-
-The app is intentionally dependency-light and SwiftUI-first. It uses
-`NavigationStack`, `TabView`, Swift concurrency, system materials, searchable
-lists, native sheets, and `#Preview`.
-
-Native auth plumbing has started without adding a third-party SDK:
-
-- `AuthSessionController` owns the current session and exposes the gateway
-  access-token provider.
-- `KeychainAuthSessionStore` keeps Supabase session tokens in the app keychain,
-  not `UserDefaults`.
-- `SupabaseAuthClient` implements only the Apple ID-token exchange needed to
-  turn a native Apple credential into a Supabase session.
-- The Settings and Paywall account surfaces use Apple's native
-  `SignInWithAppleButton` when Supabase auth config is present.
-- `GatewayMessageWritingClient` receives an Authorization bearer token from the
-  session controller when a valid session exists.
-
-Native subscription plumbing has started without adding RevenueCat:
-
-- `SubscriptionClient` defines the purchase/restore/product-loading boundary.
-- `StoreKitSubscriptionClient` loads configured App Store subscription products,
-  starts purchases, restores transactions, and surfaces active local
-  entitlements.
-- Paywall and Settings restore actions use this boundary when configured.
-- Premium gateway access still requires server-side entitlement policy; local
-  StoreKit state must not become the only production truth.
-
-Live Sign in with Apple still requires the Apple capability to be enabled for
-the bundle identifier in the Apple Developer portal, a matching provisioning
-profile, and the Supabase Apple provider configured for the same app identity.
-
-Some "modern Apple" capabilities are deliberately deferred:
-
-- `.xcconfig` files and environment-specific schemes should be added when there
-  are real staging/production gateway endpoints or signing environments.
-- SwiftData should wait until local history, migration, and cloud-sync ownership
-  are decided.
-- AppIntents/Siri shortcuts should wait until the core create/save flows are
-  stable enough to expose as system actions.
-- Newer visual material effects should stay compatible with the iOS 17 minimum
-  target and should not push ProsePal into a techy visual style.
-
-No RevenueCat, Supabase SDK, Firebase, Sentry, analytics, provider SDKs, or
-model/provider SDKs are included in this slice. StoreKit 2 is an Apple platform
-framework used behind the native subscription boundary.
-
-Native Settings should stay honest while the rewrite is R&D: support, legal,
-review, and Apple subscription-management rows use platform/web actions, while
-analytics and crash-reporting switches are omitted until those systems actually
-exist in the native target.
-
-Run the native contract tests and simulator build from this folder:
+From `prosepal-ios/` after native code changes:
 
 ```bash
 swift test
 xcodebuild -project ProsePal.xcodeproj -target ProsePal -sdk iphonesimulator CODE_SIGNING_ALLOWED=NO build
 ```
 
-To run interactively, open `ProsePal.xcodeproj` in Xcode and choose the
-`ProsePal` scheme on an iOS simulator.
+When staging gateway behavior or request headers change, also run the repo-level
+staging smoke:
 
-## Non-Goals For This First Slice
+```bash
+./scripts/prosepal-staging-smoke.sh
+```
 
-- No production AI routing change.
-- No Firebase AI client-direct integration.
-- No provider keys.
-- No model/provider names in user-facing UI.
-- No final App Store release target decision encoded in project settings yet.
+Flutter validation is required only for Flutter production code changes.

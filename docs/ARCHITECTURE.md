@@ -6,8 +6,8 @@ This document is the Flutter production architecture reference.
 
 The active native iOS architecture lives in:
 
-- `prosepal-ios/ARCHITECTURE.md`
-- `prosepal-ios/NATIVE_PRODUCT_NORTH_STAR.md`
+- `prosepal-ios/NATIVE_2026_TECHNICAL_DIRECTION.md`
+- `prosepal-ios/NATIVE_DEVICE_DEBUG_RUNBOOK.md`
 - `docs/architecture/AI_GATEWAY_STRATEGY.md`
 
 Do not use this document as approval to add Flutter, Firebase AI, Vertex AI,

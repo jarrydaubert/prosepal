@@ -30,7 +30,9 @@ The strategic direction is:
 
 **ProsePal should depend on a message-writing capability, not on one provider, one SDK, or one model name.**
 
-The product should be able to route generation through Standard, Premium, local, and fallback lanes without rewriting the client each time the AI market changes.
+The product should be able to route generation through private, careful, cloud,
+local, and fallback lanes without rewriting the client each time the AI market
+changes.
 
 ## Product Direction
 
@@ -119,11 +121,16 @@ Client app
   -> authentication and abuse controls
   -> entitlement and usage policy
   -> AI Gateway / Model Router
-  -> provider adapters
-  -> Standard, Premium, local, or template generation lane
+  -> provider adapters or approved platform generation
+  -> private, careful, cloud, local, or fallback lane
 ```
 
 In this target design, the client asks ProsePal for a message-writing capability. It does not ask a specific provider or model for a raw completion.
+
+The native iOS 26 direction adds an on-device private drafting lane behind the
+same product boundary. Everyday private drafts may be produced locally when the
+device supports it. Careful, subscription-sensitive, abuse-sensitive, or
+server-authoritative generation still routes through the ProsePal gateway.
 
 The client should send structured intent, such as:
 
@@ -259,11 +266,11 @@ Purpose:
 
 Likely backing options:
 
-* open model hosted by a low-cost or free inference provider
-* Gemma-class open model
-* cheaper cloud model
-* local or self-hosted open model when available
-* another low-cost model chosen by config
+* on-device private drafting where the native iOS device supports it
+* approved platform cloud generation for devices without local capability
+* a gateway-routed cloud model selected by server policy
+* local or self-hosted generation only after explicit quality, privacy, and
+  operations approval
 
 Suggested product policy:
 
@@ -440,11 +447,13 @@ Before any production gateway rollout, the ADR must define:
 
 Subscriber routing must also use a trusted entitlement source.
 
-Before any Premium lane exists, the ADR must define:
+Before any Premium or careful lane exists, the ADR must define:
 
-* whether RevenueCat is the entitlement source of truth
-* whether StoreKit 2 direct verification is used
-* whether entitlement state is checked live, cached, or synced through webhooks
+* how StoreKit 2 client state is used for immediate UX
+* how App Store Server Notifications V2 and App Store Server API reconciliation
+  feed the server entitlement store
+* whether entitlement state is checked live, cached, or synced through
+  webhooks/server notifications
 * how stale entitlement state expires
 * how refund, cancellation, grace period, billing retry, and restore are handled
 * how the gateway prevents the client from simply claiming Premium status
@@ -797,8 +806,8 @@ Before any model or provider is promoted to Standard or Premium, the ADR must de
 * who can approve provider changes
 * minimum score for Standard
 * minimum Premium-vs-Standard uplift
-* required sensitive-occasion pass rate
-* required regression pass rate against current production baseline
+* required sensitive-occasion quality threshold
+* required regression threshold against current production baseline
 * whether evaluation is blind, human-reviewed, automated, or mixed
 * how eval failures are triaged
 * how new edge cases are added
@@ -1182,7 +1191,7 @@ Exit criteria:
 
 * free limit policy defined
 * subscriber allowance policy defined
-* RevenueCat or StoreKit entitlement source selected
+* StoreKit 2 and App Store server entitlement source selected
 * anonymous-abuse limitations accepted
 * server-side enforcement design drafted
 * budget owner identified
@@ -1214,8 +1223,8 @@ Entry criteria:
 
 Exit criteria:
 
-* staging rollout passed
-* internal tester rollout passed
+* staging rollout criteria met
+* internal tester rollout criteria met
 * no unacceptable latency regression
 * no unacceptable quality regression
 * no privacy or telemetry violations
@@ -1236,7 +1245,7 @@ Purpose:
 
 Entry criteria:
 
-* controlled rollout passed
+* controlled rollout criteria met
 * Standard does not meaningfully regress against current free-user baseline
 * Premium demonstrates measurable uplift over Standard
 * entitlement enforcement verified

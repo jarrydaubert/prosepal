@@ -7,6 +7,9 @@ greenfield, craft-first iOS app. The goal is not Flutter parity, broad device
 reach, or preserving the current grouped-form prototype. The goal is a small
 surface built at the highest level the current Apple stack allows.
 
+Open work belongs in `../docs/BACKLOG.md`. This document defines direction; it
+is not a progress tracker.
+
 ## Locked Product Direction
 
 - Public name: ProsePal.
@@ -49,6 +52,9 @@ availability, and connectivity.
   first-class surfaces, not late add-ons.
 - Liquid Glass belongs on the control/navigation layer. Content stays opaque,
   calm, and paper-like.
+- No RevenueCat, Firebase AI, Vertex AI, Sentry, analytics SDK, or provider SDK
+  should be added by default. A dependency needs a specific product, privacy,
+  and operations reason.
 
 ## First Implementation Slice
 
@@ -69,6 +75,39 @@ Keep existing gateway, StoreKit, Sign in with Apple, catalogue, diagnostics,
 and privacy posture. Replace the grouped-form UI as soon as the Moment Sheet
 stands up.
 
+## Preserve From The Current Branch
+
+The branch already contains useful foundations that should survive the Moment
+Sheet rebuild:
+
+- provider-agnostic domain catalogue for occasions, relationships, tone, length,
+  and spelling preferences;
+- gateway request/response contracts and privacy-safe gateway client behavior;
+- StoreKit 2 subscription boundary;
+- Sign in with Apple and Supabase Auth REST boundary;
+- local keychain session storage;
+- privacy-safe OSLog diagnostics;
+- local saved-message primitives where they fit the new product shape;
+- StoreKit staging config and tethered-device runbook.
+
+Do not preserve the grouped-form Create UI as a second product path. Once the
+Moment Sheet is functional, remove the legacy scaffolding instead of maintaining
+two experiences.
+
+## Product And Safety Principles
+
+- The user should never have to prompt-engineer.
+- The app should ask for the person first, then the moment, then what is true.
+- Everyday moments can be helped by a fast private draft.
+- Hard moments should generate less and preserve more of the user's own words.
+- Premium copy should say `Take more care`, not imply a specific provider or
+  guaranteed emotional perfection.
+- Saved history must be deliberate and user-approved. Do not create a surprise
+  visible history surface before privacy, deletion, and sync semantics are
+  settled.
+- Grief, crisis, and relationship repair flows must avoid guilt mechanics,
+  streaks, scores, or pressure nudges.
+
 ## Current SDK Notes
 
 Verified locally on Xcode 26.5 / iPhoneOS 26.5:
@@ -83,3 +122,26 @@ Verified locally on Xcode 26.5 / iPhoneOS 26.5:
 Foundation Models availability must be checked at runtime. If the on-device
 model is unavailable, the product should show an honest private-draft state or
 route through the careful lane where appropriate. Do not fake local generation.
+
+## Backend And Entitlement Direction
+
+- The native client uses StoreKit 2 for product loading, purchase, restore, and
+  local transaction state.
+- The server/gateway remains authoritative for entitlement-sensitive cloud or
+  careful generation.
+- App Store Server Notifications V2 and App Store Server API reconciliation are
+  the intended first-party entitlement path.
+- Purchase must not require app sign-in first.
+- Account deletion must be available in app once account creation is available.
+
+## Out Of Scope For The Native v1
+
+- Flutter screen parity as a design requirement.
+- Android work.
+- RevenueCat.
+- Client-direct Firebase AI or Vertex AI.
+- Third-party model providers in the native client.
+- Image generation.
+- CloudKit sync.
+- Automatic silent memory inference from Contacts or Calendar.
+- Physical card ordering, social features, or gamified relationship mechanics.

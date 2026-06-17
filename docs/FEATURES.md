@@ -1,9 +1,8 @@
-# Feature And Parity Inventory
+# Native Capability Inventory
 
 ## Purpose
 
-List ProsePal capabilities that the native iOS rewrite must preserve, improve,
-or deliberately defer before it can replace the Flutter production app.
+List ProsePal capabilities that matter to the native iOS direction.
 
 Open implementation work belongs in `docs/BACKLOG.md`.
 
@@ -11,16 +10,16 @@ Open implementation work belongs in `docs/BACKLOG.md`.
 
 | Capability | Native Direction |
 |------------|------------------|
-| Occasion catalogue | Preserve full catalogue coverage from Flutter. Present through native searchable/grouped selection rather than a busy cloned grid. |
-| Relationship taxonomy | Preserve Flutter relationship options. Present through compact native selection or searchable sheet. |
-| Tone taxonomy | Preserve Flutter tone options. Keep labels user-facing and avoid prompt/provider language. |
-| Length | Preserve Brief, Standard, and Detailed behavior. |
-| Recipient | Capture naturally as “who this is for” without making the app feel like a document editor. |
-| Include details | Capture optional personal details to shape drafts. |
+| Person-first entry | Lead with who this is for, not a document type or giant occasion grid. |
+| Occasion catalogue | Keep catalogue coverage as product intelligence underneath the moment model. |
+| Relationship taxonomy | Capture the relationship naturally and reuse existing relationship vocabulary where useful. |
+| Tone/register | Support everyday, medium, and hard moments without provider/prompt language. |
+| Length | Let the draft be shaped shorter, warmer, more direct, or more detailed without turning the flow into a form. |
+| One true thing | Capture the sentence or detail the user actually wants to say. |
 | Avoid details | Capture anything the user wants left out. |
 | Extra context | Support sensitive or awkward context without logging raw text. |
 | Spelling/locale | Keep Automatic, US English, and UK English as a writing preference. |
-| Generated options | Return three drafts per successful generation where the gateway contract allows it. |
+| Draft output | Make one useful draft feel primary; alternatives can exist when the lane returns them. |
 
 ## Results
 
@@ -29,9 +28,9 @@ Open implementation work belongs in `docs/BACKLOG.md`.
 | Copy | Primary result action. Show clear confirmation. |
 | Share | Visible secondary action through native sharing. |
 | Edit | Allow user to adjust a draft before copying/saving. |
-| Save | Save useful drafts locally first; cloud sync depends on later auth/backend decisions. |
-| Regenerate | Product-lane aware. Free/Premium boundaries come from gateway/entitlement policy. |
-| Start over | Return to Create without stale keyboard focus or stale form state surprises. |
+| Save | Save only when the user chooses to save; do not create surprise visible history. |
+| Adjust | Warmer, shorter, more direct, and take-more-care actions stay close to the draft. |
+| Start over | Return to the Moment Sheet without stale keyboard focus or stale state surprises. |
 
 ## Account And Identity
 
@@ -39,37 +38,38 @@ Open implementation work belongs in `docs/BACKLOG.md`.
 |------------|------------------|
 | Anonymous first use | Preserve. Users should experience Standard value before forced auth. |
 | Sign in with Apple | First-class native identity path. |
-| Google sign-in | Deferred unless existing-account continuity requires it. |
-| Account deletion | Required before production replacement if account state exists. |
-| Data export | Required before production replacement if user data is stored beyond local-only drafts. |
-| Biometric lock | Parity requirement before production replacement if retained. Only available after sign-in. |
+| Google sign-in | Not part of the native default. |
+| Account deletion | Required once account state exists. |
+| Data export | Required once account or non-local user data exists. |
+| Biometric lock | Optional privacy feature. Only available after sign-in if retained. |
 
 ## Subscription And Entitlement
 
 | Capability | Native Direction |
 |------------|------------------|
-| Free/Standard lane | Gateway-backed during native staging; future local lane requires separate spike. |
-| Premium lane | Gateway-authorized cloud/frontier generation. |
+| Private draft lane | Everyday draft produced locally where device capability allows, with honest unavailable/degraded states. |
+| Take more care lane | Gateway or approved cloud/careful generation for harder moments and entitlement-sensitive work. |
 | Paywall | Contextual sheet from Premium/limit/settings boundaries, not forced immediately after welcome. |
 | Purchase | Must not require app sign-in before purchase. |
 | Restore | Available from Paywall and Settings. |
-| Entitlement continuity | Decide deliberately between RevenueCat continuity and StoreKit 2 direct handling. |
-| Usage limits | Gateway/server state is authoritative on production-capable paths. |
+| Entitlement source | StoreKit 2 in app; App Store server notifications/API and gateway state are authoritative for careful/Premium access. |
+| Usage limits | Server state is authoritative for cloud/careful generation. |
 
 ## Saved, History, And Reminders
 
 | Capability | Native Direction |
 |------------|------------------|
-| Saved messages | Native list/detail with copy, share, edit, delete. |
-| Generated history | Either implement as a filter/section inside Saved or explicitly defer from replacement scope. |
-| Calendar/reminders | Keep as replacement-scope parity consideration. Do not force a primary tab until mature. |
-| Notifications | Request only at the moment a reminder-style feature needs them. Gateway generation itself does not require notification permission. |
+| Saved messages | Native list/detail with copy, share, edit, and delete for user-saved drafts. |
+| Generated history | Do not expose automatic history until privacy, deletion, and sync semantics are settled. |
+| Relationship vault | SwiftData-backed Truth Beads and Voice Card, user-approved and editable. |
+| Calendar/reminders | Later enrichment only; never silent inference or guilt nudging. |
+| Notifications | Request only at the moment a reminder-style feature needs them. Generation itself does not require notification permission. |
 
 ## Settings And Support
 
 | Capability | Native Direction |
 |------------|------------------|
-| Writing preferences | Spelling, default tone, default generation mode where useful. |
+| Writing preferences | Spelling and voice preferences where useful. |
 | Subscription management | Subscription, restore, legal terms, and entitlement state. |
 | Privacy controls | Only show analytics/crash controls if those systems exist. |
 | Feedback/support | User-controlled support path; no raw card content in diagnostics unless explicitly approved. |
@@ -80,13 +80,13 @@ Open implementation work belongs in `docs/BACKLOG.md`.
 
 | Capability | Native Direction |
 |------------|------------------|
-| Generation runtime | ProsePal gateway contract. No native provider SDKs. |
-| Provider routing | Server-side only. |
+| Generation runtime | `MessageWritingService` with private, careful, and mock clients. No third-party provider SDKs. |
+| Provider routing | Hidden behind the service/gateway boundary. |
 | Provider/model copy | Never user-facing. |
 | Logging | Privacy-safe OSLog locally; no raw content or secrets. |
 | Analytics/crash | Not carried forward by default. Requires product/privacy/ops rationale. |
 | Supabase | Useful for staging gateway, auth, functions, and backend policy where it earns its keep. |
-| RevenueCat | Useful only if entitlement continuity justifies it. |
+| RevenueCat | Flutter production reference only; not a native default. |
 | Firebase Remote Config | Flutter production reference only; not a native default. |
 
 ## Platform Scope
@@ -103,5 +103,7 @@ Use:
 
 - `docs/BACKLOG.md` for active DoD.
 - `docs/DEVOPS.md` for runnable validation.
-- `prosepal-ios/NATIVE_PRODUCT_NORTH_STAR.md` for native UX/product shape.
-- `prosepal-ios/REWRITE_PLAN.md` for scenario-level native delivery gates.
+- `prosepal-ios/NATIVE_2026_TECHNICAL_DIRECTION.md` for native UX/product
+  direction.
+- `prosepal-ios/NATIVE_DEVICE_DEBUG_RUNBOOK.md` for local staging and device
+  proof.

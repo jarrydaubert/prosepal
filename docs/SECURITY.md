@@ -7,7 +7,7 @@ security principles the native iOS rewrite must preserve.
 
 Native iOS security direction:
 
-- gateway-first AI generation;
+- generation behind the `MessageWritingService` boundary;
 - no provider keys or provider SDKs in the app;
 - no raw prompt/card/generated content in client logs;
 - Sign in with Apple first for native identity;

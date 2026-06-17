@@ -10,11 +10,11 @@ This document is evergreen. Open work belongs in `docs/BACKLOG.md`.
 For the active native iOS direction, use:
 
 - `docs/architecture/AI_GATEWAY_STRATEGY.md`
-- `prosepal-ios/ARCHITECTURE.md`
-- `prosepal-ios/NATIVE_PRODUCT_NORTH_STAR.md`
+- `prosepal-ios/NATIVE_2026_TECHNICAL_DIRECTION.md`
+- `prosepal-ios/NATIVE_DEVICE_DEBUG_RUNBOOK.md`
 
-The native SwiftUI app must remain gateway-first and must not use Firebase AI,
-Vertex AI, or provider SDKs directly.
+The native SwiftUI app must use its `MessageWritingService` boundary and must
+not use Firebase AI, Vertex AI, or provider SDKs directly.
 
 ## Runtime Architecture
 

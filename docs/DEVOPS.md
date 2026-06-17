@@ -32,7 +32,8 @@ This runbook covers:
 | Backend/gateway | Supabase Edge Functions, gateway contract, usage/entitlement policy | Deno function tests and staging smoke commands |
 
 Do not use Flutter production docs or commands as approval to change the native
-architecture away from the gateway-first SwiftUI direction.
+architecture away from the iOS 26 Moment Sheet direction and its
+`MessageWritingService` boundary.
 
 ## Operational Baseline
 
