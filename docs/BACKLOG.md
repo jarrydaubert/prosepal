@@ -149,10 +149,14 @@ not done.
 - [x] Foundation Models availability is gated at runtime -- evidence:
   `ensureModelAvailable()` in
   `prosepal-ios/Sources/ProsePalAPI/FoundationModelsPrivateDraftClient.swift`.
-- [ ] Take more care lane uses Apple Private Cloud Compute / AFM Cloud --
-  evidence: current careful lane is `GatewayCarefulMomentClient` in
-  `prosepal-ios/Sources/ProsePalAPI/GatewayCarefulMomentClient.swift`, wired by
-  `MessageWritingServiceFactory` in `prosepal-ios/App/ProsePalNativeApp.swift`.
+- [~] Take more care lane is operational and decoupled from Premium billing;
+  target Apple Private Cloud Compute / AFM Cloud remains future work --
+  evidence: `GatewayCarefulMomentClient` requests `.standard` while returning
+  product lane `.takeMoreCare` in
+  `prosepal-ios/Sources/ProsePalAPI/GatewayCarefulMomentClient.swift`;
+  `RoutingMessageWritingService` falls back from careful failure to private
+  drafting in `prosepal-ios/Sources/ProsePalAPI/MessageWritingService.swift`;
+  tests in `prosepal-ios/Tests/ProsePalAPITests/MessageWritingServiceTests.swift`.
 - [x] Router chooses private vs careful by stakes and handles private fallback --
   evidence: `RoutingMessageWritingService` in
   `prosepal-ios/Sources/ProsePalAPI/MessageWritingService.swift`; tests in
@@ -181,8 +185,11 @@ not done.
   user-facing accept/keep/clean flows are not fully developed.
 - [~] Careful Mode calms sensitive moments -- evidence: `MomentInput.isCarefulMode`
   and `carefulModeSection` in
-  `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`. Partial because
-  register-specific palette, whitespace, and haptic changes are not complete.
+  `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`; sensitive
+  careful-lane failure falls back to private drafting in
+  `prosepal-ios/Sources/ProsePalAPI/MessageWritingService.swift`. Partial
+  because register-specific palette, whitespace, and haptic changes are not
+  complete.
 - [~] The app avoids therapy/crisis overreach -- evidence: crisis-support copy
   and draft blocking in `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`.
   Partial pending safety copy review and broader examples.
@@ -331,9 +338,8 @@ not done.
 
 ## Top Open Work
 
-1. Replace the careful lane's legacy Supabase `.premium` path with the agreed
-   Apple-native careful/PCC direction, or explicitly revise the spec if that API
-   is not available enough for this branch yet.
+1. Swap the now-working standard-gateway careful lane to the agreed Apple-native
+   careful/PCC direction when that API path is ready.
 2. Implement server-side StoreKit entitlement ownership through App Store Server
    Notifications V2/JWS and reconciliation.
 3. Add Care Glance widget, Control Center/Action Button control, and Share

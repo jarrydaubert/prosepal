@@ -54,6 +54,118 @@ func sensitiveMomentRoutesDirectlyToCarefulClient() async throws {
 }
 
 @Test
+func gatewayCarefulClientRequestsWorkingStandardLaneButReturnsTakeMoreCareProductLane() async throws {
+    let cardClient = RecordingCardMessageWritingClient(response: CardResponse(
+        messages: [GeneratedMessage(id: "careful-1", text: "A careful gateway draft.")],
+        laneUsed: .standard,
+        fallbackStatus: .none,
+        retryEligibility: .ineligible
+    ))
+    let client = GatewayCarefulMomentClient(
+        client: cardClient,
+        clientContext: ClientContext(appVersion: "0.0.0", buildNumber: "1")
+    )
+
+    let bundle = try await client.draft(for: MomentInput(
+        personName: "Sam",
+        relationship: .family,
+        occasion: .sympathy
+    ))
+
+    #expect(bundle.messageText == "A careful gateway draft.")
+    #expect(bundle.lane == .takeMoreCare)
+    #expect(await cardClient.firstRequestedLane == .standard)
+}
+
+@Test
+func carefulLaneEntitlementFailureFallsBackToPrivateDraft() async throws {
+    let privateClient = RecordingMomentDraftClient(
+        bundle: MomentDraftBundle(messageText: "A plain private draft.", lane: .privateDraft)
+    )
+    let carefulClient = FailingMomentDraftClient(
+        error: GenerationError.usageLimitReached(
+            message: "Premium generation is not available in this development gateway yet."
+        )
+    )
+    let service = RoutingMessageWritingService(
+        privateClient: privateClient,
+        carefulClient: carefulClient
+    )
+
+    let bundle = try await service.draft(for: MomentInput(
+        personName: "Sam",
+        relationship: .family,
+        occasion: .sympathy
+    ))
+
+    #expect(bundle.messageText == "A plain private draft.")
+    #expect(bundle.lane == .privateDraft)
+    #expect(await privateClient.draftCallCount == 1)
+}
+
+@Test(arguments: [
+    (Occasion.sympathy, GenerationError.usageLimitReached(message: "Premium unavailable.")),
+    (Occasion.apology, GenerationError.serviceUnavailable(message: "Gateway unavailable."))
+])
+func sensitiveMomentsProducePrivateDraftWhenGatewayCarefulLaneFails(
+    occasion: Occasion,
+    gatewayError: GenerationError
+) async throws {
+    let privateClient = RecordingMomentDraftClient(
+        bundle: MomentDraftBundle(messageText: "A simple fallback draft.", lane: .privateDraft)
+    )
+    let carefulClient = GatewayCarefulMomentClient(
+        client: FailingCardMessageWritingClient(error: gatewayError),
+        clientContext: ClientContext(appVersion: "0.0.0", buildNumber: "1")
+    )
+    let service = RoutingMessageWritingService(
+        privateClient: privateClient,
+        carefulClient: carefulClient
+    )
+
+    let bundle = try await service.draft(for: MomentInput(
+        personName: "Alex",
+        relationship: .closeFriend,
+        occasion: occasion,
+        register: .confess,
+        trueThing: "I want to say this carefully."
+    ))
+
+    #expect(bundle.messageText == "A simple fallback draft.")
+    #expect(bundle.lane == .privateDraft)
+    #expect(await privateClient.draftCallCount == 1)
+}
+
+@Test
+func carefulLaneContentBlockDoesNotFallbackToPrivateDraft() async {
+    let privateClient = RecordingMomentDraftClient(
+        bundle: MomentDraftBundle(messageText: "Private fallback.", lane: .privateDraft)
+    )
+    let carefulClient = FailingMomentDraftClient(
+        error: GenerationError.contentBlocked(message: "This wording needs to change first.")
+    )
+    let service = RoutingMessageWritingService(
+        privateClient: privateClient,
+        carefulClient: carefulClient
+    )
+
+    do {
+        _ = try await service.draft(for: MomentInput(
+            personName: "Alex",
+            relationship: .closeFriend,
+            occasion: .sympathy
+        ))
+        Issue.record("Expected careful content-block to stop drafting.")
+    } catch let error as GenerationError {
+        #expect(error == .contentBlocked(message: "This wording needs to change first."))
+    } catch {
+        Issue.record("Expected GenerationError, got \(error).")
+    }
+
+    #expect(await privateClient.draftCallCount == 0)
+}
+
+@Test
 func privateUnavailabilityFallsThroughToCarefulClient() async throws {
     let privateClient = FailingMomentDraftClient(
         error: GenerationError.serviceUnavailable(message: "Private draft unavailable.")
@@ -223,6 +335,33 @@ func takeMoreCareUsesCarefulRefinementWithCurrentDraft() async throws {
 }
 
 @Test
+func takeMoreCareCarefulFailureFallsBackToPrivateDraft() async throws {
+    let privateClient = RecordingMomentDraftClient(
+        bundle: MomentDraftBundle(messageText: "Private fallback.", lane: .privateDraft)
+    )
+    let carefulClient = FailingMomentDraftClient(
+        error: GenerationError.usageLimitReached(message: "Premium unavailable.")
+    )
+    let service = RoutingMessageWritingService(
+        privateClient: privateClient,
+        carefulClient: carefulClient
+    )
+
+    let bundle = try await service.takeMoreCare(
+        MomentDraftBundle(messageText: "A quick draft.", lane: .privateDraft),
+        moment: MomentInput(
+            personName: "Alex",
+            relationship: .closeFriend,
+            occasion: .birthday
+        )
+    )
+
+    #expect(bundle.messageText == "Private fallback.")
+    #expect(bundle.lane == .privateDraft)
+    #expect(await privateClient.draftCallCount == 1)
+}
+
+@Test
 func takeMoreCareFallsBackToCarefulDraftWhenClientCannotRefine() async throws {
     let privateClient = RecordingMomentDraftClient(
         bundle: MomentDraftBundle(messageText: "Private hello.", lane: .privateDraft)
@@ -336,6 +475,32 @@ private actor RecordingMomentDraftClient: MomentDraftClient {
     ) async throws -> MomentDraftBundle {
         adjustCallCount += 1
         return self.bundle
+    }
+}
+
+private actor RecordingCardMessageWritingClient: MessageWritingClient {
+    private let response: CardResponse
+    private(set) var requests: [CardRequest] = []
+
+    init(response: CardResponse) {
+        self.response = response
+    }
+
+    var firstRequestedLane: GenerationLane? {
+        requests.first?.requestedLane
+    }
+
+    func generateCard(request: CardRequest) async throws -> CardResponse {
+        requests.append(request)
+        return response
+    }
+}
+
+private struct FailingCardMessageWritingClient: MessageWritingClient {
+    let error: GenerationError
+
+    func generateCard(request: CardRequest) async throws -> CardResponse {
+        throw error
     }
 }
 

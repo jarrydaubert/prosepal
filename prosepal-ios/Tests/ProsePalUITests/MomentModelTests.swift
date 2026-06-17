@@ -89,6 +89,39 @@ func takeMoreCareReplacesPrivateDraftWithCarefulDraft() async throws {
     #expect(await carefulClient.lastCurrentMessage == "A quick private draft.")
 }
 
+@Test
+@MainActor
+func takeMoreCareDoesNotRequirePremiumEntitlementInMomentModel() async throws {
+    let privateClient = CountingMomentDraftClient()
+    let carefulClient = MomentModelRefiningClient(
+        bundle: MomentDraftBundle(
+            messageText: "A careful draft for everyone.",
+            lane: .takeMoreCare
+        )
+    )
+    let service = RoutingMessageWritingService(
+        privateClient: privateClient,
+        carefulClient: carefulClient
+    )
+    let model = MomentModel(service: service)
+
+    model.personName = "Alex"
+    model.bundle = MomentDraftBundle(
+        messageText: "A quick private draft.",
+        lane: .privateDraft
+    )
+    model.takeMoreCare()
+
+    for _ in 0..<40 {
+        if model.bundle?.messageText == "A careful draft for everyone." { break }
+        try await Task.sleep(for: .milliseconds(5))
+    }
+
+    #expect(model.bundle?.messageText == "A careful draft for everyone.")
+    #expect(model.bundle?.lane == .takeMoreCare)
+    #expect(model.errorMessage == nil)
+}
+
 private actor ControlledMomentDraftClient: MomentDraftClient {
     private struct PendingDraft {
         var moment: MomentInput

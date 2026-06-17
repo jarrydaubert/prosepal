@@ -55,8 +55,19 @@ public struct RoutingMessageWritingService: MessageWritingService {
         }
 
         if moment.requiresCarefulLane {
-            return try await carefulClient.draft(for: moment)
-                .applyingLocalPressureCheck(for: moment)
+            do {
+                return try await carefulClient.draft(for: moment)
+                    .applyingLocalPressureCheck(for: moment)
+            } catch let error as GenerationError {
+                guard error.shouldFallbackToPrivateDraftFromCarefulLane else { throw error }
+                return try await privateClient.draft(for: moment)
+                    .applyingLocalPressureCheck(for: moment)
+            } catch is CancellationError {
+                throw CancellationError()
+            } catch {
+                return try await privateClient.draft(for: moment)
+                    .applyingLocalPressureCheck(for: moment)
+            }
         }
 
         do {
@@ -112,15 +123,37 @@ public struct RoutingMessageWritingService: MessageWritingService {
         }
 
         if let refinementClient = carefulClient as? any MomentDraftRefinementClient {
-            return try await refinementClient.refine(
-                currentMessage: bundle?.messageText,
-                moment: moment
-            )
-            .applyingLocalPressureCheck(for: moment)
+            do {
+                return try await refinementClient.refine(
+                    currentMessage: bundle?.messageText,
+                    moment: moment
+                )
+                .applyingLocalPressureCheck(for: moment)
+            } catch let error as GenerationError {
+                guard error.shouldFallbackToPrivateDraftFromCarefulLane else { throw error }
+                return try await privateClient.draft(for: moment)
+                    .applyingLocalPressureCheck(for: moment)
+            } catch is CancellationError {
+                throw CancellationError()
+            } catch {
+                return try await privateClient.draft(for: moment)
+                    .applyingLocalPressureCheck(for: moment)
+            }
         }
 
-        return try await carefulClient.draft(for: moment)
-            .applyingLocalPressureCheck(for: moment)
+        do {
+            return try await carefulClient.draft(for: moment)
+                .applyingLocalPressureCheck(for: moment)
+        } catch let error as GenerationError {
+            guard error.shouldFallbackToPrivateDraftFromCarefulLane else { throw error }
+            return try await privateClient.draft(for: moment)
+                .applyingLocalPressureCheck(for: moment)
+        } catch is CancellationError {
+            throw CancellationError()
+        } catch {
+            return try await privateClient.draft(for: moment)
+                .applyingLocalPressureCheck(for: moment)
+        }
     }
 }
 
@@ -188,6 +221,15 @@ private extension GenerationError {
         case .offline, .usageLimitReached, .contentBlocked:
             false
         case .timedOut, .rateLimited, .serviceUnavailable, .unexpectedResponse:
+            true
+        }
+    }
+
+    var shouldFallbackToPrivateDraftFromCarefulLane: Bool {
+        switch self {
+        case .contentBlocked:
+            false
+        case .offline, .usageLimitReached, .timedOut, .rateLimited, .serviceUnavailable, .unexpectedResponse:
             true
         }
     }

@@ -51,7 +51,7 @@ public struct GatewayCarefulMomentClient: MomentDraftRefinementClient {
         )
         let request = CardRequest(
             intent: intent,
-            requestedLane: .premium,
+            requestedLane: .standard,
             clientContext: clientContext
         )
         let response = try await client.generateCard(request: request)

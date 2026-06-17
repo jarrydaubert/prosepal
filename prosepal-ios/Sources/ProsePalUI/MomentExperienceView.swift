@@ -1067,21 +1067,12 @@ private struct MomentSheetView: View {
     }
 
     private func takeMoreCare() {
-        if account.isPremiumUnlocked {
-            diagnostics.messageAction(
-                "take_more_care",
-                source: "moment_draft",
-                messageCharacters: model.bundle?.messageText.count ?? 0
-            )
-            model.takeMoreCare()
-        } else {
-            diagnostics.messageAction(
-                "take_more_care_locked",
-                source: "moment_draft",
-                messageCharacters: model.bundle?.messageText.count ?? 0
-            )
-            isShowingPaywall = true
-        }
+        diagnostics.messageAction(
+            "take_more_care",
+            source: "moment_draft",
+            messageCharacters: model.bundle?.messageText.count ?? 0
+        )
+        model.takeMoreCare()
     }
 
     private func copy(_ text: String) {
