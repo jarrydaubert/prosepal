@@ -1,5 +1,9 @@
 # Service Ownership Migration Runbook
 
+> LEGACY/OPS REFERENCE. This runbook protects current production service
+> custody, including Flutter-era Firebase and RevenueCat surfaces. It is not the
+> native iOS implementation direction.
+
 ## Purpose
 
 Move operational ownership of production services from personal identities to

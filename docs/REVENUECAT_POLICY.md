@@ -1,5 +1,10 @@
 # RevenueCat Policy
 
+> LEGACY (Flutter baseline). This document preserves the existing Flutter
+> RevenueCat continuity policy. The native iOS direction is StoreKit 2 first,
+> with server/gateway entitlement as source of truth; see
+> `prosepal-ios/NATIVE_2026_TECHNICAL_DIRECTION.md` and `docs/BACKLOG.md`.
+
 ## Purpose
 
 Define identity and restore behavior for subscriptions.

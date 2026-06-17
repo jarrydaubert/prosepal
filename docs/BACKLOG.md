@@ -57,6 +57,15 @@ not done.
 
 ## 1. Surfaces / Information Architecture
 
+- [x] N-IOS-13 Retire legacy island and reconcile docs to the native direction --
+  evidence: `ProsePalRootView.swift`, `LegacyComposeModels.swift`,
+  `LocalModelStore.swift`, `MessageWritingRouter.swift`,
+  `MockMessageWritingClient.swift`, and legacy UI tests are removed in this
+  cleanup slice; live coverage moved to `CardContractTests`,
+  `MomentAccountModelTests`, `RelationshipVaultTests`,
+  `NativeDiagnosticsTests`, and `NativeRuntimeReadinessTests`; `CLAUDE.md`,
+  `AGENTS.md`, and `docs/README.md` point new work at `prosepal-ios/`; `swift
+  build`, full `swift test`, and reference sweeps pass in this slice.
 - [x] App opens into the Moment experience rather than the legacy grouped
   create form -- evidence: `ProsePalNativeApp.body` in
   `prosepal-ios/App/ProsePalNativeApp.swift` constructs `MomentAppRootView`.
@@ -71,12 +80,11 @@ not done.
   `MomentAccountModel` in `prosepal-ios/Sources/ProsePalUI/MomentAccountModel.swift`.
   Partial because support/legal are mostly surfaced through paywall links rather
   than a mature settings layout.
-- [~] Legacy grouped create/results path is retired -- evidence:
-  `ProsePalNativeApp.swift` no longer references `ProsePalRootView`, but
-  `prosepal-ios/Sources/ProsePalUI/ProsePalRootView.swift`,
-  `prosepal-ios/Sources/ProsePalUI/LegacyComposeModels.swift`, and several
-  `prosepal-ios/Tests/ProsePalUITests/*` tests still compile against
-  `ProsePalAppModel`, `MessageDraft`, and `SavedMessage`.
+- [x] Legacy grouped create/results path is retired -- evidence:
+  `ProsePalNativeApp.swift` constructs `MomentAppRootView`; the dead grouped
+  form source files `ProsePalRootView.swift` and `LegacyComposeModels.swift`
+  have been removed; no `ProsePalAppModel`, `MessageDraft`, or `SavedMessage`
+  references remain under `prosepal-ios/Sources` or `prosepal-ios/Tests`.
 
 ## 2. Moment Experience
 
@@ -121,9 +129,8 @@ not done.
   evidence: `RelationshipVaultSchema` and `SwiftDataRelationshipMemoryProvider`
   in `prosepal-ios/Sources/ProsePalAPI/RelationshipVault.swift`; model container
   setup in `prosepal-ios/App/ProsePalNativeApp.swift`. Partial because the
-  SwiftData store backup/encryption posture is not separately hardened; only
-  local model directories currently set `isExcludedFromBackup` in
-  `prosepal-ios/Sources/ProsePalAPI/LocalModelStore.swift`.
+  SwiftData store backup/encryption/export posture still needs a dedicated
+  privacy review.
 - [x] Contacts/Calendar enrichment is not silently active -- evidence: no
   `EventKit` or `Contacts` implementation found under `prosepal-ios/Sources`.
 - [~] Voice Card exists as user-approved memory -- evidence:
@@ -167,8 +174,8 @@ not done.
 - [x] Client-side template generation is not part of the Moment service --
   evidence: production factory wires `FoundationModelsPrivateDraftClient` and
   `GatewayCarefulMomentClient` in `prosepal-ios/App/ProsePalNativeApp.swift`;
-  `MockMessageWritingClient` is limited to tests/previews in
-  `prosepal-ios/Sources/ProsePalAPI/MockMessageWritingClient.swift`.
+  test/preview-only drafting uses `MockMomentDraftClient` in
+  `prosepal-ios/Sources/ProsePalAPI/MessageWritingService.swift`.
 
 ## 5. Safety
 
@@ -221,11 +228,11 @@ not done.
   `app-store-notifications`, `AppStoreServer`, or JWS verification function
   found under `supabase/functions`; existing webhook is
   `supabase/functions/revenuecat-webhook/index.ts`.
-- [ ] Premium/careful gateway access is authorized by server entitlement --
-  evidence: native careful client sends `.premium` in
-  `prosepal-ios/Sources/ProsePalAPI/GatewayCarefulMomentClient.swift`, while
-  `supabase/functions/generate-card/index.ts` still rejects `requested_lane === "premium"`
-  as `premium_unavailable`.
+- [ ] Premium/extras gateway access is authorized by server entitlement --
+  evidence: careful/sensitive drafting is deliberately decoupled from Premium
+  billing in `GatewayCarefulMomentClient.swift` and
+  `MessageWritingService.swift`; no App Store Server Notifications V2/JWS
+  entitlement path exists under `supabase/functions`.
 - [~] Paywall is App Review-oriented: price/period, restore, Terms, Privacy,
   no forced sign-in -- evidence: `MomentPaywallSheet` in
   `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`. Partial because
@@ -239,7 +246,7 @@ not done.
 - [~] Restore, identity/account switch, and entitlement convergence are covered --
   evidence: restore/local entitlement code in
   `prosepal-ios/Sources/ProsePalAPI/SubscriptionClient.swift`; account/purchase
-  tests in `prosepal-ios/Tests/ProsePalUITests/AuthPurchaseFlowTests.swift`.
+  tests in `prosepal-ios/Tests/ProsePalUITests/MomentAccountModelTests.swift`.
   Partial because server reconciliation is not implemented.
 
 ## 8. Design
@@ -268,12 +275,11 @@ not done.
 
 - [~] Swift 6 and strict-concurrency direction are active -- evidence:
   `swift-tools-version: 6.2` in `prosepal-ios/Package.swift`; `SWIFT_VERSION = 6.0`
-  in `prosepal-ios/ProsePal.xcodeproj/project.pbxproj`. Partial because legacy
-  UI code still uses older `ObservableObject` patterns.
-- [~] View models use `@Observable`, not `ObservableObject` -- evidence:
-  `MomentModel` and `MomentAccountModel` in `prosepal-ios/Sources/ProsePalUI`.
-  Partial because legacy `ProsePalAppModel: ObservableObject` remains in
-  `prosepal-ios/Sources/ProsePalUI/ProsePalRootView.swift`.
+  in `prosepal-ios/ProsePal.xcodeproj/project.pbxproj`. Partial pending
+  strict-concurrency audit under Xcode 26/device builds.
+- [x] View models use `@Observable`, not `ObservableObject` -- evidence:
+  `MomentModel` and `MomentAccountModel` in `prosepal-ios/Sources/ProsePalUI`;
+  no `ObservableObject` references remain under `prosepal-ios/Sources`.
 - [~] SwiftData and Swift Testing are used for new native code -- evidence:
   `RelationshipVault.swift`, `MomentModelTests.swift`,
   `MessageWritingServiceTests.swift`, and `RelationshipVaultTests.swift`.
@@ -284,10 +290,9 @@ not done.
   `platforms: [.iOS(.v26)]` in `prosepal-ios/Package.swift` and
   `IPHONEOS_DEPLOYMENT_TARGET = 26.0` in
   `prosepal-ios/ProsePal.xcodeproj/project.pbxproj`.
-- [~] Monolith UI has been split for the new flow -- evidence:
-  Moment-specific files exist under `prosepal-ios/Sources/ProsePalUI`, but
-  `prosepal-ios/Sources/ProsePalUI/ProsePalRootView.swift` remains a compiled
-  legacy monolith.
+- [x] Monolith UI has been split for the new flow -- evidence:
+  Moment-specific files exist under `prosepal-ios/Sources/ProsePalUI`, and the
+  legacy compiled monolith `ProsePalRootView.swift` has been removed.
 
 ## 10. Privacy And Telemetry
 
@@ -302,7 +307,7 @@ not done.
   `prosepal-ios/Tests/ProsePalUITests/NativeDiagnosticsTests.swift`.
 - [~] Vault storage, deletion, export, and backup behavior are privacy-reviewed --
   evidence: SwiftData records in `RelationshipVault.swift`; delete/export flows
-  in `MomentSettingsView`; local model backup exclusion in `LocalModelStore`.
+  in `MomentSettingsView`.
   Partial because SwiftData vault backup/encryption/deletion semantics need a
   dedicated privacy review.
 
@@ -319,12 +324,13 @@ not done.
 - [~] Tests cover routing, safety, entitlement, and typed generation contracts --
   evidence: routing/safety tests in
   `prosepal-ios/Tests/ProsePalAPITests/MessageWritingServiceTests.swift`,
-  entitlement tests in `prosepal-ios/Tests/ProsePalUITests/AuthPurchaseFlowTests.swift`.
+  entitlement/account tests in
+  `prosepal-ios/Tests/ProsePalUITests/MomentAccountModelTests.swift`.
   Partial because `@Generable` output-contract/device behavior is not covered
   with wired evidence.
-- [ ] Exit criteria for deleting legacy grouped form are satisfied -- evidence:
-  `ProsePalRootView.swift`, `LegacyComposeModels.swift`, and legacy UI tests
-  still exist and compile.
+- [x] Exit criteria for deleting legacy grouped form are satisfied -- evidence:
+  `ProsePalRootView.swift`, `LegacyComposeModels.swift`, and legacy grouped-form
+  tests have been removed; live behavior is covered by Moment/domain/API tests.
 
 ## 12. Explicit Non-Goals For V1
 
@@ -346,8 +352,8 @@ not done.
    extension surfaces.
 4. Harden crisis/pressure handling beyond local English phrase lists and add
    locale-aware/model-guarded evidence.
-5. Remove the legacy grouped-form monolith and migrate/delete stale tests once
-   the Moment path owns the required behavior.
+5. Complete SwiftData vault privacy review for backup/encryption/export/delete
+   semantics.
 
 ## Flutter Production Work
 

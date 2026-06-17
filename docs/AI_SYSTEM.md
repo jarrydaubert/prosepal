@@ -1,5 +1,10 @@
 # AI System
 
+> LEGACY (Flutter baseline). This document describes the frozen Flutter
+> production/reference AI path. The active native iOS direction is
+> `MessageWritingService`-based and lives in
+> `prosepal-ios/NATIVE_2026_TECHNICAL_DIRECTION.md` and `docs/BACKLOG.md`.
+
 ## Purpose
 
 Document the Flutter production AI runtime design in ProsePal so the repo shows

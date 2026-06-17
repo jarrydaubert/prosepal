@@ -137,8 +137,8 @@ Run these with the device tethered:
 5. Product rows load; if not configured, unavailable state is visible.
 6. Cancel purchase; Premium remains locked and paywall remains usable.
 7. Pending purchase, if sandbox can produce it; Premium remains locked.
-8. Successful sandbox purchase; local Premium UI updates, then gateway Premium
-   still depends on server entitlement behavior.
+8. Successful sandbox purchase; local Premium UI updates, while future
+   Premium/extras gateway behavior still depends on server entitlement.
 9. Restore from paywall; success/no-active-subscription/error states are honest.
 10. Restore from Settings uses the same restore path.
 11. Sign in with Apple from Settings; session persists across relaunch.
@@ -159,13 +159,13 @@ xcodebuild -project ProsePal.xcodeproj -target ProsePal -sdk iphonesimulator COD
 
 Relevant native tests:
 
-- `AuthPurchaseFlowTests`
 - `MomentAccountModelTests`
 - `MomentModelTests`
 - `MessageWritingServiceTests`
 - `RelationshipVaultTests`
 - `ProsePalAppIntentsTests`
-- `SettingsParityStateTests`
-- `UsagePolicyTests`
+- `CardContractTests`
+- `NativeDiagnosticsTests`
+- `NativeRuntimeReadinessTests`
 - `MessageWritingClientTests`
 - `AuthSessionTests`

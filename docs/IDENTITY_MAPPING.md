@@ -1,5 +1,10 @@
 # Identity Mapping
 
+> LEGACY (Flutter baseline). This document captures existing Flutter
+> Supabase/RevenueCat/Firebase identity mapping. Native iOS should preserve the
+> safety principles, but its active identity/subscription implementation is
+> Sign in with Apple + StoreKit 2 + server/gateway entitlement.
+
 ## Purpose
 
 Define the canonical user-identity mapping across auth, subscriptions, and telemetry.

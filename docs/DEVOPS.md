@@ -241,7 +241,8 @@ Policy:
   profile and Supabase Apple provider to match the native bundle identity.
 - Native Premium purchase/restore R&D uses a narrow StoreKit 2 boundary driven
   by local/Xcode product ID configuration. The gateway/server entitlement policy
-  remains authoritative for Premium generation.
+  remains authoritative for future Premium limits/extras and any paid cloud
+  capability.
 - Anonymous gateway development mode does not call the authenticated usage RPC
   and must remain staging/local only.
 - Provider/model names and keys stay in the Edge Function environment. The

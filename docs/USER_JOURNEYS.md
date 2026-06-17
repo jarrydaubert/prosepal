@@ -14,7 +14,7 @@ Open implementation work belongs in `docs/BACKLOG.md`.
 Standard value first
 Purchase without mandatory account creation
 Sign in for continuity, restore confidence, support, and authenticated gateway usage
-Gateway/server state is authoritative for usage and Premium access
+Gateway/server state is authoritative for usage and future Premium limits/extras
 ```
 
 ## Launch
@@ -103,8 +103,8 @@ Rules:
   wall.
 - The paywall must include restore and legal/subscription terms access.
 - Cancelled or pending purchases must not unlock Premium.
-- Local Premium UI cannot authorize Premium generation by itself; the gateway
-  remains authoritative.
+- Local Premium UI cannot authorize paid limits/extras by itself; the gateway
+  remains authoritative for server-side entitlement.
 
 ## Restore
 

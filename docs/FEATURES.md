@@ -48,11 +48,11 @@ Open implementation work belongs in `docs/BACKLOG.md`.
 | Capability | Native Direction |
 |------------|------------------|
 | Private draft lane | Everyday draft produced locally where device capability allows, with honest unavailable/degraded states. |
-| Take more care lane | Gateway or approved cloud/careful generation for harder moments and entitlement-sensitive work. |
+| Take more care lane | Gateway or approved cloud/careful generation for harder moments. This is a safety/quality route, not a paywall gate. |
 | Paywall | Contextual sheet from Premium/limit/settings boundaries, not forced immediately after welcome. |
 | Purchase | Must not require app sign-in before purchase. |
 | Restore | Available from Paywall and Settings. |
-| Entitlement source | StoreKit 2 in app; App Store server notifications/API and gateway state are authoritative for careful/Premium access. |
+| Entitlement source | StoreKit 2 in app; App Store server notifications/API and gateway state are authoritative for future Premium limits/extras and any paid cloud capability. |
 | Usage limits | Server state is authoritative for cloud/careful generation. |
 
 ## Saved, History, And Reminders

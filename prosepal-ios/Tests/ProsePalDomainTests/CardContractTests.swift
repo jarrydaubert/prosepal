@@ -60,6 +60,54 @@ final class CardContractTests: XCTestCase {
         XCTAssertNil(object["provider"])
     }
 
+    func testMomentInputBuildsGatewayIntentFromMomentFields() {
+        let moment = MomentInput(
+            personName: "  Dad  ",
+            relationship: .parent,
+            occasion: .birthday,
+            register: .react,
+            trueThing: "  He always makes Sunday tea.  ",
+            tone: .heartfelt,
+            length: .detailed,
+            spellingPreference: .uk
+        )
+
+        let intent = moment.cardIntent
+
+        XCTAssertEqual(intent.occasion, .birthday)
+        XCTAssertEqual(intent.relationship, .parent)
+        XCTAssertEqual(intent.tone, .heartfelt)
+        XCTAssertEqual(intent.length, .detailed)
+        XCTAssertEqual(intent.spellingPreference, .uk)
+        XCTAssertEqual(intent.localeIdentifier, "en_GB")
+        XCTAssertEqual(intent.recipientName, "Dad")
+        XCTAssertEqual(intent.thingsToInclude, ["He always makes Sunday tea."])
+        XCTAssertEqual(intent.thingsToAvoid, [])
+        XCTAssertEqual(intent.userContext, "Everyday moments that need a quick, warm message.")
+    }
+
+    func testMomentInputOmitsBlankOptionalGatewayIntentFields() {
+        let moment = MomentInput(
+            personName: "   ",
+            relationship: .colleague,
+            occasion: .thankYou,
+            register: .react,
+            trueThing: "   ",
+            tone: .formal,
+            length: .brief,
+            spellingPreference: .automatic
+        )
+
+        let intent = moment.cardIntent
+
+        XCTAssertNil(intent.recipientName)
+        XCTAssertEqual(intent.thingsToInclude, [])
+        XCTAssertEqual(intent.thingsToAvoid, [])
+        XCTAssertEqual(intent.userContext, "Everyday moments that need a quick, warm message.")
+        XCTAssertEqual(intent.spellingPreference, .automatic)
+        XCTAssertEqual(intent.localeIdentifier, Locale.current.identifier)
+    }
+
     func testDomainTaxonomyMatchesFlutterProductCatalogueShape() {
         XCTAssertEqual(Occasion.allCases.count, 40)
         XCTAssertEqual(Array(Occasion.allCases.prefix(10)), [

@@ -1,5 +1,9 @@
 # Prosepal Architecture Overview
 
+> LEGACY (Flutter baseline). This document describes the frozen Flutter
+> production/reference app. The active native iOS direction lives in
+> `prosepal-ios/NATIVE_2026_TECHNICAL_DIRECTION.md` and `docs/BACKLOG.md`.
+
 ## Scope Note
 
 This document is the Flutter production architecture reference.

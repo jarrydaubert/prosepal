@@ -7,9 +7,24 @@ This file is the canonical agent contract for this repo.
 
 Ship safely: reliability and security first, then feature work.
 
+## Active Direction
+
+The active build direction is the native SwiftUI rewrite in `prosepal-ios/`.
+
+- Native target: iOS 26-first, person-first Moment Sheet.
+- Native stack: SwiftUI, SwiftData, StoreKit 2, Sign in with Apple, Foundation
+  Models, and a ProsePal-owned `MessageWritingService` boundary.
+- Native must remain provider-agnostic in the UI: no provider/model names, no
+  Firebase AI / Vertex AI / Gemini-direct client path, no RevenueCat dependency,
+  and no third-party provider SDKs by default.
+- The Flutter app at the repo root is the frozen legacy/production-reference
+  baseline. Do not change Flutter unless the user explicitly asks for Flutter
+  work or a production-reference hotfix.
+
 ## Source Of Truth
 
-- Release scope and gates: `docs/NEXT_RELEASE_BRIEF.md`
+- Native technical direction: `prosepal-ios/NATIVE_2026_TECHNICAL_DIRECTION.md`
+- Release/readiness scope and gates: `docs/NEXT_RELEASE_BRIEF.md`
 - DevOps runbook: `docs/DEVOPS.md`
 - Open work only: `docs/BACKLOG.md`
 - Documentation rules: `docs/DOCS_POLICY.md`
@@ -30,6 +45,16 @@ Ship safely: reliability and security first, then feature work.
 ## Required Validation Before Handoff
 
 Run what is relevant to the change:
+
+For native iOS work:
+
+```bash
+cd prosepal-ios
+swift build
+swift test
+```
+
+For legacy Flutter production-reference work only:
 
 ```bash
 flutter analyze

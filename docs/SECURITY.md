@@ -1,5 +1,10 @@
 # Prosepal Security Overview
 
+> MIXED REFERENCE. This document includes the frozen Flutter production security
+> posture and principles the native iOS rewrite must preserve. New native work
+> should follow `prosepal-ios/NATIVE_2026_TECHNICAL_DIRECTION.md` and
+> `docs/BACKLOG.md`.
+
 ## Scope Note
 
 This document includes the live Flutter production security posture and the

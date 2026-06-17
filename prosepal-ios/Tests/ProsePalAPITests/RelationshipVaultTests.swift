@@ -1,5 +1,6 @@
 import SwiftData
 import XCTest
+import ProsePalDomain
 @testable import ProsePalAPI
 
 final class RelationshipVaultTests: XCTestCase {
@@ -118,6 +119,78 @@ final class RelationshipVaultTests: XCTestCase {
         XCTAssertEqual(record.summary, "Gentle and simple")
         XCTAssertFalse(record.isUserApproved)
         XCTAssertEqual(record.updatedAt, updatedDate)
+    }
+
+    func testSavedMomentDraftRecordCapturesMomentMetadata() {
+        let createdAt = Date(timeIntervalSince1970: 2_000)
+        let moment = MomentInput(
+            personName: "Asha",
+            relationship: .romantic,
+            occasion: .anniversary,
+            register: .confess,
+            trueThing: "I still love quiet mornings together.",
+            tone: .poetic,
+            length: .detailed,
+            spellingPreference: .uk
+        )
+
+        let record = SavedMomentDraftRecord(
+            moment: moment,
+            messageText: "A saved anniversary draft.",
+            lane: .takeMoreCare,
+            createdAt: createdAt
+        )
+
+        XCTAssertEqual(record.personName, "Asha")
+        XCTAssertEqual(record.relationship, Relationship.romantic)
+        XCTAssertEqual(record.occasion, Occasion.anniversary)
+        XCTAssertEqual(record.register, MomentRegister.confess)
+        XCTAssertEqual(record.tone, Tone.poetic)
+        XCTAssertEqual(record.length, MessageLength.detailed)
+        XCTAssertEqual(record.lane, MomentDraftLane.takeMoreCare)
+        XCTAssertEqual(record.trueThing, "I still love quiet mornings together.")
+        XCTAssertEqual(record.messageText, "A saved anniversary draft.")
+        XCTAssertEqual(record.title, "Asha")
+        XCTAssertEqual(record.subtitle, "Anniversary · Partner")
+        XCTAssertEqual(record.createdAt, createdAt)
+        XCTAssertEqual(record.updatedAt, createdAt)
+    }
+
+    func testSavedMomentDraftRecordsPersistFetchUpdateAndDeleteLocally() throws {
+        let container = try makeContainer()
+        let context = ModelContext(container)
+        let draft = SavedMomentDraftRecord(
+            moment: MomentInput(
+                personName: "Dad",
+                relationship: .parent,
+                occasion: .birthday,
+                trueThing: "He loves a quiet cup of tea."
+            ),
+            messageText: "Happy birthday, Dad.",
+            lane: .privateDraft,
+            createdAt: Date(timeIntervalSince1970: 3_000)
+        )
+
+        context.insert(draft)
+        try context.save()
+
+        let fetched = try context.fetch(FetchDescriptor<SavedMomentDraftRecord>())
+        XCTAssertEqual(fetched.count, 1)
+        XCTAssertEqual(fetched.first?.title, "Dad")
+        XCTAssertEqual(fetched.first?.subtitle, "Birthday · Parent")
+
+        fetched[0].messageText = "Updated birthday draft."
+        fetched[0].updatedAt = Date(timeIntervalSince1970: 4_000)
+        try context.save()
+
+        let updated = try XCTUnwrap(context.fetch(FetchDescriptor<SavedMomentDraftRecord>()).first)
+        XCTAssertEqual(updated.messageText, "Updated birthday draft.")
+        XCTAssertEqual(updated.updatedAt, Date(timeIntervalSince1970: 4_000))
+
+        context.delete(updated)
+        try context.save()
+
+        XCTAssertTrue(try context.fetch(FetchDescriptor<SavedMomentDraftRecord>()).isEmpty)
     }
 
     private func makeContainer() throws -> ModelContainer {

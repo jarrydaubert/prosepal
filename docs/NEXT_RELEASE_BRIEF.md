@@ -35,8 +35,10 @@ Native rewrite facts:
 - Take more care is the cloud/careful lane through the ProsePal gateway or
   approved Apple-native cloud path.
 - Provider/model names must not appear in user-facing UI.
-- Server entitlement remains authoritative for subscription-gated cloud/careful
-  access.
+- Careful/sensitive drafting is a safety and quality route, not a Premium
+  billing gate.
+- Server entitlement remains authoritative for future subscription-gated
+  Premium limits/extras and any paid cloud capability.
 
 ## Non-Negotiables
 
@@ -107,8 +109,8 @@ Authentication is not a forced pre-purchase wall.
 Subscription implementation:
 
 - StoreKit 2 in the native client.
-- Server/gateway entitlement policy is authoritative for careful/Premium
-  generation.
+- Server/gateway entitlement policy is authoritative for future Premium
+  limits/extras and any paid cloud capability.
 - App Store Server Notifications V2 and App Store Server API reconciliation are
   the intended server-side entitlement path.
 
@@ -125,9 +127,10 @@ SwiftUI Moment Sheet
       -> MockClient
 ```
 
-The careful/cloud lane uses the ProsePal gateway where entitlement, abuse
-control, usage policy, and server secrets belong. The private/everyday lane is
-native and local where device capability allows.
+The careful/cloud lane uses the ProsePal gateway where request verification,
+abuse control, usage policy, and server secrets belong. Premium billing is a
+separate limits/extras concern. The private/everyday lane is native and local
+where device capability allows.
 
 ## Validation Commands
 

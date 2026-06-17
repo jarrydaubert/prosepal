@@ -75,12 +75,9 @@ final class NativeRuntimeReadinessTests: XCTestCase {
         XCTAssertEqual(readiness.settingsItems.first { $0.id == "take-more-care" }?.statusText, "Missing")
     }
 
-    func testAppModelStoresRuntimeReadinessForSettings() {
+    func testMomentAccountModelStoresRuntimeReadinessForSettings() {
         let readiness = NativeRuntimeReadiness(isGenerationConfigured: true)
-        let model = ProsePalAppModel(
-            client: MockMessageWritingClient(
-                response: CardResponse(messages: [], laneUsed: .standard)
-            ),
+        let model = MomentAccountModel(
             clientContext: ClientContext(appVersion: "0.0.0", buildNumber: "1"),
             runtimeReadiness: readiness
         )

@@ -3,28 +3,6 @@ import ProsePalDomain
 @testable import ProsePalAPI
 
 final class MessageWritingClientTests: XCTestCase {
-    func testMockClientReturnsProvidedGatewayResponse() async throws {
-        let response = CardResponse(
-            messages: [GeneratedMessage(id: "draft-1", text: "A gateway-shaped draft.")],
-            laneUsed: .standard,
-            fallbackStatus: .none,
-            retryEligibility: .ineligible
-        )
-        let client = MockMessageWritingClient(response: response)
-        let request = CardRequest(
-            intent: CardIntent(
-                occasion: .birthday,
-                relationship: .parent,
-                tone: .heartfelt
-            ),
-            clientContext: ClientContext(appVersion: "0.0.0", buildNumber: "1")
-        )
-
-        let generated = try await client.generateCard(request: request)
-
-        XCTAssertEqual(generated, response)
-    }
-
     func testGatewayClientAddsOptionalDevGatewaySecretHeader() async throws {
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [CapturingURLProtocol.self]
@@ -579,76 +557,6 @@ final class MessageWritingClientTests: XCTestCase {
         }
     }
 
-    func testRouterSendsStandardRequestsToStandardClient() async throws {
-        let standardClient = RecordingMessageWritingClient(response: CardResponse(
-            messages: [GeneratedMessage(id: "standard-1", text: "Standard draft.")],
-            laneUsed: .standard
-        ))
-        let premiumClient = RecordingMessageWritingClient(response: CardResponse(
-            messages: [GeneratedMessage(id: "premium-1", text: "Premium draft.")],
-            laneUsed: .premium
-        ))
-        let router = MessageWritingRouter(
-            standardClient: standardClient,
-            premiumClient: premiumClient
-        )
-
-        let generated = try await router.generateCard(request: request(requestedLane: .standard))
-        let standardRequestCount = await standardClient.requestCount()
-        let standardRequestedLane = await standardClient.firstRequestedLane()
-        let premiumRequestCount = await premiumClient.requestCount()
-
-        XCTAssertEqual(generated.laneUsed, .standard)
-        XCTAssertEqual(standardRequestCount, 1)
-        XCTAssertEqual(standardRequestedLane, .standard)
-        XCTAssertEqual(premiumRequestCount, 0)
-    }
-
-    func testRouterSendsPremiumRequestsToPremiumClient() async throws {
-        let standardClient = RecordingMessageWritingClient(response: CardResponse(
-            messages: [GeneratedMessage(id: "standard-1", text: "Standard draft.")],
-            laneUsed: .standard
-        ))
-        let premiumClient = RecordingMessageWritingClient(response: CardResponse(
-            messages: [GeneratedMessage(id: "premium-1", text: "Premium draft.")],
-            laneUsed: .premium
-        ))
-        let router = MessageWritingRouter(
-            standardClient: standardClient,
-            premiumClient: premiumClient
-        )
-
-        let generated = try await router.generateCard(request: request(requestedLane: .premium))
-        let standardRequestCount = await standardClient.requestCount()
-        let premiumRequestCount = await premiumClient.requestCount()
-        let premiumRequestedLane = await premiumClient.firstRequestedLane()
-
-        XCTAssertEqual(generated.laneUsed, .premium)
-        XCTAssertEqual(standardRequestCount, 0)
-        XCTAssertEqual(premiumRequestCount, 1)
-        XCTAssertEqual(premiumRequestedLane, .premium)
-    }
-
-    func testRouterDoesNotInventLocalFallbackWhenLocalClientIsMissing() async throws {
-        let standardClient = RecordingMessageWritingClient(response: CardResponse(
-            messages: [GeneratedMessage(id: "standard-1", text: "Standard draft.")],
-            laneUsed: .standard
-        ))
-        let router = MessageWritingRouter(standardClient: standardClient)
-
-        do {
-            _ = try await router.generateCard(request: request(requestedLane: .local))
-            XCTFail("Expected local lane to fail when no local client is configured.")
-        } catch GenerationError.serviceUnavailable(let message) {
-            XCTAssertTrue(message.contains("on-device"))
-        } catch {
-            XCTFail("Expected service unavailable, got \(error).")
-        }
-
-        let standardRequestCount = await standardClient.requestCount()
-        XCTAssertEqual(standardRequestCount, 0)
-    }
-
     private func request(requestedLane: GenerationLane) -> CardRequest {
         CardRequest(
             intent: CardIntent(
@@ -696,28 +604,6 @@ final class MessageWritingClientTests: XCTestCase {
         } catch {
             XCTFail("Expected GenerationError, got \(error).", file: file, line: line)
         }
-    }
-}
-
-private actor RecordingMessageWritingClient: MessageWritingClient {
-    private let response: CardResponse
-    private var requests: [CardRequest] = []
-
-    init(response: CardResponse) {
-        self.response = response
-    }
-
-    func generateCard(request: CardRequest) async throws -> CardResponse {
-        requests.append(request)
-        return response
-    }
-
-    func requestCount() -> Int {
-        requests.count
-    }
-
-    func firstRequestedLane() -> GenerationLane? {
-        requests.first?.requestedLane
     }
 }
 

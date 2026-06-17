@@ -1,5 +1,9 @@
 # Remote Config Runbook
 
+> LEGACY (Flutter baseline). This document describes Firebase Remote Config for
+> the frozen Flutter production/reference app. Native iOS must not inherit
+> Firebase Remote Config by default.
+
 ## Purpose
 
 Define the required Firebase Remote Config keys, safe defaults, and rollout rules.
