@@ -254,6 +254,9 @@ Policy:
 Validation:
 - Run `deno test --allow-env supabase/functions/generate-card/index.test.ts`
   after changing the gateway handler.
+- Run
+  `deno test --allow-env supabase/functions/app-store-notifications/index.test.ts`
+  after changing native StoreKit entitlement notification handling.
 - Run `swift test` and the native simulator `xcodebuild` command from
   `prosepal-ios/` after changing native gateway wiring.
 - Run `./scripts/prosepal-staging-smoke.sh` after changing staging gateway

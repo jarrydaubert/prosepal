@@ -102,10 +102,16 @@ public protocol SubscriptionClient: Sendable {
 public struct StoreKitSubscriptionClient: SubscriptionClient {
     private let productIDs: [String]
     private let recommendedProductID: String?
+    private let appAccountTokenProvider: (@Sendable () async -> UUID?)?
 
-    public init(productIDs: [String], recommendedProductID: String? = nil) {
+    public init(
+        productIDs: [String],
+        recommendedProductID: String? = nil,
+        appAccountTokenProvider: (@Sendable () async -> UUID?)? = nil
+    ) {
         self.productIDs = productIDs.uniqueTrimmedValues
         self.recommendedProductID = recommendedProductID?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfBlank
+        self.appAccountTokenProvider = appAccountTokenProvider
     }
 
     public func loadProducts() async throws -> [SubscriptionProduct] {
@@ -178,7 +184,12 @@ public struct StoreKitSubscriptionClient: SubscriptionClient {
         let products = try await Product.products(for: [productID])
         guard let product = products.first else { throw SubscriptionError.productUnavailable }
 
-        let result = try await product.purchase()
+        var purchaseOptions = Set<Product.PurchaseOption>()
+        if let appAccountToken = await appAccountTokenProvider?() {
+            purchaseOptions.insert(.appAccountToken(appAccountToken))
+        }
+
+        let result = try await product.purchase(options: purchaseOptions)
         switch result {
         case .success(let verificationResult):
             let transaction = try verified(verificationResult)

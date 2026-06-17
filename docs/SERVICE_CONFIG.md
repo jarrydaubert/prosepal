@@ -16,7 +16,6 @@ Use this before release builds and when onboarding a new environment.
 1. Access to the provider consoles for the context being changed:
    - Supabase dashboard for native staging/gateway or Flutter production
    - App Store Connect for native StoreKit/App Store product work
-   - RevenueCat dashboard when preserving Flutter entitlement continuity
    - Firebase console only for Flutter production/reference work
 2. Local repo checkout with scripts available.
 3. A local env file copied from `.env.example` to `.env.local`.
@@ -44,12 +43,17 @@ Required Supabase staging secrets by name:
 - `PROSEPAL_AI_PROVIDER_MODEL`
 - `PROSEPAL_AI_PROVIDER_FALLBACK_MODELS`
 - `PROSEPAL_AI_PROVIDER_JSON_MODE`
+- `APP_STORE_BUNDLE_ID`
+- `APP_STORE_ENVIRONMENT`
+- `APP_STORE_ROOT_CERTIFICATES_PEM`
+- `APP_STORE_PREMIUM_PRODUCT_IDS` or `PROSEPAL_PREMIUM_PRODUCT_IDS`
+- `APP_STORE_APP_APPLE_ID`, production only
+- `APP_STORE_ENABLE_ONLINE_CHECKS`, optional
 
 Additional staging secrets/config may be required before full auth, feedback,
 purchase, and entitlement testing:
 
 - Apple Sign-In/Supabase Auth provider configuration
-- `REVENUECAT_WEBHOOK_SECRET`, if RevenueCat continuity is selected
 - Resend feedback relay secrets, if direct feedback is enabled
 
 Validation:
@@ -68,6 +72,53 @@ Pass criteria:
 - provider/model fields are not exposed to the client response;
 - no local Xcode scheme secrets, Supabase `.temp`, screenshots, receipts, or
   evidence files are committed.
+
+### Native App Store Server Notifications
+
+Native subscription ownership is StoreKit 2 on-device and App Store Server
+Notifications V2 on the Supabase side. RevenueCat is not part of the native
+direction.
+
+Function:
+
+- `supabase/functions/app-store-notifications`
+- Endpoint shape:
+  `https://<project-ref>.supabase.co/functions/v1/app-store-notifications`
+- `supabase/config.toml` sets `verify_jwt = false` because Apple sends a JWS
+  `signedPayload`; the function verifies that payload with Apple's App Store
+  Server Library.
+
+Required Supabase secrets, names only:
+
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `APP_STORE_BUNDLE_ID`
+- `APP_STORE_ENVIRONMENT`
+- `APP_STORE_ROOT_CERTIFICATES_PEM`
+- `APP_STORE_PREMIUM_PRODUCT_IDS` or `PROSEPAL_PREMIUM_PRODUCT_IDS`
+- `APP_STORE_APP_APPLE_ID`, production only
+- `APP_STORE_ENABLE_ONLINE_CHECKS`, optional
+
+Privacy rules:
+
+- Do not log or persist the `signedPayload`.
+- Do not log or persist receipts, raw transactions, provider keys, or auth
+  tokens.
+- Persist only privacy-safe notification metadata in
+  `app_store_notification_events`.
+
+Validation:
+
+```bash
+deno test --allow-env supabase/functions/app-store-notifications/index.test.ts
+```
+
+Current limitation:
+
+- App Store Server API reconciliation is not implemented yet. Server
+  entitlement is partially wired through notification ingestion, but production
+  rollout still needs deployment evidence, reconciliation, and gateway policy
+  work for paid limits/extras.
 
 ## Flutter Production Reference Configuration
 

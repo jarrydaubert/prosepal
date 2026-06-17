@@ -23,3 +23,8 @@ verify_jwt = false
 # RevenueCat sends its own shared-secret Authorization header, not a Supabase JWT.
 # The function validates REVENUECAT_WEBHOOK_SECRET internally.
 verify_jwt = false
+
+[functions.app-store-notifications]
+# Apple sends a signedPayload JWS, not a Supabase JWT. The function validates
+# the JWS with Apple's App Store Server Library and configured Apple root CAs.
+verify_jwt = false

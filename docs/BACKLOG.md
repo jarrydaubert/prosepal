@@ -223,16 +223,20 @@ not done.
   evidence: `StoreKitSubscriptionClient` in
   `prosepal-ios/Sources/ProsePalAPI/SubscriptionClient.swift`; no third-party
   dependencies in `prosepal-ios/Package.swift`.
-- [ ] Server entitlement is authoritative through App Store Server
-  Notifications V2 JWS and reconciliation -- evidence: no
-  `app-store-notifications`, `AppStoreServer`, or JWS verification function
-  found under `supabase/functions`; existing webhook is
-  `supabase/functions/revenuecat-webhook/index.ts`.
+- [~] Server entitlement is authoritative through App Store Server
+  Notifications V2 JWS and reconciliation -- evidence:
+  `supabase/functions/app-store-notifications/index.ts`,
+  `supabase/functions/app-store-notifications/index.test.ts`,
+  `supabase/migrations/023_add_app_store_entitlement_metadata.sql`, and
+  `supabase/config.toml`. Partial because the function is not yet deployed with
+  Apple root certificates/secrets, and App Store Server API reconciliation is
+  not implemented.
 - [ ] Premium/extras gateway access is authorized by server entitlement --
   evidence: careful/sensitive drafting is deliberately decoupled from Premium
   billing in `GatewayCarefulMomentClient.swift` and
-  `MessageWritingService.swift`; no App Store Server Notifications V2/JWS
-  entitlement path exists under `supabase/functions`.
+  `MessageWritingService.swift`; App Store notification ingestion now updates
+  `user_entitlements`, but `generate-card` still rejects Premium by design and
+  no paid limits/extras gateway policy has been wired.
 - [~] Paywall is App Review-oriented: price/period, restore, Terms, Privacy,
   no forced sign-in -- evidence: `MomentPaywallSheet` in
   `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`. Partial because
@@ -245,9 +249,12 @@ not done.
   evidence.
 - [~] Restore, identity/account switch, and entitlement convergence are covered --
   evidence: restore/local entitlement code in
-  `prosepal-ios/Sources/ProsePalAPI/SubscriptionClient.swift`; account/purchase
-  tests in `prosepal-ios/Tests/ProsePalUITests/MomentAccountModelTests.swift`.
-  Partial because server reconciliation is not implemented.
+  `prosepal-ios/Sources/ProsePalAPI/SubscriptionClient.swift`; signed-in
+  purchases attach StoreKit `appAccountToken` from
+  `prosepal-ios/App/ProsePalNativeApp.swift`; account/purchase tests in
+  `prosepal-ios/Tests/ProsePalUITests/MomentAccountModelTests.swift`. Partial
+  because App Store Server API reconciliation and anonymous-purchase convergence
+  are not implemented.
 
 ## 8. Design
 
@@ -346,8 +353,8 @@ not done.
 
 1. Swap the now-working standard-gateway careful lane to the agreed Apple-native
    careful/PCC direction when that API path is ready.
-2. Implement server-side StoreKit entitlement ownership through App Store Server
-   Notifications V2/JWS and reconciliation.
+2. Deploy and verify App Store Server Notifications V2 in staging, then add App
+   Store Server API reconciliation.
 3. Add Care Glance widget, Control Center/Action Button control, and Share
    extension surfaces.
 4. Harden crisis/pressure handling beyond local English phrase lists and add

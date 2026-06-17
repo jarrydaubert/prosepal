@@ -13,7 +13,6 @@ struct ProsePalNativeApp: App {
     private let relationshipVaultContainer = RelationshipVaultContainerFactory.make()
     private let authClient = AuthClientFactory.makeClient()
     private let accountMaintenanceClient = AccountMaintenanceClientFactory.makeClient()
-    private let subscriptionClient = SubscriptionClientFactory.makeClient()
     private let runtimeReadiness = RuntimeReadinessFactory.make()
 
     var body: some Scene {
@@ -29,7 +28,9 @@ struct ProsePalNativeApp: App {
                     clientContext: context,
                     authSessionController: authSessionController,
                     authClient: authClient,
-                    subscriptionClient: subscriptionClient,
+                    subscriptionClient: SubscriptionClientFactory.makeClient(
+                        authSessionController: authSessionController
+                    ),
                     accountMaintenanceClient: accountMaintenanceClient,
                     runtimeReadiness: runtimeReadiness
                 )
@@ -145,7 +146,7 @@ private enum MessageWritingServiceFactory {
 }
 
 private enum SubscriptionClientFactory {
-    static func makeClient() -> (any SubscriptionClient)? {
+    static func makeClient(authSessionController: AuthSessionController?) -> (any SubscriptionClient)? {
         let config = NativeRuntimeConfig()
         let productIDs = config.list(named: "PROSEPAL_PREMIUM_PRODUCT_IDS")
         guard !productIDs.isEmpty else { return nil }
@@ -153,7 +154,20 @@ private enum SubscriptionClientFactory {
         #if canImport(StoreKit)
         return StoreKitSubscriptionClient(
             productIDs: productIDs,
-            recommendedProductID: config.value(named: "PROSEPAL_RECOMMENDED_PREMIUM_PRODUCT_ID")
+            recommendedProductID: config.value(named: "PROSEPAL_RECOMMENDED_PREMIUM_PRODUCT_ID"),
+            appAccountTokenProvider: {
+                guard let authSessionController else { return nil }
+
+                guard
+                    let session = try? await authSessionController.currentSession(),
+                    let userID = session.user?.id,
+                    let uuid = UUID(uuidString: userID)
+                else {
+                    return nil
+                }
+
+                return uuid
+            }
         )
         #else
         return nil

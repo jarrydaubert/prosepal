@@ -228,6 +228,48 @@ slot, server-side model id, fallback status, and latency. They intentionally do
 not log raw user prompt/card content, generated message text, provider API keys,
 authorization tokens, or provider payloads.
 
+## app-store-notifications
+
+Receives App Store Server Notifications V2 for the native StoreKit 2
+subscription path. The function verifies Apple's `signedPayload` JWS with
+Apple's App Store Server Library, maps `appAccountToken` to a Supabase user
+UUID, and updates `user_entitlements` with App Store metadata.
+
+This is the native iOS entitlement ingestion path. It stores metadata only;
+signed payloads, receipts, raw transactions, auth tokens, and secrets must not
+be logged or persisted.
+
+### Required environment
+
+- existing `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY`
+- `APP_STORE_BUNDLE_ID`
+- `APP_STORE_ENVIRONMENT` (`Sandbox` or `Production`)
+- `APP_STORE_ROOT_CERTIFICATES_PEM`
+- `APP_STORE_PREMIUM_PRODUCT_IDS` or `PROSEPAL_PREMIUM_PRODUCT_IDS`
+- `APP_STORE_APP_APPLE_ID` for production
+- optional `APP_STORE_ENABLE_ONLINE_CHECKS=true`
+- `supabase/config.toml` must include `[functions.app-store-notifications] verify_jwt = false`
+  because Apple sends a signed JWS rather than a Supabase JWT.
+
+### Deploy changes
+
+Deploy only to an approved development or staging project until production
+entitlement rollout gates are met:
+
+```bash
+supabase functions deploy app-store-notifications --project-ref <dev-or-staging-project-ref>
+```
+
+### Test locally
+
+```bash
+deno test --allow-env supabase/functions/app-store-notifications/index.test.ts
+```
+
+Current limitation: App Store Server API reconciliation is not implemented yet.
+Notification ingestion updates `user_entitlements`, but paid gateway
+limits/extras are a separate follow-up slice.
+
 ## Email Setup
 
 Currently using Supabase built-in email (rate limited for testing).
