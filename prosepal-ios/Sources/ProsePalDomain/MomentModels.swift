@@ -71,7 +71,6 @@ public struct MomentInput: Codable, Equatable, Sendable {
     public var trueThing: String
     public var tone: Tone
     public var length: MessageLength
-    public var spellingPreference: SpellingPreference
     public var localeIdentifier: String
 
     public init(
@@ -82,7 +81,6 @@ public struct MomentInput: Codable, Equatable, Sendable {
         trueThing: String = "",
         tone: Tone = .heartfelt,
         length: MessageLength = .standard,
-        spellingPreference: SpellingPreference = .automatic,
         localeIdentifier: String? = nil
     ) {
         self.personName = personName.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -92,8 +90,7 @@ public struct MomentInput: Codable, Equatable, Sendable {
         self.trueThing = trueThing.trimmingCharacters(in: .whitespacesAndNewlines)
         self.tone = tone
         self.length = length
-        self.spellingPreference = spellingPreference
-        self.localeIdentifier = localeIdentifier ?? spellingPreference.localeIdentifier
+        self.localeIdentifier = localeIdentifier ?? Locale.current.identifier
     }
 
     public var hasEnoughContextForDraft: Bool {
@@ -129,7 +126,6 @@ public struct MomentInput: Codable, Equatable, Sendable {
             relationship: relationship,
             tone: tone,
             length: length,
-            spellingPreference: spellingPreference,
             localeIdentifier: localeIdentifier,
             recipientName: personName.nilIfBlank,
             thingsToInclude: trueThing.nilIfBlank.map { [$0] } ?? [],

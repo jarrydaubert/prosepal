@@ -137,7 +137,7 @@ public struct FoundationModelsPrivateDraftClient: MomentDraftClient {
             "Register: \(moment.register.displayName) - \(moment.register.userSafeDescription)"
             "Tone: \(moment.tone.displayName)"
             "Length: \(moment.length.generationHint)"
-            "Spelling locale: \(moment.localeIdentifier)"
+            "Device locale: \(moment.localeIdentifier)"
 
             if !moment.trueThing.isEmpty {
                 "What is true: \(moment.trueThing)"

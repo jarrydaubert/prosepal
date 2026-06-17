@@ -161,7 +161,6 @@ public final class SavedMomentDraftRecord {
     public var registerRawValue: String
     public var toneRawValue: String
     public var lengthRawValue: String
-    public var spellingPreferenceRawValue: String
     public var laneRawValue: String
     public var trueThing: String
     public var messageText: String
@@ -176,7 +175,6 @@ public final class SavedMomentDraftRecord {
         registerRawValue: String,
         toneRawValue: String,
         lengthRawValue: String,
-        spellingPreferenceRawValue: String,
         laneRawValue: String,
         trueThing: String,
         messageText: String,
@@ -190,7 +188,6 @@ public final class SavedMomentDraftRecord {
         self.registerRawValue = registerRawValue
         self.toneRawValue = toneRawValue
         self.lengthRawValue = lengthRawValue
-        self.spellingPreferenceRawValue = spellingPreferenceRawValue
         self.laneRawValue = laneRawValue
         self.trueThing = trueThing
         self.messageText = messageText
@@ -211,7 +208,6 @@ public final class SavedMomentDraftRecord {
             registerRawValue: moment.register.rawValue,
             toneRawValue: moment.tone.rawValue,
             lengthRawValue: moment.length.rawValue,
-            spellingPreferenceRawValue: moment.spellingPreference.rawValue,
             laneRawValue: lane.rawValue,
             trueThing: moment.trueThing,
             messageText: messageText,

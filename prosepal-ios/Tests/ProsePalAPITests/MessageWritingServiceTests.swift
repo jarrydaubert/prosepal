@@ -431,8 +431,7 @@ func savedMomentDraftRecordPreservesMomentMetadata() {
         register: .confess,
         trueThing: "You always show up.",
         tone: .heartfelt,
-        length: .brief,
-        spellingPreference: .uk
+        length: .brief
     )
 
     let record = SavedMomentDraftRecord(

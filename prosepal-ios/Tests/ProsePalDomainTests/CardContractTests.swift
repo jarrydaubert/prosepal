@@ -10,7 +10,6 @@ final class CardContractTests: XCTestCase {
                 relationship: .parent,
                 tone: .heartfelt,
                 length: .brief,
-                spellingPreference: .uk,
                 recipientName: "Dad",
                 thingsToInclude: ["a quiet cup of tea"],
                 thingsToAvoid: ["provider names"],
@@ -32,8 +31,8 @@ final class CardContractTests: XCTestCase {
         XCTAssertEqual(intent["relationship"] as? String, "parent")
         XCTAssertEqual(intent["tone"] as? String, "heartfelt")
         XCTAssertEqual(intent["length"] as? String, "brief")
-        XCTAssertEqual(intent["spellingPreference"] as? String, "uk")
-        XCTAssertEqual(intent["localeIdentifier"] as? String, "en_GB")
+        XCTAssertEqual(intent["spellingPreference"] as? String, "automatic")
+        XCTAssertEqual(intent["localeIdentifier"] as? String, Locale.current.identifier)
         XCTAssertNil(object["model"])
         XCTAssertNil(object["provider"])
     }
@@ -68,8 +67,7 @@ final class CardContractTests: XCTestCase {
             register: .react,
             trueThing: "  He always makes Sunday tea.  ",
             tone: .heartfelt,
-            length: .detailed,
-            spellingPreference: .uk
+            length: .detailed
         )
 
         let intent = moment.cardIntent
@@ -78,8 +76,8 @@ final class CardContractTests: XCTestCase {
         XCTAssertEqual(intent.relationship, .parent)
         XCTAssertEqual(intent.tone, .heartfelt)
         XCTAssertEqual(intent.length, .detailed)
-        XCTAssertEqual(intent.spellingPreference, .uk)
-        XCTAssertEqual(intent.localeIdentifier, "en_GB")
+        XCTAssertEqual(intent.spellingPreference, "automatic")
+        XCTAssertEqual(intent.localeIdentifier, Locale.current.identifier)
         XCTAssertEqual(intent.recipientName, "Dad")
         XCTAssertEqual(intent.thingsToInclude, ["He always makes Sunday tea."])
         XCTAssertEqual(intent.thingsToAvoid, [])
@@ -94,8 +92,7 @@ final class CardContractTests: XCTestCase {
             register: .react,
             trueThing: "   ",
             tone: .formal,
-            length: .brief,
-            spellingPreference: .automatic
+            length: .brief
         )
 
         let intent = moment.cardIntent
@@ -104,7 +101,7 @@ final class CardContractTests: XCTestCase {
         XCTAssertEqual(intent.thingsToInclude, [])
         XCTAssertEqual(intent.thingsToAvoid, [])
         XCTAssertEqual(intent.userContext, "Everyday moments that need a quick, warm message.")
-        XCTAssertEqual(intent.spellingPreference, .automatic)
+        XCTAssertEqual(intent.spellingPreference, "automatic")
         XCTAssertEqual(intent.localeIdentifier, Locale.current.identifier)
     }
 
@@ -141,7 +138,6 @@ final class CardContractTests: XCTestCase {
         ])
 
         XCTAssertEqual(MessageLength.allCases, [.brief, .standard, .detailed])
-        XCTAssertEqual(SpellingPreference.allCases, [.automatic, .us, .uk])
     }
 
     func testTaxonomyCarriesNativePickerMetadata() {
@@ -151,7 +147,6 @@ final class CardContractTests: XCTestCase {
         XCTAssertEqual(Relationship.teacher.group, .professional)
         XCTAssertEqual(Tone.poetic.description, "Lyrical and elegant")
         XCTAssertEqual(MessageLength.detailed.generationHint, "5-7 sentences")
-        XCTAssertEqual(SpellingPreference.uk.localeIdentifier, "en_GB")
     }
 
     func testMomentSafetySignalBlocksCrisisDrafting() {

@@ -108,7 +108,7 @@ enum NativeDiagnosticsPayload {
     }
 
     static func momentDraftStarted(requestID: String, moment: MomentInput, trigger: String) -> String {
-        "moment_draft_started request_id=\(requestID.diagnosticsPrefix) trigger=\(trigger) register=\(moment.register.rawValue) occasion=\(moment.occasion.rawValue) relationship=\(moment.relationship.rawValue) tone=\(moment.tone.rawValue) length=\(moment.length.rawValue) spelling=\(moment.spellingPreference.rawValue) person_present=\(moment.personName.hasDiagnosticsText) true_chars=\(moment.trueThing.diagnosticsTextCount) safety=\(moment.safetySignal.rawValue)"
+        "moment_draft_started request_id=\(requestID.diagnosticsPrefix) trigger=\(trigger) register=\(moment.register.rawValue) occasion=\(moment.occasion.rawValue) relationship=\(moment.relationship.rawValue) tone=\(moment.tone.rawValue) length=\(moment.length.rawValue) person_present=\(moment.personName.hasDiagnosticsText) true_chars=\(moment.trueThing.diagnosticsTextCount) safety=\(moment.safetySignal.rawValue)"
     }
 
     static func momentDraftSucceeded(

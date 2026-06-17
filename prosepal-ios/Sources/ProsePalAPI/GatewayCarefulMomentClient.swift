@@ -92,7 +92,6 @@ private extension MomentInput {
             relationship: relationship,
             tone: tone,
             length: length,
-            spellingPreference: spellingPreference,
             localeIdentifier: localeIdentifier,
             recipientName: personName.trimmedNonEmpty,
             thingsToInclude: include,

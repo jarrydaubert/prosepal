@@ -21,8 +21,7 @@ final class NativeDiagnosticsTests: XCTestCase {
             register: .confess,
             trueThing: "I said something specific and sensitive.",
             tone: .heartfelt,
-            length: .standard,
-            spellingPreference: .uk
+            length: .standard
         )
 
         let payload = NativeDiagnosticsPayload.momentDraftStarted(
@@ -38,7 +37,7 @@ final class NativeDiagnosticsTests: XCTestCase {
         XCTAssertTrue(payload.contains("relationship=romantic"))
         XCTAssertTrue(payload.contains("tone=heartfelt"))
         XCTAssertTrue(payload.contains("length=standard"))
-        XCTAssertTrue(payload.contains("spelling=uk"))
+        XCTAssertFalse(payload.contains("spelling="))
         XCTAssertTrue(payload.contains("person_present=true"))
         XCTAssertTrue(payload.contains("true_chars=40"))
         XCTAssertTrue(payload.contains("safety=none"))

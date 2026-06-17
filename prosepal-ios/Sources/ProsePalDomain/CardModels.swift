@@ -452,38 +452,6 @@ public enum MessageLength: String, Codable, CaseIterable, Sendable, Identifiable
     }
 }
 
-public enum SpellingPreference: String, Codable, CaseIterable, Sendable, Identifiable {
-    case automatic
-    case us
-    case uk
-
-    public var id: String { rawValue }
-
-    public var displayName: String {
-        switch self {
-        case .automatic: "Automatic"
-        case .us: "US English"
-        case .uk: "UK English"
-        }
-    }
-
-    public var exampleText: String {
-        switch self {
-        case .automatic: "Use device locale"
-        case .us: "Mom, favorite"
-        case .uk: "Mum, favourite"
-        }
-    }
-
-    public var localeIdentifier: String {
-        switch self {
-        case .automatic: Locale.current.identifier
-        case .us: "en_US"
-        case .uk: "en_GB"
-        }
-    }
-}
-
 public enum GenerationLane: String, Codable, CaseIterable, Sendable {
     case automatic
     case standard
@@ -515,11 +483,13 @@ public enum RetryEligibility: String, Codable, Sendable {
 }
 
 public struct CardIntent: Codable, Equatable, Sendable {
+    public static let automaticSpellingPreference = "automatic"
+
     public var occasion: Occasion
     public var relationship: Relationship
     public var tone: Tone
     public var length: MessageLength
-    public var spellingPreference: SpellingPreference
+    public var spellingPreference: String
     public var localeIdentifier: String
     public var recipientName: String?
     public var thingsToInclude: [String]
@@ -531,7 +501,6 @@ public struct CardIntent: Codable, Equatable, Sendable {
         relationship: Relationship,
         tone: Tone,
         length: MessageLength = .standard,
-        spellingPreference: SpellingPreference = .automatic,
         localeIdentifier: String? = nil,
         recipientName: String? = nil,
         thingsToInclude: [String] = [],
@@ -542,8 +511,8 @@ public struct CardIntent: Codable, Equatable, Sendable {
         self.relationship = relationship
         self.tone = tone
         self.length = length
-        self.spellingPreference = spellingPreference
-        self.localeIdentifier = localeIdentifier ?? spellingPreference.localeIdentifier
+        self.spellingPreference = Self.automaticSpellingPreference
+        self.localeIdentifier = localeIdentifier ?? Locale.current.identifier
         self.recipientName = recipientName
         self.thingsToInclude = thingsToInclude
         self.thingsToAvoid = thingsToAvoid

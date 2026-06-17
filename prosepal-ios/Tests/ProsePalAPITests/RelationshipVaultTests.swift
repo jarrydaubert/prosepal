@@ -130,8 +130,7 @@ final class RelationshipVaultTests: XCTestCase {
             register: .confess,
             trueThing: "I still love quiet mornings together.",
             tone: .poetic,
-            length: .detailed,
-            spellingPreference: .uk
+            length: .detailed
         )
 
         let record = SavedMomentDraftRecord(
