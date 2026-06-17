@@ -31,8 +31,23 @@ function verifiedPayload(options: {
   productId?: string;
   appAccountToken?: string;
   expiresDate?: number;
+  omitExpiresDate?: boolean;
+  gracePeriodExpiresDate?: number;
   revocationDate?: number;
 } = {}): TestVerifiedPayload {
+  const transaction: Record<string, unknown> = {
+    appAccountToken: options.appAccountToken ?? TEST_USER_ID,
+    productId: options.productId ?? TEST_PRODUCT_ID,
+    originalTransactionId: "1000000000000001",
+    transactionId: TEST_TRANSACTION_ID,
+    revocationDate: options.revocationDate,
+    environment: "Sandbox",
+  };
+
+  if (!options.omitExpiresDate) {
+    transaction.expiresDate = options.expiresDate ?? 1_798_761_600_000;
+  }
+
   return {
     notification: {
       notificationType: options.notificationType ?? "SUBSCRIBED",
@@ -43,15 +58,10 @@ function verifiedPayload(options: {
         environment: "Sandbox",
       },
     },
-    transaction: {
-      appAccountToken: options.appAccountToken ?? TEST_USER_ID,
-      productId: options.productId ?? TEST_PRODUCT_ID,
-      originalTransactionId: "1000000000000001",
-      transactionId: TEST_TRANSACTION_ID,
-      expiresDate: options.expiresDate ?? 1_798_761_600_000,
-      revocationDate: options.revocationDate,
-      environment: "Sandbox",
-    },
+    transaction,
+    renewalInfo: options.gracePeriodExpiresDate
+      ? { gracePeriodExpiresDate: options.gracePeriodExpiresDate }
+      : undefined,
   };
 }
 
@@ -189,6 +199,122 @@ Deno.test("expires entitlement when Apple sends an expired event", async () => {
       verified: verifiedPayload({
         notificationType: "EXPIRED",
         expiresDate: 1_704_067_200_000,
+      }),
+      captureUpserts: upserts,
+    }),
+  );
+
+  assertEquals(res.status, 200);
+  assertEquals(upserts[1].table, "user_entitlements");
+  assertEquals(upserts[1].values.is_pro, false);
+});
+
+Deno.test("does not activate entitlement when a grant candidate has no expiry", async () => {
+  const upserts: Array<
+    { table: string; values: Record<string, unknown>; onConflict: string }
+  > = [];
+
+  const res = await handleAppStoreNotification(
+    makeRequest({ signedPayload: "signed.payload.value" }),
+    makeDeps({
+      verified: verifiedPayload({
+        notificationType: "SUBSCRIBED",
+        omitExpiresDate: true,
+      }),
+      captureUpserts: upserts,
+    }),
+  );
+
+  assertEquals(res.status, 200);
+  assertEquals(upserts[1].table, "user_entitlements");
+  assertEquals(upserts[1].values.is_pro, false);
+  assertEquals(upserts[1].values.expires_at, null);
+});
+
+Deno.test("does not activate entitlement for unknown notifications even with a future expiry", async () => {
+  const upserts: Array<
+    { table: string; values: Record<string, unknown>; onConflict: string }
+  > = [];
+
+  const res = await handleAppStoreNotification(
+    makeRequest({ signedPayload: "signed.payload.value" }),
+    makeDeps({
+      verified: verifiedPayload({
+        notificationType: "TEST",
+        expiresDate: 1_798_761_600_000,
+      }),
+      captureUpserts: upserts,
+    }),
+  );
+
+  assertEquals(res.status, 200);
+  assertEquals(upserts[1].table, "user_entitlements");
+  assertEquals(upserts[1].values.is_pro, false);
+});
+
+Deno.test("does not activate entitlement for failed renewal in billing retry", async () => {
+  const upserts: Array<
+    { table: string; values: Record<string, unknown>; onConflict: string }
+  > = [];
+
+  const res = await handleAppStoreNotification(
+    makeRequest({ signedPayload: "signed.payload.value" }),
+    makeDeps({
+      verified: verifiedPayload({
+        notificationType: "DID_FAIL_TO_RENEW",
+        subtype: "BILLING_RETRY",
+        expiresDate: 1_798_761_600_000,
+      }),
+      captureUpserts: upserts,
+    }),
+  );
+
+  assertEquals(res.status, 200);
+  assertEquals(upserts[1].table, "user_entitlements");
+  assertEquals(upserts[1].values.is_pro, false);
+});
+
+Deno.test("keeps entitlement active during billing grace period", async () => {
+  const upserts: Array<
+    { table: string; values: Record<string, unknown>; onConflict: string }
+  > = [];
+  const gracePeriodExpiresDate = 1_798_761_600_000;
+
+  const res = await handleAppStoreNotification(
+    makeRequest({ signedPayload: "signed.payload.value" }),
+    makeDeps({
+      verified: verifiedPayload({
+        notificationType: "DID_FAIL_TO_RENEW",
+        subtype: "GRACE_PERIOD",
+        expiresDate: 1_704_067_200_000,
+        gracePeriodExpiresDate,
+      }),
+      captureUpserts: upserts,
+    }),
+  );
+
+  assertEquals(res.status, 200);
+  assertEquals(upserts[1].table, "user_entitlements");
+  assertEquals(upserts[1].values.is_pro, true);
+  assertEquals(
+    upserts[1].values.expires_at,
+    new Date(gracePeriodExpiresDate).toISOString(),
+  );
+});
+
+Deno.test("expires entitlement after billing grace period ends", async () => {
+  const upserts: Array<
+    { table: string; values: Record<string, unknown>; onConflict: string }
+  > = [];
+
+  const res = await handleAppStoreNotification(
+    makeRequest({ signedPayload: "signed.payload.value" }),
+    makeDeps({
+      verified: verifiedPayload({
+        notificationType: "DID_FAIL_TO_RENEW",
+        subtype: "GRACE_PERIOD",
+        expiresDate: 1_704_067_200_000,
+        gracePeriodExpiresDate: 1_704_067_200_000,
       }),
       captureUpserts: upserts,
     }),

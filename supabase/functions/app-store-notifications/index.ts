@@ -11,7 +11,9 @@
 import { createClient } from "npm:@supabase/supabase-js@2.95.3";
 import {
   Environment,
+  NotificationTypeV2,
   SignedDataVerifier,
+  Subtype,
 } from "npm:@apple/app-store-server-library@3.1.0";
 import { Buffer } from "node:buffer";
 
@@ -72,25 +74,28 @@ class ConfigError extends Error {}
 
 const entitlementSource = "app_store_server_notifications";
 
-const inactiveNotificationTypes = new Set([
-  "EXPIRED",
-  "REFUND",
-  "REVOKE",
-  "GRACE_PERIOD_EXPIRED",
+const entitlementRevocationNotificationTypes: ReadonlySet<string> = new Set([
+  NotificationTypeV2.EXPIRED,
+  NotificationTypeV2.REFUND,
+  NotificationTypeV2.REVOKE,
+  NotificationTypeV2.GRACE_PERIOD_EXPIRED,
 ]);
 
-const grantNotificationTypes = new Set([
-  "SUBSCRIBED",
-  "DID_RENEW",
-  "DID_RECOVER",
-  "DID_CHANGE_RENEWAL_PREF",
-  "DID_CHANGE_RENEWAL_STATUS",
-  "OFFER_REDEEMED",
-  "PRICE_INCREASE",
-  "REFUND_DECLINED",
-  "RENEWAL_EXTENDED",
-  "RENEWAL_EXTENSION",
-]);
+const entitlementGrantCandidateNotificationTypes: ReadonlySet<string> = new Set(
+  [
+    NotificationTypeV2.SUBSCRIBED,
+    NotificationTypeV2.DID_RENEW,
+    NotificationTypeV2.DID_CHANGE_RENEWAL_PREF,
+    NotificationTypeV2.DID_CHANGE_RENEWAL_STATUS,
+    NotificationTypeV2.OFFER_REDEEMED,
+    NotificationTypeV2.PRICE_INCREASE,
+    NotificationTypeV2.REFUND_DECLINED,
+    NotificationTypeV2.REFUND_REVERSED,
+    NotificationTypeV2.RENEWAL_EXTENDED,
+    NotificationTypeV2.RENEWAL_EXTENSION,
+    NotificationTypeV2.PRICE_CHANGE,
+  ],
+);
 
 const defaultCreateAdminClient: CreateAdminClient = (
   supabaseUrl: string,
@@ -286,6 +291,7 @@ function safeNotificationFacts(payload: VerifiedApplePayload) {
   const notification = payload.notification;
   const data = isRecord(notification.data) ? notification.data : undefined;
   const transaction = payload.transaction;
+  const renewalInfo = payload.renewalInfo;
 
   return {
     notificationType: readString(notification, "notificationType") ?? "UNKNOWN",
@@ -300,8 +306,25 @@ function safeNotificationFacts(payload: VerifiedApplePayload) {
     originalTransactionId: readString(transaction, "originalTransactionId"),
     transactionId: readString(transaction, "transactionId"),
     expiresAt: millisToDate(readNumber(transaction, "expiresDate")),
+    gracePeriodExpiresAt: millisToDate(
+      readNumber(renewalInfo, "gracePeriodExpiresDate"),
+    ),
     revocationDate: millisToDate(readNumber(transaction, "revocationDate")),
   };
+}
+
+function effectiveEntitlementExpiresAt(
+  notificationType: string,
+  facts: ReturnType<typeof safeNotificationFacts>,
+): Date | null {
+  if (
+    notificationType === NotificationTypeV2.DID_FAIL_TO_RENEW &&
+    facts.subtype === Subtype.GRACE_PERIOD
+  ) {
+    return facts.gracePeriodExpiresAt ?? facts.expiresAt;
+  }
+
+  return facts.expiresAt;
 }
 
 function entitlementIsActive(
@@ -310,9 +333,24 @@ function entitlementIsActive(
   now: Date,
 ): boolean {
   if (facts.revocationDate) return false;
-  if (inactiveNotificationTypes.has(notificationType)) return false;
-  if (facts.expiresAt) return facts.expiresAt > now;
-  return grantNotificationTypes.has(notificationType);
+  if (entitlementRevocationNotificationTypes.has(notificationType)) {
+    return false;
+  }
+
+  const effectiveExpiresAt = effectiveEntitlementExpiresAt(
+    notificationType,
+    facts,
+  );
+
+  if (notificationType === NotificationTypeV2.DID_FAIL_TO_RENEW) {
+    return facts.subtype === Subtype.GRACE_PERIOD &&
+      !!effectiveExpiresAt &&
+      effectiveExpiresAt > now;
+  }
+
+  return entitlementGrantCandidateNotificationTypes.has(notificationType) &&
+    !!effectiveExpiresAt &&
+    effectiveExpiresAt > now;
 }
 
 async function upsert(
@@ -450,6 +488,10 @@ export async function handleAppStoreNotification(
     );
   }
 
+  const effectiveExpiresAt = effectiveEntitlementExpiresAt(
+    facts.notificationType,
+    facts,
+  );
   const isPro = entitlementIsActive(facts.notificationType, facts, now());
   const entitlementError = await upsert(
     adminClient,
@@ -458,7 +500,7 @@ export async function handleAppStoreNotification(
       user_id: facts.appAccountToken,
       is_pro: isPro,
       product_id: facts.productId,
-      expires_at: facts.expiresAt?.toISOString() ?? null,
+      expires_at: effectiveExpiresAt?.toISOString() ?? null,
       updated_at: now().toISOString(),
       revenuecat_app_user_id: null,
       last_event_type: facts.notificationType,
