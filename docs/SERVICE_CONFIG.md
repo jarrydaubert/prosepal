@@ -49,6 +49,10 @@ Required Supabase staging secrets by name:
 - `APP_STORE_PREMIUM_PRODUCT_IDS` or `PROSEPAL_PREMIUM_PRODUCT_IDS`
 - `APP_STORE_APP_APPLE_ID`, production only
 - `APP_STORE_ENABLE_ONLINE_CHECKS`, optional
+- `APP_STORE_RECONCILE_SECRET`
+- `APP_STORE_SERVER_API_PRIVATE_KEY`
+- `APP_STORE_SERVER_API_KEY_ID`
+- `APP_STORE_SERVER_API_ISSUER_ID`
 
 Additional staging secrets/config may be required before full auth, feedback,
 purchase, and entitlement testing:
@@ -99,6 +103,41 @@ Required Supabase secrets, names only:
 - `APP_STORE_APP_APPLE_ID`, production only
 - `APP_STORE_ENABLE_ONLINE_CHECKS`, optional
 
+### Native App Store Server API Reconciliation
+
+Native subscription reconciliation is a separate guarded operator path. It uses
+Apple's App Store Server API to fetch subscription status, verifies Apple's
+signed transaction and renewal payloads, and reconciles `user_entitlements`.
+
+Function:
+
+- `supabase/functions/app-store-reconcile-entitlement`
+- Endpoint shape:
+  `https://<project-ref>.supabase.co/functions/v1/app-store-reconcile-entitlement`
+- `supabase/config.toml` sets `verify_jwt = false`; the function requires
+  `X-ProsePal-App-Store-Reconcile-Secret` and then verifies Apple-signed
+  payloads returned by the App Store Server API.
+
+Additional required Supabase secrets, names only:
+
+- `APP_STORE_RECONCILE_SECRET`
+- `APP_STORE_SERVER_API_PRIVATE_KEY`
+- `APP_STORE_SERVER_API_KEY_ID`
+- `APP_STORE_SERVER_API_ISSUER_ID`
+
+Request shape:
+
+```json
+{
+  "transaction_id": "<App Store transaction id>",
+  "user_id": "<optional Supabase user UUID>"
+}
+```
+
+If `user_id` is supplied and Apple's signed transaction contains a different
+UUID `appAccountToken`, the function rejects the reconciliation with HTTP `409`
+and does not update entitlement state.
+
 Privacy rules:
 
 - Do not log or persist the `signedPayload`.
@@ -106,19 +145,25 @@ Privacy rules:
   tokens.
 - Persist only privacy-safe notification metadata in
   `app_store_notification_events`.
+- Persist only privacy-safe reconciliation metadata in
+  `app_store_reconciliation_events`.
 
 Validation:
 
 ```bash
 deno test --allow-env supabase/functions/app-store-notifications/index.test.ts
+deno test --allow-env supabase/functions/app-store-reconcile-entitlement/index.test.ts
 ```
 
-Current limitation:
+Current staging limitation:
 
-- App Store Server API reconciliation is not implemented yet. Server
-  entitlement is partially wired through notification ingestion, but production
-  rollout still needs deployment evidence, reconciliation, and gateway policy
-  work for paid limits/extras.
+- The native worktree's local Supabase link may not point at staging. Use
+  explicit `--project-ref llolwgqphwnhbiqewmcq` for native staging commands and
+  never rely on local `.temp` state.
+- Staging must have the Apple secret names above configured before sandbox
+  notification or reconciliation proof can pass.
+- Paid gateway limits/extras remain a separate follow-up slice after server
+  entitlement state is proven.
 
 ## Flutter Production Reference Configuration
 

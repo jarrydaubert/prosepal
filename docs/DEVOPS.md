@@ -257,6 +257,9 @@ Validation:
 - Run
   `deno test --allow-env supabase/functions/app-store-notifications/index.test.ts`
   after changing native StoreKit entitlement notification handling.
+- Run
+  `deno test --allow-env supabase/functions/app-store-reconcile-entitlement/index.test.ts`
+  after changing App Store Server API entitlement reconciliation.
 - Run `swift test` and the native simulator `xcodebuild` command from
   `prosepal-ios/` after changing native gateway wiring.
 - Run `./scripts/prosepal-staging-smoke.sh` after changing staging gateway

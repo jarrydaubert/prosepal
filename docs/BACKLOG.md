@@ -227,10 +227,14 @@ not done.
   Notifications V2 JWS and reconciliation -- evidence:
   `supabase/functions/app-store-notifications/index.ts`,
   `supabase/functions/app-store-notifications/index.test.ts`,
+  `supabase/functions/app-store-reconcile-entitlement/index.ts`,
+  `supabase/functions/app-store-reconcile-entitlement/index.test.ts`,
   `supabase/migrations/023_add_app_store_entitlement_metadata.sql`, and
-  `supabase/config.toml`. Partial because the function is not yet deployed with
-  Apple root certificates/secrets, and App Store Server API reconciliation is
-  not implemented.
+  `supabase/migrations/024_add_app_store_reconciliation_events.sql`. Partial
+  because both functions are deployed and reachable in staging, but staging
+  does not yet have Apple root certificates, App Store Server API credentials,
+  the reconcile shared secret, or migration-application evidence, so live App
+  Store sandbox verification is still outstanding.
 - [ ] Premium/extras gateway access is authorized by server entitlement --
   evidence: careful/sensitive drafting is deliberately decoupled from Premium
   billing in `GatewayCarefulMomentClient.swift` and
@@ -252,9 +256,11 @@ not done.
   `prosepal-ios/Sources/ProsePalAPI/SubscriptionClient.swift`; signed-in
   purchases attach StoreKit `appAccountToken` from
   `prosepal-ios/App/ProsePalNativeApp.swift`; account/purchase tests in
-  `prosepal-ios/Tests/ProsePalUITests/MomentAccountModelTests.swift`. Partial
-  because App Store Server API reconciliation and anonymous-purchase convergence
-  are not implemented.
+  `prosepal-ios/Tests/ProsePalUITests/MomentAccountModelTests.swift`; server
+  reconciliation path in
+  `supabase/functions/app-store-reconcile-entitlement/index.ts`. Partial
+  because sandbox reconciliation has not been proven against real App Store
+  Server API responses and anonymous-purchase convergence still needs policy.
 
 ## 8. Design
 
@@ -353,8 +359,9 @@ not done.
 
 1. Swap the now-working standard-gateway careful lane to the agreed Apple-native
    careful/PCC direction when that API path is ready.
-2. Deploy and verify App Store Server Notifications V2 in staging, then add App
-   Store Server API reconciliation.
+2. Configure Apple App Store Server secrets in staging, apply App Store
+   entitlement migrations to staging, then capture sandbox notification and
+   reconciliation evidence.
 3. Add Care Glance widget, Control Center/Action Button control, and Share
    extension surfaces.
 4. Harden crisis/pressure handling beyond local English phrase lists and add

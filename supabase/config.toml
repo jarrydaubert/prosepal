@@ -28,3 +28,8 @@ verify_jwt = false
 # Apple sends a signedPayload JWS, not a Supabase JWT. The function validates
 # the JWS with Apple's App Store Server Library and configured Apple root CAs.
 verify_jwt = false
+
+[functions.app-store-reconcile-entitlement]
+# Operator/admin reconciliation is protected by an internal shared secret and
+# then verifies Apple-signed transaction payloads from the App Store Server API.
+verify_jwt = false

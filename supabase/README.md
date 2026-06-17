@@ -251,6 +251,42 @@ be logged or persisted.
 - `supabase/config.toml` must include `[functions.app-store-notifications] verify_jwt = false`
   because Apple sends a signed JWS rather than a Supabase JWT.
 
+## app-store-reconcile-entitlement
+
+Manually reconciles native StoreKit entitlement through Apple's App Store Server
+API. The function fetches subscription status for a transaction id, verifies the
+Apple-signed transaction and renewal JWS payloads returned by Apple, and updates
+`user_entitlements`.
+
+This function is for operator/server reconciliation only. It requires
+`X-ProsePal-App-Store-Reconcile-Secret` and stores metadata only; signed
+payloads, receipts, private keys, raw transaction bodies, and auth tokens must
+not be logged or persisted.
+
+### Required environment
+
+- existing `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY`
+- all `app-store-notifications` Apple environment values
+- `APP_STORE_RECONCILE_SECRET`
+- `APP_STORE_SERVER_API_PRIVATE_KEY`
+- `APP_STORE_SERVER_API_KEY_ID`
+- `APP_STORE_SERVER_API_ISSUER_ID`
+- `supabase/config.toml` must include
+  `[functions.app-store-reconcile-entitlement] verify_jwt = false`
+
+### Request shape
+
+```json
+{
+  "transaction_id": "<App Store transaction id>",
+  "user_id": "<optional Supabase user UUID>"
+}
+```
+
+If `user_id` is supplied and Apple's signed transaction contains a different
+UUID `appAccountToken`, the function returns HTTP `409` and does not update
+entitlement state.
+
 ### Deploy changes
 
 Deploy only to an approved development or staging project until production
@@ -258,17 +294,18 @@ entitlement rollout gates are met:
 
 ```bash
 supabase functions deploy app-store-notifications --project-ref <dev-or-staging-project-ref>
+supabase functions deploy app-store-reconcile-entitlement --project-ref <dev-or-staging-project-ref>
 ```
 
 ### Test locally
 
 ```bash
 deno test --allow-env supabase/functions/app-store-notifications/index.test.ts
+deno test --allow-env supabase/functions/app-store-reconcile-entitlement/index.test.ts
 ```
 
-Current limitation: App Store Server API reconciliation is not implemented yet.
-Notification ingestion updates `user_entitlements`, but paid gateway
-limits/extras are a separate follow-up slice.
+Current limitation: paid gateway limits/extras are a separate follow-up slice
+after App Store notification and reconciliation paths are proven in staging.
 
 ## Email Setup
 
