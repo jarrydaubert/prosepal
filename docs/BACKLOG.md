@@ -1,69 +1,347 @@
 # Backlog
 
-Only open work items live here.
+This is the single active tracker for the native iOS direction. The untracked
+root `PROSEPAL_BUILD_SPEC.md` from the main checkout has been folded here so
+the repo has one source of truth for the Moment path.
 
-Active product direction:
+Status markers:
 
-- `prosepal-ios/` is the active native iOS product path.
-- The native direction is greenfield, iOS 26-first, person-first, and centered
+- `[x]` implemented in code and backed by evidence.
+- `[~]` partially implemented, implemented with important caveats, or present
+  as infrastructure without release evidence.
+- `[ ]` not implemented in code yet.
+
+Every row must include `-- evidence:`. If there is no code pointer, the item is
+not done.
+
+## Active Direction
+
+- App name: ProsePal. "Near" is an internal concept name only.
+- Native app path: `prosepal-ios/`.
+- Product shape: greenfield native iOS, iOS 26-first, person-first, and centered
   on the Moment Sheet.
-- The existing Flutter app remains in the repository, but it is not the native
-  UX source of truth. Flutter work belongs here only when it protects live
-  production, supports backend ownership, or provides explicit replacement
+- Architecture: one `MessageWritingService` seam with private and careful
+  writing lanes.
+- Dependencies: Apple-native first. No RevenueCat. No client-direct provider
+  SDKs in the UI app.
+- Flutter remains in the repository as production/reference history, but it is
+  not the native UX source of truth.
+
+## 0. Product Principles
+
+- [~] ProsePal helps someone show up for people who matter, not face a generic
+  blank page -- evidence: `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`,
+  `prosepal-ios/NATIVE_2026_TECHNICAL_DIRECTION.md`.
+- [x] Person-first entry is the default; occasion taxonomy lives underneath --
+  evidence: `MomentInput.personName` in
+  `prosepal-ios/Sources/ProsePalDomain/MomentModels.swift`,
+  `MomentSheetView.personSection` in
+  `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`.
+- [~] A plausible draft appears once there is enough context, without a visible
+  old-style Generate button -- evidence: `MomentModel.scheduleDraft()` and
+  `MomentSheetView.draftSection` in
+  `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`. Partial because
+  availability, timeout, and careful-lane states can still leave the user in an
+  error/loading state.
+- [~] Safety and restraint are product behavior, not just server policy --
+  evidence: `MomentSafetySignal`, `PressureCheck`, and `MomentInput.requiresCarefulLane`
+  in `prosepal-ios/Sources/ProsePalDomain/MomentModels.swift`; UI crisis/careful
+  sections in `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`.
+  Partial because crisis and pressure detection are still local phrase-list
+  heuristics.
+- [~] Provider/model names stay out of user-facing UI -- evidence:
+  `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`,
+  `prosepal-ios/Sources/ProsePalAPI/FoundationModelsPrivateDraftClient.swift`.
+  Partial because one user-safe unavailable message currently names Apple
+  Intelligence.
+
+## 1. Surfaces / Information Architecture
+
+- [x] App opens into the Moment experience rather than the legacy grouped
+  create form -- evidence: `ProsePalNativeApp.body` in
+  `prosepal-ios/App/ProsePalNativeApp.swift` constructs `MomentAppRootView`.
+- [~] Saved is a local, user-curated library with copy/share/delete -- evidence:
+  `SavedMomentDraftRecord` in `prosepal-ios/Sources/ProsePalAPI/RelationshipVault.swift`,
+  `MomentSavedView` and `MomentSavedDetailView` in
+  `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`. Partial because
+  edit is not present in the Moment saved detail.
+- [~] Settings covers account, subscription, writing, privacy, support, legal,
+  and about -- evidence: `MomentSettingsView` in
+  `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`,
+  `MomentAccountModel` in `prosepal-ios/Sources/ProsePalUI/MomentAccountModel.swift`.
+  Partial because support/legal are mostly surfaced through paywall links rather
+  than a mature settings layout.
+- [~] Legacy grouped create/results path is retired -- evidence:
+  `ProsePalNativeApp.swift` no longer references `ProsePalRootView`, but
+  `prosepal-ios/Sources/ProsePalUI/ProsePalRootView.swift`,
+  `prosepal-ios/Sources/ProsePalUI/LegacyComposeModels.swift`, and several
+  `prosepal-ios/Tests/ProsePalUITests/*` tests still compile against
+  `ProsePalAppModel`, `MessageDraft`, and `SavedMessage`.
+
+## 2. Moment Experience
+
+- [x] Moment input captures person, relationship, occasion, register, and one
+  true thing -- evidence: `MomentInput` in
+  `prosepal-ios/Sources/ProsePalDomain/MomentModels.swift`; `MomentSheetView`
+  sections in `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`.
+- [~] Three registers exist and route by stakes: react, confess, assemble --
+  evidence: `MomentRegister` and `requiresCarefulLane` in
+  `prosepal-ios/Sources/ProsePalDomain/MomentModels.swift`; routing tests in
+  `prosepal-ios/Tests/ProsePalAPITests/MessageWritingServiceTests.swift`.
+  Partial because "assemble/generate less" is not yet proven with human-reviewed
+  output evidence.
+- [x] Draft adjustment actions exist for warmer, shorter, and more direct --
+  evidence: `DraftAdjustment`, `MessageWritingService.adjust`, and
+  `MomentModel.adjust(_:)` in `prosepal-ios/Sources/ProsePalDomain/MomentModels.swift`,
+  `prosepal-ios/Sources/ProsePalAPI/MessageWritingService.swift`, and
+  `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`.
+- [ ] Voice capture for "say the messy thing" exists -- evidence: no `Speech`,
+  `SFSpeech`, `AVAudio`, or `AVFoundation` implementation found under
+  `prosepal-ios/Sources`.
+- [~] Draft actions cover copy, share, save, edit, and send/share handoff --
+  evidence: copy/share/save exist in `MomentActionRail` and saved detail actions
+  in `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`. Partial
+  because edit and an explicit send handoff are not implemented for Moment drafts.
+- [x] Draft body reads like correspondence rather than a chat bubble --
+  evidence: serif draft body and `textSelection(.enabled)` in
+  `MomentDraftCard` inside `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`.
+
+## 3. Relationship Memory And Voice
+
+- [x] Manual Truth Beads are implemented -- evidence:
+  `RelationshipTruthBeadRecord` in
+  `prosepal-ios/Sources/ProsePalAPI/RelationshipVault.swift`; bead UI in
+  `MomentMemorySection` inside
+  `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`.
+- [x] Truth Beads can be added, edited, corrected, deleted, and explained --
+  evidence: `MomentMemorySection`, `MomentMemoryManagementView`, and
+  `MomentTruthBeadEditor` in
+  `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`.
+- [~] Relationship memory is local SwiftData and not silently inferred --
+  evidence: `RelationshipVaultSchema` and `SwiftDataRelationshipMemoryProvider`
+  in `prosepal-ios/Sources/ProsePalAPI/RelationshipVault.swift`; model container
+  setup in `prosepal-ios/App/ProsePalNativeApp.swift`. Partial because the
+  SwiftData store backup/encryption posture is not separately hardened; only
+  local model directories currently set `isExcludedFromBackup` in
+  `prosepal-ios/Sources/ProsePalAPI/LocalModelStore.swift`.
+- [x] Contacts/Calendar enrichment is not silently active -- evidence: no
+  `EventKit` or `Contacts` implementation found under `prosepal-ios/Sources`.
+- [~] Voice Card exists as user-approved memory -- evidence:
+  `RelationshipVoiceCardRecord` in
+  `prosepal-ios/Sources/ProsePalAPI/RelationshipVault.swift`; voice-card UI in
+  `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`. Partial because
+  learning from edits is not implemented.
+
+## 4. AI Architecture
+
+- [x] UI depends on `MessageWritingService`, not provider/model details --
+  evidence: `prosepal-ios/Sources/ProsePalAPI/MessageWritingService.swift`,
+  `MessageWritingServiceFactory` in `prosepal-ios/App/ProsePalNativeApp.swift`.
+- [x] Private draft lane uses Foundation Models with typed guided generation --
+  evidence: `FoundationModelsPrivateDraftClient`,
+  `PrivateDraftContent: @Generable`, and `@Guide` fields in
+  `prosepal-ios/Sources/ProsePalAPI/FoundationModelsPrivateDraftClient.swift`.
+- [x] Private draft lane can read relationship memory through a vault tool --
+  evidence: `RelationshipMemoryTool: Tool` in
+  `prosepal-ios/Sources/ProsePalAPI/FoundationModelsPrivateDraftClient.swift`;
+  `SwiftDataRelationshipMemoryProvider` in
+  `prosepal-ios/Sources/ProsePalAPI/RelationshipVault.swift`.
+- [x] Foundation Models availability is gated at runtime -- evidence:
+  `ensureModelAvailable()` in
+  `prosepal-ios/Sources/ProsePalAPI/FoundationModelsPrivateDraftClient.swift`.
+- [ ] Take more care lane uses Apple Private Cloud Compute / AFM Cloud --
+  evidence: current careful lane is `GatewayCarefulMomentClient` in
+  `prosepal-ios/Sources/ProsePalAPI/GatewayCarefulMomentClient.swift`, wired by
+  `MessageWritingServiceFactory` in `prosepal-ios/App/ProsePalNativeApp.swift`.
+- [x] Router chooses private vs careful by stakes and handles private fallback --
+  evidence: `RoutingMessageWritingService` in
+  `prosepal-ios/Sources/ProsePalAPI/MessageWritingService.swift`; tests in
+  `prosepal-ios/Tests/ProsePalAPITests/MessageWritingServiceTests.swift`.
+- [ ] Future `LanguageModel` provider-protocol escape hatch is implemented --
+  evidence: no provider-protocol adapter implementation found in
+  `prosepal-ios/Sources`.
+- [x] Client-side template generation is not part of the Moment service --
+  evidence: production factory wires `FoundationModelsPrivateDraftClient` and
+  `GatewayCarefulMomentClient` in `prosepal-ios/App/ProsePalNativeApp.swift`;
+  `MockMessageWritingClient` is limited to tests/previews in
+  `prosepal-ios/Sources/ProsePalAPI/MockMessageWritingClient.swift`.
+
+## 5. Safety
+
+- [~] Crisis path redirects rather than drafting -- evidence:
+  `String.indicatesCrisisSupportNeed`, `MomentSafetySignal`, and
+  `MomentModel.canDraft` in `prosepal-ios/Sources/ProsePalDomain/MomentModels.swift`
+  and `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`. Partial
+  because detection is a hardcoded English phrase list, not a model guardrail
+  signal with locale awareness.
+- [~] Pressure Check provides subtractive feedback -- evidence:
+  `PressureCheck.local(for:)` in
+  `prosepal-ios/Sources/ProsePalDomain/MomentModels.swift`; private-lane
+  typed fields in `FoundationModelsPrivateDraftClient.swift`. Partial because
+  user-facing accept/keep/clean flows are not fully developed.
+- [~] Careful Mode calms sensitive moments -- evidence: `MomentInput.isCarefulMode`
+  and `carefulModeSection` in
+  `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`. Partial because
+  register-specific palette, whitespace, and haptic changes are not complete.
+- [~] The app avoids therapy/crisis overreach -- evidence: crisis-support copy
+  and draft blocking in `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`.
+  Partial pending safety copy review and broader examples.
+
+## 6. OS Surfaces
+
+- [~] App Intents / Siri / Shortcuts can start or resume a Moment --
+  evidence: `prosepal-ios/Sources/ProsePalUI/ProsePalAppIntents.swift`,
+  `prosepal-ios/App/ProsePalAppShortcuts.swift`. Partial because device evidence
+  and shortcut QA are still needed.
+- [ ] Care Glance WidgetKit widget exists -- evidence: no `WidgetKit`,
+  `WidgetBundle`, widget extension target, or `NSExtension` entry found under
+  `prosepal-ios`.
+- [ ] Control Center / Action Button control exists -- evidence: no
+  `ControlWidget` or control extension target found under `prosepal-ios`.
+- [ ] Share extension turns outside context into a Moment -- evidence: no share
+  extension or `NSExtension` entry found under `prosepal-ios`.
+- [ ] System writing/text tooling is explicitly integrated -- evidence: no
+  dedicated writing-tools integration found under `prosepal-ios/Sources`.
+
+## 7. Monetization
+
+- [x] Native app uses StoreKit 2 directly, with no RevenueCat dependency --
+  evidence: `StoreKitSubscriptionClient` in
+  `prosepal-ios/Sources/ProsePalAPI/SubscriptionClient.swift`; no third-party
+  dependencies in `prosepal-ios/Package.swift`.
+- [ ] Server entitlement is authoritative through App Store Server
+  Notifications V2 JWS and reconciliation -- evidence: no
+  `app-store-notifications`, `AppStoreServer`, or JWS verification function
+  found under `supabase/functions`; existing webhook is
+  `supabase/functions/revenuecat-webhook/index.ts`.
+- [ ] Premium/careful gateway access is authorized by server entitlement --
+  evidence: native careful client sends `.premium` in
+  `prosepal-ios/Sources/ProsePalAPI/GatewayCarefulMomentClient.swift`, while
+  `supabase/functions/generate-card/index.ts` still rejects `requested_lane === "premium"`
+  as `premium_unavailable`.
+- [~] Paywall is App Review-oriented: price/period, restore, Terms, Privacy,
+  no forced sign-in -- evidence: `MomentPaywallSheet` in
+  `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`. Partial because
+  StoreKit product loading/sandbox evidence is not captured in the tracker.
+- [~] Account deletion exists once account creation exists -- evidence:
+  `SupabaseAccountMaintenanceClient` in
+  `prosepal-ios/Sources/ProsePalAPI/AccountMaintenanceClient.swift`,
+  `supabase/functions/delete-user/index.ts`, and settings UI in
+  `MomentSettingsView`. Partial pending full App Review/account-provider
   evidence.
+- [~] Restore, identity/account switch, and entitlement convergence are covered --
+  evidence: restore/local entitlement code in
+  `prosepal-ios/Sources/ProsePalAPI/SubscriptionClient.swift`; account/purchase
+  tests in `prosepal-ios/Tests/ProsePalUITests/AuthPurchaseFlowTests.swift`.
+  Partial because server reconciliation is not implemented.
 
-## Rules
+## 8. Design
 
-- No status updates, progress notes, or completed work.
-- No placeholder rows for work that is not part of the active native direction.
-- Every item must include a clear, testable Definition of Done.
-- If an item changes runtime behavior, its Definition of Done must name the
-  regression protection: automated coverage at the right layer, or an explicit
-  replacement evidence path with a named bug target and oracle.
-- When an item is complete, remove it from this file in the same change set.
+- [~] iOS 26-first Liquid Glass direction is in code -- evidence:
+  iOS 26 deployment target in `prosepal-ios/Package.swift` and
+  `prosepal-ios/ProsePal.xcodeproj/project.pbxproj`; control-layer styling in
+  `MomentGlassModifier` and `momentControlBarSurface` in
+  `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`. Partial pending
+  Xcode 26/device visual verification.
+- [~] Opaque paper-like content sits beneath floating controls -- evidence:
+  `MomentDraftCard`, `MomentPanel`, and background styles in
+  `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`. Partial pending
+  visual and accessibility audit.
+- [~] Register-aware palette and haptics exist -- evidence:
+  `MomentPalette` and `MomentHaptics` in
+  `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`. Partial because
+  grief/sensitive haptic suppression is not fully evidenced.
+- [~] Accessibility is treated as architecture -- evidence: visible controls,
+  labels, Dynamic Type-friendly SwiftUI, and selectable text in
+  `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`. Partial pending
+  VoiceOver, Switch Control, Reduce Transparency, Increase Contrast, and AX-size
+  device evidence.
 
-## Global Definition Of Done
+## 9. Platform And Engineering
 
-Every backlog item is complete only when all conditions below are true:
+- [~] Swift 6 and strict-concurrency direction are active -- evidence:
+  `swift-tools-version: 6.2` in `prosepal-ios/Package.swift`; `SWIFT_VERSION = 6.0`
+  in `prosepal-ios/ProsePal.xcodeproj/project.pbxproj`. Partial because legacy
+  UI code still uses older `ObservableObject` patterns.
+- [~] View models use `@Observable`, not `ObservableObject` -- evidence:
+  `MomentModel` and `MomentAccountModel` in `prosepal-ios/Sources/ProsePalUI`.
+  Partial because legacy `ProsePalAppModel: ObservableObject` remains in
+  `prosepal-ios/Sources/ProsePalUI/ProsePalRootView.swift`.
+- [~] SwiftData and Swift Testing are used for new native code -- evidence:
+  `RelationshipVault.swift`, `MomentModelTests.swift`,
+  `MessageWritingServiceTests.swift`, and `RelationshipVaultTests.swift`.
+  Partial because some legacy tests still use XCTest.
+- [x] Package has zero third-party dependencies -- evidence:
+  `prosepal-ios/Package.swift`.
+- [x] Native target is iOS 26-first -- evidence:
+  `platforms: [.iOS(.v26)]` in `prosepal-ios/Package.swift` and
+  `IPHONEOS_DEPLOYMENT_TARGET = 26.0` in
+  `prosepal-ios/ProsePal.xcodeproj/project.pbxproj`.
+- [~] Monolith UI has been split for the new flow -- evidence:
+  Moment-specific files exist under `prosepal-ios/Sources/ProsePalUI`, but
+  `prosepal-ios/Sources/ProsePalUI/ProsePalRootView.swift` remains a compiled
+  legacy monolith.
 
-1. Outcome is delivered exactly as written.
-2. Regression protection is added or explicitly justified.
-3. Relevant deterministic validation passes.
-4. Evidence is attached through logs, screenshots, CI run IDs, release
-   artifacts, or a named manual evidence path.
-5. The completed item is removed from this file.
+## 10. Privacy And Telemetry
 
-## Active Priority Order
+- [~] Private lane avoids sending message text off device -- evidence:
+  `FoundationModelsPrivateDraftClient` in
+  `prosepal-ios/Sources/ProsePalAPI/FoundationModelsPrivateDraftClient.swift`.
+  Partial because careful lane still uses the Supabase gateway rather than
+  Private Cloud Compute.
+- [x] Client diagnostics are metadata-only -- evidence:
+  `NativeDiagnosticsLogger` in
+  `prosepal-ios/Sources/ProsePalUI/NativeDiagnosticsLogger.swift`; tests in
+  `prosepal-ios/Tests/ProsePalUITests/NativeDiagnosticsTests.swift`.
+- [~] Vault storage, deletion, export, and backup behavior are privacy-reviewed --
+  evidence: SwiftData records in `RelationshipVault.swift`; delete/export flows
+  in `MomentSettingsView`; local model backup exclusion in `LocalModelStore`.
+  Partial because SwiftData vault backup/encryption/deletion semantics need a
+  dedicated privacy review.
 
-1. `N-IOS-01` Moment Sheet foundation
-2. `N-IOS-02` Private draft lane
-3. `N-IOS-03` Take more care lane
-4. `N-IOS-04` Relationship vault, Truth Beads, and Voice Card
-5. `N-IOS-05` Careful Mode, Pressure Check, and crisis path
-6. `N-IOS-06` Out-of-app native surfaces
-7. `N-IOS-07` StoreKit 2 and server entitlement
-8. `N-IOS-08` Sign in with Apple, account, deletion, and export
-9. `N-IOS-09` Saved, settings, privacy, support, and legal
-10. `N-IOS-10` Native iOS 26 CI, TestFlight, and release evidence
-11. `N-IOS-11` Privacy-safe diagnostics and observability
-12. `N-IOS-12` Legacy grouped-form removal
+## 11. Quality Gates / Acceptance
 
-## Native iOS Release Gates
+- [~] Acceptance demo exists: open, person, moment, one true thing, draft,
+  adjust, copy/share/save -- evidence: `MomentAppRootView`, `MomentSheetView`,
+  `MomentActionRail`, and `MomentModel` in
+  `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`. Partial pending
+  physical-device evidence after the latest tracker pass.
+- [ ] Device spike confirms private-lane quality, latency, and escalation
+  threshold for grief/apology -- evidence: no committed evidence artifact found
+  for this spike.
+- [~] Tests cover routing, safety, entitlement, and typed generation contracts --
+  evidence: routing/safety tests in
+  `prosepal-ios/Tests/ProsePalAPITests/MessageWritingServiceTests.swift`,
+  entitlement tests in `prosepal-ios/Tests/ProsePalUITests/AuthPurchaseFlowTests.swift`.
+  Partial because `@Generable` output-contract/device behavior is not covered
+  with wired evidence.
+- [ ] Exit criteria for deleting legacy grouped form are satisfied -- evidence:
+  `ProsePalRootView.swift`, `LegacyComposeModels.swift`, and legacy UI tests
+  still exist and compile.
 
-| ID | Item | Definition of Done |
-|----|------|--------------------|
-| `N-IOS-01` | Moment Sheet foundation | The native app opens into a person-first Moment Sheet rather than the grouped Create form. The flow captures person, relationship, moment, one true thing, tone/register, and delivery intent with no provider/model language. The old occasion catalogue is available underneath the moment selection without becoming the home screen. The Moment Sheet is implemented in split SwiftUI files with `@Observable` state and a `MessageWritingService` boundary. DoD requires Swift tests for moment state transitions, request construction, and surface entry points; simulator build; and physical iPhone evidence for one-handed layout, keyboard behavior, Dynamic Type, and copy/share/send controls. |
-| `N-IOS-02` | Private draft lane | Everyday moments can produce a private draft through the native on-device generation path when available. Foundation Models availability is checked at runtime, typed output is used where supported, and unavailable devices receive an honest state without fake template generation. The draft can be adjusted with warmer, shorter, and more direct actions through the same service boundary. DoD requires real-device quality evidence, capability/unavailable tests, privacy-safe diagnostics, and no raw content logging. |
-| `N-IOS-03` | Take more care lane | Harder or sensitive moments can escalate through the careful lane without exposing provider/model names. The staging gateway remains usable for cloud/careful testing, invalid/no secret fails closed, provider/model fields are not exposed to the client, and raw prompt/card/generated content is not logged. DoD requires `./scripts/prosepal-staging-smoke.sh`, gateway response mapping tests, timeout/cancel/retry tests, and physical iPhone evidence for escalation and recovery states. |
-| `N-IOS-04` | Relationship vault, Truth Beads, and Voice Card | SwiftData stores user-approved relationship memory, Truth Beads, and Voice Card preferences locally. Memory can be added, edited, corrected, deleted, and explained through "why am I seeing this?" affordances. Contacts/Calendar enrichment remains off by default and cannot silently infer memory. DoD requires model tests, deletion/export behavior, privacy review, and device evidence for edit/delete/correction flows. |
-| `N-IOS-05` | Careful Mode, Pressure Check, and crisis path | Sensitive moments use a calmer interaction mode, subtractive Pressure Check feedback, and crisis redirection where appropriate. The app generates less for grief, apology, estrangement, or crisis-adjacent input and preserves more of the user's own words. No guilt mechanics, streaks, relationship scores, or grief nudges are introduced. DoD requires safety copy review, classifier/typed-output tests where applicable, human-reviewed examples, and accessibility evidence. |
-| `N-IOS-06` | Out-of-app native surfaces | App Intents, Siri/Shortcuts, WidgetKit, Control Center controls, and Share extension routes can create or resume a Moment Sheet without exposing private text in logs or widget surfaces. Gestures and OS surfaces are accelerators; every action also has an accessible visible control in app. DoD requires extension tests where available, manual device evidence for each OS surface, privacy review, and fallback behavior for unavailable capabilities. |
-| `N-IOS-07` | StoreKit 2 and server entitlement | The native app uses StoreKit 2 for product loading, purchase, restore, pending, cancellation, and local transaction state. Server entitlement remains authoritative for careful/Premium gateway access through App Store Server Notifications V2 and reconciliation. Purchase is not blocked behind mandatory app sign-in, and paywall price, period, Terms, and Privacy are review-safe. DoD requires StoreKit local and sandbox evidence, server entitlement tests, App Review copy/legal verification, and no RevenueCat dependency. |
-| `N-IOS-08` | Sign in with Apple, account, deletion, and export | Sign in with Apple works on a physical iPhone through the configured staging auth provider. Signed-in state persists, clears on sign out, and cannot be faked. Account deletion and data export are available once account creation is available. A new user never inherits another user's entitlement, usage, telemetry, saved account state, or pending sync state. DoD requires unit tests for success/cancel/failure/relaunch/sign-out/account-switch paths, wired iPhone evidence, and no token/content exposure. |
-| `N-IOS-09` | Saved, settings, privacy, support, and legal | Saved is explicitly user-curated unless a separate history decision is approved. Settings covers Account, Subscription, Restore, Writing preferences, Privacy, Support, Legal, About, data export, and delete account in native iOS patterns. Support/feedback never attaches message content unless the user explicitly chooses it. DoD requires Swift tests for state, wired iPhone screenshots, legal-link verification, and diagnostic payload review. |
-| `N-IOS-10` | Native iOS 26 CI, TestFlight, and release evidence | Native Swift tests and simulator builds become the correct blocking gates before TestFlight or release-candidate work. The release evidence path captures version/build, Swift tests, simulator build, physical iPhone smoke, gateway config summary with no secrets, auth evidence, purchase/restore evidence, App Store Connect review, TestFlight sanity, secret audit, rollback plan, and owner sign-off. DoD requires workflow updates, `docs/DEVOPS.md` updates, and a dry-run evidence bundle. |
-| `N-IOS-11` | Privacy-safe diagnostics and observability | Diagnostics cover launch, Moment Sheet, private draft, take-more-care, auth, purchase, restore, support, settings, OS surfaces, and gateway legs without logging raw recipient names, include/avoid/context fields, prompt text, generated drafts, tokens, receipts, provider payloads, provider keys, or provider/model IDs. Any analytics/crash SDK decision requires an ADR and privacy rationale before adding a dependency. DoD requires event schema review, redaction tests where applicable, device-console evidence, and updated diagnostics docs. |
-| `N-IOS-12` | Legacy grouped-form removal | Once the Moment Sheet covers the core loop, the grouped Create/Results scaffolding is removed rather than maintained as a fallback product. Reusable catalogue, gateway, StoreKit, auth, saved-message, and diagnostics foundations are retained where they fit the new architecture. DoD requires no active navigation path to the legacy grouped form, no stale docs pointing to it, simulator build, Swift tests, and physical iPhone smoke of the replacement flow. |
+## 12. Explicit Non-Goals For V1
+
+- [x] No image generation in v1 -- evidence: no image-generation dependency or
+  image model client in `prosepal-ios/Package.swift` or `prosepal-ios/Sources`.
+- [x] No third-party model/provider SDK dependency in v1 -- evidence:
+  `prosepal-ios/Package.swift` has no package dependencies.
+- [x] No social, physical cards, custom keyboard, Live Activities, CloudKit sync,
+  automatic memory inference, or voice cloning in v1 -- evidence: no matching
+  targets or frameworks found under `prosepal-ios`.
+
+## Top Open Work
+
+1. Replace the careful lane's legacy Supabase `.premium` path with the agreed
+   Apple-native careful/PCC direction, or explicitly revise the spec if that API
+   is not available enough for this branch yet.
+2. Implement server-side StoreKit entitlement ownership through App Store Server
+   Notifications V2/JWS and reconciliation.
+3. Add Care Glance widget, Control Center/Action Button control, and Share
+   extension surfaces.
+4. Harden crisis/pressure handling beyond local English phrase lists and add
+   locale-aware/model-guarded evidence.
+5. Remove the legacy grouped-form monolith and migrate/delete stale tests once
+   the Moment path owns the required behavior.
 
 ## Flutter Production Work
 

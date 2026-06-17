@@ -6,12 +6,15 @@ This policy keeps project docs evergreen and actionable.
 
 - Applies to all docs in `docs/`, `prosepal-ios/*.md`, and `test/README.md`.
 - Exception: release records/postmortems/changelogs can be time-bound.
+- Exception: `docs/BACKLOG.md` is the active build tracker and may use
+  `[x]` / `[~]` / `[ ]` markers with evidence pointers.
 
 ## Rules
 
 - Write docs as stable runbooks/specs, not status reports.
 - Do not include test counts, pass rates, or timing claims.
-- Do not include checkboxes, progress markers, or "last verified" dates.
+- Do not include checkboxes, progress markers, or "last verified" dates outside
+  the active backlog tracker.
 - Do not include open issues, TODOs, or in-flight work in docs.
 - Track all open work only in [BACKLOG.md](./BACKLOG.md).
 - Keep examples minimal and implementation-agnostic where possible.

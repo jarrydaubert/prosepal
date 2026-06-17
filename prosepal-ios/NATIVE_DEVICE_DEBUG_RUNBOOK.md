@@ -102,44 +102,51 @@ Set symbolic/file breakpoints on these functions while proving the flow:
 
 | Leg | Breakpoint | Confirms |
 |-----|------------|----------|
-| App startup | `ProsePalRootView.body.task` | persisted auth load starts after launch |
-| Auth session load | `ProsePalAppModel.loadAuthSession` | keychain session is loaded or cleared |
-| Apple request start | `ProsePalAppModel.beginAppleSignInRequest` | nonce generated once; duplicate taps ignored |
-| Apple completion | `AppleSignInControl.handle` | Apple sheet returned success/cancel/failure |
-| Supabase exchange | `ProsePalAppModel.completeAppleSignIn` | ID token is exchanged without logging token value |
+| App startup | `MomentAppRootView.body.task` | persisted auth load starts after launch |
+| Auth/account initial state | `MomentAccountModel.loadInitialState` | keychain session and local entitlement state are loaded |
+| Auth session load | `MomentAccountModel.loadAuthSession` | keychain session is loaded or cleared |
+| Apple request start | `MomentAccountModel.beginAppleSignInRequest` | nonce generated once; duplicate taps ignored |
+| Apple completion | `MomentAppleSignInControl.handle` | Apple sheet returned success/cancel/failure |
+| Supabase exchange | `MomentAccountModel.completeAppleSignIn` | ID token is exchanged without logging token value |
 | Auth REST call | `SupabaseAuthClient.signInWithIDToken` | Supabase receives provider/id-token exchange request |
 | Session persist | `AuthSessionController.replaceSession` | access token stored in keychain |
-| Product load | `ProsePalAppModel.loadSubscriptionProducts` | paywall asks for configured products |
+| Product load | `MomentAccountModel.loadSubscriptionProducts` | paywall asks for configured products |
 | StoreKit products | `StoreKitSubscriptionClient.loadProducts` | App Store products resolve from configured IDs |
-| Purchase start | `ProsePalAppModel.purchasePremium` | selected product ID is used |
+| Purchase start | `MomentAccountModel.purchasePremium` | selected product ID is used |
 | StoreKit purchase | `StoreKitSubscriptionClient.purchase` | purchase result is success/pending/cancelled |
-| Restore start | `ProsePalAppModel.restorePurchases` | paywall/settings restore path starts |
+| Restore start | `MomentAccountModel.restorePurchases` | paywall/settings restore path starts |
 | StoreKit restore | `StoreKitSubscriptionClient.restorePurchases` | App Store sync completes or fails safely |
-| Purchase result | `ProsePalAppModel.applySubscriptionPurchaseResult` | local Premium UI changes only for active entitlement |
+| Purchase result | `MomentAccountModel.applySubscriptionPurchaseResult` | local Premium UI changes only for active entitlement |
+| Moment draft scheduled | `MomentModel.scheduleDraft` | person-first edits trigger a debounced draft attempt |
+| Private draft | `FoundationModelsPrivateDraftClient.draft` | everyday lane uses local private drafting when available |
+| Careful draft | `GatewayCarefulMomentClient.generate` | current careful lane reaches staging gateway without printing values |
 | Gateway request | `GatewayMessageWritingClient.generateCard` | auth/dev-secret headers are configured without printing values |
-| Gateway response | `ProsePalAppModel.generate` | usage/result/error states render from `CardResponse`/`GenerationError` |
-| Sign out | `ProsePalAppModel.signOut` | keychain, biometric, signed-in, and stale Premium UI state clear |
+| Draft response | `MomentModel.draftNow` / `MomentModel.takeMoreCareNow` | result/error states render from service responses |
+| Sign out | `MomentAccountModel.signOut` | keychain, biometric, signed-in, and stale Premium UI state clear |
 
 ## Manual Pass Checklist
 
 Run these with the device tethered:
 
-1. Fresh install launches welcome and completes to Create.
-2. Standard generation works signed out through staging gateway.
-3. Premium tap opens paywall and does not force sign-in before purchase.
-4. Product rows load; if not configured, unavailable state is visible.
-5. Cancel purchase; Premium remains locked and paywall remains usable.
-6. Pending purchase, if sandbox can produce it; Premium remains locked.
-7. Successful sandbox purchase; local Premium UI updates, then gateway Premium
+1. Fresh install launches welcome and completes to Moment.
+2. Everyday Moment draft works through the private lane when the device supports
+   it, or shows an honest unavailable state when it does not.
+3. Take more care opens/uses the careful lane without exposing provider/model
+   language.
+4. Premium tap opens paywall and does not force sign-in before purchase.
+5. Product rows load; if not configured, unavailable state is visible.
+6. Cancel purchase; Premium remains locked and paywall remains usable.
+7. Pending purchase, if sandbox can produce it; Premium remains locked.
+8. Successful sandbox purchase; local Premium UI updates, then gateway Premium
    still depends on server entitlement behavior.
-8. Restore from paywall; success/no-active-subscription/error states are honest.
-9. Restore from Settings uses the same restore path.
-10. Sign in with Apple from Settings; session persists across relaunch.
-11. Sign in with Apple from Paywall; paywall stays purchase-first and sync is
+9. Restore from paywall; success/no-active-subscription/error states are honest.
+10. Restore from Settings uses the same restore path.
+11. Sign in with Apple from Settings; session persists across relaunch.
+12. Sign in with Apple from Paywall; paywall stays purchase-first and sync is
     framed as continuity.
-12. Generate while signed in; gateway request includes auth token path and logs
-    authenticated behavior without token/content exposure.
-13. Sign out clears signed-in state, biometric lock, and stale Premium UI.
+13. Take more care while signed in; gateway request includes auth token path and
+    logs authenticated behavior without token/content exposure.
+14. Sign out clears signed-in state, biometric lock, and stale Premium UI.
 
 ## Automated Coverage
 
@@ -153,6 +160,11 @@ xcodebuild -project ProsePal.xcodeproj -target ProsePal -sdk iphonesimulator COD
 Relevant native tests:
 
 - `AuthPurchaseFlowTests`
+- `MomentAccountModelTests`
+- `MomentModelTests`
+- `MessageWritingServiceTests`
+- `RelationshipVaultTests`
+- `ProsePalAppIntentsTests`
 - `SettingsParityStateTests`
 - `UsagePolicyTests`
 - `MessageWritingClientTests`
