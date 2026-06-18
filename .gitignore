@@ -59,7 +59,8 @@ custom_lint.log
 artifacts/
 
 # Supabase local CLI/link state
-supabase/.temp/
+/supabase/.temp/
+/supabase/.branches/
 
 # Golden test generated diffs (local diagnostics only)
 test/widgets/goldens/failures/

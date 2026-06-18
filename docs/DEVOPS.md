@@ -35,6 +35,32 @@ Do not use Flutter production docs or commands as approval to change the native
 architecture away from the iOS 26 Moment Sheet direction and its
 `MessageWritingService` boundary.
 
+## Supabase Environment Safety
+
+Supabase remote database operations are human-gated. Agents may prepare
+scripts, docs, and diffs, but deploys, secrets, and migrations remain operator
+actions.
+
+- Never run `supabase db push --linked` from a checkout that may be linked to
+  production.
+- Avoid remote DB mutations through linked projects. For staging migrations,
+  prefer an explicit `STAGING_DB_URL` supplied by the human operator's shell
+  environment at runtime.
+- `STAGING_DB_URL` is a secret because it embeds database credentials. It must
+  never be committed, printed, logged, copied into docs, or written to temp
+  files.
+- Native staging function deploys must always target the staging project
+  explicitly with `--project-ref llolwgqphwnhbiqewmcq`.
+- Staging migrations require a dry run before any real DB push.
+- Untracking `supabase/.temp/` and `supabase/.branches/` does not unlink
+  existing local checkouts. Delete local `supabase/.temp/` or relink to staging
+  before staging work.
+- `supabase status` reports local-stack status and is not sufficient proof of
+  the remote DB target.
+- Use `scripts/supabase-staging.sh` for human-run staging operations. It refuses
+  the known production ref `mwoxtqxzunsjmbdqezif`, requires the staging ref
+  `llolwgqphwnhbiqewmcq`, and never uses linked remote DB mutation.
+
 ## Operational Baseline
 
 1. Default branch: `main` (protected).
