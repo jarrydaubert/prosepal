@@ -56,6 +56,10 @@ custom_lint.log
 .crashlytics/
 artifacts/
 
+# Supabase local CLI/link state
+/supabase/.temp/
+/supabase/.branches/
+
 # Golden test generated diffs (local diagnostics only)
 test/widgets/goldens/failures/
 test/failures/
