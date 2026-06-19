@@ -192,6 +192,28 @@ final class RelationshipVaultTests: XCTestCase {
         XCTAssertTrue(try context.fetch(FetchDescriptor<SavedMomentDraftRecord>()).isEmpty)
     }
 
+    func testRelationshipVaultStoreLocationUsesPrivateBackupExcludedDirectory() throws {
+        let fileManager = FileManager.default
+        let rootDirectory = fileManager.temporaryDirectory
+            .appendingPathComponent("ProsePalVaultTests-\(UUID().uuidString)", isDirectory: true)
+        defer { try? fileManager.removeItem(at: rootDirectory) }
+
+        let storeURL = try RelationshipVaultStoreLocation.storeURL(
+            fileManager: fileManager,
+            baseDirectory: rootDirectory
+        )
+        let vaultDirectory = storeURL.deletingLastPathComponent()
+        let appDirectory = vaultDirectory.deletingLastPathComponent()
+
+        XCTAssertEqual(appDirectory.lastPathComponent, RelationshipVaultStoreLocation.appDirectoryName)
+        XCTAssertEqual(vaultDirectory.lastPathComponent, RelationshipVaultStoreLocation.vaultDirectoryName)
+        XCTAssertEqual(storeURL.lastPathComponent, RelationshipVaultStoreLocation.storeFileName)
+        XCTAssertTrue(fileManager.fileExists(atPath: vaultDirectory.path))
+
+        let resourceValues = try vaultDirectory.resourceValues(forKeys: [.isExcludedFromBackupKey])
+        XCTAssertEqual(resourceValues.isExcludedFromBackup, true)
+    }
+
     private func makeContainer() throws -> ModelContainer {
         let schema = Schema(RelationshipVaultSchema.models)
         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)

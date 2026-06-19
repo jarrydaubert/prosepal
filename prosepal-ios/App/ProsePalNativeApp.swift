@@ -51,7 +51,10 @@ private enum RelationshipVaultContainerFactory {
     static func make() -> ModelContainer {
         do {
             let schema = Schema(RelationshipVaultSchema.models)
-            let configuration = ModelConfiguration(schema: schema)
+            let configuration = ModelConfiguration(
+                schema: schema,
+                url: try RelationshipVaultStoreLocation.storeURL()
+            )
             return try ModelContainer(for: schema, configurations: [configuration])
         } catch {
             fatalError("Unable to create ProsePal relationship vault: \(error.localizedDescription)")

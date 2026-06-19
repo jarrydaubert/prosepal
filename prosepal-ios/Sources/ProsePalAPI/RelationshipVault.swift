@@ -108,6 +108,60 @@ public enum RelationshipVaultSchema {
     }
 }
 
+public enum RelationshipVaultStoreLocation {
+    public static let appDirectoryName = "ProsePal"
+    public static let vaultDirectoryName = "RelationshipVault"
+    public static let storeFileName = "RelationshipVault.store"
+
+    public static func storeURL(
+        fileManager: FileManager = .default,
+        baseDirectory: URL? = nil
+    ) throws -> URL {
+        let directory = try prepareStoreDirectory(
+            fileManager: fileManager,
+            baseDirectory: baseDirectory
+        )
+        return directory.appendingPathComponent(storeFileName, isDirectory: false)
+    }
+
+    public static func prepareStoreDirectory(
+        fileManager: FileManager = .default,
+        baseDirectory: URL? = nil
+    ) throws -> URL {
+        let rootDirectory: URL
+        if let baseDirectory {
+            rootDirectory = baseDirectory
+        } else if let applicationSupportDirectory = fileManager.urls(
+            for: .applicationSupportDirectory,
+            in: .userDomainMask
+        ).first {
+            rootDirectory = applicationSupportDirectory
+        } else {
+            throw RelationshipVaultStoreLocationError.applicationSupportDirectoryUnavailable
+        }
+
+        let appDirectory = rootDirectory.appendingPathComponent(appDirectoryName, isDirectory: true)
+        let vaultDirectory = appDirectory.appendingPathComponent(vaultDirectoryName, isDirectory: true)
+
+        try fileManager.createDirectory(at: vaultDirectory, withIntermediateDirectories: true)
+        try excludeFromBackup(appDirectory)
+        try excludeFromBackup(vaultDirectory)
+
+        return vaultDirectory
+    }
+
+    private static func excludeFromBackup(_ directory: URL) throws {
+        var directory = directory
+        var values = URLResourceValues()
+        values.isExcludedFromBackup = true
+        try directory.setResourceValues(values)
+    }
+}
+
+public enum RelationshipVaultStoreLocationError: Error, Equatable {
+    case applicationSupportDirectoryUnavailable
+}
+
 public actor SwiftDataRelationshipMemoryProvider: RelationshipMemoryProviding {
     private let container: ModelContainer
 

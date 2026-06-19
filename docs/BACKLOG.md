@@ -320,10 +320,13 @@ not done.
   `prosepal-ios/Sources/ProsePalUI/NativeDiagnosticsLogger.swift`; tests in
   `prosepal-ios/Tests/ProsePalUITests/NativeDiagnosticsTests.swift`.
 - [~] Vault storage, deletion, export, and backup behavior are privacy-reviewed --
-  evidence: SwiftData records in `RelationshipVault.swift`; delete/export flows
-  in `MomentSettingsView`.
-  Partial because SwiftData vault backup/encryption/deletion semantics need a
-  dedicated privacy review.
+  evidence: SwiftData records and backup-excluded Application Support store
+  location in `prosepal-ios/Sources/ProsePalAPI/RelationshipVault.swift`, app
+  container wiring in `prosepal-ios/App/ProsePalNativeApp.swift`, and filesystem
+  coverage in
+  `prosepal-ios/Tests/ProsePalAPITests/RelationshipVaultTests.swift`.
+  Partial because export, local wipe on account deletion, and any stronger
+  at-rest encryption decision still need dedicated product/security review.
 
 ## 11. Quality Gates / Acceptance
 
@@ -367,8 +370,8 @@ not done.
    extension surfaces.
 4. Harden crisis/pressure handling beyond local English phrase lists and add
    locale-aware/model-guarded evidence.
-5. Complete SwiftData vault privacy review for backup/encryption/export/delete
-   semantics.
+5. Complete vault privacy work for export, local wipe on account deletion, and
+   any stronger at-rest encryption decision.
 
 ## Flutter Production Work
 
