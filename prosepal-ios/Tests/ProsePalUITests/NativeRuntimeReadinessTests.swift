@@ -12,7 +12,8 @@ final class NativeRuntimeReadinessTests: XCTestCase {
 
         XCTAssertEqual(items.map(\.id), ["private-draft", "take-more-care", "dev-guard", "account", "subscriptions"])
         XCTAssertTrue(items.allSatisfy { !$0.isReady })
-        XCTAssertTrue(items.allSatisfy { $0.statusText == "Missing" })
+        XCTAssertEqual(items.first { $0.id == "private-draft" }?.statusText, "Unavailable")
+        XCTAssertTrue(items.filter { $0.id != "private-draft" }.allSatisfy { $0.statusText == "Missing" })
         XCTAssertFalse(items.contains { item in
             item.detail.contains("https://") ||
             item.detail.localizedCaseInsensitiveContains("secret") && item.detail.contains("=")
@@ -32,7 +33,8 @@ final class NativeRuntimeReadinessTests: XCTestCase {
         let items = readiness.settingsItems
 
         XCTAssertTrue(items.allSatisfy(\.isReady))
-        XCTAssertTrue(items.allSatisfy { $0.statusText == "Ready" })
+        XCTAssertEqual(items.first { $0.id == "private-draft" }?.statusText, "Device dependent")
+        XCTAssertTrue(items.filter { $0.id != "private-draft" }.allSatisfy { $0.statusText == "Ready" })
         XCTAssertEqual(items.first { $0.id == "subscriptions" }?.detail, "2 product IDs configured, recommended plan set")
         XCTAssertFalse(items.contains { item in
             item.detail.contains("prod_") ||
@@ -71,7 +73,7 @@ final class NativeRuntimeReadinessTests: XCTestCase {
         XCTAssertTrue(readiness.isGenerationConfigured)
         XCTAssertTrue(readiness.isPrivateDraftConfigured)
         XCTAssertFalse(readiness.isCarefulGatewayConfigured)
-        XCTAssertEqual(readiness.settingsItems.first { $0.id == "private-draft" }?.statusText, "Ready")
+        XCTAssertEqual(readiness.settingsItems.first { $0.id == "private-draft" }?.statusText, "Device dependent")
         XCTAssertEqual(readiness.settingsItems.first { $0.id == "take-more-care" }?.statusText, "Missing")
     }
 
@@ -83,6 +85,6 @@ final class NativeRuntimeReadinessTests: XCTestCase {
         )
 
         XCTAssertEqual(model.runtimeReadiness, readiness)
-        XCTAssertEqual(model.runtimeReadiness.settingsItems.first?.statusText, "Ready")
+        XCTAssertEqual(model.runtimeReadiness.settingsItems.first?.statusText, "Device dependent")
     }
 }

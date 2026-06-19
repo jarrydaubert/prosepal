@@ -92,6 +92,28 @@ func ordinaryMomentKeepsDefaultReactRegister() async throws {
 
 @Test
 @MainActor
+func ordinaryMomentResetsRegisterAfterSensitiveMoment() async throws {
+    let client = CountingMomentDraftClient()
+    let service = RoutingMessageWritingService(
+        privateClient: client,
+        carefulClient: client
+    )
+    let model = MomentModel(service: service)
+
+    model.occasion = .petSympathy
+    model.alignRegisterForMoment()
+    #expect(model.register == .assemble)
+
+    model.occasion = .birthday
+    model.alignRegisterForMoment()
+
+    #expect(model.register == .react)
+    #expect(!model.moment.isCarefulMode)
+    #expect(!model.moment.requiresCarefulLane)
+}
+
+@Test
+@MainActor
 func launchRequestAlignsSensitiveMomentBeforeDrafting() async throws {
     let client = CountingMomentDraftClient()
     let service = RoutingMessageWritingService(

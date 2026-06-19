@@ -203,6 +203,18 @@ func restorePurchasesHandlesActiveAndNotEntitledStates() async {
 
 @Test
 @MainActor
+func restorePurchasesShowsVisibleErrorWhenUnconfigured() async {
+    let account = makeAccount()
+
+    await account.restorePurchases(source: "settings")
+
+    #expect(account.isPremiumUnlocked == false)
+    #expect(account.subscriptionErrorMessage == SubscriptionError.notConfigured.userSafeMessage)
+    #expect(account.notice?.title == SubscriptionError.notConfigured.userSafeMessage)
+}
+
+@Test
+@MainActor
 func accountDeletionClearsSessionAndPremiumWhenConfigured() async throws {
     let session = AuthSession.test(accessToken: "delete-token")
     let store = MomentAccountInMemoryAuthSessionStore(session: session)

@@ -99,6 +99,8 @@ public final class MomentModel {
     public func alignRegisterForMoment() {
         if moment.prefersCareRegister && register == .react {
             register = .assemble
+        } else if !moment.prefersCareRegister && register == .assemble {
+            register = .react
         }
     }
 
@@ -2099,6 +2101,12 @@ private struct RelationshipMemoryDetailView: View {
         .navigationTitle("Memory Detail")
         .toolbarTitleDisplayMode(.inline)
         .toolbar {
+            ToolbarItem(placement: .cancellationAction) {
+                Button("Done") {
+                    dismiss()
+                }
+            }
+
             ToolbarItem(placement: .confirmationAction) {
                 Button("Save") {
                     save()
@@ -2184,6 +2192,12 @@ private struct RelationshipVoiceCardDetailView: View {
         .navigationTitle("Voice Card")
         .toolbarTitleDisplayMode(.inline)
         .toolbar {
+            ToolbarItem(placement: .cancellationAction) {
+                Button("Done") {
+                    dismiss()
+                }
+            }
+
             ToolbarItem(placement: .confirmationAction) {
                 Button("Save") {
                     save()
@@ -2272,18 +2286,25 @@ private struct MomentSettingsView: View {
                     Label(account.isRestoringPurchases ? "Restoring..." : "Restore purchases", systemImage: "arrow.clockwise")
                 }
                 .disabled(account.isRestoringPurchases)
+
+                if let subscriptionErrorMessage = account.subscriptionErrorMessage {
+                    Label(subscriptionErrorMessage, systemImage: "exclamationmark.triangle")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
 
             Section("Writing") {
                 LabeledContent(
                     "Private Draft",
-                    value: account.runtimeReadiness.isPrivateDraftConfigured ? "Ready" : "Needs setup"
+                    value: account.runtimeReadiness.isPrivateDraftConfigured ? "Device dependent" : "Unavailable here"
                 )
                 LabeledContent(
                     "Take more care",
                     value: account.runtimeReadiness.isCarefulGatewayConfigured ? "Ready" : "Needs setup"
                 )
-                Label("Private drafts start on device when available", systemImage: "lock")
+                Label("Private drafts depend on this device's runtime state", systemImage: "lock")
                 Label("Take more care is used for harder moments", systemImage: "heart.text.square")
             }
 
@@ -2492,6 +2513,14 @@ private struct MomentPaywallSheet: View {
                         .buttonStyle(.bordered)
                         .controlSize(.large)
                         .disabled(account.isRestoringPurchases)
+
+                        if let subscriptionErrorMessage = account.subscriptionErrorMessage {
+                            Label(subscriptionErrorMessage, systemImage: "exclamationmark.triangle")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .multilineTextAlignment(.center)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
                     }
 
                     VStack(alignment: .leading, spacing: 10) {
