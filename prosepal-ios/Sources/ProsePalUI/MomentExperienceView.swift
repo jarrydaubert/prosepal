@@ -674,7 +674,7 @@ private struct MomentSheetView: View {
                     .momentControlBarSurface()
             } else {
                 MomentBottomRailClearance(isCareful: model.moment.isCarefulMode)
-                    .frame(height: focusedField == nil ? 110 : 72)
+                    .frame(height: focusedField == nil ? 76 : 56)
             }
         }
         .toolbar {
@@ -898,7 +898,7 @@ private struct MomentSheetView: View {
                 .focused($focusedField, equals: .truth)
                 .submitLabel(.done)
                 .padding(16)
-                .background(Color.momentSecondaryGroupedBackground, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                .momentInputSurface(isCareful: model.moment.isCarefulMode, cornerRadius: 18)
 
             Text("Optional for easy moments. Essential for harder ones.")
                 .font(.footnote)
@@ -923,7 +923,7 @@ private struct MomentSheetView: View {
                     .focused($focusedField, equals: .memory)
                     .submitLabel(.done)
                     .padding(14)
-                    .background(Color.momentSecondaryGroupedBackground, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .momentInputSurface(cornerRadius: 16)
                     .onSubmit {
                         addTruthBead()
                     }
@@ -936,6 +936,8 @@ private struct MomentSheetView: View {
                         .frame(width: 42, height: 42)
                 }
                 .buttonStyle(.borderedProminent)
+                .buttonBorderShape(.circle)
+                .tint(.prosePalCoral)
                 .disabled(newTruthBeadText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 .accessibilityLabel("Add relationship memory")
             }
@@ -1001,7 +1003,7 @@ private struct MomentSheetView: View {
                         .focused($focusedField, equals: .voice)
                         .submitLabel(.done)
                         .padding(14)
-                        .background(Color.momentSecondaryGroupedBackground, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                        .momentInputSurface(cornerRadius: 16)
                         .onSubmit {
                             addVoiceCard()
                         }
@@ -1014,6 +1016,8 @@ private struct MomentSheetView: View {
                             .frame(width: 42, height: 42)
                     }
                     .buttonStyle(.bordered)
+                    .buttonBorderShape(.circle)
+                    .tint(.prosePalNavy)
                     .disabled(newVoiceCardSummary.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                     .accessibilityLabel("Add voice card")
                 }
@@ -1889,6 +1893,53 @@ private struct MomentMemoryManageLabel: View {
     }
 }
 
+private struct MomentSavedEmptyState: View {
+    let isSearching: Bool
+
+    var body: some View {
+        VStack(spacing: 16) {
+            ZStack {
+                Circle()
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Color.prosePalCoral.opacity(0.22),
+                                Color.prosePalPaper.opacity(0.88)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: 74, height: 74)
+
+                Image(systemName: isSearching ? "magnifyingglass" : "bookmark")
+                    .font(.system(size: 28, weight: .semibold))
+                    .foregroundStyle(Color.prosePalCoralDeep)
+                    .symbolRenderingMode(.hierarchical)
+            }
+
+            VStack(spacing: 6) {
+                Text(isSearching ? "No saved drafts found" : "No saved drafts yet")
+                    .font(.title3.weight(.semibold))
+                    .multilineTextAlignment(.center)
+
+                Text(isSearching ? "Try another person, moment, or phrase." : "When a message feels right, save it here for later.")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 18)
+        .padding(.vertical, 28)
+        .background {
+            MomentCardBackground(isCareful: false, prominence: .standard)
+        }
+        .accessibilityElement(children: .combine)
+    }
+}
+
 private struct SavedMomentDraftsView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \SavedMomentDraftRecord.createdAt, order: .reverse)
@@ -1908,12 +1959,10 @@ private struct SavedMomentDraftsView: View {
     var body: some View {
         List {
             if filteredDrafts.isEmpty {
-                ContentUnavailableView(
-                    searchText.isEmpty ? "No saved drafts yet" : "No saved drafts found",
-                    systemImage: "bookmark",
-                    description: Text(searchText.isEmpty ? "When a message feels right, save it here for later." : "Try another person, moment, or phrase.")
-                )
+                MomentSavedEmptyState(isSearching: !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    .padding(.vertical, 26)
                 .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
             } else {
                 ForEach(filteredDrafts) { draft in
                     NavigationLink {
@@ -1927,6 +1976,10 @@ private struct SavedMomentDraftsView: View {
         }
         .navigationTitle("Saved")
         .searchable(text: $searchText, prompt: "Search saved drafts")
+        .scrollContentBackground(.hidden)
+        .background {
+            MomentAtmosphericBackground(isCareful: false)
+        }
     }
 
     private func delete(at offsets: IndexSet) {
@@ -3208,19 +3261,19 @@ private struct MomentBottomRailClearance: View {
 
     var body: some View {
         LinearGradient(
-            colors: [
-                Color.momentGroupedBackground.opacity(0),
-                Color.momentGroupedBackground.opacity(0.92),
-                Color.momentGroupedBackground
+            stops: [
+                .init(color: Color.momentGroupedBackground.opacity(0), location: 0),
+                .init(color: Color.momentGroupedBackground.opacity(0.06), location: 0.48),
+                .init(color: Color.momentGroupedBackground.opacity(0.24), location: 1)
             ],
             startPoint: .top,
             endPoint: .bottom
         )
         .overlay(alignment: .bottom) {
             (isCareful ? Color.prosePalCare : Color.prosePalCoral)
-                .opacity(0.08)
-                .frame(height: 58)
-                .blur(radius: 18)
+                .opacity(0.035)
+                .frame(height: 34)
+                .blur(radius: 12)
         }
         .allowsHitTesting(false)
         .accessibilityHidden(true)
@@ -3250,6 +3303,30 @@ private extension View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .background {
                 MomentCardBackground(isCareful: isCareful, prominence: prominence)
+            }
+    }
+
+    func momentInputSurface(isCareful: Bool = false, cornerRadius: CGFloat = 16) -> some View {
+        self
+            .background {
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Color.prosePalPaper.opacity(0.98),
+                                Color.momentSecondaryGroupedBackground.opacity(0.92)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .overlay {
+                        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                            .stroke(
+                                (isCareful ? Color.prosePalCare : Color.prosePalCoral).opacity(0.16),
+                                lineWidth: 1
+                            )
+                    }
             }
     }
 
