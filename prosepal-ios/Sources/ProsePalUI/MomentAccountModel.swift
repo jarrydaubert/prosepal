@@ -28,6 +28,7 @@ public final class MomentAccountModel {
     @ObservationIgnored private let authClient: (any AuthClient)?
     @ObservationIgnored private let subscriptionClient: (any SubscriptionClient)?
     @ObservationIgnored private let accountMaintenanceClient: (any AccountMaintenanceClient)?
+    @ObservationIgnored private let localAccountDataDeletion: (() throws -> Void)?
     @ObservationIgnored private let diagnostics: NativeDiagnosticsLogger
     @ObservationIgnored private var pendingAppleSignInNonce: AppleSignInNonce?
     @ObservationIgnored private var didLoadInitialState = false
@@ -38,6 +39,7 @@ public final class MomentAccountModel {
         authClient: (any AuthClient)? = nil,
         subscriptionClient: (any SubscriptionClient)? = nil,
         accountMaintenanceClient: (any AccountMaintenanceClient)? = nil,
+        localAccountDataDeletion: (() throws -> Void)? = nil,
         runtimeReadiness: NativeRuntimeReadiness = .unconfigured,
         diagnostics: NativeDiagnosticsLogger = .shared
     ) {
@@ -46,6 +48,7 @@ public final class MomentAccountModel {
         self.authClient = authClient
         self.subscriptionClient = subscriptionClient
         self.accountMaintenanceClient = accountMaintenanceClient
+        self.localAccountDataDeletion = localAccountDataDeletion
         self.runtimeReadiness = runtimeReadiness
         self.diagnostics = diagnostics
     }
@@ -487,11 +490,21 @@ public final class MomentAccountModel {
 
         do {
             try await accountMaintenanceClient.deleteAccount(accessToken: accessToken)
+            var didClearLocalData = true
+            do {
+                try localAccountDataDeletion?()
+            } catch {
+                didClearLocalData = false
+                diagnostics.messageAction("local_account_data_delete_failed", source: "settings", messageCharacters: 0)
+            }
             try? await authSessionController?.clearSession()
             isConfirmingAccountDeletion = false
             applyAuthSession(nil)
             isPremiumUnlocked = false
-            showNotice("Account deleted", systemImage: "checkmark.circle.fill")
+            showNotice(
+                didClearLocalData ? "Account deleted" : "Account deleted. Some local data may remain.",
+                systemImage: didClearLocalData ? "checkmark.circle.fill" : "exclamationmark.triangle"
+            )
         } catch let error as AccountMaintenanceError {
             showNotice(error.userSafeMessage, systemImage: "exclamationmark.triangle")
         } catch {

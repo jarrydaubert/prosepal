@@ -162,6 +162,21 @@ public enum RelationshipVaultStoreLocationError: Error, Equatable {
     case applicationSupportDirectoryUnavailable
 }
 
+public enum RelationshipVaultLocalDataEraser {
+    public static func eraseAll(in context: ModelContext) throws {
+        try context.fetch(FetchDescriptor<RelationshipTruthBeadRecord>()).forEach {
+            context.delete($0)
+        }
+        try context.fetch(FetchDescriptor<RelationshipVoiceCardRecord>()).forEach {
+            context.delete($0)
+        }
+        try context.fetch(FetchDescriptor<SavedMomentDraftRecord>()).forEach {
+            context.delete($0)
+        }
+        try context.save()
+    }
+}
+
 public actor SwiftDataRelationshipMemoryProvider: RelationshipMemoryProviding {
     private let container: ModelContainer
 

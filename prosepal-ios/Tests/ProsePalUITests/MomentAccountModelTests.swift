@@ -211,11 +211,15 @@ func accountDeletionClearsSessionAndPremiumWhenConfigured() async throws {
         productID: "com.prosepal.pro.yearly"
     ))
     let maintenanceClient = MomentAccountMaintenanceClient()
+    var didDeleteLocalData = false
     let account = makeAccount(
         store: store,
         authClient: MomentAccountAuthClient(),
         subscriptionClient: subscriptionClient,
-        accountMaintenanceClient: maintenanceClient
+        accountMaintenanceClient: maintenanceClient,
+        localAccountDataDeletion: {
+            didDeleteLocalData = true
+        }
     )
 
     await account.loadInitialState()
@@ -229,7 +233,33 @@ func accountDeletionClearsSessionAndPremiumWhenConfigured() async throws {
     #expect(account.isConfirmingAccountDeletion == false)
     #expect(try await store.loadSession() == nil)
     #expect(await maintenanceClient.deletedTokens() == ["delete-token"])
+    #expect(didDeleteLocalData)
     #expect(account.notice?.title == "Account deleted")
+}
+
+@Test
+@MainActor
+func accountDeletionWarnsWhenLocalDataCleanupFails() async throws {
+    let session = AuthSession.test(accessToken: "delete-token")
+    let store = MomentAccountInMemoryAuthSessionStore(session: session)
+    let maintenanceClient = MomentAccountMaintenanceClient()
+    let account = makeAccount(
+        store: store,
+        authClient: MomentAccountAuthClient(),
+        accountMaintenanceClient: maintenanceClient,
+        localAccountDataDeletion: {
+            throw MomentAccountLocalDataDeletionError.testFailure
+        }
+    )
+
+    await account.loadAuthSession()
+    account.requestAccountDeletion()
+    await account.confirmAccountDeletion()
+
+    #expect(account.isSignedIn == false)
+    #expect(try await store.loadSession() == nil)
+    #expect(await maintenanceClient.deletedTokens() == ["delete-token"])
+    #expect(account.notice?.title == "Account deleted. Some local data may remain.")
 }
 
 @Test
@@ -259,15 +289,21 @@ private func makeAccount(
     store: MomentAccountInMemoryAuthSessionStore = MomentAccountInMemoryAuthSessionStore(),
     authClient: (any AuthClient)? = nil,
     subscriptionClient: (any SubscriptionClient)? = nil,
-    accountMaintenanceClient: (any AccountMaintenanceClient)? = nil
+    accountMaintenanceClient: (any AccountMaintenanceClient)? = nil,
+    localAccountDataDeletion: (() throws -> Void)? = nil
 ) -> MomentAccountModel {
     MomentAccountModel(
         clientContext: ClientContext(appVersion: "1.0", buildNumber: "1"),
         authSessionController: AuthSessionController(store: store),
         authClient: authClient,
         subscriptionClient: subscriptionClient,
-        accountMaintenanceClient: accountMaintenanceClient
+        accountMaintenanceClient: accountMaintenanceClient,
+        localAccountDataDeletion: localAccountDataDeletion
     )
+}
+
+private enum MomentAccountLocalDataDeletionError: Error {
+    case testFailure
 }
 
 private actor MomentAccountInMemoryAuthSessionStore: AuthSessionStore {

@@ -192,6 +192,36 @@ final class RelationshipVaultTests: XCTestCase {
         XCTAssertTrue(try context.fetch(FetchDescriptor<SavedMomentDraftRecord>()).isEmpty)
     }
 
+    func testRelationshipVaultLocalDataEraserDeletesAllLocalVaultRecords() throws {
+        let container = try makeContainer()
+        let context = ModelContext(container)
+        context.insert(RelationshipTruthBeadRecord(
+            personName: "Asha",
+            text: "Loves direct notes"
+        ))
+        context.insert(RelationshipVoiceCardRecord(
+            personName: "Asha",
+            summary: "Warm and brief"
+        ))
+        context.insert(SavedMomentDraftRecord(
+            moment: MomentInput(
+                personName: "Asha",
+                relationship: .closeFriend,
+                occasion: .thankYou,
+                trueThing: "Thank you for showing up."
+            ),
+            messageText: "Thank you for being there.",
+            lane: .privateDraft
+        ))
+        try context.save()
+
+        try RelationshipVaultLocalDataEraser.eraseAll(in: context)
+
+        XCTAssertTrue(try context.fetch(FetchDescriptor<RelationshipTruthBeadRecord>()).isEmpty)
+        XCTAssertTrue(try context.fetch(FetchDescriptor<RelationshipVoiceCardRecord>()).isEmpty)
+        XCTAssertTrue(try context.fetch(FetchDescriptor<SavedMomentDraftRecord>()).isEmpty)
+    }
+
     func testRelationshipVaultStoreLocationUsesPrivateBackupExcludedDirectory() throws {
         let fileManager = FileManager.default
         let rootDirectory = fileManager.temporaryDirectory

@@ -32,6 +32,11 @@ struct ProsePalNativeApp: App {
                         authSessionController: authSessionController
                     ),
                     accountMaintenanceClient: accountMaintenanceClient,
+                    localAccountDataDeletion: {
+                        try RelationshipVaultLocalDataEraser.eraseAll(
+                            in: ModelContext(relationshipVaultContainer)
+                        )
+                    },
                     runtimeReadiness: runtimeReadiness
                 )
             )

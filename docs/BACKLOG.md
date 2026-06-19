@@ -250,8 +250,10 @@ not done.
   `SupabaseAccountMaintenanceClient` in
   `prosepal-ios/Sources/ProsePalAPI/AccountMaintenanceClient.swift`,
   `supabase/functions/delete-user/index.ts`, and settings UI in
-  `MomentSettingsView`. Partial pending full App Review/account-provider
-  evidence.
+  `MomentSettingsView`; local SwiftData vault wipe is wired through
+  `RelationshipVaultLocalDataEraser` and covered in
+  `prosepal-ios/Tests/ProsePalUITests/MomentAccountModelTests.swift`.
+  Partial pending full App Review/account-provider evidence.
 - [~] Restore, identity/account switch, and entitlement convergence are covered --
   evidence: restore/local entitlement code in
   `prosepal-ios/Sources/ProsePalAPI/SubscriptionClient.swift`; signed-in
@@ -325,8 +327,8 @@ not done.
   container wiring in `prosepal-ios/App/ProsePalNativeApp.swift`, and filesystem
   coverage in
   `prosepal-ios/Tests/ProsePalAPITests/RelationshipVaultTests.swift`.
-  Partial because export, local wipe on account deletion, and any stronger
-  at-rest encryption decision still need dedicated product/security review.
+  Partial because export and any stronger at-rest encryption decision still need
+  dedicated product/security review.
 
 ## 11. Quality Gates / Acceptance
 
@@ -370,8 +372,8 @@ not done.
    extension surfaces.
 4. Harden crisis/pressure handling beyond local English phrase lists and add
    locale-aware/model-guarded evidence.
-5. Complete vault privacy work for export, local wipe on account deletion, and
-   any stronger at-rest encryption decision.
+5. Complete vault privacy work for export and any stronger at-rest encryption
+   decision.
 
 ## Flutter Production Work
 
