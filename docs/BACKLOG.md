@@ -41,19 +41,18 @@ not done.
   old-style Generate button -- evidence: `MomentModel.scheduleDraft()` and
   `MomentSheetView.draftSection` in
   `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`. Partial because
-  availability, timeout, and careful-lane states can still leave the user in an
-  error/loading state.
+  device/runtime availability can still prevent a private draft, though
+  unavailable states now use lane-specific copy and retry affordances.
 - [~] Safety and restraint are product behavior, not just server policy --
   evidence: `MomentSafetySignal`, `PressureCheck`, and `MomentInput.requiresCarefulLane`
   in `prosepal-ios/Sources/ProsePalDomain/MomentModels.swift`; UI crisis/careful
   sections in `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`.
   Partial because crisis and pressure detection are still local phrase-list
   heuristics.
-- [~] Provider/model names stay out of user-facing UI -- evidence:
+- [x] Provider/model names stay out of user-facing UI -- evidence:
   `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`,
-  `prosepal-ios/Sources/ProsePalAPI/FoundationModelsPrivateDraftClient.swift`.
-  Partial because one user-safe unavailable message currently names Apple
-  Intelligence.
+  `prosepal-ios/Sources/ProsePalAPI/FoundationModelsPrivateDraftClient.swift`,
+  and `89d2963`.
 
 ## 1. Surfaces / Information Architecture
 
@@ -77,9 +76,9 @@ not done.
 - [~] Settings covers account, subscription, writing, privacy, support, legal,
   and about -- evidence: `MomentSettingsView` in
   `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`,
-  `MomentAccountModel` in `prosepal-ios/Sources/ProsePalUI/MomentAccountModel.swift`.
-  Partial because support/legal are mostly surfaced through paywall links rather
-  than a mature settings layout.
+  `MomentAccountModel` in `prosepal-ios/Sources/ProsePalUI/MomentAccountModel.swift`,
+  and `89d2963`. Partial because export remains a support path and account
+  deletion/subscription flows still need full staging/App Review evidence.
 - [x] Legacy grouped create/results path is retired -- evidence:
   `ProsePalNativeApp.swift` constructs `MomentAppRootView`; the dead grouped
   form source files `ProsePalRootView.swift` and `LegacyComposeModels.swift`
@@ -154,8 +153,9 @@ not done.
   `SwiftDataRelationshipMemoryProvider` in
   `prosepal-ios/Sources/ProsePalAPI/RelationshipVault.swift`.
 - [x] Foundation Models availability is gated at runtime -- evidence:
-  `ensureModelAvailable()` in
-  `prosepal-ios/Sources/ProsePalAPI/FoundationModelsPrivateDraftClient.swift`.
+  `ensureModelAvailable()` and `isDefaultModelAvailable` in
+  `prosepal-ios/Sources/ProsePalAPI/FoundationModelsPrivateDraftClient.swift`;
+  `RuntimeReadinessFactory` in `prosepal-ios/App/ProsePalNativeApp.swift`.
 - [~] Take more care lane is operational and decoupled from Premium billing;
   target Apple Private Cloud Compute / AFM Cloud remains future work --
   evidence: `GatewayCarefulMomentClient` requests `.standard` while returning
@@ -193,7 +193,8 @@ not done.
 - [~] Careful Mode calms sensitive moments -- evidence: `MomentInput.isCarefulMode`
   and `carefulModeSection` in
   `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`; sensitive
-  careful-lane failure falls back to private drafting in
+  moments align away from `React` into `Take care`, and sensitive careful-lane
+  failure falls back to private drafting in
   `prosepal-ios/Sources/ProsePalAPI/MessageWritingService.swift`. Partial
   because register-specific palette, whitespace, and haptic changes are not
   complete.
