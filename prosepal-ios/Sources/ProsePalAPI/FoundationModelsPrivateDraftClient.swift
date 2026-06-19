@@ -23,6 +23,15 @@ public struct FoundationModelsPrivateDraftClient: MomentDraftClient {
     private let memoryProvider: any RelationshipMemoryProviding
     private let model: SystemLanguageModel
 
+    public static var isDefaultModelAvailable: Bool {
+        switch SystemLanguageModel.default.availability {
+        case .available:
+            true
+        case .unavailable:
+            false
+        }
+    }
+
     public init(
         memoryProvider: any RelationshipMemoryProviding = EmptyRelationshipMemoryProvider(),
         model: SystemLanguageModel = .default
@@ -98,7 +107,7 @@ public struct FoundationModelsPrivateDraftClient: MomentDraftClient {
             )
         case .unavailable(.appleIntelligenceNotEnabled):
             throw GenerationError.serviceUnavailable(
-                message: "Turn on Apple Intelligence to use Private draft."
+                message: "Private drafting is not enabled on this device."
             )
         case .unavailable(.modelNotReady):
             throw GenerationError.serviceUnavailable(

@@ -106,7 +106,15 @@ public struct MomentInput: Codable, Equatable, Sendable {
     }
 
     public var isCarefulMode: Bool {
-        register == .assemble || requiresCarefulLane || occasion == .apology
+        recommendedRegister == .assemble || requiresCarefulLane || occasion == .apology
+    }
+
+    public var prefersCareRegister: Bool {
+        occasion == .sympathy || occasion == .petSympathy || occasion == .apology
+    }
+
+    public var recommendedRegister: MomentRegister {
+        prefersCareRegister && register == .react ? .assemble : register
     }
 
     public var requiresCarefulLane: Bool {
@@ -116,7 +124,7 @@ public struct MomentInput: Codable, Equatable, Sendable {
         case .confess:
             occasion == .sympathy || occasion == .petSympathy || occasion == .apology
         case .react:
-            occasion == .sympathy || occasion == .petSympathy
+            prefersCareRegister
         }
     }
 
@@ -130,7 +138,7 @@ public struct MomentInput: Codable, Equatable, Sendable {
             recipientName: personName.nilIfBlank,
             thingsToInclude: trueThing.nilIfBlank.map { [$0] } ?? [],
             thingsToAvoid: [],
-            userContext: register.userSafeDescription
+            userContext: recommendedRegister.userSafeDescription
         )
     }
 }

@@ -39,7 +39,7 @@ public struct NativeRuntimeReadiness: Equatable, Sendable {
             NativeRuntimeReadinessItem(
                 id: "private-draft",
                 title: "Private Draft",
-                detail: isPrivateDraftConfigured ? "On-device writing client included" : "Private draft client is not included",
+                detail: isPrivateDraftConfigured ? "Private draft is available on this device" : "Private draft is device and runtime dependent",
                 statusText: isPrivateDraftConfigured ? "Ready" : "Missing",
                 systemImage: "sparkles",
                 isReady: isPrivateDraftConfigured

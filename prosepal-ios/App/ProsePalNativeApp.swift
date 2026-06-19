@@ -65,7 +65,7 @@ private enum RuntimeReadinessFactory {
         let gatewayURL = config.url(named: "PROSEPAL_GATEWAY_URL")
         let premiumProductIDs = config.list(named: "PROSEPAL_PREMIUM_PRODUCT_IDS")
         return NativeRuntimeReadiness(
-            isPrivateDraftConfigured: true,
+            isPrivateDraftConfigured: FoundationModelsPrivateDraftClient.isDefaultModelAvailable,
             isCarefulGatewayConfigured: gatewayURL != nil,
             isDevGatewaySecretConfigured: config.value(named: "PROSEPAL_DEV_GATEWAY_SECRET") != nil,
             isAccountConfigured: config.url(named: "PROSEPAL_SUPABASE_URL", fallback: "SUPABASE_URL") != nil &&

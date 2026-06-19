@@ -227,7 +227,10 @@ func serviceAppliesLocalPressureCheckToReturnedDraft() async throws {
         )
     )
     let carefulClient = RecordingMomentDraftClient(
-        bundle: MomentDraftBundle(messageText: "Careful.", lane: .takeMoreCare)
+        bundle: MomentDraftBundle(
+            messageText: "I'm sorry but I was trying to help.",
+            lane: .takeMoreCare
+        )
     )
     let service = RoutingMessageWritingService(
         privateClient: privateClient,

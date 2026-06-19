@@ -105,6 +105,20 @@ final class CardContractTests: XCTestCase {
         XCTAssertEqual(intent.localeIdentifier, Locale.current.identifier)
     }
 
+    func testSensitiveMomentUsesCarefulRegisterCopyForGatewayIntent() {
+        let moment = MomentInput(
+            personName: "Alex",
+            relationship: .closeFriend,
+            occasion: .sympathy,
+            register: .react,
+            trueThing: "Their dad died yesterday."
+        )
+
+        XCTAssertEqual(moment.recommendedRegister, .assemble)
+        XCTAssertTrue(moment.requiresCarefulLane)
+        XCTAssertEqual(moment.cardIntent.userContext, "Harder moments where your words should lead.")
+    }
+
     func testDomainTaxonomyMatchesFlutterProductCatalogueShape() {
         XCTAssertEqual(Occasion.allCases.count, 40)
         XCTAssertEqual(Array(Occasion.allCases.prefix(10)), [

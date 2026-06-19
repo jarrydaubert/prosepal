@@ -11,6 +11,36 @@ import UIKit
 import AppKit
 #endif
 
+public enum MomentDraftUnavailableReason: Equatable, Sendable {
+    case offline
+    case timedOut
+    case rateLimited
+    case usageLimitReached
+    case contentBlocked
+    case serviceUnavailable
+    case unexpectedResponse
+    case unexpected
+
+    init(_ error: GenerationError) {
+        switch error {
+        case .offline:
+            self = .offline
+        case .timedOut:
+            self = .timedOut
+        case .rateLimited:
+            self = .rateLimited
+        case .usageLimitReached:
+            self = .usageLimitReached
+        case .contentBlocked:
+            self = .contentBlocked
+        case .serviceUnavailable:
+            self = .serviceUnavailable
+        case .unexpectedResponse:
+            self = .unexpectedResponse
+        }
+    }
+}
+
 @MainActor
 @Observable
 public final class MomentModel {
@@ -22,6 +52,7 @@ public final class MomentModel {
     public var bundle: MomentDraftBundle?
     public var isDrafting = false
     public var errorMessage: String?
+    public var draftUnavailableReason: MomentDraftUnavailableReason?
 
     @ObservationIgnored private let service: any MessageWritingService
     @ObservationIgnored private let diagnostics: NativeDiagnosticsLogger
@@ -61,7 +92,14 @@ public final class MomentModel {
         if let occasion = request.occasion {
             self.occasion = occasion
         }
+        alignRegisterForMoment()
         scheduleDraft()
+    }
+
+    public func alignRegisterForMoment() {
+        if moment.prefersCareRegister && register == .react {
+            register = .assemble
+        }
     }
 
     public func scheduleDraft() {
@@ -70,6 +108,7 @@ public final class MomentModel {
         guard canDraft else {
             bundle = nil
             errorMessage = nil
+            draftUnavailableReason = nil
             isDrafting = false
             return
         }
@@ -95,6 +134,7 @@ public final class MomentModel {
         let startedAt = Date()
         isDrafting = true
         errorMessage = nil
+        draftUnavailableReason = nil
         diagnostics.momentDraftStarted(
             requestID: requestID,
             moment: input,
@@ -118,6 +158,7 @@ public final class MomentModel {
         } catch let error as GenerationError {
             guard isCurrentGeneration(generation) else { return }
             errorMessage = error.userSafeMessage
+            draftUnavailableReason = MomentDraftUnavailableReason(error)
             diagnostics.momentDraftFailed(
                 requestID: requestID,
                 category: error.diagnosticsCategory,
@@ -126,6 +167,7 @@ public final class MomentModel {
         } catch {
             guard isCurrentGeneration(generation) else { return }
             errorMessage = "ProsePal could not write this yet."
+            draftUnavailableReason = .unexpected
             diagnostics.momentDraftFailed(
                 requestID: requestID,
                 category: "unexpected_error",
@@ -163,6 +205,7 @@ public final class MomentModel {
         let startedAt = Date()
         isDrafting = true
         errorMessage = nil
+        draftUnavailableReason = nil
         diagnostics.momentDraftStarted(
             requestID: requestID,
             moment: input,
@@ -186,6 +229,7 @@ public final class MomentModel {
         } catch let error as GenerationError {
             guard isCurrentGeneration(generation) else { return }
             errorMessage = error.userSafeMessage
+            draftUnavailableReason = MomentDraftUnavailableReason(error)
             diagnostics.momentDraftFailed(
                 requestID: requestID,
                 category: error.diagnosticsCategory,
@@ -194,6 +238,7 @@ public final class MomentModel {
         } catch {
             guard isCurrentGeneration(generation) else { return }
             errorMessage = "ProsePal could not reshape this yet."
+            draftUnavailableReason = .unexpected
             diagnostics.momentDraftFailed(
                 requestID: requestID,
                 category: "unexpected_error",
@@ -211,6 +256,7 @@ public final class MomentModel {
         let startedAt = Date()
         isDrafting = true
         errorMessage = nil
+        draftUnavailableReason = nil
         diagnostics.momentDraftStarted(
             requestID: requestID,
             moment: input,
@@ -234,6 +280,7 @@ public final class MomentModel {
         } catch let error as GenerationError {
             guard isCurrentGeneration(generation) else { return }
             errorMessage = error.userSafeMessage
+            draftUnavailableReason = MomentDraftUnavailableReason(error)
             diagnostics.momentDraftFailed(
                 requestID: requestID,
                 category: error.diagnosticsCategory,
@@ -242,6 +289,7 @@ public final class MomentModel {
         } catch {
             guard isCurrentGeneration(generation) else { return }
             errorMessage = "ProsePal could not take more care with this yet."
+            draftUnavailableReason = .unexpected
             diagnostics.momentDraftFailed(
                 requestID: requestID,
                 category: "unexpected_error",
@@ -274,6 +322,13 @@ public final class MomentModel {
     private static func durationMs(since startedAt: Date) -> Int {
         max(0, Int(Date().timeIntervalSince(startedAt) * 1_000))
     }
+}
+
+private struct MomentDraftUnavailableNotice {
+    var title: String
+    var detail: String
+    var systemImage: String
+    var canRetry: Bool
 }
 
 public struct MomentAppRootView: View {
@@ -559,6 +614,10 @@ private struct MomentSheetView: View {
                         .frame(maxWidth: .infinity, alignment: .center)
                         .transition(.opacity)
                 }
+
+                Color.clear
+                    .frame(height: bottomScrollSpacerHeight)
+                    .accessibilityHidden(true)
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 22)
@@ -624,6 +683,7 @@ private struct MomentSheetView: View {
         }
         .onChange(of: model.occasion) { _, newValue in
             diagnostics.selectionChanged(kind: "moment", value: newValue.rawValue)
+            model.alignRegisterForMoment()
             model.scheduleDraft()
         }
         .onChange(of: model.register) { _, newValue in
@@ -635,6 +695,13 @@ private struct MomentSheetView: View {
 
     private var currentPersonName: String {
         model.personName.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private var bottomScrollSpacerHeight: CGFloat {
+        if focusedField != nil {
+            return 28
+        }
+        return model.bundle == nil && model.errorMessage == nil ? 40 : 150
     }
 
     private var approvedBeadsForCurrentPerson: [RelationshipTruthBeadRecord] {
@@ -717,11 +784,18 @@ private struct MomentSheetView: View {
             .buttonStyle(.plain)
 
             Picker("Care", selection: $model.register) {
-                ForEach(MomentRegister.allCases) { register in
+                ForEach(availableRegisters) { register in
                     Text(register.displayName).tag(register)
                 }
             }
             .pickerStyle(.segmented)
+
+            if model.moment.prefersCareRegister {
+                Label("This moment is handled with extra care.", systemImage: "heart.text.square")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(.tint)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
 
             Text(model.register.userSafeDescription)
                 .font(.footnote)
@@ -729,6 +803,13 @@ private struct MomentSheetView: View {
                 .fixedSize(horizontal: false, vertical: true)
         }
         .prosePalMomentCard()
+    }
+
+    private var availableRegisters: [MomentRegister] {
+        if model.moment.prefersCareRegister {
+            return MomentRegister.allCases.filter { $0 != .react }
+        }
+        return MomentRegister.allCases
     }
 
     private var truthSection: some View {
@@ -933,11 +1014,8 @@ private struct MomentSheetView: View {
                 }
             }
 
-            if let errorMessage = model.errorMessage {
-                Text(errorMessage)
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
+            if let notice = draftUnavailableNotice {
+                draftUnavailableView(notice)
             } else if let bundle = model.bundle {
                 draftBody(bundle.messageText)
 
@@ -955,6 +1033,113 @@ private struct MomentSheetView: View {
             }
         }
         .prosePalMomentCard()
+    }
+
+    private var draftUnavailableNotice: MomentDraftUnavailableNotice? {
+        guard let errorMessage = model.errorMessage else { return nil }
+
+        switch model.draftUnavailableReason {
+        case .offline:
+            return MomentDraftUnavailableNotice(
+                title: "Connection needed",
+                detail: "Private Draft could not finish offline on this device. Check your connection and try again.",
+                systemImage: "wifi.slash",
+                canRetry: true
+            )
+        case .timedOut:
+            return MomentDraftUnavailableNotice(
+                title: "That took too long",
+                detail: "The writing route did not answer in time. Your words are still here, so try again when the connection settles.",
+                systemImage: "clock",
+                canRetry: true
+            )
+        case .rateLimited, .usageLimitReached:
+            return MomentDraftUnavailableNotice(
+                title: "Writing paused for now",
+                detail: errorMessage,
+                systemImage: "hourglass",
+                canRetry: false
+            )
+        case .contentBlocked:
+            return MomentDraftUnavailableNotice(
+                title: "This needs a different kind of support",
+                detail: errorMessage,
+                systemImage: "exclamationmark.triangle",
+                canRetry: false
+            )
+        case .serviceUnavailable, .unexpectedResponse:
+            if model.moment.requiresCarefulLane || model.register == .assemble {
+                return MomentDraftUnavailableNotice(
+                    title: "Take more care is unavailable",
+                    detail: account.runtimeReadiness.isCarefulGatewayConfigured
+                        ? "The careful writing route did not answer. Try again, or add one true detail and use the private draft when available."
+                        : "This scheme needs the Take more care gateway settings before sensitive moments can use that route.",
+                    systemImage: "heart.text.square",
+                    canRetry: account.runtimeReadiness.isCarefulGatewayConfigured
+                )
+            }
+
+            return MomentDraftUnavailableNotice(
+                title: "Private Draft is unavailable",
+                detail: account.runtimeReadiness.isPrivateDraftConfigured
+                    ? errorMessage
+                    : "This build does not have the private writing client ready yet. Settings shows what is missing.",
+                systemImage: "lock",
+                canRetry: account.runtimeReadiness.isPrivateDraftConfigured
+            )
+        case .unexpected, .none:
+            if model.moment.requiresCarefulLane || model.register == .assemble {
+                return MomentDraftUnavailableNotice(
+                    title: "Take more care is unavailable",
+                    detail: "The careful writing route did not answer. Try again, or add one true detail and use the private draft when available.",
+                    systemImage: "heart.text.square",
+                    canRetry: true
+                )
+            }
+
+            return MomentDraftUnavailableNotice(
+                title: "Draft unavailable",
+                detail: "ProsePal could not write this yet. Try again, or add one more true detail first.",
+                systemImage: "square.and.pencil",
+                canRetry: true
+            )
+        }
+    }
+
+    private func draftUnavailableView(_ notice: MomentDraftUnavailableNotice) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .top, spacing: 10) {
+                Image(systemName: notice.systemImage)
+                    .font(.headline)
+                    .foregroundStyle(.tint)
+                    .frame(width: 24)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(notice.title)
+                        .font(.subheadline.weight(.semibold))
+                    Text(notice.detail)
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .accessibilityElement(children: .combine)
+
+            if notice.canRetry && model.canDraft {
+                Button {
+                    Task {
+                        await model.draftNow()
+                    }
+                } label: {
+                    Label("Try again", systemImage: "arrow.clockwise")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+                .disabled(model.isDrafting)
+            }
+        }
+        .padding(14)
+        .background(Color.momentSecondaryGroupedBackground, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
     }
 
     private func draftBody(_ text: String) -> some View {
@@ -1252,6 +1437,8 @@ private struct MomentRelationshipPickerSheet: View {
                 }
             }
             .searchable(text: $searchText, prompt: "Search relationships")
+            .momentPickerListStyle()
+            .contentMargins(.top, 8, for: .scrollContent)
             .navigationTitle("Who they are")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -1326,6 +1513,8 @@ private struct MomentOccasionPickerSheet: View {
                 }
             }
             .searchable(text: $searchText, prompt: "Search moments")
+            .momentPickerListStyle()
+            .contentMargins(.top, 8, for: .scrollContent)
             .navigationTitle("Moment")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -1426,7 +1615,7 @@ private struct MomentPickerRow: View {
                     .foregroundStyle(.tint)
             }
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, 8)
         .contentShape(Rectangle())
         .accessibilityElement(children: .combine)
     }
@@ -1471,10 +1660,7 @@ private struct MomentTruthBeadRow: View {
                     Label("Delete detail", systemImage: "trash")
                 }
             } label: {
-                Image(systemName: "ellipsis.circle")
-                    .font(.body.weight(.semibold))
-                    .foregroundStyle(.secondary)
-                    .frame(width: 32, height: 32)
+                MomentMemoryManageLabel()
             }
             .accessibilityLabel("Relationship memory actions")
         }
@@ -1531,15 +1717,24 @@ private struct MomentVoiceCardRow: View {
                     Label("Delete voice card", systemImage: "trash")
                 }
             } label: {
-                Image(systemName: "ellipsis.circle")
-                    .font(.body.weight(.semibold))
-                    .foregroundStyle(.secondary)
-                    .frame(width: 32, height: 32)
+                MomentMemoryManageLabel()
             }
             .accessibilityLabel("Voice card actions")
         }
         .padding(12)
         .background(Color.momentSecondaryGroupedBackground, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+    }
+}
+
+private struct MomentMemoryManageLabel: View {
+    var body: some View {
+        Label("Manage", systemImage: "ellipsis.circle")
+            .font(.caption.weight(.semibold))
+            .labelStyle(.titleAndIcon)
+            .foregroundStyle(.secondary)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 7)
+            .background(.thinMaterial, in: Capsule())
     }
 }
 
@@ -2053,6 +2248,10 @@ private struct MomentSettingsView: View {
                     .disabled(account.isDeletingAccount)
                 } else {
                     MomentAppleSignInControl(account: account, source: "settings")
+                    Text("Sign in when you want purchase restore, account deletion, or data export.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
             }
 
@@ -2094,6 +2293,23 @@ private struct MomentSettingsView: View {
                     RelationshipMemoryVaultView()
                 } label: {
                     Label("Relationship memory", systemImage: "checkmark.seal")
+                }
+                LabeledContent("Export data", value: account.isSignedIn ? "Contact support" : "Sign in required")
+                LabeledContent("Delete account", value: account.isSignedIn ? "Available above" : "Sign in required")
+            }
+
+            Section("Support") {
+                Link(destination: MomentSettingsExternalLinks.support) {
+                    Label("Contact support", systemImage: "envelope")
+                }
+            }
+
+            Section("Legal") {
+                Link(destination: MomentSettingsExternalLinks.terms) {
+                    Label("Terms", systemImage: "doc.text")
+                }
+                Link(destination: MomentSettingsExternalLinks.privacy) {
+                    Label("Privacy Policy", systemImage: "hand.raised")
                 }
             }
 
@@ -2484,6 +2700,7 @@ private struct MomentPaywallUnavailableRow: View {
 private enum MomentSettingsExternalLinks {
     static let terms = URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!
     static let privacy = URL(string: "https://prosepal.app/privacy")!
+    static let support = URL(string: "mailto:support@prosepal.app")!
 }
 
 private extension Relationship {
@@ -2511,6 +2728,15 @@ private extension View {
             .padding(18)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(Color.prosePalCard, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+    }
+
+    @ViewBuilder
+    func momentPickerListStyle() -> some View {
+        #if os(iOS)
+        self.listStyle(.insetGrouped)
+        #else
+        self
+        #endif
     }
 
     @ViewBuilder

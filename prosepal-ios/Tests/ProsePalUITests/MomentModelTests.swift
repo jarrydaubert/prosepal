@@ -57,6 +57,60 @@ func crisisInputDoesNotStartMomentDrafting() async throws {
 
 @Test
 @MainActor
+func sensitiveMomentAlignsDefaultRegisterToTakeCare() async throws {
+    let client = CountingMomentDraftClient()
+    let service = RoutingMessageWritingService(
+        privateClient: client,
+        carefulClient: client
+    )
+    let model = MomentModel(service: service)
+
+    model.occasion = .sympathy
+    model.alignRegisterForMoment()
+
+    #expect(model.register == .assemble)
+    #expect(model.moment.isCarefulMode)
+    #expect(model.moment.requiresCarefulLane)
+}
+
+@Test
+@MainActor
+func ordinaryMomentKeepsDefaultReactRegister() async throws {
+    let client = CountingMomentDraftClient()
+    let service = RoutingMessageWritingService(
+        privateClient: client,
+        carefulClient: client
+    )
+    let model = MomentModel(service: service)
+
+    model.occasion = .thankYou
+    model.alignRegisterForMoment()
+
+    #expect(model.register == .react)
+    #expect(!model.moment.requiresCarefulLane)
+}
+
+@Test
+@MainActor
+func launchRequestAlignsSensitiveMomentBeforeDrafting() async throws {
+    let client = CountingMomentDraftClient()
+    let service = RoutingMessageWritingService(
+        privateClient: client,
+        carefulClient: client
+    )
+    let model = MomentModel(service: service)
+
+    model.applyLaunchRequest(MomentLaunchRequest(
+        personName: "Sam",
+        occasion: .apology
+    ))
+
+    #expect(model.register == .assemble)
+    #expect(model.moment.requiresCarefulLane)
+}
+
+@Test
+@MainActor
 func takeMoreCareReplacesPrivateDraftWithCarefulDraft() async throws {
     let privateClient = CountingMomentDraftClient()
     let carefulClient = MomentModelRefiningClient(
