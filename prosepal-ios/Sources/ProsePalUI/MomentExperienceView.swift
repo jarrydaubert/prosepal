@@ -613,6 +613,8 @@ private struct MomentSheetView: View {
     @State private var isShowingPaywall = false
     @State private var newTruthBeadText = ""
     @State private var newVoiceCardSummary = ""
+    @State private var isAddingTruthBead = false
+    @State private var isAddingVoiceCard = false
     @State private var editingTruthBead: RelationshipTruthBeadRecord?
     @State private var editingVoiceCard: RelationshipVoiceCardRecord?
     @State private var isShowingMemoryExplanation = false
@@ -639,6 +641,11 @@ private struct MomentSheetView: View {
                     activeSetupSection
                 }
                 truthSection
+                if shouldReserveSecondaryContentRailBreak {
+                    Color.clear
+                        .frame(height: secondaryContentRailBreakHeight)
+                        .accessibilityHidden(true)
+                }
                 if model.safetySignal == .crisisSupport {
                     crisisSupportSection
                 } else if !currentPersonName.isEmpty {
@@ -764,6 +771,18 @@ private struct MomentSheetView: View {
             return 96
         }
         return model.bundle == nil && model.errorMessage == nil ? 132 : 170
+    }
+
+    private var shouldReserveSecondaryContentRailBreak: Bool {
+        focusedField == nil &&
+            !currentPersonName.isEmpty &&
+            model.safetySignal != .crisisSupport &&
+            model.bundle == nil &&
+            model.errorMessage == nil
+    }
+
+    private var secondaryContentRailBreakHeight: CGFloat {
+        model.moment.isCarefulMode ? 188 : 176
     }
 
     private var approvedBeadsForCurrentPerson: [RelationshipTruthBeadRecord] {
@@ -986,34 +1005,63 @@ private struct MomentSheetView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
 
-            HStack(spacing: 10) {
-                TextField("A detail to remember", text: $newTruthBeadText, prompt: Text("Loves Sunday walks"))
-                    .focused($focusedField, equals: .memory)
-                    .submitLabel(.done)
-                    .padding(14)
-                    .momentInputSurface(cornerRadius: 16)
-                    .onSubmit {
-                        addTruthBead()
-                    }
+            if shouldShowEmptyMemoryQuickActions {
+                emptyMemoryQuickActions
+            } else {
+                truthBeadControls
 
-                Button {
-                    addTruthBead()
-                } label: {
-                    Image(systemName: "plus")
-                        .font(.headline.weight(.semibold))
-                        .frame(width: 42, height: 42)
+                Divider()
+                    .padding(.vertical, 2)
+
+                voiceCardControls
+            }
+        }
+        .prosePalMomentCard(prominence: approvedBeadsForCurrentPerson.isEmpty && voiceCardForCurrentPerson == nil ? .standard : .elevated)
+    }
+
+    private var shouldShowEmptyMemoryQuickActions: Bool {
+        approvedBeadsForCurrentPerson.isEmpty &&
+            voiceCardForCurrentPerson == nil &&
+            !isAddingTruthBead &&
+            !isAddingVoiceCard
+    }
+
+    private var emptyMemoryQuickActions: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 8) {
+                memoryAddButton(title: "Add detail", systemImage: "plus") {
+                    beginAddingTruthBead()
                 }
-                .buttonStyle(.borderedProminent)
-                .buttonBorderShape(.circle)
-                .tint(.prosePalCoral)
-                .disabled(newTruthBeadText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                .accessibilityLabel("Add relationship memory")
+                memoryAddButton(title: "Add voice", systemImage: "waveform") {
+                    beginAddingVoiceCard()
+                }
             }
 
+            VStack(spacing: 8) {
+                memoryAddButton(title: "Add detail", systemImage: "plus") {
+                    beginAddingTruthBead()
+                }
+                memoryAddButton(title: "Add voice", systemImage: "waveform") {
+                    beginAddingVoiceCard()
+                }
+            }
+        }
+    }
+
+    private var truthBeadControls: some View {
+        Group {
             if approvedBeadsForCurrentPerson.isEmpty {
-                Text("No saved details yet.")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
+                if isAddingTruthBead {
+                    truthBeadInputRow
+                } else {
+                    compactEmptyMemoryAction(
+                        title: "No saved details yet.",
+                        actionTitle: "Add detail",
+                        systemImage: "plus"
+                    ) {
+                        beginAddingTruthBead()
+                    }
+                }
             } else {
                 VStack(spacing: 8) {
                     ForEach(approvedBeadsForCurrentPerson) { bead in
@@ -1030,15 +1078,95 @@ private struct MomentSheetView: View {
                             }
                         )
                     }
+
+                    if isAddingTruthBead {
+                        truthBeadInputRow
+                    } else {
+                        memoryAddButton(title: "Add another detail", systemImage: "plus") {
+                            beginAddingTruthBead()
+                        }
+                    }
                 }
             }
-
-            Divider()
-                .padding(.vertical, 2)
-
-            voiceCardControls
         }
-        .prosePalMomentCard(prominence: approvedBeadsForCurrentPerson.isEmpty && voiceCardForCurrentPerson == nil ? .standard : .elevated)
+    }
+
+    private var truthBeadInputRow: some View {
+        HStack(spacing: 10) {
+            TextField("A detail to remember", text: $newTruthBeadText, prompt: Text("Loves Sunday walks"))
+                .focused($focusedField, equals: .memory)
+                .submitLabel(.done)
+                .padding(14)
+                .momentInputSurface(cornerRadius: 16)
+                .onSubmit {
+                    addTruthBead()
+                }
+
+            Button {
+                addTruthBead()
+            } label: {
+                Image(systemName: "plus")
+                    .font(.headline.weight(.semibold))
+                    .frame(width: 42, height: 42)
+            }
+            .buttonStyle(.borderedProminent)
+            .buttonBorderShape(.circle)
+            .tint(.prosePalCoral)
+            .disabled(newTruthBeadText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            .accessibilityLabel("Add relationship memory")
+        }
+    }
+
+    private func compactEmptyMemoryAction(
+        title: String,
+        actionTitle: String,
+        systemImage: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        HStack(spacing: 10) {
+            Text(title)
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+
+            Spacer(minLength: 8)
+
+            Button(action: action) {
+                Label(actionTitle, systemImage: systemImage)
+            }
+            .buttonStyle(.bordered)
+            .buttonBorderShape(.capsule)
+            .controlSize(.small)
+            .tint(.prosePalCoral)
+        }
+    }
+
+    private func memoryAddButton(
+        title: String,
+        systemImage: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Label(title, systemImage: systemImage)
+                .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.bordered)
+        .buttonBorderShape(.capsule)
+        .controlSize(.small)
+        .tint(.prosePalCoral)
+    }
+
+    private func beginAddingTruthBead() {
+        withAnimation(.easeInOut(duration: 0.18)) {
+            isAddingTruthBead = true
+        }
+        focusedField = .memory
+    }
+
+    private func beginAddingVoiceCard() {
+        withAnimation(.easeInOut(duration: 0.18)) {
+            isAddingVoiceCard = true
+        }
+        focusedField = .voice
     }
 
     private var voiceCardControls: some View {
@@ -1066,30 +1194,44 @@ private struct MomentSheetView: View {
                     }
                 )
             } else {
-                HStack(spacing: 10) {
-                    TextField("Warm, short, no fuss", text: $newVoiceCardSummary, prompt: Text("Warm, short, no fuss"))
-                        .focused($focusedField, equals: .voice)
-                        .submitLabel(.done)
-                        .padding(14)
-                        .momentInputSurface(cornerRadius: 16)
-                        .onSubmit {
-                            addVoiceCard()
-                        }
-
-                    Button {
-                        addVoiceCard()
-                    } label: {
-                        Image(systemName: "plus")
-                            .font(.headline.weight(.semibold))
-                            .frame(width: 42, height: 42)
+                if isAddingVoiceCard {
+                    voiceCardInputRow
+                } else {
+                    compactEmptyMemoryAction(
+                        title: "No voice card yet.",
+                        actionTitle: "Add voice",
+                        systemImage: "waveform"
+                    ) {
+                        beginAddingVoiceCard()
                     }
-                    .buttonStyle(.bordered)
-                    .buttonBorderShape(.circle)
-                    .tint(.prosePalNavy)
-                    .disabled(newVoiceCardSummary.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                    .accessibilityLabel("Add voice card")
                 }
             }
+        }
+    }
+
+    private var voiceCardInputRow: some View {
+        HStack(spacing: 10) {
+            TextField("Warm, short, no fuss", text: $newVoiceCardSummary, prompt: Text("Warm, short, no fuss"))
+                .focused($focusedField, equals: .voice)
+                .submitLabel(.done)
+                .padding(14)
+                .momentInputSurface(cornerRadius: 16)
+                .onSubmit {
+                    addVoiceCard()
+                }
+
+            Button {
+                addVoiceCard()
+            } label: {
+                Image(systemName: "plus")
+                    .font(.headline.weight(.semibold))
+                    .frame(width: 42, height: 42)
+            }
+            .buttonStyle(.bordered)
+            .buttonBorderShape(.circle)
+            .tint(.prosePalNavy)
+            .disabled(newVoiceCardSummary.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            .accessibilityLabel("Add voice card")
         }
     }
 
@@ -1505,6 +1647,7 @@ private struct MomentSheetView: View {
             try modelContext.save()
             diagnostics.messageAction("truth_bead_added", source: "moment", messageCharacters: 0)
             newTruthBeadText = ""
+            isAddingTruthBead = false
             focusedField = nil
             model.scheduleDraft()
         } catch {
@@ -1536,6 +1679,7 @@ private struct MomentSheetView: View {
             try modelContext.save()
             diagnostics.messageAction("voice_card_added", source: "moment", messageCharacters: 0)
             newVoiceCardSummary = ""
+            isAddingVoiceCard = false
             focusedField = nil
             model.scheduleDraft()
         } catch {
@@ -2727,21 +2871,20 @@ private struct MomentSettingsView: View {
                     .disabled(account.isDeletingAccount)
                 } else {
                     MomentAppleSignInControl(account: account, source: "settings")
-                    Text("Sign in when you want purchase restore, account deletion, or data export.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
                 }
             }
             .momentListRowSurface()
 
             Section("Premium") {
-                LabeledContent("Status", value: account.isPremiumUnlocked ? "Active" : "Not active")
-
                 Button {
                     isShowingPaywall = true
                 } label: {
-                    Label("View Premium", systemImage: "star")
+                    HStack {
+                        Label("View Premium", systemImage: "star")
+                        Spacer()
+                        Text(account.isPremiumUnlocked ? "Active" : "Not active")
+                            .foregroundStyle(.secondary)
+                    }
                 }
 
                 Button {
@@ -2951,27 +3094,29 @@ private struct MomentPaywallSheet: View {
                     productSection
 
                     VStack(spacing: 8) {
-                    Button {
-                        Task {
-                            await account.purchasePremium(source: "paywall")
-                                if account.isPremiumUnlocked {
-                                    dismiss()
+                        if !account.subscriptionProducts.isEmpty {
+                            Button {
+                                Task {
+                                    await account.purchasePremium(source: "paywall")
+                                    if account.isPremiumUnlocked {
+                                        dismiss()
+                                    }
                                 }
+                            } label: {
+                                Label(account.isPurchasingPremium ? "Working..." : "Continue with Premium", systemImage: "star.fill")
+                                    .frame(maxWidth: .infinity)
                             }
-                        } label: {
-                            Label(account.isPurchasingPremium ? "Working..." : "Continue with Premium", systemImage: "star.fill")
-                                .frame(maxWidth: .infinity)
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .buttonBorderShape(.capsule)
-                        .tint(.prosePalCoral)
-                        .controlSize(.large)
-                        .disabled(account.isPurchasingPremium || account.isLoadingSubscriptions || account.subscriptionProducts.isEmpty)
+                            .buttonStyle(.borderedProminent)
+                            .buttonBorderShape(.capsule)
+                            .tint(.prosePalCoral)
+                            .controlSize(.large)
+                            .disabled(account.isPurchasingPremium || account.isLoadingSubscriptions)
 
-                        Text(account.premiumRenewalDisclosureText)
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                            .multilineTextAlignment(.center)
+                            Text(account.premiumRenewalDisclosureText)
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                                .multilineTextAlignment(.center)
+                        }
 
                         Button {
                             Task {
