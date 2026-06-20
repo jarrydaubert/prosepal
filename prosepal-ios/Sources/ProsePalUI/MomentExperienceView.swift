@@ -633,6 +633,11 @@ private struct MomentSheetView: View {
                 header
                 personSection
                 momentSection
+                if shouldReserveRailBreakBeforeTruth {
+                    Color.clear
+                        .frame(height: 84)
+                        .accessibilityHidden(true)
+                }
                 truthSection
                 if model.safetySignal == .crisisSupport {
                     crisisSupportSection
@@ -754,6 +759,10 @@ private struct MomentSheetView: View {
         model.personName.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
+    private var shouldReserveRailBreakBeforeTruth: Bool {
+        focusedField == nil && model.moment.isCarefulMode && !currentPersonName.isEmpty
+    }
+
     private var bottomScrollSpacerHeight: CGFloat {
         if focusedField != nil {
             return 96
@@ -789,17 +798,19 @@ private struct MomentSheetView: View {
             .padding(.vertical, 7)
             .background(Color.white.opacity(0.12), in: Capsule(style: .continuous))
 
-            Text("Who are you showing up for?")
-                .font(.system(.title, design: .serif).weight(.bold))
+            Text(currentPersonName.isEmpty ? "Who are you showing up for?" : "For \(currentPersonName)")
+                .font(.system(currentPersonName.isEmpty ? .title : .title2, design: .serif).weight(.bold))
                 .foregroundStyle(.white)
                 .fixedSize(horizontal: false, vertical: true)
 
-            Text("Start with the person. ProsePal keeps a private draft ready as you shape what is true.")
-                .font(.callout)
-                .foregroundStyle(.white.opacity(0.74))
-                .fixedSize(horizontal: false, vertical: true)
+            if currentPersonName.isEmpty {
+                Text("Start with the person. ProsePal keeps a private draft ready as you shape what is true.")
+                    .font(.callout)
+                    .foregroundStyle(.white.opacity(0.74))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
-        .padding(20)
+        .padding(currentPersonName.isEmpty ? 20 : 18)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background {
             MomentHeroBackground(isCareful: model.moment.isCarefulMode)
@@ -852,31 +863,17 @@ private struct MomentSheetView: View {
                 MomentSelectionRow(
                     title: "What is the moment?",
                     value: model.occasion.displayName,
-                    detail: model.occasion.group.displayName,
+                    detail: model.moment.prefersCareRegister ? "Handled with extra care" : model.occasion.group.displayName,
                     systemImage: model.occasion.symbolName
                 )
             }
             .buttonStyle(.plain)
-
-            if model.moment.prefersCareRegister && !currentPersonName.isEmpty {
-                Label("This moment is handled with extra care.", systemImage: "heart.text.square")
-                    .font(.footnote.weight(.semibold))
-                    .foregroundStyle(.tint)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
 
             MomentRegisterSelector(
                 selection: $model.register,
                 registers: availableRegisters,
                 isCareful: model.moment.isCarefulMode
             )
-
-            if !currentPersonName.isEmpty {
-                Text(model.register.userSafeDescription)
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
         }
         .prosePalMomentCard(isCareful: model.moment.isCarefulMode)
     }
@@ -3178,110 +3175,6 @@ private struct MomentScreenIdentityCard: View {
     }
 }
 
-private struct MomentWritingThread: Shape {
-    func path(in rect: CGRect) -> Path {
-        var path = Path()
-        path.move(to: CGPoint(x: rect.minX + rect.width * 0.06, y: rect.minY + rect.height * 0.70))
-        path.addCurve(
-            to: CGPoint(x: rect.minX + rect.width * 0.54, y: rect.minY + rect.height * 0.44),
-            control1: CGPoint(x: rect.minX + rect.width * 0.20, y: rect.minY + rect.height * 0.38),
-            control2: CGPoint(x: rect.minX + rect.width * 0.36, y: rect.minY + rect.height * 0.86)
-        )
-        path.addCurve(
-            to: CGPoint(x: rect.minX + rect.width * 0.94, y: rect.minY + rect.height * 0.26),
-            control1: CGPoint(x: rect.minX + rect.width * 0.70, y: rect.minY + rect.height * 0.08),
-            control2: CGPoint(x: rect.minX + rect.width * 0.82, y: rect.minY + rect.height * 0.58)
-        )
-        return path
-    }
-}
-
-private struct MomentShellRibbons: View {
-    @Environment(\.colorScheme) private var colorScheme
-
-    let isCareful: Bool
-
-    var body: some View {
-        ZStack {
-            VStack {
-                Spacer(minLength: 0)
-
-                LinearGradient(
-                    colors: [
-                        Color.prosePalNavy.opacity(bottomNavyOpacity),
-                        (isCareful ? Color.prosePalCare : Color.prosePalCoralDeep).opacity(bottomAccentOpacity),
-                        Color.clear
-                    ],
-                    startPoint: .leading,
-                    endPoint: .trailing
-                )
-                .frame(height: 260)
-                .rotationEffect(.degrees(-7))
-                .offset(x: -24, y: 96)
-            }
-
-            HStack {
-                Spacer(minLength: 0)
-
-                LinearGradient(
-                    colors: [
-                        Color.clear,
-                        Color.prosePalNavy.opacity(sideNavyOpacity),
-                        (isCareful ? Color.prosePalCare : Color.prosePalCoral).opacity(sideAccentOpacity)
-                    ],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-                .frame(width: 132)
-                .offset(x: 54)
-            }
-
-            MomentWritingThread()
-                .stroke(
-                    LinearGradient(
-                        colors: [
-                            (isCareful ? Color.prosePalCare : Color.prosePalCoral).opacity(threadAccentOpacity),
-                            Color.prosePalNavy.opacity(threadNavyOpacity),
-                            Color.clear
-                        ],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    ),
-                    style: StrokeStyle(lineWidth: colorScheme == .dark ? 1.4 : 1.0, lineCap: .round)
-                )
-                .padding(.horizontal, 34)
-                .padding(.top, 168)
-                .frame(maxHeight: .infinity, alignment: .top)
-        }
-        .allowsHitTesting(false)
-        .accessibilityHidden(true)
-    }
-
-    private var bottomNavyOpacity: Double {
-        colorScheme == .dark ? (isCareful ? 0.32 : 0.26) : (isCareful ? 0.16 : 0.12)
-    }
-
-    private var bottomAccentOpacity: Double {
-        colorScheme == .dark ? 0.18 : 0.07
-    }
-
-    private var sideNavyOpacity: Double {
-        colorScheme == .dark ? 0.14 : 0.05
-    }
-
-    private var sideAccentOpacity: Double {
-        colorScheme == .dark ? 0.10 : 0.035
-    }
-
-    private var threadAccentOpacity: Double {
-        colorScheme == .dark ? 0.20 : 0.07
-    }
-
-    private var threadNavyOpacity: Double {
-        colorScheme == .dark ? 0.16 : 0.055
-    }
-}
-
 private struct MomentAtmosphericBackground: View {
     @Environment(\.colorScheme) private var colorScheme
 
@@ -3307,8 +3200,6 @@ private struct MomentAtmosphericBackground: View {
                 endPoint: .bottomTrailing
             )
 
-            MomentShellRibbons(isCareful: isCareful)
-
             LinearGradient(
                 colors: [
                     Color.prosePalPaper.opacity(colorScheme == .dark ? (isCareful ? 0.08 : 0.12) : 0.08),
@@ -3324,8 +3215,6 @@ private struct MomentAtmosphericBackground: View {
 }
 
 private struct MomentHeroBackground: View {
-    @Environment(\.colorScheme) private var colorScheme
-
     let isCareful: Bool
 
     var body: some View {
@@ -3362,20 +3251,11 @@ private struct MomentHeroBackground: View {
                         lineWidth: 1
                     )
             }
-            .overlay(alignment: .bottomTrailing) {
-                MomentWritingThread()
-                    .stroke(Color.white.opacity(colorScheme == .dark ? 0.20 : 0.13), style: StrokeStyle(lineWidth: 1.2, lineCap: .round))
-                    .frame(width: 160, height: 72)
-                    .padding(.trailing, 16)
-                    .padding(.bottom, 16)
-            }
             .shadow(color: Color.prosePalNavy.opacity(0.18), radius: 24, x: 0, y: 14)
     }
 }
 
 private struct MomentCardBackground: View {
-    @Environment(\.colorScheme) private var colorScheme
-
     let isCareful: Bool
     let prominence: MomentSurfaceProminence
 
@@ -3386,13 +3266,6 @@ private struct MomentCardBackground: View {
             .fill(cardFill)
             .overlay {
                 shape.stroke(borderFill, lineWidth: borderWidth)
-            }
-            .overlay(alignment: .bottomTrailing) {
-                MomentWritingThread()
-                    .stroke(accentColor.opacity(threadOpacity), style: StrokeStyle(lineWidth: 1, lineCap: .round))
-                    .frame(width: 96, height: 46)
-                    .padding(.trailing, 14)
-                    .padding(.bottom, 12)
             }
             .shadow(
                 color: shadowColor,
@@ -3478,21 +3351,6 @@ private struct MomentCardBackground: View {
             Color.prosePalWarning.opacity(0.10)
         default:
             Color.prosePalNavy.opacity(prominence == .elevated ? 0.16 : 0.08)
-        }
-    }
-
-    private var threadOpacity: Double {
-        switch (colorScheme, prominence) {
-        case (.dark, .standard):
-            0.10
-        case (.dark, _):
-            0.16
-        case (_, .standard):
-            0.035
-        case (_, .elevated):
-            0.07
-        case (_, .accent), (_, .warning):
-            0.06
         }
     }
 }
