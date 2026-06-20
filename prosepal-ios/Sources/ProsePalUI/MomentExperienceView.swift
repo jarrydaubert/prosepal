@@ -633,9 +633,9 @@ private struct MomentSheetView: View {
                 header
                 personSection
                 momentSection
-                if shouldReserveRailBreakBeforeTruth {
+                if shouldReserveFirstViewportRailBreak {
                     Color.clear
-                        .frame(height: 84)
+                        .frame(height: firstViewportRailBreakHeight)
                         .accessibilityHidden(true)
                 }
                 truthSection
@@ -759,8 +759,12 @@ private struct MomentSheetView: View {
         model.personName.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    private var shouldReserveRailBreakBeforeTruth: Bool {
-        focusedField == nil && model.moment.isCarefulMode && !currentPersonName.isEmpty
+    private var shouldReserveFirstViewportRailBreak: Bool {
+        focusedField == nil && !currentPersonName.isEmpty
+    }
+
+    private var firstViewportRailBreakHeight: CGFloat {
+        model.moment.isCarefulMode ? 84 : 96
     }
 
     private var bottomScrollSpacerHeight: CGFloat {
