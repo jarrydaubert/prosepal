@@ -267,6 +267,13 @@ not done.
 
 ## 8. Design
 
+- [~] N-IOS-14 Native visual system and Moment rail/content discipline --
+  evidence: `MomentSheetView.momentContent(viewportHeight:)`,
+  `shouldShowSecondaryMomentPanels`, and `activeDraftStatus` in
+  `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`. Partial because
+  XcodeBuildMCP simulator evidence now covers the `Mira Audit` Birthday and
+  Sympathy rail paths, but physical-device, Dynamic Type, VoiceOver, Reduce
+  Transparency, and paywall/input follow-up polish remain.
 - [~] iOS 26-first Liquid Glass direction is in code -- evidence:
   iOS 26 deployment target in `prosepal-ios/Package.swift` and
   `prosepal-ios/ProsePal.xcodeproj/project.pbxproj`; control-layer styling in
@@ -274,9 +281,10 @@ not done.
   `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`. Partial pending
   Xcode 26/device visual verification.
 - [~] Opaque paper-like content sits beneath floating controls -- evidence:
-  `MomentDraftCard`, `MomentPanel`, and background styles in
+  `MomentDraftCard`, `MomentPanel`, `MomentCardBackground`, `MomentSymbolBadge`,
+  and active first-viewport rail/content gating in
   `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`. Partial pending
-  visual and accessibility audit.
+  physical-device and accessibility audit.
 - [~] Register-aware palette and haptics exist -- evidence:
   `MomentPalette` and `MomentHaptics` in
   `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`. Partial because
@@ -336,7 +344,8 @@ not done.
   adjust, copy/share/save -- evidence: `MomentAppRootView`, `MomentSheetView`,
   `MomentActionRail`, and `MomentModel` in
   `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`. Partial pending
-  physical-device evidence after the latest tracker pass.
+  physical-device evidence after the latest Moment rail/content-gating pass and
+  private-lane quality/latency evidence.
 - [ ] Device spike confirms private-lane quality, latency, and escalation
   threshold for grief/apology -- evidence: no committed evidence artifact found
   for this spike.
@@ -363,16 +372,19 @@ not done.
 
 ## Top Open Work
 
-1. Swap the now-working standard-gateway careful lane to the agreed Apple-native
+1. Verify the latest Moment visual/rail/content-gating pass on a physical device
+   and complete Dynamic Type, VoiceOver, Reduce Transparency, Increase Contrast,
+   Add detail focus, and paywall hierarchy polish.
+2. Swap the now-working standard-gateway careful lane to the agreed Apple-native
    careful/PCC direction when that API path is ready.
-2. Configure Apple App Store Server secrets in staging, apply App Store
+3. Configure Apple App Store Server secrets in staging, apply App Store
    entitlement migrations to staging, then capture sandbox notification and
    reconciliation evidence.
-3. Add Care Glance widget, Control Center/Action Button control, and Share
+4. Add Care Glance widget, Control Center/Action Button control, and Share
    extension surfaces.
-4. Harden crisis/pressure handling beyond local English phrase lists and add
+5. Harden crisis/pressure handling beyond local English phrase lists and add
    locale-aware/model-guarded evidence.
-5. Complete vault privacy work for export and any stronger at-rest encryption
+6. Complete vault privacy work for export and any stronger at-rest encryption
    decision.
 
 ## Flutter Production Work

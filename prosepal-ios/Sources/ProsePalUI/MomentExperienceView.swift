@@ -419,6 +419,7 @@ public struct MomentAppRootView: View {
                 MomentSheetView(model: model, account: account)
                     .navigationTitle("ProsePal")
                     .toolbarTitleDisplayMode(.inline)
+                    .momentNavigationBarColorScheme()
             }
             .tabItem {
                 Label("Moment", systemImage: "square.and.pencil")
@@ -427,6 +428,7 @@ public struct MomentAppRootView: View {
 
             NavigationStack {
                 SavedMomentDraftsView()
+                    .momentNavigationBarColorScheme()
             }
             .tabItem {
                 Label("Saved", systemImage: "bookmark")
@@ -435,6 +437,7 @@ public struct MomentAppRootView: View {
 
             NavigationStack {
                 MomentSettingsView(account: account)
+                    .momentNavigationBarColorScheme()
             }
             .tabItem {
                 Label("Settings", systemImage: "gearshape")
@@ -572,11 +575,8 @@ private struct MomentWelcomeRow: View {
     let detail: String
 
     var body: some View {
-        HStack(alignment: .top, spacing: 14) {
-            Image(systemName: systemImage)
-                .font(.title3)
-                .foregroundStyle(.tint)
-                .frame(width: 32, height: 32)
+        HStack(alignment: .center, spacing: 14) {
+            MomentSymbolBadge(systemImage: systemImage, style: .coral, size: 38)
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)
@@ -630,49 +630,29 @@ private struct MomentSheetView: View {
         case voice
     }
 
-    var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                header
-                if currentPersonName.isEmpty {
-                    personSection
-                    momentSection
-                } else {
-                    activeSetupSection
-                }
-                truthSection
-                if shouldReserveSecondaryContentRailBreak {
-                    Color.clear
-                        .frame(height: secondaryContentRailBreakHeight)
-                        .accessibilityHidden(true)
-                }
-                if model.safetySignal == .crisisSupport {
-                    crisisSupportSection
-                } else if !currentPersonName.isEmpty {
-                    memorySection
-                    if model.moment.isCarefulMode {
-                        carefulModeSection
-                    }
-                    draftSection
-                } else {
-                    draftSection
-                }
-                if let saveNotice {
-                    Text(saveNotice)
-                        .font(.footnote.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity, alignment: .center)
-                        .transition(.opacity)
-                }
+    private enum ScrollAnchor: Hashable {
+        case activePrimary
+    }
 
-                Color.clear
-                    .frame(height: bottomScrollSpacerHeight)
-                    .accessibilityHidden(true)
+    var body: some View {
+        GeometryReader { proxy in
+            ScrollViewReader { scrollProxy in
+                ScrollView {
+                    momentContent(viewportHeight: proxy.size.height)
+                }
+                .onChange(of: focusedField) { oldValue, newValue in
+                    handleFocusChange(from: oldValue, to: newValue, scrollProxy: scrollProxy)
+                }
+                .onChange(of: model.occasion) { _, _ in
+                    realignActivePrimaryIfNeeded(scrollProxy: scrollProxy, delayNanoseconds: 120_000_000)
+                }
+                .onChange(of: model.bundle?.id) { _, _ in
+                    realignActivePrimaryIfNeeded(scrollProxy: scrollProxy, delayNanoseconds: 80_000_000)
+                }
+                .onChange(of: model.errorMessage) { _, _ in
+                    realignActivePrimaryIfNeeded(scrollProxy: scrollProxy, delayNanoseconds: 80_000_000)
+                }
             }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 16)
-            .opacity(hasEntered ? 1 : 0)
-            .offset(y: reduceMotion || hasEntered ? 0 : 12)
         }
         .background {
             MomentAtmosphericBackground(isCareful: model.moment.isCarefulMode)
@@ -762,6 +742,50 @@ private struct MomentSheetView: View {
         }
     }
 
+    private func momentContent(viewportHeight: CGFloat) -> some View {
+        VStack(alignment: .leading, spacing: 16) {
+            if currentPersonName.isEmpty {
+                header
+                personSection
+                momentSection
+            } else {
+                activePrimaryContent
+                    .id(ScrollAnchor.activePrimary)
+                    .frame(
+                        minHeight: shouldHoldSecondaryContentBelowFirstViewport
+                            ? activePrimaryViewportHeight(for: viewportHeight)
+                            : nil,
+                        alignment: .top
+                    )
+
+                if model.safetySignal == .crisisSupport {
+                    crisisSupportSection
+                } else if shouldShowSecondaryMomentPanels {
+                    memorySection
+                    if model.moment.isCarefulMode {
+                        carefulModeSection
+                    }
+                    draftSection
+                }
+            }
+            if let saveNotice {
+                Text(saveNotice)
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .transition(.opacity)
+            }
+
+            Color.clear
+                .frame(height: bottomScrollSpacerHeight)
+                .accessibilityHidden(true)
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 16)
+        .opacity(hasEntered ? 1 : 0)
+        .offset(y: reduceMotion || hasEntered ? 0 : 12)
+    }
+
     private var currentPersonName: String {
         model.personName.trimmingCharacters(in: .whitespacesAndNewlines)
     }
@@ -773,16 +797,118 @@ private struct MomentSheetView: View {
         return model.bundle == nil && model.errorMessage == nil ? 132 : 170
     }
 
-    private var shouldReserveSecondaryContentRailBreak: Bool {
+    private var shouldHoldSecondaryContentBelowFirstViewport: Bool {
         focusedField == nil &&
             !currentPersonName.isEmpty &&
-            model.safetySignal != .crisisSupport &&
-            model.bundle == nil &&
-            model.errorMessage == nil
+            model.safetySignal != .crisisSupport
     }
 
-    private var secondaryContentRailBreakHeight: CGFloat {
-        model.moment.isCarefulMode ? 188 : 176
+    private func activePrimaryViewportHeight(for viewportHeight: CGFloat) -> CGFloat {
+        max(viewportHeight + floatingTabRailExclusionHeight, 0)
+    }
+
+    private var floatingTabRailExclusionHeight: CGFloat {
+        dynamicTypeSize.isAccessibilitySize ? 164 : 136
+    }
+
+    private var shouldShowSecondaryMomentPanels: Bool {
+        model.bundle != nil || model.errorMessage != nil
+    }
+
+    private var activePrimaryContent: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            header
+            activeSetupSection
+            truthSection
+            if shouldHoldSecondaryContentBelowFirstViewport {
+                activeDraftStatus
+            }
+        }
+    }
+
+    private var activeDraftStatus: some View {
+        HStack(alignment: .center, spacing: 12) {
+            MomentSymbolBadge(
+                systemImage: model.moment.isCarefulMode ? "heart.text.square" : "lock",
+                style: model.moment.isCarefulMode ? .care : .subtle,
+                size: 34
+            )
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(activeDraftStatusTitle)
+                    .font(.subheadline.weight(.semibold))
+
+                Text(activeDraftStatusDetail)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Spacer(minLength: 8)
+
+            if model.isDrafting {
+                ProgressView()
+                    .controlSize(.small)
+                    .tint(model.moment.isCarefulMode ? .prosePalCare : .prosePalCoral)
+            }
+        }
+        .padding(14)
+        .background(Color.prosePalPaper.opacity(0.9), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(Color.white.opacity(0.56), lineWidth: 1)
+        }
+    }
+
+    private var activeDraftStatusTitle: String {
+        if model.isDrafting {
+            return "Draft forming"
+        }
+        if model.errorMessage != nil {
+            return model.moment.isCarefulMode ? "Take care needs attention" : "Private draft needs attention"
+        }
+        if model.bundle != nil {
+            return model.moment.isCarefulMode ? "Careful draft ready" : "Private draft ready"
+        }
+        return model.moment.isCarefulMode ? "Careful draft next" : "Private draft next"
+    }
+
+    private var activeDraftStatusDetail: String {
+        if model.errorMessage != nil {
+            return "Scroll to review the issue without losing this setup."
+        }
+        if model.bundle != nil {
+            return "Scroll to review, copy, save, or adjust it."
+        }
+        if model.moment.isCarefulMode {
+            return "Harder moments stay quieter until you open the draft."
+        }
+        return "Memory and draft details appear after the first draft is ready."
+    }
+
+    private func handleFocusChange(from oldValue: Field?, to newValue: Field?, scrollProxy: ScrollViewProxy) {
+        guard newValue == nil, oldValue == .person || oldValue == .truth else { return }
+        realignActivePrimaryIfNeeded(scrollProxy: scrollProxy, delayNanoseconds: 180_000_000)
+    }
+
+    private func realignActivePrimaryIfNeeded(
+        scrollProxy: ScrollViewProxy,
+        delayNanoseconds: UInt64 = 0
+    ) {
+        guard shouldHoldSecondaryContentBelowFirstViewport else { return }
+        Task { @MainActor in
+            if delayNanoseconds > 0 {
+                try? await Task.sleep(nanoseconds: delayNanoseconds)
+            }
+            guard shouldHoldSecondaryContentBelowFirstViewport else { return }
+            if reduceMotion {
+                scrollProxy.scrollTo(ScrollAnchor.activePrimary, anchor: .top)
+            } else {
+                withAnimation(.snappy(duration: 0.22)) {
+                    scrollProxy.scrollTo(ScrollAnchor.activePrimary, anchor: .top)
+                }
+            }
+        }
     }
 
     private var approvedBeadsForCurrentPerson: [RelationshipTruthBeadRecord] {
@@ -802,27 +928,40 @@ private struct MomentSheetView: View {
     }
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Label(
-                model.moment.isCarefulMode ? "Take care active" : "Private by default",
-                systemImage: model.moment.isCarefulMode ? "heart.text.square" : "lock.fill"
-            )
-            .font(.caption.weight(.bold))
-            .foregroundStyle(Color.white.opacity(0.86))
-            .padding(.horizontal, 10)
-            .padding(.vertical, 7)
-            .background(Color.white.opacity(0.12), in: Capsule(style: .continuous))
+        HStack(alignment: .center, spacing: 16) {
+            VStack(alignment: .leading, spacing: 9) {
+                Text(model.moment.isCarefulMode ? "TAKE CARE ACTIVE" : "PRIVATE BY DEFAULT")
+                    .font(.caption2.weight(.bold))
+                    .foregroundStyle(Color.white.opacity(0.72))
+                    .tracking(0.6)
 
-            Text(currentPersonName.isEmpty ? "Who are you showing up for?" : "For \(currentPersonName)")
-                .font(.system(currentPersonName.isEmpty ? .title : .title3, design: .serif).weight(.bold))
-                .foregroundStyle(.white)
-                .fixedSize(horizontal: false, vertical: true)
-
-            if currentPersonName.isEmpty {
-                Text("Start with the person. ProsePal keeps a private draft ready as you shape what is true.")
-                    .font(.callout)
-                    .foregroundStyle(.white.opacity(0.74))
+                Text(currentPersonName.isEmpty ? "Who are you showing up for?" : "For \(currentPersonName)")
+                    .font(.system(currentPersonName.isEmpty ? .title : .title3, design: .serif).weight(.bold))
+                    .foregroundStyle(.white)
                     .fixedSize(horizontal: false, vertical: true)
+
+                if currentPersonName.isEmpty {
+                    Text("Start with the person. Shape one true detail, then let the draft form around it.")
+                        .font(.callout)
+                        .foregroundStyle(.white.opacity(0.76))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+
+            Spacer(minLength: 8)
+
+            VStack(spacing: 8) {
+                MomentSymbolBadge(
+                    systemImage: model.moment.isCarefulMode ? "heart.text.square.fill" : "lock.fill",
+                    style: model.moment.isCarefulMode ? .heroCare : .hero,
+                    size: currentPersonName.isEmpty ? 58 : 50
+                )
+
+                if !currentPersonName.isEmpty {
+                    Text(model.moment.isCarefulMode ? "Careful" : "Private")
+                        .font(.caption2.weight(.bold))
+                        .foregroundStyle(.white.opacity(0.68))
+                }
             }
         }
         .padding(currentPersonName.isEmpty ? 20 : 16)
@@ -843,7 +982,7 @@ private struct MomentSheetView: View {
                 .focused($focusedField, equals: .person)
                 .font(.title3.weight(.semibold))
                 .padding(16)
-                .background(Color.momentSecondaryGroupedBackground, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                .momentInputSurface(cornerRadius: 18)
 
             Button {
                 focusedField = nil
@@ -883,12 +1022,6 @@ private struct MomentSheetView: View {
                 )
             }
             .buttonStyle(.plain)
-
-            MomentRegisterSelector(
-                selection: $model.register,
-                registers: availableRegisters,
-                isCareful: model.moment.isCarefulMode
-            )
         }
         .prosePalMomentCard(isCareful: model.moment.isCarefulMode)
     }
@@ -908,7 +1041,7 @@ private struct MomentSheetView: View {
                 .font(.headline.weight(.semibold))
                 .padding(.horizontal, 14)
                 .frame(minHeight: 48)
-                .background(Color.momentSecondaryGroupedBackground, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .momentInputSurface(cornerRadius: 16)
 
             if dynamicTypeSize.isAccessibilitySize {
                 VStack(spacing: 10) {
@@ -1146,13 +1279,25 @@ private struct MomentSheetView: View {
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
-            Label(title, systemImage: systemImage)
+            HStack(spacing: 8) {
+                MomentSymbolBadge(systemImage: systemImage, style: .subtle, size: 24)
+                Text(title)
+                    .font(.caption.weight(.semibold))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.86)
+            }
                 .frame(maxWidth: .infinity)
         }
-        .buttonStyle(.bordered)
-        .buttonBorderShape(.capsule)
+        .buttonStyle(.plain)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .background(Color.prosePalPaper.opacity(0.78), in: Capsule(style: .continuous))
+        .overlay {
+            Capsule(style: .continuous)
+                .stroke(Color.prosePalNavy.opacity(0.14), lineWidth: 1)
+        }
         .controlSize(.small)
-        .tint(.prosePalCoral)
+        .foregroundStyle(Color.prosePalNavy)
     }
 
     private func beginAddingTruthBead() {
@@ -1273,11 +1418,8 @@ private struct MomentSheetView: View {
     }
 
     private var carefulModeSection: some View {
-        HStack(alignment: .top, spacing: 12) {
-            Image(systemName: "heart.text.square")
-                .font(.headline)
-                .foregroundStyle(Color.prosePalCare)
-                .frame(width: 28, height: 28)
+        HStack(alignment: .center, spacing: 12) {
+            MomentSymbolBadge(systemImage: "heart.text.square", style: .care, size: 34)
 
             VStack(alignment: .leading, spacing: 4) {
                 Text("Careful mode")
@@ -1406,11 +1548,12 @@ private struct MomentSheetView: View {
 
     private func draftUnavailableView(_ notice: MomentDraftUnavailableNotice) -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .top, spacing: 10) {
-                Image(systemName: notice.systemImage)
-                    .font(.headline)
-                    .foregroundStyle(.tint)
-                    .frame(width: 24)
+            HStack(alignment: .center, spacing: 10) {
+                MomentSymbolBadge(
+                    systemImage: notice.systemImage,
+                    style: notice.canRetry ? .coral : .warning,
+                    size: 34
+                )
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(notice.title)
@@ -1704,12 +1847,8 @@ private struct MomentSelectionRow: View {
     let systemImage: String
 
     var body: some View {
-        HStack(spacing: 12) {
-            Image(systemName: systemImage)
-                .font(.headline)
-                .symbolRenderingMode(.hierarchical)
-                .frame(width: 30, height: 30)
-                .foregroundStyle(.tint)
+        HStack(alignment: .center, spacing: 12) {
+            MomentSymbolBadge(systemImage: systemImage, style: .coral, size: 34)
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(title)
@@ -1740,8 +1879,8 @@ private struct MomentSelectionRow: View {
                 .fill(
                     LinearGradient(
                         colors: [
-                            Color.prosePalPaper.opacity(0.86),
-                            Color.momentSecondaryGroupedBackground.opacity(0.82)
+                            Color.prosePalPaper,
+                            Color.prosePalCard
                         ],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
@@ -1778,8 +1917,8 @@ private struct MomentCompactSelectionRow: View {
                 .fill(
                     LinearGradient(
                         colors: [
-                            Color.prosePalPaper.opacity(0.84),
-                            Color.momentSecondaryGroupedBackground.opacity(0.78)
+                            Color.prosePalPaper,
+                            Color.prosePalCard
                         ],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
@@ -1796,12 +1935,8 @@ private struct MomentCompactSelectionRow: View {
     }
 
     private var regularBody: some View {
-        HStack(spacing: 10) {
-            Image(systemName: systemImage)
-                .font(.subheadline.weight(.semibold))
-                .symbolRenderingMode(.hierarchical)
-                .frame(width: 26, height: 26)
-                .foregroundStyle(.tint)
+        HStack(alignment: .center, spacing: 10) {
+            MomentSymbolBadge(systemImage: systemImage, style: .coral, size: 30)
 
             VStack(alignment: .leading, spacing: 1) {
                 Text(title)
@@ -1834,12 +1969,8 @@ private struct MomentCompactSelectionRow: View {
 
     private var condensedBody: some View {
         VStack(alignment: .leading, spacing: 5) {
-            HStack(spacing: 7) {
-                Image(systemName: systemImage)
-                    .font(.caption.weight(.bold))
-                    .symbolRenderingMode(.hierarchical)
-                    .frame(width: 20, height: 20)
-                    .foregroundStyle(.tint)
+            HStack(alignment: .center, spacing: 7) {
+                MomentSymbolBadge(systemImage: systemImage, style: .coral, size: 22)
 
                 Text(title)
                     .font(.caption2.weight(.semibold))
@@ -2057,12 +2188,8 @@ private struct MomentPickerRow: View {
     let isSelected: Bool
 
     var body: some View {
-        HStack(spacing: 12) {
-            Image(systemName: systemImage)
-                .font(.headline)
-                .symbolRenderingMode(.hierarchical)
-                .frame(width: 28, height: 28)
-                .foregroundStyle(.tint)
+        HStack(alignment: .center, spacing: 12) {
+            MomentSymbolBadge(systemImage: systemImage, style: .coral, size: 34)
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(title)
@@ -2097,11 +2224,8 @@ private struct MomentTruthBeadRow: View {
     let onDelete: () -> Void
 
     var body: some View {
-        HStack(alignment: .top, spacing: 10) {
-            Image(systemName: "checkmark.seal.fill")
-                .font(.subheadline)
-                .foregroundStyle(.tint)
-                .padding(.top, 2)
+        HStack(alignment: .center, spacing: 10) {
+            MomentSymbolBadge(systemImage: "checkmark.seal.fill", style: .coral, size: 30)
 
             Text(bead.text)
                 .font(.callout)
@@ -2149,11 +2273,12 @@ private struct MomentVoiceCardRow: View {
     let onDelete: () -> Void
 
     var body: some View {
-        HStack(alignment: .top, spacing: 10) {
-            Image(systemName: voiceCard.isUserApproved ? "waveform.circle.fill" : "pause.circle.fill")
-                .font(.subheadline)
-                .foregroundStyle(.tint)
-                .padding(.top, 2)
+        HStack(alignment: .center, spacing: 10) {
+            MomentSymbolBadge(
+                systemImage: voiceCard.isUserApproved ? "waveform.circle.fill" : "pause.circle.fill",
+                style: .care,
+                size: 30
+            )
 
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 8) {
@@ -2205,10 +2330,14 @@ private struct MomentVoiceCardRow: View {
 
 private struct MomentMemoryManageLabel: View {
     var body: some View {
-        Label("Manage", systemImage: "ellipsis.circle")
-            .font(.caption.weight(.semibold))
-            .labelStyle(.titleAndIcon)
-            .foregroundStyle(.secondary)
+        HStack(spacing: 5) {
+            Image(systemName: "ellipsis.circle")
+                .font(.caption.weight(.semibold))
+                .frame(width: 14, height: 14)
+            Text("Manage")
+                .font(.caption.weight(.semibold))
+        }
+        .foregroundStyle(.secondary)
             .padding(.horizontal, 10)
             .padding(.vertical, 7)
             .background(Color.prosePalPaper.opacity(0.86), in: Capsule())
@@ -2355,8 +2484,14 @@ private struct SavedMomentDraftsView: View {
             }
         }
         .navigationTitle("Saved")
+        .toolbarTitleDisplayMode(.inline)
         .searchable(text: $searchText, prompt: "Search saved drafts")
         .contentMargins(.bottom, 112, for: .scrollContent)
+        .safeAreaInset(edge: .bottom) {
+            Color.clear
+                .frame(height: 86)
+                .accessibilityHidden(true)
+        }
         .scrollContentBackground(.hidden)
         .background {
             MomentAtmosphericBackground(isCareful: false)
@@ -2524,8 +2659,14 @@ private struct RelationshipMemoryVaultView: View {
             }
         }
         .navigationTitle("Memory")
+        .toolbarTitleDisplayMode(.inline)
         .searchable(text: $searchText, prompt: "Search memory")
         .contentMargins(.bottom, 112, for: .scrollContent)
+        .safeAreaInset(edge: .bottom) {
+            Color.clear
+                .frame(height: 86)
+                .accessibilityHidden(true)
+        }
         .scrollContentBackground(.hidden)
         .background {
             MomentAtmosphericBackground(isCareful: false)
@@ -2848,7 +2989,7 @@ private struct MomentSettingsView: View {
                 .momentListRowSurface()
             }
 
-            Section("Account") {
+            Section {
                 if account.isSignedIn {
                     LabeledContent("Signed in", value: account.signedInEmail ?? "Apple account")
 
@@ -2872,10 +3013,12 @@ private struct MomentSettingsView: View {
                 } else {
                     MomentAppleSignInControl(account: account, source: "settings")
                 }
+            } header: {
+                MomentListSectionHeader("Account")
             }
             .momentListRowSurface()
 
-            Section("Premium") {
+            Section {
                 Button {
                     isShowingPaywall = true
                 } label: {
@@ -2902,10 +3045,12 @@ private struct MomentSettingsView: View {
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
+            } header: {
+                MomentListSectionHeader("Premium")
             }
             .momentListRowSurface()
 
-            Section("Writing") {
+            Section {
                 LabeledContent(
                     "Private Draft",
                     value: account.runtimeReadiness.isPrivateDraftConfigured ? "Device dependent" : "Unavailable here"
@@ -2914,47 +3059,75 @@ private struct MomentSettingsView: View {
                     "Take more care",
                     value: account.runtimeReadiness.isCarefulGatewayConfigured ? "Ready" : "Needs setup"
                 )
+            } header: {
+                MomentListSectionHeader("Writing")
             }
             .momentListRowSurface()
 
-            Section("Privacy") {
+            Section {
                 Label("Saved drafts are only created when you tap Save", systemImage: "bookmark")
                 NavigationLink {
                     RelationshipMemoryVaultView()
                 } label: {
                     Label("Relationship memory", systemImage: "checkmark.seal")
                 }
-                LabeledContent("Export data", value: account.isSignedIn ? "Contact support" : "Sign in required")
-                LabeledContent("Delete account", value: account.isSignedIn ? "Available above" : "Sign in required")
+            } header: {
+                MomentListSectionHeader("Privacy")
             }
             .momentListRowSurface()
 
-            Section("Support") {
+            Color.clear
+                .frame(height: 72)
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
+                .accessibilityHidden(true)
+
+            Section {
+                LabeledContent("Export data", value: account.isSignedIn ? "Contact support" : "Sign in required")
+                LabeledContent("Delete account", value: account.isSignedIn ? "Available above" : "Sign in required")
+            } header: {
+                MomentListSectionHeader("Data")
+            }
+            .momentListRowSurface()
+
+            Section {
                 Link(destination: MomentSettingsExternalLinks.support) {
                     Label("Contact support", systemImage: "envelope")
                 }
+            } header: {
+                MomentListSectionHeader("Support")
             }
             .momentListRowSurface()
 
-            Section("Legal") {
+            Section {
                 Link(destination: MomentSettingsExternalLinks.terms) {
                     Label("Terms", systemImage: "doc.text")
                 }
                 Link(destination: MomentSettingsExternalLinks.privacy) {
                     Label("Privacy Policy", systemImage: "hand.raised")
                 }
+            } header: {
+                MomentListSectionHeader("Legal")
             }
             .momentListRowSurface()
 
-            Section("About") {
+            Section {
                 LabeledContent("Version", value: versionText)
                 LabeledContent("Direction", value: "Native iOS")
+            } header: {
+                MomentListSectionHeader("About")
             }
             .momentListRowSurface()
         }
         .navigationTitle("Settings")
+        .toolbarTitleDisplayMode(.inline)
         .contentMargins(.top, 6, for: .scrollContent)
         .contentMargins(.bottom, 112, for: .scrollContent)
+        .safeAreaInset(edge: .bottom) {
+            Color.clear
+                .frame(height: 86)
+                .accessibilityHidden(true)
+        }
         .scrollContentBackground(.hidden)
         .background {
             MomentAtmosphericBackground(isCareful: false)
@@ -3024,6 +3197,7 @@ private struct MomentAppleSignInControl: View {
         }
         .buttonStyle(.bordered)
         .controlSize(.large)
+        .tint(.prosePalNavy)
         .disabled(account.isSigningIn)
     }
 
@@ -3177,6 +3351,8 @@ private struct MomentPaywallSheet: View {
                 MomentAtmosphericBackground(isCareful: true)
             }
             .navigationTitle("Premium")
+            .toolbarTitleDisplayMode(.inline)
+            .momentNavigationBarColorScheme()
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Close") { dismiss() }
@@ -3228,10 +3404,8 @@ private struct MomentPremiumFeatureRow: View {
     let detail: String
 
     var body: some View {
-        HStack(alignment: .top, spacing: 10) {
-            Image(systemName: systemImage)
-                .font(.subheadline.weight(.semibold))
-                .frame(width: 24)
+        HStack(alignment: .center, spacing: 12) {
+            MomentSymbolBadge(systemImage: systemImage, style: .care, size: 34)
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(title)
@@ -3329,10 +3503,8 @@ private struct MomentPaywallUnavailableRow: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .top, spacing: 12) {
-                Image(systemName: "exclamationmark.triangle")
-                    .font(.body.weight(.semibold))
-                    .frame(width: 24)
+            HStack(alignment: .center, spacing: 12) {
+                MomentSymbolBadge(systemImage: "exclamationmark.triangle", style: .warning, size: 34)
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Subscription options unavailable")
@@ -3398,6 +3570,138 @@ private enum MomentIdentityCardStyle {
     case quiet
 }
 
+private enum MomentSymbolBadgeStyle {
+    case hero
+    case heroCare
+    case coral
+    case navy
+    case care
+    case subtle
+    case warning
+}
+
+private struct MomentSymbolBadge: View {
+    let systemImage: String
+    var style: MomentSymbolBadgeStyle = .coral
+    var size: CGFloat = 32
+
+    var body: some View {
+        RoundedRectangle(cornerRadius: max(10, size * 0.34), style: .continuous)
+            .fill(fill)
+            .overlay {
+                RoundedRectangle(cornerRadius: max(10, size * 0.34), style: .continuous)
+                    .stroke(strokeColor, lineWidth: 1)
+            }
+            .overlay {
+                Image(systemName: systemImage)
+                    .font(.system(size: max(12, size * 0.42), weight: .semibold))
+                    .symbolRenderingMode(.hierarchical)
+                    .foregroundStyle(foregroundColor)
+                    .frame(width: size, height: size)
+            }
+            .frame(width: size, height: size)
+            .accessibilityHidden(true)
+    }
+
+    private var fill: LinearGradient {
+        switch style {
+        case .hero:
+            LinearGradient(
+                colors: [
+                    Color.white.opacity(0.20),
+                    Color.white.opacity(0.08)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        case .heroCare:
+            LinearGradient(
+                colors: [
+                    Color.white.opacity(0.22),
+                    Color.prosePalCare.opacity(0.28)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        case .coral:
+            LinearGradient(
+                colors: [
+                    Color.prosePalCoral.opacity(0.20),
+                    Color.prosePalPaper.opacity(0.92)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        case .navy:
+            LinearGradient(
+                colors: [
+                    Color.prosePalNavy.opacity(0.92),
+                    Color.prosePalSlate.opacity(0.88)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        case .care:
+            LinearGradient(
+                colors: [
+                    Color.prosePalCare.opacity(0.22),
+                    Color.prosePalPaper.opacity(0.90)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        case .subtle:
+            LinearGradient(
+                colors: [
+                    Color.prosePalPaper.opacity(0.92),
+                    Color.prosePalCard.opacity(0.80)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        case .warning:
+            LinearGradient(
+                colors: [
+                    Color.prosePalWarning.opacity(0.22),
+                    Color.prosePalPaper.opacity(0.90)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        }
+    }
+
+    private var foregroundColor: Color {
+        switch style {
+        case .hero, .heroCare, .navy:
+            .white
+        case .care:
+            .prosePalCare
+        case .warning:
+            .prosePalWarning
+        case .coral, .subtle:
+            .prosePalCoralDeep
+        }
+    }
+
+    private var strokeColor: Color {
+        switch style {
+        case .hero, .heroCare:
+            Color.white.opacity(0.22)
+        case .navy:
+            Color.white.opacity(0.14)
+        case .care:
+            Color.prosePalCare.opacity(0.20)
+        case .warning:
+            Color.prosePalWarning.opacity(0.22)
+        case .coral:
+            Color.prosePalCoral.opacity(0.20)
+        case .subtle:
+            Color.prosePalNavy.opacity(0.10)
+        }
+    }
+}
+
 private struct MomentScreenIdentityCard: View {
     @Environment(\.colorScheme) private var colorScheme
 
@@ -3421,17 +3725,12 @@ private struct MomentScreenIdentityCard: View {
     }
 
     private var heroCard: some View {
-        HStack(alignment: .top, spacing: 14) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .fill(Color.white.opacity(0.12))
-                    .frame(width: 52, height: 52)
-
-                Image(systemName: systemImage)
-                    .font(.title3.weight(.semibold))
-                    .foregroundStyle(.white)
-                    .symbolRenderingMode(.hierarchical)
-            }
+        HStack(alignment: .center, spacing: 16) {
+            MomentSymbolBadge(
+                systemImage: systemImage,
+                style: isCareful ? .heroCare : .hero,
+                size: 54
+            )
 
             VStack(alignment: .leading, spacing: 6) {
                 Text(eyebrow.uppercased())
@@ -3457,26 +3756,12 @@ private struct MomentScreenIdentityCard: View {
     }
 
     private var quietCard: some View {
-        HStack(alignment: .top, spacing: 14) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .fill(
-                        LinearGradient(
-                            colors: [
-                                accentColor.opacity(colorScheme == .dark ? 0.32 : 0.16),
-                                Color.prosePalPaper.opacity(colorScheme == .dark ? 0.18 : 0.74)
-                            ],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .frame(width: 50, height: 50)
-
-                Image(systemName: systemImage)
-                    .font(.title3.weight(.semibold))
-                    .foregroundStyle(accentColor)
-                    .symbolRenderingMode(.hierarchical)
-            }
+        HStack(alignment: .center, spacing: 14) {
+            MomentSymbolBadge(
+                systemImage: systemImage,
+                style: isCareful ? .care : .coral,
+                size: 50
+            )
 
             VStack(alignment: .leading, spacing: 5) {
                 Text(eyebrow.uppercased())
@@ -3535,14 +3820,14 @@ private struct MomentAtmosphericBackground: View {
             LinearGradient(
                 colors: isCareful
                     ? [
-                        Color.prosePalCare.opacity(colorScheme == .dark ? 0.22 : 0.14),
-                        Color.momentGroupedBackground,
-                        Color.prosePalNavy.opacity(colorScheme == .dark ? 0.20 : 0.12)
+                        Color.prosePalCare.opacity(colorScheme == .dark ? 0.30 : 0.24),
+                        Color.prosePalSlate,
+                        Color.prosePalInk
                     ]
                     : [
-                        Color.prosePalCoral.opacity(colorScheme == .dark ? 0.14 : 0.09),
-                        Color.momentGroupedBackground,
-                        Color.prosePalNavy.opacity(colorScheme == .dark ? 0.18 : 0.10)
+                        Color.prosePalCoralDeep.opacity(colorScheme == .dark ? 0.20 : 0.18),
+                        Color.prosePalSlate,
+                        Color.prosePalInk
                     ],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
@@ -3550,9 +3835,9 @@ private struct MomentAtmosphericBackground: View {
 
             LinearGradient(
                 colors: [
-                    Color.prosePalPaper.opacity(colorScheme == .dark ? (isCareful ? 0.08 : 0.12) : 0.08),
+                    Color.prosePalPaper.opacity(colorScheme == .dark ? (isCareful ? 0.05 : 0.08) : 0.10),
                     Color.clear,
-                    Color.prosePalNavy.opacity(colorScheme == .dark ? 0.06 : 0.035)
+                    Color.prosePalNavy.opacity(colorScheme == .dark ? 0.18 : 0.22)
                 ],
                 startPoint: .top,
                 endPoint: .bottom
@@ -3571,14 +3856,14 @@ private struct MomentHeroBackground: View {
                 LinearGradient(
                     colors: isCareful
                         ? [
-                            Color.prosePalNavy,
-                            Color.prosePalCare.opacity(0.82),
-                            Color.prosePalNavy.opacity(0.92)
+                            Color.prosePalInk,
+                            Color.prosePalCare.opacity(0.86),
+                            Color.prosePalNavy
                         ]
                         : [
-                            Color.prosePalNavy,
-                            Color.prosePalCoralDeep.opacity(0.82),
-                            Color.prosePalNavy.opacity(0.90)
+                            Color.prosePalInk,
+                            Color.prosePalCoralDeep.opacity(0.88),
+                            Color.prosePalNavy
                         ],
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
@@ -3599,7 +3884,7 @@ private struct MomentHeroBackground: View {
                         lineWidth: 1
                     )
             }
-            .shadow(color: Color.prosePalNavy.opacity(0.18), radius: 24, x: 0, y: 14)
+            .shadow(color: Color.black.opacity(0.24), radius: 24, x: 0, y: 16)
     }
 }
 
@@ -3628,10 +3913,9 @@ private struct MomentCardBackground: View {
         case .accent:
             LinearGradient(
                 colors: [
-                    Color.prosePalCoral.opacity(0.20),
-                    Color.prosePalCard,
-                    Color.prosePalPaper.opacity(0.88),
-                    Color.prosePalNavy.opacity(0.035)
+                    Color.prosePalCoralCard,
+                    Color.prosePalPaper,
+                    Color.prosePalCard
                 ],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
@@ -3639,10 +3923,9 @@ private struct MomentCardBackground: View {
         case .warning:
             LinearGradient(
                 colors: [
-                    Color.prosePalWarning.opacity(0.18),
-                    Color.prosePalCard,
-                    Color.prosePalPaper.opacity(0.88),
-                    Color.prosePalNavy.opacity(0.035)
+                    Color.prosePalWarningCard,
+                    Color.prosePalPaper,
+                    Color.prosePalCard
                 ],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
@@ -3651,16 +3934,14 @@ private struct MomentCardBackground: View {
             LinearGradient(
                 colors: isCareful
                     ? [
-                        Color.prosePalCareSurface,
-                        Color.prosePalCard,
-                        Color.prosePalPaper.opacity(0.84),
-                        Color.prosePalNavy.opacity(0.04)
+                        Color.prosePalCareCard,
+                        Color.prosePalPaper,
+                        Color.prosePalCard
                     ]
                     : [
                         Color.prosePalCard,
-                        Color.prosePalPaper.opacity(0.90),
-                        Color.prosePalCoral.opacity(0.06),
-                        Color.prosePalNavy.opacity(0.035)
+                        Color.prosePalPaper,
+                        Color.prosePalCoralCard
                     ],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
@@ -3671,9 +3952,9 @@ private struct MomentCardBackground: View {
     private var borderFill: LinearGradient {
         LinearGradient(
             colors: [
-                Color.white.opacity(0.52),
-                accentColor.opacity(prominence == .standard ? 0.20 : 0.38),
-                Color.prosePalNavy.opacity(prominence == .standard ? 0.14 : 0.22)
+                Color.white.opacity(0.64),
+                Color.prosePalNavy.opacity(prominence == .standard ? 0.18 : 0.28),
+                accentColor.opacity(prominence == .standard ? 0.18 : 0.32)
             ],
             startPoint: .topLeading,
             endPoint: .bottomTrailing
@@ -3696,9 +3977,9 @@ private struct MomentCardBackground: View {
     private var shadowColor: Color {
         switch prominence {
         case .warning:
-            Color.prosePalWarning.opacity(0.10)
+            Color.prosePalWarning.opacity(0.12)
         default:
-            Color.prosePalNavy.opacity(prominence == .elevated ? 0.16 : 0.08)
+            Color.black.opacity(prominence == .elevated ? 0.18 : 0.10)
         }
     }
 }
@@ -3831,10 +4112,35 @@ private struct MomentSectionLabel: View {
     var isCareful: Bool = false
 
     var body: some View {
-        Label(title, systemImage: systemImage)
+        HStack(alignment: .center, spacing: 9) {
+            MomentSymbolBadge(
+                systemImage: systemImage,
+                style: isCareful ? .care : .subtle,
+                size: 28
+            )
+
+            Text(title)
+        }
             .font(.headline)
-            .symbolRenderingMode(.hierarchical)
             .foregroundStyle(isCareful ? Color.prosePalCare : Color.primary)
+            .accessibilityElement(children: .combine)
+    }
+}
+
+private struct MomentListSectionHeader: View {
+    let title: String
+
+    init(_ title: String) {
+        self.title = title
+    }
+
+    var body: some View {
+        Text(title.uppercased())
+            .font(.caption2.weight(.bold))
+            .tracking(0.7)
+            .foregroundStyle(Color.white.opacity(0.66))
+            .padding(.leading, 2)
+            .padding(.bottom, 2)
     }
 }
 
@@ -3858,8 +4164,8 @@ private extension View {
                     .fill(
                         LinearGradient(
                             colors: [
-                                Color.prosePalPaper.opacity(0.98),
-                                Color.momentSecondaryGroupedBackground.opacity(0.92)
+                                Color.prosePalPaper,
+                                Color.prosePalCard
                             ],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
@@ -3868,7 +4174,15 @@ private extension View {
                     .overlay {
                         RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                             .stroke(
-                                (isCareful ? Color.prosePalCare : Color.prosePalCoral).opacity(0.16),
+                                LinearGradient(
+                                    colors: [
+                                        Color.white.opacity(0.62),
+                                        (isCareful ? Color.prosePalCare : Color.prosePalCoral).opacity(0.22),
+                                        Color.prosePalNavy.opacity(0.12)
+                                    ],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
                                 lineWidth: 1
                             )
                     }
@@ -3880,9 +4194,9 @@ private extension View {
             .listRowBackground(
                 LinearGradient(
                     colors: [
-                        Color.prosePalPaper.opacity(0.92),
-                        Color.prosePalCard.opacity(0.88),
-                        (isCareful ? Color.prosePalCare : Color.prosePalCoral).opacity(0.045)
+                        Color.prosePalPaper,
+                        Color.prosePalCard,
+                        isCareful ? Color.prosePalCareCard : Color.prosePalCoralCard
                     ],
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
@@ -3912,6 +4226,15 @@ private extension View {
     func momentTabBarVisibility(isVisible: Bool) -> some View {
         #if os(iOS)
         self.toolbar(isVisible ? .visible : .hidden, for: .tabBar)
+        #else
+        self
+        #endif
+    }
+
+    @ViewBuilder
+    func momentNavigationBarColorScheme() -> some View {
+        #if os(iOS)
+        self.toolbarColorScheme(.dark, for: .navigationBar)
         #else
         self
         #endif
@@ -3976,7 +4299,7 @@ private extension Color {
         Color(uiColor: UIColor { traits in
             traits.userInterfaceStyle == .dark
                 ? UIColor(red: 0.055, green: 0.066, blue: 0.082, alpha: 1)
-                : UIColor(red: 0.974, green: 0.958, blue: 0.925, alpha: 1)
+                : UIColor(red: 0.065, green: 0.090, blue: 0.130, alpha: 1)
         })
         #elseif canImport(AppKit)
         Color(nsColor: .windowBackgroundColor)
@@ -4027,8 +4350,52 @@ private extension Color {
         #endif
     }
 
+    static var prosePalCoralCard: Color {
+        #if canImport(UIKit)
+        Color(uiColor: UIColor { traits in
+            traits.userInterfaceStyle == .dark
+                ? UIColor(red: 0.130, green: 0.095, blue: 0.100, alpha: 1)
+                : UIColor(red: 0.992, green: 0.940, blue: 0.910, alpha: 1)
+        })
+        #else
+        Color.prosePalCoral.opacity(0.12)
+        #endif
+    }
+
+    static var prosePalCareCard: Color {
+        #if canImport(UIKit)
+        Color(uiColor: UIColor { traits in
+            traits.userInterfaceStyle == .dark
+                ? UIColor(red: 0.084, green: 0.112, blue: 0.142, alpha: 1)
+                : UIColor(red: 0.920, green: 0.946, blue: 0.964, alpha: 1)
+        })
+        #else
+        Color.prosePalCare.opacity(0.12)
+        #endif
+    }
+
+    static var prosePalWarningCard: Color {
+        #if canImport(UIKit)
+        Color(uiColor: UIColor { traits in
+            traits.userInterfaceStyle == .dark
+                ? UIColor(red: 0.130, green: 0.104, blue: 0.076, alpha: 1)
+                : UIColor(red: 0.988, green: 0.940, blue: 0.878, alpha: 1)
+        })
+        #else
+        Color.prosePalWarning.opacity(0.12)
+        #endif
+    }
+
     static var prosePalNavy: Color {
         Color(red: 0.10, green: 0.14, blue: 0.20)
+    }
+
+    static var prosePalSlate: Color {
+        Color(red: 0.13, green: 0.18, blue: 0.25)
+    }
+
+    static var prosePalInk: Color {
+        Color(red: 0.045, green: 0.060, blue: 0.090)
     }
 
     static var prosePalCoral: Color {

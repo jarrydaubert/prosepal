@@ -71,6 +71,8 @@ The actionable backlog is `docs/BACKLOG.md`. Its native gates are:
 | `N-IOS-10` | Native iOS 26 CI, TestFlight, and release evidence. |
 | `N-IOS-11` | Privacy-safe diagnostics and observability. |
 | `N-IOS-12` | Legacy grouped-form removal. |
+| `N-IOS-13` | Retire legacy island and reconcile docs to the native direction. |
+| `N-IOS-14` | Native visual system and Moment rail/content discipline. |
 
 ## Native App Shape
 
