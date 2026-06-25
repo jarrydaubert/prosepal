@@ -72,9 +72,9 @@ not done.
   `android/`, `ios/`, `lib/`, `test/`, `integration_test/`, `test_driver/`,
   `assets/`, `pubspec.yaml`, `pubspec.lock`, `analysis_options.yaml`, and
   `firebase.json` removed from the native branch; docs moved under
-  `docs/legacy-flutter/`; active CI rewritten in `.github/workflows/ci.yml`.
-  Partial until the archive refs and native transition branch are pushed and the
-  PR is merged into `main`.
+  `docs/legacy-flutter/`; active CI rewritten in `.github/workflows/ci.yml`;
+  archive refs and native transition branch pushed to GitHub on 2026-06-25.
+  Partial until PR #75 is merged into `main`.
 - [x] App opens into the Moment experience rather than the legacy grouped
   create form -- evidence: `ProsePalNativeApp.body` in
   `prosepal-ios/App/ProsePalNativeApp.swift` constructs `MomentAppRootView`.
