@@ -1,192 +1,131 @@
-# Prosepal
+# ProsePal
 
-Prosepal is a Flutter iOS/Android app that generates personalised greeting-card messages with Gemini via Firebase AI. It is also a public quality-engineering portfolio project: the repo is structured to show how auth, subscriptions, AI, lifecycle, and release risk can be tested and evidenced in a modern mobile app.
+ProsePal is a native iOS app for writing thoughtful personal messages.
 
-## Quality Engineering Showcase
+The active product is the SwiftUI rebuild in [`prosepal-ios/`](prosepal-ios/):
+iOS 26-first, person-first, StoreKit 2, Sign in with Apple, SwiftData,
+Foundation Models, and a ProsePal-owned `MessageWritingService` boundary.
 
-This repo is intended to demonstrate:
+The previous Flutter production app has been archived at:
 
-- risk-based mobile QA thinking, not just test volume
-- deterministic Flutter gates for fast feedback
-- physical-device validation for auth, biometrics, payments, lifecycle, and rendering
-- cloud-device evidence for reproducible release confidence
-- pragmatic automation choices: standard `integration_test` for core flows, selective Patrol adoption for true native/system interactions
-- operational discipline through runbooks, cleanup scripts, evidence capture, and backlog hygiene
+- tag: `flutter-prod-freeze-2026-06-25`
+- branch: `legacy/flutter-production-reference`
 
-## App Risk Surface
+Do not recreate Flutter files on `main`. Use the archive only for historical
+behavior, release lessons, App Review context, or emergency production-reference
+inspection.
 
-The app is intentionally not trivial. It includes:
+## Start Here
 
-- AI generation through Firebase AI / Gemini
-- anonymous-first and signed-in auth flows
-- RevenueCat entitlements, restore, and identity transfer
-- biometric lock and lifecycle transitions
-- onboarding, routing, history, paywall, and calendar flows
-- Remote Config and App Check safety controls
+- [`AGENTS.md`](AGENTS.md) - canonical repo rules for agents and automation.
+- [`docs/NEXT_RELEASE_BRIEF.md`](docs/NEXT_RELEASE_BRIEF.md) - native readiness
+  scope and release gates.
+- [`docs/BACKLOG.md`](docs/BACKLOG.md) - single active tracker for open work.
+- [`prosepal-ios/NATIVE_2026_TECHNICAL_DIRECTION.md`](prosepal-ios/NATIVE_2026_TECHNICAL_DIRECTION.md)
+  - native product, design, AI, StoreKit, and platform direction.
+- [`prosepal-ios/NATIVE_DEVICE_DEBUG_RUNBOOK.md`](prosepal-ios/NATIVE_DEVICE_DEBUG_RUNBOOK.md)
+  - local staging and physical-device proof.
+- [`docs/DEVOPS.md`](docs/DEVOPS.md) - CI, Supabase safety, and release
+  operations.
 
-Those domains are where mobile apps usually become flaky, stateful, and hard to verify. The test approach is built around that risk.
-
-## Test Strategy
-
-### 1. Deterministic Flutter Gate
-
-Fast local and CI confidence for logic, UI, and routing:
-
-- `flutter analyze`
-- `flutter test`
-- `./scripts/test_critical_smoke.sh`
-
-What this covers:
-
-- service logic and model behavior
-- widget rendering and UI states
-- screen-level regressions on the most critical flows
-- deterministic checks that should pass without real devices or live stores
-
-### 2. Wired Device Validation
-
-Physical iOS and Android runs are first-class, not an afterthought.
-
-Use:
+## Native Quick Start
 
 ```bash
-./scripts/reset_devices.sh
+cd prosepal-ios
+swift build
+swift test
+xcodebuild -project ProsePal.xcodeproj -target ProsePal -sdk iphonesimulator CODE_SIGNING_ALLOWED=NO build
+```
+
+Open the native Xcode project:
+
+```bash
 ./scripts/run_ios.sh
-./scripts/run_android.sh
-./scripts/run_wired_evidence.sh --suite smoke
-./scripts/run_wired_evidence.sh --suite full
 ```
 
-What this is for:
-
-- OAuth sheet behavior
-- RevenueCat paywall / restore / purchase flows
-- biometric prompts and resume behavior
-- launch/auth visual parity
-- real rendering differences between iOS and Android
-
-### 3. Cloud / Native-Risk Coverage
-
-Two different tools serve different purposes:
-
-- Firebase Test Lab:
-  - reproducible Android device evidence in the cloud
-  - good for smoke and release-oriented confidence
-- Patrol:
-  - appropriate when a test genuinely needs native/system automation
-  - examples: permission dialogs, social-auth sheets, store/native surfaces, settings deep-links
-
-Current repo reality:
-
-- the checked-in integration journeys under `integration_test/` use Flutter's standard `integration_test` harness
-- Patrol is installed and configured, but should be adopted selectively where it adds real value
-
-## Why This Test Mix
-
-This repo deliberately does not try to force every test into one framework.
-
-- unit/widget tests are the fastest and most trustworthy for app logic and UI states
-- device runs are the right place for mobile-specific behavior
-- Firebase Test Lab gives repeatable hardware-backed evidence
-- Patrol should be used only where Flutter alone is weak
-
-Quality matters more than test count:
-
-- one high-signal test with a strong oracle is better than ten shallow
-  click-through tests
-- green is only trustworthy when pass/fail is tied to the bug the test is meant
-  to catch
-- low-signal or silently-skipping tests should be rewritten or removed, not
-  defended because they increase numbers
-
-That split is intentional. It is the test strategy I would use on a real mobile team.
-
-## AI Engineering Depth
-
-The AI path is intentionally more than a single SDK call.
-
-- pinned primary and fallback model IDs, not vague `latest` aliases
-- Remote Config allowlist validation for model selection
-- runtime backend control (`Vertex AI` by default, optional Google-path override for controlled debugging)
-- structured JSON response contract instead of free-form parsing
-- typed error classification for:
-  - network/timeouts
-  - client/app-blocked configuration failures
-  - App Check attestation failures
-  - safety/content blocks
-  - model-unavailable / fallback cases
-- support diagnostics that expose the active AI runtime configuration without exposing secrets
-
-This is meant to show LLM engineering judgment:
-- make failure modes legible
-- keep runtime controls explicit
-- make it possible to debug real mobile AI failures without guesswork
-
-## Evidence
-
-The repo is designed to produce evidence, not just green commands.
-
-Examples:
-
-- wired-device evidence bundles from `./scripts/run_wired_evidence.sh`
-- visual regression artifacts from `./scripts/test_visual_regression.sh`
-- smoke and release-oriented commands in [docs/DEVOPS.md](docs/DEVOPS.md)
-- open quality work with explicit Definition of Done in [docs/BACKLOG.md](docs/BACKLOG.md)
-
-## Quick Start
+Or directly:
 
 ```bash
-flutter pub get
-./scripts/setup-hooks.sh
-flutter analyze
-flutter test
-./scripts/test_critical_smoke.sh
+open prosepal-ios/ProsePal.xcodeproj
 ```
 
-## Useful Commands
+## Product Direction
+
+The app is centered on the Moment Sheet:
+
+```text
+person -> moment -> what is true -> private draft / take more care -> copy/share/save/send
+```
+
+Non-negotiables:
+
+- no provider/model names in user-facing UI
+- no Firebase AI / Vertex AI / Gemini-direct native client path
+- no RevenueCat dependency in the native app
+- no raw user content, prompts, drafts, tokens, receipts, or provider payloads
+  in logs
+- no Supabase production deploys, migrations, or secret changes from agent
+  tasks
+
+## Architecture
+
+The UI depends on `MessageWritingService`, not a provider SDK.
+
+```text
+SwiftUI Moment experience
+  -> MomentModel
+  -> MessageWritingService
+      -> private draft client
+      -> careful cloud/gateway client
+      -> mock client for tests/previews
+```
+
+Everyday moments should use the private/on-device lane where the device supports
+it. Harder or more sensitive moments use the careful lane behind ProsePal-owned
+policy and routing. Billing/Premium remains separate from safety routing.
+
+## Repo Layout
+
+- `prosepal-ios/` - active native app, Xcode project, Swift package, tests.
+- `supabase/` - staging gateway, App Store notification/reconciliation
+  functions, migrations, and local Supabase docs.
+- `docs/` - active native docs, backlog, runbooks, and historical records.
+- `scripts/` - native validation, Xcode opener, Supabase staging safety, and
+  repo safety scripts.
+
+## Validation
+
+For native code changes:
 
 ```bash
-# Clean local/device reset
-./scripts/reset_devices.sh
-
-# Run on physical devices
-./scripts/run_ios.sh
-./scripts/run_android.sh
-
-# Integration evidence
-./scripts/run_wired_evidence.sh --suite smoke
-./scripts/run_wired_evidence.sh --suite full
-
-# QA / reliability checks
-./scripts/test_flake_audit.sh
-./scripts/test_visual_regression.sh
-./scripts/audit_ai_cost_controls.sh
-
-# Cloud-device validation
-flutter build apk --debug -t integration_test/ftl_test.dart
-cd android && JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ./gradlew app:assembleAndroidTest -Ptarget=../integration_test/ftl_test.dart
+git diff --check
+cd prosepal-ios
+swift build
+swift test --quiet
+xcodebuild -project ProsePal.xcodeproj -target ProsePal -sdk iphonesimulator CODE_SIGNING_ALLOWED=NO build
 ```
 
-## Honesty About Scope
+For Supabase function code:
 
-This repo aims to show sound QA judgment, not fake completeness.
+```bash
+deno check supabase/functions/**/*.ts
+```
 
-- not every high-value flow should be a Patrol test
-- not every device issue should be mocked away
-- flaky tests are a quality problem and should be isolated or fixed, not normalized
-- docs should match the real harness in use
+For staging gateway smoke tests, use the guarded script and local-only secret
+setup documented in [`prosepal-ios/NATIVE_DEVICE_DEBUG_RUNBOOK.md`](prosepal-ios/NATIVE_DEVICE_DEBUG_RUNBOOK.md).
 
-Where work remains, it is tracked in [docs/BACKLOG.md](docs/BACKLOG.md) with explicit, testable completion criteria.
+## Supabase Safety
 
-## Core Docs
+Known project refs:
 
-- `AGENTS.md` - Canonical working rules for repo changes
-- `CLAUDE.md` - Claude compatibility profile
-- [docs/DEVOPS.md](docs/DEVOPS.md) - Testing, CI/CD, release, and operational runbooks
-- [docs/NEXT_RELEASE_BRIEF.md](docs/NEXT_RELEASE_BRIEF.md) - Release scope and gates
-- [docs/BACKLOG.md](docs/BACKLOG.md) - Open work only, with Definition of Done
-- [docs/SECURITY.md](docs/SECURITY.md) - Security posture and reporting rules
-- [docs/AI_SYSTEM.md](docs/AI_SYSTEM.md) - AI runtime design, failure taxonomy, and evidence paths
-- [docs/REVENUECAT_POLICY.md](docs/REVENUECAT_POLICY.md) - Subscription identity and restore policy
-- [docs/IDENTITY_MAPPING.md](docs/IDENTITY_MAPPING.md) - Auth / subscription / telemetry identity map
-- [docs/DOCS_POLICY.md](docs/DOCS_POLICY.md) - Evergreen documentation rules
+- staging: `llolwgqphwnhbiqewmcq`
+- production: `mwoxtqxzunsjmbdqezif`
+
+Never commit `supabase/.temp/` or `supabase/.branches/`. Never run production
+migrations from this repo. Staging migrations are human-gated and must use the
+guarded flow in [`scripts/supabase-staging.sh`](scripts/supabase-staging.sh).
+
+## Documentation Rules
+
+Open work belongs only in [`docs/BACKLOG.md`](docs/BACKLOG.md). Evergreen docs
+should describe current decisions and stable runbooks, not stale TODOs.

@@ -1,92 +1,109 @@
-# Prosepal Features
+# Native Capability Inventory
 
-## Generation
-- 40 occasions (Birthday, Thank You, Sympathy, Wedding, + 36 more)
-- 14 relationships (Close Friend → Community Member)
-- 9 tones (Heartfelt, Casual, Funny, Formal, Inspirational, Playful, Sarcastic, Nostalgic, Poetic)
-- 3 lengths (Brief, Standard, Detailed)
-- Recipient name personalization
-- Personal details/context (500 char)
-- UK/US spelling (auto-detected from locale, toggle in settings)
-- 3 unique messages per generation
+## Purpose
 
-## AI
-- Google Gemini via Firebase AI
-- System instruction for consistent output
-- Retry with exponential backoff
-- Model fallback via Remote Config
-- Input sanitization
+List ProsePal capabilities that matter to the native iOS direction.
+
+Open implementation work belongs in `docs/BACKLOG.md`.
+
+## Core Writing Experience
+
+| Capability | Native Direction |
+|------------|------------------|
+| Person-first entry | Lead with who this is for, not a document type or giant occasion grid. |
+| Occasion catalogue | Keep catalogue coverage as product intelligence underneath the moment model. |
+| Relationship taxonomy | Capture the relationship naturally and reuse existing relationship vocabulary where useful. |
+| Tone/register | Support everyday, medium, and hard moments without provider/prompt language. |
+| Length | Let the draft be shaped shorter, warmer, more direct, or more detailed without turning the flow into a form. |
+| One true thing | Capture the sentence or detail the user actually wants to say. |
+| Avoid details | Capture anything the user wants left out. |
+| Extra context | Support sensitive or awkward context without logging raw text. |
+| Spelling/locale | Automatic only, derived from the device locale. No user-facing spelling picker. |
+| Draft output | Make one useful draft feel primary; alternatives can exist when the lane returns them. |
 
 ## Results
-- Copy to clipboard (per message)
-- Regenerate (same inputs, new messages)
-- Share app prompt after copy
-- History auto-save (secure storage)
-- View/copy/delete past messages
 
-## Auth
-- Sign in with Apple
-- Sign in with Google
-- Anonymous usage (1 free, no sign-in)
-- Account linking
-- Delete account with data cleanup
+| Capability | Native Direction |
+|------------|------------------|
+| Copy | Primary result action. Show clear confirmation. |
+| Share | Visible secondary action through native sharing. |
+| Edit | Allow user to adjust a draft before copying/saving. |
+| Save | Save only when the user chooses to save; do not create surprise visible history. |
+| Adjust | Warmer, shorter, more direct, and take-more-care actions stay close to the draft. |
+| Start over | Return to the Moment Sheet without stale keyboard focus or stale state surprises. |
 
-## Subscription
-- Free: 1 message lifetime
-- Pro: 500 messages/month
-- RevenueCat integration
-- Restore purchases
-- Webhook sync to Supabase
-- Paywall after onboarding + when exhausted
+## Account And Identity
 
-## Settings
-- British spelling toggle
-- Biometric lock (Face ID / Touch ID)
-- Analytics opt-out
-- Data export (JSON)
-- Help & FAQ link
-- Send feedback form
-- Rate app prompt
-- Terms / Privacy Policy
+| Capability | Native Direction |
+|------------|------------------|
+| Anonymous first use | Preserve. Users should experience Standard value before forced auth. |
+| Sign in with Apple | First-class native identity path. |
+| Google sign-in | Not part of the native default. |
+| Account deletion | Required once account state exists. |
+| Data export | Required once account or non-local user data exists. |
+| Biometric lock | Optional privacy feature. Only available after sign-in if retained. |
 
-## Onboarding
-- 3-page intro
-- Progress bar
-- Pro teaser
-- Paywall on completion
+## Subscription And Entitlement
+
+| Capability | Native Direction |
+|------------|------------------|
+| Private draft lane | Everyday draft produced locally where device capability allows, with honest unavailable/degraded states. |
+| Take more care lane | Gateway or approved cloud/careful generation for harder moments. This is a safety/quality route, not a paywall gate. |
+| Paywall | Contextual sheet from Premium/limit/settings boundaries, not forced immediately after welcome. |
+| Purchase | Must not require app sign-in before purchase. |
+| Restore | Available from Paywall and Settings. |
+| Entitlement source | StoreKit 2 in app; App Store server notifications/API and gateway state are authoritative for future Premium limits/extras and any paid cloud capability. |
+| Usage limits | Server state is authoritative for cloud/careful generation. |
+
+## Saved, History, And Reminders
+
+| Capability | Native Direction |
+|------------|------------------|
+| Saved messages | Native list/detail with copy, share, edit, and delete for user-saved drafts. |
+| Generated history | Do not expose automatic history until privacy, deletion, and sync semantics are settled. |
+| Relationship vault | SwiftData-backed Truth Beads and Voice Card, user-approved and editable. |
+| Calendar/reminders | Later enrichment only; never silent inference or guilt nudging. |
+| Notifications | Request only at the moment a reminder-style feature needs them. Generation itself does not require notification permission. |
+
+## Settings And Support
+
+| Capability | Native Direction |
+|------------|------------------|
+| Writing preferences | Spelling and voice preferences where useful. |
+| Subscription management | Subscription, restore, legal terms, and entitlement state. |
+| Privacy controls | Only show analytics/crash controls if those systems exist. |
+| Feedback/support | User-controlled support path; no raw card content in diagnostics unless explicitly approved. |
+| Legal | Terms and Privacy Policy accessible from Settings and paywall. |
+| About | Version/build and safe runtime metadata. |
 
 ## Infrastructure
-- Remote Config (model switching, force update)
-- Firebase Analytics + Crashlytics
-- Structured logging
-- Client + server rate limiting
-- Review prompt after 3rd generation
 
-## Platforms
-- iOS 15.0+
-- Android API 23+
+| Capability | Native Direction |
+|------------|------------------|
+| Generation runtime | `MessageWritingService` with private, careful, and mock clients. No third-party provider SDKs. |
+| Provider routing | Hidden behind the service/gateway boundary. |
+| Provider/model copy | Never user-facing. |
+| Logging | Privacy-safe OSLog locally; no raw content or secrets. |
+| Analytics/crash | Not carried forward by default. Requires product/privacy/ops rationale. |
+| Supabase | Useful for staging gateway, auth, functions, and backend policy where it earns its keep. |
+| RevenueCat | Archived Flutter reference only; not a native default. |
+| Firebase Remote Config | Archived Flutter reference only; not a native default. |
 
-## Verification Matrix
+## Platform Scope
 
-Use the commands and evidence paths in [DEVOPS.md](./DEVOPS.md) for runnable
-validation. Each row names the behavior that needs an explicit pass/fail oracle
-when it is changed.
+| Platform | Direction |
+|----------|-----------|
+| iOS | Active native rewrite target. |
+| Android | Deferred/frozen for native rewrite. The archived Flutter Android app remains available only through the Flutter archive refs. |
+| Web | Separate marketing/product surface, outside this native app scope. |
 
-| Area | Behavior |
-|------|----------|
-| Happy path | Fresh install reaches onboarding, free generation completes, and copy works. |
-| Happy path | Sign-in, Pro upgrade, and generation converge on the expected entitlement state. |
-| Happy path | Regenerate returns a different generated option for the same inputs. |
-| Happy path | History exposes previous messages and copy remains available. |
-| Edge cases | No-network conditions show a deterministic error state. |
-| Edge cases | Exhausted free quota opens the paywall path. |
-| Edge cases | Rate limits show user-facing guidance without consuming usage incorrectly. |
-| Edge cases | Long details input remains bounded and does not break generation or layout. |
-| Settings | British spelling preference is reflected in output behavior. |
-| Settings | Biometric lock can be enabled, disabled, and exercised through app lifecycle transitions. |
-| Settings | Analytics opt-out is respected by telemetry setup and event emission. |
-| Settings | Data export produces valid JSON for the current user state. |
-| Settings | Delete account removes app-owned user data through the supported cleanup path. |
-| Subscription | Purchase grants access after entitlement reconciliation. |
-| Subscription | Restore finds an existing subscription and updates app state. |
-| Subscription | Expired entitlement returns the user to the correct free-tier behavior. |
+## Verification Reference
+
+Use:
+
+- `docs/BACKLOG.md` for active DoD.
+- `docs/DEVOPS.md` for runnable validation.
+- `prosepal-ios/NATIVE_2026_TECHNICAL_DIRECTION.md` for native UX/product
+  direction.
+- `prosepal-ios/NATIVE_DEVICE_DEBUG_RUNBOOK.md` for local staging and device
+  proof.

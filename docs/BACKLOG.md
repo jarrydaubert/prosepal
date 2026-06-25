@@ -1,166 +1,406 @@
 # Backlog
 
-Only open TODO items live here.
+This is the single active tracker for the native iOS direction. The untracked
+root `PROSEPAL_BUILD_SPEC.md` from the main checkout has been folded here so
+the repo has one source of truth for the Moment path.
 
-Rules:
-- No status updates, progress notes, or completed work.
-- Every item must include a clear, testable Definition of Done (DoD).
-- If an item changes runtime behavior, its DoD must define regression
-  protection: automated coverage at the right layer or an explicit replacement
-  evidence path with a named bug target and oracle.
-- When an item is complete, remove it from this file.
+Status markers:
 
-## Backlog Mantra
+- `[x]` implemented in code and backed by evidence.
+- `[~]` partially implemented, implemented with important caveats, or present
+  as infrastructure without release evidence.
+- `[ ]` not implemented in code yet.
 
-- Open TODO items only.
-- Clear, testable DoD only.
-- Behavior changes must say how they stay fixed:
-  - automated coverage at the right layer, or
-  - explicit replacement evidence path with a named bug target and oracle.
+Every row must include `-- evidence:`. If there is no code pointer, the item is
+not done.
 
-## Global DoD Contract (Applies To Every Item)
+## Active Direction
 
-A backlog item is only considered complete when all conditions below are true:
+- App name: ProsePal. "Near" is an internal concept name only.
+- Native app path: `prosepal-ios/`.
+- Product shape: greenfield native iOS, iOS 26-first, person-first, and centered
+  on the Moment Sheet.
+- Architecture: one `MessageWritingService` seam with private and careful
+  writing lanes.
+- Dependencies: Apple-native first. No RevenueCat. No client-direct provider
+  SDKs in the UI app.
+- Flutter production/reference history is archived at tag
+  `flutter-prod-freeze-2026-06-25` and branch
+  `legacy/flutter-production-reference`; active `main` is native iOS only.
 
-1. `Outcome delivered`: The row's feature/fix/docs scope is implemented exactly as written.
-2. `Regression protection defined`: If the item changes behavior, completion adds or updates automated coverage at the right layer, or explicitly justifies why automation is the wrong layer. That justification must name the target bug, the pass/fail oracle, and the replacement evidence path.
-3. `Deterministic validation passed`: Relevant validation commands pass with no manual interpretation required.
-4. `Evidence attached`: PR/release evidence includes concrete proof (logs, screenshots, CI run IDs, or artifact links) for the completed outcome.
-5. `Backlog hygiene`: The completed item is removed from this file in the same change set that provides outcome + validation + evidence.
+## 0. Product Principles
 
-If any condition is missing, the item remains open.
+- [~] ProsePal helps someone show up for people who matter, not face a generic
+  blank page -- evidence: `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`,
+  `prosepal-ios/NATIVE_2026_TECHNICAL_DIRECTION.md`.
+- [x] Person-first entry is the default; occasion taxonomy lives underneath --
+  evidence: `MomentInput.personName` in
+  `prosepal-ios/Sources/ProsePalDomain/MomentModels.swift`,
+  `MomentSheetView.personSection` in
+  `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`.
+- [~] A plausible draft appears once there is enough context, without a visible
+  old-style Generate button -- evidence: `MomentModel.scheduleDraft()` and
+  `MomentSheetView.draftSection` in
+  `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`. Partial because
+  device/runtime availability can still prevent a private draft, though
+  unavailable states now use lane-specific copy and retry affordances.
+- [~] Safety and restraint are product behavior, not just server policy --
+  evidence: `MomentSafetySignal`, `PressureCheck`, and `MomentInput.requiresCarefulLane`
+  in `prosepal-ios/Sources/ProsePalDomain/MomentModels.swift`; UI crisis/careful
+  sections in `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`.
+  Partial because crisis and pressure detection are still local phrase-list
+  heuristics.
+- [x] Provider/model names stay out of user-facing UI -- evidence:
+  `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`,
+  `prosepal-ios/Sources/ProsePalAPI/FoundationModelsPrivateDraftClient.swift`,
+  and `89d2963`.
 
-## Release Priority Order (`v1.1.3` active cycle)
+## 1. Surfaces / Information Architecture
 
-Process items in this order unless an explicit owner override is recorded in release planning.
+- [x] N-IOS-13 Retire legacy island and reconcile docs to the native direction --
+  evidence: `ProsePalRootView.swift`, `LegacyComposeModels.swift`,
+  `LocalModelStore.swift`, `MessageWritingRouter.swift`,
+  `MockMessageWritingClient.swift`, and legacy UI tests are removed in this
+  cleanup slice; live coverage moved to `CardContractTests`,
+  `MomentAccountModelTests`, `RelationshipVaultTests`,
+  `NativeDiagnosticsTests`, and `NativeRuntimeReadinessTests`; `CLAUDE.md`,
+  `AGENTS.md`, and `docs/README.md` point new work at `prosepal-ios/`; `swift
+  build`, full `swift test`, and reference sweeps pass in this slice.
+- [~] N-IOS-15 Promote native iOS to active main and archive Flutter production
+  baseline -- evidence: archive tag `flutter-prod-freeze-2026-06-25`, archive
+  branch `legacy/flutter-production-reference`, active Flutter app paths
+  `android/`, `ios/`, `lib/`, `test/`, `integration_test/`, `test_driver/`,
+  `assets/`, `pubspec.yaml`, `pubspec.lock`, `analysis_options.yaml`, and
+  `firebase.json` removed from the native branch; docs moved under
+  `docs/legacy-flutter/`; active CI rewritten in `.github/workflows/ci.yml`;
+  archive refs and native transition branch pushed to GitHub on 2026-06-25.
+  Partial until PR #75 is merged into `main`.
+- [x] App opens into the Moment experience rather than the legacy grouped
+  create form -- evidence: `ProsePalNativeApp.body` in
+  `prosepal-ios/App/ProsePalNativeApp.swift` constructs `MomentAppRootView`.
+- [~] Saved is a local, user-curated library with copy/share/delete -- evidence:
+  `SavedMomentDraftRecord` in `prosepal-ios/Sources/ProsePalAPI/RelationshipVault.swift`,
+  `MomentSavedView` and `MomentSavedDetailView` in
+  `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`. Partial because
+  edit is not present in the Moment saved detail.
+- [~] Settings covers account, subscription, writing, privacy, support, legal,
+  and about -- evidence: `MomentSettingsView` in
+  `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`,
+  `MomentAccountModel` in `prosepal-ios/Sources/ProsePalUI/MomentAccountModel.swift`,
+  and `89d2963`. Partial because export remains a support path and account
+  deletion/subscription flows still need full staging/App Review evidence.
+- [x] Legacy grouped create/results path is retired -- evidence:
+  `ProsePalNativeApp.swift` constructs `MomentAppRootView`; the dead grouped
+  form source files `ProsePalRootView.swift` and `LegacyComposeModels.swift`
+  have been removed; no `ProsePalAppModel`, `MessageDraft`, or `SavedMessage`
+  references remain under `prosepal-ios/Sources` or `prosepal-ios/Tests`.
 
-1. `VNEXT-10` AI cost/abuse controls
-2. `P1-43` Firebase AI client-block regression hardening
-3. `P1-62` AI output quality release audit
-4. `P1-54` Pre-Flutter startup timeout hardening
-5. `P1-55` Apple token exchange recovery for delete compliance
-6. `P1-60` Direct in-app feedback delivery
-7. `P1-56` AI error log sanitization
-8. `P1-57` Pending usage sync ownership hardening
-9. `P1-58` Entitlement convergence after anonymous purchase and sign-in
-10. `P0-08a` Core readability and contrast hardening
-11. `P0-08b` Navigation and input polish
-12. `P0-08d` Home hierarchy simplification
-13. `P1-24` Deterministic integration journey assertions
-14. `P1-41` Network-independent smoke deterministic mode
-15. `P0-08c` Launch and platform polish
-16. `P2-17` RevenueCat transfer metadata hydration
-17. `P1-48` Startup phase telemetry and budget visibility
-18. `P1-52` Biometric lifecycle debounce + single-flight guard
-19. `VNEXT-11` Canonical identity mapping
-20. `VNEXT-13` Device abuse-control compliance decision
-21. `VNEXT-12` UI parity with live baseline
-22. `P0-04` Auth loading spinner after OAuth sheet
-23. `P1-53` Telemetry adapter unification
-24. `P1-47` Server-side AI gateway rollout (post-launch trigger)
-25. `P2-13` Startup orchestration refactor (post-launch)
-26. `P2-22` Remove legacy router fallback
-27. `P2-25` Mobile app SAST coverage decision
-28. `P0-01` Move Google setup to business account
-29. `P0-05` Billing budget alert controls
-30. `P1-20` Post-release production pulse checks
-31. `P1-44` Full documentation walkthrough with repo owner
-32. `P1-61` Firebase Apple SDK CocoaPods sunset migration
-33. `P2-16` Public QA showcase packaging
-34. `P2-18` AI technical-depth showcase
+## 2. Moment Experience
 
-## P0 - Launch Blockers
+- [x] Moment input captures person, relationship, occasion, register, and one
+  true thing -- evidence: `MomentInput` in
+  `prosepal-ios/Sources/ProsePalDomain/MomentModels.swift`; `MomentSheetView`
+  sections in `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`.
+- [~] Three registers exist and route by stakes: react, confess, assemble --
+  evidence: `MomentRegister` and `requiresCarefulLane` in
+  `prosepal-ios/Sources/ProsePalDomain/MomentModels.swift`; routing tests in
+  `prosepal-ios/Tests/ProsePalAPITests/MessageWritingServiceTests.swift`.
+  Partial because "assemble/generate less" is not yet proven with human-reviewed
+  output evidence.
+- [x] Draft adjustment actions exist for warmer, shorter, and more direct --
+  evidence: `DraftAdjustment`, `MessageWritingService.adjust`, and
+  `MomentModel.adjust(_:)` in `prosepal-ios/Sources/ProsePalDomain/MomentModels.swift`,
+  `prosepal-ios/Sources/ProsePalAPI/MessageWritingService.swift`, and
+  `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`.
+- [ ] Voice capture for "say the messy thing" exists -- evidence: no `Speech`,
+  `SFSpeech`, `AVAudio`, or `AVFoundation` implementation found under
+  `prosepal-ios/Sources`.
+- [~] Draft actions cover copy, share, save, edit, and send/share handoff --
+  evidence: copy/share/save exist in `MomentActionRail` and saved detail actions
+  in `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`. Partial
+  because edit and an explicit send handoff are not implemented for Moment drafts.
+- [x] Draft body reads like correspondence rather than a chat bubble --
+  evidence: serif draft body and `textSelection(.enabled)` in
+  `MomentDraftCard` inside `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`.
 
-| ID | Item | Definition of Done |
-|----|------|--------------------|
-| `P0-08a` | Core readability and contrast hardening | Core screens and subflows in scope (`auth`, `lock`, `settings`, feedback, `history`, `calendar`, and any surfaced support/legal subflow touched by recent polish work) use shared semantic tokens only and have no readable dark-on-dark or light-on-light text regressions. DoD requires: updated widget/golden coverage where structure is stable, physical iOS + Android screenshots for each fixed surface, and an explicit WCAG AA manual verification note for primary text on the scoped screens. |
-| `P0-08b` | Navigation and input polish | Back navigation controls use the canonical chevron treatment across scoped screens, text-entry surfaces have consistent icon alignment and capitalization hints, and returning from generate/results/auth flows to home does not leave the search keyboard open. Dialog/input surfaces (delete, reauth, feedback, calendar entry, generate details) remain keyboard-safe and visually stable. DoD requires: regression coverage for each fixed bug path, explicit verification of the results-screen chevron and Gemini attribution spacing, and physical iOS + Android evidence for the named keyboard/navigation flows. |
-| `P0-08d` | Home hierarchy simplification | The home screen gets users to occasion selection faster without losing the warm occasion-first framing. Header utility controls no longer compete visually with the primary action, first-time guidance no longer adds a redundant standalone tutorial container above the grid, and the hero/search/usage stack is visibly simpler on small mobile heights. DoD requires: updated widget and golden coverage for the touched home-screen states (at minimum free-tier first-visit and Pro/home-return variants), physical iOS + Android screenshots on supported release devices, and a short manual first-impression verification note confirming the occasion grid remains visible/prominent without relying on extra instructional chrome. |
-| `P0-08c` | Launch and platform polish | Launch surfaces look intentional on both platforms: iOS remains visually clean, Android launch treatment is explicitly designed for platform behavior rather than accidental fallback chrome, and any remaining platform differences are documented as deliberate. DoD requires: physical iOS + Android launch screenshots/video evidence, an explicit decision record for Android launch treatment, and no accidental icon/splash fallback behavior on the supported release devices. |
-| `P0-05` | Billing budget alert controls | Production cost surfaces used by Prosepal have documented alert thresholds, owners, notification channels, and an explicit operator action for warning versus critical spend. At minimum this includes the active Google/Firebase AI runtime path and any project-level budget used for Gemini/Firebase AI spending. DoD requires: the alert thresholds and response expectations are recorded in `docs/DEVOPS.md`; notification destinations are verified from the business-managed admin path; at least one dry-run, replay, or equivalent test alert path is evidenced so alert delivery is not assumed; and release evidence names the exact channel a human operator will see first when spend crosses threshold. |
-| `P0-04` | Auth loading spinner after OAuth sheet | After Apple/Google auth sheet closes, UI shows deterministic loading state until auth completion resolves or fails with user-visible error, and users cannot accidentally dismiss or double-submit the auth surface while completion is still in flight. DoD requires: widget coverage for success, failure, and cancellation paths; explicit verification that provider-specific loading copy/state appears after the native auth sheet returns control; and real-device evidence on the active social providers showing the post-sheet state is visible long enough to confirm the app is finalizing auth rather than appearing frozen. |
-| `P0-01` | Move Google setup to business account | The live Google/Firebase project remains the existing production project (`prosepal-1a24b`) and stays fully operable from the business Workspace identity without requiring undiscovered personal-account-only access. DoD requires: the already-granted Workspace Firebase/Google Auth access remains validated, any remaining Google admin dependency on the personal account is explicitly documented or removed, the Play Console path is resolved as an intentional policy decision (verified organization-conversion path with evidence, or explicit acceptance of the personal-account testing path), and `docs/SERVICE_OWNERSHIP_MIGRATION.md` reflects only the unresolved Google ownership gaps. |
-| `VNEXT-10` | AI cost/abuse controls | Firebase AI production posture is treated as an operational system, not just SDK wiring. DoD requires: App Check enforcement remains verified on the live AI path; Remote Config kill switches and pinned model defaults are reviewed against the active release config; the permitted production model IDs are documented as an allowlist; runtime validation rejects or safely degrades any Remote Config model selection that is outside the documented allowlist; the operator policy explicitly states which model changes can ship via Remote Config versus which changes require a new app release; Google/Firebase budget alerts are configured and evidenced; at least one kill-switch drill or equivalent runtime-disable proof is captured; any stronger automated containment path (if implemented) is documented as advisory or authoritative with a named trigger; and `docs/DEVOPS.md` documents the final operator policy for AI runtime, rollback target, and abuse/cost response. |
-| `VNEXT-11` | Canonical identity mapping | Supabase ID, RevenueCat App User ID, Analytics ID, and Crashlytics ID mapping is validated across sign-in/sign-out transitions and documented in `docs/IDENTITY_MAPPING.md`. |
-| `VNEXT-12` | UI parity with live baseline | Baseline screenshots exist for core screens and any styling delta is either matched to live or explicitly approved before release. |
-| `VNEXT-13` | Device abuse-control compliance decision | iOS/Android abuse-control approach is approved, documented, and reflected in release checklist and runtime configuration. |
+## 3. Relationship Memory And Voice
 
-## P1 - Engineering Tasks
+- [x] Manual Truth Beads are implemented -- evidence:
+  `RelationshipTruthBeadRecord` in
+  `prosepal-ios/Sources/ProsePalAPI/RelationshipVault.swift`; bead UI in
+  `MomentMemorySection` inside
+  `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`.
+- [x] Truth Beads can be added, edited, corrected, deleted, and explained --
+  evidence: `MomentMemorySection`, `MomentMemoryManagementView`, and
+  `MomentTruthBeadEditor` in
+  `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`.
+- [~] Relationship memory is local SwiftData and not silently inferred --
+  evidence: `RelationshipVaultSchema` and `SwiftDataRelationshipMemoryProvider`
+  in `prosepal-ios/Sources/ProsePalAPI/RelationshipVault.swift`; model container
+  setup in `prosepal-ios/App/ProsePalNativeApp.swift`. Partial because the
+  SwiftData store backup/encryption/export posture still needs a dedicated
+  privacy review.
+- [x] Contacts/Calendar enrichment is not silently active -- evidence: no
+  `EventKit` or `Contacts` implementation found under `prosepal-ios/Sources`.
+- [~] Voice Card exists as user-approved memory -- evidence:
+  `RelationshipVoiceCardRecord` in
+  `prosepal-ios/Sources/ProsePalAPI/RelationshipVault.swift`; voice-card UI in
+  `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`. Partial because
+  learning from edits is not implemented.
 
-| ID | Item | Definition of Done |
-|----|------|--------------------|
-| `P1-48` | Startup phase telemetry and budget visibility | Existing startup flow emits structured phase telemetry (`init`, `identity`, `entitlements`, `routing`) with per-phase duration, timeout/fallback reason, and final terminal route outcome. Logs are queryable in Crashlytics/analytics, phase budgets are documented in `docs/DEVOPS.md`, and fault-injection runs prove telemetry captures degraded startup paths deterministically. |
-| `P1-43` | Firebase AI client-block regression hardening | Real-device AI generation succeeds on both wired iOS and wired Android using the current Firebase AI + App Check setup, and operator telemetry can distinguish configuration failure from policy/content failure without reading raw provider strings. DoD requires: the evidence bundle captures the active backend, model slot, and App Check posture for each run; failure classification distinguishes client/app-block configuration errors from true content-safety blocks; regression coverage exercises the classifier against representative provider failures at the service layer; and `docs/DEVOPS.md` includes a deterministic triage checklist for `client application <empty> are blocked` style failures with a named oracle for "fixed" versus "still misconfigured". |
-| `P1-62` | AI output quality release audit | Prosepal has release-grade evidence that real AI-generated messages are usable, warm, specific, tone-appropriate, length-appropriate, safe, and not generic across representative card-writing scenarios. DoD requires: a documented AI output quality rubric covering warmth, specificity, occasion fit, relationship fit, tone fit, length fit, no generic filler, no hallucinated personal facts, UK English where requested, and sensitive-occasion appropriateness; a representative scenario matrix covering birthday, wedding, sympathy, apology, thank you, new baby, anniversary/romantic, work colleague, close family, distant/awkward, funny, heartfelt, brief/simple, and formal cases; deterministic automated checks for prompt contracts, schema parsing, fixture linting, banned generic phrases, hallucinated-user-fact patterns, and fallback execution where practical; manual reviewed live or staging generation evidence captured only after explicit approval, including model/backend/config snapshot, sampled outputs, reviewer scores, failures, and final pass/fail decision; and any prompt/model/config changes required by the audit are covered by tests or documented evidence before release. |
-| `P1-53` | Telemetry adapter unification | Feature/domain code emits analytics, logs, and crash-report context through an interface-backed telemetry service or adapter layer rather than direct static calls. Existing redaction rules, event schemas, and operator-visible behavior remain intact unless explicitly documented. DoD requires: at least one startup event, one auth/paywall event, and one AI/runtime diagnostic event are covered by tests using fakes or spies; no secrets or sensitive user content are newly exposed; any operator-facing telemetry changes are documented in `docs/DEVOPS.md`; and `flutter analyze`, `flutter test`, and `./scripts/test_critical_smoke.sh` pass. |
-| `P1-54` | Pre-Flutter startup timeout hardening | Any initialization that occurs before `runApp()` reaches a bounded outcome instead of waiting indefinitely on remote services, and the app reaches a Flutter-controlled surface within a documented launch budget under degraded startup conditions. DoD requires: Firebase init and any other pre-Flutter network-dependent startup work use explicit timeout/failure handling; pre-Flutter work is limited to the minimum needed to mount the app safely; the launch budget is explicit and testable (`target <= 2000 ms` to a Flutter-controlled surface on supported release devices under degraded init, `hard upper bound <= 4000 ms` before fallback from pre-Flutter waits); the app deterministically reaches either the Flutter splash or init error surface within that budget under injected hung/degraded init conditions; startup telemetry distinguishes pre-Flutter timeout from post-splash startup timeout; and regression coverage exists for the timeout + graceful-degradation path without relying on ambient real-network failure. |
-| `P1-55` | Apple token exchange recovery for delete compliance | Apple sign-in no longer silently leaves account deletion non-compliant when authorization-code exchange fails, and the unresolved recovery state is not device-local only. DoD requires: the exchange path uses bounded retry during sign-in; a persistent remediation state or equivalent recovery path exists when all retries fail, with server-side state acting as the canonical delete-compliance truth and any client-side flag treated as UX cache only; delete-account flow checks the canonical recovery state and either completes revocation successfully or blocks with explicit actionable guidance instead of failing silently; if canonical recovery state cannot be fetched at delete time, the flow fails closed with explicit retry/support guidance rather than allowing optimistic deletion; regression coverage exists for transient and persistent exchange-failure paths including second-device or reinstall recovery; and real-device/manual evidence proves the app does not end in a silent "delete will fail later" state. |
-| `P1-56` | AI error log sanitization | Production AI telemetry preserves actionable operator signal without leaking provider-internal detail. DoD requires: release-mode AI logs keep stable backend/model-slot/error-bucket context for triage and include a documented telemetry schema/version marker or equivalent contract identifier; exact upstream model IDs/resource paths/provider URLs/raw upstream payloads are absent from Crashlytics and other release telemetry; richer debug/operator diagnostics remain explicitly scoped to trusted local paths only; regression coverage exercises the sanitizer against representative upstream failures and asserts that known-sensitive patterns are absent in release-mode telemetry; and `docs/DEVOPS.md` or `docs/AI_SYSTEM.md` documents the final release-vs-debug telemetry contract. |
-| `P1-57` | Pending usage sync ownership hardening | Queued usage data has explicit ownership semantics across anonymous usage, sign-out, delete-account, and user switching, with no accidental rebinding to the wrong identity. DoD requires: anonymous pending usage is never rebound to the next authenticated user; sign-out/delete-account/user-switch flows discard or quarantine pending sync entries according to documented ownership rules; server reconciliation merges counts without reattaching anonymous queue entries; lifecycle ordering for entitlement/identity/usage reconciliation is documented so ownership checks run against the intended account state; queue persistence provides atomic writes and crash-safe recovery for ownership-tagged entries; regression coverage exists for anonymous -> auth, user A -> sign-out -> user B, delete-account purge, and restart-after-write-interruption paths; and `docs/IDENTITY_MAPPING.md` or `docs/DEVOPS.md` documents the final ownership model and operator triage when pending-sync ownership is in doubt. |
-| `P1-47` | Server-side AI gateway rollout (post-launch trigger) | A documented trigger policy exists for enabling a server-side AI gateway (abuse threshold, model-policy requirement, or provider-failover need). A non-production spike path exists behind a disabled feature flag, with parity tests proving no user-visible regression when enabled in staging. Production default remains client-direct until trigger criteria are met and approved. |
-| `P1-24` | Deterministic integration journey assertions | Journey tests in `integration_test/journeys/` stop using optional `if (exists(...))` branches for core checkpoints (auth entry, upgrade path, generation result, settings navigation) and fail explicitly when expected UI state is missing. Each retained journey test must justify its existence by targeting a concrete bug/failure mode, and low-signal click-through coverage should be removed rather than padded. DoD includes a keep/rewrite/delete review across the checked-in journey suite, representative journey execution on a real mobile target without silent skips, and clear failure reasons tied to both the missing checkpoint and the named bug the test is meant to catch. |
-| `P1-42` | Auth-screen layout flake elimination | The `AuthScreen shows error banner when Google sign-in fails` test no longer produces order-dependent `RenderFlex overflow` failures during randomized multi-file runs. Root cause is fixed (test harness isolation and/or responsive layout constraints), deterministic regression coverage is added, and `./scripts/test_flake_audit.sh` shows zero flakes for this case. |
-| `P1-40` | Startup/router timeout guard under network faults | Splash/startup routing reaches an explicit terminal route (`/onboarding`, `/home`, `/auth`, `/lock`, or init error surface) within a bounded timeout even when Supabase/RevenueCat DNS fails. Returning-user entitlement routing is deterministic under delayed RevenueCat init (no false `/onboarding` fallback followed by corrective auth/restore reroute). DoD requires: Supabase-dependent startup work has an explicit timeout/backstop rather than relying only on the splash's overall max wait; startup telemetry distinguishes a Supabase/init-phase timeout from a generic splash timeout; and integration tests cover both network-fault and delayed-entitlement scenarios with deterministic pass/fail assertions. |
-| `P1-52` | Biometric lifecycle debounce + single-flight guard | Biometric lock flow guarantees a single active prompt per foreground transition, ignores duplicate resume/inactive callbacks inside a bounded debounce window, and logs one stable lifecycle transition per lock attempt. Device tests on iOS confirm no rapid repeated `Biometric auth started` bursts during Face ID enable/disable and resume flows. |
-| `P1-58` | Entitlement convergence after anonymous purchase and sign-in | Anonymous purchase, sign-in, restore, and server-side usage enforcement converge on one entitlement truth quickly enough that a newly-Pro user is never blocked by `isProClient=true` / `isProServer=false` drift during the active session. DoD requires: the purchase -> sign-in -> restore path has a deterministic server-entitlement sync or gating rule before usage checks run; post-auth RevenueCat identity reconciliation has a single authoritative execution path per sign-in event (no duplicate concurrent identify/sync flows across auth UI and app-level listeners); any entitlement-hold UI state has a bounded timeout/backstop so it cannot leave the user in a permanent false-Pro state if sync hangs; regression coverage exists for anonymous purchase then Apple sign-in, anonymous purchase then Google sign-in, signed-in restore, and app-relaunch recovery; wired-device evidence on iOS and Android proves the same user can purchase, sign in, and generate without a false free-tier block; and `docs/IDENTITY_MAPPING.md` or `docs/DEVOPS.md` documents the final entitlement-convergence rule and operator triage when client/server entitlement state diverges. |
-| `P1-59` | Home/results regression cleanup after Pro purchase | Post-purchase success feedback no longer blocks the primary next action: any welcome-to-Pro banner/toast enters from the top (or otherwise stays outside the generate CTA hit area) and dismisses predictably on supported mobile heights. The home screen regains a simpler hierarchy with less competing chrome, and the results screen no longer ships as a denser/messier replacement for the previously approved baseline without explicit sign-off. DoD requires: the Pro-success affordance is validated on wired iPhone and Android hardware with a named pass/fail oracle that the generate CTA remains tappable immediately after purchase; touched home/results layouts have updated widget/golden coverage for narrow-height and narrow-width states; a regression oracle exists for the current iPhone home tile overflow / card-fit failure; and release evidence includes before/after screenshots showing the chosen home/results direction is intentionally simpler and more usable rather than an accidental visual drift. |
-| `P1-60` | Direct in-app feedback delivery | The app ships a native in-app feedback surface backed by the authenticated Supabase + Resend delivery path instead of depending on the device mail client. DoD requires: signed-in users can submit feedback from the app with explicit success, retriable failure, and auth-required UX; duplicate taps cannot create duplicate deliveries without an explicit second submission attempt; manual copy/share fallback remains available when direct delivery or auth fails; regression coverage exists for successful submit, auth rejection, relay timeout/failure, and duplicate-submit protection; `docs/DEVOPS.md` documents the payload/operator path and failure handling; and real delivery evidence proves the support inbox receives the structured report from both iOS and Android release-path builds. |
-| `P1-61` | Firebase Apple SDK CocoaPods sunset migration | Prosepal has an approved, tested migration path for Firebase Apple SDK updates before Firebase stops publishing new CocoaPods versions in October 2026. DoD requires: current FlutterFire guidance is reviewed and linked in PR evidence; the chosen path is either official FlutterFire-managed SPM support or an explicit documented deferral if FlutterFire still requires CocoaPods; iOS dependency ownership avoids mixing duplicate Firebase SDK installations between FlutterFire pods and manually added Swift Package Manager packages; `docs/DEVOPS.md` documents the final iOS Firebase dependency-management policy and operator response to CocoaPods deprecation warnings; CI or a documented local check proves clean-clone iOS dependency resolution still works; and wired iOS smoke evidence proves Firebase initialization, App Check, Analytics/Crashlytics setup, Remote Config, and Firebase AI generation still work after the migration or deferral decision. |
-| `P1-41` | Network-independent smoke deterministic mode | `integration_test/smoke_test.dart` has a documented deterministic mode (or injected fakes) that removes dependency on live Supabase/RevenueCat reachability for core S1-S5 assertions. CI/device smoke remains stable when outbound network is unavailable or flaky, and the home/onboarding checkpoint does not depend on live backend timing to reach `What's the occasion?` or `Birthday`. |
-| `P1-36` | Journey launch readiness hardening | `integration_test/journeys/_helpers.dart` `launchApp()` waits for a concrete ready surface (onboarding/auth/home) with bounded timeout and clear failure reasons. `j1_fresh_install_test.dart` no longer produces `did not complete` behavior during wired-device execution. |
-| `P1-38` | E2E suite failure isolation | `integration_test/e2e_test.dart` execution is split or orchestrated so one early failure does not collapse the full suite into mass `did not complete` noise. Each shard outputs independent pass/fail and artifacts. |
-| `P1-34` | Offline-safe integration font loading | Integration runs do not depend on live `fonts.gstatic.com` fetches. `google_fonts` runtime fetching is disabled in test mode (or fonts are bundled/preloaded), and `integration_test/smoke_test.dart` + `integration_test/e2e_test.dart` pass without DNS/network access. |
-| `P1-37` | iOS CocoaPods lockfile consistency gate | `ios/Podfile.lock` stays aligned with plugin constraints on clean clone. Running `flutter test -d <ios-device> integration_test/*` does not require ad-hoc pod updates, and CI/dev docs include a reproducible pod consistency check. |
-| `P1-27` | QA code documentation standards (Dartdoc/JSDoc) | Public QA-facing helpers and APIs have accurate documentation comments: Dartdoc on shared test helpers/mocks/services and JSDoc on JavaScript/TypeScript automation code in repo scope. Comments describe purpose, inputs/outputs, and failure modes; stale examples are removed; documentation quality is verified in CI (lint/check step) and reflected in `docs/DEVOPS.md`. |
-| `P1-44` | Full documentation walkthrough with repo owner | A full walkthrough of repo docs is completed with the repo owner: `README.md`, `docs/DEVOPS.md`, `docs/NEXT_RELEASE_BRIEF.md`, `docs/LAUNCH_CHECKLIST.md`, `docs/IDENTITY_MAPPING.md`, and `docs/BACKLOG.md`. All command snippets are verified runnable, stale references are removed, cross-links are valid, and any follow-up gaps are captured as explicit backlog items. |
-| `P1-29` | Test-doc reference accuracy cleanup | Test docs only reference existing test files and runnable commands. Remove stale path references from docs and align command examples with current workflow gates. |
-| `P1-01` | Social-auth fallback UX | Social sign-in failures show deterministic user guidance, retry actions, and support path coverage in widget/integration tests. |
-| `P1-04` | Paywall decomposition | Paywall widget is split into maintainable sections/components with unchanged behavior and passing tests. |
-| `P1-05` | Paywall accessibility improvements | Paywall has complete semantics labels and screen-reader navigation validation passes on iOS and Android. |
-| `P1-06` | Connectivity monitoring | App-level connection state monitoring is implemented with graceful degraded UX and tested offline/restore scenarios. |
-| `P1-07` | Health monitoring runbook | Health monitoring and escalation process is documented in `docs/DEVOPS.md` with clear alert/response steps. |
-| `P1-08` | Auth abuse controls for social flows | App Check and provider-side abuse controls are validated for Apple/Google auth flows with documented thresholds and escalation steps. |
-| `P1-45` | Sensitive screen capture hardening (paywall/settings) | Android applies and releases `FLAG_SECURE` only while sensitive paywall/subscription views are visible, iOS hides sensitive content in app-switcher snapshots during resign-active transitions, and device validation evidence confirms screenshots/app-switcher previews no longer expose sensitive paywall/subscription content. |
-| `P1-46` | iOS auth callback hardening to Universal Links | iOS auth callback flow is validated end-to-end with `https://prosepal.app/auth/...` Universal Links and a live `apple-app-site-association`; custom-scheme callback usage is removed from security-critical auth paths (or explicitly documented as temporary risk with owner sign-off and expiry date). |
-| `P1-03` | Service configuration runbook | `docs/SERVICE_CONFIG.md` exists and includes reproducible Firebase/Supabase/RevenueCat configuration steps with pass criteria. |
-| `P1-14` | Workflow step summaries | CI/release/governance workflows publish structured `GITHUB_STEP_SUMMARY` output for gates, artifacts, and key timing/cost signals. |
-| `P1-15` | CI dependency caching optimization | CI caches for dependency/tooling paths are tuned and documented, with before/after runtime evidence showing no reliability regression. |
-| `P1-16` | Deterministic artifact controls | CI/release jobs enforce lockfile integrity (`dart pub get --enforce-lockfile` or equivalent), build metadata is captured, and reproducibility checks are documented and runnable. |
-| `P1-10` | Monthly governance audit automation | Scheduled/manual GitHub workflow validates ruleset drift and CI usage budget against defined thresholds, emits run-ID linked evidence artifacts, and includes month-over-month trend review fields. |
-| `P1-12` | DevOps troubleshooting runbook section | `docs/DEVOPS.md` contains concise, command-level playbooks for GitHub/API outages, stale evidence recovery, token expiry/rotation, and release rollback. |
-| `P1-13` | Scoped Dependabot auto-merge pilot | Auto-merge is enabled only for explicitly allowed low-risk dependency updates, requires existing mandatory checks, and includes documented disable/rollback criteria. |
-| `P1-11` | Automated semantic release flow | Release automation from `main` merges creates SemVer tags and GitHub Release notes from commit history/PR metadata with dry-run and rollback procedure documented in `docs/DEVOPS.md`. |
-| `P1-17` | Deployment safety guardrails verification | Deployment workflow validates target project/environment bindings before production path execution and documents tested rollback path. |
-| `P1-18` | Build-once promote release flow | Release pipeline promotes a previously built, checks-passed artifact (instead of rebuilding at release time), with artifact provenance linked to the exact CI run and commit SHA. |
-| `P1-19` | Protected production environments | GitHub environments (`staging`/`production`) gate production-key usage with required reviewers and environment-scoped secrets/variables documented in `docs/DEVOPS.md`. |
-| `P1-20` | Post-release production pulse checks | `docs/DEVOPS.md` defines a 0-60 minute post-release check protocol with named owners, exact console/tooling surfaces, build/version-scoped checks, and explicit rollback trigger thresholds. At minimum the protocol must cover Crashlytics, Firebase AI/App Check health, Supabase project pause/unreachability detection through dashboard status plus read-only auth/API/function probes, RevenueCat webhook/entitlement sanity, and store-console release sanity. DoD requires: the protocol is runnable from the documented commands and dashboards; the pass/fail thresholds are concrete enough to avoid subjective interpretation; current-build or current-release filtering is documented for each monitored surface where available; and at least one release or dry-run evidence bundle proves the checklist can actually be executed end to end. |
-| `P1-21` | Release evidence bundle automation | Release workflow publishes an evidence bundle artifact (checks summary, coverage/service-gate outputs, wired/FTL evidence links, Supabase/AI audit outputs, and run-ID traceability). |
-| `P1-63` | Supabase Auth leaked-password protection | Supabase Auth leaked-password protection is enabled for the production project, the dashboard Security Advisor warning is cleared or captured with an explicit reason if unavailable on the current plan/config, and `docs/DEVOPS.md` records the dashboard path plus operator verification evidence. |
-| `P1-64` | Supabase Security Advisor closure evidence | After migration `022`, the production Supabase Security Advisor is rerun or refreshed and evidence confirms the `pg_graphql_*_table_exposed` warnings for `apple_credentials`, `device_usage`, `rate_limit_config`, `rate_limit_log`, `user_entitlements`, and `user_usage` are cleared or narrowed to a documented accepted exception. Evidence must include anon REST/GraphQL probes and dashboard state. |
+## 4. AI Architecture
 
-## P2 - Lower Priority
+- [x] UI depends on `MessageWritingService`, not provider/model details --
+  evidence: `prosepal-ios/Sources/ProsePalAPI/MessageWritingService.swift`,
+  `MessageWritingServiceFactory` in `prosepal-ios/App/ProsePalNativeApp.swift`.
+- [x] Private draft lane uses Foundation Models with typed guided generation --
+  evidence: `FoundationModelsPrivateDraftClient`,
+  `PrivateDraftContent: @Generable`, and `@Guide` fields in
+  `prosepal-ios/Sources/ProsePalAPI/FoundationModelsPrivateDraftClient.swift`.
+- [x] Private draft lane can read relationship memory through a vault tool --
+  evidence: `RelationshipMemoryTool: Tool` in
+  `prosepal-ios/Sources/ProsePalAPI/FoundationModelsPrivateDraftClient.swift`;
+  `SwiftDataRelationshipMemoryProvider` in
+  `prosepal-ios/Sources/ProsePalAPI/RelationshipVault.swift`.
+- [x] Foundation Models availability is gated at runtime -- evidence:
+  `ensureModelAvailable()` and `isDefaultModelAvailable` in
+  `prosepal-ios/Sources/ProsePalAPI/FoundationModelsPrivateDraftClient.swift`;
+  `RuntimeReadinessFactory` in `prosepal-ios/App/ProsePalNativeApp.swift`.
+- [~] Take more care lane is operational and decoupled from Premium billing;
+  target Apple Private Cloud Compute / AFM Cloud remains future work --
+  evidence: `GatewayCarefulMomentClient` requests `.standard` while returning
+  product lane `.takeMoreCare` in
+  `prosepal-ios/Sources/ProsePalAPI/GatewayCarefulMomentClient.swift`;
+  `RoutingMessageWritingService` falls back from careful failure to private
+  drafting in `prosepal-ios/Sources/ProsePalAPI/MessageWritingService.swift`;
+  tests in `prosepal-ios/Tests/ProsePalAPITests/MessageWritingServiceTests.swift`.
+- [x] Router chooses private vs careful by stakes and handles private fallback --
+  evidence: `RoutingMessageWritingService` in
+  `prosepal-ios/Sources/ProsePalAPI/MessageWritingService.swift`; tests in
+  `prosepal-ios/Tests/ProsePalAPITests/MessageWritingServiceTests.swift`.
+- [ ] Future `LanguageModel` provider-protocol escape hatch is implemented --
+  evidence: no provider-protocol adapter implementation found in
+  `prosepal-ios/Sources`.
+- [x] Client-side template generation is not part of the Moment service --
+  evidence: production factory wires `FoundationModelsPrivateDraftClient` and
+  `GatewayCarefulMomentClient` in `prosepal-ios/App/ProsePalNativeApp.swift`;
+  test/preview-only drafting uses `MockMomentDraftClient` in
+  `prosepal-ios/Sources/ProsePalAPI/MessageWritingService.swift`.
 
-| ID | Item | Definition of Done |
-|----|------|--------------------|
-| `P2-01` | Auth/lock logic extraction | Root auth/lock routing logic is moved to dedicated lifecycle service/notifier with unchanged behavior and passing tests. |
-| `P2-02` | Biometric lock navigation cleanup | Imperative biometric lock navigation is replaced with declarative redirect flow and integration tests cover lock/unlock transitions. |
-| `P2-03` | Splash Pro-check timeout | Startup Pro check has timeout/fallback path and app no longer hangs on slow or failed network conditions. |
-| `P2-04` | Biometric auto-disable notice | User-visible notice is shown when biometrics are auto-disabled and behavior is covered by tests. |
-| `P2-05` | History pagination | History loading is paginated/lazy with deterministic UX for empty/loading/error states. |
-| `P2-06` | Accessibility automation suite | Automated accessibility checks are part of CI with documented pass/fail criteria. |
-| `P2-07` | Drop synonym prompt tests in ai_service_test | Remove brittle synonym-matching prompt tests (lines 284-316) that assert copy phrases like "funny/humor/light" and "brief/short/1-2"; contract-style `.prompt` assertions already cover the same guarantee. Tests pass after removal with no coverage loss. |
-| `P2-08` | Database backup restore verification | Supabase backup restore procedure is documented in `docs/DEVOPS.md` with steps to verify a restore, and at least one test restore has been completed and evidenced. |
-| `P2-11` | Mock-layer usage hygiene | Every file in `test/mocks/` is either exercised by at least one test or removed. In particular, `mock_reauth_service.dart` is either used by `reauth_service_test.dart`/widget tests or deleted to avoid dead mock surface area. |
-| `P2-12` | Device fingerprint real-service test coverage | Add direct tests for `DeviceFingerprintService` RPC/result mapping and graceful-degradation paths (server unavailable, fingerprint unavailable, Postgrest errors) using Supabase stubs/fakes rather than only mock-self-tests. |
-| `P2-13` | Startup orchestration refactor (post-launch) | Startup is moved to an explicit orchestration state machine/service with isolated phase boundaries, cancellation semantics, and deterministic tests for success/failure permutations. Refactor is informed by production startup telemetry from `P1-48` and does not regress route determinism or launch latency budgets. |
-| `P2-14` | Re-evaluate custom-lint compatibility | On a scheduled toolchain review, verify whether the published `custom_lint`/`riverpod_lint` ecosystem is compatible with the current Flutter/Dart/Riverpod analyzer line, document the decision in `docs/DEVOPS.md`, and either reintroduce the lint stack with passing `flutter analyze`/`flutter test`/`./scripts/test_critical_smoke.sh` or explicitly keep it deferred with recorded evidence. |
-| `P2-16` | Public QA showcase packaging | `README.md` includes a concise risk-to-test-layer matrix, links to concrete evidence sources for local, wired-device, Patrol native-risk, and Firebase Test Lab runs, and describes Patrol/FTL usage honestly as selective native-risk coverage rather than the mainline harness. The public story must explicitly favor a small number of high-signal, bug-oriented tests over inflated test counts or threshold-chasing. `docs/DEVOPS.md` and linked runbooks expose runnable commands for collecting that evidence, the public wording is reviewed against the actual repo workflows/harnesses, and a repo-owner walkthrough confirms the showcase story is accurate and portfolio-ready. |
-| `P2-17` | RevenueCat transfer metadata hydration | `user_entitlements` rows created from RevenueCat `TRANSFER` flows preserve or recover canonical `product_id` and `expires_at` values instead of leaving them null. Delete-account/recreate/restore/sign-in validation proves the backend row contains `is_pro=true` plus non-null metadata, and the recovery path is documented in `docs/DEVOPS.md` if webhook/event ordering can still temporarily omit those fields. |
-| `P2-18` | AI technical-depth showcase | The repo and app make the AI system design legible and impressive without hand-waving: public docs explain the pinned-model strategy, Remote Config controls, App Check posture, structured JSON contract, fallback path, and typed error handling; diagnostics/support surfaces expose the active AI runtime (backend, primary/fallback model, allowlist state, App Check token mode, config schema version) without leaking secrets; and at least one reproducible evidence path demonstrates a non-happy-path AI behavior (for example fallback-model recovery, client-block triage, or blocked-content classification) with a clear oracle and captured artifact. |
-| `P2-21` | Diagnostic auth-provider summary consistency | The support/diagnostic report shows `last_sign_in_provider`, `Most Recent Identity Provider`, and `current_session_source` values that match the actual authenticated session semantics after Apple/Google sign-in, linked-account reuse, and token refresh. DoD requires a clear provider precedence policy, deterministic unit coverage for linked-provider edge cases, and at least one real-device report sample where summary fields match the corresponding recent auth logs. |
-| `P2-22` | Remove legacy router fallback | The legacy `appRouter` path in `lib/app/router.dart` is removed once the guarded router migration is confirmed stable. All app entrypoints use the canonical guarded router path only, no docs or tests reference the legacy router, and navigation/regression coverage continues to pass. DoD requires: `flutter analyze`, `flutter test`, and `./scripts/test_critical_smoke.sh` pass. |
-| `P2-23` | Crash-report consent recovery UX | Crash-report consent is requested only when there is a real unsent crash or fatal-error bundle waiting, not as an extra generic settings/feedback prompt. DoD requires: unsent crash evidence is buffered locally with expiry/size bounds, next-launch UX asks once with clear send/decline choices, declining clears or suppresses the pending bundle without repeated nagging, analytics opt-in remains separate from crash-report consent, regression coverage exists for crash-present, crash-absent, send, and decline paths, and `docs/DEVOPS.md` documents the local buffering + send policy. |
-| `P2-24` | Occasion-first icon/system pilot | UI iconography stops feeling cheap and ad hoc on the highest-visibility message-selection surfaces without turning `1.1.3` into a full redesign. Scope is limited to the occasion-selection surface first, plus directly related calendar and results surfaces where the same icon/emoji system shows through; the pilot also includes the raw emoji bug sites. Current live regression to clear before this can be considered successful: wired iPhone evidence now shows `occasion_grid.dart` card-content `RenderFlex overflow` on first-launch/home sizing. DoD requires: one canonical icon family is chosen and documented for non-content UI chrome with rationale; occasion/content representation continues to use `AppEmoji` rather than replacing warm content cues with generic line icons; touched surfaces no longer mix multiple icon families/styles arbitrarily; shared icon size tokens are used instead of introducing new hardcoded icon sizes on those surfaces; raw `Text('emoji')` usages are replaced with `AppEmoji`; widget/regression coverage is updated for touched icon-bearing components, including a narrow-width oracle that would fail on the current tile overflow; and physical iOS + Android evidence confirms occasion, calendar, and results surfaces look coherent without regressing alignment, readability, affordance clarity, or card-fit on smaller device widths. Explicit non-goal: no whole-app icon migration and no broad component API rewrite purely to support decorative icon variants. |
-| `P2-25` | Mobile app SAST coverage decision | The repo documents and evaluates a security-focused static-analysis strategy for Dart/Flutter app code instead of implicitly treating workflow/edge-function CodeQL coverage as the whole security story. DoD requires: `docs/DEVOPS.md` states exactly what static security analysis does and does not cover for app code, at least one candidate Dart/Flutter SAST path is trialed with recorded evidence, and the final decision is either an adopted runnable CI check or an explicit documented gap with owner, rationale, and review cadence. |
-| `P2-26` | Remove direct user_usage client read | `UsageService.syncFromServer()` no longer reads `public.user_usage` directly from the Flutter client. The replacement preserves reinstall/sign-in usage restoration, keeps caller identity enforced server-side, and lets production revoke authenticated `SELECT` from `user_usage` so Supabase GraphQL table-exposure lints are fully cleared or explicitly accepted with documented evidence. |
-| `P2-27` | Remove unused usage RPC compatibility parameter | The legacy `p_is_pro` parameter is removed from `check_and_increment_usage` and all Flutter call sites, or the remaining compatibility signature is explicitly documented with an accepted Supabase lint warning. DoD requires local and linked `supabase db lint --schema public` no longer fail on `unused parameter "p_is_pro"` unless the exception is documented, plus `flutter analyze`, `flutter test`, and `./scripts/test_critical_smoke.sh` pass. |
+## 5. Safety
+
+- [~] Crisis path redirects rather than drafting -- evidence:
+  `String.indicatesCrisisSupportNeed`, `MomentSafetySignal`, and
+  `MomentModel.canDraft` in `prosepal-ios/Sources/ProsePalDomain/MomentModels.swift`
+  and `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`. Partial
+  because detection is a hardcoded English phrase list, not a model guardrail
+  signal with locale awareness.
+- [~] Pressure Check provides subtractive feedback -- evidence:
+  `PressureCheck.local(for:)` in
+  `prosepal-ios/Sources/ProsePalDomain/MomentModels.swift`; private-lane
+  typed fields in `FoundationModelsPrivateDraftClient.swift`. Partial because
+  user-facing accept/keep/clean flows are not fully developed.
+- [~] Careful Mode calms sensitive moments -- evidence: `MomentInput.isCarefulMode`
+  and `carefulModeSection` in
+  `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`; sensitive
+  moments align away from `React` into `Take care`, and sensitive careful-lane
+  failure falls back to private drafting in
+  `prosepal-ios/Sources/ProsePalAPI/MessageWritingService.swift`. Partial
+  because register-specific palette, whitespace, and haptic changes are not
+  complete.
+- [~] The app avoids therapy/crisis overreach -- evidence: crisis-support copy
+  and draft blocking in `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`.
+  Partial pending safety copy review and broader examples.
+
+## 6. OS Surfaces
+
+- [~] App Intents / Siri / Shortcuts can start or resume a Moment --
+  evidence: `prosepal-ios/Sources/ProsePalUI/ProsePalAppIntents.swift`,
+  `prosepal-ios/App/ProsePalAppShortcuts.swift`. Partial because device evidence
+  and shortcut QA are still needed.
+- [ ] Care Glance WidgetKit widget exists -- evidence: no `WidgetKit`,
+  `WidgetBundle`, widget extension target, or `NSExtension` entry found under
+  `prosepal-ios`.
+- [ ] Control Center / Action Button control exists -- evidence: no
+  `ControlWidget` or control extension target found under `prosepal-ios`.
+- [ ] Share extension turns outside context into a Moment -- evidence: no share
+  extension or `NSExtension` entry found under `prosepal-ios`.
+- [ ] System writing/text tooling is explicitly integrated -- evidence: no
+  dedicated writing-tools integration found under `prosepal-ios/Sources`.
+
+## 7. Monetization
+
+- [x] Native app uses StoreKit 2 directly, with no RevenueCat dependency --
+  evidence: `StoreKitSubscriptionClient` in
+  `prosepal-ios/Sources/ProsePalAPI/SubscriptionClient.swift`; no third-party
+  dependencies in `prosepal-ios/Package.swift`.
+- [~] Server entitlement is authoritative through App Store Server
+  Notifications V2 JWS and reconciliation -- evidence:
+  `supabase/functions/app-store-notifications/index.ts`,
+  `supabase/functions/app-store-notifications/index.test.ts`,
+  `supabase/functions/app-store-reconcile-entitlement/index.ts`,
+  `supabase/functions/app-store-reconcile-entitlement/index.test.ts`,
+  `supabase/migrations/023_add_app_store_entitlement_metadata.sql`, and
+  `supabase/migrations/024_add_app_store_reconciliation_events.sql`. Partial
+  because both functions are deployed and reachable in staging, but staging
+  does not yet have Apple root certificates, App Store Server API credentials,
+  the reconcile shared secret, or migration-application evidence, so live App
+  Store sandbox verification is still outstanding.
+- [ ] Premium/extras gateway access is authorized by server entitlement --
+  evidence: careful/sensitive drafting is deliberately decoupled from Premium
+  billing in `GatewayCarefulMomentClient.swift` and
+  `MessageWritingService.swift`; App Store notification ingestion now updates
+  `user_entitlements`, but `generate-card` still rejects Premium by design and
+  no paid limits/extras gateway policy has been wired.
+- [~] Paywall is App Review-oriented: price/period, restore, Terms, Privacy,
+  no forced sign-in -- evidence: `MomentPaywallSheet` in
+  `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`. Partial because
+  StoreKit product loading/sandbox evidence is not captured in the tracker.
+- [~] Account deletion exists once account creation exists -- evidence:
+  `SupabaseAccountMaintenanceClient` in
+  `prosepal-ios/Sources/ProsePalAPI/AccountMaintenanceClient.swift`,
+  `supabase/functions/delete-user/index.ts`, and settings UI in
+  `MomentSettingsView`; local SwiftData vault wipe is wired through
+  `RelationshipVaultLocalDataEraser` and covered in
+  `prosepal-ios/Tests/ProsePalUITests/MomentAccountModelTests.swift`.
+  Partial pending full App Review/account-provider evidence.
+- [~] Restore, identity/account switch, and entitlement convergence are covered --
+  evidence: restore/local entitlement code in
+  `prosepal-ios/Sources/ProsePalAPI/SubscriptionClient.swift`; signed-in
+  purchases attach StoreKit `appAccountToken` from
+  `prosepal-ios/App/ProsePalNativeApp.swift`; account/purchase tests in
+  `prosepal-ios/Tests/ProsePalUITests/MomentAccountModelTests.swift`; server
+  reconciliation path in
+  `supabase/functions/app-store-reconcile-entitlement/index.ts`. Partial
+  because sandbox reconciliation has not been proven against real App Store
+  Server API responses and anonymous-purchase convergence still needs policy.
+
+## 8. Design
+
+- [~] N-IOS-14 Native visual system and Moment rail/content discipline --
+  evidence: `MomentSheetView.momentContent(viewportHeight:)`,
+  `shouldShowSecondaryMomentPanels`, and `activeDraftStatus` in
+  `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`. Partial because
+  XcodeBuildMCP simulator evidence now covers the `Mira Audit` Birthday and
+  Sympathy rail paths, but physical-device, Dynamic Type, VoiceOver, Reduce
+  Transparency, and paywall/input follow-up polish remain.
+- [~] iOS 26-first Liquid Glass direction is in code -- evidence:
+  iOS 26 deployment target in `prosepal-ios/Package.swift` and
+  `prosepal-ios/ProsePal.xcodeproj/project.pbxproj`; control-layer styling in
+  `MomentGlassModifier` and `momentControlBarSurface` in
+  `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`. Partial pending
+  Xcode 26/device visual verification.
+- [~] Opaque paper-like content sits beneath floating controls -- evidence:
+  `MomentDraftCard`, `MomentPanel`, `MomentCardBackground`, `MomentSymbolBadge`,
+  and active first-viewport rail/content gating in
+  `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`. Partial pending
+  physical-device and accessibility audit.
+- [~] Register-aware palette and haptics exist -- evidence:
+  `MomentPalette` and `MomentHaptics` in
+  `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`. Partial because
+  grief/sensitive haptic suppression is not fully evidenced.
+- [~] Accessibility is treated as architecture -- evidence: visible controls,
+  labels, Dynamic Type-friendly SwiftUI, and selectable text in
+  `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`. Partial pending
+  VoiceOver, Switch Control, Reduce Transparency, Increase Contrast, and AX-size
+  device evidence.
+
+## 9. Platform And Engineering
+
+- [~] Swift 6 and strict-concurrency direction are active -- evidence:
+  `swift-tools-version: 6.2` in `prosepal-ios/Package.swift`; `SWIFT_VERSION = 6.0`
+  in `prosepal-ios/ProsePal.xcodeproj/project.pbxproj`. Partial pending
+  strict-concurrency audit under Xcode 26/device builds.
+- [x] View models use `@Observable`, not `ObservableObject` -- evidence:
+  `MomentModel` and `MomentAccountModel` in `prosepal-ios/Sources/ProsePalUI`;
+  no `ObservableObject` references remain under `prosepal-ios/Sources`.
+- [~] SwiftData and Swift Testing are used for new native code -- evidence:
+  `RelationshipVault.swift`, `MomentModelTests.swift`,
+  `MessageWritingServiceTests.swift`, and `RelationshipVaultTests.swift`.
+  Partial because some legacy tests still use XCTest.
+- [x] Package has zero third-party dependencies -- evidence:
+  `prosepal-ios/Package.swift`.
+- [x] Native target is iOS 26-first -- evidence:
+  `platforms: [.iOS(.v26)]` in `prosepal-ios/Package.swift` and
+  `IPHONEOS_DEPLOYMENT_TARGET = 26.0` in
+  `prosepal-ios/ProsePal.xcodeproj/project.pbxproj`.
+- [x] Monolith UI has been split for the new flow -- evidence:
+  Moment-specific files exist under `prosepal-ios/Sources/ProsePalUI`, and the
+  legacy compiled monolith `ProsePalRootView.swift` has been removed.
+
+## 10. Privacy And Telemetry
+
+- [~] Private lane avoids sending message text off device -- evidence:
+  `FoundationModelsPrivateDraftClient` in
+  `prosepal-ios/Sources/ProsePalAPI/FoundationModelsPrivateDraftClient.swift`.
+  Partial because careful lane still uses the Supabase gateway rather than
+  Private Cloud Compute.
+- [x] Client diagnostics are metadata-only -- evidence:
+  `NativeDiagnosticsLogger` in
+  `prosepal-ios/Sources/ProsePalUI/NativeDiagnosticsLogger.swift`; tests in
+  `prosepal-ios/Tests/ProsePalUITests/NativeDiagnosticsTests.swift`.
+- [~] Vault storage, deletion, export, and backup behavior are privacy-reviewed --
+  evidence: SwiftData records and backup-excluded Application Support store
+  location in `prosepal-ios/Sources/ProsePalAPI/RelationshipVault.swift`, app
+  container wiring in `prosepal-ios/App/ProsePalNativeApp.swift`, and filesystem
+  coverage in
+  `prosepal-ios/Tests/ProsePalAPITests/RelationshipVaultTests.swift`.
+  Partial because export and any stronger at-rest encryption decision still need
+  dedicated product/security review.
+
+## 11. Quality Gates / Acceptance
+
+- [~] Acceptance demo exists: open, person, moment, one true thing, draft,
+  adjust, copy/share/save -- evidence: `MomentAppRootView`, `MomentSheetView`,
+  `MomentActionRail`, and `MomentModel` in
+  `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`. Partial pending
+  physical-device evidence after the latest Moment rail/content-gating pass and
+  private-lane quality/latency evidence.
+- [ ] Device spike confirms private-lane quality, latency, and escalation
+  threshold for grief/apology -- evidence: no committed evidence artifact found
+  for this spike.
+- [~] Tests cover routing, safety, entitlement, and typed generation contracts --
+  evidence: routing/safety tests in
+  `prosepal-ios/Tests/ProsePalAPITests/MessageWritingServiceTests.swift`,
+  entitlement/account tests in
+  `prosepal-ios/Tests/ProsePalUITests/MomentAccountModelTests.swift`.
+  Partial because `@Generable` output-contract/device behavior is not covered
+  with wired evidence.
+- [x] Exit criteria for deleting legacy grouped form are satisfied -- evidence:
+  `ProsePalRootView.swift`, `LegacyComposeModels.swift`, and legacy grouped-form
+  tests have been removed; live behavior is covered by Moment/domain/API tests.
+
+## 12. Explicit Non-Goals For V1
+
+- [x] No image generation in v1 -- evidence: no image-generation dependency or
+  image model client in `prosepal-ios/Package.swift` or `prosepal-ios/Sources`.
+- [x] No third-party model/provider SDK dependency in v1 -- evidence:
+  `prosepal-ios/Package.swift` has no package dependencies.
+- [x] No social, physical cards, custom keyboard, Live Activities, CloudKit sync,
+  automatic memory inference, or voice cloning in v1 -- evidence: no matching
+  targets or frameworks found under `prosepal-ios`.
+
+## Top Open Work
+
+1. Verify the latest Moment visual/rail/content-gating pass on a physical device
+   and complete Dynamic Type, VoiceOver, Reduce Transparency, Increase Contrast,
+   Add detail focus, and paywall hierarchy polish.
+2. Swap the now-working standard-gateway careful lane to the agreed Apple-native
+   careful/PCC direction when that API path is ready.
+3. Configure Apple App Store Server secrets in staging, apply App Store
+   entitlement migrations to staging, then capture sandbox notification and
+   reconciliation evidence.
+4. Add Care Glance widget, Control Center/Action Button control, and Share
+   extension surfaces.
+5. Harden crisis/pressure handling beyond local English phrase lists and add
+   locale-aware/model-guarded evidence.
+6. Complete vault privacy work for export and any stronger at-rest encryption
+   decision.
+
+## Archived Flutter Reference Work
+
+Add Flutter/archive work here only when needed for an explicit archive
+inspection, production incident investigation, service ownership requirement, or
+native replacement evidence. Use tag `flutter-prod-freeze-2026-06-25` or branch
+`legacy/flutter-production-reference`. Do not recreate Flutter files on active
+`main`.

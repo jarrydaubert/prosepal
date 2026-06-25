@@ -1,5 +1,5 @@
 #!/bin/bash
-# Remove generated local artifacts for a clean working tree.
+# Remove generated local native artifacts for a clean working tree.
 
 set -euo pipefail
 
@@ -15,7 +15,7 @@ Usage: ./scripts/cleanup.sh [options]
 
 Options:
   --dry-run   Show what would be removed without deleting anything
-  --deep      Also run `flutter clean`
+  --deep      Also remove SwiftPM/Xcode build artifacts under prosepal-ios/
   -h, --help  Show help
 EOF
 }
@@ -59,25 +59,22 @@ remove_path() {
 }
 
 TARGETS=(
-  "$PROJECT_DIR/build"
-  "$PROJECT_DIR/coverage"
-  "$PROJECT_DIR/artifacts/wired"
+  "$PROJECT_DIR/prosepal-ios/evidence"
+  "$PROJECT_DIR/prosepal-ios/build"
+  "$PROJECT_DIR/DerivedData"
+  "$PROJECT_DIR/artifacts"
   "$PROJECT_DIR/custom_lint.log"
-  "$PROJECT_DIR/test/widgets/goldens/failures"
-  "$PROJECT_DIR/test/failures"
-  "$PROJECT_DIR/integration_test/test_bundle.dart"
 )
+
+if [[ "$DEEP" -eq 1 ]]; then
+  TARGETS+=(
+    "$PROJECT_DIR/prosepal-ios/.build"
+    "$PROJECT_DIR/prosepal-ios/.swiftpm"
+  )
+fi
 
 for target in "${TARGETS[@]}"; do
   remove_path "$target"
 done
-
-if [[ "$DEEP" -eq 1 ]]; then
-  if [[ "$DRY_RUN" -eq 1 ]]; then
-    echo "[dry-run] flutter clean"
-  else
-    (cd "$PROJECT_DIR" && flutter clean)
-  fi
-fi
 
 echo "Cleanup complete."

@@ -75,7 +75,7 @@ Separate these per app where practical:
 - Google identity used for setup
 - Firebase / Google Cloud project
 - Supabase org/project
-- RevenueCat project
+- subscription/billing backend or App Store configuration
 - email delivery vendor account or project
 - analytics property
 - search tooling / Search Console

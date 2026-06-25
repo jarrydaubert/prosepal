@@ -1,82 +1,61 @@
-# Service Endpoints Map
+# Service Endpoints
 
-Purpose: document the SDK methods Prosepal calls, grouped by integration area.
+Active native iOS endpoint inventory.
 
-For open gaps, flaky behavior, or pending improvements, use `docs/BACKLOG.md` only.
+## Native Staging Gateway
+
+```text
+https://llolwgqphwnhbiqewmcq.supabase.co/functions/v1/generate-card
+```
+
+Xcode Run environment key:
+
+```text
+PROSEPAL_GATEWAY_URL
+```
+
+Staging dev guard header:
+
+```text
+X-ProsePal-Dev-Gateway-Secret
+```
+
+The secret value must remain local-only and must never be printed, committed, or
+placed in shared schemes.
 
 ## Supabase Auth
 
-- `auth.currentUser`
-- `auth.onAuthStateChange`
-- `auth.signInWithIdToken()`
-- `auth.signInWithPassword()`
-- `auth.signUp()`
-- `auth.resetPasswordForEmail()`
-- `auth.signInWithOtp()`
-- `auth.updateUser()`
-- `auth.signOut()`
-- `auth.currentSession`
-- `functions.invoke()`
+Configured through:
 
-## Sign In With Apple
+```text
+PROSEPAL_SUPABASE_URL
+PROSEPAL_SUPABASE_ANON_KEY
+```
 
-- `generateRawNonce()`
-- `isAvailable()`
-- `getAppleIDCredential()`
-- `onCredentialRevoked`
+Sign in with Apple exchanges through Supabase Auth in the native app.
 
-## Google Sign In
+## App Store / StoreKit
 
-- `initialize()`
-- `isAvailable()`
-- `attemptLightweightAuthentication()`
-- `authenticate()`
-- `signOut()`
-- `disconnect()`
+Local product IDs:
 
-## RevenueCat
+```text
+com.prosepal.pro.yearly
+com.prosepal.pro.monthly
+com.prosepal.pro.weekly
+```
 
-- `Purchases.configure()`
-- `Purchases.getCustomerInfo()`
-- `Purchases.getOfferings()`
-- `Purchases.purchase()`
-- `Purchases.restorePurchases()`
-- `RevenueCatUI.presentPaywall()`
-- `RevenueCatUI.presentPaywallIfNeeded()`
-- `RevenueCatUI.presentCustomerCenter()`
-- `Purchases.addCustomerInfoUpdateListener()`
-- `Purchases.logIn()`
-- `Purchases.logOut()`
+Server-side entitlement endpoints live under `supabase/functions/`:
 
-## Firebase AI
+- `app-store-notifications`
+- `app-store-reconcile-entitlement`
 
-- `FirebaseAI.googleAI()`
-- `generativeModel()`
-- `model.generateContent()`
+These are staging/proof work until App Store Server Notifications V2,
+reconciliation, sandbox purchase, expiry, and refund paths are evidenced.
 
-## Local Auth (Biometrics)
+## Archived Flutter Endpoints
 
-- `canCheckBiometrics`
-- `isDeviceSupported()`
-- `getAvailableBiometrics()`
-- `authenticate()`
+Firebase AI, Remote Config, RevenueCat, and Flutter SDK endpoint details are
+historical. Use `docs/legacy-flutter/` or the archive refs:
 
-## Firebase Core and Telemetry
-
-- `Firebase.initializeApp()`
-- `FirebaseCrashlytics.recordFlutterFatalError`
-- `FirebaseCrashlytics.recordError()`
-- `FirebaseAnalytics.logEvent()`
-- `FirebaseAnalytics.setUserId()`
-- `FirebaseAnalytics.setUserProperty()`
-
-## Other SDKs
-
-- `Share.shareXFiles()` / `Share.share()`
-- `InAppReview.requestReview()`
-- `launchUrl()`
-
-## Verification References
-
-- Local/CI/device/FTL workflow and operational runbooks: `docs/DEVOPS.md`
-- Test command quick reference: `test/README.md`
+- `flutter-prod-freeze-2026-06-25`
+- `legacy/flutter-production-reference`

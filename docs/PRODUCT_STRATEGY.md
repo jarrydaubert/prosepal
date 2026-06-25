@@ -8,30 +8,53 @@ This document is directional, not a release checklist or backlog. Open implement
 
 ## Product Positioning
 
-Prosepal is an AI-powered greeting-card message writer for people who care about the message but struggle to write it quickly.
+ProsePal is a native iOS app for thoughtful personal messages. It helps someone
+show up for the people who matter: remember the moment, say what is true, and
+get the message sent.
 
 Core promise:
-- Turn occasion, relationship, tone, and a little context into usable card copy in seconds.
-- Reduce blank-page anxiety, especially for difficult occasions like sympathy, gratitude, and milestone events.
-- Keep the experience simple enough to use at the moment of need.
+
+- Start person-first, not document-first.
+- Turn a person, moment, relationship, and one true thing into a useful draft
+  without making the user prompt-engineer.
+- Reduce blank-page anxiety, especially for difficult moments like sympathy,
+  apology, gratitude, and milestones.
+- Keep sensitive writing private by default and never expose provider/model
+  names to users.
 
 Differentiation:
-- More guided and faster than general-purpose AI tools.
-- More personal than static example lists.
-- More message-focused than card-design apps.
+
+- More emotionally aware than a generic AI text box.
+- More native and immediate than a form-based card-message generator.
+- More personal than static examples because relationship memory and voice can
+  live on device.
+- More privacy-aligned than client-direct provider SDKs because generation
+  routes through a ProsePal-owned service boundary.
 
 ## Product Baseline
 
-The current product design is the baseline.
+The active native baseline is the person-first Moment Sheet in `prosepal-ios/`.
+The previous Flutter app is archived at tag `flutter-prod-freeze-2026-06-25`
+and branch `legacy/flutter-production-reference` for lessons, service behavior,
+App Review history, and functional inventory. Flutter screens are not the
+native interaction or visual spec.
 
-Near-term product work should stay within the existing design language and focus on:
-- reliability
-- clarity
-- accessibility
-- visual consistency
-- auth, payment, and entitlement determinism
+Near-term native work should strengthen:
 
-Avoid major UX architecture changes unless they are explicitly re-approved.
+- Moment Sheet clarity and speed to first useful draft
+- private draft and take-more-care routing through `MessageWritingService`
+- relationship vault, Truth Beads, and Voice Card control
+- safety, crisis handling, Pressure Check, and careful-mode states
+- StoreKit 2, Sign in with Apple, account deletion, and entitlement determinism
+- accessibility, Liquid Glass control surfaces, and privacy-safe diagnostics
+
+Avoid reintroducing:
+
+- a giant occasion grid as the primary experience
+- grouped-form parity as a maintained fallback
+- Firebase AI / Vertex AI / provider SDK generation in the native client
+- RevenueCat as a native dependency
+- user-facing provider/model names
 
 ## Audience And Markets
 
@@ -88,16 +111,22 @@ Most promising retention directions:
 
 ## Product Direction
 
-Prioritize improvements that strengthen the current product:
-- localization and wording preferences where they improve trust
-- better repeat-use hooks around real occasions
+Prioritize improvements that strengthen the native Moment product:
+
+- faster path from person -> moment -> one true thing -> draft
+- better local relationship memory where the user stays in control
+- Standard/private drafting for everyday moments
+- take-more-care escalation for sensitive or higher-stakes messages
+- clearer saved/local privacy semantics
 - sharper onboarding that gets users to first value quickly
-- support for difficult, high-stakes writing moments
+- spelling/locale preferences where they improve trust
 
 Deprioritize or avoid:
-- large speculative redesign tracks
-- heavy B2B feature work before demand is proven
-- broad feature expansion that weakens the core message-writing use case
+- broad feature expansion that weakens the message-writing core
+- automatic memory inference before user-approved memory is solid
+- notifications/reminders before timing semantics are safe and useful
+- heavy B2B work before consumer value is proven
+- Flutter parity work that does not serve the native Moment shape
 
 ## Experiments And Ideas
 
@@ -127,14 +156,14 @@ Brand voice should stay:
 - clear rather than clever
 
 Messaging should emphasize:
-- relief from blank-card stress
+- relief from blank-message stress
 - speed without sounding robotic
-- thoughtfulness and personal tone
+- thoughtfulness, privacy, and personal tone
 
 ## Decision Rules
 
 Use these filters before expanding scope:
-- Does this help users write better card messages faster?
+- Does this help users show up for someone with a better message faster?
 - Does it strengthen trust, retention, or monetization without complicating the core flow?
 - Can it be validated cheaply before deep investment?
 - Is it more valuable than reliability and release hardening work already in backlog?

@@ -1,192 +1,230 @@
-# User Journeys
+# Native User Journeys
 
-> Auth/payment flow reference. Current state and target state.
+## Purpose
 
----
+Define the user journey policy for the native iOS app. The archived Flutter app
+remains useful for App Review lessons, but the active journey is the native
+Moment Sheet.
 
-## Core Principle
+Open implementation work belongs in `docs/BACKLOG.md`.
 
-**Free tier = anonymous OK | Paid tier = auth required first**
+## Core Policy
 
----
-
-## Launch Decision Tree
-
+```text
+Standard value first
+Purchase without mandatory account creation
+Sign in for continuity, restore confidence, support, and authenticated gateway usage
+Gateway/server state is authoritative for usage and future Premium limits/extras
 ```
+
+## Launch
+
+```text
 Launch
-  ├─ !onboarded → /onboarding
-  ├─ biometrics enabled → /lock → /home
-  └─ else → /home
+  -> first run? Welcome
+  -> biometric lock enabled and signed in? Lock
+  -> otherwise Moment
 ```
 
----
+Rules:
 
-## Flow: Onboarding Complete
+- Do not show a marketing splash on every launch.
+- Do not force sign-in during welcome/onboarding.
+- Do not hard-paywall the user before they have experienced core value.
+- If required configuration is missing, show a user-safe unavailable state with
+  a retry/support path rather than a blank screen.
 
-```
-Onboarding [Get Started]
-  │
-  ├─ hasPro && !loggedIn → /auth (link orphaned Pro)
-  ├─ hasPro && loggedIn → /home
-  └─ !hasPro → /home + showPaywall() sheet (dismissable)
-                  │
-                  ├─ [X Dismiss] → /home (1 free generation)
-                  ├─ [Subscribe] → AUTH REQUIRED (see below)
-                  └─ [Restore] → AUTH REQUIRED (see below)
-```
+## First Use
 
----
-
-## Flow: Subscribe (TARGET)
-
-```
-                    ┌─────────────────────────────┐
-                    │  CURRENT         TARGET     │
-                    ├─────────────────────────────┤
-                    │  Pay → Auth?    Auth → Pay  │
-                    │  X dismissable  No X        │
-                    │  Pro orphanable Pro linked  │
-                    └─────────────────────────────┘
-
-TARGET FLOW:
-[Subscribe] → Paywall Sheet (inline auth) → Sign in → Purchase → Sheet closes
-                                                      │
-                                              RevenueCat.identify(userId)
-                                              Pro linked to account ✓
+```text
+Welcome
+  -> Start writing
+  -> Moment
+  -> who is this for?
+  -> what is the moment?
+  -> what is true?
+  -> private draft appears when enough context exists
+  -> adjust / take more care
+  -> copy, share, save, or send
 ```
 
----
+Rules:
 
-## Flow: Restore (TARGET)
+- Person-first entry is the product anchor.
+- Occasion taxonomy sits underneath the moment model and should not become a
+  giant visible grid.
+- Relationship context should help the user think about the message without
+  making the flow feel like a generic document form.
 
-```
-                    ┌─────────────────────────────────────┐
-                    │  CURRENT              TARGET        │
-                    ├─────────────────────────────────────┤
-                    │  Paywall: No auth     Auth required │
-                    │  Settings: Auth req   Auth required │
-                    │  Inconsistent         Consistent    │
-                    └─────────────────────────────────────┘
+## Private Draft
 
-TARGET FLOW (all restore buttons):
-[Restore] → if !loggedIn → /auth (NO X) → Sign in → Restore → result
-```
-
----
-
-## Flow: Generate (Free Tier Exhausted)
-
-```
-Generate Screen (remaining=0)
-  │
-  └─ [Upgrade] → Paywall Sheet (inline auth) → Sign in → Purchase → Sheet closes
-
-CURRENT BUG: Auth has X, user can dismiss and is stuck in loop
-TARGET: No X on auth when in payment flow
+```text
+Moment
+  -> Private draft
+  -> on-device where available
+  -> draft
 ```
 
----
+Rules:
 
-## Flow: Anonymous Free Tier
+- Private draft is the everyday route where device/runtime support allows.
+- If private drafting is unavailable, the UI must say so honestly.
+- The app must not use client-side template generation as a runtime fallback.
+- The app must not expose provider/model names.
 
-```
-                    ┌──────────────────────────────────────────┐
-                    │  CURRENT                 TARGET          │
-                    ├──────────────────────────────────────────┤
-                    │  Local check only        Server check    │
-                    │  Reinstall = abuse       Fingerprint DB  │
-                    └──────────────────────────────────────────┘
+## Premium Boundary
 
-TARGET FLOW:
-Generate (anonymous, !isPro)
-  │
-  └─ checkDeviceFreeTierServerSide() BEFORE generation
-      │
-      ├─ allowed → generate → markDeviceUsedFreeTier (server)
-      └─ blocked → "Upgrade to Pro"
-```
+Good Premium triggers:
 
----
+- user reaches future paid limits/extras
+- gateway reports free limit reached
+- user chooses a Premium-only future capability
+- user opens Subscription from Settings
 
-## Decision Record
+Bad Premium trigger:
 
-**Decision:** Auth First, Then Pay  
-**Date:** 2026-01-11  
-**Confirmed by:** Code audit + RevenueCat docs research  
+- immediately blocking first-run onboarding before the user writes anything.
 
-**Rationale:**
-- RevenueCat Flutter SDK lacks `onPurchaseInitiated` callback (iOS/Android native only)
-- Industry standard (Spotify, Netflix, Disney+) requires auth before premium access
-- Eliminates orphaned subscriptions - Pro always linked to account
-- Simplifies implementation - no `isPostPurchase` tracking needed
+## Purchase
 
-**Sources:**
-- RevenueCat docs: https://www.revenuecat.com/docs/tools/paywalls
-- RevenueCat community: "Check if user is logged in; if anonymous, prompt to create account before paywall"
-
----
-
-## Implementation Summary
-
-```dart
-// PAYWALL: Subscribe button
-if (!authService.isLoggedIn) {
-  context.push('/auth?redirect=paywall');
-  return;
-}
-// proceed with purchase...
-
-// PAYWALL: Restore button  
-if (!authService.isLoggedIn) {
-  context.push('/auth?redirect=paywall');
-  return;
-}
-// proceed with restore...
-
-// GENERATE SCREEN: Upgrade button (remaining=0)
-context.push('/auth?redirect=paywall');
-
-// AUTH SCREEN: X button logic
-final canDismiss = widget.redirectTo != 'paywall' && 
-                   (widget.redirectTo != null || context.canPop());
+```text
+Premium selected or limit reached
+  -> Paywall sheet
+  -> Product loading
+  -> Purchase
+  -> Entitlement confirmation
+  -> Premium UI updates only after entitlement is active
 ```
 
----
+Rules:
 
-## Auth Screen Parameters
+- Purchase cannot require app sign-in first.
+- Sign in with Apple can be offered as a continuity benefit, not a pre-purchase
+  wall.
+- The paywall must include restore and legal/subscription terms access.
+- Cancelled or pending purchases must not unlock Premium.
+- Local Premium UI cannot authorize paid limits/extras by itself; the gateway
+  remains authoritative for server-side entitlement.
 
-```dart
-AuthScreen({
-  String? redirectTo,      // 'paywall' = no X button
-  bool isProRestore,       // Show "link your Pro" messaging
-  bool autoRestore,        // Auto-restore after auth
-})
+## Restore
+
+```text
+Restore from Paywall or Settings
+  -> Store restore / selected entitlement provider restore
+  -> Entitlement refresh
+  -> Result state
 ```
 
----
+Rules:
 
-## State Persistence
+- Restore should be available from both Paywall and Settings.
+- Restore should not require mandatory app sign-in because store ownership is
+  tied to the Apple ID.
+- After restore succeeds, the app can invite sign-in for continuity.
+- No-active-subscription and failure states must be honest and recoverable.
 
-| State | Storage | Survives Reinstall |
-|-------|---------|-------------------|
-| `isLoggedIn` | Supabase session | No |
-| `hasPro` | RevenueCat | Yes (if linked to account) |
-| `deviceUsedFreeTier` | Server fingerprint | Yes |
-| `onboardingComplete` | SharedPrefs | No |
-| `user_usage` | Supabase table | Yes (tied to user_id) |
+## Sign In With Apple
 
----
+```text
+Settings or Paywall continuity prompt
+  -> Sign in with Apple
+  -> Supabase Auth exchange
+  -> session persisted
+  -> app state refresh
+```
 
-## Routes
+Rules:
 
-| Route | Entry Point | Auth Required |
-|-------|-------------|---------------|
-| `/onboarding` | Fresh install | No |
-| `/home` | Default | No |
-| `/auth` | Payment flows, settings | N/A (is auth) |
-| `showPaywall()` sheet | Inline auth in sheet | Yes (swipe to dismiss) |
-| `/generate` | Occasion tap | No |
-| `/results` | Generation complete | No |
-| `/settings` | Settings icon | No |
-| `/history` | History tab | No |
-| `/lock` | Biometrics enabled | No |
+- Sign in with Apple is first-class for native iOS.
+- Google sign-in is not part of the initial native direction unless existing
+  account continuity requires it.
+- Auth loading/finalizing state must prevent duplicate submits.
+- Cancellation must not leave the app stuck.
+- Sign out clears signed-in state, stale entitlement UI, biometric lock, and
+  account-scoped diagnostics.
+
+## Authenticated Gateway Usage
+
+```text
+Moment
+  -> gateway request with bearer token
+  -> gateway verifies auth, usage, entitlement, abuse controls
+  -> CardResponse or user-safe error
+```
+
+Rules:
+
+- Bearer tokens are never logged.
+- Raw recipient names, include/avoid/context fields, prompts, and generated
+  drafts are never logged.
+- Usage and entitlement policy lives behind the gateway/server boundary.
+
+## Saved And History
+
+Recommended native shape:
+
+```text
+Saved
+  -> user-curated messages
+  -> optional History filter later
+  -> detail
+  -> copy / share / edit / delete
+```
+
+Rules:
+
+- Local saved messages can ship before cloud sync.
+- History must be either implemented or deliberately excluded from the native
+  replacement scope.
+- Migration from archived Flutter local storage is not a release blocker for the
+  current R&D main, but any future production replacement must make an explicit
+  continuity decision.
+
+## Settings
+
+```text
+Settings
+  -> Account
+  -> Subscription
+  -> Writing preferences
+  -> Privacy
+  -> Support
+  -> Legal
+  -> About
+```
+
+Rules:
+
+- Settings should look and behave like grouped iOS settings.
+- Rows should not claim functionality that is not backed by real code.
+- Analytics/crash toggles should exist only if those systems exist.
+- Delete account and data export should either work or be hidden/unavailable
+  with honest copy.
+
+## Account Switch And Stale State
+
+```text
+User A signed in
+  -> sign out
+  -> User B signs in
+```
+
+Rules:
+
+- User B must not inherit User A's entitlement, usage, telemetry, saved account
+  state, pending sync, biometric preference, or diagnostics identity.
+- Anonymous usage must never be rebound to whichever user signs in next.
+- Server state wins over local cache for entitlement and usage.
+
+## Replacement Readiness
+
+Native can replace the archived Flutter production baseline only when:
+
+- Moment and draft results are better on iPhone than the archived Flutter flow.
+- Auth, purchase, restore, usage, entitlement, support, legal, and settings are
+  real, not placeholders.
+- Existing user continuity is handled.
+- TestFlight and physical iPhone evidence pass.
+- App Review lessons from the Flutter release are explicitly preserved.
+- Rollback to the archived Flutter production baseline remains possible until
+  native is approved.
