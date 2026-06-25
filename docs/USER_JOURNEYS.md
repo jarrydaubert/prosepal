@@ -2,9 +2,9 @@
 
 ## Purpose
 
-Define the user journey policy for the native iOS rewrite. These journeys are
-derived from the Flutter app's useful behavior and App Review lessons, but they
-are expressed as SwiftUI-native product flows.
+Define the user journey policy for the native iOS app. The archived Flutter app
+remains useful for App Review lessons, but the active journey is the native
+Moment Sheet.
 
 Open implementation work belongs in `docs/BACKLOG.md`.
 
@@ -23,7 +23,7 @@ Gateway/server state is authoritative for usage and future Premium limits/extras
 Launch
   -> first run? Welcome
   -> biometric lock enabled and signed in? Lock
-  -> otherwise Create
+  -> otherwise Moment
 ```
 
 Rules:
@@ -39,36 +39,36 @@ Rules:
 ```text
 Welcome
   -> Start writing
-  -> Create
-  -> choose occasion / relationship / tone / length / details
-  -> Generate through gateway
-  -> Drafts
-  -> Copy, Share, Edit, or Save
+  -> Moment
+  -> who is this for?
+  -> what is the moment?
+  -> what is true?
+  -> private draft appears when enough context exists
+  -> adjust / take more care
+  -> copy, share, save, or send
 ```
 
 Rules:
 
-- Occasion remains the product anchor.
-- Recipient/relationship context should help the user think about the message
-  without making the flow feel like a generic document form.
-- The full Flutter option set remains available, but native presentation should
-  use searchable sheets, grouped lists, compact controls, and keyboard-safe
-  forms.
+- Person-first entry is the product anchor.
+- Occasion taxonomy sits underneath the moment model and should not become a
+  giant visible grid.
+- Relationship context should help the user think about the message without
+  making the flow feel like a generic document form.
 
-## Standard Generation
+## Private Draft
 
 ```text
-Create
-  -> Standard
-  -> gateway request
-  -> Drafts
+Moment
+  -> Private draft
+  -> on-device where available
+  -> draft
 ```
 
 Rules:
 
-- Native Standard generation is gateway-backed during staging/native R&D.
-- Long-term Standard may become local on-device generation after a separate
-  approved spike.
+- Private draft is the everyday route where device/runtime support allows.
+- If private drafting is unavailable, the UI must say so honestly.
 - The app must not use client-side template generation as a runtime fallback.
 - The app must not expose provider/model names.
 
@@ -76,7 +76,7 @@ Rules:
 
 Good Premium triggers:
 
-- user taps Premium generation
+- user reaches future paid limits/extras
 - gateway reports free limit reached
 - user chooses a Premium-only future capability
 - user opens Subscription from Settings
@@ -146,7 +146,7 @@ Rules:
 ## Authenticated Gateway Usage
 
 ```text
-Create
+Moment
   -> gateway request with bearer token
   -> gateway verifies auth, usage, entitlement, abuse controls
   -> CardResponse or user-safe error
@@ -176,7 +176,9 @@ Rules:
 - Local saved messages can ship before cloud sync.
 - History must be either implemented or deliberately excluded from the native
   replacement scope.
-- Migration from Flutter local storage requires a tested, format-aware path.
+- Migration from archived Flutter local storage is not a release blocker for the
+  current R&D main, but any future production replacement must make an explicit
+  continuity decision.
 
 ## Settings
 
@@ -216,13 +218,13 @@ Rules:
 
 ## Replacement Readiness
 
-Native can replace Flutter only when:
+Native can replace the archived Flutter production baseline only when:
 
-- Create and Results are better on iPhone than the Flutter flow.
+- Moment and draft results are better on iPhone than the archived Flutter flow.
 - Auth, purchase, restore, usage, entitlement, support, legal, and settings are
   real, not placeholders.
 - Existing user continuity is handled.
 - TestFlight and physical iPhone evidence pass.
 - App Review lessons from the Flutter release are explicitly preserved.
-- Rollback to the Flutter production baseline remains possible until native is
-  approved.
+- Rollback to the archived Flutter production baseline remains possible until
+  native is approved.

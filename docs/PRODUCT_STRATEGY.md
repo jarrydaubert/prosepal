@@ -34,9 +34,10 @@ Differentiation:
 ## Product Baseline
 
 The active native baseline is the person-first Moment Sheet in `prosepal-ios/`.
-The previous Flutter app remains a frozen production-reference baseline for
-lessons, service behavior, App Review history, and functional inventory. Flutter
-screens are not the native interaction or visual spec.
+The previous Flutter app is archived at tag `flutter-prod-freeze-2026-06-25`
+and branch `legacy/flutter-production-reference` for lessons, service behavior,
+App Review history, and functional inventory. Flutter screens are not the
+native interaction or visual spec.
 
 Near-term native work should strengthen:
 

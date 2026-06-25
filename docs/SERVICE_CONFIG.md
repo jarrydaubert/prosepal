@@ -1,290 +1,75 @@
-# Service Configuration Runbook
+# Service Configuration
 
-## Purpose
+This document covers active native iOS service configuration.
 
-Provide one reproducible configuration runbook for external services.
+For the archived Flutter production app, use tag
+`flutter-prod-freeze-2026-06-25`, branch `legacy/flutter-production-reference`,
+and the historical docs under `docs/legacy-flutter/`.
 
-There are two different service contexts:
+## Native Staging
 
-- native iOS staging/rewrite services;
-- Flutter production/reference services.
+Known staging ref:
 
-Use this before release builds and when onboarding a new environment.
+```text
+llolwgqphwnhbiqewmcq
+```
 
-## Prerequisites
+Native staging uses:
 
-1. Access to the provider consoles for the context being changed:
-   - Supabase dashboard for native staging/gateway or Flutter production
-   - App Store Connect for native StoreKit/App Store product work
-   - Firebase console only for Flutter production/reference work
-2. Local repo checkout with scripts available.
-3. A local env file copied from `.env.example` to `.env.local`.
-4. GitHub Actions secret access for release workflow configuration.
+- Supabase Edge Function gateway: `generate-card`
+- Supabase Auth for Sign in with Apple session exchange
+- StoreKit 2 local/sandbox product loading
+- App Store Server Notifications V2 and reconciliation functions for future
+  server-side entitlement proof
 
-## Native iOS Staging Configuration
+## Xcode Run Environment
 
-Native staging configuration must not touch production.
+Use a local-only scheme for device testing. Do not commit local scheme secrets.
 
-Required local Xcode environment names:
+Common keys:
 
 - `PROSEPAL_GATEWAY_URL`
-- `PROSEPAL_DEV_GATEWAY_SECRET`
-- `PROSEPAL_SUPABASE_URL` or `SUPABASE_URL`
-- `PROSEPAL_SUPABASE_ANON_KEY` or `SUPABASE_ANON_KEY`
+- `PROSEPAL_DEV_GATEWAY_SECRET` (staging only)
+- `PROSEPAL_SUPABASE_URL`
+- `PROSEPAL_SUPABASE_ANON_KEY`
 - `PROSEPAL_PREMIUM_PRODUCT_IDS`
 - `PROSEPAL_RECOMMENDED_PREMIUM_PRODUCT_ID`
 
-Required Supabase staging secrets by name:
+See `prosepal-ios/NATIVE_DEVICE_DEBUG_RUNBOOK.md` for setup steps.
+
+## Supabase Secrets
+
+Secrets are configured manually in the Supabase dashboard or CLI by the human
+operator. Do not print or commit values.
+
+Expected staging secret names include:
 
 - `PROSEPAL_DEV_GATEWAY_SECRET`
-- provider API key secret for the gateway provider
-- `PROSEPAL_AI_PROVIDER`
-- `PROSEPAL_AI_PROVIDER_BASE_URL`
-- `PROSEPAL_AI_PROVIDER_MODEL`
-- `PROSEPAL_AI_PROVIDER_FALLBACK_MODELS`
-- `PROSEPAL_AI_PROVIDER_JSON_MODE`
-- `APP_STORE_BUNDLE_ID`
-- `APP_STORE_ENVIRONMENT`
-- `APP_STORE_ROOT_CERTIFICATES_PEM`
-- `APP_STORE_PREMIUM_PRODUCT_IDS` or `PROSEPAL_PREMIUM_PRODUCT_IDS`
-- `APP_STORE_APP_APPLE_ID`, production only
-- `APP_STORE_ENABLE_ONLINE_CHECKS`, optional
-- `APP_STORE_RECONCILE_SECRET`
-- `APP_STORE_SERVER_API_PRIVATE_KEY`
-- `APP_STORE_SERVER_API_KEY_ID`
-- `APP_STORE_SERVER_API_ISSUER_ID`
+- provider/gateway keys required by `generate-card`
+- App Store Server API / ASSN V2 verification material for entitlement work
+- feedback/email provider secrets when feedback sending is enabled
 
-Additional staging secrets/config may be required before full auth, feedback,
-purchase, and entitlement testing:
+## StoreKit
 
-- Apple Sign-In/Supabase Auth provider configuration
-- Resend feedback relay secrets, if direct feedback is enabled
+Native product IDs currently used for local/sandbox testing:
 
-Validation:
+- `com.prosepal.pro.yearly`
+- `com.prosepal.pro.monthly`
+- `com.prosepal.pro.weekly`
 
-```bash
-./scripts/prosepal-staging-smoke.sh
-cd prosepal-ios
-swift test
-xcodebuild -project ProsePal.xcodeproj -target ProsePal -sdk iphonesimulator CODE_SIGNING_ALLOWED=NO build
-```
+StoreKit config:
 
-Pass criteria:
+- `prosepal-ios/App/ProsePalStaging.storekit`
 
-- valid staging gateway request returns three drafts;
-- no-secret or invalid-secret gateway request fails closed;
-- provider/model fields are not exposed to the client response;
-- no local Xcode scheme secrets, Supabase `.temp`, screenshots, receipts, or
-  evidence files are committed.
+The local StoreKit file is for simulator/dev proof only. Production entitlement
+truth belongs to the Supabase App Store notification/reconciliation path once
+staging is proven.
 
-### Native App Store Server Notifications
+## Not Native Defaults
 
-Native subscription ownership is StoreKit 2 on-device and App Store Server
-Notifications V2 on the Supabase side. RevenueCat is not part of the native
-direction.
+Do not add these to the active native client by default:
 
-Function:
-
-- `supabase/functions/app-store-notifications`
-- Endpoint shape:
-  `https://<project-ref>.supabase.co/functions/v1/app-store-notifications`
-- `supabase/config.toml` sets `verify_jwt = false` because Apple sends a JWS
-  `signedPayload`; the function verifies that payload with Apple's App Store
-  Server Library.
-
-Required Supabase secrets, names only:
-
-- `SUPABASE_URL`
-- `SUPABASE_SERVICE_ROLE_KEY`
-- `APP_STORE_BUNDLE_ID`
-- `APP_STORE_ENVIRONMENT`
-- `APP_STORE_ROOT_CERTIFICATES_PEM`
-- `APP_STORE_PREMIUM_PRODUCT_IDS` or `PROSEPAL_PREMIUM_PRODUCT_IDS`
-- `APP_STORE_APP_APPLE_ID`, production only
-- `APP_STORE_ENABLE_ONLINE_CHECKS`, optional
-
-### Native App Store Server API Reconciliation
-
-Native subscription reconciliation is a separate guarded operator path. It uses
-Apple's App Store Server API to fetch subscription status, verifies Apple's
-signed transaction and renewal payloads, and reconciles `user_entitlements`.
-
-Function:
-
-- `supabase/functions/app-store-reconcile-entitlement`
-- Endpoint shape:
-  `https://<project-ref>.supabase.co/functions/v1/app-store-reconcile-entitlement`
-- `supabase/config.toml` sets `verify_jwt = false`; the function requires
-  `X-ProsePal-App-Store-Reconcile-Secret` and then verifies Apple-signed
-  payloads returned by the App Store Server API.
-
-Additional required Supabase secrets, names only:
-
-- `APP_STORE_RECONCILE_SECRET`
-- `APP_STORE_SERVER_API_PRIVATE_KEY`
-- `APP_STORE_SERVER_API_KEY_ID`
-- `APP_STORE_SERVER_API_ISSUER_ID`
-
-Request shape:
-
-```json
-{
-  "transaction_id": "<App Store transaction id>",
-  "user_id": "<optional Supabase user UUID>"
-}
-```
-
-If `user_id` is supplied and Apple's signed transaction contains a different
-UUID `appAccountToken`, the function rejects the reconciliation with HTTP `409`
-and does not update entitlement state.
-
-Privacy rules:
-
-- Do not log or persist the `signedPayload`.
-- Do not log or persist receipts, raw transactions, provider keys, or auth
-  tokens.
-- Persist only privacy-safe notification metadata in
-  `app_store_notification_events`.
-- Persist only privacy-safe reconciliation metadata in
-  `app_store_reconciliation_events`.
-
-Validation:
-
-```bash
-deno test --allow-env supabase/functions/app-store-notifications/index.test.ts
-deno test --allow-env supabase/functions/app-store-reconcile-entitlement/index.test.ts
-```
-
-Current staging limitation:
-
-- The native worktree's local Supabase link may not point at staging. Use
-  explicit `--project-ref llolwgqphwnhbiqewmcq` for native staging commands and
-  never rely on local `.temp` state.
-- Staging must have the Apple secret names above configured before sandbox
-  notification or reconciliation proof can pass.
-- Paid gateway limits/extras remain a separate follow-up slice after server
-  entitlement state is proven.
-
-## Flutter Production Reference Configuration
-
-Use this section only for Flutter production changes or live production
-maintenance.
-
-## Commands And Steps
-
-### 1) Configure Runtime Keys
-
-Create local runtime config:
-
-```bash
-cp .env.example .env.local
-```
-
-Set required keys in `.env.local`:
-- `SUPABASE_URL`
-- `SUPABASE_ANON_KEY`
-- `REVENUECAT_IOS_KEY`
-- `REVENUECAT_ANDROID_KEY`
-- `GOOGLE_WEB_CLIENT_ID`
-- `GOOGLE_IOS_CLIENT_ID`
-
-For CI release runs, mirror these values in GitHub Actions secrets with the same names.
-
-### 2) Validate Key Completeness And Non-Placeholder Values
-
-Run deterministic preflight checks:
-
-```bash
-./scripts/release_preflight.sh ios
-./scripts/release_preflight.sh android
-./scripts/release_preflight.sh all
-./scripts/test_release_preflight.sh
-```
-
-### 3) Configure Supabase
-
-In Supabase Console:
-1. Confirm project URL/API values match `.env.local` values.
-2. Confirm social auth providers required by app policy are enabled:
-   - Apple
-   - Google
-3. Confirm approved callback URLs are present.
-4. Confirm required edge functions exist:
-   - `delete-user`
-   - `exchange-apple-token`
-   - `send-feedback`
-   - `revenuecat-webhook`
-5. If direct in-app feedback is enabled for the release, confirm function secrets
-   are configured:
-   - `RESEND_API_KEY`
-   - `FEEDBACK_TO_EMAIL`
-   - `FEEDBACK_FROM_EMAIL`
-
-Optional script-assisted verification:
-
-```bash
-SUPABASE_DB_URL="postgresql://..." ./scripts/verify_supabase_readonly.sh
-```
-
-### 4) Configure RevenueCat
-
-In RevenueCat Console:
-1. Confirm iOS and Android app entries exist for the project.
-2. Confirm product identifiers are present and mapped to entitlement `pro`.
-3. Confirm offering `default` contains expected package mappings.
-4. Confirm SDK API keys match values in `.env.local` and CI secrets.
-5. Confirm restore behavior policy and identity mapping align with:
-   - `docs/REVENUECAT_POLICY.md`
-   - `docs/IDENTITY_MAPPING.md`
-
-### 5) Configure Firebase
-
-In Firebase Console:
-1. Confirm iOS bundle ID and Android package match app IDs.
-2. Confirm App Check posture is configured for release policy.
-3. Confirm Remote Config contains required AI keys:
-   - `ai_model`
-   - `ai_model_fallback`
-   - `ai_enabled`
-4. Confirm Crashlytics and Analytics are enabled.
-
-### 6) Validate End-To-End Runtime Wiring
-
-Run baseline validation:
-
-```bash
-flutter analyze
-flutter test
-./scripts/test_critical_smoke.sh
-./scripts/run_wired_evidence.sh --suite smoke
-```
-
-## Pass Criteria
-
-Configuration is considered valid only when all are true:
-
-1. `release_preflight` passes for `ios`, `android`, and `all`.
-2. `test_release_preflight` passes.
-3. Supabase verification checks pass (manual + script-assisted where used).
-4. RevenueCat entitlement/offering/key mapping is confirmed in console.
-5. Firebase App Check + Remote Config + analytics/crash services are confirmed.
-6. Analyzer/tests/smoke/wired evidence run successfully with configured keys.
-7. Any release-scoped edge functions are deployed to production with required
-   secrets present; for `send-feedback`, direct in-app submission must not 404
-   due to a missing function deployment.
-
-## Failure Handling And Escalation
-
-If a step fails:
-
-1. Capture failing command output and provider-console evidence.
-2. Classify failure source:
-   - local key/config
-   - CI secret mismatch
-   - provider policy/permission issue
-   - service outage
-3. Apply targeted remediation:
-   - update `.env.local` and/or CI secrets
-   - correct provider-side config
-   - re-run preflight and validation commands
-4. If unresolved, follow service-specific triage in `docs/DEVOPS.md` and track unresolved work in `docs/BACKLOG.md`.
+- RevenueCat
+- Firebase AI / Vertex AI / Gemini-direct client path
+- provider-specific generation SDKs
+- Sentry or analytics SDKs without a separate privacy/product decision

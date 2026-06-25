@@ -11,14 +11,10 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  quality:
-    name: Flutter Quality Gate
-    runs-on: ubuntu-latest
+  native_ios:
+    name: Native iOS Quality Gate
+    runs-on: macos-latest
     timeout-minutes: 25
-    outputs:
-      docs_only: "${{ steps.scope.outputs.docs_only }}"
-      integration_smoke_needed: "${{ steps.scope.outputs.integration_smoke_needed }}"
-      native_ios_needed: "${{ steps.scope.outputs.native_ios_needed }}"
     permissions:
       contents: read
     steps:
@@ -48,78 +44,42 @@ jobs:
         shell: bash
         run: bash ./scripts/security_history_guard.sh
 
-      - name: Detect docs-only change scope
-        id: scope
+      - name: Native release preflight
         shell: bash
-        run: |
-          set -euo pipefail
+        run: ./scripts/release_preflight.sh native --no-env-file
 
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            BASE_SHA="${{ github.event.pull_request.base.sha }}"
-          else
-            BASE_SHA="${{ github.event.before }}"
-            if [[ -z "$BASE_SHA" || "$BASE_SHA" == "0000000000000000000000000000000000000000" ]]; then
-              BASE_SHA="$(git rev-parse HEAD^)"
-            fi
-          fi
+      - name: Swift version
+        run: swift --version
 
-          git diff --name-only "$BASE_SHA" "${{ github.sha }}" > /tmp/changed_files.txt
+      - name: Swift package build
+        working-directory: prosepal-ios
+        run: swift build
 
-          docs_only=true
-          integration_smoke_needed=false
-          native_ios_needed=false
-          while IFS= read -r file; do
-            if [[ -z "$file" ]]; then
-              continue
-            fi
+      - name: Swift package tests
+        working-directory: prosepal-ios
+        run: swift test --quiet
 
-            if [[ "$file" =~ ^prosepal-ios/ ]]; then
-              native_ios_needed=true
-            fi
+      - name: Native simulator build
+        working-directory: prosepal-ios
+        run: xcodebuild -project ProsePal.xcodeproj -target ProsePal -sdk iphonesimulator CODE_SIGNING_ALLOWED=NO build
 
-            if [[ "$file" =~ ^(android|integration_test|ios|lib|test)/ ]] ||
-               [[ "$file" =~ ^(analysis_options\.yaml|pubspec\.lock|pubspec\.yaml)$ ]]; then
-              integration_smoke_needed=true
-            fi
-
-            if [[ "$file" =~ ^docs/ ]]; then
-              continue
-            fi
-
-            if [[ "$file" =~ \.md$ ]]; then
-              continue
-            fi
-
-            if [[ "$file" == "LICENSE" ]]; then
-              continue
-            fi
-
-            docs_only=false
-          done < /tmp/changed_files.txt
-
-          echo "docs_only=$docs_only" >> "$GITHUB_OUTPUT"
-          echo "integration_smoke_needed=$integration_smoke_needed" >> "$GITHUB_OUTPUT"
-          echo "native_ios_needed=$native_ios_needed" >> "$GITHUB_OUTPUT"
-
-      - name: Docs-only fast path
-        if: steps.scope.outputs.docs_only == 'true'
-        run: |
-          echo "Docs-only change detected."
-          echo "Skipping Flutter install/build/test to save CI minutes."
-
-      - name: Release config preflight tests
-        if: steps.scope.outputs.docs_only != 'true'
-        run: ./scripts/test_release_preflight.sh
+  supabase_functions:
+    name: Supabase Function Type Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
 
       - name: Install Deno
-        if: steps.scope.outputs.docs_only != 'true'
         shell: bash
         run: |
           curl -fsSL https://deno.land/install.sh | sh -s -- -q
           echo "$HOME/.deno/bin" >> "$GITHUB_PATH"
 
       - name: Validate Supabase edge-function TypeScript
-        if: steps.scope.outputs.docs_only != 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -129,231 +89,3 @@ jobs:
             exit 0
           fi
           deno check "${TS_FILES[@]}"
-
-      - name: Install Flutter SDK
-        if: steps.scope.outputs.docs_only != 'true'
-        run: |
-          git clone https://github.com/flutter/flutter.git --depth 1 --branch 3.41.4 "$HOME/flutter"
-          echo "$HOME/flutter/bin" >> "$GITHUB_PATH"
-          "$HOME/flutter/bin/flutter" --version
-
-      - name: Install dependencies
-        if: steps.scope.outputs.docs_only != 'true'
-        run: flutter pub get
-
-      - name: Format check
-        if: steps.scope.outputs.docs_only != 'true'
-        run: dart format --output=none --set-exit-if-changed .
-
-      - name: Static analysis
-        if: steps.scope.outputs.docs_only != 'true'
-        run: flutter analyze --no-fatal-infos
-
-      - name: Launch/auth color parity guard
-        if: steps.scope.outputs.docs_only != 'true'
-        run: ./scripts/check_launch_color_parity.sh
-
-      - name: Critical smoke gate
-        if: steps.scope.outputs.docs_only != 'true'
-        run: ./scripts/test_critical_smoke.sh
-
-      - name: Unit and widget tests (non-golden)
-        if: steps.scope.outputs.docs_only != 'true'
-        run: |
-          mapfile -t TEST_FILES < <(find test -name '*_test.dart' ! -path 'test/widgets/goldens/*' | sort)
-          flutter test --exclude-tags flaky --coverage "${TEST_FILES[@]}"
-
-      - name: Service coverage gate
-        if: steps.scope.outputs.docs_only != 'true'
-        env:
-          MIN_COVERAGE: '35'
-        run: ./scripts/check_service_coverage.sh coverage/lcov.info
-
-      - name: Flutter debug bundle build
-        if: steps.scope.outputs.docs_only != 'true'
-        run: flutter build bundle --debug
-
-      - name: Upload coverage artifact
-        if: always() && steps.scope.outputs.docs_only != 'true'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
-        with:
-          name: coverage-lcov
-          path: coverage/lcov.info
-          if-no-files-found: warn
-          retention-days: 14
-
-  native_ios:
-    name: Native iOS App (non-blocking)
-    runs-on: macos-latest
-    timeout-minutes: 15
-    needs: quality
-    if: needs.quality.outputs.native_ios_needed == 'true'
-    continue-on-error: true
-    permissions:
-      contents: read
-    steps:
-      - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-
-      - name: Swift version
-        run: swift --version
-
-      - name: Run native Swift package tests
-        id: swift
-        working-directory: prosepal-ios
-        run: swift test
-
-      - name: Build native simulator app
-        id: app_build
-        working-directory: prosepal-ios
-        run: xcodebuild -project ProsePal.xcodeproj -target ProsePal -sdk iphonesimulator CODE_SIGNING_ALLOWED=NO build
-
-      - name: Native iOS summary
-        if: always()
-        shell: bash
-        run: |
-          {
-            echo "## Native iOS App"
-            if [[ "${{ steps.swift.outcome }}" == "success" ]]; then
-              echo "- Swift package tests: passed"
-            else
-              echo "- Swift package tests: failed (non-blocking while native rewrite is R&D)"
-            fi
-            if [[ "${{ steps.app_build.outcome }}" == "success" ]]; then
-              echo "- Simulator app build: passed"
-            else
-              echo "- Simulator app build: failed (non-blocking while native rewrite is R&D)"
-            fi
-            echo "- Command: \`cd prosepal-ios && swift test\`"
-            echo "- Command: \`cd prosepal-ios && xcodebuild -project ProsePal.xcodeproj -target ProsePal -sdk iphonesimulator CODE_SIGNING_ALLOWED=NO build\`"
-          } >> "$GITHUB_STEP_SUMMARY"
-
-  visual_regression:
-    name: Visual Regression (non-blocking)
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    needs: quality
-    if: needs.quality.outputs.docs_only != 'true'
-    continue-on-error: true
-    permissions:
-      contents: read
-    steps:
-      - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-
-      - name: Install Flutter SDK
-        run: |
-          git clone https://github.com/flutter/flutter.git --depth 1 --branch 3.41.4 "$HOME/flutter"
-          echo "$HOME/flutter/bin" >> "$GITHUB_PATH"
-          "$HOME/flutter/bin/flutter" --version
-
-      - name: Install dependencies
-        run: flutter pub get
-
-      - name: Run visual regression suite
-        id: visual
-        shell: bash
-        run: |
-          set -euo pipefail
-          ./scripts/test_visual_regression.sh
-
-      - name: Upload visual diff artifacts
-        if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
-        with:
-          name: visual-regression-diffs
-          path: |
-            test/widgets/goldens/failures/**
-          if-no-files-found: warn
-          retention-days: 14
-
-      - name: Visual regression summary
-        if: always()
-        shell: bash
-        run: |
-          {
-            echo "## Visual Regression (non-blocking)"
-            if [[ "${{ steps.visual.outcome }}" == "success" ]]; then
-              echo "- Status: ✅ passed"
-              echo "- Baseline unchanged."
-            else
-              echo "- Status: ⚠️ failed (non-blocking)"
-              echo "- Diff artifacts: \`visual-regression-diffs\`"
-              echo "- To accept intended UI changes locally:"
-              echo "  - \`./scripts/test_visual_regression.sh --update\`"
-            fi
-          } >> "$GITHUB_STEP_SUMMARY"
-
-  integration_smoke:
-    name: Integration Smoke (non-blocking)
-    runs-on: macos-latest
-    timeout-minutes: 45
-    needs: quality
-    if: needs.quality.outputs.integration_smoke_needed == 'true'
-    continue-on-error: true
-    permissions:
-      contents: read
-    steps:
-      - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-
-      - name: Install Flutter SDK
-        run: |
-          git clone https://github.com/flutter/flutter.git --depth 1 --branch 3.41.4 "$HOME/flutter"
-          echo "$HOME/flutter/bin" >> "$GITHUB_PATH"
-          "$HOME/flutter/bin/flutter" --version
-          "$HOME/flutter/bin/flutter" precache --ios
-
-      - name: Install dependencies
-        run: flutter pub get
-
-      - name: Prepare iOS integration smoke build dependencies
-        run: |
-          cd ios
-          pod install
-
-      - name: Run integration smoke target
-        id: smoke
-        shell: bash
-        timeout-minutes: 30
-        run: |
-          set -euo pipefail
-          mkdir -p artifacts/integration-smoke
-          SIM_ID="$(xcrun simctl list devices available | awk -F '[()]' '/iPhone 16/ {print $2; exit}')"
-          if [[ -z "$SIM_ID" ]]; then
-            SIM_ID="$(xcrun simctl list devices available | awk -F '[()]' '/iPhone/ {print $2; exit}')"
-          fi
-          if [[ -z "$SIM_ID" ]]; then
-            echo "No available iOS simulator found."
-            exit 1
-          fi
-          xcrun simctl boot "$SIM_ID" || true
-          xcrun simctl bootstatus "$SIM_ID" -b
-          flutter devices
-          flutter test -d "$SIM_ID" integration_test/smoke_test.dart -r expanded 2>&1 | tee artifacts/integration-smoke/smoke.log
-
-      - name: Upload integration smoke artifacts
-        if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
-        with:
-          name: integration-smoke-artifacts
-          path: |
-            artifacts/integration-smoke/**
-          if-no-files-found: warn
-          retention-days: 14
-
-      - name: Integration smoke summary
-        if: always()
-        shell: bash
-        run: |
-          {
-            echo "## Integration Smoke (non-blocking)"
-            if [[ "${{ steps.smoke.outcome }}" == "success" ]]; then
-              echo "- Status: ✅ passed"
-            else
-              echo "- Status: ⚠️ failed (non-blocking)"
-              echo "- Artifacts: \`integration-smoke-artifacts\`"
-            fi
-            echo "- Target: iOS Simulator on \`macos-latest\`"
-            echo "- Command: \`flutter test -d <simulator-udid> integration_test/smoke_test.dart\`"
-          } >> "$GITHUB_STEP_SUMMARY"

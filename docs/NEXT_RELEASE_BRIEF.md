@@ -73,6 +73,7 @@ The actionable backlog is `docs/BACKLOG.md`. Its native gates are:
 | `N-IOS-12` | Legacy grouped-form removal. |
 | `N-IOS-13` | Retire legacy island and reconcile docs to the native direction. |
 | `N-IOS-14` | Native visual system and Moment rail/content discipline. |
+| `N-IOS-15` | Promote native iOS to active main and archive Flutter baseline. |
 
 ## Native App Shape
 
@@ -140,6 +141,7 @@ Native validation when `prosepal-ios/` changes:
 
 ```bash
 cd prosepal-ios
+swift build
 swift test
 xcodebuild -project ProsePal.xcodeproj -target ProsePal -sdk iphonesimulator CODE_SIGNING_ALLOWED=NO build
 ```
@@ -151,13 +153,9 @@ Gateway validation when staging generation changes:
 deno test --allow-env supabase/functions/generate-card/index.test.ts
 ```
 
-Flutter validation is required only for Flutter production code changes:
-
-```bash
-flutter analyze
-flutter test
-./scripts/test_critical_smoke.sh
-```
+Flutter is archived and is not validated on active `main`. Use tag
+`flutter-prod-freeze-2026-06-25` or branch
+`legacy/flutter-production-reference` only for historical inspection.
 
 ## Read These First
 

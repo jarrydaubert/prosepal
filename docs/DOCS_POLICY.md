@@ -4,7 +4,7 @@ This policy keeps project docs evergreen and actionable.
 
 ## Scope
 
-- Applies to all docs in `docs/`, `prosepal-ios/*.md`, and `test/README.md`.
+- Applies to all docs in `docs/` and `prosepal-ios/*.md`.
 - Exception: release records/postmortems/changelogs can be time-bound.
 - Exception: `docs/BACKLOG.md` is the active build tracker and may use
   `[x]` / `[~]` / `[ ]` markers with evidence pointers.

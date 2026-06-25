@@ -24,8 +24,9 @@ not done.
   writing lanes.
 - Dependencies: Apple-native first. No RevenueCat. No client-direct provider
   SDKs in the UI app.
-- Flutter remains in the repository as production/reference history, but it is
-  not the native UX source of truth.
+- Flutter production/reference history is archived at tag
+  `flutter-prod-freeze-2026-06-25` and branch
+  `legacy/flutter-production-reference`; active `main` is native iOS only.
 
 ## 0. Product Principles
 
@@ -65,6 +66,15 @@ not done.
   `NativeDiagnosticsTests`, and `NativeRuntimeReadinessTests`; `CLAUDE.md`,
   `AGENTS.md`, and `docs/README.md` point new work at `prosepal-ios/`; `swift
   build`, full `swift test`, and reference sweeps pass in this slice.
+- [~] N-IOS-15 Promote native iOS to active main and archive Flutter production
+  baseline -- evidence: archive tag `flutter-prod-freeze-2026-06-25`, archive
+  branch `legacy/flutter-production-reference`, active Flutter app paths
+  `android/`, `ios/`, `lib/`, `test/`, `integration_test/`, `test_driver/`,
+  `assets/`, `pubspec.yaml`, `pubspec.lock`, `analysis_options.yaml`, and
+  `firebase.json` removed from the native branch; docs moved under
+  `docs/legacy-flutter/`; active CI rewritten in `.github/workflows/ci.yml`.
+  Partial until the archive refs and native transition branch are pushed and the
+  PR is merged into `main`.
 - [x] App opens into the Moment experience rather than the legacy grouped
   create form -- evidence: `ProsePalNativeApp.body` in
   `prosepal-ios/App/ProsePalNativeApp.swift` constructs `MomentAppRootView`.
@@ -387,9 +397,10 @@ not done.
 6. Complete vault privacy work for export and any stronger at-rest encryption
    decision.
 
-## Flutter Production Work
+## Archived Flutter Reference Work
 
-Add Flutter work here only when needed for a production hotfix, production
-security issue, live service ownership requirement, or explicit replacement
-evidence. The Flutter screens and interaction model are not the native iOS
-design source of truth.
+Add Flutter/archive work here only when needed for an explicit archive
+inspection, production incident investigation, service ownership requirement, or
+native replacement evidence. Use tag `flutter-prod-freeze-2026-06-25` or branch
+`legacy/flutter-production-reference`. Do not recreate Flutter files on active
+`main`.

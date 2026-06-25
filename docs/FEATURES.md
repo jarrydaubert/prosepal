@@ -18,7 +18,7 @@ Open implementation work belongs in `docs/BACKLOG.md`.
 | One true thing | Capture the sentence or detail the user actually wants to say. |
 | Avoid details | Capture anything the user wants left out. |
 | Extra context | Support sensitive or awkward context without logging raw text. |
-| Spelling/locale | Keep Automatic, US English, and UK English as a writing preference. |
+| Spelling/locale | Automatic only, derived from the device locale. No user-facing spelling picker. |
 | Draft output | Make one useful draft feel primary; alternatives can exist when the lane returns them. |
 
 ## Results
@@ -86,15 +86,15 @@ Open implementation work belongs in `docs/BACKLOG.md`.
 | Logging | Privacy-safe OSLog locally; no raw content or secrets. |
 | Analytics/crash | Not carried forward by default. Requires product/privacy/ops rationale. |
 | Supabase | Useful for staging gateway, auth, functions, and backend policy where it earns its keep. |
-| RevenueCat | Flutter production reference only; not a native default. |
-| Firebase Remote Config | Flutter production reference only; not a native default. |
+| RevenueCat | Archived Flutter reference only; not a native default. |
+| Firebase Remote Config | Archived Flutter reference only; not a native default. |
 
 ## Platform Scope
 
 | Platform | Direction |
 |----------|-----------|
 | iOS | Active native rewrite target. |
-| Android | Deferred/frozen for native rewrite. Flutter Android remains production-reference only. |
+| Android | Deferred/frozen for native rewrite. The archived Flutter Android app remains available only through the Flutter archive refs. |
 | Web | Separate marketing/product surface, outside this native app scope. |
 
 ## Verification Reference

@@ -60,7 +60,7 @@ Avoid:
 
 ## Lesson 4: Production Services Are Reference, Not Native Defaults
 
-The live Flutter app uses production Firebase, Supabase, RevenueCat, Remote
+The archived Flutter app used production Firebase, Supabase, RevenueCat, Remote
 Config, Analytics, Crashlytics, App Check, and provider-specific AI routing.
 
 Native translation:
@@ -68,8 +68,7 @@ Native translation:
 - preserve service ownership and user-continuity lessons;
 - do not blindly carry every SDK into the native app;
 - use Supabase where it supports the gateway/auth/backend direction;
-- decide RevenueCat versus StoreKit 2 deliberately before production
-  replacement;
+- use StoreKit 2 for the native app; RevenueCat is archive context only;
 - keep Firebase AI / Vertex AI client-direct out of the native app.
 
 ## Lesson 5: Evidence Beats Assumption
@@ -85,8 +84,8 @@ unit tests alone:
 - settings/support/legal surfaces;
 - TestFlight install and smoke.
 
-## When Flutter Production Needs A Hotfix
+## When Archived Flutter Production Needs Inspection
 
-Use Flutter production-reference operations in `docs/DEVOPS.md` and add any
-new Flutter production work to `docs/BACKLOG.md` only when it is required to
-protect the live app.
+Use tag `flutter-prod-freeze-2026-06-25` or branch
+`legacy/flutter-production-reference`. Do not recreate Flutter files on active
+`main`.

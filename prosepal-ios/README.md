@@ -115,6 +115,7 @@ payloads, provider keys, or provider/model IDs.
 From `prosepal-ios/` after native code changes:
 
 ```bash
+swift build
 swift test
 xcodebuild -project ProsePal.xcodeproj -target ProsePal -sdk iphonesimulator CODE_SIGNING_ALLOWED=NO build
 ```
@@ -125,5 +126,3 @@ staging smoke:
 ```bash
 ./scripts/prosepal-staging-smoke.sh
 ```
-
-Flutter validation is required only for Flutter production code changes.

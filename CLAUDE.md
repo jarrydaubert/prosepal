@@ -15,9 +15,10 @@ The active product/build direction is the native SwiftUI rewrite in
   ProsePal `MessageWritingService` seam.
 - Native must not use RevenueCat, Firebase AI, Vertex AI, Gemini-direct,
   provider SDKs, or provider/model names in user-facing UI.
-- The Flutter app at the repo root is frozen legacy/production-reference
-  baseline. Read it for lessons only; do not treat Flutter screens or routing
-  as the native product spec.
+- The previous Flutter production app is archived at tag
+  `flutter-prod-freeze-2026-06-25` and branch
+  `legacy/flutter-production-reference`. Read the archive for lessons only; do
+  not treat Flutter screens or routing as the native product spec.
 
 ## Quick Commands
 
@@ -27,16 +28,6 @@ Native Swift workflow:
 cd prosepal-ios
 swift build
 swift test
-```
-
-Legacy Flutter workflow, only when changing Flutter production-reference code:
-
-```bash
-flutter run
-flutter analyze
-flutter test
-./scripts/test_flake_audit.sh
-dart format .
 ```
 
 ## Canonical Docs

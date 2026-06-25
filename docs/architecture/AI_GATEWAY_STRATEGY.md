@@ -4,6 +4,12 @@
 
 This document is an architecture strategy and decision framework.
 
+As of the native-main transition, the previous Flutter production app is
+archived at tag `flutter-prod-freeze-2026-06-25` and branch
+`legacy/flutter-production-reference`. Historical references below to the
+Flutter client-direct Firebase AI path describe the archived baseline, not the
+active `main` implementation.
+
 It is not:
 
 * approval to build a production AI gateway
@@ -11,7 +17,8 @@ It is not:
 * approval to change production model routing
 * approval to launch Standard or Premium generation
 * approval to change pricing, limits, prompts, telemetry, privacy posture, or release scope
-* approval to replace the current Flutter production runtime
+* approval to replace App Store production runtime without a separate release
+  decision
 * approval to scaffold a SwiftUI client
 * approval to move provider keys, model selection, entitlement logic, or routing logic into the mobile app
 
@@ -24,7 +31,8 @@ Current release scope, gates, and open work remain owned by:
 
 ## Purpose
 
-Define the target AI architecture direction for ProsePal without changing the current production runtime.
+Define the target AI architecture direction for ProsePal without changing App
+Store production runtime by accident.
 
 The strategic direction is:
 
@@ -74,9 +82,9 @@ Claude generation
 
 Provider and model names are implementation details. The product promise is quality, usefulness, and reliability.
 
-## Current ProsePal AI Architecture
+## Archived Flutter AI Architecture
 
-The current production AI path is client-direct:
+The archived Flutter production baseline used a client-direct path:
 
 ```text
 Flutter app
@@ -85,16 +93,17 @@ Flutter app
   -> configured Gemini model
 ```
 
-Current runtime facts:
+Archived runtime facts:
 
-* the Flutter app currently uses the Firebase AI SDK
-* the production default backend is Vertex AI
+* the Flutter app used the Firebase AI SDK
+* the production default backend was Vertex AI
 * an optional debug override can force the Google Developer API path
 * Remote Config controls the configured primary and fallback model IDs
 * model routing is limited to configured primary and fallback model slots
-* production remains client-direct unless the server-side gateway trigger is approved
+* the archived baseline remained client-direct unless a server-side gateway
+  trigger was approved
 
-Current controls:
+Archived controls:
 
 * primary and fallback model IDs are pinned stable IDs, not `latest` aliases
 * Remote Config values are validated against `AiConfig.allowedModelIds`
@@ -232,7 +241,8 @@ Rules:
 * breaking response-contract changes require app release coordination
 * gateway changes must not silently break previously shipped app versions
 * any migration from client-direct generation to gateway generation must define which app versions are eligible for gateway routing
-* old app versions may need to remain on the current Firebase AI path until they age out or are explicitly blocked
+* old shipped app versions may need to remain on the archived Firebase AI path
+  until they age out or are explicitly blocked
 
 Example compatibility policy:
 
@@ -290,23 +300,26 @@ Standard generation must still be useful. It can be less polished than Premium, 
 
 ### Standard Generation Regression Risk
 
-Current free users receive the current production Firebase AI / Vertex path.
+The archived Flutter baseline used the production Firebase AI / Vertex path for
+free users.
 
 If Standard generation later uses a cheaper or open model, existing free users may perceive a quality downgrade. This is a separate risk from whether Standard is good enough in isolation.
 
-Before Standard generation replaces the current free-user path, it must be evaluated against the current production baseline.
+Before Standard/private generation replaces the App Store production experience,
+it must be evaluated against the archived production baseline.
 
 Gate:
 
 ```text
-Standard generation must not meaningfully regress against the current free-user production experience.
+Standard/private generation must not meaningfully regress against the archived
+free-user production experience.
 ```
 
 This should be measured through the ProsePal eval harness, not by anecdotal impressions.
 
 If Standard is cheaper but visibly worse, product options include:
 
-* keep the current production baseline for free users
+* keep the archived production baseline available as rollback/eval reference
 * make Standard available only to new anonymous users
 * require sign-in for free generation
 * reduce free usage rather than reduce quality
@@ -604,7 +617,9 @@ Routing inputs may include:
 * kill-switch state
 * privacy or offline mode
 
-The router should make these decisions on the server-side path only after the gateway rollout trigger is approved. Until then, production routing remains the current client-direct Firebase AI primary/fallback behaviour.
+The router should make these decisions on the server-side path only after the
+gateway rollout trigger is approved. Archived Flutter routing stayed on the
+client-direct Firebase AI primary/fallback behaviour.
 
 Example routing policy:
 
@@ -652,11 +667,11 @@ ProsePal defines the internal AI generation port. Providers are replaceable adap
 
 Possible adapters:
 
-* current Firebase AI / Vertex AI adapter
+* archived Firebase AI / Vertex AI adapter
 * OpenRouter or model-aggregator adapter
 * direct frontier-provider adapter
 * local or self-hosted model adapter
-* deterministic template adapter
+* deterministic server-side template adapter for emergency fallback only
 * mock or test adapter
 
 Adapters hide provider-specific details such as:
@@ -775,7 +790,7 @@ Promotion rules should be explicit:
 Standard lane:
   must be good enough for free users
   must not damage trust
-  must not meaningfully regress against the current free-user production baseline
+  must not meaningfully regress against the archived free-user production baseline
 
 Premium lane:
   must outperform Standard on quality, nuance, and reliability
@@ -807,7 +822,7 @@ Before any model or provider is promoted to Standard or Premium, the ADR must de
 * minimum score for Standard
 * minimum Premium-vs-Standard uplift
 * required sensitive-occasion quality threshold
-* required regression threshold against current production baseline
+* required regression threshold against archived production baseline
 * whether evaluation is blind, human-reviewed, automated, or mixed
 * how eval failures are triaged
 * how new edge cases are added
@@ -1064,7 +1079,7 @@ Possible rollback options:
 3. disable Standard provider and use alternate Standard provider
 4. disable anonymous free generation
 5. disable gateway routing for new app versions
-6. return eligible app versions to current client-direct Firebase AI path where supported
+6. return eligible app versions to the archived client-direct Firebase AI path where supported
 7. disable model generation and use template fallback
 8. disable generation entirely with user-safe messaging
 
@@ -1092,12 +1107,12 @@ Purpose:
 * agree product language
 * agree Standard and Premium lane definitions
 * agree that model names are implementation details
-* agree that production remains client-direct until rollout is approved
+* agree how archived client-direct behavior is used as an eval baseline
 
 Entry criteria:
 
 * strategy document reviewed
-* current production runtime documented
+* archived production runtime documented
 * no production routing change in scope
 
 Exit criteria:
@@ -1124,8 +1139,9 @@ Entry criteria:
 
 * ADR or spike ticket approved
 * provider keys available only in non-production, if needed
-* mock and template adapters planned first
-* no production Remote Config values changed
+* mock adapter planned first; server-side template fallback only if explicitly
+  approved
+* no production config values changed
 * no production model routing changed
 
 Exit criteria:
@@ -1133,20 +1149,21 @@ Exit criteria:
 * gateway accepts conceptual `CardRequest`
 * gateway returns conceptual `CardResponse`
 * mock adapter passes contract tests
-* template adapter passes contract tests
+* server-side fallback adapter passes contract tests if explicitly in scope
 * at least one experimental model adapter can be tested outside production
 * no production user traffic uses the gateway
 
 Production guardrail:
 
-* production Flutter runtime remains client-direct
-* production provider/model config unchanged
+* App Store production runtime is not changed by strategy work alone
+* provider/model config is unchanged unless a separate release decision approves
+  it
 
 ### Stage 2: Eval Harness
 
 Purpose:
 
-* compare Standard, Premium, current production, and fallback candidates
+* compare Standard, Premium, archived production, and fallback candidates
 * score message quality using ProsePal-specific criteria
 
 Entry criteria:
@@ -1164,7 +1181,7 @@ Exit criteria:
 * Standard threshold drafted
 * Premium uplift threshold drafted
 * sensitive-occasion threshold drafted
-* current production baseline captured
+* archived production baseline captured
 
 Production guardrail:
 
@@ -1206,7 +1223,7 @@ Production guardrail:
 Purpose:
 
 * route a small controlled slice through the gateway
-* preserve rollback to current Firebase AI path where supported
+* preserve rollback to archived Firebase AI path where supported
 
 Entry criteria:
 
@@ -1246,7 +1263,7 @@ Purpose:
 Entry criteria:
 
 * controlled rollout criteria met
-* Standard does not meaningfully regress against current free-user baseline
+* Standard does not meaningfully regress against archived free-user baseline
 * Premium demonstrates measurable uplift over Standard
 * entitlement enforcement verified
 * paid fallback semantics approved
@@ -1273,8 +1290,8 @@ This document is client-agnostic.
 
 It supports:
 
-* current Flutter app
-* future SwiftUI iOS client
+* archived Flutter app
+* active SwiftUI iOS client
 * possible web client
 * possible Android client later
 
@@ -1294,9 +1311,9 @@ SwiftUI app
   -> Firebase AI / Vertex AI directly
 ```
 
-This does not change Flutter production routing. Native iOS work remains
-gateway-first; Flutter production remains client-direct until a separate
-production replacement decision is made.
+This does not reintroduce Flutter production routing to active `main`. Native
+iOS work remains gateway-first/careful-lane aware; App Store production
+replacement remains a separate release decision.
 
 ## Relationship To Existing Backlog
 
@@ -1323,7 +1340,7 @@ AI-GW-SPIKE-01:
   Define CardRequest/CardResponse contract
 
 AI-GW-SPIKE-02:
-  Build mock + template adapters in non-production
+  Build mock adapter and any approved server-side fallback adapter in non-production
 
 AI-GW-SPIKE-03:
   Build one experimental Standard adapter in non-production
@@ -1335,7 +1352,7 @@ AI-EVAL-02:
   Define Standard/Premium promotion thresholds
 
 AI-EVAL-03:
-  Capture current production baseline outputs
+  Capture archived production baseline outputs
 
 AI-OPS-01:
   Define AI cost budget, alerts, owner, and degradation policy
@@ -1398,7 +1415,7 @@ The ADR should cover:
 * provider data-processing review
 * production rollout plan
 * staging or non-production spike path
-* parity tests against the current client-direct path
+* parity tests against the archived client-direct path
 * backward compatibility for old app versions
 * failure and rollback behaviour
 * telemetry and redaction contract
@@ -1409,7 +1426,9 @@ The ADR should cover:
 * App Store and privacy implications
 * support messaging for degraded generation
 
-Until those criteria are met and approved, production remains client-direct through the current Firebase AI SDK path.
+Until those criteria are met and approved, App Store production replacement must
+not be promoted by accident. The archived client-direct path remains an eval and
+rollback reference.
 
 ## Why This Matters
 

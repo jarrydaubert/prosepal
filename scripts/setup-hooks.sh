@@ -20,5 +20,5 @@ cp "$SCRIPT_DIR/commit-msg" "$HOOKS_DIR/commit-msg"
 chmod +x "$HOOKS_DIR/commit-msg"
 
 echo "✅ Git hooks installed!"
-echo "Pre-commit will now run: format + analyze"
+echo "Pre-commit will now run: whitespace checks and native Swift tests when prosepal-ios/ changes"
 echo "Commit-msg will now run: attribution trailer guard"

@@ -17,9 +17,11 @@ The active build direction is the native SwiftUI rewrite in `prosepal-ios/`.
 - Native must remain provider-agnostic in the UI: no provider/model names, no
   Firebase AI / Vertex AI / Gemini-direct client path, no RevenueCat dependency,
   and no third-party provider SDKs by default.
-- The Flutter app at the repo root is the frozen legacy/production-reference
-  baseline. Do not change Flutter unless the user explicitly asks for Flutter
-  work or a production-reference hotfix.
+- The previous Flutter production app is archived at tag
+  `flutter-prod-freeze-2026-06-25` and branch
+  `legacy/flutter-production-reference`. Do not recreate Flutter files on
+  `main`; read the archive only when historical behavior or App Review context
+  is needed.
 
 ## Source Of Truth
 
@@ -52,14 +54,6 @@ For native iOS work:
 cd prosepal-ios
 swift build
 swift test
-```
-
-For legacy Flutter production-reference work only:
-
-```bash
-flutter analyze
-flutter test
-./scripts/test_critical_smoke.sh
 ```
 
 For DevOps/workflow changes, also ensure `docs/DEVOPS.md` is updated.

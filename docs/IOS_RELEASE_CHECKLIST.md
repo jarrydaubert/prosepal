@@ -4,9 +4,9 @@
 
 Define the required gates for native iOS TestFlight and release-candidate work.
 
-This checklist applies to `prosepal-ios/`. Flutter production release commands
-remain in `docs/DEVOPS.md` and should be used only for Flutter production
-changes.
+This checklist applies to `prosepal-ios/`. The previous Flutter production app
+is archived at tag `flutter-prod-freeze-2026-06-25` and branch
+`legacy/flutter-production-reference`.
 
 ## Prerequisites
 
@@ -49,7 +49,7 @@ Required evidence files:
 | Version/build | Version and build values match the intended candidate and are recorded. |
 | Swift tests | `cd prosepal-ios && swift test` exits `0`. |
 | Simulator build | `cd prosepal-ios && xcodebuild -project ProsePal.xcodeproj -target ProsePal -sdk iphonesimulator CODE_SIGNING_ALLOWED=NO build` exits `0`. |
-| Wired iPhone smoke | Launch, welcome, Create, keyboard, gateway generation, Drafts, Copy, Share, Edit, Save, Saved, and Settings are exercised on device. |
+| Wired iPhone smoke | Launch, welcome, Moment, keyboard, private/careful drafting states, copy, share, save, Saved, and Settings are exercised on device. |
 | Gateway config | The build targets the intended gateway environment; no provider keys, model IDs, dev secrets, or auth tokens are committed or printed. |
 | Auth | Sign in with Apple succeeds, cancellation/failure is safe, sign-out clears state, and authenticated gateway token wiring is verified without logging tokens. |
 | Purchase/restore | Purchase is available without mandatory app sign-in, restore works from Paywall and Settings, entitlement state is reconciled, and Premium gateway access remains server-authorized. |
@@ -57,7 +57,7 @@ Required evidence files:
 | App Store Connect | Bundle ID/listing/product/subscription/privacy decisions are reviewed against App Review lessons. |
 | TestFlight | Install, launch, generate, auth, paywall, restore, settings, and support sanity pass from TestFlight. |
 | Secret audit | Git status and repository scans show no local schemes, Supabase `.temp`, secrets, tokens, receipts, screenshots, evidence, or model binaries committed. |
-| Rollback | Rollback to the current Flutter production baseline is documented until native replacement is approved. |
+| Rollback | Rollback to the archived Flutter production baseline is documented until native replacement is approved. |
 
 ## Failure Handling
 
