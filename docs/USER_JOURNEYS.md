@@ -55,6 +55,8 @@ Rules:
   giant visible grid.
 - Relationship context should help the user think about the message without
   making the flow feel like a generic document form.
+- The Moment surface should feel like writing a message for someone, not
+  creating a document, manuscript, scene, or project.
 
 ## Private Draft
 
@@ -71,6 +73,10 @@ Rules:
 - If private drafting is unavailable, the UI must say so honestly.
 - The app must not use client-side template generation as a runtime fallback.
 - The app must not expose provider/model names.
+- AI actions should refine user-owned writing through explicit controls such as
+  warmer, firmer, shorter, more professional, keep my voice, and take more care.
+- AI must not silently overwrite a draft. Destructive or substantial changes
+  need an accept/reject, undo, or snapshot path.
 
 ## Premium Boundary
 

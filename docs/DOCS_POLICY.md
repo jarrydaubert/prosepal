@@ -19,6 +19,11 @@ This policy keeps project docs evergreen and actionable.
 - Track all open work only in [BACKLOG.md](./BACKLOG.md).
 - Keep examples minimal and implementation-agnostic where possible.
 - Prefer "how to run" + "pass criteria" format over narrative.
+- Platform, App Store Review, subscription, privacy, accessibility, and tooling
+  claims must include direct source links close to the claim when they are used
+  to justify product or engineering direction.
+- Taste, brand, and product-positioning statements do not need citations, but
+  they must not be presented as platform requirements.
 
 ## Required Structure For Operational Docs
 

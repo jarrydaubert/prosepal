@@ -17,6 +17,8 @@ Core promise:
 - Start person-first, not document-first.
 - Turn a person, moment, relationship, and one true thing into a useful draft
   without making the user prompt-engineer.
+- Treat AI as an editor and co-writer that improves the user's own words, not a
+  chatbot that takes over the emotional work.
 - Reduce blank-page anxiety, especially for difficult moments like sympathy,
   apology, gratitude, and milestones.
 - Keep sensitive writing private by default and never expose provider/model
@@ -55,6 +57,7 @@ Avoid reintroducing:
 - Firebase AI / Vertex AI / provider SDK generation in the native client
 - RevenueCat as a native dependency
 - user-facing provider/model names
+- manuscript, scene, character, project-library, or document-manager bloat
 
 ## Audience And Markets
 
@@ -117,12 +120,16 @@ Prioritize improvements that strengthen the native Moment product:
 - better local relationship memory where the user stays in control
 - Standard/private drafting for everyday moments
 - take-more-care escalation for sensitive or higher-stakes messages
+- contextual AI refinement actions such as warmer, firmer, shorter, less
+  defensive, more professional, keep my voice, explain how this might land, and
+  say no clearly
 - clearer saved/local privacy semantics
 - sharper onboarding that gets users to first value quickly
 - spelling/locale preferences where they improve trust
 
 Deprioritize or avoid:
 - broad feature expansion that weakens the message-writing core
+- creative-writing, manuscript, or document-project workflows
 - automatic memory inference before user-approved memory is solid
 - notifications/reminders before timing semantics are safe and useful
 - heavy B2B work before consumer value is proven

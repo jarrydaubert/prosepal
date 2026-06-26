@@ -75,6 +75,7 @@ The actionable backlog is `docs/BACKLOG.md`. Its native gates are:
 | `N-IOS-14` | Native visual system and Moment rail/content discipline. |
 | `N-IOS-15` | Promote native iOS to active main and archive Flutter baseline. |
 | `N-IOS-16` | Supabase public API and linter posture for native release. |
+| `N-IOS-17` | Protect user drafts during AI refinement. |
 
 ## Native App Shape
 
