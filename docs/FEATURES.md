@@ -20,6 +20,7 @@ Open implementation work belongs in `docs/BACKLOG.md`.
 | Extra context | Support sensitive or awkward context without logging raw text. |
 | Spelling/locale | Automatic only, derived from the device locale. No user-facing spelling picker. |
 | Draft output | Make one useful draft feel primary; alternatives can exist when the lane returns them. |
+| Writing scope | Moment messages only. Do not add manuscript, scene, character, project-library, or document-manager workflows to native v1. |
 
 ## Results
 
@@ -30,6 +31,7 @@ Open implementation work belongs in `docs/BACKLOG.md`.
 | Edit | Allow user to adjust a draft before copying/saving. |
 | Save | Save only when the user chooses to save; do not create surprise visible history. |
 | Adjust | Warmer, shorter, more direct, and take-more-care actions stay close to the draft. |
+| Protect draft | Substantial AI changes need an explicit accept/reject, undo, or snapshot path. Never silently overwrite user text. |
 | Start over | Return to the Moment Sheet without stale keyboard focus or stale state surprises. |
 
 ## Account And Identity

@@ -10,6 +10,26 @@ surface built at the highest level the current Apple stack allows.
 Open work belongs in `../docs/BACKLOG.md`. This document defines direction; it
 is not a progress tracker.
 
+## Product Doctrine
+
+ProsePal is a premium Moment-writing workspace. It is AI-assisted, not AI-led.
+
+The product job is:
+
+```text
+I need to say this properly.
+```
+
+It is not:
+
+```text
+I need to manage a writing project.
+```
+
+ProsePal should feel like a calm, trustworthy native writing surface for
+personal moments. It should not become a manuscript manager, project library,
+scene/character/worldbuilding tool, Scrivener-lite, or generic AI chat box.
+
 ## Locked Product Direction
 
 - Public name: ProsePal.
@@ -24,6 +44,9 @@ is not a progress tracker.
 - User-facing UI must never expose provider or model names.
 - No raw recipient names, personal details, prompts, generated text, tokens,
   provider payloads, or StoreKit receipts in logs.
+- Never silently overwrite or risk the user's draft.
+- The user's words lead; AI helps refine, shorten, soften, clarify, or check
+  how a message may land.
 
 ## Architecture
 
@@ -55,6 +78,25 @@ availability, and connectivity.
 - No RevenueCat, Firebase AI, Vertex AI, Sentry, analytics SDK, or provider SDK
   should be added by default. A dependency needs a specific product, privacy,
   and operations reason.
+
+## Native Quality Bar
+
+- Use standard Apple navigation, sheets, search, controls, haptics, text
+  selection, sharing, and accessibility affordances where they fit.
+- Keep Liquid Glass restrained to navigation and control surfaces. Writing
+  content should remain opaque, calm, and readable.
+- Treat Dynamic Type, VoiceOver, Reduce Motion, Increase Contrast, keyboard,
+  iPad layout, and safe-area behavior as core product requirements.
+- Protect user text through autosave, snapshots, explicit accept/reject, undo,
+  and clear error states.
+- Prefer contextual writing actions over a giant prompt box: warmer, firmer,
+  shorter, less defensive, more professional, keep my voice, explain how this
+  might land, remove passive aggression, say no clearly, and take more care.
+
+References:
+
+- Adopting Liquid Glass: https://developer.apple.com/documentation/technologyoverviews/adopting-liquid-glass
+- Accessibility: https://developer.apple.com/accessibility/
 
 ## First Implementation Slice
 
@@ -100,6 +142,10 @@ two experiences.
 - The app should ask for the person first, then the moment, then what is true.
 - Everyday moments can be helped by a fast private draft.
 - Hard moments should generate less and preserve more of the user's own words.
+- The first paywall should follow a meaningful writing result or a clear paid
+  limit/extras boundary, not first launch.
+- Sign-in should support continuity, restore confidence, support, export, and
+  deletion. It should not block first value.
 - Premium copy should say `Take more care`, not imply a specific provider or
   guaranteed emotional perfection.
 - Saved history must be deliberate and user-approved. Do not create a surprise
@@ -110,7 +156,20 @@ two experiences.
 
 ## Current SDK Notes
 
-Verified locally on Xcode 26.5 / iPhoneOS 26.5:
+Live development baseline:
+
+- Xcode 26.6, build 17F113.
+- Swift 6.3.3.
+- Xcode 26.6 is the production development baseline for this native branch.
+- Xcode 27 / iOS 27 beta work belongs in an explicit exploration branch until
+  the APIs and App Store submission requirements are production-ready.
+
+References:
+
+- Xcode App Store listing: https://apps.apple.com/us/app/xcode/id497799835?mt=12
+- Apple developer releases: https://developer.apple.com/news/releases/
+
+Verified locally on the Xcode 26.x toolchain:
 
 - `FoundationModels.framework` exists.
 - `@Generable`, `@Guide`, `LanguageModelSession`, `SystemLanguageModel`,
@@ -134,6 +193,11 @@ route through the careful lane where appropriate. Do not fake local generation.
 - Purchase must not require app sign-in first.
 - Account deletion must be available in app once account creation is available.
 
+References:
+
+- App Review Guidelines: https://developer.apple.com/app-store/review/guidelines/
+- Auto-renewable subscriptions: https://developer.apple.com/app-store/subscriptions/
+
 ## Out Of Scope For The Native v1
 
 - Flutter screen parity as a design requirement.
@@ -143,5 +207,7 @@ route through the careful lane where appropriate. Do not fake local generation.
 - Third-party model providers in the native client.
 - Image generation.
 - CloudKit sync.
+- Manuscripts, scene lists, characters, worldbuilding, goals, export-heavy
+  writer workflows, or document-manager architecture.
 - Automatic silent memory inference from Contacts or Calendar.
 - Physical card ordering, social features, or gamified relationship mechanics.

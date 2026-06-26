@@ -28,6 +28,8 @@ handoff material.
 - Deployment floor: iOS 26.
 - Primary flow: person-first Moment Sheet.
 - Product spine: `person -> moment -> what is true -> draft -> adjust -> send`.
+- Product boundary: Moment messages, not manuscripts, documents, scenes,
+  characters, or project libraries.
 - AI lanes: `Private draft` and `Take more care`.
 - Subscriptions: StoreKit 2 only in the native client.
 - Identity: Sign in with Apple first.
