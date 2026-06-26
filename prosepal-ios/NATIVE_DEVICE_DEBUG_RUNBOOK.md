@@ -132,7 +132,8 @@ Set symbolic/file breakpoints on these functions while proving the flow:
 | Restore start | `MomentAccountModel.restorePurchases` | paywall/settings restore path starts |
 | StoreKit restore | `StoreKitSubscriptionClient.restorePurchases` | App Store sync completes or fails safely |
 | Purchase result | `MomentAccountModel.applySubscriptionPurchaseResult` | local Premium UI changes only for active entitlement |
-| Moment draft scheduled | `MomentModel.scheduleDraft` | person-first edits trigger a debounced draft attempt |
+| Moment setup changed | `MomentModel.resetDraftForMomentChange` | person-first edits clear stale draft state without starting generation |
+| Moment draft started | `MomentModel.draftNow` | `Write draft`, `Try again`, or an explicit adjustment starts generation |
 | Private draft | `FoundationModelsPrivateDraftClient.draft` | everyday lane uses local private drafting when available |
 | Careful draft | `GatewayCarefulMomentClient.generate` | current careful lane reaches staging gateway without printing values |
 | Gateway request | `GatewayMessageWritingClient.generateCard` | auth/dev-secret headers are configured without printing values |

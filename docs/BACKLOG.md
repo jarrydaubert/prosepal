@@ -38,12 +38,14 @@ not done.
   `prosepal-ios/Sources/ProsePalDomain/MomentModels.swift`,
   `MomentSheetView.personSection` in
   `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`.
-- [~] A plausible draft appears once there is enough context, without a visible
-  old-style Generate button -- evidence: `MomentModel.scheduleDraft()` and
-  `MomentSheetView.draftSection` in
-  `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`. Partial because
-  device/runtime availability can still prevent a private draft, though
-  unavailable states now use lane-specific copy and retry affordances.
+- [x] Drafting is explicit and user-controlled once there is enough context --
+  evidence: `MomentModel.resetDraftForMomentChange()`,
+  `MomentModel.draftNow()`, `MomentModel.startNewMoment()`, and
+  `MomentSheetView.draftStartSection` in
+  `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`; tests in
+  `prosepal-ios/Tests/ProsePalUITests/MomentModelTests.swift`; PR #83. Typing,
+  picker changes, and memory edits clear stale drafts but do not start network
+  generation before the user taps `Write draft`.
 - [~] Safety and restraint are product behavior, not just server policy --
   evidence: `MomentSafetySignal`, `PressureCheck`, and `MomentInput.requiresCarefulLane`
   in `prosepal-ios/Sources/ProsePalDomain/MomentModels.swift`; UI crisis/careful
@@ -301,11 +303,12 @@ not done.
 
 - [~] N-IOS-14 Native visual system and Moment rail/content discipline --
   evidence: `MomentSheetView.momentContent(viewportHeight:)`,
-  `shouldShowSecondaryMomentPanels`, and `activeDraftStatus` in
+  `shouldShowSecondaryMomentPanels`, `draftStartSection`, `shouldShowTabRail`,
+  and `startNewMoment()` in
   `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`. Partial because
-  XcodeBuildMCP simulator evidence now covers the `Mira Audit` Birthday and
-  Sympathy rail paths, but physical-device, Dynamic Type, VoiceOver, Reduce
-  Transparency, and paywall/input follow-up polish remain.
+  XcodeBuildMCP simulator evidence covers the explicit `Mira Audit` active
+  compose path and rail avoidance, but physical-device, Dynamic Type,
+  VoiceOver, Reduce Transparency, and paywall/input follow-up polish remain.
 - [~] iOS 26-first Liquid Glass direction is in code -- evidence:
   iOS 26 deployment target in `prosepal-ios/Package.swift` and
   `prosepal-ios/ProsePal.xcodeproj/project.pbxproj`; control-layer styling in
@@ -372,7 +375,7 @@ not done.
 
 ## 11. Quality Gates / Acceptance
 
-- [~] Acceptance demo exists: open, person, moment, one true thing, draft,
+- [~] Acceptance demo exists: open, person, moment, one true thing, write draft,
   adjust, copy/share/save -- evidence: `MomentAppRootView`, `MomentSheetView`,
   `MomentActionRail`, and `MomentModel` in
   `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`. Partial pending
