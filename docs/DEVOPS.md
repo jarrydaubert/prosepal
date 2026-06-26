@@ -45,6 +45,12 @@ Active CI on `main` and pull requests runs:
 - Supabase Edge Function TypeScript validation with Deno
 - CodeQL for GitHub Actions and TypeScript
 
+The native iOS job is pinned to GitHub's documented `macos-26` hosted runner
+label because `prosepal-ios/Package.swift` requires Swift tools 6.2+ and the
+iOS 26 SDK. Do not change this back to `macos-latest` without proving the alias
+resolves to an iOS 26-capable image; `macos-latest` has resolved to older Swift
+6.1 images and cannot build the native package.
+
 Flutter analyze/test/integration/golden workflows are intentionally removed from
 active `main` because Flutter is archived, not the active app.
 
