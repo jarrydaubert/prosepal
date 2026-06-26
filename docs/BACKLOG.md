@@ -77,18 +77,20 @@ not done.
   `docs/legacy-flutter/`; active CI rewritten in `.github/workflows/ci.yml`;
   archive refs and native transition branch pushed to GitHub on 2026-06-25.
   Partial until PR #75 is merged into `main`.
-- [ ] N-IOS-16 Harden Supabase public API and linter posture for native release
+- [~] N-IOS-16 Harden Supabase public API and linter posture for native release
   -- evidence: Supabase database linter reported `user_usage` GraphQL exposure
   to `authenticated` plus public/signed-in `SECURITY DEFINER` RPC exposure for
   `check_device_free_tier`, `check_rate_limit`, `check_and_increment_usage`, and
   `sync_user_usage` on 2026-06-26; current intentional grants are documented in
-  `supabase/migrations/022_lock_down_client_api_privileges.sql` and reflected by
-  `scripts/verify_supabase_readonly.sh`. DoD: decide which legacy Flutter-era
-  direct table/RPC grants remain necessary for native, move usage/rate-limit
-  enforcement behind Edge Functions or service-role-only paths where possible,
-  apply guarded staging migrations only, prove Supabase linter output is clean
-  or explicitly accepted with rationale, and capture staging evidence without
-  touching production.
+  `supabase/migrations/022_lock_down_client_api_privileges.sql`; native repo-side
+  hardening is prepared in
+  `supabase/migrations/025_harden_native_usage_api_surface.sql`,
+  `supabase/functions/generate-card/index.ts`, and
+  `scripts/verify_supabase_readonly.sh`, moving generation usage enforcement to a
+  service-role gateway path and removing legacy client table/RPC privileges when
+  applied. Partial until a human applies guarded staging migrations only, proves
+  Supabase linter output is clean or explicitly accepted with rationale, and
+  captures staging evidence without touching production.
 - [x] App opens into the Moment experience rather than the legacy grouped
   create form -- evidence: `ProsePalNativeApp.body` in
   `prosepal-ios/App/ProsePalNativeApp.swift` constructs `MomentAppRootView`.

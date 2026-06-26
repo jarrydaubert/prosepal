@@ -54,7 +54,7 @@ function makeDeps(options: {
   captureUsageCalls?: Array<{
     functionName: string;
     params: Record<string, unknown>;
-    authHeader: string;
+    serviceRoleKey: string;
   }>;
   devGatewaySecret?: string;
   logger?: {
@@ -73,6 +73,8 @@ function makeDeps(options: {
           return options.authUserId ? "https://example.supabase.co" : undefined;
         case "SUPABASE_ANON_KEY":
           return options.authUserId ? "anon-key" : undefined;
+        case "SUPABASE_SERVICE_ROLE_KEY":
+          return options.authUserId ? "service-role-key" : undefined;
         case "GATEWAY_DEV_ALLOW_ANONYMOUS":
           return options.anonymous ? "true" : undefined;
         case "PROSEPAL_AI_PROVIDER":
@@ -164,14 +166,13 @@ function makeDeps(options: {
     }),
     createUsageClient: (
       _supabaseUrl: string,
-      _supabaseAnonKey: string,
-      authHeader: string,
+      serviceRoleKey: string,
     ) => ({
       rpc: async (
         functionName: string,
         params: Record<string, unknown>,
       ) => {
-        captureUsageCalls.push({ functionName, params, authHeader });
+        captureUsageCalls.push({ functionName, params, serviceRoleKey });
         return {
           data: options.usageResponse ?? {
             allowed: true,
@@ -301,7 +302,7 @@ Deno.test("authenticated generation consumes server usage and returns usage summ
   const usageCalls: Array<{
     functionName: string;
     params: Record<string, unknown>;
-    authHeader: string;
+    serviceRoleKey: string;
   }> = [];
   const res = await handleGenerateCard(
     makeRequest(fixedRequest, { Authorization: "Bearer user-token" }),
@@ -329,7 +330,7 @@ Deno.test("authenticated generation consumes server usage and returns usage summ
   assertEquals(usage.resets_at, "2026-07-01T00:00:00.000Z");
   assertEquals(usageCalls.length, 1);
   assertEquals(usageCalls[0].functionName, "check_and_increment_usage");
-  assertEquals(usageCalls[0].authHeader, "Bearer user-token");
+  assertEquals(usageCalls[0].serviceRoleKey, "service-role-key");
   assertEquals(
     usageCalls[0].params.p_user_id,
     "00000000-0000-4000-8000-000000000001",
@@ -344,7 +345,7 @@ Deno.test("anonymous dev generation does not call authenticated usage RPC", asyn
   const usageCalls: Array<{
     functionName: string;
     params: Record<string, unknown>;
-    authHeader: string;
+    serviceRoleKey: string;
   }> = [];
   const res = await handleGenerateCard(
     makeRequest(),
