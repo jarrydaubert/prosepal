@@ -53,6 +53,7 @@ public final class MomentModel {
     public var isDrafting = false
     public var errorMessage: String?
     public var draftUnavailableReason: MomentDraftUnavailableReason?
+    public private(set) var previousDraftBundle: MomentDraftBundle?
 
     @ObservationIgnored private let service: any MessageWritingService
     @ObservationIgnored private let diagnostics: NativeDiagnosticsLogger
@@ -108,6 +109,7 @@ public final class MomentModel {
         draftTask?.cancel()
         _ = nextDraftGeneration()
         bundle = nil
+        previousDraftBundle = nil
         errorMessage = nil
         draftUnavailableReason = nil
         isDrafting = false
@@ -122,6 +124,7 @@ public final class MomentModel {
         register = .react
         trueThing = ""
         bundle = nil
+        previousDraftBundle = nil
         errorMessage = nil
         draftUnavailableReason = nil
         isDrafting = false
@@ -131,9 +134,25 @@ public final class MomentModel {
         await draftNow(generation: nextDraftGeneration(), trigger: "manual")
     }
 
+    public var canRestorePreviousDraft: Bool {
+        previousDraftBundle != nil && !isDrafting
+    }
+
+    public func restorePreviousDraft() {
+        guard let previousDraftBundle else { return }
+        draftTask?.cancel()
+        _ = nextDraftGeneration()
+        bundle = previousDraftBundle
+        self.previousDraftBundle = nil
+        errorMessage = nil
+        draftUnavailableReason = nil
+        isDrafting = false
+    }
+
     private func draftNow(generation: Int, trigger: String = "automatic") async {
         guard canDraft else { return }
         let input = moment
+        let originalBundle = bundle
         let requestID = UUID().uuidString
         let startedAt = Date()
         isDrafting = true
@@ -151,6 +170,7 @@ public final class MomentModel {
         do {
             let nextBundle = try await service.draft(for: input)
             guard isCurrentGeneration(generation) else { return }
+            previousDraftBundle = originalBundle
             bundle = nextBundle
             diagnostics.momentDraftSucceeded(
                 requestID: requestID,
@@ -222,6 +242,7 @@ public final class MomentModel {
         do {
             let nextBundle = try await service.adjust(bundle, with: adjustment, moment: input)
             guard isCurrentGeneration(generation) else { return }
+            previousDraftBundle = bundle
             self.bundle = nextBundle
             diagnostics.momentDraftSucceeded(
                 requestID: requestID,
@@ -273,6 +294,7 @@ public final class MomentModel {
         do {
             let nextBundle = try await service.takeMoreCare(bundle, moment: input)
             guard isCurrentGeneration(generation) else { return }
+            previousDraftBundle = bundle
             self.bundle = nextBundle
             diagnostics.momentDraftSucceeded(
                 requestID: requestID,
@@ -1692,6 +1714,26 @@ private struct MomentSheetView: View {
 
     private func actionRail(bundle: MomentDraftBundle) -> some View {
         VStack(spacing: 10) {
+            if model.canRestorePreviousDraft {
+                Button {
+                    diagnostics.messageAction(
+                        "undo_rewrite",
+                        source: "moment_draft",
+                        messageCharacters: bundle.messageText.count
+                    )
+                    model.restorePreviousDraft()
+                } label: {
+                    Label("Undo rewrite", systemImage: "arrow.uturn.backward")
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.82)
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+                .buttonBorderShape(.capsule)
+                .tint(.prosePalNavy)
+                .controlSize(.large)
+            }
+
             if bundle.lane != .takeMoreCare {
                 Button {
                     takeMoreCare()
