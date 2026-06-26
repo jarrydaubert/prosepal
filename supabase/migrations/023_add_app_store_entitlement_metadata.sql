@@ -6,7 +6,7 @@
 -- minimal processed-notification ledger for idempotency/audit.
 
 ALTER TABLE user_entitlements
-  ADD COLUMN IF NOT EXISTS entitlement_source TEXT NOT NULL DEFAULT 'revenuecat',
+  ADD COLUMN IF NOT EXISTS entitlement_source TEXT NOT NULL DEFAULT 'unknown',
   ADD COLUMN IF NOT EXISTS app_store_original_transaction_id TEXT,
   ADD COLUMN IF NOT EXISTS app_store_transaction_id TEXT,
   ADD COLUMN IF NOT EXISTS app_store_environment TEXT,
@@ -35,7 +35,7 @@ CREATE TABLE IF NOT EXISTS app_store_notification_events (
 ALTER TABLE app_store_notification_events ENABLE ROW LEVEL SECURITY;
 
 COMMENT ON COLUMN user_entitlements.entitlement_source IS
-  'Authoritative entitlement source, for example revenuecat or app_store_server_notifications.';
+  'Authoritative entitlement source, for example app_store_server_notifications or app_store_server_api.';
 
 COMMENT ON TABLE app_store_notification_events IS
   'Privacy-safe App Store Server Notification metadata. Does not store signed payloads, receipts, or tokens.';

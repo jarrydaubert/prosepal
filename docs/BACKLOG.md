@@ -253,7 +253,9 @@ not done.
 - [x] Native app uses StoreKit 2 directly, with no RevenueCat dependency --
   evidence: `StoreKitSubscriptionClient` in
   `prosepal-ios/Sources/ProsePalAPI/SubscriptionClient.swift`; no third-party
-  dependencies in `prosepal-ios/Package.swift`.
+  dependencies in `prosepal-ios/Package.swift`; the active Supabase
+  `revenuecat-webhook` function and config entry have been removed from the
+  native repo.
 - [~] Server entitlement is authoritative through App Store Server
   Notifications V2 JWS and reconciliation -- evidence:
   `supabase/functions/app-store-notifications/index.ts`,

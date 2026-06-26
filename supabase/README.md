@@ -44,8 +44,8 @@ supabase functions serve send-feedback
 
 Accepts the native SwiftUI `CardRequest` contract and returns `CardResponse`
 without exposing provider names, model names, or provider payloads to the
-client. This is a native iOS R&D gateway path only; Flutter production routing
-remains client-direct Firebase AI / Vertex AI.
+client. This is the native iOS gateway path for staging and future production
+rollout once the approval gates are met.
 
 **Production deployment:** not enabled as the default AI path. Production
 gateway rollout still requires the approval gates in
