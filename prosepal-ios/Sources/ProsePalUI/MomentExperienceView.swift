@@ -93,7 +93,7 @@ public final class MomentModel {
             self.occasion = occasion
         }
         alignRegisterForMoment()
-        scheduleDraft()
+        resetDraftForMomentChange()
     }
 
     public func alignRegisterForMoment() {
@@ -104,25 +104,27 @@ public final class MomentModel {
         }
     }
 
-    public func scheduleDraft() {
+    public func resetDraftForMomentChange() {
         draftTask?.cancel()
-        let generation = nextDraftGeneration()
-        guard canDraft else {
-            bundle = nil
-            errorMessage = nil
-            draftUnavailableReason = nil
-            isDrafting = false
-            return
-        }
+        _ = nextDraftGeneration()
+        bundle = nil
+        errorMessage = nil
+        draftUnavailableReason = nil
+        isDrafting = false
+    }
 
-        draftTask = Task { [weak self] in
-            do {
-                try await Task.sleep(for: .milliseconds(450))
-                await self?.draftNow(generation: generation)
-            } catch {
-                self?.clearCancelledDraftingState(generation: generation)
-            }
-        }
+    public func startNewMoment() {
+        draftTask?.cancel()
+        _ = nextDraftGeneration()
+        personName = ""
+        relationship = .closeFriend
+        occasion = .birthday
+        register = .react
+        trueThing = ""
+        bundle = nil
+        errorMessage = nil
+        draftUnavailableReason = nil
+        isDrafting = false
     }
 
     public func draftNow() async {
@@ -677,7 +679,7 @@ private struct MomentSheetView: View {
                 }
             }
         }
-        .momentTabBarVisibility(isVisible: focusedField == nil)
+        .momentTabBarVisibility(isVisible: shouldShowTabRail)
         .sheet(isPresented: $isShowingRelationshipPicker) {
             MomentRelationshipPickerSheet(selection: $model.relationship)
                 .presentationDetents([.medium, .large])
@@ -692,14 +694,14 @@ private struct MomentSheetView: View {
             MomentPaywallSheet(account: account)
         }
         .sheet(item: $editingTruthBead, onDismiss: {
-            model.scheduleDraft()
+            model.resetDraftForMomentChange()
         }) { bead in
             NavigationStack {
                 RelationshipMemoryDetailView(bead: bead)
             }
         }
         .sheet(item: $editingVoiceCard, onDismiss: {
-            model.scheduleDraft()
+            model.resetDraftForMomentChange()
         }) { voiceCard in
             NavigationStack {
                 RelationshipVoiceCardDetailView(voiceCard: voiceCard)
@@ -715,21 +717,21 @@ private struct MomentSheetView: View {
         } message: {
             Text("You saved this voice card for \(currentPersonName). ProsePal uses it as style guidance only, and does not log the text.")
         }
-        .onChange(of: model.personName) { _, _ in model.scheduleDraft() }
+        .onChange(of: model.personName) { _, _ in model.resetDraftForMomentChange() }
         .onChange(of: model.relationship) { _, newValue in
             diagnostics.selectionChanged(kind: "moment_relationship", value: newValue.rawValue)
-            model.scheduleDraft()
+            model.resetDraftForMomentChange()
         }
         .onChange(of: model.occasion) { _, newValue in
             diagnostics.selectionChanged(kind: "moment", value: newValue.rawValue)
             model.alignRegisterForMoment()
-            model.scheduleDraft()
+            model.resetDraftForMomentChange()
         }
         .onChange(of: model.register) { _, newValue in
             diagnostics.selectionChanged(kind: "moment_register", value: newValue.rawValue)
-            model.scheduleDraft()
+            model.resetDraftForMomentChange()
         }
-        .onChange(of: model.trueThing) { _, _ in model.scheduleDraft() }
+        .onChange(of: model.trueThing) { _, _ in model.resetDraftForMomentChange() }
         .task {
             guard !hasEntered else { return }
             if reduceMotion {
@@ -815,75 +817,113 @@ private struct MomentSheetView: View {
         model.bundle != nil || model.errorMessage != nil
     }
 
+    private var shouldShowTabRail: Bool {
+        focusedField == nil && currentPersonName.isEmpty
+    }
+
     private var activePrimaryContent: some View {
         VStack(alignment: .leading, spacing: 16) {
             header
             activeSetupSection
             truthSection
-            if shouldHoldSecondaryContentBelowFirstViewport {
-                activeDraftStatus
-            }
+            draftStartSection
         }
     }
 
-    private var activeDraftStatus: some View {
-        HStack(alignment: .center, spacing: 12) {
-            MomentSymbolBadge(
-                systemImage: model.moment.isCarefulMode ? "heart.text.square" : "lock",
-                style: model.moment.isCarefulMode ? .care : .subtle,
-                size: 34
-            )
+    private var draftStartSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .center, spacing: 12) {
+                MomentSymbolBadge(
+                    systemImage: model.moment.isCarefulMode ? "heart.text.square" : "square.and.pencil",
+                    style: model.moment.isCarefulMode ? .care : .coral,
+                    size: 34
+                )
 
-            VStack(alignment: .leading, spacing: 3) {
-                Text(activeDraftStatusTitle)
-                    .font(.subheadline.weight(.semibold))
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(draftStartTitle)
+                        .font(.subheadline.weight(.semibold))
 
-                Text(activeDraftStatusDetail)
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
+                    Text(draftStartDetail)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Spacer(minLength: 8)
+
+                if model.isDrafting {
+                    ProgressView()
+                        .controlSize(.small)
+                        .tint(model.moment.isCarefulMode ? .prosePalCare : .prosePalCoral)
+                }
             }
 
-            Spacer(minLength: 8)
-
-            if model.isDrafting {
-                ProgressView()
-                    .controlSize(.small)
-                    .tint(model.moment.isCarefulMode ? .prosePalCare : .prosePalCoral)
+            Button {
+                focusedField = nil
+                Task {
+                    await model.draftNow()
+                }
+            } label: {
+                Label(draftStartButtonTitle, systemImage: model.isDrafting ? "hourglass" : "sparkles")
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.82)
+                    .frame(maxWidth: .infinity)
             }
+            .buttonStyle(.borderedProminent)
+            .buttonBorderShape(.capsule)
+            .controlSize(.large)
+            .tint(model.moment.isCarefulMode ? .prosePalCare : .prosePalCoral)
+            .disabled(!model.canDraft || model.isDrafting)
         }
         .padding(14)
-        .background(Color.prosePalPaper.opacity(0.9), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .stroke(Color.white.opacity(0.56), lineWidth: 1)
+        .background {
+            MomentCardBackground(
+                isCareful: model.moment.isCarefulMode,
+                prominence: .accent
+            )
         }
     }
 
-    private var activeDraftStatusTitle: String {
+    private var draftStartTitle: String {
         if model.isDrafting {
-            return "Draft forming"
+            return "Writing your draft"
         }
         if model.errorMessage != nil {
-            return model.moment.isCarefulMode ? "Take care needs attention" : "Private draft needs attention"
+            return "Ready to try again"
         }
         if model.bundle != nil {
-            return model.moment.isCarefulMode ? "Careful draft ready" : "Private draft ready"
+            return "Draft ready"
         }
-        return model.moment.isCarefulMode ? "Careful draft next" : "Private draft next"
+        return "Ready when you are"
     }
 
-    private var activeDraftStatusDetail: String {
+    private var draftStartDetail: String {
+        if model.isDrafting {
+            return "You can keep editing after this finishes."
+        }
         if model.errorMessage != nil {
-            return "Scroll to review the issue without losing this setup."
+            return "Nothing new happens until you tap again."
         }
         if model.bundle != nil {
-            return "Scroll to review, copy, save, or adjust it."
+            return "Change the setup above, or scroll to copy, save, and adjust."
         }
-        if model.moment.isCarefulMode {
-            return "Harder moments stay quieter until you open the draft."
+        if model.canDraft {
+            return "Nothing is sent until you tap Write draft."
         }
-        return "Memory and draft details appear after the first draft is ready."
+        return "Add who this is for before writing a draft."
+    }
+
+    private var draftStartButtonTitle: String {
+        if model.isDrafting {
+            return "Writing"
+        }
+        if model.errorMessage != nil {
+            return "Try again"
+        }
+        if model.bundle != nil {
+            return "Rewrite draft"
+        }
+        return "Write draft"
     }
 
     private func handleFocusChange(from oldValue: Field?, to newValue: Field?, scrollProxy: ScrollViewProxy) {
@@ -951,11 +991,26 @@ private struct MomentSheetView: View {
             Spacer(minLength: 8)
 
             VStack(spacing: 8) {
-                MomentSymbolBadge(
-                    systemImage: model.moment.isCarefulMode ? "heart.text.square.fill" : "lock.fill",
-                    style: model.moment.isCarefulMode ? .heroCare : .hero,
-                    size: currentPersonName.isEmpty ? 58 : 50
-                )
+                if currentPersonName.isEmpty {
+                    MomentSymbolBadge(
+                        systemImage: model.moment.isCarefulMode ? "heart.text.square.fill" : "lock.fill",
+                        style: model.moment.isCarefulMode ? .heroCare : .hero,
+                        size: 58
+                    )
+                } else {
+                    Button {
+                        focusedField = nil
+                        model.startNewMoment()
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(.callout.weight(.bold))
+                            .frame(width: 34, height: 34)
+                            .background(Color.white.opacity(0.16), in: Circle())
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(.white)
+                    .accessibilityLabel("Start over")
+                }
 
                 if !currentPersonName.isEmpty {
                     Text(model.moment.isCarefulMode ? "Careful" : "Private")
@@ -1641,7 +1696,9 @@ private struct MomentSheetView: View {
                 Button {
                     takeMoreCare()
                 } label: {
-                    Label("Take more care", systemImage: "heart.text.square")
+                    Label("Take care", systemImage: "heart.text.square")
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.78)
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
@@ -1687,6 +1744,8 @@ private struct MomentSheetView: View {
             model.adjust(adjustment)
         } label: {
             Label(adjustment.displayName, systemImage: adjustment.systemImage)
+                .lineLimit(1)
+                .minimumScaleFactor(0.74)
                 .frame(maxWidth: .infinity)
         }
         .buttonStyle(.bordered)
@@ -1702,6 +1761,8 @@ private struct MomentSheetView: View {
             copy(text)
         } label: {
             Label("Copy", systemImage: "doc.on.doc")
+                .lineLimit(1)
+                .minimumScaleFactor(0.82)
                 .frame(maxWidth: .infinity)
         }
         .buttonStyle(.bordered)
@@ -1712,6 +1773,8 @@ private struct MomentSheetView: View {
     private func shareButton(text: String) -> some View {
         ShareLink(item: text) {
             Label("Share", systemImage: "square.and.arrow.up")
+                .lineLimit(1)
+                .minimumScaleFactor(0.82)
                 .frame(maxWidth: .infinity)
         }
         .buttonStyle(.borderedProminent)
@@ -1724,6 +1787,8 @@ private struct MomentSheetView: View {
             save(bundle)
         } label: {
             Label("Save", systemImage: "bookmark")
+                .lineLimit(1)
+                .minimumScaleFactor(0.82)
                 .frame(maxWidth: .infinity)
         }
         .buttonStyle(.bordered)
@@ -1792,7 +1857,7 @@ private struct MomentSheetView: View {
             newTruthBeadText = ""
             isAddingTruthBead = false
             focusedField = nil
-            model.scheduleDraft()
+            model.resetDraftForMomentChange()
         } catch {
             withAnimation(.easeInOut(duration: 0.18)) {
                 saveNotice = "Could not save this detail."
@@ -1804,7 +1869,7 @@ private struct MomentSheetView: View {
         modelContext.delete(bead)
         try? modelContext.save()
         diagnostics.messageAction("truth_bead_deleted", source: "moment", messageCharacters: 0)
-        model.scheduleDraft()
+        model.resetDraftForMomentChange()
     }
 
     private func addVoiceCard() {
@@ -1824,7 +1889,7 @@ private struct MomentSheetView: View {
             newVoiceCardSummary = ""
             isAddingVoiceCard = false
             focusedField = nil
-            model.scheduleDraft()
+            model.resetDraftForMomentChange()
         } catch {
             withAnimation(.easeInOut(duration: 0.18)) {
                 saveNotice = "Could not save this voice card."
@@ -1836,7 +1901,7 @@ private struct MomentSheetView: View {
         modelContext.delete(voiceCard)
         try? modelContext.save()
         diagnostics.messageAction("voice_card_deleted", source: "moment", messageCharacters: 0)
-        model.scheduleDraft()
+        model.resetDraftForMomentChange()
     }
 }
 
@@ -3990,13 +4055,26 @@ private struct MomentRegisterSelector: View {
     let isCareful: Bool
 
     var body: some View {
-        ViewThatFits(in: .horizontal) {
-            HStack(spacing: 8) {
-                registerButtons
+        VStack(alignment: .leading, spacing: 9) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text("How should ProsePal help?")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.primary)
+
+                Text(selection.userSafeDescription)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
 
-            VStack(spacing: 8) {
-                registerButtons
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 8) {
+                    registerButtons
+                }
+
+                VStack(spacing: 8) {
+                    registerButtons
+                }
             }
         }
         .animation(.spring(response: 0.34, dampingFraction: 0.82), value: selection)
@@ -4035,7 +4113,7 @@ private struct MomentRegisterOption: View {
             Text(register.displayName)
                 .font(.footnote.weight(.semibold))
                 .lineLimit(1)
-                .minimumScaleFactor(0.82)
+                .minimumScaleFactor(0.72)
         }
         .foregroundStyle(isSelected ? Color.white : Color.primary)
         .padding(.horizontal, 12)
