@@ -222,6 +222,125 @@ func takeMoreCareReplacesPrivateDraftWithCarefulDraft() async throws {
 
 @Test
 @MainActor
+func adjustingDraftStoresUndoSnapshotAndRestoreClearsIt() async throws {
+    let originalBundle = MomentDraftBundle(
+        messageText: "A quick private draft.",
+        lane: .privateDraft
+    )
+    let refinedBundle = MomentDraftBundle(
+        messageText: "A warmer draft.",
+        lane: .privateDraft
+    )
+    let privateClient = MomentModelRefiningClient(bundle: refinedBundle)
+    let service = RoutingMessageWritingService(
+        privateClient: privateClient,
+        carefulClient: MomentModelRefiningClient(bundle: refinedBundle)
+    )
+    let model = MomentModel(service: service)
+
+    model.personName = "Alex"
+    model.bundle = originalBundle
+    model.adjust(.warmer)
+
+    for _ in 0..<40 {
+        if model.bundle?.messageText == "A warmer draft." { break }
+        try await Task.sleep(for: .milliseconds(5))
+    }
+
+    #expect(model.bundle == refinedBundle)
+    #expect(model.previousDraftBundle == originalBundle)
+    #expect(model.canRestorePreviousDraft)
+
+    model.restorePreviousDraft()
+
+    #expect(model.bundle == originalBundle)
+    #expect(model.previousDraftBundle == nil)
+    #expect(!model.canRestorePreviousDraft)
+}
+
+@Test
+@MainActor
+func takeMoreCareStoresUndoSnapshotWhenItReplacesDraft() async throws {
+    let originalBundle = MomentDraftBundle(
+        messageText: "A quick private draft.",
+        lane: .privateDraft
+    )
+    let carefulBundle = MomentDraftBundle(
+        messageText: "A careful draft.",
+        lane: .takeMoreCare
+    )
+    let privateClient = CountingMomentDraftClient()
+    let carefulClient = MomentModelRefiningClient(bundle: carefulBundle)
+    let service = RoutingMessageWritingService(
+        privateClient: privateClient,
+        carefulClient: carefulClient
+    )
+    let model = MomentModel(service: service)
+
+    model.personName = "Alex"
+    model.bundle = originalBundle
+    model.takeMoreCare()
+
+    for _ in 0..<40 {
+        if model.bundle?.messageText == "A careful draft." { break }
+        try await Task.sleep(for: .milliseconds(5))
+    }
+
+    #expect(model.bundle == carefulBundle)
+    #expect(model.previousDraftBundle == originalBundle)
+}
+
+@Test
+@MainActor
+func failedAdjustmentKeepsCurrentDraftAndUndoSnapshot() async throws {
+    let originalBundle = MomentDraftBundle(
+        messageText: "Original draft.",
+        lane: .privateDraft
+    )
+    let currentBundle = MomentDraftBundle(
+        messageText: "Current draft.",
+        lane: .privateDraft
+    )
+    let sequencingClient = SequencedMomentModelRefinementClient(
+        outcomes: [
+            .success(currentBundle),
+            .failure(GenerationError.serviceUnavailable(message: "Unavailable.")),
+            .failure(GenerationError.serviceUnavailable(message: "Unavailable."))
+        ]
+    )
+    let service = RoutingMessageWritingService(
+        privateClient: sequencingClient,
+        carefulClient: sequencingClient
+    )
+    let model = MomentModel(service: service)
+
+    model.personName = "Alex"
+    model.bundle = originalBundle
+    model.adjust(.warmer)
+
+    for _ in 0..<40 {
+        if model.bundle == currentBundle { break }
+        try await Task.sleep(for: .milliseconds(5))
+    }
+
+    #expect(model.bundle == currentBundle)
+    #expect(model.previousDraftBundle == originalBundle)
+
+    model.adjust(.shorter)
+
+    for _ in 0..<40 {
+        if model.errorMessage != nil { break }
+        try await Task.sleep(for: .milliseconds(5))
+    }
+
+    #expect(model.bundle == currentBundle)
+    #expect(model.previousDraftBundle == originalBundle)
+    #expect(model.errorMessage == "Unavailable.")
+    #expect(model.canRestorePreviousDraft)
+}
+
+@Test
+@MainActor
 func takeMoreCareDoesNotRequirePremiumEntitlementInMomentModel() async throws {
     let privateClient = CountingMomentDraftClient()
     let carefulClient = MomentModelRefiningClient(
@@ -336,5 +455,50 @@ private actor MomentModelRefiningClient: MomentDraftRefinementClient {
     ) async throws -> MomentDraftBundle {
         lastCurrentMessage = currentMessage
         return bundle
+    }
+}
+
+private actor SequencedMomentModelRefinementClient: MomentDraftRefinementClient {
+    enum Outcome {
+        case success(MomentDraftBundle)
+        case failure(Error)
+    }
+
+    private var outcomes: [Outcome]
+
+    init(outcomes: [Outcome]) {
+        self.outcomes = outcomes
+    }
+
+    func draft(for moment: MomentInput) async throws -> MomentDraftBundle {
+        try nextOutcome()
+    }
+
+    func adjust(
+        _ bundle: MomentDraftBundle,
+        with adjustment: MomentAdjustment,
+        moment: MomentInput
+    ) async throws -> MomentDraftBundle {
+        try nextOutcome()
+    }
+
+    func refine(
+        currentMessage: String?,
+        moment: MomentInput
+    ) async throws -> MomentDraftBundle {
+        try nextOutcome()
+    }
+
+    private func nextOutcome() throws -> MomentDraftBundle {
+        guard !outcomes.isEmpty else {
+            throw GenerationError.serviceUnavailable(message: "No queued outcome.")
+        }
+
+        switch outcomes.removeFirst() {
+        case .success(let bundle):
+            return bundle
+        case .failure(let error):
+            throw error
+        }
     }
 }

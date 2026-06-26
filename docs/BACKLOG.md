@@ -133,14 +133,17 @@ not done.
   evidence: copy/share/save exist in `MomentActionRail` and saved detail actions
   in `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`. Partial
   because edit and an explicit send handoff are not implemented for Moment drafts.
-- [ ] N-IOS-17 Protect user drafts during AI refinement -- evidence: no
-  dedicated draft snapshot/undo/accept/reject model or tests exist under
-  `prosepal-ios/Sources` or `prosepal-ios/Tests`; current draft adjustment
-  actions can request rewritten output through `MessageWritingService.adjust`.
-  DoD: local autosave preserves the user's current words, substantial AI edits
-  create a recoverable snapshot, refinement results require explicit accept or
-  keep-original behavior before replacing user text, undo remains available
-  after acceptance, and tests cover cancellation/failure without text loss.
+- [~] N-IOS-17 Protect user drafts during AI refinement -- evidence:
+  `MomentModel.previousDraftBundle`, `restorePreviousDraft()`, and the visible
+  `Undo rewrite` action in
+  `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`; undo/failure
+  tests in `prosepal-ios/Tests/ProsePalUITests/MomentModelTests.swift`. Partial
+  because full accept/reject, version history, and autosave for user-authored
+  editable draft text are not implemented yet. DoD: local autosave preserves the
+  user's current words, substantial AI edits create a recoverable snapshot,
+  refinement results require explicit accept or keep-original behavior before
+  replacing user text, undo remains available after acceptance, and tests cover
+  cancellation/failure without text loss.
 - [x] Draft body reads like correspondence rather than a chat bubble --
   evidence: serif draft body and `textSelection(.enabled)` in
   `MomentDraftCard` inside `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`.
