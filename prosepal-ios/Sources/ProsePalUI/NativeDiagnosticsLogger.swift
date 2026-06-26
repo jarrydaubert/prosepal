@@ -54,6 +54,21 @@ public struct NativeDiagnosticsLogger: Sendable {
         logger.info("\(payload, privacy: .public)")
     }
 
+    public func authEvent(
+        _ event: String,
+        source: String,
+        outcome: String = "none",
+        statusCode: Int? = nil
+    ) {
+        let payload = NativeDiagnosticsPayload.authEvent(
+            event: event,
+            source: source,
+            outcome: outcome,
+            statusCode: statusCode
+        )
+        logger.info("\(payload, privacy: .public)")
+    }
+
     public func momentDraftStarted(requestID: String, moment: MomentInput, trigger: String) {
         let payload = NativeDiagnosticsPayload.momentDraftStarted(
             requestID: requestID,
@@ -105,6 +120,16 @@ public struct NativeDiagnosticsLogger: Sendable {
 enum NativeDiagnosticsPayload {
     static func messageAction(action: String, source: String, messageCharacters: Int) -> String {
         "message_action action=\(action) source=\(source) message_chars=\(messageCharacters)"
+    }
+
+    static func authEvent(
+        event: String,
+        source: String,
+        outcome: String,
+        statusCode: Int?
+    ) -> String {
+        let status = statusCode.map(String.init) ?? "none"
+        return "auth_event event=\(event) source=\(source) outcome=\(outcome) status_code=\(status)"
     }
 
     static func momentDraftStarted(requestID: String, moment: MomentInput, trigger: String) -> String {

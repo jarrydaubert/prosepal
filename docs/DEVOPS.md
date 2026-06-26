@@ -95,6 +95,17 @@ The restore script verifies that the expected staging env keys are enabled, the
 StoreKit staging config is referenced, and the restored scheme remains ignored
 by Git. It must not print secret values.
 
+Before debugging staging auth, generation, or StoreKit behavior from Xcode, run:
+
+```bash
+./scripts/verify-native-staging-plumbing.sh
+```
+
+The verifier checks the shared scheme is clean, the ignored local staging scheme
+has the expected env keys enabled, the StoreKit config reference resolves, and
+the local StoreKit file contains the expected native product IDs. It must not
+print secret values.
+
 ## Supabase Environment Safety
 
 Known project refs:
