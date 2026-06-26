@@ -81,4 +81,9 @@ if grep -R "RevenueCat" prosepal-ios/Package.swift prosepal-ios/Sources >/dev/nu
   exit 1
 fi
 
+if [[ -d "supabase/functions/revenuecat-webhook" ]] || grep -q "functions.revenuecat-webhook" supabase/config.toml; then
+  echo "Active Supabase RevenueCat webhook is present; native direction is StoreKit 2 + App Store Server Notifications." >&2
+  exit 1
+fi
+
 echo "Native release preflight passed."
