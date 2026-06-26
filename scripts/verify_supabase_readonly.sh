@@ -193,6 +193,7 @@ ANON_NO_SELECT_TABLES=(
 )
 
 AUTH_NO_SELECT_TABLES=(
+  "user_usage"
   "user_entitlements"
   "device_usage"
   "rate_limit_log"
@@ -213,6 +214,8 @@ PUBLIC_NO_EXECUTE_FUNCTIONS=(
 
 ANON_NO_EXECUTE_FUNCTIONS=(
   "check_and_increment_usage(uuid, boolean, text)"
+  "check_device_free_tier(text, text, uuid, boolean)"
+  "check_rate_limit(uuid, text, text)"
   "cleanup_rate_limit_logs()"
   "is_user_pro(uuid)"
   "save_apple_authorization_code(text)"
@@ -221,22 +224,18 @@ ANON_NO_EXECUTE_FUNCTIONS=(
 )
 
 AUTH_NO_EXECUTE_FUNCTIONS=(
-  "cleanup_rate_limit_logs()"
-  "is_user_pro(uuid)"
-  "save_apple_authorization_code(text)"
-  "update_updated_at_column()"
-)
-
-AUTH_EXECUTE_FUNCTIONS=(
   "check_and_increment_usage(uuid, boolean, text)"
   "check_device_free_tier(text, text, uuid, boolean)"
   "check_rate_limit(uuid, text, text)"
+  "cleanup_rate_limit_logs()"
+  "is_user_pro(uuid)"
+  "save_apple_authorization_code(text)"
   "sync_user_usage(uuid, integer, integer, text)"
+  "update_updated_at_column()"
 )
 
-ANON_EXECUTE_FUNCTIONS=(
-  "check_device_free_tier(text, text, uuid, boolean)"
-  "check_rate_limit(uuid, text, text)"
+SERVICE_EXECUTE_FUNCTIONS=(
+  "check_and_increment_usage(uuid, boolean, text)"
 )
 
 echo "== Tables =="
@@ -277,11 +276,8 @@ done
 for function_signature in "${AUTH_NO_EXECUTE_FUNCTIONS[@]}"; do
   check_function_execute_absent "authenticated" "$function_signature"
 done
-for function_signature in "${AUTH_EXECUTE_FUNCTIONS[@]}"; do
-  check_function_execute_present "authenticated" "$function_signature"
-done
-for function_signature in "${ANON_EXECUTE_FUNCTIONS[@]}"; do
-  check_function_execute_present "anon" "$function_signature"
+for function_signature in "${SERVICE_EXECUTE_FUNCTIONS[@]}"; do
+  check_function_execute_present "service_role" "$function_signature"
 done
 
 echo

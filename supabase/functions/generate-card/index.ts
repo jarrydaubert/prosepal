@@ -67,8 +67,7 @@ type UsageClient = {
 
 type CreateUsageClient = (
   supabaseUrl: string,
-  supabaseAnonKey: string,
-  authHeader: string,
+  supabaseServiceRoleKey: string,
 ) => UsageClient;
 
 export interface GenerateCardDeps {
@@ -529,12 +528,9 @@ const defaultCreateUserClient: CreateUserClient = (
 
 const defaultCreateUsageClient: CreateUsageClient = (
   supabaseUrl: string,
-  supabaseAnonKey: string,
-  authHeader: string,
+  supabaseServiceRoleKey: string,
 ) =>
-  createClient(supabaseUrl, supabaseAnonKey, {
-    global: { headers: { Authorization: authHeader } },
-  }) as unknown as UsageClient;
+  createClient(supabaseUrl, supabaseServiceRoleKey) as unknown as UsageClient;
 
 function jsonResponse(body: Record<string, unknown>, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -1445,8 +1441,8 @@ async function consumeUsageForAuthenticatedGeneration(
   }
 
   const supabaseUrl = deps.getEnv("SUPABASE_URL");
-  const supabaseAnonKey = deps.getEnv("SUPABASE_ANON_KEY");
-  if (!supabaseUrl || !supabaseAnonKey) {
+  const supabaseServiceRoleKey = deps.getEnv("SUPABASE_SERVICE_ROLE_KEY");
+  if (!supabaseUrl || !supabaseServiceRoleKey) {
     deps.logger.error(
       "generate-card usage unconfigured",
       JSON.stringify({
@@ -1471,8 +1467,7 @@ async function consumeUsageForAuthenticatedGeneration(
 
   const usageClient = deps.createUsageClient(
     supabaseUrl,
-    supabaseAnonKey,
-    auth.authHeader,
+    supabaseServiceRoleKey,
   );
 
   let rpcResult: Awaited<ReturnType<UsageClient["rpc"]>>;
