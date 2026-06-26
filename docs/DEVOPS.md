@@ -78,6 +78,17 @@ Important local Run environment variables:
 See `prosepal-ios/NATIVE_DEVICE_DEBUG_RUNBOOK.md` for the detailed device
 smoke matrix.
 
+If the ignored local staging scheme is lost after worktree cleanup, restore it
+from the operator's local backup:
+
+```bash
+./scripts/restore-local-staging-scheme.sh
+```
+
+The restore script verifies that the expected staging env keys are enabled, the
+StoreKit staging config is referenced, and the restored scheme remains ignored
+by Git. It must not print secret values.
+
 ## Supabase Environment Safety
 
 Known project refs:
@@ -131,6 +142,16 @@ Use:
 The script expects the staging dev gateway secret to be available locally
 without printing it. A healthy smoke returns HTTP 200, `lane_used=standard`,
 `fallback_status=none`, and three generated messages.
+
+If `nslookup llolwgqphwnhbiqewmcq.supabase.co` returns `NXDOMAIN` or device logs
+show `NSURLErrorDomain Code=-1003`, check:
+
+```bash
+supabase projects list --output json
+```
+
+`prosepal-staging` must not be `INACTIVE`. Resume it in the Supabase dashboard
+and wait for DNS before changing app code.
 
 ## App Store / Entitlement Work
 

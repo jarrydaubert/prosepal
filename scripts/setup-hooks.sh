@@ -18,6 +18,8 @@ cp "$SCRIPT_DIR/pre-commit" "$HOOKS_DIR/pre-commit"
 chmod +x "$HOOKS_DIR/pre-commit"
 cp "$SCRIPT_DIR/commit-msg" "$HOOKS_DIR/commit-msg"
 chmod +x "$HOOKS_DIR/commit-msg"
+cp "$SCRIPT_DIR/check_commit_attribution.sh" "$HOOKS_DIR/check_commit_attribution.sh"
+chmod +x "$HOOKS_DIR/check_commit_attribution.sh"
 
 echo "✅ Git hooks installed!"
 echo "Pre-commit will now run: whitespace checks and native Swift tests when prosepal-ios/ changes"

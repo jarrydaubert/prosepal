@@ -19,7 +19,7 @@
 		PP0000000000000000000009 /* ProsePalNativeApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProsePalNativeApp.swift; sourceTree = "<group>"; };
 		PP0000000000000000000032 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		PP0000000000000000000034 /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
-		PP0000000000000000000035 /* ProsePalStaging.storekit */ = {isa = PBXFileReference; lastKnownFileType = "com.apple.dt.storekit"; path = ProsePalStaging.storekit; sourceTree = "<group>"; };
+		PP0000000000000000000035 /* ProsePalStaging.storekit */ = {isa = PBXFileReference; lastKnownFileType = com.apple.dt.storekit; path = ProsePalStaging.storekit; sourceTree = "<group>"; };
 		PP0000000000000000000036 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		PP0000000000000000000037 /* ProsePalAppShortcuts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProsePalAppShortcuts.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -280,6 +280,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = App/Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -312,6 +313,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = App/Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
