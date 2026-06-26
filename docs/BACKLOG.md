@@ -68,15 +68,15 @@ not done.
   `NativeDiagnosticsTests`, and `NativeRuntimeReadinessTests`; `CLAUDE.md`,
   `AGENTS.md`, and `docs/README.md` point new work at `prosepal-ios/`; `swift
   build`, full `swift test`, and reference sweeps pass in this slice.
-- [~] N-IOS-15 Promote native iOS to active main and archive Flutter production
+- [x] N-IOS-15 Promote native iOS to active main and archive Flutter production
   baseline -- evidence: archive tag `flutter-prod-freeze-2026-06-25`, archive
   branch `legacy/flutter-production-reference`, active Flutter app paths
   `android/`, `ios/`, `lib/`, `test/`, `integration_test/`, `test_driver/`,
   `assets/`, `pubspec.yaml`, `pubspec.lock`, `analysis_options.yaml`, and
   `firebase.json` removed from the native branch; docs moved under
   `docs/legacy-flutter/`; active CI rewritten in `.github/workflows/ci.yml`;
-  archive refs and native transition branch pushed to GitHub on 2026-06-25.
-  Partial until PR #75 is merged into `main`.
+  archive refs and native transition branch pushed to GitHub on 2026-06-25; PR
+  #75 merged into `main` on 2026-06-25.
 - [~] N-IOS-16 Harden Supabase public API and linter posture for native release
   -- evidence: Supabase database linter reported `user_usage` GraphQL exposure
   to `authenticated` plus public/signed-in `SECURITY DEFINER` RPC exposure for
