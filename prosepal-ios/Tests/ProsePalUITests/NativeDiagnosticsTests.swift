@@ -13,6 +13,23 @@ final class NativeDiagnosticsTests: XCTestCase {
         XCTAssertEqual(payload, "message_action action=copy source=result_card message_chars=144")
     }
 
+    func testAuthEventPayloadUsesOutcomeAndStatusOnly() {
+        let payload = NativeDiagnosticsPayload.authEvent(
+            event: "auth_apple_supabase_exchange_failed",
+            source: "settings",
+            outcome: "supabase_rejected",
+            statusCode: 401
+        )
+
+        XCTAssertEqual(
+            payload,
+            "auth_event event=auth_apple_supabase_exchange_failed source=settings outcome=supabase_rejected status_code=401"
+        )
+        XCTAssertFalse(payload.contains("token"))
+        XCTAssertFalse(payload.contains("nonce"))
+        XCTAssertFalse(payload.contains("email"))
+    }
+
     func testMomentDraftStartedPayloadDoesNotIncludeRawMomentContent() {
         let moment = MomentInput(
             personName: "Private Person",

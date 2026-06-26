@@ -179,6 +179,7 @@ public final class MomentAccountModel {
         }
 
         do {
+            diagnostics.authEvent("auth_apple_supabase_exchange_started", source: source)
             let session = try await authClient.signInWithIDToken(
                 provider: .apple,
                 idToken: idToken,
@@ -186,10 +187,21 @@ public final class MomentAccountModel {
             )
             try await authSessionController.replaceSession(session)
             applyAuthSession(session)
+            diagnostics.authEvent(
+                "auth_apple_supabase_exchange_succeeded",
+                source: source,
+                outcome: "success"
+            )
             diagnostics.messageAction("auth_apple_succeeded", source: source, messageCharacters: 0)
             await refreshSubscriptionEntitlement(source: "auth_apple_success")
             showNotice("Signed in with Apple", systemImage: "checkmark.circle.fill")
         } catch let error as AuthError {
+            diagnostics.authEvent(
+                "auth_apple_supabase_exchange_failed",
+                source: source,
+                outcome: error.diagnosticsOutcome,
+                statusCode: error.diagnosticsStatusCode
+            )
             diagnostics.messageAction(
                 "auth_apple_failed_\(error.diagnosticsOutcome)",
                 source: source,

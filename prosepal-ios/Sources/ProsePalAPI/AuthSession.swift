@@ -103,6 +103,14 @@ public extension AuthError {
             "session_storage_failed"
         }
     }
+
+    var diagnosticsStatusCode: Int? {
+        if case .requestFailed(let statusCode, _) = self {
+            return statusCode
+        }
+
+        return nil
+    }
 }
 
 public protocol AuthClient: Sendable {
