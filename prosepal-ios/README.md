@@ -43,7 +43,7 @@ handoff material.
 Launch
   -> first-run welcome
   -> Moment Sheet
-  -> private draft appears when enough context exists
+  -> Write draft when the user is ready
   -> warmer / shorter / more direct / take more care
   -> copy / share / send / save
 

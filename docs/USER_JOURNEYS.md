@@ -43,7 +43,7 @@ Welcome
   -> who is this for?
   -> what is the moment?
   -> what is true?
-  -> private draft appears when enough context exists
+  -> Write draft when ready
   -> adjust / take more care
   -> copy, share, save, or send
 ```
@@ -57,6 +57,8 @@ Rules:
   making the flow feel like a generic document form.
 - The Moment surface should feel like writing a message for someone, not
   creating a document, manuscript, scene, or project.
+- Drafting should not start while the user is typing or changing setup fields;
+  the explicit `Write draft` action is the user's consent to generate.
 
 ## Private Draft
 

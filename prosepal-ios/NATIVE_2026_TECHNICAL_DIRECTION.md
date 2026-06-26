@@ -108,7 +108,7 @@ open
   -> person
   -> moment
   -> one true thing
-  -> draft already there
+  -> Write draft
   -> warmer / shorter / more direct
   -> copy / share / send
 ```
