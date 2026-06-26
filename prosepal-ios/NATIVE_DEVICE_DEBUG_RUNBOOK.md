@@ -55,6 +55,21 @@ yearly, monthly, and weekly.
 Do not commit Xcode scheme secrets, Supabase `.temp` link state, provider keys,
 StoreKit receipts, auth tokens, or screenshots under tracked paths.
 
+Back up the local staging scheme outside Git after editing it:
+
+```bash
+mkdir -p ~/.config/prosepal/xcode-schemes
+cp "prosepal-ios/ProsePal.xcodeproj/xcuserdata/$USER.xcuserdatad/xcschemes/ProsePal Local Staging.xcscheme" ~/.config/prosepal/xcode-schemes/
+chmod 600 ~/.config/prosepal/xcode-schemes/"ProsePal Local Staging.xcscheme"
+```
+
+If the local scheme disappears after worktree cleanup, restore it without
+printing any secret values:
+
+```bash
+./scripts/restore-local-staging-scheme.sh
+```
+
 ## Staging Support Status
 
 | Surface | Staging status |
@@ -169,3 +184,24 @@ Relevant native tests:
 - `NativeRuntimeReadinessTests`
 - `MessageWritingClientTests`
 - `AuthSessionTests`
+
+## Staging DNS / Inactive Project Check
+
+If device generation fails with:
+
+```text
+NSURLErrorDomain Code=-1003
+A server with the specified hostname could not be found
+```
+
+check DNS and project status before changing app code:
+
+```bash
+nslookup llolwgqphwnhbiqewmcq.supabase.co
+supabase projects list --output json
+```
+
+If the project shows `status: INACTIVE` or the hostname returns `NXDOMAIN`,
+resume `prosepal-staging` in the Supabase dashboard and wait for DNS to return.
+The expected staging project is `llolwgqphwnhbiqewmcq`; do not touch production
+`mwoxtqxzunsjmbdqezif`.
