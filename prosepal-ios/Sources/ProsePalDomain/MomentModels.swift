@@ -9,8 +9,8 @@ public enum MomentRegister: String, Codable, CaseIterable, Sendable, Identifiabl
 
     public var displayName: String {
         switch self {
-        case .react: "React"
-        case .confess: "Say it"
+        case .react: "Quick"
+        case .confess: "Your words"
         case .assemble: "Take care"
         }
     }
@@ -29,6 +29,7 @@ public enum MomentRegister: String, Codable, CaseIterable, Sendable, Identifiabl
 
 public enum MomentDraftLane: String, Codable, Sendable, Equatable {
     case privateDraft
+    case standardDraft
     case takeMoreCare
     case mock
 }
@@ -44,7 +45,7 @@ public enum MomentAdjustment: String, Codable, CaseIterable, Sendable, Identifia
         switch self {
         case .warmer: "Warmer"
         case .shorter: "Shorter"
-        case .moreDirect: "More direct"
+        case .moreDirect: "Direct"
         }
     }
 }
@@ -94,7 +95,7 @@ public struct MomentInput: Codable, Equatable, Sendable {
     }
 
     public var hasEnoughContextForDraft: Bool {
-        !personName.isEmpty
+        personName.filter { !$0.isWhitespace }.count >= 2
     }
 
     public var safetySignal: MomentSafetySignal {
@@ -317,6 +318,18 @@ public struct MomentDraftBundle: Codable, Equatable, Identifiable, Sendable {
             messageText: messageText,
             lane: lane,
             pressureCheck: pressureCheck.merged(with: .local(messageText: messageText, moment: moment)),
+            truthBeads: truthBeads,
+            missingInformation: missingInformation,
+            riskNotes: riskNotes
+        )
+    }
+
+    public func replacingLane(_ lane: MomentDraftLane) -> MomentDraftBundle {
+        MomentDraftBundle(
+            id: id,
+            messageText: messageText,
+            lane: lane,
+            pressureCheck: pressureCheck,
             truthBeads: truthBeads,
             missingInformation: missingInformation,
             riskNotes: riskNotes

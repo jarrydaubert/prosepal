@@ -76,6 +76,7 @@ public struct RoutingMessageWritingService: MessageWritingService {
         } catch let error as GenerationError {
             guard error.shouldRouteToCarefulLane else { throw error }
             return try await carefulClient.draft(for: moment)
+                .replacingLane(.standardDraft)
                 .applyingLocalPressureCheck(for: moment)
         }
     }
@@ -99,8 +100,13 @@ public struct RoutingMessageWritingService: MessageWritingService {
             } catch let error as GenerationError {
                 guard error.shouldRouteToCarefulLane else { throw error }
                 return try await carefulClient.adjust(bundle, with: adjustment, moment: moment)
+                    .replacingLane(.standardDraft)
                     .applyingLocalPressureCheck(for: moment)
             }
+        case .standardDraft:
+            return try await carefulClient.adjust(bundle, with: adjustment, moment: moment)
+                .replacingLane(.standardDraft)
+                .applyingLocalPressureCheck(for: moment)
         case .takeMoreCare:
             return try await carefulClient.adjust(bundle, with: adjustment, moment: moment)
                 .applyingLocalPressureCheck(for: moment)

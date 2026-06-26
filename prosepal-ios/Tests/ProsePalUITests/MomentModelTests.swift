@@ -57,6 +57,61 @@ func crisisInputDoesNotStartMomentDrafting() async throws {
 
 @Test
 @MainActor
+func momentChangesClearDraftWithoutStartingGeneration() async throws {
+    let client = CountingMomentDraftClient()
+    let service = RoutingMessageWritingService(
+        privateClient: client,
+        carefulClient: client
+    )
+    let model = MomentModel(service: service)
+
+    model.personName = "Alex"
+    model.bundle = MomentDraftBundle(messageText: "Old draft.", lane: .privateDraft)
+    model.errorMessage = "Old error."
+
+    model.personName = "Alexandra"
+    model.resetDraftForMomentChange()
+
+    #expect(model.bundle == nil)
+    #expect(model.errorMessage == nil)
+    #expect(model.isDrafting == false)
+    #expect(await client.draftCallCount == 0)
+}
+
+@Test
+@MainActor
+func startNewMomentClearsActiveComposerWithoutStartingGeneration() async throws {
+    let client = CountingMomentDraftClient()
+    let service = RoutingMessageWritingService(
+        privateClient: client,
+        carefulClient: client
+    )
+    let model = MomentModel(service: service)
+
+    model.personName = "Mira"
+    model.relationship = .colleague
+    model.occasion = .sympathy
+    model.register = .assemble
+    model.trueThing = "A detail"
+    model.bundle = MomentDraftBundle(messageText: "Old draft.", lane: .takeMoreCare)
+    model.errorMessage = "Old error."
+    model.isDrafting = true
+
+    model.startNewMoment()
+
+    #expect(model.personName == "")
+    #expect(model.relationship == .closeFriend)
+    #expect(model.occasion == .birthday)
+    #expect(model.register == .react)
+    #expect(model.trueThing == "")
+    #expect(model.bundle == nil)
+    #expect(model.errorMessage == nil)
+    #expect(model.isDrafting == false)
+    #expect(await client.draftCallCount == 0)
+}
+
+@Test
+@MainActor
 func sensitiveMomentAlignsDefaultRegisterToTakeCare() async throws {
     let client = CountingMomentDraftClient()
     let service = RoutingMessageWritingService(

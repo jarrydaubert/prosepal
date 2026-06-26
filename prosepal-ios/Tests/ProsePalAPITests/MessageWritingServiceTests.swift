@@ -166,7 +166,7 @@ func carefulLaneContentBlockDoesNotFallbackToPrivateDraft() async {
 }
 
 @Test
-func privateUnavailabilityFallsThroughToCarefulClient() async throws {
+func privateUnavailabilityFallsThroughToStandardGatewayDraft() async throws {
     let privateClient = FailingMomentDraftClient(
         error: GenerationError.serviceUnavailable(message: "Private draft unavailable.")
     )
@@ -185,7 +185,7 @@ func privateUnavailabilityFallsThroughToCarefulClient() async throws {
     ))
 
     #expect(bundle.messageText == "Careful fallback.")
-    #expect(bundle.lane == .takeMoreCare)
+    #expect(bundle.lane == .standardDraft)
     #expect(await carefulClient.draftCallCount == 1)
 }
 
@@ -420,7 +420,7 @@ func adjustPrivateDraftFallsThroughToCarefulClientWhenPrivateIsUnavailable() asy
     )
 
     #expect(bundle.messageText == "Careful warmer draft.")
-    #expect(bundle.lane == .takeMoreCare)
+    #expect(bundle.lane == .standardDraft)
     #expect(await carefulClient.adjustCallCount == 1)
 }
 
