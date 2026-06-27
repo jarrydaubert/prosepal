@@ -7,6 +7,11 @@ Active direction: native SwiftUI app in `prosepal-ios/`, iOS 26-first,
 person-first Moment Sheet, StoreKit 2, Foundation Models, and ProsePal-owned
 message-writing/routing boundaries.
 
+Production identity: the native rewrite reuses the existing ProsePal App Store
+Connect app and bundle ID `com.prosepal.prosepal`. Staging is UAT via the
+local-only Xcode scheme plus staging Supabase/StoreKit configuration, not a
+second public ProsePal app.
+
 The previous Flutter production app is archived at tag
 `flutter-prod-freeze-2026-06-25` and branch
 `legacy/flutter-production-reference`.

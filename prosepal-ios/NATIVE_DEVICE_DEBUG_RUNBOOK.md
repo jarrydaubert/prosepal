@@ -8,7 +8,18 @@ findings into tests, screenshots, or release notes after each pass.
 
 Use the local-only `ProsePal Local Staging` scheme for staging/device work.
 Keep it under `xcuserdata`; do not copy its secret values into the shared
-scheme. It should include:
+scheme.
+
+The tracked native Xcode project uses the production ProsePal app identity:
+
+```text
+com.prosepal.prosepal
+```
+
+That is intentional. Production should reuse the existing ProsePal App Store
+Connect app, Sign in with Apple identity, and subscription products. Staging is
+UAT through Run environment values and the staging Supabase project; it is not a
+second public ProsePal app. It should include:
 
 ```text
 PROSEPAL_GATEWAY_URL=https://llolwgqphwnhbiqewmcq.supabase.co/functions/v1/generate-card
@@ -19,9 +30,9 @@ PROSEPAL_PREMIUM_PRODUCT_IDS=com.prosepal.pro.yearly,com.prosepal.pro.monthly,co
 PROSEPAL_RECOMMENDED_PREMIUM_PRODUCT_ID=com.prosepal.pro.yearly
 ```
 
-For local paywall product and purchase testing before App Store Connect products
-are attached to the native bundle ID, select this StoreKit configuration in the
-local staging scheme:
+For local paywall product and purchase testing before App Store sandbox products
+are proven against the production bundle ID, select this StoreKit configuration
+in the local staging scheme:
 
 ```text
 App/ProsePalStaging.storekit
@@ -76,8 +87,8 @@ printing any secret values:
 |---------|----------------|
 | Standard generation, signed out | Supported through the staging gateway dev-secret guard. |
 | Standard generation, signed in | Supported when Supabase Auth is configured and a valid access token is present; usage is enforced by the gateway RPC. |
-| Sign in with Apple | Native entitlement and Supabase Auth REST client are present. Requires Apple Developer bundle setup and Supabase Auth Apple provider setup for `com.prosepal.prosepal.native`. |
-| Paywall product loading | Supported through StoreKit 2 using configured product IDs. Use `App/ProsePalStaging.storekit` for local testing if App Store Connect products are not ready for the native bundle. |
+| Sign in with Apple | Native entitlement and Supabase Auth REST client are present. Requires Apple Developer bundle setup and Supabase Auth Apple provider setup for `com.prosepal.prosepal`. |
+| Paywall product loading | Supported through StoreKit 2 using configured product IDs. Use `App/ProsePalStaging.storekit` for local testing until App Store sandbox products are proven against the production bundle. |
 | Purchase / restore UI | Supported through StoreKit 2 for local StoreKit testing and App Store sandbox once products exist. |
 | Premium generation | Not yet supported by the staging gateway; Premium requests currently fail closed server-side. This needs a gateway/entitlement PR before full Premium generation testing. |
 
@@ -86,7 +97,7 @@ printing any secret values:
 Filter Xcode Console or Console.app by subsystem:
 
 ```text
-com.prosepal.native
+com.prosepal.prosepal
 ```
 
 Useful event families:

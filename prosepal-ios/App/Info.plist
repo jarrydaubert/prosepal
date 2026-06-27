@@ -24,7 +24,7 @@
 			<key>CFBundleTypeRole</key>
 			<string>Editor</string>
 			<key>CFBundleURLName</key>
-			<string>com.prosepal.prosepal.native</string>
+			<string>com.prosepal.prosepal</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>prosepal</string>

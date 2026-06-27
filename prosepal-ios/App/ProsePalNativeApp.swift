@@ -8,7 +8,7 @@ import SwiftData
 @main
 struct ProsePalNativeApp: App {
     private let authSessionController = AuthSessionController(
-        store: KeychainAuthSessionStore(service: "com.prosepal.native.auth")
+        store: KeychainAuthSessionStore(service: "com.prosepal.prosepal.auth")
     )
     private let relationshipVaultContainer = RelationshipVaultContainerFactory.make()
     private let authClient = AuthClientFactory.makeClient()

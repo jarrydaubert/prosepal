@@ -32,6 +32,7 @@ expected_products = {
     "com.prosepal.pro.monthly",
     "com.prosepal.pro.weekly",
 }
+expected_bundle_id = "com.prosepal.prosepal"
 
 def fail(message: str) -> None:
     print(f"FAIL: {message}", file=sys.stderr)
@@ -97,6 +98,10 @@ print(f"storekit_subscription_products={len(product_ids)}")
 
 if pbxproj.exists():
     project_text = pbxproj.read_text()
+    if f"PRODUCT_BUNDLE_IDENTIFIER = {expected_bundle_id};" not in project_text:
+        fail(f"native project is not using production bundle id: {expected_bundle_id}")
+    print("project_bundle_id=production")
+
     reference_count = len(re.findall(
         r"isa = PBXFileReference;[^}\n]+path = ProsePalStaging\.storekit;",
         project_text

@@ -8,6 +8,16 @@ and the historical docs under `docs/legacy-flutter/`.
 
 ## Native Staging
 
+Production native identity reuses the existing ProsePal App Store Connect app:
+
+```text
+com.prosepal.prosepal
+```
+
+Staging is UAT through staging Supabase, local StoreKit/sandbox configuration,
+and the ignored local Xcode scheme. Do not create a second public ProsePal app
+unless there is a deliberate release decision to do so.
+
 Known staging ref:
 
 ```text
@@ -51,7 +61,7 @@ Expected staging secret names include:
 
 ## StoreKit
 
-Native product IDs currently used for local/sandbox testing:
+Native product IDs reused from the existing ProsePal App Store Connect app:
 
 - `com.prosepal.pro.yearly`
 - `com.prosepal.pro.monthly`

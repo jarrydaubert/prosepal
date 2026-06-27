@@ -36,7 +36,16 @@ Sign in with Apple exchanges through Supabase Auth in the native app.
 
 ## App Store / StoreKit
 
-Local product IDs:
+Production app identity:
+
+```text
+com.prosepal.prosepal
+```
+
+Staging/UAT must use the existing production app identity plus staging runtime
+configuration where possible. Do not create multiple public ProsePal apps.
+
+Product IDs:
 
 ```text
 com.prosepal.pro.yearly

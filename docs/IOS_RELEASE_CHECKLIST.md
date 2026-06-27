@@ -15,8 +15,9 @@ is archived at tag `flutter-prod-freeze-2026-06-25` and branch
    scoped out of the candidate.
 3. Physical iPhone is available for wired validation.
 4. Staging or production gateway target is selected without committing secrets.
-5. App Store Connect strategy is approved: bundle ID, listing, product IDs,
-   subscription terms, privacy policy, and rollback path.
+5. App Store Connect strategy is approved: the native rewrite uses the existing
+   ProsePal app record and bundle ID `com.prosepal.prosepal`, existing
+   product IDs, subscription terms, privacy policy, and rollback path.
 
 ## Evidence Folder Contract
 
