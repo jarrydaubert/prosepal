@@ -77,6 +77,14 @@ not done.
   `docs/legacy-flutter/`; active CI rewritten in `.github/workflows/ci.yml`;
   archive refs and native transition branch pushed to GitHub on 2026-06-25; PR
   #75 merged into `main` on 2026-06-25.
+- [x] N-IOS-18 Reuse production ProsePal app identity for the native rewrite --
+  evidence: tracked native bundle ID is `com.prosepal.prosepal` in
+  `prosepal-ios/ProsePal.xcodeproj/project.pbxproj`; URL type name, keychain
+  service, and OSLog subsystems use the same product identity; staging/UAT is
+  documented as local scheme plus staging Supabase/StoreKit configuration in
+  `prosepal-ios/README.md`, `prosepal-ios/NATIVE_DEVICE_DEBUG_RUNBOOK.md`,
+  `docs/DEVOPS.md`, `docs/SERVICE_CONFIG.md`, and
+  `docs/SERVICE_ENDPOINTS.md`.
 - [~] N-IOS-16 Harden Supabase public API and linter posture for native release
   -- evidence: Supabase database linter reported `user_usage` GraphQL exposure
   to `authenticated` plus public/signed-in `SECURITY DEFINER` RPC exposure for

@@ -311,7 +311,7 @@ private struct SubscriptionStoreDiagnosticsContext: Sendable {
 private struct SubscriptionDiagnosticsLogger: Sendable {
     static let shared = SubscriptionDiagnosticsLogger()
 
-    private let logger = Logger(subsystem: "com.prosepal.native", category: "subscription")
+    private let logger = Logger(subsystem: "com.prosepal.prosepal", category: "subscription")
 
     func productsLoadStarted(_ context: SubscriptionStoreDiagnosticsContext) {
         logger.info(

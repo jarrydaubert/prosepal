@@ -34,6 +34,10 @@ scene/character/worldbuilding tool, Scrivener-lite, or generic AI chat box.
 
 - Public name: ProsePal.
 - Internal concept name: Near.
+- Production app identity: reuse the existing ProsePal App Store Connect app,
+  bundle ID `com.prosepal.prosepal`, and subscription product IDs. Staging is
+  UAT through local scheme/runtime configuration and staging services, not a
+  second public App Store app.
 - Primary flow: person-first Moment Sheet.
 - Occasion taxonomy: retained as product intelligence underneath the person
   flow.

@@ -13,6 +13,9 @@ The active product/build direction is the native SwiftUI rewrite in
 - Target: iOS 26-first, person-first Moment Sheet.
 - Stack: SwiftUI, SwiftData, StoreKit 2, Sign in with Apple, Foundation Models,
   ProsePal `MessageWritingService` seam.
+- Production identity: reuse the existing ProsePal App Store Connect app and
+  bundle ID `com.prosepal.prosepal`; staging is UAT via local-only Xcode scheme
+  and staging services, not a second public app by default.
 - Native must not use RevenueCat, Firebase AI, Vertex AI, Gemini-direct,
   provider SDKs, or provider/model names in user-facing UI.
 - The previous Flutter production app is archived at tag

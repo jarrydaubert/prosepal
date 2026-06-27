@@ -56,6 +56,16 @@ active `main` because Flutter is archived, not the active app.
 
 ## Native Xcode Project
 
+Tracked native project identity:
+
+- production bundle ID: `com.prosepal.prosepal`
+- production App Store Connect app: existing ProsePal listing
+- production subscription products: existing `com.prosepal.pro.*` products
+
+Staging/UAT is selected through the local-only Xcode scheme and staging
+Supabase/StoreKit configuration. Do not create or commit a separate public
+ProsePal app identity just to test staging.
+
 Open the native app:
 
 ```bash

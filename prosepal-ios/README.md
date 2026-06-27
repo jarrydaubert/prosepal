@@ -26,6 +26,10 @@ handoff material.
 - Public name: ProsePal.
 - Internal concept name: Near.
 - Deployment floor: iOS 26.
+- Production app identity: existing ProsePal App Store Connect app and bundle
+  ID `com.prosepal.prosepal`.
+- Staging/UAT: local-only Xcode scheme and staging Supabase/StoreKit
+  configuration, not a second public App Store app.
 - Primary flow: person-first Moment Sheet.
 - Product spine: `person -> moment -> what is true -> draft -> adjust -> send`.
 - Product boundary: Moment messages, not manuscripts, documents, scenes,
@@ -75,7 +79,10 @@ model names.
 ## Local Staging Configuration
 
 Use the untracked `ProsePal Local Staging` Xcode scheme for tethered-device and
-simulator work. Keep secrets in the local scheme or local files only.
+simulator work. The tracked Xcode project keeps the production bundle ID
+`com.prosepal.prosepal`; staging/UAT is selected by Run environment values and
+StoreKit configuration, not by committing a different shared project identity.
+Keep secrets in the local scheme or local files only.
 
 ```text
 PROSEPAL_GATEWAY_URL=https://<project-ref>.supabase.co/functions/v1/generate-card
@@ -95,7 +102,7 @@ assets.
 Native diagnostics use Apple `OSLog` with subsystem:
 
 ```text
-com.prosepal.native
+com.prosepal.prosepal
 ```
 
 Logs may include event names, lane names, response categories, request IDs,

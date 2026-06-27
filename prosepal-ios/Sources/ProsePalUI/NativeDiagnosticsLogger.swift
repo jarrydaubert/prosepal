@@ -5,7 +5,7 @@ import ProsePalDomain
 public struct NativeDiagnosticsLogger: Sendable {
     public static let shared = NativeDiagnosticsLogger()
 
-    private let logger = Logger(subsystem: "com.prosepal.native", category: "flow")
+    private let logger = Logger(subsystem: "com.prosepal.prosepal", category: "flow")
 
     public init() {}
 

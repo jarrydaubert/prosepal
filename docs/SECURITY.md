@@ -20,6 +20,9 @@ The previous Flutter security document is archived at
 
 ## Native Client
 
+- The tracked native app identity is the existing production bundle ID
+  `com.prosepal.prosepal`; staging/UAT must be environment-selected through
+  local schemes and staging services, not a second public app by default.
 - Sign in with Apple is the primary auth path.
 - Auth/session material belongs in Keychain-backed storage.
 - Relationship memory and saved drafts are local-first through SwiftData.

@@ -14,6 +14,9 @@ The active build direction is the native SwiftUI rewrite in `prosepal-ios/`.
 - Native target: iOS 26-first, person-first Moment Sheet.
 - Native stack: SwiftUI, SwiftData, StoreKit 2, Sign in with Apple, Foundation
   Models, and a ProsePal-owned `MessageWritingService` boundary.
+- Production identity: reuse the existing ProsePal App Store Connect app and
+  bundle ID `com.prosepal.prosepal`; staging is UAT via local-only Xcode scheme
+  and staging services, not a second public app by default.
 - Native must remain provider-agnostic in the UI: no provider/model names, no
   Firebase AI / Vertex AI / Gemini-direct client path, no RevenueCat dependency,
   and no third-party provider SDKs by default.
