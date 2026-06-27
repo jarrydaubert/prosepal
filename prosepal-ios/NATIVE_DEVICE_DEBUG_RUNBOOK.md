@@ -68,18 +68,23 @@ StoreKit receipts, auth tokens, or screenshots under tracked paths.
 
 ## UAT App Identity And App Store Sandbox
 
-There are two different staging modes. Keep them separate:
+There are three related identities. Keep them separate:
 
-| Mode | Installs beside production? | Bundle ID | Purchase source | Use when |
-|------|-----------------------------|-----------|-----------------|----------|
-| Local staging scheme | No | `com.prosepal.prosepal` | `App/ProsePalStaging.storekit` or the existing App Store products | tethered Xcode debugging against staging Supabase |
-| Side-by-side UAT app | Yes | proposed `com.prosepal.prosepal.staging` | separate App Store Connect sandbox/TestFlight app setup, or local StoreKit while tethered | proving staging and production on one device at the same time |
+| Identity | Installs beside production? | Bundle ID | Purchase source | Use when |
+|----------|-----------------------------|-----------|-----------------|----------|
+| Production app | N/A | `com.prosepal.prosepal` | existing App Store Connect products | production/TestFlight replacement for the archived Flutter app |
+| Local side-by-side staging | Yes | `com.prosepal.prosepal.staging` | `App/ProsePalStaging.storekit` while tethered | Xcode UAT against staging Supabase on the same device as production |
+| App Store/TestFlight UAT | Yes, if a separate app record is created | `com.prosepal.prosepal.staging` | App Store Connect sandbox products for the staging app record | end-to-end sandbox receipt/notification/reconciliation proof |
 
-The tracked app currently implements only the first mode. A side-by-side
-`ProsePal Staging` install requires a deliberate target/config slice, because
-iOS treats apps with the same bundle ID as the same app. The staging app must
-also use a distinct display name, keychain service, app group/container choices
-where applicable, and Sign in with Apple/App Store Connect configuration. Do not
+The tracked project includes a separate `ProsePal Staging` app target and shared
+scheme. The shared scheme contains no secrets. To run staging fully, restore or
+recreate the ignored local `ProsePal Local Staging` scheme so it targets the
+`ProsePal Staging` app and carries the staging Run environment values.
+
+The staging bundle still needs human Apple/Supabase setup before it is a fully
+working device/TestFlight environment: Apple Developer App ID, Sign in with
+Apple capability, signing profile, Supabase Auth Apple-provider allowance, and
+an App Store Connect/TestFlight decision for sandbox receipt testing. Do not
 create a second public listing casually; if an App Store Connect record is
 needed for TestFlight UAT, keep the intent internal and document it before
 creating products.
@@ -130,7 +135,7 @@ printing any secret values:
 |---------|----------------|
 | Standard generation, signed out | Supported through the staging gateway dev-secret guard. |
 | Standard generation, signed in | Supported when Supabase Auth is configured and a valid access token is present; usage is enforced by the gateway RPC. |
-| Sign in with Apple | Native entitlement and Supabase Auth REST client are present. Requires Apple Developer bundle setup and Supabase Auth Apple provider setup for `com.prosepal.prosepal`. |
+| Sign in with Apple | Native entitlement and Supabase Auth REST client are present. Production requires setup for `com.prosepal.prosepal`; side-by-side staging requires separate setup for `com.prosepal.prosepal.staging`. |
 | Paywall product loading | Supported through StoreKit 2 using configured product IDs. Use `App/ProsePalStaging.storekit` for local testing until App Store sandbox products are proven against the production bundle. |
 | Purchase / restore UI | Supported through StoreKit 2 for local StoreKit testing and App Store sandbox once products exist. |
 | Premium generation | Not yet supported by the staging gateway; Premium requests currently fail closed server-side. This needs a gateway/entitlement PR before full Premium generation testing. |
@@ -141,6 +146,7 @@ Filter Xcode Console or Console.app by subsystem:
 
 ```text
 com.prosepal.prosepal
+com.prosepal.prosepal.staging
 ```
 
 Useful event families:

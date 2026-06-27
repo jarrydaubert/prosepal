@@ -84,12 +84,12 @@ simulator work. The tracked Xcode project keeps the production bundle ID
 StoreKit configuration, not by committing a different shared project identity.
 Keep secrets in the local scheme or local files only.
 
-That local scheme does not install beside production because the bundle ID is
-the same. A separate on-device `ProsePal Staging` install needs a deliberate
-internal/UAT target/configuration with its own bundle ID, signing capability
-setup, display name, keychain/storage separation, and App Store Connect /
-Sign in with Apple / Supabase staging configuration. Track that work in
-`../docs/BACKLOG.md` as `N-IOS-19`.
+The tracked project includes a separate `ProsePal Staging` app target with
+bundle ID `com.prosepal.prosepal.staging` so staging and production can coexist
+on a device. The shared staging scheme contains no secrets; restore or recreate
+the ignored local staging scheme for real staging gateway/auth values. External
+Apple Developer, App Store Connect, Sign in with Apple, and Supabase staging
+setup is tracked in `../docs/BACKLOG.md` as `N-IOS-19`.
 
 ```text
 PROSEPAL_GATEWAY_URL=https://<project-ref>.supabase.co/functions/v1/generate-card
@@ -110,6 +110,7 @@ Native diagnostics use Apple `OSLog` with subsystem:
 
 ```text
 com.prosepal.prosepal
+com.prosepal.prosepal.staging
 ```
 
 Logs may include event names, lane names, response categories, request IDs,

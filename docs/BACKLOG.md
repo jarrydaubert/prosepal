@@ -85,18 +85,19 @@ not done.
   `prosepal-ios/README.md`, `prosepal-ios/NATIVE_DEVICE_DEBUG_RUNBOOK.md`,
   `docs/DEVOPS.md`, `docs/SERVICE_CONFIG.md`, and
   `docs/SERVICE_ENDPOINTS.md`.
-- [ ] N-IOS-19 Add side-by-side ProsePal Staging internal UAT app identity --
-  evidence: current tracked native project has only production bundle ID
-  `com.prosepal.prosepal` in
-  `prosepal-ios/ProsePal.xcodeproj/project.pbxproj`; no
-  `com.prosepal.prosepal.staging` target/configuration, staging display name,
-  staging keychain service, or side-by-side App Store Connect/TestFlight setup
-  exists yet. DoD: add a deliberate internal/UAT identity with display name
-  `ProsePal Staging`; keep production identity as `ProsePal`; separate local
-  storage/keychain/log identity as needed; document Apple Developer App ID,
-  Sign in with Apple, App Store Connect sandbox/TestFlight, StoreKit product
-  strategy, and Supabase staging auth settings; prove production and staging
-  can coexist on one physical device without leaking secrets or receipts.
+- [~] N-IOS-19 Add side-by-side ProsePal Staging internal UAT app identity --
+  evidence: tracked native project has production target `ProsePal` with bundle
+  ID `com.prosepal.prosepal` and staging target `ProsePal Staging` with bundle
+  ID `com.prosepal.prosepal.staging` in
+  `prosepal-ios/ProsePal.xcodeproj/project.pbxproj`; `Info.plist` display name
+  and URL scheme are build-setting driven; keychain/log identity derives from
+  the app bundle ID; shared
+  `prosepal-ios/ProsePal.xcodeproj/xcshareddata/xcschemes/ProsePal Staging.xcscheme`
+  contains no secrets and points to `App/ProsePalStaging.storekit`; local scheme
+  restore/verify scripts retarget ignored staging schemes to the staging app.
+  Partial until Apple Developer App ID/signing, Sign in with Apple,
+  App Store Connect sandbox/TestFlight product strategy, Supabase staging auth
+  settings, and physical-device side-by-side proof are complete.
 - [~] N-IOS-16 Harden Supabase public API and linter posture for native release
   -- evidence: Supabase database linter reported `user_usage` GraphQL exposure
   to `authenticated` plus public/signed-in `SECURITY DEFINER` RPC exposure for
@@ -440,8 +441,8 @@ not done.
 3. Configure Apple App Store Server secrets in staging, apply App Store
    entitlement migrations to staging, then capture sandbox notification and
    reconciliation evidence.
-4. Add a side-by-side `ProsePal Staging` internal UAT app identity if we want
-   production and staging installed on one device at the same time.
+4. Finish external Apple/Supabase setup and device proof for side-by-side
+   `ProsePal Staging`.
 5. Add Care Glance widget, Control Center/Action Button control, and Share
    extension surfaces.
 6. Harden crisis/pressure handling beyond local English phrase lists and add
