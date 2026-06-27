@@ -18,6 +18,18 @@ Staging is UAT through staging Supabase, local StoreKit/sandbox configuration,
 and the ignored local Xcode scheme. Do not create a second public ProsePal app
 unless there is a deliberate release decision to do so.
 
+Environment identities:
+
+| Environment | Bundle ID | Display name | Install behavior | Notes |
+|-------------|-----------|--------------|------------------|-------|
+| Production | `com.prosepal.prosepal` | `ProsePal` | normal production/TestFlight app | existing App Store Connect app and product IDs |
+| Local staging scheme | `com.prosepal.prosepal` | `ProsePal` | replaces production on the device | staging Supabase and local StoreKit via ignored scheme |
+| Side-by-side UAT app | proposed `com.prosepal.prosepal.staging` | proposed `ProsePal Staging` | can install beside production | not implemented yet; needs separate Apple Developer/App Store Connect/Auth setup |
+
+The side-by-side UAT app is useful, but it is not just a scheme rename. It
+needs a separate bundle identity, signing capability setup, keychain/storage
+separation, display name, and App Store sandbox/TestFlight decision.
+
 Known staging ref:
 
 ```text
@@ -74,6 +86,14 @@ StoreKit config:
 The local StoreKit file is for simulator/dev proof only. Production entitlement
 truth belongs to the Supabase App Store notification/reconciliation path once
 staging is proven.
+
+App Store sandbox/TestFlight proof requires human-owned sandbox tester accounts
+and App Store Connect products for the bundle/app record under test. Do not
+commit sandbox tester credentials, StoreKit receipts, App Store Server API
+material, or signed payloads. Useful Apple references:
+
+- <https://developer.apple.com/help/app-store-connect/test-in-app-purchases/create-a-sandbox-apple-account/>
+- <https://developer.apple.com/help/app-store-connect/test-a-beta-version/testing-subscriptions-and-in-app-purchases-in-testflight/>
 
 ## Not Native Defaults
 

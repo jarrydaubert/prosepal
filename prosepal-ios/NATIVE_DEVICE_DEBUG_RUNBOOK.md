@@ -66,6 +66,49 @@ yearly, monthly, and weekly.
 Do not commit Xcode scheme secrets, Supabase `.temp` link state, provider keys,
 StoreKit receipts, auth tokens, or screenshots under tracked paths.
 
+## UAT App Identity And App Store Sandbox
+
+There are two different staging modes. Keep them separate:
+
+| Mode | Installs beside production? | Bundle ID | Purchase source | Use when |
+|------|-----------------------------|-----------|-----------------|----------|
+| Local staging scheme | No | `com.prosepal.prosepal` | `App/ProsePalStaging.storekit` or the existing App Store products | tethered Xcode debugging against staging Supabase |
+| Side-by-side UAT app | Yes | proposed `com.prosepal.prosepal.staging` | separate App Store Connect sandbox/TestFlight app setup, or local StoreKit while tethered | proving staging and production on one device at the same time |
+
+The tracked app currently implements only the first mode. A side-by-side
+`ProsePal Staging` install requires a deliberate target/config slice, because
+iOS treats apps with the same bundle ID as the same app. The staging app must
+also use a distinct display name, keychain service, app group/container choices
+where applicable, and Sign in with Apple/App Store Connect configuration. Do not
+create a second public listing casually; if an App Store Connect record is
+needed for TestFlight UAT, keep the intent internal and document it before
+creating products.
+
+For App Store sandbox purchase testing:
+
+- Use a human-owned App Store Connect sandbox Apple Account. Never commit or
+  paste its credentials into docs, schemes, scripts, logs, or issue comments.
+- Local StoreKit configuration is enough to validate native StoreKit UI and
+  product handling, but it is not proof that App Store Connect products,
+  receipts, App Store Server Notifications, or reconciliation work.
+- TestFlight / App Store sandbox evidence must cover product load, purchase
+  cancel, pending if reproducible, success, restore, expiry/refund or equivalent
+  server notification, and reconciliation to `user_entitlements`.
+- Sign in with Apple evidence must be captured for the bundle ID under test.
+  A staging bundle ID will need its own Apple Developer App ID capability and
+  Supabase Auth Apple-provider allowance; production uses `com.prosepal.prosepal`.
+
+Useful Apple references:
+
+- Sandbox accounts:
+  <https://developer.apple.com/help/app-store-connect/test-in-app-purchases/create-a-sandbox-apple-account/>
+- TestFlight purchases:
+  <https://developer.apple.com/help/app-store-connect/test-a-beta-version/testing-subscriptions-and-in-app-purchases-in-testflight/>
+- App records:
+  <https://developer.apple.com/help/app-store-connect/create-an-app-record/add-a-new-app/>
+- Sign in with Apple configuration:
+  <https://developer.apple.com/help/account/capabilities/configure-sign-in-with-apple-for-the-web/>
+
 Back up the local staging scheme outside Git after editing it:
 
 ```bash
@@ -174,6 +217,17 @@ Run these with the device tethered:
 13. Take more care while signed in; gateway request includes auth token path and
     logs authenticated behavior without token/content exposure.
 14. Sign out clears signed-in state, biometric lock, and stale Premium UI.
+
+For App Store sandbox evidence, add:
+
+15. Product load from App Store Connect products, not only local StoreKit.
+16. Purchase with sandbox Apple Account; app receives an active local
+    entitlement.
+17. App Store Server Notification event is written in staging without granting
+    entitlement for harmless TEST notifications.
+18. Reconciliation agrees with the App Store Server API for the signed-in user.
+19. Restore after reinstall/account switch resolves honestly and does not carry
+    stale Premium UI across identities.
 
 ## Automated Coverage
 

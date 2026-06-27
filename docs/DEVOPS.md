@@ -66,6 +66,19 @@ Staging/UAT is selected through the local-only Xcode scheme and staging
 Supabase/StoreKit configuration. Do not create or commit a separate public
 ProsePal app identity just to test staging.
 
+Local staging and side-by-side UAT are different:
+
+- `ProsePal Local Staging` keeps the production bundle ID and swaps runtime
+  environment values. It is right for tethered Xcode debugging, but it replaces
+  the production install on a device because the bundle ID is the same.
+- A device can keep production and staging installed side by side only if the
+  staging build has a different bundle ID, display name, keychain service, and
+  Apple Developer/App Store Connect configuration. Proposed internal identity:
+  `com.prosepal.prosepal.staging`, display name `ProsePal Staging`.
+- Do not create a second public ProsePal listing by accident. If TestFlight UAT
+  needs a separate App Store Connect app record, document that as an internal
+  staging/testing app decision before creating records or products.
+
 Open the native app:
 
 ```bash
@@ -192,12 +205,26 @@ Native monetization direction:
 
 Before native subscription behavior can be release-gated, staging must prove:
 
+- App Store Connect sandbox Apple Account exists and credentials remain
+  human-held only.
+- StoreKit product loading is proven against either the local StoreKit config
+  for tethered development or the intended App Store Connect app record for
+  TestFlight/sandbox. Do not treat local StoreKit as server-entitlement proof.
 - Apple TEST notification verifies and writes an event row.
 - TEST notifications do not grant entitlement.
 - garbage/tampered `signedPayload` returns 400.
 - signed-in sandbox purchase updates `user_entitlements`.
 - expiry/refund flips entitlement off.
 - reconciliation agrees with App Store Server API.
+
+Useful Apple references:
+
+- Sandbox accounts:
+  <https://developer.apple.com/help/app-store-connect/test-in-app-purchases/create-a-sandbox-apple-account/>
+- TestFlight purchases:
+  <https://developer.apple.com/help/app-store-connect/test-a-beta-version/testing-subscriptions-and-in-app-purchases-in-testflight/>
+- App records:
+  <https://developer.apple.com/help/app-store-connect/create-an-app-record/add-a-new-app/>
 
 Track the remaining work in `docs/BACKLOG.md`.
 

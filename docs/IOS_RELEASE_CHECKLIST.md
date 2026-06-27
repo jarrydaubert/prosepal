@@ -18,6 +18,9 @@ is archived at tag `flutter-prod-freeze-2026-06-25` and branch
 5. App Store Connect strategy is approved: the native rewrite uses the existing
    ProsePal app record and bundle ID `com.prosepal.prosepal`, existing
    product IDs, subscription terms, privacy policy, and rollback path.
+6. UAT identity strategy is approved: local staging scheme for tethered testing
+   or a separate side-by-side `ProsePal Staging` bundle/app record if production
+   and staging must coexist on one device.
 
 ## Evidence Folder Contract
 
@@ -41,6 +44,7 @@ Required evidence files:
 - `10-testflight-sanity.md`
 - `11-secret-audit.log`
 - `12-rollback-plan.md`
+- `13-sandbox-tester-and-uat-identity.md`
 - `signoff.md`
 
 ## Gates
@@ -56,6 +60,7 @@ Required evidence files:
 | Purchase/restore | Purchase is available without mandatory app sign-in, restore works from Paywall and Settings, entitlement state is reconciled, and Premium gateway access remains server-authorized. |
 | Settings/support/legal | Account, subscription, writing preferences, privacy, support, legal, and about surfaces are present and honest. |
 | App Store Connect | Bundle ID/listing/product/subscription/privacy decisions are reviewed against App Review lessons. |
+| Sandbox tester | Human-owned sandbox Apple Account, local StoreKit versus App Store sandbox mode, and side-by-side UAT bundle decision are recorded without credentials. |
 | TestFlight | Install, launch, generate, auth, paywall, restore, settings, and support sanity pass from TestFlight. |
 | Secret audit | Git status and repository scans show no local schemes, Supabase `.temp`, secrets, tokens, receipts, screenshots, evidence, or model binaries committed. |
 | Rollback | Rollback to the archived Flutter production baseline is documented until native replacement is approved. |
