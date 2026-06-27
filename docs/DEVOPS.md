@@ -68,13 +68,12 @@ ProsePal app identity just to test staging.
 
 Local staging and side-by-side UAT are different:
 
-- `ProsePal Local Staging` keeps the production bundle ID and swaps runtime
-  environment values. It is right for tethered Xcode debugging, but it replaces
-  the production install on a device because the bundle ID is the same.
-- A device can keep production and staging installed side by side only if the
-  staging build has a different bundle ID, display name, keychain service, and
-  Apple Developer/App Store Connect configuration. Proposed internal identity:
+- `ProsePal` keeps production identity: `com.prosepal.prosepal`.
+- `ProsePal Staging` uses side-by-side UAT identity:
   `com.prosepal.prosepal.staging`, display name `ProsePal Staging`.
+- The shared `ProsePal Staging` scheme carries target and StoreKit references
+  only. Restore or recreate the ignored local staging scheme for staging Run
+  environment values; do not commit those values.
 - Do not create a second public ProsePal listing by accident. If TestFlight UAT
   needs a separate App Store Connect app record, document that as an internal
   staging/testing app decision before creating records or products.

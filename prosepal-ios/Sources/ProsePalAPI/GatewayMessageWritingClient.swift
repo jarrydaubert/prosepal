@@ -288,7 +288,7 @@ private func userSafeGatewayMessage(from data: Data, fallback: String) -> String
 private struct GatewayDiagnosticsLogger: Sendable {
     static let shared = GatewayDiagnosticsLogger()
 
-    private let logger = Logger(subsystem: "com.prosepal.prosepal", category: "gateway")
+    private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "com.prosepal.prosepal", category: "gateway")
 
     func requestStarted(
         requestID: String,

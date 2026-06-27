@@ -26,6 +26,23 @@ mkdir -p "$(dirname "$DEST")"
 cp "$BACKUP" "$DEST"
 chmod 600 "$DEST"
 
+python3 - "$DEST" <<'PY'
+from pathlib import Path
+import sys
+import xml.etree.ElementTree as ET
+
+scheme = Path(sys.argv[1])
+tree = ET.parse(scheme)
+root = tree.getroot()
+
+for item in root.findall(".//BuildableReference"):
+    item.set("BlueprintIdentifier", "PP0000000000000000000048")
+    item.set("BuildableName", "ProsePal Staging.app")
+    item.set("BlueprintName", "ProsePal Staging")
+
+tree.write(scheme, encoding="UTF-8", xml_declaration=True)
+PY
+
 if [[ -f "$MANAGEMENT" ]]; then
   /usr/libexec/PlistBuddy \
     -c 'Add :SchemeUserState:"ProsePal Local Staging.xcscheme" dict' \
@@ -74,7 +91,17 @@ if missing:
 if not storekit:
     print("Restored scheme is missing StoreKit configuration reference.", file=sys.stderr)
     sys.exit(1)
+
+targets_staging = all(
+    item.get("BlueprintIdentifier") == "PP0000000000000000000048"
+    and item.get("BuildableName") == "ProsePal Staging.app"
+    and item.get("BlueprintName") == "ProsePal Staging"
+    for item in root.findall(".//BuildableReference")
+)
+if not targets_staging:
+    print("Restored scheme does not target ProsePal Staging.", file=sys.stderr)
+    sys.exit(1)
 PY
 
 echo "Restored ProsePal Local Staging scheme from backup."
-echo "Verified: expected env keys are enabled, StoreKit reference exists, and scheme is ignored by Git."
+echo "Verified: expected env keys are enabled, StoreKit reference exists, scheme targets ProsePal Staging, and scheme is ignored by Git."

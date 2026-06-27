@@ -12,10 +12,10 @@ Connect app and bundle ID `com.prosepal.prosepal`. Staging is UAT via the
 local-only Xcode scheme plus staging Supabase/StoreKit configuration, not a
 second public ProsePal app.
 
-If staging must be installed beside production on the same device, track it as
-an internal `ProsePal Staging` app identity (`N-IOS-19`) with its own bundle ID
-and Apple/Supabase/StoreKit setup. Do not infer side-by-side install support
-from the local staging scheme.
+Side-by-side staging is tracked as the internal `ProsePal Staging` app identity
+(`N-IOS-19`) with bundle ID `com.prosepal.prosepal.staging`. The repo has the
+target/scheme identity; Apple Developer, App Store Connect, Sign in with Apple,
+and Supabase staging setup still need human proof before it is release-grade.
 
 The previous Flutter production app is archived at tag
 `flutter-prod-freeze-2026-06-25` and branch

@@ -8,7 +8,7 @@ import SwiftData
 @main
 struct ProsePalNativeApp: App {
     private let authSessionController = AuthSessionController(
-        store: KeychainAuthSessionStore(service: "com.prosepal.prosepal.auth")
+        store: KeychainAuthSessionStore(service: "\(ProsePalAppIdentity.bundleIdentifier).auth")
     )
     private let relationshipVaultContainer = RelationshipVaultContainerFactory.make()
     private let authClient = AuthClientFactory.makeClient()
@@ -49,6 +49,12 @@ struct ProsePalNativeApp: App {
             appVersion: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0.1.0",
             buildNumber: Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
         )
+    }
+}
+
+private enum ProsePalAppIdentity {
+    static var bundleIdentifier: String {
+        Bundle.main.bundleIdentifier ?? "com.prosepal.prosepal"
     }
 }
 
