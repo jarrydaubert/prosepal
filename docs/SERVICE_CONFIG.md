@@ -27,10 +27,15 @@ Environment identities:
 | App Store/TestFlight UAT | `com.prosepal.prosepal.staging` | `ProsePal Staging` | can install beside production | needs separate Apple Developer/App Store Connect/Auth setup before use |
 
 The side-by-side UAT app is useful, but it is not only a scheme rename. The
-repo now has the separate bundle identity and display name; human setup is still
-needed for signing, Sign in with Apple, Supabase Auth Apple-provider allowance,
-and App Store sandbox/TestFlight products before it is treated as a complete
-environment.
+repo now has the separate bundle identity and display name, and the connected
+iPhone device build signs after the explicit staging App ID/profile was
+configured. Human evidence is still needed for Supabase Auth Apple-provider
+allowance, App Store sandbox/TestFlight products, and an end-to-end device run
+before it is treated as a complete environment.
+
+Signing note: `com.prosepal.prosepal.staging` needs an explicit Apple Developer
+App ID and provisioning profile with Sign in with Apple enabled. A wildcard
+profile cannot satisfy the native entitlement for the staging app.
 
 Known staging ref:
 
