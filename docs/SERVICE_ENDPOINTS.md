@@ -45,6 +45,17 @@ com.prosepal.prosepal
 Staging/UAT must use the existing production app identity plus staging runtime
 configuration where possible. Do not create multiple public ProsePal apps.
 
+If staging must install beside production on the same device, it needs a
+separate internal/UAT bundle identity such as:
+
+```text
+com.prosepal.prosepal.staging
+```
+
+That identity is not implemented in the tracked Xcode project yet and must be
+paired with matching Apple Developer, Sign in with Apple, StoreKit/App Store
+Connect, and Supabase staging configuration before it is treated as testable.
+
 Product IDs:
 
 ```text
