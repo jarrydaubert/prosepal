@@ -81,13 +81,21 @@ scheme. The shared scheme contains no secrets. To run staging fully, restore or
 recreate the ignored local `ProsePal Local Staging` scheme so it targets the
 `ProsePal Staging` app and carries the staging Run environment values.
 
-The staging bundle still needs human Apple/Supabase setup before it is a fully
-working device/TestFlight environment: Apple Developer App ID, Sign in with
-Apple capability, signing profile, Supabase Auth Apple-provider allowance, and
-an App Store Connect/TestFlight decision for sandbox receipt testing. Do not
-create a second public listing casually; if an App Store Connect record is
-needed for TestFlight UAT, keep the intent internal and document it before
-creating products.
+The staging bundle still needs human Apple/Supabase/App Store evidence before
+it is a fully working device/TestFlight environment: Supabase Auth
+Apple-provider allowance, an App Store Connect/TestFlight decision for sandbox
+receipt testing, and a physical-device proof run. Do not create a second public
+listing casually; if an App Store Connect record is needed for TestFlight UAT,
+keep the intent internal and document it before creating products.
+
+Sign in with Apple requires an explicit App ID and provisioning profile for the
+bundle ID under test. A wildcard team provisioning profile cannot carry the
+`com.apple.developer.applesignin` entitlement. If the staging device build
+reports that `iOS Team Provisioning Profile: *` does not include Sign in with
+Apple, fix the Apple Developer App ID/profile for
+`com.prosepal.prosepal.staging` rather than changing app code. This was proven
+on 2026-06-28: the staging device build failed with the wildcard profile, then
+passed after the explicit staging App ID/profile was configured.
 
 For App Store sandbox purchase testing:
 
@@ -113,6 +121,17 @@ Useful Apple references:
   <https://developer.apple.com/help/app-store-connect/create-an-app-record/add-a-new-app/>
 - Sign in with Apple configuration:
   <https://developer.apple.com/help/account/capabilities/configure-sign-in-with-apple-for-the-web/>
+- Supabase identity linking:
+  <https://supabase.com/docs/guides/auth/auth-identity-linking>
+
+Existing Google users need explicit continuity evidence before native release.
+Supabase Auth can automatically link OAuth identities when verified email
+addresses match, but native ProsePal currently only performs Apple ID-token
+sign-in. It does not expose a manual `linkIdentity` / native ID-token linking
+flow. Test both an Apple sign-in that shares the same email as the existing
+Google account and an Apple Hide My Email/private-relay sign-in. The latter may
+produce a different email and should be treated as unproven until it keeps the
+same Supabase user/entitlement or a recovery/linking flow exists.
 
 Back up the local staging scheme outside Git after editing it:
 

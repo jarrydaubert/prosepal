@@ -94,10 +94,15 @@ not done.
   the app bundle ID; shared
   `prosepal-ios/ProsePal.xcodeproj/xcshareddata/xcschemes/ProsePal Staging.xcscheme`
   contains no secrets and points to `App/ProsePalStaging.storekit`; local scheme
-  restore/verify scripts retarget ignored staging schemes to the staging app.
-  Partial until Apple Developer App ID/signing, Sign in with Apple,
-  App Store Connect sandbox/TestFlight product strategy, Supabase staging auth
-  settings, and physical-device side-by-side proof are complete.
+  restore/verify scripts retarget ignored staging schemes to the staging app;
+  `xcodebuild -scheme ProsePal -destination id=00008120-0008644C263B401E build`
+  signs for the connected iPhone;
+  `xcodebuild -scheme "ProsePal Local Staging" -destination id=00008120-0008644C263B401E build`
+  previously failed against wildcard profile `iOS Team Provisioning Profile: *`
+  without Sign in with Apple, then passed after the staging App ID/profile was
+  configured on 2026-06-28. Partial until App Store Connect sandbox/TestFlight
+  product strategy, Supabase staging auth settings, and physical-device
+  side-by-side install/auth/generation proof are complete.
 - [~] N-IOS-16 Harden Supabase public API and linter posture for native release
   -- evidence: Supabase database linter reported `user_usage` GraphQL exposure
   to `authenticated` plus public/signed-in `SECURITY DEFINER` RPC exposure for
@@ -323,7 +328,15 @@ not done.
   reconciliation path in
   `supabase/functions/app-store-reconcile-entitlement/index.ts`. Partial
   because sandbox reconciliation has not been proven against real App Store
-  Server API responses and anonymous-purchase convergence still needs policy.
+  Server API responses, anonymous-purchase convergence still needs policy, and
+  Google-to-Apple continuity relies on Supabase Auth identity linking behavior
+  rather than a native manual link flow. Supabase documents automatic identity
+  linking for matching email addresses and separate manual/native-ID-token
+  linking for different-email cases:
+  <https://supabase.com/docs/guides/auth/auth-identity-linking>. DoD: prove an
+  existing Google-authenticated subscribed user can sign in with Apple and keep
+  the same Supabase user/entitlement for both shared-email and Hide My Email or
+  private-relay cases, or add an explicit account-linking/recovery flow.
 
 ## 8. Design
 
