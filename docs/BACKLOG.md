@@ -691,8 +691,14 @@ not done.
   `snapshot_ui` confirmed Privacy & data, export, delete confirmation, and
   Privacy Policy controls remain reachable. A follow-up spacing pass increased
   trust-note and row padding after simulator review showed the first version was
-  too bunched. Latest simulator screenshot:
-  `prosepal-ios/evidence/ui-design-qa/privacy-data/03-simulator-privacy-data-after-padding.jpg`.
+  too bunched. Export detail now uses the same custom paper/card visual system
+  rather than a stock `List`; simulator review covered both top and scrolled
+  states so rows do not slide under the status/Dynamic Island area. Latest
+  simulator screenshots:
+  `prosepal-ios/evidence/ui-design-qa/privacy-data/03-simulator-privacy-data-after-padding.jpg`,
+  `prosepal-ios/evidence/ui-design-qa/privacy-data/export-detail/01-export-detail-top.jpg`,
+  and
+  `prosepal-ios/evidence/ui-design-qa/privacy-data/export-detail/02-export-detail-scrolled.jpg`.
 - [~] N-IOS-14 Native visual system and Moment rail/content discipline --
   evidence: `MomentSheetView.momentContent(viewportHeight:)`,
   `draftStartSection`, `shouldShowTabRail`, and `startNewMoment()` in

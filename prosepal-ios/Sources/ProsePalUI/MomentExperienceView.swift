@@ -6453,92 +6453,311 @@ private struct MomentPrivacyDataView: View {
 }
 
 private struct MomentLocalDataExportView: View {
+    @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @State private var exportState: MomentLocalDataExportState = .loading
     @State private var notice: String?
 
     var body: some View {
-        List {
-            switch exportState {
-            case .loading:
-                Section {
-                    ProgressView("Preparing export")
-                }
-                .momentListRowSurface()
+        VStack(spacing: 0) {
+            topChrome
+                .padding(.horizontal, 20)
+                .padding(.top, 10)
+                .padding(.bottom, 8)
 
-            case .ready(let export):
-                Section {
-                    Label("Export ready", systemImage: "checkmark.circle.fill")
-                        .foregroundStyle(.primary)
-                    LabeledContent("File", value: export.fileName)
-                    LabeledContent("Truth Beads", value: "\(export.snapshot.counts.truthBeads)")
-                    LabeledContent("Voice Cards", value: "\(export.snapshot.counts.voiceCards)")
-                    LabeledContent("Saved Drafts", value: "\(export.snapshot.counts.savedDrafts)")
-                } header: {
-                    MomentListSectionHeader("Summary")
-                }
-                .momentListRowSurface()
-
-                Section {
-                    Button {
-                        copy(export.jsonString)
-                    } label: {
-                        Label("Copy JSON", systemImage: "doc.on.doc")
-                    }
-
-                    Button {
-                        prepareExport()
-                    } label: {
-                        Label("Refresh export", systemImage: "arrow.clockwise")
-                    }
-                } header: {
-                    MomentListSectionHeader("Actions")
-                }
-                .momentListRowSurface()
-
-                if let notice {
-                    Section {
-                        Label(notice, systemImage: "checkmark.circle.fill")
-                    }
-                    .momentListRowSurface()
-                }
-
-                Section {
-                    Text(export.preview)
-                        .font(.system(.caption, design: .monospaced))
-                        .foregroundStyle(.secondary)
-                        .textSelection(.enabled)
-                        .fixedSize(horizontal: false, vertical: true)
-                } header: {
-                    MomentListSectionHeader("Preview")
-                }
-                .momentListRowSurface()
-
-            case .failed:
-                Section {
-                    Label("Export failed. Please try again.", systemImage: "exclamationmark.triangle")
-                    Button {
-                        prepareExport()
-                    } label: {
-                        Label("Try again", systemImage: "arrow.clockwise")
+            ScrollView {
+                VStack(alignment: .leading, spacing: 22) {
+                    switch exportState {
+                    case .loading:
+                        loadingState
+                    case .ready(let export):
+                        readyState(export)
+                    case .failed:
+                        failedState
                     }
                 }
-                .momentListRowSurface()
+                .padding(.horizontal, 20)
+                .padding(.top, 12)
+                .padding(.bottom, 44)
             }
+            .scrollIndicators(.hidden)
         }
-        .navigationTitle("Export")
-        .toolbarTitleDisplayMode(.inline)
-        .contentMargins(.top, 6, for: .scrollContent)
-        .scrollContentBackground(.hidden)
         .background {
             MomentAtmosphericBackground(isCareful: false)
         }
         .tint(.prosePalCoral)
+        #if os(iOS)
+        .toolbar(.hidden, for: .navigationBar)
+        #endif
         .task {
             if case .loading = exportState {
                 prepareExport()
             }
         }
+    }
+
+    private var topChrome: some View {
+        HStack(alignment: .center) {
+            Button {
+                dismiss()
+            } label: {
+                Image(systemName: "chevron.left")
+                    .font(.system(size: 17, weight: .semibold))
+                    .frame(width: 42, height: 42)
+                    .contentShape(Circle())
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(Color.prosePalCoralDeep)
+            .background(Color.prosePalPaper.opacity(0.74), in: Circle())
+            .accessibilityLabel("Back")
+
+            Spacer(minLength: 12)
+
+            Text("Export")
+                .font(.headline.weight(.semibold))
+                .foregroundStyle(Color.prosePalInk)
+
+            Spacer(minLength: 54)
+        }
+    }
+
+    private var loadingState: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            exportHero(
+                systemImage: "square.and.arrow.up",
+                title: "Preparing your export",
+                detail: "Gathering saved drafts and approved relationship memory into one readable JSON file."
+            )
+
+            HStack(spacing: 12) {
+                ProgressView()
+                    .tint(.prosePalCoral)
+
+                Text("Finding your local records...")
+                    .font(.callout)
+                    .foregroundStyle(Color.prosePalSlate.opacity(0.78))
+            }
+            .padding(20)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.prosePalPaper.opacity(0.94), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                    .stroke(Color.prosePalNavy.opacity(0.10), lineWidth: 1)
+            }
+        }
+    }
+
+    private func readyState(_ export: MomentLocalDataExport) -> some View {
+        VStack(alignment: .leading, spacing: 22) {
+            exportHero(
+                systemImage: "checkmark.seal",
+                title: "Your export is ready",
+                detail: "This is a private snapshot of the local records ProsePal can use when helping you write."
+            )
+
+            exportGroup("Summary") {
+                exportMetricRow(
+                    systemImage: "doc.text",
+                    title: "File",
+                    value: export.fileName
+                )
+                exportDivider
+                exportMetricRow(
+                    systemImage: "calendar",
+                    title: "Created",
+                    value: formattedExportDate(export.snapshot.exportedAt)
+                )
+                exportDivider
+                exportMetricRow(
+                    systemImage: "text.badge.checkmark",
+                    title: "Truth beads",
+                    value: "\(export.snapshot.counts.truthBeads)"
+                )
+                exportDivider
+                exportMetricRow(
+                    systemImage: "person.crop.square",
+                    title: "Voice cards",
+                    value: "\(export.snapshot.counts.voiceCards)"
+                )
+                exportDivider
+                exportMetricRow(
+                    systemImage: "tray.full",
+                    title: "Saved drafts",
+                    value: "\(export.snapshot.counts.savedDrafts)"
+                )
+            }
+
+            exportActions(export)
+
+            if let notice {
+                Label(notice, systemImage: "checkmark.circle.fill")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Color.prosePalCare)
+                    .frame(maxWidth: .infinity, alignment: .center)
+            }
+
+            exportPreview(export)
+        }
+    }
+
+    private var failedState: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            exportHero(
+                systemImage: "exclamationmark.triangle",
+                title: "Export failed",
+                detail: "ProsePal could not prepare the local data export. You can try again without changing your records."
+            )
+
+            Button {
+                prepareExport()
+            } label: {
+                Label("Try again", systemImage: "arrow.clockwise")
+                    .font(.body.weight(.semibold))
+                    .frame(maxWidth: .infinity, minHeight: 52)
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(Color.prosePalPaper)
+            .background(Color.prosePalCoral, in: Capsule(style: .continuous))
+            .shadow(color: Color.prosePalCoralDeep.opacity(0.18), radius: 10, x: 0, y: 5)
+        }
+    }
+
+    private func exportHero(systemImage: String, title: String, detail: String) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Image(systemName: systemImage)
+                .font(.system(size: 24, weight: .regular))
+                .foregroundStyle(Color.prosePalCoralDeep)
+                .frame(width: 52, height: 52)
+                .background(Color.prosePalCoral.opacity(0.12), in: RoundedRectangle(cornerRadius: 17, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 7) {
+                Text(title)
+                    .font(.system(size: 30, weight: .regular, design: .serif))
+                    .foregroundStyle(Color.prosePalInk)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Text(detail)
+                    .font(.callout)
+                    .foregroundStyle(Color.prosePalSlate.opacity(0.78))
+                    .lineSpacing(2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func exportGroup<Content: View>(
+        _ title: String,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(title)
+                .font(.caption.weight(.semibold))
+                .textCase(.uppercase)
+                .foregroundStyle(Color.prosePalSlate.opacity(0.62))
+                .padding(.horizontal, 2)
+
+            VStack(spacing: 0) {
+                content()
+            }
+            .background(Color.prosePalPaper.opacity(0.94), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                    .stroke(Color.prosePalNavy.opacity(0.10), lineWidth: 1)
+            }
+            .shadow(color: Color.prosePalCoralDeep.opacity(0.06), radius: 10, x: 0, y: 5)
+        }
+    }
+
+    private func exportMetricRow(systemImage: String, title: String, value: String) -> some View {
+        HStack(alignment: .center, spacing: 14) {
+            Image(systemName: systemImage)
+                .font(.system(size: 18, weight: .regular))
+                .foregroundStyle(Color.prosePalSlate)
+                .frame(width: 34)
+
+            Text(title)
+                .font(.callout.weight(.medium))
+                .foregroundStyle(Color.prosePalInk)
+
+            Spacer(minLength: 12)
+
+            Text(value)
+                .font(.callout.weight(.semibold))
+                .foregroundStyle(Color.prosePalSlate.opacity(0.86))
+                .multilineTextAlignment(.trailing)
+                .lineLimit(2)
+                .minimumScaleFactor(0.82)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
+        .frame(minHeight: 58)
+        .accessibilityElement(children: .combine)
+    }
+
+    private var exportDivider: some View {
+        Rectangle()
+            .fill(Color.prosePalNavy.opacity(0.08))
+            .frame(height: 1)
+            .padding(.leading, 64)
+    }
+
+    private func exportActions(_ export: MomentLocalDataExport) -> some View {
+        VStack(spacing: 10) {
+            Button {
+                copy(export.jsonString)
+            } label: {
+                Label("Copy JSON", systemImage: "doc.on.doc")
+                    .font(.body.weight(.semibold))
+                    .frame(maxWidth: .infinity, minHeight: 52)
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(Color.prosePalPaper)
+            .background(Color.prosePalCoral, in: Capsule(style: .continuous))
+            .shadow(color: Color.prosePalCoralDeep.opacity(0.18), radius: 10, x: 0, y: 5)
+
+            Button {
+                prepareExport()
+            } label: {
+                Label("Refresh export", systemImage: "arrow.clockwise")
+                    .font(.body.weight(.semibold))
+                    .frame(maxWidth: .infinity, minHeight: 48)
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(Color.prosePalCoralDeep)
+            .background(Color.prosePalCoral.opacity(0.12), in: Capsule(style: .continuous))
+        }
+    }
+
+    private func exportPreview(_ export: MomentLocalDataExport) -> some View {
+        exportGroup("Preview") {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Readable JSON")
+                    .font(.callout.weight(.semibold))
+                    .foregroundStyle(Color.prosePalInk)
+
+                ScrollView {
+                    Text(export.preview)
+                        .font(.system(.caption, design: .monospaced))
+                        .foregroundStyle(Color.prosePalSlate.opacity(0.82))
+                        .lineSpacing(3)
+                        .textSelection(.enabled)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(16)
+                }
+                .frame(maxHeight: 320, alignment: .top)
+                .background(Color.momentGroupedBackground.opacity(0.42), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .stroke(Color.prosePalNavy.opacity(0.08), lineWidth: 1)
+                }
+            }
+            .padding(18)
+        }
+    }
+
+    private func formattedExportDate(_ date: Date) -> String {
+        date.formatted(.dateTime.year().month(.abbreviated).day().hour().minute())
     }
 
     private func prepareExport() {
