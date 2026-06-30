@@ -1437,11 +1437,15 @@ private struct MomentSheetView: View {
                 applyVoiceTranscript(transcript)
             }
         }
+        #if os(iOS)
+        .fullScreenCover(isPresented: $isShowingDraftHistory) {
+            draftHistorySheet
+        }
+        #else
         .sheet(isPresented: $isShowingDraftHistory) {
             draftHistorySheet
-            .presentationDetents([.medium, .large])
-            .presentationDragIndicator(.visible)
         }
+        #endif
         .momentShareSheet($shareRequest)
         .sheet(item: $editingTruthBead, onDismiss: {
             model.resetDraftForMomentChange()
@@ -3318,6 +3322,17 @@ private struct MomentSheetView: View {
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
+                    if model.canShowDraftHistory {
+                        draftRefineChip(title: "History", systemImage: "clock.arrow.circlepath") {
+                            diagnostics.messageAction(
+                                "open_draft_history",
+                                source: "moment_draft",
+                                messageCharacters: bundle.messageText.count
+                            )
+                            isShowingDraftHistory = true
+                        }
+                    }
+
                     ForEach(MomentAdjustment.allCases) { adjustment in
                         draftRefineChip(
                             title: adjustment.displayName,
@@ -3396,61 +3411,153 @@ private struct MomentRevisionRuledLines: View {
 }
 
 private struct MomentDraftHistorySheet: View {
+    @Environment(\.dismiss) private var dismiss
+
     @Bindable var model: MomentModel
     let onRestore: (MomentDraftSnapshot) -> Void
 
     var body: some View {
-        NavigationStack {
-            List {
-                if model.draftSnapshots.isEmpty {
-                    ContentUnavailableView(
-                        "No draft history",
-                        systemImage: "clock.arrow.circlepath",
-                        description: Text("Edits and rewrites you can recover appear here.")
-                    )
+        ScrollView {
+            VStack(alignment: .leading, spacing: 18) {
+                topChrome
+
+                if timelineItems.isEmpty {
+                    emptyState
                 } else {
-                    ForEach(model.draftSnapshots.reversed()) { snapshot in
-                        Button {
-                            onRestore(snapshot)
-                        } label: {
-                            HStack(alignment: .top, spacing: 12) {
-                                Image(systemName: systemImage(for: snapshot.reason))
-                                    .font(.title3.weight(.semibold))
-                                    .foregroundStyle(Color.prosePalCoral)
-                                    .frame(width: 28)
-
-                                VStack(alignment: .leading, spacing: 5) {
-                                    HStack {
-                                        Text(title(for: snapshot.reason))
-                                            .font(.headline)
-                                            .foregroundStyle(.primary)
-
-                                        Spacer(minLength: 12)
-
-                                        Text(snapshot.createdAt, style: .time)
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
-                                    }
-
-                                    Text(snapshot.bundle.messageText)
-                                        .font(.callout)
-                                        .foregroundStyle(.secondary)
-                                        .lineLimit(4)
-                                        .fixedSize(horizontal: false, vertical: true)
-
-                                    Label("Restore", systemImage: "arrow.uturn.backward")
-                                        .font(.caption.weight(.semibold))
-                                        .foregroundStyle(Color.prosePalNavy)
-                                }
+                    VStack(spacing: 0) {
+                        ForEach(Array(timelineItems.enumerated()), id: \.element.id) { index, item in
+                            MomentDraftHistoryRow(
+                                item: item,
+                                isLast: index == timelineItems.count - 1
+                            ) { snapshot in
+                                onRestore(snapshot)
                             }
-                            .padding(.vertical, 6)
                         }
-                        .buttonStyle(.plain)
                     }
                 }
             }
-            .navigationTitle("Draft history")
-            .toolbarTitleDisplayMode(.inline)
+            .padding(.horizontal, 18)
+            .padding(.top, 14)
+            .padding(.bottom, 26)
+        }
+        .scrollIndicators(.hidden)
+        .background {
+            MomentAtmosphericBackground(isCareful: model.moment.isCarefulMode)
+        }
+    }
+
+    private var topChrome: some View {
+        ZStack {
+            HStack {
+                Button {
+                    dismiss()
+                } label: {
+                    Label("Draft", systemImage: "chevron.left")
+                        .font(.subheadline.weight(.medium))
+                        .labelStyle(.titleAndIcon)
+                        .foregroundStyle(Color.prosePalCoralDeep)
+                        .lineLimit(1)
+                        .padding(.horizontal, 11)
+                        .frame(height: 36)
+                        .background(Color.prosePalPaper.opacity(0.70), in: Capsule(style: .continuous))
+                        .overlay {
+                            Capsule(style: .continuous)
+                                .stroke(Color.prosePalNavy.opacity(0.10), lineWidth: 1)
+                        }
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Back to draft")
+
+                Spacer()
+            }
+
+            Text("Version history")
+                .font(.headline.weight(.semibold))
+                .foregroundStyle(Color.prosePalInk)
+                .lineLimit(1)
+                .minimumScaleFactor(0.84)
+        }
+        .frame(height: 44)
+    }
+
+    private var emptyState: some View {
+        VStack(spacing: 10) {
+            Image(systemName: "clock.arrow.circlepath")
+                .font(.system(size: 32, weight: .medium))
+                .foregroundStyle(Color.prosePalCoral.opacity(0.68))
+
+            Text("No draft history")
+                .font(.system(size: 23, design: .serif).weight(.medium))
+                .foregroundStyle(Color.prosePalInk)
+
+            Text("Edits and rewrites you can recover appear here.")
+                .font(.callout)
+                .foregroundStyle(Color.prosePalSlate)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 26)
+        .padding(.vertical, 34)
+        .background(Color.prosePalPaper.opacity(0.94), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(Color.prosePalNavy.opacity(0.10), lineWidth: 1)
+        }
+    }
+
+    private var timelineItems: [MomentDraftHistoryItem] {
+        var items: [MomentDraftHistoryItem] = []
+
+        if let bundle = model.bundle {
+            items.append(MomentDraftHistoryItem(
+                id: "current-\(bundle.id.uuidString)",
+                title: currentTitle(for: bundle),
+                marker: "Current",
+                text: bundle.messageText,
+                systemImage: "feather",
+                isCurrent: true
+            ))
+        }
+
+        items.append(contentsOf: model.draftSnapshots.reversed().map { snapshot in
+            MomentDraftHistoryItem(
+                id: "snapshot-\(snapshot.id.uuidString)",
+                title: title(for: snapshot.reason),
+                marker: snapshot.createdAt.formatted(date: .omitted, time: .shortened),
+                text: snapshot.bundle.messageText,
+                systemImage: systemImage(for: snapshot.reason),
+                snapshot: snapshot
+            )
+        })
+
+        let originalNote = model.trueThing.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !originalNote.isEmpty {
+            items.append(MomentDraftHistoryItem(
+                id: "original-note",
+                title: "Your note",
+                marker: "Original",
+                text: originalNote,
+                systemImage: "pencil",
+                isOriginal: true
+            ))
+        }
+
+        return items
+    }
+
+    private func currentTitle(for bundle: MomentDraftBundle) -> String {
+        if bundle.lane == .takeMoreCare {
+            return "Careful & steady"
+        }
+
+        switch model.register {
+        case .react:
+            return "Warm & concise"
+        case .confess:
+            return "Your words, polished"
+        case .assemble:
+            return "Diplomatic & warm"
         }
     }
 
@@ -3469,6 +3576,124 @@ private struct MomentDraftHistorySheet: View {
             "pencil"
         case .rewrite:
             "sparkles"
+        }
+    }
+
+    private struct MomentDraftHistoryItem: Identifiable {
+        var id: String
+        var title: String
+        var marker: String
+        var text: String
+        var systemImage: String
+        var isCurrent = false
+        var isOriginal = false
+        var snapshot: MomentDraftSnapshot?
+    }
+
+    private struct MomentDraftHistoryRow: View {
+        let item: MomentDraftHistoryItem
+        let isLast: Bool
+        let onRestore: (MomentDraftSnapshot) -> Void
+
+        var body: some View {
+            HStack(alignment: .top, spacing: 14) {
+                timelineStem
+
+                timelineCard
+                    .padding(.bottom, isLast ? 0 : 16)
+            }
+        }
+
+        private var timelineStem: some View {
+            VStack(spacing: 0) {
+                ZStack {
+                    Circle()
+                        .fill(item.isCurrent ? Color.prosePalCoral : Color.prosePalPaper)
+                        .frame(width: 34, height: 34)
+                        .overlay {
+                            Circle()
+                                .stroke(
+                                    item.isCurrent ? Color.clear : Color.prosePalNavy.opacity(0.14),
+                                    lineWidth: 1
+                                )
+                        }
+
+                    Image(systemName: item.systemImage)
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(item.isCurrent ? Color.white : Color.prosePalSlate)
+                }
+
+                if !isLast {
+                    Rectangle()
+                        .fill(Color.prosePalNavy.opacity(0.14))
+                        .frame(width: 1.5)
+                        .frame(maxHeight: .infinity)
+                }
+            }
+            .frame(width: 34)
+            .accessibilityHidden(true)
+        }
+
+        private var timelineCard: some View {
+            VStack(alignment: .leading, spacing: 7) {
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Text(item.title)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Color.prosePalInk)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.84)
+
+                    Spacer(minLength: 8)
+
+                    Text(item.marker)
+                        .font(.caption2.monospacedDigit())
+                        .foregroundStyle(Color.prosePalSlate.opacity(0.82))
+                        .lineLimit(1)
+                }
+
+                Text(item.text)
+                    .font(.system(.callout, design: .serif))
+                    .lineSpacing(3)
+                    .foregroundStyle(item.isOriginal ? Color.prosePalSlate.opacity(0.86) : Color.prosePalSlate)
+                    .italic(item.isOriginal)
+                    .lineLimit(3)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                if item.isCurrent {
+                    Label("Showing now", systemImage: "checkmark")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Color.prosePalCare)
+                        .padding(.top, 1)
+                } else if let snapshot = item.snapshot {
+                    Button {
+                        onRestore(snapshot)
+                    } label: {
+                        Label("Restore", systemImage: "arrow.counterclockwise")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(Color.prosePalCoralDeep)
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.top, 1)
+                }
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.prosePalPaper.opacity(0.96), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .stroke(
+                        item.isCurrent ? Color.prosePalCoral.opacity(0.28) : Color.prosePalNavy.opacity(0.09),
+                        lineWidth: 1
+                    )
+            }
+            .shadow(
+                color: Color.prosePalCoralDeep.opacity(item.isCurrent ? 0.12 : 0.06),
+                radius: item.isCurrent ? 10 : 5,
+                x: 0,
+                y: item.isCurrent ? 5 : 2
+            )
+            .accessibilityElement(children: .combine)
         }
     }
 }

@@ -603,6 +603,25 @@ not done.
   `prosepal-ios/evidence/ui-design-qa/drafts-library/02-simulator-drafts-before.jpg`,
   and
   `prosepal-ios/evidence/ui-design-qa/drafts-library/03-simulator-drafts-after.jpg`.
+  Slice 9 evidence: performed a Version history visual QA pass against the
+  rendered `10 · Version history` screen from the desktop ProsePal design-system
+  kit, with local screenshots saved under
+  `prosepal-ios/evidence/ui-design-qa/version-history/`. Draft history now opens
+  as a full-screen iOS cover instead of a medium bottom sheet, and uses the kit
+  timeline anatomy: compact `Draft`/`Version history` chrome, left timeline
+  rail, clay current node, cream version cards, a `Showing now` marker,
+  three-line serif excerpts, and explicit `Restore` actions. The result-first
+  refine rail now surfaces `History` first once recoverable draft snapshots
+  exist. `swift build` and `swift test` passed; XcodeBuildMCP `ProsePal Staging`
+  build/run passed on `iPhone 17` with `--prosepal-use-mock-writing-service`;
+  `snapshot_ui` confirmed the History chip, current timeline item, recoverable
+  snapshots, `Restore`, and `Back to draft`, and a restore action dismissed the
+  cover and reverted the active draft. Latest comparison screenshots:
+  `prosepal-ios/evidence/ui-design-qa/version-history/01-reference-version-history-phone.png`,
+  `prosepal-ios/evidence/ui-design-qa/version-history/02-simulator-version-history-medium-before.jpg`,
+  `prosepal-ios/evidence/ui-design-qa/version-history/03-simulator-version-history-fullscreen-after.jpg`,
+  and
+  `prosepal-ios/evidence/ui-design-qa/version-history/04-simulator-version-history-after-tightened.jpg`.
 - [~] N-IOS-14 Native visual system and Moment rail/content discipline --
   evidence: `MomentSheetView.momentContent(viewportHeight:)`,
   `draftStartSection`, `shouldShowTabRail`, and `startNewMoment()` in
