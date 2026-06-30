@@ -689,8 +689,10 @@ not done.
   `ProsePal Staging` build/run passed on `iPhone 17` with
   `--prosepal-use-mock-writing-service`;
   `snapshot_ui` confirmed Privacy & data, export, delete confirmation, and
-  Privacy Policy controls remain reachable. Latest simulator screenshot:
-  `prosepal-ios/evidence/ui-design-qa/privacy-data/02-simulator-privacy-data-after.jpg`.
+  Privacy Policy controls remain reachable. A follow-up spacing pass increased
+  trust-note and row padding after simulator review showed the first version was
+  too bunched. Latest simulator screenshot:
+  `prosepal-ios/evidence/ui-design-qa/privacy-data/03-simulator-privacy-data-after-padding.jpg`.
 - [~] N-IOS-14 Native visual system and Moment rail/content discipline --
   evidence: `MomentSheetView.momentContent(viewportHeight:)`,
   `draftStartSection`, `shouldShowTabRail`, and `startNewMoment()` in

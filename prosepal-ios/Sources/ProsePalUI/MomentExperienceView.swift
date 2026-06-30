@@ -6192,7 +6192,7 @@ private struct MomentPrivacyDataView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 20) {
                 topChrome
                 trustNote
 
@@ -6257,8 +6257,8 @@ private struct MomentPrivacyDataView: View {
                 privacyFinePrint
             }
             .padding(.horizontal, 18)
-            .padding(.top, 8)
-            .padding(.bottom, 36)
+            .padding(.top, 10)
+            .padding(.bottom, 42)
         }
         .scrollIndicators(.hidden)
         .background {
@@ -6304,14 +6304,14 @@ private struct MomentPrivacyDataView: View {
     }
 
     private var trustNote: some View {
-        HStack(alignment: .top, spacing: 13) {
+        HStack(alignment: .top, spacing: 14) {
             Image(systemName: "lock")
                 .font(.system(size: 20, weight: .regular))
                 .foregroundStyle(Color.prosePalCoralDeep)
-                .frame(width: 42, height: 42)
+                .frame(width: 44, height: 44)
                 .background(Color.prosePalCoral.opacity(0.12), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
 
-            VStack(alignment: .leading, spacing: 5) {
+            VStack(alignment: .leading, spacing: 7) {
                 Text("Your writing stays yours")
                     .font(.headline.weight(.semibold))
                     .foregroundStyle(Color.prosePalInk)
@@ -6319,10 +6319,11 @@ private struct MomentPrivacyDataView: View {
                 Text("ProsePal processes drafts privately. Your words are never used to train models, and you can erase them at any time.")
                     .font(.callout)
                     .foregroundStyle(Color.prosePalSlate.opacity(0.78))
+                    .lineSpacing(2)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
-        .padding(16)
+        .padding(18)
         .background(Color.prosePalPaper.opacity(0.92), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 18, style: .continuous)
@@ -6334,7 +6335,7 @@ private struct MomentPrivacyDataView: View {
         _ title: String,
         @ViewBuilder content: () -> Content
     ) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 10) {
             Text(title)
                 .font(.caption.weight(.semibold))
                 .textCase(.uppercase)
@@ -6385,9 +6386,9 @@ private struct MomentPrivacyDataView: View {
             Image(systemName: systemImage)
                 .font(.system(size: 19, weight: .regular))
                 .foregroundStyle(isDestructive ? Color.red.opacity(0.78) : Color.prosePalSlate)
-                .frame(width: 36)
+                .frame(width: 38)
 
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 6) {
                 Text(title)
                     .font(.headline.weight(.semibold))
                     .foregroundStyle(isDestructive ? Color.red.opacity(0.84) : Color.prosePalInk)
@@ -6398,6 +6399,7 @@ private struct MomentPrivacyDataView: View {
                     Text(subtitle)
                         .font(.callout)
                         .foregroundStyle(Color.prosePalSlate.opacity(0.78))
+                        .lineSpacing(2)
                         .lineLimit(2)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -6420,7 +6422,8 @@ private struct MomentPrivacyDataView: View {
             }
         }
         .padding(.horizontal, 16)
-        .frame(minHeight: 64)
+        .padding(.vertical, 13)
+        .frame(minHeight: 82)
         .contentShape(Rectangle())
         .accessibilityElement(children: .combine)
     }
