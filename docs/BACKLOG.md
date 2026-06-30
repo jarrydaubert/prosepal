@@ -660,6 +660,21 @@ not done.
   `prosepal-ios/evidence/ui-design-qa/first-screen/11-simulator-entry-after-context-below-fold.jpg`,
   and
   `prosepal-ios/evidence/ui-design-qa/first-screen/12-simulator-active-after-context-below-fold.jpg`.
+  Slice 12 evidence: performed a Paywall visual-system pass against the desktop
+  ProsePal design-system Paywall source in
+  `/Users/jarrydaubert/Desktop/ProsePal Design System/ui_kits/prosepal/screens-3.jsx`,
+  with local simulator evidence saved under
+  `prosepal-ios/evidence/ui-design-qa/paywall/`. The paywall now uses custom
+  close/restore chrome instead of a system `Premium` navigation title, an italic
+  serif promise (`A room of your own.`), a single cream feature panel, kit-aligned
+  unavailable/retry and plan-row surfaces, App Review-visible restore, account
+  sign-in, and Terms/Privacy links. `swift build` and `swift test` passed;
+  XcodeBuildMCP
+  `ProsePal Staging` build/run passed on `iPhone 17` with
+  `--prosepal-use-mock-writing-service`; `snapshot_ui` confirmed the real
+  unavailable StoreKit state still exposes Retry, Restore, Continue with Apple,
+  Terms, and Privacy. Latest simulator screenshot:
+  `prosepal-ios/evidence/ui-design-qa/paywall/02-simulator-paywall-unavailable-after.jpg`.
 - [~] N-IOS-14 Native visual system and Moment rail/content discipline --
   evidence: `MomentSheetView.momentContent(viewportHeight:)`,
   `draftStartSection`, `shouldShowTabRail`, and `startNewMoment()` in
