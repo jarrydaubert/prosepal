@@ -1051,6 +1051,9 @@ public struct MomentAppRootView: View {
     }
 
     private var shouldShowRootDock: Bool {
+        if selectedTab == .settings {
+            return false
+        }
         if selectedTab == .moment {
             return model.bundle == nil && model.errorMessage == nil
         }
@@ -1533,6 +1536,7 @@ private struct MomentSheetView: View {
                 if model.safetySignal == .crisisSupport {
                     crisisSupportSection
                 } else {
+                    activeSetupSection
                     memorySection
                     if model.moment.isCarefulMode {
                         carefulModeSection
@@ -1817,7 +1821,6 @@ private struct MomentSheetView: View {
         VStack(alignment: .leading, spacing: 18) {
             personPageSection
             toneSelectorSection
-            activeSetupSection
         }
     }
 
@@ -1825,7 +1828,6 @@ private struct MomentSheetView: View {
         VStack(alignment: .leading, spacing: 18) {
             truthSection
             toneSelectorSection
-            activeSetupSection
             if shouldShowDraftStartSection {
                 draftStartSection
             }
@@ -5753,18 +5755,6 @@ private struct MomentSettingsView: View {
                     }
                     settingsDivider
                     settingsButtonRow(
-                        systemImage: "arrow.clockwise",
-                        title: account.isRestoringPurchases ? "Restoring purchases" : "Restore purchases",
-                        subtitle: account.subscriptionErrorMessage,
-                        showsChevron: false
-                    ) {
-                        Task {
-                            await account.restorePurchases(source: "settings")
-                        }
-                    }
-                    .disabled(account.isRestoringPurchases)
-                    settingsDivider
-                    settingsButtonRow(
                         systemImage: "lifepreserver",
                         title: "Help & support",
                         showsChevron: true
@@ -5807,6 +5797,17 @@ private struct MomentSettingsView: View {
                         settingsDivider
                     }
 
+                    settingsButtonRow(
+                        systemImage: "arrow.clockwise",
+                        title: account.isRestoringPurchases ? "Restoring purchases" : "Restore purchases",
+                        subtitle: account.subscriptionErrorMessage
+                    ) {
+                        Task {
+                            await account.restorePurchases(source: "settings")
+                        }
+                    }
+                    .disabled(account.isRestoringPurchases)
+                    settingsDivider
                     settingsNavigationRow(
                         systemImage: "checkmark.seal",
                         title: "Relationship memory",
@@ -5853,14 +5854,9 @@ private struct MomentSettingsView: View {
             }
             .padding(.horizontal, 18)
             .padding(.top, 10)
-            .padding(.bottom, 116)
+            .padding(.bottom, 42)
         }
         .scrollIndicators(.hidden)
-        .safeAreaInset(edge: .bottom) {
-            Color.clear
-                .frame(height: 86)
-                .accessibilityHidden(true)
-        }
         .background {
             MomentAtmosphericBackground(isCareful: false)
         }

@@ -537,8 +537,8 @@ not done.
   screenshots and metrics saved under
   `prosepal-ios/evidence/ui-design-qa/first-screen/`. The native first screen
   now uses fixed custom serif `Today` chrome, paper-first entry/active surfaces,
-  tone controls directly beneath the writing page, compact context metadata
-  below tones, a floating dock-style control, and a corrected ruled-paper
+  tone controls directly beneath the writing page, compact context metadata,
+  a floating dock-style control, and a corrected ruled-paper
   background that no longer drives page height. The visible `Next` action now
   commits the person without leaving keyboard accessory chrome on the clean
   active screen, while keyboard Return still advances into the note field.
@@ -640,6 +640,26 @@ not done.
   `prosepal-ios/evidence/ui-design-qa/drafts-empty/02-simulator-empty-library-after.jpg`,
   and
   `prosepal-ios/evidence/ui-design-qa/drafts-empty/03-simulator-empty-library-after-lowered.jpg`.
+  Slice 11 evidence: performed a Settings visual QA pass against rendered
+  `12 · Settings` from the desktop ProsePal design-system kit, with local
+  screenshots saved under `prosepal-ios/evidence/ui-design-qa/settings/`, and
+  revisited the first-screen hierarchy from `05 · The page`. Settings now uses
+  custom large-serif chrome, a profile card, compact Writing/Privacy/Subscription
+  groups, no overlapping root dock, and preserves restore purchases below the
+  first Subscription group. The Moment entry and active-note first viewports now
+  keep relationship/moment context below the primary writing viewport instead of
+  competing with the page and tone controls; a swipe still reaches context and
+  relationship-memory controls. `swift build` and `swift test` passed;
+  XcodeBuildMCP
+  `ProsePal Staging` build/run passed on `iPhone 17` with
+  `--prosepal-use-mock-writing-service`; `snapshot_ui` confirmed entry, active
+  note, settings, context, and memory controls remain reachable. Latest
+  comparison screenshots:
+  `prosepal-ios/evidence/ui-design-qa/settings/01-reference-settings-phone.png`,
+  `prosepal-ios/evidence/ui-design-qa/settings/02-simulator-settings-after-dock-fix.jpg`,
+  `prosepal-ios/evidence/ui-design-qa/first-screen/11-simulator-entry-after-context-below-fold.jpg`,
+  and
+  `prosepal-ios/evidence/ui-design-qa/first-screen/12-simulator-active-after-context-below-fold.jpg`.
 - [~] N-IOS-14 Native visual system and Moment rail/content discipline --
   evidence: `MomentSheetView.momentContent(viewportHeight:)`,
   `draftStartSection`, `shouldShowTabRail`, and `startNewMoment()` in
