@@ -5314,17 +5314,29 @@ private struct SavedMomentDraftDetailView: View {
 }
 
 private struct RelationshipMemoryVaultView: View {
-    @Environment(\.modelContext) private var modelContext
+    @Environment(\.dismiss) private var dismiss
     @Query(sort: \RelationshipTruthBeadRecord.updatedAt, order: .reverse)
     private var beads: [RelationshipTruthBeadRecord]
     @Query(sort: \RelationshipVoiceCardRecord.updatedAt, order: .reverse)
     private var voiceCards: [RelationshipVoiceCardRecord]
     @State private var searchText = ""
 
-    private var filteredItems: [RelationshipMemoryVaultItem] {
-        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
-        let items = (beads.map(RelationshipMemoryVaultItem.detail) + voiceCards.map(RelationshipMemoryVaultItem.voice))
+    private var allItems: [RelationshipMemoryVaultItem] {
+        (beads.map(RelationshipMemoryVaultItem.detail) + voiceCards.map(RelationshipMemoryVaultItem.voice))
             .sorted { $0.updatedAt > $1.updatedAt }
+    }
+
+    private var trimmedSearchText: String {
+        searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private var isSearching: Bool {
+        !trimmedSearchText.isEmpty
+    }
+
+    private var filteredItems: [RelationshipMemoryVaultItem] {
+        let query = trimmedSearchText
+        let items = allItems
         guard !query.isEmpty else { return items }
 
         return items.filter {
@@ -5333,63 +5345,45 @@ private struct RelationshipMemoryVaultView: View {
     }
 
     var body: some View {
-        List {
-            MomentScreenIdentityCard(
-                eyebrow: "Memory",
-                title: "What ProsePal may remember",
-                detail: "Approved details and voice notes stay editable, pausable, and local to this relationship memory.",
-                systemImage: "checkmark.seal"
-            )
-            .listRowBackground(Color.clear)
-            .listRowSeparator(.hidden)
+        VStack(spacing: 0) {
+            vaultTopChrome
+                .padding(.horizontal, 20)
+                .padding(.top, 10)
+                .padding(.bottom, 8)
 
-            if filteredItems.isEmpty {
-                MomentSavedEmptyState(
-                    isSearching: !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-                    emptyTitle: searchText.isEmpty ? "No relationship memory yet" : "No matching memory",
-                    emptyDetail: searchText.isEmpty ? "Save details or voice cards from the Moment screen when they should help future drafts." : "Try another person or phrase.",
-                    systemImage: "checkmark.seal"
-                )
-                .padding(.vertical, 12)
-                .listRowBackground(Color.clear)
-                .listRowSeparator(.hidden)
-            } else {
-                ForEach(filteredItems) { item in
-                    NavigationLink {
-                        destination(for: item)
-                    } label: {
-                        RelationshipMemoryVaultRow(item: item)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 18) {
+                    memoryHero
+
+                    if !allItems.isEmpty || isSearching {
+                        memorySearchField
                     }
-                    .listRowBackground(Color.prosePalPaper.opacity(0.84))
+
+                    if filteredItems.isEmpty {
+                        MomentSavedEmptyState(
+                            isSearching: isSearching,
+                            emptyTitle: isSearching ? "No matching memory" : "No relationship memory yet",
+                            emptyDetail: isSearching ? "Try another person or phrase." : "Save details or voice cards from the Moment screen when they should help future drafts.",
+                            systemImage: "checkmark.seal"
+                        )
+                        .padding(.top, 4)
+                    } else {
+                        memoryList(filteredItems)
+                    }
                 }
-                .onDelete(perform: delete)
+                .padding(.horizontal, 20)
+                .padding(.top, 12)
+                .padding(.bottom, 44)
             }
+            .scrollIndicators(.hidden)
         }
-        .navigationTitle("Memory")
-        .toolbarTitleDisplayMode(.inline)
-        .searchable(text: $searchText, prompt: "Search memory")
-        .contentMargins(.bottom, 112, for: .scrollContent)
-        .safeAreaInset(edge: .bottom) {
-            Color.clear
-                .frame(height: 86)
-                .accessibilityHidden(true)
-        }
-        .scrollContentBackground(.hidden)
         .background {
             MomentAtmosphericBackground(isCareful: false)
         }
-    }
-
-    private func delete(at offsets: IndexSet) {
-        for index in offsets {
-            switch filteredItems[index] {
-            case .detail(let bead):
-                modelContext.delete(bead)
-            case .voice(let voiceCard):
-                modelContext.delete(voiceCard)
-            }
-        }
-        try? modelContext.save()
+        .tint(.prosePalCoral)
+        #if os(iOS)
+        .toolbar(.hidden, for: .navigationBar)
+        #endif
     }
 
     @ViewBuilder
@@ -5400,6 +5394,137 @@ private struct RelationshipMemoryVaultView: View {
         case .voice(let voiceCard):
             RelationshipVoiceCardDetailView(voiceCard: voiceCard)
         }
+    }
+
+    private var vaultTopChrome: some View {
+        HStack(alignment: .center) {
+            Button {
+                dismiss()
+            } label: {
+                Image(systemName: "chevron.left")
+                    .font(.system(size: 17, weight: .semibold))
+                    .frame(width: 42, height: 42)
+                    .contentShape(Circle())
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(Color.prosePalCoralDeep)
+            .background(Color.prosePalPaper.opacity(0.74), in: Circle())
+            .accessibilityLabel("Back")
+
+            Spacer(minLength: 12)
+
+            Text("Memory")
+                .font(.headline.weight(.semibold))
+                .foregroundStyle(Color.prosePalInk)
+
+            Spacer(minLength: 54)
+        }
+    }
+
+    private var memoryHero: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Image(systemName: "checkmark.seal")
+                .font(.system(size: 24, weight: .regular))
+                .foregroundStyle(Color.prosePalCoralDeep)
+                .frame(width: 52, height: 52)
+                .background(Color.prosePalCoral.opacity(0.12), in: RoundedRectangle(cornerRadius: 17, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 7) {
+                Text("What ProsePal may remember")
+                    .font(.system(size: 30, weight: .regular, design: .serif))
+                    .foregroundStyle(Color.prosePalInk)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Text("Approved details and voice notes stay editable, pausable, and local to this relationship memory.")
+                    .font(.callout)
+                    .foregroundStyle(Color.prosePalSlate.opacity(0.78))
+                    .lineSpacing(2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var memorySearchField: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: 16, weight: .medium))
+                .foregroundStyle(Color.prosePalSlate.opacity(0.70))
+
+            TextField("Search memory", text: $searchText)
+                .textFieldStyle(.plain)
+                .font(.body)
+                .foregroundStyle(Color.prosePalInk)
+                .submitLabel(.search)
+
+            if isSearching {
+                Button {
+                    searchText = ""
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 17, weight: .semibold))
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(Color.prosePalSlate.opacity(0.55))
+                .accessibilityLabel("Clear search")
+            }
+        }
+        .padding(.horizontal, 15)
+        .frame(height: 46)
+        .background(Color.prosePalPaper.opacity(0.80), in: Capsule(style: .continuous))
+        .overlay {
+            Capsule(style: .continuous)
+                .stroke(Color.prosePalNavy.opacity(0.10), lineWidth: 1)
+        }
+    }
+
+    private func memoryList(_ items: [RelationshipMemoryVaultItem]) -> some View {
+        memoryGroup("Saved memory") {
+            ForEach(items.indices, id: \.self) { index in
+                let item = items[index]
+
+                NavigationLink {
+                    destination(for: item)
+                } label: {
+                    RelationshipMemoryVaultRow(item: item)
+                }
+                .buttonStyle(.plain)
+
+                if index != items.index(before: items.endIndex) {
+                    memoryDivider
+                }
+            }
+        }
+    }
+
+    private func memoryGroup<Content: View>(
+        _ title: String,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(title)
+                .font(.caption.weight(.semibold))
+                .textCase(.uppercase)
+                .foregroundStyle(Color.prosePalSlate.opacity(0.62))
+                .padding(.horizontal, 2)
+
+            VStack(spacing: 0) {
+                content()
+            }
+            .background(Color.prosePalPaper.opacity(0.94), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                    .stroke(Color.prosePalNavy.opacity(0.10), lineWidth: 1)
+            }
+            .shadow(color: Color.prosePalCoralDeep.opacity(0.06), radius: 10, x: 0, y: 5)
+        }
+    }
+
+    private var memoryDivider: some View {
+        Rectangle()
+            .fill(Color.prosePalNavy.opacity(0.08))
+            .frame(height: 1)
+            .padding(.leading, 70)
     }
 }
 
@@ -5461,6 +5586,33 @@ private enum RelationshipMemoryVaultItem: Identifiable {
         }
     }
 
+    var systemImage: String {
+        switch self {
+        case .detail:
+            "text.badge.checkmark"
+        case .voice:
+            "person.crop.square"
+        }
+    }
+
+    var updatedAtLabel: String {
+        let calendar = Calendar.current
+
+        if calendar.isDateInToday(updatedAt) {
+            return "Updated today"
+        }
+        if calendar.isDateInYesterday(updatedAt) {
+            return "Updated yesterday"
+        }
+
+        let days = calendar.dateComponents([.day], from: updatedAt, to: Date()).day ?? 0
+        if days < 7 {
+            return "Updated \(updatedAt.formatted(.dateTime.weekday(.abbreviated)))"
+        }
+
+        return "Updated \(updatedAt.formatted(.dateTime.month(.abbreviated).day()))"
+    }
+
     var searchText: String {
         "\(personName) \(kindLabel) \(bodyText)"
     }
@@ -5470,33 +5622,62 @@ private struct RelationshipMemoryVaultRow: View {
     let item: RelationshipMemoryVaultItem
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 5) {
-            HStack(spacing: 8) {
-                Text(item.personName)
-                    .font(.headline)
+        HStack(alignment: .top, spacing: 14) {
+            Image(systemName: item.systemImage)
+                .font(.system(size: 18, weight: .regular))
+                .foregroundStyle(Color.prosePalCoralDeep)
+                .frame(width: 42, height: 42)
+                .background(Color.prosePalCoral.opacity(0.12), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
 
-                Text(item.kindLabel)
-                    .font(.caption2.weight(.bold))
-                    .padding(.horizontal, 7)
-                    .padding(.vertical, 3)
-                    .background(.tint.opacity(0.14), in: Capsule())
-                    .foregroundStyle(.tint)
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Text(item.personName)
+                        .font(.headline.weight(.semibold))
+                        .foregroundStyle(Color.prosePalInk)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.84)
 
-                if !item.isUserApproved {
-                    Text("Paused")
-                        .font(.caption2.weight(.bold))
-                        .padding(.horizontal, 7)
-                        .padding(.vertical, 3)
-                        .background(.secondary.opacity(0.12), in: Capsule())
+                    Spacer(minLength: 8)
+
+                    HStack(spacing: 6) {
+                        memoryBadge(item.kindLabel, color: .prosePalCoralDeep)
+
+                        if !item.isUserApproved {
+                            memoryBadge("Paused", color: .prosePalSlate)
+                        }
+                    }
                 }
+
+                Text(item.bodyText)
+                    .font(.callout)
+                    .foregroundStyle(Color.prosePalSlate.opacity(0.82))
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Label(item.updatedAtLabel, systemImage: "clock")
+                    .font(.caption2.weight(.medium))
+                    .foregroundStyle(Color.prosePalSlate.opacity(0.66))
             }
 
-            Text(item.bodyText)
-                .font(.callout)
-                .foregroundStyle(.secondary)
-                .lineLimit(2)
+            Image(systemName: "chevron.right")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(Color.prosePalSlate.opacity(0.40))
+                .padding(.top, 14)
         }
-        .padding(.vertical, 4)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
+        .frame(maxWidth: .infinity, minHeight: 104, alignment: .leading)
+        .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
+    }
+
+    private func memoryBadge(_ title: String, color: Color) -> some View {
+        Text(title)
+            .font(.caption2.weight(.semibold))
+            .foregroundStyle(color)
+            .padding(.horizontal, 8)
+            .frame(height: 24)
+            .background(color.opacity(0.12), in: Capsule(style: .continuous))
     }
 }
 

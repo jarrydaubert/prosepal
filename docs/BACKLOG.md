@@ -704,8 +704,12 @@ not done.
   `draftStartSection`, `shouldShowTabRail`, and `startNewMoment()` in
   `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`. Partial because
   XcodeBuildMCP simulator evidence covers the explicit `Mira Audit` active
-  compose path and rail avoidance, but physical-device, Dynamic Type,
-  VoiceOver, Switch Control, and paywall/input follow-up polish remain.
+  compose path and rail avoidance, plus the custom Relationship memory vault
+  empty/populated overview states under
+  `prosepal-ios/evidence/ui-design-qa/memory-vault/`. The populated row was
+  seeded through the normal mock Moment flow and verified to navigate into the
+  existing detail form. Physical-device, Dynamic Type, VoiceOver, Switch
+  Control, and remaining detail-form polish remain.
 - [~] iOS 26-first Liquid Glass direction is in code -- evidence:
   iOS 26 deployment target in `prosepal-ios/Package.swift` and
   `prosepal-ios/ProsePal.xcodeproj/project.pbxproj`; control-layer styling in
