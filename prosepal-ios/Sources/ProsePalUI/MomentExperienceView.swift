@@ -1088,7 +1088,9 @@ public struct MomentAppRootView: View {
 
         case .settings:
             NavigationStack {
-                MomentSettingsView(account: account)
+                MomentSettingsView(account: account) {
+                    selectedTab = .moment
+                }
                     .momentNavigationBarColorScheme()
             }
         }
@@ -5680,184 +5682,192 @@ private struct RelationshipVoiceCardDetailView: View {
 
 private struct MomentSettingsView: View {
     @Bindable var account: MomentAccountModel
+    let onDone: () -> Void
     @State private var activeSheet: MomentSettingsPresentedSheet?
     @State private var supportNotice: String?
 
     var body: some View {
-        List {
-            if let notice = account.notice {
-                Section {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 18) {
+                settingsTopChrome
+
+                if let notice = account.notice {
                     Label(notice.title, systemImage: notice.systemImage)
                         .font(.callout.weight(.semibold))
+                        .foregroundStyle(Color.prosePalSlate)
+                        .padding(14)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color.prosePalPaper.opacity(0.92), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                 }
-                .momentListRowSurface()
-            }
 
-            Section {
-                if account.isSignedIn {
-                    LabeledContent("Signed in", value: account.signedInEmail ?? "Apple account")
+                settingsProfileCard
 
-                    Button {
+                settingsGroup("Writing") {
+                    settingsStaticRow(
+                        systemImage: "paintbrush",
+                        title: "Default tone",
+                        subtitle: "Diplomatic · Warm",
+                        trailing: "Edit",
+                        showsChevron: true
+                    )
+                    settingsDivider
+                    settingsSwitchRow(
+                        systemImage: "person.crop.square",
+                        title: "Voice profile",
+                        subtitle: "Learns how you write",
+                        isOn: account.runtimeReadiness.isRelationshipVaultPersistent
+                    )
+                    settingsDivider
+                    settingsStaticRow(
+                        systemImage: "textformat.size",
+                        title: "Reading text size",
+                        trailing: "Medium",
+                        showsChevron: true
+                    )
+                }
+
+                settingsGroup("Privacy") {
+                    settingsSwitchRow(
+                        systemImage: "lock",
+                        title: "Private mode",
+                        subtitle: "Keep drafts on this device",
+                        isOn: true
+                    )
+                    settingsDivider
+                    settingsNavigationRow(
+                        systemImage: "shield.checkered",
+                        title: "Privacy & data"
+                    ) {
+                        MomentLocalDataExportView()
+                    }
+                }
+
+                settingsGroup("Subscription") {
+                    settingsButtonRow(
+                        systemImage: "checkmark.seal",
+                        title: "ProsePal Pro",
+                        subtitle: account.isPremiumUnlocked ? "Active" : "Upgrade available",
+                        showsChevron: true
+                    ) {
+                        activeSheet = .paywall
+                    }
+                    settingsDivider
+                    settingsButtonRow(
+                        systemImage: "arrow.clockwise",
+                        title: account.isRestoringPurchases ? "Restoring purchases" : "Restore purchases",
+                        subtitle: account.subscriptionErrorMessage,
+                        showsChevron: false
+                    ) {
                         Task {
-                            await account.signOut()
+                            await account.restorePurchases(source: "settings")
                         }
-                    } label: {
-                        Label("Sign out", systemImage: "rectangle.portrait.and.arrow.right")
                     }
-
-                    Button(role: .destructive) {
-                        account.requestAccountDeletion()
-                    } label: {
-                        Label(
-                            account.isDeletingAccount ? "Deleting..." : "Delete account",
-                            systemImage: "trash"
-                        )
+                    .disabled(account.isRestoringPurchases)
+                    settingsDivider
+                    settingsButtonRow(
+                        systemImage: "lifepreserver",
+                        title: "Help & support",
+                        showsChevron: true
+                    ) {
+                        copySupportEmail()
                     }
-                    .disabled(account.isDeletingAccount)
-                } else {
-                    MomentAppleSignInControl(account: account, source: "settings")
-                }
-            } header: {
-                MomentListSectionHeader("Account")
-            }
-            .momentListRowSurface()
-
-            Section {
-                Button {
-                    activeSheet = .paywall
-                } label: {
-                    HStack {
-                        Label("View Premium", systemImage: "star")
-                        Spacer()
-                        Text(account.isPremiumUnlocked ? "Active" : "Not active")
-                            .foregroundStyle(.secondary)
-                    }
-                }
-
-                Button {
-                    Task {
-                        await account.restorePurchases(source: "settings")
-                    }
-                } label: {
-                    Label(account.isRestoringPurchases ? "Restoring..." : "Restore purchases", systemImage: "arrow.clockwise")
-                }
-                .disabled(account.isRestoringPurchases)
-
-                if let subscriptionErrorMessage = account.subscriptionErrorMessage {
-                    Label(subscriptionErrorMessage, systemImage: "exclamationmark.triangle")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-            } header: {
-                MomentListSectionHeader("Premium")
-            }
-            .momentListRowSurface()
-
-            Section {
-                LabeledContent(
-                    "Private Draft",
-                    value: account.runtimeReadiness.isPrivateDraftConfigured ? "Device dependent" : "Unavailable here"
-                )
-                LabeledContent(
-                    "Take more care",
-                    value: account.runtimeReadiness.isCarefulGatewayConfigured ? "Ready" : "Needs setup"
-                )
-            } header: {
-                MomentListSectionHeader("Writing")
-            }
-            .momentListRowSurface()
-
-            Section {
-                Label("Saved drafts are only created when you tap Save", systemImage: "bookmark")
-                LabeledContent(
-                    "Local vault",
-                    value: account.runtimeReadiness.isRelationshipVaultPersistent ? "Stored on device" : "Temporary"
-                )
-                NavigationLink {
-                    RelationshipMemoryVaultView()
-                } label: {
-                    Label("Relationship memory", systemImage: "checkmark.seal")
-                }
-            } header: {
-                MomentListSectionHeader("Privacy")
-            }
-            .momentListRowSurface()
-
-            Color.clear
-                .frame(height: 72)
-                .listRowBackground(Color.clear)
-                .listRowSeparator(.hidden)
-                .accessibilityHidden(true)
-
-            Section {
-                NavigationLink {
-                    MomentLocalDataExportView()
-                } label: {
-                    Label("Export local data", systemImage: "square.and.arrow.up")
-                }
-
-                LabeledContent("Delete account", value: account.isSignedIn ? "Available above" : "Sign in required")
-            } header: {
-                MomentListSectionHeader("Data")
-            }
-            .momentListRowSurface()
-
-            Section {
-                Link(destination: MomentSettingsExternalLinks.support) {
-                    Label("Contact support", systemImage: "envelope")
-                }
-
-                Button {
-                    copySupportEmail()
-                } label: {
-                    Label("Copy support email", systemImage: "doc.on.doc")
                 }
 
                 if let supportNotice {
                     Label(supportNotice, systemImage: "checkmark.circle")
                         .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.prosePalSlate)
+                        .frame(maxWidth: .infinity, alignment: .center)
                 }
-            } header: {
-                MomentListSectionHeader("Support")
-            }
-            .momentListRowSurface()
 
-            Section {
-                Link(destination: MomentSettingsExternalLinks.terms) {
-                    Label("Terms", systemImage: "doc.text")
-                }
-                Link(destination: MomentSettingsExternalLinks.privacy) {
-                    Label("Privacy Policy", systemImage: "hand.raised")
-                }
-            } header: {
-                MomentListSectionHeader("Legal")
-            }
-            .momentListRowSurface()
+                settingsGroup("Account & data") {
+                    if account.isSignedIn {
+                        settingsButtonRow(
+                            systemImage: "rectangle.portrait.and.arrow.right",
+                            title: "Sign out"
+                        ) {
+                            Task {
+                                await account.signOut()
+                            }
+                        }
+                        settingsDivider
+                        settingsButtonRow(
+                            systemImage: "trash",
+                            title: account.isDeletingAccount ? "Deleting account" : "Delete account",
+                            role: .destructive
+                        ) {
+                            account.requestAccountDeletion()
+                        }
+                        .disabled(account.isDeletingAccount)
+                        settingsDivider
+                    } else {
+                        MomentAppleSignInControl(account: account, source: "settings")
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 12)
+                        settingsDivider
+                    }
 
-            Section {
-                LabeledContent("Version", value: versionText)
-                LabeledContent("Direction", value: "Native iOS")
-            } header: {
-                MomentListSectionHeader("About")
+                    settingsNavigationRow(
+                        systemImage: "checkmark.seal",
+                        title: "Relationship memory",
+                        subtitle: account.runtimeReadiness.isRelationshipVaultPersistent ? "Stored on device" : "Temporary"
+                    ) {
+                        RelationshipMemoryVaultView()
+                    }
+                    settingsDivider
+                    settingsStaticRow(
+                        systemImage: "lock.doc",
+                        title: "Private Draft",
+                        trailing: account.runtimeReadiness.isPrivateDraftConfigured ? "Device dependent" : "Unavailable here"
+                    )
+                    settingsDivider
+                    settingsStaticRow(
+                        systemImage: "heart.text.square",
+                        title: "Take more care",
+                        trailing: account.runtimeReadiness.isCarefulGatewayConfigured ? "Ready" : "Needs setup"
+                    )
+                }
+
+                settingsGroup("Legal") {
+                    Link(destination: MomentSettingsExternalLinks.support) {
+                        settingsLinkRowBody(systemImage: "envelope", title: "Contact support")
+                    }
+                    .buttonStyle(.plain)
+                    settingsDivider
+                    Link(destination: MomentSettingsExternalLinks.terms) {
+                        settingsLinkRowBody(systemImage: "doc.text", title: "Terms")
+                    }
+                    .buttonStyle(.plain)
+                    settingsDivider
+                    Link(destination: MomentSettingsExternalLinks.privacy) {
+                        settingsLinkRowBody(systemImage: "hand.raised", title: "Privacy Policy")
+                    }
+                    .buttonStyle(.plain)
+                }
+
+                settingsGroup("About") {
+                    settingsStaticRow(systemImage: "info.circle", title: "Version", trailing: versionText)
+                    settingsDivider
+                    settingsStaticRow(systemImage: "iphone", title: "Direction", trailing: "Native iOS")
+                }
             }
-            .momentListRowSurface()
+            .padding(.horizontal, 18)
+            .padding(.top, 10)
+            .padding(.bottom, 116)
         }
-        .navigationTitle("Settings")
-        .toolbarTitleDisplayMode(.inline)
-        .contentMargins(.top, 6, for: .scrollContent)
-        .contentMargins(.bottom, 112, for: .scrollContent)
+        .scrollIndicators(.hidden)
         .safeAreaInset(edge: .bottom) {
             Color.clear
                 .frame(height: 86)
                 .accessibilityHidden(true)
         }
-        .scrollContentBackground(.hidden)
         .background {
             MomentAtmosphericBackground(isCareful: false)
         }
         .tint(.prosePalCoral)
+        #if os(iOS)
+        .toolbar(.hidden, for: .navigationBar)
+        #endif
         .sheet(item: $activeSheet) { sheet in
             switch sheet {
             case .paywall:
@@ -5883,6 +5893,282 @@ private struct MomentSettingsView: View {
         } message: {
             Text("This deletes your ProsePal account and app data connected to it.")
         }
+    }
+
+    private var settingsTopChrome: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            Button("Done") {
+                onDone()
+            }
+            .font(.title3.weight(.regular))
+            .foregroundStyle(Color.prosePalCoralDeep)
+            .buttonStyle(.plain)
+            .frame(minHeight: 36, alignment: .leading)
+
+            Text("Settings")
+                .font(.system(size: 38, weight: .medium, design: .serif))
+                .foregroundStyle(Color.prosePalInk)
+                .lineLimit(1)
+                .minimumScaleFactor(0.84)
+        }
+        .padding(.top, 4)
+    }
+
+    private var settingsProfileCard: some View {
+        HStack(spacing: 14) {
+            Text(profileInitials)
+                .font(.system(size: 22, weight: .bold, design: .default))
+                .foregroundStyle(Color.prosePalCoralDeep)
+                .frame(width: 58, height: 58)
+                .background(Color.prosePalCoral.opacity(0.16), in: Circle())
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(profileTitle)
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(Color.prosePalInk)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.84)
+
+                Text(profileDetail)
+                    .font(.callout)
+                    .foregroundStyle(Color.prosePalSlate.opacity(0.78))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.82)
+            }
+
+            Spacer(minLength: 10)
+
+            Text(account.isPremiumUnlocked ? "Pro" : "Free")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Color.prosePalCoralDeep)
+                .padding(.horizontal, 13)
+                .frame(height: 32)
+                .background(Color.prosePalCoral.opacity(0.12), in: Capsule(style: .continuous))
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, minHeight: 88, alignment: .leading)
+        .background(Color.prosePalPaper.opacity(0.96), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(Color.prosePalNavy.opacity(0.10), lineWidth: 1)
+        }
+        .shadow(color: Color.prosePalCoralDeep.opacity(0.08), radius: 12, x: 0, y: 6)
+        .accessibilityElement(children: .combine)
+    }
+
+    private func settingsGroup<Content: View>(
+        _ title: String,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(.caption.weight(.semibold))
+                .textCase(.uppercase)
+                .foregroundStyle(Color.prosePalSlate.opacity(0.72))
+                .padding(.leading, 4)
+
+            VStack(spacing: 0) {
+                content()
+            }
+            .background(Color.prosePalPaper.opacity(0.94), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .stroke(Color.prosePalNavy.opacity(0.10), lineWidth: 1)
+            }
+        }
+    }
+
+    private var settingsDivider: some View {
+        Rectangle()
+            .fill(Color.prosePalNavy.opacity(0.11))
+            .frame(height: 0.5)
+            .padding(.leading, 64)
+    }
+
+    private func settingsStaticRow(
+        systemImage: String,
+        title: String,
+        subtitle: String? = nil,
+        trailing: String? = nil,
+        showsChevron: Bool = false
+    ) -> some View {
+        settingsRowBody(
+            systemImage: systemImage,
+            title: title,
+            subtitle: subtitle,
+            trailing: trailing,
+            showsChevron: showsChevron
+        )
+    }
+
+    private func settingsButtonRow(
+        systemImage: String,
+        title: String,
+        subtitle: String? = nil,
+        showsChevron: Bool = false,
+        role: ButtonRole? = nil,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(role: role, action: action) {
+            settingsRowBody(
+                systemImage: systemImage,
+                title: title,
+                subtitle: subtitle,
+                showsChevron: showsChevron,
+                isDestructive: role == .destructive
+            )
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func settingsNavigationRow<Destination: View>(
+        systemImage: String,
+        title: String,
+        subtitle: String? = nil,
+        @ViewBuilder destination: () -> Destination
+    ) -> some View {
+        NavigationLink {
+            destination()
+        } label: {
+            settingsRowBody(
+                systemImage: systemImage,
+                title: title,
+                subtitle: subtitle,
+                showsChevron: true
+            )
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func settingsSwitchRow(
+        systemImage: String,
+        title: String,
+        subtitle: String? = nil,
+        isOn: Bool
+    ) -> some View {
+        HStack(spacing: 12) {
+            settingsIcon(systemImage)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(Color.prosePalInk)
+
+                if let subtitle {
+                    Text(subtitle)
+                        .font(.callout)
+                        .foregroundStyle(Color.prosePalSlate.opacity(0.78))
+                        .lineLimit(2)
+                }
+            }
+
+            Spacer(minLength: 10)
+
+            settingsSwitch(isOn: isOn)
+        }
+        .padding(.horizontal, 16)
+        .frame(minHeight: 64)
+        .accessibilityElement(children: .combine)
+    }
+
+    private func settingsRowBody(
+        systemImage: String,
+        title: String,
+        subtitle: String? = nil,
+        trailing: String? = nil,
+        showsChevron: Bool = false,
+        isDestructive: Bool = false
+    ) -> some View {
+        HStack(spacing: 12) {
+            settingsIcon(systemImage, color: isDestructive ? Color.red.opacity(0.78) : Color.prosePalSlate)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(isDestructive ? Color.red.opacity(0.84) : Color.prosePalInk)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.84)
+
+                if let subtitle, !subtitle.isEmpty {
+                    Text(subtitle)
+                        .font(.callout)
+                        .foregroundStyle(Color.prosePalSlate.opacity(0.78))
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+
+            Spacer(minLength: 10)
+
+            if let trailing {
+                Text(trailing)
+                    .font(.body)
+                    .foregroundStyle(Color.prosePalSlate.opacity(0.64))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.78)
+            }
+
+            if showsChevron {
+                Image(systemName: "chevron.right")
+                    .font(.body.weight(.medium))
+                    .foregroundStyle(Color.prosePalSlate.opacity(0.48))
+            }
+        }
+        .padding(.horizontal, 16)
+        .frame(minHeight: 64)
+        .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
+    }
+
+    private func settingsLinkRowBody(systemImage: String, title: String) -> some View {
+        settingsRowBody(
+            systemImage: systemImage,
+            title: title,
+            showsChevron: true
+        )
+    }
+
+    private func settingsIcon(_ systemImage: String, color: Color = Color.prosePalSlate) -> some View {
+        Image(systemName: systemImage)
+            .font(.system(size: 20, weight: .regular))
+            .foregroundStyle(color)
+            .frame(width: 36)
+    }
+
+    private func settingsSwitch(isOn: Bool) -> some View {
+        ZStack(alignment: isOn ? .trailing : .leading) {
+            Capsule(style: .continuous)
+                .fill(isOn ? Color.prosePalCoral : Color.prosePalSlate.opacity(0.18))
+
+            Circle()
+                .fill(Color.prosePalPaper)
+                .frame(width: 28, height: 28)
+                .shadow(color: Color.prosePalNavy.opacity(0.16), radius: 3, x: 0, y: 2)
+                .padding(2)
+        }
+        .frame(width: 56, height: 32)
+        .accessibilityLabel(isOn ? "On" : "Off")
+    }
+
+    private var profileInitials: String {
+        guard let firstCharacter = (account.signedInEmail ?? "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .first
+        else {
+            return "PP"
+        }
+        return String(firstCharacter).uppercased()
+    }
+
+    private var profileTitle: String {
+        account.isSignedIn ? "Apple account" : "ProsePal"
+    }
+
+    private var profileDetail: String {
+        if account.isSignedIn {
+            return account.signedInEmail ?? "Signed in with Apple"
+        }
+        return "Private on this iPhone"
     }
 
     private var versionText: String {
