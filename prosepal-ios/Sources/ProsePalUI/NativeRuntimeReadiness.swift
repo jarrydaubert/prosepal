@@ -9,6 +9,7 @@ public struct NativeRuntimeReadiness: Equatable, Sendable {
     public var isSubscriptionConfigured: Bool
     public var premiumProductCount: Int
     public var isRecommendedPremiumProductConfigured: Bool
+    public var isRelationshipVaultPersistent: Bool
 
     public init(
         isGenerationConfigured: Bool = false,
@@ -18,7 +19,8 @@ public struct NativeRuntimeReadiness: Equatable, Sendable {
         isAccountConfigured: Bool = false,
         isSubscriptionConfigured: Bool = false,
         premiumProductCount: Int = 0,
-        isRecommendedPremiumProductConfigured: Bool = false
+        isRecommendedPremiumProductConfigured: Bool = false,
+        isRelationshipVaultPersistent: Bool = true
     ) {
         let privateDraftConfigured = isPrivateDraftConfigured ?? isGenerationConfigured
         let carefulGatewayConfigured = isCarefulGatewayConfigured ?? isGenerationConfigured
@@ -30,6 +32,7 @@ public struct NativeRuntimeReadiness: Equatable, Sendable {
         self.isSubscriptionConfigured = isSubscriptionConfigured
         self.premiumProductCount = max(0, premiumProductCount)
         self.isRecommendedPremiumProductConfigured = isRecommendedPremiumProductConfigured
+        self.isRelationshipVaultPersistent = isRelationshipVaultPersistent
     }
 
     public static let unconfigured = NativeRuntimeReadiness()
@@ -80,7 +83,7 @@ public struct NativeRuntimeReadiness: Equatable, Sendable {
     }
 
     var diagnosticsPayload: String {
-        "runtime_readiness generation_configured=\(isGenerationConfigured) private_draft_configured=\(isPrivateDraftConfigured) take_more_care_configured=\(isCarefulGatewayConfigured) dev_secret_configured=\(isDevGatewaySecretConfigured) account_configured=\(isAccountConfigured) subscription_configured=\(isSubscriptionConfigured) premium_product_count=\(premiumProductCount) recommended_plan_configured=\(isRecommendedPremiumProductConfigured)"
+        "runtime_readiness generation_configured=\(isGenerationConfigured) private_draft_configured=\(isPrivateDraftConfigured) take_more_care_configured=\(isCarefulGatewayConfigured) dev_secret_configured=\(isDevGatewaySecretConfigured) account_configured=\(isAccountConfigured) subscription_configured=\(isSubscriptionConfigured) premium_product_count=\(premiumProductCount) recommended_plan_configured=\(isRecommendedPremiumProductConfigured) relationship_vault_persistent=\(isRelationshipVaultPersistent)"
     }
 
     private var subscriptionDetail: String {

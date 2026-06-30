@@ -302,7 +302,7 @@ private func makeAccount(
     authClient: (any AuthClient)? = nil,
     subscriptionClient: (any SubscriptionClient)? = nil,
     accountMaintenanceClient: (any AccountMaintenanceClient)? = nil,
-    localAccountDataDeletion: (() throws -> Void)? = nil
+    localAccountDataDeletion: (@MainActor () async throws -> Void)? = nil
 ) -> MomentAccountModel {
     MomentAccountModel(
         clientContext: ClientContext(appVersion: "1.0", buildNumber: "1"),

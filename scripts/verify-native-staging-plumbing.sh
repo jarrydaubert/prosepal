@@ -33,8 +33,12 @@ expected_products = {
     "com.prosepal.pro.monthly",
     "com.prosepal.pro.weekly",
 }
+expected_product_ids_setting = "com.prosepal.pro.yearly,com.prosepal.pro.monthly,com.prosepal.pro.weekly"
+expected_recommended_product_id = "com.prosepal.pro.yearly"
 expected_bundle_id = "com.prosepal.prosepal"
 expected_staging_bundle_id = "com.prosepal.prosepal.staging"
+expected_staging_widget_bundle_id = "com.prosepal.prosepal.staging.widgets"
+expected_staging_share_bundle_id = "com.prosepal.prosepal.staging.share"
 expected_staging_target_id = "PP0000000000000000000048"
 
 def fail(message: str) -> None:
@@ -136,6 +140,29 @@ if pbxproj.exists():
     if f"PRODUCT_BUNDLE_IDENTIFIER = {expected_staging_bundle_id};" not in project_text:
         fail(f"native project is missing staging bundle id: {expected_staging_bundle_id}")
     print("project_staging_bundle_id=staging")
+
+    staging_product_setting = f'PROSEPAL_PREMIUM_PRODUCT_IDS = "{expected_product_ids_setting}";'
+    if project_text.count(staging_product_setting) < 2:
+        fail("staging target does not pass expected premium product ids into app runtime")
+    staging_recommended_setting = (
+        f"PROSEPAL_RECOMMENDED_PREMIUM_PRODUCT_ID = {expected_recommended_product_id};"
+    )
+    if project_text.count(staging_recommended_setting) < 2:
+        fail("staging target does not pass expected recommended premium product id into app runtime")
+    if project_text.count('PROSEPAL_PREMIUM_PRODUCT_IDS = "";') < 2:
+        fail("production target should keep premium product ids explicitly blank in local project settings")
+    print("project_staging_product_ids=configured")
+
+    staging_surface_markers = [
+        "ProsePalWidgetsStaging.appex in Embed App Extensions",
+        "ProsePalShareExtensionStaging.appex in Embed App Extensions",
+        f"PRODUCT_BUNDLE_IDENTIFIER = {expected_staging_widget_bundle_id};",
+        f"PRODUCT_BUNDLE_IDENTIFIER = {expected_staging_share_bundle_id};",
+    ]
+    for marker in staging_surface_markers:
+        if marker not in project_text:
+            fail(f"staging project surface plumbing missing: {marker}")
+    print("project_staging_system_surfaces=configured")
 
     reference_count = len(re.findall(
         r"isa = PBXFileReference;[^}\n]+path = ProsePalStaging\.storekit;",

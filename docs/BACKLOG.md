@@ -1,8 +1,18 @@
 # Backlog
 
-This is the single active tracker for the native iOS direction. The untracked
-root `PROSEPAL_BUILD_SPEC.md` from the main checkout has been folded here so
-the repo has one source of truth for the Moment path.
+This is the single active open-work tracker for the native iOS direction. The
+untracked root `PROSEPAL_BUILD_SPEC.md` from the main checkout has been folded
+here so the repo has one source of truth for remaining Moment-path work.
+
+The detailed user-story audit and verification matrix lives in
+`docs/FEATURE_STATUS.csv`. Its implementation statuses describe code-complete
+feature behavior; this backlog remains authoritative for open implementation,
+release, and App Review readiness work.
+
+Codex verification is complete to the local automated/static/simulator scope.
+Remaining `[~]` items stay open when they require physical-device behavior,
+live Apple/Supabase/App Store or StoreKit sandbox evidence, actual OS
+system-surface configuration, or human safety/accessibility review.
 
 Status markers:
 
@@ -55,7 +65,8 @@ not done.
 - [x] Provider/model names stay out of user-facing UI -- evidence:
   `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`,
   `prosepal-ios/Sources/ProsePalAPI/FoundationModelsPrivateDraftClient.swift`,
-  and `89d2963`.
+  and `providerNamesStayOutOfAppAndUISource()` in
+  `prosepal-ios/Tests/ProsePalUITests/NativeGuardrailTests.swift`.
 
 ## 1. Surfaces / Information Architecture
 
@@ -120,17 +131,19 @@ not done.
 - [x] App opens into the Moment experience rather than the legacy grouped
   create form -- evidence: `ProsePalNativeApp.body` in
   `prosepal-ios/App/ProsePalNativeApp.swift` constructs `MomentAppRootView`.
-- [~] Saved is a local, user-curated library with copy/share/delete -- evidence:
+- [x] Saved is a local, user-curated library with copy/share/edit/delete -- evidence:
   `SavedMomentDraftRecord` in `prosepal-ios/Sources/ProsePalAPI/RelationshipVault.swift`,
-  `MomentSavedView` and `MomentSavedDetailView` in
-  `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`. Partial because
-  edit is not present in the Moment saved detail.
+  `SavedMomentDraftsView` and `SavedMomentDraftDetailView` in
+  `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`, and saved-record
+  tests in `prosepal-ios/Tests/ProsePalAPITests/RelationshipVaultTests.swift`.
 - [~] Settings covers account, subscription, writing, privacy, support, legal,
   and about -- evidence: `MomentSettingsView` in
   `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`,
   `MomentAccountModel` in `prosepal-ios/Sources/ProsePalUI/MomentAccountModel.swift`,
-  and `89d2963`. Partial because export remains a support path and account
-  deletion/subscription flows still need full staging/App Review evidence.
+  `docs/FEATURE_STATUS.csv` row `US-040`, and staging screenshots under
+  `prosepal-ios/evidence/feature-status/us-040-staging-*.jpg`. Partial because
+  account deletion/subscription flows still need full staging/App Review
+  evidence.
 - [x] Legacy grouped create/results path is retired -- evidence:
   `ProsePalNativeApp.swift` constructs `MomentAppRootView`; the dead grouped
   form source files `ProsePalRootView.swift` and `LegacyComposeModels.swift`
@@ -154,27 +167,44 @@ not done.
   `MomentModel.adjust(_:)` in `prosepal-ios/Sources/ProsePalDomain/MomentModels.swift`,
   `prosepal-ios/Sources/ProsePalAPI/MessageWritingService.swift`, and
   `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`.
-- [ ] Voice capture for "say the messy thing" exists -- evidence: no `Speech`,
-  `SFSpeech`, `AVAudio`, or `AVFoundation` implementation found under
-  `prosepal-ios/Sources`.
+- [~] Voice capture for "say the messy thing" exists -- evidence:
+  `MomentVoiceCaptureModel`, `MomentVoiceCaptureTranscribing`, and the
+  iOS-only `AppleSpeechMomentVoiceTranscriber` in
+  `prosepal-ios/Sources/ProsePalUI/MomentVoiceCapture.swift`; the Moment sheet
+  mic control and `MomentVoiceCaptureSheet` live in
+  `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`; microphone and
+  speech-recognition permission strings are in `prosepal-ios/App/Info.plist`;
+  state coverage lives in
+  `prosepal-ios/Tests/ProsePalUITests/MomentVoiceCaptureTests.swift`.
+  Partial because simulator proof confirms the UI and unavailable state, while
+  successful live speech transcription still needs physical-device evidence.
 - [~] Draft actions cover copy, share, save, edit, and send/share handoff --
-  evidence: copy/share/save exist in `MomentActionRail` and saved detail actions
-  in `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`. Partial
-  because edit and an explicit send handoff are not implemented for Moment drafts.
-- [~] N-IOS-17 Protect user drafts during AI refinement -- evidence:
-  `MomentModel.previousDraftBundle`, `restorePreviousDraft()`, and the visible
-  `Undo rewrite` action in
-  `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`; undo/failure
-  tests in `prosepal-ios/Tests/ProsePalUITests/MomentModelTests.swift`. Partial
-  because full accept/reject, version history, and autosave for user-authored
-  editable draft text are not implemented yet. DoD: local autosave preserves the
-  user's current words, substantial AI edits create a recoverable snapshot,
-  refinement results require explicit accept or keep-original behavior before
-  replacing user text, undo remains available after acceptance, and tests cover
-  cancellation/failure without text loss.
+  evidence: active draft copy/share/save/edit actions live in `MomentSheetView`
+  through `copyButton(text:)`, `shareButton(text:)`,
+  `updateActiveDraftMessage(_:)`, and the state-driven `MomentActivityView`;
+  saved draft edit exists in the saved-detail path; and draft edit tests exist in
+  `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift` and
+  `prosepal-ios/Tests/ProsePalUITests/MomentModelTests.swift`. Partial because
+  an explicit send handoff is not implemented for Moment drafts.
+- [x] N-IOS-17 Protect user drafts during AI refinement -- evidence:
+  `MomentModel.draftSnapshots`, `previousDraftBundle`, `restorePreviousDraft()`,
+  `restoreDraftSnapshot(id:)`, `updateActiveDraftMessage(_:)`,
+  `keepCurrentDraftChange()`, `MomentDraftHistorySheet`,
+  `MomentDraftRecoveryStore`, and the visible `Undo edit` / `Keep edits` /
+  `Undo rewrite` / `Keep rewrite` / `History` actions in
+  `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`; undo/failure,
+  history, restart recovery, and Start over clearing tests in
+  `prosepal-ios/Tests/ProsePalUITests/MomentModelTests.swift`; XcodeBuildMCP
+  runtime proof reopened `For Recovery Test` with `Draft ready` after app
+  relaunch, then Start over returned to the first-entry screen. Local autosave
+  persists active drafts across app lifecycle boundaries, substantial AI edits
+  create recoverable snapshots, refinement results expose explicit keep/undo,
+  accepted rewrites remain recoverable through history, and cancellation/failure
+  paths keep current text.
 - [x] Draft body reads like correspondence rather than a chat bubble --
-  evidence: serif draft body and `textSelection(.enabled)` in
-  `MomentDraftCard` inside `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`.
+  evidence: serif editable draft body in
+  `MomentSheetView.draftBody(_:)` inside
+  `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`.
 
 ## 3. Relationship Memory And Voice
 
@@ -193,13 +223,25 @@ not done.
   setup in `prosepal-ios/App/ProsePalNativeApp.swift`. Partial because the
   SwiftData store backup/encryption/export posture still needs a dedicated
   privacy review.
+- [x] Relationship memory lookups use stable persisted person keys instead of
+  in-memory locale-dependent filtering -- evidence:
+  `RelationshipTruthBeadRecord`, `RelationshipVoiceCardRecord`, and
+  `SavedMomentDraftRecord` persist `normalizedPersonName`;
+  `SwiftDataRelationshipMemoryProvider.approvedTruthBeads(for:)` and
+  `approvedVoiceCard(for:)` query that key with SwiftData predicates after
+  backfilling missing keys; normalization uses `en_US_POSIX` in
+  `prosepal-ios/Sources/ProsePalAPI/RelationshipVault.swift`. Covered by
+  `RelationshipVaultTests` for case, diacritic, whitespace, and legacy empty-key
+  backfill behavior.
 - [x] Contacts/Calendar enrichment is not silently active -- evidence: no
   `EventKit` or `Contacts` implementation found under `prosepal-ios/Sources`.
-- [~] Voice Card exists as user-approved memory -- evidence:
+- [x] Voice Card exists as user-approved memory -- evidence:
   `RelationshipVoiceCardRecord` in
   `prosepal-ios/Sources/ProsePalAPI/RelationshipVault.swift`; voice-card UI in
-  `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`. Partial because
-  learning from edits is not implemented.
+  `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`; approved
+  voice-card lookup and style-only prompt guard in
+  `prosepal-ios/Tests/ProsePalAPITests/RelationshipVaultTests.swift`.
+  Spoken voice input is tracked separately as the Moment voice capture feature.
 
 ## 4. AI Architecture
 
@@ -245,14 +287,28 @@ not done.
 - [~] Crisis path redirects rather than drafting -- evidence:
   `String.indicatesCrisisSupportNeed`, `MomentSafetySignal`, and
   `MomentModel.canDraft` in `prosepal-ios/Sources/ProsePalDomain/MomentModels.swift`
-  and `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`. Partial
-  because detection is a hardcoded English phrase list, not a model guardrail
-  signal with locale awareness.
+  and `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`; simulator
+  evidence in
+  `prosepal-ios/evidence/feature-status/us-009-crisis-block-fixed.jpg` and
+  `prosepal-ios/evidence/feature-status/us-009-crisis-support-actions.jpg`.
+  `ERR-UX-009` fixed the disabled draft card so crisis state explains the safety
+  block instead of showing generic missing-context copy. Partial because
+  detection is a hardcoded English phrase list, not a model guardrail signal with
+  locale awareness.
 - [~] Pressure Check provides subtractive feedback -- evidence:
-  `PressureCheck.local(for:)` in
+  `PressureCheck.local(messageText:moment:)` in
   `prosepal-ios/Sources/ProsePalDomain/MomentModels.swift`; private-lane
-  typed fields in `FoundationModelsPrivateDraftClient.swift`. Partial because
-  user-facing accept/keep/clean flows are not fully developed.
+  typed fields in `FoundationModelsPrivateDraftClient.swift`; actionable Keep
+  draft and Clean up/Make direct controls in
+  `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`; model tests in
+  `prosepal-ios/Tests/ProsePalUITests/MomentModelTests.swift`; simulator
+  evidence in
+  `prosepal-ios/evidence/feature-status/us-019-pressure-check-controls.jpg`,
+  `prosepal-ios/evidence/feature-status/us-019-pressure-check-clean-up-fixed.jpg`,
+  and `prosepal-ios/evidence/feature-status/us-019-pressure-check-keep-draft.jpg`.
+  `ERR-UX-008` fixed cleanup looping when a local pressure finding persisted
+  from the original true detail. Partial because the current detection remains
+  local phrase-list heuristics and broader safety copy review is still needed.
 - [~] Careful Mode calms sensitive moments -- evidence: `MomentInput.isCarefulMode`
   and `carefulModeSection` in
   `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`; sensitive
@@ -271,13 +327,41 @@ not done.
   evidence: `prosepal-ios/Sources/ProsePalUI/ProsePalAppIntents.swift`,
   `prosepal-ios/App/ProsePalAppShortcuts.swift`. Partial because device evidence
   and shortcut QA are still needed.
-- [ ] Care Glance WidgetKit widget exists -- evidence: no `WidgetKit`,
-  `WidgetBundle`, widget extension target, or `NSExtension` entry found under
-  `prosepal-ios`.
-- [ ] Control Center / Action Button control exists -- evidence: no
-  `ControlWidget` or control extension target found under `prosepal-ios`.
-- [ ] Share extension turns outside context into a Moment -- evidence: no share
-  extension or `NSExtension` entry found under `prosepal-ios`.
+- [~] Care Glance WidgetKit widget exists -- evidence:
+  `CareGlanceWidget`, `CareGlanceProvider`, and `ProsePalWidgetsBundle` live in
+  `prosepal-ios/Widgets/ProsePalWidgets.swift`; `ProsePalWidgets` and
+  `ProsePalWidgetsStaging` are WidgetKit app-extension targets embedded in the
+  matching production/staging app targets in
+  `prosepal-ios/ProsePal.xcodeproj/project.pbxproj`; `Widgets/Info.plist`
+  declares `com.apple.widgetkit-extension`; `SystemSurfaceProjectTests` guard
+  the target wiring and declarations; the built staging app contains
+  `PlugIns/ProsePalWidgetsStaging.appex`. Partial pending actual widget
+  gallery/add/tap proof on simulator or device.
+- [~] Control Center / Action Button control exists -- evidence:
+  `StartMomentControlWidget` uses `ControlWidgetButton` with an
+  `OpenURLIntent` handoff to the production or staging Moment URL scheme in
+  `prosepal-ios/Widgets/ProsePalWidgets.swift`, inside the WidgetKit extension
+  targets; `ProsePalAppIntentsTests` cover the `control_center` deep-link source
+  and `SystemSurfaceProjectTests` guard the control declaration. Partial pending
+  Control Center / Action Button configuration proof on device.
+- [~] Share extension turns outside context into a Moment -- evidence:
+  `ProsePalShareExtension` and `ProsePalShareExtensionStaging` are
+  share-services app-extension targets embedded in their matching app targets in
+  `prosepal-ios/ProsePal.xcodeproj/project.pbxproj`;
+  `prosepal-ios/ShareExtension/ShareViewController.swift` reads text/URL share
+  items, stores sanitized context in the app-group payload key, and opens the
+  production or staging Moment URL scheme based on extension bundle identity;
+  `MomentAppRootView` consumes that payload into the Moment detail;
+  `SystemSurfaceProjectTests`,
+  `ProsePalAppIntentsTests`, and `NativeDiagnosticsTests` guard project wiring,
+  payload handling, and metadata-only diagnostics; Safari's source-app share
+  sheet shows the `ProsePal` activity in
+  `prosepal-ios/evidence/feature-status/us-048-safari-share-sheet-prosepal.jpg`;
+  production and staging extension targets now define non-empty
+  `CFBundleDisplayName` build settings, and XcodeBuildMCP production build/run
+  succeeded after `ERR-INSTALL-001` fixed the empty-display-name install blocker.
+  Partial pending tap-through extension UI and app handoff proof on simulator or
+  device.
 - [ ] System writing/text tooling is explicitly integrated -- evidence: no
   dedicated writing-tools integration found under `prosepal-ios/Sources`.
 
@@ -286,9 +370,11 @@ not done.
 - [x] Native app uses StoreKit 2 directly, with no RevenueCat dependency --
   evidence: `StoreKitSubscriptionClient` in
   `prosepal-ios/Sources/ProsePalAPI/SubscriptionClient.swift`; no third-party
-  dependencies in `prosepal-ios/Package.swift`; the active Supabase
-  `revenuecat-webhook` function and config entry have been removed from the
-  native repo.
+  dependencies in `prosepal-ios/Package.swift`;
+  `nativeDependencyGuardDoesNotIncludeThirdPartyProviderSDKs()` in
+  `prosepal-ios/Tests/ProsePalUITests/NativeGuardrailTests.swift`; the active
+  Supabase `revenuecat-webhook` function and config entry have been removed from
+  the native repo.
 - [~] Server entitlement is authoritative through App Store Server
   Notifications V2 JWS and reconciliation -- evidence:
   `supabase/functions/app-store-notifications/index.ts`,
@@ -309,8 +395,13 @@ not done.
   no paid limits/extras gateway policy has been wired.
 - [~] Paywall is App Review-oriented: price/period, restore, Terms, Privacy,
   no forced sign-in -- evidence: `MomentPaywallSheet` in
-  `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`. Partial because
-  StoreKit product loading/sandbox evidence is not captured in the tracker.
+  `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`,
+  `docs/FEATURE_STATUS.csv` row `US-036`, and
+  `prosepal-ios/evidence/feature-status/us-036-staging-product-ids-wired-products-unavailable.jpg`.
+  Partial because staging now passes product IDs into the app, but StoreKit
+  still returns zero products under the current simulator launch; local StoreKit
+  product-serving, TestFlight/sandbox plan-selection, and active restore
+  evidence remain outstanding.
 - [~] Account deletion exists once account creation exists -- evidence:
   `SupabaseAccountMaintenanceClient` in
   `prosepal-ios/Sources/ProsePalAPI/AccountMaintenanceClient.swift`,
@@ -337,37 +428,171 @@ not done.
   existing Google-authenticated subscribed user can sign in with Apple and keep
   the same Supabase user/entitlement for both shared-email and Hide My Email or
   private-relay cases, or add an explicit account-linking/recovery flow.
+- [ ] StoreKit `appAccountToken` mapping remains money-correct and server-aligned
+  -- evidence: `SubscriptionClientFactory` only passes an `appAccountToken` when
+  the current Supabase auth user id parses as a UUID in
+  `prosepal-ios/App/ProsePalNativeApp.swift`; App Store notification and
+  reconciliation functions treat UUID `appAccountToken` as the Supabase
+  `user_entitlements.user_id` in
+  `supabase/functions/app-store-notifications/index.ts`,
+  `supabase/functions/app-store-reconcile-entitlement/index.ts`, and
+  `supabase/migrations/009_create_user_entitlements.sql`. DoD: keep the current
+  nil-if-not-UUID behavior unless a server-side mapping table/flow is designed;
+  do not introduce a deterministic hashed UUID fallback in the client without
+  proving entitlement convergence, account switch behavior, and unknown-user
+  handling against staging App Store sandbox events.
 
 ## 8. Design
 
+- [ ] UI execution plan is staged and reviewable -- evidence:
+  `prosepal-ios/NATIVE_2026_TECHNICAL_DIRECTION.md` sets the product direction
+  for an iOS 26-first, person-first Moment Sheet; current implementation lives
+  primarily in `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`;
+  XcodeBuildMCP staging run confirms the current first viewport is the intended
+  person-first Moment flow. Plan:
+  1. Extract stable visual primitives without behavior changes: Moment surfaces,
+     hero/header, section labels, input rows, action rails, badges, and
+     reduce-transparency fallbacks should become small SwiftUI components or
+     focused files while keeping `MomentModel` state ownership unchanged.
+  2. Tighten first-viewport and keyboard behavior: person input, committed
+     person header, active setup, bottom rail clearance, and tab visibility must
+     stay stable across standard text, accessibility Dynamic Type, keyboard
+     focus, iPad widths, Increase Contrast, Reduce Motion, and Reduce
+     Transparency.
+  3. Refine the draft workspace: opaque paper-like draft content remains the
+     primary reading surface; copy/share/save/edit/adjust/history actions stay
+     nearby without covering text; pressure-check and crisis states remain clear
+     safety surfaces, not decorative cards.
+  4. Normalize presentation state: replace clusters of boolean sheets with
+     enum/item-driven sheet presentation where it reduces state ambiguity, and
+     keep sheets responsible for their own dismissal/actions unless parent state
+     must change.
+  5. Keep Liquid Glass restrained: apply native iOS 26 glass only to
+     navigation/control layers, use `GlassEffectContainer` when grouped glass
+     elements coexist, mark only interactive controls as interactive, and keep
+     writing content opaque and readable.
+  6. Bring Settings and Paywall into the same visual system: dense, native,
+     App-Review-safe rows; no marketing landing-page treatment; loading,
+     unavailable, restore, legal, and support states remain explicit.
+  7. Review system entry handoffs visually: App Intent, widget, Control Center,
+     and share-extension deep links should land in a recognisable Moment state
+     without provider copy or raw shared text in the URL.
+  8. Finish accessibility review as product behavior: VoiceOver order and
+     labels, Switch Control reachability, Reduce Motion, Reduce Transparency,
+     Increase Contrast, Dynamic Type, keyboard, safe-area, and iPad layout are
+     acceptance gates, not polish tasks.
+  Review loop for each UI slice: apply SwiftUI state-ownership and sheet-routing
+  checks; apply Liquid Glass availability/composition/modifier-order checks;
+  build/run `ProsePal Staging` with XcodeBuildMCP; capture `snapshot_ui` for the
+  touched screens; run relevant package tests plus `swift build`/`swift test`;
+  update this backlog item or its child items with evidence. Partial because the
+  plan exists, but execution remains open.
+  Slice 1 evidence: visual primitives were extracted from
+  `MomentExperienceView` into focused SwiftUI files
+  (`MomentVisualTokens`, `MomentSymbolBadge`, `MomentIdentityCard`,
+  `MomentBackgrounds`, `MomentViewModifiers`, `MomentSectionChrome`,
+  `MomentRegisterSelector`); `swift build` and `swift test` passed; XcodeBuildMCP
+  `ProsePal Staging` build/run passed on `iPhone 17` with
+  `--prosepal-use-mock-writing-service`; `snapshot_ui` still exposes the
+  person-first first viewport controls and tabs; screenshot captured at
+  `/var/folders/w7/smr7zw112q55_g41ntxk4bjw0000gn/T/screenshot_optimized_b85d2b2b-655d-400d-bde8-eee035ba72db.jpg`.
+  Slice 2 evidence: first-viewport setup now uses one `Moment setup` card for
+  person, relationship, and moment selection; selection rows carry private/care
+  accent state consistently in both initial and active setup layouts; `swift
+  build` and `swift test` passed; XcodeBuildMCP `ProsePal Staging` build/run
+  passed on `iPhone 17`; `snapshot_ui` confirmed reachable person,
+  relationship, moment, and tab controls in private and care states; screenshots
+  captured at
+  `/var/folders/w7/smr7zw112q55_g41ntxk4bjw0000gn/T/screenshot_optimized_2e076346-9c9c-4be2-9306-43deacc358b2.jpg`
+  and
+  `/var/folders/w7/smr7zw112q55_g41ntxk4bjw0000gn/T/screenshot_optimized_89225015-31cd-4d01-bd7b-0666d735e25f.jpg`.
+  Corrective Slice 3 evidence: realigned the visual tokens and first viewport
+  against `/Users/jarrydaubert/Desktop/ProsePal Design System/readme.md` and
+  the canonical `/Users/jarrydaubert/Desktop/ProsePal Design System/ui_kits/prosepal/`
+  direction: warm cream paper/wash, ink text, deeper clay accent, sage as a
+  supporting care/voice hue, light paper chrome, and no dark hero-card treatment
+  on the first viewport. `swift build` and `swift test` passed; XcodeBuildMCP
+  `ProsePal Staging` build/run passed on `iPhone 17`; `snapshot_ui` confirmed
+  the person, relationship, moment, and tab controls remain reachable; screenshot
+  captured at
+  `/var/folders/w7/smr7zw112q55_g41ntxk4bjw0000gn/T/screenshot_optimized_b92b9fed-f58f-4be8-9d43-69400ec84ad8.jpg`.
+  Slice 4 evidence: introduced the canonical writing-page primitive
+  `MomentWritingPageSurface` for the active note and draft body: opaque cream
+  paper, clay margin rule, faint ruled lines for note capture, serif writing
+  text, and page-local mic/word-count/`Help me write` footer action. The active
+  setup state now collapses to relationship/moment/register controls once the
+  person is committed, and root chrome now reads `Today`, `Write`, and `Drafts`
+  to better match the desktop ProsePal kit while keeping the existing
+  person-first flow. `swift build` and `swift test` passed; XcodeBuildMCP
+  `ProsePal Staging` build/run passed on `iPhone 17` with
+  `--prosepal-use-mock-writing-service`; `snapshot_ui` confirmed the active
+  `The note`, mic, `Help me write`, generated `Your draft`, and copy/share/save
+  controls remain reachable. Screenshots captured at
+  `/var/folders/w7/smr7zw112q55_g41ntxk4bjw0000gn/T/screenshot_optimized_866a2f33-ecfc-4d5d-bc3a-ced19d1a1214.jpg`,
+  `/var/folders/w7/smr7zw112q55_g41ntxk4bjw0000gn/T/screenshot_optimized_77ca4a57-d73d-4f63-8213-a81c17b4e440.jpg`,
+  and
+  `/var/folders/w7/smr7zw112q55_g41ntxk4bjw0000gn/T/screenshot_optimized_44e3ee11-0d03-4392-bbf6-96823378d33a.jpg`.
+  Slice 5 evidence: performed a first-screen visual QA pass against rendered
+  `05 · The page` from the desktop ProsePal design-system kit, with local
+  screenshots and metrics saved under
+  `prosepal-ios/evidence/ui-design-qa/first-screen/`. The native first screen
+  now uses fixed custom serif `Today` chrome, paper-first entry/active surfaces,
+  tone controls directly beneath the writing page, compact context metadata
+  below tones, a floating dock-style control, and a corrected ruled-paper
+  background that no longer drives page height. The visible `Next` action now
+  commits the person without leaving keyboard accessory chrome on the clean
+  active screen, while keyboard Return still advances into the note field.
+  `swift build` and `swift test` passed; XcodeBuildMCP `ProsePal Staging`
+  build/run passed on `iPhone 17`; `snapshot_ui` confirmed entry, active note,
+  tone, context, dock, draft, and copy/share/save controls remain reachable.
+  Latest comparison screenshots:
+  `prosepal-ios/evidence/ui-design-qa/first-screen/01-reference-the-page-phone.png`,
+  `prosepal-ios/evidence/ui-design-qa/first-screen/08-simulator-entry-after-fixed-top.jpg`,
+  and
+  `prosepal-ios/evidence/ui-design-qa/first-screen/10-simulator-active-after-tone-order.jpg`.
 - [~] N-IOS-14 Native visual system and Moment rail/content discipline --
   evidence: `MomentSheetView.momentContent(viewportHeight:)`,
-  `shouldShowSecondaryMomentPanels`, `draftStartSection`, `shouldShowTabRail`,
-  and `startNewMoment()` in
+  `draftStartSection`, `shouldShowTabRail`, and `startNewMoment()` in
   `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`. Partial because
   XcodeBuildMCP simulator evidence covers the explicit `Mira Audit` active
   compose path and rail avoidance, but physical-device, Dynamic Type,
-  VoiceOver, Reduce Transparency, and paywall/input follow-up polish remain.
+  VoiceOver, Switch Control, and paywall/input follow-up polish remain.
 - [~] iOS 26-first Liquid Glass direction is in code -- evidence:
   iOS 26 deployment target in `prosepal-ios/Package.swift` and
   `prosepal-ios/ProsePal.xcodeproj/project.pbxproj`; control-layer styling in
-  `MomentGlassModifier` and `momentControlBarSurface` in
+  `momentControlBarSurface()` and navigation/control color-scheme modifiers in
   `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`. Partial pending
   Xcode 26/device visual verification.
 - [~] Opaque paper-like content sits beneath floating controls -- evidence:
-  `MomentDraftCard`, `MomentPanel`, `MomentCardBackground`, `MomentSymbolBadge`,
-  and active first-viewport rail/content gating in
+  `MomentCardBackground`, `MomentSymbolBadge`, `MomentBottomRailClearance`,
+  `MomentSheetView.momentContent(viewportHeight:)`, and active first-viewport
+  rail/content gating in
   `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`. Partial pending
   physical-device and accessibility audit.
 - [~] Register-aware palette and haptics exist -- evidence:
-  `MomentPalette` and `MomentHaptics` in
+  `MomentRegisterSelector`, register-aware `MomentCardBackground` styling, and
+  careful-mode surface colors in
   `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`. Partial because
-  grief/sensitive haptic suppression is not fully evidenced.
+  grief/sensitive haptic policy is not fully evidenced.
 - [~] Accessibility is treated as architecture -- evidence: visible controls,
-  labels, Dynamic Type-friendly SwiftUI, and selectable text in
-  `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`. Partial pending
-  VoiceOver, Switch Control, Reduce Transparency, Increase Contrast, and AX-size
-  device evidence.
+  labels, Dynamic Type-friendly SwiftUI, selectable text, and the accessibility
+  Dynamic Type first-entry header/tab-rail behavior plus inline draft actions at
+  accessibility text sizes in
+  `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`; AX-XXXL plus
+  Increase Contrast before/after evidence lives in
+  `prosepal-ios/evidence/feature-status/us-053-accessibility-large-text-overlap-before.jpg`
+  and
+  `prosepal-ios/evidence/feature-status/us-053-accessibility-large-text-fixed.jpg`;
+  generated draft and rewrite action evidence lives in
+  `prosepal-ios/evidence/feature-status/us-053-accessibility-inline-actions-fixed.jpg`
+  and
+  `prosepal-ios/evidence/feature-status/us-053-accessibility-inline-rewrite-actions-fixed.jpg`;
+  forced Reduce Transparency evidence lives in
+  `prosepal-ios/evidence/feature-status/us-053-reduce-transparency-first-entry.jpg`
+  and
+  `prosepal-ios/evidence/feature-status/us-053-reduce-transparency-action-rail.jpg`.
+  Partial pending VoiceOver, Switch Control, broader AX-size flow, and
+  physical-device evidence.
 
 ## 9. Platform And Engineering
 
@@ -383,7 +608,9 @@ not done.
   `MessageWritingServiceTests.swift`, and `RelationshipVaultTests.swift`.
   Partial because some legacy tests still use XCTest.
 - [x] Package has zero third-party dependencies -- evidence:
-  `prosepal-ios/Package.swift`.
+  `prosepal-ios/Package.swift` and
+  `nativeDependencyGuardDoesNotIncludeThirdPartyProviderSDKs()` in
+  `prosepal-ios/Tests/ProsePalUITests/NativeGuardrailTests.swift`.
 - [x] Native target is iOS 26-first -- evidence:
   `platforms: [.iOS(.v26)]` in `prosepal-ios/Package.swift` and
   `IPHONEOS_DEPLOYMENT_TARGET = 26.0` in
@@ -405,18 +632,36 @@ not done.
   `prosepal-ios/Tests/ProsePalUITests/NativeDiagnosticsTests.swift`.
 - [~] Vault storage, deletion, export, and backup behavior are privacy-reviewed --
   evidence: SwiftData records and backup-excluded Application Support store
-  location in `prosepal-ios/Sources/ProsePalAPI/RelationshipVault.swift`, app
-  container wiring in `prosepal-ios/App/ProsePalNativeApp.swift`, and filesystem
-  coverage in
+  location plus local JSON export snapshot/writer in
+  `prosepal-ios/Sources/ProsePalAPI/RelationshipVault.swift`, app container
+  wiring in `prosepal-ios/App/ProsePalNativeApp.swift`, and filesystem coverage
+  in
   `prosepal-ios/Tests/ProsePalAPITests/RelationshipVaultTests.swift`.
-  Partial because export and any stronger at-rest encryption decision still need
-  dedicated product/security review.
+  Partial because any stronger at-rest encryption decision still needs dedicated
+  product/security review.
+- [x] Local vault export provides a working in-app export destination -- evidence:
+  `RelationshipVaultExporter` creates a JSON export; `MomentLocalDataExportView`
+  shows counts, filename, JSON preview, and Copy JSON in
+  `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`; XcodeBuildMCP
+  simulator proof shows the Export screen and `xcrun simctl pbpaste` verified
+  copied JSON with `schemaVersion`, `savedDrafts`, `truthBeads`, and
+  `voiceCards`. Exporter tests prove user data is included without internal
+  lookup keys.
+- [x] Relationship vault failure and erase paths are release-resilient --
+  evidence: `RelationshipVaultContainerFactory.makePersistentOrEphemeral()`
+  falls back to an ephemeral vault instead of crashing when the persistent store
+  cannot open; `RelationshipVaultLocalDataEraser.eraseAll(in:)` creates its own
+  context from a `ModelContainer`/vault result and removes dedicated vault store
+  files when erasing from fallback mode; account deletion awaits that async erase
+  boundary in `MomentAccountModel` wiring. Covered by
+  `RelationshipVaultTests` for unavailable persistent store fallback, non-empty
+  container erase, and fallback store-file cleanup.
 
 ## 11. Quality Gates / Acceptance
 
 - [~] Acceptance demo exists: open, person, moment, one true thing, write draft,
   adjust, copy/share/save -- evidence: `MomentAppRootView`, `MomentSheetView`,
-  `MomentActionRail`, and `MomentModel` in
+  `MomentActivityView`, and `MomentModel` in
   `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`. Partial pending
   physical-device evidence after the latest Moment rail/content-gating pass and
   private-lane quality/latency evidence.
@@ -439,7 +684,10 @@ not done.
 - [x] No image generation in v1 -- evidence: no image-generation dependency or
   image model client in `prosepal-ios/Package.swift` or `prosepal-ios/Sources`.
 - [x] No third-party model/provider SDK dependency in v1 -- evidence:
-  `prosepal-ios/Package.swift` has no package dependencies.
+  `prosepal-ios/Package.swift` has no package dependencies, and
+  `nativeDependencyGuardDoesNotIncludeThirdPartyProviderSDKs()` in
+  `prosepal-ios/Tests/ProsePalUITests/NativeGuardrailTests.swift` fails on
+  provider SDK drift in the native package, project, app, or source tree.
 - [x] No social, physical cards, custom keyboard, Live Activities, CloudKit sync,
   automatic memory inference, or voice cloning in v1 -- evidence: no matching
   targets or frameworks found under `prosepal-ios`.
@@ -456,12 +704,11 @@ not done.
    reconciliation evidence.
 4. Finish external Apple/Supabase setup and device proof for side-by-side
    `ProsePal Staging`.
-5. Add Care Glance widget, Control Center/Action Button control, and Share
-   extension surfaces.
+5. Complete widget/control/share-extension system-surface QA from actual system
+   surfaces on simulator or device.
 6. Harden crisis/pressure handling beyond local English phrase lists and add
    locale-aware/model-guarded evidence.
-7. Complete vault privacy work for export and any stronger at-rest encryption
-   decision.
+7. Complete vault privacy work for any stronger at-rest encryption decision.
 
 ## Archived Flutter Reference Work
 

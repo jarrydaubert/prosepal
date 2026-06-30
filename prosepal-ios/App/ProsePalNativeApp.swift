@@ -10,14 +10,14 @@ struct ProsePalNativeApp: App {
     private let authSessionController = AuthSessionController(
         store: KeychainAuthSessionStore(service: "\(ProsePalAppIdentity.bundleIdentifier).auth")
     )
-    private let relationshipVaultContainer = RelationshipVaultContainerFactory.make()
+    private let relationshipVault = RelationshipVaultContainerFactory.makePersistentOrEphemeral()
     private let authClient = AuthClientFactory.makeClient()
     private let accountMaintenanceClient = AccountMaintenanceClientFactory.makeClient()
-    private let runtimeReadiness = RuntimeReadinessFactory.make()
 
     var body: some Scene {
         WindowGroup {
             let context = clientContext
+            let relationshipVaultContainer = relationshipVault.container
             MomentAppRootView(
                 service: MessageWritingServiceFactory.makeService(
                     authSessionController: authSessionController,
@@ -33,14 +33,15 @@ struct ProsePalNativeApp: App {
                     ),
                     accountMaintenanceClient: accountMaintenanceClient,
                     localAccountDataDeletion: {
-                        try RelationshipVaultLocalDataEraser.eraseAll(
-                            in: ModelContext(relationshipVaultContainer)
-                        )
+                        try await RelationshipVaultLocalDataEraser.eraseAll(in: relationshipVault)
                     },
-                    runtimeReadiness: runtimeReadiness
+                    runtimeReadiness: RuntimeReadinessFactory.make(
+                        isRelationshipVaultPersistent: relationshipVault.isPersistent
+                    )
                 )
             )
             .modelContainer(relationshipVaultContainer)
+            .prosePalDebugAccessibilityOverrides()
         }
     }
 
@@ -58,23 +59,8 @@ private enum ProsePalAppIdentity {
     }
 }
 
-private enum RelationshipVaultContainerFactory {
-    static func make() -> ModelContainer {
-        do {
-            let schema = Schema(RelationshipVaultSchema.models)
-            let configuration = ModelConfiguration(
-                schema: schema,
-                url: try RelationshipVaultStoreLocation.storeURL()
-            )
-            return try ModelContainer(for: schema, configurations: [configuration])
-        } catch {
-            fatalError("Unable to create ProsePal relationship vault: \(error.localizedDescription)")
-        }
-    }
-}
-
 private enum RuntimeReadinessFactory {
-    static func make() -> NativeRuntimeReadiness {
+    static func make(isRelationshipVaultPersistent: Bool) -> NativeRuntimeReadiness {
         let config = NativeRuntimeConfig()
         let gatewayURL = config.url(named: "PROSEPAL_GATEWAY_URL")
         let premiumProductIDs = config.list(named: "PROSEPAL_PREMIUM_PRODUCT_IDS")
@@ -86,7 +72,8 @@ private enum RuntimeReadinessFactory {
                 config.value(named: "PROSEPAL_SUPABASE_ANON_KEY", fallback: "SUPABASE_ANON_KEY") != nil,
             isSubscriptionConfigured: !premiumProductIDs.isEmpty,
             premiumProductCount: premiumProductIDs.count,
-            isRecommendedPremiumProductConfigured: config.value(named: "PROSEPAL_RECOMMENDED_PREMIUM_PRODUCT_ID") != nil
+            isRecommendedPremiumProductConfigured: config.value(named: "PROSEPAL_RECOMMENDED_PREMIUM_PRODUCT_ID") != nil,
+            isRelationshipVaultPersistent: isRelationshipVaultPersistent
         )
     }
 }
@@ -125,6 +112,19 @@ private enum MessageWritingServiceFactory {
         clientContext: ClientContext,
         relationshipVaultContainer: ModelContainer
     ) -> any MessageWritingService {
+        #if DEBUG
+        if ProsePalDebugLaunchArguments.usesMockWritingService {
+            let mockClient = MockMomentDraftClient(bundle: MomentDraftBundle(
+                messageText: "Mira, I have been thinking about our Sunday calls. I miss that easy rhythm with you, and I would love to find a time to catch up soon.",
+                lane: .mock
+            ))
+            return RoutingMessageWritingService(
+                privateClient: mockClient,
+                carefulClient: mockClient
+            )
+        }
+        #endif
+
         let privateClient = FoundationModelsPrivateDraftClient(
             memoryProvider: SwiftDataRelationshipMemoryProvider(container: relationshipVaultContainer)
         )
@@ -156,6 +156,36 @@ private enum MessageWritingServiceFactory {
 
     private static var gatewayEndpoint: URL? {
         NativeRuntimeConfig().url(named: "PROSEPAL_GATEWAY_URL")
+    }
+}
+
+#if DEBUG
+private enum ProsePalDebugLaunchArguments {
+    static let mockWritingService = "--prosepal-use-mock-writing-service"
+    static let reduceTransparency = "--prosepal-force-reduce-transparency"
+
+    static var usesMockWritingService: Bool {
+        ProcessInfo.processInfo.arguments.contains(mockWritingService)
+    }
+
+    static var forcesReduceTransparency: Bool {
+        ProcessInfo.processInfo.arguments.contains(reduceTransparency)
+    }
+}
+#endif
+
+private extension View {
+    @ViewBuilder
+    func prosePalDebugAccessibilityOverrides() -> some View {
+        #if DEBUG
+        if ProsePalDebugLaunchArguments.forcesReduceTransparency {
+            self.environment(\.prosePalReduceTransparencyOverride, true)
+        } else {
+            self
+        }
+        #else
+        self
+        #endif
     }
 }
 

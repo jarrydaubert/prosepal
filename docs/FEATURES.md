@@ -2,9 +2,17 @@
 
 ## Purpose
 
-List ProsePal capabilities that matter to the native iOS direction.
+List ProsePal capabilities that matter to the native iOS direction. This is a
+compact capability inventory, not an exhaustive user-story tracker.
+
+The canonical user-story and verification spreadsheet is
+`docs/FEATURE_STATUS.csv`.
 
 Open implementation work belongs in `docs/BACKLOG.md`.
+
+Feature capabilities are meant to be stable. Presentation labels, layout, and
+internal component names may change during the native visual-system pass without
+changing the capability model.
 
 ## Core Writing Experience
 
@@ -15,7 +23,7 @@ Open implementation work belongs in `docs/BACKLOG.md`.
 | Relationship taxonomy | Capture the relationship naturally and reuse existing relationship vocabulary where useful. |
 | Tone/register | Support everyday, medium, and hard moments without provider/prompt language. |
 | Length | Let the draft be shaped shorter, warmer, more direct, or more detailed without turning the flow into a form. |
-| One true thing | Capture the sentence or detail the user actually wants to say. |
+| One true thing | Capture the sentence or detail the user actually wants to say, by typing or by voice input where on-device speech is available. |
 | Avoid details | Capture anything the user wants left out. |
 | Extra context | Support sensitive or awkward context without logging raw text. |
 | Spelling/locale | Automatic only, derived from the device locale. No user-facing spelling picker. |
@@ -42,7 +50,7 @@ Open implementation work belongs in `docs/BACKLOG.md`.
 | Sign in with Apple | First-class native identity path. |
 | Google sign-in | Not part of the native default. |
 | Account deletion | Required once account state exists. |
-| Data export | Required once account or non-local user data exists. |
+| Data export | Local vault JSON export exists with an in-app preview and Copy JSON action; account/server export is separate. |
 | Biometric lock | Optional privacy feature. Only available after sign-in if retained. |
 
 ## Subscription And Entitlement
@@ -77,6 +85,15 @@ Open implementation work belongs in `docs/BACKLOG.md`.
 | Feedback/support | User-controlled support path; no raw card content in diagnostics unless explicitly approved. |
 | Legal | Terms and Privacy Policy accessible from Settings and paywall. |
 | About | Version/build and safe runtime metadata. |
+
+## System Surfaces
+
+| Capability | Native Direction |
+|------------|------------------|
+| App Intents and Shortcuts | Start a Moment from system actions and route into the native Moment Sheet. |
+| Care Glance widget | WidgetKit extension provides a glanceable Start Moment entry point where the system supports widgets. |
+| Control Center / Action Button | WidgetKit control provides a Start Moment handoff into the native Moment Sheet. |
+| Share extension | Share-services extension accepts text or links, hands sanitized context to the Moment Sheet through app-group storage, and still needs source-app share-sheet proof before release. |
 
 ## Infrastructure
 

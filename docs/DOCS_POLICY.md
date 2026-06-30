@@ -8,6 +8,12 @@ This policy keeps project docs evergreen and actionable.
 - Exception: release records/postmortems/changelogs can be time-bound.
 - Exception: `docs/BACKLOG.md` is the active build tracker and may use
   `[x]` / `[~]` / `[ ]` markers with evidence pointers.
+- Exception: `docs/FEATURE_STATUS.csv` is the canonical user-story evidence
+  matrix for feature audit work. It may contain implementation, test, error,
+  fix, and retest status columns. Its `implementation_status` values describe
+  code-completeness for the stated expected behavior; release/App Review
+  readiness gaps belong in its test/error/retest/notes columns and in
+  `docs/BACKLOG.md` when they remain open work.
 
 ## Rules
 
@@ -16,7 +22,7 @@ This policy keeps project docs evergreen and actionable.
 - Do not include checkboxes, progress markers, or "last verified" dates outside
   the active backlog tracker.
 - Do not include open issues, TODOs, or in-flight work in docs.
-- Track all open work only in [BACKLOG.md](./BACKLOG.md).
+- Track open implementation and release work only in [BACKLOG.md](./BACKLOG.md).
 - Keep examples minimal and implementation-agnostic where possible.
 - Prefer "how to run" + "pass criteria" format over narrative.
 - Platform, App Store Review, subscription, privacy, accessibility, and tooling

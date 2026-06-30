@@ -1,3 +1,4 @@
+import Foundation
 import ProsePalAPI
 import ProsePalDomain
 import SwiftData
@@ -41,6 +42,132 @@ public enum MomentDraftUnavailableReason: Equatable, Sendable {
     }
 }
 
+public enum MomentDraftSnapshotReason: String, Codable, Equatable, Sendable {
+    case edit
+    case rewrite
+}
+
+public struct MomentDraftSnapshot: Codable, Equatable, Identifiable, Sendable {
+    public var id: UUID
+    public var bundle: MomentDraftBundle
+    public var reason: MomentDraftSnapshotReason
+    public var createdAt: Date
+
+    public init(
+        id: UUID = UUID(),
+        bundle: MomentDraftBundle,
+        reason: MomentDraftSnapshotReason,
+        createdAt: Date = Date()
+    ) {
+        self.id = id
+        self.bundle = bundle
+        self.reason = reason
+        self.createdAt = createdAt
+    }
+}
+
+public struct MomentDraftRecoveryState: Codable, Equatable, Sendable {
+    public static let schemaVersion = 1
+
+    public var schemaVersion: Int
+    public var personName: String
+    public var relationship: Relationship
+    public var occasion: Occasion
+    public var register: MomentRegister
+    public var trueThing: String
+    public var bundle: MomentDraftBundle
+    public var draftSnapshots: [MomentDraftSnapshot]
+    public var savedAt: Date
+
+    public init(
+        schemaVersion: Int = Self.schemaVersion,
+        personName: String,
+        relationship: Relationship,
+        occasion: Occasion,
+        register: MomentRegister,
+        trueThing: String,
+        bundle: MomentDraftBundle,
+        draftSnapshots: [MomentDraftSnapshot],
+        savedAt: Date = Date()
+    ) {
+        self.schemaVersion = schemaVersion
+        self.personName = personName.trimmingCharacters(in: .whitespacesAndNewlines)
+        self.relationship = relationship
+        self.occasion = occasion
+        self.register = register
+        self.trueThing = trueThing.trimmingCharacters(in: .whitespacesAndNewlines)
+        self.bundle = bundle
+        self.draftSnapshots = Array(draftSnapshots.suffix(12))
+        self.savedAt = savedAt
+    }
+
+    public var hasRecoverableDraft: Bool {
+        !personName.isEmpty && !bundle.messageText.isEmpty
+    }
+}
+
+@MainActor
+public protocol MomentDraftRecoveryStoring {
+    func load() -> MomentDraftRecoveryState?
+    func save(_ state: MomentDraftRecoveryState)
+    func clear()
+}
+
+public struct MomentDraftRecoveryNoopStore: MomentDraftRecoveryStoring {
+    public init() {}
+
+    public func load() -> MomentDraftRecoveryState? { nil }
+    public func save(_ state: MomentDraftRecoveryState) {}
+    public func clear() {}
+}
+
+public struct MomentDraftRecoveryStore: MomentDraftRecoveryStoring {
+    public static let defaultKey = "prosepal.native.activeDraftRecovery.v1"
+
+    private let store: UserDefaults
+    private let key: String
+
+    public init(
+        store: UserDefaults = .standard,
+        key: String = MomentDraftRecoveryStore.defaultKey
+    ) {
+        self.store = store
+        self.key = key
+    }
+
+    public func load() -> MomentDraftRecoveryState? {
+        guard let data = store.data(forKey: key),
+              let state = try? JSONDecoder().decode(MomentDraftRecoveryState.self, from: data)
+        else {
+            return nil
+        }
+
+        guard state.schemaVersion == MomentDraftRecoveryState.schemaVersion,
+              state.hasRecoverableDraft
+        else {
+            clear()
+            return nil
+        }
+
+        return state
+    }
+
+    public func save(_ state: MomentDraftRecoveryState) {
+        guard state.hasRecoverableDraft,
+              let data = try? JSONEncoder().encode(state)
+        else {
+            clear()
+            return
+        }
+
+        store.set(data, forKey: key)
+    }
+
+    public func clear() {
+        store.removeObject(forKey: key)
+    }
+}
+
 @MainActor
 @Observable
 public final class MomentModel {
@@ -49,23 +176,44 @@ public final class MomentModel {
     public var occasion: Occasion = .birthday
     public var register: MomentRegister = .react
     public var trueThing: String = ""
-    public var bundle: MomentDraftBundle?
+    public var bundle: MomentDraftBundle? {
+        didSet {
+            if Self.pressureDraftKey(for: bundle) != Self.pressureDraftKey(for: oldValue) {
+                acknowledgedPressureDraftKey = nil
+            }
+            persistDraftRecovery()
+        }
+    }
     public var isDrafting = false
     public var errorMessage: String?
     public var draftUnavailableReason: MomentDraftUnavailableReason?
-    public private(set) var previousDraftBundle: MomentDraftBundle?
+    public private(set) var draftSnapshots: [MomentDraftSnapshot] = []
+    public var previousDraftBundle: MomentDraftBundle? {
+        draftSnapshots.last?.bundle
+    }
+    public var previousDraftSnapshotReason: MomentDraftSnapshotReason? {
+        draftSnapshots.last?.reason
+    }
+    public private(set) var acknowledgedPressureDraftKey: Int?
 
     @ObservationIgnored private let service: any MessageWritingService
     @ObservationIgnored private let diagnostics: NativeDiagnosticsLogger
+    @ObservationIgnored private let generationTimeout: Duration
+    @ObservationIgnored private let draftRecoveryStore: any MomentDraftRecoveryStoring
     @ObservationIgnored private var draftTask: Task<Void, Never>?
     @ObservationIgnored private var draftGeneration = 0
 
     public init(
         service: any MessageWritingService,
-        diagnostics: NativeDiagnosticsLogger = .shared
+        diagnostics: NativeDiagnosticsLogger = .shared,
+        generationTimeout: Duration = .seconds(20),
+        draftRecoveryStore: any MomentDraftRecoveryStoring = MomentDraftRecoveryNoopStore()
     ) {
         self.service = service
         self.diagnostics = diagnostics
+        self.generationTimeout = generationTimeout
+        self.draftRecoveryStore = draftRecoveryStore
+        restoreRecoveredDraftIfAvailable()
     }
 
     public var moment: MomentInput {
@@ -86,12 +234,34 @@ public final class MomentModel {
         moment.safetySignal
     }
 
+    public var hasVisiblePressureCheck: Bool {
+        guard let bundle, bundle.pressureCheck.hasFindings else { return false }
+        return acknowledgedPressureDraftKey != Self.pressureDraftKey(for: bundle)
+    }
+
+    public func keepPressureCheckedDraft() {
+        guard let bundle, bundle.pressureCheck.hasFindings else { return }
+        acknowledgedPressureDraftKey = Self.pressureDraftKey(for: bundle)
+    }
+
+    public func cleanUpPressureCheckedDraft() {
+        guard let bundle, bundle.pressureCheck.hasFindings else { return }
+        if bundle.lane == .takeMoreCare {
+            adjust(.moreDirect, acknowledgePressureResult: true)
+        } else {
+            takeMoreCare(acknowledgePressureResult: true)
+        }
+    }
+
     public func applyLaunchRequest(_ request: MomentLaunchRequest) {
         if let personName = request.personName {
             self.personName = personName
         }
         if let occasion = request.occasion {
             self.occasion = occasion
+        }
+        if let sharedText = request.sharedText {
+            trueThing = sharedText
         }
         alignRegisterForMoment()
         resetDraftForMomentChange()
@@ -109,7 +279,7 @@ public final class MomentModel {
         draftTask?.cancel()
         _ = nextDraftGeneration()
         bundle = nil
-        previousDraftBundle = nil
+        draftSnapshots.removeAll()
         errorMessage = nil
         draftUnavailableReason = nil
         isDrafting = false
@@ -124,10 +294,11 @@ public final class MomentModel {
         register = .react
         trueThing = ""
         bundle = nil
-        previousDraftBundle = nil
+        draftSnapshots.removeAll()
         errorMessage = nil
         draftUnavailableReason = nil
         isDrafting = false
+        clearDraftRecovery()
     }
 
     public func draftNow() async {
@@ -138,15 +309,73 @@ public final class MomentModel {
         previousDraftBundle != nil && !isDrafting
     }
 
+    public var canShowDraftHistory: Bool {
+        !draftSnapshots.isEmpty && !isDrafting
+    }
+
     public func restorePreviousDraft() {
-        guard let previousDraftBundle else { return }
+        guard let snapshot = draftSnapshots.popLast() else { return }
         draftTask?.cancel()
         _ = nextDraftGeneration()
-        bundle = previousDraftBundle
-        self.previousDraftBundle = nil
+        bundle = snapshot.bundle
         errorMessage = nil
         draftUnavailableReason = nil
         isDrafting = false
+    }
+
+    public func restoreDraftSnapshot(id: UUID) {
+        guard let index = draftSnapshots.firstIndex(where: { $0.id == id }) else { return }
+        let snapshot = draftSnapshots[index]
+        draftTask?.cancel()
+        _ = nextDraftGeneration()
+        draftSnapshots.removeSubrange(index...)
+        bundle = snapshot.bundle
+        errorMessage = nil
+        draftUnavailableReason = nil
+        isDrafting = false
+    }
+
+    public var previousDraftActionTitle: String {
+        previousDraftSnapshotReason == .edit ? "Undo edit" : "Undo rewrite"
+    }
+
+    public var keepCurrentDraftActionTitle: String {
+        previousDraftSnapshotReason == .edit ? "Keep edits" : "Keep rewrite"
+    }
+
+    public var previousDraftActionDiagnosticsName: String {
+        previousDraftSnapshotReason == .edit ? "undo_edit" : "undo_rewrite"
+    }
+
+    public var keepCurrentDraftActionDiagnosticsName: String {
+        previousDraftSnapshotReason == .edit ? "keep_edit" : "keep_rewrite"
+    }
+
+    public func keepCurrentRewrite() {
+        keepCurrentDraftChange()
+    }
+
+    public func keepCurrentDraftChange() {
+        guard canRestorePreviousDraft else { return }
+        draftSnapshots.removeAll()
+        errorMessage = nil
+        draftUnavailableReason = nil
+        persistDraftRecovery()
+    }
+
+    public func updateActiveDraftMessage(_ messageText: String) {
+        guard !isDrafting, var currentBundle = bundle else { return }
+        guard currentBundle.messageText != messageText else { return }
+
+        if previousDraftSnapshotReason != .edit {
+            storeRecoverableDraftSnapshot(currentBundle, reason: .edit)
+        }
+
+        currentBundle.messageText = messageText
+        currentBundle.pressureCheck = .local(messageText: messageText, moment: moment)
+        bundle = currentBundle
+        errorMessage = nil
+        draftUnavailableReason = nil
     }
 
     private func draftNow(generation: Int, trigger: String = "automatic") async {
@@ -168,9 +397,11 @@ public final class MomentModel {
         }
 
         do {
-            let nextBundle = try await service.draft(for: input)
+            let nextBundle = try await withGenerationTimeout {
+                try await self.service.draft(for: input)
+            }
             guard isCurrentGeneration(generation) else { return }
-            previousDraftBundle = originalBundle
+            storeRecoverableDraftSnapshot(originalBundle, reason: .rewrite)
             bundle = nextBundle
             diagnostics.momentDraftSucceeded(
                 requestID: requestID,
@@ -201,28 +432,46 @@ public final class MomentModel {
     }
 
     public func adjust(_ adjustment: MomentAdjustment) {
+        adjust(adjustment, acknowledgePressureResult: false)
+    }
+
+    private func adjust(_ adjustment: MomentAdjustment, acknowledgePressureResult: Bool) {
         guard let bundle else { return }
         draftTask?.cancel()
         let generation = nextDraftGeneration()
         draftTask = Task { [weak self, bundle] in
-            await self?.adjustNow(bundle, adjustment: adjustment, generation: generation)
+            await self?.adjustNow(
+                bundle,
+                adjustment: adjustment,
+                generation: generation,
+                acknowledgePressureResult: acknowledgePressureResult
+            )
         }
     }
 
     public func takeMoreCare() {
+        takeMoreCare(acknowledgePressureResult: false)
+    }
+
+    private func takeMoreCare(acknowledgePressureResult: Bool) {
         guard canDraft else { return }
         draftTask?.cancel()
         let generation = nextDraftGeneration()
         let currentBundle = bundle
         draftTask = Task { [weak self, currentBundle] in
-            await self?.takeMoreCareNow(currentBundle, generation: generation)
+            await self?.takeMoreCareNow(
+                currentBundle,
+                generation: generation,
+                acknowledgePressureResult: acknowledgePressureResult
+            )
         }
     }
 
     private func adjustNow(
         _ bundle: MomentDraftBundle,
         adjustment: MomentAdjustment,
-        generation: Int
+        generation: Int,
+        acknowledgePressureResult: Bool
     ) async {
         let input = moment
         let requestID = UUID().uuidString
@@ -240,10 +489,15 @@ public final class MomentModel {
         }
 
         do {
-            let nextBundle = try await service.adjust(bundle, with: adjustment, moment: input)
+            let nextBundle = try await withGenerationTimeout {
+                try await self.service.adjust(bundle, with: adjustment, moment: input)
+            }
             guard isCurrentGeneration(generation) else { return }
-            previousDraftBundle = bundle
+            storeRecoverableDraftSnapshot(bundle, reason: .rewrite)
             self.bundle = nextBundle
+            if acknowledgePressureResult {
+                acknowledgedPressureDraftKey = Self.pressureDraftKey(for: nextBundle)
+            }
             diagnostics.momentDraftSucceeded(
                 requestID: requestID,
                 bundle: nextBundle,
@@ -274,7 +528,8 @@ public final class MomentModel {
 
     private func takeMoreCareNow(
         _ bundle: MomentDraftBundle?,
-        generation: Int
+        generation: Int,
+        acknowledgePressureResult: Bool
     ) async {
         let input = moment
         let requestID = UUID().uuidString
@@ -292,10 +547,15 @@ public final class MomentModel {
         }
 
         do {
-            let nextBundle = try await service.takeMoreCare(bundle, moment: input)
+            let nextBundle = try await withGenerationTimeout {
+                try await self.service.takeMoreCare(bundle, moment: input)
+            }
             guard isCurrentGeneration(generation) else { return }
-            previousDraftBundle = bundle
+            storeRecoverableDraftSnapshot(bundle, reason: .rewrite)
             self.bundle = nextBundle
+            if acknowledgePressureResult {
+                acknowledgedPressureDraftKey = Self.pressureDraftKey(for: nextBundle)
+            }
             diagnostics.momentDraftSucceeded(
                 requestID: requestID,
                 bundle: nextBundle,
@@ -339,6 +599,25 @@ public final class MomentModel {
         }
     }
 
+    private func withGenerationTimeout(
+        _ operation: @escaping @Sendable () async throws -> MomentDraftBundle
+    ) async throws -> MomentDraftBundle {
+        let race = MomentDraftGenerationTimeoutRace()
+        let generationTimeout = generationTimeout
+
+        return try await withTaskCancellationHandler {
+            try await withCheckedThrowingContinuation { continuation in
+                race.start(
+                    continuation: continuation,
+                    timeout: generationTimeout,
+                    operation: operation
+                )
+            }
+        } onCancel: {
+            race.cancel()
+        }
+    }
+
     private func clearCancelledDraftingState(generation: Int) {
         if isCurrentGeneration(generation) && isDrafting {
             isDrafting = false
@@ -348,6 +627,135 @@ public final class MomentModel {
     private static func durationMs(since startedAt: Date) -> Int {
         max(0, Int(Date().timeIntervalSince(startedAt) * 1_000))
     }
+
+    private func storeRecoverableDraftSnapshot(
+        _ bundle: MomentDraftBundle?,
+        reason: MomentDraftSnapshotReason
+    ) {
+        guard let bundle else { return }
+        if draftSnapshots.last?.bundle == bundle,
+           draftSnapshots.last?.reason == reason {
+            return
+        }
+
+        draftSnapshots.append(MomentDraftSnapshot(bundle: bundle, reason: reason))
+        if draftSnapshots.count > 12 {
+            draftSnapshots.removeFirst(draftSnapshots.count - 12)
+        }
+    }
+
+    private func restoreRecoveredDraftIfAvailable() {
+        guard let state = draftRecoveryStore.load() else { return }
+
+        personName = state.personName
+        relationship = state.relationship
+        occasion = state.occasion
+        register = state.register
+        trueThing = state.trueThing
+        draftSnapshots = state.draftSnapshots
+        bundle = state.bundle
+        errorMessage = nil
+        draftUnavailableReason = nil
+        isDrafting = false
+    }
+
+    private func persistDraftRecovery() {
+        guard let bundle else {
+            clearDraftRecovery()
+            return
+        }
+
+        let state = MomentDraftRecoveryState(
+            personName: personName,
+            relationship: relationship,
+            occasion: occasion,
+            register: register,
+            trueThing: trueThing,
+            bundle: bundle,
+            draftSnapshots: draftSnapshots
+        )
+        draftRecoveryStore.save(state)
+    }
+
+    private func clearDraftRecovery() {
+        draftRecoveryStore.clear()
+    }
+
+    private static func pressureDraftKey(for bundle: MomentDraftBundle?) -> Int? {
+        guard let bundle else { return nil }
+        var hasher = Hasher()
+        hasher.combine(bundle.messageText)
+        hasher.combine(bundle.lane.rawValue)
+        hasher.combine(bundle.pressureCheck.asksForReassurance)
+        hasher.combine(bundle.pressureCheck.explainsBeforeApology)
+        hasher.combine(bundle.pressureCheck.mayFeelTooHeavy)
+        for note in bundle.pressureCheck.userVisibleNotes {
+            hasher.combine(note)
+        }
+        return hasher.finalize()
+    }
+}
+
+private final class MomentDraftGenerationTimeoutRace: @unchecked Sendable {
+    private let lock = NSLock()
+    private var continuation: CheckedContinuation<MomentDraftBundle, Error>?
+    private var operationTask: Task<Void, Never>?
+    private var timeoutTask: Task<Void, Never>?
+
+    func start(
+        continuation: CheckedContinuation<MomentDraftBundle, Error>,
+        timeout: Duration,
+        operation: @escaping @Sendable () async throws -> MomentDraftBundle
+    ) {
+        lock.lock()
+        self.continuation = continuation
+        lock.unlock()
+
+        let operationTask = Task {
+            do {
+                let bundle = try await operation()
+                resume(.success(bundle))
+            } catch {
+                resume(.failure(error))
+            }
+        }
+
+        let timeoutTask = Task {
+            do {
+                try await Task.sleep(for: timeout)
+                resume(.failure(GenerationError.timedOut))
+            } catch {
+                return
+            }
+        }
+
+        lock.lock()
+        self.operationTask = operationTask
+        self.timeoutTask = timeoutTask
+        lock.unlock()
+    }
+
+    func cancel() {
+        resume(.failure(CancellationError()))
+    }
+
+    private func resume(_ result: Result<MomentDraftBundle, Error>) {
+        lock.lock()
+        guard let continuation else {
+            lock.unlock()
+            return
+        }
+        self.continuation = nil
+        let operationTask = operationTask
+        let timeoutTask = timeoutTask
+        self.operationTask = nil
+        self.timeoutTask = nil
+        lock.unlock()
+
+        operationTask?.cancel()
+        timeoutTask?.cancel()
+        continuation.resume(with: result)
+    }
 }
 
 private struct MomentDraftUnavailableNotice {
@@ -356,6 +764,186 @@ private struct MomentDraftUnavailableNotice {
     var systemImage: String
     var canRetry: Bool
 }
+
+private struct MomentShareRequest: Identifiable {
+    let id = UUID()
+    let activityItems: [Any]
+
+    static func text(_ text: String) -> MomentShareRequest {
+        MomentShareRequest(activityItems: [text])
+    }
+}
+
+private struct MomentVoiceCaptureSheet: View {
+    @Bindable var capture: MomentVoiceCaptureModel
+    @Environment(\.dismiss) private var dismiss
+
+    let onUseTranscript: (String) -> Void
+
+    private var trimmedTranscript: String {
+        capture.transcript.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    var body: some View {
+        NavigationStack {
+            VStack(alignment: .leading, spacing: 18) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Label(statusTitle, systemImage: statusSystemImage)
+                        .font(.headline)
+
+                    Text(capture.statusText)
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .accessibilityElement(children: .combine)
+
+                ScrollView {
+                    Text(transcriptPreview)
+                        .font(.body)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .textSelection(.enabled)
+                        .padding(16)
+                        .background(Color.secondary.opacity(0.09), in: RoundedRectangle(cornerRadius: 14))
+                }
+                .frame(minHeight: 160)
+
+                Spacer(minLength: 8)
+
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: 10) {
+                        recordControl
+                        useTranscriptButton
+                    }
+
+                    VStack(spacing: 10) {
+                        recordControl
+                        useTranscriptButton
+                    }
+                }
+            }
+            .padding(20)
+            .navigationTitle("Voice Input")
+            .toolbarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        capture.reset()
+                        dismiss()
+                    }
+                }
+            }
+        }
+        .onDisappear {
+            capture.reset()
+        }
+    }
+
+    private var statusTitle: String {
+        switch capture.state {
+        case .idle:
+            "Ready"
+        case .requestingPermission:
+            "Checking access"
+        case .recording:
+            "Recording"
+        case .finished:
+            "Review"
+        case .unavailable:
+            "Unavailable"
+        case .failed:
+            "Stopped"
+        }
+    }
+
+    private var statusSystemImage: String {
+        switch capture.state {
+        case .recording:
+            "waveform.circle.fill"
+        case .unavailable, .failed:
+            "exclamationmark.triangle.fill"
+        default:
+            "mic.circle.fill"
+        }
+    }
+
+    private var transcriptPreview: String {
+        trimmedTranscript.isEmpty ? "Captured words will appear here." : capture.transcript
+    }
+
+    @ViewBuilder
+    private var recordControl: some View {
+        if capture.isRecording {
+            Button {
+                capture.stop()
+            } label: {
+                Label("Stop recording", systemImage: "stop.fill")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(.red)
+        } else {
+            Button {
+                Task {
+                    await capture.start()
+                }
+            } label: {
+                Label(capture.canUseTranscript ? "Record again" : "Record", systemImage: "mic.fill")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(.prosePalCoral)
+            .disabled(capture.isRequestingPermission)
+        }
+    }
+
+    private var useTranscriptButton: some View {
+        Button {
+            onUseTranscript(trimmedTranscript)
+            capture.reset()
+            dismiss()
+        } label: {
+            Label("Use words", systemImage: "checkmark")
+                .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.bordered)
+        .disabled(!capture.canUseTranscript)
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func momentShareSheet(_ request: Binding<MomentShareRequest?>) -> some View {
+        #if canImport(UIKit)
+        sheet(isPresented: Binding(
+            get: { request.wrappedValue != nil },
+            set: { isPresented in
+                if !isPresented {
+                    request.wrappedValue = nil
+                }
+            }
+        )) {
+            if let request = request.wrappedValue {
+                MomentActivityView(activityItems: request.activityItems)
+            }
+        }
+        #else
+        self
+        #endif
+    }
+}
+
+#if canImport(UIKit)
+private struct MomentActivityView: UIViewControllerRepresentable {
+    let activityItems: [Any]
+
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: activityItems, applicationActivities: nil)
+    }
+
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
+}
+#endif
 
 public struct MomentAppRootView: View {
     @State private var model: MomentModel
@@ -367,6 +955,7 @@ public struct MomentAppRootView: View {
     private var savedDrafts: [SavedMomentDraftRecord]
 
     private let launchStore: MomentLaunchStore
+    private let sharedLaunchStore: SharedMomentLaunchStore
     private let diagnostics: NativeDiagnosticsLogger
 
     public init(
@@ -374,12 +963,17 @@ public struct MomentAppRootView: View {
         account: MomentAccountModel,
         welcomeState: @autoclosure @escaping () -> MomentWelcomeState = MomentWelcomeState(),
         launchStore: MomentLaunchStore = MomentLaunchStore(),
+        sharedLaunchStore: SharedMomentLaunchStore = SharedMomentLaunchStore(),
         diagnostics: NativeDiagnosticsLogger = .shared
     ) {
-        _model = State(initialValue: MomentModel(service: service))
+        _model = State(initialValue: MomentModel(
+            service: service,
+            draftRecoveryStore: MomentDraftRecoveryStore()
+        ))
         _account = State(initialValue: account)
         _welcomeState = State(initialValue: welcomeState())
         self.launchStore = launchStore
+        self.sharedLaunchStore = sharedLaunchStore
         self.diagnostics = diagnostics
     }
 
@@ -428,7 +1022,13 @@ public struct MomentAppRootView: View {
 
     private func consumeDeepLink(_ url: URL) {
         guard let deepLink = MomentDeepLink(url: url) else { return }
-        applyLaunchRequest(deepLink.launchRequest)
+        var request = deepLink.launchRequest
+        if request.source == "share_extension",
+           let sharedPayload = sharedLaunchStore.consume(),
+           let sharedText = sharedPayload.text ?? sharedPayload.sourceURL?.absoluteString {
+            request.sharedText = sharedText
+        }
+        applyLaunchRequest(request)
     }
 
     private func applyLaunchRequest(_ request: MomentLaunchRequest) {
@@ -438,37 +1038,58 @@ public struct MomentAppRootView: View {
     }
 
     private var tabs: some View {
-        TabView(selection: $selectedTab) {
+        currentTab
+            .safeAreaInset(edge: .bottom) {
+                if shouldShowRootDock {
+                    MomentRootDock(selection: $selectedTab)
+                        .padding(.horizontal, 26)
+                        .padding(.bottom, 12)
+                }
+            }
+            .tint(.prosePalCoral)
+            .preferredColorScheme(.light)
+    }
+
+    private var shouldShowRootDock: Bool {
+        if selectedTab == .moment {
+            return model.bundle == nil && model.errorMessage == nil
+        }
+        return true
+    }
+
+    @ViewBuilder
+    private var currentTab: some View {
+        switch selectedTab {
+        case .moment:
             NavigationStack {
-                MomentSheetView(model: model, account: account)
-                    .navigationTitle("ProsePal")
-                    .toolbarTitleDisplayMode(.inline)
+                MomentSheetView(
+                    model: model,
+                    account: account,
+                    onOpenDrafts: {
+                        selectedTab = .saved
+                    },
+                    onOpenSettings: {
+                        selectedTab = .settings
+                    }
+                )
+#if os(iOS)
+                    .toolbar(.hidden, for: .navigationBar)
+#endif
                     .momentNavigationBarColorScheme()
             }
-            .tabItem {
-                Label("Moment", systemImage: "square.and.pencil")
-            }
-            .tag(MomentRootTab.moment)
 
+        case .saved:
             NavigationStack {
                 SavedMomentDraftsView()
                     .momentNavigationBarColorScheme()
             }
-            .tabItem {
-                Label("Saved", systemImage: "bookmark")
-            }
-            .tag(MomentRootTab.saved)
 
+        case .settings:
             NavigationStack {
                 MomentSettingsView(account: account)
                     .momentNavigationBarColorScheme()
             }
-            .tabItem {
-                Label("Settings", systemImage: "gearshape")
-            }
-            .tag(MomentRootTab.settings)
         }
-        .tint(.prosePalCoral)
     }
 }
 
@@ -501,6 +1122,67 @@ private enum MomentRootTab: Hashable {
     case moment
     case saved
     case settings
+}
+
+private struct MomentRootDock: View {
+    @Binding var selection: MomentRootTab
+
+    var body: some View {
+        HStack(spacing: 6) {
+            dockButton(
+                tab: .saved,
+                label: "Drafts",
+                systemImage: "rectangle.stack"
+            )
+
+            Button {
+                selection = .moment
+            } label: {
+                Image(systemName: "pencil.and.scribble")
+                    .font(.title3.weight(.semibold))
+                    .frame(width: 46, height: 46)
+                    .foregroundStyle(.white)
+                    .background(Color.prosePalCoral, in: Circle())
+                    .shadow(color: Color.prosePalCoralDeep.opacity(0.24), radius: 12, x: 0, y: 5)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Write")
+            .accessibilityAddTraits(selection == .moment ? [.isSelected] : [])
+
+            dockButton(
+                tab: .saved,
+                label: "Library",
+                systemImage: "bookmark"
+            )
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 7)
+        .frame(maxWidth: 250)
+        .momentControlBarSurface()
+    }
+
+    private func dockButton(
+        tab: MomentRootTab,
+        label: String,
+        systemImage: String
+    ) -> some View {
+        Button {
+            selection = tab
+        } label: {
+            VStack(spacing: 4) {
+                Image(systemName: systemImage)
+                    .font(.system(size: 18, weight: .medium))
+
+                Text(label)
+                    .font(.caption2.weight(.medium))
+            }
+            .foregroundStyle(selection == tab ? Color.prosePalCoral : Color.prosePalSlate.opacity(0.82))
+            .frame(width: 78, height: 46)
+            .contentShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(selection == tab ? [.isSelected] : [])
+    }
 }
 
 private struct MomentWelcomeView: View {
@@ -623,6 +1305,8 @@ private struct MomentWelcomeRow: View {
 private struct MomentSheetView: View {
     @Bindable var model: MomentModel
     @Bindable var account: MomentAccountModel
+    let onOpenDrafts: () -> Void
+    let onOpenSettings: () -> Void
     @Environment(\.modelContext) private var modelContext
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
@@ -643,13 +1327,19 @@ private struct MomentSheetView: View {
     @State private var editingVoiceCard: RelationshipVoiceCardRecord?
     @State private var isShowingMemoryExplanation = false
     @State private var isShowingVoiceCardExplanation = false
+    @State private var isShowingVoiceCapture = false
+    @State private var isShowingDraftHistory = false
+    @State private var voiceCapture = MomentVoiceCaptureModel()
+    @State private var hasCommittedPersonEntry = false
     @State private var hasEntered = false
+    @State private var shareRequest: MomentShareRequest?
 
     private let diagnostics = NativeDiagnosticsLogger.shared
 
     private enum Field: Hashable {
         case person
         case truth
+        case draft
         case memory
         case voice
     }
@@ -660,21 +1350,28 @@ private struct MomentSheetView: View {
 
     var body: some View {
         GeometryReader { proxy in
-            ScrollViewReader { scrollProxy in
-                ScrollView {
-                    momentContent(viewportHeight: proxy.size.height)
-                }
-                .onChange(of: focusedField) { oldValue, newValue in
-                    handleFocusChange(from: oldValue, to: newValue, scrollProxy: scrollProxy)
-                }
-                .onChange(of: model.occasion) { _, _ in
-                    realignActivePrimaryIfNeeded(scrollProxy: scrollProxy, delayNanoseconds: 120_000_000)
-                }
-                .onChange(of: model.bundle?.id) { _, _ in
-                    realignActivePrimaryIfNeeded(scrollProxy: scrollProxy, delayNanoseconds: 80_000_000)
-                }
-                .onChange(of: model.errorMessage) { _, _ in
-                    realignActivePrimaryIfNeeded(scrollProxy: scrollProxy, delayNanoseconds: 80_000_000)
+            VStack(spacing: 0) {
+                topChrome
+                    .padding(.horizontal, 20)
+                    .padding(.top, 4)
+                    .padding(.bottom, 18)
+
+                ScrollViewReader { scrollProxy in
+                    ScrollView {
+                        momentContent(viewportHeight: proxy.size.height)
+                    }
+                    .onChange(of: focusedField) { oldValue, newValue in
+                        handleFocusChange(from: oldValue, to: newValue, scrollProxy: scrollProxy)
+                    }
+                    .onChange(of: model.occasion) { _, _ in
+                        realignActivePrimaryIfNeeded(scrollProxy: scrollProxy, delayNanoseconds: 120_000_000)
+                    }
+                    .onChange(of: model.bundle?.id) { _, _ in
+                        realignActivePrimaryIfNeeded(scrollProxy: scrollProxy, delayNanoseconds: 80_000_000)
+                    }
+                    .onChange(of: model.errorMessage) { _, _ in
+                        realignActivePrimaryIfNeeded(scrollProxy: scrollProxy, delayNanoseconds: 80_000_000)
+                    }
                 }
             }
         }
@@ -683,7 +1380,7 @@ private struct MomentSheetView: View {
                 .animation(.easeInOut(duration: 0.28), value: model.moment.isCarefulMode)
         }
         .safeAreaInset(edge: .bottom) {
-            if let bundle = model.bundle, focusedField == nil {
+            if let bundle = model.bundle, focusedField == nil, shouldShowFloatingDraftActionRail {
                 actionRail(bundle: bundle)
                     .padding(.horizontal, 16)
                     .padding(.vertical, 10)
@@ -697,7 +1394,7 @@ private struct MomentSheetView: View {
             ToolbarItemGroup(placement: .keyboard) {
                 Spacer()
                 Button("Done") {
-                    focusedField = nil
+                    endFocusedEditing()
                 }
             }
         }
@@ -715,6 +1412,17 @@ private struct MomentSheetView: View {
         .sheet(isPresented: $isShowingPaywall) {
             MomentPaywallSheet(account: account)
         }
+        .sheet(isPresented: $isShowingVoiceCapture) {
+            MomentVoiceCaptureSheet(capture: voiceCapture) { transcript in
+                applyVoiceTranscript(transcript)
+            }
+        }
+        .sheet(isPresented: $isShowingDraftHistory) {
+            draftHistorySheet
+            .presentationDetents([.medium, .large])
+            .presentationDragIndicator(.visible)
+        }
+        .momentShareSheet($shareRequest)
         .sheet(item: $editingTruthBead, onDismiss: {
             model.resetDraftForMomentChange()
         }) { bead in
@@ -739,7 +1447,12 @@ private struct MomentSheetView: View {
         } message: {
             Text("You saved this voice card for \(currentPersonName). ProsePal uses it as style guidance only, and does not log the text.")
         }
-        .onChange(of: model.personName) { _, _ in model.resetDraftForMomentChange() }
+        .onChange(of: model.personName) { _, newValue in
+            if newValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                hasCommittedPersonEntry = false
+            }
+            model.resetDraftForMomentChange()
+        }
         .onChange(of: model.relationship) { _, newValue in
             diagnostics.selectionChanged(kind: "moment_relationship", value: newValue.rawValue)
             model.resetDraftForMomentChange()
@@ -754,6 +1467,11 @@ private struct MomentSheetView: View {
             model.resetDraftForMomentChange()
         }
         .onChange(of: model.trueThing) { _, _ in model.resetDraftForMomentChange() }
+        .onAppear {
+            if model.bundle != nil && !currentPersonName.isEmpty {
+                hasCommittedPersonEntry = true
+            }
+        }
         .task {
             guard !hasEntered else { return }
             if reduceMotion {
@@ -767,11 +1485,9 @@ private struct MomentSheetView: View {
     }
 
     private func momentContent(viewportHeight: CGFloat) -> some View {
-        VStack(alignment: .leading, spacing: 16) {
-            if currentPersonName.isEmpty {
-                header
-                personSection
-                momentSection
+        VStack(alignment: .leading, spacing: 18) {
+            if !shouldUseActiveMomentLayout {
+                initialPrimaryContent
             } else {
                 activePrimaryContent
                     .id(ScrollAnchor.activePrimary)
@@ -784,12 +1500,14 @@ private struct MomentSheetView: View {
 
                 if model.safetySignal == .crisisSupport {
                     crisisSupportSection
-                } else if shouldShowSecondaryMomentPanels {
+                } else {
                     memorySection
                     if model.moment.isCarefulMode {
                         carefulModeSection
                     }
-                    draftSection
+                    if shouldShowDraftResultSection {
+                        draftSection
+                    }
                 }
             }
             if let saveNotice {
@@ -805,9 +1523,22 @@ private struct MomentSheetView: View {
                 .accessibilityHidden(true)
         }
         .padding(.horizontal, 20)
-        .padding(.vertical, 16)
+        .padding(.top, 0)
+        .padding(.bottom, 16)
         .opacity(hasEntered ? 1 : 0)
         .offset(y: reduceMotion || hasEntered ? 0 : 12)
+    }
+
+    private var draftHistorySheet: some View {
+        Self.MomentDraftHistorySheet(model: model) { snapshot in
+            diagnostics.messageAction(
+                "restore_draft_history",
+                source: "moment_draft",
+                messageCharacters: snapshot.bundle.messageText.count
+            )
+            model.restoreDraftSnapshot(id: snapshot.id)
+            isShowingDraftHistory = false
+        }
     }
 
     private var currentPersonName: String {
@@ -827,6 +1558,14 @@ private struct MomentSheetView: View {
             model.safetySignal != .crisisSupport
     }
 
+    private var shouldUseActiveMomentLayout: Bool {
+        !currentPersonName.isEmpty && hasCommittedPersonEntry
+    }
+
+    private var shouldShowCommittedPersonHeader: Bool {
+        !currentPersonName.isEmpty && hasCommittedPersonEntry
+    }
+
     private func activePrimaryViewportHeight(for viewportHeight: CGFloat) -> CGFloat {
         max(viewportHeight + floatingTabRailExclusionHeight, 0)
     }
@@ -835,21 +1574,101 @@ private struct MomentSheetView: View {
         dynamicTypeSize.isAccessibilitySize ? 164 : 136
     }
 
-    private var shouldShowSecondaryMomentPanels: Bool {
+    private var shouldShowDraftResultSection: Bool {
         model.bundle != nil || model.errorMessage != nil
     }
 
+    private var shouldShowDraftStartSection: Bool {
+        model.isDrafting ||
+            model.bundle != nil ||
+            model.errorMessage != nil ||
+            model.safetySignal == .crisisSupport
+    }
+
     private var shouldShowTabRail: Bool {
-        focusedField == nil && currentPersonName.isEmpty
+        focusedField == nil &&
+            currentPersonName.isEmpty &&
+            !dynamicTypeSize.isAccessibilitySize
+    }
+
+    private var shouldShowFloatingDraftActionRail: Bool {
+        !dynamicTypeSize.isAccessibilitySize
+    }
+
+    private var topChrome: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(alignment: .center) {
+                Button {
+                    onOpenDrafts()
+                } label: {
+                    Image(systemName: "line.3.horizontal")
+                        .font(.system(size: 18, weight: .medium))
+                        .frame(width: 38, height: 38)
+                        .contentShape(Circle())
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(Color.prosePalCoralDeep)
+                .accessibilityLabel("Open drafts")
+
+                Spacer(minLength: 12)
+
+                Button {
+                    onOpenSettings()
+                } label: {
+                    Text(accountInitials)
+                        .font(.caption.weight(.semibold))
+                        .frame(width: 34, height: 34)
+                        .foregroundStyle(Color.prosePalCoralDeep)
+                        .background(Color.prosePalCoralCard.opacity(0.42), in: Circle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Open settings")
+            }
+            .frame(minHeight: 42)
+
+            Text("Today")
+                .font(.system(size: dynamicTypeSize.isAccessibilitySize ? 34 : 36, design: .serif).weight(.medium))
+                .foregroundStyle(Color.prosePalInk)
+                .lineLimit(1)
+                .minimumScaleFactor(0.84)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var accountInitials: String {
+        guard let signedInEmail = account.signedInEmail,
+              let firstCharacter = signedInEmail.trimmingCharacters(in: .whitespacesAndNewlines).first
+        else {
+            return "PP"
+        }
+        return String(firstCharacter).uppercased()
+    }
+
+    private var initialPrimaryContent: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            personPageSection
+            toneSelectorSection
+            activeSetupSection
+        }
     }
 
     private var activePrimaryContent: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            header
-            activeSetupSection
+        VStack(alignment: .leading, spacing: 18) {
             truthSection
-            draftStartSection
+            toneSelectorSection
+            activeSetupSection
+            if shouldShowDraftStartSection {
+                draftStartSection
+            }
         }
+    }
+
+    private var toneSelectorSection: some View {
+        MomentRegisterSelector(
+            selection: $model.register,
+            registers: availableRegisters,
+            isCareful: model.moment.isCarefulMode
+        )
     }
 
     private var draftStartSection: some View {
@@ -910,6 +1729,9 @@ private struct MomentSheetView: View {
         if model.isDrafting {
             return "Writing your draft"
         }
+        if model.safetySignal == .crisisSupport {
+            return "Immediate support first"
+        }
         if model.errorMessage != nil {
             return "Ready to try again"
         }
@@ -927,7 +1749,10 @@ private struct MomentSheetView: View {
             return "Nothing new happens until you tap again."
         }
         if model.bundle != nil {
-            return "Change the setup above, or scroll to copy, save, and adjust."
+            return "Edit the draft below, or scroll to copy, save, and adjust."
+        }
+        if model.safetySignal == .crisisSupport {
+            return "ProsePal will not draft this as a message."
         }
         if model.canDraft {
             return "Nothing is sent until you tap Write draft."
@@ -945,12 +1770,60 @@ private struct MomentSheetView: View {
         if model.bundle != nil {
             return "Rewrite draft"
         }
+        if model.safetySignal == .crisisSupport {
+            return "Draft unavailable"
+        }
         return "Write draft"
+    }
+
+    private var writingPageActionTitle: String {
+        if model.isDrafting {
+            return "Writing"
+        }
+        if model.errorMessage != nil {
+            return "Try again"
+        }
+        if model.bundle != nil {
+            return "Rewrite"
+        }
+        if model.safetySignal == .crisisSupport {
+            return "Draft unavailable"
+        }
+        return "Help me write"
+    }
+
+    private var noteWordCount: Int {
+        model.trueThing
+            .split { $0.isWhitespace || $0.isNewline }
+            .count
+    }
+
+    private var noteCountLabel: String {
+        if noteWordCount == 1 {
+            return "1 word"
+        }
+        return "\(noteWordCount) words"
     }
 
     private func handleFocusChange(from oldValue: Field?, to newValue: Field?, scrollProxy: ScrollViewProxy) {
         guard newValue == nil, oldValue == .person || oldValue == .truth else { return }
         realignActivePrimaryIfNeeded(scrollProxy: scrollProxy, delayNanoseconds: 180_000_000)
+    }
+
+    private func endFocusedEditing() {
+        if !currentPersonName.isEmpty {
+            hasCommittedPersonEntry = true
+        }
+        focusedField = nil
+    }
+
+    private func submitPersonEntry(focusNote: Bool = false) {
+        guard !currentPersonName.isEmpty else {
+            focusedField = nil
+            return
+        }
+        hasCommittedPersonEntry = true
+        focusedField = focusNote ? .truth : nil
     }
 
     private func realignActivePrimaryIfNeeded(
@@ -989,23 +1862,61 @@ private struct MomentSheetView: View {
         }
     }
 
+    @ViewBuilder
     private var header: some View {
+        if shouldUseAccessibilityIntroHeader {
+            accessibilityIntroHeader
+        } else {
+            standardHeader
+        }
+    }
+
+    private var shouldUseAccessibilityIntroHeader: Bool {
+        dynamicTypeSize.isAccessibilitySize && !shouldShowCommittedPersonHeader
+    }
+
+    private var accessibilityIntroHeader: some View {
+        VStack(alignment: .leading, spacing: 10) {
+                Text(model.moment.isCarefulMode ? "TAKE CARE" : "PRIVATE")
+                .font(.caption.weight(.bold))
+                .foregroundStyle(model.moment.isCarefulMode ? Color.prosePalCare : Color.prosePalCoralDeep)
+
+            Text("Who are you showing up for?")
+                .font(.system(.title2, design: .serif).weight(.bold))
+                .foregroundStyle(Color.prosePalInk)
+                .lineLimit(4)
+                .minimumScaleFactor(0.84)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Text("Start with the person.")
+                .font(.body)
+                .foregroundStyle(Color.prosePalSlate)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(.horizontal, 4)
+        .padding(.vertical, 8)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .combine)
+        .animation(.easeInOut(duration: 0.24), value: model.moment.isCarefulMode)
+    }
+
+    private var standardHeader: some View {
         HStack(alignment: .center, spacing: 16) {
             VStack(alignment: .leading, spacing: 9) {
-                Text(model.moment.isCarefulMode ? "TAKE CARE ACTIVE" : "PRIVATE BY DEFAULT")
+                Text(model.moment.isCarefulMode ? "EXTRA CARE" : "PRIVATE BY DEFAULT")
                     .font(.caption2.weight(.bold))
-                    .foregroundStyle(Color.white.opacity(0.72))
+                    .foregroundStyle(model.moment.isCarefulMode ? Color.prosePalCare : Color.prosePalCoralDeep)
                     .tracking(0.6)
 
-                Text(currentPersonName.isEmpty ? "Who are you showing up for?" : "For \(currentPersonName)")
-                    .font(.system(currentPersonName.isEmpty ? .title : .title3, design: .serif).weight(.bold))
-                    .foregroundStyle(.white)
+                Text(shouldShowCommittedPersonHeader ? "For \(currentPersonName)" : "Who are you showing up for?")
+                    .font(.system(shouldShowCommittedPersonHeader ? .title3 : .title, design: .serif).weight(.bold))
+                    .foregroundStyle(Color.prosePalInk)
                     .fixedSize(horizontal: false, vertical: true)
 
-                if currentPersonName.isEmpty {
+                if !shouldShowCommittedPersonHeader {
                     Text("Start with the person. Shape one true detail, then let the draft form around it.")
                         .font(.callout)
-                        .foregroundStyle(.white.opacity(0.76))
+                        .foregroundStyle(Color.prosePalSlate)
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
@@ -1013,7 +1924,7 @@ private struct MomentSheetView: View {
             Spacer(minLength: 8)
 
             VStack(spacing: 8) {
-                if currentPersonName.isEmpty {
+                if !shouldShowCommittedPersonHeader {
                     MomentSymbolBadge(
                         systemImage: model.moment.isCarefulMode ? "heart.text.square.fill" : "lock.fill",
                         style: model.moment.isCarefulMode ? .heroCare : .hero,
@@ -1021,90 +1932,91 @@ private struct MomentSheetView: View {
                     )
                 } else {
                     Button {
+                        hasCommittedPersonEntry = false
                         focusedField = nil
                         model.startNewMoment()
                     } label: {
                         Image(systemName: "xmark")
                             .font(.callout.weight(.bold))
                             .frame(width: 34, height: 34)
-                            .background(Color.white.opacity(0.16), in: Circle())
+                            .background(Color.prosePalCoralCard.opacity(0.74), in: Circle())
                     }
                     .buttonStyle(.plain)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(Color.prosePalCoralDeep)
                     .accessibilityLabel("Start over")
                 }
 
-                if !currentPersonName.isEmpty {
+                if shouldShowCommittedPersonHeader {
                     Text(model.moment.isCarefulMode ? "Careful" : "Private")
                         .font(.caption2.weight(.bold))
-                        .foregroundStyle(.white.opacity(0.68))
+                        .foregroundStyle(Color.prosePalSlate)
                 }
             }
         }
-        .padding(currentPersonName.isEmpty ? 20 : 16)
+        .padding(.horizontal, 4)
+        .padding(.vertical, shouldShowCommittedPersonHeader ? 8 : 10)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background {
-            MomentHeroBackground(isCareful: model.moment.isCarefulMode)
-        }
         .animation(.easeInOut(duration: 0.24), value: model.moment.isCarefulMode)
     }
 
-    private var personSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            MomentSectionLabel(title: "Person", systemImage: "person.crop.circle")
-
+    private var personPageSection: some View {
+        MomentWritingPageSurface(
+            prompt: "Who is this for?",
+            isCareful: model.moment.isCarefulMode,
+            showsRules: false,
+            minHeight: dynamicTypeSize.isAccessibilitySize ? 96 : 62
+        ) {
             TextField("Name or person", text: $model.personName, prompt: Text("Alex, Mum, my manager"))
                 .momentNameInputBehavior()
                 .submitLabel(.next)
+                .onSubmit {
+                    submitPersonEntry(focusNote: true)
+                }
                 .focused($focusedField, equals: .person)
-                .font(.title3.weight(.semibold))
-                .padding(16)
-                .momentInputSurface(cornerRadius: 18)
+                .font(.system(.title2, design: .serif))
+                .foregroundStyle(Color.prosePalInk)
+                .textFieldStyle(.plain)
+                .accessibilityLabel("Name or person")
+        } footer: {
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 12) {
+                    Text("Start with the person. The note comes next.")
+                        .font(.caption)
+                        .foregroundStyle(Color.prosePalSlate)
 
-            Button {
-                focusedField = nil
-                diagnostics.pickerOpened("relationship")
-                isShowingRelationshipPicker = true
-            } label: {
-                MomentSelectionRow(
-                    title: "Who they are to you",
-                    value: model.relationship.displayName,
-                    detail: model.relationship.group.displayName,
-                    systemImage: model.relationship.symbolName
-                )
+                    Spacer(minLength: 8)
+
+                    personPageNextButton
+                }
+
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Start with the person. The note comes next.")
+                        .font(.caption)
+                        .foregroundStyle(Color.prosePalSlate)
+
+                    personPageNextButton
+                }
             }
-            .buttonStyle(.plain)
         }
-        .prosePalMomentCard()
     }
 
-    private var momentSection: some View {
+    private var personPageNextButton: some View {
+        Button {
+            submitPersonEntry()
+        } label: {
+            Label("Next", systemImage: "arrow.right")
+                .font(.subheadline.weight(.semibold))
+                .lineLimit(1)
+        }
+        .buttonStyle(.borderedProminent)
+        .buttonBorderShape(.capsule)
+        .controlSize(.regular)
+        .tint(model.moment.isCarefulMode ? .prosePalCare : .prosePalCoral)
+        .disabled(currentPersonName.isEmpty)
+    }
+
+    private var initialSetupSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            MomentSectionLabel(
-                title: "Moment",
-                systemImage: model.moment.isCarefulMode ? "heart.text.square" : "calendar",
-                isCareful: model.moment.isCarefulMode
-            )
-
-            Button {
-                focusedField = nil
-                diagnostics.pickerOpened("moment")
-                isShowingMomentPicker = true
-            } label: {
-                MomentSelectionRow(
-                    title: "What is the moment?",
-                    value: model.occasion.displayName,
-                    detail: model.moment.prefersCareRegister ? "Handled with extra care" : model.occasion.group.displayName,
-                    systemImage: model.occasion.symbolName
-                )
-            }
-            .buttonStyle(.plain)
-        }
-        .prosePalMomentCard(isCareful: model.moment.isCarefulMode)
-    }
-
-    private var activeSetupSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
             MomentSectionLabel(
                 title: "Moment setup",
                 systemImage: model.moment.isCarefulMode ? "heart.text.square" : "sparkle",
@@ -1114,12 +2026,49 @@ private struct MomentSheetView: View {
             TextField("Name or person", text: $model.personName, prompt: Text("Alex, Mum, my manager"))
                 .momentNameInputBehavior()
                 .submitLabel(.next)
+                .onSubmit {
+                    submitPersonEntry(focusNote: true)
+                }
                 .focused($focusedField, equals: .person)
-                .font(.headline.weight(.semibold))
-                .padding(.horizontal, 14)
-                .frame(minHeight: 48)
-                .momentInputSurface(cornerRadius: 16)
+                .font(.title3.weight(.semibold))
+                .padding(16)
+                .momentInputSurface(isCareful: model.moment.isCarefulMode, cornerRadius: 18)
 
+            Button {
+                endFocusedEditing()
+                diagnostics.pickerOpened("relationship")
+                isShowingRelationshipPicker = true
+            } label: {
+                MomentSelectionRow(
+                    title: "Who they are to you",
+                    value: model.relationship.displayName,
+                    detail: model.relationship.group.displayName,
+                    systemImage: model.relationship.symbolName,
+                    isCareful: model.moment.isCarefulMode
+                )
+            }
+            .buttonStyle(.plain)
+
+            Button {
+                endFocusedEditing()
+                diagnostics.pickerOpened("moment")
+                isShowingMomentPicker = true
+            } label: {
+                MomentSelectionRow(
+                    title: "What is the moment?",
+                    value: model.occasion.displayName,
+                    detail: model.moment.prefersCareRegister ? "Handled with extra care" : model.occasion.group.displayName,
+                    systemImage: model.occasion.symbolName,
+                    isCareful: model.moment.isCarefulMode
+                )
+            }
+            .buttonStyle(.plain)
+        }
+        .prosePalMomentCard(isCareful: model.moment.isCarefulMode)
+    }
+
+    private var activeSetupSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
             if dynamicTypeSize.isAccessibilitySize {
                 VStack(spacing: 10) {
                     relationshipSelectionButton(isCondensed: false)
@@ -1131,19 +2080,19 @@ private struct MomentSheetView: View {
                     momentSelectionButton(isCondensed: true)
                 }
             }
-
-            MomentRegisterSelector(
-                selection: $model.register,
-                registers: availableRegisters,
-                isCareful: model.moment.isCarefulMode
+        }
+        .padding(12)
+        .background {
+            MomentCardBackground(
+                isCareful: model.moment.isCarefulMode,
+                prominence: .standard
             )
         }
-        .prosePalMomentCard(isCareful: model.moment.isCarefulMode)
     }
 
     private func relationshipSelectionButton(isCondensed: Bool) -> some View {
         Button {
-            focusedField = nil
+            endFocusedEditing()
             diagnostics.pickerOpened("relationship")
             isShowingRelationshipPicker = true
         } label: {
@@ -1152,7 +2101,8 @@ private struct MomentSheetView: View {
                 value: model.relationship.displayName,
                 detail: model.relationship.group.displayName,
                 systemImage: model.relationship.symbolName,
-                isCondensed: isCondensed
+                isCondensed: isCondensed,
+                isCareful: model.moment.isCarefulMode
             )
         }
         .buttonStyle(.plain)
@@ -1160,7 +2110,7 @@ private struct MomentSheetView: View {
 
     private func momentSelectionButton(isCondensed: Bool) -> some View {
         Button {
-            focusedField = nil
+            endFocusedEditing()
             diagnostics.pickerOpened("moment")
             isShowingMomentPicker = true
         } label: {
@@ -1169,7 +2119,8 @@ private struct MomentSheetView: View {
                 value: model.occasion.displayName,
                 detail: model.moment.prefersCareRegister ? "Handled with extra care" : model.occasion.group.displayName,
                 systemImage: model.occasion.symbolName,
-                isCondensed: isCondensed
+                isCondensed: isCondensed,
+                isCareful: model.moment.isCarefulMode
             )
         }
         .buttonStyle(.plain)
@@ -1183,25 +2134,95 @@ private struct MomentSheetView: View {
     }
 
     private var truthSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            MomentSectionLabel(
-                title: "What is true?",
-                systemImage: "quote.bubble",
-                isCareful: model.moment.isCarefulMode
+        MomentWritingPageSurface(
+            prompt: "The note",
+            isCareful: model.moment.isCarefulMode,
+            minHeight: dynamicTypeSize.isAccessibilitySize ? 150 : 102
+        ) {
+            TextField(
+                "Write the rough version",
+                text: $model.trueThing,
+                prompt: Text("One true detail. ProsePal will help."),
+                axis: .vertical
             )
-
-            TextField("One honest detail", text: $model.trueThing, prompt: Text("I miss our Sunday calls."))
-                .focused($focusedField, equals: .truth)
-                .submitLabel(.done)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 13)
-                .momentInputSurface(isCareful: model.moment.isCarefulMode, cornerRadius: 16)
-
-            Text("Optional for easy moments. Essential for harder ones.")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            .font(.system(.title3, design: .serif))
+            .lineSpacing(5)
+            .foregroundStyle(Color.prosePalInk)
+            .textFieldStyle(.plain)
+            .lineLimit(dynamicTypeSize.isAccessibilitySize ? 4...12 : 3...9)
+            .focused($focusedField, equals: .truth)
+            .submitLabel(.done)
+            .onSubmit {
+                endFocusedEditing()
+            }
+            .accessibilityLabel("Moment note")
+        } footer: {
+            writingPageFooter
         }
-        .prosePalMomentCard(isCareful: model.moment.isCarefulMode)
+    }
+
+    @ViewBuilder
+    private var writingPageFooter: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 12) {
+                noteTools
+
+                Spacer(minLength: 8)
+
+                writeFromPageButton
+            }
+
+            VStack(alignment: .leading, spacing: 12) {
+                noteTools
+                writeFromPageButton
+            }
+        }
+    }
+
+    private var noteTools: some View {
+        HStack(spacing: 10) {
+            Button {
+                endFocusedEditing()
+                voiceCapture.reset()
+                diagnostics.messageAction("voice_input_opened", source: "moment", messageCharacters: 0)
+                isShowingVoiceCapture = true
+            } label: {
+                Image(systemName: "mic.fill")
+                    .font(.subheadline.weight(.medium))
+                    .frame(width: 34, height: 34)
+                    .contentShape(Circle())
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(model.moment.isCarefulMode ? Color.prosePalCare : Color.prosePalCoral)
+            .accessibilityLabel("Record moment detail")
+
+            if noteWordCount > 0 {
+                Text(noteCountLabel)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Color.prosePalSlate)
+                    .lineLimit(1)
+            }
+        }
+    }
+
+    private var writeFromPageButton: some View {
+        Button {
+            focusedField = nil
+            Task {
+                await model.draftNow()
+            }
+        } label: {
+            Label(writingPageActionTitle, systemImage: model.isDrafting ? "hourglass" : "sparkles")
+                .font(.subheadline.weight(.semibold))
+                .lineLimit(1)
+                .minimumScaleFactor(0.82)
+                .frame(maxWidth: dynamicTypeSize.isAccessibilitySize ? .infinity : nil)
+        }
+        .buttonStyle(.borderedProminent)
+        .buttonBorderShape(.capsule)
+        .controlSize(.regular)
+        .tint(model.moment.isCarefulMode ? .prosePalCare : .prosePalCoral)
+        .disabled(!model.canDraft || model.isDrafting)
     }
 
     private var memorySection: some View {
@@ -1534,10 +2555,15 @@ private struct MomentSheetView: View {
             if let notice = draftUnavailableNotice {
                 draftUnavailableView(notice)
             } else if let bundle = model.bundle {
-                draftBody(bundle.messageText)
+                draftBody(bundle)
 
-                if bundle.pressureCheck.hasFindings {
-                    pressureCheck(bundle.pressureCheck)
+                if model.hasVisiblePressureCheck {
+                    pressureCheck(bundle)
+                }
+
+                if dynamicTypeSize.isAccessibilitySize {
+                    actionRail(bundle: bundle)
+                        .padding(.top, 4)
                 }
             } else if model.canDraft {
                 Text("Writing a private draft...")
@@ -1623,6 +2649,84 @@ private struct MomentSheetView: View {
         }
     }
 
+private struct MomentDraftHistorySheet: View {
+    @Bindable var model: MomentModel
+    let onRestore: (MomentDraftSnapshot) -> Void
+
+    var body: some View {
+        NavigationStack {
+            List {
+                if model.draftSnapshots.isEmpty {
+                    ContentUnavailableView(
+                        "No draft history",
+                        systemImage: "clock.arrow.circlepath",
+                        description: Text("Edits and rewrites you can recover appear here.")
+                    )
+                } else {
+                    ForEach(model.draftSnapshots.reversed()) { snapshot in
+                        Button {
+                            onRestore(snapshot)
+                        } label: {
+                            HStack(alignment: .top, spacing: 12) {
+                                Image(systemName: systemImage(for: snapshot.reason))
+                                    .font(.title3.weight(.semibold))
+                                    .foregroundStyle(Color.prosePalCoral)
+                                    .frame(width: 28)
+
+                                VStack(alignment: .leading, spacing: 5) {
+                                    HStack {
+                                        Text(title(for: snapshot.reason))
+                                            .font(.headline)
+                                            .foregroundStyle(.primary)
+
+                                        Spacer(minLength: 12)
+
+                                        Text(snapshot.createdAt, style: .time)
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+
+                                    Text(snapshot.bundle.messageText)
+                                        .font(.callout)
+                                        .foregroundStyle(.secondary)
+                                        .lineLimit(4)
+                                        .fixedSize(horizontal: false, vertical: true)
+
+                                    Label("Restore", systemImage: "arrow.uturn.backward")
+                                        .font(.caption.weight(.semibold))
+                                        .foregroundStyle(Color.prosePalNavy)
+                                }
+                            }
+                            .padding(.vertical, 6)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+            .navigationTitle("Draft history")
+            .toolbarTitleDisplayMode(.inline)
+        }
+    }
+
+    private func title(for reason: MomentDraftSnapshotReason) -> String {
+        switch reason {
+        case .edit:
+            "Before edit"
+        case .rewrite:
+            "Before rewrite"
+        }
+    }
+
+    private func systemImage(for reason: MomentDraftSnapshotReason) -> String {
+        switch reason {
+        case .edit:
+            "pencil"
+        case .rewrite:
+            "sparkles"
+        }
+    }
+}
+
     private func draftUnavailableView(_ notice: MomentDraftUnavailableNotice) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .center, spacing: 10) {
@@ -1665,44 +2769,69 @@ private struct MomentSheetView: View {
         }
     }
 
-    private func draftBody(_ text: String) -> some View {
-        Text(text)
-            .font(.system(.title3, design: .serif))
-            .lineSpacing(5)
-            .textSelection(.enabled)
-            .fixedSize(horizontal: false, vertical: true)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(20)
-            .background {
-                RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .fill(
-                        LinearGradient(
-                            colors: [
-                                Color.prosePalPaper,
-                                Color.prosePalPaper.opacity(0.92),
-                                Color.prosePalCoral.opacity(0.035)
-                            ],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 20, style: .continuous)
-                            .stroke(Color.prosePalCoral.opacity(0.18), lineWidth: 1)
-                    }
-            }
+    private var activeDraftText: Binding<String> {
+        Binding {
+            model.bundle?.messageText ?? ""
+        } set: { nextText in
+            model.updateActiveDraftMessage(nextText)
+        }
     }
 
-    private func pressureCheck(_ check: PressureCheck) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
+    private func draftBody(_ bundle: MomentDraftBundle) -> some View {
+        MomentWritingPageSurface(
+            prompt: bundle.lane == .takeMoreCare ? "Careful draft" : "Your draft",
+            isCareful: bundle.lane == .takeMoreCare,
+            showsRules: false,
+            showsFooter: false,
+            minHeight: dynamicTypeSize.isAccessibilitySize ? 190 : 150
+        ) {
+            TextField("Draft text", text: activeDraftText, axis: .vertical)
+                .font(.system(.title3, design: .serif))
+                .lineSpacing(5)
+                .foregroundStyle(Color.prosePalInk)
+                .lineLimit(dynamicTypeSize.isAccessibilitySize ? 8...24 : 5...18)
+                .textFieldStyle(.plain)
+                .focused($focusedField, equals: .draft)
+                .submitLabel(.done)
+                .onSubmit {
+                    endFocusedEditing()
+                }
+                .disabled(model.isDrafting)
+                .accessibilityLabel("Draft text")
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        } footer: {
+            EmptyView()
+        }
+    }
+
+    private func pressureCheck(_ bundle: MomentDraftBundle) -> some View {
+        let check = bundle.pressureCheck
+
+        return VStack(alignment: .leading, spacing: 12) {
             Label("Pressure check", systemImage: "checkmark.seal")
                 .font(.subheadline.weight(.semibold))
 
-            ForEach(check.userVisibleNotes, id: \.self) { note in
-                Text(note)
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 6) {
+                ForEach(check.userVisibleNotes, id: \.self) { note in
+                    Text(note)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
             }
+
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 10) {
+                    keepPressureDraftButton(bundle)
+                    cleanUpPressureButton(bundle)
+                }
+
+                VStack(spacing: 8) {
+                    keepPressureDraftButton(bundle)
+                    cleanUpPressureButton(bundle)
+                }
+            }
+            .controlSize(.regular)
         }
         .padding(14)
         .background(Color.prosePalCare.opacity(0.10), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
@@ -1712,26 +2841,70 @@ private struct MomentSheetView: View {
         }
     }
 
+    private func keepPressureDraftButton(_ bundle: MomentDraftBundle) -> some View {
+        Button {
+            diagnostics.messageAction(
+                "keep_pressure_checked_draft",
+                source: "pressure_check",
+                messageCharacters: bundle.messageText.count
+            )
+            model.keepPressureCheckedDraft()
+        } label: {
+            Label("Keep draft", systemImage: "checkmark")
+                .lineLimit(1)
+                .minimumScaleFactor(0.82)
+                .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.bordered)
+        .buttonBorderShape(.capsule)
+        .tint(.prosePalNavy)
+        .frame(maxWidth: .infinity)
+        .disabled(model.isDrafting)
+    }
+
+    private func cleanUpPressureButton(_ bundle: MomentDraftBundle) -> some View {
+        Button {
+            diagnostics.messageAction(
+                "clean_up_pressure",
+                source: "pressure_check",
+                messageCharacters: bundle.messageText.count
+            )
+            model.cleanUpPressureCheckedDraft()
+        } label: {
+            Label(cleanUpPressureTitle(for: bundle), systemImage: "wand.and.stars")
+                .lineLimit(1)
+                .minimumScaleFactor(0.78)
+                .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.borderedProminent)
+        .buttonBorderShape(.capsule)
+        .tint(model.moment.isCarefulMode ? .prosePalCare : .prosePalCoral)
+        .frame(maxWidth: .infinity)
+        .disabled(model.isDrafting)
+    }
+
+    private func cleanUpPressureTitle(for bundle: MomentDraftBundle) -> String {
+        bundle.lane == .takeMoreCare ? "Make direct" : "Clean up"
+    }
+
     private func actionRail(bundle: MomentDraftBundle) -> some View {
         VStack(spacing: 10) {
             if model.canRestorePreviousDraft {
-                Button {
-                    diagnostics.messageAction(
-                        "undo_rewrite",
-                        source: "moment_draft",
-                        messageCharacters: bundle.messageText.count
-                    )
-                    model.restorePreviousDraft()
-                } label: {
-                    Label("Undo rewrite", systemImage: "arrow.uturn.backward")
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.82)
-                        .frame(maxWidth: .infinity)
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: 10) {
+                        undoRewriteButton(bundle)
+                        keepRewriteButton(bundle)
+                    }
+
+                    VStack(spacing: 8) {
+                        undoRewriteButton(bundle)
+                        keepRewriteButton(bundle)
+                    }
                 }
-                .buttonStyle(.bordered)
-                .buttonBorderShape(.capsule)
-                .tint(.prosePalNavy)
-                .controlSize(.large)
+            }
+
+            if model.canShowDraftHistory {
+                draftHistoryButton(bundle)
             }
 
             if bundle.lane != .takeMoreCare {
@@ -1781,6 +2954,71 @@ private struct MomentSheetView: View {
         }
     }
 
+    private func undoRewriteButton(_ bundle: MomentDraftBundle) -> some View {
+        Button {
+            diagnostics.messageAction(
+                model.previousDraftActionDiagnosticsName,
+                source: "moment_draft",
+                messageCharacters: bundle.messageText.count
+            )
+            model.restorePreviousDraft()
+        } label: {
+            Label(model.previousDraftActionTitle, systemImage: "arrow.uturn.backward")
+                .lineLimit(dynamicTypeSize.isAccessibilitySize ? 2 : 1)
+                .multilineTextAlignment(.center)
+                .minimumScaleFactor(0.82)
+                .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.bordered)
+        .buttonBorderShape(.capsule)
+        .tint(.prosePalNavy)
+        .controlSize(.large)
+        .frame(maxWidth: .infinity)
+    }
+
+    private func keepRewriteButton(_ bundle: MomentDraftBundle) -> some View {
+        Button {
+            diagnostics.messageAction(
+                model.keepCurrentDraftActionDiagnosticsName,
+                source: "moment_draft",
+                messageCharacters: bundle.messageText.count
+            )
+            model.keepCurrentDraftChange()
+        } label: {
+            Label(model.keepCurrentDraftActionTitle, systemImage: "checkmark")
+                .lineLimit(dynamicTypeSize.isAccessibilitySize ? 2 : 1)
+                .multilineTextAlignment(.center)
+                .minimumScaleFactor(0.82)
+                .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.borderedProminent)
+        .buttonBorderShape(.capsule)
+        .tint(model.moment.isCarefulMode ? .prosePalCare : .prosePalCoral)
+        .controlSize(.large)
+        .frame(maxWidth: .infinity)
+    }
+
+    private func draftHistoryButton(_ bundle: MomentDraftBundle) -> some View {
+        Button {
+            diagnostics.messageAction(
+                "open_draft_history",
+                source: "moment_draft",
+                messageCharacters: bundle.messageText.count
+            )
+            isShowingDraftHistory = true
+        } label: {
+            Label("History", systemImage: "clock.arrow.circlepath")
+                .lineLimit(1)
+                .minimumScaleFactor(0.82)
+                .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.bordered)
+        .buttonBorderShape(.capsule)
+        .tint(.prosePalNavy)
+        .controlSize(.large)
+        .frame(maxWidth: .infinity)
+    }
+
     private func adjustmentButton(_ adjustment: MomentAdjustment) -> some View {
         Button {
             model.adjust(adjustment)
@@ -1813,7 +3051,10 @@ private struct MomentSheetView: View {
     }
 
     private func shareButton(text: String) -> some View {
-        ShareLink(item: text) {
+        Button {
+            shareRequest = MomentShareRequest.text(text)
+            diagnostics.messageAction("share", source: "moment_draft", messageCharacters: text.count)
+        } label: {
             Label("Share", systemImage: "square.and.arrow.up")
                 .lineLimit(1)
                 .minimumScaleFactor(0.82)
@@ -1945,6 +3186,18 @@ private struct MomentSheetView: View {
         diagnostics.messageAction("voice_card_deleted", source: "moment", messageCharacters: 0)
         model.resetDraftForMomentChange()
     }
+
+    private func applyVoiceTranscript(_ transcript: String) {
+        let trimmedTranscript = transcript.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedTranscript.isEmpty else { return }
+
+        model.trueThing = trimmedTranscript
+        diagnostics.messageAction(
+            "voice_input_used",
+            source: "moment",
+            messageCharacters: trimmedTranscript.count
+        )
+    }
 }
 
 private struct MomentSelectionRow: View {
@@ -1952,10 +3205,11 @@ private struct MomentSelectionRow: View {
     let value: String
     let detail: String
     let systemImage: String
+    var isCareful = false
 
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
-            MomentSymbolBadge(systemImage: systemImage, style: .coral, size: 34)
+            MomentSymbolBadge(systemImage: systemImage, style: isCareful ? .care : .coral, size: 34)
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(title)
@@ -1987,7 +3241,8 @@ private struct MomentSelectionRow: View {
                     LinearGradient(
                         colors: [
                             Color.prosePalPaper,
-                            Color.prosePalCard
+                            Color.prosePalCard,
+                            accentSurface
                         ],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
@@ -1995,12 +3250,20 @@ private struct MomentSelectionRow: View {
                 )
                 .overlay {
                     RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .stroke(Color.prosePalCoral.opacity(0.16), lineWidth: 1)
+                        .stroke(accentColor.opacity(0.16), lineWidth: 1)
                 }
         }
         .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(.isButton)
+    }
+
+    private var accentColor: Color {
+        isCareful ? .prosePalCare : .prosePalCoral
+    }
+
+    private var accentSurface: Color {
+        isCareful ? .prosePalCareCard : .prosePalCoralCard
     }
 }
 
@@ -2010,6 +3273,7 @@ private struct MomentCompactSelectionRow: View {
     let detail: String
     let systemImage: String
     var isCondensed = false
+    var isCareful = false
 
     var body: some View {
         Group {
@@ -2025,7 +3289,8 @@ private struct MomentCompactSelectionRow: View {
                     LinearGradient(
                         colors: [
                             Color.prosePalPaper,
-                            Color.prosePalCard
+                            Color.prosePalCard,
+                            accentSurface
                         ],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
@@ -2033,7 +3298,7 @@ private struct MomentCompactSelectionRow: View {
                 )
                 .overlay {
                     RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .stroke(Color.prosePalCoral.opacity(0.14), lineWidth: 1)
+                        .stroke(accentColor.opacity(0.14), lineWidth: 1)
                 }
         }
         .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
@@ -2043,7 +3308,7 @@ private struct MomentCompactSelectionRow: View {
 
     private var regularBody: some View {
         HStack(alignment: .center, spacing: 10) {
-            MomentSymbolBadge(systemImage: systemImage, style: .coral, size: 30)
+            MomentSymbolBadge(systemImage: systemImage, style: isCareful ? .care : .coral, size: 30)
 
             VStack(alignment: .leading, spacing: 1) {
                 Text(title)
@@ -2077,7 +3342,7 @@ private struct MomentCompactSelectionRow: View {
     private var condensedBody: some View {
         VStack(alignment: .leading, spacing: 5) {
             HStack(alignment: .center, spacing: 7) {
-                MomentSymbolBadge(systemImage: systemImage, style: .coral, size: 22)
+                MomentSymbolBadge(systemImage: systemImage, style: isCareful ? .care : .coral, size: 22)
 
                 Text(title)
                     .font(.caption2.weight(.semibold))
@@ -2107,6 +3372,14 @@ private struct MomentCompactSelectionRow: View {
         .padding(.horizontal, 11)
         .padding(.vertical, 9)
         .frame(maxWidth: .infinity, minHeight: 74, alignment: .leading)
+    }
+
+    private var accentColor: Color {
+        isCareful ? .prosePalCare : .prosePalCoral
+    }
+
+    private var accentSurface: Color {
+        isCareful ? .prosePalCareCard : .prosePalCoralCard
     }
 }
 
@@ -2590,7 +3863,7 @@ private struct SavedMomentDraftsView: View {
                 .onDelete(perform: delete)
             }
         }
-        .navigationTitle("Saved")
+        .navigationTitle("Drafts")
         .toolbarTitleDisplayMode(.inline)
         .searchable(text: $searchText, prompt: "Search saved drafts")
         .contentMargins(.bottom, 112, for: .scrollContent)
@@ -2644,10 +3917,26 @@ private struct SavedMomentDraftDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     let draft: SavedMomentDraftRecord
+    @State private var isEditing = false
+    @State private var editedMessageText: String
+    @State private var notice: String?
+    @State private var shareRequest: MomentShareRequest?
+    private let diagnostics = NativeDiagnosticsLogger.shared
+
+    init(draft: SavedMomentDraftRecord) {
+        self.draft = draft
+        _editedMessageText = State(initialValue: draft.messageText)
+    }
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
+                if let notice {
+                    Label(notice, systemImage: "checkmark.circle")
+                        .font(.callout.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                }
+
                 VStack(alignment: .leading, spacing: 8) {
                     Text(draft.title)
                         .font(.system(.largeTitle, design: .serif).weight(.bold))
@@ -2658,33 +3947,68 @@ private struct SavedMomentDraftDetailView: View {
                         .foregroundStyle(.secondary)
                 }
 
-                Text(draft.messageText)
-                    .font(.system(.title3, design: .serif))
-                    .lineSpacing(5)
-                    .textSelection(.enabled)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(18)
-                    .background {
-                        MomentCardBackground(isCareful: false, prominence: .elevated)
+                Group {
+                    if isEditing {
+                        TextField("Draft text", text: $editedMessageText, axis: .vertical)
+                            .font(.system(.title3, design: .serif))
+                            .lineSpacing(5)
+                            .lineLimit(8...18)
+                            .textFieldStyle(.plain)
+                    } else {
+                        Text(draft.messageText)
+                            .font(.system(.title3, design: .serif))
+                            .lineSpacing(5)
+                            .textSelection(.enabled)
                     }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(18)
+                .background {
+                    MomentCardBackground(isCareful: false, prominence: .elevated)
+                }
 
                 HStack(spacing: 12) {
-                    Button {
-                        copy(draft.messageText)
-                    } label: {
-                        Label("Copy", systemImage: "doc.on.doc")
-                            .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.bordered)
-                    .buttonBorderShape(.capsule)
+                    if isEditing {
+                        Button {
+                            cancelEditing()
+                        } label: {
+                            Label("Cancel", systemImage: "xmark")
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.bordered)
+                        .buttonBorderShape(.capsule)
 
-                    ShareLink(item: draft.messageText) {
-                        Label("Share", systemImage: "square.and.arrow.up")
-                            .frame(maxWidth: .infinity)
+                        Button {
+                            saveEdits()
+                        } label: {
+                            Label("Save", systemImage: "checkmark")
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .buttonBorderShape(.capsule)
+                        .tint(.prosePalCoral)
+                        .disabled(!canSaveEdits)
+                    } else {
+                        Button {
+                            copy(draft.messageText)
+                        } label: {
+                            Label("Copy", systemImage: "doc.on.doc")
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.bordered)
+                        .buttonBorderShape(.capsule)
+
+                        Button {
+                            shareRequest = MomentShareRequest.text(draft.messageText)
+                            diagnostics.messageAction("share", source: "saved_draft", messageCharacters: draft.messageText.count)
+                        } label: {
+                            Label("Share", systemImage: "square.and.arrow.up")
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .buttonBorderShape(.capsule)
+                        .tint(.prosePalCoral)
                     }
-                    .buttonStyle(.borderedProminent)
-                    .buttonBorderShape(.capsule)
-                    .tint(.prosePalCoral)
                 }
                 .controlSize(.large)
             }
@@ -2696,6 +4020,17 @@ private struct SavedMomentDraftDetailView: View {
         .navigationTitle("Draft")
         .toolbarTitleDisplayMode(.inline)
         .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button(isEditing ? "Save" : "Edit") {
+                    if isEditing {
+                        saveEdits()
+                    } else {
+                        beginEditing()
+                    }
+                }
+                .disabled(isEditing && !canSaveEdits)
+            }
+
             ToolbarItem(placement: .destructiveAction) {
                 Button("Delete", role: .destructive) {
                     modelContext.delete(draft)
@@ -2704,12 +4039,44 @@ private struct SavedMomentDraftDetailView: View {
                 }
             }
         }
+        .momentShareSheet($shareRequest)
     }
 
     private func copy(_ text: String) {
         #if canImport(UIKit)
         UIPasteboard.general.string = text
         #endif
+    }
+
+    private var canSaveEdits: Bool {
+        !editedMessageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    private func beginEditing() {
+        editedMessageText = draft.messageText
+        withAnimation(.easeInOut(duration: 0.18)) {
+            notice = nil
+            isEditing = true
+        }
+    }
+
+    private func cancelEditing() {
+        editedMessageText = draft.messageText
+        withAnimation(.easeInOut(duration: 0.18)) {
+            isEditing = false
+        }
+    }
+
+    private func saveEdits() {
+        guard canSaveEdits else { return }
+        draft.updateMessageText(editedMessageText)
+        try? modelContext.save()
+        editedMessageText = draft.messageText
+
+        withAnimation(.easeInOut(duration: 0.18)) {
+            isEditing = false
+            notice = "Saved"
+        }
     }
 }
 
@@ -3084,7 +4451,8 @@ private struct RelationshipVoiceCardDetailView: View {
 
 private struct MomentSettingsView: View {
     @Bindable var account: MomentAccountModel
-    @State private var isShowingPaywall = false
+    @State private var activeSheet: MomentSettingsPresentedSheet?
+    @State private var supportNotice: String?
 
     var body: some View {
         List {
@@ -3127,7 +4495,7 @@ private struct MomentSettingsView: View {
 
             Section {
                 Button {
-                    isShowingPaywall = true
+                    activeSheet = .paywall
                 } label: {
                     HStack {
                         Label("View Premium", systemImage: "star")
@@ -3173,6 +4541,10 @@ private struct MomentSettingsView: View {
 
             Section {
                 Label("Saved drafts are only created when you tap Save", systemImage: "bookmark")
+                LabeledContent(
+                    "Local vault",
+                    value: account.runtimeReadiness.isRelationshipVaultPersistent ? "Stored on device" : "Temporary"
+                )
                 NavigationLink {
                     RelationshipMemoryVaultView()
                 } label: {
@@ -3190,7 +4562,12 @@ private struct MomentSettingsView: View {
                 .accessibilityHidden(true)
 
             Section {
-                LabeledContent("Export data", value: account.isSignedIn ? "Contact support" : "Sign in required")
+                NavigationLink {
+                    MomentLocalDataExportView()
+                } label: {
+                    Label("Export local data", systemImage: "square.and.arrow.up")
+                }
+
                 LabeledContent("Delete account", value: account.isSignedIn ? "Available above" : "Sign in required")
             } header: {
                 MomentListSectionHeader("Data")
@@ -3200,6 +4577,18 @@ private struct MomentSettingsView: View {
             Section {
                 Link(destination: MomentSettingsExternalLinks.support) {
                     Label("Contact support", systemImage: "envelope")
+                }
+
+                Button {
+                    copySupportEmail()
+                } label: {
+                    Label("Copy support email", systemImage: "doc.on.doc")
+                }
+
+                if let supportNotice {
+                    Label(supportNotice, systemImage: "checkmark.circle")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
                 }
             } header: {
                 MomentListSectionHeader("Support")
@@ -3240,8 +4629,11 @@ private struct MomentSettingsView: View {
             MomentAtmosphericBackground(isCareful: false)
         }
         .tint(.prosePalCoral)
-        .sheet(isPresented: $isShowingPaywall) {
-            MomentPaywallSheet(account: account)
+        .sheet(item: $activeSheet) { sheet in
+            switch sheet {
+            case .paywall:
+                MomentPaywallSheet(account: account)
+            }
         }
         .confirmationDialog(
             "Delete account?",
@@ -3266,6 +4658,173 @@ private struct MomentSettingsView: View {
 
     private var versionText: String {
         account.appVersionDisplayText
+    }
+
+    private func copySupportEmail() {
+        #if canImport(UIKit)
+        UIPasteboard.general.string = MomentSettingsExternalLinks.supportEmail
+        #elseif canImport(AppKit)
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(MomentSettingsExternalLinks.supportEmail, forType: .string)
+        #endif
+        supportNotice = "Copied support email"
+    }
+}
+
+private struct MomentLocalDataExportView: View {
+    @Environment(\.modelContext) private var modelContext
+    @State private var exportState: MomentLocalDataExportState = .loading
+    @State private var notice: String?
+
+    var body: some View {
+        List {
+            switch exportState {
+            case .loading:
+                Section {
+                    ProgressView("Preparing export")
+                }
+                .momentListRowSurface()
+
+            case .ready(let export):
+                Section {
+                    Label("Export ready", systemImage: "checkmark.circle.fill")
+                        .foregroundStyle(.primary)
+                    LabeledContent("File", value: export.fileName)
+                    LabeledContent("Truth Beads", value: "\(export.snapshot.counts.truthBeads)")
+                    LabeledContent("Voice Cards", value: "\(export.snapshot.counts.voiceCards)")
+                    LabeledContent("Saved Drafts", value: "\(export.snapshot.counts.savedDrafts)")
+                } header: {
+                    MomentListSectionHeader("Summary")
+                }
+                .momentListRowSurface()
+
+                Section {
+                    Button {
+                        copy(export.jsonString)
+                    } label: {
+                        Label("Copy JSON", systemImage: "doc.on.doc")
+                    }
+
+                    Button {
+                        prepareExport()
+                    } label: {
+                        Label("Refresh export", systemImage: "arrow.clockwise")
+                    }
+                } header: {
+                    MomentListSectionHeader("Actions")
+                }
+                .momentListRowSurface()
+
+                if let notice {
+                    Section {
+                        Label(notice, systemImage: "checkmark.circle.fill")
+                    }
+                    .momentListRowSurface()
+                }
+
+                Section {
+                    Text(export.preview)
+                        .font(.system(.caption, design: .monospaced))
+                        .foregroundStyle(.secondary)
+                        .textSelection(.enabled)
+                        .fixedSize(horizontal: false, vertical: true)
+                } header: {
+                    MomentListSectionHeader("Preview")
+                }
+                .momentListRowSurface()
+
+            case .failed:
+                Section {
+                    Label("Export failed. Please try again.", systemImage: "exclamationmark.triangle")
+                    Button {
+                        prepareExport()
+                    } label: {
+                        Label("Try again", systemImage: "arrow.clockwise")
+                    }
+                }
+                .momentListRowSurface()
+            }
+        }
+        .navigationTitle("Export")
+        .toolbarTitleDisplayMode(.inline)
+        .contentMargins(.top, 6, for: .scrollContent)
+        .scrollContentBackground(.hidden)
+        .background {
+            MomentAtmosphericBackground(isCareful: false)
+        }
+        .tint(.prosePalCoral)
+        .task {
+            if case .loading = exportState {
+                prepareExport()
+            }
+        }
+    }
+
+    private func prepareExport() {
+        notice = nil
+
+        do {
+            let exportedAt = Date()
+            let snapshot = try RelationshipVaultExporter.snapshot(
+                in: modelContext,
+                exportedAt: exportedAt
+            )
+            let data = try RelationshipVaultExporter.encodedData(for: snapshot)
+            guard let jsonString = String(data: data, encoding: .utf8) else {
+                throw MomentLocalDataExportError.encodingFailed
+            }
+
+            exportState = .ready(MomentLocalDataExport(
+                fileName: RelationshipVaultExporter.fileName(exportedAt: exportedAt),
+                snapshot: snapshot,
+                jsonString: jsonString
+            ))
+        } catch {
+            exportState = .failed
+        }
+    }
+
+    private func copy(_ jsonString: String) {
+        #if canImport(UIKit)
+        UIPasteboard.general.string = jsonString
+        #elseif canImport(AppKit)
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(jsonString, forType: .string)
+        #endif
+        notice = "Copied JSON"
+    }
+}
+
+private enum MomentLocalDataExportState {
+    case loading
+    case ready(MomentLocalDataExport)
+    case failed
+}
+
+private struct MomentLocalDataExport {
+    var fileName: String
+    var snapshot: RelationshipVaultExportSnapshot
+    var jsonString: String
+
+    var preview: String {
+        let maxCharacters = 2_400
+        guard jsonString.count > maxCharacters else {
+            return jsonString
+        }
+
+        return String(jsonString.prefix(maxCharacters)) + "\n..."
+    }
+}
+
+private enum MomentLocalDataExportError: Error {
+    case encodingFailed
+}
+
+private enum MomentSettingsPresentedSheet: Identifiable {
+    case paywall
+
+    var id: String {
+        "paywall"
     }
 }
 
@@ -3643,7 +5202,8 @@ private struct MomentPaywallUnavailableRow: View {
 private enum MomentSettingsExternalLinks {
     static let terms = URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!
     static let privacy = URL(string: "https://prosepal.app/privacy")!
-    static let support = URL(string: "mailto:support@prosepal.app")!
+    static let supportEmail = "support@prosepal.app"
+    static let support = URL(string: "mailto:\(supportEmail)")!
 }
 
 private extension Relationship {
@@ -3659,747 +5219,6 @@ private extension String {
     }
 }
 
-private func playMomentSelectionFeedback() {
-    #if canImport(UIKit)
-    UISelectionFeedbackGenerator().selectionChanged()
-    #endif
-}
-
-private enum MomentSurfaceProminence {
-    case standard
-    case elevated
-    case accent
-    case warning
-}
-
-private enum MomentIdentityCardStyle {
-    case hero
-    case quiet
-}
-
-private enum MomentSymbolBadgeStyle {
-    case hero
-    case heroCare
-    case coral
-    case navy
-    case care
-    case subtle
-    case warning
-}
-
-private struct MomentSymbolBadge: View {
-    let systemImage: String
-    var style: MomentSymbolBadgeStyle = .coral
-    var size: CGFloat = 32
-
-    var body: some View {
-        RoundedRectangle(cornerRadius: max(10, size * 0.34), style: .continuous)
-            .fill(fill)
-            .overlay {
-                RoundedRectangle(cornerRadius: max(10, size * 0.34), style: .continuous)
-                    .stroke(strokeColor, lineWidth: 1)
-            }
-            .overlay {
-                Image(systemName: systemImage)
-                    .font(.system(size: max(12, size * 0.42), weight: .semibold))
-                    .symbolRenderingMode(.hierarchical)
-                    .foregroundStyle(foregroundColor)
-                    .frame(width: size, height: size)
-            }
-            .frame(width: size, height: size)
-            .accessibilityHidden(true)
-    }
-
-    private var fill: LinearGradient {
-        switch style {
-        case .hero:
-            LinearGradient(
-                colors: [
-                    Color.white.opacity(0.20),
-                    Color.white.opacity(0.08)
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-        case .heroCare:
-            LinearGradient(
-                colors: [
-                    Color.white.opacity(0.22),
-                    Color.prosePalCare.opacity(0.28)
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-        case .coral:
-            LinearGradient(
-                colors: [
-                    Color.prosePalCoral.opacity(0.20),
-                    Color.prosePalPaper.opacity(0.92)
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-        case .navy:
-            LinearGradient(
-                colors: [
-                    Color.prosePalNavy.opacity(0.92),
-                    Color.prosePalSlate.opacity(0.88)
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-        case .care:
-            LinearGradient(
-                colors: [
-                    Color.prosePalCare.opacity(0.22),
-                    Color.prosePalPaper.opacity(0.90)
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-        case .subtle:
-            LinearGradient(
-                colors: [
-                    Color.prosePalPaper.opacity(0.92),
-                    Color.prosePalCard.opacity(0.80)
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-        case .warning:
-            LinearGradient(
-                colors: [
-                    Color.prosePalWarning.opacity(0.22),
-                    Color.prosePalPaper.opacity(0.90)
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-        }
-    }
-
-    private var foregroundColor: Color {
-        switch style {
-        case .hero, .heroCare, .navy:
-            .white
-        case .care:
-            .prosePalCare
-        case .warning:
-            .prosePalWarning
-        case .coral, .subtle:
-            .prosePalCoralDeep
-        }
-    }
-
-    private var strokeColor: Color {
-        switch style {
-        case .hero, .heroCare:
-            Color.white.opacity(0.22)
-        case .navy:
-            Color.white.opacity(0.14)
-        case .care:
-            Color.prosePalCare.opacity(0.20)
-        case .warning:
-            Color.prosePalWarning.opacity(0.22)
-        case .coral:
-            Color.prosePalCoral.opacity(0.20)
-        case .subtle:
-            Color.prosePalNavy.opacity(0.10)
-        }
-    }
-}
-
-private struct MomentScreenIdentityCard: View {
-    @Environment(\.colorScheme) private var colorScheme
-
-    let eyebrow: String
-    let title: String
-    let detail: String
-    let systemImage: String
-    var isCareful: Bool = false
-    var style: MomentIdentityCardStyle = .hero
-
-    var body: some View {
-        Group {
-            switch style {
-            case .hero:
-                heroCard
-            case .quiet:
-                quietCard
-            }
-        }
-        .accessibilityElement(children: .combine)
-    }
-
-    private var heroCard: some View {
-        HStack(alignment: .center, spacing: 16) {
-            MomentSymbolBadge(
-                systemImage: systemImage,
-                style: isCareful ? .heroCare : .hero,
-                size: 54
-            )
-
-            VStack(alignment: .leading, spacing: 6) {
-                Text(eyebrow.uppercased())
-                    .font(.caption2.weight(.bold))
-                    .foregroundStyle(.white.opacity(0.72))
-
-                Text(title)
-                    .font(.system(.title2, design: .serif).weight(.bold))
-                    .foregroundStyle(.white)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                Text(detail)
-                    .font(.callout)
-                    .foregroundStyle(.white.opacity(0.74))
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-        }
-        .padding(20)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background {
-            MomentHeroBackground(isCareful: isCareful)
-        }
-    }
-
-    private var quietCard: some View {
-        HStack(alignment: .center, spacing: 14) {
-            MomentSymbolBadge(
-                systemImage: systemImage,
-                style: isCareful ? .care : .coral,
-                size: 50
-            )
-
-            VStack(alignment: .leading, spacing: 5) {
-                Text(eyebrow.uppercased())
-                    .font(.caption2.weight(.bold))
-                    .foregroundStyle(accentColor)
-
-                Text(title)
-                    .font(.system(.title3, design: .serif).weight(.bold))
-                    .foregroundStyle(.primary)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                Text(detail)
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-        }
-        .padding(18)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background {
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .fill(Color.prosePalPaper.opacity(colorScheme == .dark ? 0.20 : 0.82))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 24, style: .continuous)
-                        .stroke(
-                            LinearGradient(
-                                colors: [
-                                    Color.white.opacity(colorScheme == .dark ? 0.18 : 0.52),
-                                    Color.prosePalNavy.opacity(colorScheme == .dark ? 0.24 : 0.10),
-                                    accentColor.opacity(colorScheme == .dark ? 0.18 : 0.10)
-                                ],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ),
-                            lineWidth: 1
-                        )
-                }
-                .shadow(color: Color.prosePalNavy.opacity(colorScheme == .dark ? 0.16 : 0.08), radius: 14, x: 0, y: 8)
-        }
-    }
-
-    private var accentColor: Color {
-        isCareful ? Color.prosePalCare : Color.prosePalCoral
-    }
-}
-
-private struct MomentAtmosphericBackground: View {
-    @Environment(\.colorScheme) private var colorScheme
-
-    let isCareful: Bool
-
-    var body: some View {
-        ZStack {
-            Color.momentGroupedBackground
-
-            LinearGradient(
-                colors: isCareful
-                    ? [
-                        Color.prosePalCare.opacity(colorScheme == .dark ? 0.30 : 0.24),
-                        Color.prosePalSlate,
-                        Color.prosePalInk
-                    ]
-                    : [
-                        Color.prosePalCoralDeep.opacity(colorScheme == .dark ? 0.20 : 0.18),
-                        Color.prosePalSlate,
-                        Color.prosePalInk
-                    ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-
-            LinearGradient(
-                colors: [
-                    Color.prosePalPaper.opacity(colorScheme == .dark ? (isCareful ? 0.05 : 0.08) : 0.10),
-                    Color.clear,
-                    Color.prosePalNavy.opacity(colorScheme == .dark ? 0.18 : 0.22)
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-        }
-        .ignoresSafeArea()
-    }
-}
-
-private struct MomentHeroBackground: View {
-    let isCareful: Bool
-
-    var body: some View {
-        RoundedRectangle(cornerRadius: 28, style: .continuous)
-            .fill(
-                LinearGradient(
-                    colors: isCareful
-                        ? [
-                            Color.prosePalInk,
-                            Color.prosePalCare.opacity(0.86),
-                            Color.prosePalNavy
-                        ]
-                        : [
-                            Color.prosePalInk,
-                            Color.prosePalCoralDeep.opacity(0.88),
-                            Color.prosePalNavy
-                        ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-            )
-            .overlay {
-                RoundedRectangle(cornerRadius: 28, style: .continuous)
-                    .stroke(
-                        LinearGradient(
-                            colors: [
-                                Color.white.opacity(0.36),
-                                Color.white.opacity(0.10),
-                                Color.prosePalCoral.opacity(isCareful ? 0.12 : 0.32)
-                            ],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        ),
-                        lineWidth: 1
-                    )
-            }
-            .shadow(color: Color.black.opacity(0.24), radius: 24, x: 0, y: 16)
-    }
-}
-
-private struct MomentCardBackground: View {
-    let isCareful: Bool
-    let prominence: MomentSurfaceProminence
-
-    var body: some View {
-        let shape = RoundedRectangle(cornerRadius: 22, style: .continuous)
-
-        shape
-            .fill(cardFill)
-            .overlay {
-                shape.stroke(borderFill, lineWidth: borderWidth)
-            }
-            .shadow(
-                color: shadowColor,
-                radius: prominence == .elevated ? 18 : 10,
-                x: 0,
-                y: prominence == .elevated ? 10 : 5
-            )
-    }
-
-    private var cardFill: LinearGradient {
-        switch prominence {
-        case .accent:
-            LinearGradient(
-                colors: [
-                    Color.prosePalCoralCard,
-                    Color.prosePalPaper,
-                    Color.prosePalCard
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-        case .warning:
-            LinearGradient(
-                colors: [
-                    Color.prosePalWarningCard,
-                    Color.prosePalPaper,
-                    Color.prosePalCard
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-        case .standard, .elevated:
-            LinearGradient(
-                colors: isCareful
-                    ? [
-                        Color.prosePalCareCard,
-                        Color.prosePalPaper,
-                        Color.prosePalCard
-                    ]
-                    : [
-                        Color.prosePalCard,
-                        Color.prosePalPaper,
-                        Color.prosePalCoralCard
-                    ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-        }
-    }
-
-    private var borderFill: LinearGradient {
-        LinearGradient(
-            colors: [
-                Color.white.opacity(0.64),
-                Color.prosePalNavy.opacity(prominence == .standard ? 0.18 : 0.28),
-                accentColor.opacity(prominence == .standard ? 0.18 : 0.32)
-            ],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-        )
-    }
-
-    private var accentColor: Color {
-        switch prominence {
-        case .warning:
-            Color.prosePalWarning
-        default:
-            isCareful ? Color.prosePalCare : Color.prosePalCoral
-        }
-    }
-
-    private var borderWidth: CGFloat {
-        prominence == .standard ? 0.8 : 1
-    }
-
-    private var shadowColor: Color {
-        switch prominence {
-        case .warning:
-            Color.prosePalWarning.opacity(0.12)
-        default:
-            Color.black.opacity(prominence == .elevated ? 0.18 : 0.10)
-        }
-    }
-}
-
-private struct MomentRegisterSelector: View {
-    @Binding var selection: MomentRegister
-    let registers: [MomentRegister]
-    let isCareful: Bool
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 9) {
-            VStack(alignment: .leading, spacing: 3) {
-                Text("How should ProsePal help?")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.primary)
-
-                Text(selection.userSafeDescription)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-
-            ViewThatFits(in: .horizontal) {
-                HStack(spacing: 8) {
-                    registerButtons
-                }
-
-                VStack(spacing: 8) {
-                    registerButtons
-                }
-            }
-        }
-        .animation(.spring(response: 0.34, dampingFraction: 0.82), value: selection)
-        .animation(.spring(response: 0.34, dampingFraction: 0.82), value: registers.map(\.rawValue).joined())
-    }
-
-    @ViewBuilder
-    private var registerButtons: some View {
-        ForEach(registers) { register in
-            Button {
-                selection = register
-                playMomentSelectionFeedback()
-            } label: {
-                MomentRegisterOption(
-                    register: register,
-                    isSelected: selection == register,
-                    isCareful: isCareful
-                )
-            }
-            .buttonStyle(.plain)
-        }
-    }
-}
-
-private struct MomentRegisterOption: View {
-    let register: MomentRegister
-    let isSelected: Bool
-    let isCareful: Bool
-
-    var body: some View {
-        HStack(spacing: 8) {
-            Image(systemName: register.systemImage)
-                .font(.caption.weight(.bold))
-                .symbolRenderingMode(.hierarchical)
-
-            Text(register.displayName)
-                .font(.footnote.weight(.semibold))
-                .lineLimit(1)
-                .minimumScaleFactor(0.72)
-        }
-        .foregroundStyle(isSelected ? Color.white : Color.primary)
-        .padding(.horizontal, 12)
-        .padding(.vertical, 10)
-        .frame(maxWidth: .infinity)
-        .background {
-            Capsule(style: .continuous)
-                .fill(backgroundFill)
-        }
-        .overlay {
-            Capsule(style: .continuous)
-                .stroke(
-                    isSelected ? Color.white.opacity(0.24) : accentColor.opacity(0.20),
-                    lineWidth: 1
-                )
-        }
-        .scaleEffect(isSelected ? 1 : 0.98)
-        .accessibilityAddTraits(isSelected ? [.isSelected] : [])
-    }
-
-    private var accentColor: Color {
-        isCareful ? .prosePalCare : .prosePalCoral
-    }
-
-    private var backgroundFill: LinearGradient {
-        if isSelected {
-            return LinearGradient(
-                colors: isCareful
-                    ? [Color.prosePalCare, Color.prosePalNavy.opacity(0.92)]
-                    : [Color.prosePalCoral, Color.prosePalCoralDeep],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-        }
-
-        return LinearGradient(
-            colors: [
-                Color.prosePalPaper.opacity(0.82),
-                Color.momentSecondaryGroupedBackground.opacity(0.88)
-            ],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-        )
-    }
-}
-
-private struct MomentBottomRailClearance: View {
-    let isCareful: Bool
-
-    var body: some View {
-        LinearGradient(
-            stops: [
-                .init(color: Color.momentGroupedBackground.opacity(0), location: 0),
-                .init(color: Color.momentGroupedBackground.opacity(0.06), location: 0.48),
-                .init(color: Color.momentGroupedBackground.opacity(0.24), location: 1)
-            ],
-            startPoint: .top,
-            endPoint: .bottom
-        )
-        .overlay(alignment: .bottom) {
-            (isCareful ? Color.prosePalCare : Color.prosePalCoral)
-                .opacity(0.035)
-                .frame(height: 34)
-                .blur(radius: 12)
-        }
-        .allowsHitTesting(false)
-        .accessibilityHidden(true)
-    }
-}
-
-private struct MomentSectionLabel: View {
-    let title: String
-    let systemImage: String
-    var isCareful: Bool = false
-
-    var body: some View {
-        HStack(alignment: .center, spacing: 9) {
-            MomentSymbolBadge(
-                systemImage: systemImage,
-                style: isCareful ? .care : .subtle,
-                size: 28
-            )
-
-            Text(title)
-        }
-            .font(.headline)
-            .foregroundStyle(isCareful ? Color.prosePalCare : Color.primary)
-            .accessibilityElement(children: .combine)
-    }
-}
-
-private struct MomentListSectionHeader: View {
-    let title: String
-
-    init(_ title: String) {
-        self.title = title
-    }
-
-    var body: some View {
-        Text(title.uppercased())
-            .font(.caption2.weight(.bold))
-            .tracking(0.7)
-            .foregroundStyle(Color.white.opacity(0.66))
-            .padding(.leading, 2)
-            .padding(.bottom, 2)
-    }
-}
-
-private extension View {
-    func prosePalMomentCard(
-        isCareful: Bool = false,
-        prominence: MomentSurfaceProminence = .standard
-    ) -> some View {
-        self
-            .padding(18)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background {
-                MomentCardBackground(isCareful: isCareful, prominence: prominence)
-            }
-    }
-
-    func momentInputSurface(isCareful: Bool = false, cornerRadius: CGFloat = 16) -> some View {
-        self
-            .background {
-                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .fill(
-                        LinearGradient(
-                            colors: [
-                                Color.prosePalPaper,
-                                Color.prosePalCard
-                            ],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .overlay {
-                        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                            .stroke(
-                                LinearGradient(
-                                    colors: [
-                                        Color.white.opacity(0.62),
-                                        (isCareful ? Color.prosePalCare : Color.prosePalCoral).opacity(0.22),
-                                        Color.prosePalNavy.opacity(0.12)
-                                    ],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                ),
-                                lineWidth: 1
-                            )
-                    }
-            }
-    }
-
-    func momentListRowSurface(isCareful: Bool = false) -> some View {
-        self
-            .listRowBackground(
-                LinearGradient(
-                    colors: [
-                        Color.prosePalPaper,
-                        Color.prosePalCard,
-                        isCareful ? Color.prosePalCareCard : Color.prosePalCoralCard
-                    ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-            )
-    }
-
-    @ViewBuilder
-    func momentPickerListStyle() -> some View {
-        #if os(iOS)
-        self.listStyle(.insetGrouped)
-        #else
-        self
-        #endif
-    }
-
-    @ViewBuilder
-    func momentNameInputBehavior() -> some View {
-        #if os(iOS)
-        self.textInputAutocapitalization(.words)
-        #else
-        self
-        #endif
-    }
-
-    @ViewBuilder
-    func momentTabBarVisibility(isVisible: Bool) -> some View {
-        #if os(iOS)
-        self.toolbar(isVisible ? .visible : .hidden, for: .tabBar)
-        #else
-        self
-        #endif
-    }
-
-    @ViewBuilder
-    func momentNavigationBarColorScheme() -> some View {
-        #if os(iOS)
-        self.toolbarColorScheme(.dark, for: .navigationBar)
-        #else
-        self
-        #endif
-    }
-
-    @ViewBuilder
-    func momentControlBarSurface() -> some View {
-        #if os(iOS) || os(macOS) || os(tvOS) || os(watchOS)
-        if #available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, *) {
-            self
-                .padding(8)
-                .glassEffect(
-                    .regular.tint(Color.prosePalNavy.opacity(0.10)).interactive(),
-                    in: .rect(cornerRadius: 30)
-                )
-        } else {
-            self
-                .background(.bar)
-                .overlay(alignment: .top) {
-                    Divider()
-                }
-        }
-        #else
-        self
-            .background(.bar)
-            .overlay(alignment: .top) {
-                Divider()
-            }
-        #endif
-    }
-}
-
-private extension MomentRegister {
-    var systemImage: String {
-        switch self {
-        case .react:
-            "bolt.fill"
-        case .confess:
-            "pencil"
-        case .assemble:
-            "heart.text.square"
-        }
-    }
-}
-
 private extension MomentAdjustment {
     var systemImage: String {
         switch self {
@@ -4410,131 +5229,5 @@ private extension MomentAdjustment {
         case .moreDirect:
             "arrow.right"
         }
-    }
-}
-
-private extension Color {
-    static var momentGroupedBackground: Color {
-        #if canImport(UIKit)
-        Color(uiColor: UIColor { traits in
-            traits.userInterfaceStyle == .dark
-                ? UIColor(red: 0.055, green: 0.066, blue: 0.082, alpha: 1)
-                : UIColor(red: 0.065, green: 0.090, blue: 0.130, alpha: 1)
-        })
-        #elseif canImport(AppKit)
-        Color(nsColor: .windowBackgroundColor)
-        #else
-        Color.gray.opacity(0.08)
-        #endif
-    }
-
-    static var momentSecondaryGroupedBackground: Color {
-        #if canImport(UIKit)
-        Color(uiColor: UIColor { traits in
-            traits.userInterfaceStyle == .dark
-                ? UIColor(red: 0.108, green: 0.125, blue: 0.152, alpha: 1)
-                : UIColor(red: 0.946, green: 0.918, blue: 0.870, alpha: 1)
-        })
-        #elseif canImport(AppKit)
-        Color(nsColor: .controlBackgroundColor)
-        #else
-        Color.gray.opacity(0.12)
-        #endif
-    }
-
-    static var prosePalPaper: Color {
-        #if canImport(UIKit)
-        Color(uiColor: UIColor { traits in
-            traits.userInterfaceStyle == .dark
-                ? UIColor(red: 0.100, green: 0.108, blue: 0.126, alpha: 1)
-                : UIColor(red: 1.000, green: 0.992, blue: 0.966, alpha: 1)
-        })
-        #elseif canImport(AppKit)
-        Color(nsColor: .textBackgroundColor)
-        #else
-        Color.white
-        #endif
-    }
-
-    static var prosePalCard: Color {
-        #if canImport(UIKit)
-        Color(uiColor: UIColor { traits in
-            traits.userInterfaceStyle == .dark
-                ? UIColor(red: 0.082, green: 0.096, blue: 0.118, alpha: 1)
-                : UIColor(red: 0.992, green: 0.978, blue: 0.948, alpha: 1)
-        })
-        #elseif canImport(AppKit)
-        Color(nsColor: .controlBackgroundColor)
-        #else
-        Color.gray.opacity(0.12)
-        #endif
-    }
-
-    static var prosePalCoralCard: Color {
-        #if canImport(UIKit)
-        Color(uiColor: UIColor { traits in
-            traits.userInterfaceStyle == .dark
-                ? UIColor(red: 0.130, green: 0.095, blue: 0.100, alpha: 1)
-                : UIColor(red: 0.992, green: 0.940, blue: 0.910, alpha: 1)
-        })
-        #else
-        Color.prosePalCoral.opacity(0.12)
-        #endif
-    }
-
-    static var prosePalCareCard: Color {
-        #if canImport(UIKit)
-        Color(uiColor: UIColor { traits in
-            traits.userInterfaceStyle == .dark
-                ? UIColor(red: 0.084, green: 0.112, blue: 0.142, alpha: 1)
-                : UIColor(red: 0.920, green: 0.946, blue: 0.964, alpha: 1)
-        })
-        #else
-        Color.prosePalCare.opacity(0.12)
-        #endif
-    }
-
-    static var prosePalWarningCard: Color {
-        #if canImport(UIKit)
-        Color(uiColor: UIColor { traits in
-            traits.userInterfaceStyle == .dark
-                ? UIColor(red: 0.130, green: 0.104, blue: 0.076, alpha: 1)
-                : UIColor(red: 0.988, green: 0.940, blue: 0.878, alpha: 1)
-        })
-        #else
-        Color.prosePalWarning.opacity(0.12)
-        #endif
-    }
-
-    static var prosePalNavy: Color {
-        Color(red: 0.10, green: 0.14, blue: 0.20)
-    }
-
-    static var prosePalSlate: Color {
-        Color(red: 0.13, green: 0.18, blue: 0.25)
-    }
-
-    static var prosePalInk: Color {
-        Color(red: 0.045, green: 0.060, blue: 0.090)
-    }
-
-    static var prosePalCoral: Color {
-        Color(red: 0.83, green: 0.39, blue: 0.35)
-    }
-
-    static var prosePalCoralDeep: Color {
-        Color(red: 0.64, green: 0.25, blue: 0.23)
-    }
-
-    static var prosePalCare: Color {
-        Color(red: 0.38, green: 0.53, blue: 0.70)
-    }
-
-    static var prosePalCareSurface: Color {
-        Color.prosePalCare.opacity(0.14)
-    }
-
-    static var prosePalWarning: Color {
-        Color(red: 0.78, green: 0.48, blue: 0.22)
     }
 }

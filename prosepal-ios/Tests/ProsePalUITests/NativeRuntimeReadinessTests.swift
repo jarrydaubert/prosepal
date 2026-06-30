@@ -57,11 +57,21 @@ final class NativeRuntimeReadinessTests: XCTestCase {
 
         XCTAssertEqual(
             payload,
-            "runtime_readiness generation_configured=true private_draft_configured=true take_more_care_configured=true dev_secret_configured=true account_configured=false subscription_configured=true premium_product_count=1 recommended_plan_configured=false"
+            "runtime_readiness generation_configured=true private_draft_configured=true take_more_care_configured=true dev_secret_configured=true account_configured=false subscription_configured=true premium_product_count=1 recommended_plan_configured=false relationship_vault_persistent=true"
         )
         XCTAssertFalse(payload.contains("http"))
         XCTAssertFalse(payload.contains("secret="))
         XCTAssertFalse(payload.contains("product_id="))
+    }
+
+    func testDiagnosticsPayloadSummarisesTemporaryVaultWithoutStoreDetails() {
+        let readiness = NativeRuntimeReadiness(isRelationshipVaultPersistent: false)
+
+        let payload = readiness.diagnosticsPayload
+
+        XCTAssertTrue(payload.contains("relationship_vault_persistent=false"))
+        XCTAssertFalse(payload.contains("/"))
+        XCTAssertFalse(payload.contains("RelationshipVault.store"))
     }
 
     func testPrivateDraftAndTakeMoreCareReadinessAreSeparate() {

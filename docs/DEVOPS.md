@@ -71,9 +71,13 @@ Local staging and side-by-side UAT are different:
 - `ProsePal` keeps production identity: `com.prosepal.prosepal`.
 - `ProsePal Staging` uses side-by-side UAT identity:
   `com.prosepal.prosepal.staging`, display name `ProsePal Staging`.
-- The shared `ProsePal Staging` scheme carries target and StoreKit references
-  only. Restore or recreate the ignored local staging scheme for staging Run
-  environment values; do not commit those values.
+- The shared `ProsePal Staging` scheme carries target and StoreKit references.
+  The staging target carries non-secret Premium product IDs in build settings so
+  the app runtime can request local StoreKit products. Staging embeds
+  staging-specific WidgetKit and Share extension targets so system-surface
+  handoffs use `prosepal-staging://` instead of the production app scheme.
+  Restore or recreate the ignored local staging scheme for staging Run
+  environment values that contain secrets; do not commit those values.
 - Do not create a second public ProsePal listing by accident. If TestFlight UAT
   needs a separate App Store Connect app record, document that as an internal
   staging/testing app decision before creating records or products.
@@ -124,8 +128,9 @@ Before debugging staging auth, generation, or StoreKit behavior from Xcode, run:
 ```
 
 The verifier checks the shared scheme is clean, the ignored local staging scheme
-has the expected env keys enabled, the StoreKit config reference resolves, and
-the local StoreKit file contains the expected native product IDs. It must not
+has the expected env keys enabled, the StoreKit config reference resolves, the
+local StoreKit file contains the expected native product IDs, and the staging
+target passes those non-secret product IDs into the app runtime. It must not
 print secret values.
 
 ## Supabase Environment Safety

@@ -102,10 +102,18 @@ final class NativeDiagnosticsTests: XCTestCase {
 
     func testMomentLaunchConsumedPayloadDoesNotIncludeRawPerson() {
         let payload = NativeDiagnosticsPayload.momentLaunchConsumed(
-            MomentLaunchRequest(personName: "Private Person", source: "app_intent")
+            MomentLaunchRequest(
+                personName: "Private Person",
+                sharedText: "Private shared text",
+                source: "share_extension"
+            )
         )
 
-        XCTAssertEqual(payload, "moment_launch_consumed source=app_intent person_present=true occasion=none")
+        XCTAssertEqual(
+            payload,
+            "moment_launch_consumed source=share_extension person_present=true occasion=none shared_text_present=true shared_text_chars=19"
+        )
         XCTAssertFalse(payload.contains("Private Person"))
+        XCTAssertFalse(payload.contains("Private shared text"))
     }
 }

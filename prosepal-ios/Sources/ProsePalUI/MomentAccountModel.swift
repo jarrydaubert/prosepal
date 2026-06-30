@@ -28,7 +28,7 @@ public final class MomentAccountModel {
     @ObservationIgnored private let authClient: (any AuthClient)?
     @ObservationIgnored private let subscriptionClient: (any SubscriptionClient)?
     @ObservationIgnored private let accountMaintenanceClient: (any AccountMaintenanceClient)?
-    @ObservationIgnored private let localAccountDataDeletion: (() throws -> Void)?
+    @ObservationIgnored private let localAccountDataDeletion: (@MainActor () async throws -> Void)?
     @ObservationIgnored private let diagnostics: NativeDiagnosticsLogger
     @ObservationIgnored private var pendingAppleSignInNonce: AppleSignInNonce?
     @ObservationIgnored private var didLoadInitialState = false
@@ -39,7 +39,7 @@ public final class MomentAccountModel {
         authClient: (any AuthClient)? = nil,
         subscriptionClient: (any SubscriptionClient)? = nil,
         accountMaintenanceClient: (any AccountMaintenanceClient)? = nil,
-        localAccountDataDeletion: (() throws -> Void)? = nil,
+        localAccountDataDeletion: (@MainActor () async throws -> Void)? = nil,
         runtimeReadiness: NativeRuntimeReadiness = .unconfigured,
         diagnostics: NativeDiagnosticsLogger = .shared
     ) {
@@ -504,7 +504,7 @@ public final class MomentAccountModel {
             try await accountMaintenanceClient.deleteAccount(accessToken: accessToken)
             var didClearLocalData = true
             do {
-                try localAccountDataDeletion?()
+                try await localAccountDataDeletion?()
             } catch {
                 didClearLocalData = false
                 diagnostics.messageAction("local_account_data_delete_failed", source: "settings", messageCharacters: 0)

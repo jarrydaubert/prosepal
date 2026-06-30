@@ -7,18 +7,21 @@ public struct MomentLaunchRequest: Codable, Equatable, Sendable {
 
     public var personName: String?
     public var occasion: Occasion?
+    public var sharedText: String?
     public var source: String
     public var createdAt: Date
 
     public init(
         personName: String? = nil,
         occasion: Occasion? = nil,
+        sharedText: String? = nil,
         source: String = MomentLaunchRequest.defaultSource,
         createdAt: Date = Date()
     ) {
         let trimmedName = personName?.trimmingCharacters(in: .whitespacesAndNewlines)
         self.personName = trimmedName?.isEmpty == false ? trimmedName : nil
         self.occasion = occasion
+        self.sharedText = SharedMomentLaunchPayload.sanitized(sharedText)
         self.source = source.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             ? Self.defaultSource
             : source.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -51,6 +54,65 @@ public struct MomentLaunchStore {
         guard let data = store.data(forKey: key) else { return nil }
         store.removeObject(forKey: key)
         return try? decoder.decode(MomentLaunchRequest.self, from: data)
+    }
+}
+
+public struct SharedMomentLaunchPayload: Codable, Equatable, Sendable {
+    public static let appGroupIdentifier = "group.com.prosepal.prosepal"
+    public static let defaultKey = "prosepal.native.pendingSharedMoment.v1"
+    public static let maxTextCharacterCount = 1_200
+
+    public var text: String?
+    public var sourceURL: URL?
+    public var createdAt: Date
+
+    public init(
+        text: String?,
+        sourceURL: URL? = nil,
+        createdAt: Date = Date()
+    ) {
+        self.text = Self.sanitized(text)
+        self.sourceURL = sourceURL
+        self.createdAt = createdAt
+    }
+
+    public var hasMomentContext: Bool {
+        text != nil || sourceURL != nil
+    }
+
+    public static func sanitized(_ text: String?) -> String? {
+        guard let text else { return nil }
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+        return String(trimmed.prefix(maxTextCharacterCount))
+    }
+}
+
+public struct SharedMomentLaunchStore {
+    private let store: UserDefaults?
+    private let key: String
+    private let encoder = JSONEncoder()
+    private let decoder = JSONDecoder()
+
+    public init(
+        store: UserDefaults? = UserDefaults(suiteName: SharedMomentLaunchPayload.appGroupIdentifier),
+        key: String = SharedMomentLaunchPayload.defaultKey
+    ) {
+        self.store = store
+        self.key = key
+    }
+
+    @discardableResult
+    public func save(_ payload: SharedMomentLaunchPayload) -> Bool {
+        guard payload.hasMomentContext, let data = try? encoder.encode(payload) else { return false }
+        store?.set(data, forKey: key)
+        return store != nil
+    }
+
+    public func consume() -> SharedMomentLaunchPayload? {
+        guard let data = store?.data(forKey: key) else { return nil }
+        store?.removeObject(forKey: key)
+        return try? decoder.decode(SharedMomentLaunchPayload.self, from: data)
     }
 }
 
