@@ -550,6 +550,25 @@ not done.
   `prosepal-ios/evidence/ui-design-qa/first-screen/08-simulator-entry-after-fixed-top.jpg`,
   and
   `prosepal-ios/evidence/ui-design-qa/first-screen/10-simulator-active-after-tone-order.jpg`.
+  Slice 6 evidence: performed a draft-result visual QA pass against rendered
+  `07 · Draft result` from the desktop ProsePal design-system kit, with local
+  screenshots and metrics saved under
+  `prosepal-ios/evidence/ui-design-qa/draft-result/`. The generated state now
+  branches into a result-first layout instead of leading with the source editor:
+  compact `Today`/`A draft` chrome, a clean unruled draft card with italic tone
+  label, variant dots, `Still unmistakably you`, inline `Copy`/`Another`/`Keep
+  this` actions, a margin note, and a compact bottom refine rail. The source
+  editor remains reachable through `Today` without destroying the generated
+  draft. `swift build` and `swift test` passed; XcodeBuildMCP `ProsePal Staging`
+  build/run passed on `iPhone 17` with
+  `--prosepal-use-mock-writing-service`; `snapshot_ui` confirmed draft text,
+  copy, rewrite, keep, margin note, and refine actions remain reachable.
+  Latest comparison screenshots:
+  `prosepal-ios/evidence/ui-design-qa/draft-result/01-reference-draft-result-phone.png`,
+  `prosepal-ios/evidence/ui-design-qa/draft-result/02-simulator-draft-before.jpg`,
+  `prosepal-ios/evidence/ui-design-qa/draft-result/03-simulator-draft-body-before.jpg`,
+  and
+  `prosepal-ios/evidence/ui-design-qa/draft-result/04-simulator-draft-after.jpg`.
 - [~] N-IOS-14 Native visual system and Moment rail/content discipline --
   evidence: `MomentSheetView.momentContent(viewportHeight:)`,
   `draftStartSection`, `shouldShowTabRail`, and `startNewMoment()` in

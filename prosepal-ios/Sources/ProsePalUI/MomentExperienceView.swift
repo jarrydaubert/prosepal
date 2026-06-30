@@ -1333,6 +1333,7 @@ private struct MomentSheetView: View {
     @State private var hasCommittedPersonEntry = false
     @State private var hasEntered = false
     @State private var shareRequest: MomentShareRequest?
+    @State private var isShowingDraftSource = false
 
     private let diagnostics = NativeDiagnosticsLogger.shared
 
@@ -1352,9 +1353,9 @@ private struct MomentSheetView: View {
         GeometryReader { proxy in
             VStack(spacing: 0) {
                 topChrome
-                    .padding(.horizontal, 20)
+                    .padding(.horizontal, topChromeHorizontalPadding)
                     .padding(.top, 4)
-                    .padding(.bottom, 18)
+                    .padding(.bottom, topChromeBottomPadding)
 
                 ScrollViewReader { scrollProxy in
                     ScrollView {
@@ -1366,7 +1367,10 @@ private struct MomentSheetView: View {
                     .onChange(of: model.occasion) { _, _ in
                         realignActivePrimaryIfNeeded(scrollProxy: scrollProxy, delayNanoseconds: 120_000_000)
                     }
-                    .onChange(of: model.bundle?.id) { _, _ in
+                    .onChange(of: model.bundle?.id) { _, newValue in
+                        if newValue != nil {
+                            isShowingDraftSource = false
+                        }
                         realignActivePrimaryIfNeeded(scrollProxy: scrollProxy, delayNanoseconds: 80_000_000)
                     }
                     .onChange(of: model.errorMessage) { _, _ in
@@ -1380,15 +1384,7 @@ private struct MomentSheetView: View {
                 .animation(.easeInOut(duration: 0.28), value: model.moment.isCarefulMode)
         }
         .safeAreaInset(edge: .bottom) {
-            if let bundle = model.bundle, focusedField == nil, shouldShowFloatingDraftActionRail {
-                actionRail(bundle: bundle)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 10)
-                    .momentControlBarSurface()
-            } else {
-                MomentBottomRailClearance(isCareful: model.moment.isCarefulMode)
-                    .frame(height: focusedField == nil ? 76 : 56)
-            }
+            bottomInsetContent
         }
         .toolbar {
             ToolbarItemGroup(placement: .keyboard) {
@@ -1486,7 +1482,9 @@ private struct MomentSheetView: View {
 
     private func momentContent(viewportHeight: CGFloat) -> some View {
         VStack(alignment: .leading, spacing: 18) {
-            if !shouldUseActiveMomentLayout {
+            if let bundle = model.bundle, !isShowingDraftSource {
+                draftResultContent(bundle)
+            } else if !shouldUseActiveMomentLayout {
                 initialPrimaryContent
             } else {
                 activePrimaryContent
@@ -1549,11 +1547,15 @@ private struct MomentSheetView: View {
         if focusedField != nil {
             return 96
         }
+        if model.bundle != nil && !isShowingDraftSource {
+            return dynamicTypeSize.isAccessibilitySize ? 132 : 98
+        }
         return model.bundle == nil && model.errorMessage == nil ? 132 : 170
     }
 
     private var shouldHoldSecondaryContentBelowFirstViewport: Bool {
         focusedField == nil &&
+            (model.bundle == nil || isShowingDraftSource) &&
             !currentPersonName.isEmpty &&
             model.safetySignal != .crisisSupport
     }
@@ -1595,7 +1597,46 @@ private struct MomentSheetView: View {
         !dynamicTypeSize.isAccessibilitySize
     }
 
+    @ViewBuilder
+    private var bottomInsetContent: some View {
+        if let bundle = model.bundle, focusedField == nil, shouldShowFloatingDraftActionRail {
+            draftFloatingControls(bundle: bundle)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+                .momentControlBarSurface()
+        } else {
+            MomentBottomRailClearance(isCareful: model.moment.isCarefulMode)
+                .frame(height: focusedField == nil ? 76 : 56)
+        }
+    }
+
+    @ViewBuilder
+    private func draftFloatingControls(bundle: MomentDraftBundle) -> some View {
+        if isShowingDraftSource {
+            actionRail(bundle: bundle)
+        } else {
+            draftRefineRail(bundle: bundle)
+        }
+    }
+
+    private var topChromeHorizontalPadding: CGFloat {
+        model.bundle != nil && !isShowingDraftSource ? 18 : 20
+    }
+
+    private var topChromeBottomPadding: CGFloat {
+        model.bundle != nil && !isShowingDraftSource ? 5 : 18
+    }
+
+    @ViewBuilder
     private var topChrome: some View {
+        if model.bundle != nil && !isShowingDraftSource {
+            draftResultTopChrome
+        } else {
+            momentTopChrome
+        }
+    }
+
+    private var momentTopChrome: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack(alignment: .center) {
                 Button {
@@ -1635,6 +1676,49 @@ private struct MomentSheetView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
+    private var draftResultTopChrome: some View {
+        HStack(alignment: .center) {
+            Button {
+                isShowingDraftSource = true
+            } label: {
+                Label("Today", systemImage: "chevron.left")
+                    .font(.system(.body, design: .default).weight(.regular))
+                    .labelStyle(.titleAndIcon)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.88)
+                    .frame(minWidth: 76, alignment: .leading)
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(Color.prosePalCoralDeep)
+            .accessibilityLabel("Back to today")
+
+            Spacer(minLength: 8)
+
+            Text("A draft")
+                .font(.headline.weight(.semibold))
+                .foregroundStyle(Color.prosePalInk)
+                .lineLimit(1)
+
+            Spacer(minLength: 8)
+
+            Button {
+                if let bundle = model.bundle {
+                    save(bundle)
+                }
+            } label: {
+                Image(systemName: "bookmark")
+                    .font(.system(size: 19, weight: .regular))
+                    .frame(width: 44, height: 44)
+                    .contentShape(Circle())
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(Color.prosePalCoralDeep)
+            .accessibilityLabel("Keep this draft")
+        }
+        .frame(height: 48)
+        .frame(maxWidth: .infinity)
+    }
+
     private var accountInitials: String {
         guard let signedInEmail = account.signedInEmail,
               let firstCharacter = signedInEmail.trimmingCharacters(in: .whitespacesAndNewlines).first
@@ -1659,6 +1743,24 @@ private struct MomentSheetView: View {
             activeSetupSection
             if shouldShowDraftStartSection {
                 draftStartSection
+            }
+        }
+    }
+
+    private func draftResultContent(_ bundle: MomentDraftBundle) -> some View {
+        VStack(alignment: .leading, spacing: 13) {
+            draftResultCard(bundle)
+
+            if model.hasVisiblePressureCheck {
+                pressureCheck(bundle)
+            } else {
+                draftMarginNote(bundle)
+            }
+
+            if dynamicTypeSize.isAccessibilitySize {
+                draftRefineRail(bundle: bundle)
+                    .padding(.top, 2)
+                    .momentControlBarSurface()
             }
         }
     }
@@ -2647,6 +2749,271 @@ private struct MomentSheetView: View {
                 canRetry: true
             )
         }
+    }
+
+    private func draftResultCard(_ bundle: MomentDraftBundle) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(alignment: .center, spacing: 8) {
+                Text(draftResultToneLabel(for: bundle))
+                    .font(.system(size: 13, weight: .medium, design: .serif))
+                    .italic()
+                    .foregroundStyle(draftResultAccentColor(for: bundle))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.84)
+
+                Spacer(minLength: 10)
+
+                draftVariantDots
+            }
+            .padding(.top, 15)
+            .padding(.horizontal, 20)
+
+            TextField("Draft text", text: activeDraftText, axis: .vertical)
+                .font(.system(.title3, design: .serif))
+                .lineSpacing(7)
+                .foregroundStyle(Color.prosePalInk)
+                .lineLimit(dynamicTypeSize.isAccessibilitySize ? 7...28 : 5...20)
+                .textFieldStyle(.plain)
+                .focused($focusedField, equals: .draft)
+                .submitLabel(.done)
+                .onSubmit {
+                    endFocusedEditing()
+                }
+                .disabled(model.isDrafting)
+                .accessibilityLabel("Draft text")
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(
+                    maxWidth: .infinity,
+                    minHeight: dynamicTypeSize.isAccessibilitySize ? 260 : 236,
+                    alignment: .topLeading
+                )
+                .padding(.horizontal, 20)
+                .padding(.top, 12)
+                .padding(.bottom, 14)
+
+            Label("Still unmistakably you", systemImage: "checkmark.seal")
+                .font(.footnote)
+                .foregroundStyle(Color.prosePalCare)
+                .labelStyle(.titleAndIcon)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 13)
+
+            Rectangle()
+                .fill(Color.prosePalNavy.opacity(0.12))
+                .frame(height: 0.5)
+                .padding(.horizontal, 12)
+
+            HStack(alignment: .center, spacing: 4) {
+                draftResultFooterButton(title: "Copy", systemImage: "doc.on.doc") {
+                    copy(bundle.messageText)
+                }
+
+                draftResultFooterButton(title: "Another", systemImage: "arrow.clockwise") {
+                    focusedField = nil
+                    Task {
+                        await model.draftNow()
+                    }
+                }
+                .disabled(model.isDrafting || !model.canDraft)
+
+                Spacer(minLength: 4)
+
+                draftResultFooterButton(title: "Keep this", systemImage: "checkmark", isAccent: true) {
+                    save(bundle)
+                }
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background {
+            let shape = RoundedRectangle(cornerRadius: 20, style: .continuous)
+
+            ZStack(alignment: .leading) {
+                shape
+                    .fill(Color.prosePalPaper.opacity(0.96))
+
+                Rectangle()
+                    .fill(draftResultAccentColor(for: bundle))
+                    .frame(width: 3)
+                    .padding(.vertical, 1)
+            }
+            .clipShape(shape)
+            .overlay {
+                shape.stroke(Color.prosePalNavy.opacity(0.12), lineWidth: 1)
+            }
+            .shadow(color: Color.prosePalCoralDeep.opacity(0.10), radius: 18, x: 0, y: 9)
+        }
+    }
+
+    private func draftResultToneLabel(for bundle: MomentDraftBundle) -> String {
+        if bundle.lane == .takeMoreCare {
+            return "Careful & steady"
+        }
+
+        switch model.register {
+        case .react:
+            return "Warm & concise"
+        case .confess:
+            return "Your words, polished"
+        case .assemble:
+            return "Diplomatic & warm"
+        }
+    }
+
+    private var draftVariantDots: some View {
+        HStack(spacing: 5) {
+            Capsule(style: .continuous)
+                .fill(Color.prosePalCoral)
+                .frame(width: 18, height: 6)
+
+            Circle()
+                .fill(Color.prosePalSlate.opacity(0.36))
+                .frame(width: 6, height: 6)
+
+            Circle()
+                .fill(Color.prosePalSlate.opacity(0.36))
+                .frame(width: 6, height: 6)
+        }
+        .accessibilityHidden(true)
+    }
+
+    private func draftResultFooterButton(
+        title: String,
+        systemImage: String,
+        isAccent: Bool = false,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Label {
+                Text(title)
+                    .font(.subheadline.weight(isAccent ? .semibold : .medium))
+            } icon: {
+                Image(systemName: systemImage)
+                    .font(.caption.weight(.medium))
+            }
+            .labelStyle(.titleAndIcon)
+            .lineLimit(1)
+            .minimumScaleFactor(0.78)
+            .frame(height: 36)
+            .padding(.horizontal, 8)
+            .foregroundStyle(isAccent ? Color.prosePalCoralDeep : Color.prosePalSlate)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func draftMarginNote(_ bundle: MomentDraftBundle) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: "square.and.pencil")
+                .font(.system(size: 15, weight: .medium))
+                .foregroundStyle(draftResultAccentColor(for: bundle))
+                .frame(width: 30, height: 30)
+                .background(
+                    draftResultAccentColor(for: bundle).opacity(0.12),
+                    in: RoundedRectangle(cornerRadius: 9, style: .continuous)
+                )
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text("Margin note")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Color.prosePalInk)
+
+                Text(draftMarginNoteText(for: bundle))
+                    .font(.system(.subheadline, design: .serif))
+                    .italic()
+                    .lineSpacing(3)
+                    .foregroundStyle(Color.prosePalSlate)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(.vertical, 13)
+        .padding(.horizontal, 15)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background {
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(Color.prosePalPaper.opacity(0.52))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .stroke(Color.prosePalNavy.opacity(0.10), lineWidth: 1)
+                }
+        }
+    }
+
+    private func draftMarginNoteText(for bundle: MomentDraftBundle) -> String {
+        if bundle.lane == .takeMoreCare || model.register == .assemble {
+            return "The draft keeps your decision clear while softening the landing."
+        }
+        if model.register == .confess {
+            return "The draft keeps one true detail visible without making the message feel overworked."
+        }
+        return "The draft stays close to your note and turns it into something ready to send."
+    }
+
+    private func draftRefineRail(bundle: MomentDraftBundle) -> some View {
+        HStack(alignment: .center, spacing: 10) {
+            Image(systemName: "wand.and.stars")
+                .font(.system(size: 15, weight: .medium))
+                .foregroundStyle(draftResultAccentColor(for: bundle))
+                .frame(width: 30, height: 30)
+                .background(
+                    draftResultAccentColor(for: bundle).opacity(0.12),
+                    in: Circle()
+                )
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(MomentAdjustment.allCases) { adjustment in
+                        draftRefineChip(
+                            title: adjustment.displayName,
+                            systemImage: adjustment.systemImage
+                        ) {
+                            model.adjust(adjustment)
+                        }
+                    }
+
+                    if bundle.lane != .takeMoreCare {
+                        draftRefineChip(title: "Take care", systemImage: "heart.text.square") {
+                            takeMoreCare()
+                        }
+                    }
+                }
+            }
+            .scrollClipDisabled()
+        }
+        .frame(height: 40)
+    }
+
+    private func draftRefineChip(
+        title: String,
+        systemImage: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Label {
+                Text(title)
+                    .font(.subheadline.weight(.medium))
+            } icon: {
+                Image(systemName: systemImage)
+                    .font(.caption.weight(.medium))
+            }
+            .labelStyle(.titleAndIcon)
+            .lineLimit(1)
+            .minimumScaleFactor(0.82)
+            .padding(.horizontal, 14)
+            .frame(height: 36)
+            .foregroundStyle(Color.prosePalSlate)
+            .background(Color.prosePalPaper.opacity(0.68), in: Capsule(style: .continuous))
+            .overlay {
+                Capsule(style: .continuous)
+                    .stroke(Color.prosePalNavy.opacity(0.10), lineWidth: 1)
+            }
+        }
+        .buttonStyle(.plain)
+        .disabled(model.isDrafting)
+    }
+
+    private func draftResultAccentColor(for bundle: MomentDraftBundle) -> Color {
+        bundle.lane == .takeMoreCare ? Color.prosePalCare : Color.prosePalCoral
     }
 
 private struct MomentDraftHistorySheet: View {
