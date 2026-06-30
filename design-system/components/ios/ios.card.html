@@ -1,0 +1,88 @@
+<!-- @dsCard group="Components" viewport="700x560" name="iOS chrome" subtitle="PhoneFrame · StatusBar · NavBar · TabBar" -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="stylesheet" href="../../styles.css" />
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css" />
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css" />
+<style>
+  body { margin: 0; background: var(--bg-grouped); }
+  .wrap { height: 560px; display: flex; align-items: center; justify-content: center; gap: 40px; }
+  .scaler { transform: scale(0.6); transform-origin: center; }
+  .right { display: flex; flex-direction: column; gap: 18px; width: 300px; }
+  .lab { font: 600 11px/1 var(--font-ui); letter-spacing: .06em; text-transform: uppercase; color: var(--text-tertiary); margin-bottom: 8px; }
+  .spec { border-radius: 18px; overflow: hidden; border: 0.5px solid var(--separator); background: var(--bg); }
+</style>
+</head>
+<body>
+<div id="root" class="wrap"></div>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script>
+<script type="text/babel" data-presets="react">
+const NS = window.ProsePalDesignSystem_019e02;
+const { PhoneFrame, StatusBar, HomeIndicator, NavBar, TabBar, IconButton, Avatar, Card, Badge, ListRow } = NS;
+const { useState } = React;
+const I = (n) => <i className={"ph ph-" + n} />;
+
+function Demo() {
+  const [tab, setTab] = useState("drafts");
+  const tabs = [
+    { value: "drafts", label: "Drafts", icon: I("cards") },
+    { value: "new", label: "", icon: I("feather"), fab: true },
+    { value: "library", label: "Library", icon: I("bookmarks-simple") },
+  ];
+  return (
+    <>
+      <div className="scaler">
+        <PhoneFrame>
+          <StatusBar />
+          <NavBar large largeTitle="Drafts"
+            trailing={<><IconButton icon={I("magnifying-glass")} label="Search" /><Avatar name="Maya O" size="sm" /></>} />
+          <div className="pp-screen-body" style={{ padding: "4px 20px 16px", display: "flex", flexDirection: "column", gap: 14 }}>
+            <Card pad="lg" interactive style={{ display: "flex", alignItems: "center", gap: 14 }}>
+              <span style={{ width: 44, height: 44, borderRadius: 14, background: "var(--accent-soft)", color: "var(--accent-text)", display: "grid", placeItems: "center", fontSize: 22 }}>{I("feather")}</span>
+              <div style={{ flex: 1 }}>
+                <div style={{ font: "600 17px var(--font-ui)", letterSpacing: "-0.01em" }}>Start a new draft</div>
+                <div style={{ font: "400 14px var(--font-ui)", color: "var(--text-tertiary)" }}>A message, note, or longer piece</div>
+              </div>
+              <span style={{ color: "var(--text-quaternary)", fontSize: 18 }}>{I("caret-right")}</span>
+            </Card>
+            <div className="pp-listgroup">
+              <ListRow lead={I("chat-circle")} title="Reply to Daniel" subtitle="Warmer · 2 refines · 11:24" chevron onClick={()=>{}} />
+              <ListRow lead={I("envelope-simple")} title="Resignation note" subtitle="Diplomatic · edited yesterday" chevron onClick={()=>{}} />
+              <ListRow lead={I("heart")} title="Anniversary message" subtitle="Heartfelt · 3 days ago" chevron onClick={()=>{}} />
+            </div>
+          </div>
+          <TabBar value={tab} onChange={setTab} items={tabs} />
+          <HomeIndicator />
+        </PhoneFrame>
+      </div>
+
+      <div className="right">
+        <div>
+          <div className="lab">NavBar · large title</div>
+          <div className="spec"><NavBar large largeTitle="Library"
+            trailing={<IconButton icon={I("plus")} label="New" />} /></div>
+        </div>
+        <div>
+          <div className="lab">NavBar · inline + back</div>
+          <div className="spec"><NavBar title="Refine"
+            leading={<button className="pp-navbar__btn">{I("caret-left")} Drafts</button>}
+            trailing={<button className="pp-navbar__btn" style={{fontWeight:600}}>Done</button>} /></div>
+        </div>
+        <div>
+          <div className="lab">TabBar</div>
+          <div className="spec"><TabBar value={tab} onChange={setTab} items={tabs} /></div>
+        </div>
+      </div>
+    </>
+  );
+}
+ReactDOM.createRoot(document.getElementById("root")).render(<Demo />);
+</script>
+</body>
+</html>

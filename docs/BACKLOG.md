@@ -487,6 +487,14 @@ not done.
   touched screens; run relevant package tests plus `swift build`/`swift test`;
   update this backlog item or its child items with evidence. Partial because the
   plan exists, but execution remains open.
+  The design system now lives in-repo at `design-system/`. Outstanding
+  canonical-kit gaps: `01`-`04` multi-panel onboarding; `06` dedicated
+  generation state; `14`/`15` free/pro plan detail screens; `17` custom
+  share/insert sheet; `18` copied toast; `19` offline banner/state; `20`
+  generation-error full state; `21` quota-reached state; remaining stock
+  detail/edit forms for relationship memory and saved drafts; full token parity
+  for the in-repo color/radius/elevation/glass system; and final
+  Dynamic Type/VoiceOver/Switch Control/physical-device review.
   Slice 1 evidence: visual primitives were extracted from
   `MomentExperienceView` into focused SwiftUI files
   (`MomentVisualTokens`, `MomentSymbolBadge`, `MomentIdentityCard`,
@@ -507,8 +515,8 @@ not done.
   and
   `/var/folders/w7/smr7zw112q55_g41ntxk4bjw0000gn/T/screenshot_optimized_89225015-31cd-4d01-bd7b-0666d735e25f.jpg`.
   Corrective Slice 3 evidence: realigned the visual tokens and first viewport
-  against `/Users/jarrydaubert/Desktop/ProsePal Design System/readme.md` and
-  the canonical `/Users/jarrydaubert/Desktop/ProsePal Design System/ui_kits/prosepal/`
+  against `design-system/readme.md` and
+  the canonical `design-system/ui_kits/prosepal/`
   direction: warm cream paper/wash, ink text, deeper clay accent, sage as a
   supporting care/voice hue, light paper chrome, and no dark hero-card treatment
   on the first viewport. `swift build` and `swift test` passed; XcodeBuildMCP
@@ -522,7 +530,7 @@ not done.
   text, and page-local mic/word-count/`Help me write` footer action. The active
   setup state now collapses to relationship/moment/register controls once the
   person is committed, and root chrome now reads `Today`, `Write`, and `Drafts`
-  to better match the desktop ProsePal kit while keeping the existing
+  to better match the in-repo ProsePal kit while keeping the existing
   person-first flow. `swift build` and `swift test` passed; XcodeBuildMCP
   `ProsePal Staging` build/run passed on `iPhone 17` with
   `--prosepal-use-mock-writing-service`; `snapshot_ui` confirmed the active
@@ -533,7 +541,7 @@ not done.
   and
   `/var/folders/w7/smr7zw112q55_g41ntxk4bjw0000gn/T/screenshot_optimized_44e3ee11-0d03-4392-bbf6-96823378d33a.jpg`.
   Slice 5 evidence: performed a first-screen visual QA pass against rendered
-  `05 · The page` from the desktop ProsePal design-system kit, with local
+  `05 · The page` from the in-repo ProsePal design-system kit, with local
   screenshots and metrics saved under
   `prosepal-ios/evidence/ui-design-qa/first-screen/`. The native first screen
   now uses fixed custom serif `Today` chrome, paper-first entry/active surfaces,
@@ -551,7 +559,7 @@ not done.
   and
   `prosepal-ios/evidence/ui-design-qa/first-screen/10-simulator-active-after-tone-order.jpg`.
   Slice 6 evidence: performed a draft-result visual QA pass against rendered
-  `07 · Draft result` from the desktop ProsePal design-system kit, with local
+  `07 · Draft result` from the in-repo ProsePal design-system kit, with local
   screenshots and metrics saved under
   `prosepal-ios/evidence/ui-design-qa/draft-result/`. The generated state now
   branches into a result-first layout instead of leading with the source editor:
@@ -570,7 +578,7 @@ not done.
   and
   `prosepal-ios/evidence/ui-design-qa/draft-result/04-simulator-draft-after.jpg`.
   Slice 7 evidence: performed a Revise visual QA pass against rendered
-  `08 · Revise` from the desktop ProsePal design-system kit, with local
+  `08 · Revise` from the in-repo ProsePal design-system kit, with local
   screenshots and metrics saved under `prosepal-ios/evidence/ui-design-qa/revise/`.
   The generated draft now has a dedicated Revise shell instead of only direct
   text editing inside the result card: compact `Revise` chrome, segmented
@@ -587,7 +595,7 @@ not done.
   and
   `prosepal-ios/evidence/ui-design-qa/revise/04-simulator-revise-after-tightened.jpg`.
   Slice 8 evidence: performed a Drafts library visual QA pass against the
-  rendered Drafts screen from the desktop ProsePal design-system kit, with local
+  rendered Drafts screen from the in-repo ProsePal design-system kit, with local
   screenshots and metrics saved under
   `prosepal-ios/evidence/ui-design-qa/drafts-library/`. The saved-drafts screen
   now uses custom large-serif Drafts chrome, top search toggle, `All`/`Kept`/
@@ -604,7 +612,7 @@ not done.
   and
   `prosepal-ios/evidence/ui-design-qa/drafts-library/03-simulator-drafts-after.jpg`.
   Slice 9 evidence: performed a Version history visual QA pass against the
-  rendered `10 · Version history` screen from the desktop ProsePal design-system
+  rendered `10 · Version history` screen from the in-repo ProsePal design-system
   kit, with local screenshots saved under
   `prosepal-ios/evidence/ui-design-qa/version-history/`. Draft history now opens
   as a full-screen iOS cover instead of a medium bottom sheet, and uses the kit
@@ -623,7 +631,7 @@ not done.
   and
   `prosepal-ios/evidence/ui-design-qa/version-history/04-simulator-version-history-after-tightened.jpg`.
   Slice 10 evidence: performed an Empty library visual QA pass against rendered
-  `11 · Empty library` from the desktop ProsePal design-system kit, with local
+  `11 · Empty library` from the in-repo ProsePal design-system kit, with local
   screenshots saved under `prosepal-ios/evidence/ui-design-qa/drafts-empty/`.
   The first-run Drafts screen now suppresses search and filter chrome, uses a
   centered unframed empty state with the kit copy (`Nothing here yet` and
@@ -641,7 +649,7 @@ not done.
   and
   `prosepal-ios/evidence/ui-design-qa/drafts-empty/03-simulator-empty-library-after-lowered.jpg`.
   Slice 11 evidence: performed a Settings visual QA pass against rendered
-  `12 · Settings` from the desktop ProsePal design-system kit, with local
+  `12 · Settings` from the in-repo ProsePal design-system kit, with local
   screenshots saved under `prosepal-ios/evidence/ui-design-qa/settings/`, and
   revisited the first-screen hierarchy from `05 · The page`. Settings now uses
   custom large-serif chrome, a profile card, compact Writing/Privacy/Subscription
@@ -660,9 +668,9 @@ not done.
   `prosepal-ios/evidence/ui-design-qa/first-screen/11-simulator-entry-after-context-below-fold.jpg`,
   and
   `prosepal-ios/evidence/ui-design-qa/first-screen/12-simulator-active-after-context-below-fold.jpg`.
-  Slice 12 evidence: performed a Paywall visual-system pass against the desktop
+  Slice 12 evidence: performed a Paywall visual-system pass against the in-repo
   ProsePal design-system Paywall source in
-  `/Users/jarrydaubert/Desktop/ProsePal Design System/ui_kits/prosepal/screens-3.jsx`,
+  `design-system/ui_kits/prosepal/screens-3.jsx`,
   with local simulator evidence saved under
   `prosepal-ios/evidence/ui-design-qa/paywall/`. The paywall now uses custom
   close/restore chrome instead of a system `Premium` navigation title, an italic
@@ -676,8 +684,8 @@ not done.
   Terms, and Privacy. Latest simulator screenshot:
   `prosepal-ios/evidence/ui-design-qa/paywall/02-simulator-paywall-unavailable-after.jpg`.
   Slice 13 evidence: performed a Privacy & data visual-system pass against the
-  desktop ProsePal design-system `Privacy` source in
-  `/Users/jarrydaubert/Desktop/ProsePal Design System/ui_kits/prosepal/screens-3.jsx`,
+  in-repo ProsePal design-system `Privacy` source in
+  `design-system/ui_kits/prosepal/screens-3.jsx`,
   with local simulator evidence saved under
   `prosepal-ios/evidence/ui-design-qa/privacy-data/`. Settings now opens a real
   Privacy & data overview before export: custom Settings back chrome, trust note,

@@ -1,0 +1,105 @@
+<!-- @dsCard group="Directions" viewport="2260x1180" name="E · Modern AI productivity, elegant" subtitle="Structured & app-like · light data · still warm and human" -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600&display=swap" />
+<link rel="stylesheet" href="../../styles.css" />
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css" />
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css" />
+<link rel="stylesheet" href="../_shared/kit.css" />
+<style>
+  /* Direction E theme — modern AI productivity, elegant.
+     Tighter density, structured sections, a supporting ink-blue for
+     "recommended"/data. Writing surface is the native sans. Warm, never
+     a dashboard — no neon, no purple gradients. */
+  .dir-modern {
+    --radius-card: 18px;
+    --canvas-font: var(--font-ui);
+  }
+  .dir-modern.kit-page { background: oklch(0.91 0.006 75); }
+
+  .e-logo { width: 64px; height: 64px; border-radius: 18px; display: grid; place-items: center; font-size: 30px; color: var(--text-on-accent); background: linear-gradient(155deg, var(--accent), var(--accent-press)); box-shadow: var(--shadow-md); }
+
+  .e-bullet { display: flex; align-items: center; gap: 12px; }
+  .e-bullet > i { flex: none; width: 38px; height: 38px; border-radius: 11px; display: grid; place-items: center; font-size: 19px; background: var(--accent-soft); color: var(--accent-text); }
+  .e-bullet div { display: flex; flex-direction: column; }
+  .e-bullet b { font: 600 15px var(--font-ui); color: var(--text); letter-spacing: -0.01em; }
+  .e-bullet span { font: 400 13px var(--font-ui); color: var(--text-tertiary); }
+
+  .e-card { background: var(--surface); border-radius: var(--radius-card); border: 0.5px solid var(--separator); box-shadow: var(--shadow-sm); }
+  .e-canvas { padding: 14px 16px; }
+  .e-canvas__label { font: 600 11px var(--font-ui); letter-spacing: .05em; text-transform: uppercase; color: var(--text-tertiary); margin-bottom: 8px; }
+  .e-canvas__foot { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; padding-top: 12px; border-top: 0.5px solid var(--separator); }
+
+  .e-seg { display: flex; gap: 6px; }
+  .e-seg__i { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 38px; border-radius: 12px; background: var(--surface); border: 0.5px solid var(--separator); font: 500 14px var(--font-ui); color: var(--text-secondary); cursor: pointer; }
+  .e-seg__i i { font-size: 16px; }
+  .e-seg__i--on { background: var(--accent-soft); color: var(--accent-text); border-color: var(--accent-border); font-weight: 600; }
+
+  .e-section-h { font: 600 12px var(--font-ui); letter-spacing: .04em; text-transform: uppercase; color: var(--text-tertiary); }
+
+  .e-chip { display: inline-flex; align-items: center; gap: 7px; height: 36px; padding: 0 14px; border-radius: 10px; background: var(--surface); border: 1px solid var(--border); font: 500 14px var(--font-ui); color: var(--text-secondary); cursor: pointer; }
+  .e-chip i { font-size: 15px; }
+  .e-chip--on { background: var(--accent-soft); color: var(--accent-text); border-color: var(--accent-border); font-weight: 600; }
+
+  .e-tip { display: flex; gap: 9px; padding: 12px 14px; border-radius: 12px; background: var(--info-soft); border: 0.5px solid color-mix(in oklab, var(--info) 22%, transparent); font: 400 13px/1.45 var(--font-ui); color: var(--text-secondary); }
+  .e-tip i { color: var(--info); font-size: 17px; flex: none; margin-top: 1px; }
+  .e-tip b { color: var(--text); font-weight: 600; }
+
+  .e-result-head { display: flex; align-items: center; justify-content: space-between; }
+  .e-draft { padding: 14px 16px; }
+  .e-draft--on { border: 1.5px solid var(--accent); box-shadow: var(--shadow-md); }
+  .e-draft__top { display: flex; align-items: center; gap: 8px; margin-bottom: 9px; }
+  .e-draft__tone { font: 500 12px var(--font-ui); color: var(--text-tertiary); }
+  .e-draft__body { font-family: var(--font-ui); font-size: 16px; line-height: 1.5; color: var(--text); }
+  .e-draft__foot { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; padding-top: 11px; border-top: 0.5px solid var(--separator); }
+  .e-badge { display: inline-flex; align-items: center; height: 21px; padding: 0 8px; border-radius: 7px; font: 600 11px var(--font-ui); letter-spacing: .01em; }
+  .e-badge--blue { background: var(--info-soft); color: var(--info); }
+  .e-iconpill { display: inline-flex; align-items: center; gap: 5px; height: 32px; padding: 0 12px; border-radius: 9px; background: var(--fill-strong); border: none; color: var(--text-secondary); font: 600 13px var(--font-ui); cursor: pointer; }
+  .e-iconpill i { font-size: 15px; }
+  .e-iconpill--accent { background: var(--accent); color: var(--text-on-accent); }
+
+  .e-diff { font-family: var(--font-ui); font-size: 16px; line-height: 1.55; color: var(--text); }
+  .e-del { color: var(--text-quaternary); text-decoration: line-through; text-decoration-color: var(--danger); }
+  .e-add { background: var(--voice-soft); color: var(--voice); border-radius: 4px; padding: 0 3px; }
+
+  .e-meter-card { display: flex; flex-direction: column; gap: 9px; padding: 13px 15px; background: var(--surface); border-radius: 14px; border: 0.5px solid var(--separator); }
+  .e-meter-row { display: flex; align-items: center; gap: 12px; font: 500 13px var(--font-ui); color: var(--text-secondary); }
+  .e-meter-row > span:first-child { width: 56px; flex: none; }
+  .e-meter { flex: 1; height: 7px; border-radius: 999px; background: var(--fill-2); overflow: hidden; }
+  .e-meter span { display: block; height: 100%; background: var(--accent); border-radius: 999px; }
+
+  .e-compare { background: var(--surface); border-radius: 16px; border: 0.5px solid var(--separator); overflow: hidden; box-shadow: var(--shadow-sm); }
+  .e-compare__row { display: grid; grid-template-columns: 1fr 56px 56px; align-items: center; padding: 11px 16px; font: 400 14px var(--font-ui); color: var(--text-secondary); }
+  .e-compare__row + .e-compare__row { border-top: 0.5px solid var(--separator); }
+  .e-compare__row span:nth-child(2), .e-compare__row span:nth-child(3) { text-align: center; }
+  .e-compare__row--head { font: 600 12px var(--font-ui); text-transform: uppercase; letter-spacing: .04em; color: var(--text-tertiary); }
+  .e-compare i { font-size: 16px; }
+  .e-pro { color: var(--accent-text); font-weight: 600; }
+
+  .e-plans { display: flex; gap: 10px; }
+  .e-plan { flex: 1; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 13px 15px; border-radius: 14px; background: var(--surface); border: 1.5px solid var(--border); cursor: pointer; text-align: left; }
+  .e-plan div { display: flex; flex-direction: column; }
+  .e-plan b { font: 600 15px var(--font-ui); color: var(--text); }
+  .e-plan span { font: 400 12px var(--font-ui); color: var(--text-tertiary); }
+  .e-plan--on { border-color: var(--accent); background: var(--accent-soft); }
+</style>
+</head>
+<body class="kit-page dir-modern">
+<div class="kit-header">
+  <span class="kit-dir">Direction E</span>
+  <span class="kit-title">Modern AI productivity, elegant</span>
+  <span class="kit-note">Fast and capable without feeling like a dashboard. Structured sections, multiple ranked options, light quality signals, and a supporting ink-blue — all kept warm by the clay system and humane copy. The everyday-driver direction.</span>
+</div>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel" data-presets="react" src="../_shared/frame.jsx"></script>
+<script type="text/babel" data-presets="react" src="screens.jsx"></script>
+</body>
+</html>

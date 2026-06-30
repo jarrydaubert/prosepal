@@ -1,0 +1,11 @@
+<svg width="420" height="120" viewBox="0 0 420 120" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ProsePal">
+  <defs>
+    <linearGradient id="claywd" x1="14" y1="30" x2="86" y2="92" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#D08A6E"></stop>
+      <stop offset="1" stop-color="#B5654A"></stop>
+    </linearGradient>
+  </defs>
+  <rect x="14" y="30" width="72" height="72" rx="19" fill="url(#claywd)"></rect>
+  <text x="50" y="66" dy="0.355em" text-anchor="middle" font-family="Newsreader, Georgia, serif" font-size="52" font-weight="500" fill="#FAF3EA">P</text>
+  <text x="108" y="68" dy="0.34em" font-family="Newsreader, Georgia, serif" font-size="50" font-weight="500" letter-spacing="-0.5" fill="#F4EFE8">ProsePal</text>
+</svg>

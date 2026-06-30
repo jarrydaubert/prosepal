@@ -1,0 +1,34 @@
+<!-- @dsCard group="Colors" viewport="700x178" name="Paper & Ink · neutrals" subtitle="Warm-tinted surfaces and text — the calm foundation" -->
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8" />
+<link rel="stylesheet" href="../styles.css" />
+<style>
+  body { margin: 0; background: var(--bg); padding: 18px 20px; display: flex; flex-direction: column; gap: 16px; }
+  .row { display: flex; flex-direction: column; gap: 7px; }
+  .lab { font: 600 10px/1 var(--font-ui); letter-spacing: .07em; text-transform: uppercase; color: var(--text-quaternary); }
+  .ramp { display: grid; grid-template-columns: repeat(8, 1fr); gap: 7px; }
+  .sw { display: flex; flex-direction: column; gap: 5px; }
+  .chip { height: 48px; border-radius: 11px; box-shadow: inset 0 0 0 0.5px oklch(0 0 0 / 0.08); }
+  .n { font: 500 11px/1.2 var(--font-mono); color: var(--text-tertiary); }
+</style></head>
+<body>
+  <div class="row"><span class="lab">Paper · surfaces</span>
+    <div class="ramp">
+      <div class="sw"><div class="chip" style="background:var(--paper-0)"></div><span class="n">paper-0<br/>bg</span></div>
+      <div class="sw"><div class="chip" style="background:var(--paper-1)"></div><span class="n">paper-1<br/>grouped</span></div>
+      <div class="sw"><div class="chip" style="background:var(--paper-2)"></div><span class="n">paper-2</span></div>
+      <div class="sw"><div class="chip" style="background:var(--paper-3)"></div><span class="n">paper-3<br/>card</span></div>
+    </div>
+  </div>
+  <div class="row"><span class="lab">Ink · text</span>
+    <div class="ramp">
+      <div class="sw"><div class="chip" style="background:var(--ink-1)"></div><span class="n">ink-1<br/>primary</span></div>
+      <div class="sw"><div class="chip" style="background:var(--ink-2)"></div><span class="n">ink-2<br/>2nd</span></div>
+      <div class="sw"><div class="chip" style="background:var(--ink-3)"></div><span class="n">ink-3<br/>3rd</span></div>
+      <div class="sw"><div class="chip" style="background:var(--ink-4)"></div><span class="n">ink-4<br/>placeholder</span></div>
+      <div class="sw"><div class="chip" style="background:var(--ink-5)"></div><span class="n">ink-5</span></div>
+      <div class="sw"><div class="chip" style="background:var(--line-2)"></div><span class="n">line-2<br/>border</span></div>
+      <div class="sw"><div class="chip" style="background:var(--line-1)"></div><span class="n">line-1<br/>hairline</span></div>
+    </div>
+  </div>
+</body></html>

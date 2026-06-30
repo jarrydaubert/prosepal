@@ -1,0 +1,43 @@
+<!-- @dsCard group="Brand" viewport="700x240" name="Voice & microcopy" subtitle="Calm, literate, second-person. The partner, not the bot." -->
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,500;1,6..72,400&display=swap" />
+<link rel="stylesheet" href="../styles.css" />
+<style>
+  body { margin: 0; background: var(--bg); padding: 22px 26px; font-family: var(--font-ui); display: grid; grid-template-columns: 1fr 1fr; gap: 14px 26px; }
+  .col { display: flex; flex-direction: column; gap: 11px; }
+  .h { display: flex; align-items: center; gap: 7px; font: 600 11px/1 var(--font-ui); letter-spacing: .06em; text-transform: uppercase; }
+  .do { color: var(--voice); } .dont { color: var(--danger); }
+  .line { font-size: 15px; color: var(--text-secondary); }
+  .line b { color: var(--text); font-weight: 500; }
+  .serif { font-family: var(--font-reading); font-size: 21px; font-weight: 500; color: var(--text); letter-spacing: -0.01em; }
+  .strike { color: var(--text-quaternary); text-decoration: line-through; text-decoration-color: var(--danger); }
+  .full { grid-column: 1 / -1; border-top: 0.5px solid var(--separator); padding-top: 12px; display: flex; gap: 10px; flex-wrap: wrap; }
+  .pill { font-size: 13px; color: var(--text-secondary); background: var(--fill-strong); border-radius: 999px; padding: 5px 12px; }
+</style></head>
+<body>
+  <div class="col">
+    <div class="h do">✓ Sounds like ProsePal</div>
+    <div class="serif">“Say it like you mean it.”</div>
+    <div class="line"><b>Your voice, kept.</b></div>
+    <div class="line"><b>Find the right words.</b></div>
+    <div class="line">Write the rough version — we'll help.</div>
+  </div>
+  <div class="col">
+    <div class="h dont">✕ Not ProsePal</div>
+    <div class="line strike">Generate AI content instantly!</div>
+    <div class="line strike">Powered by GPT-4 🤖🚀</div>
+    <div class="line strike">Unleash next-gen productivity</div>
+    <div class="line strike">Your prompt has been processed.</div>
+  </div>
+  <div class="full">
+    <span class="pill">Second person · “you”</span>
+    <span class="pill">Sentence case</span>
+    <span class="pill">No emoji in product</span>
+    <span class="pill">Verbs over nouns</span>
+    <span class="pill">Reassure, don't hype</span>
+    <span class="pill">Editor, not algorithm</span>
+  </div>
+</body></html>

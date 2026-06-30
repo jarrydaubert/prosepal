@@ -1,0 +1,61 @@
+<!-- @dsCard group="Brand" viewport="700x250" name="★ The direction · B ∩ C" subtitle="Literary writing on cream paper; glass for everything that floats" -->
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap" />
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css" />
+<link rel="stylesheet" href="../styles.css" />
+<style>
+  body { margin: 0; }
+  .stage {
+    position: relative; height: 250px; padding: 20px 24px; overflow: hidden;
+    --accent: oklch(0.520 0.110 40); --accent-text: oklch(0.466 0.104 38);
+    --accent-soft: oklch(0.928 0.030 56); --accent-border: oklch(0.520 0.110 40 / 0.30);
+    background:
+      radial-gradient(120% 82% at 6% 0%, oklch(0.935 0.052 74) 0%, transparent 50%),
+      radial-gradient(110% 78% at 98% 4%, oklch(0.918 0.046 44) 0%, transparent 46%),
+      radial-gradient(150% 115% at 60% 100%, oklch(0.930 0.030 142) 0%, transparent 56%),
+      linear-gradient(165deg, oklch(0.966 0.020 78), oklch(0.944 0.026 70));
+    display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: center;
+  }
+  /* glass chrome chip row */
+  .glass {
+    display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 999px;
+    background: oklch(0.987 0.016 80 / 0.55); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px);
+    border: 1px solid oklch(1 0 0 / 0.6); box-shadow: 0 1px 0 oklch(1 0 0 / 0.5) inset, 0 12px 34px oklch(0.42 0.06 40 / 0.16);
+    position: absolute; top: 18px; left: 24px; right: 24px;
+  }
+  .glass .pill { font: 500 13px var(--font-ui); color: var(--accent-text); background: var(--accent-soft); border: 1px solid var(--accent-border); border-radius: 999px; padding: 5px 12px; }
+  .glass .pill.muted { color: oklch(0.43 0.013 62); background: oklch(1 0 0 / 0.4); border-color: oklch(1 0 0 / 0.5); }
+  .glass i { color: var(--accent-text); font-size: 18px; }
+  /* literary page */
+  .page {
+    grid-column: 1 / -1; margin-top: 62px; align-self: start;
+    background: oklch(0.985 0.012 82); border-radius: 16px; padding: 16px 18px;
+    border: 0.5px solid oklch(0.886 0.018 76);
+    box-shadow: 0 2px 8px oklch(0.42 0.06 40 / 0.08), inset 3px 0 0 oklch(0.520 0.110 40 / 0.18);
+  }
+  .page p {
+    margin: 0; font-family: var(--font-reading); font-size: 18px; line-height: 32px; color: oklch(0.245 0.013 62);
+    background-image: linear-gradient(to bottom, transparent 31px, oklch(0.520 0.110 40 / 0.09) 31px, oklch(0.520 0.110 40 / 0.09) 32px, transparent 32px);
+    background-size: 100% 32px;
+  }
+  .page em { color: var(--accent-text); }
+  .tags { position: absolute; bottom: 14px; left: 24px; right: 24px; display: flex; justify-content: space-between; font: 500 11px var(--font-ui); color: oklch(0.50 0.013 62); }
+  .tags b { color: var(--accent-text); font-weight: 600; }
+</style></head>
+<body>
+  <div class="stage">
+    <div class="glass">
+      <i class="ph ph-magic-wand"></i>
+      <span class="pill">Warmer</span><span class="pill muted">Shorter</span><span class="pill muted">Softer</span>
+      <span style="flex:1"></span>
+      <i class="ph ph-dots-three"></i>
+    </div>
+    <div class="page">
+      <p>After six <em>happy</em> years, we've decided not to renew our lease — and we wanted to tell you early.</p>
+    </div>
+    <div class="tags"><span>Writing → <b>literary cream paper, serif, ruled</b></span><span>Chrome → <b>premium glass</b></span></div>
+  </div>
+</body></html>

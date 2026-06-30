@@ -1,0 +1,39 @@
+/* ============================================================
+   ProsePal — Spacing
+   ------------------------------------------------------------
+   4px base grid. Generous by default — whitespace is the
+   product's main material. Screen gutter is 20px (iOS edge).
+   ============================================================ */
+
+:root {
+  --space-0:   0px;
+  --space-1:   4px;
+  --space-2:   8px;
+  --space-3:   12px;
+  --space-4:   16px;
+  --space-5:   20px;   /* default screen gutter */
+  --space-6:   24px;
+  --space-7:   32px;
+  --space-8:   40px;
+  --space-9:   48px;
+  --space-10:  64px;
+  --space-11:  80px;
+  --space-12:  96px;
+
+  /* ---- Semantic spacing ------------------------------- */
+  --gutter:        20px;   /* horizontal screen inset */
+  --gutter-wide:   24px;
+  --stack-tight:   8px;    /* between tightly-related items */
+  --stack:         16px;   /* default vertical rhythm */
+  --stack-loose:   28px;   /* between sections */
+  --section:       40px;   /* between major blocks */
+
+  /* ---- Component sizing ------------------------------- */
+  --control-sm:    32px;
+  --control-md:    44px;   /* iOS minimum touch target */
+  --control-lg:    52px;
+  --control-xl:    58px;   /* primary CTA height */
+  --tabbar-h:      50px;
+  --navbar-h:      44px;
+  --field-min:     120px;  /* writing canvas min height */
+}

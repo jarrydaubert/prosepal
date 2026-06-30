@@ -1,0 +1,32 @@
+<!-- @dsCard group="Brand" viewport="700x200" name="Wordmark & app icon" subtitle="Newsreader lockup · clay squircle · the editor's 'P'" -->
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap" />
+<link rel="stylesheet" href="../styles.css" />
+<style>
+  body { margin: 0; background: var(--bg); padding: 26px 30px; display: flex; align-items: center; gap: 34px; }
+  .lockup { display: flex; align-items: center; gap: 18px; }
+  .icon { width: 84px; height: 84px; flex: none; filter: drop-shadow(var(--shadow-md)); }
+  .wm { font-family: var(--font-reading); font-size: 52px; font-weight: 500; letter-spacing: -0.02em; color: var(--text); line-height: 1; }
+  .tag { font-family: var(--font-ui); font-size: 15px; color: var(--text-tertiary); margin-top: 7px; }
+  .rule { width: 0.5px; height: 96px; background: var(--separator); }
+  .scales { display: flex; align-items: flex-end; gap: 16px; }
+  .sq { background: linear-gradient(160deg, #C0795E, #9A5238); display: grid; place-items: center; color: #FAF3EA; font-family: var(--font-reading); font-weight: 500; box-shadow: var(--shadow-sm); }
+</style></head>
+<body>
+  <div class="lockup">
+    <img class="icon" src="../assets/app-icon.svg" alt="ProsePal app icon" />
+    <div>
+      <div class="wm">ProsePal</div>
+      <div class="tag">Write it like you mean it.</div>
+    </div>
+  </div>
+  <div class="rule"></div>
+  <div class="scales">
+    <div class="sq" style="width:60px;height:60px;border-radius:15px;font-size:38px">P</div>
+    <div class="sq" style="width:40px;height:40px;border-radius:10px;font-size:25px">P</div>
+    <div class="sq" style="width:28px;height:28px;border-radius:7px;font-size:18px">P</div>
+  </div>
+</body></html>
