@@ -4570,92 +4570,280 @@ private struct SavedMomentDraftsView: View {
     @Query(sort: \SavedMomentDraftRecord.createdAt, order: .reverse)
     private var drafts: [SavedMomentDraftRecord]
     @State private var searchText = ""
+    @State private var selectedFilter: SavedDraftFilter = .all
+    @State private var isShowingSearch = false
 
     private var filteredDrafts: [SavedMomentDraftRecord] {
         let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !query.isEmpty else { return drafts }
         return drafts.filter { draft in
-            draft.title.localizedCaseInsensitiveContains(query)
-                || draft.subtitle.localizedCaseInsensitiveContains(query)
-                || draft.messageText.localizedCaseInsensitiveContains(query)
+            selectedFilter.includes(draft)
+                && (
+                    query.isEmpty
+                        || draft.title.localizedCaseInsensitiveContains(query)
+                        || draft.subtitle.localizedCaseInsensitiveContains(query)
+                        || draft.messageText.localizedCaseInsensitiveContains(query)
+                )
         }
     }
 
     var body: some View {
-        List {
-            MomentScreenIdentityCard(
-                eyebrow: "Saved",
-                title: "Drafts worth keeping",
-                detail: "Messages you choose to save stay close, searchable, and ready when the moment returns.",
-                systemImage: "bookmark"
-            )
-            .listRowBackground(Color.clear)
-            .listRowSeparator(.hidden)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 11) {
+                draftsTopChrome
 
-            if filteredDrafts.isEmpty {
-                MomentSavedEmptyState(isSearching: !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                    .padding(.vertical, 12)
-                .listRowBackground(Color.clear)
-                .listRowSeparator(.hidden)
-            } else {
-                ForEach(filteredDrafts) { draft in
-                    NavigationLink {
-                        SavedMomentDraftDetailView(draft: draft)
-                    } label: {
-                        SavedMomentDraftRow(draft: draft)
-                    }
-                    .listRowBackground(Color.prosePalPaper.opacity(0.84))
+                if isShowingSearch {
+                    draftsSearchField
+                        .transition(.opacity.combined(with: .move(edge: .top)))
                 }
-                .onDelete(perform: delete)
+
+                savedDraftFilterRow
+
+                if filteredDrafts.isEmpty {
+                    MomentSavedEmptyState(
+                        isSearching: !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                        emptyTitle: selectedFilter.emptyTitle,
+                        emptyDetail: selectedFilter.emptyDetail
+                    )
+                    .padding(.top, 10)
+                } else {
+                    ForEach(filteredDrafts) { draft in
+                        NavigationLink {
+                            SavedMomentDraftDetailView(draft: draft)
+                        } label: {
+                            SavedMomentDraftLibraryCard(draft: draft)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
             }
+            .padding(.horizontal, 20)
+            .padding(.top, 2)
+            .padding(.bottom, 126)
         }
-        .navigationTitle("Drafts")
-        .toolbarTitleDisplayMode(.inline)
-        .searchable(text: $searchText, prompt: "Search saved drafts")
-        .contentMargins(.bottom, 112, for: .scrollContent)
+        .scrollIndicators(.hidden)
         .safeAreaInset(edge: .bottom) {
             Color.clear
-                .frame(height: 86)
+                .frame(height: 92)
                 .accessibilityHidden(true)
         }
-        .scrollContentBackground(.hidden)
         .background {
             MomentAtmosphericBackground(isCareful: false)
         }
+        #if os(iOS)
+        .toolbar(.hidden, for: .navigationBar)
+        #endif
     }
 
-    private func delete(at offsets: IndexSet) {
-        for index in offsets {
-            modelContext.delete(filteredDrafts[index])
+    private var draftsTopChrome: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(alignment: .center) {
+                Image(systemName: "line.3.horizontal")
+                    .font(.system(size: 18, weight: .regular))
+                    .foregroundStyle(Color.prosePalCoralDeep)
+                    .frame(width: 38, height: 38)
+                    .accessibilityHidden(true)
+
+                Spacer()
+
+                Button {
+                    withAnimation(.easeInOut(duration: 0.18)) {
+                        isShowingSearch.toggle()
+                    }
+                } label: {
+                    Image(systemName: isShowingSearch ? "xmark" : "magnifyingglass")
+                        .font(.system(size: 18, weight: .regular))
+                        .frame(width: 38, height: 38)
+                        .contentShape(Circle())
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(Color.prosePalCoralDeep)
+                .accessibilityLabel(isShowingSearch ? "Close search" : "Search drafts")
+            }
+            .frame(height: 38)
+
+            Text("Drafts")
+                .font(.system(size: 36, design: .serif).weight(.medium))
+                .foregroundStyle(Color.prosePalInk)
+                .lineLimit(1)
+                .minimumScaleFactor(0.84)
         }
-        try? modelContext.save()
+        .padding(.top, 2)
+    }
+
+    private var draftsSearchField: some View {
+        TextField("Search saved drafts", text: $searchText)
+            .textFieldStyle(.plain)
+            .font(.body)
+            .foregroundStyle(Color.prosePalInk)
+            .padding(.horizontal, 14)
+            .frame(height: 42)
+            .background(Color.prosePalPaper.opacity(0.76), in: Capsule(style: .continuous))
+            .overlay {
+                Capsule(style: .continuous)
+                    .stroke(Color.prosePalNavy.opacity(0.10), lineWidth: 1)
+            }
+            .submitLabel(.search)
+    }
+
+    private var savedDraftFilterRow: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(SavedDraftFilter.allCases) { filter in
+                    Button {
+                        selectedFilter = filter
+                    } label: {
+                        Text(filter.title)
+                            .font(.subheadline.weight(selectedFilter == filter ? .semibold : .medium))
+                            .foregroundStyle(selectedFilter == filter ? Color.prosePalCoralDeep : Color.prosePalSlate)
+                            .lineLimit(1)
+                            .padding(.horizontal, 15)
+                            .frame(height: 36)
+                            .background(
+                                selectedFilter == filter
+                                    ? Color.prosePalCoral.opacity(0.11)
+                                    : Color.prosePalPaper.opacity(0.58),
+                                in: Capsule(style: .continuous)
+                            )
+                            .overlay {
+                                Capsule(style: .continuous)
+                                    .stroke(
+                                        selectedFilter == filter
+                                            ? Color.prosePalCoral.opacity(0.22)
+                                            : Color.prosePalNavy.opacity(0.08),
+                                        lineWidth: 1
+                                    )
+                            }
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+        .scrollClipDisabled()
+        .padding(.top, 2)
     }
 }
 
-private struct SavedMomentDraftRow: View {
+private enum SavedDraftFilter: String, CaseIterable, Identifiable {
+    case all
+    case kept
+    case used
+    case drafts
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .all: "All"
+        case .kept: "Kept"
+        case .used: "Used"
+        case .drafts: "Drafts"
+        }
+    }
+
+    func includes(_ draft: SavedMomentDraftRecord) -> Bool {
+        switch self {
+        case .all, .kept, .drafts:
+            return true
+        case .used:
+            return false
+        }
+    }
+
+    var emptyTitle: String? {
+        switch self {
+        case .used:
+            return "No used drafts yet"
+        default:
+            return nil
+        }
+    }
+
+    var emptyDetail: String? {
+        switch self {
+        case .used:
+            return "Drafts you mark as used will appear here."
+        default:
+            return nil
+        }
+    }
+}
+
+private struct SavedMomentDraftLibraryCard: View {
     let draft: SavedMomentDraftRecord
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack {
-                Text(draft.title)
-                    .font(.headline)
-                Spacer(minLength: 12)
-                Text(draft.createdAt, style: .date)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: draft.occasion.symbolName)
+                .font(.system(size: 18, weight: .medium))
+                .foregroundStyle(Color.prosePalCoral)
+                .frame(width: 40, height: 40)
+                .background(Color.prosePalCoral.opacity(0.12), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(alignment: .firstTextBaseline, spacing: 10) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(draft.title)
+                            .font(.headline.weight(.semibold))
+                            .foregroundStyle(Color.prosePalInk)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.84)
+
+                        Text(draft.subtitle)
+                            .font(.caption)
+                            .foregroundStyle(Color.prosePalSlate)
+                            .lineLimit(1)
+                    }
+
+                    Spacer(minLength: 8)
+
+                    Text("Kept")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Color.prosePalCare)
+                        .padding(.horizontal, 9)
+                        .frame(height: 22)
+                        .background(Color.prosePalCare.opacity(0.12), in: Capsule(style: .continuous))
+                }
+
+                Text(draft.messageText)
+                    .font(.system(.callout, design: .serif))
+                    .foregroundStyle(Color.prosePalSlate)
+                    .lineLimit(1)
+
+                Label(relativeSavedDate, systemImage: "clock")
+                    .font(.caption2)
+                    .foregroundStyle(Color.prosePalSlate.opacity(0.78))
             }
-
-            Text(draft.subtitle)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-
-            Text(draft.messageText)
-                .font(.callout)
-                .foregroundStyle(.secondary)
-                .lineLimit(2)
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, 14)
+        .padding(.horizontal, 16)
+        .frame(maxWidth: .infinity, minHeight: 112, alignment: .leading)
+        .background {
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(Color.prosePalPaper.opacity(0.96))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .stroke(Color.prosePalNavy.opacity(0.10), lineWidth: 1)
+                }
+                .shadow(color: Color.prosePalCoralDeep.opacity(0.10), radius: 10, x: 0, y: 5)
+        }
+    }
+
+    private var relativeSavedDate: String {
+        let calendar = Calendar.current
+
+        if calendar.isDateInToday(draft.createdAt) {
+            return "Just now"
+        }
+        if calendar.isDateInYesterday(draft.createdAt) {
+            return "Yesterday"
+        }
+
+        let days = calendar.dateComponents([.day], from: draft.createdAt, to: Date()).day ?? 0
+        if days < 7 {
+            return draft.createdAt.formatted(.dateTime.weekday(.abbreviated))
+        }
+
+        return draft.createdAt.formatted(.dateTime.month(.abbreviated).day())
     }
 }
 

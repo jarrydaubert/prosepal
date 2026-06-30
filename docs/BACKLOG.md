@@ -586,6 +586,23 @@ not done.
   `prosepal-ios/evidence/ui-design-qa/revise/03-simulator-revise-after.jpg`,
   and
   `prosepal-ios/evidence/ui-design-qa/revise/04-simulator-revise-after-tightened.jpg`.
+  Slice 8 evidence: performed a Drafts library visual QA pass against the
+  rendered Drafts screen from the desktop ProsePal design-system kit, with local
+  screenshots and metrics saved under
+  `prosepal-ios/evidence/ui-design-qa/drafts-library/`. The saved-drafts screen
+  now uses custom large-serif Drafts chrome, top search toggle, `All`/`Kept`/
+  `Used`/`Drafts` filter chips, cream saved-draft cards with occasion icon,
+  subtitle, `Kept` badge, serif excerpt, and relative saved time. This replaces
+  the prior standard `List` shell whose `.searchable` field collided with the
+  floating dock. `swift build` and `swift test` passed; XcodeBuildMCP
+  `ProsePal Staging` build/run passed on `iPhone 17` with
+  `--prosepal-use-mock-writing-service`; `snapshot_ui` confirmed the Drafts
+  title, search toggle, filters, saved card, badge, and root dock remain
+  reachable. Latest comparison screenshots:
+  `prosepal-ios/evidence/ui-design-qa/drafts-library/01-reference-drafts-phone.png`,
+  `prosepal-ios/evidence/ui-design-qa/drafts-library/02-simulator-drafts-before.jpg`,
+  and
+  `prosepal-ios/evidence/ui-design-qa/drafts-library/03-simulator-drafts-after.jpg`.
 - [~] N-IOS-14 Native visual system and Moment rail/content discipline --
   evidence: `MomentSheetView.momentContent(viewportHeight:)`,
   `draftStartSection`, `shouldShowTabRail`, and `startNewMoment()` in
