@@ -622,6 +622,24 @@ not done.
   `prosepal-ios/evidence/ui-design-qa/version-history/03-simulator-version-history-fullscreen-after.jpg`,
   and
   `prosepal-ios/evidence/ui-design-qa/version-history/04-simulator-version-history-after-tightened.jpg`.
+  Slice 10 evidence: performed an Empty library visual QA pass against rendered
+  `11 · Empty library` from the desktop ProsePal design-system kit, with local
+  screenshots saved under `prosepal-ios/evidence/ui-design-qa/drafts-empty/`.
+  The first-run Drafts screen now suppresses search and filter chrome, uses a
+  centered unframed empty state with the kit copy (`Nothing here yet` and
+  `Every message you shape with ProsePal lands here — ready to revisit, reuse,
+  or refine.`), and exposes a clay `Write your first` command that returns to the
+  Moment tab. Filter/search empty states keep the existing shared empty card so
+  relationship-memory empty states are not restyled by accident. `swift build`
+  and `swift test` passed; XcodeBuildMCP `ProsePal Staging` build/run passed on
+  `iPhone 17` with `--prosepal-use-mock-writing-service` after uninstalling only
+  the staging bundle to verify a clean empty library; `snapshot_ui` confirmed the
+  empty title, copy, CTA, dock, and return-to-Moment action remain reachable.
+  Latest comparison screenshots:
+  `prosepal-ios/evidence/ui-design-qa/drafts-empty/01-reference-empty-library-phone.png`,
+  `prosepal-ios/evidence/ui-design-qa/drafts-empty/02-simulator-empty-library-after.jpg`,
+  and
+  `prosepal-ios/evidence/ui-design-qa/drafts-empty/03-simulator-empty-library-after-lowered.jpg`.
 - [~] N-IOS-14 Native visual system and Moment rail/content discipline --
   evidence: `MomentSheetView.momentContent(viewportHeight:)`,
   `draftStartSection`, `shouldShowTabRail`, and `startNewMoment()` in

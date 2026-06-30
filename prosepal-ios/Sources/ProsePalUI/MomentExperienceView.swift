@@ -1080,7 +1080,9 @@ public struct MomentAppRootView: View {
 
         case .saved:
             NavigationStack {
-                SavedMomentDraftsView()
+                SavedMomentDraftsView {
+                    selectedTab = .moment
+                }
                     .momentNavigationBarColorScheme()
             }
 
@@ -4790,13 +4792,65 @@ private struct MomentSavedEmptyState: View {
     }
 }
 
+private struct MomentDraftsLibraryEmptyState: View {
+    let onWriteFirst: () -> Void
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Image(systemName: "rectangle.stack")
+                .font(.system(size: 46, weight: .regular))
+                .foregroundStyle(Color.prosePalCoral.opacity(0.55))
+                .frame(width: 64, height: 58)
+                .accessibilityHidden(true)
+
+            Text("Nothing here yet")
+                .font(.system(size: 23, weight: .medium, design: .serif))
+                .foregroundStyle(Color.prosePalInk)
+                .multilineTextAlignment(.center)
+                .padding(.top, 8)
+
+            Text("Every message you shape with ProsePal lands here — ready to revisit, reuse, or refine.")
+                .font(.system(size: 15, weight: .regular, design: .default))
+                .lineSpacing(6)
+                .foregroundStyle(Color.prosePalSlate.opacity(0.78))
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: 278)
+                .padding(.top, 28)
+
+            Button(action: onWriteFirst) {
+                Label("Write your first", systemImage: "pencil.and.scribble")
+                    .font(.headline.weight(.semibold))
+                    .labelStyle(.titleAndIcon)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.82)
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 28)
+                    .frame(minWidth: 196, minHeight: 52)
+                    .background(Color.prosePalCoral, in: Capsule(style: .continuous))
+                    .shadow(color: Color.prosePalCoralDeep.opacity(0.20), radius: 12, x: 0, y: 7)
+            }
+            .buttonStyle(.plain)
+            .padding(.top, 34)
+            .accessibilityLabel("Write your first draft")
+        }
+        .frame(maxWidth: .infinity)
+        .accessibilityElement(children: .combine)
+    }
+}
+
 private struct SavedMomentDraftsView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \SavedMomentDraftRecord.createdAt, order: .reverse)
     private var drafts: [SavedMomentDraftRecord]
+    let onWriteFirst: () -> Void
     @State private var searchText = ""
     @State private var selectedFilter: SavedDraftFilter = .all
     @State private var isShowingSearch = false
+
+    init(onWriteFirst: @escaping () -> Void = {}) {
+        self.onWriteFirst = onWriteFirst
+    }
 
     private var filteredDrafts: [SavedMomentDraftRecord] {
         let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -4811,6 +4865,12 @@ private struct SavedMomentDraftsView: View {
         }
     }
 
+    private var isFirstRunEmptyState: Bool {
+        drafts.isEmpty &&
+            searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
+            selectedFilter == .all
+    }
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 11) {
@@ -4821,15 +4881,23 @@ private struct SavedMomentDraftsView: View {
                         .transition(.opacity.combined(with: .move(edge: .top)))
                 }
 
-                savedDraftFilterRow
+                if !isFirstRunEmptyState {
+                    savedDraftFilterRow
+                }
 
                 if filteredDrafts.isEmpty {
-                    MomentSavedEmptyState(
-                        isSearching: !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-                        emptyTitle: selectedFilter.emptyTitle,
-                        emptyDetail: selectedFilter.emptyDetail
-                    )
-                    .padding(.top, 10)
+                    if isFirstRunEmptyState {
+                        MomentDraftsLibraryEmptyState(onWriteFirst: onWriteFirst)
+                            .frame(minHeight: 484)
+                            .padding(.top, 58)
+                    } else {
+                        MomentSavedEmptyState(
+                            isSearching: !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                            emptyTitle: selectedFilter.emptyTitle,
+                            emptyDetail: selectedFilter.emptyDetail
+                        )
+                        .padding(.top, 10)
+                    }
                 } else {
                     ForEach(filteredDrafts) { draft in
                         NavigationLink {
@@ -4870,19 +4938,21 @@ private struct SavedMomentDraftsView: View {
 
                 Spacer()
 
-                Button {
-                    withAnimation(.easeInOut(duration: 0.18)) {
-                        isShowingSearch.toggle()
+                if !isFirstRunEmptyState || isShowingSearch {
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.18)) {
+                            isShowingSearch.toggle()
+                        }
+                    } label: {
+                        Image(systemName: isShowingSearch ? "xmark" : "magnifyingglass")
+                            .font(.system(size: 18, weight: .regular))
+                            .frame(width: 38, height: 38)
+                            .contentShape(Circle())
                     }
-                } label: {
-                    Image(systemName: isShowingSearch ? "xmark" : "magnifyingglass")
-                        .font(.system(size: 18, weight: .regular))
-                        .frame(width: 38, height: 38)
-                        .contentShape(Circle())
+                    .buttonStyle(.plain)
+                    .foregroundStyle(Color.prosePalCoralDeep)
+                    .accessibilityLabel(isShowingSearch ? "Close search" : "Search drafts")
                 }
-                .buttonStyle(.plain)
-                .foregroundStyle(Color.prosePalCoralDeep)
-                .accessibilityLabel(isShowingSearch ? "Close search" : "Search drafts")
             }
             .frame(height: 38)
 
