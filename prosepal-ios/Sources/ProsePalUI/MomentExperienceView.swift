@@ -5740,7 +5740,7 @@ private struct MomentSettingsView: View {
                         systemImage: "shield.checkered",
                         title: "Privacy & data"
                     ) {
-                        MomentLocalDataExportView()
+                        MomentPrivacyDataView(account: account)
                     }
                 }
 
@@ -6179,6 +6179,273 @@ private struct MomentSettingsView: View {
         NSPasteboard.general.setString(MomentSettingsExternalLinks.supportEmail, forType: .string)
         #endif
         supportNotice = "Copied support email"
+    }
+}
+
+private struct MomentPrivacyDataView: View {
+    let account: MomentAccountModel
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
+    @State private var notice: String?
+    @State private var eraseError: String?
+    @State private var isConfirmingErase = false
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                topChrome
+                trustNote
+
+                privacyGroup("Controls") {
+                    privacyStatusRow(
+                        systemImage: "iphone",
+                        title: "On-device drafts",
+                        subtitle: "Process without leaving your iPhone",
+                        trailing: account.runtimeReadiness.isPrivateDraftConfigured ? "On" : "Unavailable"
+                    )
+                    privacyDivider
+                    privacyStatusRow(
+                        systemImage: "chart.line.uptrend.xyaxis",
+                        title: "Anonymous diagnostics",
+                        subtitle: "Metadata only, no writing text",
+                        trailing: "Minimal"
+                    )
+                }
+
+                privacyGroup("Your data") {
+                    NavigationLink {
+                        MomentLocalDataExportView()
+                    } label: {
+                        privacyRowBody(
+                            systemImage: "square.and.arrow.up",
+                            title: "Export local data",
+                            subtitle: "Drafts and approved relationship memory",
+                            showsChevron: true
+                        )
+                    }
+                    .buttonStyle(.plain)
+
+                    privacyDivider
+
+                    Button(role: .destructive) {
+                        isConfirmingErase = true
+                    } label: {
+                        privacyRowBody(
+                            systemImage: "trash",
+                            title: "Delete local data",
+                            subtitle: "Erase saved drafts and relationship memory",
+                            isDestructive: true
+                        )
+                    }
+                    .buttonStyle(.plain)
+                }
+
+                if let notice {
+                    Label(notice, systemImage: "checkmark.circle")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Color.prosePalSlate)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                }
+
+                if let eraseError {
+                    Label(eraseError, systemImage: "exclamationmark.triangle")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Color.prosePalCoralDeep)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                }
+
+                privacyFinePrint
+            }
+            .padding(.horizontal, 18)
+            .padding(.top, 8)
+            .padding(.bottom, 36)
+        }
+        .scrollIndicators(.hidden)
+        .background {
+            MomentAtmosphericBackground(isCareful: false)
+        }
+        .tint(.prosePalCoral)
+        #if os(iOS)
+        .toolbar(.hidden, for: .navigationBar)
+        #endif
+        .confirmationDialog(
+            "Delete local data?",
+            isPresented: $isConfirmingErase,
+            titleVisibility: .visible
+        ) {
+            Button("Delete local data", role: .destructive) {
+                eraseLocalData()
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This erases saved drafts, truth beads, and voice cards stored on this device. Your account is not deleted.")
+        }
+    }
+
+    private var topChrome: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Button {
+                dismiss()
+            } label: {
+                Label("Settings", systemImage: "chevron.left")
+                    .font(.body.weight(.regular))
+                    .labelStyle(.titleAndIcon)
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(Color.prosePalCoralDeep)
+            .frame(minHeight: 36, alignment: .leading)
+
+            Text("Privacy & data")
+                .font(.system(.title2, design: .serif).weight(.medium))
+                .foregroundStyle(Color.prosePalInk)
+                .lineLimit(1)
+                .minimumScaleFactor(0.82)
+        }
+    }
+
+    private var trustNote: some View {
+        HStack(alignment: .top, spacing: 13) {
+            Image(systemName: "lock")
+                .font(.system(size: 20, weight: .regular))
+                .foregroundStyle(Color.prosePalCoralDeep)
+                .frame(width: 42, height: 42)
+                .background(Color.prosePalCoral.opacity(0.12), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 5) {
+                Text("Your writing stays yours")
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(Color.prosePalInk)
+
+                Text("ProsePal processes drafts privately. Your words are never used to train models, and you can erase them at any time.")
+                    .font(.callout)
+                    .foregroundStyle(Color.prosePalSlate.opacity(0.78))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(16)
+        .background(Color.prosePalPaper.opacity(0.92), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(Color.prosePalNavy.opacity(0.10), lineWidth: 1)
+        }
+    }
+
+    private func privacyGroup<Content: View>(
+        _ title: String,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(.caption.weight(.semibold))
+                .textCase(.uppercase)
+                .foregroundStyle(Color.prosePalSlate.opacity(0.72))
+                .padding(.leading, 4)
+
+            VStack(spacing: 0) {
+                content()
+            }
+            .background(Color.prosePalPaper.opacity(0.94), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .stroke(Color.prosePalNavy.opacity(0.10), lineWidth: 1)
+            }
+        }
+    }
+
+    private var privacyDivider: some View {
+        Rectangle()
+            .fill(Color.prosePalNavy.opacity(0.11))
+            .frame(height: 0.5)
+            .padding(.leading, 64)
+    }
+
+    private func privacyStatusRow(
+        systemImage: String,
+        title: String,
+        subtitle: String,
+        trailing: String
+    ) -> some View {
+        privacyRowBody(
+            systemImage: systemImage,
+            title: title,
+            subtitle: subtitle,
+            trailing: trailing
+        )
+    }
+
+    private func privacyRowBody(
+        systemImage: String,
+        title: String,
+        subtitle: String? = nil,
+        trailing: String? = nil,
+        showsChevron: Bool = false,
+        isDestructive: Bool = false
+    ) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: systemImage)
+                .font(.system(size: 19, weight: .regular))
+                .foregroundStyle(isDestructive ? Color.red.opacity(0.78) : Color.prosePalSlate)
+                .frame(width: 36)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(isDestructive ? Color.red.opacity(0.84) : Color.prosePalInk)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.84)
+
+                if let subtitle {
+                    Text(subtitle)
+                        .font(.callout)
+                        .foregroundStyle(Color.prosePalSlate.opacity(0.78))
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+
+            Spacer(minLength: 10)
+
+            if let trailing {
+                Text(trailing)
+                    .font(.callout.weight(.medium))
+                    .foregroundStyle(Color.prosePalSlate.opacity(0.68))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.74)
+            }
+
+            if showsChevron {
+                Image(systemName: "chevron.right")
+                    .font(.body.weight(.medium))
+                    .foregroundStyle(Color.prosePalSlate.opacity(0.48))
+            }
+        }
+        .padding(.horizontal, 16)
+        .frame(minHeight: 64)
+        .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
+    }
+
+    private var privacyFinePrint: some View {
+        HStack(spacing: 4) {
+            Text("Read our")
+            Link("Privacy Policy", destination: MomentSettingsExternalLinks.privacy)
+            Text("for the full details.")
+        }
+        .font(.caption)
+        .foregroundStyle(Color.prosePalSlate.opacity(0.68))
+        .frame(maxWidth: .infinity)
+        .multilineTextAlignment(.center)
+    }
+
+    private func eraseLocalData() {
+        do {
+            try RelationshipVaultLocalDataEraser.eraseAll(in: modelContext)
+            eraseError = nil
+            notice = "Local data deleted"
+        } catch {
+            notice = nil
+            eraseError = "Could not delete local data. Please try again."
+        }
     }
 }
 

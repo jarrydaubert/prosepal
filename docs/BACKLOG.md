@@ -675,6 +675,22 @@ not done.
   unavailable StoreKit state still exposes Retry, Restore, Continue with Apple,
   Terms, and Privacy. Latest simulator screenshot:
   `prosepal-ios/evidence/ui-design-qa/paywall/02-simulator-paywall-unavailable-after.jpg`.
+  Slice 13 evidence: performed a Privacy & data visual-system pass against the
+  desktop ProsePal design-system `Privacy` source in
+  `/Users/jarrydaubert/Desktop/ProsePal Design System/ui_kits/prosepal/screens-3.jsx`,
+  with local simulator evidence saved under
+  `prosepal-ios/evidence/ui-design-qa/privacy-data/`. Settings now opens a real
+  Privacy & data overview before export: custom Settings back chrome, trust note,
+  Controls rows for on-device drafts and metadata-only diagnostics, Your data
+  rows for export and confirmed local delete, and a Privacy Policy link. The
+  existing JSON export remains reachable as a second-level screen, and the local
+  delete action uses the existing `RelationshipVaultLocalDataEraser` behind a
+  confirmation dialog. `swift build` and `swift test` passed; XcodeBuildMCP
+  `ProsePal Staging` build/run passed on `iPhone 17` with
+  `--prosepal-use-mock-writing-service`;
+  `snapshot_ui` confirmed Privacy & data, export, delete confirmation, and
+  Privacy Policy controls remain reachable. Latest simulator screenshot:
+  `prosepal-ios/evidence/ui-design-qa/privacy-data/02-simulator-privacy-data-after.jpg`.
 - [~] N-IOS-14 Native visual system and Moment rail/content discipline --
   evidence: `MomentSheetView.momentContent(viewportHeight:)`,
   `draftStartSection`, `shouldShowTabRail`, and `startNewMoment()` in
