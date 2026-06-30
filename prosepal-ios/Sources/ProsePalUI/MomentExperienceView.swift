@@ -1334,6 +1334,8 @@ private struct MomentSheetView: View {
     @State private var hasEntered = false
     @State private var shareRequest: MomentShareRequest?
     @State private var isShowingDraftSource = false
+    @State private var isShowingReviseMode = false
+    @State private var selectedDraftRevisionTab: DraftRevisionTab = .draft
 
     private let diagnostics = NativeDiagnosticsLogger.shared
 
@@ -1347,6 +1349,25 @@ private struct MomentSheetView: View {
 
     private enum ScrollAnchor: Hashable {
         case activePrimary
+    }
+
+    private enum DraftRevisionTab: String, CaseIterable, Identifiable {
+        case draft
+        case changes
+        case original
+
+        var id: String { rawValue }
+
+        var title: String {
+            switch self {
+            case .draft:
+                return "Draft"
+            case .changes:
+                return "Changes"
+            case .original:
+                return "Original"
+            }
+        }
     }
 
     var body: some View {
@@ -1363,13 +1384,16 @@ private struct MomentSheetView: View {
                     }
                     .onChange(of: focusedField) { oldValue, newValue in
                         handleFocusChange(from: oldValue, to: newValue, scrollProxy: scrollProxy)
+                        handleDraftFocusForRevise(newValue)
                     }
                     .onChange(of: model.occasion) { _, _ in
                         realignActivePrimaryIfNeeded(scrollProxy: scrollProxy, delayNanoseconds: 120_000_000)
                     }
                     .onChange(of: model.bundle?.id) { _, newValue in
+                        isShowingDraftSource = false
+                        isShowingReviseMode = false
                         if newValue != nil {
-                            isShowingDraftSource = false
+                            selectedDraftRevisionTab = .draft
                         }
                         realignActivePrimaryIfNeeded(scrollProxy: scrollProxy, delayNanoseconds: 80_000_000)
                     }
@@ -1482,7 +1506,9 @@ private struct MomentSheetView: View {
 
     private func momentContent(viewportHeight: CGFloat) -> some View {
         VStack(alignment: .leading, spacing: 18) {
-            if let bundle = model.bundle, !isShowingDraftSource {
+            if let bundle = model.bundle, isShowingReviseMode {
+                draftReviseContent(bundle)
+            } else if let bundle = model.bundle, !isShowingDraftSource {
                 draftResultContent(bundle)
             } else if !shouldUseActiveMomentLayout {
                 initialPrimaryContent
@@ -1547,6 +1573,9 @@ private struct MomentSheetView: View {
         if focusedField != nil {
             return 96
         }
+        if model.bundle != nil && isShowingReviseMode {
+            return dynamicTypeSize.isAccessibilitySize ? 132 : 96
+        }
         if model.bundle != nil && !isShowingDraftSource {
             return dynamicTypeSize.isAccessibilitySize ? 132 : 98
         }
@@ -1599,7 +1628,12 @@ private struct MomentSheetView: View {
 
     @ViewBuilder
     private var bottomInsetContent: some View {
-        if let bundle = model.bundle, focusedField == nil, shouldShowFloatingDraftActionRail {
+        if let bundle = model.bundle, isShowingReviseMode, focusedField == nil {
+            draftRevisionKeepButton(bundle: bundle)
+                .padding(.horizontal, 18)
+                .padding(.top, 10)
+                .padding(.bottom, 12)
+        } else if let bundle = model.bundle, focusedField == nil, shouldShowFloatingDraftActionRail {
             draftFloatingControls(bundle: bundle)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 10)
@@ -1629,7 +1663,9 @@ private struct MomentSheetView: View {
 
     @ViewBuilder
     private var topChrome: some View {
-        if model.bundle != nil && !isShowingDraftSource {
+        if model.bundle != nil && isShowingReviseMode {
+            draftReviseTopChrome
+        } else if model.bundle != nil && !isShowingDraftSource {
             draftResultTopChrome
         } else {
             momentTopChrome
@@ -1679,6 +1715,7 @@ private struct MomentSheetView: View {
     private var draftResultTopChrome: some View {
         HStack(alignment: .center) {
             Button {
+                isShowingReviseMode = false
                 isShowingDraftSource = true
             } label: {
                 Label("Today", systemImage: "chevron.left")
@@ -1714,6 +1751,46 @@ private struct MomentSheetView: View {
             .buttonStyle(.plain)
             .foregroundStyle(Color.prosePalCoralDeep)
             .accessibilityLabel("Keep this draft")
+        }
+        .frame(height: 48)
+        .frame(maxWidth: .infinity)
+    }
+
+    private var draftReviseTopChrome: some View {
+        HStack(alignment: .center) {
+            Button {
+                endFocusedEditing()
+                isShowingReviseMode = false
+            } label: {
+                Image(systemName: "chevron.left")
+                    .font(.system(size: 17, weight: .regular))
+                    .frame(width: 44, height: 44)
+                    .contentShape(Circle())
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(Color.prosePalCoralDeep)
+            .accessibilityLabel("Back to draft")
+
+            Spacer(minLength: 8)
+
+            Text("Revise")
+                .font(.headline.weight(.semibold))
+                .foregroundStyle(Color.prosePalInk)
+                .lineLimit(1)
+
+            Spacer(minLength: 8)
+
+            Button {
+                endFocusedEditing()
+                isShowingReviseMode = false
+            } label: {
+                Text("Done")
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(Color.prosePalCoralDeep)
+                    .frame(minWidth: 54, minHeight: 44, alignment: .trailing)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Done revising")
         }
         .frame(height: 48)
         .frame(maxWidth: .infinity)
@@ -1762,6 +1839,15 @@ private struct MomentSheetView: View {
                     .padding(.top, 2)
                     .momentControlBarSurface()
             }
+        }
+    }
+
+    private func draftReviseContent(_ bundle: MomentDraftBundle) -> some View {
+        VStack(alignment: .leading, spacing: 14) {
+            draftRevisionSegmentedControl
+            draftRevisionPage(bundle)
+            draftRevisionSuggestionCard(bundle)
+            draftRevisionToneRow(bundle)
         }
     }
 
@@ -1910,6 +1996,19 @@ private struct MomentSheetView: View {
     private func handleFocusChange(from oldValue: Field?, to newValue: Field?, scrollProxy: ScrollViewProxy) {
         guard newValue == nil, oldValue == .person || oldValue == .truth else { return }
         realignActivePrimaryIfNeeded(scrollProxy: scrollProxy, delayNanoseconds: 180_000_000)
+    }
+
+    private func handleDraftFocusForRevise(_ newValue: Field?) {
+        guard newValue == .draft,
+              model.bundle != nil,
+              !isShowingDraftSource,
+              !isShowingReviseMode
+        else {
+            return
+        }
+
+        isShowingReviseMode = true
+        focusedField = nil
     }
 
     private func endFocusedEditing() {
@@ -2751,6 +2850,263 @@ private struct MomentSheetView: View {
         }
     }
 
+    private var draftRevisionSegmentedControl: some View {
+        HStack(spacing: 2) {
+            ForEach(DraftRevisionTab.allCases) { tab in
+                Button {
+                    selectedDraftRevisionTab = tab
+                } label: {
+                    Text(tab.title)
+                        .font(.subheadline.weight(selectedDraftRevisionTab == tab ? .semibold : .medium))
+                        .foregroundStyle(selectedDraftRevisionTab == tab ? Color.prosePalInk : Color.prosePalSlate)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.84)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 31)
+                        .background {
+                            if selectedDraftRevisionTab == tab {
+                                RoundedRectangle(cornerRadius: 11, style: .continuous)
+                                    .fill(Color.prosePalPaper.opacity(0.96))
+                                    .shadow(color: Color.prosePalCoralDeep.opacity(0.08), radius: 6, x: 0, y: 2)
+                            }
+                        }
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(3)
+        .frame(maxWidth: .infinity)
+        .background {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(Color.prosePalPaper.opacity(0.52))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .stroke(Color.prosePalNavy.opacity(0.10), lineWidth: 1)
+                }
+        }
+    }
+
+    private func draftRevisionPage(_ bundle: MomentDraftBundle) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            if selectedDraftRevisionTab == .draft {
+                TextField("Draft text", text: activeDraftText, axis: .vertical)
+                    .font(.system(.title3, design: .serif))
+                    .lineSpacing(7)
+                    .foregroundStyle(Color.prosePalInk)
+                    .lineLimit(dynamicTypeSize.isAccessibilitySize ? 6...24 : 4...16)
+                    .textFieldStyle(.plain)
+                    .focused($focusedField, equals: .draft)
+                    .submitLabel(.done)
+                    .onSubmit {
+                        endFocusedEditing()
+                    }
+                    .disabled(model.isDrafting)
+                    .accessibilityLabel("Draft text")
+                    .fixedSize(horizontal: false, vertical: true)
+            } else {
+                Text(draftRevisionDisplayText(for: bundle))
+                    .font(.system(.title3, design: .serif))
+                    .lineSpacing(7)
+                    .foregroundStyle(Color.prosePalInk)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityLabel(selectedDraftRevisionTab == .original ? "Original text" : "Draft changes")
+            }
+        }
+        .frame(maxWidth: .infinity, minHeight: dynamicTypeSize.isAccessibilitySize ? 190 : 136, alignment: .topLeading)
+        .background(alignment: .topLeading) {
+            MomentRevisionRuledLines()
+                .accessibilityHidden(true)
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 18)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background {
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(Color.prosePalPaper.opacity(0.96))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .stroke(Color.prosePalNavy.opacity(0.12), lineWidth: 1)
+                }
+                .shadow(color: Color.prosePalCoralDeep.opacity(0.10), radius: 12, x: 0, y: 6)
+        }
+    }
+
+    private func draftRevisionDisplayText(for bundle: MomentDraftBundle) -> String {
+        switch selectedDraftRevisionTab {
+        case .draft:
+            return bundle.messageText
+        case .changes:
+            return bundle.messageText
+        case .original:
+            let original = model.trueThing.trimmingCharacters(in: .whitespacesAndNewlines)
+            return original.isEmpty ? bundle.messageText : original
+        }
+    }
+
+    private func draftRevisionSuggestionCard(_ bundle: MomentDraftBundle) -> some View {
+        VStack(alignment: .leading, spacing: 11) {
+            Label(draftRevisionSuggestionTitle(for: bundle), systemImage: "wand.and.stars")
+                .font(.caption.weight(.medium))
+                .foregroundStyle(Color.prosePalSlate)
+                .labelStyle(.titleAndIcon)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(draftRevisionSuggestionOptions(for: bundle), id: \.self) { option in
+                        Button {
+                            applyRevisionSuggestion(option)
+                        } label: {
+                            Text(option)
+                                .font(.system(.body, design: .serif))
+                                .foregroundStyle(Color.prosePalSlate)
+                                .lineLimit(1)
+                                .padding(.horizontal, 14)
+                                .frame(height: 30)
+                                .background(Color.prosePalPaper.opacity(0.80), in: Capsule(style: .continuous))
+                                .overlay {
+                                    Capsule(style: .continuous)
+                                        .stroke(Color.prosePalNavy.opacity(0.12), lineWidth: 1)
+                                }
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(model.isDrafting)
+                    }
+                }
+            }
+            .scrollClipDisabled()
+        }
+        .padding(.vertical, 14)
+        .padding(.horizontal, 16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background {
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(Color.prosePalPaper.opacity(0.56))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .stroke(Color.prosePalNavy.opacity(0.10), lineWidth: 1)
+                }
+        }
+    }
+
+    private func draftRevisionToneRow(_ bundle: MomentDraftBundle) -> some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(MomentAdjustment.allCases) { adjustment in
+                    draftRevisionToneChip(
+                        title: adjustment.displayName,
+                        systemImage: adjustment.systemImage,
+                        isSelected: adjustment == .warmer
+                    ) {
+                        model.adjust(adjustment)
+                    }
+                }
+            }
+        }
+        .scrollClipDisabled()
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Revision tones")
+    }
+
+    private func draftRevisionToneChip(
+        title: String,
+        systemImage: String,
+        isSelected: Bool,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Label {
+                Text(title)
+                    .font(.subheadline.weight(isSelected ? .semibold : .medium))
+            } icon: {
+                Image(systemName: systemImage)
+                    .font(.caption.weight(.medium))
+            }
+            .labelStyle(.titleAndIcon)
+            .lineLimit(1)
+            .minimumScaleFactor(0.82)
+            .padding(.horizontal, 14)
+            .frame(height: 36)
+            .foregroundStyle(isSelected ? Color.prosePalCoralDeep : Color.prosePalSlate)
+            .background(
+                isSelected ? Color.prosePalCoral.opacity(0.12) : Color.prosePalPaper.opacity(0.62),
+                in: Capsule(style: .continuous)
+            )
+            .overlay {
+                Capsule(style: .continuous)
+                    .stroke(
+                        isSelected ? Color.prosePalCoral.opacity(0.22) : Color.prosePalNavy.opacity(0.10),
+                        lineWidth: 1
+                    )
+            }
+        }
+        .buttonStyle(.plain)
+        .disabled(model.isDrafting)
+    }
+
+    private func draftRevisionKeepButton(bundle: MomentDraftBundle) -> some View {
+        Button {
+            endFocusedEditing()
+            save(bundle)
+            isShowingReviseMode = false
+        } label: {
+            Label("Keep this draft", systemImage: "checkmark")
+                .font(.headline.weight(.semibold))
+                .lineLimit(1)
+                .minimumScaleFactor(0.86)
+                .frame(maxWidth: .infinity)
+                .frame(height: 52)
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(Color.prosePalPaper)
+        .background(Color.prosePalCoral, in: Capsule(style: .continuous))
+        .shadow(color: Color.prosePalCoralDeep.opacity(0.18), radius: 10, x: 0, y: 5)
+        .disabled(model.isDrafting)
+    }
+
+    private func draftRevisionSuggestionTitle(for bundle: MomentDraftBundle) -> String {
+        let target = draftRevisionSuggestionTarget(in: bundle.messageText)
+        return "Replace \"\(target)\""
+    }
+
+    private func draftRevisionSuggestionOptions(for bundle: MomentDraftBundle) -> [String] {
+        let target = draftRevisionSuggestionTarget(in: bundle.messageText).lowercased()
+
+        if target.contains("thinking") {
+            return ["wondering", "missing", "hoping"]
+        }
+        if target.contains("miss") {
+            return ["remember", "value", "hope"]
+        }
+        return ["gentler", "warmer", "clearer", "shorter"]
+    }
+
+    private func draftRevisionSuggestionTarget(in text: String) -> String {
+        let preferredTargets = ["thinking", "miss", "love", "happy", "easy"]
+        let lowercased = text.lowercased()
+        return preferredTargets.first { lowercased.contains($0) } ?? "this"
+    }
+
+    private func applyRevisionSuggestion(_ option: String) {
+        guard selectedDraftRevisionTab == .draft,
+              var currentBundle = model.bundle
+        else {
+            return
+        }
+
+        let target = draftRevisionSuggestionTarget(in: currentBundle.messageText)
+        guard target != "this",
+              let range = currentBundle.messageText.range(
+                of: target,
+                options: [.caseInsensitive, .diacriticInsensitive]
+              )
+        else {
+            return
+        }
+
+        currentBundle.messageText.replaceSubrange(range, with: option)
+        model.updateActiveDraftMessage(currentBundle.messageText)
+    }
+
     private func draftResultCard(_ bundle: MomentDraftBundle) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .center, spacing: 8) {
@@ -3015,6 +3371,29 @@ private struct MomentSheetView: View {
     private func draftResultAccentColor(for bundle: MomentDraftBundle) -> Color {
         bundle.lane == .takeMoreCare ? Color.prosePalCare : Color.prosePalCoral
     }
+
+private struct MomentRevisionRuledLines: View {
+    var lineHeight: CGFloat = 34
+
+    var body: some View {
+        Canvas { context, size in
+            var path = Path()
+            var y = lineHeight - 1
+
+            while y < size.height {
+                path.move(to: CGPoint(x: 0, y: y))
+                path.addLine(to: CGPoint(x: size.width, y: y))
+                y += lineHeight
+            }
+
+            context.stroke(
+                path,
+                with: .color(Color.prosePalCoral.opacity(0.10)),
+                lineWidth: 0.6
+            )
+        }
+    }
+}
 
 private struct MomentDraftHistorySheet: View {
     @Bindable var model: MomentModel

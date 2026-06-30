@@ -569,6 +569,23 @@ not done.
   `prosepal-ios/evidence/ui-design-qa/draft-result/03-simulator-draft-body-before.jpg`,
   and
   `prosepal-ios/evidence/ui-design-qa/draft-result/04-simulator-draft-after.jpg`.
+  Slice 7 evidence: performed a Revise visual QA pass against rendered
+  `08 · Revise` from the desktop ProsePal design-system kit, with local
+  screenshots and metrics saved under `prosepal-ios/evidence/ui-design-qa/revise/`.
+  The generated draft now has a dedicated Revise shell instead of only direct
+  text editing inside the result card: compact `Revise` chrome, segmented
+  `Draft`/`Changes`/`Original` controls, a ruled active editing page, replacement
+  suggestion chips, revision tone chips using the existing `Warmer`/`Shorter`/
+  `Direct` domain actions, and a bottom `Keep this draft` command. `swift build`
+  and `swift test` passed; XcodeBuildMCP `ProsePal Staging` build/run passed on
+  `iPhone 17` with `--prosepal-use-mock-writing-service`; `snapshot_ui` confirmed
+  the revise shell targets and `Done` returned to the draft result without
+  destroying the active draft. Latest comparison screenshots:
+  `prosepal-ios/evidence/ui-design-qa/revise/01-reference-revise-phone.png`,
+  `prosepal-ios/evidence/ui-design-qa/revise/02-simulator-revise-before.jpg`,
+  `prosepal-ios/evidence/ui-design-qa/revise/03-simulator-revise-after.jpg`,
+  and
+  `prosepal-ios/evidence/ui-design-qa/revise/04-simulator-revise-after-tightened.jpg`.
 - [~] N-IOS-14 Native visual system and Moment rail/content discipline --
   evidence: `MomentSheetView.momentContent(viewportHeight:)`,
   `draftStartSection`, `shouldShowTabRail`, and `startNewMoment()` in
