@@ -488,12 +488,12 @@ not done.
   update this backlog item or its child items with evidence. Partial because the
   plan exists, but execution remains open.
   The design system now lives in-repo at `design-system/`. Outstanding
-  canonical-kit gaps: `01`-`04` multi-panel onboarding; `06` dedicated
-  generation state; `14`/`15` free/pro plan detail screens; `17` custom
-  share/insert sheet; `18` copied toast; `19` offline banner/state; `20`
-  generation-error full state; `21` quota-reached state; remaining stock
-  detail/edit forms for relationship memory and saved drafts; full token parity
-  for the in-repo color/radius/elevation/glass system; and final
+  canonical-kit gaps: `06` dedicated generation state; `14`/`15` free/pro plan
+  detail screens; `17` custom share/insert sheet; `18` copied toast; `19`
+  offline banner/state; `20` generation-error full state; `21` quota-reached
+  state; remaining stock detail/edit forms for relationship memory and saved
+  drafts; full token parity for the in-repo color/radius/elevation/glass
+  system; and final
   Dynamic Type/VoiceOver/Switch Control/physical-device review.
   Slice 1 evidence: visual primitives were extracted from
   `MomentExperienceView` into focused SwiftUI files
@@ -707,6 +707,26 @@ not done.
   `prosepal-ios/evidence/ui-design-qa/privacy-data/export-detail/01-export-detail-top.jpg`,
   and
   `prosepal-ios/evidence/ui-design-qa/privacy-data/export-detail/02-export-detail-scrolled.jpg`.
+  Slice 14 evidence: performed an onboarding visual-system pass against rendered
+  `01`-`04` from the in-repo ProsePal design-system source in
+  `design-system/ui_kits/prosepal/screens-1.jsx`, with local simulator evidence
+  saved under `prosepal-ios/evidence/ui-design-qa/onboarding/`. The old single
+  dark welcome screen is replaced by a four-panel first-run flow with top
+  progress dots, centered crest/title/body composition, kit copy for Welcome,
+  How it works, Privacy promise, and Ready, and fixed footer actions. The
+  primary action advances through panels; the first-panel account shortcut and
+  final-panel Maybe later action complete onboarding through the existing
+  `MomentWelcomeState` persistence. `swift build` and `swift test` passed;
+  XcodeBuildMCP `ProsePal Staging` build/run passed on `iPhone 17` with
+  `--prosepal-use-mock-writing-service`; the staging simulator app was
+  uninstalled/reinstalled to verify true first-run behavior; `snapshot_ui`
+  confirmed all four panels and footer targets, and final completion landed on
+  the Moment `Today` screen. Latest simulator screenshots:
+  `prosepal-ios/evidence/ui-design-qa/onboarding/01-simulator-welcome.jpg`,
+  `prosepal-ios/evidence/ui-design-qa/onboarding/02-simulator-how-it-works.jpg`,
+  `prosepal-ios/evidence/ui-design-qa/onboarding/03-simulator-privacy.jpg`,
+  and
+  `prosepal-ios/evidence/ui-design-qa/onboarding/04-simulator-ready.jpg`.
 - [~] N-IOS-14 Native visual system and Moment rail/content discipline --
   evidence: `MomentSheetView.momentContent(viewportHeight:)`,
   `draftStartSection`, `shouldShowTabRail`, and `startNewMoment()` in
