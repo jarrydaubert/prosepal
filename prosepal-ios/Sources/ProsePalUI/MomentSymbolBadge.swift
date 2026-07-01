@@ -20,7 +20,7 @@ struct MomentSymbolBadge: View {
             .fill(fill)
             .overlay {
                 RoundedRectangle(cornerRadius: max(10, size * 0.34), style: .continuous)
-                    .stroke(strokeColor, lineWidth: 1)
+                    .stroke(strokeColor, lineWidth: 0.5)
             }
             .overlay {
                 Image(systemName: systemImage)
@@ -56,7 +56,7 @@ struct MomentSymbolBadge: View {
         case .coral:
             LinearGradient(
                 colors: [
-                    Color.prosePalCoral.opacity(0.20),
+                    Color.prosePalAccentSoft,
                     Color.prosePalPaper.opacity(0.92)
                 ],
                 startPoint: .topLeading,
@@ -84,7 +84,7 @@ struct MomentSymbolBadge: View {
             LinearGradient(
                 colors: [
                     Color.prosePalPaper.opacity(0.92),
-                    Color.prosePalCard.opacity(0.80)
+                    Color.prosePalSurface2.opacity(0.80)
                 ],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
@@ -121,7 +121,7 @@ struct MomentSymbolBadge: View {
         case .hero, .heroCare:
             Color.white.opacity(0.34)
         case .navy:
-            Color.prosePalNavy.opacity(0.12)
+            Color.prosePalBorder.opacity(0.70)
         case .care:
             Color.prosePalCare.opacity(0.20)
         case .warning:
@@ -129,7 +129,7 @@ struct MomentSymbolBadge: View {
         case .coral:
             Color.prosePalCoral.opacity(0.20)
         case .subtle:
-            Color.prosePalNavy.opacity(0.10)
+            Color.prosePalBorder.opacity(0.62)
         }
     }
 }

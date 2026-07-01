@@ -45,11 +45,11 @@ struct MomentGeneratingView: View {
         .padding(.vertical, 15)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background {
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
+            RoundedRectangle(cornerRadius: ProsePalRadius.field, style: .continuous)
                 .fill(Color.prosePalPaper.opacity(0.70))
                 .overlay {
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .stroke(Color.prosePalNavy.opacity(0.08), lineWidth: 0.8)
+                    RoundedRectangle(cornerRadius: ProsePalRadius.field, style: .continuous)
+                        .stroke(Color.prosePalSeparator, lineWidth: 0.5)
                 }
         }
         .accessibilityElement(children: .combine)
@@ -86,11 +86,11 @@ struct MomentGeneratingView: View {
         .padding(.bottom, 20)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background {
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
+            RoundedRectangle(cornerRadius: ProsePalRadius.canvas, style: .continuous)
                 .fill(Color.prosePalPaper)
                 .overlay {
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .stroke(Color.prosePalNavy.opacity(0.10), lineWidth: 0.8)
+                    RoundedRectangle(cornerRadius: ProsePalRadius.canvas, style: .continuous)
+                        .stroke(Color.prosePalSeparator, lineWidth: 0.5)
                 }
                 .overlay(alignment: .leading) {
                     Rectangle()
@@ -98,7 +98,7 @@ struct MomentGeneratingView: View {
                         .frame(width: 3)
                         .padding(.vertical, 18)
                 }
-                .shadow(color: Color.prosePalCoralDeep.opacity(0.08), radius: 8, x: 0, y: 4)
+                .prosePalElevation(.small)
         }
         .accessibilityElement(children: .combine)
     }

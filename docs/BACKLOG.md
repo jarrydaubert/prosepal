@@ -488,9 +488,9 @@ not done.
   update this backlog item or its child items with evidence. Partial because the
   plan exists, but execution remains open.
   The design system now lives in-repo at `design-system/`. Outstanding
-  canonical-kit gaps: full token parity for the in-repo
-  color/radius/elevation/glass system, and final Dynamic Type/VoiceOver/Switch
-  Control/physical-device review.
+  canonical-kit gaps: folding remaining one-off in-screen radius/shadow literals
+  into the shared token API as those screens are touched, and final Dynamic
+  Type/VoiceOver/Switch Control/physical-device review.
   Slice 1 evidence: visual primitives were extracted from
   `MomentExperienceView` into focused SwiftUI files
   (`MomentVisualTokens`, `MomentSymbolBadge`, `MomentIdentityCard`,
@@ -847,6 +847,22 @@ not done.
   `prosepal-ios/evidence/ui-design-qa/detail-forms/02-saved-draft-edit.jpg`,
   `prosepal-ios/evidence/ui-design-qa/detail-forms/03-memory-detail.jpg`, and
   `prosepal-ios/evidence/ui-design-qa/detail-forms/04-voice-card-detail.jpg`.
+  Slice 23 evidence: added a shared SwiftUI visual-token layer matching the
+  in-repo ProsePal kit's color, radius, elevation, and glass vocabulary:
+  `ProsePalRadius`, `ProsePalElevation`, canonical paper/ink/clay/sage aliases,
+  glass fill/stroke aliases, and warm two-layer shadow helpers. Core shared
+  surfaces now consume those tokens: atmospheric/hero/card backgrounds, writing
+  pages, input/control surfaces, register chips, symbol badges, identity cards,
+  and the generation state. Added `ProsePalVisualTokenTests` to pin Swift radius
+  values to `design-system/tokens/radius.css` and confirm the canonical
+  `design-system/ui_kits/prosepal/` production theme block remains present.
+  `swift build` and `swift test` passed; XcodeBuildMCP `ProsePal Staging`
+  build/run passed on `iPhone 17` with `--prosepal-use-mock-writing-service`;
+  `snapshot_ui` confirmed the first entry and active-note controls remain
+  reachable. Latest simulator screenshots:
+  `prosepal-ios/evidence/ui-design-qa/token-parity/01-entry-token-parity.jpg`
+  and
+  `prosepal-ios/evidence/ui-design-qa/token-parity/02-active-token-parity.jpg`.
 - [~] N-IOS-14 Native visual system and Moment rail/content discipline --
   evidence: `MomentSheetView.momentContent(viewportHeight:)`,
   `draftStartSection`, `shouldShowTabRail`, and `startNewMoment()` in

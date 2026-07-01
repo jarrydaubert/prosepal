@@ -23,8 +23,8 @@ struct MomentAtmosphericBackground: View {
 
             LinearGradient(
                 colors: [
-                    Color(red: 0.966, green: 0.925, blue: 0.830),
-                    Color(red: 0.944, green: 0.880, blue: 0.765)
+                    Color.momentGroupedBackground,
+                    Color.momentSecondaryGroupedBackground
                 ],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
@@ -74,24 +74,24 @@ struct MomentHeroBackground: View {
     let isCareful: Bool
 
     var body: some View {
-        RoundedRectangle(cornerRadius: 28, style: .continuous)
+        RoundedRectangle(cornerRadius: ProsePalRadius.sheet, style: .continuous)
             .fill(fill)
             .overlay {
-                RoundedRectangle(cornerRadius: 28, style: .continuous)
+                RoundedRectangle(cornerRadius: ProsePalRadius.sheet, style: .continuous)
                     .stroke(
                         LinearGradient(
                             colors: [
-                                Color.white.opacity(0.78),
-                                Color.prosePalCoral.opacity(0.16),
-                                (isCareful ? Color.prosePalCare : Color.prosePalCoral).opacity(0.26)
+                                Color.prosePalGlassStroke,
+                                Color.prosePalAccentSoft.opacity(0.54),
+                                accentColor.opacity(0.24)
                             ],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         ),
-                        lineWidth: 1
+                        lineWidth: 0.5
                     )
             }
-            .shadow(color: Color.prosePalCoralDeep.opacity(0.12), radius: 18, x: 0, y: 10)
+            .prosePalElevation(.medium)
     }
 
     private var fill: LinearGradient {
@@ -107,17 +107,21 @@ struct MomentHeroBackground: View {
             colors: isCareful
                 ? [
                     Color.prosePalPaper,
-                    Color.prosePalCareCard,
-                    Color.prosePalCard
+                    Color.prosePalCareCard.opacity(0.88),
+                    Color.prosePalSurface2
                 ]
                 : [
                     Color.prosePalPaper,
-                    Color.prosePalCoralCard,
-                    Color.prosePalCard
+                    Color.prosePalAccentSoft.opacity(0.82),
+                    Color.prosePalSurface2
                 ],
             startPoint: .topLeading,
             endPoint: .bottomTrailing
         )
+    }
+
+    private var accentColor: Color {
+        isCareful ? Color.prosePalCare : Color.prosePalCoral
     }
 
     private var shouldReduceTransparency: Bool {
@@ -133,19 +137,19 @@ struct MomentCardBackground: View {
     let prominence: MomentSurfaceProminence
 
     var body: some View {
-        let shape = RoundedRectangle(cornerRadius: 22, style: .continuous)
+        let shape = RoundedRectangle(cornerRadius: ProsePalRadius.card, style: .continuous)
 
-        shape
+        let surface = shape
             .fill(cardFill)
             .overlay {
                 shape.stroke(borderFill, lineWidth: borderWidth)
             }
-            .shadow(
-                color: shadowColor,
-                radius: prominence == .elevated ? 18 : 10,
-                x: 0,
-                y: prominence == .elevated ? 10 : 5
-            )
+
+        if shouldReduceTransparency {
+            surface
+        } else {
+            surface.prosePalElevation(prominence == .elevated ? .medium : .small)
+        }
     }
 
     private var cardFill: LinearGradient {
@@ -161,9 +165,9 @@ struct MomentCardBackground: View {
         case .accent:
             return LinearGradient(
                 colors: [
-                    Color.prosePalCoralCard,
                     Color.prosePalPaper,
-                    Color.prosePalCard
+                    Color.prosePalAccentSoft.opacity(0.76),
+                    Color.prosePalSurface2
                 ],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
@@ -171,8 +175,8 @@ struct MomentCardBackground: View {
         case .warning:
             return LinearGradient(
                 colors: [
-                    Color.prosePalWarningCard,
                     Color.prosePalPaper,
+                    Color.prosePalWarningCard,
                     Color.prosePalCard
                 ],
                 startPoint: .topLeading,
@@ -182,14 +186,14 @@ struct MomentCardBackground: View {
             return LinearGradient(
                 colors: isCareful
                     ? [
-                        Color.prosePalCareCard,
                         Color.prosePalPaper,
-                        Color.prosePalCard
+                        Color.prosePalCareCard.opacity(0.84),
+                        Color.prosePalSurface2
                     ]
                     : [
-                        Color.prosePalCard,
                         Color.prosePalPaper,
-                        Color.prosePalCoralCard
+                        Color.prosePalSurface2,
+                        Color.prosePalAccentSoft.opacity(0.54)
                     ],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
@@ -208,9 +212,9 @@ struct MomentCardBackground: View {
 
         return LinearGradient(
             colors: [
-                Color.white.opacity(0.64),
-                Color.prosePalNavy.opacity(prominence == .standard ? 0.18 : 0.28),
-                accentColor.opacity(prominence == .standard ? 0.18 : 0.32)
+                Color.prosePalGlassStroke,
+                Color.prosePalBorder.opacity(prominence == .standard ? 0.62 : 0.78),
+                accentColor.opacity(prominence == .standard ? 0.18 : 0.30)
             ],
             startPoint: .topLeading,
             endPoint: .bottomTrailing
@@ -238,20 +242,7 @@ struct MomentCardBackground: View {
     }
 
     private var borderWidth: CGFloat {
-        prominence == .standard ? 0.8 : 1
-    }
-
-    private var shadowColor: Color {
-        if shouldReduceTransparency {
-            return Color.clear
-        }
-
-        switch prominence {
-        case .warning:
-            return Color.prosePalWarning.opacity(0.12)
-        default:
-            return Color.black.opacity(prominence == .elevated ? 0.18 : 0.10)
-        }
+        prominence == .standard ? 0.5 : 1
     }
 
     private var shouldReduceTransparency: Bool {

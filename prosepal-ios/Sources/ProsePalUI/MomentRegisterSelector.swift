@@ -70,7 +70,7 @@ private struct MomentRegisterOption: View {
                 .lineLimit(1)
                 .minimumScaleFactor(0.76)
         }
-        .foregroundStyle(isSelected ? Color.prosePalPaper : Color.prosePalSlate)
+        .foregroundStyle(isSelected ? Color.prosePalTextOnAccent : Color.prosePalSlate)
         .padding(.horizontal, 13)
         .frame(height: 36)
         .frame(maxWidth: .infinity)
@@ -80,17 +80,9 @@ private struct MomentRegisterOption: View {
         }
         .overlay {
             Capsule(style: .continuous)
-                .stroke(
-                    isSelected ? Color.prosePalPaper.opacity(0.18) : accentColor.opacity(0.18),
-                    lineWidth: 1
-                )
+                .stroke(Color.prosePalGlassStrokeSoft, lineWidth: 0.5)
         }
-        .shadow(
-            color: isSelected ? accentColor.opacity(0.12) : .clear,
-            radius: 7,
-            x: 0,
-            y: 3
-        )
+        .prosePalElevation(isSelected ? .accent(accentColor) : .extraSmall)
         .accessibilityAddTraits(isSelected ? [.isSelected] : [])
     }
 
@@ -103,7 +95,7 @@ private struct MomentRegisterOption: View {
             return LinearGradient(
                 colors: isCareful
                     ? [Color.prosePalCare, Color.prosePalCare.opacity(0.94)]
-                    : [Color.prosePalCoral, Color.prosePalCoral.opacity(0.94)],
+                    : [Color.prosePalCoral, Color.prosePalAccentHover],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
@@ -111,8 +103,8 @@ private struct MomentRegisterOption: View {
 
         return LinearGradient(
             colors: [
-                Color.prosePalPaper.opacity(0.64),
-                Color.prosePalPaper.opacity(0.46)
+                Color.prosePalGlassFill2,
+                Color.prosePalPaper.opacity(0.36)
             ],
             startPoint: .topLeading,
             endPoint: .bottomTrailing

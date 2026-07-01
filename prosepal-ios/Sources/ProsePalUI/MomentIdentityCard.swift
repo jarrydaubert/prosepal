@@ -87,24 +87,24 @@ struct MomentScreenIdentityCard: View {
         .padding(18)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background {
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
+            RoundedRectangle(cornerRadius: ProsePalRadius.card, style: .continuous)
                 .fill(quietCardFill)
                 .overlay {
-                    RoundedRectangle(cornerRadius: 24, style: .continuous)
+                    RoundedRectangle(cornerRadius: ProsePalRadius.card, style: .continuous)
                         .stroke(
                             LinearGradient(
                                 colors: [
-                                    Color.white.opacity(colorScheme == .dark ? 0.18 : 0.52),
-                                    Color.prosePalNavy.opacity(colorScheme == .dark ? 0.24 : 0.10),
+                                    Color.prosePalGlassStroke.opacity(colorScheme == .dark ? 0.30 : 1),
+                                    Color.prosePalBorder.opacity(colorScheme == .dark ? 0.24 : 0.70),
                                     accentColor.opacity(colorScheme == .dark ? 0.18 : 0.10)
                                 ],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             ),
-                            lineWidth: 1
+                            lineWidth: 0.5
                         )
                 }
-                .shadow(color: Color.prosePalNavy.opacity(colorScheme == .dark ? 0.16 : 0.08), radius: 14, x: 0, y: 8)
+                .prosePalElevation(.small)
         }
     }
 

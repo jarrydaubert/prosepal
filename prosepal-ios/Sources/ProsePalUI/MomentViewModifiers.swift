@@ -13,7 +13,7 @@ extension View {
             }
     }
 
-    func momentInputSurface(isCareful: Bool = false, cornerRadius: CGFloat = 16) -> some View {
+    func momentInputSurface(isCareful: Bool = false, cornerRadius: CGFloat = ProsePalRadius.field) -> some View {
         self
             .background {
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
@@ -21,7 +21,7 @@ extension View {
                         LinearGradient(
                             colors: [
                                 Color.prosePalPaper,
-                                Color.prosePalCard
+                                Color.prosePalSurfaceSunken
                             ],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
@@ -32,14 +32,14 @@ extension View {
                             .stroke(
                                 LinearGradient(
                                     colors: [
-                                        Color.white.opacity(0.62),
+                                        Color.prosePalGlassStroke,
                                         (isCareful ? Color.prosePalCare : Color.prosePalCoral).opacity(0.22),
-                                        Color.prosePalNavy.opacity(0.12)
+                                        Color.prosePalBorder.opacity(0.70)
                                     ],
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
                                 ),
-                                lineWidth: 1
+                                lineWidth: 0.5
                             )
                     }
             }
@@ -51,8 +51,8 @@ extension View {
                 LinearGradient(
                     colors: [
                         Color.prosePalPaper,
-                        Color.prosePalCard,
-                        isCareful ? Color.prosePalCareCard : Color.prosePalCoralCard
+                        Color.prosePalSurface2,
+                        isCareful ? Color.prosePalCareCard : Color.prosePalAccentSoft
                     ],
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
@@ -111,11 +111,11 @@ private struct MomentControlBarSurfaceModifier: ViewModifier {
             content
                 .padding(8)
                 .background {
-                    RoundedRectangle(cornerRadius: 30, style: .continuous)
+                    RoundedRectangle(cornerRadius: ProsePalRadius.capsule, style: .continuous)
                         .fill(Color.prosePalPaper)
                         .overlay {
-                            RoundedRectangle(cornerRadius: 30, style: .continuous)
-                                .stroke(Color.prosePalNavy.opacity(0.18), lineWidth: 1)
+                            RoundedRectangle(cornerRadius: ProsePalRadius.capsule, style: .continuous)
+                                .stroke(Color.prosePalBorder, lineWidth: 0.5)
                         }
                 }
         } else {
@@ -130,8 +130,8 @@ private struct MomentControlBarSurfaceModifier: ViewModifier {
             content
                 .padding(8)
                 .glassEffect(
-                    .regular.tint(Color.prosePalPaper.opacity(0.44)).interactive(),
-                    in: .rect(cornerRadius: 30)
+                    .regular.tint(Color.prosePalGlassFill).interactive(),
+                    in: .rect(cornerRadius: ProsePalRadius.capsule)
                 )
         } else {
             barSurface(content: content)
