@@ -2998,18 +2998,27 @@ private struct MomentSheetView: View {
 
     @ViewBuilder
     private var writingPageFooter: some View {
-        ViewThatFits(in: .horizontal) {
-            HStack(spacing: 12) {
-                noteTools
+        Group {
+            if dynamicTypeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: 12) {
+                    noteTools
+                    writeFromPageButton
+                }
+            } else {
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: 12) {
+                        noteTools
 
-                Spacer(minLength: 8)
+                        Spacer(minLength: 8)
 
-                writeFromPageButton
-            }
+                        writeFromPageButton
+                    }
 
-            VStack(alignment: .leading, spacing: 12) {
-                noteTools
-                writeFromPageButton
+                    VStack(alignment: .leading, spacing: 12) {
+                        noteTools
+                        writeFromPageButton
+                    }
+                }
             }
         }
     }
@@ -3047,17 +3056,35 @@ private struct MomentSheetView: View {
                 await model.draftNow()
             }
         } label: {
-            Label(writingPageActionTitle, systemImage: model.isDrafting ? "hourglass" : "sparkles")
-                .font(.subheadline.weight(.semibold))
-                .lineLimit(1)
-                .minimumScaleFactor(0.82)
-                .frame(maxWidth: dynamicTypeSize.isAccessibilitySize ? .infinity : nil)
+            writeFromPageButtonLabel
         }
         .buttonStyle(.borderedProminent)
         .buttonBorderShape(.capsule)
         .controlSize(.regular)
         .tint(model.moment.isCarefulMode ? .prosePalCare : .prosePalCoral)
         .disabled(!model.canDraft || model.isDrafting)
+    }
+
+    @ViewBuilder
+    private var writeFromPageButtonLabel: some View {
+        if dynamicTypeSize.isAccessibilitySize {
+            HStack(spacing: 8) {
+                Image(systemName: model.isDrafting ? "hourglass" : "sparkles")
+                    .accessibilityHidden(true)
+
+                Text(writingPageActionTitle)
+                    .lineLimit(2)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .font(.subheadline.weight(.semibold))
+            .frame(maxWidth: .infinity, minHeight: 58)
+        } else {
+            Label(writingPageActionTitle, systemImage: model.isDrafting ? "hourglass" : "sparkles")
+                .font(.subheadline.weight(.semibold))
+                .lineLimit(1)
+                .minimumScaleFactor(0.82)
+        }
     }
 
     private var memorySection: some View {
