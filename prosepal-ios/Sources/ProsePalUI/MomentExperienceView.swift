@@ -940,6 +940,7 @@ private struct MomentDraftUseSheet: View {
     let onShareDestination: (String) -> Void
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     private let destinations = [
         MomentDraftShareDestination(id: "messages", title: "Messages", systemImage: "message.fill", tint: Color.prosePalCare),
@@ -949,7 +950,7 @@ private struct MomentDraftUseSheet: View {
     ]
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 14) {
             grabber
 
             Text("Use this draft")
@@ -975,9 +976,9 @@ private struct MomentDraftUseSheet: View {
             .foregroundStyle(Color.prosePalInk)
             .background(Color.prosePalPaper.opacity(0.78), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, 18)
         .padding(.top, 8)
-        .padding(.bottom, 18)
+        .padding(.bottom, 20)
         .background {
             MomentAtmosphericBackground(isCareful: request.bundle.lane == .takeMoreCare)
                 .opacity(0.36)
@@ -1008,50 +1009,66 @@ private struct MomentDraftUseSheet: View {
                 .font(.system(.callout, design: .serif))
                 .lineSpacing(3)
                 .foregroundStyle(Color.prosePalSlate)
-                .lineLimit(2)
+                .lineLimit(3)
                 .fixedSize(horizontal: false, vertical: true)
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 13)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.prosePalPaper.opacity(0.92), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .background(Color.prosePalPaper.opacity(0.94), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay {
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .stroke(Color.prosePalNavy.opacity(0.10), lineWidth: 1)
         }
         .accessibilityElement(children: .combine)
     }
 
     private var destinationRow: some View {
-        HStack(spacing: 8) {
+        LazyVGrid(columns: destinationColumns, spacing: 8) {
             ForEach(destinations) { destination in
-                ShareLink(item: request.bundle.messageText) {
-                    VStack(spacing: 7) {
-                        Image(systemName: destination.systemImage)
-                            .font(.system(size: 20, weight: .medium))
-                            .foregroundStyle(destination.tint)
-                            .frame(width: 40, height: 40)
-                            .background(Color.prosePalPaper.opacity(0.92), in: Circle())
-                            .shadow(color: Color.prosePalNavy.opacity(0.08), radius: 6, x: 0, y: 3)
-
-                        Text(destination.title)
-                            .font(.caption.weight(.medium))
-                            .foregroundStyle(Color.prosePalSlate)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.76)
-                    }
-                    .padding(.horizontal, 4)
-                    .padding(.vertical, 12)
-                    .frame(maxWidth: .infinity)
-                    .background(Color.prosePalPaper.opacity(0.42), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .stroke(Color.prosePalNavy.opacity(0.08), lineWidth: 1)
-                    }
-                }
+                destinationButton(destination)
                 .simultaneousGesture(TapGesture().onEnded {
                     onShareDestination(destination.id)
                 })
+            }
+        }
+    }
+
+    private var destinationColumns: [GridItem] {
+        if dynamicTypeSize.isAccessibilitySize {
+            return [GridItem(.flexible(), spacing: 8)]
+        }
+        return [
+            GridItem(.flexible(), spacing: 8),
+            GridItem(.flexible(), spacing: 8)
+        ]
+    }
+
+    private func destinationButton(_ destination: MomentDraftShareDestination) -> some View {
+        ShareLink(item: request.bundle.messageText) {
+            HStack(spacing: 10) {
+                Image(systemName: destination.systemImage)
+                    .font(.system(size: 18, weight: .medium))
+                    .foregroundStyle(destination.tint)
+                    .frame(width: 34, height: 34)
+                    .background(Color.prosePalPaper.opacity(0.94), in: Circle())
+                    .shadow(color: Color.prosePalNavy.opacity(0.08), radius: 6, x: 0, y: 3)
+
+                Text(destination.title)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(Color.prosePalSlate)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.82)
+
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 12)
+            .frame(maxWidth: .infinity)
+            .frame(height: 58)
+            .background(Color.prosePalPaper.opacity(0.46), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .stroke(Color.prosePalNavy.opacity(0.08), lineWidth: 1)
             }
         }
     }
@@ -1071,9 +1088,9 @@ private struct MomentDraftUseSheet: View {
                 onSave()
             }
         }
-        .background(Color.prosePalPaper.opacity(0.92), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .background(Color.prosePalPaper.opacity(0.94), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay {
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .stroke(Color.prosePalNavy.opacity(0.10), lineWidth: 1)
         }
     }
@@ -1103,7 +1120,7 @@ private struct MomentDraftUseSheet: View {
                     .accessibilityHidden(true)
             }
             .padding(.horizontal, 14)
-            .frame(height: 50)
+            .frame(height: 54)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -1575,7 +1592,7 @@ private struct MomentSheetView: View {
                 }
             )
             #if os(iOS)
-            .presentationDetents([.height(dynamicTypeSize.isAccessibilitySize ? 560 : 432), .medium])
+            .presentationDetents([.height(dynamicTypeSize.isAccessibilitySize ? 620 : 520)])
             .presentationDragIndicator(.hidden)
             .presentationBackground(.regularMaterial)
             #endif

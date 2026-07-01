@@ -937,6 +937,22 @@ not done.
   `prosepal-ios/evidence/ui-design-qa/generating-accessibility/03-draft-result-ax-actions-after.jpg`,
   and
   `prosepal-ios/evidence/ui-design-qa/generating-accessibility/04-draft-result-normal-after.jpg`.
+  Slice 28 evidence: revisited the draft `Use this draft` share sheet at normal
+  text size against `17 · Share / insert` in
+  `design-system/ui_kits/prosepal/screens-4.jsx`. The previous rendered sheet
+  packed Messages/Mail/Notes/More into four narrow cards and left the preview
+  plus lower actions feeling crowded. The sheet now uses a two-column
+  destination grid at normal sizes, falls back to one column for accessibility
+  sizes, gives the preview and copy/save rows kit-scaled padding and 16pt
+  corners, and uses a fixed custom detent so the title/grabber are not clipped
+  by the medium presentation. XcodeBuildMCP `ProsePal Staging` build/run passed
+  on `iPhone 17` with `--prosepal-use-mock-writing-service`; `snapshot_ui`
+  confirmed Messages, Mail, Notes, More, Copy to clipboard, Save to drafts, and
+  Cancel remain reachable. `swift build` and `swift test` passed. Latest
+  simulator screenshots:
+  `prosepal-ios/evidence/ui-design-qa/share-sheet/01-share-sheet-before.jpg`
+  and
+  `prosepal-ios/evidence/ui-design-qa/share-sheet/03-share-sheet-after-detent.jpg`.
 - [~] N-IOS-14 Native visual system and Moment rail/content discipline --
   evidence: `MomentSheetView.momentContent(viewportHeight:)`,
   `draftStartSection`, `shouldShowTabRail`, and `startNewMoment()` in
@@ -947,9 +963,11 @@ not done.
   `prosepal-ios/evidence/ui-design-qa/memory-vault/`. The populated row was
   seeded through the normal mock Moment flow and verified to navigate into the
   custom detail form. First Moment entry, active-note viewport, onboarding flow,
-  and draft-result detail chrome/actions Dynamic Type and Increase Contrast
-  simulator coverage exists at maximum accessibility text size. Broader Dynamic
-  Type, physical-device, VoiceOver, and Switch Control review remain.
+  draft-result detail chrome/actions Dynamic Type and Increase Contrast
+  simulator coverage exists at maximum accessibility text size, and the
+  draft-result share/use sheet has normal-size simulator spacing evidence.
+  Broader Dynamic Type, physical-device, VoiceOver, and Switch Control review
+  remain.
 - [~] iOS 26-first Liquid Glass direction is in code -- evidence:
   iOS 26 deployment target in `prosepal-ios/Package.swift` and
   `prosepal-ios/ProsePal.xcodeproj/project.pbxproj`; control-layer styling in
