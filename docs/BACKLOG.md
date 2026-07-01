@@ -918,6 +918,25 @@ not done.
   `prosepal-ios/evidence/ui-design-qa/onboarding-accessibility/07-ready-ax-reset-top.jpg`,
   and
   `prosepal-ios/evidence/ui-design-qa/onboarding-accessibility/08-welcome-normal-after.jpg`.
+  Slice 27 evidence: extended the initial-flow accessibility pass to the draft
+  result screen after generation. Maximum accessibility text showed the compact
+  `A draft` chrome colliding with the back/bookmark controls and the result-card
+  Copy/Share/Keep row truncating visually. Detail chrome now keeps the normal
+  centered kit layout at regular text sizes, but switches generation, draft
+  result, generation-error, and revise chrome to a two-tier accessibility layout:
+  controls first, screen title beneath, then content. The draft result footer
+  now stacks full-width action rows only at accessibility content sizes. XcodeBuildMCP
+  `ProsePal Staging` build/run passed on `iPhone 17` with
+  `--prosepal-use-mock-writing-service` and with
+  `--prosepal-use-mock-writing-service --prosepal-slow-mock-writing-service`;
+  `snapshot_ui` confirmed Back to today, Keep this draft, Draft text, Copy,
+  Share, Keep this, margin note, and refine controls remain reachable. `swift build`
+  and `swift test` passed; the simulator was restored to `large` text and
+  Increase Contrast disabled. Latest simulator screenshots:
+  `prosepal-ios/evidence/ui-design-qa/generating-accessibility/01-draft-result-ax-topchrome-after.jpg`,
+  `prosepal-ios/evidence/ui-design-qa/generating-accessibility/03-draft-result-ax-actions-after.jpg`,
+  and
+  `prosepal-ios/evidence/ui-design-qa/generating-accessibility/04-draft-result-normal-after.jpg`.
 - [~] N-IOS-14 Native visual system and Moment rail/content discipline --
   evidence: `MomentSheetView.momentContent(viewportHeight:)`,
   `draftStartSection`, `shouldShowTabRail`, and `startNewMoment()` in
@@ -927,10 +946,10 @@ not done.
   empty/populated overview states under
   `prosepal-ios/evidence/ui-design-qa/memory-vault/`. The populated row was
   seeded through the normal mock Moment flow and verified to navigate into the
-  custom detail form. First Moment entry, active-note viewport, and onboarding
-  flow Dynamic Type and Increase Contrast simulator coverage exists at maximum
-  accessibility text size. Broader Dynamic Type, physical-device, VoiceOver,
-  and Switch Control review remain.
+  custom detail form. First Moment entry, active-note viewport, onboarding flow,
+  and draft-result detail chrome/actions Dynamic Type and Increase Contrast
+  simulator coverage exists at maximum accessibility text size. Broader Dynamic
+  Type, physical-device, VoiceOver, and Switch Control review remain.
 - [~] iOS 26-first Liquid Glass direction is in code -- evidence:
   iOS 26 deployment target in `prosepal-ios/Package.swift` and
   `prosepal-ios/ProsePal.xcodeproj/project.pbxproj`; control-layer styling in

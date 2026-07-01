@@ -1900,9 +1900,15 @@ private struct MomentSheetView: View {
 
     private var topChromeBottomPadding: CGFloat {
         if isShowingInitialGenerationState {
-            return 6
+            return dynamicTypeSize.isAccessibilitySize ? 12 : 6
         }
-        return model.bundle != nil && !isShowingDraftSource ? 5 : 18
+        if model.bundle != nil && (isShowingReviseMode || !isShowingDraftSource) {
+            return dynamicTypeSize.isAccessibilitySize ? 12 : 5
+        }
+        if isShowingGenerationErrorState {
+            return dynamicTypeSize.isAccessibilitySize ? 12 : 18
+        }
+        return 18
     }
 
     @ViewBuilder
@@ -1963,109 +1969,169 @@ private struct MomentSheetView: View {
     }
 
     private var generatingTopChrome: some View {
-        ZStack {
-            Text("Writing…")
-                .font(.headline.weight(.semibold))
-                .foregroundStyle(Color.prosePalInk)
-                .lineLimit(1)
-                .frame(maxWidth: .infinity, alignment: .center)
-
-            HStack {
-                Button {
-                    model.resetDraftForMomentChange()
-                    isShowingDraftSource = true
-                    isShowingReviseMode = false
-                } label: {
-                    Label("Today", systemImage: "chevron.left")
-                        .font(.system(.body, design: .default).weight(.regular))
-                        .labelStyle(.titleAndIcon)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.88)
-                        .frame(minWidth: 76, alignment: .leading)
+        Group {
+            if dynamicTypeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: 6) {
+                    generatingBackButton
+                    detailChromeTitle("Writing…")
                 }
-                .buttonStyle(.plain)
-                .foregroundStyle(Color.prosePalCoralDeep)
-                .accessibilityLabel("Back to today")
+            } else {
+                ZStack {
+                    Text("Writing…")
+                        .font(.headline.weight(.semibold))
+                        .foregroundStyle(Color.prosePalInk)
+                        .lineLimit(1)
+                        .frame(maxWidth: .infinity, alignment: .center)
 
-                Spacer(minLength: 8)
+                    HStack {
+                        generatingBackButton
+
+                        Spacer(minLength: 8)
+                    }
+                }
+                .frame(height: 48)
             }
         }
-        .frame(height: 48)
         .frame(maxWidth: .infinity)
+    }
+
+    private var generatingBackButton: some View {
+        Button {
+            model.resetDraftForMomentChange()
+            isShowingDraftSource = true
+            isShowingReviseMode = false
+        } label: {
+            Label("Today", systemImage: "chevron.left")
+                .font(.system(.body, design: .default).weight(.regular))
+                .labelStyle(.titleAndIcon)
+                .lineLimit(1)
+                .minimumScaleFactor(0.88)
+                .frame(minWidth: dynamicTypeSize.isAccessibilitySize ? nil : 76, alignment: .leading)
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(Color.prosePalCoralDeep)
+        .accessibilityLabel("Back to today")
+    }
+
+    private func detailChromeTitle(_ title: String) -> some View {
+        Text(title)
+            .font(dynamicTypeSize.isAccessibilitySize ? .system(.title2, design: .default).weight(.semibold) : .headline.weight(.semibold))
+            .foregroundStyle(Color.prosePalInk)
+            .lineLimit(2)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity, alignment: dynamicTypeSize.isAccessibilitySize ? .leading : .center)
+            .accessibilityAddTraits(.isHeader)
     }
 
     private var draftResultTopChrome: some View {
-        HStack(alignment: .center) {
-            Button {
-                isShowingReviseMode = false
-                isShowingDraftSource = true
-            } label: {
-                Label("Today", systemImage: "chevron.left")
-                    .font(.system(.body, design: .default).weight(.regular))
-                    .labelStyle(.titleAndIcon)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.88)
-                    .frame(minWidth: 76, alignment: .leading)
-            }
-            .buttonStyle(.plain)
-            .foregroundStyle(Color.prosePalCoralDeep)
-            .accessibilityLabel("Back to today")
+        Group {
+            if dynamicTypeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack(alignment: .center, spacing: 12) {
+                        draftResultBackButton
 
-            Spacer(minLength: 8)
+                        Spacer(minLength: 12)
 
-            Text("A draft")
-                .font(.headline.weight(.semibold))
-                .foregroundStyle(Color.prosePalInk)
-                .lineLimit(1)
+                        draftResultSaveButton
+                    }
 
-            Spacer(minLength: 8)
-
-            Button {
-                if let bundle = model.bundle {
-                    save(bundle)
+                    detailChromeTitle("A draft")
                 }
-            } label: {
-                Image(systemName: "bookmark")
-                    .font(.system(size: 19, weight: .regular))
-                    .frame(width: 44, height: 44)
-                    .contentShape(Circle())
+            } else {
+                HStack(alignment: .center) {
+                    draftResultBackButton
+
+                    Spacer(minLength: 8)
+
+                    Text("A draft")
+                        .font(.headline.weight(.semibold))
+                        .foregroundStyle(Color.prosePalInk)
+                        .lineLimit(1)
+
+                    Spacer(minLength: 8)
+
+                    draftResultSaveButton
+                }
+                .frame(height: 48)
             }
-            .buttonStyle(.plain)
-            .foregroundStyle(Color.prosePalCoralDeep)
-            .accessibilityLabel("Keep this draft")
         }
-        .frame(height: 48)
         .frame(maxWidth: .infinity)
     }
 
-    private var generationErrorTopChrome: some View {
-        ZStack {
-            Text("A draft")
-                .font(.headline.weight(.semibold))
-                .foregroundStyle(Color.prosePalInk)
+    private var draftResultBackButton: some View {
+        Button {
+            isShowingReviseMode = false
+            isShowingDraftSource = true
+        } label: {
+            Label("Today", systemImage: "chevron.left")
+                .font(.system(.body, design: .default).weight(.regular))
+                .labelStyle(.titleAndIcon)
                 .lineLimit(1)
-                .frame(maxWidth: .infinity, alignment: .center)
+                .minimumScaleFactor(0.88)
+                .frame(minWidth: dynamicTypeSize.isAccessibilitySize ? nil : 76, alignment: .leading)
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(Color.prosePalCoralDeep)
+        .accessibilityLabel("Back to today")
+    }
 
-            HStack {
-                Button {
-                    returnToNoteAfterDraftFailure()
-                } label: {
-                    Label("Today", systemImage: "chevron.left")
-                        .font(.system(.body, design: .default).weight(.regular))
-                        .labelStyle(.titleAndIcon)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.88)
-                        .frame(minWidth: 76, alignment: .leading)
+    private var draftResultSaveButton: some View {
+        Button {
+            if let bundle = model.bundle {
+                save(bundle)
+            }
+        } label: {
+            Image(systemName: "bookmark")
+                .font(.system(size: 19, weight: .regular))
+                .frame(width: 44, height: 44)
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(Color.prosePalCoralDeep)
+        .accessibilityLabel("Keep this draft")
+    }
+
+    private var generationErrorTopChrome: some View {
+        Group {
+            if dynamicTypeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: 6) {
+                    generationErrorBackButton
+                    detailChromeTitle("A draft")
                 }
-                .buttonStyle(.plain)
-                .foregroundStyle(Color.prosePalCoralDeep)
-                .accessibilityLabel("Back to today")
+            } else {
+                ZStack {
+                    Text("A draft")
+                        .font(.headline.weight(.semibold))
+                        .foregroundStyle(Color.prosePalInk)
+                        .lineLimit(1)
+                        .frame(maxWidth: .infinity, alignment: .center)
 
-                Spacer(minLength: 8)
+                    HStack {
+                        generationErrorBackButton
+
+                        Spacer(minLength: 8)
+                    }
+                }
+                .frame(height: 48)
             }
         }
-        .frame(height: 48)
         .frame(maxWidth: .infinity)
+    }
+
+    private var generationErrorBackButton: some View {
+        Button {
+            returnToNoteAfterDraftFailure()
+        } label: {
+            Label("Today", systemImage: "chevron.left")
+                .font(.system(.body, design: .default).weight(.regular))
+                .labelStyle(.titleAndIcon)
+                .lineLimit(1)
+                .minimumScaleFactor(0.88)
+                .frame(minWidth: dynamicTypeSize.isAccessibilitySize ? nil : 76, alignment: .leading)
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(Color.prosePalCoralDeep)
+        .accessibilityLabel("Back to today")
     }
 
     private var quotaReachedTopChrome: some View {
@@ -2089,42 +2155,80 @@ private struct MomentSheetView: View {
     }
 
     private var draftReviseTopChrome: some View {
-        HStack(alignment: .center) {
-            Button {
-                endFocusedEditing()
-                isShowingReviseMode = false
-            } label: {
-                Image(systemName: "chevron.left")
-                    .font(.system(size: 17, weight: .regular))
-                    .frame(width: 44, height: 44)
-                    .contentShape(Circle())
-            }
-            .buttonStyle(.plain)
-            .foregroundStyle(Color.prosePalCoralDeep)
-            .accessibilityLabel("Back to draft")
+        Group {
+            if dynamicTypeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack(alignment: .center, spacing: 12) {
+                        Button {
+                            endFocusedEditing()
+                            isShowingReviseMode = false
+                        } label: {
+                            Label("Draft", systemImage: "chevron.left")
+                                .font(.system(.body, design: .default).weight(.regular))
+                                .labelStyle(.titleAndIcon)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.88)
+                        }
+                        .buttonStyle(.plain)
+                        .foregroundStyle(Color.prosePalCoralDeep)
+                        .accessibilityLabel("Back to draft")
 
-            Spacer(minLength: 8)
+                        Spacer(minLength: 12)
 
-            Text("Revise")
-                .font(.headline.weight(.semibold))
-                .foregroundStyle(Color.prosePalInk)
-                .lineLimit(1)
+                        Button {
+                            endFocusedEditing()
+                            isShowingReviseMode = false
+                        } label: {
+                            Text("Done")
+                                .font(.body.weight(.semibold))
+                                .foregroundStyle(Color.prosePalCoralDeep)
+                                .frame(minHeight: 44, alignment: .trailing)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Done revising")
+                    }
 
-            Spacer(minLength: 8)
-
-            Button {
-                endFocusedEditing()
-                isShowingReviseMode = false
-            } label: {
-                Text("Done")
-                    .font(.body.weight(.semibold))
+                    detailChromeTitle("Revise")
+                }
+            } else {
+                HStack(alignment: .center) {
+                    Button {
+                        endFocusedEditing()
+                        isShowingReviseMode = false
+                    } label: {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 17, weight: .regular))
+                            .frame(width: 44, height: 44)
+                            .contentShape(Circle())
+                    }
+                    .buttonStyle(.plain)
                     .foregroundStyle(Color.prosePalCoralDeep)
-                    .frame(minWidth: 54, minHeight: 44, alignment: .trailing)
+                    .accessibilityLabel("Back to draft")
+
+                    Spacer(minLength: 8)
+
+                    Text("Revise")
+                        .font(.headline.weight(.semibold))
+                        .foregroundStyle(Color.prosePalInk)
+                        .lineLimit(1)
+
+                    Spacer(minLength: 8)
+
+                    Button {
+                        endFocusedEditing()
+                        isShowingReviseMode = false
+                    } label: {
+                        Text("Done")
+                            .font(.body.weight(.semibold))
+                            .foregroundStyle(Color.prosePalCoralDeep)
+                            .frame(minWidth: 54, minHeight: 44, alignment: .trailing)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Done revising")
+                }
+                .frame(height: 48)
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Done revising")
         }
-        .frame(height: 48)
         .frame(maxWidth: .infinity)
     }
 
@@ -3820,21 +3924,7 @@ private struct MomentSheetView: View {
                 .frame(height: 0.5)
                 .padding(.horizontal, 12)
 
-            HStack(alignment: .center, spacing: 4) {
-                draftResultFooterButton(title: "Copy", systemImage: "doc.on.doc") {
-                    copy(bundle.messageText)
-                }
-
-                draftResultFooterButton(title: "Share", systemImage: "square.and.arrow.up") {
-                    openDraftUseSheet(bundle, source: "moment_result_card")
-                }
-
-                Spacer(minLength: 4)
-
-                draftResultFooterButton(title: "Keep this", systemImage: "checkmark", isAccent: true) {
-                    save(bundle)
-                }
-            }
+            draftResultFooter(bundle)
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
         }
@@ -3856,6 +3946,41 @@ private struct MomentSheetView: View {
                 shape.stroke(Color.prosePalNavy.opacity(0.12), lineWidth: 1)
             }
             .shadow(color: Color.prosePalCoralDeep.opacity(0.10), radius: 18, x: 0, y: 9)
+        }
+    }
+
+    @ViewBuilder
+    private func draftResultFooter(_ bundle: MomentDraftBundle) -> some View {
+        if dynamicTypeSize.isAccessibilitySize {
+            VStack(alignment: .center, spacing: 8) {
+                draftResultFooterButton(title: "Copy", systemImage: "doc.on.doc") {
+                    copy(bundle.messageText)
+                }
+
+                draftResultFooterButton(title: "Share", systemImage: "square.and.arrow.up") {
+                    openDraftUseSheet(bundle, source: "moment_result_card")
+                }
+
+                draftResultFooterButton(title: "Keep this", systemImage: "checkmark", isAccent: true) {
+                    save(bundle)
+                }
+            }
+        } else {
+            HStack(alignment: .center, spacing: 4) {
+                draftResultFooterButton(title: "Copy", systemImage: "doc.on.doc") {
+                    copy(bundle.messageText)
+                }
+
+                draftResultFooterButton(title: "Share", systemImage: "square.and.arrow.up") {
+                    openDraftUseSheet(bundle, source: "moment_result_card")
+                }
+
+                Spacer(minLength: 4)
+
+                draftResultFooterButton(title: "Keep this", systemImage: "checkmark", isAccent: true) {
+                    save(bundle)
+                }
+            }
         }
     }
 
@@ -3900,17 +4025,26 @@ private struct MomentSheetView: View {
         Button(action: action) {
             Label {
                 Text(title)
-                    .font(.subheadline.weight(isAccent ? .semibold : .medium))
+                    .font(dynamicTypeSize.isAccessibilitySize ? .body.weight(isAccent ? .semibold : .medium) : .subheadline.weight(isAccent ? .semibold : .medium))
             } icon: {
                 Image(systemName: systemImage)
-                    .font(.caption.weight(.medium))
+                    .font(dynamicTypeSize.isAccessibilitySize ? .body.weight(.medium) : .caption.weight(.medium))
             }
             .labelStyle(.titleAndIcon)
-            .lineLimit(1)
+            .lineLimit(dynamicTypeSize.isAccessibilitySize ? 2 : 1)
             .minimumScaleFactor(0.78)
-            .frame(height: 36)
-            .padding(.horizontal, 8)
+            .frame(
+                maxWidth: dynamicTypeSize.isAccessibilitySize ? .infinity : nil,
+                minHeight: dynamicTypeSize.isAccessibilitySize ? 52 : 36
+            )
+            .padding(.horizontal, dynamicTypeSize.isAccessibilitySize ? 14 : 8)
             .foregroundStyle(isAccent ? Color.prosePalCoralDeep : Color.prosePalSlate)
+            .background {
+                if dynamicTypeSize.isAccessibilitySize {
+                    Capsule(style: .continuous)
+                        .fill(isAccent ? Color.prosePalAccentSoft : Color.prosePalSurface2.opacity(0.72))
+                }
+            }
         }
         .buttonStyle(.plain)
     }
