@@ -5797,6 +5797,155 @@ private struct SavedMomentDraftLibraryCard: View {
     }
 }
 
+private struct MomentDetailTopChrome<Trailing: View>: View {
+    let title: String
+    let backAction: () -> Void
+    private let trailing: Trailing
+
+    init(
+        title: String,
+        backAction: @escaping () -> Void,
+        @ViewBuilder trailing: () -> Trailing
+    ) {
+        self.title = title
+        self.backAction = backAction
+        self.trailing = trailing()
+    }
+
+    var body: some View {
+        HStack(alignment: .center) {
+            Button {
+                backAction()
+            } label: {
+                Image(systemName: "chevron.left")
+                    .font(.system(size: 17, weight: .semibold))
+                    .frame(width: 42, height: 42)
+                    .contentShape(Circle())
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(Color.prosePalCoralDeep)
+            .background(Color.prosePalPaper.opacity(0.74), in: Circle())
+            .accessibilityLabel("Back")
+
+            Spacer(minLength: 12)
+
+            Text(title)
+                .font(.headline.weight(.semibold))
+                .foregroundStyle(Color.prosePalInk)
+                .lineLimit(1)
+
+            Spacer(minLength: 12)
+
+            trailing
+                .frame(minWidth: 54, alignment: .trailing)
+        }
+        .frame(height: 46)
+    }
+}
+
+private struct MomentDetailHero: View {
+    let systemImage: String
+    let title: String
+    let detail: String
+    var accent: Color = .prosePalCoralDeep
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Image(systemName: systemImage)
+                .font(.system(size: 24, weight: .regular))
+                .foregroundStyle(accent)
+                .frame(width: 52, height: 52)
+                .background(accent.opacity(0.12), in: RoundedRectangle(cornerRadius: 17, style: .continuous))
+                .accessibilityHidden(true)
+
+            VStack(alignment: .leading, spacing: 7) {
+                Text(title)
+                    .font(.system(size: 30, weight: .regular, design: .serif))
+                    .foregroundStyle(Color.prosePalInk)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Text(detail)
+                    .font(.callout)
+                    .foregroundStyle(Color.prosePalSlate.opacity(0.78))
+                    .lineSpacing(2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+private struct MomentDetailNotice: View {
+    let text: String
+
+    var body: some View {
+        Label(text, systemImage: "checkmark.circle")
+            .font(.callout.weight(.semibold))
+            .foregroundStyle(Color.prosePalCare)
+            .padding(.horizontal, 14)
+            .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+            .background(Color.prosePalCare.opacity(0.10), in: RoundedRectangle(cornerRadius: 15, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 15, style: .continuous)
+                    .stroke(Color.prosePalCare.opacity(0.16), lineWidth: 1)
+            }
+    }
+}
+
+private struct MomentDetailCard<Content: View>: View {
+    let title: String
+    let systemImage: String
+    let footer: String?
+    private let content: Content
+
+    init(
+        title: String,
+        systemImage: String,
+        footer: String? = nil,
+        @ViewBuilder content: () -> Content
+    ) {
+        self.title = title
+        self.systemImage = systemImage
+        self.footer = footer
+        self.content = content()
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 9) {
+                Image(systemName: systemImage)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Color.prosePalCoralDeep)
+                    .frame(width: 26, height: 26)
+                    .background(Color.prosePalCoral.opacity(0.12), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    .accessibilityHidden(true)
+
+                Text(title)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Color.prosePalInk)
+            }
+
+            content
+
+            if let footer {
+                Text(footer)
+                    .font(.footnote)
+                    .lineSpacing(2)
+                    .foregroundStyle(Color.prosePalSlate.opacity(0.72))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.prosePalPaper.opacity(0.94), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .stroke(Color.prosePalNavy.opacity(0.10), lineWidth: 1)
+        }
+        .shadow(color: Color.prosePalCoralDeep.opacity(0.06), radius: 10, x: 0, y: 5)
+    }
+}
+
 private struct SavedMomentDraftDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
@@ -5813,98 +5962,8 @@ private struct SavedMomentDraftDetailView: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                if let notice {
-                    Label(notice, systemImage: "checkmark.circle")
-                        .font(.callout.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                }
-
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(draft.title)
-                        .font(.system(.largeTitle, design: .serif).weight(.bold))
-                        .fixedSize(horizontal: false, vertical: true)
-
-                    Text(draft.subtitle)
-                        .font(.callout)
-                        .foregroundStyle(.secondary)
-                }
-
-                Group {
-                    if isEditing {
-                        TextField("Draft text", text: $editedMessageText, axis: .vertical)
-                            .font(.system(.title3, design: .serif))
-                            .lineSpacing(5)
-                            .lineLimit(8...18)
-                            .textFieldStyle(.plain)
-                    } else {
-                        Text(draft.messageText)
-                            .font(.system(.title3, design: .serif))
-                            .lineSpacing(5)
-                            .textSelection(.enabled)
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(18)
-                .background {
-                    MomentCardBackground(isCareful: false, prominence: .elevated)
-                }
-
-                HStack(spacing: 12) {
-                    if isEditing {
-                        Button {
-                            cancelEditing()
-                        } label: {
-                            Label("Cancel", systemImage: "xmark")
-                                .frame(maxWidth: .infinity)
-                        }
-                        .buttonStyle(.bordered)
-                        .buttonBorderShape(.capsule)
-
-                        Button {
-                            saveEdits()
-                        } label: {
-                            Label("Save", systemImage: "checkmark")
-                                .frame(maxWidth: .infinity)
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .buttonBorderShape(.capsule)
-                        .tint(.prosePalCoral)
-                        .disabled(!canSaveEdits)
-                    } else {
-                        Button {
-                            copy(draft.messageText)
-                        } label: {
-                            Label("Copy", systemImage: "doc.on.doc")
-                                .frame(maxWidth: .infinity)
-                        }
-                        .buttonStyle(.bordered)
-                        .buttonBorderShape(.capsule)
-
-                        Button {
-                            shareRequest = MomentShareRequest.text(draft.messageText)
-                            diagnostics.messageAction("share", source: "saved_draft", messageCharacters: draft.messageText.count)
-                        } label: {
-                            Label("Share", systemImage: "square.and.arrow.up")
-                                .frame(maxWidth: .infinity)
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .buttonBorderShape(.capsule)
-                        .tint(.prosePalCoral)
-                    }
-                }
-                .controlSize(.large)
-            }
-            .padding(20)
-        }
-        .background {
-            MomentAtmosphericBackground(isCareful: false)
-        }
-        .navigationTitle("Draft")
-        .toolbarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) {
+        VStack(spacing: 0) {
+            MomentDetailTopChrome(title: "Draft", backAction: { dismiss() }) {
                 Button(isEditing ? "Save" : "Edit") {
                     if isEditing {
                         saveEdits()
@@ -5912,18 +5971,128 @@ private struct SavedMomentDraftDetailView: View {
                         beginEditing()
                     }
                 }
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(isEditing && !canSaveEdits ? Color.prosePalSlate.opacity(0.45) : Color.prosePalCoralDeep)
+                .frame(minHeight: 42)
                 .disabled(isEditing && !canSaveEdits)
             }
+            .padding(.horizontal, 20)
+            .padding(.top, 10)
+            .padding(.bottom, 8)
 
-            ToolbarItem(placement: .destructiveAction) {
-                Button("Delete", role: .destructive) {
-                    modelContext.delete(draft)
-                    try? modelContext.save()
-                    dismiss()
+            ScrollView {
+                VStack(alignment: .leading, spacing: 18) {
+                    if let notice {
+                        MomentDetailNotice(text: notice)
+                    }
+
+                    MomentDetailHero(
+                        systemImage: draft.occasion.symbolName,
+                        title: draft.title,
+                        detail: draft.subtitle
+                    )
+
+                    MomentDetailCard(
+                        title: isEditing ? "Edit draft" : "Saved draft",
+                        systemImage: "bookmark"
+                    ) {
+                        if isEditing {
+                            TextField("Draft text", text: $editedMessageText, axis: .vertical)
+                                .font(.system(.title3, design: .serif))
+                                .lineSpacing(5)
+                                .lineLimit(8...18)
+                                .textFieldStyle(.plain)
+                                .foregroundStyle(Color.prosePalInk)
+                        } else {
+                            Text(draft.messageText)
+                                .font(.system(.title3, design: .serif))
+                                .lineSpacing(5)
+                                .foregroundStyle(Color.prosePalInk)
+                                .textSelection(.enabled)
+                        }
+                    }
+
+                    savedDraftActionRow
+
+                    savedDraftDeleteButton
                 }
+                .padding(.horizontal, 20)
+                .padding(.top, 12)
+                .padding(.bottom, 44)
+            }
+            .scrollIndicators(.hidden)
+        }
+        .background {
+            MomentAtmosphericBackground(isCareful: false)
+        }
+        #if os(iOS)
+        .toolbar(.hidden, for: .navigationBar)
+        #endif
+        .momentShareSheet($shareRequest)
+    }
+
+    @ViewBuilder
+    private var savedDraftActionRow: some View {
+        HStack(spacing: 12) {
+            if isEditing {
+                Button {
+                    cancelEditing()
+                } label: {
+                    Label("Cancel", systemImage: "xmark")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+                .buttonBorderShape(.capsule)
+                .tint(.prosePalCoralDeep)
+
+                Button {
+                    saveEdits()
+                } label: {
+                    Label("Save", systemImage: "checkmark")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .buttonBorderShape(.capsule)
+                .tint(.prosePalCoral)
+                .disabled(!canSaveEdits)
+            } else {
+                Button {
+                    copy(draft.messageText)
+                } label: {
+                    Label("Copy", systemImage: "doc.on.doc")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+                .buttonBorderShape(.capsule)
+                .tint(.prosePalCoralDeep)
+
+                Button {
+                    shareRequest = MomentShareRequest.text(draft.messageText)
+                    diagnostics.messageAction("share", source: "saved_draft", messageCharacters: draft.messageText.count)
+                } label: {
+                    Label("Share", systemImage: "square.and.arrow.up")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .buttonBorderShape(.capsule)
+                .tint(.prosePalCoral)
             }
         }
-        .momentShareSheet($shareRequest)
+        .controlSize(.large)
+    }
+
+    private var savedDraftDeleteButton: some View {
+        Button(role: .destructive) {
+            deleteDraft()
+        } label: {
+            Label("Delete draft", systemImage: "trash")
+                .font(.subheadline.weight(.semibold))
+                .frame(maxWidth: .infinity)
+                .frame(height: 48)
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(Color.red.opacity(0.86))
+        .background(Color.red.opacity(0.08), in: Capsule(style: .continuous))
     }
 
     private func copy(_ text: String) {
@@ -5961,6 +6130,12 @@ private struct SavedMomentDraftDetailView: View {
             isEditing = false
             notice = "Saved"
         }
+    }
+
+    private func deleteDraft() {
+        modelContext.delete(draft)
+        try? modelContext.save()
+        dismiss()
     }
 }
 
@@ -6349,59 +6524,76 @@ private struct RelationshipMemoryDetailView: View {
     }
 
     var body: some View {
-        Form {
-            if let notice {
-                Section {
-                    Label(notice, systemImage: "checkmark.circle")
-                }
-            }
-
-            Section("Person") {
-                TextField("Name", text: $personName)
-                    .momentNameInputBehavior()
-            }
-
-            Section {
-                TextField("What should ProsePal remember?", text: $text, axis: .vertical)
-                    .lineLimit(3...6)
-            } header: {
-                Text("Detail")
-            } footer: {
-                Text("Correct this whenever it becomes stale or wrong.")
-            }
-
-            Section {
-                Toggle("Use this in drafts", isOn: $isUserApproved)
-            } header: {
-                Text("Use")
-            } footer: {
-                Text("Why am I seeing this? You saved this detail for \(bead.personName). ProsePal uses approved details only when drafting for that person, and does not log the text.")
-            }
-
-            Section {
-                Button("Delete detail", role: .destructive) {
-                    modelContext.delete(bead)
-                    try? modelContext.save()
-                    dismiss()
-                }
-            }
-        }
-        .navigationTitle("Memory Detail")
-        .toolbarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .cancellationAction) {
-                Button("Done") {
-                    dismiss()
-                }
-            }
-
-            ToolbarItem(placement: .confirmationAction) {
+        VStack(spacing: 0) {
+            MomentDetailTopChrome(title: "Memory detail", backAction: { dismiss() }) {
                 Button("Save") {
                     save()
                 }
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(canSave ? Color.prosePalCoralDeep : Color.prosePalSlate.opacity(0.45))
+                .frame(minHeight: 42)
                 .disabled(!canSave)
             }
+            .padding(.horizontal, 20)
+            .padding(.top, 10)
+            .padding(.bottom, 8)
+
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    if let notice {
+                        MomentDetailNotice(text: notice)
+                    }
+
+                    MomentDetailHero(
+                        systemImage: "text.badge.checkmark",
+                        title: "Saved detail",
+                        detail: "Keep only details that should help future drafts for this person."
+                    )
+
+                    MomentDetailCard(title: "Person", systemImage: "person") {
+                        TextField("Name", text: $personName)
+                            .momentNameInputBehavior()
+                            .font(.body.weight(.medium))
+                            .textFieldStyle(.plain)
+                            .foregroundStyle(Color.prosePalInk)
+                    }
+
+                    MomentDetailCard(
+                        title: "Detail",
+                        systemImage: "quote.bubble",
+                        footer: "Correct this whenever it becomes stale or wrong."
+                    ) {
+                        TextField("What should ProsePal remember?", text: $text, axis: .vertical)
+                            .font(.system(.body, design: .serif))
+                            .lineSpacing(4)
+                            .lineLimit(3...7)
+                            .textFieldStyle(.plain)
+                            .foregroundStyle(Color.prosePalInk)
+                    }
+
+                    memoryUseCard(
+                        isOn: $isUserApproved,
+                        footer: "Why am I seeing this? You saved this detail for \(bead.personName). ProsePal uses approved details only when drafting for that person, and does not log the text."
+                    )
+
+                    detailDeleteButton(title: "Delete detail") {
+                        modelContext.delete(bead)
+                        try? modelContext.save()
+                        dismiss()
+                    }
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 12)
+                .padding(.bottom, 44)
+            }
+            .scrollIndicators(.hidden)
         }
+        .background {
+            MomentAtmosphericBackground(isCareful: false)
+        }
+        #if os(iOS)
+        .toolbar(.hidden, for: .navigationBar)
+        #endif
     }
 
     private var canSave: Bool {
@@ -6420,6 +6612,27 @@ private struct RelationshipMemoryDetailView: View {
         withAnimation(.easeInOut(duration: 0.18)) {
             notice = "Saved"
         }
+    }
+
+    private func memoryUseCard(isOn: Binding<Bool>, footer: String) -> some View {
+        MomentDetailCard(title: "Use", systemImage: "checkmark.seal", footer: footer) {
+            Toggle("Use this in drafts", isOn: isOn)
+                .font(.body.weight(.medium))
+                .foregroundStyle(Color.prosePalInk)
+                .tint(.prosePalCare)
+        }
+    }
+
+    private func detailDeleteButton(title: String, action: @escaping () -> Void) -> some View {
+        Button(role: .destructive, action: action) {
+            Label(title, systemImage: "trash")
+                .font(.subheadline.weight(.semibold))
+                .frame(maxWidth: .infinity)
+                .frame(height: 48)
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(Color.red.opacity(0.86))
+        .background(Color.red.opacity(0.08), in: Capsule(style: .continuous))
     }
 }
 
@@ -6440,59 +6653,76 @@ private struct RelationshipVoiceCardDetailView: View {
     }
 
     var body: some View {
-        Form {
-            if let notice {
-                Section {
-                    Label(notice, systemImage: "checkmark.circle")
-                }
-            }
-
-            Section("Person") {
-                TextField("Name", text: $personName)
-                    .momentNameInputBehavior()
-            }
-
-            Section {
-                TextField("How should ProsePal sound with this person?", text: $summary, axis: .vertical)
-                    .lineLimit(3...6)
-            } header: {
-                Text("Voice")
-            } footer: {
-                Text("Use this for style only, not as a fact to quote.")
-            }
-
-            Section {
-                Toggle("Use this in drafts", isOn: $isUserApproved)
-            } header: {
-                Text("Use")
-            } footer: {
-                Text("Why am I seeing this? You saved this voice card for \(voiceCard.personName). ProsePal uses approved voice cards only when drafting for that person, and does not log the text.")
-            }
-
-            Section {
-                Button("Delete voice card", role: .destructive) {
-                    modelContext.delete(voiceCard)
-                    try? modelContext.save()
-                    dismiss()
-                }
-            }
-        }
-        .navigationTitle("Voice Card")
-        .toolbarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .cancellationAction) {
-                Button("Done") {
-                    dismiss()
-                }
-            }
-
-            ToolbarItem(placement: .confirmationAction) {
+        VStack(spacing: 0) {
+            MomentDetailTopChrome(title: "Voice card", backAction: { dismiss() }) {
                 Button("Save") {
                     save()
                 }
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(canSave ? Color.prosePalCoralDeep : Color.prosePalSlate.opacity(0.45))
+                .frame(minHeight: 42)
                 .disabled(!canSave)
             }
+            .padding(.horizontal, 20)
+            .padding(.top, 10)
+            .padding(.bottom, 8)
+
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    if let notice {
+                        MomentDetailNotice(text: notice)
+                    }
+
+                    MomentDetailHero(
+                        systemImage: "person.crop.square",
+                        title: "Voice card",
+                        detail: "A style note for how drafts should sound with this person."
+                    )
+
+                    MomentDetailCard(title: "Person", systemImage: "person") {
+                        TextField("Name", text: $personName)
+                            .momentNameInputBehavior()
+                            .font(.body.weight(.medium))
+                            .textFieldStyle(.plain)
+                            .foregroundStyle(Color.prosePalInk)
+                    }
+
+                    MomentDetailCard(
+                        title: "Voice",
+                        systemImage: "textformat.size",
+                        footer: "Use this for style only, not as a fact to quote."
+                    ) {
+                        TextField("How should ProsePal sound with this person?", text: $summary, axis: .vertical)
+                            .font(.system(.body, design: .serif))
+                            .lineSpacing(4)
+                            .lineLimit(3...7)
+                            .textFieldStyle(.plain)
+                            .foregroundStyle(Color.prosePalInk)
+                    }
+
+                    memoryUseCard(
+                        isOn: $isUserApproved,
+                        footer: "Why am I seeing this? You saved this voice card for \(voiceCard.personName). ProsePal uses approved voice cards only when drafting for that person, and does not log the text."
+                    )
+
+                    detailDeleteButton(title: "Delete voice card") {
+                        modelContext.delete(voiceCard)
+                        try? modelContext.save()
+                        dismiss()
+                    }
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 12)
+                .padding(.bottom, 44)
+            }
+            .scrollIndicators(.hidden)
         }
+        .background {
+            MomentAtmosphericBackground(isCareful: false)
+        }
+        #if os(iOS)
+        .toolbar(.hidden, for: .navigationBar)
+        #endif
     }
 
     private var canSave: Bool {
@@ -6511,6 +6741,27 @@ private struct RelationshipVoiceCardDetailView: View {
         withAnimation(.easeInOut(duration: 0.18)) {
             notice = "Saved"
         }
+    }
+
+    private func memoryUseCard(isOn: Binding<Bool>, footer: String) -> some View {
+        MomentDetailCard(title: "Use", systemImage: "checkmark.seal", footer: footer) {
+            Toggle("Use this in drafts", isOn: isOn)
+                .font(.body.weight(.medium))
+                .foregroundStyle(Color.prosePalInk)
+                .tint(.prosePalCare)
+        }
+    }
+
+    private func detailDeleteButton(title: String, action: @escaping () -> Void) -> some View {
+        Button(role: .destructive, action: action) {
+            Label(title, systemImage: "trash")
+                .font(.subheadline.weight(.semibold))
+                .frame(maxWidth: .infinity)
+                .frame(height: 48)
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(Color.red.opacity(0.86))
+        .background(Color.red.opacity(0.08), in: Capsule(style: .continuous))
     }
 }
 

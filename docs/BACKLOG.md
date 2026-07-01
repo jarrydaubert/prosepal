@@ -488,9 +488,8 @@ not done.
   update this backlog item or its child items with evidence. Partial because the
   plan exists, but execution remains open.
   The design system now lives in-repo at `design-system/`. Outstanding
-  canonical-kit gaps: remaining stock detail/edit forms for relationship memory
-  and saved drafts; full token parity for the in-repo
-  color/radius/elevation/glass system; and final Dynamic Type/VoiceOver/Switch
+  canonical-kit gaps: full token parity for the in-repo
+  color/radius/elevation/glass system, and final Dynamic Type/VoiceOver/Switch
   Control/physical-device review.
   Slice 1 evidence: visual primitives were extracted from
   `MomentExperienceView` into focused SwiftUI files
@@ -830,6 +829,24 @@ not done.
   `prosepal-ios/evidence/ui-design-qa/first-screen/13-simulator-entry-tone-refine.jpg`
   and
   `prosepal-ios/evidence/ui-design-qa/first-screen/14-simulator-active-tone-refine.jpg`.
+  Slice 22 evidence: replaced the remaining stock detail/edit surfaces for
+  saved drafts, relationship details, and voice cards with custom ProsePal
+  paper/detail chrome. Saved-draft detail now uses bespoke back/edit chrome,
+  a serif paper draft card, explicit copy/share/edit/delete actions, and a
+  separate edit state. Relationship memory and voice-card detail no longer use
+  stock `Form`; they use paper edit cards for person/content, visible Save,
+  approved-use toggles, explanatory trust copy, delete actions, and a custom
+  saved notice. XcodeBuildMCP `ProsePal Staging` build/run passed on `iPhone 17`
+  with `--prosepal-use-mock-writing-service`; simulator QA seeded and opened a
+  saved draft, a relationship detail, and a voice card through normal app flows.
+  `snapshot_ui` confirmed the custom detail targets and edit/save/delete
+  controls. `swift build` and `swift test` passed; `swift test` emitted
+  transient CoreData XPC warnings during vault tests but completed with 0
+  failures. Latest simulator screenshots:
+  `prosepal-ios/evidence/ui-design-qa/detail-forms/01-saved-draft-detail.jpg`,
+  `prosepal-ios/evidence/ui-design-qa/detail-forms/02-saved-draft-edit.jpg`,
+  `prosepal-ios/evidence/ui-design-qa/detail-forms/03-memory-detail.jpg`, and
+  `prosepal-ios/evidence/ui-design-qa/detail-forms/04-voice-card-detail.jpg`.
 - [~] N-IOS-14 Native visual system and Moment rail/content discipline --
   evidence: `MomentSheetView.momentContent(viewportHeight:)`,
   `draftStartSection`, `shouldShowTabRail`, and `startNewMoment()` in
@@ -839,8 +856,8 @@ not done.
   empty/populated overview states under
   `prosepal-ios/evidence/ui-design-qa/memory-vault/`. The populated row was
   seeded through the normal mock Moment flow and verified to navigate into the
-  existing detail form. Physical-device, Dynamic Type, VoiceOver, Switch
-  Control, and remaining detail-form polish remain.
+  custom detail form. Physical-device, Dynamic Type, VoiceOver, and Switch
+  Control review remain.
 - [~] iOS 26-first Liquid Glass direction is in code -- evidence:
   iOS 26 deployment target in `prosepal-ios/Package.swift` and
   `prosepal-ios/ProsePal.xcodeproj/project.pbxproj`; control-layer styling in
