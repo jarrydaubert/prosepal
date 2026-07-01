@@ -65,6 +65,7 @@ func appleSignInSuccessStoresSessionAndRefreshesEntitlement() async throws {
     #expect(account.isSignedIn)
     #expect(account.signedInEmail == "user@example.com")
     #expect(account.isPremiumUnlocked)
+    #expect(account.subscriptionEntitlement.productID == "com.prosepal.pro.yearly")
     #expect(try await store.loadSession()?.accessToken == "access-token")
 }
 
@@ -112,11 +113,13 @@ func signOutClearsPersistedSessionAndPremiumState() async throws {
     await account.loadInitialState()
     #expect(account.isSignedIn)
     #expect(account.isPremiumUnlocked)
+    #expect(account.subscriptionEntitlement.isActive)
 
     await account.signOut()
 
     #expect(account.isSignedIn == false)
     #expect(account.isPremiumUnlocked == false)
+    #expect(account.subscriptionEntitlement == .inactive)
     #expect(try await store.loadSession() == nil)
     #expect(await authClient.signOutTokens() == ["signed-in-token"])
 }
@@ -143,6 +146,7 @@ func subscriptionProductsSelectRecommendedPlanAndPurchaseUnlocksPremium() async 
 
     await account.purchasePremium(source: "paywall")
     #expect(account.isPremiumUnlocked)
+    #expect(account.subscriptionEntitlement.productID == yearly.id)
     #expect(account.notice?.title == "Premium purchase completed")
     #expect(await subscriptionClient.purchasedProductIDs() == [yearly.id])
 }
@@ -192,12 +196,14 @@ func restorePurchasesHandlesActiveAndNotEntitledStates() async {
 
     await account.restorePurchases(source: "paywall")
     #expect(account.isPremiumUnlocked)
+    #expect(account.subscriptionEntitlement.productID == "com.prosepal.pro.yearly")
     #expect(account.notice?.title == "Premium restored")
 
     await subscriptionClient.setRestoreResult(SubscriptionPurchaseResult(status: .notEntitled))
     await account.restorePurchases(source: "paywall")
 
     #expect(account.isPremiumUnlocked == false)
+    #expect(account.subscriptionEntitlement == .inactive)
     #expect(account.notice?.title == "No active subscription found")
 }
 

@@ -163,10 +163,21 @@ private enum MessageWritingServiceFactory {
 private enum ProsePalDebugLaunchArguments {
     static let mockWritingService = "--prosepal-use-mock-writing-service"
     static let slowMockWritingService = "--prosepal-slow-mock-writing-service"
+    static let mockSubscriptionService = "--prosepal-use-mock-subscription-service"
+    static let forcePremium = "--prosepal-force-premium"
     static let reduceTransparency = "--prosepal-force-reduce-transparency"
 
     static var usesMockWritingService: Bool {
         ProcessInfo.processInfo.arguments.contains(mockWritingService)
+    }
+
+    static var usesMockSubscriptionService: Bool {
+        ProcessInfo.processInfo.arguments.contains(mockSubscriptionService) ||
+            ProcessInfo.processInfo.arguments.contains(forcePremium)
+    }
+
+    static var forcesPremiumSubscription: Bool {
+        ProcessInfo.processInfo.arguments.contains(forcePremium)
     }
 
     static var forcesReduceTransparency: Bool {
@@ -198,6 +209,16 @@ private enum SubscriptionClientFactory {
     static func makeClient(authSessionController: AuthSessionController?) -> (any SubscriptionClient)? {
         let config = NativeRuntimeConfig()
         let productIDs = config.list(named: "PROSEPAL_PREMIUM_PRODUCT_IDS")
+
+        #if DEBUG
+        if ProsePalDebugLaunchArguments.usesMockSubscriptionService {
+            return DebugSubscriptionClient(
+                productIDs: productIDs,
+                isPremiumUnlocked: ProsePalDebugLaunchArguments.forcesPremiumSubscription
+            )
+        }
+        #endif
+
         guard !productIDs.isEmpty else { return nil }
 
         #if canImport(StoreKit)
@@ -223,3 +244,76 @@ private enum SubscriptionClientFactory {
         #endif
     }
 }
+
+#if DEBUG
+private struct DebugSubscriptionClient: SubscriptionClient {
+    var productIDs: [String]
+    var isPremiumUnlocked: Bool
+
+    func loadProducts() async throws -> [SubscriptionProduct] {
+        products
+    }
+
+    func currentEntitlement() async throws -> SubscriptionEntitlement {
+        isPremiumUnlocked ? activeEntitlement(productID: yearlyProductID) : .inactive
+    }
+
+    func purchase(productID: String) async throws -> SubscriptionPurchaseResult {
+        SubscriptionPurchaseResult(
+            status: .purchased,
+            entitlement: activeEntitlement(productID: productID)
+        )
+    }
+
+    func restorePurchases() async throws -> SubscriptionPurchaseResult {
+        SubscriptionPurchaseResult(
+            status: isPremiumUnlocked ? .restored : .notEntitled,
+            entitlement: isPremiumUnlocked ? activeEntitlement(productID: yearlyProductID) : .inactive
+        )
+    }
+
+    private var products: [SubscriptionProduct] {
+        [
+            SubscriptionProduct(
+                id: yearlyProductID,
+                displayName: "Yearly",
+                displayPrice: "$39.99",
+                durationLabel: "Yearly",
+                isRecommended: true
+            ),
+            SubscriptionProduct(
+                id: monthlyProductID,
+                displayName: "Monthly",
+                displayPrice: "$5.99",
+                durationLabel: "Monthly"
+            ),
+            SubscriptionProduct(
+                id: weeklyProductID,
+                displayName: "Weekly",
+                displayPrice: "$1.99",
+                durationLabel: "Weekly"
+            )
+        ]
+    }
+
+    private var yearlyProductID: String {
+        productIDs.first { $0.localizedCaseInsensitiveContains("yearly") } ?? "com.prosepal.pro.yearly"
+    }
+
+    private var monthlyProductID: String {
+        productIDs.first { $0.localizedCaseInsensitiveContains("monthly") } ?? "com.prosepal.pro.monthly"
+    }
+
+    private var weeklyProductID: String {
+        productIDs.first { $0.localizedCaseInsensitiveContains("weekly") } ?? "com.prosepal.pro.weekly"
+    }
+
+    private func activeEntitlement(productID: String) -> SubscriptionEntitlement {
+        SubscriptionEntitlement(
+            isActive: true,
+            productID: productID,
+            expiresAt: Calendar.current.date(byAdding: .year, value: 1, to: Date())
+        )
+    }
+}
+#endif

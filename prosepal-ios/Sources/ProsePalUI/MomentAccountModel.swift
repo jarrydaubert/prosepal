@@ -10,6 +10,7 @@ public final class MomentAccountModel {
     public private(set) var signedInEmail: String?
     public private(set) var isSigningIn = false
     public private(set) var isPremiumUnlocked = false
+    public private(set) var subscriptionEntitlement: SubscriptionEntitlement = .inactive
     public private(set) var subscriptionProducts: [SubscriptionProduct] = []
     public var selectedSubscriptionProductID: String?
     public private(set) var isLoadingSubscriptions = false
@@ -89,6 +90,11 @@ public final class MomentAccountModel {
         }
 
         return displayPrice
+    }
+
+    public var activeSubscriptionProduct: SubscriptionProduct? {
+        guard let productID = subscriptionEntitlement.productID else { return nil }
+        return subscriptionProducts.first { $0.id == productID }
     }
 
     public var premiumRenewalDisclosureText: String {
@@ -311,6 +317,7 @@ public final class MomentAccountModel {
         guard !isRefreshingSubscriptionEntitlement else { return }
         guard let subscriptionClient else {
             isPremiumUnlocked = false
+            subscriptionEntitlement = .inactive
             diagnostics.subscriptionEvent(
                 "subscription_entitlement_unconfigured",
                 source: source,
@@ -326,6 +333,7 @@ public final class MomentAccountModel {
         do {
             let entitlement = try await subscriptionClient.currentEntitlement()
             isPremiumUnlocked = entitlement.isActive
+            subscriptionEntitlement = entitlement
             subscriptionErrorMessage = nil
             diagnostics.subscriptionEvent(
                 "subscription_entitlement_refresh_succeeded",
@@ -334,6 +342,7 @@ public final class MomentAccountModel {
             )
         } catch let error as SubscriptionError {
             isPremiumUnlocked = false
+            subscriptionEntitlement = .inactive
             subscriptionErrorMessage = error.userSafeMessage
             diagnostics.subscriptionEvent(
                 "subscription_entitlement_refresh_failed",
@@ -342,6 +351,7 @@ public final class MomentAccountModel {
             )
         } catch {
             isPremiumUnlocked = false
+            subscriptionEntitlement = .inactive
             subscriptionErrorMessage = SubscriptionError.unexpectedResponse.userSafeMessage
             diagnostics.subscriptionEvent(
                 "subscription_entitlement_refresh_failed",
@@ -535,14 +545,17 @@ public final class MomentAccountModel {
 
         if usableSession == nil {
             isPremiumUnlocked = false
+            subscriptionEntitlement = .inactive
         }
     }
 
     private func applySubscriptionPurchaseResult(_ result: SubscriptionPurchaseResult, source: String) {
         if result.entitlement.isActive {
             isPremiumUnlocked = true
+            subscriptionEntitlement = result.entitlement
         } else if result.status == .restored || result.status == .notEntitled {
             isPremiumUnlocked = false
+            subscriptionEntitlement = .inactive
         }
 
         diagnostics.subscriptionEvent(

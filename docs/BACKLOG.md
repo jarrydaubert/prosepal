@@ -488,11 +488,11 @@ not done.
   update this backlog item or its child items with evidence. Partial because the
   plan exists, but execution remains open.
   The design system now lives in-repo at `design-system/`. Outstanding
-  canonical-kit gaps: `14`/`15` free/pro plan detail screens; `17` custom
-  share/insert sheet; `18` copied toast; `19` offline banner/state; `20`
-  generation-error full state; `21` quota-reached state; remaining stock
-  detail/edit forms for relationship memory and saved drafts; full token parity
-  for the in-repo color/radius/elevation/glass system; and final
+  canonical-kit gaps: `17` custom share/insert sheet; `18` copied toast; `19`
+  offline banner/state; `20` generation-error full state; `21` quota-reached
+  state; remaining stock detail/edit forms for relationship memory and saved
+  drafts; full token parity for the in-repo color/radius/elevation/glass
+  system; and final
   Dynamic Type/VoiceOver/Switch Control/physical-device review.
   Slice 1 evidence: visual primitives were extracted from
   `MomentExperienceView` into focused SwiftUI files
@@ -741,6 +741,22 @@ not done.
   `snapshot_ui` confirmed the generation screen and transition into `A draft`.
   Latest simulator screenshot:
   `prosepal-ios/evidence/ui-design-qa/generating/01-simulator-generating.jpg`.
+  Slice 16 evidence: performed free/pro plan-detail passes against `14 · Plan ·
+  Free` and `15 · Plan · Pro` in
+  `design-system/ui_kits/prosepal/screens-3.jsx`. Settings now routes the
+  subscription row into a native `Your plan` detail surface: free state includes
+  a usage-style card and Pro upsell matching the kit spacing, while avoiding
+  hardcoded quota counts until server-owned account usage is exposed to the UI;
+  Pro state includes the warm gradient plan card, included-feature rows, and
+  manage-subscription link. `MomentAccountModel` now preserves the active
+  `SubscriptionEntitlement` for display, and a debug-only mock subscription path
+  (`--prosepal-use-mock-subscription-service` / `--prosepal-force-premium`)
+  enables simulator QA of free/pro states without changing production StoreKit
+  behavior. `swift build` and `swift test` passed; XcodeBuildMCP
+  `ProsePal Staging` build/run passed on `iPhone 17` for normal free-state QA
+  and forced-premium QA. Latest simulator screenshots:
+  `prosepal-ios/evidence/ui-design-qa/plan/01-simulator-plan-free.jpg` and
+  `prosepal-ios/evidence/ui-design-qa/plan/02-simulator-plan-pro.jpg`.
 - [~] N-IOS-14 Native visual system and Moment rail/content discipline --
   evidence: `MomentSheetView.momentContent(viewportHeight:)`,
   `draftStartSection`, `shouldShowTabRail`, and `startNewMoment()` in
