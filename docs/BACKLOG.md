@@ -398,6 +398,8 @@ not done.
   `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`,
   `docs/FEATURE_STATUS.csv` row `US-036`, and
   `prosepal-ios/evidence/feature-status/us-036-staging-product-ids-wired-products-unavailable.jpg`.
+  Normal-size layout evidence also exists at
+  `prosepal-ios/evidence/ui-design-qa/paywall-spacing/01-paywall-after.jpg`.
   Partial because staging now passes product IDs into the app, but StoreKit
   still returns zero products under the current simulator launch; local StoreKit
   product-serving, TestFlight/sandbox plan-selection, and active restore
@@ -989,6 +991,21 @@ not done.
   `prosepal-ios/evidence/ui-design-qa/offline-spacing/01-offline-before.jpg`
   and
   `prosepal-ios/evidence/ui-design-qa/offline-spacing/02-offline-after.jpg`.
+  Slice 31 evidence: revisited the paywall at normal text size against `16 ·
+  Paywall` in `design-system/ui_kits/prosepal/screens-3.jsx`. The previous
+  rendered unavailable-products state had the right App Review elements, but the
+  hero, feature panel, subscription-unavailable card, legal links, and optional
+  account sign-in card were competing for the first viewport, with the Apple
+  button clipped at the bottom edge. The paywall now uses tighter kit-sized
+  hero/feature spacing, keeps `Retry` prominent for the unavailable StoreKit
+  state, moves Terms/Privacy fine print above the optional account card, and
+  uses a paywall-only compact Apple sign-in control while leaving the settings
+  sign-in control unchanged. XcodeBuildMCP `ProsePal Staging` build/run passed
+  on `iPhone 17` with `--prosepal-use-mock-writing-service`; `snapshot_ui`
+  confirmed Close, Restore, Retry, Terms, Privacy, and Continue with Apple
+  remain reachable. `swift build` and `swift test` passed. Latest simulator
+  screenshot:
+  `prosepal-ios/evidence/ui-design-qa/paywall-spacing/01-paywall-after.jpg`.
 - [~] N-IOS-14 Native visual system and Moment rail/content discipline --
   evidence: `MomentSheetView.momentContent(viewportHeight:)`,
   `draftStartSection`, `shouldShowTabRail`, and `startNewMoment()` in

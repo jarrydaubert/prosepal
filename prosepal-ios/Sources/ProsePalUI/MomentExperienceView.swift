@@ -8609,6 +8609,7 @@ private enum MomentLocalDataExportError: Error {
 private struct MomentAppleSignInControl: View {
     @Bindable var account: MomentAccountModel
     let source: String
+    var height: CGFloat = 52
 
     var body: some View {
         #if canImport(AuthenticationServices)
@@ -8620,7 +8621,7 @@ private struct MomentAppleSignInControl: View {
                 handle(result)
             }
             .signInWithAppleButtonStyle(.black)
-            .frame(maxWidth: .infinity, minHeight: 52, maxHeight: 52)
+            .frame(maxWidth: .infinity, minHeight: height, maxHeight: height)
             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             .disabled(account.isSigningIn)
             .accessibilityLabel("Continue with Apple")
@@ -8640,6 +8641,7 @@ private struct MomentAppleSignInControl: View {
                 .frame(maxWidth: .infinity)
         }
         .buttonStyle(.bordered)
+        .frame(maxWidth: .infinity, minHeight: height, maxHeight: height)
         .controlSize(.large)
         .tint(.prosePalNavy)
         .disabled(account.isSigningIn)
@@ -8682,17 +8684,18 @@ private struct MomentPaywallSheet: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
+                VStack(alignment: .leading, spacing: 14) {
                     paywallTopChrome
                     paywallHero
                     paywallFeaturePanel
                     productSection
                     purchaseActionSection
-                    accountSection
                     paywallFinePrint
+                    accountSection
                 }
-                .padding(18)
-                .padding(.bottom, 28)
+                .padding(.horizontal, 18)
+                .padding(.top, 14)
+                .padding(.bottom, 30)
             }
             .scrollIndicators(.hidden)
             .background {
@@ -8741,15 +8744,15 @@ private struct MomentPaywallSheet: View {
             .foregroundStyle(Color.prosePalCoralDeep)
             .disabled(account.isRestoringPurchases)
         }
-        .padding(.top, 2)
+        .padding(.top, 0)
     }
 
     private var paywallHero: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: 8) {
             Image(systemName: "pencil.and.scribble")
                 .font(.system(size: 30, weight: .regular))
                 .foregroundStyle(Color.prosePalCoralDeep)
-                .frame(width: 64, height: 64)
+                .frame(width: 58, height: 58)
                 .background(
                     LinearGradient(
                         colors: [
@@ -8763,17 +8766,18 @@ private struct MomentPaywallSheet: View {
                 )
 
             Text("A room of your own.")
-                .font(.system(size: 34, weight: .regular, design: .serif).italic())
+                .font(.system(size: 32, weight: .regular, design: .serif).italic())
                 .foregroundStyle(Color.prosePalInk)
                 .multilineTextAlignment(.center)
                 .lineLimit(2)
                 .minimumScaleFactor(0.82)
 
             Text("Unlimited drafts, every register of tone, and a voice profile that remembers how you write.")
-                .font(.callout)
+                .font(.subheadline)
                 .foregroundStyle(Color.prosePalSlate.opacity(0.78))
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: 312)
         }
         .frame(maxWidth: .infinity)
         .accessibilityElement(children: .combine)
@@ -8799,7 +8803,7 @@ private struct MomentPaywallSheet: View {
                 detail: "Your pages never train a model"
             )
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, 2)
         .background(Color.prosePalPaper.opacity(0.92), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 18, style: .continuous)
@@ -8840,21 +8844,31 @@ private struct MomentPaywallSheet: View {
     }
 
     private var accountSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("Account")
-                .font(.headline.weight(.semibold))
-                .foregroundStyle(Color.prosePalInk)
+        VStack(alignment: .leading, spacing: 11) {
+            HStack(alignment: .top, spacing: 12) {
+                Image(systemName: "person.crop.circle")
+                    .font(.system(size: 18, weight: .regular))
+                    .foregroundStyle(Color.prosePalCoralDeep)
+                    .frame(width: 32, height: 32)
+                    .accessibilityHidden(true)
 
-            Text(account.isSignedIn ? "Purchases are connected to your Apple account." : "Sign in with Apple to connect purchases to you.")
-                .font(.callout)
-                .foregroundStyle(Color.prosePalSlate.opacity(0.78))
-                .fixedSize(horizontal: false, vertical: true)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Account")
+                        .font(.headline.weight(.semibold))
+                        .foregroundStyle(Color.prosePalInk)
+
+                    Text(account.isSignedIn ? "Purchases are connected to your Apple account." : "Sign in with Apple to connect purchases to you.")
+                        .font(.subheadline)
+                        .foregroundStyle(Color.prosePalSlate.opacity(0.78))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
 
             if !account.isSignedIn {
-                MomentAppleSignInControl(account: account, source: "paywall")
+                MomentAppleSignInControl(account: account, source: "paywall", height: 48)
             }
         }
-        .padding(16)
+        .padding(13)
         .background(Color.prosePalPaper.opacity(0.92), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 18, style: .continuous)
@@ -8919,7 +8933,7 @@ private struct MomentPremiumFeatureRow: View {
             Image(systemName: systemImage)
                 .font(.system(size: 18, weight: .regular))
                 .foregroundStyle(Color.prosePalCoralDeep)
-                .frame(width: 34, height: 34)
+                .frame(width: 32, height: 32)
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(title)
@@ -8935,7 +8949,7 @@ private struct MomentPremiumFeatureRow: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 16)
-        .padding(.vertical, 11)
+        .padding(.vertical, 10)
         .accessibilityElement(children: .combine)
     }
 }
@@ -9031,7 +9045,7 @@ private struct MomentPaywallUnavailableRow: View {
     let onRetry: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 11) {
             HStack(alignment: .center, spacing: 12) {
                 Image(systemName: "exclamationmark.triangle")
                     .font(.system(size: 18, weight: .regular))
@@ -9055,13 +9069,13 @@ private struct MomentPaywallUnavailableRow: View {
                 Label("Retry", systemImage: "arrow.clockwise")
                     .font(.headline.weight(.semibold))
                     .frame(maxWidth: .infinity)
-                    .frame(height: 48)
+                    .frame(height: 46)
             }
             .buttonStyle(.borderedProminent)
             .buttonBorderShape(.capsule)
             .tint(.prosePalCoral)
         }
-        .padding(16)
+        .padding(14)
         .background(Color.prosePalPaper.opacity(0.92), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 18, style: .continuous)
