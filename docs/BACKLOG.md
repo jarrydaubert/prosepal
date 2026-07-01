@@ -953,6 +953,25 @@ not done.
   `prosepal-ios/evidence/ui-design-qa/share-sheet/01-share-sheet-before.jpg`
   and
   `prosepal-ios/evidence/ui-design-qa/share-sheet/03-share-sheet-after-detent.jpg`.
+  Slice 29 evidence: revisited the generation-error and quota-reached blocking
+  states at normal text size against `20 · Generation error` and `21 · Quota
+  reached` in `design-system/ui_kits/prosepal/screens-4.jsx`. The previous
+  rendered states were functionally correct but stretched the message group and
+  primary action into separate visual islands on the 368pt simulator viewport.
+  The blocking-state frame now uses a tighter normal-size content height while
+  preserving the larger accessibility height, the error cluster/button spacing
+  has a calmer relationship, and the quota headline now wraps as one centered
+  styled text block only when width requires it. XcodeBuildMCP `ProsePal Staging`
+  build/run passed on `iPhone 17` with
+  `--prosepal-use-mock-writing-service --prosepal-force-generation-error-writing-service`
+  and with
+  `--prosepal-use-mock-writing-service --prosepal-force-quota-writing-service`;
+  `snapshot_ui` confirmed `Try again`, `Back to your note`,
+  `Go Pro — unlimited`, and `Wait until Monday` remain reachable. `swift build`
+  and `swift test` passed. Latest simulator screenshots:
+  `prosepal-ios/evidence/ui-design-qa/blocking-states/01-generation-error-after.jpg`
+  and
+  `prosepal-ios/evidence/ui-design-qa/blocking-states/02-quota-after.jpg`.
 - [~] N-IOS-14 Native visual system and Moment rail/content discipline --
   evidence: `MomentSheetView.momentContent(viewportHeight:)`,
   `draftStartSection`, `shouldShowTabRail`, and `startNewMoment()` in
@@ -965,9 +984,9 @@ not done.
   custom detail form. First Moment entry, active-note viewport, onboarding flow,
   draft-result detail chrome/actions Dynamic Type and Increase Contrast
   simulator coverage exists at maximum accessibility text size, and the
-  draft-result share/use sheet has normal-size simulator spacing evidence.
-  Broader Dynamic Type, physical-device, VoiceOver, and Switch Control review
-  remain.
+  draft-result share/use sheet plus generation-error/quota blocking states have
+  normal-size simulator spacing evidence. Broader Dynamic Type, physical-device,
+  VoiceOver, and Switch Control review remain.
 - [~] iOS 26-first Liquid Glass direction is in code -- evidence:
   iOS 26 deployment target in `prosepal-ios/Package.swift` and
   `prosepal-ios/ProsePal.xcodeproj/project.pbxproj`; control-layer styling in

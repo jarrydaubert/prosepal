@@ -2946,9 +2946,9 @@ private struct MomentSheetView: View {
 
     private func generationErrorStateContent(viewportHeight: CGFloat) -> some View {
         VStack(spacing: 0) {
-            Spacer(minLength: 34)
+            Spacer(minLength: dynamicTypeSize.isAccessibilitySize ? 28 : 26)
 
-            VStack(spacing: 10) {
+            VStack(spacing: 11) {
                 Image(systemName: "exclamationmark.triangle.fill")
                     .font(.system(size: 28, weight: .semibold))
                     .foregroundStyle(Color.prosePalWarning)
@@ -2976,18 +2976,18 @@ private struct MomentSheetView: View {
             .frame(maxWidth: .infinity)
             .accessibilityElement(children: .combine)
 
-            Spacer(minLength: 42)
+            Spacer(minLength: dynamicTypeSize.isAccessibilitySize ? 28 : 54)
 
             generationErrorActions
         }
-        .frame(minHeight: max(viewportHeight - 156, 520), alignment: .center)
+        .frame(minHeight: blockingStateContentHeight(for: viewportHeight), alignment: .center)
     }
 
     private func quotaReachedStateContent(viewportHeight: CGFloat) -> some View {
         VStack(spacing: 0) {
-            Spacer(minLength: 30)
+            Spacer(minLength: dynamicTypeSize.isAccessibilitySize ? 28 : 24)
 
-            VStack(spacing: 7) {
+            VStack(spacing: 8) {
                 Image(systemName: "hourglass")
                     .font(.system(size: 28, weight: .medium))
                     .foregroundStyle(Color.prosePalCoralDeep)
@@ -2998,13 +2998,11 @@ private struct MomentSheetView: View {
                     )
                     .accessibilityHidden(true)
 
-                HStack(spacing: 0) {
-                    Text("You've used this week's ")
-                    Text("ten.")
-                        .italic()
-                }
+                Text("You've used this week's \(Text("ten.").italic())")
                 .font(.system(size: 26, weight: .medium, design: .serif))
                 .foregroundStyle(Color.prosePalInk)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: 340)
                 .padding(.top, 12)
                 .lineLimit(2)
                 .minimumScaleFactor(0.84)
@@ -3023,11 +3021,18 @@ private struct MomentSheetView: View {
             .frame(maxWidth: .infinity)
             .accessibilityElement(children: .combine)
 
-            Spacer(minLength: 38)
+            Spacer(minLength: dynamicTypeSize.isAccessibilitySize ? 28 : 50)
 
             quotaReachedActions
         }
-        .frame(minHeight: max(viewportHeight - 156, 520), alignment: .center)
+        .frame(minHeight: blockingStateContentHeight(for: viewportHeight), alignment: .center)
+    }
+
+    private func blockingStateContentHeight(for viewportHeight: CGFloat) -> CGFloat {
+        if dynamicTypeSize.isAccessibilitySize {
+            return max(viewportHeight - 156, 520)
+        }
+        return max(viewportHeight - 218, 500)
     }
 
     private var quotaMeter: some View {
