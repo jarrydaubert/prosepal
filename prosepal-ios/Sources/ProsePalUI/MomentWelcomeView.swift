@@ -4,6 +4,7 @@ struct MomentWelcomeView: View {
     let onStart: () -> Void
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var selectedPage: MomentOnboardingPage = .welcome
     @State private var hasAppeared = false
 
@@ -14,31 +15,51 @@ struct MomentWelcomeView: View {
                 .padding(.bottom, 2)
 
             GeometryReader { proxy in
-                ScrollView {
-                    VStack {
-                        Spacer(minLength: 0)
+                ScrollViewReader { scrollProxy in
+                    ScrollView {
+                        VStack(spacing: dynamicTypeSize.isAccessibilitySize ? 22 : 0) {
+                            Color.clear
+                                .frame(height: 0)
+                                .id(MomentOnboardingScrollAnchor.top)
+                                .accessibilityHidden(true)
 
-                        MomentOnboardingPanel(page: selectedPage)
-                            .id(selectedPage)
-                            .transition(pageTransition)
+                            if !dynamicTypeSize.isAccessibilitySize {
+                                Spacer(minLength: 0)
+                            }
 
-                        Spacer(minLength: 0)
+                            MomentOnboardingPanel(page: selectedPage)
+                                .id(selectedPage)
+                                .transition(pageTransition)
+
+                            if dynamicTypeSize.isAccessibilitySize {
+                                onboardingFooter
+                                    .padding(.top, 6)
+                            } else {
+                                Spacer(minLength: 0)
+                            }
+                        }
+                        .frame(
+                            minHeight: max(360, proxy.size.height),
+                            alignment: dynamicTypeSize.isAccessibilitySize ? .top : .center
+                        )
+                        .frame(maxWidth: .infinity)
+                        .padding(.horizontal, horizontalPadding)
+                        .padding(.top, dynamicTypeSize.isAccessibilitySize ? 18 : 0)
+                        .padding(.bottom, dynamicTypeSize.isAccessibilitySize ? 20 : 0)
                     }
-                    .frame(minHeight: max(360, proxy.size.height), alignment: .center)
-                    .frame(maxWidth: .infinity)
-                    .padding(.horizontal, 26)
+                    .scrollIndicators(.hidden)
+                    .onChange(of: selectedPage) { _, _ in
+                        resetAccessibilityScroll(using: scrollProxy)
+                    }
                 }
-                .scrollIndicators(.hidden)
             }
 
-            MomentOnboardingFooter(
-                page: selectedPage,
-                onPrimary: handlePrimaryAction,
-                onSecondary: handleSecondaryAction
-            )
-            .padding(.horizontal, 26)
-            .padding(.top, 10)
-            .padding(.bottom, 14)
+            if !dynamicTypeSize.isAccessibilitySize {
+                onboardingFooter
+                    .padding(.horizontal, horizontalPadding)
+                    .padding(.top, 10)
+                    .padding(.bottom, 14)
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background {
@@ -61,8 +82,32 @@ struct MomentWelcomeView: View {
         .accessibilityIdentifier("moment.onboarding")
     }
 
+    private var horizontalPadding: CGFloat {
+        dynamicTypeSize.isAccessibilitySize ? 24 : 26
+    }
+
+    private var onboardingFooter: some View {
+        MomentOnboardingFooter(
+            page: selectedPage,
+            onPrimary: handlePrimaryAction,
+            onSecondary: handleSecondaryAction
+        )
+    }
+
     private var pageTransition: AnyTransition {
         .opacity.combined(with: .move(edge: .trailing))
+    }
+
+    private func resetAccessibilityScroll(using scrollProxy: ScrollViewProxy) {
+        guard dynamicTypeSize.isAccessibilitySize else { return }
+
+        if reduceMotion {
+            scrollProxy.scrollTo(MomentOnboardingScrollAnchor.top, anchor: .top)
+        } else {
+            withAnimation(.easeInOut(duration: 0.18)) {
+                scrollProxy.scrollTo(MomentOnboardingScrollAnchor.top, anchor: .top)
+            }
+        }
     }
 
     private func handlePrimaryAction() {
@@ -89,6 +134,10 @@ struct MomentWelcomeView: View {
             }
         }
     }
+}
+
+private enum MomentOnboardingScrollAnchor {
+    static let top = "moment.onboarding.scrollTop"
 }
 
 private enum MomentOnboardingPage: Int, CaseIterable, Identifiable {
@@ -171,6 +220,7 @@ private struct MomentOnboardingDots: View {
 private struct MomentOnboardingPanel: View {
     let page: MomentOnboardingPage
 
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @ScaledMetric(relativeTo: .largeTitle) private var titleSize = 40
     @ScaledMetric(relativeTo: .title) private var compactTitleSize = 34
     @ScaledMetric(relativeTo: .title) private var readyTitleSize = 36
@@ -188,27 +238,51 @@ private struct MomentOnboardingPanel: View {
                 readyPanel
             }
         }
-        .frame(maxWidth: 330)
+        .frame(maxWidth: panelWidth)
         .frame(maxWidth: .infinity)
         .multilineTextAlignment(.center)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("moment.onboarding.\(page.accessibilityName.lowercased().replacingOccurrences(of: " ", with: "-"))")
     }
 
+    private var panelWidth: CGFloat {
+        dynamicTypeSize.isAccessibilitySize ? 316 : 330
+    }
+
+    private var heroBadgeSize: CGFloat {
+        dynamicTypeSize.isAccessibilitySize ? 58 : 78
+    }
+
+    private var titleTopSpacing: CGFloat {
+        dynamicTypeSize.isAccessibilitySize ? 14 : 22
+    }
+
+    private var welcomeTitleSize: CGFloat {
+        resolvedTitleSize(titleSize, accessibilityCap: 58)
+    }
+
+    private var compactResolvedTitleSize: CGFloat {
+        resolvedTitleSize(compactTitleSize, accessibilityCap: 52)
+    }
+
+    private var readyResolvedTitleSize: CGFloat {
+        resolvedTitleSize(readyTitleSize, accessibilityCap: 54)
+    }
+
     private var welcomePanel: some View {
         VStack(spacing: 0) {
-            MomentSymbolBadge(systemImage: "pencil.and.scribble", style: .hero, size: 78)
+            MomentSymbolBadge(systemImage: "pencil.and.scribble", style: .hero, size: heroBadgeSize)
 
             Text("Welcome to ProsePal")
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(Color.prosePalCoralDeep)
-                .padding(.top, 22)
+                .padding(.top, titleTopSpacing)
 
             MomentOnboardingTitle(
                 firstLine: "Find the words",
                 secondLinePrefix: "you ",
                 italicText: "mean.",
-                size: titleSize
+                size: welcomeTitleSize
             )
 
             onboardingBody("Bring the rough version. ProsePal helps you shape it — clearer, warmer, truer — and keeps it sounding like you.")
@@ -223,9 +297,9 @@ private struct MomentOnboardingPanel: View {
                 firstLine: "Rough in,",
                 secondLinePrefix: "",
                 italicText: "right words out.",
-                size: compactTitleSize
+                size: compactResolvedTitleSize
             )
-            .padding(.top, 22)
+            .padding(.top, titleTopSpacing)
 
             onboardingBody("Type how you'd say it to yourself. Choose a tone. ProsePal does the polishing.")
         }
@@ -233,15 +307,15 @@ private struct MomentOnboardingPanel: View {
 
     private var privacyPanel: some View {
         VStack(spacing: 0) {
-            MomentSymbolBadge(systemImage: "lock", style: .heroCare, size: 78)
+            MomentSymbolBadge(systemImage: "lock", style: .heroCare, size: heroBadgeSize)
 
             MomentOnboardingTitle(
                 firstLine: "Your words",
                 secondLinePrefix: "",
                 italicText: "stay yours.",
-                size: compactTitleSize
+                size: compactResolvedTitleSize
             )
-            .padding(.top, 22)
+            .padding(.top, titleTopSpacing)
 
             onboardingBody("Drafts are processed privately and never used to train models. Delete anything, anytime.")
 
@@ -252,15 +326,15 @@ private struct MomentOnboardingPanel: View {
 
     private var readyPanel: some View {
         VStack(spacing: 0) {
-            MomentSymbolBadge(systemImage: "paperplane.fill", style: .hero, size: 78)
+            MomentSymbolBadge(systemImage: "paperplane.fill", style: .hero, size: heroBadgeSize)
 
             MomentOnboardingTitle(
                 firstLine: nil,
                 secondLinePrefix: "You're ",
                 italicText: "ready.",
-                size: readyTitleSize
+                size: readyResolvedTitleSize
             )
-            .padding(.top, 22)
+            .padding(.top, titleTopSpacing)
 
             onboardingBody("Want a quiet nudge when a message has been waiting? No noise — just a hand when you need one.")
         }
@@ -268,11 +342,15 @@ private struct MomentOnboardingPanel: View {
 
     private func onboardingBody(_ text: String) -> some View {
         Text(text)
-            .font(.system(.title3, design: .serif))
+            .font(dynamicTypeSize.isAccessibilitySize ? .system(.body, design: .serif) : .system(.title3, design: .serif))
             .lineSpacing(5)
             .foregroundStyle(Color.prosePalSlate)
             .fixedSize(horizontal: false, vertical: true)
-            .frame(maxWidth: 300)
+            .frame(maxWidth: dynamicTypeSize.isAccessibilitySize ? 314 : 300)
+    }
+
+    private func resolvedTitleSize(_ size: CGFloat, accessibilityCap: CGFloat) -> CGFloat {
+        dynamicTypeSize.isAccessibilitySize ? min(size, accessibilityCap) : size
     }
 }
 
@@ -281,6 +359,8 @@ private struct MomentOnboardingTitle: View {
     let secondLinePrefix: String
     let italicText: String
     let size: CGFloat
+
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
         VStack(spacing: 0) {
@@ -299,11 +379,11 @@ private struct MomentOnboardingTitle: View {
         }
         .font(.system(size: size, weight: .medium, design: .serif))
         .foregroundStyle(Color.prosePalInk)
-        .lineSpacing(1)
+        .lineSpacing(dynamicTypeSize.isAccessibilitySize ? 4 : 1)
         .minimumScaleFactor(0.82)
         .fixedSize(horizontal: false, vertical: true)
-        .padding(.top, 6)
-        .padding(.bottom, 8)
+        .padding(.top, dynamicTypeSize.isAccessibilitySize ? 4 : 6)
+        .padding(.bottom, dynamicTypeSize.isAccessibilitySize ? 10 : 8)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilityTitle)
         .accessibilityAddTraits(.isHeader)

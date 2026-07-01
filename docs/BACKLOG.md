@@ -896,6 +896,28 @@ not done.
   `prosepal-ios/evidence/ui-design-qa/accessibility/05-active-max-text-button-wrap.jpg`,
   and
   `prosepal-ios/evidence/ui-design-qa/accessibility/06-active-max-text-tone-context.jpg`.
+  Slice 26 evidence: extended the design-system onboarding pass to maximum
+  accessibility text plus Increase Contrast. The normal-size onboarding layout
+  still matches the canonical `design-system/ui_kits/prosepal/screens-1.jsx`
+  composition, while accessibility sizes now move the CTA group inside the
+  scrollable content, reduce only the hero/title proportions needed for
+  readability, and reset scroll position to the top when advancing panels. This
+  fixed the previous AX behavior where the fixed footer crowded the first
+  viewport and later panels inherited the scrolled action position. XcodeBuildMCP
+  `ProsePal Staging` build/run passed on `iPhone 17` with
+  `--prosepal-use-mock-writing-service`; `snapshot_ui` confirmed Welcome,
+  How it works, Privacy promise, and Ready panel text/actions are reachable at
+  max accessibility text, and completing via `Maybe later` lands on `Today`.
+  `swift build` and `swift test` passed; the simulator was restored to `large`
+  text and Increase Contrast disabled. Latest simulator screenshots:
+  `prosepal-ios/evidence/ui-design-qa/onboarding-accessibility/02-welcome-ax-before.jpg`,
+  `prosepal-ios/evidence/ui-design-qa/onboarding-accessibility/03-welcome-ax-after-top.jpg`,
+  `prosepal-ios/evidence/ui-design-qa/onboarding-accessibility/04-welcome-ax-after-actions.jpg`,
+  `prosepal-ios/evidence/ui-design-qa/onboarding-accessibility/05-how-it-works-ax-reset-top.jpg`,
+  `prosepal-ios/evidence/ui-design-qa/onboarding-accessibility/06-privacy-ax-reset-top.jpg`,
+  `prosepal-ios/evidence/ui-design-qa/onboarding-accessibility/07-ready-ax-reset-top.jpg`,
+  and
+  `prosepal-ios/evidence/ui-design-qa/onboarding-accessibility/08-welcome-normal-after.jpg`.
 - [~] N-IOS-14 Native visual system and Moment rail/content discipline --
   evidence: `MomentSheetView.momentContent(viewportHeight:)`,
   `draftStartSection`, `shouldShowTabRail`, and `startNewMoment()` in
@@ -905,10 +927,10 @@ not done.
   empty/populated overview states under
   `prosepal-ios/evidence/ui-design-qa/memory-vault/`. The populated row was
   seeded through the normal mock Moment flow and verified to navigate into the
-  custom detail form. First Moment entry and active-note viewport Dynamic Type
-  and Increase Contrast simulator coverage exists at maximum accessibility text
-  size. Broader Dynamic Type, physical-device, VoiceOver, and Switch Control
-  review remain.
+  custom detail form. First Moment entry, active-note viewport, and onboarding
+  flow Dynamic Type and Increase Contrast simulator coverage exists at maximum
+  accessibility text size. Broader Dynamic Type, physical-device, VoiceOver,
+  and Switch Control review remain.
 - [~] iOS 26-first Liquid Glass direction is in code -- evidence:
   iOS 26 deployment target in `prosepal-ios/Package.swift` and
   `prosepal-ios/ProsePal.xcodeproj/project.pbxproj`; control-layer styling in
