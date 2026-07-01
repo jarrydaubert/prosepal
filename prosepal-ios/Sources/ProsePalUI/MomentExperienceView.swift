@@ -6956,6 +6956,7 @@ private struct MomentSettingsView: View {
     @Bindable var account: MomentAccountModel
     let onDone: () -> Void
     @State private var supportNotice: String?
+    @State private var isStatusWashVisible = false
 
     var body: some View {
         ScrollView {
@@ -7125,8 +7126,18 @@ private struct MomentSettingsView: View {
             .padding(.bottom, 42)
         }
         .scrollIndicators(.hidden)
+        .onScrollGeometryChange(for: Bool.self) { geometry in
+            geometry.contentOffset.y > 8
+        } action: { _, isScrolled in
+            isStatusWashVisible = isScrolled
+        }
         .background {
             MomentAtmosphericBackground(isCareful: false)
+        }
+        .overlay(alignment: .top) {
+            settingsStatusWash
+                .opacity(isStatusWashVisible ? 1 : 0)
+                .animation(.easeInOut(duration: 0.16), value: isStatusWashVisible)
         }
         .tint(.prosePalCoral)
         #if os(iOS)
@@ -7151,6 +7162,22 @@ private struct MomentSettingsView: View {
         } message: {
             Text("This deletes your ProsePal account and app data connected to it.")
         }
+    }
+
+    private var settingsStatusWash: some View {
+        LinearGradient(
+            stops: [
+                Gradient.Stop(color: Color.prosePalPaper, location: 0.0),
+                Gradient.Stop(color: Color.prosePalPaper, location: 0.78),
+                Gradient.Stop(color: Color.prosePalPaper.opacity(0.0), location: 1.0)
+            ],
+            startPoint: .top,
+            endPoint: .bottom
+        )
+        .frame(height: 106)
+        .ignoresSafeArea(edges: .top)
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
 
     private var settingsTopChrome: some View {

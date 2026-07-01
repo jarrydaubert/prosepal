@@ -1006,6 +1006,20 @@ not done.
   remain reachable. `swift build` and `swift test` passed. Latest simulator
   screenshot:
   `prosepal-ios/evidence/ui-design-qa/paywall-spacing/01-paywall-after.jpg`.
+  Slice 32 evidence: revisited the lower Settings account/legal scrolled state
+  at normal text size against `12 · Settings` in
+  `design-system/ui_kits/prosepal/screens-3.jsx`. The previous scrolled state
+  let row copy clip under the Dynamic Island/status area. Settings now turns on
+  a paper status wash only after the scroll view moves, keeping the top
+  `Done`/`Settings` header crisp at rest while preventing lower rows from
+  riding through the status area. XcodeBuildMCP `ProsePal Staging` build/run
+  passed on `iPhone 17` with `--prosepal-use-mock-writing-service`;
+  `snapshot_ui` confirmed Continue with Apple, Restore purchases, Relationship
+  memory, Contact support, Terms, and Privacy Policy remain reachable.
+  `swift build` and `swift test` passed. Latest simulator screenshots:
+  `prosepal-ios/evidence/ui-design-qa/settings-lower/01-settings-lower-before.jpg`
+  and
+  `prosepal-ios/evidence/ui-design-qa/settings-lower/02-settings-lower-after.jpg`.
 - [~] N-IOS-14 Native visual system and Moment rail/content discipline --
   evidence: `MomentSheetView.momentContent(viewportHeight:)`,
   `draftStartSection`, `shouldShowTabRail`, and `startNewMoment()` in
@@ -1018,9 +1032,10 @@ not done.
   custom detail form. First Moment entry, active-note viewport, onboarding flow,
   draft-result detail chrome/actions Dynamic Type and Increase Contrast
   simulator coverage exists at maximum accessibility text size, and the
-  draft-result share/use sheet plus offline/generation-error/quota states have
-  normal-size simulator spacing evidence. Broader Dynamic Type, physical-device,
-  VoiceOver, and Switch Control review remain.
+  draft-result share/use sheet, offline/generation-error/quota states, paywall,
+  and lower Settings scrolled state have normal-size simulator spacing evidence.
+  Broader Dynamic Type, physical-device, VoiceOver, and Switch Control review
+  remain.
 - [~] iOS 26-first Liquid Glass direction is in code -- evidence:
   iOS 26 deployment target in `prosepal-ios/Package.swift` and
   `prosepal-ios/ProsePal.xcodeproj/project.pbxproj`; control-layer styling in
