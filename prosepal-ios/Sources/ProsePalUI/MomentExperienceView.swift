@@ -1176,6 +1176,7 @@ public struct MomentAppRootView: View {
     @State private var welcomeState: MomentWelcomeState
     @State private var selectedTab: MomentRootTab = .moment
     @State private var didLogStartup = false
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Query(sort: \SavedMomentDraftRecord.createdAt, order: .reverse)
     private var savedDrafts: [SavedMomentDraftRecord]
 
@@ -1276,6 +1277,9 @@ public struct MomentAppRootView: View {
     }
 
     private var shouldShowRootDock: Bool {
+        if dynamicTypeSize.isAccessibilitySize {
+            return false
+        }
         if selectedTab == .settings {
             return false
         }

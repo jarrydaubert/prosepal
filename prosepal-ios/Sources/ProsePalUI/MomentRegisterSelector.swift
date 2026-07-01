@@ -3,30 +3,40 @@ import SwiftUI
 
 struct MomentRegisterSelector: View {
     @Binding var selection: MomentRegister
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let registers: [MomentRegister]
     let isCareful: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .firstTextBaseline) {
-                Text("How should it read?")
-                    .font(.system(.title3, design: .serif).weight(.medium))
-                    .foregroundStyle(Color.prosePalInk)
+            if dynamicTypeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: 4) {
+                    selectorTitle
+                    selectorHint
+                }
+            } else {
+                HStack(alignment: .firstTextBaseline) {
+                    selectorTitle
 
-                Spacer(minLength: 12)
+                    Spacer(minLength: 12)
 
-                Text("Choose one")
-                    .font(.caption)
-                    .foregroundStyle(Color.prosePalSlate)
+                    selectorHint
+                }
             }
 
-            ViewThatFits(in: .horizontal) {
-                HStack(spacing: 9) {
-                    registerButtons
-                }
-
+            if dynamicTypeSize.isAccessibilitySize {
                 VStack(spacing: 9) {
                     registerButtons
+                }
+            } else {
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: 9) {
+                        registerButtons
+                    }
+
+                    VStack(spacing: 9) {
+                        registerButtons
+                    }
                 }
             }
         }
@@ -34,6 +44,20 @@ struct MomentRegisterSelector: View {
         .accessibilityHint(selection.userSafeDescription)
         .animation(.spring(response: 0.34, dampingFraction: 0.82), value: selection)
         .animation(.spring(response: 0.34, dampingFraction: 0.82), value: registers.map(\.rawValue).joined())
+    }
+
+    private var selectorTitle: some View {
+        Text("How should it read?")
+            .font(.system(.title3, design: .serif).weight(.medium))
+            .foregroundStyle(Color.prosePalInk)
+            .fixedSize(horizontal: false, vertical: true)
+    }
+
+    private var selectorHint: some View {
+        Text("Choose one")
+            .font(.caption)
+            .foregroundStyle(Color.prosePalSlate)
+            .fixedSize(horizontal: false, vertical: true)
     }
 
     @ViewBuilder
@@ -55,6 +79,7 @@ struct MomentRegisterSelector: View {
 }
 
 private struct MomentRegisterOption: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let register: MomentRegister
     let isSelected: Bool
     let isCareful: Bool
@@ -67,12 +92,12 @@ private struct MomentRegisterOption: View {
 
             Text(register.displayName)
                 .font(.caption.weight(.semibold))
-                .lineLimit(1)
+                .lineLimit(dynamicTypeSize.isAccessibilitySize ? 2 : 1)
                 .minimumScaleFactor(0.76)
         }
         .foregroundStyle(isSelected ? Color.prosePalTextOnAccent : Color.prosePalSlate)
         .padding(.horizontal, 13)
-        .frame(height: 36)
+        .frame(minHeight: dynamicTypeSize.isAccessibilitySize ? 54 : 36)
         .frame(maxWidth: .infinity)
         .background {
             Capsule(style: .continuous)

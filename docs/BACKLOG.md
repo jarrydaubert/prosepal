@@ -489,8 +489,9 @@ not done.
   plan exists, but execution remains open.
   The design system now lives in-repo at `design-system/`. Outstanding
   canonical-kit gaps: folding remaining one-off in-screen radius/shadow literals
-  into the shared token API as those screens are touched, and final Dynamic
-  Type/VoiceOver/Switch Control/physical-device review.
+  into the shared token API as those screens are touched, broader Dynamic Type
+  review beyond the first Moment viewport, and final VoiceOver/Switch
+  Control/physical-device review.
   Slice 1 evidence: visual primitives were extracted from
   `MomentExperienceView` into focused SwiftUI files
   (`MomentVisualTokens`, `MomentSymbolBadge`, `MomentIdentityCard`,
@@ -863,6 +864,22 @@ not done.
   `prosepal-ios/evidence/ui-design-qa/token-parity/01-entry-token-parity.jpg`
   and
   `prosepal-ios/evidence/ui-design-qa/token-parity/02-active-token-parity.jpg`.
+  Slice 24 evidence: performed a simulator-side accessibility stress pass on the
+  first Moment entry viewport using `xcrun simctl ui` with
+  `accessibility-extra-extra-extra-large` content size and Increase Contrast
+  enabled, then restored the simulator to `large` text and Increase Contrast
+  disabled. The first pass showed the root dock and compact tone selector
+  crowding the first viewport at maximum text size. The root dock now suppresses
+  itself for accessibility content sizes, and `MomentRegisterSelector` switches
+  to stacked heading/hint copy plus vertical, taller tone choices. XcodeBuildMCP
+  `ProsePal Staging` build/run passed on `iPhone 17` with
+  `--prosepal-use-mock-writing-service`; `snapshot_ui` confirmed the first
+  viewport remains reachable and, after one scroll, `Quick`, `Your words`, and
+  `Take care` are all visible tappable targets at max accessibility text.
+  `swift build` and `swift test` passed. Latest simulator screenshots:
+  `prosepal-ios/evidence/ui-design-qa/accessibility/01-entry-max-text-before-scroll.jpg`
+  and
+  `prosepal-ios/evidence/ui-design-qa/accessibility/02-entry-max-text-tone-options.jpg`.
 - [~] N-IOS-14 Native visual system and Moment rail/content discipline --
   evidence: `MomentSheetView.momentContent(viewportHeight:)`,
   `draftStartSection`, `shouldShowTabRail`, and `startNewMoment()` in
@@ -872,8 +889,9 @@ not done.
   empty/populated overview states under
   `prosepal-ios/evidence/ui-design-qa/memory-vault/`. The populated row was
   seeded through the normal mock Moment flow and verified to navigate into the
-  custom detail form. Physical-device, Dynamic Type, VoiceOver, and Switch
-  Control review remain.
+  custom detail form. First Moment viewport Dynamic Type and Increase Contrast
+  simulator coverage exists at maximum accessibility text size. Broader Dynamic
+  Type, physical-device, VoiceOver, and Switch Control review remain.
 - [~] iOS 26-first Liquid Glass direction is in code -- evidence:
   iOS 26 deployment target in `prosepal-ios/Package.swift` and
   `prosepal-ios/ProsePal.xcodeproj/project.pbxproj`; control-layer styling in
