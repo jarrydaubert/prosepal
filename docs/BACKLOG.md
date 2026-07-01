@@ -815,6 +815,21 @@ not done.
   `snapshot_ui` confirmed `Go Pro — unlimited`, `Wait until Monday`, and the
   combined quota messaging. Latest simulator screenshot:
   `prosepal-ios/evidence/ui-design-qa/quota/01-simulator-quota.jpg`.
+  Refinement Slice 21 evidence: revisited the first Moment viewport against
+  `05 · The page` in `design-system/ui_kits/prosepal/screens-1.jsx` after
+  simulator review. The native single-select register row now uses lighter,
+  kit-scaled chips and `Choose one` truthful copy instead of pretending the
+  app supports multi-select tones. The active note viewport now adds a small
+  privacy/status line in the mock's metadata position, using
+  `Private drafting · your words stay yours` rather than a hardcoded quota
+  count until account usage is server-owned in the UI. `snapshot_ui` confirmed
+  entry and active-note targets, and the status line announces once after an
+  accessibility-label fix. `swift build` and `swift test` passed; XcodeBuildMCP
+  `ProsePal Staging` build/run passed on `iPhone 17` with
+  `--prosepal-use-mock-writing-service`. Latest simulator screenshots:
+  `prosepal-ios/evidence/ui-design-qa/first-screen/13-simulator-entry-tone-refine.jpg`
+  and
+  `prosepal-ios/evidence/ui-design-qa/first-screen/14-simulator-active-tone-refine.jpg`.
 - [~] N-IOS-14 Native visual system and Moment rail/content discipline --
   evidence: `MomentSheetView.momentContent(viewportHeight:)`,
   `draftStartSection`, `shouldShowTabRail`, and `startNewMoment()` in

@@ -2144,6 +2144,7 @@ private struct MomentSheetView: View {
         VStack(alignment: .leading, spacing: 18) {
             truthSection
             toneSelectorSection
+            firstScreenTrustStatusLine
             if shouldShowDraftStartSection {
                 draftStartSection
             }
@@ -2190,6 +2191,23 @@ private struct MomentSheetView: View {
             registers: availableRegisters,
             isCareful: model.moment.isCarefulMode
         )
+    }
+
+    private var firstScreenTrustStatusLine: some View {
+        HStack(spacing: 7) {
+            Image(systemName: "sparkles")
+                .font(.caption.weight(.medium))
+                .accessibilityHidden(true)
+
+            Text("Private drafting · your words stay yours")
+                .font(.caption.monospacedDigit().weight(.medium))
+                .lineLimit(1)
+                .minimumScaleFactor(0.82)
+        }
+        .foregroundStyle(Color.prosePalSlate.opacity(0.70))
+        .frame(maxWidth: .infinity, alignment: .center)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Private drafting, your words stay yours")
     }
 
     private var draftStartSection: some View {

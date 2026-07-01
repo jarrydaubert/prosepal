@@ -15,17 +15,17 @@ struct MomentRegisterSelector: View {
 
                 Spacer(minLength: 12)
 
-                Text("Pick one")
+                Text("Choose one")
                     .font(.caption)
                     .foregroundStyle(Color.prosePalSlate)
             }
 
             ViewThatFits(in: .horizontal) {
-                HStack(spacing: 8) {
+                HStack(spacing: 9) {
                     registerButtons
                 }
 
-                VStack(spacing: 8) {
+                VStack(spacing: 9) {
                     registerButtons
                 }
             }
@@ -60,19 +60,19 @@ private struct MomentRegisterOption: View {
     let isCareful: Bool
 
     var body: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: 7) {
             Image(systemName: register.systemImage)
-                .font(.caption.weight(.bold))
+                .font(.caption2.weight(.semibold))
                 .symbolRenderingMode(.hierarchical)
 
             Text(register.displayName)
-                .font(.footnote.weight(.semibold))
+                .font(.caption.weight(.semibold))
                 .lineLimit(1)
-                .minimumScaleFactor(0.72)
+                .minimumScaleFactor(0.76)
         }
-        .foregroundStyle(isSelected ? Color.white : Color.primary)
-        .padding(.horizontal, 12)
-        .padding(.vertical, 10)
+        .foregroundStyle(isSelected ? Color.prosePalPaper : Color.prosePalSlate)
+        .padding(.horizontal, 13)
+        .frame(height: 36)
         .frame(maxWidth: .infinity)
         .background {
             Capsule(style: .continuous)
@@ -81,11 +81,16 @@ private struct MomentRegisterOption: View {
         .overlay {
             Capsule(style: .continuous)
                 .stroke(
-                    isSelected ? Color.white.opacity(0.24) : accentColor.opacity(0.20),
+                    isSelected ? Color.prosePalPaper.opacity(0.18) : accentColor.opacity(0.18),
                     lineWidth: 1
                 )
         }
-        .scaleEffect(isSelected ? 1 : 0.98)
+        .shadow(
+            color: isSelected ? accentColor.opacity(0.12) : .clear,
+            radius: 7,
+            x: 0,
+            y: 3
+        )
         .accessibilityAddTraits(isSelected ? [.isSelected] : [])
     }
 
@@ -97,8 +102,8 @@ private struct MomentRegisterOption: View {
         if isSelected {
             return LinearGradient(
                 colors: isCareful
-                    ? [Color.prosePalCare, Color.prosePalNavy.opacity(0.92)]
-                    : [Color.prosePalCoral, Color.prosePalCoralDeep],
+                    ? [Color.prosePalCare, Color.prosePalCare.opacity(0.94)]
+                    : [Color.prosePalCoral, Color.prosePalCoral.opacity(0.94)],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
@@ -106,8 +111,8 @@ private struct MomentRegisterOption: View {
 
         return LinearGradient(
             colors: [
-                Color.prosePalPaper.opacity(0.82),
-                Color.momentSecondaryGroupedBackground.opacity(0.88)
+                Color.prosePalPaper.opacity(0.64),
+                Color.prosePalPaper.opacity(0.46)
             ],
             startPoint: .topLeading,
             endPoint: .bottomTrailing
