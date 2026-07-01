@@ -113,6 +113,14 @@ private enum MessageWritingServiceFactory {
         relationshipVaultContainer: ModelContainer
     ) -> any MessageWritingService {
         #if DEBUG
+        if ProsePalDebugLaunchArguments.forcesOfflineWritingService {
+            let failingClient = DebugFailingMomentDraftClient(error: .offline)
+            return RoutingMessageWritingService(
+                privateClient: failingClient,
+                carefulClient: failingClient
+            )
+        }
+
         if ProsePalDebugLaunchArguments.usesMockWritingService {
             let mockClient = MockMomentDraftClient(bundle: MomentDraftBundle(
                 messageText: "Mira, I have been thinking about our Sunday calls. I miss that easy rhythm with you, and I would love to find a time to catch up soon.",
@@ -160,8 +168,25 @@ private enum MessageWritingServiceFactory {
 }
 
 #if DEBUG
+private struct DebugFailingMomentDraftClient: MomentDraftClient {
+    let error: GenerationError
+
+    func draft(for moment: MomentInput) async throws -> MomentDraftBundle {
+        throw error
+    }
+
+    func adjust(
+        _ bundle: MomentDraftBundle,
+        with adjustment: MomentAdjustment,
+        moment: MomentInput
+    ) async throws -> MomentDraftBundle {
+        throw error
+    }
+}
+
 private enum ProsePalDebugLaunchArguments {
     static let mockWritingService = "--prosepal-use-mock-writing-service"
+    static let offlineWritingService = "--prosepal-force-offline-writing-service"
     static let slowMockWritingService = "--prosepal-slow-mock-writing-service"
     static let mockSubscriptionService = "--prosepal-use-mock-subscription-service"
     static let forcePremium = "--prosepal-force-premium"
@@ -169,6 +194,10 @@ private enum ProsePalDebugLaunchArguments {
 
     static var usesMockWritingService: Bool {
         ProcessInfo.processInfo.arguments.contains(mockWritingService)
+    }
+
+    static var forcesOfflineWritingService: Bool {
+        ProcessInfo.processInfo.arguments.contains(offlineWritingService)
     }
 
     static var usesMockSubscriptionService: Bool {

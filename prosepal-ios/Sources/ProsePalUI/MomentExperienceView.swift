@@ -1654,6 +1654,8 @@ private struct MomentSheetView: View {
                 draftReviseContent(bundle)
             } else if let bundle = model.bundle, !isShowingDraftSource {
                 draftResultContent(bundle)
+            } else if isShowingOfflineDraftState {
+                offlineDraftStateContent
             } else if !shouldUseActiveMomentLayout {
                 initialPrimaryContent
             } else {
@@ -1762,6 +1764,14 @@ private struct MomentSheetView: View {
             shouldUseActiveMomentLayout
     }
 
+    private var isShowingOfflineDraftState: Bool {
+        model.draftUnavailableReason == .offline &&
+            model.errorMessage != nil &&
+            (model.bundle == nil || isShowingDraftSource) &&
+            !model.isDrafting &&
+            shouldUseActiveMomentLayout
+    }
+
     private func activePrimaryViewportHeight(for viewportHeight: CGFloat) -> CGFloat {
         max(viewportHeight + floatingTabRailExclusionHeight, 0)
     }
@@ -1811,7 +1821,7 @@ private struct MomentSheetView: View {
                 .padding(.horizontal, 18)
                 .padding(.top, 10)
                 .padding(.bottom, 12)
-        } else if let bundle = model.bundle, focusedField == nil, shouldShowFloatingDraftActionRail {
+        } else if let bundle = model.bundle, !isShowingOfflineDraftState, focusedField == nil, shouldShowFloatingDraftActionRail {
             draftFloatingControls(bundle: bundle)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 10)
@@ -2595,6 +2605,112 @@ private struct MomentSheetView: View {
         } footer: {
             writingPageFooter
         }
+    }
+
+    private var offlineDraftStateContent: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            offlineConnectionBanner
+            offlineNotePage
+            offlineRetryingRow
+        }
+    }
+
+    private var offlineConnectionBanner: some View {
+        HStack(alignment: .center, spacing: 10) {
+            Image(systemName: "wifi.slash")
+                .font(.system(size: 19, weight: .semibold))
+                .foregroundStyle(Color.prosePalWarning)
+                .frame(width: 24)
+                .accessibilityHidden(true)
+
+            Text("You're offline — drafts are saved here and will sync later")
+                .font(.subheadline.weight(.medium))
+                .lineSpacing(2)
+                .foregroundStyle(Color.prosePalSlate)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .stroke(Color.prosePalNavy.opacity(0.10), lineWidth: 1)
+        }
+        .shadow(color: Color.prosePalCoralDeep.opacity(0.08), radius: 8, x: 0, y: 3)
+        .accessibilityElement(children: .combine)
+    }
+
+    private var offlineNotePage: some View {
+        MomentWritingPageSurface(
+            prompt: "The note",
+            isCareful: model.moment.isCarefulMode,
+            minHeight: dynamicTypeSize.isAccessibilitySize ? 230 : 220
+        ) {
+            Text(offlineNoteText)
+                .font(.system(.title3, design: .serif))
+                .lineSpacing(5)
+                .foregroundStyle(Color.prosePalInk)
+                .fixedSize(horizontal: false, vertical: true)
+        } footer: {
+            offlineNoteFooter
+        }
+    }
+
+    private var offlineNoteText: String {
+        let trimmed = model.trueThing.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? "Your note is saved here." : trimmed
+    }
+
+    @ViewBuilder
+    private var offlineNoteFooter: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 12) {
+                savedLocallyLabel
+                Spacer(minLength: 8)
+                refineWhenOnlineButton
+            }
+
+            VStack(alignment: .leading, spacing: 12) {
+                savedLocallyLabel
+                refineWhenOnlineButton
+            }
+        }
+    }
+
+    private var savedLocallyLabel: some View {
+        Text("Saved locally")
+            .font(.caption.weight(.medium))
+            .foregroundStyle(Color.prosePalSlate.opacity(0.76))
+            .lineLimit(1)
+    }
+
+    private var refineWhenOnlineButton: some View {
+        Button {} label: {
+            Label("Refine when online", systemImage: "feather")
+                .font(.subheadline.weight(.semibold))
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+        }
+        .buttonStyle(.bordered)
+        .buttonBorderShape(.capsule)
+        .controlSize(.regular)
+        .tint(.prosePalNavy)
+        .disabled(true)
+    }
+
+    private var offlineRetryingRow: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "arrow.triangle.2.circlepath")
+                .font(.caption.weight(.semibold))
+                .accessibilityHidden(true)
+
+            Text("Retrying connection…")
+                .font(.caption.weight(.medium))
+        }
+        .foregroundStyle(Color.prosePalSlate.opacity(0.72))
+        .frame(maxWidth: .infinity, alignment: .center)
+        .accessibilityElement(children: .combine)
     }
 
     @ViewBuilder
