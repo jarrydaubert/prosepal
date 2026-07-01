@@ -488,11 +488,10 @@ not done.
   update this backlog item or its child items with evidence. Partial because the
   plan exists, but execution remains open.
   The design system now lives in-repo at `design-system/`. Outstanding
-  canonical-kit gaps: `17` custom share/insert sheet; `18` copied toast; `19`
-  offline banner/state; `20` generation-error full state; `21` quota-reached
-  state; remaining stock detail/edit forms for relationship memory and saved
-  drafts; full token parity for the in-repo color/radius/elevation/glass
-  system; and final
+  canonical-kit gaps: `19` offline banner/state; `20` generation-error full
+  state; `21` quota-reached state; remaining stock detail/edit forms for
+  relationship memory and saved drafts; full token parity for the in-repo
+  color/radius/elevation/glass system; and final
   Dynamic Type/VoiceOver/Switch Control/physical-device review.
   Slice 1 evidence: visual primitives were extracted from
   `MomentExperienceView` into focused SwiftUI files
@@ -757,6 +756,21 @@ not done.
   and forced-premium QA. Latest simulator screenshots:
   `prosepal-ios/evidence/ui-design-qa/plan/01-simulator-plan-free.jpg` and
   `prosepal-ios/evidence/ui-design-qa/plan/02-simulator-plan-pro.jpg`.
+  Slice 17 evidence: performed a draft action/share pass against `17 · Share /
+  insert` and `18 · Copied toast` in
+  `design-system/ui_kits/prosepal/screens-4.jsx`. The primary draft result
+  footer now exposes `Copy`, `Share`, and `Keep this`; `Another` moved into the
+  refinement rail so the result card keeps the canonical three-action shape.
+  `Share` opens a custom `Use this draft` sheet with glass presentation, a
+  word-boundary two-line preview, Messages/Mail/Notes/More destinations,
+  clipboard/save rows, and cancel. Copy actions show the glass confirmation
+  toast above the floating rail. `swift build` and `swift test` passed;
+  XcodeBuildMCP `ProsePal Staging` build/run passed on `iPhone 17` with
+  `--prosepal-use-mock-writing-service`; `snapshot_ui` confirmed result footer,
+  share sheet, and toast accessibility targets. Latest simulator screenshots:
+  `prosepal-ios/evidence/ui-design-qa/share/01-result-share-entry.jpg`,
+  `prosepal-ios/evidence/ui-design-qa/share/02-use-draft-sheet.jpg`, and
+  `prosepal-ios/evidence/ui-design-qa/share/03-copied-toast.jpg`.
 - [~] N-IOS-14 Native visual system and Moment rail/content discipline --
   evidence: `MomentSheetView.momentContent(viewportHeight:)`,
   `draftStartSection`, `shouldShowTabRail`, and `startNewMoment()` in
