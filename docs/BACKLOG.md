@@ -488,12 +488,11 @@ not done.
   update this backlog item or its child items with evidence. Partial because the
   plan exists, but execution remains open.
   The design system now lives in-repo at `design-system/`. Outstanding
-  canonical-kit gaps: `06` dedicated generation state; `14`/`15` free/pro plan
-  detail screens; `17` custom share/insert sheet; `18` copied toast; `19`
-  offline banner/state; `20` generation-error full state; `21` quota-reached
-  state; remaining stock detail/edit forms for relationship memory and saved
-  drafts; full token parity for the in-repo color/radius/elevation/glass
-  system; and final
+  canonical-kit gaps: `14`/`15` free/pro plan detail screens; `17` custom
+  share/insert sheet; `18` copied toast; `19` offline banner/state; `20`
+  generation-error full state; `21` quota-reached state; remaining stock
+  detail/edit forms for relationship memory and saved drafts; full token parity
+  for the in-repo color/radius/elevation/glass system; and final
   Dynamic Type/VoiceOver/Switch Control/physical-device review.
   Slice 1 evidence: visual primitives were extracted from
   `MomentExperienceView` into focused SwiftUI files
@@ -727,6 +726,21 @@ not done.
   `prosepal-ios/evidence/ui-design-qa/onboarding/03-simulator-privacy.jpg`,
   and
   `prosepal-ios/evidence/ui-design-qa/onboarding/04-simulator-ready.jpg`.
+  Slice 15 evidence: performed a dedicated generation-state visual pass against
+  rendered `06 · Generating` from the in-repo ProsePal design-system source in
+  `design-system/ui_kits/prosepal/screens-1.jsx`, with local simulator evidence
+  saved under `prosepal-ios/evidence/ui-design-qa/generating/`. Initial draft
+  creation now leaves the active note page for a separate `Writing…` screen with
+  back-to-Today chrome, a compact `Your note` preview, a cream paper skeleton
+  surface, the `Finding the right words…` status, and the `Keeping your voice`
+  marker; the root dock is hidden while this state is active. A debug-only
+  `--prosepal-slow-mock-writing-service` launch flag delays the mock writing
+  client for simulator QA only. `swift build` passed; XcodeBuildMCP
+  `ProsePal Staging` build/run passed on `iPhone 17` with
+  `--prosepal-use-mock-writing-service --prosepal-slow-mock-writing-service`;
+  `snapshot_ui` confirmed the generation screen and transition into `A draft`.
+  Latest simulator screenshot:
+  `prosepal-ios/evidence/ui-design-qa/generating/01-simulator-generating.jpg`.
 - [~] N-IOS-14 Native visual system and Moment rail/content discipline --
   evidence: `MomentSheetView.momentContent(viewportHeight:)`,
   `draftStartSection`, `shouldShowTabRail`, and `startNewMoment()` in

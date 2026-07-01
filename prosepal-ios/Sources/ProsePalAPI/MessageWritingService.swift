@@ -165,13 +165,16 @@ public struct RoutingMessageWritingService: MessageWritingService {
 
 public struct MockMomentDraftClient: MomentDraftClient {
     public var bundle: MomentDraftBundle
+    public var delay: Duration?
 
-    public init(bundle: MomentDraftBundle) {
+    public init(bundle: MomentDraftBundle, delay: Duration? = nil) {
         self.bundle = bundle
+        self.delay = delay
     }
 
     public func draft(for moment: MomentInput) async throws -> MomentDraftBundle {
-        bundle
+        try await sleepIfNeeded()
+        return bundle
     }
 
     public func adjust(
@@ -179,7 +182,8 @@ public struct MockMomentDraftClient: MomentDraftClient {
         with adjustment: MomentAdjustment,
         moment: MomentInput
     ) async throws -> MomentDraftBundle {
-        MomentDraftBundle(
+        try await sleepIfNeeded()
+        return MomentDraftBundle(
             messageText: adjustedText(bundle.messageText, adjustment: adjustment),
             lane: .mock,
             pressureCheck: bundle.pressureCheck,
@@ -187,6 +191,11 @@ public struct MockMomentDraftClient: MomentDraftClient {
             missingInformation: bundle.missingInformation,
             riskNotes: bundle.riskNotes
         )
+    }
+
+    private func sleepIfNeeded() async throws {
+        guard let delay else { return }
+        try await Task.sleep(for: delay)
     }
 
     private func adjustedText(_ text: String, adjustment: MomentAdjustment) -> String {

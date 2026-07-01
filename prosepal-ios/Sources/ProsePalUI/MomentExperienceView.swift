@@ -1055,7 +1055,7 @@ public struct MomentAppRootView: View {
             return false
         }
         if selectedTab == .moment {
-            return model.bundle == nil && model.errorMessage == nil
+            return model.bundle == nil && model.errorMessage == nil && !model.isDrafting
         }
         return true
     }
@@ -1400,7 +1400,9 @@ private struct MomentSheetView: View {
 
     private func momentContent(viewportHeight: CGFloat) -> some View {
         VStack(alignment: .leading, spacing: 18) {
-            if let bundle = model.bundle, isShowingReviseMode {
+            if isShowingInitialGenerationState {
+                generatingContent
+            } else if let bundle = model.bundle, isShowingReviseMode {
                 draftReviseContent(bundle)
             } else if let bundle = model.bundle, !isShowingDraftSource {
                 draftResultContent(bundle)
@@ -1492,6 +1494,13 @@ private struct MomentSheetView: View {
         !currentPersonName.isEmpty && hasCommittedPersonEntry
     }
 
+    private var isShowingInitialGenerationState: Bool {
+        model.isDrafting &&
+            model.bundle == nil &&
+            model.errorMessage == nil &&
+            shouldUseActiveMomentLayout
+    }
+
     private func activePrimaryViewportHeight(for viewportHeight: CGFloat) -> CGFloat {
         max(viewportHeight + floatingTabRailExclusionHeight, 0)
     }
@@ -1523,7 +1532,11 @@ private struct MomentSheetView: View {
 
     @ViewBuilder
     private var bottomInsetContent: some View {
-        if let bundle = model.bundle, isShowingReviseMode, focusedField == nil {
+        if isShowingInitialGenerationState {
+            Color.clear
+                .frame(height: 8)
+                .accessibilityHidden(true)
+        } else if let bundle = model.bundle, isShowingReviseMode, focusedField == nil {
             draftRevisionKeepButton(bundle: bundle)
                 .padding(.horizontal, 18)
                 .padding(.top, 10)
@@ -1549,16 +1562,24 @@ private struct MomentSheetView: View {
     }
 
     private var topChromeHorizontalPadding: CGFloat {
-        model.bundle != nil && !isShowingDraftSource ? 18 : 20
+        if isShowingInitialGenerationState {
+            return 18
+        }
+        return model.bundle != nil && !isShowingDraftSource ? 18 : 20
     }
 
     private var topChromeBottomPadding: CGFloat {
-        model.bundle != nil && !isShowingDraftSource ? 5 : 18
+        if isShowingInitialGenerationState {
+            return 6
+        }
+        return model.bundle != nil && !isShowingDraftSource ? 5 : 18
     }
 
     @ViewBuilder
     private var topChrome: some View {
-        if model.bundle != nil && isShowingReviseMode {
+        if isShowingInitialGenerationState {
+            generatingTopChrome
+        } else if model.bundle != nil && isShowingReviseMode {
             draftReviseTopChrome
         } else if model.bundle != nil && !isShowingDraftSource {
             draftResultTopChrome
@@ -1605,6 +1626,38 @@ private struct MomentSheetView: View {
                 .minimumScaleFactor(0.84)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var generatingTopChrome: some View {
+        ZStack {
+            Text("Writing…")
+                .font(.headline.weight(.semibold))
+                .foregroundStyle(Color.prosePalInk)
+                .lineLimit(1)
+                .frame(maxWidth: .infinity, alignment: .center)
+
+            HStack {
+                Button {
+                    model.resetDraftForMomentChange()
+                    isShowingDraftSource = true
+                    isShowingReviseMode = false
+                } label: {
+                    Label("Today", systemImage: "chevron.left")
+                        .font(.system(.body, design: .default).weight(.regular))
+                        .labelStyle(.titleAndIcon)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.88)
+                        .frame(minWidth: 76, alignment: .leading)
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(Color.prosePalCoralDeep)
+                .accessibilityLabel("Back to today")
+
+                Spacer(minLength: 8)
+            }
+        }
+        .frame(height: 48)
+        .frame(maxWidth: .infinity)
     }
 
     private var draftResultTopChrome: some View {
@@ -1733,6 +1786,13 @@ private struct MomentSheetView: View {
                     .momentControlBarSurface()
             }
         }
+    }
+
+    private var generatingContent: some View {
+        MomentGeneratingView(
+            noteText: model.trueThing,
+            isCareful: model.moment.isCarefulMode
+        )
     }
 
     private func draftReviseContent(_ bundle: MomentDraftBundle) -> some View {

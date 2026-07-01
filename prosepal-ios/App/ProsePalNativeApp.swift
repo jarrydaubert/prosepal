@@ -117,7 +117,7 @@ private enum MessageWritingServiceFactory {
             let mockClient = MockMomentDraftClient(bundle: MomentDraftBundle(
                 messageText: "Mira, I have been thinking about our Sunday calls. I miss that easy rhythm with you, and I would love to find a time to catch up soon.",
                 lane: .mock
-            ))
+            ), delay: ProsePalDebugLaunchArguments.mockWritingDelay)
             return RoutingMessageWritingService(
                 privateClient: mockClient,
                 carefulClient: mockClient
@@ -162,6 +162,7 @@ private enum MessageWritingServiceFactory {
 #if DEBUG
 private enum ProsePalDebugLaunchArguments {
     static let mockWritingService = "--prosepal-use-mock-writing-service"
+    static let slowMockWritingService = "--prosepal-slow-mock-writing-service"
     static let reduceTransparency = "--prosepal-force-reduce-transparency"
 
     static var usesMockWritingService: Bool {
@@ -170,6 +171,10 @@ private enum ProsePalDebugLaunchArguments {
 
     static var forcesReduceTransparency: Bool {
         ProcessInfo.processInfo.arguments.contains(reduceTransparency)
+    }
+
+    static var mockWritingDelay: Duration? {
+        ProcessInfo.processInfo.arguments.contains(slowMockWritingService) ? .seconds(10) : nil
     }
 }
 #endif
