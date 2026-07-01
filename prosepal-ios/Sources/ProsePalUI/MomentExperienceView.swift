@@ -1656,6 +1656,8 @@ private struct MomentSheetView: View {
                 draftResultContent(bundle)
             } else if isShowingOfflineDraftState {
                 offlineDraftStateContent
+            } else if isShowingGenerationErrorState {
+                generationErrorStateContent(viewportHeight: viewportHeight)
             } else if !shouldUseActiveMomentLayout {
                 initialPrimaryContent
             } else {
@@ -1772,6 +1774,24 @@ private struct MomentSheetView: View {
             shouldUseActiveMomentLayout
     }
 
+    private var isShowingGenerationErrorState: Bool {
+        guard
+            model.errorMessage != nil,
+            (model.bundle == nil || isShowingDraftSource),
+            !model.isDrafting,
+            shouldUseActiveMomentLayout
+        else {
+            return false
+        }
+
+        switch model.draftUnavailableReason {
+        case .timedOut, .rateLimited, .serviceUnavailable, .unexpectedResponse, .unexpected:
+            return true
+        case .offline, .usageLimitReached, .contentBlocked, .none:
+            return false
+        }
+    }
+
     private func activePrimaryViewportHeight(for viewportHeight: CGFloat) -> CGFloat {
         max(viewportHeight + floatingTabRailExclusionHeight, 0)
     }
@@ -1821,7 +1841,7 @@ private struct MomentSheetView: View {
                 .padding(.horizontal, 18)
                 .padding(.top, 10)
                 .padding(.bottom, 12)
-        } else if let bundle = model.bundle, !isShowingOfflineDraftState, focusedField == nil, shouldShowFloatingDraftActionRail {
+        } else if let bundle = model.bundle, !isShowingBlockingDraftState, focusedField == nil, shouldShowFloatingDraftActionRail {
             draftFloatingControls(bundle: bundle)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 10)
@@ -1830,6 +1850,10 @@ private struct MomentSheetView: View {
             MomentBottomRailClearance(isCareful: model.moment.isCarefulMode)
                 .frame(height: focusedField == nil ? 76 : 56)
         }
+    }
+
+    private var isShowingBlockingDraftState: Bool {
+        isShowingOfflineDraftState || isShowingGenerationErrorState
     }
 
     @ViewBuilder
@@ -1871,6 +1895,8 @@ private struct MomentSheetView: View {
     private var topChrome: some View {
         if isShowingInitialGenerationState {
             generatingTopChrome
+        } else if isShowingGenerationErrorState {
+            generationErrorTopChrome
         } else if model.bundle != nil && isShowingReviseMode {
             draftReviseTopChrome
         } else if model.bundle != nil && !isShowingDraftSource {
@@ -1991,6 +2017,36 @@ private struct MomentSheetView: View {
             .buttonStyle(.plain)
             .foregroundStyle(Color.prosePalCoralDeep)
             .accessibilityLabel("Keep this draft")
+        }
+        .frame(height: 48)
+        .frame(maxWidth: .infinity)
+    }
+
+    private var generationErrorTopChrome: some View {
+        ZStack {
+            Text("A draft")
+                .font(.headline.weight(.semibold))
+                .foregroundStyle(Color.prosePalInk)
+                .lineLimit(1)
+                .frame(maxWidth: .infinity, alignment: .center)
+
+            HStack {
+                Button {
+                    returnToNoteAfterDraftFailure()
+                } label: {
+                    Label("Today", systemImage: "chevron.left")
+                        .font(.system(.body, design: .default).weight(.regular))
+                        .labelStyle(.titleAndIcon)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.88)
+                        .frame(minWidth: 76, alignment: .leading)
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(Color.prosePalCoralDeep)
+                .accessibilityLabel("Back to today")
+
+                Spacer(minLength: 8)
+            }
         }
         .frame(height: 48)
         .frame(maxWidth: .infinity)
@@ -2711,6 +2767,83 @@ private struct MomentSheetView: View {
         .foregroundStyle(Color.prosePalSlate.opacity(0.72))
         .frame(maxWidth: .infinity, alignment: .center)
         .accessibilityElement(children: .combine)
+    }
+
+    private func generationErrorStateContent(viewportHeight: CGFloat) -> some View {
+        VStack(spacing: 0) {
+            Spacer(minLength: 34)
+
+            VStack(spacing: 10) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .font(.system(size: 28, weight: .semibold))
+                    .foregroundStyle(Color.prosePalWarning)
+                    .frame(width: 60, height: 60)
+                    .background(
+                        Color.prosePalWarning.opacity(0.14),
+                        in: RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    )
+                    .accessibilityHidden(true)
+
+                Text("That didn't go through")
+                    .font(.system(size: 23, weight: .medium, design: .serif))
+                    .foregroundStyle(Color.prosePalInk)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Text("We couldn't finish your draft just now. Your note is safe — nothing was lost.")
+                    .font(.callout)
+                    .lineSpacing(3)
+                    .foregroundStyle(Color.prosePalSlate)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: 285)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity)
+            .accessibilityElement(children: .combine)
+
+            Spacer(minLength: 42)
+
+            generationErrorActions
+        }
+        .frame(minHeight: max(viewportHeight - 156, 520), alignment: .center)
+    }
+
+    private var generationErrorActions: some View {
+        VStack(spacing: 10) {
+            Button {
+                Task {
+                    await model.draftNow()
+                }
+            } label: {
+                Label("Try again", systemImage: "arrow.clockwise")
+                    .font(.headline.weight(.semibold))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.82)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 50)
+            }
+            .buttonStyle(.borderedProminent)
+            .buttonBorderShape(.capsule)
+            .tint(model.moment.isCarefulMode ? .prosePalCare : .prosePalCoral)
+            .disabled(!model.canDraft || model.isDrafting)
+
+            Button {
+                returnToNoteAfterDraftFailure()
+            } label: {
+                Text("Back to your note")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Color.prosePalCoralDeep)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 44)
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    private func returnToNoteAfterDraftFailure() {
+        model.resetDraftForMomentChange()
+        isShowingDraftSource = true
+        isShowingReviseMode = false
     }
 
     @ViewBuilder

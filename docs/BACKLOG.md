@@ -488,10 +488,9 @@ not done.
   update this backlog item or its child items with evidence. Partial because the
   plan exists, but execution remains open.
   The design system now lives in-repo at `design-system/`. Outstanding
-  canonical-kit gaps: `20` generation-error full state; `21` quota-reached
-  state; remaining stock detail/edit forms for relationship memory and saved
-  drafts; full token parity for the in-repo color/radius/elevation/glass
-  system; and final
+  canonical-kit gaps: `21` quota-reached state; remaining stock detail/edit
+  forms for relationship memory and saved drafts; full token parity for the
+  in-repo color/radius/elevation/glass system; and final
   Dynamic Type/VoiceOver/Switch Control/physical-device review.
   Slice 1 evidence: visual primitives were extracted from
   `MomentExperienceView` into focused SwiftUI files
@@ -786,6 +785,20 @@ not done.
   refine copy, and retrying row without the draft rail. Latest simulator
   screenshot:
   `prosepal-ios/evidence/ui-design-qa/offline/01-simulator-offline.jpg`.
+  Slice 19 evidence: performed a generation-error pass against `20 · Generation
+  error` in `design-system/ui_kits/prosepal/screens-4.jsx`. Non-offline
+  generation failures now use a full `A draft` error state with back-to-Today
+  chrome, centered warning treatment, `That didn't go through` copy, primary
+  `Try again`, and `Back to your note`; the existing note is preserved and the
+  draft rail is hidden while the blocking state is visible. A debug-only
+  `--prosepal-force-generation-error-writing-service` launch flag enables
+  deterministic simulator QA without changing production clients. `swift build`
+  and `swift test` passed; XcodeBuildMCP `ProsePal Staging` build/run passed on
+  `iPhone 17` with
+  `--prosepal-use-mock-writing-service --prosepal-force-generation-error-writing-service`;
+  `snapshot_ui` confirmed `A draft`, `Try again`, `Back to your note`, and a
+  clean return to the active note. Latest simulator screenshot:
+  `prosepal-ios/evidence/ui-design-qa/generation-error/01-simulator-generation-error.jpg`.
 - [~] N-IOS-14 Native visual system and Moment rail/content discipline --
   evidence: `MomentSheetView.momentContent(viewportHeight:)`,
   `draftStartSection`, `shouldShowTabRail`, and `startNewMoment()` in

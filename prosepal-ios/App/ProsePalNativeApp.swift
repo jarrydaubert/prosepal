@@ -121,6 +121,16 @@ private enum MessageWritingServiceFactory {
             )
         }
 
+        if ProsePalDebugLaunchArguments.forcesGenerationErrorWritingService {
+            let failingClient = DebugFailingMomentDraftClient(error: .serviceUnavailable(
+                message: "Message generation is temporarily unavailable. Please try again shortly."
+            ))
+            return RoutingMessageWritingService(
+                privateClient: failingClient,
+                carefulClient: failingClient
+            )
+        }
+
         if ProsePalDebugLaunchArguments.usesMockWritingService {
             let mockClient = MockMomentDraftClient(bundle: MomentDraftBundle(
                 messageText: "Mira, I have been thinking about our Sunday calls. I miss that easy rhythm with you, and I would love to find a time to catch up soon.",
@@ -187,6 +197,7 @@ private struct DebugFailingMomentDraftClient: MomentDraftClient {
 private enum ProsePalDebugLaunchArguments {
     static let mockWritingService = "--prosepal-use-mock-writing-service"
     static let offlineWritingService = "--prosepal-force-offline-writing-service"
+    static let generationErrorWritingService = "--prosepal-force-generation-error-writing-service"
     static let slowMockWritingService = "--prosepal-slow-mock-writing-service"
     static let mockSubscriptionService = "--prosepal-use-mock-subscription-service"
     static let forcePremium = "--prosepal-force-premium"
@@ -198,6 +209,10 @@ private enum ProsePalDebugLaunchArguments {
 
     static var forcesOfflineWritingService: Bool {
         ProcessInfo.processInfo.arguments.contains(offlineWritingService)
+    }
+
+    static var forcesGenerationErrorWritingService: Bool {
+        ProcessInfo.processInfo.arguments.contains(generationErrorWritingService)
     }
 
     static var usesMockSubscriptionService: Bool {
