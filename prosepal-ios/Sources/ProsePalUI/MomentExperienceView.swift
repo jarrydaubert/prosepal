@@ -2839,7 +2839,7 @@ private struct MomentSheetView: View {
     }
 
     private var offlineDraftStateContent: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 14) {
             offlineConnectionBanner
             offlineNotePage
             offlineRetryingRow
@@ -2876,7 +2876,7 @@ private struct MomentSheetView: View {
         MomentWritingPageSurface(
             prompt: "The note",
             isCareful: model.moment.isCarefulMode,
-            minHeight: dynamicTypeSize.isAccessibilitySize ? 230 : 220
+            minHeight: dynamicTypeSize.isAccessibilitySize ? 230 : 150
         ) {
             Text(offlineNoteText)
                 .font(.system(.title3, design: .serif))

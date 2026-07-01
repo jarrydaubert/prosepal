@@ -972,6 +972,23 @@ not done.
   `prosepal-ios/evidence/ui-design-qa/blocking-states/01-generation-error-after.jpg`
   and
   `prosepal-ios/evidence/ui-design-qa/blocking-states/02-quota-after.jpg`.
+  Slice 30 evidence: revisited the offline draft state at normal text size
+  against `19 · Offline` in
+  `design-system/ui_kits/prosepal/screens-4.jsx`. The banner and horizontal
+  padding already matched the kit, but the native note page forced a 220pt
+  ruled body, leaving the footer pinned to the bottom of an over-tall mostly
+  empty card for short notes. Offline now uses a 150pt normal-size ruled body
+  while preserving the larger accessibility height, and the banner/page/retry
+  stack gets a 14pt rhythm so the page remains paper-like without swallowing the
+  viewport. XcodeBuildMCP `ProsePal Staging` build/run passed on `iPhone 17`
+  with
+  `--prosepal-use-mock-writing-service --prosepal-force-offline-writing-service`;
+  `snapshot_ui` confirmed the offline banner, note text, `Saved locally`,
+  disabled `Refine when online`, and `Retrying connection…` remain reachable.
+  `swift build` and `swift test` passed. Latest simulator screenshots:
+  `prosepal-ios/evidence/ui-design-qa/offline-spacing/01-offline-before.jpg`
+  and
+  `prosepal-ios/evidence/ui-design-qa/offline-spacing/02-offline-after.jpg`.
 - [~] N-IOS-14 Native visual system and Moment rail/content discipline --
   evidence: `MomentSheetView.momentContent(viewportHeight:)`,
   `draftStartSection`, `shouldShowTabRail`, and `startNewMoment()` in
@@ -984,7 +1001,7 @@ not done.
   custom detail form. First Moment entry, active-note viewport, onboarding flow,
   draft-result detail chrome/actions Dynamic Type and Increase Contrast
   simulator coverage exists at maximum accessibility text size, and the
-  draft-result share/use sheet plus generation-error/quota blocking states have
+  draft-result share/use sheet plus offline/generation-error/quota states have
   normal-size simulator spacing evidence. Broader Dynamic Type, physical-device,
   VoiceOver, and Switch Control review remain.
 - [~] iOS 26-first Liquid Glass direction is in code -- evidence:
