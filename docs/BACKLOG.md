@@ -12,7 +12,8 @@ release, and App Review readiness work.
 Codex verification is complete to the local automated/static/simulator scope.
 Remaining `[~]` items stay open when they require physical-device behavior,
 live Apple/Supabase/App Store or StoreKit sandbox evidence, actual OS
-system-surface configuration, or human safety/accessibility review.
+system-surface configuration, human safety review, or work intentionally scoped
+to post-release/v2.0.0 follow-up.
 
 Status markers:
 
@@ -479,10 +480,10 @@ not done.
   7. Review system entry handoffs visually: App Intent, widget, Control Center,
      and share-extension deep links should land in a recognisable Moment state
      without provider copy or raw shared text in the URL.
-  8. Finish accessibility review as product behavior: VoiceOver order and
-     labels, Switch Control reachability, Reduce Motion, Reduce Transparency,
-     Increase Contrast, Dynamic Type, keyboard, safe-area, and iPad layout are
-     acceptance gates, not polish tasks.
+  8. Keep accessibility implementation foundations intact, but track the final
+     VoiceOver, Switch Control, broader Dynamic Type, Reduce Motion, Reduce
+     Transparency, Increase Contrast, keyboard, safe-area, and iPad audit as
+     post-release/v2.0.0 work unless the release scope changes.
   Review loop for each UI slice: apply SwiftUI state-ownership and sheet-routing
   checks; apply Liquid Glass availability/composition/modifier-order checks;
   build/run `ProsePal Staging` with XcodeBuildMCP; capture `snapshot_ui` for the
@@ -491,9 +492,8 @@ not done.
   plan exists, but execution remains open.
   The design system now lives in-repo at `design-system/`. Outstanding
   canonical-kit gaps: folding remaining one-off in-screen radius/shadow literals
-  into the shared token API as those screens are touched, broader Dynamic Type
-  review beyond the first Moment entry/active viewport, and final VoiceOver/Switch
-  Control/physical-device review.
+  into the shared token API as those screens are touched, physical-device review,
+  and final accessibility review tracked for post-release/v2.0.0.
   Slice 1 evidence: visual primitives were extracted from
   `MomentExperienceView` into focused SwiftUI files
   (`MomentVisualTokens`, `MomentSymbolBadge`, `MomentIdentityCard`,
@@ -1020,6 +1020,26 @@ not done.
   `prosepal-ios/evidence/ui-design-qa/settings-lower/01-settings-lower-before.jpg`
   and
   `prosepal-ios/evidence/ui-design-qa/settings-lower/02-settings-lower-after.jpg`.
+  Slice 33 evidence: performed a fresh normal-size release-flow UI/UX audit from
+  first visible Moment entry through person entry, note entry, initial
+  generation waiting, draft result, copy/share/save, saved draft library/detail,
+  Settings, Privacy & data, Plan, Paywall, lower Settings, adjustment waiting,
+  and generation error. The pass found that returning from a generated draft to
+  the source/Today view still showed the floating draft action rail, causing it
+  to overlap the `Draft ready` card and `Rewrite draft` action. The rail now
+  stays scoped to the draft result surface by hiding it while
+  `isShowingDraftSource` is true, leaving the source view's `Rewrite draft`
+  action fully visible. XcodeBuildMCP `ProsePal Staging` build/runs passed on
+  `iPhone 17` with mock, slow-mock, and forced-generation-error launch
+  arguments; `snapshot_ui` confirmed the first Moment entry, draft result
+  actions, share sheet actions, saved draft detail actions, settings/account,
+  paywall recovery/legal/account controls, and generation-error recovery remain
+  reachable. The audit starts at the first visible Moment screen because the
+  simulator defaults domain still marked welcome complete after reinstall;
+  first-run welcome remains part of release-candidate TestFlight/device smoke
+  evidence rather than this normal-flow UI polish pass. `swift build` and
+  `swift test` passed. Latest simulator audit notes and screenshots live under
+  `prosepal-ios/evidence/ui-design-qa/release-flow-audit/`.
 - [~] N-IOS-14 Native visual system and Moment rail/content discipline --
   evidence: `MomentSheetView.momentContent(viewportHeight:)`,
   `draftStartSection`, `shouldShowTabRail`, and `startNewMoment()` in
@@ -1033,9 +1053,10 @@ not done.
   draft-result detail chrome/actions Dynamic Type and Increase Contrast
   simulator coverage exists at maximum accessibility text size, and the
   draft-result share/use sheet, offline/generation-error/quota states, paywall,
-  and lower Settings scrolled state have normal-size simulator spacing evidence.
-  Broader Dynamic Type, physical-device, VoiceOver, and Switch Control review
-  remain.
+  lower Settings scrolled state, and release-flow happy/recovery paths have
+  normal-size simulator spacing evidence. Physical-device visual review remains;
+  final VoiceOver, Switch Control, and broader accessibility review are tracked
+  for post-release/v2.0.0.
 - [~] iOS 26-first Liquid Glass direction is in code -- evidence:
   iOS 26 deployment target in `prosepal-ios/Package.swift` and
   `prosepal-ios/ProsePal.xcodeproj/project.pbxproj`; control-layer styling in
@@ -1046,8 +1067,10 @@ not done.
   `MomentCardBackground`, `MomentSymbolBadge`, `MomentBottomRailClearance`,
   `MomentSheetView.momentContent(viewportHeight:)`, and active first-viewport
   rail/content gating in
-  `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`. Partial pending
-  physical-device and accessibility audit.
+  `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`. Latest normal
+  simulator flow audit also verifies the floating draft action rail is no longer
+  shown on the source/Today view after a generated draft, preventing overlap
+  with the `Draft ready` card. Partial pending physical-device visual audit.
 - [~] Register-aware palette and haptics exist -- evidence:
   `MomentRegisterSelector`, register-aware `MomentCardBackground` styling, and
   careful-mode surface colors in
@@ -1071,7 +1094,8 @@ not done.
   and
   `prosepal-ios/evidence/feature-status/us-053-reduce-transparency-action-rail.jpg`.
   Partial pending VoiceOver, Switch Control, broader AX-size flow, and
-  physical-device evidence.
+  physical-device evidence; final accessibility release hardening is scoped to
+  post-release/v2.0.0 unless release scope changes.
 
 ## 9. Platform And Engineering
 
@@ -1173,9 +1197,9 @@ not done.
 
 ## Top Open Work
 
-1. Verify the latest Moment visual/rail/content-gating pass on a physical device
-   and complete Dynamic Type, VoiceOver, Reduce Transparency, Increase Contrast,
-   Add detail focus, and paywall hierarchy polish.
+1. Verify first-run welcome plus the latest Moment visual/rail/content-gating
+   pass on a physical device/TestFlight build and capture the release-candidate
+   iPhone smoke evidence.
 2. Swap the now-working standard-gateway careful lane to the agreed Apple-native
    careful/PCC direction when that API path is ready.
 3. Configure Apple App Store Server secrets in staging, apply App Store
@@ -1188,6 +1212,9 @@ not done.
 6. Harden crisis/pressure handling beyond local English phrase lists and add
    locale-aware/model-guarded evidence.
 7. Complete vault privacy work for any stronger at-rest encryption decision.
+8. Post-release/v2.0.0: complete final accessibility hardening for VoiceOver,
+   Switch Control, broader Dynamic Type, Reduce Motion, Reduce Transparency,
+   Increase Contrast, keyboard/focus behavior, safe-area, and iPad layout.
 
 ## Archived Flutter Reference Work
 

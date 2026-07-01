@@ -1849,7 +1849,7 @@ private struct MomentSheetView: View {
     }
 
     private var shouldShowFloatingDraftActionRail: Bool {
-        !dynamicTypeSize.isAccessibilitySize
+        !dynamicTypeSize.isAccessibilitySize && !isShowingDraftSource
     }
 
     @ViewBuilder
