@@ -1656,6 +1656,8 @@ private struct MomentSheetView: View {
                 draftResultContent(bundle)
             } else if isShowingOfflineDraftState {
                 offlineDraftStateContent
+            } else if isShowingQuotaReachedState {
+                quotaReachedStateContent(viewportHeight: viewportHeight)
             } else if isShowingGenerationErrorState {
                 generationErrorStateContent(viewportHeight: viewportHeight)
             } else if !shouldUseActiveMomentLayout {
@@ -1792,6 +1794,14 @@ private struct MomentSheetView: View {
         }
     }
 
+    private var isShowingQuotaReachedState: Bool {
+        model.draftUnavailableReason == .usageLimitReached &&
+            model.errorMessage != nil &&
+            (model.bundle == nil || isShowingDraftSource) &&
+            !model.isDrafting &&
+            shouldUseActiveMomentLayout
+    }
+
     private func activePrimaryViewportHeight(for viewportHeight: CGFloat) -> CGFloat {
         max(viewportHeight + floatingTabRailExclusionHeight, 0)
     }
@@ -1853,7 +1863,7 @@ private struct MomentSheetView: View {
     }
 
     private var isShowingBlockingDraftState: Bool {
-        isShowingOfflineDraftState || isShowingGenerationErrorState
+        isShowingOfflineDraftState || isShowingGenerationErrorState || isShowingQuotaReachedState
     }
 
     @ViewBuilder
@@ -1895,6 +1905,8 @@ private struct MomentSheetView: View {
     private var topChrome: some View {
         if isShowingInitialGenerationState {
             generatingTopChrome
+        } else if isShowingQuotaReachedState {
+            quotaReachedTopChrome
         } else if isShowingGenerationErrorState {
             generationErrorTopChrome
         } else if model.bundle != nil && isShowingReviseMode {
@@ -2047,6 +2059,26 @@ private struct MomentSheetView: View {
 
                 Spacer(minLength: 8)
             }
+        }
+        .frame(height: 48)
+        .frame(maxWidth: .infinity)
+    }
+
+    private var quotaReachedTopChrome: some View {
+        HStack {
+            Button {
+                returnToNoteAfterDraftFailure()
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 16, weight: .semibold))
+                    .frame(width: 44, height: 44)
+                    .contentShape(Circle())
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(Color.prosePalCoralDeep)
+            .accessibilityLabel("Back to your note")
+
+            Spacer(minLength: 8)
         }
         .frame(height: 48)
         .frame(maxWidth: .infinity)
@@ -2806,6 +2838,102 @@ private struct MomentSheetView: View {
             generationErrorActions
         }
         .frame(minHeight: max(viewportHeight - 156, 520), alignment: .center)
+    }
+
+    private func quotaReachedStateContent(viewportHeight: CGFloat) -> some View {
+        VStack(spacing: 0) {
+            Spacer(minLength: 30)
+
+            VStack(spacing: 7) {
+                Image(systemName: "hourglass")
+                    .font(.system(size: 28, weight: .medium))
+                    .foregroundStyle(Color.prosePalCoralDeep)
+                    .frame(width: 60, height: 60)
+                    .background(
+                        Color.prosePalCoralCard.opacity(0.62),
+                        in: RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    )
+                    .accessibilityHidden(true)
+
+                HStack(spacing: 0) {
+                    Text("You've used this week's ")
+                    Text("ten.")
+                        .italic()
+                }
+                .font(.system(size: 26, weight: .medium, design: .serif))
+                .foregroundStyle(Color.prosePalInk)
+                .padding(.top, 12)
+                .lineLimit(2)
+                .minimumScaleFactor(0.84)
+
+                Text("Your free refines reset Monday. Or go Pro for unlimited — and never count again.")
+                    .font(.callout)
+                    .lineSpacing(3)
+                    .foregroundStyle(Color.prosePalSlate)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: 300)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                quotaMeter
+                    .padding(.top, 14)
+            }
+            .frame(maxWidth: .infinity)
+            .accessibilityElement(children: .combine)
+
+            Spacer(minLength: 38)
+
+            quotaReachedActions
+        }
+        .frame(minHeight: max(viewportHeight - 156, 520), alignment: .center)
+    }
+
+    private var quotaMeter: some View {
+        VStack(spacing: 6) {
+            GeometryReader { proxy in
+                Capsule(style: .continuous)
+                    .fill(Color.prosePalNavy.opacity(0.10))
+                    .overlay(alignment: .leading) {
+                        Capsule(style: .continuous)
+                            .fill(Color.prosePalWarning)
+                            .frame(width: proxy.size.width)
+                    }
+            }
+            .frame(width: 180, height: 8)
+
+            Text("10 of 10 used")
+                .font(.caption2.monospacedDigit().weight(.medium))
+                .foregroundStyle(Color.prosePalSlate.opacity(0.72))
+        }
+        .accessibilityLabel("10 of 10 used")
+    }
+
+    private var quotaReachedActions: some View {
+        VStack(spacing: 10) {
+            Button {
+                isShowingPaywall = true
+            } label: {
+                Label("Go Pro — unlimited", systemImage: "feather")
+                    .font(.headline.weight(.semibold))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.82)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 52)
+            }
+            .buttonStyle(.borderedProminent)
+            .buttonBorderShape(.capsule)
+            .tint(model.moment.isCarefulMode ? .prosePalCare : .prosePalCoral)
+
+            Button {
+                returnToNoteAfterDraftFailure()
+            } label: {
+                Text("Wait until Monday")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Color.prosePalCoralDeep)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 44)
+            }
+            .buttonStyle(.plain)
+        }
     }
 
     private var generationErrorActions: some View {

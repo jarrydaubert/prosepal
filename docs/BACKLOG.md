@@ -488,10 +488,10 @@ not done.
   update this backlog item or its child items with evidence. Partial because the
   plan exists, but execution remains open.
   The design system now lives in-repo at `design-system/`. Outstanding
-  canonical-kit gaps: `21` quota-reached state; remaining stock detail/edit
-  forms for relationship memory and saved drafts; full token parity for the
-  in-repo color/radius/elevation/glass system; and final
-  Dynamic Type/VoiceOver/Switch Control/physical-device review.
+  canonical-kit gaps: remaining stock detail/edit forms for relationship memory
+  and saved drafts; full token parity for the in-repo
+  color/radius/elevation/glass system; and final Dynamic Type/VoiceOver/Switch
+  Control/physical-device review.
   Slice 1 evidence: visual primitives were extracted from
   `MomentExperienceView` into focused SwiftUI files
   (`MomentVisualTokens`, `MomentSymbolBadge`, `MomentIdentityCard`,
@@ -799,6 +799,22 @@ not done.
   `snapshot_ui` confirmed `A draft`, `Try again`, `Back to your note`, and a
   clean return to the active note. Latest simulator screenshot:
   `prosepal-ios/evidence/ui-design-qa/generation-error/01-simulator-generation-error.jpg`.
+  Slice 20 evidence: performed a quota-reached pass against `21 · Quota
+  reached` in `design-system/ui_kits/prosepal/screens-4.jsx`. Weekly usage-limit
+  failures now use a dedicated full-screen state with close chrome, centered
+  hourglass treatment, `You've used this week's ten.` copy, a 10/10 usage meter,
+  primary `Go Pro — unlimited`, and secondary `Wait until Monday`; the draft
+  rail is hidden while the blocking state is visible. A debug-only
+  `--prosepal-force-quota-writing-service` launch flag enables deterministic
+  simulator QA without changing production clients. `Go Pro — unlimited` was
+  verified to open the existing paywall sheet, closing the sheet returned to the
+  quota state, and `Wait until Monday` returned cleanly to the active note.
+  `swift build` and `swift test` passed; XcodeBuildMCP `ProsePal Staging`
+  build/run passed on `iPhone 17` with
+  `--prosepal-use-mock-writing-service --prosepal-force-quota-writing-service`;
+  `snapshot_ui` confirmed `Go Pro — unlimited`, `Wait until Monday`, and the
+  combined quota messaging. Latest simulator screenshot:
+  `prosepal-ios/evidence/ui-design-qa/quota/01-simulator-quota.jpg`.
 - [~] N-IOS-14 Native visual system and Moment rail/content discipline --
   evidence: `MomentSheetView.momentContent(viewportHeight:)`,
   `draftStartSection`, `shouldShowTabRail`, and `startNewMoment()` in
