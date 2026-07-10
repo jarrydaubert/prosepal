@@ -30,6 +30,20 @@ func momentLaunchRequestTrimsPersonAndSource() {
 }
 
 @Test
+func momentLaunchRequestUsesDomainOwnedPersonAndSharedTextLimits() {
+    let request = MomentLaunchRequest(
+        personName: "Alex\nMorgan " + String(repeating: "x", count: 100),
+        sharedText: String(repeating: "🙂", count: ProsePalTextLimit.momentDetail + 20),
+        source: "app_intent"
+    )
+
+    #expect(request.personName?.count == ProsePalTextLimit.personName)
+    #expect(request.personName?.hasPrefix("Alex Morgan") == true)
+    #expect(request.sharedText?.count == ProsePalTextLimit.momentDetail)
+    #expect(SharedMomentLaunchPayload.maxTextCharacterCount == ProsePalTextLimit.momentDetail)
+}
+
+@Test
 func momentLaunchRequestCapsSharedTextToHandoffLimit() {
     let request = MomentLaunchRequest(
         sharedText: String(repeating: "x", count: SharedMomentLaunchPayload.maxTextCharacterCount + 20),

@@ -1454,16 +1454,23 @@ Implementation sequencing rules:
   intended remaining budget, change progress copy after a defined threshold,
   and test deadline propagation plus cancellation without exposing provider
   details or inventing retry economics.
-- [ ] Align input semantics and length limits across in-app, App Intent, share,
-  and gateway entry paths -- evidence: Share Extension and App Intent payloads
-  cap shared text at 1,200 characters, while Moment person/detail/revise fields
-  have no matching limit/counter and name fields apply capitalization but no
-  `.textContentType` in
-  `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift` and
-  `MomentViewModifiers.swift`. DoD: define domain-owned limits and normalization,
-  enforce them consistently before persistence/generation, provide accessible
-  counters or errors where truncation would surprise, add appropriate content
-  types, and test every ingress boundary.
+- [~] Align input semantics and length limits across in-app, App Intent, share,
+  and gateway entry paths -- evidence: `ProsePalTextLimit` and
+  `ProsePalTextInput` in `prosepal-ios/Sources/ProsePalDomain/TextInputPolicy.swift`
+  now own grapheme-safe normalization and limits for person names, Moment
+  details, relationship memory, voice cards, and edited drafts. `MomentInput`
+  and `CardIntent` normalize before generation; launch/App Intent payloads,
+  draft recovery, model launch/voice/edit paths, and SwiftData record
+  create/update paths enforce the same policy. `MomentTextInputSupport.swift`
+  supplies capped bindings and a visible near-limit counter; touched fields
+  expose character counts to accessibility, and name inputs now use `.name`
+  content type. Domain, App Intent, and persistence tests cover oversized and
+  multiline ingress. Partial only because the standalone Share Extension still
+  carries its copied 1,200-character sanitizer until the next shared
+  extension-contract slice gives it an extension-safe dependency on the
+  canonical policy; its existing rule remains numerically aligned meanwhile.
+  DoD: move the Share Extension to the canonical shared policy and retain
+  encode/decode plus target-membership guards.
 
 ## Top Open Work
 

@@ -113,7 +113,7 @@ func momentDraftExposesExplicitSendHandoff() throws {
     #expect(source.contains("MomentDraftShareDestination(id: \"messages\""))
     #expect(source.contains("MomentDraftShareDestination(id: \"mail\""))
     #expect(source.contains("ShareLink(item: request.bundle.messageText)"))
-    #expect(source.contains("updateActiveDraftMessage(nextText)"))
+    #expect(source.contains("updateActiveDraftMessage(ProsePalTextInput.limited("))
 }
 
 @Test

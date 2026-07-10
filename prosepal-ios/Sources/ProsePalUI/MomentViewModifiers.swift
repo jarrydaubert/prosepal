@@ -73,6 +73,7 @@ extension View {
     func momentNameInputBehavior() -> some View {
         #if os(iOS)
         self.textInputAutocapitalization(.words)
+            .textContentType(.name)
         #else
         self
         #endif

@@ -84,11 +84,11 @@ public struct MomentInput: Codable, Equatable, Sendable {
         length: MessageLength = .standard,
         localeIdentifier: String? = nil
     ) {
-        self.personName = personName.trimmingCharacters(in: .whitespacesAndNewlines)
+        self.personName = ProsePalTextInput.personName(personName)
         self.relationship = relationship
         self.occasion = occasion
         self.register = register
-        self.trueThing = trueThing.trimmingCharacters(in: .whitespacesAndNewlines)
+        self.trueThing = ProsePalTextInput.momentDetail(trueThing)
         self.tone = tone
         self.length = length
         self.localeIdentifier = localeIdentifier ?? Locale.current.identifier

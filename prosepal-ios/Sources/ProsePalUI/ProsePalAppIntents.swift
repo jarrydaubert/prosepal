@@ -18,8 +18,8 @@ public struct MomentLaunchRequest: Codable, Equatable, Sendable {
         source: String = MomentLaunchRequest.defaultSource,
         createdAt: Date = Date()
     ) {
-        let trimmedName = personName?.trimmingCharacters(in: .whitespacesAndNewlines)
-        self.personName = trimmedName?.isEmpty == false ? trimmedName : nil
+        let normalizedName = personName.map(ProsePalTextInput.personName)
+        self.personName = normalizedName?.isEmpty == false ? normalizedName : nil
         self.occasion = occasion
         self.sharedText = SharedMomentLaunchPayload.sanitized(sharedText)
         self.source = source.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -60,7 +60,7 @@ public struct MomentLaunchStore {
 public struct SharedMomentLaunchPayload: Codable, Equatable, Sendable {
     public static let appGroupIdentifier = "group.com.prosepal.prosepal"
     public static let defaultKey = "prosepal.native.pendingSharedMoment.v1"
-    public static let maxTextCharacterCount = 1_200
+    public static let maxTextCharacterCount = ProsePalTextLimit.momentDetail
 
     public var text: String?
     public var sourceURL: URL?
@@ -82,9 +82,8 @@ public struct SharedMomentLaunchPayload: Codable, Equatable, Sendable {
 
     public static func sanitized(_ text: String?) -> String? {
         guard let text else { return nil }
-        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return nil }
-        return String(trimmed.prefix(maxTextCharacterCount))
+        let normalized = ProsePalTextInput.momentDetail(text)
+        return normalized.isEmpty ? nil : normalized
     }
 }
 

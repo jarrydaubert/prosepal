@@ -20,10 +20,11 @@ public final class RelationshipTruthBeadRecord {
         createdAt: Date = Date(),
         updatedAt: Date = Date()
     ) {
+        let normalizedInputName = ProsePalTextInput.personName(personName)
         self.id = id
-        self.personName = personName
-        self.normalizedPersonName = RelationshipPersonKey.normalized(personName)
-        self.text = text
+        self.personName = normalizedInputName
+        self.normalizedPersonName = RelationshipPersonKey.normalized(normalizedInputName)
+        self.text = ProsePalTextInput.relationshipMemory(text)
         self.isUserApproved = isUserApproved
         self.createdAt = createdAt
         self.updatedAt = updatedAt
@@ -45,9 +46,9 @@ public final class RelationshipTruthBeadRecord {
         isUserApproved: Bool,
         updatedAt: Date = Date()
     ) {
-        self.personName = personName.trimmingCharacters(in: .whitespacesAndNewlines)
+        self.personName = ProsePalTextInput.personName(personName)
         self.normalizedPersonName = RelationshipPersonKey.normalized(self.personName)
-        self.text = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        self.text = ProsePalTextInput.relationshipMemory(text)
         self.isUserApproved = isUserApproved
         self.updatedAt = updatedAt
     }
@@ -71,10 +72,11 @@ public final class RelationshipVoiceCardRecord {
         createdAt: Date = Date(),
         updatedAt: Date = Date()
     ) {
+        let normalizedInputName = ProsePalTextInput.personName(personName)
         self.id = id
-        self.personName = personName
-        self.normalizedPersonName = RelationshipPersonKey.normalized(personName)
-        self.summary = summary
+        self.personName = normalizedInputName
+        self.normalizedPersonName = RelationshipPersonKey.normalized(normalizedInputName)
+        self.summary = ProsePalTextInput.voiceCard(summary)
         self.isUserApproved = isUserApproved
         self.createdAt = createdAt
         self.updatedAt = updatedAt
@@ -96,9 +98,9 @@ public final class RelationshipVoiceCardRecord {
         isUserApproved: Bool,
         updatedAt: Date = Date()
     ) {
-        self.personName = personName.trimmingCharacters(in: .whitespacesAndNewlines)
+        self.personName = ProsePalTextInput.personName(personName)
         self.normalizedPersonName = RelationshipPersonKey.normalized(self.personName)
-        self.summary = summary.trimmingCharacters(in: .whitespacesAndNewlines)
+        self.summary = ProsePalTextInput.voiceCard(summary)
         self.isUserApproved = isUserApproved
         self.updatedAt = updatedAt
     }
@@ -601,17 +603,18 @@ public final class SavedMomentDraftRecord {
         createdAt: Date = Date(),
         updatedAt: Date = Date()
     ) {
+        let normalizedInputName = ProsePalTextInput.personName(personName)
         self.id = id
-        self.personName = personName
-        self.normalizedPersonName = RelationshipPersonKey.normalized(personName)
+        self.personName = normalizedInputName
+        self.normalizedPersonName = RelationshipPersonKey.normalized(normalizedInputName)
         self.relationshipRawValue = relationshipRawValue
         self.occasionRawValue = occasionRawValue
         self.registerRawValue = registerRawValue
         self.toneRawValue = toneRawValue
         self.lengthRawValue = lengthRawValue
         self.laneRawValue = laneRawValue
-        self.trueThing = trueThing
-        self.messageText = messageText
+        self.trueThing = ProsePalTextInput.momentDetail(trueThing)
+        self.messageText = ProsePalTextInput.draft(messageText)
         self.createdAt = createdAt
         self.updatedAt = updatedAt
     }
@@ -673,7 +676,7 @@ public final class SavedMomentDraftRecord {
         _ messageText: String,
         updatedAt: Date = Date()
     ) {
-        self.messageText = messageText.trimmingCharacters(in: .whitespacesAndNewlines)
+        self.messageText = ProsePalTextInput.draft(messageText)
         self.updatedAt = updatedAt
     }
 }

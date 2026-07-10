@@ -95,13 +95,13 @@ public struct MomentDraftRecoveryState: Codable, Equatable, Sendable {
         savedAt: Date = Date()
     ) {
         self.schemaVersion = schemaVersion
-        self.personName = personName.trimmingCharacters(in: .whitespacesAndNewlines)
+        self.personName = ProsePalTextInput.personName(personName)
         self.relationship = relationship
         self.occasion = occasion
         self.register = register
         self.tone = tone
         self.length = length
-        self.trueThing = trueThing.trimmingCharacters(in: .whitespacesAndNewlines)
+        self.trueThing = ProsePalTextInput.momentDetail(trueThing)
         self.bundle = bundle
         self.draftSnapshots = Array(draftSnapshots.suffix(12))
         self.savedAt = savedAt
@@ -128,15 +128,17 @@ public struct MomentDraftRecoveryState: Codable, Equatable, Sendable {
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         schemaVersion = try container.decode(Int.self, forKey: .schemaVersion)
-        personName = try container.decode(String.self, forKey: .personName)
-            .trimmingCharacters(in: .whitespacesAndNewlines)
+        personName = ProsePalTextInput.personName(
+            try container.decode(String.self, forKey: .personName)
+        )
         relationship = try container.decode(Relationship.self, forKey: .relationship)
         occasion = try container.decode(Occasion.self, forKey: .occasion)
         register = try container.decode(MomentRegister.self, forKey: .register)
         tone = try container.decodeIfPresent(Tone.self, forKey: .tone) ?? .heartfelt
         length = try container.decodeIfPresent(MessageLength.self, forKey: .length) ?? .standard
-        trueThing = try container.decode(String.self, forKey: .trueThing)
-            .trimmingCharacters(in: .whitespacesAndNewlines)
+        trueThing = ProsePalTextInput.momentDetail(
+            try container.decode(String.self, forKey: .trueThing)
+        )
         bundle = try container.decode(MomentDraftBundle.self, forKey: .bundle)
         draftSnapshots = Array((try container.decode([MomentDraftSnapshot].self, forKey: .draftSnapshots)).suffix(12))
         savedAt = try container.decode(Date.self, forKey: .savedAt)
@@ -308,13 +310,13 @@ public final class MomentModel {
 
     public func applyLaunchRequest(_ request: MomentLaunchRequest) {
         if let personName = request.personName {
-            self.personName = personName
+            self.personName = ProsePalTextInput.personName(personName)
         }
         if let occasion = request.occasion {
             self.occasion = occasion
         }
         if let sharedText = request.sharedText {
-            trueThing = sharedText
+            trueThing = ProsePalTextInput.momentDetail(sharedText)
         }
         alignRegisterForMoment()
         resetDraftForMomentChange()
@@ -436,7 +438,7 @@ public final class MomentModel {
             storeRecoverableDraftSnapshot(currentBundle, reason: .edit)
         }
 
-        currentBundle.messageText = messageText
+        currentBundle.messageText = ProsePalTextInput.draft(messageText)
         currentBundle.pressureCheck = .local(messageText: messageText, moment: moment)
         bundle = currentBundle
         errorMessage = nil
@@ -2293,7 +2295,11 @@ private struct MomentSheetView: View {
 
             VStack(alignment: .leading, spacing: 10) {
                 composerStep(number: 1, title: "Who", detail: "Name the person.") {
-                    TextField("Name or person", text: $model.personName, prompt: Text("Alex, Mum, my manager"))
+                    TextField(
+                        "Name or person",
+                        text: $model.personName.prosePalLimited(to: ProsePalTextLimit.personName),
+                        prompt: Text("Alex, Mum, my manager")
+                    )
                         .momentNameInputBehavior()
                         .submitLabel(.next)
                         .onSubmit {
@@ -2307,6 +2313,7 @@ private struct MomentSheetView: View {
                         .frame(minHeight: 44, alignment: .leading)
                         .momentInputSurface(isCareful: model.moment.isCarefulMode, cornerRadius: 15)
                         .accessibilityLabel("Name or person")
+                        .accessibilityValue("\(model.personName.count) of \(ProsePalTextLimit.personName) characters")
                 }
 
                 composerDivider
@@ -2548,7 +2555,7 @@ private struct MomentSheetView: View {
 
                 TextField(
                     "Anything to mention?",
-                    text: $model.trueThing,
+                    text: $model.trueThing.prosePalLimited(to: ProsePalTextLimit.momentDetail),
                     prompt: Text("A memory, apology, detail, or feeling"),
                     axis: .vertical
                 )
@@ -2566,6 +2573,12 @@ private struct MomentSheetView: View {
                 .frame(minHeight: dynamicTypeSize.isAccessibilitySize ? 96 : 72, alignment: .topLeading)
                 .momentInputSurface(isCareful: model.moment.isCarefulMode, cornerRadius: 15)
                 .accessibilityLabel("Optional detail to include")
+                .accessibilityValue("\(model.trueThing.count) of \(ProsePalTextLimit.momentDetail) characters")
+
+                MomentCharacterLimitStatus(
+                    text: model.trueThing,
+                    limit: ProsePalTextLimit.momentDetail
+                )
 
                 noteTools
             }
@@ -3170,7 +3183,11 @@ private struct MomentSheetView: View {
 
     private var truthBeadInputRow: some View {
         HStack(spacing: 10) {
-            TextField("A detail to remember", text: $newTruthBeadText, prompt: Text("Loves Sunday walks"))
+            TextField(
+                "A detail to remember",
+                text: $newTruthBeadText.prosePalLimited(to: ProsePalTextLimit.relationshipMemory),
+                prompt: Text("Loves Sunday walks")
+            )
                 .focused($focusedField, equals: .memory)
                 .submitLabel(.done)
                 .padding(14)
@@ -3178,6 +3195,7 @@ private struct MomentSheetView: View {
                 .onSubmit {
                     addTruthBead()
                 }
+                .accessibilityValue("\(newTruthBeadText.count) of \(ProsePalTextLimit.relationshipMemory) characters")
 
             Button {
                 addTruthBead()
@@ -3300,7 +3318,11 @@ private struct MomentSheetView: View {
 
     private var voiceCardInputRow: some View {
         HStack(spacing: 10) {
-            TextField("Warm, short, no fuss", text: $newVoiceCardSummary, prompt: Text("Warm, short, no fuss"))
+            TextField(
+                "Warm, short, no fuss",
+                text: $newVoiceCardSummary.prosePalLimited(to: ProsePalTextLimit.voiceCard),
+                prompt: Text("Warm, short, no fuss")
+            )
                 .focused($focusedField, equals: .voice)
                 .submitLabel(.done)
                 .padding(14)
@@ -3308,6 +3330,7 @@ private struct MomentSheetView: View {
                 .onSubmit {
                     addVoiceCard()
                 }
+                .accessibilityValue("\(newVoiceCardSummary.count) of \(ProsePalTextLimit.voiceCard) characters")
 
             Button {
                 addVoiceCard()
@@ -3549,6 +3572,7 @@ private struct MomentSheetView: View {
                     }
                     .disabled(model.isDrafting)
                     .accessibilityLabel("Draft text")
+                    .accessibilityValue("\(bundle.messageText.count) of \(ProsePalTextLimit.draft) characters")
                     .fixedSize(horizontal: false, vertical: true)
             } else {
                 Text(draftRevisionDisplayText(for: bundle))
@@ -3782,6 +3806,7 @@ private struct MomentSheetView: View {
                 }
                 .disabled(model.isDrafting)
                 .accessibilityLabel("Draft text")
+                .accessibilityValue("\(bundle.messageText.count) of \(ProsePalTextLimit.draft) characters")
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(
                     maxWidth: .infinity,
@@ -4419,7 +4444,10 @@ private struct MomentDraftHistorySheet: View {
         Binding {
             model.bundle?.messageText ?? ""
         } set: { nextText in
-            model.updateActiveDraftMessage(nextText)
+            model.updateActiveDraftMessage(ProsePalTextInput.limited(
+                nextText,
+                to: ProsePalTextLimit.draft
+            ))
         }
     }
 
@@ -4888,7 +4916,7 @@ private struct MomentDraftHistorySheet: View {
         let trimmedTranscript = transcript.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedTranscript.isEmpty else { return }
 
-        model.trueThing = trimmedTranscript
+        model.trueThing = ProsePalTextInput.momentDetail(trimmedTranscript)
         diagnostics.messageAction(
             "voice_input_used",
             source: "moment",
@@ -6066,12 +6094,17 @@ private struct SavedMomentDraftDetailView: View {
                         systemImage: "bookmark"
                     ) {
                         if isEditing {
-                            TextField("Draft text", text: $editedMessageText, axis: .vertical)
+                            TextField(
+                                "Draft text",
+                                text: $editedMessageText.prosePalLimited(to: ProsePalTextLimit.draft),
+                                axis: .vertical
+                            )
                                 .font(.system(.title3, design: .serif))
                                 .lineSpacing(5)
                                 .lineLimit(8...18)
                                 .textFieldStyle(.plain)
                                 .foregroundStyle(Color.prosePalInk)
+                                .accessibilityValue("\(editedMessageText.count) of \(ProsePalTextLimit.draft) characters")
                         } else {
                             Text(draft.messageText)
                                 .font(.system(.title3, design: .serif))
@@ -6649,11 +6682,15 @@ private struct RelationshipMemoryDetailView: View {
                     )
 
                     MomentDetailCard(title: "Person", systemImage: "person") {
-                        TextField("Name", text: $personName)
+                        TextField(
+                            "Name",
+                            text: $personName.prosePalLimited(to: ProsePalTextLimit.personName)
+                        )
                             .momentNameInputBehavior()
                             .font(.body.weight(.medium))
                             .textFieldStyle(.plain)
                             .foregroundStyle(Color.prosePalInk)
+                            .accessibilityValue("\(personName.count) of \(ProsePalTextLimit.personName) characters")
                     }
 
                     MomentDetailCard(
@@ -6661,12 +6698,17 @@ private struct RelationshipMemoryDetailView: View {
                         systemImage: "quote.bubble",
                         footer: "Correct this whenever it becomes stale or wrong."
                     ) {
-                        TextField("What should ProsePal remember?", text: $text, axis: .vertical)
+                        TextField(
+                            "What should ProsePal remember?",
+                            text: $text.prosePalLimited(to: ProsePalTextLimit.relationshipMemory),
+                            axis: .vertical
+                        )
                             .font(.system(.body, design: .serif))
                             .lineSpacing(4)
                             .lineLimit(3...7)
                             .textFieldStyle(.plain)
                             .foregroundStyle(Color.prosePalInk)
+                            .accessibilityValue("\(text.count) of \(ProsePalTextLimit.relationshipMemory) characters")
                     }
 
                     memoryUseCard(
@@ -6810,11 +6852,15 @@ private struct RelationshipVoiceCardDetailView: View {
                     )
 
                     MomentDetailCard(title: "Person", systemImage: "person") {
-                        TextField("Name", text: $personName)
+                        TextField(
+                            "Name",
+                            text: $personName.prosePalLimited(to: ProsePalTextLimit.personName)
+                        )
                             .momentNameInputBehavior()
                             .font(.body.weight(.medium))
                             .textFieldStyle(.plain)
                             .foregroundStyle(Color.prosePalInk)
+                            .accessibilityValue("\(summary.count) of \(ProsePalTextLimit.voiceCard) characters")
                     }
 
                     MomentDetailCard(
@@ -6822,7 +6868,11 @@ private struct RelationshipVoiceCardDetailView: View {
                         systemImage: "textformat.size",
                         footer: "Use this for style only, not as a fact to quote."
                     ) {
-                        TextField("How should ProsePal sound with this person?", text: $summary, axis: .vertical)
+                        TextField(
+                            "How should ProsePal sound with this person?",
+                            text: $summary.prosePalLimited(to: ProsePalTextLimit.voiceCard),
+                            axis: .vertical
+                        )
                             .font(.system(.body, design: .serif))
                             .lineSpacing(4)
                             .lineLimit(3...7)

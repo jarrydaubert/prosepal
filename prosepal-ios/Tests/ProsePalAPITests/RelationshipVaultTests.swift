@@ -5,6 +5,34 @@ import ProsePalDomain
 @testable import ProsePalAPI
 
 final class RelationshipVaultTests: XCTestCase {
+    func testRelationshipRecordsEnforceDomainOwnedTextLimitsBeforePersistence() {
+        let longName = String(repeating: "n", count: ProsePalTextLimit.personName + 20)
+        let truthBead = RelationshipTruthBeadRecord(
+            personName: longName,
+            text: String(repeating: "t", count: ProsePalTextLimit.relationshipMemory + 20)
+        )
+        let voiceCard = RelationshipVoiceCardRecord(
+            personName: longName,
+            summary: String(repeating: "v", count: ProsePalTextLimit.voiceCard + 20)
+        )
+        let draft = SavedMomentDraftRecord(
+            moment: MomentInput(
+                personName: longName,
+                relationship: .closeFriend,
+                occasion: .birthday,
+                trueThing: String(repeating: "d", count: ProsePalTextLimit.momentDetail + 20)
+            ),
+            messageText: String(repeating: "m", count: ProsePalTextLimit.draft + 20),
+            lane: .privateDraft
+        )
+
+        XCTAssertEqual(truthBead.personName.count, ProsePalTextLimit.personName)
+        XCTAssertEqual(truthBead.text.count, ProsePalTextLimit.relationshipMemory)
+        XCTAssertEqual(voiceCard.summary.count, ProsePalTextLimit.voiceCard)
+        XCTAssertEqual(draft.trueThing.count, ProsePalTextLimit.momentDetail)
+        XCTAssertEqual(draft.messageText.count, ProsePalTextLimit.draft)
+    }
+
     func testRelationshipMemoryProviderReturnsOnlyApprovedBeadsForPerson() async throws {
         let container = try makeContainer()
         let context = ModelContext(container)
