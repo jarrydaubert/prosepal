@@ -30,6 +30,15 @@ changing the capability model.
 | Draft output | Make one useful draft feel primary; alternatives can exist when the lane returns them. |
 | Writing scope | Moment messages only. Do not add manuscript, scene, character, project-library, or document-manager workflows to native v1. |
 
+## Safety Boundary
+
+| Capability | Native Direction |
+|------------|------------------|
+| Careful writing | Route emotionally difficult writing through the careful lane when the product's moment/register rules call for it. |
+| Pressure feedback | Flag obvious guilt, reassurance-seeking, or overly heavy wording as writing feedback, without diagnosing the user. |
+| Model refusal | Convert on-device or gateway safety refusals into calm, provider-neutral UI. |
+| Crisis assessment | Not a native v1 capability. Keep any existing explicit defensive block narrow; defer multilingual, three-tier, or model-assisted classification. |
+
 ## Results
 
 | Capability | Native Direction |

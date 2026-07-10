@@ -46,7 +46,7 @@ Near-term native work should strengthen:
 - Moment Sheet clarity and speed to first useful draft
 - private draft and take-more-care routing through `MessageWritingService`
 - relationship vault, Truth Beads, and Voice Card control
-- safety, crisis handling, Pressure Check, and careful-mode states
+- careful-mode writing, Pressure Check, and honest model-refusal/error states
 - StoreKit 2, Sign in with Apple, account deletion, and entitlement determinism
 - accessibility, Liquid Glass control surfaces, and privacy-safe diagnostics
 
@@ -132,6 +132,7 @@ Deprioritize or avoid:
 - creative-writing, manuscript, or document-project workflows
 - automatic memory inference before user-approved memory is solid
 - notifications/reminders before timing semantics are safe and useful
+- custom crisis classification or mental-health assessment in native v1
 - heavy B2B work before consumer value is proven
 - Flutter parity work that does not serve the native Moment shape
 

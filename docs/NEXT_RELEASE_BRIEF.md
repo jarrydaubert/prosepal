@@ -25,6 +25,35 @@ Native iOS direction:
 - StoreKit 2, Sign in with Apple, SwiftData, and Foundation Models.
 - Flutter screens are not the native visual or interaction spec.
 
+## Native V1 Launch Contract
+
+Native v1 launches when the following product loop is reliable on a supported
+iPhone:
+
+1. Open the app and start without a mandatory account or paywall.
+2. Name the person, choose the moment, and add the words or detail that matter.
+3. Produce one useful draft through the private lane where available or the
+   careful gateway lane where appropriate.
+4. Edit or adjust the draft without losing the user's work.
+5. Copy, share/send, or deliberately save the result.
+
+The supporting v1 contract is intentionally narrow:
+
+- user-approved relationship memory through Truth Beads and Voice Card
+- local saved drafts with clear edit, share, and deletion behavior
+- Sign in with Apple, account deletion, and local-data export
+- StoreKit 2 purchase, restore, and deterministic entitlement convergence
+- privacy-safe diagnostics, truthful offline/error states, and no provider names
+- accessible core flows on iPhone, with regular-width layouts remaining usable
+- App Intent, widget/control, and Share Extension only where their embedded
+  production targets pass release QA; none may weaken the core app loop
+
+V1 is a personal-message writing product, not a crisis-assessment product.
+Models and the gateway may refuse unsafe requests, and the app must present
+those refusals safely. The existing narrow defensive crisis-support path may
+remain, but expanding it into multilingual detection, three-tier assessment,
+or custom crisis classification is not a v1 launch requirement.
+
 ## Native Boundary
 
 Native rewrite facts:
@@ -77,7 +106,7 @@ The actionable backlog is `docs/BACKLOG.md`. Its native gates are:
 | `N-IOS-02` | Private draft lane. |
 | `N-IOS-03` | Take more care lane. |
 | `N-IOS-04` | Relationship vault, Truth Beads, and Voice Card. |
-| `N-IOS-05` | Careful Mode, Pressure Check, and crisis path. |
+| `N-IOS-05` | Careful Mode, Pressure Check, and safe provider-refusal handling. |
 | `N-IOS-06` | Out-of-app native surfaces. |
 | `N-IOS-07` | StoreKit 2 and server entitlement. |
 | `N-IOS-08` | Sign in with Apple, account, deletion, and export. |
@@ -107,7 +136,7 @@ Supporting surfaces
   relationship vault
   saved local messages
   settings/account/subscription/privacy/legal
-  App Intents / widget / Control Center / Share extension
+  release-qualified App Intents / widget / Control Center / Share extension
 ```
 
 The product starts person-first. Occasion taxonomy exists underneath the moment
@@ -196,3 +225,7 @@ Flutter is archived and is not validated on active `main`. Use tag
 - No production gateway promotion without explicit release approval.
 - No RevenueCat dependency.
 - No Flutter screen parity requirement.
+- No custom multilingual crisis classifier or crisis-assessment programme for
+  native v1.
+- No requirement for the app to infer a user's mental-health state beyond
+  safely handling explicit local or model/gateway refusal signals.

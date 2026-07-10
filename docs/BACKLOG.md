@@ -309,9 +309,10 @@ Implementation sequencing rules:
   `prosepal-ios/evidence/feature-status/us-009-crisis-block-fixed.jpg` and
   `prosepal-ios/evidence/feature-status/us-009-crisis-support-actions.jpg`.
   `ERR-UX-009` fixed the disabled draft card so crisis state explains the safety
-  block instead of showing generic missing-context copy. Partial because
-  detection is a hardcoded English phrase list, not a model guardrail signal with
-  locale awareness.
+  block instead of showing generic missing-context copy. This remains a narrow
+  defensive path, not a native-v1 crisis-assessment capability. Locale-aware,
+  three-tier, or model-assisted classification is deferred to a future release
+  and is not a v1 launch gate.
 - [~] Pressure Check provides subtractive feedback -- evidence:
   `PressureCheck.local(messageText:moment:)` in
   `prosepal-ios/Sources/ProsePalDomain/MomentModels.swift`; private-lane
@@ -336,7 +337,8 @@ Implementation sequencing rules:
   complete.
 - [~] The app avoids therapy/crisis overreach -- evidence: crisis-support copy
   and draft blocking in `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`.
-  Partial pending safety copy review and broader examples.
+  Native v1 does not expand this into diagnosis or custom classification;
+  broader safety-policy work is explicitly deferred.
 
 ## 6. OS Surfaces
 
@@ -1215,6 +1217,16 @@ Implementation sequencing rules:
 
 ## 11. Quality Gates / Acceptance
 
+- [ ] Establish a focused native-v1 writing-quality evaluation -- evidence:
+  current domain and routing tests verify contracts and errors but do not score
+  representative generated messages for preserving the user's words, avoiding
+  invented personal facts, respecting requested length/register, avoiding guilt
+  or pressure, and keeping provider/internal language out of drafts. DoD: create
+  a deterministic representative fixture set and scorer exemplars for those
+  writing qualities; run separately approved live samples through the private
+  and careful lanes; record pass/fail evidence without retaining user content or
+  secrets. This evaluation explicitly excludes custom crisis classification,
+  multilingual crisis detection, and mental-health inference.
 - [~] Acceptance demo exists: open, person, moment, one true thing, write draft,
   adjust, copy/share/save -- evidence: `MomentAppRootView`, `MomentSheetView`,
   `MomentActivityView`, and `MomentModel` in
@@ -1472,42 +1484,41 @@ Implementation sequencing rules:
   DoD: move the Share Extension to the canonical shared policy and retain
   encode/decode plus target-membership guards.
 
-## Top Open Work
+## Native V1 Finish Line
 
-1. Align domain-owned input semantics, normalization, and limits across the app,
-   App Intents, Share Extension, persistence, and gateway.
-2. Consolidate widget, control, shortcut, App Intent, Share Extension, and
-   staging-routing contracts into extension-safe shared code.
+1. Finish the shared extension-safe input/payload contract so the app, App
+   Intents, Share Extension, widget/control, and staging routing cannot drift.
+2. Establish the focused writing-quality evaluation described above, covering
+   private and careful output without adding crisis classification.
 3. Make root navigation destinations distinct and accessible, extracting the
-   touched navigation surfaces and adding real view-layer coverage as part of
-   the slice.
-4. Define safe handling for verified StoreKit transactions from retired or
-   temporarily unconfigured product IDs.
-5. Define the measured end-to-end generation deadline/fallback-chain ceiling
-   and add acknowledged long-wait progress copy.
-6. Propagate structured limit, remaining-use, and reset metadata from the
-   server-owned usage contract when product policy calls for quantified quota UI.
-7. Add release-critical UI automation incrementally and close the enumerated
-   Dynamic Type, Reduce Motion, hit-target, contrast, identifier, and navigation
-   gaps while touched surfaces leave `MomentExperienceView.swift`.
-8. Verify first-run welcome plus the latest Moment visual/rail/content-gating
-   pass on a physical device/TestFlight build and capture release-candidate
-   iPhone and iPad smoke evidence.
-9. Configure Apple App Store Server secrets in staging, apply App Store
-   entitlement migrations to staging, then capture sandbox notification and
-   reconciliation evidence.
-10. Finish external Apple/Supabase setup and device proof for side-by-side
-   `ProsePal Staging`.
-11. Complete widget/control/share-extension QA from
-   actual system surfaces on simulator or device.
-12. Swap the now-working standard-gateway careful lane to the agreed Apple-native
-   careful/PCC direction when that API path is ready.
-13. Harden crisis/pressure handling beyond local English phrase lists and add
-    locale-aware/model-guarded evidence.
-14. Complete vault privacy work for any stronger at-rest encryption decision.
-15. Complete Dark Mode, String Catalog, VoiceOver, Switch Control, broader
-    Dynamic Type, Reduce Motion, Reduce Transparency, Increase Contrast,
-    keyboard/focus, safe-area, and regular-width iPad hardening.
+   touched navigation surfaces and adding real view-layer coverage.
+4. Define a measured end-to-end generation deadline/fallback ceiling and add
+   acknowledged long-wait progress copy.
+5. Add release-critical UI automation and close core-flow Dynamic Type,
+   VoiceOver, hit-target, contrast, identifier, keyboard, and navigation gaps.
+6. Complete production-like Apple/Supabase/App Store staging setup and capture
+   sandbox purchase/restore/notification, auth, gateway, TestFlight, and
+   physical-device release evidence.
+7. Exercise App Intent, widget/control, and Share Extension from actual system
+   surfaces. Remove any optional embedded surface from the v1 target if it
+   cannot pass release QA without destabilizing the core writing loop.
+
+## Post-V1 / Triggered Work
+
+1. Define safe StoreKit handling for retired or temporarily unconfigured product
+   IDs before changing the stable launch product set.
+2. Add quantified quota UI only when the server-owned product policy supplies
+   structured limit, remaining-use, and reset metadata.
+3. Move the careful lane to the agreed Apple-native/PCC direction when that API
+   path is available and approved.
+4. Decide whether the vault needs stronger at-rest encryption beyond current
+   platform storage and privacy controls.
+5. Complete full Dark Mode, String Catalog/localization, Switch Control, broader
+   accessibility, motion/transparency/contrast, and regular-width iPad polish.
+6. Reconsider app-owned crisis classification only as a separate future product
+   decision. Do not build multilingual detection, three-tier assessment, or
+   mental-health inference for native v1; any expansion requires specialist
+   safety review and evidence that model/gateway refusals are insufficient.
 
 ## Archived Flutter Reference Work
 
