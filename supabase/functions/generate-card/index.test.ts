@@ -33,7 +33,11 @@ function makeRequest(
 ): Request {
   return new Request("https://example.supabase.co/functions/v1/generate-card", {
     method: "POST",
-    headers: { "Content-Type": "application/json", ...headers },
+    headers: {
+      "Content-Type": "application/json",
+      "X-ProsePal-Dev-Gateway-Secret": "dev-secret",
+      ...headers,
+    },
     body: JSON.stringify(payload),
   });
 }
@@ -92,7 +96,8 @@ function makeDeps(options: {
         case "PROSEPAL_AI_PROVIDER_JSON_MODE":
           return options.providerJsonMode ? "true" : undefined;
         case "PROSEPAL_DEV_GATEWAY_SECRET":
-          return options.devGatewaySecret;
+          return options.devGatewaySecret ??
+            (options.anonymous ? "dev-secret" : undefined);
         default:
           return undefined;
       }
@@ -233,7 +238,7 @@ Deno.test("requires authentication unless anonymous dev mode is explicitly enabl
 
 Deno.test("requires dev gateway secret when anonymous dev guard is configured", async () => {
   const res = await handleGenerateCard(
-    makeRequest(),
+    makeRequest(fixedRequest, { "X-ProsePal-Dev-Gateway-Secret": "" }),
     makeDeps({ anonymous: true, devGatewaySecret: "dev-secret" }),
   );
 
@@ -241,6 +246,25 @@ Deno.test("requires dev gateway secret when anonymous dev guard is configured", 
   const body = await res.json() as Record<string, unknown>;
   const userSafeError = body.user_safe_error as Record<string, unknown>;
   assertEquals(userSafeError.code, "dev_gateway_secret_required");
+});
+
+Deno.test("fails closed when anonymous dev mode has no configured secret", async () => {
+  const providerBodies: Array<Record<string, unknown>> = [];
+  const res = await handleGenerateCard(
+    makeRequest(),
+    makeDeps({
+      anonymous: true,
+      provider: true,
+      devGatewaySecret: " ",
+      captureProviderBodies: providerBodies,
+    }),
+  );
+
+  assertEquals(res.status, 503);
+  const body = await res.json() as Record<string, unknown>;
+  const userSafeError = body.user_safe_error as Record<string, unknown>;
+  assertEquals(userSafeError.code, "dev_gateway_secret_unconfigured");
+  assertEquals(providerBodies.length, 0);
 });
 
 Deno.test("allows anonymous dev request when dev gateway secret matches", async () => {

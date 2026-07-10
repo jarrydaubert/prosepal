@@ -1286,27 +1286,42 @@ async function authenticate(
   if (boolEnv(deps.getEnv("GATEWAY_DEV_ALLOW_ANONYMOUS"))) {
     const requiredDevSecret = deps.getEnv("PROSEPAL_DEV_GATEWAY_SECRET")
       ?.trim();
-    if (requiredDevSecret) {
-      const providedDevSecret = req.headers.get(
-        "X-ProsePal-Dev-Gateway-Secret",
-      )?.trim() ?? "";
-
-      if (!constantTimeEquals(providedDevSecret, requiredDevSecret)) {
-        return {
-          ok: false,
-          response: jsonResponse(
-            {
-              error: "Development gateway access required",
-              user_safe_error: {
-                code: "dev_gateway_secret_required",
-                message:
-                  "Message generation is not configured for this app build.",
-              },
+    if (!requiredDevSecret) {
+      return {
+        ok: false,
+        response: jsonResponse(
+          {
+            error: "Development gateway is not configured",
+            user_safe_error: {
+              code: "dev_gateway_secret_unconfigured",
+              message:
+                "Message generation is not configured for this app build.",
             },
-            401,
-          ),
-        };
-      }
+          },
+          503,
+        ),
+      };
+    }
+
+    const providedDevSecret = req.headers.get(
+      "X-ProsePal-Dev-Gateway-Secret",
+    )?.trim() ?? "";
+
+    if (!constantTimeEquals(providedDevSecret, requiredDevSecret)) {
+      return {
+        ok: false,
+        response: jsonResponse(
+          {
+            error: "Development gateway access required",
+            user_safe_error: {
+              code: "dev_gateway_secret_required",
+              message:
+                "Message generation is not configured for this app build.",
+            },
+          },
+          401,
+        ),
+      };
     }
 
     return { ok: true, userId: null, mode: "anonymous_dev" };
