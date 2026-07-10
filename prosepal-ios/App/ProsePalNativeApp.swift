@@ -7,12 +7,19 @@ import SwiftData
 
 @main
 struct ProsePalNativeApp: App {
-    private let authSessionController = AuthSessionController(
-        store: KeychainAuthSessionStore(service: "\(ProsePalAppIdentity.bundleIdentifier).auth")
-    )
+    private let authSessionController: AuthSessionController
     private let relationshipVault = RelationshipVaultContainerFactory.makePersistentOrEphemeral()
-    private let authClient = AuthClientFactory.makeClient()
+    private let authClient: (any AuthClient)?
     private let accountMaintenanceClient = AccountMaintenanceClientFactory.makeClient()
+
+    init() {
+        let authClient = AuthClientFactory.makeClient()
+        self.authClient = authClient
+        self.authSessionController = AuthSessionController(
+            store: KeychainAuthSessionStore(service: "\(ProsePalAppIdentity.bundleIdentifier).auth"),
+            authClient: authClient
+        )
+    }
 
     var body: some Scene {
         WindowGroup {

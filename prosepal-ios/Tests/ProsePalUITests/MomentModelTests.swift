@@ -98,6 +98,84 @@ func slowDraftTimesOutAndReturnsToRecoverableState() async throws {
 
 @Test
 @MainActor
+func offlineDraftRetryPreservesNoteAndRecoversWhenServiceReturns() async throws {
+    let service = SequencedMomentWritingService(outcomes: [
+        .failure(.offline),
+        .success(MomentDraftBundle(messageText: "Recovered draft.", lane: .privateDraft))
+    ])
+    let model = MomentModel(service: service)
+    model.personName = "Alex"
+    model.trueThing = "Please keep this note safe."
+
+    await model.draftNow()
+    #expect(model.draftUnavailableReason == .offline)
+    #expect(model.trueThing == "Please keep this note safe.")
+
+    model.startDraft()
+    for _ in 0..<100 {
+        if model.bundle?.messageText == "Recovered draft." { break }
+        try await Task.sleep(for: .milliseconds(2))
+    }
+
+    #expect(model.bundle?.messageText == "Recovered draft.")
+    #expect(model.errorMessage == nil)
+    #expect(model.draftUnavailableReason == nil)
+    #expect(model.trueThing == "Please keep this note safe.")
+    #expect(await service.draftCallCount() == 2)
+}
+
+@Test
+@MainActor
+func offlineDraftRetryFailureReturnsToRetryableStateWithoutLosingNote() async throws {
+    let service = SequencedMomentWritingService(outcomes: [
+        .failure(.offline),
+        .failure(.offline)
+    ])
+    let model = MomentModel(service: service)
+    model.personName = "Alex"
+    model.trueThing = "Keep this exact note."
+
+    await model.draftNow()
+    model.startDraft()
+    for _ in 0..<100 {
+        if await service.draftCallCount() == 2 && !model.isDrafting { break }
+        try await Task.sleep(for: .milliseconds(2))
+    }
+
+    #expect(model.bundle == nil)
+    #expect(model.draftUnavailableReason == .offline)
+    #expect(model.errorMessage == GenerationError.offline.userSafeMessage)
+    #expect(model.trueThing == "Keep this exact note.")
+}
+
+@Test
+@MainActor
+func startDraftIgnoresRepeatedTapsAndCancellationPreventsLateResult() async throws {
+    let client = ControlledMomentDraftClient()
+    let service = RoutingMessageWritingService(
+        privateClient: client,
+        carefulClient: client
+    )
+    let model = MomentModel(service: service)
+    model.personName = "Alex"
+    model.trueThing = "Do not lose this."
+
+    model.startDraft()
+    model.startDraft()
+    await client.waitForDraftCount(1)
+
+    #expect(await client.draftCount() == 1)
+    model.resetDraftForMomentChange()
+    await client.resumeDraft(at: 0, text: "Late draft.")
+    for _ in 0..<20 { await Task.yield() }
+
+    #expect(model.bundle == nil)
+    #expect(model.isDrafting == false)
+    #expect(model.trueThing == "Do not lose this.")
+}
+
+@Test
+@MainActor
 func activeDraftRecoveryRestoresDraftAndHistoryAcrossModelRecreation() {
     // Bug this catches: a user hand-edits a draft, restarts the app, and loses both draft text and undo history.
     let suiteName = "MomentDraftRecoveryTests.\(UUID().uuidString)"
@@ -118,6 +196,8 @@ func activeDraftRecoveryRestoresDraftAndHistoryAcrossModelRecreation() {
     model.relationship = .family
     model.occasion = .apology
     model.register = .assemble
+    model.tone = .poetic
+    model.length = .detailed
     model.trueThing = "I missed the call."
     model.bundle = originalBundle
     model.updateActiveDraftMessage("My edited apology draft.")
@@ -128,6 +208,8 @@ func activeDraftRecoveryRestoresDraftAndHistoryAcrossModelRecreation() {
     #expect(restored.relationship == .family)
     #expect(restored.occasion == .apology)
     #expect(restored.register == .assemble)
+    #expect(restored.tone == .poetic)
+    #expect(restored.length == .detailed)
     #expect(restored.trueThing == "I missed the call.")
     #expect(restored.bundle?.messageText == "My edited apology draft.")
     #expect(restored.previousDraftBundle == originalBundle)
@@ -176,6 +258,8 @@ func startNewMomentClearsActiveComposerWithoutStartingGeneration() async throws 
     model.relationship = .colleague
     model.occasion = .sympathy
     model.register = .assemble
+    model.tone = .formal
+    model.length = .brief
     model.trueThing = "A detail"
     model.bundle = MomentDraftBundle(messageText: "Old draft.", lane: .takeMoreCare)
     model.errorMessage = "Old error."
@@ -187,6 +271,8 @@ func startNewMomentClearsActiveComposerWithoutStartingGeneration() async throws 
     #expect(model.relationship == .closeFriend)
     #expect(model.occasion == .birthday)
     #expect(model.register == .react)
+    #expect(model.tone == .heartfelt)
+    #expect(model.length == .standard)
     #expect(model.trueThing == "")
     #expect(model.bundle == nil)
     #expect(model.errorMessage == nil)
@@ -772,6 +858,57 @@ private actor ControlledMomentDraftClient: MomentDraftClient {
             messageText: text,
             lane: .privateDraft
         ))
+    }
+
+    func draftCount() -> Int {
+        pendingDrafts.count
+    }
+}
+
+private actor SequencedMomentWritingService: MessageWritingService {
+    enum Outcome: Sendable {
+        case success(MomentDraftBundle)
+        case failure(GenerationError)
+    }
+
+    private var outcomes: [Outcome]
+    private var calls = 0
+
+    init(outcomes: [Outcome]) {
+        self.outcomes = outcomes
+    }
+
+    func draft(for moment: MomentInput) async throws -> MomentDraftBundle {
+        calls += 1
+        guard !outcomes.isEmpty else {
+            throw GenerationError.serviceUnavailable(message: "No queued outcome.")
+        }
+
+        switch outcomes.removeFirst() {
+        case .success(let bundle):
+            return bundle
+        case .failure(let error):
+            throw error
+        }
+    }
+
+    func adjust(
+        _ bundle: MomentDraftBundle,
+        with adjustment: MomentAdjustment,
+        moment: MomentInput
+    ) async throws -> MomentDraftBundle {
+        try await draft(for: moment)
+    }
+
+    func takeMoreCare(
+        _ bundle: MomentDraftBundle?,
+        moment: MomentInput
+    ) async throws -> MomentDraftBundle {
+        try await draft(for: moment)
+    }
+
+    func draftCallCount() -> Int {
+        calls
     }
 }
 

@@ -23,6 +23,7 @@ migrate_working_dir/
 # Local environment and generated artifacts
 .env.local
 *.local.sh
+.claude/settings.local.json
 custom_lint.log
 artifacts/
 build/

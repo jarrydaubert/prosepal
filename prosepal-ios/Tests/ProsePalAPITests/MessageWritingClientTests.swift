@@ -173,6 +173,47 @@ final class MessageWritingClientTests: XCTestCase {
         }
     }
 
+    func testGatewayClientMapsCannotFindHostToOffline() async throws {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [CapturingURLProtocol.self]
+        let session = URLSession(configuration: configuration)
+        let endpoint = try XCTUnwrap(URL(string: "https://gateway.example/functions/v1/generate-card"))
+        let client = GatewayMessageWritingClient(endpoint: endpoint, session: session)
+
+        CapturingURLProtocol.requestHandler = { _ in
+            throw URLError(.cannotFindHost)
+        }
+        defer { CapturingURLProtocol.requestHandler = nil }
+
+        do {
+            _ = try await client.generateCard(request: request(requestedLane: .standard))
+            XCTFail("Expected DNS failure to map to offline.")
+        } catch GenerationError.offline {
+            // Expected path.
+        } catch {
+            XCTFail("Expected offline, got \(error).")
+        }
+    }
+
+    func testGatewayClientMapsOfflineAuthRefreshToOffline() async throws {
+        let endpoint = try XCTUnwrap(URL(string: "https://gateway.example/functions/v1/generate-card"))
+        let client = GatewayMessageWritingClient(
+            endpoint: endpoint,
+            authorizationTokenProvider: {
+                throw AuthError.networkUnavailable
+            }
+        )
+
+        do {
+            _ = try await client.generateCard(request: request(requestedLane: .standard))
+            XCTFail("Expected offline auth refresh to map to offline generation.")
+        } catch GenerationError.offline {
+            // Expected path.
+        } catch {
+            XCTFail("Expected offline, got \(error).")
+        }
+    }
+
     func testGatewayClientAddsAuthorizationHeaderFromTokenProvider() async throws {
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [CapturingURLProtocol.self]

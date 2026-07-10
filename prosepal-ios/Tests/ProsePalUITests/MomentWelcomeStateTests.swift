@@ -1,4 +1,4 @@
-import ProsePalUI
+@testable import ProsePalUI
 import Testing
 import Foundation
 
@@ -25,4 +25,17 @@ func momentWelcomeStartsIncompleteAndPersistsCompletion() {
     )
 
     #expect(returningLaunch.hasCompletedWelcome == true)
+}
+
+@Test
+func onboardingFooterActionsMatchTheirVisiblePromises() {
+    #expect(MomentOnboardingPage.welcome.primaryAction == .advance)
+    #expect(MomentOnboardingPage.welcome.showsAccountSignIn)
+    #expect(MomentOnboardingPage.howItWorks.primaryAction == .advance)
+    #expect(MomentOnboardingPage.howItWorks.showsAccountSignIn == false)
+    #expect(MomentOnboardingPage.privacy.primaryAction == .advance)
+    #expect(MomentOnboardingPage.privacy.showsAccountSignIn == false)
+    #expect(MomentOnboardingPage.ready.primaryAction == .complete)
+    #expect(MomentOnboardingPage.ready.primaryTitle == "Start writing")
+    #expect(MomentOnboardingPage.ready.showsAccountSignIn == false)
 }

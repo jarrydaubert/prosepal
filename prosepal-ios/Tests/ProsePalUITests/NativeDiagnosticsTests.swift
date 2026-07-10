@@ -30,6 +30,23 @@ final class NativeDiagnosticsTests: XCTestCase {
         XCTAssertFalse(payload.contains("email"))
     }
 
+    func testSubscriptionEventPayloadSeparatesFetchedAndConfiguredProductCounts() {
+        let payload = NativeDiagnosticsPayload.subscriptionEvent(
+            event: "subscription_restore_failed",
+            source: "settings",
+            productCount: 0,
+            configuredProductCount: 3,
+            outcome: "store_unavailable"
+        )
+
+        XCTAssertEqual(
+            payload,
+            "subscription_event event=subscription_restore_failed source=settings product_count=0 configured_product_count=3 outcome=store_unavailable"
+        )
+        XCTAssertFalse(payload.contains("com.prosepal.pro"))
+        XCTAssertFalse(payload.contains("receipt"))
+    }
+
     func testMomentDraftStartedPayloadDoesNotIncludeRawMomentContent() {
         let moment = MomentInput(
             personName: "Private Person",

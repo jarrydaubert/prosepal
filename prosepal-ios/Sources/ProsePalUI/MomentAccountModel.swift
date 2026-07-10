@@ -33,6 +33,8 @@ public final class MomentAccountModel {
     @ObservationIgnored private let diagnostics: NativeDiagnosticsLogger
     @ObservationIgnored private var pendingAppleSignInNonce: AppleSignInNonce?
     @ObservationIgnored private var didLoadInitialState = false
+    @ObservationIgnored private var subscriptionTransactionUpdatesTask: Task<Void, Never>?
+    @ObservationIgnored private var subscriptionEntitlementRefreshOperation: SubscriptionEntitlementRefreshOperation?
 
     public init(
         clientContext: ClientContext,
@@ -52,6 +54,11 @@ public final class MomentAccountModel {
         self.localAccountDataDeletion = localAccountDataDeletion
         self.runtimeReadiness = runtimeReadiness
         self.diagnostics = diagnostics
+        startSubscriptionTransactionListener()
+    }
+
+    deinit {
+        subscriptionTransactionUpdatesTask?.cancel()
     }
 
     public var isAppleSignInConfigured: Bool {
@@ -60,6 +67,14 @@ public final class MomentAccountModel {
 
     public var isSubscriptionConfigured: Bool {
         subscriptionClient != nil
+    }
+
+    private var fetchedSubscriptionProductCount: Int {
+        subscriptionProducts.count
+    }
+
+    private var configuredSubscriptionProductCount: Int {
+        runtimeReadiness.premiumProductCount
     }
 
     public var isAccountDeletionConfigured: Bool {
@@ -116,15 +131,26 @@ public final class MomentAccountModel {
         guard let authSessionController else { return }
 
         do {
-            let session = try await authSessionController.loadPersistedSession()
-            if session?.isUsable() == true {
-                applyAuthSession(session)
+            let session = try await authSessionController.currentSession()
+            let persistedSession: AuthSession?
+            if let session {
+                persistedSession = session
             } else {
-                try? await authSessionController.clearSession()
-                applyAuthSession(nil)
+                persistedSession = try await authSessionController.persistedSession()
             }
+            applyAuthSession(persistedSession)
+        } catch let error as AuthError {
+            let persistedSession = try? await authSessionController.persistedSession()
+            applyAuthSession(persistedSession)
+            diagnostics.authEvent(
+                "auth_session_refresh_failed",
+                source: "launch",
+                outcome: error.diagnosticsOutcome,
+                statusCode: error.diagnosticsStatusCode
+            )
         } catch {
-            applyAuthSession(nil)
+            let persistedSession = try? await authSessionController.persistedSession()
+            applyAuthSession(persistedSession)
             diagnostics.messageAction("auth_session_load_failed", source: "launch", messageCharacters: 0)
         }
     }
@@ -265,6 +291,7 @@ public final class MomentAccountModel {
                 "subscription_products_unconfigured",
                 source: source,
                 productCount: 0,
+                configuredProductCount: configuredSubscriptionProductCount,
                 outcome: "not_configured"
             )
             return
@@ -272,7 +299,12 @@ public final class MomentAccountModel {
 
         isLoadingSubscriptions = true
         subscriptionErrorMessage = nil
-        diagnostics.subscriptionEvent("subscription_products_loading", source: source)
+        diagnostics.subscriptionEvent(
+            "subscription_products_loading",
+            source: source,
+            productCount: fetchedSubscriptionProductCount,
+            configuredProductCount: configuredSubscriptionProductCount
+        )
         defer { isLoadingSubscriptions = false }
 
         do {
@@ -288,6 +320,7 @@ public final class MomentAccountModel {
                 "subscription_products_loaded",
                 source: source,
                 productCount: products.count,
+                configuredProductCount: configuredSubscriptionProductCount,
                 outcome: "success"
             )
         } catch let error as SubscriptionError {
@@ -298,6 +331,7 @@ public final class MomentAccountModel {
                 "subscription_products_failed",
                 source: source,
                 productCount: 0,
+                configuredProductCount: configuredSubscriptionProductCount,
                 outcome: error.diagnosticsOutcome
             )
         } catch {
@@ -308,27 +342,59 @@ public final class MomentAccountModel {
                 "subscription_products_failed",
                 source: source,
                 productCount: 0,
+                configuredProductCount: configuredSubscriptionProductCount,
                 outcome: "unexpected_error"
             )
         }
     }
 
-    public func refreshSubscriptionEntitlement(source: String) async {
-        guard !isRefreshingSubscriptionEntitlement else { return }
+    @discardableResult
+    public func refreshSubscriptionEntitlement(source: String) async -> Bool {
         guard let subscriptionClient else {
             isPremiumUnlocked = false
             subscriptionEntitlement = .inactive
             diagnostics.subscriptionEvent(
                 "subscription_entitlement_unconfigured",
                 source: source,
+                configuredProductCount: configuredSubscriptionProductCount,
                 outcome: "not_configured"
             )
-            return
+            return false
         }
 
+        while let existingOperation = subscriptionEntitlementRefreshOperation {
+            _ = await existingOperation.task.value
+            clearSubscriptionEntitlementRefreshOperation(ifMatching: existingOperation.id)
+        }
+
+        let operation = SubscriptionEntitlementRefreshOperation(
+            id: UUID(),
+            task: Task { [weak self] in
+                guard let self else { return false }
+                return await self.performSubscriptionEntitlementRefresh(
+                    using: subscriptionClient,
+                    source: source
+                )
+            }
+        )
+        subscriptionEntitlementRefreshOperation = operation
+        let didRefresh = await operation.task.value
+        clearSubscriptionEntitlementRefreshOperation(ifMatching: operation.id)
+        return didRefresh
+    }
+
+    private func performSubscriptionEntitlementRefresh(
+        using subscriptionClient: any SubscriptionClient,
+        source: String
+    ) async -> Bool {
         isRefreshingSubscriptionEntitlement = true
         defer { isRefreshingSubscriptionEntitlement = false }
-        diagnostics.subscriptionEvent("subscription_entitlement_refresh_started", source: source)
+        diagnostics.subscriptionEvent(
+            "subscription_entitlement_refresh_started",
+            source: source,
+            productCount: fetchedSubscriptionProductCount,
+            configuredProductCount: configuredSubscriptionProductCount
+        )
 
         do {
             let entitlement = try await subscriptionClient.currentEntitlement()
@@ -338,8 +404,11 @@ public final class MomentAccountModel {
             diagnostics.subscriptionEvent(
                 "subscription_entitlement_refresh_succeeded",
                 source: source,
+                productCount: fetchedSubscriptionProductCount,
+                configuredProductCount: configuredSubscriptionProductCount,
                 outcome: entitlement.isActive ? "active" : "inactive"
             )
+            return true
         } catch let error as SubscriptionError {
             isPremiumUnlocked = false
             subscriptionEntitlement = .inactive
@@ -347,8 +416,11 @@ public final class MomentAccountModel {
             diagnostics.subscriptionEvent(
                 "subscription_entitlement_refresh_failed",
                 source: source,
+                productCount: fetchedSubscriptionProductCount,
+                configuredProductCount: configuredSubscriptionProductCount,
                 outcome: error.diagnosticsOutcome
             )
+            return false
         } catch {
             isPremiumUnlocked = false
             subscriptionEntitlement = .inactive
@@ -356,9 +428,22 @@ public final class MomentAccountModel {
             diagnostics.subscriptionEvent(
                 "subscription_entitlement_refresh_failed",
                 source: source,
+                productCount: fetchedSubscriptionProductCount,
+                configuredProductCount: configuredSubscriptionProductCount,
                 outcome: "unexpected_error"
             )
+            return false
         }
+    }
+
+    private func clearSubscriptionEntitlementRefreshOperation(ifMatching id: UUID) {
+        guard subscriptionEntitlementRefreshOperation?.id == id else { return }
+        subscriptionEntitlementRefreshOperation = nil
+    }
+
+    public func stopSubscriptionTransactionListener() {
+        subscriptionTransactionUpdatesTask?.cancel()
+        subscriptionTransactionUpdatesTask = nil
     }
 
     public func selectSubscriptionProduct(_ product: SubscriptionProduct) {
@@ -375,6 +460,7 @@ public final class MomentAccountModel {
                 "subscription_purchase_unconfigured",
                 source: source,
                 productCount: 0,
+                configuredProductCount: configuredSubscriptionProductCount,
                 outcome: "not_configured"
             )
             return
@@ -390,7 +476,8 @@ public final class MomentAccountModel {
             diagnostics.subscriptionEvent(
                 "subscription_purchase_failed",
                 source: source,
-                productCount: subscriptionProducts.count,
+                productCount: fetchedSubscriptionProductCount,
+                configuredProductCount: configuredSubscriptionProductCount,
                 outcome: "no_product"
             )
             return
@@ -401,7 +488,8 @@ public final class MomentAccountModel {
         diagnostics.subscriptionEvent(
             "subscription_purchase_started",
             source: source,
-            productCount: subscriptionProducts.count
+            productCount: fetchedSubscriptionProductCount,
+            configuredProductCount: configuredSubscriptionProductCount
         )
         defer { isPurchasingPremium = false }
 
@@ -414,7 +502,8 @@ public final class MomentAccountModel {
             diagnostics.subscriptionEvent(
                 "subscription_purchase_failed",
                 source: source,
-                productCount: subscriptionProducts.count,
+                productCount: fetchedSubscriptionProductCount,
+                configuredProductCount: configuredSubscriptionProductCount,
                 outcome: error.diagnosticsOutcome
             )
         } catch {
@@ -423,7 +512,8 @@ public final class MomentAccountModel {
             diagnostics.subscriptionEvent(
                 "subscription_purchase_failed",
                 source: source,
-                productCount: subscriptionProducts.count,
+                productCount: fetchedSubscriptionProductCount,
+                configuredProductCount: configuredSubscriptionProductCount,
                 outcome: "unexpected_error"
             )
         }
@@ -438,6 +528,7 @@ public final class MomentAccountModel {
                 "subscription_restore_unconfigured",
                 source: source,
                 productCount: 0,
+                configuredProductCount: configuredSubscriptionProductCount,
                 outcome: "not_configured"
             )
             return
@@ -445,7 +536,12 @@ public final class MomentAccountModel {
 
         isRestoringPurchases = true
         subscriptionErrorMessage = nil
-        diagnostics.subscriptionEvent("subscription_restore_started", source: source)
+        diagnostics.subscriptionEvent(
+            "subscription_restore_started",
+            source: source,
+            productCount: fetchedSubscriptionProductCount,
+            configuredProductCount: configuredSubscriptionProductCount
+        )
         defer { isRestoringPurchases = false }
 
         do {
@@ -457,6 +553,8 @@ public final class MomentAccountModel {
             diagnostics.subscriptionEvent(
                 "subscription_restore_failed",
                 source: source,
+                productCount: fetchedSubscriptionProductCount,
+                configuredProductCount: configuredSubscriptionProductCount,
                 outcome: error.diagnosticsOutcome
             )
         } catch {
@@ -465,6 +563,8 @@ public final class MomentAccountModel {
             diagnostics.subscriptionEvent(
                 "subscription_restore_failed",
                 source: source,
+                productCount: fetchedSubscriptionProductCount,
+                configuredProductCount: configuredSubscriptionProductCount,
                 outcome: "unexpected_error"
             )
         }
@@ -539,11 +639,11 @@ public final class MomentAccountModel {
     }
 
     private func applyAuthSession(_ session: AuthSession?) {
-        let usableSession = session?.isUsable() == true ? session : nil
-        isSignedIn = usableSession != nil
-        signedInEmail = usableSession?.user?.email
+        let continuableSession = session?.canContinueSignIn == true ? session : nil
+        isSignedIn = continuableSession != nil
+        signedInEmail = continuableSession?.user?.email
 
-        if usableSession == nil {
+        if continuableSession == nil {
             isPremiumUnlocked = false
             subscriptionEntitlement = .inactive
         }
@@ -561,7 +661,8 @@ public final class MomentAccountModel {
         diagnostics.subscriptionEvent(
             "subscription_result",
             source: source,
-            productCount: subscriptionProducts.count,
+            productCount: fetchedSubscriptionProductCount,
+            configuredProductCount: configuredSubscriptionProductCount,
             outcome: result.status.rawValue
         )
 
@@ -584,6 +685,40 @@ public final class MomentAccountModel {
         }
     }
 
+    private func startSubscriptionTransactionListener() {
+        guard subscriptionTransactionUpdatesTask == nil,
+              let subscriptionClient else { return }
+
+        subscriptionTransactionUpdatesTask = Task { [weak self] in
+            let updates = await subscriptionClient.transactionUpdates()
+            for await update in updates {
+                guard !Task.isCancelled, let self else { return }
+                await self.handleSubscriptionTransactionUpdate(update)
+            }
+        }
+    }
+
+    private func handleSubscriptionTransactionUpdate(
+        _ update: SubscriptionTransactionUpdate
+    ) async {
+        guard update.verification == .verified else {
+            diagnostics.subscriptionEvent(
+                "subscription_transaction_unverified",
+                source: "transaction_updates",
+                productCount: fetchedSubscriptionProductCount,
+                configuredProductCount: configuredSubscriptionProductCount,
+                outcome: "verification_failed"
+            )
+            return
+        }
+
+        let didConverge = await refreshSubscriptionEntitlement(
+            source: "transaction_updates"
+        )
+        guard didConverge, !Task.isCancelled else { return }
+        await update.finish()
+    }
+
     private func showNotice(_ title: String, systemImage: String) {
         let notice = MomentAccountNotice(title: title, systemImage: systemImage)
         self.notice = notice
@@ -597,6 +732,18 @@ public final class MomentAccountModel {
     }
 }
 
+private extension AuthSession {
+    var canContinueSignIn: Bool {
+        if isUsable() {
+            return true
+        }
+
+        let refreshToken = refreshToken?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        return refreshToken?.isEmpty == false
+    }
+}
+
 public struct MomentAccountNotice: Identifiable, Equatable, Sendable {
     public var id = UUID()
     public var title: String
@@ -607,6 +754,11 @@ public struct MomentAccountNotice: Identifiable, Equatable, Sendable {
         self.title = title
         self.systemImage = systemImage
     }
+}
+
+private struct SubscriptionEntitlementRefreshOperation: Sendable {
+    let id: UUID
+    let task: Task<Bool, Never>
 }
 
 private extension SubscriptionError {

@@ -53,6 +53,7 @@ public enum AuthError: Error, Equatable, Sendable {
     case missingNonce
     case nonceGenerationFailed
     case invalidResponse
+    case networkUnavailable
     case requestFailed(statusCode: Int, message: String)
     case storageFailed(message: String)
 }
@@ -70,6 +71,8 @@ public extension AuthError {
             "Apple sign-in could not start securely. Please try again."
         case .invalidResponse:
             "Sign in returned an unexpected response. Please try again."
+        case .networkUnavailable:
+            "ProsePal services could not be reached. Check your connection and try again."
         case .requestFailed(_, let message),
              .storageFailed(let message):
             message
@@ -88,6 +91,8 @@ public extension AuthError {
             "nonce_generation_failed"
         case .invalidResponse:
             "supabase_invalid_response"
+        case .networkUnavailable:
+            "network_unavailable"
         case .requestFailed(let statusCode, _):
             switch statusCode {
             case 400, 401, 403:
@@ -120,6 +125,8 @@ public protocol AuthClient: Sendable {
         nonce: String?
     ) async throws -> AuthSession
 
+    func refreshSession(_ session: AuthSession) async throws -> AuthSession
+
     func signOut(accessToken: String) async throws
 }
 
@@ -131,11 +138,17 @@ public protocol AuthSessionStore: Sendable {
 
 public actor AuthSessionController {
     private let store: AuthSessionStore
+    private let authClient: (any AuthClient)?
     private var cachedSession: AuthSession?
     private var hasLoadedStoredSession = false
+    private var refreshOperation: AuthSessionRefreshOperation?
 
-    public init(store: AuthSessionStore) {
+    public init(
+        store: AuthSessionStore,
+        authClient: (any AuthClient)? = nil
+    ) {
         self.store = store
+        self.authClient = authClient
     }
 
     @discardableResult
@@ -148,6 +161,7 @@ public actor AuthSessionController {
 
     @discardableResult
     public func replaceSession(_ session: AuthSession) async throws -> AuthSession {
+        await cancelRefreshIfNeeded()
         try await store.saveSession(session)
         cachedSession = session
         hasLoadedStoredSession = true
@@ -155,21 +169,106 @@ public actor AuthSessionController {
     }
 
     public func clearSession() async throws {
+        await cancelRefreshIfNeeded()
         try await store.clearSession()
         cachedSession = nil
         hasLoadedStoredSession = true
     }
 
-    public func currentSession() async throws -> AuthSession? {
+    public func persistedSession() async throws -> AuthSession? {
         try await loadedSession()
     }
 
+    public func currentSession(at date: Date = Date()) async throws -> AuthSession? {
+        guard let session = try await loadedSession() else {
+            return nil
+        }
+        guard !session.isUsable(at: date) else {
+            return session
+        }
+
+        return try await refreshSessionIfPossible(session, at: date)
+    }
+
     public func currentAccessToken(at date: Date = Date()) async throws -> String? {
-        guard let session = try await loadedSession(), session.isUsable(at: date) else {
+        guard let session = try await currentSession(at: date) else {
             return nil
         }
 
         return session.accessToken
+    }
+
+    private func refreshSessionIfPossible(
+        _ session: AuthSession,
+        at date: Date
+    ) async throws -> AuthSession? {
+        let refreshToken = session.refreshToken?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        guard refreshToken?.isEmpty == false else {
+            try await store.clearSession()
+            cachedSession = nil
+            hasLoadedStoredSession = true
+            return nil
+        }
+        guard let authClient else {
+            return nil
+        }
+
+        let operation: AuthSessionRefreshOperation
+        if let refreshOperation {
+            operation = refreshOperation
+        } else {
+            let store = store
+            let task = Task {
+                let refreshedSession = try await authClient.refreshSession(session)
+                try Task.checkCancellation()
+                guard refreshedSession.isUsable(at: date) else {
+                    throw AuthError.invalidResponse
+                }
+                try await store.saveSession(refreshedSession)
+                return refreshedSession
+            }
+            operation = AuthSessionRefreshOperation(id: UUID(), task: task)
+            refreshOperation = operation
+        }
+
+        do {
+            let refreshedSession = try await operation.task.value
+            guard refreshedSession.isUsable(at: date) else {
+                throw AuthError.invalidResponse
+            }
+            cachedSession = refreshedSession
+            hasLoadedStoredSession = true
+            clearRefreshOperation(ifMatching: operation.id)
+            return refreshedSession
+        } catch is CancellationError {
+            clearRefreshOperation(ifMatching: operation.id)
+            throw CancellationError()
+        } catch let error as AuthError {
+            let ownsRefreshOperation = refreshOperation?.id == operation.id
+            clearRefreshOperation(ifMatching: operation.id)
+            if ownsRefreshOperation && error.clearsSessionAfterRefreshFailure {
+                cachedSession = nil
+                hasLoadedStoredSession = true
+                try? await store.clearSession()
+            }
+            throw error
+        } catch {
+            clearRefreshOperation(ifMatching: operation.id)
+            throw error
+        }
+    }
+
+    private func cancelRefreshIfNeeded() async {
+        guard let refreshOperation else { return }
+        self.refreshOperation = nil
+        refreshOperation.task.cancel()
+        _ = try? await refreshOperation.task.value
+    }
+
+    private func clearRefreshOperation(ifMatching id: UUID) {
+        guard refreshOperation?.id == id else { return }
+        refreshOperation = nil
     }
 
     private func loadedSession() async throws -> AuthSession? {
@@ -178,6 +277,20 @@ public actor AuthSessionController {
         }
 
         return cachedSession
+    }
+}
+
+private struct AuthSessionRefreshOperation: Sendable {
+    let id: UUID
+    let task: Task<AuthSession, Error>
+}
+
+private extension AuthError {
+    var clearsSessionAfterRefreshFailure: Bool {
+        guard case .requestFailed(let statusCode, _) = self else {
+            return false
+        }
+        return statusCode == 400 || statusCode == 401 || statusCode == 403
     }
 }
 

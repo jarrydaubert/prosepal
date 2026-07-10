@@ -54,12 +54,15 @@ Run what is relevant to the change:
 For native iOS work:
 
 ```bash
+git diff --check
 cd prosepal-ios
 swift build
 swift test
+xcodebuild -project ProsePal.xcodeproj -target ProsePal -sdk iphonesimulator CODE_SIGNING_ALLOWED=NO build
 ```
 
-For DevOps/workflow changes, also ensure `docs/DEVOPS.md` is updated.
+For repo/workflow changes, also run the relevant release preflight from
+`docs/DEVOPS.md` and update that runbook in the same change.
 
 If any required validation cannot be run, state that clearly.
 

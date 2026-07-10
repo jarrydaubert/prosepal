@@ -71,6 +71,73 @@ func appleSignInSuccessStoresSessionAndRefreshesEntitlement() async throws {
 
 @Test
 @MainActor
+func launchRefreshesExpiredAuthSessionAndKeepsAccountSignedIn() async throws {
+    let expiredSession = AuthSession.test(
+        accessToken: "expired-token",
+        refreshToken: "refresh-token-1",
+        expiresAt: Date(timeIntervalSince1970: 1_700_000_000)
+    )
+    let rotatedSession = AuthSession.test(
+        accessToken: "access-token-2",
+        refreshToken: "refresh-token-2",
+        expiresAt: Date(timeIntervalSince1970: 2_000_000_000)
+    )
+    let store = MomentAccountInMemoryAuthSessionStore(session: expiredSession)
+    let authClient = MomentAccountAuthClient(session: rotatedSession)
+    let account = makeAccount(store: store, authClient: authClient)
+
+    await account.loadAuthSession()
+
+    #expect(account.isSignedIn)
+    #expect(account.signedInEmail == "user@example.com")
+    #expect(try await store.loadSession() == rotatedSession)
+    #expect(await authClient.refreshCallCount() == 1)
+}
+
+@Test
+@MainActor
+func launchPreservesSignedInIdentityWhenExpiredSessionRefreshIsOffline() async throws {
+    let expiredSession = AuthSession.test(
+        accessToken: "expired-token",
+        refreshToken: "refresh-token-1",
+        expiresAt: Date(timeIntervalSince1970: 1_700_000_000)
+    )
+    let store = MomentAccountInMemoryAuthSessionStore(session: expiredSession)
+    let authClient = MomentAccountAuthClient(refreshError: AuthError.networkUnavailable)
+    let account = makeAccount(store: store, authClient: authClient)
+
+    await account.loadAuthSession()
+
+    #expect(account.isSignedIn)
+    #expect(account.signedInEmail == "user@example.com")
+    #expect(try await store.loadSession() == expiredSession)
+    #expect(await authClient.refreshCallCount() == 1)
+}
+
+@Test
+@MainActor
+func launchClearsSignedInStateAfterTerminalRefreshRejection() async throws {
+    let expiredSession = AuthSession.test(
+        accessToken: "expired-token",
+        refreshToken: "refresh-token-1",
+        expiresAt: Date(timeIntervalSince1970: 1_700_000_000)
+    )
+    let store = MomentAccountInMemoryAuthSessionStore(session: expiredSession)
+    let authClient = MomentAccountAuthClient(refreshError: AuthError.requestFailed(
+        statusCode: 401,
+        message: "Refresh token rejected."
+    ))
+    let account = makeAccount(store: store, authClient: authClient)
+
+    await account.loadAuthSession()
+
+    #expect(account.isSignedIn == false)
+    #expect(try await store.loadSession() == nil)
+    #expect(await authClient.refreshCallCount() == 1)
+}
+
+@Test
+@MainActor
 func appleSignInFailurePreservesExistingSignedInSession() async throws {
     let existingSession = AuthSession.test(
         accessToken: "existing-token",
@@ -221,6 +288,195 @@ func restorePurchasesShowsVisibleErrorWhenUnconfigured() async {
 
 @Test
 @MainActor
+func transactionUpdatesConvergeApprovalsRenewalsFamilySharingAndRevocations() async {
+    let subscriptionClient = MomentAccountSubscriptionClient()
+    let finishRecorder = MomentAccountTransactionFinishRecorder()
+    let account = makeAccount(subscriptionClient: subscriptionClient)
+
+    await subscriptionClient.setEntitlement(SubscriptionEntitlement(
+        isActive: true,
+        productID: "com.prosepal.pro.monthly"
+    ))
+    await subscriptionClient.emitTransactionUpdate(SubscriptionTransactionUpdate(
+        verification: .verified,
+        productID: "com.prosepal.pro.monthly",
+        finishAction: { await finishRecorder.recordFinish() }
+    ))
+    await waitForTransactionUpdates(finishRecorder: finishRecorder, expectedFinishCount: 1)
+
+    #expect(account.isPremiumUnlocked)
+    #expect(account.subscriptionEntitlement.productID == "com.prosepal.pro.monthly")
+
+    await subscriptionClient.setEntitlement(SubscriptionEntitlement(
+        isActive: true,
+        productID: "com.prosepal.pro.yearly"
+    ))
+    await subscriptionClient.emitTransactionUpdate(SubscriptionTransactionUpdate(
+        verification: .verified,
+        productID: "com.prosepal.pro.yearly",
+        finishAction: { await finishRecorder.recordFinish() }
+    ))
+    await waitForTransactionUpdates(finishRecorder: finishRecorder, expectedFinishCount: 2)
+
+    #expect(account.isPremiumUnlocked)
+    #expect(account.subscriptionEntitlement.productID == "com.prosepal.pro.yearly")
+
+    await subscriptionClient.setEntitlement(.inactive)
+    await subscriptionClient.emitTransactionUpdate(SubscriptionTransactionUpdate(
+        verification: .verified,
+        productID: "com.prosepal.pro.yearly",
+        finishAction: { await finishRecorder.recordFinish() }
+    ))
+    await waitForTransactionUpdates(finishRecorder: finishRecorder, expectedFinishCount: 3)
+
+    #expect(account.isPremiumUnlocked == false)
+    #expect(account.subscriptionEntitlement == .inactive)
+    #expect(await subscriptionClient.currentEntitlementCallCount() == 3)
+    account.stopSubscriptionTransactionListener()
+}
+
+@Test
+@MainActor
+func unverifiedTransactionUpdateCannotUnlockPremiumOrFinishTransaction() async {
+    let subscriptionClient = MomentAccountSubscriptionClient(entitlement: SubscriptionEntitlement(
+        isActive: true,
+        productID: "com.prosepal.pro.yearly"
+    ))
+    let unverifiedFinishRecorder = MomentAccountTransactionFinishRecorder()
+    let verifiedFinishRecorder = MomentAccountTransactionFinishRecorder()
+    let account = makeAccount(subscriptionClient: subscriptionClient)
+
+    for _ in 0..<200 {
+        if await subscriptionClient.transactionUpdatesCallCount() == 1 { break }
+        await Task.yield()
+    }
+    await subscriptionClient.emitTransactionUpdate(SubscriptionTransactionUpdate(
+        verification: .unverified,
+        productID: "com.prosepal.pro.yearly",
+        finishAction: { await unverifiedFinishRecorder.recordFinish() }
+    ))
+
+    for _ in 0..<200 {
+        await Task.yield()
+    }
+
+    #expect(account.isPremiumUnlocked == false)
+    #expect(await unverifiedFinishRecorder.finishCount() == 0)
+    #expect(await subscriptionClient.currentEntitlementCallCount() == 0)
+
+    await subscriptionClient.setEntitlement(.inactive)
+    await subscriptionClient.emitTransactionUpdate(SubscriptionTransactionUpdate(
+        verification: .verified,
+        productID: "com.prosepal.pro.yearly",
+        finishAction: { await verifiedFinishRecorder.recordFinish() }
+    ))
+    await waitForTransactionUpdates(
+        finishRecorder: verifiedFinishRecorder,
+        expectedFinishCount: 1
+    )
+
+    #expect(account.isPremiumUnlocked == false)
+    #expect(account.subscriptionEntitlement == .inactive)
+    #expect(await unverifiedFinishRecorder.finishCount() == 0)
+    #expect(await subscriptionClient.currentEntitlementCallCount() == 1)
+    account.stopSubscriptionTransactionListener()
+}
+
+@Test
+@MainActor
+func verifiedTransactionIsNotFinishedWhenEntitlementConvergenceFails() async {
+    let subscriptionClient = MomentAccountSubscriptionClient(
+        currentEntitlementError: SubscriptionError.storeUnavailable
+    )
+    let finishRecorder = MomentAccountTransactionFinishRecorder()
+    let account = makeAccount(subscriptionClient: subscriptionClient)
+
+    await subscriptionClient.emitTransactionUpdate(SubscriptionTransactionUpdate(
+        verification: .verified,
+        productID: "com.prosepal.pro.yearly",
+        finishAction: { await finishRecorder.recordFinish() }
+    ))
+
+    for _ in 0..<200 {
+        if await subscriptionClient.currentEntitlementCallCount() == 1 { break }
+        await Task.yield()
+    }
+
+    #expect(await subscriptionClient.currentEntitlementCallCount() == 1)
+    #expect(await finishRecorder.finishCount() == 0)
+    #expect(account.isPremiumUnlocked == false)
+    #expect(account.subscriptionErrorMessage == SubscriptionError.storeUnavailable.userSafeMessage)
+    account.stopSubscriptionTransactionListener()
+}
+
+@Test
+@MainActor
+func overlappingEntitlementRefreshesAreSerialized() async {
+    let subscriptionClient = MomentAccountSubscriptionClient(
+        entitlement: SubscriptionEntitlement(
+            isActive: true,
+            productID: "com.prosepal.pro.yearly"
+        ),
+        currentEntitlementDelay: .milliseconds(20)
+    )
+    let account = makeAccount(subscriptionClient: subscriptionClient)
+
+    async let launchRefresh = account.refreshSubscriptionEntitlement(source: "launch")
+    async let transactionRefresh = account.refreshSubscriptionEntitlement(source: "transaction_updates")
+    let results = await (launchRefresh, transactionRefresh)
+
+    #expect(results.0)
+    #expect(results.1)
+    #expect(await subscriptionClient.currentEntitlementCallCount() == 2)
+    #expect(await subscriptionClient.maximumConcurrentEntitlementCallCount() == 1)
+    #expect(account.isPremiumUnlocked)
+    account.stopSubscriptionTransactionListener()
+}
+
+@Test
+@MainActor
+func stoppingTransactionListenerPreventsFurtherEntitlementChanges() async {
+    let subscriptionClient = MomentAccountSubscriptionClient()
+    let finishRecorder = MomentAccountTransactionFinishRecorder()
+    let account = makeAccount(subscriptionClient: subscriptionClient)
+
+    for _ in 0..<200 {
+        if await subscriptionClient.transactionUpdatesCallCount() == 1 { break }
+        await Task.yield()
+    }
+    account.stopSubscriptionTransactionListener()
+    await subscriptionClient.setEntitlement(SubscriptionEntitlement(
+        isActive: true,
+        productID: "com.prosepal.pro.yearly"
+    ))
+    await subscriptionClient.emitTransactionUpdate(SubscriptionTransactionUpdate(
+        verification: .verified,
+        productID: "com.prosepal.pro.yearly",
+        finishAction: { await finishRecorder.recordFinish() }
+    ))
+
+    for _ in 0..<200 {
+        await Task.yield()
+    }
+
+    #expect(account.isPremiumUnlocked == false)
+    #expect(await subscriptionClient.currentEntitlementCallCount() == 0)
+    #expect(await finishRecorder.finishCount() == 0)
+}
+
+@MainActor
+private func waitForTransactionUpdates(
+    finishRecorder: MomentAccountTransactionFinishRecorder,
+    expectedFinishCount: Int
+) async {
+    for _ in 0..<200 {
+        if await finishRecorder.finishCount() == expectedFinishCount { return }
+        await Task.yield()
+    }
+}
+
+@Test
+@MainActor
 func accountDeletionClearsSessionAndPremiumWhenConfigured() async throws {
     let session = AuthSession.test(accessToken: "delete-token")
     let store = MomentAccountInMemoryAuthSessionStore(session: session)
@@ -310,9 +566,13 @@ private func makeAccount(
     accountMaintenanceClient: (any AccountMaintenanceClient)? = nil,
     localAccountDataDeletion: (@MainActor () async throws -> Void)? = nil
 ) -> MomentAccountModel {
-    MomentAccountModel(
+    let authSessionController = AuthSessionController(
+        store: store,
+        authClient: authClient
+    )
+    return MomentAccountModel(
         clientContext: ClientContext(appVersion: "1.0", buildNumber: "1"),
-        authSessionController: AuthSessionController(store: store),
+        authSessionController: authSessionController,
         authClient: authClient,
         subscriptionClient: subscriptionClient,
         accountMaintenanceClient: accountMaintenanceClient,
@@ -347,7 +607,9 @@ private actor MomentAccountInMemoryAuthSessionStore: AuthSessionStore {
 private actor MomentAccountAuthClient: AuthClient {
     private let session: AuthSession
     private let signInError: (any Error)?
+    private let refreshError: (any Error)?
     private var recordedSignOutTokens: [String] = []
+    private var recordedRefreshCallCount = 0
 
     init(
         session: AuthSession = .test(
@@ -355,10 +617,12 @@ private actor MomentAccountAuthClient: AuthClient {
             userID: "user-1",
             email: "user@example.com"
         ),
-        signInError: (any Error)? = nil
+        signInError: (any Error)? = nil,
+        refreshError: (any Error)? = nil
     ) {
         self.session = session
         self.signInError = signInError
+        self.refreshError = refreshError
     }
 
     func signInWithIDToken(
@@ -373,12 +637,25 @@ private actor MomentAccountAuthClient: AuthClient {
         return session
     }
 
+    func refreshSession(_ session: AuthSession) async throws -> AuthSession {
+        recordedRefreshCallCount += 1
+        if let refreshError {
+            throw refreshError
+        }
+
+        return self.session
+    }
+
     func signOut(accessToken: String) async throws {
         recordedSignOutTokens.append(accessToken)
     }
 
     func signOutTokens() -> [String] {
         recordedSignOutTokens
+    }
+
+    func refreshCallCount() -> Int {
+        recordedRefreshCallCount
     }
 }
 
@@ -389,10 +666,18 @@ private actor MomentAccountSubscriptionClient: SubscriptionClient {
     private var restoreResult: SubscriptionPurchaseResult
     private var loadProductsError: (any Error)?
     private var currentEntitlementError: (any Error)?
+    private let currentEntitlementDelay: Duration?
     private var purchaseError: (any Error)?
     private var restoreError: (any Error)?
     private var recordedLoadProductsCallCount = 0
     private var recordedPurchasedProductIDs: [String] = []
+    private var recordedCurrentEntitlementCallCount = 0
+    private var activeCurrentEntitlementCallCount = 0
+    private var recordedMaximumConcurrentEntitlementCallCount = 0
+    private var transactionUpdatesStream: AsyncStream<SubscriptionTransactionUpdate>?
+    private var transactionUpdatesContinuation: AsyncStream<SubscriptionTransactionUpdate>.Continuation?
+    private var pendingTransactionUpdates: [SubscriptionTransactionUpdate] = []
+    private var recordedTransactionUpdatesCallCount = 0
 
     init(
         products: [SubscriptionProduct] = [],
@@ -401,6 +686,7 @@ private actor MomentAccountSubscriptionClient: SubscriptionClient {
         restoreResult: SubscriptionPurchaseResult = SubscriptionPurchaseResult(status: .notEntitled),
         loadProductsError: (any Error)? = nil,
         currentEntitlementError: (any Error)? = nil,
+        currentEntitlementDelay: Duration? = nil,
         purchaseError: (any Error)? = nil,
         restoreError: (any Error)? = nil
     ) {
@@ -410,6 +696,7 @@ private actor MomentAccountSubscriptionClient: SubscriptionClient {
         self.restoreResult = restoreResult
         self.loadProductsError = loadProductsError
         self.currentEntitlementError = currentEntitlementError
+        self.currentEntitlementDelay = currentEntitlementDelay
         self.purchaseError = purchaseError
         self.restoreError = restoreError
     }
@@ -424,6 +711,16 @@ private actor MomentAccountSubscriptionClient: SubscriptionClient {
     }
 
     func currentEntitlement() async throws -> SubscriptionEntitlement {
+        recordedCurrentEntitlementCallCount += 1
+        activeCurrentEntitlementCallCount += 1
+        recordedMaximumConcurrentEntitlementCallCount = max(
+            recordedMaximumConcurrentEntitlementCallCount,
+            activeCurrentEntitlementCallCount
+        )
+        defer { activeCurrentEntitlementCallCount -= 1 }
+        if let currentEntitlementDelay {
+            try await Task.sleep(for: currentEntitlementDelay)
+        }
         if let currentEntitlementError {
             throw currentEntitlementError
         }
@@ -448,8 +745,36 @@ private actor MomentAccountSubscriptionClient: SubscriptionClient {
         return restoreResult
     }
 
+    func transactionUpdates() async -> AsyncStream<SubscriptionTransactionUpdate> {
+        recordedTransactionUpdatesCallCount += 1
+        if let transactionUpdatesStream {
+            return transactionUpdatesStream
+        }
+
+        let (stream, continuation) = AsyncStream<SubscriptionTransactionUpdate>.makeStream()
+        transactionUpdatesStream = stream
+        transactionUpdatesContinuation = continuation
+        for update in pendingTransactionUpdates {
+            continuation.yield(update)
+        }
+        pendingTransactionUpdates.removeAll()
+        return stream
+    }
+
     func setRestoreResult(_ result: SubscriptionPurchaseResult) {
         restoreResult = result
+    }
+
+    func setEntitlement(_ entitlement: SubscriptionEntitlement) {
+        self.entitlement = entitlement
+    }
+
+    func emitTransactionUpdate(_ update: SubscriptionTransactionUpdate) {
+        if let transactionUpdatesContinuation {
+            transactionUpdatesContinuation.yield(update)
+        } else {
+            pendingTransactionUpdates.append(update)
+        }
     }
 
     func loadProductsCallCount() -> Int {
@@ -458,6 +783,30 @@ private actor MomentAccountSubscriptionClient: SubscriptionClient {
 
     func purchasedProductIDs() -> [String] {
         recordedPurchasedProductIDs
+    }
+
+    func currentEntitlementCallCount() -> Int {
+        recordedCurrentEntitlementCallCount
+    }
+
+    func maximumConcurrentEntitlementCallCount() -> Int {
+        recordedMaximumConcurrentEntitlementCallCount
+    }
+
+    func transactionUpdatesCallCount() -> Int {
+        recordedTransactionUpdatesCallCount
+    }
+}
+
+private actor MomentAccountTransactionFinishRecorder {
+    private var count = 0
+
+    func recordFinish() {
+        count += 1
+    }
+
+    func finishCount() -> Int {
+        count
     }
 }
 
@@ -485,13 +834,15 @@ private actor MomentAccountMaintenanceClient: AccountMaintenanceClient {
 private extension AuthSession {
     static func test(
         accessToken: String,
+        refreshToken: String = "refresh-token",
+        expiresAt: Date = Date(timeIntervalSince1970: 2_000_000_000),
         userID: String = "user-1",
         email: String? = "user@example.com"
     ) -> AuthSession {
         AuthSession(
             accessToken: accessToken,
-            refreshToken: "refresh-token",
-            expiresAt: Date(timeIntervalSince1970: 2_000_000_000),
+            refreshToken: refreshToken,
+            expiresAt: expiresAt,
             user: AuthUser(id: userID, email: email)
         )
     }

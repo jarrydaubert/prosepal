@@ -93,7 +93,7 @@ changing the capability model.
 | App Intents and Shortcuts | Start a Moment from system actions and route into the native Moment Sheet. |
 | Care Glance widget | WidgetKit extension provides a glanceable Start Moment entry point where the system supports widgets. |
 | Control Center / Action Button | WidgetKit control provides a Start Moment handoff into the native Moment Sheet. |
-| Share extension | Share-services extension accepts text or links, hands sanitized context to the Moment Sheet through app-group storage, and still needs source-app share-sheet proof before release. |
+| Share extension | Share-services extension accepts text or links and hands sanitized context to the Moment Sheet through app-group storage. |
 
 ## Infrastructure
 

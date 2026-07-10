@@ -51,7 +51,13 @@ public struct SupabaseAuthClient: AuthClient {
         )
         request.httpBody = try JSONEncoder.authSession.encode(body)
 
-        let (data, response) = try await session.data(for: request)
+        let data: Data
+        let response: URLResponse
+        do {
+            (data, response) = try await session.data(for: request)
+        } catch let error as URLError where error.isProsePalConnectivityFailure {
+            throw AuthError.networkUnavailable
+        }
         guard let httpResponse = response as? HTTPURLResponse else {
             throw AuthError.invalidResponse
         }
@@ -76,6 +82,70 @@ public struct SupabaseAuthClient: AuthClient {
         )
     }
 
+    public func refreshSession(_ session: AuthSession) async throws -> AuthSession {
+        guard !anonKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            throw AuthError.configurationMissing
+        }
+
+        let refreshToken = session.refreshToken?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let refreshToken, !refreshToken.isEmpty else {
+            throw AuthError.invalidResponse
+        }
+
+        var endpoint = projectURL
+            .appendingPathComponent("auth")
+            .appendingPathComponent("v1")
+            .appendingPathComponent("token")
+        endpoint.append(queryItems: [URLQueryItem(name: "grant_type", value: "refresh_token")])
+
+        var request = URLRequest(url: endpoint)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue(anonKey, forHTTPHeaderField: "apikey")
+        request.httpBody = try JSONEncoder.authSession.encode(
+            RefreshTokenRequest(refreshToken: refreshToken)
+        )
+
+        let data: Data
+        let response: URLResponse
+        do {
+            (data, response) = try await self.session.data(for: request)
+        } catch let error as URLError where error.isProsePalConnectivityFailure {
+            throw AuthError.networkUnavailable
+        }
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw AuthError.invalidResponse
+        }
+
+        guard (200..<300).contains(httpResponse.statusCode) else {
+            throw AuthError.requestFailed(
+                statusCode: httpResponse.statusCode,
+                message: decodeErrorMessage(from: data)
+            )
+        }
+
+        guard let tokenResponse = try? JSONDecoder.authSession.decode(TokenResponse.self, from: data) else {
+            throw AuthError.invalidResponse
+        }
+        let accessToken = tokenResponse.accessToken.trimmingCharacters(in: .whitespacesAndNewlines)
+        let rotatedRefreshToken = tokenResponse.refreshToken?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !accessToken.isEmpty,
+              let rotatedRefreshToken,
+              !rotatedRefreshToken.isEmpty else {
+            throw AuthError.invalidResponse
+        }
+
+        return AuthSession(
+            accessToken: accessToken,
+            refreshToken: rotatedRefreshToken,
+            expiresAt: tokenResponse.resolvedExpiresAt(now: now()),
+            user: tokenResponse.user.map { AuthUser(id: $0.id, email: $0.email) } ?? session.user
+        )
+    }
+
     public func signOut(accessToken: String) async throws {
         guard !anonKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             throw AuthError.configurationMissing
@@ -95,7 +165,13 @@ public struct SupabaseAuthClient: AuthClient {
         request.setValue(anonKey, forHTTPHeaderField: "apikey")
         request.setValue("Bearer \(trimmedAccessToken)", forHTTPHeaderField: "Authorization")
 
-        let (data, response) = try await session.data(for: request)
+        let data: Data
+        let response: URLResponse
+        do {
+            (data, response) = try await session.data(for: request)
+        } catch let error as URLError where error.isProsePalConnectivityFailure {
+            throw AuthError.networkUnavailable
+        }
         guard let httpResponse = response as? HTTPURLResponse else {
             throw AuthError.invalidResponse
         }
@@ -125,6 +201,10 @@ private struct IDTokenRequest: Encodable {
     var provider: String
     var idToken: String
     var nonce: String?
+}
+
+private struct RefreshTokenRequest: Encodable {
+    var refreshToken: String
 }
 
 private struct TokenResponse: Decodable {

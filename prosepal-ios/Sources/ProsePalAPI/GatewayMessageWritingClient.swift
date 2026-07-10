@@ -180,7 +180,15 @@ public struct GatewayMessageWritingClient: MessageWritingClient {
                 durationMs: startedAt.elapsedMilliseconds
             )
             throw CancellationError()
-        } catch let error as URLError where error.code == .notConnectedToInternet {
+        } catch let error as URLError where error.isProsePalConnectivityFailure {
+            GatewayDiagnosticsLogger.shared.requestFailed(
+                requestID: requestID,
+                statusCode: nil,
+                category: "offline",
+                durationMs: startedAt.elapsedMilliseconds
+            )
+            throw GenerationError.offline
+        } catch AuthError.networkUnavailable {
             GatewayDiagnosticsLogger.shared.requestFailed(
                 requestID: requestID,
                 statusCode: nil,

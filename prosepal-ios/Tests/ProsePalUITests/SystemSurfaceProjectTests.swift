@@ -1,5 +1,10 @@
 import Foundation
 import Testing
+@testable import ProsePalUI
+
+private enum RelationshipMemoryPersistenceTestError: Error {
+    case persistenceFailed
+}
 
 @Test
 func widgetExtensionTargetStaysWiredIntoTheAppProject() throws {
@@ -91,6 +96,177 @@ func shareExtensionPlistAndEntitlementsDeclareShareSurface() throws {
     #expect(plist.contains("$(PRODUCT_MODULE_NAME).ShareViewController"))
     #expect(entitlements.contains("group.com.prosepal.prosepal"))
     #expect(appEntitlements.contains("group.com.prosepal.prosepal"))
+}
+
+@Test
+func momentDraftExposesExplicitSendHandoff() throws {
+    let source = try String(
+        contentsOf: packageRoot.appending(path: "Sources/ProsePalUI/MomentExperienceView.swift"),
+        encoding: .utf8
+    )
+
+    #expect(source.contains("Text(\"Send draft\")"))
+    #expect(source.contains("draftResultFooterButton(title: \"Send\", systemImage: \"paperplane.fill\")"))
+    #expect(source.contains("Label(\"Send\", systemImage: \"paperplane.fill\")"))
+    #expect(source.contains("openDraftSendSheet(bundle, source: \"moment_draft\")"))
+    #expect(source.contains("open_draft_send_handoff"))
+    #expect(source.contains("MomentDraftShareDestination(id: \"messages\""))
+    #expect(source.contains("MomentDraftShareDestination(id: \"mail\""))
+    #expect(source.contains("ShareLink(item: request.bundle.messageText)"))
+    #expect(source.contains("updateActiveDraftMessage(nextText)"))
+}
+
+@Test
+func momentHomeComposerShowsClearDraftSteps() throws {
+    let source = try String(
+        contentsOf: packageRoot.appending(path: "Sources/ProsePalUI/MomentExperienceView.swift"),
+        encoding: .utf8
+    )
+
+    #expect(source.contains("composerStep(number: 1, title: \"Who\""))
+    #expect(source.contains("composerStep(number: 2, title: \"What's the occasion?\""))
+    #expect(source.contains("composerStep(number: 3, title: \"Tone\""))
+    #expect(source.contains("composerStep(number: 4, title: \"Length\""))
+    #expect(source.contains("composerStep(number: 5, title: \"Generate\""))
+    #expect(source.contains("model.tone = tone"))
+    #expect(source.contains("model.length = length"))
+    #expect(source.contains("generateDraftFromComposer()"))
+}
+
+@Test
+func offlineStateOffersARealRetryWithoutDecorativeConnectionClaims() throws {
+    let source = try String(
+        contentsOf: packageRoot.appending(path: "Sources/ProsePalUI/MomentExperienceView.swift"),
+        encoding: .utf8
+    )
+
+    #expect(source.contains("Label(\"Try again\", systemImage: \"arrow.clockwise\")"))
+    #expect(source.contains("model.startDraft()"))
+    #expect(source.contains("moment.offline.retry"))
+    #expect(source.contains("your note is still here on this device"))
+    #expect(!source.contains("Button {}"))
+    #expect(!source.contains("Retrying connection…"))
+    #expect(!source.contains("will sync later"))
+}
+
+@Test
+func settingsAndReviseDoNotPresentStatusAsFakeControls() throws {
+    let source = try String(
+        contentsOf: packageRoot.appending(path: "Sources/ProsePalUI/MomentExperienceView.swift"),
+        encoding: .utf8
+    )
+
+    #expect(source.contains("title: \"Tone options\""))
+    #expect(source.contains("subtitle: \"Choose a tone for each moment\""))
+    #expect(source.contains("subtitle: \"Follows your device setting\""))
+    #expect(source.contains("subtitle: \"Uses on-device writing when available\""))
+    #expect(!source.contains("settingsSwitchRow("))
+    #expect(!source.contains("case changes"))
+    #expect(!source.contains("return \"Changes\""))
+}
+
+@Test
+func quotaStateUsesServerMessageWithoutInventingLimitsOrResetDates() throws {
+    let source = try String(
+        contentsOf: packageRoot.appending(path: "Sources/ProsePalUI/MomentExperienceView.swift"),
+        encoding: .utf8
+    )
+
+    #expect(source.contains("Text(\"Draft limit reached\")"))
+    #expect(source.contains("Text(model.errorMessage ??"))
+    #expect(source.contains("Label(\"View Pro options\", systemImage: \"feather\")"))
+    #expect(!source.contains("10 of 10 used"))
+    #expect(!source.contains("reset Monday"))
+    #expect(!source.contains("Go Pro — unlimited"))
+    #expect(!source.contains("Wait until Monday"))
+}
+
+@Test
+func confirmedMemoryDeletionPersistsWithoutRollback() throws {
+    var didDelete = false
+    var didSave = false
+    var didRollback = false
+
+    try performConfirmedMemoryDeletion(
+        delete: { didDelete = true },
+        save: { didSave = true },
+        rollback: { didRollback = true }
+    )
+
+    #expect(didDelete)
+    #expect(didSave)
+    #expect(!didRollback)
+}
+
+@Test
+func failedMemoryDeletionRollsBackAndPropagatesTheFailure() {
+    var didDelete = false
+    var didRollback = false
+
+    #expect(throws: RelationshipMemoryPersistenceTestError.persistenceFailed) {
+        try performConfirmedMemoryDeletion(
+            delete: { didDelete = true },
+            save: { throw RelationshipMemoryPersistenceTestError.persistenceFailed },
+            rollback: { didRollback = true }
+        )
+    }
+
+    #expect(didDelete)
+    #expect(didRollback)
+}
+
+@Test
+func relationshipMemoryEditReportsSuccessOnlyAfterPersistence() throws {
+    var didUpdate = false
+    var didSave = false
+    var didRollback = false
+
+    try performRelationshipMemorySave(
+        update: { didUpdate = true },
+        save: { didSave = true },
+        rollback: { didRollback = true }
+    )
+
+    #expect(didUpdate)
+    #expect(didSave)
+    #expect(!didRollback)
+}
+
+@Test
+func failedRelationshipMemoryEditRollsBackAndPropagatesTheFailure() {
+    var didUpdate = false
+    var didRollback = false
+
+    #expect(throws: RelationshipMemoryPersistenceTestError.persistenceFailed) {
+        try performRelationshipMemorySave(
+            update: { didUpdate = true },
+            save: { throw RelationshipMemoryPersistenceTestError.persistenceFailed },
+            rollback: { didRollback = true }
+        )
+    }
+
+    #expect(didUpdate)
+    #expect(didRollback)
+}
+
+@Test
+func relationshipMemoryDeletionRequiresConfirmationAndSurfacesFailure() throws {
+    let source = try String(
+        contentsOf: packageRoot.appending(path: "Sources/ProsePalUI/MomentExperienceView.swift"),
+        encoding: .utf8
+    )
+
+    #expect(source.contains("pendingMemoryDeletion = .truthBead(bead)"))
+    #expect(source.contains("pendingMemoryDeletion = .voiceCard(voiceCard)"))
+    #expect(source.contains("\"Delete saved memory?\""))
+    #expect(source.contains("\"Delete saved detail?\""))
+    #expect(source.contains("\"Delete saved voice card?\""))
+    #expect(source.contains("Button(\"Cancel\", role: .cancel)"))
+    #expect(source.contains("model.resetDraftForMomentChange()"))
+    #expect(source.contains("Could not delete this detail. It is still saved."))
+    #expect(source.contains("Could not delete this voice card. It is still saved."))
+    #expect(source.contains("Could not save this detail. Your previous version is still saved."))
+    #expect(source.contains("Could not save this voice card. Your previous version is still saved."))
 }
 
 @Test

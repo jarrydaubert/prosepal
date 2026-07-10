@@ -1,6 +1,8 @@
 import SwiftUI
+import ProsePalDomain
 
 struct MomentWelcomeView: View {
+    @Bindable var account: MomentAccountModel
     let onStart: () -> Void
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -80,6 +82,11 @@ struct MomentWelcomeView: View {
         .tint(.prosePalCoral)
         .preferredColorScheme(.light)
         .accessibilityIdentifier("moment.onboarding")
+        .onChange(of: account.isSignedIn) { wasSignedIn, isSignedIn in
+            if !wasSignedIn && isSignedIn {
+                onStart()
+            }
+        }
     }
 
     private var horizontalPadding: CGFloat {
@@ -89,8 +96,8 @@ struct MomentWelcomeView: View {
     private var onboardingFooter: some View {
         MomentOnboardingFooter(
             page: selectedPage,
-            onPrimary: handlePrimaryAction,
-            onSecondary: handleSecondaryAction
+            account: account,
+            onPrimary: handlePrimaryAction
         )
     }
 
@@ -111,16 +118,12 @@ struct MomentWelcomeView: View {
     }
 
     private func handlePrimaryAction() {
-        switch selectedPage {
-        case .welcome, .howItWorks, .privacy:
+        switch selectedPage.primaryAction {
+        case .advance:
             advance()
-        case .ready:
+        case .complete:
             onStart()
         }
-    }
-
-    private func handleSecondaryAction() {
-        onStart()
     }
 
     private func advance() {
@@ -140,7 +143,7 @@ private enum MomentOnboardingScrollAnchor {
     static let top = "moment.onboarding.scrollTop"
 }
 
-private enum MomentOnboardingPage: Int, CaseIterable, Identifiable {
+enum MomentOnboardingPage: Int, CaseIterable, Identifiable {
     case welcome
     case howItWorks
     case privacy
@@ -152,6 +155,10 @@ private enum MomentOnboardingPage: Int, CaseIterable, Identifiable {
         MomentOnboardingPage(rawValue: rawValue + 1)
     }
 
+    var primaryAction: MomentOnboardingPrimaryAction {
+        self == .ready ? .complete : .advance
+    }
+
     var primaryTitle: String {
         switch self {
         case .welcome:
@@ -159,28 +166,21 @@ private enum MomentOnboardingPage: Int, CaseIterable, Identifiable {
         case .howItWorks, .privacy:
             "Next"
         case .ready:
-            "Turn on gentle reminders"
+            "Start writing"
         }
     }
 
     var primarySystemImage: String? {
         switch self {
         case .ready:
-            "bell"
+            "arrow.right"
         default:
             nil
         }
     }
 
-    var secondaryTitle: String? {
-        switch self {
-        case .welcome:
-            "I already have an account"
-        case .howItWorks, .privacy:
-            nil
-        case .ready:
-            "Maybe later"
-        }
+    var showsAccountSignIn: Bool {
+        self == .welcome
     }
 
     var accessibilityName: String {
@@ -195,6 +195,11 @@ private enum MomentOnboardingPage: Int, CaseIterable, Identifiable {
             "Ready"
         }
     }
+}
+
+enum MomentOnboardingPrimaryAction: Equatable {
+    case advance
+    case complete
 }
 
 private struct MomentOnboardingDots: View {
@@ -336,7 +341,7 @@ private struct MomentOnboardingPanel: View {
             )
             .padding(.top, titleTopSpacing)
 
-            onboardingBody("Want a quiet nudge when a message has been waiting? No noise — just a hand when you need one.")
+            onboardingBody("Start with someone who matters. Add what you want them to know, then ask ProsePal for a draft.")
         }
     }
 
@@ -501,8 +506,8 @@ private struct MomentOnboardingPrivacyList: View {
 
 private struct MomentOnboardingFooter: View {
     let page: MomentOnboardingPage
+    @Bindable var account: MomentAccountModel
     let onPrimary: () -> Void
-    let onSecondary: () -> Void
 
     var body: some View {
         VStack(spacing: 10) {
@@ -514,17 +519,16 @@ private struct MomentOnboardingFooter: View {
                     systemImage: page.primarySystemImage
                 )
             }
-            .buttonStyle(MomentOnboardingButtonStyle(variant: .primary))
+            .buttonStyle(MomentOnboardingButtonStyle())
             .accessibilityIdentifier("moment.onboarding.primary")
 
-            if let secondaryTitle = page.secondaryTitle {
-                Button {
-                    onSecondary()
-                } label: {
-                    MomentOnboardingButtonLabel(title: secondaryTitle)
-                }
-                .buttonStyle(MomentOnboardingButtonStyle(variant: .ghost))
-                .accessibilityIdentifier("moment.onboarding.secondary")
+            if page.showsAccountSignIn && account.isAppleSignInConfigured {
+                MomentAppleSignInControl(
+                    account: account,
+                    source: "onboarding",
+                    height: 52
+                )
+                .accessibilityIdentifier("moment.onboarding.signIn")
             }
         }
         .animation(.easeInOut(duration: 0.18), value: page)
@@ -552,24 +556,17 @@ private struct MomentOnboardingButtonLabel: View {
 }
 
 private struct MomentOnboardingButtonStyle: ButtonStyle {
-    enum Variant {
-        case primary
-        case ghost
-    }
-
-    let variant: Variant
-
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.system(.body, weight: .semibold))
-            .foregroundStyle(foregroundStyle)
-            .padding(.horizontal, variant == .primary ? 28 : 24)
-            .padding(.vertical, variant == .primary ? 17 : 14)
-            .frame(maxWidth: .infinity, minHeight: variant == .primary ? 58 : 52)
-            .background(background)
+            .foregroundStyle(.white)
+            .padding(.horizontal, 28)
+            .padding(.vertical, 17)
+            .frame(maxWidth: .infinity, minHeight: 58)
+            .background(Color.prosePalCoral)
             .clipShape(Capsule())
             .shadow(
-                color: variant == .primary ? Color.prosePalCoralDeep.opacity(0.16) : Color.clear,
+                color: Color.prosePalCoralDeep.opacity(0.16),
                 radius: 8,
                 x: 0,
                 y: 4
@@ -577,26 +574,12 @@ private struct MomentOnboardingButtonStyle: ButtonStyle {
             .scaleEffect(configuration.isPressed ? 0.97 : 1)
             .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
     }
-
-    private var foregroundStyle: Color {
-        switch variant {
-        case .primary:
-            .white
-        case .ghost:
-            .prosePalCoralDeep
-        }
-    }
-
-    private var background: some ShapeStyle {
-        switch variant {
-        case .primary:
-            return Color.prosePalCoral
-        case .ghost:
-            return Color.clear
-        }
-    }
 }
 
 #Preview("Onboarding") {
-    MomentWelcomeView {}
+    MomentWelcomeView(
+        account: MomentAccountModel(
+            clientContext: ClientContext(appVersion: "1.0", buildNumber: "1")
+        )
+    ) {}
 }

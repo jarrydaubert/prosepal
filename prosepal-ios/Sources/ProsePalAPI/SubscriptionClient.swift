@@ -59,6 +59,33 @@ public struct SubscriptionPurchaseResult: Equatable, Sendable {
     }
 }
 
+public struct SubscriptionTransactionUpdate: Sendable {
+    public enum Verification: Equatable, Sendable {
+        case verified
+        case unverified
+    }
+
+    public var verification: Verification
+    public var productID: String
+
+    private let finishAction: (@Sendable () async -> Void)?
+
+    public init(
+        verification: Verification,
+        productID: String,
+        finishAction: (@Sendable () async -> Void)? = nil
+    ) {
+        self.verification = verification
+        self.productID = productID
+        self.finishAction = finishAction
+    }
+
+    public func finish() async {
+        guard verification == .verified else { return }
+        await finishAction?()
+    }
+}
+
 public enum SubscriptionError: Error, Equatable, Sendable {
     case notConfigured
     case productsUnavailable
@@ -96,6 +123,15 @@ public protocol SubscriptionClient: Sendable {
     func currentEntitlement() async throws -> SubscriptionEntitlement
     func purchase(productID: String) async throws -> SubscriptionPurchaseResult
     func restorePurchases() async throws -> SubscriptionPurchaseResult
+    func transactionUpdates() async -> AsyncStream<SubscriptionTransactionUpdate>
+}
+
+public extension SubscriptionClient {
+    func transactionUpdates() async -> AsyncStream<SubscriptionTransactionUpdate> {
+        AsyncStream { continuation in
+            continuation.finish()
+        }
+    }
 }
 
 #if canImport(StoreKit)
@@ -193,10 +229,11 @@ public struct StoreKitSubscriptionClient: SubscriptionClient {
         switch result {
         case .success(let verificationResult):
             let transaction = try verified(verificationResult)
+            let entitlement = try await currentEntitlement()
             await transaction.finish()
             return SubscriptionPurchaseResult(
                 status: .purchased,
-                entitlement: try await currentEntitlement()
+                entitlement: entitlement
             )
         case .pending:
             return SubscriptionPurchaseResult(
@@ -227,6 +264,42 @@ public struct StoreKitSubscriptionClient: SubscriptionClient {
             status: entitlement.isActive ? .restored : .notEntitled,
             entitlement: entitlement
         )
+    }
+
+    public func transactionUpdates() async -> AsyncStream<SubscriptionTransactionUpdate> {
+        let configuredProductIDs = Set(productIDs)
+
+        return AsyncStream { continuation in
+            let listenerTask = Task(priority: .background) {
+                for await result in Transaction.updates {
+                    guard !Task.isCancelled else { break }
+
+                    switch result {
+                    case .verified(let transaction):
+                        guard configuredProductIDs.contains(transaction.productID) else { continue }
+                        continuation.yield(SubscriptionTransactionUpdate(
+                            verification: .verified,
+                            productID: transaction.productID,
+                            finishAction: {
+                                await transaction.finish()
+                            }
+                        ))
+                    case .unverified(let transaction, _):
+                        guard configuredProductIDs.contains(transaction.productID) else { continue }
+                        continuation.yield(SubscriptionTransactionUpdate(
+                            verification: .unverified,
+                            productID: transaction.productID
+                        ))
+                    }
+                }
+
+                continuation.finish()
+            }
+
+            continuation.onTermination = { @Sendable _ in
+                listenerTask.cancel()
+            }
+        }
     }
 
     private func sortRank(for product: Product) -> Int {
