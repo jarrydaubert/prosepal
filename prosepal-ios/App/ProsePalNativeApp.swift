@@ -66,9 +66,19 @@ private enum ProsePalAppIdentity {
     }
 }
 
+private extension NativeRuntimeConfig {
+    static var prosePalApp: Self {
+        #if DEBUG
+        Self(allowsInsecureLoopback: true)
+        #else
+        Self()
+        #endif
+    }
+}
+
 private enum RuntimeReadinessFactory {
     static func make(isRelationshipVaultPersistent: Bool) -> NativeRuntimeReadiness {
-        let config = NativeRuntimeConfig()
+        let config = NativeRuntimeConfig.prosePalApp
         let gatewayURL = config.url(named: "PROSEPAL_GATEWAY_URL")
         let premiumProductIDs = config.list(named: "PROSEPAL_PREMIUM_PRODUCT_IDS")
         return NativeRuntimeReadiness(
@@ -87,7 +97,7 @@ private enum RuntimeReadinessFactory {
 
 private enum AuthClientFactory {
     static func makeClient() -> (any AuthClient)? {
-        let config = NativeRuntimeConfig()
+        let config = NativeRuntimeConfig.prosePalApp
         guard
             let projectURL = config.url(named: "PROSEPAL_SUPABASE_URL", fallback: "SUPABASE_URL"),
             let anonKey = config.value(named: "PROSEPAL_SUPABASE_ANON_KEY", fallback: "SUPABASE_ANON_KEY")
@@ -101,7 +111,7 @@ private enum AuthClientFactory {
 
 private enum AccountMaintenanceClientFactory {
     static func makeClient() -> (any AccountMaintenanceClient)? {
-        let config = NativeRuntimeConfig()
+        let config = NativeRuntimeConfig.prosePalApp
         guard
             let projectURL = config.url(named: "PROSEPAL_SUPABASE_URL", fallback: "SUPABASE_URL"),
             let anonKey = config.value(named: "PROSEPAL_SUPABASE_ANON_KEY", fallback: "SUPABASE_ANON_KEY")
@@ -166,7 +176,7 @@ private enum MessageWritingServiceFactory {
         let carefulClient: any MomentDraftClient
 
         if let gatewayEndpoint {
-            let config = NativeRuntimeConfig()
+            let config = NativeRuntimeConfig.prosePalApp
             let gatewayClient = GatewayMessageWritingClient(
                 endpoint: gatewayEndpoint,
                 devGatewaySecret: config.value(named: "PROSEPAL_DEV_GATEWAY_SECRET"),
@@ -190,7 +200,7 @@ private enum MessageWritingServiceFactory {
     }
 
     private static var gatewayEndpoint: URL? {
-        NativeRuntimeConfig().url(named: "PROSEPAL_GATEWAY_URL")
+        NativeRuntimeConfig.prosePalApp.url(named: "PROSEPAL_GATEWAY_URL")
     }
 }
 
@@ -273,7 +283,7 @@ private extension View {
 
 private enum SubscriptionClientFactory {
     static func makeClient(authSessionController: AuthSessionController?) -> (any SubscriptionClient)? {
-        let config = NativeRuntimeConfig()
+        let config = NativeRuntimeConfig.prosePalApp
         let productIDs = config.list(named: "PROSEPAL_PREMIUM_PRODUCT_IDS")
 
         #if DEBUG

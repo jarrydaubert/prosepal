@@ -72,4 +72,34 @@ final class NativeRuntimeConfigTests: XCTestCase {
 
         XCTAssertNil(config.url(named: "PROSEPAL_GATEWAY_URL"))
     }
+
+    func testProductionRuntimeRejectsInsecureRemoteAndLoopbackURLs() {
+        let remote = NativeRuntimeConfig(
+            environment: ["URL": "http://example.com/service"],
+            infoDictionary: [:]
+        )
+        let loopback = NativeRuntimeConfig(
+            environment: ["URL": "http://127.0.0.1:54321/service"],
+            infoDictionary: [:]
+        )
+
+        XCTAssertNil(remote.url(named: "URL"))
+        XCTAssertNil(loopback.url(named: "URL"))
+    }
+
+    func testExplicitDebugPolicyAllowsOnlyInsecureLoopbackURLs() {
+        let loopback = NativeRuntimeConfig(
+            environment: ["URL": "http://localhost:54321/service"],
+            infoDictionary: [:],
+            allowsInsecureLoopback: true
+        )
+        let remote = NativeRuntimeConfig(
+            environment: ["URL": "http://example.com/service"],
+            infoDictionary: [:],
+            allowsInsecureLoopback: true
+        )
+
+        XCTAssertEqual(loopback.url(named: "URL"), URL(string: "http://localhost:54321/service"))
+        XCTAssertNil(remote.url(named: "URL"))
+    }
 }

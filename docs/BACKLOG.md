@@ -72,11 +72,6 @@ completed item instead of turning this file into a status log.
   no development gateway secret or privileged key is embedded. This is a
   prerequisite for live auth, careful generation, and account deletion proof.
 
-- [ ] Restrict remote runtime URLs to secure production transport. DoD:
-  `NativeRuntimeConfig` accepts HTTPS for production/staging services, permits
-  HTTP only for explicit debug loopback/local development where required, and
-  has tests for rejected insecure and malformed URLs.
-
 - [ ] Add atomic pre-provider abuse and cost control to `generate-card`. DoD:
   authenticated and explicitly authorized development requests reserve burst and
   quota capacity before provider work; exhausted users cannot incur provider
