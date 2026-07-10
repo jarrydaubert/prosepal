@@ -111,7 +111,7 @@ final class RelationshipVaultTests: XCTestCase {
         XCTAssertEqual(savedDraft.normalizedPersonName, "mira")
     }
 
-    func testRelationshipMemoryProviderBackfillsLegacyMissingPersonKeysBeforePredicateLookup() async throws {
+    func testRelationshipVaultMaintenanceRepairsLegacyMissingPersonKeys() async throws {
         let container = try makeContainer()
         let context = ModelContext(container)
         let truthBead = RelationshipTruthBeadRecord(
@@ -143,6 +143,7 @@ final class RelationshipVaultTests: XCTestCase {
         context.insert(savedDraft)
         try context.save()
 
+        try RelationshipVaultMaintenance.repairLegacyPersonKeys(in: container)
         let provider = SwiftDataRelationshipMemoryProvider(container: container)
         let beads = try await provider.approvedTruthBeads(for: "  JOSE  ")
         let approvedVoiceCard = try await provider.approvedVoiceCard(for: "  JOSE  ")
@@ -163,6 +164,45 @@ final class RelationshipVaultTests: XCTestCase {
         XCTAssertEqual(storedTruthBead.normalizedPersonName, "jose")
         XCTAssertEqual(storedVoiceCard.normalizedPersonName, "jose")
         XCTAssertEqual(storedDraft.normalizedPersonName, "jose")
+    }
+
+    func testVersionedContainerOpensLegacyFixtureAndRepairsPersonKeys() throws {
+        let fileManager = FileManager.default
+        let rootDirectory = fileManager.temporaryDirectory
+            .appendingPathComponent("ProsePalVaultMigrationTests-\(UUID().uuidString)", isDirectory: true)
+        try fileManager.createDirectory(at: rootDirectory, withIntermediateDirectories: true)
+        defer { try? fileManager.removeItem(at: rootDirectory) }
+        let storeURL = rootDirectory.appendingPathComponent("legacy.store")
+
+        do {
+            let legacySchema = Schema(RelationshipVaultSchema.models)
+            let legacyConfiguration = ModelConfiguration(schema: legacySchema, url: storeURL)
+            let legacyContainer = try ModelContainer(
+                for: legacySchema,
+                configurations: [legacyConfiguration]
+            )
+            let legacyContext = ModelContext(legacyContainer)
+            let truthBead = RelationshipTruthBeadRecord(
+                personName: " José ",
+                text: "Legacy detail"
+            )
+            truthBead.normalizedPersonName = ""
+            legacyContext.insert(truthBead)
+            try legacyContext.save()
+        }
+
+        let upgradedContainer = try RelationshipVaultContainerFactory.makePersistent(
+            storeURL: storeURL
+        )
+        let upgradedContext = ModelContext(upgradedContainer)
+        let upgradedRecord = try XCTUnwrap(
+            upgradedContext.fetch(FetchDescriptor<RelationshipTruthBeadRecord>()).first
+        )
+
+        XCTAssertEqual(upgradedRecord.text, "Legacy detail")
+        XCTAssertEqual(upgradedRecord.normalizedPersonName, "jose")
+        XCTAssertEqual(RelationshipVaultSchemaV1.versionIdentifier, Schema.Version(1, 0, 0))
+        XCTAssertEqual(RelationshipVaultMigrationPlan.schemas.count, 1)
     }
 
     func testRelationshipTruthBeadRecordUpdateTrimsAndTouchesTimestamp() {
@@ -542,9 +582,7 @@ final class RelationshipVaultTests: XCTestCase {
     }
 
     private func makeContainer() throws -> ModelContainer {
-        let schema = Schema(RelationshipVaultSchema.models)
-        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
-        return try ModelContainer(for: schema, configurations: [configuration])
+        try RelationshipVaultContainerFactory.makeEphemeral()
     }
 }
 

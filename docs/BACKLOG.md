@@ -1402,17 +1402,18 @@ Implementation sequencing rules:
   auth entry, offline/error/quota recovery, Settings control semantics, Revise
   tabs, purchase/restore presentation, destructive confirmation, and at least
   one Dynamic Type/identifier navigation path in blocking CI.
-- [ ] Version the SwiftData relationship-vault schema before non-additive model
-  evolution -- evidence: `RelationshipVaultSchema` is only a list of models and
-  `ModelContainer` is built without a migration plan in
-  `prosepal-ios/Sources/ProsePalAPI/RelationshipVault.swift`; missing
-  `normalizedPersonName` values are repaired by write-on-read fetches instead.
-  Apple provides `VersionedSchema` and `SchemaMigrationPlan` for explicit store
-  evolution:
-  <https://developer.apple.com/documentation/swiftdata/schemamigrationplan>.
-  DoD: establish a versioned baseline, move legacy key repair into a tested
-  migration or one-time maintenance path, prove upgrade with a fixture store,
-  and preserve the persistent-to-ephemeral failure behavior without data loss.
+- [x] Version the SwiftData relationship-vault schema before non-additive model
+  evolution -- completed 2026-07-10. `RelationshipVaultSchemaV1` establishes
+  schema version 1.0.0 and `RelationshipVaultMigrationPlan` is passed to both
+  persistent and ephemeral `ModelContainer` construction in
+  `prosepal-ios/Sources/ProsePalAPI/RelationshipVault.swift`. Legacy blank
+  `normalizedPersonName` repair moved out of every provider read into the
+  idempotent `RelationshipVaultMaintenance` container-open path. Tests in
+  `RelationshipVaultTests.swift` open a real unversioned fixture store through
+  the versioned container, prove records survive and keys repair, cover direct
+  maintenance, and retain persistent-store failure to ephemeral fallback and
+  erase behavior. Future schema changes must add a new `VersionedSchema` and an
+  explicit lightweight or custom migration stage.
 - [ ] Consolidate duplicated system-surface contracts so app and extensions
   cannot silently drift -- evidence: `SharedMomentLaunchPayload` /
   `SharedMomentLaunchStore` in
@@ -1440,6 +1441,19 @@ Implementation sequencing rules:
   `MomentModelTests.swift` proves lane taxonomy, underlying-operation
   cancellation, gateway request budget, timeout recovery, late-result
   suppression, and cancellation cleanup.
+- [ ] Define one measured end-to-end generation latency budget across fallback
+  attempts and acknowledge long waits in the generating UI -- evidence:
+  `.timedOut` remains eligible for cross-lane fallback, so the current 20-second
+  on-device and 45-second gateway budgets can chain to roughly 65 seconds, while
+  the placeholder SLOs in `docs/architecture/AI_GATEWAY_STRATEGY.md` describe
+  hard timeouts under 15 seconds for Standard and under 25 seconds for Premium
+  and require a fallback-chain maximum. The non-streaming generating surface is
+  static during that interval. DoD: use measured device/staging latency to set a
+  single deadline or explicit fallback-chain ceiling, reconcile request and
+  lane budgets with the strategy SLOs, ensure fallback receives only its
+  intended remaining budget, change progress copy after a defined threshold,
+  and test deadline propagation plus cancellation without exposing provider
+  details or inventing retry economics.
 - [ ] Align input semantics and length limits across in-app, App Intent, share,
   and gateway entry paths -- evidence: Share Extension and App Intent payloads
   cap shared text at 1,200 characters, while Moment person/detail/revise fields
@@ -1453,17 +1467,17 @@ Implementation sequencing rules:
 
 ## Top Open Work
 
-1. Establish the versioned SwiftData relationship-vault schema and migration
-   baseline before any further `@Model` evolution.
-2. Align domain-owned input semantics, normalization, and limits across the app,
+1. Align domain-owned input semantics, normalization, and limits across the app,
    App Intents, Share Extension, persistence, and gateway.
-3. Consolidate widget, control, shortcut, App Intent, Share Extension, and
+2. Consolidate widget, control, shortcut, App Intent, Share Extension, and
    staging-routing contracts into extension-safe shared code.
-4. Make root navigation destinations distinct and accessible, extracting the
+3. Make root navigation destinations distinct and accessible, extracting the
    touched navigation surfaces and adding real view-layer coverage as part of
    the slice.
-5. Define safe handling for verified StoreKit transactions from retired or
+4. Define safe handling for verified StoreKit transactions from retired or
    temporarily unconfigured product IDs.
+5. Define the measured end-to-end generation deadline/fallback-chain ceiling
+   and add acknowledged long-wait progress copy.
 6. Propagate structured limit, remaining-use, and reset metadata from the
    server-owned usage contract when product policy calls for quantified quota UI.
 7. Add release-critical UI automation incrementally and close the enumerated

@@ -117,13 +117,31 @@ public enum RelationshipPersonKey {
     }
 }
 
-public enum RelationshipVaultSchema {
+public enum RelationshipVaultSchemaV1: VersionedSchema {
+    public static let versionIdentifier = Schema.Version(1, 0, 0)
+
     public static var models: [any PersistentModel.Type] {
         [
             RelationshipTruthBeadRecord.self,
             RelationshipVoiceCardRecord.self,
             SavedMomentDraftRecord.self
         ]
+    }
+}
+
+public enum RelationshipVaultMigrationPlan: SchemaMigrationPlan {
+    public static var schemas: [any VersionedSchema.Type] {
+        [RelationshipVaultSchemaV1.self]
+    }
+
+    public static var stages: [MigrationStage] {
+        []
+    }
+}
+
+public enum RelationshipVaultSchema {
+    public static var models: [any PersistentModel.Type] {
+        RelationshipVaultSchemaV1.models
     }
 }
 
@@ -242,19 +260,29 @@ public enum RelationshipVaultContainerFactory {
         ))
     }
 
-    private static func makePersistent(storeURL: URL) throws -> ModelContainer {
-        let schema = Schema(RelationshipVaultSchema.models)
+    static func makePersistent(storeURL: URL) throws -> ModelContainer {
+        let schema = Schema(versionedSchema: RelationshipVaultSchemaV1.self)
         let configuration = ModelConfiguration(
             schema: schema,
             url: storeURL
         )
-        return try ModelContainer(for: schema, configurations: [configuration])
+        let container = try ModelContainer(
+            for: schema,
+            migrationPlan: RelationshipVaultMigrationPlan.self,
+            configurations: [configuration]
+        )
+        try RelationshipVaultMaintenance.repairLegacyPersonKeys(in: container)
+        return container
     }
 
     public static func makeEphemeral() throws -> ModelContainer {
-        let schema = Schema(RelationshipVaultSchema.models)
+        let schema = Schema(versionedSchema: RelationshipVaultSchemaV1.self)
         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
-        return try ModelContainer(for: schema, configurations: [configuration])
+        return try ModelContainer(
+            for: schema,
+            migrationPlan: RelationshipVaultMigrationPlan.self,
+            configurations: [configuration]
+        )
     }
 
     private static func makeEphemeralFallback() -> ModelContainer {
@@ -262,6 +290,44 @@ public enum RelationshipVaultContainerFactory {
             return try makeEphemeral()
         } catch {
             preconditionFailure("Unable to create an ephemeral ProsePal relationship vault.")
+        }
+    }
+}
+
+public enum RelationshipVaultMaintenance {
+    public static func repairLegacyPersonKeys(in container: ModelContainer) throws {
+        try repairLegacyPersonKeys(in: ModelContext(container))
+    }
+
+    public static func repairLegacyPersonKeys(in context: ModelContext) throws {
+        var didRepair = false
+
+        let truthBeadDescriptor = FetchDescriptor<RelationshipTruthBeadRecord>(
+            predicate: #Predicate { $0.normalizedPersonName == "" }
+        )
+        for record in try context.fetch(truthBeadDescriptor) {
+            record.normalizedPersonName = RelationshipPersonKey.normalized(record.personName)
+            didRepair = true
+        }
+
+        let voiceCardDescriptor = FetchDescriptor<RelationshipVoiceCardRecord>(
+            predicate: #Predicate { $0.normalizedPersonName == "" }
+        )
+        for record in try context.fetch(voiceCardDescriptor) {
+            record.normalizedPersonName = RelationshipPersonKey.normalized(record.personName)
+            didRepair = true
+        }
+
+        let savedDraftDescriptor = FetchDescriptor<SavedMomentDraftRecord>(
+            predicate: #Predicate { $0.normalizedPersonName == "" }
+        )
+        for record in try context.fetch(savedDraftDescriptor) {
+            record.normalizedPersonName = RelationshipPersonKey.normalized(record.personName)
+            didRepair = true
+        }
+
+        if didRepair {
+            try context.save()
         }
     }
 }
@@ -478,7 +544,6 @@ public actor SwiftDataRelationshipMemoryProvider: RelationshipMemoryProviding {
         guard !normalizedName.isEmpty else { return [] }
 
         let context = ModelContext(container)
-        try backfillMissingPersonKeys(in: context)
         let descriptor = FetchDescriptor<RelationshipTruthBeadRecord>(
             predicate: #Predicate {
                 $0.isUserApproved && $0.normalizedPersonName == normalizedName
@@ -494,7 +559,6 @@ public actor SwiftDataRelationshipMemoryProvider: RelationshipMemoryProviding {
         guard !normalizedName.isEmpty else { return nil }
 
         let context = ModelContext(container)
-        try backfillMissingPersonKeys(in: context)
         var descriptor = FetchDescriptor<RelationshipVoiceCardRecord>(
             predicate: #Predicate {
                 $0.isUserApproved && $0.normalizedPersonName == normalizedName
@@ -504,38 +568,6 @@ public actor SwiftDataRelationshipMemoryProvider: RelationshipMemoryProviding {
         descriptor.fetchLimit = 1
 
         return try context.fetch(descriptor).first?.voiceCard
-    }
-
-    private func backfillMissingPersonKeys(in context: ModelContext) throws {
-        var didBackfill = false
-
-        let truthBeadDescriptor = FetchDescriptor<RelationshipTruthBeadRecord>(
-            predicate: #Predicate { $0.normalizedPersonName == "" }
-        )
-        for record in try context.fetch(truthBeadDescriptor) {
-            record.normalizedPersonName = RelationshipPersonKey.normalized(record.personName)
-            didBackfill = true
-        }
-
-        let voiceCardDescriptor = FetchDescriptor<RelationshipVoiceCardRecord>(
-            predicate: #Predicate { $0.normalizedPersonName == "" }
-        )
-        for record in try context.fetch(voiceCardDescriptor) {
-            record.normalizedPersonName = RelationshipPersonKey.normalized(record.personName)
-            didBackfill = true
-        }
-
-        let savedDraftDescriptor = FetchDescriptor<SavedMomentDraftRecord>(
-            predicate: #Predicate { $0.normalizedPersonName == "" }
-        )
-        for record in try context.fetch(savedDraftDescriptor) {
-            record.normalizedPersonName = RelationshipPersonKey.normalized(record.personName)
-            didBackfill = true
-        }
-
-        if didBackfill {
-            try context.save()
-        }
     }
 }
 
