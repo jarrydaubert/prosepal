@@ -1179,6 +1179,14 @@ Implementation sequencing rules:
 
 ## 10. Privacy And Telemetry
 
+- [x] App Store privacy manifests declare required-reason API use -- evidence:
+  `prosepal-ios/App/PrivacyInfo.xcprivacy` declares app-only (`CA92.1`) and
+  same-App-Group (`1C8F.1`) UserDefaults access for both production and staging
+  app targets; `prosepal-ios/ShareExtension/PrivacyInfo.xcprivacy` declares the
+  App Group reason for both Share Extension targets. The widget targets do not
+  directly use `UserDefaults`. Project-membership and manifest-value coverage is
+  in `SystemSurfaceProjectTests.swift`; release builds must retain the manifest
+  at the root of each applicable built bundle.
 - [~] Private lane avoids sending message text off device -- evidence:
   `FoundationModelsPrivateDraftClient` in
   `prosepal-ios/Sources/ProsePalAPI/FoundationModelsPrivateDraftClient.swift`.

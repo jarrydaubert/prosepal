@@ -25,6 +25,10 @@
 		PP000000000000000000008A /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = PP0000000000000000000065 /* ShareViewController.swift */; };
 		PP0000000000000000000092 /* ProsePalWidgetsStaging.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = PP0000000000000000000080 /* ProsePalWidgetsStaging.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		PP0000000000000000000093 /* ProsePalShareExtensionStaging.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = PP0000000000000000000089 /* ProsePalShareExtensionStaging.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		PP00000000000000000000A0 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = PP00000000000000000000A4 /* PrivacyInfo.xcprivacy */; };
+		PP00000000000000000000A1 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = PP00000000000000000000A4 /* PrivacyInfo.xcprivacy */; };
+		PP00000000000000000000A2 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = PP00000000000000000000A5 /* PrivacyInfo.xcprivacy */; };
+		PP00000000000000000000A3 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = PP00000000000000000000A5 /* PrivacyInfo.xcprivacy */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -103,6 +107,8 @@
 		PP0000000000000000000067 /* ProsePalShareExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ProsePalShareExtension.entitlements; sourceTree = "<group>"; };
 		PP0000000000000000000080 /* ProsePalWidgetsStaging.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ProsePalWidgetsStaging.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		PP0000000000000000000089 /* ProsePalShareExtensionStaging.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ProsePalShareExtensionStaging.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		PP00000000000000000000A4 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		PP00000000000000000000A5 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -185,6 +191,7 @@
 				PP0000000000000000000032 /* Assets.xcassets */,
 				PP0000000000000000000034 /* LaunchScreen.storyboard */,
 				PP0000000000000000000035 /* ProsePalStaging.storekit */,
+				PP00000000000000000000A4 /* PrivacyInfo.xcprivacy */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -204,6 +211,7 @@
 				PP0000000000000000000065 /* ShareViewController.swift */,
 				PP0000000000000000000066 /* Info.plist */,
 				PP0000000000000000000067 /* ProsePalShareExtension.entitlements */,
+				PP00000000000000000000A5 /* PrivacyInfo.xcprivacy */,
 			);
 			path = ShareExtension;
 			sourceTree = "<group>";
@@ -396,6 +404,7 @@
 			files = (
 				PP0000000000000000000031 /* Assets.xcassets in Resources */,
 				PP0000000000000000000033 /* LaunchScreen.storyboard in Resources */,
+				PP00000000000000000000A0 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -405,6 +414,7 @@
 			files = (
 				PP0000000000000000000043 /* Assets.xcassets in Resources */,
 				PP0000000000000000000044 /* LaunchScreen.storyboard in Resources */,
+				PP00000000000000000000A1 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -419,6 +429,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				PP00000000000000000000A2 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -433,6 +444,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				PP00000000000000000000A3 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

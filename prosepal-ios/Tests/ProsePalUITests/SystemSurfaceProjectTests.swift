@@ -99,6 +99,24 @@ func shareExtensionPlistAndEntitlementsDeclareShareSurface() throws {
 }
 
 @Test
+func appAndShareExtensionDeclareRequiredReasonAPIUsage() throws {
+    let appReasons = try privacyAccessReasons(at: "App/PrivacyInfo.xcprivacy")
+    let shareReasons = try privacyAccessReasons(at: "ShareExtension/PrivacyInfo.xcprivacy")
+
+    #expect(appReasons == ["1C8F.1", "CA92.1"])
+    #expect(shareReasons == ["1C8F.1"])
+
+    let project = try String(
+        contentsOf: packageRoot.appending(path: "ProsePal.xcodeproj/project.pbxproj"),
+        encoding: .utf8
+    )
+    #expect(project.contains("PP00000000000000000000A0 /* PrivacyInfo.xcprivacy in Resources */"))
+    #expect(project.contains("PP00000000000000000000A1 /* PrivacyInfo.xcprivacy in Resources */"))
+    #expect(project.contains("PP00000000000000000000A2 /* PrivacyInfo.xcprivacy in Resources */"))
+    #expect(project.contains("PP00000000000000000000A3 /* PrivacyInfo.xcprivacy in Resources */"))
+}
+
+@Test
 func momentDraftExposesExplicitSendHandoff() throws {
     let source = try String(
         contentsOf: packageRoot.appending(path: "Sources/ProsePalUI/MomentExperienceView.swift"),
@@ -288,4 +306,18 @@ private var packageRoot: URL {
         .deletingLastPathComponent()
         .deletingLastPathComponent()
         .deletingLastPathComponent()
+}
+
+private func privacyAccessReasons(at relativePath: String) throws -> [String] {
+    let data = try Data(contentsOf: packageRoot.appending(path: relativePath))
+    let plist = try #require(
+        PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any]
+    )
+    let entries = try #require(plist["NSPrivacyAccessedAPITypes"] as? [[String: Any]])
+    let userDefaultsEntry = try #require(entries.first {
+        $0["NSPrivacyAccessedAPIType"] as? String == "NSPrivacyAccessedAPICategoryUserDefaults"
+    })
+    return try #require(
+        userDefaultsEntry["NSPrivacyAccessedAPITypeReasons"] as? [String]
+    ).sorted()
 }
