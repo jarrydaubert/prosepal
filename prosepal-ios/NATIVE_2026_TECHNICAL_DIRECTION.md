@@ -97,6 +97,19 @@ availability, and connectivity.
   shorter, less defensive, more professional, keep my voice, explain how this
   might land, remove passive aggression, say no clearly, and take more care.
 
+Engineering evolution follows the same restraint:
+
+- Version the SwiftData relationship-vault schema before another model change.
+- Extract the affected surface whenever a product slice materially touches the
+  main Moment view and the boundary is safe; shrink the monolith incrementally
+  instead of attempting a big-bang rewrite.
+- New user-facing copy uses localization-safe APIs and joins the String Catalog
+  baseline. New colors are semantic and adaptive from their introduction.
+- Timeout and cancellation budgets belong at the writing-lane/service boundary;
+  views present retryable state but do not own competing transport timers.
+- External Apple/Supabase configuration and physical-device evidence proceed in
+  parallel with locally deterministic implementation work.
+
 References:
 
 - Adopting Liquid Glass: https://developer.apple.com/documentation/technologyoverviews/adopting-liquid-glass

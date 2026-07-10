@@ -14,7 +14,7 @@ import AppKit
 
 public enum MomentDraftUnavailableReason: Equatable, Sendable {
     case offline
-    case timedOut
+    case timedOut(lane: GenerationTimeoutLane)
     case rateLimited
     case usageLimitReached
     case contentBlocked
@@ -26,8 +26,8 @@ public enum MomentDraftUnavailableReason: Equatable, Sendable {
         switch error {
         case .offline:
             self = .offline
-        case .timedOut:
-            self = .timedOut
+        case .timedOut(let lane):
+            self = .timedOut(lane: lane)
         case .rateLimited:
             self = .rateLimited
         case .usageLimitReached:
@@ -252,7 +252,6 @@ public final class MomentModel {
 
     @ObservationIgnored private let service: any MessageWritingService
     @ObservationIgnored private let diagnostics: NativeDiagnosticsLogger
-    @ObservationIgnored private let generationTimeout: Duration
     @ObservationIgnored private let draftRecoveryStore: any MomentDraftRecoveryStoring
     @ObservationIgnored private var draftTask: Task<Void, Never>?
     @ObservationIgnored private var draftGeneration = 0
@@ -260,12 +259,10 @@ public final class MomentModel {
     public init(
         service: any MessageWritingService,
         diagnostics: NativeDiagnosticsLogger = .shared,
-        generationTimeout: Duration = .seconds(20),
         draftRecoveryStore: any MomentDraftRecoveryStoring = MomentDraftRecoveryNoopStore()
     ) {
         self.service = service
         self.diagnostics = diagnostics
-        self.generationTimeout = generationTimeout
         self.draftRecoveryStore = draftRecoveryStore
         restoreRecoveredDraftIfAvailable()
     }
@@ -465,9 +462,7 @@ public final class MomentModel {
         }
 
         do {
-            let nextBundle = try await withGenerationTimeout {
-                try await self.service.draft(for: input)
-            }
+            let nextBundle = try await service.draft(for: input)
             guard isCurrentGeneration(generation) else { return }
             storeRecoverableDraftSnapshot(originalBundle, reason: .rewrite)
             bundle = nextBundle
@@ -557,9 +552,7 @@ public final class MomentModel {
         }
 
         do {
-            let nextBundle = try await withGenerationTimeout {
-                try await self.service.adjust(bundle, with: adjustment, moment: input)
-            }
+            let nextBundle = try await service.adjust(bundle, with: adjustment, moment: input)
             guard isCurrentGeneration(generation) else { return }
             storeRecoverableDraftSnapshot(bundle, reason: .rewrite)
             self.bundle = nextBundle
@@ -615,9 +608,7 @@ public final class MomentModel {
         }
 
         do {
-            let nextBundle = try await withGenerationTimeout {
-                try await self.service.takeMoreCare(bundle, moment: input)
-            }
+            let nextBundle = try await service.takeMoreCare(bundle, moment: input)
             guard isCurrentGeneration(generation) else { return }
             storeRecoverableDraftSnapshot(bundle, reason: .rewrite)
             self.bundle = nextBundle
@@ -663,31 +654,6 @@ public final class MomentModel {
 
     private func finishDrafting(generation: Int) {
         if isCurrentGeneration(generation) {
-            isDrafting = false
-        }
-    }
-
-    private func withGenerationTimeout(
-        _ operation: @escaping @Sendable () async throws -> MomentDraftBundle
-    ) async throws -> MomentDraftBundle {
-        let race = MomentDraftGenerationTimeoutRace()
-        let generationTimeout = generationTimeout
-
-        return try await withTaskCancellationHandler {
-            try await withCheckedThrowingContinuation { continuation in
-                race.start(
-                    continuation: continuation,
-                    timeout: generationTimeout,
-                    operation: operation
-                )
-            }
-        } onCancel: {
-            race.cancel()
-        }
-    }
-
-    private func clearCancelledDraftingState(generation: Int) {
-        if isCurrentGeneration(generation) && isDrafting {
             isDrafting = false
         }
     }
@@ -766,75 +732,6 @@ public final class MomentModel {
         }
         return hasher.finalize()
     }
-}
-
-private final class MomentDraftGenerationTimeoutRace: @unchecked Sendable {
-    private let lock = NSLock()
-    private var continuation: CheckedContinuation<MomentDraftBundle, Error>?
-    private var operationTask: Task<Void, Never>?
-    private var timeoutTask: Task<Void, Never>?
-
-    func start(
-        continuation: CheckedContinuation<MomentDraftBundle, Error>,
-        timeout: Duration,
-        operation: @escaping @Sendable () async throws -> MomentDraftBundle
-    ) {
-        lock.lock()
-        self.continuation = continuation
-        lock.unlock()
-
-        let operationTask = Task {
-            do {
-                let bundle = try await operation()
-                resume(.success(bundle))
-            } catch {
-                resume(.failure(error))
-            }
-        }
-
-        let timeoutTask = Task {
-            do {
-                try await Task.sleep(for: timeout)
-                resume(.failure(GenerationError.timedOut))
-            } catch {
-                return
-            }
-        }
-
-        lock.lock()
-        self.operationTask = operationTask
-        self.timeoutTask = timeoutTask
-        lock.unlock()
-    }
-
-    func cancel() {
-        resume(.failure(CancellationError()))
-    }
-
-    private func resume(_ result: Result<MomentDraftBundle, Error>) {
-        lock.lock()
-        guard let continuation else {
-            lock.unlock()
-            return
-        }
-        self.continuation = nil
-        let operationTask = operationTask
-        let timeoutTask = timeoutTask
-        self.operationTask = nil
-        self.timeoutTask = nil
-        lock.unlock()
-
-        operationTask?.cancel()
-        timeoutTask?.cancel()
-        continuation.resume(with: result)
-    }
-}
-
-private struct MomentDraftUnavailableNotice {
-    var title: String
-    var detail: String
-    var systemImage: String
-    var canRetry: Bool
 }
 
 private struct MomentShareRequest: Identifiable {
@@ -3538,10 +3435,12 @@ private struct MomentSheetView: View {
                 systemImage: "wifi.slash",
                 canRetry: true
             )
-        case .timedOut:
+        case .timedOut(let lane):
             return MomentDraftUnavailableNotice(
-                title: "That took too long",
-                detail: "The writing route did not answer in time. Your words are still here, so try again when the connection settles.",
+                title: lane == .onDevice
+                    ? String(localized: "On-device writing took too long")
+                    : String(localized: "Drafting took too long"),
+                detail: errorMessage,
                 systemImage: "clock",
                 canRetry: true
             )

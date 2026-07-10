@@ -25,6 +25,20 @@ Status markers:
 Every row must include `-- evidence:`. If there is no code pointer, the item is
 not done.
 
+Implementation sequencing rules:
+
+- Do not evolve a SwiftData `@Model` again until the versioned-schema baseline
+  and migration plan are in place.
+- When a product slice materially touches `MomentExperienceView.swift`, extract
+  the affected view or behavior into a focused file when the boundary is safe;
+  replace monolith-pinned source scans with behavioral or view-layer coverage
+  opportunistically instead of scheduling a big-bang rewrite.
+- New user-facing copy must use localization-safe APIs and join the String
+  Catalog baseline as it lands. New visual colors must be semantic and adaptive
+  rather than adding fixed light-only literals.
+- Start calendar-bound Apple, Supabase, StoreKit sandbox, TestFlight, and
+  physical-device evidence in parallel with locally testable engineering work.
+
 ## Active Direction
 
 - App name: ProsePal. "Near" is an internal concept name only.
@@ -1411,16 +1425,21 @@ not done.
   wire constants/types and shortcut declarations to one extension-safe shared
   target, preserve production/staging URL routing, and add encode/decode and
   target-membership guards.
-- [ ] Align generation timeout and cancellation ownership -- evidence:
-  `MomentModel` races all generation through a 20-second custom
-  `NSLock`/checked-continuation timeout while `GatewayMessageWritingClient`
-  configures a 45-second URL request timeout; the UI timeout therefore wins for
-  production gateway calls, and `clearCancelledDraftingState` is defined but
-  unused in `MomentExperienceView.swift`. DoD: define one end-to-end timeout
-  budget per lane, use structured concurrency for the race where possible,
-  remove dead cancellation code, and prove operation cancellation, late-result
-  suppression, timeout taxonomy, and UI state cleanup without continuation
-  leaks.
+- [x] Align generation timeout and cancellation ownership -- completed
+  2026-07-10. `GenerationTimeoutPolicy` now gives on-device work a 20-second
+  budget and gateway/careful work a 45-second budget at the routing boundary in
+  `prosepal-ios/Sources/ProsePalAPI/MessageWritingService.swift`; the gateway
+  request uses the same 45-second budget. `GenerationError.timedOut` carries the
+  lane that actually exhausted its budget, so `MomentModel` and the extracted
+  `MomentDraftUnavailableNotice` surface honest on-device versus gateway retry
+  copy without provider details. The former UI-owned
+  `NSLock`/checked-continuation race and dead cancellation helper are removed;
+  structured task groups cancel the losing operation, while the existing model
+  generation counter still rejects late results and clears UI state. Coverage
+  in `MessageWritingServiceTests.swift`, `MessageWritingClientTests.swift`, and
+  `MomentModelTests.swift` proves lane taxonomy, underlying-operation
+  cancellation, gateway request budget, timeout recovery, late-result
+  suppression, and cancellation cleanup.
 - [ ] Align input semantics and length limits across in-app, App Intent, share,
   and gateway entry paths -- evidence: Share Extension and App Intent payloads
   cap shared text at 1,200 characters, while Moment person/detail/revise fields
@@ -1434,28 +1453,38 @@ not done.
 
 ## Top Open Work
 
-1. Propagate structured limit, remaining-use, and reset metadata from the
+1. Establish the versioned SwiftData relationship-vault schema and migration
+   baseline before any further `@Model` evolution.
+2. Align domain-owned input semantics, normalization, and limits across the app,
+   App Intents, Share Extension, persistence, and gateway.
+3. Consolidate widget, control, shortcut, App Intent, Share Extension, and
+   staging-routing contracts into extension-safe shared code.
+4. Make root navigation destinations distinct and accessible, extracting the
+   touched navigation surfaces and adding real view-layer coverage as part of
+   the slice.
+5. Define safe handling for verified StoreKit transactions from retired or
+   temporarily unconfigured product IDs.
+6. Propagate structured limit, remaining-use, and reset metadata from the
    server-owned usage contract when product policy calls for quantified quota UI.
-2. Add release-critical UI automation while decomposing
-   `MomentExperienceView.swift`, and close the enumerated Dynamic Type, Reduce
-   Motion, hit-target, contrast, identifier, and navigation gaps.
-3. Verify first-run welcome plus the latest Moment visual/rail/content-gating
+7. Add release-critical UI automation incrementally and close the enumerated
+   Dynamic Type, Reduce Motion, hit-target, contrast, identifier, and navigation
+   gaps while touched surfaces leave `MomentExperienceView.swift`.
+8. Verify first-run welcome plus the latest Moment visual/rail/content-gating
    pass on a physical device/TestFlight build and capture release-candidate
    iPhone and iPad smoke evidence.
-4. Configure Apple App Store Server secrets in staging, apply App Store
+9. Configure Apple App Store Server secrets in staging, apply App Store
    entitlement migrations to staging, then capture sandbox notification and
    reconciliation evidence.
-5. Finish external Apple/Supabase setup and device proof for side-by-side
+10. Finish external Apple/Supabase setup and device proof for side-by-side
    `ProsePal Staging`.
-6. Complete widget/control/share-extension contract consolidation and QA from
+11. Complete widget/control/share-extension QA from
    actual system surfaces on simulator or device.
-7. Swap the now-working standard-gateway careful lane to the agreed Apple-native
+12. Swap the now-working standard-gateway careful lane to the agreed Apple-native
    careful/PCC direction when that API path is ready.
-8. Harden crisis/pressure handling beyond local English phrase lists and add
+13. Harden crisis/pressure handling beyond local English phrase lists and add
     locale-aware/model-guarded evidence.
-9. Complete vault privacy work for any stronger at-rest encryption decision and
-    establish the versioned SwiftData migration baseline.
-10. Complete Dark Mode, String Catalog, VoiceOver, Switch Control, broader
+14. Complete vault privacy work for any stronger at-rest encryption decision.
+15. Complete Dark Mode, String Catalog, VoiceOver, Switch Control, broader
     Dynamic Type, Reduce Motion, Reduce Transparency, Increase Contrast,
     keyboard/focus, safe-area, and regular-width iPad hardening.
 

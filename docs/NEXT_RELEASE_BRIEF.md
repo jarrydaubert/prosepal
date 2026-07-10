@@ -53,6 +53,20 @@ Native rewrite facts:
 - Do not build or maintain the grouped-form UI as a product fallback once the
   Moment Sheet stands up.
 
+## Evolution Rules
+
+- Establish the versioned SwiftData schema baseline before changing another
+  relationship-vault `@Model`.
+- Shrink `MomentExperienceView.swift` as touched product slices land: extract
+  the affected surface when the boundary is safe and move string-scan guards to
+  behavioral/view-layer tests opportunistically. Do not schedule a risky
+  big-bang view rewrite.
+- Route new user-facing copy through localization-safe APIs and add it to the
+  String Catalog baseline; define new colors semantically with adaptive light
+  and dark behavior.
+- Run Apple/Supabase staging setup, StoreKit sandbox propagation, TestFlight,
+  and physical-device evidence in parallel with local engineering slices.
+
 ## Active Readiness Gates
 
 The actionable backlog is `docs/BACKLOG.md`. Its native gates are:

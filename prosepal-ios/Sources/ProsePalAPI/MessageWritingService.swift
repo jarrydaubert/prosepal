@@ -30,16 +30,32 @@ public protocol MomentDraftRefinementClient: MomentDraftClient {
     ) async throws -> MomentDraftBundle
 }
 
+public struct GenerationTimeoutPolicy: Sendable {
+    public var onDevice: Duration
+    public var gateway: Duration
+
+    public init(
+        onDevice: Duration = .seconds(20),
+        gateway: Duration = .seconds(45)
+    ) {
+        self.onDevice = onDevice
+        self.gateway = gateway
+    }
+}
+
 public struct RoutingMessageWritingService: MessageWritingService {
     private let privateClient: any MomentDraftClient
     private let carefulClient: any MomentDraftClient
+    private let timeoutPolicy: GenerationTimeoutPolicy
 
     public init(
         privateClient: any MomentDraftClient,
-        carefulClient: any MomentDraftClient
+        carefulClient: any MomentDraftClient,
+        timeoutPolicy: GenerationTimeoutPolicy = GenerationTimeoutPolicy()
     ) {
         self.privateClient = privateClient
         self.carefulClient = carefulClient
+        self.timeoutPolicy = timeoutPolicy
     }
 
     public func draft(for moment: MomentInput) async throws -> MomentDraftBundle {
@@ -56,26 +72,26 @@ public struct RoutingMessageWritingService: MessageWritingService {
 
         if moment.requiresCarefulLane {
             do {
-                return try await carefulClient.draft(for: moment)
+                return try await runCareful { try await carefulClient.draft(for: moment) }
                     .applyingLocalPressureCheck(for: moment)
             } catch let error as GenerationError {
                 guard error.shouldFallbackToPrivateDraftFromCarefulLane else { throw error }
-                return try await privateClient.draft(for: moment)
+                return try await runPrivate { try await privateClient.draft(for: moment) }
                     .applyingLocalPressureCheck(for: moment)
             } catch is CancellationError {
                 throw CancellationError()
             } catch {
-                return try await privateClient.draft(for: moment)
+                return try await runPrivate { try await privateClient.draft(for: moment) }
                     .applyingLocalPressureCheck(for: moment)
             }
         }
 
         do {
-            return try await privateClient.draft(for: moment)
+            return try await runPrivate { try await privateClient.draft(for: moment) }
                 .applyingLocalPressureCheck(for: moment)
         } catch let error as GenerationError {
             guard error.shouldRouteToCarefulLane else { throw error }
-            return try await carefulClient.draft(for: moment)
+            return try await runCareful { try await carefulClient.draft(for: moment) }
                 .replacingLane(.standardDraft)
                 .applyingLocalPressureCheck(for: moment)
         }
@@ -95,20 +111,28 @@ public struct RoutingMessageWritingService: MessageWritingService {
         switch bundle.lane {
         case .privateDraft, .mock:
             do {
-                return try await privateClient.adjust(bundle, with: adjustment, moment: moment)
+                return try await runPrivate {
+                    try await privateClient.adjust(bundle, with: adjustment, moment: moment)
+                }
                     .applyingLocalPressureCheck(for: moment)
             } catch let error as GenerationError {
                 guard error.shouldRouteToCarefulLane else { throw error }
-                return try await carefulClient.adjust(bundle, with: adjustment, moment: moment)
+                return try await runCareful {
+                    try await carefulClient.adjust(bundle, with: adjustment, moment: moment)
+                }
                     .replacingLane(.standardDraft)
                     .applyingLocalPressureCheck(for: moment)
             }
         case .standardDraft:
-            return try await carefulClient.adjust(bundle, with: adjustment, moment: moment)
+            return try await runCareful {
+                try await carefulClient.adjust(bundle, with: adjustment, moment: moment)
+            }
                 .replacingLane(.standardDraft)
                 .applyingLocalPressureCheck(for: moment)
         case .takeMoreCare:
-            return try await carefulClient.adjust(bundle, with: adjustment, moment: moment)
+            return try await runCareful {
+                try await carefulClient.adjust(bundle, with: adjustment, moment: moment)
+            }
                 .applyingLocalPressureCheck(for: moment)
         }
     }
@@ -130,36 +154,78 @@ public struct RoutingMessageWritingService: MessageWritingService {
 
         if let refinementClient = carefulClient as? any MomentDraftRefinementClient {
             do {
-                return try await refinementClient.refine(
-                    currentMessage: bundle?.messageText,
-                    moment: moment
-                )
+                return try await runCareful {
+                    try await refinementClient.refine(
+                        currentMessage: bundle?.messageText,
+                        moment: moment
+                    )
+                }
                 .applyingLocalPressureCheck(for: moment)
             } catch let error as GenerationError {
                 guard error.shouldFallbackToPrivateDraftFromCarefulLane else { throw error }
-                return try await privateClient.draft(for: moment)
+                return try await runPrivate { try await privateClient.draft(for: moment) }
                     .applyingLocalPressureCheck(for: moment)
             } catch is CancellationError {
                 throw CancellationError()
             } catch {
-                return try await privateClient.draft(for: moment)
+                return try await runPrivate { try await privateClient.draft(for: moment) }
                     .applyingLocalPressureCheck(for: moment)
             }
         }
 
         do {
-            return try await carefulClient.draft(for: moment)
+            return try await runCareful { try await carefulClient.draft(for: moment) }
                 .applyingLocalPressureCheck(for: moment)
         } catch let error as GenerationError {
             guard error.shouldFallbackToPrivateDraftFromCarefulLane else { throw error }
-            return try await privateClient.draft(for: moment)
+            return try await runPrivate { try await privateClient.draft(for: moment) }
                 .applyingLocalPressureCheck(for: moment)
         } catch is CancellationError {
             throw CancellationError()
         } catch {
-            return try await privateClient.draft(for: moment)
+            return try await runPrivate { try await privateClient.draft(for: moment) }
                 .applyingLocalPressureCheck(for: moment)
         }
+    }
+
+    private func runPrivate(
+        _ operation: @escaping @Sendable () async throws -> MomentDraftBundle
+    ) async throws -> MomentDraftBundle {
+        try await withGenerationTimeout(
+            timeoutPolicy.onDevice,
+            lane: .onDevice,
+            operation: operation
+        )
+    }
+
+    private func runCareful(
+        _ operation: @escaping @Sendable () async throws -> MomentDraftBundle
+    ) async throws -> MomentDraftBundle {
+        try await withGenerationTimeout(
+            timeoutPolicy.gateway,
+            lane: .gateway,
+            operation: operation
+        )
+    }
+}
+
+private func withGenerationTimeout(
+    _ timeout: Duration,
+    lane: GenerationTimeoutLane,
+    operation: @escaping @Sendable () async throws -> MomentDraftBundle
+) async throws -> MomentDraftBundle {
+    try await withThrowingTaskGroup(of: MomentDraftBundle.self) { group in
+        group.addTask(operation: operation)
+        group.addTask {
+            try await Task.sleep(for: timeout)
+            throw GenerationError.timedOut(lane: lane)
+        }
+
+        defer { group.cancelAll() }
+        guard let result = try await group.next() else {
+            throw CancellationError()
+        }
+        return result
     }
 }
 

@@ -81,18 +81,50 @@ func momentChangesClearDraftWithoutStartingGeneration() async throws {
 
 @Test
 @MainActor
-func slowDraftTimesOutAndReturnsToRecoverableState() async throws {
+func onDeviceTimeoutReturnsLaneHonestRecoverableState() async throws {
+    let slowClient = SlowMomentWritingService(delay: .seconds(5))
     let model = MomentModel(
-        service: SlowMomentWritingService(delay: .seconds(5)),
-        generationTimeout: .milliseconds(20)
+        service: RoutingMessageWritingService(
+            privateClient: slowClient,
+            carefulClient: slowClient,
+            timeoutPolicy: GenerationTimeoutPolicy(
+                onDevice: .milliseconds(20),
+                gateway: .milliseconds(20)
+            )
+        )
+    )
+
+    model.personName = "Alex"
+    model.occasion = .sympathy
+    model.alignRegisterForMoment()
+    await model.draftNow()
+
+    #expect(model.bundle == nil)
+    #expect(model.errorMessage == GenerationError.timedOut(lane: .onDevice).userSafeMessage)
+    #expect(model.draftUnavailableReason == .timedOut(lane: .onDevice))
+    #expect(model.isDrafting == false)
+}
+
+@Test
+@MainActor
+func gatewayTimeoutReturnsLaneHonestRecoverableState() async throws {
+    let model = MomentModel(
+        service: RoutingMessageWritingService(
+            privateClient: UnconfiguredMomentDraftClient(),
+            carefulClient: SlowMomentWritingService(delay: .seconds(5)),
+            timeoutPolicy: GenerationTimeoutPolicy(
+                onDevice: .milliseconds(20),
+                gateway: .milliseconds(20)
+            )
+        )
     )
 
     model.personName = "Alex"
     await model.draftNow()
 
     #expect(model.bundle == nil)
-    #expect(model.errorMessage == GenerationError.timedOut.userSafeMessage)
-    #expect(model.draftUnavailableReason == .timedOut)
+    #expect(model.errorMessage == GenerationError.timedOut(lane: .gateway).userSafeMessage)
+    #expect(model.draftUnavailableReason == .timedOut(lane: .gateway))
     #expect(model.isDrafting == false)
 }
 
@@ -929,7 +961,7 @@ private actor CountingMomentDraftClient: MomentDraftClient {
     }
 }
 
-private struct SlowMomentWritingService: MessageWritingService {
+private struct SlowMomentWritingService: MessageWritingService, MomentDraftClient {
     var delay: Duration
 
     func draft(for moment: MomentInput) async throws -> MomentDraftBundle {

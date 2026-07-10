@@ -219,6 +219,37 @@ func privateContentBlockDoesNotFallThroughToCarefulClient() async {
 }
 
 @Test
+func laneTimeoutCancelsTheUnderlyingOperationBeforeFallback() async {
+    let privateClient = CancellationRecordingMomentDraftClient()
+    let carefulClient = FailingMomentDraftClient(
+        error: .contentBlocked(message: "Stop after the timeout fallback.")
+    )
+    let service = RoutingMessageWritingService(
+        privateClient: privateClient,
+        carefulClient: carefulClient,
+        timeoutPolicy: GenerationTimeoutPolicy(
+            onDevice: .milliseconds(20),
+            gateway: .seconds(1)
+        )
+    )
+
+    do {
+        _ = try await service.draft(for: MomentInput(
+            personName: "Alex",
+            relationship: .closeFriend,
+            occasion: .birthday
+        ))
+        Issue.record("Expected the careful fallback to stop after the private timeout.")
+    } catch let error as GenerationError {
+        #expect(error == .contentBlocked(message: "Stop after the timeout fallback."))
+    } catch {
+        Issue.record("Expected GenerationError, got \(error).")
+    }
+
+    #expect(await privateClient.didObserveCancellation)
+}
+
+@Test
 func serviceAppliesLocalPressureCheckToReturnedDraft() async throws {
     let privateClient = RecordingMomentDraftClient(
         bundle: MomentDraftBundle(
@@ -519,6 +550,28 @@ private struct FailingMomentDraftClient: MomentDraftClient {
         moment: MomentInput
     ) async throws -> MomentDraftBundle {
         throw error
+    }
+}
+
+private actor CancellationRecordingMomentDraftClient: MomentDraftClient {
+    private(set) var didObserveCancellation = false
+
+    func draft(for moment: MomentInput) async throws -> MomentDraftBundle {
+        do {
+            try await Task.sleep(for: .seconds(5))
+            return MomentDraftBundle(messageText: "Too late.", lane: .privateDraft)
+        } catch is CancellationError {
+            didObserveCancellation = true
+            throw CancellationError()
+        }
+    }
+
+    func adjust(
+        _ bundle: MomentDraftBundle,
+        with adjustment: MomentAdjustment,
+        moment: MomentInput
+    ) async throws -> MomentDraftBundle {
+        try await draft(for: moment)
     }
 }
 

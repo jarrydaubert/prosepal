@@ -513,7 +513,7 @@ final class MessageWritingClientTests: XCTestCase {
     func testGatewayClientMapsGatewayFailureStatusBuckets() async throws {
         try await assertGatewayFailure(
             statusCode: 408,
-            expectedError: .timedOut
+            expectedError: .timedOut(lane: .gateway)
         )
         try await assertGatewayFailure(
             statusCode: 429,

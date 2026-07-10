@@ -108,7 +108,7 @@ public struct GatewayMessageWritingClient: MessageWritingClient {
                     category: "timeout",
                     durationMs: startedAt.elapsedMilliseconds
                 )
-                throw GenerationError.timedOut
+                throw GenerationError.timedOut(lane: .gateway)
             case 409, 425, 429:
                 GatewayDiagnosticsLogger.shared.requestFailed(
                     requestID: requestID,
@@ -203,7 +203,7 @@ public struct GatewayMessageWritingClient: MessageWritingClient {
                 category: "timeout",
                 durationMs: startedAt.elapsedMilliseconds
             )
-            throw GenerationError.timedOut
+            throw GenerationError.timedOut(lane: .gateway)
         } catch {
             GatewayDiagnosticsLogger.shared.requestFailed(
                 requestID: requestID,
