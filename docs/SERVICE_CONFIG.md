@@ -66,6 +66,16 @@ Common keys:
 
 See `prosepal-ios/NATIVE_DEVICE_DEBUG_RUNBOOK.md` for setup steps.
 
+## Archive Configuration
+
+TestFlight/App Store archives do not inherit Xcode Run environment variables.
+The app targets therefore expose build settings for the gateway URL, Supabase
+URL, and Supabase publishable/legacy anon key; `App/Info.plist` copies those
+public values into the built bundle. The archive validation phase rejects
+missing or insecure values and rejects any development gateway secret. Provide
+approved production or staging values through the archive/CI environment, not a
+tracked secret file.
+
 ## Supabase Secrets
 
 Secrets are configured manually in the Supabase dashboard or CLI by the human

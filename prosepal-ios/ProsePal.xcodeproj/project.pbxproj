@@ -223,6 +223,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = PP0000000000000000000020 /* Build configuration list for PBXNativeTarget "ProsePal" */;
 			buildPhases = (
+				PP00000000000000000000B0 /* Validate Remote Service Configuration */,
 				PP0000000000000000000013 /* Sources */,
 				PP0000000000000000000012 /* Frameworks */,
 				PP0000000000000000000014 /* Resources */,
@@ -246,6 +247,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = PP0000000000000000000053 /* Build configuration list for PBXNativeTarget "ProsePal Staging" */;
 			buildPhases = (
+				PP00000000000000000000B1 /* Validate Remote Service Configuration */,
 				PP0000000000000000000050 /* Sources */,
 				PP0000000000000000000047 /* Frameworks */,
 				PP0000000000000000000049 /* Resources */,
@@ -449,6 +451,49 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		PP00000000000000000000B0 /* Validate Remote Service Configuration */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/scripts/validate-native-service-config.sh",
+			);
+			name = "Validate Remote Service Configuration";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "/bin/sh \"${SRCROOT}/scripts/validate-native-service-config.sh\"\n";
+		};
+		PP00000000000000000000B1 /* Validate Remote Service Configuration */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/scripts/validate-native-service-config.sh",
+			);
+			name = "Validate Remote Service Configuration";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "/bin/sh \"${SRCROOT}/scripts/validate-native-service-config.sh\"\n";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		PP0000000000000000000013 /* Sources */ = {
@@ -666,8 +711,11 @@
 				);
 				MARKETING_VERSION = 0.1.0;
 				PROSEPAL_DISPLAY_NAME = ProsePal;
+				PROSEPAL_GATEWAY_URL = "";
 				PROSEPAL_PREMIUM_PRODUCT_IDS = "";
 				PROSEPAL_RECOMMENDED_PREMIUM_PRODUCT_ID = "";
+				PROSEPAL_SUPABASE_ANON_KEY = "";
+				PROSEPAL_SUPABASE_URL = "";
 				PROSEPAL_URL_SCHEME = prosepal;
 				PRODUCT_BUNDLE_IDENTIFIER = com.prosepal.prosepal;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -703,8 +751,11 @@
 				);
 				MARKETING_VERSION = 0.1.0;
 				PROSEPAL_DISPLAY_NAME = ProsePal;
+				PROSEPAL_GATEWAY_URL = "";
 				PROSEPAL_PREMIUM_PRODUCT_IDS = "";
 				PROSEPAL_RECOMMENDED_PREMIUM_PRODUCT_ID = "";
+				PROSEPAL_SUPABASE_ANON_KEY = "";
+				PROSEPAL_SUPABASE_URL = "";
 				PROSEPAL_URL_SCHEME = prosepal;
 				PRODUCT_BUNDLE_IDENTIFIER = com.prosepal.prosepal;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -742,8 +793,11 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.prosepal.prosepal.staging;
 				PRODUCT_NAME = "ProsePal Staging";
 				PROSEPAL_DISPLAY_NAME = "ProsePal Staging";
+				PROSEPAL_GATEWAY_URL = "";
 				PROSEPAL_PREMIUM_PRODUCT_IDS = "com.prosepal.pro.yearly,com.prosepal.pro.monthly,com.prosepal.pro.weekly";
 				PROSEPAL_RECOMMENDED_PREMIUM_PRODUCT_ID = com.prosepal.pro.yearly;
+				PROSEPAL_SUPABASE_ANON_KEY = "";
+				PROSEPAL_SUPABASE_URL = "";
 				PROSEPAL_URL_SCHEME = "prosepal-staging";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
@@ -779,8 +833,11 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.prosepal.prosepal.staging;
 				PRODUCT_NAME = "ProsePal Staging";
 				PROSEPAL_DISPLAY_NAME = "ProsePal Staging";
+				PROSEPAL_GATEWAY_URL = "";
 				PROSEPAL_PREMIUM_PRODUCT_IDS = "com.prosepal.pro.yearly,com.prosepal.pro.monthly,com.prosepal.pro.weekly";
 				PROSEPAL_RECOMMENDED_PREMIUM_PRODUCT_ID = com.prosepal.pro.yearly;
+				PROSEPAL_SUPABASE_ANON_KEY = "";
+				PROSEPAL_SUPABASE_URL = "";
 				PROSEPAL_URL_SCHEME = "prosepal-staging";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;

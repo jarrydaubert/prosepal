@@ -107,6 +107,20 @@ Important local Run environment variables:
 - `PROSEPAL_PREMIUM_PRODUCT_IDS`
 - `PROSEPAL_RECOMMENDED_PREMIUM_PRODUCT_ID`
 
+Archived TestFlight/App Store builds receive the three public remote-service
+values as Xcode build settings, which `App/Info.plist` expands into the app
+bundle:
+
+- `PROSEPAL_GATEWAY_URL`
+- `PROSEPAL_SUPABASE_URL`
+- `PROSEPAL_SUPABASE_ANON_KEY` (Supabase publishable or legacy anon key only)
+
+The app targets run `prosepal-ios/scripts/validate-native-service-config.sh`
+during archive/install actions. Missing or non-HTTPS URLs, a missing public key,
+or any embedded `PROSEPAL_DEV_GATEWAY_SECRET` fail the archive. Supply values
+through the approved CI/archive environment without printing them; never pass a
+service-role or secret key.
+
 See `prosepal-ios/NATIVE_DEVICE_DEBUG_RUNBOOK.md` for the detailed device
 smoke matrix.
 

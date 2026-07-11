@@ -117,6 +117,35 @@ func appAndShareExtensionDeclareRequiredReasonAPIUsage() throws {
 }
 
 @Test
+func archivedAppsRequirePublicRemoteServiceConfiguration() throws {
+    let plist = try String(
+        contentsOf: packageRoot.appending(path: "App/Info.plist"),
+        encoding: .utf8
+    )
+    let project = try String(
+        contentsOf: packageRoot.appending(path: "ProsePal.xcodeproj/project.pbxproj"),
+        encoding: .utf8
+    )
+    let validator = try String(
+        contentsOf: packageRoot.appending(path: "scripts/validate-native-service-config.sh"),
+        encoding: .utf8
+    )
+
+    for key in [
+        "PROSEPAL_GATEWAY_URL",
+        "PROSEPAL_SUPABASE_URL",
+        "PROSEPAL_SUPABASE_ANON_KEY"
+    ] {
+        #expect(plist.contains("<key>\(key)</key>"))
+        #expect(project.contains("\(key) = \"\";"))
+        #expect(validator.contains(key))
+    }
+
+    #expect(project.contains("Validate Remote Service Configuration"))
+    #expect(validator.contains("PROSEPAL_DEV_GATEWAY_SECRET must never be embedded"))
+}
+
+@Test
 func momentDraftExposesExplicitSendHandoff() throws {
     let source = try String(
         contentsOf: packageRoot.appending(path: "Sources/ProsePalUI/MomentExperienceView.swift"),
