@@ -9,6 +9,7 @@ public enum GenerationError: Error, Equatable, Sendable {
     case offline
     case timedOut(lane: GenerationTimeoutLane)
     case rateLimited(message: String)
+    case requestNeedsFreshKey(message: String)
     case usageLimitReached(message: String)
     case contentBlocked(message: String)
     case serviceUnavailable(message: String)
@@ -28,6 +29,7 @@ public extension GenerationError {
                 String(localized: "ProsePal could not finish this draft in time. Your note is still here, so you can try again.")
             }
         case .rateLimited(let message),
+             .requestNeedsFreshKey(let message),
              .usageLimitReached(let message),
              .contentBlocked(let message),
              .serviceUnavailable(let message),
@@ -44,6 +46,8 @@ public extension GenerationError {
             "timeout"
         case .rateLimited:
             "rate_limited"
+        case .requestNeedsFreshKey:
+            "request_needs_fresh_key"
         case .usageLimitReached:
             "usage_limit"
         case .contentBlocked:

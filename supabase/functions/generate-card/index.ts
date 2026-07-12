@@ -160,6 +160,13 @@ type ValidationResult =
   | { ok: true; value: CardRequest }
   | { ok: false; status: number; error: string; code: string };
 
+type LedgerReservation = {
+  requestId: string;
+  reservationToken: string;
+  usage?: CardResponse["usage"];
+  client: UsageClient;
+};
+
 type ProviderConfig =
   | { mode: "unconfigured"; slot: string }
   | {
@@ -532,10 +539,18 @@ const defaultCreateUsageClient: CreateUsageClient = (
 ) =>
   createClient(supabaseUrl, supabaseServiceRoleKey) as unknown as UsageClient;
 
-function jsonResponse(body: Record<string, unknown>, status = 200): Response {
+function jsonResponse(
+  body: Record<string, unknown>,
+  status = 200,
+  extraHeaders: Record<string, string> = {},
+): Response {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    headers: {
+      ...corsHeaders,
+      "Content-Type": "application/json",
+      ...extraHeaders,
+    },
   });
 }
 
@@ -663,6 +678,11 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === "object" && !Array.isArray(value);
 }
 
+function validatedIdempotencyKey(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
+  return /^[A-Za-z0-9._:-]{1,120}$/.test(value) ? value : undefined;
+}
+
 function isEnumValue<T extends Record<string, unknown>>(
   value: unknown,
   allowed: T,
@@ -781,11 +801,17 @@ function parseRequest(payload: unknown): ValidationResult {
 
   const clientContextObject =
     readWireObject(payload, "client_context", "clientContext") ?? {};
-  const idempotencyKey = sanitizeField(
+  const idempotencyKey = validatedIdempotencyKey(
     readWireValue(payload, "idempotency_key", "idempotencyKey"),
-    120,
-  ) ??
-    crypto.randomUUID();
+  );
+  if (!idempotencyKey) {
+    return {
+      ok: false,
+      status: 400,
+      code: "invalid_idempotency_key",
+      error: "A valid idempotency key is required",
+    };
+  }
   const localeIdentifier = sanitizeField(
     readWireValue(intentObject, "locale_identifier", "localeIdentifier"),
     40,
@@ -845,6 +871,27 @@ function parseRequest(payload: unknown): ValidationResult {
       },
     },
   };
+}
+
+export async function requestFingerprint(
+  request: CardRequest,
+): Promise<string> {
+  // Only fields that can affect provider output belong in the server identity.
+  // Diagnostic client context is deliberately excluded so an app update cannot
+  // turn the same pending request into an idempotency conflict.
+  const canonical = JSON.stringify({
+    intent: request.intent,
+    requested_lane: request.requested_lane,
+    prompt_contract_version: request.prompt_contract_version,
+    output_contract_version: request.output_contract_version,
+  });
+  const digest = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(canonical),
+  );
+  return Array.from(new Uint8Array(digest))
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
 }
 
 function providerConfig(getEnv: EnvGetter): ProviderConfig {
@@ -1395,23 +1442,19 @@ function redactedUserId(userId: string | null): string | null {
   return userId ? `${userId.substring(0, 8)}...` : null;
 }
 
-function monthKeyFor(date: Date): string {
-  const utcMonth = date.getUTCMonth() + 1;
-  return `${date.getUTCFullYear()}-${utcMonth.toString().padStart(2, "0")}`;
-}
-
 function nextMonthResetAt(date: Date): string {
   return new Date(
     Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 1, 0, 0, 0, 0),
   ).toISOString();
 }
 
-async function consumeUsageForAuthenticatedGeneration(
+async function reserveGatewayRequest(
   auth: {
     userId: string | null;
     mode: "authenticated" | "anonymous_dev";
-    authHeader?: string;
   },
+  request: CardRequest,
+  fingerprint: string,
   deps: {
     getEnv: EnvGetter;
     createUsageClient: CreateUsageClient;
@@ -1423,43 +1466,15 @@ async function consumeUsageForAuthenticatedGeneration(
 ): Promise<
   | {
     ok: true;
-    usage?: CardResponse["usage"];
-    source: "authenticated_rpc" | "anonymous_dev";
+    reservation: LedgerReservation;
   }
   | { ok: false; response: Response }
 > {
-  if (auth.mode === "anonymous_dev") {
-    return { ok: true, source: "anonymous_dev" };
-  }
-
-  if (!auth.userId || !auth.authHeader) {
-    deps.logger.error(
-      "generate-card usage auth state invalid",
-      JSON.stringify({
-        ...requestLog,
-        latencyMs: deps.now().getTime() - startedAt,
-      }),
-    );
-    return {
-      ok: false,
-      response: jsonResponse(
-        {
-          error: "Gateway usage policy failed",
-          user_safe_error: {
-            code: "gateway_usage_failed",
-            message: "Message generation could not be completed. Try again.",
-          },
-        },
-        500,
-      ),
-    };
-  }
-
   const supabaseUrl = deps.getEnv("SUPABASE_URL");
   const supabaseServiceRoleKey = deps.getEnv("SUPABASE_SERVICE_ROLE_KEY");
   if (!supabaseUrl || !supabaseServiceRoleKey) {
     deps.logger.error(
-      "generate-card usage unconfigured",
+      "generate-card ledger unconfigured",
       JSON.stringify({
         ...requestLog,
         latencyMs: deps.now().getTime() - startedAt,
@@ -1469,7 +1484,7 @@ async function consumeUsageForAuthenticatedGeneration(
       ok: false,
       response: jsonResponse(
         {
-          error: "Gateway usage policy unconfigured",
+          error: "Gateway request policy unconfigured",
           user_safe_error: {
             code: "gateway_usage_unconfigured",
             message: "Message generation is not configured yet.",
@@ -1487,14 +1502,18 @@ async function consumeUsageForAuthenticatedGeneration(
 
   let rpcResult: Awaited<ReturnType<UsageClient["rpc"]>>;
   try {
-    rpcResult = await usageClient.rpc("check_and_increment_usage", {
+    rpcResult = await usageClient.rpc("reserve_card_request", {
       p_user_id: auth.userId,
-      p_is_pro: false,
-      p_month_key: monthKeyFor(deps.now()),
+      p_dev_anonymous: auth.mode === "anonymous_dev",
+      p_idempotency_key: request.idempotency_key,
+      p_request_fingerprint: fingerprint,
+      p_lane: request.requested_lane,
+      p_contract_version:
+        `prompt-${request.prompt_contract_version}:output-${request.output_contract_version}`,
     });
   } catch {
     deps.logger.warn(
-      "generate-card usage rpc threw",
+      "generate-card reserve rpc threw",
       JSON.stringify({
         ...requestLog,
         latencyMs: deps.now().getTime() - startedAt,
@@ -1517,7 +1536,7 @@ async function consumeUsageForAuthenticatedGeneration(
 
   if (rpcResult.error) {
     deps.logger.warn(
-      "generate-card usage rpc failed",
+      "generate-card reserve rpc failed",
       JSON.stringify({
         ...requestLog,
         errorCode: rpcResult.error.code,
@@ -1541,7 +1560,7 @@ async function consumeUsageForAuthenticatedGeneration(
 
   if (!isRecord(rpcResult.data)) {
     deps.logger.warn(
-      "generate-card usage rpc malformed",
+      "generate-card reserve rpc malformed",
       JSON.stringify({
         ...requestLog,
         latencyMs: deps.now().getTime() - startedAt,
@@ -1562,14 +1581,13 @@ async function consumeUsageForAuthenticatedGeneration(
     };
   }
 
-  const allowed = readWireBoolean(rpcResult.data, "allowed", "allowed") ??
-    false;
+  const outcome = readWireString(rpcResult.data, "outcome", "outcome");
   const remaining = readWireNumber(rpcResult.data, "remaining", "remaining");
   const limit = readWireNumber(rpcResult.data, "limit", "limit");
   const serverIsPro = readWireBoolean(rpcResult.data, "is_pro", "isPro") ??
     false;
 
-  if (!allowed) {
+  if (outcome === "quota_exhausted") {
     deps.logger.log(
       "generate-card usage limit reached",
       JSON.stringify({
@@ -1597,38 +1615,183 @@ async function consumeUsageForAuthenticatedGeneration(
     };
   }
 
-  if (remaining === undefined || limit === undefined) {
-    deps.logger.warn(
-      "generate-card usage rpc incomplete",
-      JSON.stringify({
-        ...requestLog,
-        latencyMs: deps.now().getTime() - startedAt,
-      }),
+  if (outcome === "rate_limited") {
+    const retryAfter = Math.max(
+      1,
+      readWireNumber(rpcResult.data, "retry_after", "retryAfter") ?? 1,
     );
     return {
       ok: false,
       response: jsonResponse(
         {
-          error: "Gateway usage policy failed",
+          error: "Gateway rate limit reached",
           user_safe_error: {
-            code: "gateway_usage_failed",
-            message: "Message generation could not be completed. Try again.",
+            code: "gateway_rate_limited",
+            message: "Please wait a moment before trying again.",
           },
         },
-        503,
+        429,
+        { "Retry-After": retryAfter.toString() },
       ),
     };
   }
 
+  if (outcome === "in_flight") {
+    const retryAfter = Math.max(
+      1,
+      readWireNumber(rpcResult.data, "retry_after", "retryAfter") ?? 1,
+    );
+    return {
+      ok: false,
+      response: jsonResponse(
+        {
+          error: "Gateway request is still in flight",
+          user_safe_error: {
+            code: "gateway_request_in_flight",
+            message:
+              "This draft is still being prepared. Try again in a moment.",
+          },
+        },
+        409,
+        { "Retry-After": retryAfter.toString() },
+      ),
+    };
+  }
+
+  if (outcome === "idempotency_conflict") {
+    return {
+      ok: false,
+      response: jsonResponse(
+        {
+          error: "Idempotency key does not match this request",
+          user_safe_error: {
+            code: "gateway_idempotency_conflict",
+            message: "This draft request changed. Please try again.",
+          },
+        },
+        409,
+      ),
+    };
+  }
+
+  if (outcome === "replay_expired") {
+    return {
+      ok: false,
+      response: jsonResponse(
+        {
+          error: "Replay window expired",
+          user_safe_error: {
+            code: "gateway_replay_expired",
+            message:
+              "That earlier draft is no longer available. Please try again.",
+          },
+        },
+        409,
+      ),
+    };
+  }
+
+  if (outcome === "replay") {
+    const payload = readWireValue(
+      rpcResult.data,
+      "response_payload",
+      "responsePayload",
+    );
+    if (isRecord(payload)) {
+      return {
+        ok: false,
+        response: jsonResponse(payload, 200, { "X-ProsePal-Replay": "true" }),
+      };
+    }
+  }
+
+  const requestId = readWireString(rpcResult.data, "request_id", "requestId");
+  const reservationToken = readWireString(
+    rpcResult.data,
+    "reservation_token",
+    "reservationToken",
+  );
+  if (outcome === "reserved" && requestId && reservationToken) {
+    const usage = auth.mode === "authenticated" &&
+        remaining !== undefined && limit !== undefined
+      ? {
+        remaining,
+        limit,
+        resets_at: serverIsPro ? nextMonthResetAt(deps.now()) : undefined,
+      }
+      : undefined;
+    return {
+      ok: true,
+      reservation: { requestId, reservationToken, usage, client: usageClient },
+    };
+  }
+
+  deps.logger.warn(
+    "generate-card reserve rpc outcome invalid",
+    JSON.stringify({
+      ...requestLog,
+      ledgerOutcome: outcome ?? "missing",
+      latencyMs: deps.now().getTime() - startedAt,
+    }),
+  );
   return {
-    ok: true,
-    source: "authenticated_rpc",
-    usage: {
-      remaining,
-      limit,
-      resets_at: nextMonthResetAt(deps.now()),
-    },
+    ok: false,
+    response: jsonResponse(
+      {
+        error: "Gateway request policy failed",
+        user_safe_error: {
+          code: "gateway_usage_failed",
+          message: "Message generation could not be completed. Try again.",
+        },
+      },
+      503,
+    ),
   };
+}
+
+async function finalizeGatewayRequest(
+  usageClient: UsageClient,
+  reservation: LedgerReservation,
+  outcome: "completed" | "failed",
+  responsePayload: CardResponse | null,
+  failureBucket: string | null,
+  logger: Logger,
+  requestLog: Record<string, unknown>,
+): Promise<boolean> {
+  try {
+    const result = await usageClient.rpc("finalize_card_request", {
+      p_request_id: reservation.requestId,
+      p_reservation_token: reservation.reservationToken,
+      p_outcome: outcome,
+      p_failure_bucket: failureBucket,
+      p_response_payload: responsePayload,
+    });
+    if (result.error || !isRecord(result.data)) {
+      logger.warn(
+        "generate-card finalize rpc failed",
+        JSON.stringify({
+          ...requestLog,
+          ledgerOutcome: "finalize_rpc_failed",
+          errorCode: result.error?.code,
+        }),
+      );
+      return false;
+    }
+    const finalized = readWireString(result.data, "outcome", "outcome");
+    const acceptedOutcomes = outcome === "completed"
+      ? ["completed", "already_completed"]
+      : ["failed", "already_failed"];
+    return acceptedOutcomes.includes(finalized ?? "");
+  } catch {
+    logger.warn(
+      "generate-card finalize rpc threw",
+      JSON.stringify({
+        ...requestLog,
+        ledgerOutcome: "finalize_rpc_threw",
+      }),
+    );
+    return false;
+  }
 }
 
 export async function handleGenerateCard(
@@ -1678,6 +1841,23 @@ export async function handleGenerateCard(
   }
 
   const request = parsed.value;
+  const headerIdempotencyKey = req.headers.get("Idempotency-Key");
+  if (
+    headerIdempotencyKey !== null &&
+    headerIdempotencyKey !== request.idempotency_key
+  ) {
+    return jsonResponse(
+      {
+        error: "Idempotency key header does not match request body",
+        user_safe_error: {
+          code: "invalid_idempotency_key",
+          message: "Those message details could not be used. Please try again.",
+        },
+      },
+      400,
+    );
+  }
+
   const config = providerConfig(getEnv);
   const requestLog = {
     requestId: `${request.idempotency_key.substring(0, 12)}...`,
@@ -1750,6 +1930,18 @@ export async function handleGenerateCard(
     );
   }
 
+  const fingerprint = await requestFingerprint(request);
+  const reserveResult = await reserveGatewayRequest(
+    auth,
+    request,
+    fingerprint,
+    { getEnv, createUsageClient, logger, now },
+    requestLog,
+    startedAt,
+  );
+  if (!reserveResult.ok) return reserveResult.response;
+  const reservation = reserveResult.reservation;
+
   const prompt = buildPrompt(request);
 
   try {
@@ -1766,6 +1958,15 @@ export async function handleGenerateCard(
     const quality = qualityCheck(providerMessages, request);
 
     if (!quality.passed) {
+      await finalizeGatewayRequest(
+        reservation.client,
+        reservation,
+        "failed",
+        null,
+        "quality_failed",
+        logger,
+        requestLog,
+      );
       logger.warn(
         "generate-card quality failed",
         JSON.stringify({
@@ -1788,18 +1989,34 @@ export async function handleGenerateCard(
       );
     }
 
-    const usageResult = await consumeUsageForAuthenticatedGeneration(
-      auth,
-      {
-        getEnv,
-        createUsageClient,
-        logger,
-        now,
-      },
+    const completedResponse = responseBody({
+      messages: providerMessages,
+      laneUsed: "standard",
+      fallbackStatus: "none",
+      retryEligibility: "ineligible",
+      qualityPassed: true,
+      usage: reservation.usage,
+    });
+    const didFinalize = await finalizeGatewayRequest(
+      reservation.client,
+      reservation,
+      "completed",
+      completedResponse,
+      null,
+      logger,
       requestLog,
-      startedAt,
     );
-    if (!usageResult.ok) return usageResult.response;
+
+    if (!didFinalize) {
+      logger.warn(
+        "generate-card finalize failed after success",
+        JSON.stringify({
+          ...requestLog,
+          ledgerOutcome: "finalize_failed_after_success",
+          providerSlot: config.slot,
+        }),
+      );
+    }
 
     logger.log(
       "generate-card completed",
@@ -1808,25 +2025,27 @@ export async function handleGenerateCard(
         laneUsed: "standard",
         fallbackStatus: "none",
         providerSlot: config.slot,
-        usageSource: usageResult.source,
-        usageRemaining: usageResult.usage?.remaining,
-        usageLimit: usageResult.usage?.limit,
+        ledgerOutcome: didFinalize
+          ? "completed"
+          : "finalize_failed_after_success",
+        usageRemaining: reservation.usage?.remaining,
+        usageLimit: reservation.usage?.limit,
         latencyMs: now().getTime() - startedAt,
       }),
     );
 
-    return jsonResponse(
-      responseBody({
-        messages: providerMessages,
-        laneUsed: "standard",
-        fallbackStatus: "none",
-        retryEligibility: "ineligible",
-        qualityPassed: true,
-        usage: usageResult.usage,
-      }),
-    );
+    return jsonResponse(completedResponse);
   } catch (error) {
     if (error instanceof ProviderQualityError) {
+      await finalizeGatewayRequest(
+        reservation.client,
+        reservation,
+        "failed",
+        null,
+        "quality_failed",
+        logger,
+        requestLog,
+      );
       logger.warn(
         "generate-card quality failed",
         JSON.stringify({
@@ -1849,6 +2068,15 @@ export async function handleGenerateCard(
       );
     }
 
+    await finalizeGatewayRequest(
+      reservation.client,
+      reservation,
+      "failed",
+      null,
+      "provider_failed",
+      logger,
+      requestLog,
+    );
     logger.warn(
       "generate-card provider failed",
       JSON.stringify({

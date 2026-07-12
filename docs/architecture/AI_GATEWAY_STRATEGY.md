@@ -928,6 +928,38 @@ If generation takes several seconds, the app should provide visible state change
 
 The gateway should preserve operator signal without exposing sensitive user content or provider internals.
 
+### Native V1 Request Ledger
+
+The native gateway reserves capacity before provider work through a
+service-role-only PostgreSQL request ledger. The request lifecycle is:
+
+```text
+authenticate and validate
+  -> derive server request fingerprint
+  -> reserve burst and quota capacity
+     -> replay / reject without provider work
+     -> or call the provider once
+  -> finalize the reservation
+     -> completed: consume usage once and retain replay payload for 24 hours
+     -> failed: release reservation without consuming usage
+```
+
+The ledger uses `(subject, idempotency_key)` uniqueness, a request fingerprint
+to reject key reuse with changed provider input, and a per-attempt reservation
+token so late results cannot complete a reclaimed request. Failed and reclaimed
+attempts receive separate rows in the existing sliding-window rate-limit log.
+
+The app persists the pending idempotency key for an initial draft for the same
+24-hour recovery window. A retry with unchanged draft input can recover a
+completed response after a connection loss or app relaunch. Expired or
+conflicting keys are cleared, but the app never starts a replacement paid
+request without another user action.
+
+Generated response payloads are sensitive user content. They are never logged,
+are inaccessible to client roles, and are cleared hourly after 24 hours by the
+database cleanup job. Terminal and abandoned request metadata is removed after
+seven days; an active reservation is never deleted.
+
 Useful fields:
 
 * generation lane used

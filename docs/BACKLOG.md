@@ -84,21 +84,27 @@ completed item instead of turning this file into a status log.
   secrets are absent. This is a prerequisite for live auth, careful generation,
   and account deletion proof.
 
-- [ ] Add atomic pre-provider abuse and cost control to `generate-card`. DoD:
-  authenticated and explicitly authorized development requests reserve burst and
-  quota capacity before provider work; exhausted users cannot incur provider
-  cost; concurrent requests cannot oversubscribe limits; provider/quality failure
-  releases or refunds the reservation; success finalizes it; database functions
-  are service-role-only, concurrency-safe, and covered by migration/function and
-  Edge Function tests that also prove rejected callers trigger zero provider
-  requests.
+- [ ] Verify gateway reservation and cost controls in staging. DoD: the guarded
+  staging migration dry-run and apply succeed; authenticated and explicitly
+  authorized development requests reserve burst and quota capacity before
+  provider work; parallel requests at the last free allowance produce exactly
+  one provider call and one charge; provider/quality failure is reclaimable;
+  database linter/advisors and scheduled-cleanup history are clean or explicitly
+  accepted; no probe touches production.
 
-- [ ] Implement real gateway idempotency. DoD: user plus idempotency key has a
-  unique server-side record; in-flight duplicates do not start another provider
-  call; completed duplicates replay the same safe response and usage result;
-  failed attempts follow an explicit retry policy; keys and cached responses
-  expire; tests cover lost responses, concurrent duplicates, and cross-user key
-  isolation without logging full keys or message text.
+- [ ] Verify gateway idempotency and replay in staging. DoD: concurrent
+  duplicates produce one provider call; a completed duplicate replays the same
+  safe response and usage result without another charge; an abandoned lease
+  becomes reclaimable; expired cached output requires a fresh client key;
+  cross-user keys remain isolated; logs and evidence contain neither full keys
+  nor message text.
+
+- [ ] Extend durable gateway request identity beyond initial careful drafts.
+  DoD: Adjust and Take More Care reuse a persisted request key after transport
+  ambiguity, change keys when provider-affecting input changes, clear keys after
+  success or an explicit expiry/conflict response, and have relaunch/retry tests;
+  a user's first gateway-backed request cannot be charged twice merely because
+  its response was lost.
 
 - [ ] Apply and verify the guarded Supabase native hardening in staging. DoD:
   migrations remove client access to usage/rate-limit tables and SECURITY

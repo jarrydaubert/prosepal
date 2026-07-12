@@ -24,7 +24,15 @@ For Supabase Edge Function changes:
 
 ```bash
 deno check supabase/functions/**/*.ts
+deno test --allow-env supabase/functions/generate-card/index.test.ts
+supabase test db
+./scripts/test_gateway_ledger_concurrency.sh
 ```
+
+The database checks require the local Supabase stack. Run `supabase start`
+first when it is not already available. The pgTAP suite verifies the request
+ledger's permissions and state transitions; the concurrency script proves that
+parallel quota and duplicate-key reservations cannot both enter provider work.
 
 For repo/workflow changes:
 
@@ -200,6 +208,23 @@ Use:
 The script expects the staging dev gateway secret to be available locally
 without printing it. A healthy smoke returns HTTP 200, `lane_used=standard`,
 `fallback_status=none`, and three generated messages.
+
+Before promoting the request ledger beyond staging, prove all of these against
+staging without reusing production identities or credentials:
+
+- Parallel requests at the remaining free quota produce one reservation and
+  one quota rejection, with only one provider request and one final charge.
+- Parallel requests with the same subject and idempotency key produce one
+  provider request; the duplicate is reported as in flight or replays the
+  completed safe response without another charge.
+- A failed provider attempt can be reclaimed, while an expired cached response
+  requires a fresh client key.
+- An abandoned reservation becomes reclaimable after its lease expires.
+- Scheduled cleanup removes expired cached payloads and old terminal metadata;
+  the `cron.job_run_details` entry reports success.
+
+These are staging release proofs, not permission to run the probes against
+production.
 
 If `nslookup llolwgqphwnhbiqewmcq.supabase.co` returns `NXDOMAIN` or device logs
 show `NSURLErrorDomain Code=-1003`, check:

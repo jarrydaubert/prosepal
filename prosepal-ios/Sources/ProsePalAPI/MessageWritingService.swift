@@ -301,7 +301,7 @@ private extension GenerationError {
         switch self {
         case .offline, .usageLimitReached, .contentBlocked:
             false
-        case .timedOut, .rateLimited, .serviceUnavailable, .unexpectedResponse:
+        case .timedOut, .rateLimited, .requestNeedsFreshKey, .serviceUnavailable, .unexpectedResponse:
             true
         }
     }
@@ -310,7 +310,7 @@ private extension GenerationError {
         switch self {
         case .contentBlocked:
             false
-        case .offline, .usageLimitReached, .timedOut, .rateLimited, .serviceUnavailable, .unexpectedResponse:
+        case .offline, .usageLimitReached, .timedOut, .rateLimited, .requestNeedsFreshKey, .serviceUnavailable, .unexpectedResponse:
             true
         }
     }

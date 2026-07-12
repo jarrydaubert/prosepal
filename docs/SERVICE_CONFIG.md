@@ -88,6 +88,25 @@ Expected staging secret names include:
 - App Store Server API / ASSN V2 verification material for entitlement work
 - feedback/email provider secrets when feedback sending is enabled
 
+## Gateway Request Retention
+
+The native `generate-card` gateway stores a completed `CardResponse` in the
+service-role-only `gateway_requests` ledger so a response lost in transit can be
+replayed without another provider call or usage charge. This payload contains
+sensitive generated personal-message text.
+
+Retention rules:
+
+- completed response payload: 24 hours
+- completed, failed, or abandoned request metadata: 7 days
+- sliding-window rate-limit attempts: 1 hour
+- full idempotency keys and request fingerprints: database only, never logs
+
+Migration `20260712170634_gateway_request_ledger.sql` installs an hourly
+`pg_cron` cleanup job that enforces these limits. The native app stores only the
+pending initial-draft key and a non-content local request identity for up to 24
+hours, separately from completed-draft recovery.
+
 ## StoreKit
 
 Native product IDs reused from the existing ProsePal App Store Connect app:

@@ -187,7 +187,10 @@ private enum MessageWritingServiceFactory {
             )
             carefulClient = GatewayCarefulMomentClient(
                 client: gatewayClient,
-                clientContext: clientContext
+                clientContext: clientContext,
+                requestKeyStore: CarefulRequestKeyStore(
+                    persistence: UserDefaultsCarefulRequestKeyPersistence()
+                )
             )
         } else {
             carefulClient = UnconfiguredMomentDraftClient()

@@ -528,6 +528,30 @@ final class MessageWritingClientTests: XCTestCase {
             expectedError: .rateLimited(message: "Please wait a moment before trying again.")
         )
         try await assertGatewayFailure(
+            statusCode: 409,
+            body: """
+            {
+              "user_safe_error": {
+                "code": "gateway_request_in_flight",
+                "message": "This draft is still being prepared."
+              }
+            }
+            """,
+            expectedError: .rateLimited(message: "This draft is still being prepared.")
+        )
+        try await assertGatewayFailure(
+            statusCode: 409,
+            body: """
+            {
+              "user_safe_error": {
+                "code": "gateway_replay_expired",
+                "message": "That earlier draft expired."
+              }
+            }
+            """,
+            expectedError: .requestNeedsFreshKey(message: "That earlier draft expired.")
+        )
+        try await assertGatewayFailure(
             statusCode: 422,
             body: """
             {

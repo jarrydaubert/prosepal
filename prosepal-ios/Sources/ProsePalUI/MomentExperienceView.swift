@@ -30,6 +30,8 @@ public enum MomentDraftUnavailableReason: Equatable, Sendable {
             self = .timedOut(lane: lane)
         case .rateLimited:
             self = .rateLimited
+        case .requestNeedsFreshKey:
+            self = .rateLimited
         case .usageLimitReached:
             self = .usageLimitReached
         case .contentBlocked:
