@@ -12,7 +12,9 @@ Detailed code and test evidence lives in
 | Person-first entry | The user starts with who the message is for, then chooses relationship and occasion context. |
 | One true thing | The user supplies the real sentence or detail the draft should preserve. |
 | Voice input | On-device speech capture can fill the moment detail when the platform supports it. |
-| Register | Quick, Your Words, and Take Care shape how much the app writes and how cautiously it responds. |
+| Register | Quick, Your words, and Take care shape how much the app writes and how cautiously it responds. |
+| Tone | Heartfelt, Casual, Funny, Formal, Inspirational, Playful, Sarcastic, Nostalgic, and Poetic choices shape the voice. |
+| Length | Brief, Standard, and Detailed choices set the intended message shape. |
 | Locale | The app derives locale and spelling behaviour from the device rather than exposing a spelling picker. |
 | Explicit generation | Drafting begins only after the user taps Write Draft. |
 | Private Draft | Everyday moments use Foundation Models on device when available. |
@@ -40,7 +42,7 @@ Detailed code and test evidence lives in
 | Voice Card | One user-written style example can guide future private drafting. |
 | Local vault | SwiftData stores relationship memory and saved drafts in an app-private, backup-excluded location. |
 | Export | Settings can produce and copy a JSON export of local relationship memory and saved drafts. |
-| Delete | Destructive actions require confirmation, persist honestly, and roll back after save failure. |
+| Memory delete | Truth Bead and Voice Card deletion requires confirmation, reports persistence failure, and rolls back after a failed save. |
 
 ## Identity and subscriptions
 
@@ -68,7 +70,9 @@ Detailed code and test evidence lives in
 
 The project contains native App Intent, Shortcuts, widget/control, and Share
 Extension targets. These are optional v1 entry points: each ships only after its
-embedded production target passes release qualification.
+embedded production target passes release qualification. See
+[System surfaces](../engineering/system-surfaces.md) for the current handoff
+boundary and staging limitation.
 
 ## Platform and dependency boundary
 

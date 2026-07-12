@@ -7,15 +7,15 @@ the native product has its present boundaries.
 
 ## Contents
 
-- [architecture](./architecture/) — superseded native and gateway strategies.
-- [product](./product/) — longer-range product explorations preserved outside
+- [architecture](./architecture/README.md) — superseded native and gateway strategies.
+- [product](./product/README.md) — longer-range product explorations preserved outside
   the v1 contract.
 - [flutter](./flutter/README.md) — archived Flutter production architecture,
   services, security, and configuration.
 - [app-review-lessons.md](./app-review-lessons.md) — lessons translated from
   the previous production release.
-- [design-explorations](./design-explorations/) — non-current layout mockups.
-- [releases](./releases/) — immutable evidence from earlier release work.
+- [design-explorations](./design-explorations/README.md) — non-current layout mockups.
+- [releases](./releases/README.md) — immutable evidence from earlier release work.
 
 ## Rules
 

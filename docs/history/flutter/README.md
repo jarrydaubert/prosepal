@@ -22,12 +22,12 @@ Full Flutter app source is preserved at:
 
 Legacy docs in this folder:
 
-- `ARCHITECTURE.md`
-- `AI_SYSTEM.md`
-- `REMOTE_CONFIG.md`
-- `REMOTE_CONFIG_TEMPLATE.json`
-- `REMOTE_CONFIG_TEMPLATE.firebase.json`
-- `REVENUECAT_POLICY.md`
-- `IDENTITY_MAPPING.md`
-- `SERVICE_OWNERSHIP_MIGRATION.md`
-- `SECURITY.md`
+- [Architecture](./ARCHITECTURE.md)
+- [AI system](./AI_SYSTEM.md)
+- [Remote Config](./REMOTE_CONFIG.md)
+- [Generic Remote Config template](./REMOTE_CONFIG_TEMPLATE.json)
+- [Firebase Remote Config template](./REMOTE_CONFIG_TEMPLATE.firebase.json)
+- [RevenueCat policy](./REVENUECAT_POLICY.md)
+- [Identity mapping](./IDENTITY_MAPPING.md)
+- [Service-ownership migration](./SERVICE_OWNERSHIP_MIGRATION.md)
+- [Security](./SECURITY.md)

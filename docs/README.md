@@ -33,13 +33,19 @@ is reachable from this page and has one job. Open work belongs only in
 - [Native architecture](./engineering/architecture.md) — modules, state,
   dependencies, concurrency, and data boundaries.
 - [AI generation](./engineering/ai-generation.md) — private/careful routing,
-  gateway request ledger, idempotency, quality, and retention.
+  provider-neutral generation, validation, and fallback behaviour.
+- [Gateway request ledger](./engineering/gateway-request-ledger.md) — atomic
+  reservation, idempotency, quota, replay, charging, and retention.
 - [Data and privacy](./engineering/data-and-privacy.md) — SwiftData, Keychain,
   recovery, logging, export, deletion, and sensitive data.
+- [Relationship vault](./engineering/relationship-vault.md) — versioned local
+  models, person matching, backup exclusion, export, erasure, and prompt memory.
 - [Authentication and accounts](./engineering/auth-and-accounts.md) — Apple
   sign-in, Supabase session refresh, sign-out, and deletion.
 - [Subscriptions and entitlement](./engineering/subscriptions.md) — StoreKit 2,
   transaction updates, server entitlement, and release proof.
+- [System surfaces](./engineering/system-surfaces.md) — App Intent, Shortcuts,
+  widget/control, Share Extension, and sanitized Moment handoff.
 
 ## Operations
 
@@ -57,8 +63,10 @@ is reachable from this page and has one job. Open work belongs only in
 ## Quality
 
 - [Testing](./quality/testing.md) — deterministic test layers and commands.
-- [AI output quality](./quality/ai-output-quality.md) — synthetic scenarios,
-  rubric, review evidence, and live-provider approval gates.
+- [AI output quality](./quality/ai-output-quality.md) — how to run and record a
+  deterministic or approved live writing-quality review.
+- [Writing quality rubric](./quality/writing-quality-rubric.md) — versioned
+  scoring criteria, synthetic scenarios, and scorer rules.
 - [Accessibility](./quality/accessibility.md) — native accessibility standard
   and release matrix.
 - [Release evidence](./quality/release-evidence.md) — private evidence contract
@@ -70,6 +78,8 @@ is reachable from this page and has one job. Open work belongs only in
   values, server secrets, and archive delivery.
 - [Service endpoints](./reference/service-endpoints.md) — Edge Functions,
   database functions, and Apple boundaries.
+- [Generation contract](./reference/generation-contract.md) — versioned request
+  and response fields, input limits, identity, and HTTP mapping.
 - [Feature status matrix](./reference/feature-status.csv) — detailed user-story
   implementation and evidence record.
 

@@ -41,3 +41,4 @@ prosepal-ios/.build/
 prosepal-ios/.swiftpm/
 prosepal-ios/build/
 prosepal-ios/evidence/
+.gstack/

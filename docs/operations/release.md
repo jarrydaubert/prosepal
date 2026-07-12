@@ -1,4 +1,4 @@
-# Native Release
+# How to Release Native iOS
 
 This runbook covers archive, TestFlight, and App Store release work for the
 native iOS app.

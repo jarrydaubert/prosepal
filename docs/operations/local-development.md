@@ -1,4 +1,4 @@
-# Local Development
+# How to Work Locally
 
 This runbook covers the daily development and validation workflow for the
 native SwiftUI app and its Supabase server boundaries.

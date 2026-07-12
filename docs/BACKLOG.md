@@ -175,6 +175,12 @@ completed item instead of turning this file into a status log.
 
 ## Post-V1 / Triggered Work
 
+- [ ] Add generated or cross-language parity coverage before changing the
+  native generation vocabulary. DoD: Occasion, Relationship, Tone,
+  MessageLength, lane, and contract-version values have one generated source or
+  a test that compares the Swift and gateway sets; adding a native value cannot
+  reach production while the gateway would reject it.
+
 - [ ] Define handling for verified StoreKit transactions from retired or
   temporarily unconfigured product IDs before changing the stable launch set.
 

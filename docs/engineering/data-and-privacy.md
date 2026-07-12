@@ -19,15 +19,11 @@ message content and credentials.
 
 ## Local relationship vault
 
-The vault uses a versioned SwiftData schema containing Truth Beads, Voice Cards,
-and saved drafts. Its persistent store lives in an app-private Application
-Support directory and is excluded from backup. If the persistent container
-cannot open, the app can use an explicitly reported ephemeral container rather
-than crash.
-
-`RelationshipVaultMigrationPlan` owns schema evolution. Maintenance can repair
-legacy normalized person keys without treating write-on-read repair as a schema
-migration.
+The versioned SwiftData store contains Truth Beads, Voice Cards, and saved
+drafts. It lives in backup-excluded Application Support storage and reports an
+ephemeral fallback honestly when persistent storage cannot open. Model shape,
+migration, person matching, export, erase, and prompt lookup are documented in
+[Relationship vault](./relationship-vault.md).
 
 ## Draft recovery versus saved history
 
@@ -63,10 +59,12 @@ for one hour. Scheduled cleanup enforces those limits.
 The local export contains user-readable Truth Beads, Voice Cards, and saved
 drafts. It omits internal person keys and store paths.
 
-Confirmed local deletion persists before reporting success. A failed save rolls
-back the model context and tells the user the item remains saved. Account
-deletion invokes an authenticated server boundary, then clears local account and
-vault state. Partial local cleanup is reported honestly rather than hidden.
+Confirmed relationship-memory deletion persists before reporting success. A
+failed save rolls back the model context and tells the user the item remains
+saved. Account deletion invokes an authenticated server boundary, then clears
+local account and vault state. Partial local cleanup is reported honestly rather
+than hidden. Saved-draft persistence hardening is tracked in the backlog rather
+than being overstated here.
 
 ## Secrets and configuration
 

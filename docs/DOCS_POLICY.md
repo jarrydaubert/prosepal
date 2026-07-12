@@ -65,6 +65,21 @@ for rationale but must not rely on them for current commands.
 - Public behaviour changes update `docs/product/capabilities.md` and the feature
   status matrix when evidence changes.
 
+## Document size and splitting
+
+Split by reader job and component ownership, not by an arbitrary line count.
+
+- Give a component its own engineering document when it owns a stable contract,
+  state model, failure policy, tests, and operational boundary.
+- Keep tutorials, task-oriented how-tos, factual references, and design
+  explanations separate when combining them makes the reader switch jobs.
+- Do not create a new file for a small subsection that has no independent owner
+  or update trigger.
+- Keep self-contained visual artifacts and frozen historical decision sequences
+  intact even when large; add a short directory landing page instead.
+- When splitting, leave a concise overview and reciprocal links so neither half
+  becomes undiscoverable.
+
 ## Validation
 
 Run:

@@ -65,18 +65,8 @@ The provider call begins only after the database reservation succeeds. A failed
 provider or quality attempt does not consume user usage. A successful finalize
 consumes usage once.
 
-## Idempotency and ambiguous retries
-
-The ledger uses `(subject, idempotency_key)` uniqueness plus a SHA-256 request
-fingerprint. Reusing a key with changed provider-affecting input is rejected.
-A per-attempt reservation token prevents a late result from completing a lease
-that has already been reclaimed.
-
-For an initial careful draft, the app persists a pending request key and a
-non-content request identity for up to 24 hours. An unchanged retry after a lost
-response or relaunch can replay the completed response without a second provider
-call or charge. An explicit replay-expired or conflict response clears the key
-and requires another user action before a replacement request.
+Request identity, reservation leases, atomic quota decisions, replay, and
+retention are specified in [Gateway request ledger](./gateway-request-ledger.md).
 
 ## Gateway validation
 
@@ -94,23 +84,11 @@ The Edge Function:
 - logs metadata only; and
 - finalizes usage only after output passes quality checks.
 
-## Retention
-
-- Completed replay payload: 24 hours.
-- Terminal or abandoned request metadata: 7 days.
-- Sliding-window rate-attempt rows: 1 hour.
-- Native pending initial-draft key: up to 24 hours.
-
-Sensitive replay payloads are service-role-only and removed by an hourly
-`pg_cron` cleanup job. Full request keys, fingerprints, prompts, and generated
-messages are never written to operational logs.
-
 ## Contracts
 
-`CardRequest` and `CardResponse` are defined in
-`prosepal-ios/Sources/ProsePalDomain/CardModels.swift`. Current requests carry
-prompt and output contract versions, a requested lane, client metadata, an
-idempotency key, and a sanitized `CardIntent`.
+`CardRequest` and `CardResponse` form the versioned provider-neutral wire
+boundary. Field shapes, text limits, response validation, and HTTP mapping live
+in [Generation contract reference](../reference/generation-contract.md).
 
 ## Verification
 

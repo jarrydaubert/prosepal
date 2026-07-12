@@ -26,9 +26,12 @@ required = %w[
   docs/product/user-journeys.md
   docs/engineering/architecture.md
   docs/engineering/ai-generation.md
+  docs/engineering/gateway-request-ledger.md
   docs/engineering/data-and-privacy.md
+  docs/engineering/relationship-vault.md
   docs/engineering/auth-and-accounts.md
   docs/engineering/subscriptions.md
+  docs/engineering/system-surfaces.md
   docs/operations/getting-started.md
   docs/operations/local-development.md
   docs/operations/staging.md
@@ -36,9 +39,11 @@ required = %w[
   docs/operations/service-ownership.md
   docs/quality/testing.md
   docs/quality/ai-output-quality.md
+  docs/quality/writing-quality-rubric.md
   docs/quality/accessibility.md
   docs/quality/release-evidence.md
   docs/reference/configuration.md
+  docs/reference/generation-contract.md
   docs/reference/service-endpoints.md
   docs/reference/feature-status.csv
   docs/history/README.md
@@ -73,7 +78,11 @@ Find.find(docs_root.to_s) do |path|
   next unless File.file?(path)
   link_sources << Pathname(path) if %w[.md .html].include?(File.extname(path))
 end
-%w[README.md AGENTS.md CLAUDE.md SECURITY.md prosepal-ios/README.md supabase/README.md design-system/readme.md].each do |relative|
+Find.find(root.join("design-system").to_s) do |path|
+  next unless File.file?(path)
+  link_sources << Pathname(path) if %w[.md .html].include?(File.extname(path))
+end
+%w[README.md AGENTS.md CLAUDE.md SECURITY.md prosepal-ios/README.md supabase/README.md].each do |relative|
   path = root.join(relative)
   link_sources << path if path.file?
 end
@@ -87,7 +96,7 @@ link_sources.each do |source|
     target = raw_target.strip
     target = target[1...-1] if target.start_with?("<") && target.end_with?(">")
     target = target.split(/\s+["']/).first
-    next if target.empty? || target.start_with?("#", "//")
+    next if target.empty? || target.start_with?("#", "//", "/")
     next if target.match?(/\A[a-z][a-z0-9+.-]*:/i)
 
     target = CGI.unescape(target.split(/[?#]/, 2).first)
@@ -115,6 +124,17 @@ Find.find(docs_root.to_s) do |path|
   active_text_files << Pathname(path) if %w[.md .html].include?(File.extname(path))
 end
 active_text_files.concat(%w[README.md AGENTS.md CLAUDE.md SECURITY.md].map { |path| root.join(path) })
+
+active_text_files.each do |path|
+  next unless path.file?
+  path.read.scan(/`([^`\n]+)`/).flatten.each do |token|
+    next unless token.match?(%r{\A(?:docs|prosepal-ios|supabase|scripts|design-system)/})
+    next if token.match?(/[\s*<$]/)
+
+    candidate = root.join(token.sub(/:\d+\z/, ""))
+    errors << "missing repository path in #{path.relative_path_from(root)}: #{token}" unless candidate.exist?
+  end
+end
 
 retired_paths = %r{
   docs/(?:NEXT_RELEASE_BRIEF|FEATURES|FEATURE_STATUS|DEVOPS|SERVICE_CONFIG|SERVICE_ENDPOINTS|USER_JOURNEYS|SECURITY|AI_OUTPUT_QUALITY|IOS_RELEASE_CHECKLIST|LAUNCH_CHECKLIST|RELATIONSHIP_ASSISTANT_VISION|PRODUCT_STRATEGY|NATIVE_APP_GUIDE)\.(?:md|csv|html)

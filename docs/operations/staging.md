@@ -1,4 +1,4 @@
-# Staging
+# How to Use Staging
 
 This runbook explains how to use the internal ProsePal staging app and Supabase
 project without leaking secrets or touching production.

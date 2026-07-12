@@ -427,8 +427,8 @@
 
       <div class="journey-grid" aria-label="The five-step ProsePal writing journey">
         <article class="journey-step" data-step="STEP 01"><span class="verb">Begin with someone</span><h3>Name the person</h3><p>Frame the message around who matters, not a document type.</p></article>
-        <article class="journey-step" data-step="STEP 02"><span class="verb">Set the moment</span><h3>Choose context</h3><p>Relationship, occasion, register, and length shape the writing.</p></article>
-        <article class="journey-step" data-step="STEP 03"><span class="verb">Ground the words</span><h3>Add what is true</h3><p>Type or dictate the detail to include, avoid, or handle carefully.</p></article>
+        <article class="journey-step" data-step="STEP 02"><span class="verb">Set the moment</span><h3>Choose context</h3><p>Relationship, occasion, register, tone, and length shape the writing.</p></article>
+        <article class="journey-step" data-step="STEP 03"><span class="verb">Ground the words</span><h3>Add what is true</h3><p>Type or dictate the real detail the draft should preserve or handle carefully.</p></article>
         <article class="journey-step" data-step="STEP 04"><span class="verb">Ask explicitly</span><h3>Write the draft</h3><p>The private or careful route produces one primary message.</p></article>
         <article class="journey-step" data-step="STEP 05"><span class="verb">Keep control</span><h3>Edit and use it</h3><p>Adjust, undo, copy, share, send, or deliberately save.</p></article>
       </div>
@@ -442,7 +442,7 @@ flowchart LR
   B -- No --> D[Moment Sheet]
   C --> D
   D --> E[Person + relationship]
-  E --> F[Occasion + register]
+  E --> F[Occasion + register + tone + length]
   F --> G[One true thing]
   G --> H[Tap Write draft]
   H --> I{Writing route}
@@ -493,8 +493,9 @@ flowchart LR
               <div class="feature-item"><strong>Relationship context</strong><p>Grouped relationship choices help the writing fit family, friendship, romance, and work contexts.</p></div>
               <div class="feature-item"><strong>Searchable occasions</strong><p>A broad occasion catalogue sits beneath a focused, searchable picker rather than a giant grid.</p></div>
               <div class="feature-item"><strong>Quick, Your words, Take care</strong><p>Human-readable registers express the stakes without exposing models or providers.</p></div>
+              <div class="feature-item"><strong>Tone</strong><p>Choices such as Heartfelt, Casual, Funny, Formal, and Poetic shape the voice without asking for prompt-writing expertise.</p></div>
+              <div class="feature-item"><strong>Message length</strong><p>Brief, Standard, and Detailed set an understandable target for the size of the draft.</p></div>
               <div class="feature-item"><strong>One true thing</strong><p>The user supplies the real sentence or detail that should anchor the message.</p></div>
-              <div class="feature-item"><strong>Include, avoid, and context</strong><p>Optional constraints help preserve details and prevent unwanted wording or topics.</p></div>
               <div class="feature-item"><strong>On-device voice input</strong><p>Where Apple speech recognition is available, spoken thoughts can become editable moment detail.</p></div>
               <div class="feature-item"><strong>Automatic locale</strong><p>Spelling follows the device locale without adding another preference form.</p></div>
             </div>
@@ -714,7 +715,7 @@ sequenceDiagram
       <div style="height: 44px"></div>
       <div class="honesty-grid" aria-label="Gateway capabilities">
         <article class="honesty-card"><div class="symbol">AUTH</div><h3>Prove who is calling</h3><p>Signed-in requests carry a short-lived digital pass called a JWT, which Supabase verifies. Development access remains closed unless its separate secret is deliberately configured.</p></article>
-        <article class="honesty-card"><div class="symbol">INPUT</div><h3>Accept only expected details</h3><p>Names, context, include and avoid notes, app information, and writing modes are cleaned and length-limited before any outside model is called.</p></article>
+        <article class="honesty-card"><div class="symbol">INPUT</div><h3>Accept only expected details</h3><p>Names, moment detail, context, app information, and writing modes are cleaned and length-limited before any outside model is called.</p></article>
         <article class="honesty-card"><div class="symbol">ROUTE</div><h3>Server-side provider choice</h3><p>Provider URL, key, model, fallback models, sampling, token limits, and JSON behavior remain outside the client.</p></article>
         <article class="honesty-card"><div class="symbol">QUALITY</div><h3>Output checks</h3><p>Responses must be structured, distinct, non-empty, appropriately specific, and free of generic filler or provider/internal language.</p></article>
         <article class="honesty-card"><div class="symbol">PRIVACY</div><h3>Metadata-only logs</h3><p>Operational logs carry lanes, versions, latency, failure buckets, and redacted identity—not prompts, names, tokens, or generated drafts.</p></article>
@@ -816,7 +817,7 @@ flowchart LR
       <div class="plain-language">
         <span class="plain-label">A failure should still feel trustworthy</span>
         <p>People often use ProsePal when finding the words already feels difficult. If the internet drops or a service takes too long, the worst response would be to lose their note, show a button that does nothing, or claim something was saved when it was not.</p>
-        <p>The app therefore treats failure as a real part of the experience. It keeps what the user typed, explains what is known, offers a retry only when retrying is real, and waits for storage or payment confirmation before showing success.</p>
+        <p>The app therefore treats failure as a real part of the experience. It keeps what the user typed, explains what is known, offers a retry only when retrying is real, and waits for confirmed persistence on guarded memory changes and for verified payment state before showing success.</p>
       </div>
       <div class="honesty-grid">
         <article class="honesty-card"><div class="symbol">OFFLINE</div><h3>The note stays local</h3><p>“Try again” performs a real retry. Repeated taps and late results cannot replace newer work.</p></article>
@@ -879,7 +880,7 @@ flowchart LR
       </header>
       <div class="plain-language care">
         <span class="plain-label">Why keep separate source documents?</span>
-        <p>A visual guide should remain readable. The detailed evidence matrix answers “Where is this implemented and how was it tested?” The backlog answers “What still needs work?” The release brief answers “What must be true before v1 launches?” Keeping those jobs separate prevents a friendly overview from becoming an outdated project-status report.</p>
+        <p>A visual guide should remain readable. The detailed evidence matrix answers “Where is this implemented and how was it tested?” The backlog answers “What still needs work?” The launch contract answers “What must be true before v1 launches?” Keeping those jobs separate prevents a friendly overview from becoming an outdated project-status report.</p>
       </div>
       <div class="source-panel">
         <a class="source-link" href="../reference/feature-status.csv"><small>Evidence</small><strong>Feature status matrix</strong><span>User stories, implementation evidence, tests, known limitations, and release proof.</span></a>
@@ -887,7 +888,9 @@ flowchart LR
         <a class="source-link" href="../product/v1-launch-contract.md"><small>Scope</small><strong>V1 launch contract</strong><span>The launch contract and supporting product boundary.</span></a>
         <a class="source-link" href="../product/capabilities.md"><small>Capabilities</small><strong>Feature inventory</strong><span>The current capability model behind this visual guide.</span></a>
         <a class="source-link" href="../product/user-journeys.md"><small>Behaviour</small><strong>User journeys</strong><span>Launch, writing, purchase, restore, identity, saved work, and Settings policies.</span></a>
-        <a class="source-link" href="../engineering/ai-generation.md"><small>Architecture</small><strong>AI generation</strong><span>Current routing, request ledger, quality, privacy, and retention behaviour.</span></a>
+        <a class="source-link" href="../engineering/ai-generation.md"><small>Architecture</small><strong>AI generation</strong><span>Current private and careful routing, validation, fallback, and privacy behaviour.</span></a>
+        <a class="source-link" href="../engineering/gateway-request-ledger.md"><small>Cost integrity</small><strong>Gateway request ledger</strong><span>Atomic reservation, replay, charging, and retention under retries and concurrency.</span></a>
+        <a class="source-link" href="../reference/generation-contract.md"><small>Contract</small><strong>Generation boundary</strong><span>The versioned fields and limits shared by the app and gateway.</span></a>
       </div>
     </section>
   </main>

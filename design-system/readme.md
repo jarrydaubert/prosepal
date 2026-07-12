@@ -6,6 +6,12 @@ This repository is the design system: foundations (color, type, spacing, motion)
 
 > **★ Decided direction:** *a warm literary writing companion inside a premium modern iOS interface* — the blend of **B (Warm literary notebook)** and **C (Premium glassy iOS 26)**. Literary cream paper + serif prose carry the writing; premium glass carries the chrome. The canonical screen kit is **`ui_kits/prosepal/`**; its `.dir-prosepal` block is the production theme. The five lettered kits remain as the exploration that led here.
 
+> **Scope:** This bundle is visual source and decision history, not a shipped
+> capability contract. Alternate kits, web font substitutions, and dark-mode
+> tokens may describe future or exploratory states. Verify current appearance,
+> accessibility support, and release scope against the SwiftUI source and
+> [`docs/`](../docs/README.md).
+
 **Namespace (for cards / consumers):** `window.ProsePalDesignSystem_019e02`
 
 ---

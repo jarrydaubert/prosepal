@@ -28,6 +28,9 @@ Optional entry points
   -> sanitized Moment launch request
 ```
 
+Their handoff and trust boundary is documented in
+[System surfaces](./system-surfaces.md).
+
 ## Module responsibilities
 
 | Module | Responsibility |
@@ -51,7 +54,8 @@ account-maintenance actions.
 
 SwiftData owns Truth Beads, Voice Cards, and deliberately saved drafts. Active
 draft recovery is separate so relaunch recovery does not silently turn every
-generation into saved history.
+generation into saved history. See [Relationship vault](./relationship-vault.md)
+for persistence, migration, export, and prompt-memory rules.
 
 ## Dependency rules
 
