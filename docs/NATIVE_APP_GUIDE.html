@@ -1,0 +1,864 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <meta name="description" content="A visual guide to the native ProsePal iOS app, its features, and the systems behind private and careful message writing.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%239d5035'/%3E%3Cpath d='M21 49V15h13c9 0 14 4 14 12 0 9-6 13-16 13h-3v9h-8Zm8-17h4c4 0 7-1 7-5 0-3-2-5-7-5h-4v10Z' fill='%23fff9ef'/%3E%3C/svg%3E">
+  <title>ProsePal native app — feature and system guide</title>
+  <style>
+    :root {
+      --paper: #fff9ef;
+      --paper-deep: #f5ead9;
+      --paper-raised: #fffdf8;
+      --ink: #251f1a;
+      --slate: #625850;
+      --muted: #8a7d72;
+      --line: #d9c9b7;
+      --line-strong: #bca994;
+      --coral: #9d5035;
+      --coral-deep: #773826;
+      --coral-soft: #f5d4c0;
+      --care: #4e6c59;
+      --care-soft: #e1eee4;
+      --blue: #3e607f;
+      --blue-soft: #e2edf5;
+      --warning: #9d672e;
+      --shadow: rgba(54, 37, 26, .12);
+      --display: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+      --body: "Avenir Next", Avenir, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --utility: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      --page: min(1180px, calc(100vw - 40px));
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --paper: #191612;
+        --paper-deep: #221d18;
+        --paper-raised: #29231d;
+        --ink: #f8ecdd;
+        --slate: #c8b9aa;
+        --muted: #9f9082;
+        --line: #493d32;
+        --line-strong: #665547;
+        --coral: #dc8b6f;
+        --coral-deep: #f3ac92;
+        --coral-soft: #4b2d23;
+        --care: #8eb39a;
+        --care-soft: #263c2e;
+        --blue: #8db6d6;
+        --blue-soft: #233745;
+        --warning: #d4a05f;
+        --shadow: rgba(0, 0, 0, .28);
+      }
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background:
+        linear-gradient(90deg, transparent 0 7.9%, color-mix(in srgb, var(--coral) 16%, transparent) 8%, transparent 8.1%),
+        repeating-linear-gradient(0deg, transparent 0 31px, color-mix(in srgb, var(--line) 24%, transparent) 32px),
+        var(--paper);
+      color: var(--ink);
+      font-family: var(--body);
+      line-height: 1.62;
+      -webkit-font-smoothing: antialiased;
+    }
+    img { max-width: 100%; display: block; }
+    a { color: var(--coral-deep); text-decoration-thickness: .08em; text-underline-offset: .18em; }
+    a:hover { color: var(--coral); }
+    button, a { -webkit-tap-highlight-color: transparent; }
+    :focus-visible { outline: 3px solid var(--blue); outline-offset: 4px; }
+    ::selection { background: var(--coral-soft); color: var(--ink); }
+
+    .skip-link {
+      position: fixed; left: 16px; top: -80px; z-index: 100;
+      padding: 10px 14px; border-radius: 10px; background: var(--ink); color: var(--paper);
+      transition: top .2s ease;
+    }
+    .skip-link:focus { top: 16px; }
+
+    .topbar {
+      position: sticky; top: 0; z-index: 20;
+      border-bottom: 1px solid color-mix(in srgb, var(--line) 72%, transparent);
+      background: color-mix(in srgb, var(--paper) 88%, transparent);
+      backdrop-filter: blur(18px);
+    }
+    .topbar-inner {
+      width: var(--page); min-height: 64px; margin: auto;
+      display: flex; align-items: center; justify-content: space-between; gap: 24px;
+    }
+    .brand { display: flex; align-items: center; gap: 11px; color: var(--ink); text-decoration: none; }
+    .brand-mark {
+      width: 34px; height: 34px; border: 1px solid var(--ink); border-radius: 50% 50% 46% 54%;
+      display: grid; place-items: center; font-family: var(--display); font-weight: 700;
+      transform: rotate(-4deg); box-shadow: 3px 3px 0 var(--coral-soft);
+    }
+    .brand span:last-child { font-weight: 700; letter-spacing: -.02em; }
+    .topnav { display: flex; align-items: center; gap: 5px; overflow-x: auto; scrollbar-width: none; }
+    .topnav a {
+      padding: 8px 10px; border-radius: 999px; color: var(--slate); text-decoration: none;
+      font-size: .78rem; font-weight: 700; white-space: nowrap;
+    }
+    .topnav a:hover, .topnav a[aria-current="true"] { background: var(--coral-soft); color: var(--coral-deep); }
+
+    main { overflow: hidden; }
+    .hero {
+      width: var(--page); min-height: 760px; margin: auto; padding: 92px 0 84px;
+      display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(340px, .85fr); align-items: center; gap: 72px;
+    }
+    .eyebrow, .kicker {
+      font-family: var(--utility); text-transform: uppercase; letter-spacing: .13em;
+      font-size: .72rem; font-weight: 800; color: var(--coral-deep);
+    }
+    .hero h1 {
+      max-width: 760px; margin: 20px 0 22px; font-family: var(--display);
+      font-size: clamp(3.6rem, 8vw, 7.8rem); line-height: .88; letter-spacing: -.065em; font-weight: 600;
+    }
+    .hero h1 em { display: block; color: var(--coral); font-weight: 500; }
+    .hero-copy { max-width: 650px; font-size: clamp(1.05rem, 1.8vw, 1.3rem); color: var(--slate); }
+    .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 30px; }
+    .button {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      min-height: 46px; padding: 0 18px; border: 1px solid var(--ink); border-radius: 999px;
+      color: var(--ink); background: var(--paper-raised); text-decoration: none; font-weight: 750;
+      box-shadow: 3px 3px 0 var(--line-strong); transition: transform .16s ease, box-shadow .16s ease;
+    }
+    .button.primary { background: var(--ink); color: var(--paper); box-shadow: 4px 4px 0 var(--coral); }
+    .button:hover { transform: translate(-1px, -1px); box-shadow: 5px 5px 0 var(--coral-soft); }
+    .button.primary:hover { color: var(--paper); box-shadow: 6px 6px 0 var(--coral); }
+    .hero-note {
+      margin-top: 30px; padding-left: 18px; border-left: 3px solid var(--coral);
+      color: var(--muted); font-size: .86rem;
+    }
+
+    .phone-stage { position: relative; min-height: 620px; display: grid; place-items: center; }
+    .phone-stage::before {
+      content: ""; position: absolute; inset: 6% -20% 2%; border-radius: 48% 52% 44% 56%;
+      background: var(--coral-soft); transform: rotate(7deg); opacity: .76;
+    }
+    .phone {
+      position: relative; z-index: 1; width: min(340px, 82vw); padding: 11px;
+      border: 1px solid color-mix(in srgb, var(--ink) 70%, transparent); border-radius: 48px;
+      background: #17130f; box-shadow: 0 32px 80px var(--shadow); transform: rotate(2.3deg);
+    }
+    .phone img { border-radius: 38px; aspect-ratio: 1179 / 2556; object-fit: cover; }
+    .pencil-note {
+      position: absolute; z-index: 3; max-width: 190px; padding: 12px 14px;
+      border: 1px solid var(--line-strong); background: var(--paper-raised); color: var(--slate);
+      font-family: var(--display); font-style: italic; font-size: .95rem; line-height: 1.35;
+      box-shadow: 5px 6px 0 color-mix(in srgb, var(--care) 28%, transparent);
+      transform: rotate(-5deg); right: -12px; bottom: 60px;
+    }
+
+    .section { width: var(--page); margin: auto; padding: 96px 0; scroll-margin-top: 64px; }
+    .section-header { max-width: 780px; margin-bottom: 52px; }
+    .section-header h2 {
+      margin: 10px 0 14px; font-family: var(--display); font-size: clamp(2.4rem, 5vw, 5rem);
+      line-height: .98; letter-spacing: -.045em; font-weight: 600;
+    }
+    .section-header p { margin: 0; color: var(--slate); font-size: 1.08rem; }
+    .section-rule { border-top: 1px solid var(--line-strong); }
+
+    .journey-grid { display: grid; grid-template-columns: repeat(5, 1fr); border-block: 1px solid var(--line-strong); }
+    .journey-step { position: relative; padding: 28px 22px 32px; border-right: 1px solid var(--line); }
+    .journey-step:last-child { border-right: 0; }
+    .journey-step::before {
+      content: attr(data-step); display: block; margin-bottom: 28px; font-family: var(--utility);
+      color: var(--coral-deep); font-size: .72rem; font-weight: 900; letter-spacing: .12em;
+    }
+    .journey-step h3 { margin: 0 0 8px; font-size: 1.05rem; }
+    .journey-step p { margin: 0; color: var(--slate); font-size: .9rem; }
+    .journey-step .verb {
+      position: absolute; top: -13px; left: 20px; padding: 1px 9px; background: var(--paper);
+      color: var(--muted); font-family: var(--display); font-style: italic;
+    }
+
+    .diagram-shell {
+      position: relative; padding: clamp(18px, 4vw, 48px); border: 1px solid var(--line-strong);
+      border-radius: 28px 10px 28px 10px; background: color-mix(in srgb, var(--paper-raised) 94%, transparent);
+      box-shadow: 10px 12px 0 color-mix(in srgb, var(--line) 55%, transparent); overflow: auto;
+    }
+    .diagram-shell::after {
+      content: attr(data-label); position: absolute; top: 14px; right: 18px;
+      font: 700 .66rem/1 var(--utility); letter-spacing: .12em; color: var(--muted); text-transform: uppercase;
+    }
+    .mermaid { min-width: 720px; text-align: center; }
+    .diagram-caption { margin: 20px 0 0; color: var(--muted); font-size: .84rem; }
+
+    .feature-index {
+      display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 48px; align-items: start;
+    }
+    .feature-nav {
+      position: sticky; top: 92px; padding: 20px 0; border-block: 1px solid var(--line-strong);
+    }
+    .feature-nav strong { display: block; margin-bottom: 10px; font: 800 .7rem/1.4 var(--utility); letter-spacing: .12em; text-transform: uppercase; }
+    .feature-nav a { display: block; padding: 7px 0; color: var(--slate); text-decoration: none; font-size: .88rem; }
+    .feature-nav a:hover { color: var(--coral-deep); transform: translateX(3px); }
+    .feature-groups { display: grid; gap: 32px; }
+    .feature-group {
+      display: grid; grid-template-columns: minmax(170px, .55fr) minmax(0, 1.45fr); gap: 30px;
+      padding: 34px 0; border-top: 1px solid var(--line); scroll-margin-top: 90px;
+    }
+    .feature-group:first-child { border-top: 0; padding-top: 0; }
+    .feature-group h3 { margin: 0; font-family: var(--display); font-size: 1.75rem; line-height: 1.05; }
+    .feature-group h3 span { display: block; margin-top: 9px; color: var(--muted); font: 700 .65rem/1.4 var(--utility); letter-spacing: .1em; text-transform: uppercase; }
+    .feature-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 28px; }
+    .feature-item { position: relative; padding: 0 0 18px 18px; }
+    .feature-item::before { content: ""; position: absolute; top: .65em; left: 0; width: 7px; height: 7px; border-radius: 50%; background: var(--coral); }
+    .feature-item strong { display: block; margin-bottom: 3px; font-size: .93rem; }
+    .feature-item p { margin: 0; color: var(--slate); font-size: .84rem; line-height: 1.52; }
+    .feature-item.care::before { background: var(--care); }
+    .feature-item.blue::before { background: var(--blue); }
+
+    .split { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px; align-items: start; }
+    .lane {
+      min-height: 100%; padding: 32px; border: 1px solid var(--line-strong); border-radius: 28px 9px 28px 9px;
+      background: var(--paper-raised); position: relative; overflow: hidden;
+    }
+    .lane::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 7px; background: var(--coral); }
+    .lane.care::before { background: var(--care); }
+    .lane .lane-tag { font: 800 .68rem/1 var(--utility); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+    .lane h3 { margin: 15px 0 10px; font-family: var(--display); font-size: 2rem; }
+    .lane p { color: var(--slate); }
+    .lane ul { margin: 22px 0 0; padding-left: 18px; color: var(--slate); }
+    .lane li + li { margin-top: 8px; }
+
+    .gallery { display: grid; grid-template-columns: 1.05fr .95fr .95fr; gap: 18px; align-items: end; }
+    .shot { margin: 0; }
+    .shot img {
+      width: 100%; aspect-ratio: 9 / 16; object-fit: cover; object-position: top;
+      border: 1px solid var(--line-strong); border-radius: 24px; box-shadow: 0 20px 50px var(--shadow);
+    }
+    .shot:first-child img { transform: rotate(-1.4deg); }
+    .shot:last-child img { transform: rotate(1.2deg); }
+    .shot figcaption { margin-top: 13px; color: var(--muted); font-size: .78rem; text-align: center; }
+
+    .system-stack { display: grid; gap: 32px; }
+    .system-block { display: grid; grid-template-columns: .7fr 1.3fr; gap: 36px; align-items: start; }
+    .system-block h3 { margin: 0; font-family: var(--display); font-size: clamp(1.8rem, 3vw, 3rem); line-height: 1; }
+    .system-block .prose { color: var(--slate); }
+    .system-block .prose p:first-child { margin-top: 0; }
+    .fact-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+    .fact {
+      padding: 6px 10px; border: 1px solid var(--line); border-radius: 999px;
+      background: var(--paper-raised); color: var(--slate); font: 700 .7rem/1.2 var(--utility);
+    }
+
+    .honesty-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--line-strong); border: 1px solid var(--line-strong); }
+    .honesty-card { padding: 28px; background: var(--paper-raised); }
+    .honesty-card .symbol { font-family: var(--utility); color: var(--coral-deep); font-size: .72rem; font-weight: 900; }
+    .honesty-card h3 { margin: 16px 0 8px; font-size: 1rem; }
+    .honesty-card p { margin: 0; color: var(--slate); font-size: .86rem; }
+
+    .boundary {
+      display: grid; grid-template-columns: .9fr 1.1fr; gap: 48px; align-items: center;
+      padding: clamp(30px, 6vw, 72px); border-radius: 8px 48px 8px 48px; background: var(--ink); color: var(--paper);
+    }
+    .boundary h2 { margin: 8px 0 0; font-family: var(--display); font-size: clamp(2.6rem, 5vw, 5rem); line-height: .95; letter-spacing: -.04em; }
+    .boundary ul { margin: 0; padding: 0; list-style: none; columns: 2; column-gap: 30px; }
+    .boundary li { break-inside: avoid; padding: 10px 0; border-bottom: 1px solid color-mix(in srgb, var(--paper) 18%, transparent); color: color-mix(in srgb, var(--paper) 80%, transparent); font-size: .88rem; }
+
+    .source-panel {
+      display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 18px;
+    }
+    .source-link {
+      min-height: 150px; padding: 24px; border: 1px solid var(--line-strong); border-radius: 18px;
+      background: var(--paper-raised); color: var(--ink); text-decoration: none;
+      transition: transform .16s ease, box-shadow .16s ease;
+    }
+    .source-link:hover { transform: translateY(-3px); box-shadow: 0 14px 28px var(--shadow); color: var(--ink); }
+    .source-link small { display: block; color: var(--coral-deep); font: 800 .67rem/1 var(--utility); letter-spacing: .1em; text-transform: uppercase; }
+    .source-link strong { display: block; margin: 17px 0 7px; font-size: 1rem; }
+    .source-link span { display: block; color: var(--slate); font-size: .82rem; }
+
+    footer { margin-top: 80px; border-top: 1px solid var(--line-strong); }
+    .footer-inner { width: var(--page); margin: auto; padding: 38px 0 56px; display: flex; justify-content: space-between; gap: 24px; color: var(--muted); font-size: .78rem; }
+
+    .mermaid .nodeLabel, .mermaid .edgeLabel, .mermaid .messageText, .mermaid .labelText { font-family: var(--body) !important; }
+
+    @media (max-width: 920px) {
+      .hero { grid-template-columns: 1fr; padding-top: 72px; gap: 40px; }
+      .hero-copy { max-width: 720px; }
+      .phone-stage { min-height: 560px; }
+      .journey-grid { grid-template-columns: 1fr 1fr; }
+      .journey-step { border-bottom: 1px solid var(--line); }
+      .journey-step:nth-child(even) { border-right: 0; }
+      .journey-step:last-child { grid-column: 1 / -1; }
+      .feature-index { grid-template-columns: 1fr; }
+      .feature-nav { position: static; display: flex; flex-wrap: wrap; gap: 0 16px; }
+      .feature-nav strong { width: 100%; }
+      .feature-nav a { display: inline-block; }
+      .system-block, .boundary { grid-template-columns: 1fr; }
+      .honesty-grid { grid-template-columns: 1fr 1fr; }
+      .source-panel { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (max-width: 660px) {
+      :root { --page: min(100% - 28px, 1180px); }
+      body { background: repeating-linear-gradient(0deg, transparent 0 31px, color-mix(in srgb, var(--line) 20%, transparent) 32px), var(--paper); }
+      .topbar-inner { min-height: 58px; }
+      .topnav a { display: none; }
+      .topnav a:last-child { display: block; }
+      .hero { min-height: auto; padding: 60px 0 64px; }
+      .hero h1 { font-size: clamp(3.4rem, 17vw, 5.4rem); }
+      .phone-stage { min-height: 510px; }
+      .pencil-note { right: 0; }
+      .section { padding: 72px 0; }
+      .journey-grid, .split, .gallery, .feature-group, .feature-list, .honesty-grid, .source-panel { grid-template-columns: 1fr; }
+      .journey-step { border-right: 0; }
+      .journey-step:last-child { grid-column: auto; }
+      .feature-group { gap: 20px; }
+      .gallery { max-width: 390px; margin: auto; gap: 34px; }
+      .shot img { transform: none !important; }
+      .boundary ul { columns: 1; }
+      .footer-inner { flex-direction: column; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
+    }
+
+    @media print {
+      @page { size: A4; margin: 16mm; }
+      :root {
+        color-scheme: light;
+        --paper: #ffffff;
+        --paper-deep: #f4f0eb;
+        --paper-raised: #ffffff;
+        --ink: #1f1b18;
+        --slate: #514a44;
+        --muted: #6f665e;
+        --line: #d7cec5;
+        --line-strong: #a99c90;
+        --coral: #8a432e;
+        --coral-deep: #6e3021;
+        --coral-soft: #f3d8c8;
+        --care: #466451;
+        --care-soft: #e5eee7;
+        --blue: #365a78;
+        --blue-soft: #e5edf3;
+        --shadow: transparent;
+        --page: 100%;
+      }
+      html { scroll-behavior: auto; }
+      body { background: #ffffff; font-size: 9.5pt; }
+      .topbar, .skip-link, .hero-actions, .feature-nav { display: none !important; }
+      .hero { min-height: auto; padding: 0 0 28px; grid-template-columns: 1.25fr .55fr; gap: 24px; }
+      .hero h1 { font-size: 46pt; }
+      .hero-copy { font-size: 11pt; }
+      .hero-note { font-size: 8pt; }
+      .phone-stage { min-height: auto; }
+      .phone-stage::before, .pencil-note { display: none; }
+      .phone { width: 150px; padding: 5px; border-radius: 24px; box-shadow: none; transform: none; }
+      .phone img { border-radius: 18px; }
+      .section { padding: 30px 0; }
+      .section-header { margin-bottom: 24px; }
+      .section-header h2 { font-size: 30pt; }
+      .feature-index { display: block; }
+      .feature-group, .system-block, .lane, .honesty-card, .source-link, .shot, .diagram-shell { break-inside: avoid; }
+      .diagram-shell, .lane, .source-link { box-shadow: none; }
+      .diagram-shell { padding: 16px; overflow: visible; }
+      .mermaid { min-width: 0; }
+      .gallery { gap: 10px; }
+      .shot img { box-shadow: none; transform: none !important; }
+      .boundary { background: #ffffff; color: var(--ink); border: 2px solid var(--ink); }
+      .boundary li { color: var(--slate); border-color: var(--line); }
+      footer { margin-top: 20px; }
+      .footer-inner { padding: 18px 0 0; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to the guide</a>
+
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="#top" aria-label="ProsePal feature guide home">
+        <span class="brand-mark" aria-hidden="true">P</span>
+        <span>ProsePal / native</span>
+      </a>
+      <nav class="topnav" aria-label="Page sections">
+        <a href="#journey">The journey</a>
+        <a href="#features">Features</a>
+        <a href="#routing">Writing routes</a>
+        <a href="#gateway">Gateway</a>
+        <a href="#foundations">Foundations</a>
+        <a href="#sources">Sources</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="hero" id="top">
+      <div>
+        <div class="eyebrow">Native iOS capability guide</div>
+        <h1>Show up.<br><em>Say what is true.</em><br>Send it.</h1>
+        <p class="hero-copy">ProsePal helps someone write a thoughtful personal message without turning the moment into a form, a chat session, or a blank page. Start with the person. Add the detail that matters. Get one useful draft—and keep control of every word.</p>
+        <div class="hero-actions">
+          <a class="button primary" href="#journey">Walk through the app <span aria-hidden="true">↓</span></a>
+          <a class="button" href="#gateway">See how the gateway works</a>
+        </div>
+        <p class="hero-note">This is an evergreen system explainer, not a release tracker. The evidence matrix and open backlog remain the canonical sources for implementation and release readiness.</p>
+      </div>
+
+      <div class="phone-stage" aria-label="ProsePal native app draft screen">
+        <div class="phone">
+          <img src="assets/native-app-guide/draft-result.jpg" alt="ProsePal showing a generated personal message with copy, share, save, and adjustment actions">
+        </div>
+        <div class="pencil-note">The draft is the work. Everything else stays close, quiet, and reversible.</div>
+      </div>
+    </section>
+
+    <section class="section section-rule" id="journey">
+      <header class="section-header">
+        <div class="kicker">The core loop</div>
+        <h2>One moment, five deliberate steps.</h2>
+        <p>No mandatory account. No instant paywall. No generation while someone is still typing. The user decides when writing begins and what happens to the result.</p>
+      </header>
+
+      <div class="journey-grid" aria-label="The five-step ProsePal writing journey">
+        <article class="journey-step" data-step="STEP 01"><span class="verb">Begin with someone</span><h3>Name the person</h3><p>Frame the message around who matters, not a document type.</p></article>
+        <article class="journey-step" data-step="STEP 02"><span class="verb">Set the moment</span><h3>Choose context</h3><p>Relationship, occasion, register, and length shape the writing.</p></article>
+        <article class="journey-step" data-step="STEP 03"><span class="verb">Ground the words</span><h3>Add what is true</h3><p>Type or dictate the detail to include, avoid, or handle carefully.</p></article>
+        <article class="journey-step" data-step="STEP 04"><span class="verb">Ask explicitly</span><h3>Write the draft</h3><p>The private or careful route produces one primary message.</p></article>
+        <article class="journey-step" data-step="STEP 05"><span class="verb">Keep control</span><h3>Edit and use it</h3><p>Adjust, undo, copy, share, send, or deliberately save.</p></article>
+      </div>
+
+      <div style="height: 44px"></div>
+      <div class="diagram-shell" data-label="Product flow">
+        <pre class="mermaid">
+flowchart LR
+  A[Open app] --> B{First run?}
+  B -- Yes --> C[Short welcome]
+  B -- No --> D[Moment Sheet]
+  C --> D
+  D --> E[Person + relationship]
+  E --> F[Occasion + register]
+  F --> G[One true thing]
+  G --> H[Tap Write draft]
+  H --> I{Writing route}
+  I --> J[Private on-device]
+  I --> K[Careful gateway]
+  J --> L[One primary draft]
+  K --> L
+  L --> M[Edit / adjust / undo]
+  M --> N[Copy / share / send / save]
+        </pre>
+      </div>
+    </section>
+
+    <section class="section section-rule" id="features">
+      <header class="section-header">
+        <div class="kicker">Capability map</div>
+        <h2>What the app lets someone do.</h2>
+        <p>The native rewrite is a focused personal-message tool. Its depth is in protecting context, drafts, identity, and user-approved memory—not in adding more document machinery.</p>
+      </header>
+
+      <div class="feature-index">
+        <nav class="feature-nav" aria-label="Feature groups">
+          <strong>Jump to a capability</strong>
+          <a href="#input-features">Shape the moment</a>
+          <a href="#draft-features">Create a draft</a>
+          <a href="#revision-features">Revise safely</a>
+          <a href="#result-features">Use and save</a>
+          <a href="#memory-features">Relationship memory</a>
+          <a href="#account-features">Account and plan</a>
+          <a href="#system-features">System surfaces</a>
+          <a href="#accessibility-features">Accessibility</a>
+        </nav>
+
+        <div class="feature-groups">
+          <article class="feature-group" id="input-features">
+            <h3>Shape the moment <span>Input</span></h3>
+            <div class="feature-list">
+              <div class="feature-item"><strong>Person-first entry</strong><p>The flow begins with who the message is for and keeps the layout stable while a name is being entered.</p></div>
+              <div class="feature-item"><strong>Relationship context</strong><p>Grouped relationship choices help the writing fit family, friendship, romance, and work contexts.</p></div>
+              <div class="feature-item"><strong>Searchable occasions</strong><p>A broad occasion catalogue sits beneath a focused, searchable picker rather than a giant grid.</p></div>
+              <div class="feature-item"><strong>Quick, Your words, Take care</strong><p>Human-readable registers express the stakes without exposing models or providers.</p></div>
+              <div class="feature-item"><strong>One true thing</strong><p>The user supplies the real sentence or detail that should anchor the message.</p></div>
+              <div class="feature-item"><strong>Include, avoid, and context</strong><p>Optional constraints help preserve details and prevent unwanted wording or topics.</p></div>
+              <div class="feature-item"><strong>On-device voice input</strong><p>Where Apple speech recognition is available, spoken thoughts can become editable moment detail.</p></div>
+              <div class="feature-item"><strong>Automatic locale</strong><p>Spelling follows the device locale without adding another preference form.</p></div>
+            </div>
+          </article>
+
+          <article class="feature-group" id="draft-features">
+            <h3>Create a draft <span>Writing</span></h3>
+            <div class="feature-list">
+              <div class="feature-item care"><strong>Explicit generation</strong><p>Nothing drafts while the user types. “Write draft” is a clear act of consent.</p></div>
+              <div class="feature-item care"><strong>Private draft lane</strong><p>Everyday writing uses Apple Foundation Models on device where the runtime is available.</p></div>
+              <div class="feature-item care"><strong>Careful gateway lane</strong><p>Harder moments can use a ProsePal-owned gateway with provider details kept behind the boundary.</p></div>
+              <div class="feature-item care"><strong>Cross-lane recovery</strong><p>Eligible availability and service failures can route to the other lane instead of simply losing the moment.</p></div>
+              <div class="feature-item care"><strong>Honest unavailable states</strong><p>Offline, timeout, refusal, limit, and configuration errors return user-safe explanations and retry paths.</p></div>
+              <div class="feature-item care"><strong>Protective refusal</strong><p>Some high-risk input stops before either writing lane and shows immediate-support actions instead of generating a message.</p></div>
+              <div class="feature-item care"><strong>Pressure feedback</strong><p>Obvious guilt, reassurance-seeking, or heavy wording can be flagged as writing feedback—not diagnosis.</p></div>
+            </div>
+          </article>
+
+          <article class="feature-group" id="revision-features">
+            <h3>Revise safely <span>Draft protection</span></h3>
+            <div class="feature-list">
+              <div class="feature-item blue"><strong>Direct editing</strong><p>The generated message remains user-owned, selectable, and editable.</p></div>
+              <div class="feature-item blue"><strong>Focused adjustments</strong><p>Warmer, shorter, and more direct rewrites sit beside the draft instead of starting a new session.</p></div>
+              <div class="feature-item blue"><strong>Take more care rewrite</strong><p>The current draft is passed as context for a more careful version.</p></div>
+              <div class="feature-item blue"><strong>Undo and keep</strong><p>Substantial edits and rewrites create snapshots before replacing text.</p></div>
+              <div class="feature-item blue"><strong>Version history</strong><p>A current-session history sheet can restore a specific earlier snapshot.</p></div>
+              <div class="feature-item blue"><strong>Relaunch recovery</strong><p>The active draft, moment fields, and snapshot stack survive an app restart until the user starts over.</p></div>
+            </div>
+          </article>
+
+          <article class="feature-group" id="result-features">
+            <h3>Use and save <span>Results</span></h3>
+            <div class="feature-list">
+              <div class="feature-item"><strong>Copy with confirmation</strong><p>The primary action puts the draft on the pasteboard and confirms completion.</p></div>
+              <div class="feature-item"><strong>Send handoff</strong><p>Messages and Mail are presented as clear destinations without pretending ProsePal sent anything itself.</p></div>
+              <div class="feature-item"><strong>Native sharing</strong><p>The system share sheet keeps other destinations available.</p></div>
+              <div class="feature-item"><strong>Deliberate save</strong><p>Drafts enter the local library only when the user chooses Save.</p></div>
+              <div class="feature-item"><strong>Saved draft library</strong><p>Saved messages can be opened, edited, copied, shared, and deleted.</p></div>
+              <div class="feature-item"><strong>No surprise history</strong><p>Generated messages are not silently turned into a visible history feed.</p></div>
+            </div>
+          </article>
+
+          <article class="feature-group" id="memory-features">
+            <h3>Relationship memory <span>Local vault</span></h3>
+            <div class="feature-list">
+              <div class="feature-item care"><strong>Truth Beads</strong><p>Small, approved facts or memories can be saved for a person and used in future private drafts.</p></div>
+              <div class="feature-item care"><strong>Voice Card</strong><p>A user-written style note helps future drafts sound more like the user.</p></div>
+              <div class="feature-item care"><strong>User approval only</strong><p>Memory is explicit and editable; the app does not silently infer relationship facts.</p></div>
+              <div class="feature-item care"><strong>Confirmation and rollback</strong><p>Destructive deletion is confirmed, and failed persistence restores the previous local state.</p></div>
+              <div class="feature-item care"><strong>Local JSON export</strong><p>Settings can create, preview, refresh, and copy a portable snapshot of saved local data.</p></div>
+              <div class="feature-item care"><strong>Private local storage</strong><p>SwiftData lives in backup-excluded Application Support with an ephemeral fallback if storage cannot open.</p></div>
+            </div>
+          </article>
+
+          <article class="feature-group" id="account-features">
+            <h3>Account and plan <span>Identity + StoreKit</span></h3>
+            <div class="feature-list">
+              <div class="feature-item blue"><strong>Anonymous first use</strong><p>Someone can experience the core writing loop without creating an account.</p></div>
+              <div class="feature-item blue"><strong>Sign in with Apple</strong><p>Native Apple identity connects to Supabase for continuity and authenticated gateway access.</p></div>
+              <div class="feature-item blue"><strong>Protected session refresh</strong><p>Sessions live in the device-bound Keychain; refresh is single-flight, rotated, and race-safe.</p></div>
+              <div class="feature-item blue"><strong>Contextual paywall</strong><p>Premium appears from plan, limit, or Settings boundaries—not as a first-run wall.</p></div>
+              <div class="feature-item blue"><strong>StoreKit 2 purchase and restore</strong><p>Products, purchase, restore, verified transaction updates, and entitlement convergence use Apple-native APIs.</p></div>
+              <div class="feature-item blue"><strong>Account deletion</strong><p>The authenticated server path and local cleanup remove account and local vault state with honest partial-failure messaging.</p></div>
+            </div>
+          </article>
+
+          <article class="feature-group" id="system-features">
+            <h3>System surfaces <span>Optional entry points</span></h3>
+            <div class="feature-list">
+              <div class="feature-item"><strong>App Intents and Shortcuts</strong><p>Start a Moment from system actions and hand it into the same native writing flow.</p></div>
+              <div class="feature-item"><strong>Care Glance widget</strong><p>A WidgetKit entry point opens a new Moment from the Home Screen.</p></div>
+              <div class="feature-item"><strong>Control Center / Action Button</strong><p>A WidgetKit control opens the Moment Sheet through the app’s deep-link contract.</p></div>
+              <div class="feature-item"><strong>Share Extension</strong><p>Selected text or a URL can be sanitized, stored through the app group, and handed to a Moment without placing raw text in the URL.</p></div>
+            </div>
+          </article>
+
+          <article class="feature-group" id="accessibility-features">
+            <h3>Accessibility <span>Native behavior</span></h3>
+            <div class="feature-list">
+              <div class="feature-item care"><strong>Dynamic Type layouts</strong><p>Large accessibility sizes move important draft actions inline and keep entry fields reachable.</p></div>
+              <div class="feature-item care"><strong>Reduce Transparency</strong><p>Glass and translucent surfaces become opaque when the system preference is enabled.</p></div>
+              <div class="feature-item care"><strong>Reduce Motion</strong><p>Motion-sensitive effects respond to the system accessibility setting.</p></div>
+              <div class="feature-item care"><strong>Labels and native controls</strong><p>Icon-only actions receive accessible labels, with standard SwiftUI navigation and selectable text.</p></div>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-rule" id="routing">
+      <header class="section-header">
+        <div class="kicker">Writing routes</div>
+        <h2>Two lanes. One product promise.</h2>
+        <p>The interface talks about the kind of help a person wants. Models, providers, tokens, and routing mechanics stay behind a single <code>MessageWritingService</code> boundary.</p>
+      </header>
+
+      <div class="split">
+        <article class="lane">
+          <div class="lane-tag">Everyday route</div>
+          <h3>Private draft</h3>
+          <p>Designed for ordinary personal messages where Apple’s on-device model is available.</p>
+          <ul>
+            <li>Message context remains on device during generation.</li>
+            <li>Foundation Models uses typed output rather than provider-shaped UI.</li>
+            <li>Relationship memory can enrich the prompt locally.</li>
+            <li>Availability and timeout failures are translated into honest product language.</li>
+          </ul>
+        </article>
+        <article class="lane care">
+          <div class="lane-tag">Higher-care route</div>
+          <h3>Take more care</h3>
+          <p>Designed for harder moments and explicit careful rewrites through the ProsePal gateway.</p>
+          <ul>
+            <li>The app sends a versioned, length-capped request—not an open-ended chat transcript.</li>
+            <li>Authentication, provider choice, quality checks, and usage policy stay server-side.</li>
+            <li>Provider and model names never appear in the app.</li>
+            <li>User-safe errors preserve retry and fallback behavior without leaking internals.</li>
+          </ul>
+        </article>
+      </div>
+
+      <div style="height: 36px"></div>
+      <div class="diagram-shell" data-label="Routing logic">
+        <pre class="mermaid">
+flowchart TD
+  A[MomentInput] --> B{Enough context?}
+  B -- No --> C[Ask for the missing person/context]
+  B -- Yes --> S{Drafting allowed?}
+  S -- No --> T[Stop drafting]
+  T --> U[Show immediate-support actions]
+  S -- Yes --> D{Product lane decision}
+  D -- Everyday --> E[Private on-device client]
+  D -- Sensitive / Take care --> F[Careful gateway client]
+  E --> G{Eligible service failure?}
+  F --> H{Eligible careful-lane failure?}
+  G -- Yes --> F
+  G -- No --> I[User-safe error]
+  H -- Yes --> E
+  H -- No --> I
+  E --> J[MomentDraftBundle]
+  F --> J
+  J --> K[Local pressure feedback]
+  K --> L[Draft + reversible actions]
+        </pre>
+      </div>
+      <p class="diagram-caption">Fallback is selective rather than universal. Cancellation and content refusals keep their own semantics, and each transport owns its timeout.</p>
+    </section>
+
+    <section class="section section-rule" id="gateway">
+      <header class="section-header">
+        <div class="kicker">ProsePal gateway</div>
+        <h2>A narrow server boundary, not a second app.</h2>
+        <p>The gateway accepts a stable card-writing contract, validates it, calls a configured provider, checks the result, and returns provider-neutral messages and errors.</p>
+      </header>
+
+      <div class="diagram-shell" data-label="Current request sequence">
+        <pre class="mermaid">
+sequenceDiagram
+  autonumber
+  actor Person
+  participant App as iPhone app
+  participant Auth as Auth session
+  participant Edge as generate-card gateway
+  participant AI as Configured provider
+  participant DB as Supabase usage RPC
+
+  Person->>App: Tap Write draft / Take more care
+  App->>Auth: Request current access token
+  Auth-->>App: Valid token or safely refreshed token
+  App->>Edge: Versioned CardRequest
+  Edge->>Edge: Authenticate, sanitize, cap, validate lane
+  Edge->>AI: Structured prompt (15s provider budget)
+  AI-->>Edge: Three structured message options
+  Edge->>Edge: Quality checks and configured fallback if needed
+  Edge->>DB: Apply authenticated usage policy
+  DB-->>Edge: Allowed + usage summary, or user-safe rejection
+  Edge-->>App: Provider-neutral CardResponse
+  App-->>Person: One primary draft + actions
+        </pre>
+      </div>
+
+      <div style="height: 44px"></div>
+      <div class="honesty-grid" aria-label="Gateway capabilities">
+        <article class="honesty-card"><div class="symbol">AUTH</div><h3>JWT verification</h3><p>Authenticated requests are verified through Supabase Auth. Anonymous development access fails closed unless its separate secret is configured and matches.</p></article>
+        <article class="honesty-card"><div class="symbol">INPUT</div><h3>Bounded contracts</h3><p>Recipient, include, avoid, context, client metadata, lanes, and contract versions are sanitized and length-capped before provider work.</p></article>
+        <article class="honesty-card"><div class="symbol">ROUTE</div><h3>Server-side provider choice</h3><p>Provider URL, key, model, fallback models, sampling, token limits, and JSON behavior remain outside the client.</p></article>
+        <article class="honesty-card"><div class="symbol">QUALITY</div><h3>Output checks</h3><p>Responses must be structured, distinct, non-empty, appropriately specific, and free of generic filler or provider/internal language.</p></article>
+        <article class="honesty-card"><div class="symbol">PRIVACY</div><h3>Metadata-only logs</h3><p>Operational logs carry lanes, versions, latency, failure buckets, and redacted identity—not prompts, names, tokens, or generated drafts.</p></article>
+        <article class="honesty-card"><div class="symbol">FAILURE</div><h3>Safe degradation</h3><p>Provider timeouts, malformed output, quality failure, auth failure, configuration failure, and usage limits map to stable user-safe errors.</p></article>
+      </div>
+    </section>
+
+    <section class="section section-rule" aria-labelledby="screens-title">
+      <header class="section-header">
+        <div class="kicker">The product in use</div>
+        <h2 id="screens-title">From a person to a kept message.</h2>
+        <p>The same writing object moves through setup, result, and deliberate local storage. It does not become a chat transcript or an automatic content history.</p>
+      </header>
+
+      <div class="gallery">
+        <figure class="shot">
+          <img src="assets/native-app-guide/moment-entry.jpg" alt="ProsePal person-first Moment Sheet on launch">
+          <figcaption>Start with the person and the moment.</figcaption>
+        </figure>
+        <figure class="shot">
+          <img src="assets/native-app-guide/share-sheet.jpg" alt="ProsePal native share sheet for a finished draft">
+          <figcaption>Use the message through native system actions.</figcaption>
+        </figure>
+        <figure class="shot">
+          <img src="assets/native-app-guide/saved-drafts.jpg" alt="ProsePal library of deliberately saved drafts">
+          <figcaption>Save only the drafts worth keeping.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="section section-rule" id="foundations">
+      <header class="section-header">
+        <div class="kicker">Trust foundations</div>
+        <h2>The quiet systems doing the serious work.</h2>
+        <p>Identity, payments, local memory, and diagnostics are separated so each boundary can fail honestly without corrupting another.</p>
+      </header>
+
+      <div class="system-stack">
+        <article class="system-block">
+          <h3>Identity and session continuity</h3>
+          <div class="prose">
+            <p>Sign in with Apple exchanges identity through Supabase Auth. The resulting session is stored in the device-bound Keychain. Expired access tokens refresh through a single shared operation, persist rotation before use, preserve identity during transient network failure, and clear only on terminal rejection.</p>
+            <div class="fact-row"><span class="fact">CSPRNG nonce</span><span class="fact">Keychain storage</span><span class="fact">Single-flight refresh</span><span class="fact">Race-safe sign-out</span></div>
+          </div>
+        </article>
+
+        <div class="diagram-shell" data-label="Identity boundary">
+          <pre class="mermaid">
+flowchart LR
+  A[Anonymous first use] --> B[Sign in with Apple]
+  B --> C[Supabase ID-token exchange]
+  C --> D[Keychain session]
+  D --> E{Access token usable?}
+  E -- Yes --> F[Authenticated gateway request]
+  E -- No --> G[Single-flight refresh]
+  G --> H[Persist rotated session]
+  H --> F
+  D --> I[Sign out / account deletion]
+  I --> J[Cancel refresh + clear local identity]
+          </pre>
+        </div>
+
+        <article class="system-block">
+          <h3>StoreKit and entitlement integrity</h3>
+          <div class="prose">
+            <p>Apple remains the purchase authority. The app loads configured products, supports purchase and restore without mandatory app sign-in, listens for transaction updates from launch, ignores unverified transactions, and finishes verified transactions only after entitlement convergence succeeds.</p>
+            <div class="fact-row"><span class="fact">StoreKit 2</span><span class="fact">Purchase + restore</span><span class="fact">Transaction.updates</span><span class="fact">Verified before unlock</span></div>
+          </div>
+        </article>
+
+        <article class="system-block">
+          <h3>Local data and privacy</h3>
+          <div class="prose">
+            <p>Truth Beads, Voice Cards, and saved drafts live in a versioned SwiftData vault. The store is excluded from backup, supports migration, can fall back ephemerally instead of crashing, exports user-readable JSON, and is erased during local-data or account deletion.</p>
+            <div class="fact-row"><span class="fact">Versioned SwiftData</span><span class="fact">Backup excluded</span><span class="fact">JSON export</span><span class="fact">Explicit erase</span><span class="fact">No raw-content logs</span></div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section section-rule" aria-labelledby="honesty-title">
+      <header class="section-header">
+        <div class="kicker">Failure is part of the product</div>
+        <h2 id="honesty-title">No fake controls. No invented certainty.</h2>
+        <p>The app names what happened and preserves the user’s work. Provider internals, quota fiction, and decorative retry states do not belong on the screen.</p>
+      </header>
+      <div class="honesty-grid">
+        <article class="honesty-card"><div class="symbol">OFFLINE</div><h3>The note stays local</h3><p>“Try again” performs a real retry. Repeated taps and late results cannot replace newer work.</p></article>
+        <article class="honesty-card"><div class="symbol">TIMEOUT</div><h3>The lane is named honestly</h3><p>On-device and gateway timeouts have separate product-neutral explanations and cancellation behavior.</p></article>
+        <article class="honesty-card"><div class="symbol">LIMIT</div><h3>The server supplies the policy</h3><p>The UI avoids invented weekly limits, reset dates, meters, or “unlimited” promises.</p></article>
+        <article class="honesty-card"><div class="symbol">REFUSAL</div><h3>Safe, calm presentation</h3><p>Model and gateway refusals become understandable app language without exposing the provider.</p></article>
+        <article class="honesty-card"><div class="symbol">SAVE</div><h3>Success follows persistence</h3><p>Memory edits and deletes show success only after the local save succeeds; failures roll back.</p></article>
+        <article class="honesty-card"><div class="symbol">CONFIG</div><h3>Missing means unavailable</h3><p>Unconfigured auth, gateway, subscriptions, or local model capability produce explicit readiness states—not empty buttons.</p></article>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="boundary-title">
+      <div class="boundary">
+        <div>
+          <div class="kicker" style="color: var(--coral)">V1 product boundary</div>
+          <h2 id="boundary-title">Focused by what it refuses to become.</h2>
+        </div>
+        <ul>
+          <li>No manuscript, scene, project, or document-manager workflow</li>
+          <li>No mandatory account before first value</li>
+          <li>No forced paywall immediately after welcome</li>
+          <li>No provider or model names in the interface</li>
+          <li>No client-side provider API keys or provider SDKs</li>
+          <li>No automatic visible generation history</li>
+          <li>No silent relationship-memory inference</li>
+          <li>No app-owned therapy or mental-health inference system</li>
+          <li>No analytics or crash toggles for systems that do not exist</li>
+          <li>No fake settings rows, retry controls, or quota claims</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="section section-rule" id="sources">
+      <header class="section-header">
+        <div class="kicker">Canonical detail</div>
+        <h2>Go from the map to the evidence.</h2>
+        <p>This guide explains the whole. These sources own exact scope, verification, and unresolved work.</p>
+      </header>
+      <div class="source-panel">
+        <a class="source-link" href="FEATURE_STATUS.csv"><small>Evidence</small><strong>Feature status matrix</strong><span>User stories, implementation evidence, tests, known limitations, and release proof.</span></a>
+        <a class="source-link" href="BACKLOG.md"><small>Open work</small><strong>Native backlog</strong><span>The only canonical list of unresolved engineering and release work.</span></a>
+        <a class="source-link" href="NEXT_RELEASE_BRIEF.md"><small>Scope</small><strong>Release brief</strong><span>The v1 launch contract and supporting product boundary.</span></a>
+        <a class="source-link" href="FEATURES.md"><small>Capabilities</small><strong>Feature inventory</strong><span>The stable capability model behind this visual guide.</span></a>
+        <a class="source-link" href="USER_JOURNEYS.md"><small>Behavior</small><strong>User journeys</strong><span>Launch, writing, purchase, restore, identity, saved work, and Settings policies.</span></a>
+        <a class="source-link" href="architecture/AI_GATEWAY_STRATEGY.md"><small>Architecture</small><strong>Gateway strategy</strong><span>Routing, provider abstraction, quality, privacy, cost, rollout, and rollback reasoning.</span></a>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+      <span>ProsePal native iOS — feature and system guide</span>
+      <span>Built from the repository’s canonical native capability, journey, architecture, and evidence sources.</span>
+    </div>
+  </footer>
+
+  <script type="module">
+    const rootStyles = getComputedStyle(document.documentElement);
+    const darkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const mermaidNodes = document.querySelectorAll('.mermaid');
+
+    try {
+      const mermaid = (await import('https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs')).default;
+      mermaid.initialize({
+        startOnLoad: false,
+        theme: 'base',
+        securityLevel: 'strict',
+        flowchart: { curve: 'basis', htmlLabels: true, useMaxWidth: true },
+        sequence: { useMaxWidth: true, mirrorActors: false },
+        themeVariables: {
+          background: rootStyles.getPropertyValue('--paper-raised').trim(),
+          primaryColor: rootStyles.getPropertyValue('--coral-soft').trim(),
+          primaryTextColor: rootStyles.getPropertyValue('--ink').trim(),
+          primaryBorderColor: rootStyles.getPropertyValue('--coral').trim(),
+          secondaryColor: rootStyles.getPropertyValue('--care-soft').trim(),
+          secondaryTextColor: rootStyles.getPropertyValue('--ink').trim(),
+          secondaryBorderColor: rootStyles.getPropertyValue('--care').trim(),
+          tertiaryColor: rootStyles.getPropertyValue('--blue-soft').trim(),
+          tertiaryTextColor: rootStyles.getPropertyValue('--ink').trim(),
+          lineColor: rootStyles.getPropertyValue('--line-strong').trim(),
+          textColor: rootStyles.getPropertyValue('--ink').trim(),
+          actorBkg: rootStyles.getPropertyValue('--paper-raised').trim(),
+          actorBorder: rootStyles.getPropertyValue('--line-strong').trim(),
+          actorTextColor: rootStyles.getPropertyValue('--ink').trim(),
+          signalColor: rootStyles.getPropertyValue('--slate').trim(),
+          signalTextColor: rootStyles.getPropertyValue('--ink').trim(),
+          noteBkgColor: rootStyles.getPropertyValue('--care-soft').trim(),
+          noteTextColor: rootStyles.getPropertyValue('--ink').trim(),
+          noteBorderColor: rootStyles.getPropertyValue('--care').trim(),
+          darkMode
+        }
+      });
+      await mermaid.run({ nodes: mermaidNodes });
+    } catch (error) {
+      document.documentElement.classList.add('mermaid-unavailable');
+      console.warn('Mermaid could not load; diagram source remains visible.', error);
+    }
+
+    const navLinks = [...document.querySelectorAll('.topnav a')];
+    const sections = navLinks.map(link => document.querySelector(link.getAttribute('href'))).filter(Boolean);
+    if ('IntersectionObserver' in window) {
+      const observer = new IntersectionObserver(entries => {
+        const visible = entries.filter(entry => entry.isIntersecting).sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+        if (!visible) return;
+        navLinks.forEach(link => link.setAttribute('aria-current', String(link.getAttribute('href') === `#${visible.target.id}`)));
+      }, { rootMargin: '-20% 0px -65%', threshold: [0, .15, .5] });
+      sections.forEach(section => observer.observe(section));
+    }
+  </script>
+</body>
+</html>

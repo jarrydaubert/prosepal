@@ -6,8 +6,9 @@ This policy keeps project docs evergreen and actionable.
 
 - Applies to all docs in `docs/` and `prosepal-ios/*.md`.
 - Exception: release records/postmortems/changelogs can be time-bound.
-- Exception: `docs/BACKLOG.md` is the active build tracker and may use
-  `[x]` / `[~]` / `[ ]` markers with evidence pointers.
+- Exception: `docs/BACKLOG.md` is the active build tracker and uses `[ ]` for
+  unresolved work only. Completed items are removed instead of retained as a
+  status history.
 - Exception: `docs/FEATURE_STATUS.csv` is the canonical user-story evidence
   matrix for feature audit work. It may contain implementation, test, error,
   fix, and retest status columns. Its `implementation_status` values describe

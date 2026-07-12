@@ -25,17 +25,20 @@ The previous Flutter production app is archived at tag
 
 1. `../AGENTS.md`
    - Repo working rules for agents and automation.
-2. `NEXT_RELEASE_BRIEF.md`
+2. `NATIVE_APP_GUIDE.html`
+   - Visual guide to the native app, its user-facing capabilities, writing
+     routes, gateway, identity, payments, privacy, and system surfaces.
+3. `NEXT_RELEASE_BRIEF.md`
    - Shareable native iOS readiness brief.
-3. `BACKLOG.md`
+4. `BACKLOG.md`
    - Single active tracker for open native work.
-4. `../prosepal-ios/NATIVE_2026_TECHNICAL_DIRECTION.md`
+5. `../prosepal-ios/NATIVE_2026_TECHNICAL_DIRECTION.md`
    - Native product, design, AI, StoreKit, and platform direction.
-5. `../prosepal-ios/NATIVE_DEVICE_DEBUG_RUNBOOK.md`
+6. `../prosepal-ios/NATIVE_DEVICE_DEBUG_RUNBOOK.md`
    - Local staging and physical-device proof.
-6. `DEVOPS.md`
+7. `DEVOPS.md`
    - CI, Supabase safety, and release operations.
-7. `architecture/AI_GATEWAY_STRATEGY.md`
+8. `architecture/AI_GATEWAY_STRATEGY.md`
    - Gateway/model-router strategy and historical reasoning.
 
 ## Active Native Docs
@@ -45,6 +48,7 @@ The previous Flutter production app is archived at tag
 - `DEVOPS.md`
 - `DOCS_POLICY.md`
 - `PRODUCT_STRATEGY.md`
+- `NATIVE_APP_GUIDE.html`
 - `FEATURES.md`
 - `USER_JOURNEYS.md`
 - `AI_OUTPUT_QUALITY.md`

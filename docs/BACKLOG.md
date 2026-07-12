@@ -56,6 +56,14 @@ completed item instead of turning this file into a status log.
   purchase/restore presentation, destructive confirmation, Settings semantics,
   and one accessibility-size identifier-driven navigation path.
 
+- [ ] Make critical asynchronous tests fail fast and prove rejected requests
+  have no expensive side effects. DoD: auth refresh and Moment-model test
+  synchronization has an explicit deadline instead of unbounded polling;
+  bounded waits use deterministic synchronization or a shared fail-fast helper;
+  auth and development-secret rejection tests configure a callable provider and
+  explicitly assert that it receives zero requests; regressions fail rather than
+  hanging the test run.
+
 - [ ] Complete core-flow accessibility and visual hardening. DoD: release flows
   pass VoiceOver, Dynamic Type, hit-target, contrast, keyboard/focus, Reduce
   Motion, and Reduce Transparency checks on supported iPhone sizes; regular-width
@@ -64,13 +72,17 @@ completed item instead of turning this file into a status log.
 
 ## Native V1 — Production Configuration And Gateway
 
-- [ ] Add a production-safe remote-service configuration channel. DoD:
+- [ ] Complete and prove the production-safe remote-service configuration
+  channel. DoD:
   build-configuration-driven `Info.plist` values provide
   `PROSEPAL_GATEWAY_URL`, `PROSEPAL_SUPABASE_URL`, and the Supabase
   publishable/legacy anon key to archived TestFlight/App Store builds; production
-  and staging values are distinct; release builds reject missing configuration;
-  no development gateway secret or privileged key is embedded. This is a
-  prerequisite for live auth, careful generation, and account deletion proof.
+  and staging values are reproducible and bound to the intended target; archive
+  validation rejects missing configuration, insecure URLs, target/environment
+  cross-contamination, and embedded development gateway secrets or privileged
+  keys; an archive inspection proves the intended public values are present and
+  secrets are absent. This is a prerequisite for live auth, careful generation,
+  and account deletion proof.
 
 - [ ] Add atomic pre-provider abuse and cost control to `generate-card`. DoD:
   authenticated and explicitly authorized development requests reserve burst and
@@ -78,7 +90,8 @@ completed item instead of turning this file into a status log.
   cost; concurrent requests cannot oversubscribe limits; provider/quality failure
   releases or refunds the reservation; success finalizes it; database functions
   are service-role-only, concurrency-safe, and covered by migration/function and
-  Edge Function tests.
+  Edge Function tests that also prove rejected callers trigger zero provider
+  requests.
 
 - [ ] Implement real gateway idempotency. DoD: user plus idempotency key has a
   unique server-side record; in-flight duplicates do not start another provider
