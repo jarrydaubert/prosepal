@@ -80,15 +80,6 @@ extension View {
     }
 
     @ViewBuilder
-    func momentTabBarVisibility(isVisible: Bool) -> some View {
-        #if os(iOS)
-        self.toolbar(isVisible ? .visible : .hidden, for: .tabBar)
-        #else
-        self
-        #endif
-    }
-
-    @ViewBuilder
     func momentNavigationBarColorScheme() -> some View {
         #if os(iOS)
         self.toolbarColorScheme(.light, for: .navigationBar)

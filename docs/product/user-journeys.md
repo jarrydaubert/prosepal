@@ -18,6 +18,9 @@ Launch
 ```
 
 - Welcome does not force sign-in, notifications, or purchase.
+- After welcome, the native tab bar keeps Write, Drafts, and Settings available;
+  switching destinations preserves each destination's SwiftUI state for the
+  current app session.
 - Typing does not silently start generation.
 - The user’s note remains present after offline or retryable failure.
 - The app never exposes provider or model names.

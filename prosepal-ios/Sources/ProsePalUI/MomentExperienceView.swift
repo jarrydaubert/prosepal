@@ -1160,257 +1160,6 @@ private struct MomentActivityView: UIViewControllerRepresentable {
 }
 #endif
 
-public struct MomentAppRootView: View {
-    @State private var model: MomentModel
-    @State private var account: MomentAccountModel
-    @State private var welcomeState: MomentWelcomeState
-    @State private var selectedTab: MomentRootTab = .moment
-    @State private var didLogStartup = false
-    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
-    @Query(sort: \SavedMomentDraftRecord.createdAt, order: .reverse)
-    private var savedDrafts: [SavedMomentDraftRecord]
-
-    private let launchStore: MomentLaunchStore
-    private let sharedLaunchStore: SharedMomentLaunchStore
-    private let diagnostics: NativeDiagnosticsLogger
-
-    public init(
-        service: any MessageWritingService,
-        account: MomentAccountModel,
-        welcomeState: @autoclosure @escaping () -> MomentWelcomeState = MomentWelcomeState(),
-        launchStore: MomentLaunchStore = MomentLaunchStore(),
-        sharedLaunchStore: SharedMomentLaunchStore = SharedMomentLaunchStore(),
-        diagnostics: NativeDiagnosticsLogger = .shared
-    ) {
-        _model = State(initialValue: MomentModel(
-            service: service,
-            draftRecoveryStore: MomentDraftRecoveryStore()
-        ))
-        _account = State(initialValue: account)
-        _welcomeState = State(initialValue: welcomeState())
-        self.launchStore = launchStore
-        self.sharedLaunchStore = sharedLaunchStore
-        self.diagnostics = diagnostics
-    }
-
-    public var body: some View {
-        Group {
-            if welcomeState.hasCompletedWelcome {
-                tabs
-            } else {
-                MomentWelcomeView(account: account) {
-                    welcomeState.completeWelcome()
-                }
-            }
-        }
-        .animation(.easeInOut(duration: 0.22), value: welcomeState.hasCompletedWelcome)
-        .onAppear {
-            logStartupIfNeeded()
-            consumePendingLaunch()
-        }
-        .onChange(of: welcomeState.hasCompletedWelcome) { _, completed in
-            if completed {
-                consumePendingLaunch()
-            }
-        }
-        .onOpenURL { url in
-            consumeDeepLink(url)
-        }
-        .task {
-            await account.loadInitialState()
-        }
-    }
-
-    private func logStartupIfNeeded() {
-        guard !didLogStartup else { return }
-        didLogStartup = true
-        diagnostics.appStarted(
-            hasCompletedOnboarding: welcomeState.hasCompletedWelcome,
-            savedMessageCount: savedDrafts.count
-        )
-        diagnostics.runtimeReadiness(account.runtimeReadiness)
-    }
-
-    private func consumePendingLaunch() {
-        guard let request = launchStore.consume() else { return }
-        applyLaunchRequest(request)
-    }
-
-    private func consumeDeepLink(_ url: URL) {
-        guard let deepLink = MomentDeepLink(url: url) else { return }
-        var request = deepLink.launchRequest
-        if request.source == "share_extension",
-           let sharedPayload = sharedLaunchStore.consume(),
-           let sharedText = sharedPayload.text ?? sharedPayload.sourceURL?.absoluteString {
-            request.sharedText = sharedText
-        }
-        applyLaunchRequest(request)
-    }
-
-    private func applyLaunchRequest(_ request: MomentLaunchRequest) {
-        selectedTab = .moment
-        diagnostics.momentLaunchConsumed(request)
-        model.applyLaunchRequest(request)
-    }
-
-    private var tabs: some View {
-        currentTab
-            .safeAreaInset(edge: .bottom) {
-                if shouldShowRootDock {
-                    MomentRootDock(selection: $selectedTab)
-                        .padding(.horizontal, 26)
-                        .padding(.bottom, 12)
-                }
-            }
-            .tint(.prosePalCoral)
-            .preferredColorScheme(.light)
-    }
-
-    private var shouldShowRootDock: Bool {
-        if dynamicTypeSize.isAccessibilitySize {
-            return false
-        }
-        if selectedTab == .settings {
-            return false
-        }
-        if selectedTab == .moment {
-            return false
-        }
-        return true
-    }
-
-    @ViewBuilder
-    private var currentTab: some View {
-        switch selectedTab {
-        case .moment:
-            NavigationStack {
-                MomentSheetView(
-                    model: model,
-                    account: account,
-                    onOpenDrafts: {
-                        selectedTab = .saved
-                    },
-                    onOpenSettings: {
-                        selectedTab = .settings
-                    }
-                )
-#if os(iOS)
-                    .toolbar(.hidden, for: .navigationBar)
-#endif
-                    .momentNavigationBarColorScheme()
-            }
-
-        case .saved:
-            NavigationStack {
-                SavedMomentDraftsView {
-                    selectedTab = .moment
-                }
-                    .momentNavigationBarColorScheme()
-            }
-
-        case .settings:
-            NavigationStack {
-                MomentSettingsView(account: account) {
-                    selectedTab = .moment
-                }
-                    .momentNavigationBarColorScheme()
-            }
-        }
-    }
-}
-
-@MainActor
-@Observable
-public final class MomentWelcomeState {
-    public nonisolated static let defaultCompletionKey = "prosepal.native.momentWelcomeCompleted.v1"
-
-    public private(set) var hasCompletedWelcome: Bool
-
-    @ObservationIgnored private let store: UserDefaults
-    @ObservationIgnored private let completionKey: String
-
-    public init(
-        store: UserDefaults = .standard,
-        completionKey: String = MomentWelcomeState.defaultCompletionKey
-    ) {
-        self.store = store
-        self.completionKey = completionKey
-        self.hasCompletedWelcome = store.bool(forKey: completionKey)
-    }
-
-    public func completeWelcome() {
-        hasCompletedWelcome = true
-        store.set(true, forKey: completionKey)
-    }
-}
-
-private enum MomentRootTab: Hashable {
-    case moment
-    case saved
-    case settings
-}
-
-private struct MomentRootDock: View {
-    @Binding var selection: MomentRootTab
-
-    var body: some View {
-        HStack(spacing: 6) {
-            dockButton(
-                tab: .saved,
-                label: "Drafts",
-                systemImage: "rectangle.stack"
-            )
-
-            Button {
-                selection = .moment
-            } label: {
-                Image(systemName: "pencil.and.scribble")
-                    .font(.title3.weight(.semibold))
-                    .frame(width: 46, height: 46)
-                    .foregroundStyle(.white)
-                    .background(Color.prosePalCoral, in: Circle())
-                    .shadow(color: Color.prosePalCoralDeep.opacity(0.24), radius: 12, x: 0, y: 5)
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Write")
-            .accessibilityAddTraits(selection == .moment ? [.isSelected] : [])
-
-            dockButton(
-                tab: .saved,
-                label: "Library",
-                systemImage: "bookmark"
-            )
-        }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 7)
-        .frame(maxWidth: 250)
-        .momentControlBarSurface()
-    }
-
-    private func dockButton(
-        tab: MomentRootTab,
-        label: String,
-        systemImage: String
-    ) -> some View {
-        Button {
-            selection = tab
-        } label: {
-            VStack(spacing: 4) {
-                Image(systemName: systemImage)
-                    .font(.system(size: 18, weight: .medium))
-
-                Text(label)
-                    .font(.caption2.weight(.medium))
-            }
-            .foregroundStyle(selection == tab ? Color.prosePalCoral : Color.prosePalSlate.opacity(0.82))
-            .frame(width: 78, height: 46)
-            .contentShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
-        }
-        .buttonStyle(.plain)
-        .accessibilityAddTraits(selection == tab ? [.isSelected] : [])
-    }
-}
-
 private enum MemoryDeletionRequest {
     case truthBead(RelationshipTruthBeadRecord)
     case voiceCard(RelationshipVoiceCardRecord)
@@ -1464,7 +1213,7 @@ private struct MemoryDeletionConfirmationModifier: ViewModifier {
     }
 }
 
-private struct MomentSheetView: View {
+struct MomentSheetView: View {
     @Bindable var model: MomentModel
     @Bindable var account: MomentAccountModel
     let onOpenDrafts: () -> Void
@@ -1579,7 +1328,6 @@ private struct MomentSheetView: View {
                 }
             }
         }
-        .momentTabBarVisibility(isVisible: shouldShowTabRail)
         .sheet(isPresented: $isShowingRelationshipPicker) {
             MomentRelationshipPickerSheet(selection: $model.relationship)
                 .presentationDetents([.medium, .large])
@@ -1866,12 +1614,6 @@ private struct MomentSheetView: View {
 
     private var shouldShowDraftResultSection: Bool {
         model.bundle != nil || model.errorMessage != nil
-    }
-
-    private var shouldShowTabRail: Bool {
-        focusedField == nil &&
-            currentPersonName.isEmpty &&
-            !dynamicTypeSize.isAccessibilitySize
     }
 
     private var shouldShowFloatingDraftActionRail: Bool {
@@ -5593,7 +5335,7 @@ private struct MomentDraftsLibraryEmptyState: View {
     }
 }
 
-private struct SavedMomentDraftsView: View {
+struct SavedMomentDraftsView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \SavedMomentDraftRecord.createdAt, order: .reverse)
     private var drafts: [SavedMomentDraftRecord]
@@ -6978,7 +6720,7 @@ private struct RelationshipVoiceCardDetailView: View {
     }
 }
 
-private struct MomentSettingsView: View {
+struct MomentSettingsView: View {
     @Bindable var account: MomentAccountModel
     let onDone: () -> Void
     @State private var supportNotice: String?

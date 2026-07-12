@@ -9,6 +9,7 @@ Detailed code and test evidence lives in
 
 | Capability | Current behaviour |
 |---|---|
+| Root navigation | After welcome, native Write, Drafts, and Settings tabs remain distinct and discoverable; app and extension handoffs return to Write. |
 | Person-first entry | The user starts with who the message is for, then chooses relationship and occasion context. |
 | One true thing | The user supplies the real sentence or detail the draft should preserve. |
 | Voice input | On-device speech capture can fill the moment detail when the platform supports it. |

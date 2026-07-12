@@ -129,19 +129,20 @@ verified locally?”, not “is this file below an arbitrary number of lines?”
 currently contains several independently changing surfaces and should shrink as
 those surfaces are touched; it is not the desired long-term module boundary.
 
-In source order, its stable landmarks are:
+The map names the owning file for extracted regions and the remaining landmarks
+inside the monolith:
 
-| Region | Owning symbols |
+| Region | Owning file and symbols |
 |---|---|
-| Draft state and relaunch recovery | `MomentDraftRecoveryState`, `MomentDraftRecoveryStoring`, `MomentDraftRecoveryStore`, `MomentModel` |
-| Voice, share, and draft-action presentation | `MomentVoiceCaptureSheet`, `MomentDraftUseSheet`, `MomentShareRequest`, `MomentActivityView` |
-| App-root navigation and welcome state | `MomentAppRootView`, `MomentWelcomeState`, `MomentRootDock` |
-| Core Moment composer and generated-draft experience | `MomentSheetView`, including loading, retry, refusal, revision, pressure feedback, memory controls, copy/share/save, and draft history |
-| Relationship and occasion pickers | `MomentRelationshipPickerSheet`, `MomentOccasionPickerSheet`, and their row types |
-| Saved-draft library and detail | `SavedMomentDraftsView`, `SavedMomentDraftLibraryCard`, `SavedMomentDraftDetailView` |
-| Relationship-memory library and detail | `RelationshipMemoryVaultView`, `RelationshipMemoryDetailView`, `RelationshipVoiceCardDetailView` |
-| Settings and subscription detail | `MomentSettingsView`, `MomentPlanDetailView`, and plan presentation helpers |
-| Privacy, export, authentication, and paywall | `MomentPrivacyDataView`, `MomentLocalDataExportView`, `MomentAppleSignInControl`, `MomentPaywallSheet` |
+| Draft state and relaunch recovery | `MomentExperienceView.swift`: `MomentDraftRecoveryState`, `MomentDraftRecoveryStoring`, `MomentDraftRecoveryStore`, `MomentModel` |
+| Voice, share, and draft-action presentation | `MomentExperienceView.swift`: `MomentVoiceCaptureSheet`, `MomentDraftUseSheet`, `MomentShareRequest`, `MomentActivityView` |
+| App-root navigation and welcome state | `MomentAppRootView.swift`: `MomentAppRootView`, `MomentRootTabs`, `MomentRootTab`, `MomentWelcomeState` |
+| Core Moment composer and generated-draft experience | `MomentExperienceView.swift`: `MomentSheetView`, including loading, retry, refusal, revision, pressure feedback, memory controls, copy/share/save, and draft history |
+| Relationship and occasion pickers | `MomentExperienceView.swift`: `MomentRelationshipPickerSheet`, `MomentOccasionPickerSheet`, and their row types |
+| Saved-draft library and detail | `MomentExperienceView.swift`: `SavedMomentDraftsView`, `SavedMomentDraftLibraryCard`, `SavedMomentDraftDetailView` |
+| Relationship-memory library and detail | `MomentExperienceView.swift`: `RelationshipMemoryVaultView`, `RelationshipMemoryDetailView`, `RelationshipVoiceCardDetailView` |
+| Settings and subscription detail | `MomentExperienceView.swift`: `MomentSettingsView`, `MomentPlanDetailView`, and plan presentation helpers |
+| Privacy, export, authentication, and paywall | `MomentExperienceView.swift`: `MomentPrivacyDataView`, `MomentLocalDataExportView`, `MomentAppleSignInControl`, `MomentPaywallSheet` |
 
 Use these symbols as navigation anchors rather than durable line numbers. When a
 task changes one region, prefer extracting that complete region and its private
