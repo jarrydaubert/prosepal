@@ -65,6 +65,10 @@ The provider call begins only after the database reservation succeeds. A failed
 provider or quality attempt does not consume user usage. A successful finalize
 consumes usage once.
 
+Gateway success carries three distinct candidates with equal contract status.
+Array order is transport order, not a quality ranking or a declaration that the
+first candidate is best.
+
 Request identity, reservation leases, atomic quota decisions, replay, and
 retention are specified in [Gateway request ledger](./gateway-request-ledger.md).
 

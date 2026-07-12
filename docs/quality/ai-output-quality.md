@@ -52,7 +52,8 @@ Deterministic writing-quality coverage should check:
 - guilt, coercion, or reassurance pressure;
 - generic filler and greeting-card mush;
 - provider or internal implementation language;
-- schema validity and distinct non-empty options; and
+- schema validity and distinct non-empty options;
+- meaningful variation across an option set rather than synonym-only rewrites;
 - scorer abstention when a criterion does not apply.
 
 Scorers for subjective properties are advisory until exemplar tests show that
@@ -79,8 +80,9 @@ record, token, or secret.
 
 ## 4. Score each sample
 
-Apply every criterion in the rubric. Use `Not applicable` with a short reason
-instead of forcing a pass when a criterion cannot be judged.
+Apply every criterion in the rubric to each candidate. Then judge the option set
+as a whole for useful variation. Use `Not applicable` with a short reason instead
+of forcing a pass when a criterion cannot be judged.
 
 Any `Fail` for invented facts, preservation of the user’s meaning, coercive
 pressure, sensitive-occasion appropriateness, or provider/internal leakage

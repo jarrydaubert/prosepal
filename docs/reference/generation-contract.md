@@ -96,6 +96,8 @@ turn the same pending generation into an idempotency conflict.
 
 The native client requires readable contract versions, at least one message,
 and no blank message text before returning success to the writing service.
+`messages` order has no ranking semantics; every gateway candidate is subject to
+the same response quality gate.
 
 ## HTTP and error mapping
 

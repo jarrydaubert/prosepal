@@ -38,15 +38,43 @@ completed item instead of turning this file into a status log.
   generation. DoD: deterministic representative fixtures and exemplar-tested
   scorers cover preservation of the user's words, invented personal facts,
   requested length/register, guilt or pressure, and provider/internal-language
-  leakage; separately approved live samples exercise both lanes without
-  retaining user content or secrets. Custom crisis classification and
-  mental-health inference are out of scope.
+  leakage; every candidate is scored individually and three-option sets are
+  checked for meaningful variation rather than superficial paraphrases;
+  separately approved live samples exercise both lanes without retaining user
+  content or secrets. Custom crisis classification and mental-health inference
+  are out of scope.
+
+- [ ] Prove and deliver the approved choose-before-edit three-option writing
+  flow without weakening private-first routing. DoD: the gateway client
+  preserves all three distinct `CardResponse` messages instead of selecting an
+  unranked first element, including exact request-ledger replay; one Foundation
+  Models session produces and validates three distinct private options on a
+  supported physical iPhone within the measured end-to-end deadline; both lanes
+  expose one provider-neutral option-set contract without revealing routing.
+  The composer keeps person, explicitly chosen relationship, occasion, and the
+  optional personal detail visible while tone and length live in one compact
+  Style disclosure with honest defaults; no hidden `closeFriend` default can be
+  sent for an unconfirmed relationship. Results say “Three ways to say it,”
+  give the options equal visual weight with no invented best ranking, and
+  require an explicit choice before the existing edit/adjust/copy/share/save
+  flow. Candidate sets and the chosen draft survive relaunch, changing the
+  underlying moment invalidates stale candidates, and choosing or switching an
+  option never destroys recoverable wording. Deterministic service/model tests,
+  compact and accessibility-size UI automation, VoiceOver review, quality
+  evaluation, and physical-device evidence pass. Only after the private-lane
+  gate passes may the launch contract, overview, journeys, capabilities, guide,
+  and feature matrix change from one draft to three choices. If the private
+  prototype misses the agreed deadline, keep the current contract and make an
+  explicit universal fallback decision; do not ship lane-divergent result UX.
 
 - [ ] Define one measured end-to-end generation deadline across fallback
   attempts. DoD: device and staging measurements determine a single ceiling or
-  remaining-budget policy; fallback cannot extend the wait unintentionally;
-  long waits receive honest progress copy; deterministic tests cover deadline
-  propagation, cancellation, and late-result suppression.
+  remaining-budget policy; private-device measurements compare the current
+  single structured draft with one-session three-option generation across
+  representative Brief, Standard, and Detailed fixtures; fallback cannot extend
+  the wait unintentionally; long waits receive honest progress copy;
+  deterministic tests cover deadline propagation, cancellation, and late-result
+  suppression.
 
 - [ ] Make root navigation destinations distinct, discoverable, and accessible.
   DoD: each root destination has unique content and state restoration; Settings
@@ -71,8 +99,9 @@ completed item instead of turning this file into a status log.
   funded v1 work; do not run a separate big-bang rewrite. Extraction order is:
   root navigation/welcome with navigation work; saved drafts and relationship
   memory with persistence/UI automation; settings, plans, privacy/export,
-  authentication, and paywall with release UI automation; composer, generation
-  states, revision, voice/share, and pickers with accessibility/core-flow work;
+  authentication, and paywall with release UI automation; composer, candidate
+  choice, generation states, revision, voice/share, and pickers with the
+  approved three-option flow plus accessibility/core-flow work;
   then move `MomentModel` and draft recovery into their owning file. DoD: every
   region in the architecture map names a cohesive source file instead of the
   monolith; the original file is removed or has one reason to change; each
@@ -167,10 +196,12 @@ completed item instead of turning this file into a status log.
 ## Native V1 — Release Evidence
 
 - [ ] Run the complete physical-device/TestFlight acceptance loop. DoD: first
-  run → person/moment/detail → private or careful draft → adjust without losing
-  work → copy/share/send/save passes on a supported iPhone; voice input succeeds
-  where on-device speech is available; offline and refusal states are honest;
-  release-candidate evidence contains no user content or secrets.
+  run → person/relationship/moment/detail → private or careful candidate set →
+  choose a message → adjust without losing work → copy/share/send/save passes on
+  a supported iPhone; voice input succeeds where on-device speech is available;
+  offline and refusal states are honest; release-candidate evidence contains no
+  user content or secrets. Until the three-option feasibility gate passes, use
+  the current one-draft loop rather than claiming candidate-choice proof.
 
 - [ ] Qualify optional system surfaces. DoD: App Intent/Shortcuts, widget,
   Control Center/Action Button, and Share Extension are launched from their real
