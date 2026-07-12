@@ -1,0 +1,82 @@
+# Capabilities
+
+This is the compact catalogue of behaviour present in the native ProsePal app.
+Detailed code and test evidence lives in
+[feature-status.csv](../reference/feature-status.csv); unresolved work lives in
+[BACKLOG.md](../BACKLOG.md).
+
+## Moment writing
+
+| Capability | Current behaviour |
+|---|---|
+| Person-first entry | The user starts with who the message is for, then chooses relationship and occasion context. |
+| One true thing | The user supplies the real sentence or detail the draft should preserve. |
+| Voice input | On-device speech capture can fill the moment detail when the platform supports it. |
+| Register | Quick, Your Words, and Take Care shape how much the app writes and how cautiously it responds. |
+| Locale | The app derives locale and spelling behaviour from the device rather than exposing a spelling picker. |
+| Explicit generation | Drafting begins only after the user taps Write Draft. |
+| Private Draft | Everyday moments use Foundation Models on device when available. |
+| Take More Care | Harder moments use the ProsePal gateway and provider-neutral product language. |
+| Fallback | Retryable failures can move between eligible lanes while content blocks remain blocked. |
+
+## Draft protection and results
+
+| Capability | Current behaviour |
+|---|---|
+| Primary draft | One generated message is presented as the main writing surface. |
+| Edit | The user can edit the active draft directly. |
+| Adjust | Warmer, shorter, more direct, and Take More Care actions can reshape a draft. |
+| Undo and keep | Edits and rewrites create recoverable snapshots before replacing current text. |
+| Relaunch recovery | The active draft and its snapshot history can be recovered after an app restart. |
+| Copy | Copies the active message with visible confirmation. |
+| Share/send | Uses the native share sheet; the destination remains the user’s choice. |
+| Save | Adds a draft to the local saved list only after an explicit user action. |
+
+## Relationship memory
+
+| Capability | Current behaviour |
+|---|---|
+| Truth Beads | User-approved facts can be saved per person and included in future private drafting. |
+| Voice Card | One user-written style example can guide future private drafting. |
+| Local vault | SwiftData stores relationship memory and saved drafts in an app-private, backup-excluded location. |
+| Export | Settings can produce and copy a JSON export of local relationship memory and saved drafts. |
+| Delete | Destructive actions require confirmation, persist honestly, and roll back after save failure. |
+
+## Identity and subscriptions
+
+| Capability | Current behaviour |
+|---|---|
+| Anonymous first use | Welcome and first writing value do not require an account. |
+| Sign in with Apple | Apple identity is exchanged through Supabase Auth and the session is stored in Keychain. |
+| Session refresh | Access-token refresh is single-flight, persists rotated tokens, and distinguishes terminal from transient failure. |
+| Purchase | StoreKit 2 purchase does not require ProsePal sign-in first. |
+| Restore | Restore is available from Paywall and Settings. |
+| Transaction updates | Launch-time StoreKit updates converge verified purchases, renewals, approvals, sharing changes, and revocations. |
+| Account deletion | The authenticated server boundary deletes account data and the app clears local account state. |
+
+## Safety and honesty
+
+| Capability | Current behaviour |
+|---|---|
+| Pressure Check | Local writing feedback flags obvious guilt or reassurance pressure without diagnosing the user. |
+| Provider refusal | Model and gateway refusals become calm, provider-neutral errors. |
+| Defensive block | A narrow existing explicit-input block stops drafting and presents support resources. It is not a general crisis classifier. |
+| Offline recovery | The note remains local and the user receives a real Try Again action. |
+| Usage limits | The gateway’s user-safe policy message is shown without invented counters or reset dates. |
+
+## System surfaces
+
+The project contains native App Intent, Shortcuts, widget/control, and Share
+Extension targets. These are optional v1 entry points: each ships only after its
+embedded production target passes release qualification.
+
+## Platform and dependency boundary
+
+- Native target: iOS 26 and later.
+- UI: SwiftUI.
+- Local models: Foundation Models.
+- Storage: SwiftData and Keychain.
+- Purchase: StoreKit 2.
+- Backend: Supabase Auth, Edge Functions, and PostgreSQL policy.
+- Third-party provider SDKs: none in the native app.
+- Android and web product clients: outside this native rewrite.

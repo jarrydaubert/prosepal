@@ -36,11 +36,12 @@ swift test
 ## Canonical Docs
 
 - `AGENTS.md`
-- `docs/NEXT_RELEASE_BRIEF.md`
+- `docs/README.md`
+- `docs/product/v1-launch-contract.md`
 - `docs/BACKLOG.md`
-- `prosepal-ios/NATIVE_2026_TECHNICAL_DIRECTION.md`
+- `docs/engineering/architecture.md`
 - `docs/DOCS_POLICY.md`
-- `docs/DEVOPS.md`
+- `docs/operations/local-development.md`
 
 ## Claude Commands
 

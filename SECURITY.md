@@ -31,5 +31,4 @@ Include:
 This policy covers the mobile app repository and related release/security workflows.
 
 For implementation-level controls and architecture details, see:
-- `docs/SECURITY.md`
-
+- `docs/engineering/data-and-privacy.md`

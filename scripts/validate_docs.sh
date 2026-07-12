@@ -1,0 +1,149 @@
+#!/bin/bash
+
+set -euo pipefail
+
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$REPO_ROOT"
+
+ruby <<'RUBY'
+require "cgi"
+require "find"
+require "pathname"
+
+root = Pathname.pwd
+docs_root = root.join("docs")
+index_path = docs_root.join("README.md")
+errors = []
+
+required = %w[
+  docs/README.md
+  docs/BACKLOG.md
+  docs/DOCS_POLICY.md
+  docs/guide/app-guide.html
+  docs/product/overview.md
+  docs/product/v1-launch-contract.md
+  docs/product/capabilities.md
+  docs/product/user-journeys.md
+  docs/engineering/architecture.md
+  docs/engineering/ai-generation.md
+  docs/engineering/data-and-privacy.md
+  docs/engineering/auth-and-accounts.md
+  docs/engineering/subscriptions.md
+  docs/operations/getting-started.md
+  docs/operations/local-development.md
+  docs/operations/staging.md
+  docs/operations/release.md
+  docs/operations/service-ownership.md
+  docs/quality/testing.md
+  docs/quality/ai-output-quality.md
+  docs/quality/accessibility.md
+  docs/quality/release-evidence.md
+  docs/reference/configuration.md
+  docs/reference/service-endpoints.md
+  docs/reference/feature-status.csv
+  docs/history/README.md
+]
+
+required.each do |relative|
+  errors << "missing required document: #{relative}" unless root.join(relative).file?
+end
+
+index = index_path.read
+active_files = []
+Find.find(docs_root.to_s) do |path|
+  relative = Pathname(path).relative_path_from(docs_root).to_s
+  if File.directory?(path)
+    Find.prune if relative == "history"
+    next
+  end
+  next if relative == "README.md"
+  next if relative.start_with?("guide/assets/")
+  next unless %w[.md .html .csv].include?(File.extname(path))
+
+  active_files << relative
+end
+
+
+active_files.sort.each do |relative|
+  errors << "active document is not indexed in docs/README.md: docs/#{relative}" unless index.include?("./#{relative}")
+end
+
+link_sources = []
+Find.find(docs_root.to_s) do |path|
+  next unless File.file?(path)
+  link_sources << Pathname(path) if %w[.md .html].include?(File.extname(path))
+end
+%w[README.md AGENTS.md CLAUDE.md SECURITY.md prosepal-ios/README.md supabase/README.md design-system/readme.md].each do |relative|
+  path = root.join(relative)
+  link_sources << path if path.file?
+end
+
+link_sources.each do |source|
+  content = source.read
+  targets = content.scan(/\[[^\]]*\]\(([^)]+)\)/).flatten
+  targets.concat(content.scan(/(?:href|src)=["']([^"']+)["']/i).flatten)
+
+  targets.each do |raw_target|
+    target = raw_target.strip
+    target = target[1...-1] if target.start_with?("<") && target.end_with?(">")
+    target = target.split(/\s+["']/).first
+    next if target.empty? || target.start_with?("#", "//")
+    next if target.match?(/\A[a-z][a-z0-9+.-]*:/i)
+
+    target = CGI.unescape(target.split(/[?#]/, 2).first)
+    candidate = if target.start_with?("/")
+      root.join(target.delete_prefix("/"))
+    else
+      source.dirname.join(target)
+    end.cleanpath
+
+    unless candidate.exist?
+      relative_source = source.relative_path_from(root)
+      errors << "broken local link in #{relative_source}: #{raw_target}"
+    end
+  end
+end
+
+active_text_files = []
+Find.find(docs_root.to_s) do |path|
+  relative = Pathname(path).relative_path_from(docs_root).to_s
+  if File.directory?(path)
+    Find.prune if relative == "history"
+    next
+  end
+  next if relative == "BACKLOG.md" || relative == "reference/feature-status.csv"
+  active_text_files << Pathname(path) if %w[.md .html].include?(File.extname(path))
+end
+active_text_files.concat(%w[README.md AGENTS.md CLAUDE.md SECURITY.md].map { |path| root.join(path) })
+
+retired_paths = %r{
+  docs/(?:NEXT_RELEASE_BRIEF|FEATURES|FEATURE_STATUS|DEVOPS|SERVICE_CONFIG|SERVICE_ENDPOINTS|USER_JOURNEYS|SECURITY|AI_OUTPUT_QUALITY|IOS_RELEASE_CHECKLIST|LAUNCH_CHECKLIST|RELATIONSHIP_ASSISTANT_VISION|PRODUCT_STRATEGY|NATIVE_APP_GUIDE)\.(?:md|csv|html)
+  |prosepal-ios/(?:NATIVE_2026_TECHNICAL_DIRECTION|NATIVE_DEVICE_DEBUG_RUNBOOK)\.md
+}x
+
+status_phrases = /\b(?:last verified|completion date|current status|candidate backlog|remaining work)\b/i
+
+active_text_files.each do |path|
+  next unless path.file?
+  path.each_line.with_index(1) do |line, number|
+    relative = path.relative_path_from(root)
+    errors << "retired canonical path in #{relative}:#{number}" if line.match?(retired_paths)
+    errors << "status-report language in active doc #{relative}:#{number}" if line.match?(status_phrases)
+  end
+end
+
+backlog = docs_root.join("BACKLOG.md")
+if backlog.file?
+  backlog.each_line.with_index(1) do |line, number|
+    errors << "completed checkbox belongs outside the backlog: docs/BACKLOG.md:#{number}" if line.match?(/^\s*-\s*\[[xX]\]/)
+  end
+end
+
+unless errors.empty?
+  warn "Documentation validation failed:"
+  errors.uniq.sort.each { |error| warn "- #{error}" }
+  exit 1
+end
+
+puts "Documentation validation passed (#{active_files.length} active documents indexed; #{link_sources.length} files checked for local links)."
+RUBY

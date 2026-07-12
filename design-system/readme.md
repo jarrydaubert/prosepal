@@ -12,13 +12,17 @@ This repository is the design system: foundations (color, type, spacing, motion)
 
 ## Sources
 
-ProsePal was designed **from scratch** — there was no prior codebase, Figma file, or brand kit. Everything here is original to this system. If/when real product source appears (a SwiftUI repo, a Figma library, marketing copy), record the links here so future work can reconcile against them:
+ProsePal’s visual system was originally explored from scratch. The active native
+implementation now lives in `../prosepal-ios/Sources/ProsePalUI/`. Use this
+bundle as visual source and historical rationale, then verify current behaviour
+against the SwiftUI app and
+[native architecture](../docs/engineering/architecture.md).
 
 - Codebase: `../prosepal-ios/`
 - Figma: _none provided_
 - Brand / copy decks: _none provided_
 
-### Font substitutions (please confirm)
+### Font substitutions
 
 ProsePal is designed around **Apple's native faces**. For the web design system to render, each is mapped to the closest embeddable Google font. On a real Apple device the genuine face renders via the `-apple-system` fallback.
 

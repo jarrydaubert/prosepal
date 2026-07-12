@@ -28,9 +28,10 @@ The active build direction is the native SwiftUI rewrite in `prosepal-ios/`.
 
 ## Source Of Truth
 
-- Native technical direction: `prosepal-ios/NATIVE_2026_TECHNICAL_DIRECTION.md`
-- Release/readiness scope and gates: `docs/NEXT_RELEASE_BRIEF.md`
-- DevOps runbook: `docs/DEVOPS.md`
+- Documentation index: `docs/README.md`
+- Native technical architecture: `docs/engineering/architecture.md`
+- Release/readiness scope and gates: `docs/product/v1-launch-contract.md`
+- Development and release runbooks: `docs/operations/`
 - Open work only: `docs/BACKLOG.md`
 - Documentation rules: `docs/DOCS_POLICY.md`
 
@@ -62,7 +63,8 @@ xcodebuild -project ProsePal.xcodeproj -target ProsePal -sdk iphonesimulator COD
 ```
 
 For repo/workflow changes, also run the relevant release preflight from
-`docs/DEVOPS.md` and update that runbook in the same change.
+`docs/operations/local-development.md` and update the owning operations doc in
+the same change.
 
 If any required validation cannot be run, state that clearly.
 

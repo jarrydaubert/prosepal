@@ -1,46 +1,78 @@
 # Documentation Policy
 
-This policy keeps project docs evergreen and actionable.
+This policy keeps ProsePal documentation accurate, discoverable, and clear
+about the difference between current behaviour, open work, and history.
 
-## Scope
+## Canonical locations
 
-- Applies to all docs in `docs/` and `prosepal-ios/*.md`.
-- Exception: release records/postmortems/changelogs can be time-bound.
-- Exception: `docs/BACKLOG.md` is the active build tracker and uses `[ ]` for
-  unresolved work only. Completed items are removed instead of retained as a
-  status history.
-- Exception: `docs/FEATURE_STATUS.csv` is the canonical user-story evidence
-  matrix for feature audit work. It may contain implementation, test, error,
-  fix, and retest status columns. Its `implementation_status` values describe
-  code-completeness for the stated expected behavior; release/App Review
-  readiness gaps belong in its test/error/retest/notes columns and in
-  `docs/BACKLOG.md` when they remain open work.
+| Subject | Owner |
+|---|---|
+| Product promise and boundaries | `docs/product/` |
+| Current technical design | `docs/engineering/` |
+| Runnable workflows | `docs/operations/` |
+| Quality standards and evidence contracts | `docs/quality/` |
+| Exact settings, endpoints, and evidence matrix | `docs/reference/` |
+| Open work | `docs/BACKLOG.md` |
+| Frozen context and release records | `docs/history/` |
+| Repository rules | `AGENTS.md` |
 
-## Rules
+Each subject has one canonical owner. Other files link to it instead of copying
+the same instructions.
 
-- Write docs as stable runbooks/specs, not status reports.
-- Do not include test counts, pass rates, or timing claims.
-- Do not include checkboxes, progress markers, or "last verified" dates outside
-  the active backlog tracker.
-- Do not include open issues, TODOs, or in-flight work in docs.
-- Track open implementation and release work only in [BACKLOG.md](./BACKLOG.md).
-- Keep examples minimal and implementation-agnostic where possible.
-- Prefer "how to run" + "pass criteria" format over narrative.
-- Platform, App Store Review, subscription, privacy, accessibility, and tooling
-  claims must include direct source links close to the claim when they are used
-  to justify product or engineering direction.
-- Taste, brand, and product-positioning statements do not need citations, but
-  they must not be presented as platform requirements.
+## Evergreen rules
 
-## Required Structure For Operational Docs
+- Active docs describe current behaviour, stable policy, or a runnable process.
+- Open work, “still needs”, proposed tickets, and unfinished status belong only
+  in `BACKLOG.md`.
+- Completed implementation history belongs in Git history or
+  `reference/feature-status.csv`, not the backlog.
+- Test counts, pass percentages, dated verification claims, and temporary
+  worktree paths do not belong in active docs.
+- Commands include prerequisites, pass criteria, and failure handling.
+- Architecture diagrams match current source and label historical or optional
+  components explicitly.
+- User-facing and platform claims link to authoritative sources when the claim
+  depends on external policy.
+- Active documents are linked from `docs/README.md` and reachable within two
+  clicks from the repository README.
+- Package READMEs stay short and point to canonical docs rather than duplicating
+  runbooks.
 
-- Purpose
-- Prerequisites
-- Commands/steps
-- Pass criteria
-- Failure handling/escalation path
+## Allowed time-bound material
 
-## Ownership
+- `docs/BACKLOG.md`: unresolved work with `[ ]` and a definition of done.
+- `docs/reference/feature-status.csv`: implementation and evidence history.
+- `docs/history/releases/`: immutable release evidence and postmortems.
+- Private `artifacts/release/`: candidate-specific evidence, normally untracked.
 
-- Any PR that adds TODO/status language to docs must move that content to backlog.
-- Any PR that changes workflows must update `docs/DEVOPS.md` in the same PR.
+## Historical material
+
+Historical files live under `docs/history/` and begin with, or inherit from
+their folder, a clear frozen-context notice. They may contain dates, retired
+technology, old identifiers, and superseded plans. Active docs may link to them
+for rationale but must not rely on them for current commands.
+
+## Documentation changes
+
+- Read the complete source document before merging or removing it.
+- Use `git mv` when a document still has a clear successor.
+- Preserve valuable superseded strategy under `history/` before replacing it.
+- Remove a redundant active file only after its unique content is incorporated
+  or intentionally archived.
+- Update inbound links in the same change.
+- Workflow changes update the relevant file under `docs/operations/`.
+- Configuration changes update `docs/reference/configuration.md`.
+- Public behaviour changes update `docs/product/capabilities.md` and the feature
+  status matrix when evidence changes.
+
+## Validation
+
+Run:
+
+```bash
+./scripts/validate_docs.sh
+./scripts/release_preflight.sh native --no-env-file
+```
+
+Documentation validation checks the canonical inventory, local links, forbidden
+status language in active docs, and references to retired canonical paths.
