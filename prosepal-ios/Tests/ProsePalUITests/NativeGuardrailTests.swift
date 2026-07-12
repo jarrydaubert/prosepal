@@ -2,6 +2,43 @@ import Foundation
 import Testing
 
 @Test
+func momentExperienceMonolithCanOnlyShrink() throws {
+    // Bug this catches: a feature adds more code to the transitional monolith
+    // instead of extracting the touched surface behind a cohesive boundary.
+    let source = try String(
+        contentsOf: packageRoot.appending(path: "Sources/ProsePalUI/MomentExperienceView.swift"),
+        encoding: .utf8
+    )
+    let currentLineCount = source.reduce(into: 0) { count, character in
+        if character == "\n" {
+            count += 1
+        }
+    } + (source.last == "\n" || source.isEmpty ? 0 : 1)
+
+    // This baseline may only move downward. Equality prevents an extraction
+    // from leaving unused headroom for later growth.
+    let lineCountBaseline = 9_126
+    #expect(currentLineCount == lineCountBaseline)
+}
+
+@Test
+func momentExperienceSourceStringGuardsCanOnlyDecrease() throws {
+    // Bug this catches: a new existence-only test further couples the suite to
+    // the monolith instead of testing the extracted surface's behaviour.
+    let monolithPath = "Sources/ProsePalUI/MomentExperienceView.swift"
+    let testFiles = try textFiles(in: [packageRoot.appending(path: "Tests")])
+        .filter { $0.lastPathComponent != "NativeGuardrailTests.swift" }
+    let referenceCount = try testFiles.reduce(into: 0) { count, file in
+        let source = try String(contentsOf: file, encoding: .utf8)
+        count += source.components(separatedBy: monolithPath).count - 1
+    }
+
+    // This baseline may only move downward as guards become behavioral tests.
+    let sourceStringGuardBaseline = 6
+    #expect(referenceCount == sourceStringGuardBaseline)
+}
+
+@Test
 func providerNamesStayOutOfAppAndUISource() throws {
     let bannedTerms = [
         "Firebase",

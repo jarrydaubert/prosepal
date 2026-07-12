@@ -15,6 +15,8 @@ completed item instead of turning this file into a status log.
 - When touching `MomentExperienceView.swift`, extract the affected surface when
   the boundary is safe and replace source-string guards with behavioral or
   view-layer coverage where practical.
+- The monolith line-count and source-string-test ceilings are shrink-only:
+  lower both relevant baselines in the same commit as each extraction.
 - New user-facing copy must use localization-safe APIs. New colors must be
   semantic and adaptive even while full localization and Dark Mode remain
   post-v1 work.
@@ -70,6 +72,21 @@ completed item instead of turning this file into a status log.
   auth and development-secret rejection tests configure a callable provider and
   explicitly assert that it receives zero requests; regressions fail rather than
   hanging the test run.
+
+- [ ] Decompose `MomentExperienceView.swift` incrementally while completing
+  funded v1 work; do not run a separate big-bang rewrite. Extraction order is:
+  root navigation/welcome with navigation work; saved drafts and relationship
+  memory with persistence/UI automation; settings, plans, privacy/export,
+  authentication, and paywall with release UI automation; composer, generation
+  states, revision, voice/share, and pickers with accessibility/core-flow work;
+  then move `MomentModel` and draft recovery into their owning file. DoD: every
+  region in the architecture map names a cohesive source file instead of the
+  monolith; the original file is removed or has one reason to change; each
+  extracted user-facing surface has a compiling `#Preview`; each moved region's
+  source-string guard is deleted or replaced by behavioral/view coverage in the
+  same commit; both shrink-only guardrail baselines are lowered; the architecture
+  map is updated; Swift package tests and the complete app target build pass
+  after every extraction.
 
 - [ ] Complete core-flow accessibility and visual hardening. DoD: release flows
   pass VoiceOver, Dynamic Type, hit-target, contrast, keyboard/focus, Reduce
