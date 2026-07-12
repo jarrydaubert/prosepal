@@ -57,7 +57,8 @@ Changing the underlying moment invalidates stale generated output.
 
 - Copy and native sharing act on the current visible draft.
 - Saving is deliberate; generation alone does not create visible history.
-- Saved drafts can be opened, edited, shared, and deleted.
+- Saved drafts can be opened, edited, and shared. Deletion asks for confirmation;
+  failed edits or deletions retain the last persisted draft and show an honest error.
 - Truth Beads and Voice Cards require destructive confirmation.
 - Relationship-memory deletion rolls back after a failed save and reports that
   the item remains stored.

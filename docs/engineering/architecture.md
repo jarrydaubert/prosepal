@@ -139,7 +139,8 @@ inside the monolith:
 | App-root navigation and welcome state | `MomentAppRootView.swift`: `MomentAppRootView`, `MomentRootTabs`, `MomentRootTab`, `MomentWelcomeState` |
 | Core Moment composer and generated-draft experience | `MomentExperienceView.swift`: `MomentSheetView`, including loading, retry, refusal, revision, pressure feedback, memory controls, copy/share/save, and draft history |
 | Relationship and occasion pickers | `MomentExperienceView.swift`: `MomentRelationshipPickerSheet`, `MomentOccasionPickerSheet`, and their row types |
-| Saved-draft library and detail | `MomentExperienceView.swift`: `SavedMomentDraftsView`, `SavedMomentDraftLibraryCard`, `SavedMomentDraftDetailView` |
+| Saved-draft library | `MomentExperienceView.swift`: `SavedMomentDraftsView`, `SavedMomentDraftLibraryCard` |
+| Saved-draft detail and persistence | `SavedMomentDraftDetailView.swift` and `SavedDraftPersistence.swift`: `SavedMomentDraftDetailView`, `persistSavedDraftEdit`, `persistSavedDraftDeletion` |
 | Relationship-memory library and detail | `MomentExperienceView.swift`: `RelationshipMemoryVaultView`, `RelationshipMemoryDetailView`, `RelationshipVoiceCardDetailView` |
 | Settings and subscription detail | `MomentExperienceView.swift`: `MomentSettingsView`, `MomentPlanDetailView`, and plan presentation helpers |
 | Privacy, export, authentication, and paywall | `MomentExperienceView.swift`: `MomentPrivacyDataView`, `MomentLocalDataExportView`, `MomentAppleSignInControl`, `MomentPaywallSheet` |

@@ -738,7 +738,7 @@ public final class MomentModel {
     }
 }
 
-private struct MomentShareRequest: Identifiable {
+struct MomentShareRequest: Identifiable {
     let id = UUID()
     let activityItems: [Any]
 
@@ -1126,7 +1126,7 @@ private struct MomentCopiedToast: View {
     }
 }
 
-private extension View {
+extension View {
     @ViewBuilder
     func momentShareSheet(_ request: Binding<MomentShareRequest?>) -> some View {
         #if canImport(UIKit)
@@ -5638,7 +5638,7 @@ private struct SavedMomentDraftLibraryCard: View {
     }
 }
 
-private struct MomentDetailTopChrome<Trailing: View>: View {
+struct MomentDetailTopChrome<Trailing: View>: View {
     let title: String
     let backAction: () -> Void
     private let trailing: Trailing
@@ -5684,7 +5684,7 @@ private struct MomentDetailTopChrome<Trailing: View>: View {
     }
 }
 
-private struct MomentDetailHero: View {
+struct MomentDetailHero: View {
     let systemImage: String
     let title: String
     let detail: String
@@ -5716,7 +5716,7 @@ private struct MomentDetailHero: View {
     }
 }
 
-private struct MomentDetailNotice: View {
+struct MomentDetailNotice: View {
     let text: String
 
     var body: some View {
@@ -5733,7 +5733,7 @@ private struct MomentDetailNotice: View {
     }
 }
 
-private struct MomentDetailCard<Content: View>: View {
+struct MomentDetailCard<Content: View>: View {
     let title: String
     let systemImage: String
     let footer: String?
@@ -5784,204 +5784,6 @@ private struct MomentDetailCard<Content: View>: View {
                 .stroke(Color.prosePalNavy.opacity(0.10), lineWidth: 1)
         }
         .shadow(color: Color.prosePalCoralDeep.opacity(0.06), radius: 10, x: 0, y: 5)
-    }
-}
-
-private struct SavedMomentDraftDetailView: View {
-    @Environment(\.dismiss) private var dismiss
-    @Environment(\.modelContext) private var modelContext
-    let draft: SavedMomentDraftRecord
-    @State private var isEditing = false
-    @State private var editedMessageText: String
-    @State private var notice: String?
-    @State private var shareRequest: MomentShareRequest?
-    private let diagnostics = NativeDiagnosticsLogger.shared
-
-    init(draft: SavedMomentDraftRecord) {
-        self.draft = draft
-        _editedMessageText = State(initialValue: draft.messageText)
-    }
-
-    var body: some View {
-        VStack(spacing: 0) {
-            MomentDetailTopChrome(title: "Draft", backAction: { dismiss() }) {
-                Button(isEditing ? "Save" : "Edit") {
-                    if isEditing {
-                        saveEdits()
-                    } else {
-                        beginEditing()
-                    }
-                }
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(isEditing && !canSaveEdits ? Color.prosePalSlate.opacity(0.45) : Color.prosePalCoralDeep)
-                .frame(minHeight: 42)
-                .disabled(isEditing && !canSaveEdits)
-            }
-            .padding(.horizontal, 20)
-            .padding(.top, 10)
-            .padding(.bottom, 8)
-
-            ScrollView {
-                VStack(alignment: .leading, spacing: 18) {
-                    if let notice {
-                        MomentDetailNotice(text: notice)
-                    }
-
-                    MomentDetailHero(
-                        systemImage: draft.occasion.symbolName,
-                        title: draft.title,
-                        detail: draft.subtitle
-                    )
-
-                    MomentDetailCard(
-                        title: isEditing ? "Edit draft" : "Saved draft",
-                        systemImage: "bookmark"
-                    ) {
-                        if isEditing {
-                            TextField(
-                                "Draft text",
-                                text: $editedMessageText.prosePalLimited(to: ProsePalTextLimit.draft),
-                                axis: .vertical
-                            )
-                                .font(.system(.title3, design: .serif))
-                                .lineSpacing(5)
-                                .lineLimit(8...18)
-                                .textFieldStyle(.plain)
-                                .foregroundStyle(Color.prosePalInk)
-                                .accessibilityValue("\(editedMessageText.count) of \(ProsePalTextLimit.draft) characters")
-                        } else {
-                            Text(draft.messageText)
-                                .font(.system(.title3, design: .serif))
-                                .lineSpacing(5)
-                                .foregroundStyle(Color.prosePalInk)
-                                .textSelection(.enabled)
-                        }
-                    }
-
-                    savedDraftActionRow
-
-                    savedDraftDeleteButton
-                }
-                .padding(.horizontal, 20)
-                .padding(.top, 12)
-                .padding(.bottom, 44)
-            }
-            .scrollIndicators(.hidden)
-        }
-        .background {
-            MomentAtmosphericBackground(isCareful: false)
-        }
-        #if os(iOS)
-        .toolbar(.hidden, for: .navigationBar)
-        #endif
-        .momentShareSheet($shareRequest)
-    }
-
-    @ViewBuilder
-    private var savedDraftActionRow: some View {
-        HStack(spacing: 12) {
-            if isEditing {
-                Button {
-                    cancelEditing()
-                } label: {
-                    Label("Cancel", systemImage: "xmark")
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.bordered)
-                .buttonBorderShape(.capsule)
-                .tint(.prosePalCoralDeep)
-
-                Button {
-                    saveEdits()
-                } label: {
-                    Label("Save", systemImage: "checkmark")
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.borderedProminent)
-                .buttonBorderShape(.capsule)
-                .tint(.prosePalCoral)
-                .disabled(!canSaveEdits)
-            } else {
-                Button {
-                    copy(draft.messageText)
-                } label: {
-                    Label("Copy", systemImage: "doc.on.doc")
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.bordered)
-                .buttonBorderShape(.capsule)
-                .tint(.prosePalCoralDeep)
-
-                Button {
-                    shareRequest = MomentShareRequest.text(draft.messageText)
-                    diagnostics.messageAction("share", source: "saved_draft", messageCharacters: draft.messageText.count)
-                } label: {
-                    Label("Share", systemImage: "square.and.arrow.up")
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.borderedProminent)
-                .buttonBorderShape(.capsule)
-                .tint(.prosePalCoral)
-            }
-        }
-        .controlSize(.large)
-    }
-
-    private var savedDraftDeleteButton: some View {
-        Button(role: .destructive) {
-            deleteDraft()
-        } label: {
-            Label("Delete draft", systemImage: "trash")
-                .font(.subheadline.weight(.semibold))
-                .frame(maxWidth: .infinity)
-                .frame(height: 48)
-        }
-        .buttonStyle(.plain)
-        .foregroundStyle(Color.red.opacity(0.86))
-        .background(Color.red.opacity(0.08), in: Capsule(style: .continuous))
-    }
-
-    private func copy(_ text: String) {
-        #if canImport(UIKit)
-        UIPasteboard.general.string = text
-        #endif
-    }
-
-    private var canSaveEdits: Bool {
-        !editedMessageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-    }
-
-    private func beginEditing() {
-        editedMessageText = draft.messageText
-        withAnimation(.easeInOut(duration: 0.18)) {
-            notice = nil
-            isEditing = true
-        }
-    }
-
-    private func cancelEditing() {
-        editedMessageText = draft.messageText
-        withAnimation(.easeInOut(duration: 0.18)) {
-            isEditing = false
-        }
-    }
-
-    private func saveEdits() {
-        guard canSaveEdits else { return }
-        draft.updateMessageText(editedMessageText)
-        try? modelContext.save()
-        editedMessageText = draft.messageText
-
-        withAnimation(.easeInOut(duration: 0.18)) {
-            isEditing = false
-            notice = "Saved"
-        }
-    }
-
-    private func deleteDraft() {
-        modelContext.delete(draft)
-        try? modelContext.save()
-        dismiss()
     }
 }
 

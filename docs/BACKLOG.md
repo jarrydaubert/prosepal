@@ -59,12 +59,6 @@ completed item instead of turning this file into a status log.
   purchase/restore presentation, destructive confirmation, Settings semantics,
   and one accessibility-size identifier-driven navigation path.
 
-- [ ] Make saved-draft edit and deletion persistence honest. DoD: edit failure
-  restores the last persisted text and never shows a false Saved notice;
-  deletion requires an intentional destructive action, rolls back and keeps the
-  detail open when persistence fails, and dismisses only after a successful
-  save; behavioral tests cover success, cancellation, and failure.
-
 - [ ] Make critical asynchronous tests fail fast and prove rejected requests
   have no expensive side effects. DoD: auth refresh and Moment-model test
   synchronization has an explicit deadline instead of unbounded polling;
