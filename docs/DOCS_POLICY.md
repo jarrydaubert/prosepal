@@ -37,6 +37,9 @@ the same instructions.
   clicks from the repository README.
 - Package READMEs stay short and point to canonical docs rather than duplicating
   runbooks.
+- Repo-local agent commands and skills are kept only when they encode a
+  ProsePal-specific engineering workflow; generic marketing or framework packs
+  belong outside this repository.
 
 ## Allowed time-bound material
 
@@ -90,4 +93,5 @@ Run:
 ```
 
 Documentation validation checks the canonical inventory, local links, forbidden
-status language in active docs, and references to retired canonical paths.
+status language in active docs, references to retired canonical paths, and
+repository paths used by active agent commands and skills.

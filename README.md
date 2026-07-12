@@ -58,8 +58,8 @@ it does not control whether sensitive writing receives careful treatment.
 - `docs/` — canonical app documentation and frozen history.
 - `design-system/` — web-rendered design source and archived visual directions.
 - `scripts/` — validation, staging guards, Xcode helpers, and repository safety.
-- `.agents/` and `.claude/` — internal agent skills and commands, separate from
-  app documentation.
+- `.agents/` and `.claude/` — the small native audit, security, testing, and
+  cleanup command set; canonical app knowledge remains in `docs/`.
 
 ## Validation
 

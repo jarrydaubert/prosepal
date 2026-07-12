@@ -87,6 +87,17 @@ end
   link_sources << path if path.file?
 end
 
+instruction_sources = []
+%w[.claude/commands .agents/skills].each do |relative_root|
+  instruction_root = root.join(relative_root)
+  next unless instruction_root.directory?
+
+  Find.find(instruction_root.to_s) do |path|
+    next unless File.file?(path)
+    instruction_sources << Pathname(path) if %w[.md .html].include?(File.extname(path))
+  end
+end
+
 link_sources.each do |source|
   content = source.read
   targets = content.scan(/\[[^\]]*\]\(([^)]+)\)/).flatten
@@ -113,6 +124,29 @@ link_sources.each do |source|
   end
 end
 
+# Repo-local commands and skills may include upstream reference links whose
+# optional reference packs are not vendored here. Validate every link they make
+# into this repository without treating those external package-relative links
+# as repository documentation.
+instruction_sources.each do |source|
+  content = source.read
+  targets = content.scan(/\[[^\]]*\]\(([^)]+)\)/).flatten
+  targets.concat(content.scan(/(?:href|src)=["']([^"']+)["']/i).flatten)
+
+  targets.each do |raw_target|
+    target = raw_target.strip
+    target = target[1...-1] if target.start_with?("<") && target.end_with?(">")
+    target = target.split(/\s+["']/).first
+    next unless target.match?(%r{\A(?:docs|prosepal-ios|supabase|scripts|design-system|\.claude|\.agents)/})
+
+    candidate = root.join(CGI.unescape(target.split(/[?#]/, 2).first)).cleanpath
+    unless candidate.exist?
+      relative_source = source.relative_path_from(root)
+      errors << "broken repository link in #{relative_source}: #{raw_target}"
+    end
+  end
+end
+
 active_text_files = []
 Find.find(docs_root.to_s) do |path|
   relative = Pathname(path).relative_path_from(docs_root).to_s
@@ -125,10 +159,12 @@ Find.find(docs_root.to_s) do |path|
 end
 active_text_files.concat(%w[README.md AGENTS.md CLAUDE.md SECURITY.md].map { |path| root.join(path) })
 
-active_text_files.each do |path|
+path_checked_files = (active_text_files + instruction_sources).uniq
+
+path_checked_files.each do |path|
   next unless path.file?
   path.read.scan(/`([^`\n]+)`/).flatten.each do |token|
-    next unless token.match?(%r{\A(?:docs|prosepal-ios|supabase|scripts|design-system)/})
+    next unless token.match?(%r{\A(?:docs|prosepal-ios|supabase|scripts|design-system|\.claude|\.agents)/})
     next if token.match?(/[\s*<$]/)
 
     candidate = root.join(token.sub(/:\d+\z/, ""))
@@ -143,12 +179,14 @@ retired_paths = %r{
 
 status_phrases = /\b(?:last verified|completion date|current status|candidate backlog|remaining work)\b/i
 
-active_text_files.each do |path|
+path_checked_files.each do |path|
   next unless path.file?
   path.each_line.with_index(1) do |line, number|
     relative = path.relative_path_from(root)
     errors << "retired canonical path in #{relative}:#{number}" if line.match?(retired_paths)
-    errors << "status-report language in active doc #{relative}:#{number}" if line.match?(status_phrases)
+    if active_text_files.include?(path)
+      errors << "status-report language in active doc #{relative}:#{number}" if line.match?(status_phrases)
+    end
   end
 end
 
@@ -165,5 +203,5 @@ unless errors.empty?
   exit 1
 end
 
-puts "Documentation validation passed (#{active_files.length} active documents indexed; #{link_sources.length} files checked for local links)."
+puts "Documentation validation passed (#{active_files.length} active documents indexed; #{link_sources.length} documentation files and #{instruction_sources.length} instruction files checked)."
 RUBY

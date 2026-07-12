@@ -24,5 +24,6 @@ Only these slash commands are active in this repo.
 
 - Keep findings actionable and prioritized by severity.
 - Do not store progress/status in docs; open work belongs in `docs/BACKLOG.md`.
-- Use `docs/DEVOPS.md` for CI/test/release runbook and validation commands.
+- Use `docs/quality/testing.md` for test commands and
+  `docs/operations/release.md` for release gates.
 - Use absolute file paths and line references in findings when possible.
