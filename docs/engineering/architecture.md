@@ -98,6 +98,55 @@ See [Data and privacy](./data-and-privacy.md) for retention and storage details.
 - Add behaviour behind an injectable boundary and deterministic tests.
 - Keep optional system surfaces subordinate to the core app launch path.
 
+## Code-organization principles
+
+File size is a signal, not an architecture rule. Split code when a region has a
+different owner, reason to change, dependency set, or test boundary. Do not split
+small helpers merely to satisfy a line-count target.
+
+For SwiftUI in this repository:
+
+- observable models own state transitions, cancellation, persistence
+  coordination, and service calls;
+- views render state and send user intent back to those models;
+- a feature surface that can be named, previewed, tested, or changed
+  independently belongs in its own file;
+- feature-private helpers stay beside their feature unless multiple features
+  genuinely share the abstraction;
+- dependency direction remains `App -> ProsePalUI -> ProsePalAPI / ProsePalDomain`;
+  extraction must not introduce provider knowledge into the UI; and
+- refactors are behaviour-preserving and incremental, with tests moved from
+  source-string checks to behavioural or view coverage as seams become
+  available.
+
+This favours cohesive feature files over both a monolith and a directory full of
+one-line wrapper types. The review question is “can one change be understood and
+verified locally?”, not “is this file below an arbitrary number of lines?”
+
+## `MomentExperienceView.swift` region map
+
+`prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift` is transitional. It
+currently contains several independently changing surfaces and should shrink as
+those surfaces are touched; it is not the desired long-term module boundary.
+
+In source order, its stable landmarks are:
+
+| Region | Owning symbols |
+|---|---|
+| Draft state and relaunch recovery | `MomentDraftRecoveryState`, `MomentDraftRecoveryStoring`, `MomentDraftRecoveryStore`, `MomentModel` |
+| Voice, share, and draft-action presentation | `MomentVoiceCaptureSheet`, `MomentDraftUseSheet`, `MomentShareRequest`, `MomentActivityView` |
+| App-root navigation and welcome state | `MomentAppRootView`, `MomentWelcomeState`, `MomentRootDock` |
+| Core Moment composer and generated-draft experience | `MomentSheetView`, including loading, retry, refusal, revision, pressure feedback, memory controls, copy/share/save, and draft history |
+| Relationship and occasion pickers | `MomentRelationshipPickerSheet`, `MomentOccasionPickerSheet`, and their row types |
+| Saved-draft library and detail | `SavedMomentDraftsView`, `SavedMomentDraftLibraryCard`, `SavedMomentDraftDetailView` |
+| Relationship-memory library and detail | `RelationshipMemoryVaultView`, `RelationshipMemoryDetailView`, `RelationshipVoiceCardDetailView` |
+| Settings and subscription detail | `MomentSettingsView`, `MomentPlanDetailView`, and plan presentation helpers |
+| Privacy, export, authentication, and paywall | `MomentPrivacyDataView`, `MomentLocalDataExportView`, `MomentAppleSignInControl`, `MomentPaywallSheet` |
+
+Use these symbols as navigation anchors rather than durable line numbers. When a
+task changes one region, prefer extracting that complete region and its private
+helpers instead of moving unrelated code or attempting a big-bang rewrite.
+
 ## Source map
 
 - `prosepal-ios/App/ProsePalNativeApp.swift`

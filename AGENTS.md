@@ -40,7 +40,16 @@ The active build direction is the native SwiftUI rewrite in `prosepal-ios/`.
 - Preserve existing architecture unless a change is required for safety/reliability.
 - Keep auth, payments, entitlement, and AI flows deterministic and testable.
 - Do not log secrets, tokens, or sensitive user content.
-- Keep evergreen docs free of TODOs/status; move open work to backlog.
+- Keep documentation evergreen: describe current behaviour, stable policy, or a
+  runnable process rather than progress, test counts, dates, or “verified at”
+  commit stamps.
+- Put unresolved work only in `docs/BACKLOG.md`; keep completed history in Git,
+  release evidence, or `docs/reference/feature-status.csv`.
+- Anchor behavioural documentation to the owning source file and stable symbol
+  names so a reader can verify it in one hop. Avoid line-number references in
+  evergreen docs because normal edits make them stale.
+- Update the owning document in the same change when a documented contract,
+  workflow, configuration boundary, or public behaviour changes.
 
 ## Verification
 
