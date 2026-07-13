@@ -93,5 +93,24 @@ with production user content in repository evidence.
   for useful choice; one strong message does not excuse a blocking failure in
   another candidate.
 
+## Deterministic baseline subset
+
+The blocking synthetic baseline uses Q02, Q04, Q06, and Q16. Together they
+exercise private and careful lanes, everyday and careful writing modes,
+personal-fact preservation, tone and length, coercive-pressure rejection,
+implementation-language leakage, and three-candidate variation. The committed
+candidate text is repository-authored synthetic content; it is not captured
+model output and does not replace the full scenario matrix or live review.
+
+Run it with:
+
+```bash
+cd prosepal-ios
+swift test --filter WritingQuality
+```
+
+The runner and the rules for reviewing a baseline change are documented in
+[How to evaluate AI output quality](./ai-output-quality.md).
+
 See [How to evaluate AI output quality](./ai-output-quality.md) for the review
 procedure and evidence boundary.

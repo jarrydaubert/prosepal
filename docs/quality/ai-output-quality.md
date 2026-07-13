@@ -44,6 +44,30 @@ cd ..
 deno test --allow-env supabase/functions/generate-card/index.test.ts
 ```
 
+Run the focused synthetic baseline while changing a prompt, model-facing
+schema, tool configuration, generation runtime, scorer, or adjustment
+vocabulary:
+
+```bash
+cd prosepal-ios
+swift test --filter WritingQuality
+```
+
+The runner lives in the tooling-only `ProsePalEvaluation` package target; no
+app product links it. Its versioned fixture is
+`Tests/ProsePalEvaluationTests/Fixtures/writing-quality-baseline-v1.json` and
+currently exercises Q02, Q04, Q06, and Q16 across private/everyday and
+careful/careful paths. Each candidate records expected criterion ratings, and
+the set records its expected useful-choice rating. Scorer exemplar tests pin
+reviewed pass, concern, fail, and abstention behaviour.
+
+This is a deterministic scorer and fixture baseline, not evidence that either
+live model produces equivalent prose. Its phrase oracles deliberately test
+known synthetic facts and failure examples; invented-fact and subjective-style
+automation remains advisory. A changed expected rating requires an explicit
+fixture review. Change the rubric version when criterion or scenario meaning
+changes.
+
 Deterministic writing-quality coverage should check:
 
 - preservation of supplied words and facts;

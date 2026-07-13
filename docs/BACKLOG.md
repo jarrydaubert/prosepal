@@ -34,22 +34,19 @@ completed item instead of turning this file into a status log.
   production and staging targets compile against it; encode/decode,
   sanitization, and target-membership tests prevent drift.
 
-- [ ] Establish a focused writing-quality evaluation for private and careful
-  generation. DoD: deterministic representative fixtures and exemplar-tested
-  scorers cover preservation of the user's words, invented personal facts,
-  requested tone/length, derived everyday/careful writing mode, guilt or
-  pressure, and provider/internal-language
-  leakage; every candidate is scored individually and three-option sets are
-  checked for meaningful variation rather than superficial paraphrases;
-  separately approved live samples exercise both lanes without retaining user
-  content or secrets. A minimum deterministic fixture runner, exemplar-tested
-  scorers, and recorded baseline exist before the three-option epic changes a
-  prompt, model-facing schema, tool configuration, generation runtime, or
-  adjustment vocabulary. After that baseline exists, every change expected to
-  affect generated meaning or presentation reruns the affected deterministic
-  evaluation and, where required, the approved lane-specific review; persistence-
-  only schema changes do not trigger an unrelated writing evaluation. Custom
-  crisis classification and mental-health inference are out of scope.
+- [ ] Complete lane-specific live writing-quality evidence for private and
+  careful generation. DoD: separately approved live samples exercise the full
+  representative rubric across both lanes without retaining user content or
+  secrets; every candidate is scored individually and each three-option set is
+  reviewed for meaningful variation rather than superficial paraphrases;
+  preservation, invented personal facts, tone/length, everyday/careful writing
+  mode, guilt or pressure, and provider/internal-language leakage all pass or
+  have an explicit release-owner disposition. Every change expected to affect
+  generated meaning or presentation reruns the deterministic baseline in
+  `docs/quality/ai-output-quality.md` and, where required, the approved lane-
+  specific review; persistence-only schema changes do not trigger an unrelated
+  writing evaluation. Custom crisis classification and mental-health inference
+  are out of scope.
 
 - [ ] Define one measured end-to-end generation deadline across fallback
   attempts. DoD: the release owner first approves an initial user-visible
