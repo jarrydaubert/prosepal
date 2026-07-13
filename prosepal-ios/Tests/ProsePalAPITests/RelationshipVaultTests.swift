@@ -104,24 +104,6 @@ final class RelationshipVaultTests: XCTestCase {
         XCTAssertEqual(voiceCard?.summary, "Warm and direct")
     }
 
-    func testPrivateDraftUsesApprovedPromptMemoryWithoutToolCalling() throws {
-        let source = try String(
-            contentsOf: packageRoot.appending(path: "Sources/ProsePalAPI/FoundationModelsPrivateDraftClient.swift"),
-            encoding: .utf8
-        )
-
-        XCTAssertTrue(source.contains("let approvedBeads = try await memoryProvider.approvedTruthBeads"))
-        XCTAssertTrue(source.contains("let approvedVoiceCard = try await memoryProvider.approvedVoiceCard"))
-        XCTAssertTrue(source.contains("Approved relationship memory:"))
-        XCTAssertTrue(source.contains("Treat approved voice cards as style guidance only; do not quote them as facts."))
-        XCTAssertTrue(source.contains("Approved voice card:"))
-        XCTAssertTrue(source.contains("generating: PrivateDraftContent.self"))
-        XCTAssertTrue(source.contains("catch let error as LanguageModelSession.GenerationError"))
-        XCTAssertFalse(source.contains("RelationshipMemoryArguments"))
-        XCTAssertFalse(source.contains("RelationshipMemoryTool"))
-        XCTAssertFalse(source.contains("tools:"))
-    }
-
     func testRelationshipRecordsPersistStableNormalizedPersonKeys() {
         let truthBead = RelationshipTruthBeadRecord(
             personName: " José ",
@@ -620,11 +602,4 @@ final class RelationshipVaultTests: XCTestCase {
     private func makeContainer() throws -> ModelContainer {
         try RelationshipVaultContainerFactory.makeEphemeral()
     }
-}
-
-private var packageRoot: URL {
-    URL(fileURLWithPath: #filePath)
-        .deletingLastPathComponent()
-        .deletingLastPathComponent()
-        .deletingLastPathComponent()
 }

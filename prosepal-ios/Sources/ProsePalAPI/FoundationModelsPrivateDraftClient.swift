@@ -65,20 +65,25 @@ public struct FoundationModelsPrivateDraftClient: MomentDraftClient {
 
         let approvedBeads = try await memoryProvider.approvedTruthBeads(for: moment.personName)
         let approvedVoiceCard = try await memoryProvider.approvedVoiceCard(for: moment.personName)
+        let promptPlan = PrivateDraftPromptPlan(
+            moment: moment,
+            adjustment: adjustment,
+            currentMessage: currentMessage,
+            approvedBeads: approvedBeads,
+            approvedVoiceCard: approvedVoiceCard
+        )
         let session = LanguageModelSession(
             model: model,
-            instructions: privateDraftInstructions
+            instructions: Instructions {
+                promptPlan.instructionComponents
+            }
         )
 
         do {
             let response = try await session.respond(
-                to: prompt(
-                    for: moment,
-                    adjustment: adjustment,
-                    currentMessage: currentMessage,
-                    approvedBeads: approvedBeads,
-                    approvedVoiceCard: approvedVoiceCard
-                ),
+                to: Prompt {
+                    promptPlan.promptComponents
+                },
                 generating: PrivateDraftContent.self,
                 options: GenerationOptions(
                     sampling: .random(probabilityThreshold: 0.92),
@@ -118,59 +123,65 @@ public struct FoundationModelsPrivateDraftClient: MomentDraftClient {
             )
         }
     }
+}
 
-    private var privateDraftInstructions: Instructions {
-        Instructions {
-            "You are ProsePal, a private writing assistant for short personal messages."
-            "Write like a thoughtful human, not a chatbot."
-            "Never mention models, providers, AI, tokens, or implementation details."
-            "For hard moments, use the user's own sentence as the emotional anchor and invent less."
-            "Treat approved voice cards as style guidance only; do not quote them as facts."
-            "Avoid guilt mechanics, relationship scoring, manipulative nudges, and pressure."
-            "Return structured fields exactly as requested."
-        }
-    }
+struct PrivateDraftPromptPlan: Equatable, Sendable {
+    let instructionComponents: [String]
+    let promptComponents: [String]
 
-    private func prompt(
-        for moment: MomentInput,
+    init(
+        moment: MomentInput,
         adjustment: MomentAdjustment?,
         currentMessage: String?,
         approvedBeads: [TruthBead],
         approvedVoiceCard: RelationshipVoiceCard?
-    ) -> Prompt {
-        Prompt {
-            "Person: \(moment.personName)"
-            "Relationship: \(moment.relationship.displayName)"
-            "Moment: \(moment.occasion.displayName)"
-            "Register: \(moment.register.displayName) - \(moment.register.userSafeDescription)"
-            "Tone: \(moment.tone.displayName)"
-            "Length: \(moment.length.generationHint)"
+    ) {
+        instructionComponents = [
+            "You are ProsePal, a private writing assistant for short personal messages.",
+            "Write like a thoughtful human, not a chatbot.",
+            "Never mention models, providers, AI, tokens, or implementation details.",
+            "For hard moments, use the user's own sentence as the emotional anchor and invent less.",
+            "Treat approved voice cards as style guidance only; do not quote them as facts.",
+            "Avoid guilt mechanics, relationship scoring, manipulative nudges, and pressure.",
+            "Return structured fields exactly as requested."
+        ]
+
+        var components = [
+            "Person: \(moment.personName)",
+            "Relationship: \(moment.relationship.displayName)",
+            "Moment: \(moment.occasion.displayName)",
+            "Register: \(moment.register.displayName) - \(moment.register.userSafeDescription)",
+            "Tone: \(moment.tone.displayName)",
+            "Length: \(moment.length.generationHint)",
             "Device locale: \(moment.localeIdentifier)"
+        ]
 
-            if !moment.trueThing.isEmpty {
-                "What is true: \(moment.trueThing)"
-            }
-
-            if let adjustment {
-                "Adjustment requested: \(adjustment.displayName)"
-            }
-
-            if let currentMessage, !currentMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                "Current message to reshape: \(currentMessage)"
-            }
-
-            if !approvedBeads.isEmpty {
-                "Approved relationship memory:"
-                approvedBeads.map { "- \($0.text)" }
-            }
-
-            if let approvedVoiceCard {
-                "Approved voice card:"
-                approvedVoiceCard.summary
-            }
-
-            "Write one message. Include pressure-check findings if the wording asks the recipient to reassure the sender, explains before apologising, or feels too heavy for the moment."
+        if !moment.trueThing.isEmpty {
+            components.append("What is true: \(moment.trueThing)")
         }
+
+        if let adjustment {
+            components.append("Adjustment requested: \(adjustment.displayName)")
+        }
+
+        if let currentMessage, !currentMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            components.append("Current message to reshape: \(currentMessage)")
+        }
+
+        if !approvedBeads.isEmpty {
+            components.append("Approved relationship memory:")
+            components.append(contentsOf: approvedBeads.map { "- \($0.text)" })
+        }
+
+        if let approvedVoiceCard {
+            components.append("Approved voice card:")
+            components.append(approvedVoiceCard.summary)
+        }
+
+        components.append(
+            "Write one message. Include pressure-check findings if the wording asks the recipient to reassure the sender, explains before apologising, or feels too heavy for the moment."
+        )
+        promptComponents = components
     }
 }
 
