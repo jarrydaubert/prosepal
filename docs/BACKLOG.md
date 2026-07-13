@@ -28,6 +28,15 @@ completed item instead of turning this file into a status log.
 
 ## Native V1 — Engineering
 
+- [ ] Remove the redundant Foundation Models relationship-memory tool before
+  taking the writing-quality baseline. DoD: `FoundationModelsPrivateDraftClient`
+  continues to inject the approved relationship summary and memory into its
+  deterministic prompt, creates its `LanguageModelSession` without
+  `RelationshipMemoryTool`, and has regression coverage proving prompt memory,
+  generated-schema validation, cancellation, and user-safe error behaviour are
+  unchanged; the complete native build and test gates pass before latency or
+  quality measurements are recorded.
+
 - [ ] Finish the extension-safe launch/input contract shared by the app, App
   Intents, Share Extension, widget/control, and production/staging routing.
   DoD: one canonical payload, app-group key, URL-routing policy, and text limit;
@@ -42,14 +51,23 @@ completed item instead of turning this file into a status log.
   leakage; every candidate is scored individually and three-option sets are
   checked for meaningful variation rather than superficial paraphrases;
   separately approved live samples exercise both lanes without retaining user
-  content or secrets. Custom crisis classification and mental-health inference
-  are out of scope.
+  content or secrets. A minimum deterministic fixture runner, exemplar-tested
+  scorers, and recorded baseline exist before the three-option epic changes a
+  prompt, model-facing schema, tool configuration, generation runtime, or
+  adjustment vocabulary. After that baseline exists, every change expected to
+  affect generated meaning or presentation reruns the affected deterministic
+  evaluation and, where required, the approved lane-specific review; persistence-
+  only schema changes do not trigger an unrelated writing evaluation. Custom
+  crisis classification and mental-health inference are out of scope.
 
 - [ ] Define one measured end-to-end generation deadline across fallback
-  attempts. DoD: device and staging measurements determine a single ceiling or
-  remaining-budget policy; private-device measurements compare the current
-  single structured draft with one-session three-option generation across
-  representative Brief, Standard, and Detailed fixtures; fallback cannot extend
+  attempts. DoD: the release owner first approves an initial user-visible
+  ceiling and one total fallback budget; repeated device and staging measurements
+  then confirm or explicitly revise that contract. Private-device measurements
+  use the existing debug scheme, not a separate harness app, and compare the
+  current single structured draft, complete one-session three-option generation,
+  streamed time-to-first-useful-text, and complete streamed output across
+  representative Brief, Standard, and Detailed fixtures. Fallback cannot extend
   the wait unintentionally; long waits receive honest progress copy;
   deterministic tests cover deadline propagation, cancellation, and late-result
   suppression.
@@ -63,7 +81,11 @@ completed item instead of turning this file into a status log.
   expose one provider-neutral option-set contract without revealing routing.
   Execution order is mandatory: approve the end-to-end deadline, run a
   timeboxed private-device three-option spike, record the gate decision, and
-  only then begin production domain, recovery, and UI work.
+  only then begin production domain, recovery, and UI work. The spike compares
+  complete single-shot generation with `LanguageModelSession` streaming and
+  prewarming, and may conclude that single-shot completion is already fast
+  enough. Streaming must earn its state, recovery, accessibility, and lane-
+  parity complexity; it is not a preselected implementation requirement.
 
   The composer presents person, explicitly confirmed relationship, and occasion
   before one skippable relationship-by-occasion question that replaces the
@@ -101,6 +123,24 @@ completed item instead of turning this file into a status log.
   Candidate sets and the chosen draft survive relaunch, changing any
   meaning-bearing input invalidates stale candidates, and choosing or switching
   an option never destroys recoverable wording.
+
+  Each finalized candidate has a stable identifier and recovery stores the
+  chosen candidate identifier rather than relying on array position. Only a
+  complete, validated three-candidate set can become selectable or persistent;
+  cancellation or Stop before completion discards incomplete fragments and
+  returns to an honest retryable composer state. Recovery uses a versioned draft
+  envelope that still decodes the current single chosen editable draft; it is
+  distinct from SwiftData model versioning.
+
+  If and only if the spike adopts streaming, the shared generation state owns
+  idle, preparing, generating progress, awaiting three-way choice, and editing;
+  deterministic scenarios cover complete success, cancellation before
+  completion, meaning-bearing input mutation, retry with late-result suppression,
+  background cancellation, total-budget expiry/fallback, and gateway completion.
+  One private `LanguageModelSession` may live only for one composer epoch: any
+  meaning-bearing change destroys it, prewarming is debounced, and backgrounding
+  cancels it. The gateway may report truthful generic progress but must not fake
+  streamed candidate text or expose a lane-divergent result screen.
 
   Deterministic domain/service/model tests cover cue selection, blank/partial
   answers, include-versus-avoid mapping, legacy recovery decoding, input limits,
@@ -145,8 +185,11 @@ completed item instead of turning this file into a status log.
   extracted user-facing surface has a compiling `#Preview`; each moved region's
   source-string guard is deleted or replaced by behavioral/view coverage in the
   same commit; both shrink-only guardrail baselines are lowered; the architecture
-  map is updated; Swift package tests and the complete app target build pass
-  after every extraction.
+  map is updated; when an extracted region's navigation chrome is touched,
+  custom bars move to appropriate system toolbar placements while paper-like
+  content surfaces retain their own visual treatment; this opportunistic chrome
+  modernization never becomes a separate v1 release gate. Swift package tests
+  and the complete app target build pass after every extraction.
 
 - [ ] Complete core-flow accessibility and visual hardening. DoD: release flows
   pass VoiceOver, Dynamic Type, hit-target, contrast, keyboard/focus, Reduce
@@ -250,7 +293,10 @@ completed item instead of turning this file into a status log.
   app and applicable extension bundles contain valid privacy manifests and
   required-reason declarations; App Privacy answers match actual collection;
   Terms, Privacy Policy, support, subscription disclosure, export, and deletion
-  paths are reachable; archive validation and submission preflight pass.
+  paths are reachable; the release owner verifies the user-facing claim that
+  message text is never used to train models against the binding terms and data-
+  use policy of every production gateway provider, then preserves private legal
+  evidence or amends the copy; archive validation and submission preflight pass.
 
 ## Post-V1 / Triggered Work
 
@@ -266,8 +312,12 @@ completed item instead of turning this file into a status log.
 - [ ] Add quantified quota UI only when the server contract supplies structured
   limit, remaining-use, and reset metadata backed by an approved product policy.
 
-- [ ] Move the careful lane to the approved Apple-native/PCC path when that API
-  is available and its privacy, reliability, and cost behavior are proven.
+- [ ] Prototype an Apple-native Private Cloud Compute careful lane after the
+  iOS 27 SDK and entitlement path stabilize. The API-discovery trigger has
+  occurred, but adoption remains blocked on a provider-neutral
+  `MessageWritingService` prototype proving privacy, refusal behaviour, latency,
+  availability, cost, and universal result-contract parity; this is an
+  experiment, not a migration commitment.
 
 - [ ] Decide whether relationship-vault data needs stronger at-rest encryption
   beyond current platform storage, backup exclusion, deletion, and export
@@ -277,7 +327,52 @@ completed item instead of turning this file into a status log.
   adaptation, Switch Control, and non-critical visual/motion/haptic polish.
 
 - [ ] Evaluate system Writing Tools integration only if it improves the focused
-  message workflow without bypassing draft protection or exposing private text.
+  editor without bypassing Pressure Check, undo/history, recovery, or private-
+  text boundaries. DoD: a small `.writingToolsBehavior(.limited)` experiment
+  proves the system UI cannot evade those protections before any product-scope
+  decision.
+
+- [ ] Evaluate replacing the current speech-recognition internals with
+  `SpeechAnalyzer` plus an explicit `DictationTranscriber` fallback. Trigger:
+  after v1, or earlier only if physical-device release evidence shows the current
+  `SFSpeechRecognizer` path is inadequate. DoD: the existing transcriber
+  protocol remains the boundary; volatile and final text, locale selection,
+  managed asset installation, unsupported devices/languages, permissions,
+  cancellation, offline behaviour, and supported-device evidence all pass.
+
+- [ ] Evaluate replacing custom subscription purchase controls with
+  `SubscriptionStoreView` when the paywall region is extracted. Trigger: after
+  v1, or earlier only if the current paywall cannot satisfy release evidence or
+  App Review. DoD: branded system controls preserve the existing hero,
+  entitlement listener, restore path, and `appAccountToken` boundary; localized
+  products, policies, purchase, restore, cancellation, accessibility, and
+  sandbox/TestFlight convergence pass before replacement.
+
+- [ ] Research a lane-neutral result-screen trust layer after the core
+  three-option experience ships. DoD: user testing and legal/privacy review
+  decide whether “AI-assisted — review before sending” and a disclosure of the
+  user-selected inputs improve understanding; wording never names providers,
+  exposes routing, implies gateway work occurred on-device, or displays raw
+  personal context unexpectedly; accessibility and both-lane accuracy pass.
+
+- [ ] Modernize optional App Intents only after their v1 system-surface evidence
+  is complete. DoD: availability-gated typed entities, current Messages-domain
+  schema support, and direct widget/control intent buttons preserve foreground
+  review, sanitized handoff, and the rule that ProsePal never auto-sends an AI-
+  authored message.
+
+- [ ] Review Drafts-tab prominence after launch using privacy-safe usage
+  evidence. If the saved-drafts destination is materially quiet, test moving the
+  library below the writing surface without harming discoverability, state
+  restoration, accessibility, or saved-work recovery; do not change root
+  navigation from intuition alone.
+
+- [ ] Reorder burst enforcement before quota lookup inside
+  `reserve_card_request` if observed abuse traffic shows quota-exhausted callers
+  are creating avoidable database load. DoD: idempotency and subject isolation
+  still run first; burst-denied requests cannot reach quota or provider work;
+  quota, replay, reclaim, concurrency, and staging tests pass with unchanged
+  legitimate-user charging semantics.
 
 - [ ] Add a provider-protocol escape hatch only when a second approved runtime
   requires it; keep provider details behind `MessageWritingService`.

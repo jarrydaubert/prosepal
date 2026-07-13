@@ -50,6 +50,10 @@ The active build direction is the native SwiftUI rewrite in `prosepal-ios/`.
   evergreen docs because normal edits make them stale.
 - Update the owning document in the same change when a documented contract,
   workflow, configuration boundary, or public behaviour changes.
+- Before adopting or redesigning around an Apple platform or AI-runtime API,
+  verify availability, constraints, and known issues against current official
+  Apple documentation. Cite any external claim that changes scope or
+  architecture in the owning decision record or backlog item.
 
 ## Verification
 
