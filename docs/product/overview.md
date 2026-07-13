@@ -8,11 +8,12 @@ send, without turning the experience into a chatbot or a document editor.
 
 ProsePal helps a person:
 
-1. start with who the message is for;
-2. name the moment and what is true;
-3. receive one useful draft;
-4. revise without losing their own words; and
-5. copy, share, send, or deliberately save the result.
+1. start with who the message is for and their relationship;
+2. name the moment and answer one helpful, optional question about what matters;
+3. receive three meaningfully different ways to say it;
+4. recognise and choose the one that sounds right;
+5. revise without losing their own words; and
+6. copy, share, send, or deliberately save the result.
 
 The product should reduce blank-page anxiety while preserving the emotional
 work that belongs to the user.
@@ -32,7 +33,7 @@ markets.
 
 - Person-first, not document-first.
 - The user’s words lead; AI edits and assists.
-- One strong draft is more useful than a wall of alternatives.
+- A small set of genuinely different choices is useful; a wall of output is not.
 - Everyday writing should stay private on device where available.
 - Harder writing may use the careful gateway lane without becoming a paywall.
 - Provider and model names are implementation details, never product language.

@@ -1,4 +1,4 @@
-# Frozen Decision Record: Three-Option Writing Flow
+# Frozen Decision Record: Guided Composer And Three-Option Writing Flow
 
 > Frozen product decision context from July 2026. This file explains the
 > reasoning; it is not implementation instruction. Current behaviour remains in
@@ -6,21 +6,26 @@
 
 ## Decision
 
-ProsePal should move from presenting one arbitrary generated draft to a
-choose-before-edit flow when the private on-device lane proves it can produce
-three useful options inside the agreed end-to-end generation deadline.
+Native v1 targets a guided compose-to-choice flow. Delivery remains gated on the
+private on-device lane proving it can produce three useful options inside the
+agreed end-to-end generation deadline.
 
 The intended experience is:
 
 ```text
-Compose simply
+Name the person and confirm the relationship
+  -> choose the occasion
+  -> answer one tailored, skippable question
+  -> optionally reveal up to two more questions
+  -> keep or change compact Style defaults
   -> generate three equally weighted ways to say it
   -> choose the one that feels right
   -> edit, adjust, undo, copy, share, or save
 ```
 
-The current one-draft launch contract remains authoritative until that physical-
-device feasibility gate passes.
+This is now the explicit v1 launch target. Current-behaviour documentation must
+continue to describe the implemented one-draft experience until the physical-
+device gate and delivery work pass.
 
 ## Why
 
@@ -41,16 +46,66 @@ Keep meaning-bearing context visible:
 
 - person;
 - explicitly selected relationship;
-- occasion; and
-- one optional personal detail or true thing.
+- occasion;
+- one relationship-by-occasion question; and
+- the answer, when the user chooses to provide one.
 
 Tone and length have safe defaults and should share one compact Style disclosure.
 Relationship must not hide behind the current `closeFriend` default because an
 unconfirmed relationship can materially distort the message.
 
-The personal detail remains visible rather than sitting behind an add button. It
-is optional so a simple birthday or thank-you message is still quick, but the UI
-should explain that this is what makes the result personal.
+The primary question replaces the generic blank “one true thing” field. It is
+visible, inline, and skippable. A quiet “Help me personalise it further” action
+may reveal no more than two additional inline questions. These questions never
+become dialogs, separate screens, or prerequisites for generation once required
+person/relationship/occasion context is valid.
+
+Keep pre-generation Style because it protects scarce gateway usage from an
+avoidable wrong-shape result. Post-selection adjustments complement Style; they
+do not replace it.
+
+## Register Fate
+
+The target composer has no Quick / Your words / Take care selector. That control
+is already absent from the current composer even though `MomentRegister` still
+exists in domain state, recovery, prompt context, styling, routing, and one local
+Pressure Check rule.
+
+For new initial drafts, everyday-versus-careful treatment derives from occasion
+policy and writing-service availability/fallback. The narrow defensive input
+block remains a refusal boundary rather than a third writing mode. After the
+user chooses a message, Take More Care remains an explicit refinement action.
+
+Legacy register values must continue to decode so active recovery data is not
+lost. They cannot remain hidden mutable intent for a new generation: regenerating
+normalizes to the derived policy. The implementation records a before/after
+occasion-to-lane parity matrix and enumerates any deliberate routing change.
+Pre-result careful styling, prompt context, and Pressure Check rules move to the
+same explicit occasion/lane policy instead of consulting an unreachable choice.
+
+## Guidance Contract
+
+Question selection combines a small occasion family with relationship context,
+so a birthday for a parent does not read like a birthday for a manager. Families
+cover celebration, gratitude, apology, sympathy, encouragement/check-in, and
+professional moments, with a reviewed generic fallback for every supported
+combination.
+
+Each answer keeps a stable cue identifier and one explicit meaning:
+
+- `personalDetail`: a memory, action, quality, or concrete fact to preserve;
+- `messageGoal`: what the user wants the message to communicate; or
+- `avoid`: wording or subject matter the generated messages must not introduce.
+
+Positive and negative guidance must never be flattened into one ambiguous field.
+Raw answers remain message content: they can reach the selected writing lane but
+cannot enter operational logs or analytics. Existing recovery payloads must keep
+decoding after the state model grows.
+
+Tender prompts receive an editorial review. Sympathy questions may invite a
+memory or quality but never probe the circumstances of a death. Apology prompts
+encourage ownership without assigning blame, demanding reassurance, or creating
+pressure. Questions are deterministic product copy, not generated dynamically.
 
 ## Result Hierarchy
 
@@ -69,17 +124,19 @@ The gateway path already generates three candidates in one charged request and
 the request ledger replays the complete `CardResponse`. The unknown is private
 on-device generation.
 
-Before changing the active product contract:
+Before treating the target as delivered:
 
-1. prototype exactly three distinct structured candidates from one Foundation
+1. approve the measured end-to-end generation deadline;
+2. prototype exactly three distinct structured candidates from one Foundation
    Models session;
-2. measure representative Brief, Standard, and Detailed cases on a supported
+3. measure representative Brief, Standard, and Detailed cases on a supported
    physical iPhone against the same end-to-end deadline used by routing;
-3. evaluate every candidate for writing quality and the set for meaningful
+4. evaluate every candidate for writing quality and the set for meaningful
    variation;
-4. prove candidate-set and selected-draft recovery, cancellation, fallback, and
+5. record the gate decision before production composer or result work begins;
+6. prove candidate-set and selected-draft recovery, cancellation, fallback, and
    late-result behaviour; and
-5. verify compact and accessibility-size selection flows without exposing which
+7. verify compact and accessibility-size selection flows without exposing which
    writing lane ran.
 
 If private generation misses the deadline, do not ship different result models
@@ -109,8 +166,8 @@ preferences that have honest defaults.
 
 ## Documentation Activation Rule
 
-After the feasibility and release evidence pass, amend the v1 launch contract,
-product overview, capabilities, user journeys, HTML guide, feature matrix, AI
-generation docs, recovery documentation, and release acceptance path together.
-Until then, those active documents continue to describe the implemented
-single-draft experience.
+The v1 launch contract and product promise now record the chosen target. After
+the feasibility and release evidence pass, amend current-behaviour capabilities,
+user journeys, HTML guide, feature matrix, AI-generation docs, recovery
+documentation, and the release acceptance path together. Until then, those
+documents continue to describe the implemented single-draft experience.

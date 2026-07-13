@@ -13,7 +13,7 @@ Detailed code and test evidence lives in
 | Person-first entry | The user starts with who the message is for, then chooses relationship and occasion context. |
 | One true thing | The user supplies the real sentence or detail the draft should preserve. |
 | Voice input | On-device speech capture can fill the moment detail when the platform supports it. |
-| Register | Quick, Your words, and Take care shape how much the app writes and how cautiously it responds. |
+| Occasion-aware care | Ordinary moments default to quick private writing, while sympathy, pet sympathy, and apology automatically request extra care; Take More Care remains available after a draft. |
 | Tone | Heartfelt, Casual, Funny, Formal, Inspirational, Playful, Sarcastic, Nostalgic, and Poetic choices shape the voice. |
 | Length | Brief, Standard, and Detailed choices set the intended message shape. |
 | Locale | The app derives locale and spelling behaviour from the device rather than exposing a spelling picker. |

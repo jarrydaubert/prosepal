@@ -37,35 +37,13 @@ completed item instead of turning this file into a status log.
 - [ ] Establish a focused writing-quality evaluation for private and careful
   generation. DoD: deterministic representative fixtures and exemplar-tested
   scorers cover preservation of the user's words, invented personal facts,
-  requested length/register, guilt or pressure, and provider/internal-language
+  requested tone/length, derived everyday/careful writing mode, guilt or
+  pressure, and provider/internal-language
   leakage; every candidate is scored individually and three-option sets are
   checked for meaningful variation rather than superficial paraphrases;
   separately approved live samples exercise both lanes without retaining user
   content or secrets. Custom crisis classification and mental-health inference
   are out of scope.
-
-- [ ] Prove and deliver the approved choose-before-edit three-option writing
-  flow without weakening private-first routing. DoD: the gateway client
-  preserves all three distinct `CardResponse` messages instead of selecting an
-  unranked first element, including exact request-ledger replay; one Foundation
-  Models session produces and validates three distinct private options on a
-  supported physical iPhone within the measured end-to-end deadline; both lanes
-  expose one provider-neutral option-set contract without revealing routing.
-  The composer keeps person, explicitly chosen relationship, occasion, and the
-  optional personal detail visible while tone and length live in one compact
-  Style disclosure with honest defaults; no hidden `closeFriend` default can be
-  sent for an unconfirmed relationship. Results say “Three ways to say it,”
-  give the options equal visual weight with no invented best ranking, and
-  require an explicit choice before the existing edit/adjust/copy/share/save
-  flow. Candidate sets and the chosen draft survive relaunch, changing the
-  underlying moment invalidates stale candidates, and choosing or switching an
-  option never destroys recoverable wording. Deterministic service/model tests,
-  compact and accessibility-size UI automation, VoiceOver review, quality
-  evaluation, and physical-device evidence pass. Only after the private-lane
-  gate passes may the launch contract, overview, journeys, capabilities, guide,
-  and feature matrix change from one draft to three choices. If the private
-  prototype misses the agreed deadline, keep the current contract and make an
-  explicit universal fallback decision; do not ship lane-divergent result UX.
 
 - [ ] Define one measured end-to-end generation deadline across fallback
   attempts. DoD: device and staging measurements determine a single ceiling or
@@ -75,6 +53,65 @@ completed item instead of turning this file into a status log.
   the wait unintentionally; long waits receive honest progress copy;
   deterministic tests cover deadline propagation, cancellation, and late-result
   suppression.
+
+- [ ] Prove and deliver the approved choose-before-edit three-option writing
+  flow without weakening private-first routing. DoD: the gateway client
+  preserves all three distinct `CardResponse` messages instead of selecting an
+  unranked first element, including exact request-ledger replay; one Foundation
+  Models session produces and validates three distinct private options on a
+  supported physical iPhone within the measured end-to-end deadline; both lanes
+  expose one provider-neutral option-set contract without revealing routing.
+  Execution order is mandatory: approve the end-to-end deadline, run a
+  timeboxed private-device three-option spike, record the gate decision, and
+  only then begin production domain, recovery, and UI work.
+
+  The composer presents person, explicitly confirmed relationship, and occasion
+  before one skippable relationship-by-occasion question that replaces the
+  generic blank-detail prompt. “Help me personalise it further” reveals no more
+  than two additional inline questions; generation remains available when the
+  questions are unanswered once the required person/relationship/occasion
+  context is valid. Personal detail, message goal, and things to avoid remain
+  structurally distinct, use stable cue identifiers, survive backward-compatible
+  draft recovery, and reach both private and careful prompts without raw answer
+  text entering diagnostics or analytics. The deterministic question bank is
+  owned by a small set of occasion families with relationship-aware wording, a
+  reviewed generic fallback, and editorial checks preventing sympathy/apology
+  prompts from probing circumstances, assigning blame, or encouraging pressure.
+  Tone and length retain honest defaults inside one compact Style disclosure;
+  no hidden `closeFriend` default can be sent for an unconfirmed relationship.
+
+  `MomentRegister` stops being user-controlled or hidden mutable compose input.
+  New initial drafts derive everyday-versus-careful treatment from occasion
+  policy and writing-service availability/fallback; the narrow defensive content
+  block remains a separate refusal rule, not a routing mode. Explicit Take More
+  Care remains available after a message is chosen. Legacy Quick/Your words/Take
+  care recovery values decode safely, but regeneration normalizes them to the
+  new derived policy. Prompt context, pre-result careful styling, and the local
+  Pressure Check no longer depend on an unreachable register selection.
+  A routing-parity matrix records every current occasion-to-initial-lane result
+  before and after the migration, with every intentional change named and
+  approved.
+
+  Results say “Three ways to say it,” give all options equal visual weight with
+  no invented best ranking, and require an explicit choice before the existing
+  edit/adjust/copy/share/save flow. Post-choice refinement stays optional and
+  contextual: existing adjustments remain available, and any new adjustment
+  vocabulary must be supported by both lanes, the quality rubric, and occasion
+  rules before appearing (for example, no “Funnier” promise on sympathy).
+  Candidate sets and the chosen draft survive relaunch, changing any
+  meaning-bearing input invalidates stale candidates, and choosing or switching
+  an option never destroys recoverable wording.
+
+  Deterministic domain/service/model tests cover cue selection, blank/partial
+  answers, include-versus-avoid mapping, legacy recovery decoding, input limits,
+  candidate variation, cancellation, and lane parity. Compact and
+  accessibility-size UI automation proves the quick path, expanded guidance,
+  Style disclosure, three-way choice, and edit handoff; VoiceOver review,
+  writing-quality evaluation, and physical-device evidence pass. Current-
+  behaviour docs and evidence change from one draft to three choices only when
+  the private-lane gate and implementation pass. If the private prototype misses
+  the agreed deadline, make an explicit universal fallback and v1-scope decision;
+  never ship lane-divergent result UX.
 
 - [ ] Make root navigation destinations distinct, discoverable, and accessible.
   DoD: each root destination has unique content and state restoration; Settings
