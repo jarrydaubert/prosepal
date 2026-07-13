@@ -67,7 +67,6 @@ public struct FoundationModelsPrivateDraftClient: MomentDraftClient {
         let approvedVoiceCard = try await memoryProvider.approvedVoiceCard(for: moment.personName)
         let session = LanguageModelSession(
             model: model,
-            tools: [RelationshipMemoryTool(memoryProvider: memoryProvider)],
             instructions: privateDraftInstructions
         )
 
@@ -216,41 +215,6 @@ private struct PrivateDraftContent {
             missingInformation: missingInformation.nonEmptyTrimmed,
             riskNotes: riskNotes.nonEmptyTrimmed
         )
-    }
-}
-
-@Generable(description: "Arguments for looking up approved relationship memory")
-private struct RelationshipMemoryArguments {
-    @Guide(description: "The person's name")
-    var personName: String
-}
-
-private struct RelationshipMemoryTool: Tool {
-    let memoryProvider: any RelationshipMemoryProviding
-
-    var name: String { "approved_relationship_memory" }
-
-    var description: String {
-        "Looks up user-approved facts for a person from ProsePal's private on-device relationship vault."
-    }
-
-    @concurrent func call(arguments: RelationshipMemoryArguments) async throws -> String {
-        let beads = try await memoryProvider.approvedTruthBeads(for: arguments.personName)
-            .filter(\.isUserApproved)
-        let voiceCard = try await memoryProvider.approvedVoiceCard(for: arguments.personName)
-        guard !beads.isEmpty || voiceCard != nil else {
-            return "No approved relationship memory."
-        }
-
-        var sections: [String] = []
-        if !beads.isEmpty {
-            sections.append("Approved details:\n" + beads.map { "- \($0.text)" }.joined(separator: "\n"))
-        }
-        if let voiceCard {
-            sections.append("Approved voice card:\n\(voiceCard.summary)")
-        }
-
-        return sections.joined(separator: "\n\n")
     }
 }
 

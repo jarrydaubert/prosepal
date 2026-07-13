@@ -28,15 +28,6 @@ completed item instead of turning this file into a status log.
 
 ## Native V1 — Engineering
 
-- [ ] Remove the redundant Foundation Models relationship-memory tool before
-  taking the writing-quality baseline. DoD: `FoundationModelsPrivateDraftClient`
-  continues to inject the approved relationship summary and memory into its
-  deterministic prompt, creates its `LanguageModelSession` without
-  `RelationshipMemoryTool`, and has regression coverage proving prompt memory,
-  generated-schema validation, cancellation, and user-safe error behaviour are
-  unchanged; the complete native build and test gates pass before latency or
-  quality measurements are recorded.
-
 - [ ] Finish the extension-safe launch/input contract shared by the app, App
   Intents, Share Extension, widget/control, and production/staging routing.
   DoD: one canonical payload, app-group key, URL-routing policy, and text limit;
