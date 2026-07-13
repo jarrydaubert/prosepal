@@ -55,10 +55,14 @@ completed item instead of turning this file into a status log.
   use the existing debug scheme, not a separate harness app, and compare the
   current single structured draft, complete one-session three-option generation,
   streamed time-to-first-useful-text, and complete streamed output across
-  representative Brief, Standard, and Detailed fixtures. Fallback cannot extend
-  the wait unintentionally; long waits receive honest progress copy;
-  deterministic tests cover deadline propagation, cancellation, and late-result
-  suppression.
+  representative Brief, Standard, and Detailed fixtures. The same approved
+  private-device runs score every completed synthetic output with the
+  deterministic evaluator and retain the first live private-lane scorecard next
+  to the timing evidence; the current single-draft control is scored per
+  candidate, while complete three-option runs also receive a useful-choice set
+  score. Fallback cannot extend the wait unintentionally; long waits receive
+  honest progress copy; deterministic tests cover deadline propagation,
+  cancellation, and late-result suppression.
 
 - [ ] Prove and deliver the approved choose-before-edit three-option writing
   flow without weakening private-first routing. DoD: the gateway client

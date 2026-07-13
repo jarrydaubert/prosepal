@@ -102,6 +102,14 @@ Capture:
 Never capture a real personal message, recipient name, relationship-memory
 record, token, or secret.
 
+When the physical-iPhone three-option feasibility spike runs, use the same
+approved synthetic executions for latency and quality evidence. Score each
+completed current single draft as a candidate-only control. Score each complete
+three-option result candidate by candidate and then score the set for useful
+choice. Do not score or retain partial streamed fragments. This pairing records
+the first private-lane live scorecard without requiring another model session or
+claiming that timing alone proves writing quality.
+
 ## 4. Score each sample
 
 Apply every criterion in the rubric to each candidate. Then judge the option set
