@@ -2034,11 +2034,16 @@ struct MomentSheetView: View {
     }
 
     private var guidedComposerContent: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            composerIntro
-
-            VStack(alignment: .leading, spacing: 10) {
-                composerStep(number: 1, title: "Who", detail: "Name the person.") {
+        MomentGuidedComposerLayout(
+            isCareful: model.moment.isCarefulMode,
+            intro: {
+                composerIntro
+            },
+            rows: [
+                AnyView(MomentComposerStep(
+                    definition: .person,
+                    accentColor: composerAccentColor
+                ) {
                     TextField(
                         "Name or person",
                         text: $model.personName.prosePalLimited(to: ProsePalTextLimit.personName),
@@ -2058,48 +2063,35 @@ struct MomentSheetView: View {
                         .momentInputSurface(isCareful: model.moment.isCarefulMode, cornerRadius: 15)
                         .accessibilityLabel("Name or person")
                         .accessibilityValue("\(model.personName.count) of \(ProsePalTextLimit.personName) characters")
-                }
-
-                composerDivider
-
-                composerStep(number: 2, title: "What's the occasion?", detail: "Pick the moment.") {
+                }),
+                AnyView(MomentComposerStep(
+                    definition: .occasion,
+                    accentColor: composerAccentColor
+                ) {
                     occasionComposerButton
-                }
-
-                composerDivider
-
-                composerStep(number: 3, title: "Tone", detail: "Choose how it should feel.") {
+                }),
+                AnyView(MomentComposerStep(
+                    definition: .tone,
+                    accentColor: composerAccentColor
+                ) {
                     toneComposerMenu
-                }
-
-                composerDivider
-
-                composerStep(number: 4, title: "Length", detail: model.length.generationHint) {
+                }),
+                AnyView(MomentComposerStep(
+                    definition: .length(detail: model.length.generationHint),
+                    accentColor: composerAccentColor
+                ) {
                     lengthComposerPicker
-                }
-
-                composerDivider
-
-                composerStep(number: 5, title: "Generate", detail: "Create the draft.") {
+                }),
+                AnyView(MomentComposerStep(
+                    definition: .generate,
+                    accentColor: composerAccentColor
+                ) {
                     generateComposerButton
-                }
-
-                composerDivider
-
-                relationshipComposerButton
-
-                composerDivider
-
-                composerOptionalDetailSection
-            }
-        }
-        .padding(14)
-        .background {
-            MomentCardBackground(
-                isCareful: model.moment.isCarefulMode,
-                prominence: .standard
-            )
-        }
+                }),
+                AnyView(relationshipComposerButton),
+                AnyView(composerOptionalDetailSection)
+            ]
+        )
     }
 
     private var composerIntro: some View {
@@ -2124,46 +2116,6 @@ struct MomentSheetView: View {
             Spacer(minLength: 8)
         }
         .accessibilityElement(children: .combine)
-    }
-
-    private func composerStep<Content: View>(
-        number: Int,
-        title: String,
-        detail: String,
-        @ViewBuilder content: () -> Content
-    ) -> some View {
-        HStack(alignment: .top, spacing: 12) {
-            Text("\(number)")
-                .font(.caption.weight(.bold))
-                .foregroundStyle(.white)
-                .frame(width: 26, height: 26)
-                .background(composerAccentColor, in: Circle())
-                .accessibilityHidden(true)
-
-            VStack(alignment: .leading, spacing: 7) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(title)
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(Color.prosePalInk)
-
-                    Text(detail)
-                        .font(.caption)
-                        .foregroundStyle(Color.prosePalSlate.opacity(0.74))
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-
-                content()
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-        }
-    }
-
-    private var composerDivider: some View {
-        Rectangle()
-            .fill(Color.prosePalNavy.opacity(0.08))
-            .frame(height: 1)
-            .padding(.leading, 38)
-            .accessibilityHidden(true)
     }
 
     private var relationshipComposerButton: some View {
@@ -7140,13 +7092,11 @@ private struct MomentPlanDetailView: View {
             } label: {
                 Label("See Pro", systemImage: "pencil.and.scribble")
                     .font(.headline.weight(.semibold))
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 50)
+                    .frame(maxWidth: .infinity, minHeight: 50)
             }
-            .buttonStyle(.plain)
-            .foregroundStyle(Color.prosePalPaper)
-            .background(Color.prosePalCoral, in: Capsule(style: .continuous))
-            .shadow(color: Color.prosePalCoralDeep.opacity(0.18), radius: 10, x: 0, y: 5)
+            .buttonStyle(.borderedProminent)
+            .buttonBorderShape(.capsule)
+            .tint(.prosePalCoral)
             .accessibilityLabel("See Pro")
         }
         .padding(16)
@@ -7513,6 +7463,7 @@ private extension View {
             .overlay {
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                     .stroke(Color.prosePalNavy.opacity(0.10), lineWidth: 1)
+                    .allowsHitTesting(false)
             }
             .shadow(color: shadow ? Color.prosePalCoralDeep.opacity(0.08) : Color.clear, radius: shadow ? 12 : 0, x: 0, y: shadow ? 6 : 0)
     }

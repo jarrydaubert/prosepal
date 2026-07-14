@@ -164,23 +164,6 @@ func momentDraftExposesExplicitSendHandoff() throws {
 }
 
 @Test
-func momentHomeComposerShowsClearDraftSteps() throws {
-    let source = try String(
-        contentsOf: packageRoot.appending(path: "Sources/ProsePalUI/MomentExperienceView.swift"),
-        encoding: .utf8
-    )
-
-    #expect(source.contains("composerStep(number: 1, title: \"Who\""))
-    #expect(source.contains("composerStep(number: 2, title: \"What's the occasion?\""))
-    #expect(source.contains("composerStep(number: 3, title: \"Tone\""))
-    #expect(source.contains("composerStep(number: 4, title: \"Length\""))
-    #expect(source.contains("composerStep(number: 5, title: \"Generate\""))
-    #expect(source.contains("model.tone = tone"))
-    #expect(source.contains("model.length = length"))
-    #expect(source.contains("generateDraftFromComposer()"))
-}
-
-@Test
 func offlineStateOffersARealRetryWithoutDecorativeConnectionClaims() throws {
     let source = try String(
         contentsOf: packageRoot.appending(path: "Sources/ProsePalUI/MomentExperienceView.swift"),

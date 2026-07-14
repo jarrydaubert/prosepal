@@ -137,7 +137,7 @@ inside the monolith:
 | Draft state and relaunch recovery | `MomentExperienceView.swift`: `MomentDraftRecoveryState`, `MomentDraftRecoveryStoring`, `MomentDraftRecoveryStore`, `MomentModel` |
 | Voice, share, and draft-action presentation | `MomentExperienceView.swift`: `MomentVoiceCaptureSheet`, `MomentDraftUseSheet`, `MomentShareRequest`, `MomentActivityView` |
 | App-root navigation and welcome state | `MomentAppRootView.swift`: `MomentAppRootView`, `MomentRootTabs`, `MomentRootTab`, `MomentWelcomeState` |
-| Core Moment composer and generated-draft experience | `MomentExperienceView.swift`: `MomentSheetView`, including loading, retry, refusal, revision, pressure feedback, memory controls, copy/share/save, and draft history |
+| Core Moment composer and generated-draft experience | `MomentExperienceView.swift`: `MomentSheetView`, including loading, retry, refusal, revision, pressure feedback, memory controls, copy/share/save, and draft history; `MomentGuidedComposerLayout.swift`: the type-erased guided-composer layout and numbered step shell |
 | Relationship and occasion pickers | `MomentExperienceView.swift`: `MomentRelationshipPickerSheet`, `MomentOccasionPickerSheet`, and their row types |
 | Saved-draft library | `MomentExperienceView.swift`: `SavedMomentDraftsView`, `SavedMomentDraftLibraryCard` |
 | Saved-draft detail and persistence | `SavedMomentDraftDetailView.swift` and `SavedDraftPersistence.swift`: `SavedMomentDraftDetailView`, `persistSavedDraftEdit`, `persistSavedDraftDeletion` |
