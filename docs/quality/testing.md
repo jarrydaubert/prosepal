@@ -9,6 +9,7 @@ project, or wall-clock race to pass.
 | Layer | Purpose | Command or location |
 |---|---|---|
 | Swift package | Domain, API, concurrency, persistence, account, StoreKit, and observable-model behaviour | `cd prosepal-ios && swift test` |
+| App-hosted StoreKit | Real `StoreKitSubscriptionClient` against the local `.storekit` configuration | `cd prosepal-ios && xcodebuild -project ProsePal.xcodeproj -scheme "ProsePal Staging" -destination 'platform=iOS Simulator,name=iPhone 17' -only-testing:ProsePalStoreKitTests test` |
 | Xcode simulator build | App target and embedded extension compilation | `xcodebuild ... CODE_SIGNING_ALLOWED=NO build` |
 | Edge Function | Handler validation, auth rejection, provider-call suppression, Apple account lifecycle, ledger outcomes, and logging hygiene | discover every `supabase/functions/**/*.test.ts` file and run them together with `deno test --allow-env` |
 | Database | Privileges, quota, idempotency, transition, retention, and cleanup contracts | `supabase test db` |
@@ -25,6 +26,11 @@ swift build
 swift test
 xcodebuild -project ProsePal.xcodeproj -target ProsePal -sdk iphonesimulator CODE_SIGNING_ALLOWED=NO build
 ```
+
+The app-hosted StoreKit suite is a release gate rather than a deterministic
+package gate. All discovered scenarios must execute; an environment skip caused
+by StoreKit Test failing to install its configuration remains an open release
+item.
 
 ## Gateway gate
 

@@ -41,6 +41,90 @@ public struct SubscriptionEntitlement: Equatable, Sendable {
     public static let inactive = SubscriptionEntitlement(isActive: false)
 }
 
+public enum SubscriptionRenewalState: String, Equatable, Sendable {
+    case subscribed
+    case gracePeriod
+    case billingRetry
+    case expired
+    case revoked
+    case notApplicable
+}
+
+public enum SubscriptionEntitlementFailure: String, Equatable, Sendable {
+    case notConfigured
+    case productsUnavailable
+    case verificationFailed
+    case storeUnavailable
+    case ownershipMismatch
+    case unexpectedResponse
+
+    public var userSafeMessage: String {
+        switch self {
+        case .notConfigured:
+            SubscriptionError.notConfigured.userSafeMessage
+        case .productsUnavailable:
+            SubscriptionError.productsUnavailable.userSafeMessage
+        case .verificationFailed:
+            SubscriptionError.verificationFailed.userSafeMessage
+        case .storeUnavailable:
+            SubscriptionError.storeUnavailable.userSafeMessage
+        case .ownershipMismatch:
+            "This purchase belongs to a different ProsePal account. Sign in with the purchasing account or restore without signing in."
+        case .unexpectedResponse:
+            SubscriptionError.unexpectedResponse.userSafeMessage
+        }
+    }
+}
+
+public enum SubscriptionEntitlementState: Equatable, Sendable {
+    case active(
+        entitlement: SubscriptionEntitlement,
+        renewalState: SubscriptionRenewalState,
+        ownership: SubscriptionTransactionOwnership
+    )
+    case confirmedInactive(renewalState: SubscriptionRenewalState)
+    case unknown(SubscriptionEntitlementFailure)
+
+    public static func active(
+        _ entitlement: SubscriptionEntitlement,
+        renewalState: SubscriptionRenewalState = .subscribed,
+        ownership: SubscriptionTransactionOwnership = .unlinked
+    ) -> Self {
+        .active(
+            entitlement: entitlement,
+            renewalState: renewalState,
+            ownership: ownership
+        )
+    }
+
+    public static let inactive: Self = .confirmedInactive(renewalState: .notApplicable)
+
+    public var entitlement: SubscriptionEntitlement? {
+        guard case .active(let entitlement, _, _) = self else { return nil }
+        return entitlement
+    }
+
+    public var isConfirmed: Bool {
+        if case .unknown = self { return false }
+        return true
+    }
+}
+
+public enum SubscriptionTransactionOwnership: Equatable, Sendable {
+    case linked(UUID)
+    case unlinked
+
+    public func isCompatible(with expectedAccountToken: UUID?) -> Bool {
+        guard let expectedAccountToken else { return true }
+        switch self {
+        case .linked(let token):
+            return token == expectedAccountToken
+        case .unlinked:
+            return true
+        }
+    }
+}
+
 public enum SubscriptionPurchaseStatus: String, Equatable, Sendable {
     case purchased
     case restored
@@ -51,11 +135,68 @@ public enum SubscriptionPurchaseStatus: String, Equatable, Sendable {
 
 public struct SubscriptionPurchaseResult: Equatable, Sendable {
     public var status: SubscriptionPurchaseStatus
-    public var entitlement: SubscriptionEntitlement
+    public var entitlementState: SubscriptionEntitlementState
 
-    public init(status: SubscriptionPurchaseStatus, entitlement: SubscriptionEntitlement = .inactive) {
+    private let delivery: SubscriptionTransactionDelivery?
+
+    public init(
+        status: SubscriptionPurchaseStatus,
+        entitlementState: SubscriptionEntitlementState = .inactive,
+        delivery: SubscriptionTransactionDelivery? = nil
+    ) {
         self.status = status
-        self.entitlement = entitlement
+        self.entitlementState = entitlementState
+        self.delivery = delivery
+    }
+
+    public init(status: SubscriptionPurchaseStatus, entitlement: SubscriptionEntitlement) {
+        self.init(
+            status: status,
+            entitlementState: entitlement.isActive ? .active(entitlement) : .inactive
+        )
+    }
+
+    public var entitlement: SubscriptionEntitlement {
+        entitlementState.entitlement ?? .inactive
+    }
+
+    public var transactionOwnership: SubscriptionTransactionOwnership? {
+        delivery?.ownership
+    }
+
+    public var transactionProductID: String? {
+        delivery?.productID
+    }
+
+    public func finish() async {
+        await delivery?.finish()
+    }
+}
+
+public struct SubscriptionTransactionDelivery: Sendable {
+    public var productID: String
+    public var ownership: SubscriptionTransactionOwnership
+
+    private let finishAction: @Sendable () async -> Void
+
+    public init(
+        productID: String,
+        ownership: SubscriptionTransactionOwnership,
+        finishAction: @escaping @Sendable () async -> Void
+    ) {
+        self.productID = productID
+        self.ownership = ownership
+        self.finishAction = finishAction
+    }
+
+    public func finish() async {
+        await finishAction()
+    }
+}
+
+extension SubscriptionTransactionDelivery: Equatable {
+    public static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.productID == rhs.productID && lhs.ownership == rhs.ownership
     }
 }
 
@@ -67,16 +208,22 @@ public struct SubscriptionTransactionUpdate: Sendable {
 
     public var verification: Verification
     public var productID: String
+    public var ownership: SubscriptionTransactionOwnership
+    public var effect: SubscriptionTransactionEffect
 
     private let finishAction: (@Sendable () async -> Void)?
 
     public init(
         verification: Verification,
         productID: String,
+        ownership: SubscriptionTransactionOwnership = .unlinked,
+        effect: SubscriptionTransactionEffect = .grantsOrRenews,
         finishAction: (@Sendable () async -> Void)? = nil
     ) {
         self.verification = verification
         self.productID = productID
+        self.ownership = ownership
+        self.effect = effect
         self.finishAction = finishAction
     }
 
@@ -84,6 +231,12 @@ public struct SubscriptionTransactionUpdate: Sendable {
         guard verification == .verified else { return }
         await finishAction?()
     }
+}
+
+public enum SubscriptionTransactionEffect: Equatable, Sendable {
+    case grantsOrRenews
+    case removesAccess
+    case unknown
 }
 
 public enum SubscriptionError: Error, Equatable, Sendable {
@@ -116,11 +269,26 @@ public enum SubscriptionError: Error, Equatable, Sendable {
             "Subscriptions are unavailable right now. Please try again shortly."
         }
     }
+
+    public var entitlementFailure: SubscriptionEntitlementFailure {
+        switch self {
+        case .notConfigured:
+            .notConfigured
+        case .productsUnavailable, .productUnavailable:
+            .productsUnavailable
+        case .verificationFailed:
+            .verificationFailed
+        case .storeUnavailable:
+            .storeUnavailable
+        case .purchaseCancelled, .purchasePending, .unexpectedResponse:
+            .unexpectedResponse
+        }
+    }
 }
 
 public protocol SubscriptionClient: Sendable {
     func loadProducts() async throws -> [SubscriptionProduct]
-    func currentEntitlement() async throws -> SubscriptionEntitlement
+    func currentEntitlement() async -> SubscriptionEntitlementState
     func purchase(productID: String) async throws -> SubscriptionPurchaseResult
     func restorePurchases() async throws -> SubscriptionPurchaseResult
     func transactionUpdates() async -> AsyncStream<SubscriptionTransactionUpdate>
@@ -137,15 +305,20 @@ public extension SubscriptionClient {
 #if canImport(StoreKit)
 public struct StoreKitSubscriptionClient: SubscriptionClient {
     private let productIDs: [String]
+    private let retiredProductIDs: [String]
     private let recommendedProductID: String?
     private let appAccountTokenProvider: (@Sendable () async -> UUID?)?
 
     public init(
         productIDs: [String],
+        retiredProductIDs: [String] = [],
         recommendedProductID: String? = nil,
         appAccountTokenProvider: (@Sendable () async -> UUID?)? = nil
     ) {
-        self.productIDs = productIDs.uniqueTrimmedValues
+        let configuredProductIDs = productIDs.uniqueTrimmedValues
+        self.productIDs = configuredProductIDs
+        self.retiredProductIDs = retiredProductIDs.uniqueTrimmedValues
+            .filter { !configuredProductIDs.contains($0) }
         self.recommendedProductID = recommendedProductID?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfBlank
         self.appAccountTokenProvider = appAccountTokenProvider
     }
@@ -167,7 +340,7 @@ public struct StoreKitSubscriptionClient: SubscriptionClient {
                 diagnosticsContext,
                 error: error
             )
-            throw error
+            throw SubscriptionError.storeUnavailable
         }
 
         SubscriptionDiagnosticsLogger.shared.productsLoadReturned(
@@ -194,39 +367,57 @@ public struct StoreKitSubscriptionClient: SubscriptionClient {
             }
     }
 
-    public func currentEntitlement() async throws -> SubscriptionEntitlement {
-        guard !productIDs.isEmpty else { throw SubscriptionError.notConfigured }
+    public func currentEntitlement() async -> SubscriptionEntitlementState {
+        guard !productIDs.isEmpty else { return .unknown(.notConfigured) }
 
-        let configuredProductIDs = Set(productIDs)
-        for await result in Transaction.currentEntitlements {
-            let candidate: StoreKitEntitlementCandidate
-            switch result {
-            case .verified(let transaction):
-                candidate = StoreKitEntitlementCandidate(
-                    verification: .verified,
-                    productID: transaction.productID,
-                    revocationDate: transaction.revocationDate,
-                    expirationDate: transaction.expirationDate
-                )
-            case .unverified(let transaction, _):
-                candidate = StoreKitEntitlementCandidate(
-                    verification: .unverified,
-                    productID: transaction.productID,
-                    revocationDate: transaction.revocationDate,
-                    expirationDate: transaction.expirationDate
-                )
-            }
+        let entitlementProductIDs = productIDs + retiredProductIDs
+        let expectedAccountToken = await appAccountTokenProvider?()
+        var activeCandidate: StoreKitEntitlementCandidate?
+        var observedVerificationFailure = false
+        var observedOwnershipMismatch = false
 
-            if let entitlement = try resolveStoreKitEntitlementCandidate(
-                candidate,
-                configuredProductIDs: configuredProductIDs,
-                now: Date()
-            ) {
-                return entitlement
+        for productID in entitlementProductIDs {
+            for await result in Transaction.currentEntitlements(for: productID) {
+                let candidate = StoreKitEntitlementCandidate(result: result)
+                switch evaluateStoreKitEntitlementCandidate(
+                    candidate,
+                    expectedAccountToken: expectedAccountToken,
+                    now: Date()
+                ) {
+                case .active:
+                    if activeCandidate == nil {
+                        activeCandidate = candidate
+                    }
+                case .verificationFailed:
+                    observedVerificationFailure = true
+                case .ownershipMismatch:
+                    observedOwnershipMismatch = true
+                case .inactive:
+                    break
+                }
             }
         }
 
-        return .inactive
+        let statusResolution = await subscriptionStatusResolution(
+            expectedAccountToken: expectedAccountToken
+        )
+        if case .active = statusResolution {
+            return statusResolution
+        }
+        if let activeCandidate {
+            return .active(
+                activeCandidate.entitlement,
+                renewalState: .subscribed,
+                ownership: activeCandidate.ownership
+            )
+        }
+        if observedVerificationFailure {
+            return .unknown(.verificationFailed)
+        }
+        if observedOwnershipMismatch {
+            return .unknown(.ownershipMismatch)
+        }
+        return statusResolution
     }
 
     public func purchase(productID: String) async throws -> SubscriptionPurchaseResult {
@@ -240,25 +431,39 @@ public struct StoreKitSubscriptionClient: SubscriptionClient {
             purchaseOptions.insert(.appAccountToken(appAccountToken))
         }
 
-        let result = try await product.purchase(options: purchaseOptions)
+        let result: Product.PurchaseResult
+        do {
+            result = try await product.purchase(options: purchaseOptions)
+        } catch StoreKitError.userCancelled {
+            return SubscriptionPurchaseResult(
+                status: .cancelled,
+                entitlementState: await currentEntitlement()
+            )
+        } catch {
+            throw SubscriptionError.storeUnavailable
+        }
         switch result {
         case .success(let verificationResult):
             let transaction = try verified(verificationResult)
-            let entitlement = try await currentEntitlement()
-            await transaction.finish()
+            let entitlementState = await currentEntitlement()
             return SubscriptionPurchaseResult(
                 status: .purchased,
-                entitlement: entitlement
+                entitlementState: entitlementState,
+                delivery: SubscriptionTransactionDelivery(
+                    productID: transaction.productID,
+                    ownership: transaction.subscriptionOwnership,
+                    finishAction: { await transaction.finish() }
+                )
             )
         case .pending:
             return SubscriptionPurchaseResult(
                 status: .pending,
-                entitlement: (try? await currentEntitlement()) ?? .inactive
+                entitlementState: await currentEntitlement()
             )
         case .userCancelled:
             return SubscriptionPurchaseResult(
                 status: .cancelled,
-                entitlement: (try? await currentEntitlement()) ?? .inactive
+                entitlementState: await currentEntitlement()
             )
         @unknown default:
             throw SubscriptionError.unexpectedResponse
@@ -274,15 +479,15 @@ public struct StoreKitSubscriptionClient: SubscriptionClient {
             throw SubscriptionError.storeUnavailable
         }
 
-        let entitlement = try await currentEntitlement()
+        let entitlementState = await currentEntitlement()
         return SubscriptionPurchaseResult(
-            status: entitlement.isActive ? .restored : .notEntitled,
-            entitlement: entitlement
+            status: entitlementState.entitlement?.isActive == true ? .restored : .notEntitled,
+            entitlementState: entitlementState
         )
     }
 
     public func transactionUpdates() async -> AsyncStream<SubscriptionTransactionUpdate> {
-        let configuredProductIDs = Set(productIDs)
+        let entitlementProductIDs = Set(productIDs + retiredProductIDs)
 
         return AsyncStream { continuation in
             let listenerTask = Task(priority: .background) {
@@ -291,19 +496,23 @@ public struct StoreKitSubscriptionClient: SubscriptionClient {
 
                     switch result {
                     case .verified(let transaction):
-                        guard configuredProductIDs.contains(transaction.productID) else { continue }
+                        guard entitlementProductIDs.contains(transaction.productID) else { continue }
                         continuation.yield(SubscriptionTransactionUpdate(
                             verification: .verified,
                             productID: transaction.productID,
+                            ownership: transaction.subscriptionOwnership,
+                            effect: transaction.subscriptionEffect,
                             finishAction: {
                                 await transaction.finish()
                             }
                         ))
                     case .unverified(let transaction, _):
-                        guard configuredProductIDs.contains(transaction.productID) else { continue }
+                        guard entitlementProductIDs.contains(transaction.productID) else { continue }
                         continuation.yield(SubscriptionTransactionUpdate(
                             verification: .unverified,
-                            productID: transaction.productID
+                            productID: transaction.productID,
+                            ownership: transaction.subscriptionOwnership,
+                            effect: .unknown
                         ))
                     }
                 }
@@ -334,6 +543,64 @@ public struct StoreKitSubscriptionClient: SubscriptionClient {
             return 50
         }
     }
+
+    private func subscriptionStatusResolution(
+        expectedAccountToken: UUID?
+    ) async -> SubscriptionEntitlementState {
+        let products: [Product]
+        do {
+            products = try await Product.products(for: productIDs)
+        } catch {
+            return .unknown(.storeUnavailable)
+        }
+        guard !products.isEmpty else { return .unknown(.productsUnavailable) }
+
+        var inactiveState: SubscriptionRenewalState = .notApplicable
+        do {
+            for product in products {
+                guard let subscription = product.subscription else { continue }
+                for status in try await subscription.status {
+                    let transaction: Transaction
+                    switch status.transaction {
+                    case .verified(let verifiedTransaction):
+                        transaction = verifiedTransaction
+                    case .unverified:
+                        return .unknown(.verificationFailed)
+                    }
+                    guard productIDs.contains(transaction.productID) else { continue }
+                    let ownership = transaction.subscriptionOwnership
+                    guard ownership.isCompatible(with: expectedAccountToken) else {
+                        return .unknown(.ownershipMismatch)
+                    }
+                    guard case .verified = status.renewalInfo else {
+                        return .unknown(.verificationFailed)
+                    }
+
+                    let renewalState = status.state.prosePalRenewalState
+                    switch renewalState {
+                    case .subscribed, .gracePeriod:
+                        return .active(
+                            SubscriptionEntitlement(
+                                isActive: true,
+                                productID: transaction.productID,
+                                expiresAt: transaction.expirationDate
+                            ),
+                            renewalState: renewalState,
+                            ownership: ownership
+                        )
+                    case .billingRetry, .expired, .revoked:
+                        inactiveState = renewalState
+                    case .notApplicable:
+                        break
+                    }
+                }
+            }
+        } catch {
+            return .unknown(.storeUnavailable)
+        }
+
+        return .confirmedInactive(renewalState: inactiveState)
+    }
 }
 
 enum StoreKitEntitlementVerification: Equatable, Sendable {
@@ -346,6 +613,77 @@ struct StoreKitEntitlementCandidate: Equatable, Sendable {
     var productID: String
     var revocationDate: Date?
     var expirationDate: Date?
+    var appAccountToken: UUID?
+
+    init(
+        verification: StoreKitEntitlementVerification,
+        productID: String,
+        revocationDate: Date?,
+        expirationDate: Date?,
+        appAccountToken: UUID? = nil
+    ) {
+        self.verification = verification
+        self.productID = productID
+        self.revocationDate = revocationDate
+        self.expirationDate = expirationDate
+        self.appAccountToken = appAccountToken
+    }
+
+    init(result: VerificationResult<Transaction>) {
+        switch result {
+        case .verified(let transaction):
+            self.init(
+                verification: .verified,
+                productID: transaction.productID,
+                revocationDate: transaction.revocationDate,
+                expirationDate: transaction.expirationDate,
+                appAccountToken: transaction.appAccountToken
+            )
+        case .unverified(let transaction, _):
+            self.init(
+                verification: .unverified,
+                productID: transaction.productID,
+                revocationDate: transaction.revocationDate,
+                expirationDate: transaction.expirationDate,
+                appAccountToken: transaction.appAccountToken
+            )
+        }
+    }
+
+    var entitlement: SubscriptionEntitlement {
+        SubscriptionEntitlement(
+            isActive: true,
+            productID: productID,
+            expiresAt: expirationDate
+        )
+    }
+
+    var ownership: SubscriptionTransactionOwnership {
+        appAccountToken.map(SubscriptionTransactionOwnership.linked) ?? .unlinked
+    }
+}
+
+enum StoreKitEntitlementCandidateEvaluation: Equatable, Sendable {
+    case active
+    case inactive
+    case verificationFailed
+    case ownershipMismatch
+}
+
+func evaluateStoreKitEntitlementCandidate(
+    _ candidate: StoreKitEntitlementCandidate,
+    expectedAccountToken: UUID?,
+    now: Date
+) -> StoreKitEntitlementCandidateEvaluation {
+    guard candidate.verification == .verified else { return .verificationFailed }
+    guard candidate.ownership.isCompatible(with: expectedAccountToken) else {
+        return .ownershipMismatch
+    }
+    guard candidate.revocationDate == nil else { return .inactive }
+    if let expirationDate = candidate.expirationDate, expirationDate < now {
+        return .inactive
+    }
+    return .active
 }
 
 func resolveStoreKitEntitlementCandidate(
@@ -354,19 +692,17 @@ func resolveStoreKitEntitlementCandidate(
     now: Date
 ) throws -> SubscriptionEntitlement? {
     guard configuredProductIDs.contains(candidate.productID) else { return nil }
-    guard candidate.verification == .verified else {
+    let evaluation = evaluateStoreKitEntitlementCandidate(
+        candidate,
+        expectedAccountToken: nil,
+        now: now
+    )
+    guard evaluation != .verificationFailed else {
         throw SubscriptionError.verificationFailed
     }
-    guard candidate.revocationDate == nil else { return nil }
-    if let expirationDate = candidate.expirationDate, expirationDate < now {
-        return nil
-    }
+    guard evaluation == .active else { return nil }
 
-    return SubscriptionEntitlement(
-        isActive: true,
-        productID: candidate.productID,
-        expiresAt: candidate.expirationDate
-    )
+    return candidate.entitlement
 }
 
 private func verified<T>(_ result: VerificationResult<T>) throws -> T {
@@ -397,6 +733,41 @@ private extension Product {
         }
 
         return "Every \(period.value) \(unit)"
+    }
+}
+
+private extension Transaction {
+    var subscriptionOwnership: SubscriptionTransactionOwnership {
+        appAccountToken.map(SubscriptionTransactionOwnership.linked) ?? .unlinked
+    }
+
+    var subscriptionEffect: SubscriptionTransactionEffect {
+        if revocationDate != nil {
+            return .removesAccess
+        }
+        if let expirationDate, expirationDate < Date() {
+            return .removesAccess
+        }
+        return .grantsOrRenews
+    }
+}
+
+private extension Product.SubscriptionInfo.RenewalState {
+    var prosePalRenewalState: SubscriptionRenewalState {
+        switch self {
+        case .subscribed:
+            .subscribed
+        case .inGracePeriod:
+            .gracePeriod
+        case .inBillingRetryPeriod:
+            .billingRetry
+        case .expired:
+            .expired
+        case .revoked:
+            .revoked
+        default:
+            .notApplicable
+        }
     }
 }
 #endif

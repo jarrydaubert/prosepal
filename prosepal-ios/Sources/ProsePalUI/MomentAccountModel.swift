@@ -11,6 +11,7 @@ public final class MomentAccountModel {
     public private(set) var isSigningIn = false
     public private(set) var isPremiumUnlocked = false
     public private(set) var subscriptionEntitlement: SubscriptionEntitlement = .inactive
+    public private(set) var subscriptionEntitlementState: SubscriptionEntitlementState = .unknown(.storeUnavailable)
     public private(set) var subscriptionProducts: [SubscriptionProduct] = []
     public var selectedSubscriptionProductID: String?
     public private(set) var isLoadingSubscriptions = false
@@ -38,6 +39,7 @@ public final class MomentAccountModel {
     @ObservationIgnored private var appleCredentialRevocationTask: Task<Void, Never>?
     @ObservationIgnored private var subscriptionTransactionUpdatesTask: Task<Void, Never>?
     @ObservationIgnored private var subscriptionEntitlementRefreshOperation: SubscriptionEntitlementRefreshOperation?
+    @ObservationIgnored private var signedInUserID: String?
 
     public init(
         clientContext: ClientContext,
@@ -502,6 +504,7 @@ public final class MomentAccountModel {
         guard let subscriptionClient else {
             isPremiumUnlocked = false
             subscriptionEntitlement = .inactive
+            subscriptionEntitlementState = .unknown(.notConfigured)
             diagnostics.subscriptionEvent(
                 "subscription_entitlement_unconfigured",
                 source: source,
@@ -545,9 +548,24 @@ public final class MomentAccountModel {
             configuredProductCount: configuredSubscriptionProductCount
         )
 
-        do {
-            let entitlement = try await subscriptionClient.currentEntitlement()
-            isPremiumUnlocked = entitlement.isActive
+        let state = await subscriptionClient.currentEntitlement()
+        subscriptionEntitlementState = state
+        switch state {
+        case .active(let entitlement, _, let ownership):
+            let expectedToken = currentSignedInAccountToken
+            guard ownership.isCompatible(with: expectedToken) else {
+                subscriptionEntitlementState = .unknown(.ownershipMismatch)
+                subscriptionErrorMessage = SubscriptionEntitlementFailure.ownershipMismatch.userSafeMessage
+                diagnostics.subscriptionEvent(
+                    "subscription_entitlement_refresh_failed",
+                    source: source,
+                    productCount: fetchedSubscriptionProductCount,
+                    configuredProductCount: configuredSubscriptionProductCount,
+                    outcome: "ownership_mismatch"
+                )
+                return false
+            }
+            isPremiumUnlocked = true
             subscriptionEntitlement = entitlement
             subscriptionErrorMessage = nil
             diagnostics.subscriptionEvent(
@@ -555,31 +573,31 @@ public final class MomentAccountModel {
                 source: source,
                 productCount: fetchedSubscriptionProductCount,
                 configuredProductCount: configuredSubscriptionProductCount,
-                outcome: entitlement.isActive ? "active" : "inactive"
+                outcome: "active"
             )
             return true
-        } catch let error as SubscriptionError {
+        case .confirmedInactive:
             isPremiumUnlocked = false
             subscriptionEntitlement = .inactive
-            subscriptionErrorMessage = error.userSafeMessage
+            subscriptionErrorMessage = nil
             diagnostics.subscriptionEvent(
-                "subscription_entitlement_refresh_failed",
+                "subscription_entitlement_refresh_succeeded",
                 source: source,
                 productCount: fetchedSubscriptionProductCount,
                 configuredProductCount: configuredSubscriptionProductCount,
-                outcome: error.diagnosticsOutcome
+                outcome: "inactive"
             )
-            return false
-        } catch {
-            isPremiumUnlocked = false
-            subscriptionEntitlement = .inactive
-            subscriptionErrorMessage = SubscriptionError.unexpectedResponse.userSafeMessage
+            return true
+        case .unknown(let failure):
+            // Unknown never creates access. A previously verified active value is
+            // retained only within the same account epoch until StoreKit recovers.
+            subscriptionErrorMessage = failure.userSafeMessage
             diagnostics.subscriptionEvent(
                 "subscription_entitlement_refresh_failed",
                 source: source,
                 productCount: fetchedSubscriptionProductCount,
                 configuredProductCount: configuredSubscriptionProductCount,
-                outcome: "unexpected_error"
+                outcome: failure.rawValue
             )
             return false
         }
@@ -644,7 +662,7 @@ public final class MomentAccountModel {
 
         do {
             let result = try await subscriptionClient.purchase(productID: productID)
-            applySubscriptionPurchaseResult(result, source: source)
+            await applySubscriptionPurchaseResult(result, source: source)
         } catch let error as SubscriptionError {
             subscriptionErrorMessage = error.userSafeMessage
             showNotice(error.userSafeMessage, systemImage: "exclamationmark.triangle")
@@ -695,7 +713,7 @@ public final class MomentAccountModel {
 
         do {
             let result = try await subscriptionClient.restorePurchases()
-            applySubscriptionPurchaseResult(result, source: source)
+            await applySubscriptionPurchaseResult(result, source: source)
         } catch let error as SubscriptionError {
             subscriptionErrorMessage = error.userSafeMessage
             showNotice(error.userSafeMessage, systemImage: "exclamationmark.triangle")
@@ -789,6 +807,13 @@ public final class MomentAccountModel {
 
     private func applyAuthSession(_ session: AuthSession?) {
         let continuableSession = session?.canContinueSignIn == true ? session : nil
+        let nextUserID = continuableSession?.user?.id
+        if signedInUserID != nextUserID {
+            isPremiumUnlocked = false
+            subscriptionEntitlement = .inactive
+            subscriptionEntitlementState = .unknown(.storeUnavailable)
+        }
+        signedInUserID = nextUserID
         isSignedIn = continuableSession != nil
         signedInEmail = continuableSession?.user?.email
 
@@ -798,13 +823,40 @@ public final class MomentAccountModel {
         }
     }
 
-    private func applySubscriptionPurchaseResult(_ result: SubscriptionPurchaseResult, source: String) {
-        if result.entitlement.isActive {
+    private func applySubscriptionPurchaseResult(
+        _ result: SubscriptionPurchaseResult,
+        source: String
+    ) async {
+        subscriptionEntitlementState = result.entitlementState
+        var didConverge = false
+        switch result.entitlementState {
+        case .active(let entitlement, _, let ownership):
+            guard ownership.isCompatible(with: currentSignedInAccountToken),
+                  result.transactionOwnership?.isCompatible(with: currentSignedInAccountToken) != false else {
+                subscriptionEntitlementState = .unknown(.ownershipMismatch)
+                subscriptionErrorMessage = SubscriptionEntitlementFailure.ownershipMismatch.userSafeMessage
+                break
+            }
+            guard result.transactionProductID == nil || result.transactionProductID == entitlement.productID else {
+                subscriptionEntitlementState = .unknown(.verificationFailed)
+                subscriptionErrorMessage = SubscriptionEntitlementFailure.verificationFailed.userSafeMessage
+                break
+            }
             isPremiumUnlocked = true
-            subscriptionEntitlement = result.entitlement
-        } else if result.status == .restored || result.status == .notEntitled {
+            subscriptionEntitlement = entitlement
+            subscriptionErrorMessage = nil
+            didConverge = true
+        case .confirmedInactive:
             isPremiumUnlocked = false
             subscriptionEntitlement = .inactive
+            subscriptionErrorMessage = nil
+            didConverge = true
+        case .unknown(let failure):
+            subscriptionErrorMessage = failure.userSafeMessage
+        }
+
+        if result.status == .purchased, didConverge, isPremiumUnlocked {
+            await result.finish()
         }
 
         diagnostics.subscriptionEvent(
@@ -817,20 +869,28 @@ public final class MomentAccountModel {
 
         switch result.status {
         case .purchased:
-            if result.entitlement.isActive {
+            if didConverge, isPremiumUnlocked {
                 showNotice("Premium purchase completed", systemImage: "checkmark.seal.fill")
             } else {
                 subscriptionErrorMessage = SubscriptionError.verificationFailed.userSafeMessage
                 showNotice("Purchase needs verification", systemImage: "exclamationmark.triangle")
             }
         case .restored:
-            showNotice(result.entitlement.isActive ? "Premium restored" : "No active subscription found", systemImage: "arrow.clockwise")
+            if case .unknown = result.entitlementState {
+                showNotice("Could not verify purchases. Please try again.", systemImage: "exclamationmark.triangle")
+            } else {
+                showNotice(isPremiumUnlocked ? "Premium restored" : "No active subscription found", systemImage: "arrow.clockwise")
+            }
         case .pending:
             showNotice("Purchase pending approval", systemImage: "clock")
         case .cancelled:
             showNotice("Purchase cancelled", systemImage: "xmark.circle")
         case .notEntitled:
-            showNotice("No active subscription found", systemImage: "arrow.clockwise")
+            if case .unknown = result.entitlementState {
+                showNotice("Could not verify purchases. Please try again.", systemImage: "exclamationmark.triangle")
+            } else {
+                showNotice("No active subscription found", systemImage: "arrow.clockwise")
+            }
         }
     }
 
@@ -903,11 +963,42 @@ public final class MomentAccountModel {
             return
         }
 
+        guard update.ownership.isCompatible(with: currentSignedInAccountToken) else {
+            subscriptionEntitlementState = .unknown(.ownershipMismatch)
+            subscriptionErrorMessage = SubscriptionEntitlementFailure.ownershipMismatch.userSafeMessage
+            diagnostics.subscriptionEvent(
+                "subscription_transaction_ownership_mismatch",
+                source: "transaction_updates",
+                productCount: fetchedSubscriptionProductCount,
+                configuredProductCount: configuredSubscriptionProductCount,
+                outcome: "ownership_mismatch"
+            )
+            return
+        }
+
         let didConverge = await refreshSubscriptionEntitlement(
             source: "transaction_updates"
         )
-        guard didConverge, !Task.isCancelled else { return }
+        guard didConverge,
+              !Task.isCancelled,
+              hasReconciled(update) else { return }
         await update.finish()
+    }
+
+    private func hasReconciled(_ update: SubscriptionTransactionUpdate) -> Bool {
+        switch update.effect {
+        case .grantsOrRenews:
+            return subscriptionEntitlementState.entitlement?.productID == update.productID
+        case .removesAccess:
+            return subscriptionEntitlementState.entitlement?.productID != update.productID
+        case .unknown:
+            return false
+        }
+    }
+
+    private var currentSignedInAccountToken: UUID? {
+        guard let signedInUserID else { return nil }
+        return UUID(uuidString: signedInUserID)
     }
 
     private func showNotice(_ title: String, systemImage: String) {

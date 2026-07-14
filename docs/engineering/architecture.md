@@ -54,7 +54,11 @@ results even when a dependency returns after cancellation.
 
 `MomentAccountModel` owns sign-in presentation, current account state, Apple
 credential-state reconciliation and revocation events, subscription products,
-entitlement convergence, transaction updates, and account-maintenance actions.
+explicit active/inactive/unknown entitlement state, same-account last-known-good
+access, transaction convergence, account-switch invalidation, and
+account-maintenance actions. `StoreKitSubscriptionClient` owns StoreKit reads and
+deferred transaction delivery; only the account model decides when correlated
+delivery is safe to finish.
 
 SwiftData owns Truth Beads, Voice Cards, and deliberately saved drafts. Active
 draft recovery is separate so relaunch recovery does not silently turn every
@@ -163,7 +167,7 @@ helpers instead of moving unrelated code or attempting a big-bang rewrite.
 | Boundary | Owner |
 |---|---|
 | Account and entitlement presentation state | `ProsePalUI/MomentAccountModel.swift`: auth presentation, product selection, entitlement convergence, transaction-update coordination, and account maintenance |
-| StoreKit 2 client | `ProsePalAPI/SubscriptionClient.swift`: products, verified transactions, purchase, current entitlement, user-triggered restore, update stream, and finish actions |
+| StoreKit 2 client | `ProsePalAPI/SubscriptionClient.swift`: products, verified transactions and renewal status, purchase, tri-state current entitlement, ownership, retired-product policy, user-triggered restore, update stream, and deferred finish actions; `AppStoreKitTests/StoreKitSubscriptionClientStoreKitTests.swift`: app-hosted direct StoreKit Test scenarios |
 | Authentication and session | `ProsePalAPI/AuthSession.swift`, `SupabaseAuthClient.swift`, `AppleAccountLifecycleClient.swift`, and `AppleCredentialState.swift`: Keychain session, refresh serialization, nonce support, authenticated authorization-code forwarding, Apple credential-state checks, and revocation events |
 | App Intent and sanitized launch domain | `ProsePalUI/ProsePalAppIntents.swift`: `StartMomentIntent`, launch/deep-link payloads, app-group handoff, and package shortcut metadata |
 | App-target shortcut registration | `App/ProsePalAppShortcuts.swift`: app shortcut provider metadata |

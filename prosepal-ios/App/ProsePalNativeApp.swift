@@ -31,34 +31,38 @@ struct ProsePalNativeApp: App {
 
     var body: some Scene {
         WindowGroup {
-            let context = clientContext
-            let relationshipVaultContainer = relationshipVault.container
-            MomentAppRootView(
-                service: MessageWritingServiceFactory.makeService(
-                    authSessionController: authSessionController,
-                    clientContext: context,
-                    relationshipVaultContainer: relationshipVaultContainer
-                ),
-                account: MomentAccountModel(
-                    clientContext: context,
-                    authSessionController: authSessionController,
-                    authClient: authClient,
-                    appleAccountLifecycleClient: appleAccountLifecycleClient,
-                    appleCredentialStateProvider: appleCredentialStateProvider,
-                    subscriptionClient: SubscriptionClientFactory.makeClient(
-                        authSessionController: authSessionController
+            if ProsePalTestRuntime.isUnitTestHost {
+                Color.clear
+            } else {
+                let context = clientContext
+                let relationshipVaultContainer = relationshipVault.container
+                MomentAppRootView(
+                    service: MessageWritingServiceFactory.makeService(
+                        authSessionController: authSessionController,
+                        clientContext: context,
+                        relationshipVaultContainer: relationshipVaultContainer
                     ),
-                    accountMaintenanceClient: accountMaintenanceClient,
-                    localAccountDataDeletion: {
-                        try await RelationshipVaultLocalDataEraser.eraseAll(in: relationshipVault)
-                    },
-                    runtimeReadiness: RuntimeReadinessFactory.make(
-                        isRelationshipVaultPersistent: relationshipVault.isPersistent
+                    account: MomentAccountModel(
+                        clientContext: context,
+                        authSessionController: authSessionController,
+                        authClient: authClient,
+                        appleAccountLifecycleClient: appleAccountLifecycleClient,
+                        appleCredentialStateProvider: appleCredentialStateProvider,
+                        subscriptionClient: SubscriptionClientFactory.makeClient(
+                            authSessionController: authSessionController
+                        ),
+                        accountMaintenanceClient: accountMaintenanceClient,
+                        localAccountDataDeletion: {
+                            try await RelationshipVaultLocalDataEraser.eraseAll(in: relationshipVault)
+                        },
+                        runtimeReadiness: RuntimeReadinessFactory.make(
+                            isRelationshipVaultPersistent: relationshipVault.isPersistent
+                        )
                     )
                 )
-            )
-            .modelContainer(relationshipVaultContainer)
-            .prosePalDebugAccessibilityOverrides()
+                .modelContainer(relationshipVaultContainer)
+                .prosePalDebugAccessibilityOverrides()
+            }
         }
     }
 
@@ -67,6 +71,12 @@ struct ProsePalNativeApp: App {
             appVersion: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0.1.0",
             buildNumber: Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
         )
+    }
+}
+
+private enum ProsePalTestRuntime {
+    static var isUnitTestHost: Bool {
+        ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
     }
 }
 
@@ -327,6 +337,7 @@ private enum SubscriptionClientFactory {
     static func makeClient(authSessionController: AuthSessionController?) -> (any SubscriptionClient)? {
         let config = NativeRuntimeConfig.prosePalApp
         let productIDs = config.list(named: "PROSEPAL_PREMIUM_PRODUCT_IDS")
+        let retiredProductIDs = config.list(named: "PROSEPAL_RETIRED_PREMIUM_PRODUCT_IDS")
 
         #if DEBUG
         if ProsePalDebugLaunchArguments.usesMockSubscriptionService {
@@ -342,6 +353,7 @@ private enum SubscriptionClientFactory {
         #if canImport(StoreKit)
         return StoreKitSubscriptionClient(
             productIDs: productIDs,
+            retiredProductIDs: retiredProductIDs,
             recommendedProductID: config.value(named: "PROSEPAL_RECOMMENDED_PREMIUM_PRODUCT_ID"),
             appAccountTokenProvider: {
                 guard let authSessionController else { return nil }
@@ -372,8 +384,10 @@ private struct DebugSubscriptionClient: SubscriptionClient {
         products
     }
 
-    func currentEntitlement() async throws -> SubscriptionEntitlement {
-        isPremiumUnlocked ? activeEntitlement(productID: yearlyProductID) : .inactive
+    func currentEntitlement() async -> SubscriptionEntitlementState {
+        isPremiumUnlocked
+            ? .active(activeEntitlement(productID: yearlyProductID))
+            : .inactive
     }
 
     func purchase(productID: String) async throws -> SubscriptionPurchaseResult {

@@ -80,6 +80,21 @@ Evidence must cover:
 - optional system surfaces included in the candidate; and
 - archive secret and configuration inspection.
 
+Before sandbox/TestFlight promotion, run the app-hosted direct client suite from
+the shared staging scheme:
+
+```bash
+cd prosepal-ios
+xcodebuild -project ProsePal.xcodeproj \
+  -scheme "ProsePal Staging" \
+  -destination 'platform=iOS Simulator,name=iPhone 17' \
+  -only-testing:ProsePalStoreKitTests test
+```
+
+Every discovered StoreKit scenario must execute. A configuration-install skip,
+including `SKInternalErrorDomain Code=3` from the Apple test environment, blocks
+this gate until it is rerun on a working Xcode/runtime. It is not a client pass.
+
 ## Failure handling
 
 Stop promotion when a required gate fails. Record privacy-safe evidence, create

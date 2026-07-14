@@ -553,6 +553,7 @@ func transactionUpdatesConvergeApprovalsRenewalsFamilySharingAndRevocations() as
     await subscriptionClient.emitTransactionUpdate(SubscriptionTransactionUpdate(
         verification: .verified,
         productID: "com.prosepal.pro.yearly",
+        effect: .removesAccess,
         finishAction: { await finishRecorder.recordFinish() }
     ))
     await waitForTransactionUpdates(finishRecorder: finishRecorder, expectedFinishCount: 3)
@@ -596,6 +597,7 @@ func unverifiedTransactionUpdateCannotUnlockPremiumOrFinishTransaction() async {
     await subscriptionClient.emitTransactionUpdate(SubscriptionTransactionUpdate(
         verification: .verified,
         productID: "com.prosepal.pro.yearly",
+        effect: .removesAccess,
         finishAction: { await verifiedFinishRecorder.recordFinish() }
     ))
     await waitForTransactionUpdates(
@@ -612,7 +614,7 @@ func unverifiedTransactionUpdateCannotUnlockPremiumOrFinishTransaction() async {
 
 @Test
 @MainActor
-func verifiedTransactionIsNotFinishedWhenEntitlementConvergenceFails() async {
+func failedTransactionReconciliationRemainsUnfinishedUntilRedeliveryConverges() async {
     let subscriptionClient = MomentAccountSubscriptionClient(
         currentEntitlementError: SubscriptionError.storeUnavailable
     )
@@ -634,6 +636,240 @@ func verifiedTransactionIsNotFinishedWhenEntitlementConvergenceFails() async {
     #expect(await finishRecorder.finishCount() == 0)
     #expect(account.isPremiumUnlocked == false)
     #expect(account.subscriptionErrorMessage == SubscriptionError.storeUnavailable.userSafeMessage)
+
+    await subscriptionClient.setEntitlement(SubscriptionEntitlement(
+        isActive: true,
+        productID: "com.prosepal.pro.yearly"
+    ))
+    await subscriptionClient.emitTransactionUpdate(SubscriptionTransactionUpdate(
+        verification: .verified,
+        productID: "com.prosepal.pro.yearly",
+        finishAction: { await finishRecorder.recordFinish() }
+    ))
+    await waitForTransactionUpdates(
+        finishRecorder: finishRecorder,
+        expectedFinishCount: 1
+    )
+
+    #expect(await subscriptionClient.currentEntitlementCallCount() == 2)
+    #expect(account.isPremiumUnlocked)
+    account.stopSubscriptionTransactionListener()
+}
+
+@Test
+@MainActor
+func transientEntitlementFailureKeepsLastVerifiedActiveAccessForSameAccount() async {
+    let active = SubscriptionEntitlement(
+        isActive: true,
+        productID: "com.prosepal.pro.yearly"
+    )
+    let subscriptionClient = MomentAccountSubscriptionClient(entitlement: active)
+    let account = makeAccount(subscriptionClient: subscriptionClient)
+
+    #expect(await account.refreshSubscriptionEntitlement(source: "launch"))
+    #expect(account.isPremiumUnlocked)
+    #expect(account.subscriptionEntitlement == active)
+
+    await subscriptionClient.setEntitlementError(SubscriptionError.storeUnavailable)
+    #expect(await account.refreshSubscriptionEntitlement(source: "foreground") == false)
+
+    #expect(account.isPremiumUnlocked)
+    #expect(account.subscriptionEntitlement == active)
+    #expect(account.subscriptionEntitlementState == .unknown(.storeUnavailable))
+    #expect(account.subscriptionErrorMessage == SubscriptionError.storeUnavailable.userSafeMessage)
+    account.stopSubscriptionTransactionListener()
+}
+
+@Test
+@MainActor
+func unknownEntitlementNeverCreatesPremiumAndConfirmedInactiveClearsLastKnownAccess() async {
+    let subscriptionClient = MomentAccountSubscriptionClient(
+        currentEntitlementError: SubscriptionError.storeUnavailable
+    )
+    let account = makeAccount(subscriptionClient: subscriptionClient)
+
+    #expect(await account.refreshSubscriptionEntitlement(source: "launch") == false)
+    #expect(account.isPremiumUnlocked == false)
+    #expect(account.subscriptionEntitlement == .inactive)
+
+    await subscriptionClient.setEntitlement(SubscriptionEntitlement(
+        isActive: true,
+        productID: "com.prosepal.pro.monthly"
+    ))
+    #expect(await account.refreshSubscriptionEntitlement(source: "retry"))
+    #expect(account.isPremiumUnlocked)
+
+    await subscriptionClient.setEntitlement(.inactive)
+    #expect(await account.refreshSubscriptionEntitlement(source: "expiration"))
+    #expect(account.isPremiumUnlocked == false)
+    #expect(account.subscriptionEntitlementState == .inactive)
+    account.stopSubscriptionTransactionListener()
+}
+
+@Test
+@MainActor
+func successfulPurchaseFinishesOnlyAfterActiveEntitlementDelivery() async {
+    let product = SubscriptionProduct.yearly(isRecommended: true)
+    let finishRecorder = MomentAccountTransactionFinishRecorder()
+    let active = SubscriptionEntitlement(isActive: true, productID: product.id)
+    let subscriptionClient = MomentAccountSubscriptionClient(
+        products: [product],
+        purchaseResult: SubscriptionPurchaseResult(
+            status: .purchased,
+            entitlementState: .active(active),
+            delivery: SubscriptionTransactionDelivery(
+                productID: product.id,
+                ownership: .unlinked,
+                finishAction: { await finishRecorder.recordFinish() }
+            )
+        )
+    )
+    let account = makeAccount(subscriptionClient: subscriptionClient)
+
+    await account.loadSubscriptionProducts(source: "paywall")
+    await account.purchasePremium(source: "paywall")
+
+    #expect(account.isPremiumUnlocked)
+    #expect(await finishRecorder.finishCount() == 1)
+    account.stopSubscriptionTransactionListener()
+}
+
+@Test
+@MainActor
+func purchaseWithMismatchedDeliveredProductDoesNotUnlockOrFinish() async {
+    let yearly = SubscriptionProduct.yearly(isRecommended: true)
+    let monthlyID = "com.prosepal.pro.monthly"
+    let finishRecorder = MomentAccountTransactionFinishRecorder()
+    let subscriptionClient = MomentAccountSubscriptionClient(
+        products: [yearly],
+        purchaseResult: SubscriptionPurchaseResult(
+            status: .purchased,
+            entitlementState: .active(SubscriptionEntitlement(
+                isActive: true,
+                productID: yearly.id
+            )),
+            delivery: SubscriptionTransactionDelivery(
+                productID: monthlyID,
+                ownership: .unlinked,
+                finishAction: { await finishRecorder.recordFinish() }
+            )
+        )
+    )
+    let account = makeAccount(subscriptionClient: subscriptionClient)
+
+    await account.loadSubscriptionProducts(source: "paywall")
+    await account.purchasePremium(source: "paywall")
+
+    #expect(account.isPremiumUnlocked == false)
+    #expect(account.subscriptionEntitlementState == .unknown(.verificationFailed))
+    #expect(await finishRecorder.finishCount() == 0)
+    #expect(account.notice?.title == "Purchase needs verification")
+    account.stopSubscriptionTransactionListener()
+}
+
+@Test
+@MainActor
+func unknownRestoreKeepsSameAccountLastKnownGoodAndShowsVerificationFailure() async {
+    let active = SubscriptionEntitlement(
+        isActive: true,
+        productID: "com.prosepal.pro.yearly"
+    )
+    let subscriptionClient = MomentAccountSubscriptionClient(
+        entitlement: active,
+        restoreResult: SubscriptionPurchaseResult(
+            status: .notEntitled,
+            entitlementState: .unknown(.storeUnavailable)
+        )
+    )
+    let account = makeAccount(subscriptionClient: subscriptionClient)
+
+    #expect(await account.refreshSubscriptionEntitlement(source: "launch"))
+    await account.restorePurchases(source: "settings")
+
+    #expect(account.isPremiumUnlocked)
+    #expect(account.subscriptionEntitlement == active)
+    #expect(account.subscriptionEntitlementState == .unknown(.storeUnavailable))
+    #expect(account.notice?.title == "Could not verify purchases. Please try again.")
+    account.stopSubscriptionTransactionListener()
+}
+
+@Test
+@MainActor
+func mismatchedAccountTransactionDoesNotUnlockOrFinish() async {
+    let signedInAccount = UUID(uuidString: "11111111-1111-1111-1111-111111111111")!
+    let otherAccount = UUID(uuidString: "22222222-2222-2222-2222-222222222222")!
+    let store = MomentAccountInMemoryAuthSessionStore(session: .test(
+        accessToken: "token",
+        userID: signedInAccount.uuidString
+    ))
+    let subscriptionClient = MomentAccountSubscriptionClient(entitlement: SubscriptionEntitlement(
+        isActive: true,
+        productID: "com.prosepal.pro.yearly"
+    ))
+    let finishRecorder = MomentAccountTransactionFinishRecorder()
+    let account = makeAccount(store: store, subscriptionClient: subscriptionClient)
+    await account.loadAuthSession()
+
+    await subscriptionClient.emitTransactionUpdate(SubscriptionTransactionUpdate(
+        verification: .verified,
+        productID: "com.prosepal.pro.yearly",
+        ownership: .linked(otherAccount),
+        finishAction: { await finishRecorder.recordFinish() }
+    ))
+    for _ in 0..<200 { await Task.yield() }
+
+    #expect(account.isPremiumUnlocked == false)
+    #expect(account.subscriptionEntitlementState == .unknown(.ownershipMismatch))
+    #expect(await finishRecorder.finishCount() == 0)
+    #expect(await subscriptionClient.currentEntitlementCallCount() == 0)
+    account.stopSubscriptionTransactionListener()
+}
+
+@Test
+@MainActor
+func switchingAccountsClearsLastKnownPremiumAndRejectsThePreviousOwner() async throws {
+    let accountA = UUID(uuidString: "11111111-1111-1111-1111-111111111111")!
+    let accountB = UUID(uuidString: "22222222-2222-2222-2222-222222222222")!
+    let store = MomentAccountInMemoryAuthSessionStore(session: .test(
+        accessToken: "token-a",
+        userID: accountA.uuidString
+    ))
+    let entitlement = SubscriptionEntitlement(
+        isActive: true,
+        productID: "com.prosepal.pro.yearly"
+    )
+    let subscriptionClient = MomentAccountSubscriptionClient(
+        entitlementState: .active(
+            entitlement,
+            ownership: .linked(accountA)
+        )
+    )
+    let authClient = MomentAccountAuthClient(session: .test(
+        accessToken: "token-b",
+        userID: accountB.uuidString
+    ))
+    let account = makeAccount(
+        store: store,
+        authClient: authClient,
+        subscriptionClient: subscriptionClient
+    )
+
+    await account.loadAuthSession()
+    #expect(await account.refreshSubscriptionEntitlement(source: "account-a"))
+    #expect(account.isPremiumUnlocked)
+
+    #expect(account.beginAppleSignInRequest(source: "settings") != nil)
+    await account.completeAppleSignIn(
+        idToken: "apple-token-b",
+        authorizationCode: "authorization-code-b",
+        appleUserID: "apple-user-b",
+        source: "settings"
+    )
+
+    #expect(account.isPremiumUnlocked == false)
+    #expect(account.subscriptionEntitlement == .inactive)
+    #expect(account.subscriptionEntitlementState == .unknown(.ownershipMismatch))
+    #expect(account.isPremiumUnlocked == false)
     account.stopSubscriptionTransactionListener()
 }
 
@@ -981,6 +1217,7 @@ private actor MomentAccountAppleCredentialStateStore {
 private actor MomentAccountSubscriptionClient: SubscriptionClient {
     private var products: [SubscriptionProduct]
     private var entitlement: SubscriptionEntitlement
+    private var entitlementState: SubscriptionEntitlementState?
     private var purchaseResult: SubscriptionPurchaseResult
     private var restoreResult: SubscriptionPurchaseResult
     private var loadProductsError: (any Error)?
@@ -1001,6 +1238,7 @@ private actor MomentAccountSubscriptionClient: SubscriptionClient {
     init(
         products: [SubscriptionProduct] = [],
         entitlement: SubscriptionEntitlement = .inactive,
+        entitlementState: SubscriptionEntitlementState? = nil,
         purchaseResult: SubscriptionPurchaseResult = SubscriptionPurchaseResult(status: .notEntitled),
         restoreResult: SubscriptionPurchaseResult = SubscriptionPurchaseResult(status: .notEntitled),
         loadProductsError: (any Error)? = nil,
@@ -1011,6 +1249,7 @@ private actor MomentAccountSubscriptionClient: SubscriptionClient {
     ) {
         self.products = products
         self.entitlement = entitlement
+        self.entitlementState = entitlementState
         self.purchaseResult = purchaseResult
         self.restoreResult = restoreResult
         self.loadProductsError = loadProductsError
@@ -1029,7 +1268,7 @@ private actor MomentAccountSubscriptionClient: SubscriptionClient {
         return products
     }
 
-    func currentEntitlement() async throws -> SubscriptionEntitlement {
+    func currentEntitlement() async -> SubscriptionEntitlementState {
         recordedCurrentEntitlementCallCount += 1
         activeCurrentEntitlementCallCount += 1
         recordedMaximumConcurrentEntitlementCallCount = max(
@@ -1038,13 +1277,16 @@ private actor MomentAccountSubscriptionClient: SubscriptionClient {
         )
         defer { activeCurrentEntitlementCallCount -= 1 }
         if let currentEntitlementDelay {
-            try await Task.sleep(for: currentEntitlementDelay)
+            try? await Task.sleep(for: currentEntitlementDelay)
         }
-        if let currentEntitlementError {
-            throw currentEntitlementError
+        if let error = currentEntitlementError as? SubscriptionError {
+            return .unknown(error.entitlementFailure)
+        }
+        if currentEntitlementError != nil {
+            return .unknown(.unexpectedResponse)
         }
 
-        return entitlement
+        return entitlementState ?? (entitlement.isActive ? .active(entitlement) : .inactive)
     }
 
     func purchase(productID: String) async throws -> SubscriptionPurchaseResult {
@@ -1086,6 +1328,17 @@ private actor MomentAccountSubscriptionClient: SubscriptionClient {
 
     func setEntitlement(_ entitlement: SubscriptionEntitlement) {
         self.entitlement = entitlement
+        entitlementState = nil
+        currentEntitlementError = nil
+    }
+
+    func setEntitlementState(_ state: SubscriptionEntitlementState) {
+        entitlementState = state
+        currentEntitlementError = nil
+    }
+
+    func setEntitlementError(_ error: any Error) {
+        currentEntitlementError = error
     }
 
     func emitTransactionUpdate(_ update: SubscriptionTransactionUpdate) {

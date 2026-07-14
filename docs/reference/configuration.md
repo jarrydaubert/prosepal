@@ -15,6 +15,7 @@ build settings copied into `Info.plist` for archives.
 | `PROSEPAL_SUPABASE_ANON_KEY` | Supabase publishable/legacy anon key | Auth and authenticated public APIs |
 | `PROSEPAL_PREMIUM_PRODUCT_IDS` | Comma-separated StoreKit products | Paywall, purchase, restore |
 | `PROSEPAL_RECOMMENDED_PREMIUM_PRODUCT_ID` | Preferred product identifier | Recommended paywall selection |
+| `PROSEPAL_RETIRED_PREMIUM_PRODUCT_IDS` | Comma-separated historical StoreKit products, excluded from the paywall | Entitlement and transaction-update recognition after a product leaves the launch set |
 
 `SUPABASE_URL` and `SUPABASE_ANON_KEY` are accepted as native local fallbacks,
 but the `PROSEPAL_` names are the app-facing contract.

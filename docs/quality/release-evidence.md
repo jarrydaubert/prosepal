@@ -60,4 +60,11 @@ The release owner signs only after every required area is passed or explicitly
 removed from the candidate scope. A failed gate becomes one backlog item with a
 deterministic definition of done before the candidate is promoted.
 
+For StoreKit, record package policy tests separately from the app-hosted
+`ProsePalStoreKitTests` run. The direct run must list discovered, passed, failed,
+and skipped scenarios plus the Xcode and simulator runtime versions. Any skip
+caused by failure to install the `.storekit` configuration leaves StoreKit proof
+open. Local StoreKit evidence never substitutes for sandbox/TestFlight product,
+purchase, restore, notification, or server-reconciliation evidence.
+
 See [Native Release](../operations/release.md) for the operational sequence.

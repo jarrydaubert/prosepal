@@ -168,6 +168,34 @@
           "winbackOffers" : [
 
           ]
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "2.99",
+          "familyShareable" : false,
+          "groupNumber" : 4,
+          "internalID" : "PROSEPAL-PRO-RETIRED",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Legacy ProsePal subscription used for entitlement migration tests.",
+              "displayName" : "ProsePal Pro Legacy",
+              "locale" : "en_GB"
+            }
+          ],
+          "productID" : "com.prosepal.pro.retired",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "ProsePal Pro Retired Test Product",
+          "subscriptionGroupID" : "PROSEPAL-PRO",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
         }
       ]
     }

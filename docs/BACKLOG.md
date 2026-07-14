@@ -269,9 +269,13 @@ completed item instead of turning this file into a status log.
   Xcode-launched paywall; an app-hosted StoreKit Test suite directly exercises
   `StoreKitSubscriptionClient` with verified, unverified, unrelated, and retired
   product transactions, purchase cancellation/pending/approval, renewal, grace,
-  billing retry, expiry, refund/revocation, Family Sharing, update-stream
-  termination, and finish only after entitlement convergence; transient read
-  failure remains distinguishable from inactive entitlement. Configured
+  billing retry, expiry, refund/revocation, Family Sharing when enabled,
+  update-stream termination, and finish only after entitlement convergence;
+  transient read failure remains distinguishable from inactive entitlement.
+  All direct scenarios execute without skips on a StoreKit Test runtime that
+  successfully installs `ProsePalStaging.storekit`; the Xcode 26.6 / iOS
+  26.4–26.5 `SKInternalErrorDomain Code=3` environment failure is rechecked on a
+  fixed Xcode/runtime and is not accepted as a pass. Configured
   production product IDs return products; purchase and user-triggered restore
   work without a forced app login; App Store Server notifications and
   reconciliation update staging entitlement; account switching cannot carry
@@ -324,13 +328,6 @@ completed item instead of turning this file into a status log.
   MessageLength, lane, and contract-version values have one generated source or
   a test that compares the Swift and gateway sets; adding a native value cannot
   reach production while the gateway would reject it.
-
-- [ ] Define transaction-update finishing and redelivery handling for verified
-  and unverified StoreKit transactions from retired or temporarily unconfigured
-  product IDs before changing the stable launch set. The current-entitlement
-  scan already ignores unrelated IDs before verification; the remaining policy
-  must prevent ignored update transactions from redelivering forever without
-  allowing them to unlock Premium.
 
 - [ ] Add quantified quota UI only when the server contract supplies structured
   limit, remaining-use, and reset metadata backed by an approved product policy.

@@ -258,22 +258,29 @@ failure paths.
 
 ### A-06 — StoreKit entitlement and subscription status
 
-**Priority and decision:** P0, refactor the entitlement result model and add
-subscription-status handling needed by product and server convergence.
+**Priority and decision:** implemented locally. Keep the explicit entitlement
+state model and prove it against StoreKit sandbox, TestFlight, and the server
+authority before release.
 
 **Minimum/toolchain:** subscription status requires iOS 17 and the per-product
 entitlement sequence requires iOS 18.4; both are below the iOS 26 minimum.
 
 **Source and behaviour:** `StoreKitSubscriptionClient.currentEntitlement()`
-iterates `Transaction.currentEntitlements`, classifies the transaction's product
-ID before treating verification failure as relevant, and returns an
-active/inactive value. An unverified transaction outside ProsePal's configured
-product set is ignored; an unverified configured transaction still fails
-closed. `MomentAccountModel` converts any entitlement-read failure into inactive
-and locks Premium. This still conflates “not entitled” with “StoreKit could not
-establish state” and can produce a transient false downgrade. The app does not
-model renewal state, billing retry, grace, revocation, or Family Sharing service
-selection.
+queries each configured or explicitly retired product with
+`Transaction.currentEntitlements(for:)`, then combines verified transaction and
+subscription-status evidence into `active`, `confirmedInactive`, or `unknown`.
+Unrelated products never enter the scan. Unverified, ownership-mismatched, or
+unavailable StoreKit state fails closed as `unknown`; it is not re-labelled as a
+confirmed expiry. Subscribed and grace-period states are active. Billing retry,
+expiry, and revocation are inactive.
+
+`MomentAccountModel` treats this as a same-account state machine. Unknown never
+creates Premium. A transient unknown state may retain previously verified active
+entitlement for the same account, while confirmed inactivity or an account
+identity change clears it. An entitlement linked to a different valid
+`appAccountToken` cannot cross an account switch. Unlinked StoreKit purchases
+remain usable locally so purchase does not require ProsePal sign-in; server-side
+paid capabilities still require separate reconciliation.
 
 **Apple pattern and availability:** Keep verified StoreKit 2 transactions, but
 iterate configured IDs with `Transaction.currentEntitlements(for:)` or filter
@@ -289,37 +296,41 @@ and [renewal-state](https://developer.apple.com/documentation/storekit/product/s
 contracts.
 
 **Benefit, risk, dependencies, and evidence:** The product-first ordering avoids
-an unrelated transaction aborting the entitlement scan while preserving
-verification failure as a security signal for configured products. The wider
-entitlement-state redesign still depends on an explicit product policy for
-billing retry, grace, Family Sharing, retired IDs, anonymous purchases, and
-server authority. StoreKit Test and sandbox evidence must cover active, expired,
-grace, billing retry, revoked/refunded, unverified, Family Sharing, missing
-products, and transient store failure.
+an unrelated transaction aborting the scan while preserving verification and
+ownership failures as security signals for ProsePal products. Deterministic
+package tests cover the state and last-known-good rules. The app-hosted
+`ProsePalStoreKitTests` target owns direct `SKTestSession` scenarios for products,
+purchase, Ask to Buy, restore, renewal states, expiry, refund, retired IDs,
+ownership, and updates. A skipped direct StoreKit scenario is not release proof;
+the entire suite must execute on a working Apple runtime, followed by
+sandbox/TestFlight and server-reconciliation evidence. Family Sharing is not
+enabled in the local product configuration and must be proved only if enabled
+for the App Store products.
 
 ### A-07 — StoreKit transaction lifecycle, restore, ownership, and tests
 
-**Priority and decision:** keep the lifecycle foundation; P0 to prove it with
-direct StoreKit tests and end-to-end account reconciliation.
+**Priority and decision:** lifecycle implementation and the direct test target
+are in place. Sandbox/TestFlight and server convergence remain release gates.
 
 **Minimum/toolchain:** StoreKit 2 requires iOS 15 and StoreKit Test requires an
 Xcode-hosted test environment; the existing Xcode 26/iOS 26 setup exceeds both.
 
 **Source and behaviour:** The client uses `Product.products`, verified purchase
-results, `Transaction.updates`, `Transaction.currentEntitlements`, and an
-explicit user-triggered `AppStore.sync()` restore. A successful purchase is
-finished only after entitlement convergence; verified update transactions are
-finished only after `MomentAccountModel` refresh succeeds. Pending and cancelled
-results remain distinct. The update stream cancels its listener on termination.
-`appAccountToken` is supplied only when a signed-in Supabase identifier parses
-as a UUID.
+results, `Transaction.updates`, per-product current entitlements, subscription
+status, and an explicit user-triggered `AppStore.sync()` restore. Purchase and
+update transactions carry deferred delivery handles. `MomentAccountModel`
+finishes them only after the same product, compatible owner, and expected grant
+or removal have converged. Verification, ownership, store-read, or correlation
+failure leaves the transaction unfinished so StoreKit can redeliver it. Pending
+and cancelled results remain distinct, and the update stream cancels its
+listener on termination. `appAccountToken` is supplied only when a signed-in
+Supabase identifier parses as a UUID.
 
-The local `.storekit` configuration contains the three products and is attached
-to the staging scheme, while package tests exercise the injected
-`SubscriptionClient` model contract only. There is no direct
-`StoreKitSubscriptionClient`/`SKTestSession` test target. Server notification,
-reconciliation, anonymous-purchase convergence, and account switching still
-need sandbox/TestFlight proof.
+The staging `.storekit` configuration contains the three configured products
+plus one test-only retired product. `ProsePalStoreKitTests` is an app-hosted
+XCTest target linked to the real `StoreKitSubscriptionClient` and StoreKit Test.
+The app host suppresses its normal root lifecycle only while XCTest injection is
+active, preventing launch-time entitlement reads from racing `SKTestSession`.
 
 **Apple pattern and availability:** The implemented finish and restore sequence
 matches StoreKit 2. Apple states that `finish()` follows delivery and that
@@ -331,10 +342,12 @@ and [`appAccountToken`](https://developer.apple.com/documentation/storekit/produ
 
 **Benefit, risk, dependencies, and evidence:** Automated StoreKit scenarios
 protect the most failure-prone lifecycle without making sandbox state a CI
-dependency. Server reconciliation remains required because device entitlement
-and ProsePal account ownership are different identities. Evidence must include
-local StoreKit automation, sandbox/TestFlight purchase and restore without app
-login, transaction updates, server notification/reconciliation, and account
+dependency. The target must skip, rather than fabricate success, when StoreKit
+Test cannot install its local configuration; that skip leaves the release gate
+open. Server reconciliation remains required because device entitlement and
+ProsePal account ownership are different identities. Evidence must include an
+executed direct StoreKit suite, sandbox/TestFlight purchase and restore without
+app login, transaction updates, server notification/reconciliation, and account
 switching.
 
 ### A-08 — System StoreKit views and paywall controls

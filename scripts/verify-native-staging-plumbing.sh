@@ -35,6 +35,7 @@ expected_products = {
 }
 expected_product_ids_setting = "com.prosepal.pro.yearly,com.prosepal.pro.monthly,com.prosepal.pro.weekly"
 expected_recommended_product_id = "com.prosepal.pro.yearly"
+expected_retired_product_id = "com.prosepal.pro.retired"
 expected_bundle_id = "com.prosepal.prosepal"
 expected_staging_bundle_id = "com.prosepal.prosepal.staging"
 expected_staging_widget_bundle_id = "com.prosepal.prosepal.staging.widgets"
@@ -147,8 +148,15 @@ if pbxproj.exists():
     )
     if project_text.count(staging_recommended_setting) < 2:
         fail("staging target does not pass expected recommended premium product id into app runtime")
+    staging_retired_setting = (
+        f"PROSEPAL_RETIRED_PREMIUM_PRODUCT_IDS = {expected_retired_product_id};"
+    )
+    if project_text.count(staging_retired_setting) < 2:
+        fail("staging target does not pass expected retired premium product id into app runtime")
     if project_text.count('PROSEPAL_PREMIUM_PRODUCT_IDS = "";') < 2:
         fail("production target should keep premium product ids explicitly blank in local project settings")
+    if project_text.count('PROSEPAL_RETIRED_PREMIUM_PRODUCT_IDS = "";') < 2:
+        fail("production target should keep retired premium product ids explicitly blank in local project settings")
     print("project_staging_product_ids=configured")
 
     staging_surface_markers = [
