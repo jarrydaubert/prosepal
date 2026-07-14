@@ -17,7 +17,7 @@ func momentExperienceMonolithCanOnlyShrink() throws {
 
     // This baseline may only move downward. Equality prevents an extraction
     // from leaving unused headroom for later growth.
-    let lineCountBaseline = 8_621
+    let lineCountBaseline = 8_125
     #expect(currentLineCount == lineCountBaseline)
 }
 
@@ -34,7 +34,7 @@ func momentExperienceSourceStringGuardsCanOnlyDecrease() throws {
     }
 
     // This baseline may only move downward as guards become behavioral tests.
-    let sourceStringGuardBaseline = 5
+    let sourceStringGuardBaseline = 4
     #expect(referenceCount == sourceStringGuardBaseline)
 }
 

@@ -32,6 +32,9 @@ is reachable from this page and has one job. Open work belongs only in
 
 - [Native architecture](./engineering/architecture.md) — modules, state,
   dependencies, concurrency, and data boundaries.
+- [SwiftUI architecture standard](./engineering/swiftui-architecture.md) —
+  feature folders, state ownership, navigation, persistence, concurrency,
+  previews, testing, and incremental extraction rules.
 - [AI generation](./engineering/ai-generation.md) — private/careful routing,
   provider-neutral generation, validation, and fallback behaviour.
 - [Gateway request ledger](./engineering/gateway-request-ledger.md) — atomic

@@ -196,22 +196,6 @@ func offlineStateOffersARealRetryWithoutDecorativeConnectionClaims() throws {
 }
 
 @Test
-func settingsAndReviseDoNotPresentStatusAsFakeControls() throws {
-    let source = try String(
-        contentsOf: packageRoot.appending(path: "Sources/ProsePalUI/MomentExperienceView.swift"),
-        encoding: .utf8
-    )
-
-    #expect(source.contains("title: \"Tone options\""))
-    #expect(source.contains("subtitle: \"Choose a tone for each moment\""))
-    #expect(source.contains("subtitle: \"Follows your device setting\""))
-    #expect(source.contains("subtitle: \"Uses on-device writing when available\""))
-    #expect(!source.contains("settingsSwitchRow("))
-    #expect(!source.contains("case changes"))
-    #expect(!source.contains("return \"Changes\""))
-}
-
-@Test
 func quotaStateUsesServerMessageWithoutInventingLimitsOrResetDates() throws {
     let source = try String(
         contentsOf: packageRoot.appending(path: "Sources/ProsePalUI/MomentExperienceView.swift"),

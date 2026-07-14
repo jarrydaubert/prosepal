@@ -142,7 +142,8 @@ inside the monolith:
 | Saved-draft library | `MomentExperienceView.swift`: `SavedMomentDraftsView`, `SavedMomentDraftLibraryCard` |
 | Saved-draft detail and persistence | `SavedMomentDraftDetailView.swift` and `SavedDraftPersistence.swift`: `SavedMomentDraftDetailView`, `persistSavedDraftEdit`, `persistSavedDraftDeletion` |
 | Relationship-memory library and detail | `MomentExperienceView.swift`: `RelationshipMemoryVaultView`, `RelationshipMemoryDetailView`, `RelationshipVoiceCardDetailView` |
-| Settings and subscription detail | `MomentExperienceView.swift`: `MomentSettingsView`, `MomentPlanDetailView`, and plan presentation helpers |
+| Settings shell and static presentation components | `Features/Settings/MomentSettingsView.swift`, `MomentSettingsComponents.swift`, and `MomentSettingsPreview.swift`: `MomentSettingsView`, truthful static-row descriptors, feature presentation components, and deterministic preview setup |
+| Subscription plan detail | `MomentExperienceView.swift`: `MomentPlanDetailView` and plan presentation helpers |
 | Privacy, export, authentication, and paywall | `MomentExperienceView.swift`: `MomentPrivacyDataView`, `MomentLocalDataExportView`, `MomentAppleSignInControl`, `MomentPaywallSheet` |
 
 Use these symbols as navigation anchors rather than durable line numbers. When a
@@ -160,3 +161,7 @@ helpers instead of moving unrelated code or attempting a big-bang rewrite.
 
 Historical design rationale remains in
 [Native 2026 technical direction](../history/architecture/native-2026-technical-direction.md).
+
+SwiftUI feature organisation, state ownership, navigation, preview, testing,
+and extraction conventions are defined in the
+[SwiftUI architecture standard](./swiftui-architecture.md).

@@ -151,6 +151,13 @@ completed item instead of turning this file into a status log.
   and regular widths retain a complete path; touched navigation views leave the
   monolith with behavioral coverage.
 
+- [ ] Make Saved Drafts filtering truthful to the persisted data model. DoD:
+  either remove the unsupported `Kept`, `Used`, and `Drafts` filter controls or
+  add real persisted semantics through a new `RelationshipVaultSchema` version
+  and explicit migration; every visible filter produces a distinct truthful
+  result, empty-state copy describes behaviour the app actually supports, and
+  deterministic presentation plus persistence tests cover every retained state.
+
 - [ ] Add release-critical view/UI automation. DoD: blocking tests cover first
   run, auth entry, draft success, offline/error recovery, copy/share/save,
   purchase/restore presentation, destructive confirmation, Settings semantics,
@@ -165,13 +172,16 @@ completed item instead of turning this file into a status log.
   hanging the test run.
 
 - [ ] Decompose `MomentExperienceView.swift` incrementally while completing
-  funded v1 work; do not run a separate big-bang rewrite. Extraction order is:
-  root navigation/welcome with navigation work; saved drafts and relationship
-  memory with persistence/UI automation; settings, plans, privacy/export,
-  authentication, and paywall with release UI automation; composer, candidate
-  choice, generation states, revision, voice/share, and pickers with the
-  approved three-option flow plus accessibility/core-flow work;
-  then move `MomentModel` and draft recovery into their owning file. DoD: every
+  funded v1 work; do not run a separate big-bang rewrite. The remaining
+  migration map is: move the Saved Drafts library into
+  `Features/SavedDrafts/` while resolving its filter contract; move the memory
+  library and details into `Features/RelationshipMemory/` with persistence/UI
+  automation; move plan, privacy/export, authentication, and paywall
+  destinations into `Features/Settings/` with release UI automation; move the
+  composer, candidate choice, generation states, revision, voice/share, and
+  pickers into cohesive feature files during the approved three-option and
+  accessibility/core-flow work; then move `MomentModel` and the versioned draft
+  recovery boundary into their owning workflow files. DoD: every
   region in the architecture map names a cohesive source file instead of the
   monolith; the original file is removed or has one reason to change; each
   extracted user-facing surface has a compiling `#Preview`; each moved region's
