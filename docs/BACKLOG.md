@@ -186,7 +186,8 @@ completed item instead of turning this file into a status log.
 - [ ] Complete core-flow accessibility and visual hardening. DoD: release flows
   pass VoiceOver, Dynamic Type, hit-target, contrast, keyboard/focus, Reduce
   Motion, and Reduce Transparency checks on supported iPhone sizes; regular-width
-  layouts remain usable; no fixed-size or light-only styling is added while
+  layouts remain usable; first-run and composer device logs contain no invalid
+  frame-dimension warnings; no fixed-size or light-only styling is added while
   touched surfaces are extracted.
 
 ## Native V1 — Production Configuration And Gateway
@@ -208,6 +209,10 @@ completed item instead of turning this file into a status log.
   authorized development requests reserve burst and quota capacity before
   provider work; parallel requests at the last free allowance produce exactly
   one provider call and one charge; provider/quality failure is reclaimable;
+  repeated healthy smoke requests return a validated three-message response
+  rather than timing out or failing the output-quality gate; attempt-level
+  staging evidence distinguishes provider timeouts, upstream/provider errors,
+  and output-quality rejection before model or timeout policy is changed;
   database linter/advisors and scheduled-cleanup history are clean or explicitly
   accepted; no probe touches production.
 
@@ -248,8 +253,10 @@ completed item instead of turning this file into a status log.
   and retry behavior.
 
 - [ ] Complete StoreKit and server-entitlement release proof. DoD: configured
-  production product IDs return products; purchase and restore work without a
-  forced app login; transaction updates converge after renewal, approval,
+  local StoreKit testing returns all three configured products from an
+  Xcode-launched paywall; configured production product IDs return products;
+  purchase and restore work without a forced app login; transaction updates
+  converge after renewal, approval,
   Family Sharing change, and revocation/refund; App Store Server notifications
   and reconciliation update staging entitlement; account switching cannot carry
   Premium incorrectly; evidence is captured from sandbox/TestFlight.
