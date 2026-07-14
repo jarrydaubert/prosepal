@@ -30,76 +30,70 @@ struct SavedMomentDraftDetailView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            MomentDetailTopChrome(title: "Draft", backAction: { dismiss() }) {
-                Button(isEditing ? "Save" : "Edit", action: toggleEditing)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(
-                        isEditing && !canSaveEdits
-                            ? Color.prosePalSlate.opacity(0.45)
-                            : Color.prosePalCoralDeep
-                    )
-                    .frame(minHeight: 42)
-                    .disabled(isEditing && !canSaveEdits)
-                    .accessibilityIdentifier("savedDraft.editOrSave")
-            }
-            .padding(.horizontal, 20)
-            .padding(.top, 10)
-            .padding(.bottom, 8)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 18) {
+                if let notice {
+                    SavedDraftNoticeView(notice: notice)
+                }
 
-            ScrollView {
-                VStack(alignment: .leading, spacing: 18) {
-                    if let notice {
-                        SavedDraftNoticeView(notice: notice)
-                    }
+                MomentDetailHero(
+                    systemImage: draft.occasion.symbolName,
+                    title: draft.title,
+                    detail: draft.subtitle
+                )
 
-                    MomentDetailHero(
-                        systemImage: draft.occasion.symbolName,
-                        title: draft.title,
-                        detail: draft.subtitle
-                    )
-
-                    MomentDetailCard(
-                        title: isEditing ? "Edit draft" : "Saved draft",
-                        systemImage: "bookmark"
-                    ) {
-                        if isEditing {
-                            TextField(
-                                "Draft text",
-                                text: $editedMessageText.prosePalLimited(to: ProsePalTextLimit.draft),
-                                axis: .vertical
-                            )
+                MomentDetailCard(
+                    title: isEditing ? "Edit draft" : "Saved draft",
+                    systemImage: "bookmark"
+                ) {
+                    if isEditing {
+                        TextField(
+                            "Draft text",
+                            text: $editedMessageText.prosePalLimited(to: ProsePalTextLimit.draft),
+                            axis: .vertical
+                        )
+                        .font(.system(.title3, design: .serif))
+                        .lineSpacing(5)
+                        .lineLimit(8...18)
+                        .textFieldStyle(.plain)
+                        .foregroundStyle(Color.prosePalInk)
+                        .accessibilityValue(
+                            "\(editedMessageText.count) of \(ProsePalTextLimit.draft) characters"
+                        )
+                    } else {
+                        Text(draft.messageText)
                             .font(.system(.title3, design: .serif))
                             .lineSpacing(5)
-                            .lineLimit(8...18)
-                            .textFieldStyle(.plain)
                             .foregroundStyle(Color.prosePalInk)
-                            .accessibilityValue(
-                                "\(editedMessageText.count) of \(ProsePalTextLimit.draft) characters"
-                            )
-                        } else {
-                            Text(draft.messageText)
-                                .font(.system(.title3, design: .serif))
-                                .lineSpacing(5)
-                                .foregroundStyle(Color.prosePalInk)
-                                .textSelection(.enabled)
-                        }
+                            .textSelection(.enabled)
                     }
-
-                    savedDraftActionRow
-                    savedDraftDeleteButton
                 }
-                .padding(.horizontal, 20)
-                .padding(.top, 12)
-                .padding(.bottom, 44)
+
+                savedDraftActionRow
+                savedDraftDeleteButton
             }
-            .scrollIndicators(.hidden)
+            .padding(.horizontal, 20)
+            .padding(.top, 12)
+            .padding(.bottom, 44)
         }
+        .scrollIndicators(.hidden)
         .background {
             MomentAtmosphericBackground(isCareful: false)
         }
+        .navigationTitle(String(localized: "Draft"))
+        .toolbar {
+            #if os(iOS)
+            ToolbarItem(placement: .topBarTrailing) {
+                editOrSaveButton
+            }
+            #else
+            ToolbarItem {
+                editOrSaveButton
+            }
+            #endif
+        }
         #if os(iOS)
-        .toolbar(.hidden, for: .navigationBar)
+        .navigationBarTitleDisplayMode(.inline)
         #endif
         .momentShareSheet($shareRequest)
         .confirmationDialog(
@@ -115,6 +109,13 @@ struct SavedMomentDraftDetailView: View {
         } message: {
             Text(String(localized: "This removes the draft from this device. This cannot be undone."))
         }
+    }
+
+    private var editOrSaveButton: some View {
+        Button(isEditing ? "Save" : "Edit", action: toggleEditing)
+            .font(.subheadline.weight(.semibold))
+            .disabled(isEditing && !canSaveEdits)
+            .accessibilityIdentifier("savedDraft.editOrSave")
     }
 
     @ViewBuilder

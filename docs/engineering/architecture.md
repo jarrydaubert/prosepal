@@ -139,9 +139,8 @@ inside the monolith:
 | App-root navigation and welcome state | `MomentAppRootView.swift`: `MomentAppRootView`, `MomentRootTabs`, `MomentRootTab`, `MomentWelcomeState` |
 | Core Moment composer and generated-draft experience | `MomentExperienceView.swift`: `MomentSheetView`, including loading, retry, refusal, revision, pressure feedback, memory controls, copy/share/save, and draft history; `MomentGuidedComposerLayout.swift`: the type-erased guided-composer layout and numbered step shell |
 | Relationship and occasion pickers | `MomentExperienceView.swift`: `MomentRelationshipPickerSheet`, `MomentOccasionPickerSheet`, and their row types |
-| Saved-draft library | `MomentExperienceView.swift`: `SavedMomentDraftsView`, `SavedMomentDraftLibraryCard` |
-| Saved-draft detail and persistence | `SavedMomentDraftDetailView.swift` and `SavedDraftPersistence.swift`: `SavedMomentDraftDetailView`, `persistSavedDraftEdit`, `persistSavedDraftDeletion` |
-| Relationship-memory library and detail | `MomentExperienceView.swift`: `RelationshipMemoryVaultView`, `RelationshipMemoryDetailView`, `RelationshipVoiceCardDetailView` |
+| Saved Drafts feature | `Features/SavedDrafts/`: `SavedMomentDraftsView`, `SavedDraftLibrarySearch`, `SavedMomentDraftLibraryCard`, `SavedMomentDraftDetailView`, persistence functions, and deterministic previews; `Components/`: shared empty/detail presentation; `Support/MomentShareSheet.swift`: native share bridge; `ProsePalAPI/RelationshipVault.swift`: persisted `SavedMomentDraftRecord` and schema ownership |
+| Relationship-memory library and detail | `MomentExperienceView.swift`: `RelationshipMemoryVaultView`, `RelationshipMemoryDetailView`, `RelationshipVoiceCardDetailView`; shared empty/detail presentation is in `Components/` |
 | Settings shell and static presentation components | `Features/Settings/MomentSettingsView.swift`, `MomentSettingsComponents.swift`, and `MomentSettingsPreview.swift`: `MomentSettingsView`, truthful static-row descriptors, feature presentation components, and deterministic preview setup |
 | Subscription plan detail | `MomentExperienceView.swift`: `MomentPlanDetailView` and plan presentation helpers |
 | Privacy, export, authentication, and paywall | `MomentExperienceView.swift`: `MomentPrivacyDataView`, `MomentLocalDataExportView`, `MomentAppleSignInControl`, `MomentPaywallSheet` |

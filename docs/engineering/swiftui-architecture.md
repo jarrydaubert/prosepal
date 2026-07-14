@@ -48,6 +48,18 @@ transport, StoreKit, auth, runtime configuration, and persistence services.
 `App` continues to own target-specific dependency composition, lifecycle,
 entitlements, and production/staging configuration.
 
+Current extracted feature ownership is intentionally small and concrete:
+
+| Feature | Ownership |
+|---|---|
+| `Features/Settings/` | Settings shell, truthful static-row presentation, account/subscription entry actions, and deterministic preview setup. Destinations still named in the migration map remain transitional dependencies. |
+| `Features/SavedDrafts/` | SwiftData query ownership, local search and disclosure state, list/detail navigation, edit/delete persistence coordination, feature components, and deterministic list/detail previews. The persisted `SavedMomentDraftRecord` and versioned schema remain owned by `ProsePalAPI`. |
+
+Shared empty, hero, and detail-card presentation used by more than one feature
+lives in `Components/`; UIKit sharing presentation used by multiple features
+lives in `Support/MomentShareSheet.swift`. Neither owns feature state or
+persistence.
+
 ## Views and state ownership
 
 Every mutable value has one owner.

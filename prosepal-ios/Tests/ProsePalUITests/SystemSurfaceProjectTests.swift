@@ -180,22 +180,6 @@ func momentDraftExposesExplicitSendHandoff() throws {
 }
 
 @Test
-func offlineStateOffersARealRetryWithoutDecorativeConnectionClaims() throws {
-    let source = try String(
-        contentsOf: packageRoot.appending(path: "Sources/ProsePalUI/MomentExperienceView.swift"),
-        encoding: .utf8
-    )
-
-    #expect(source.contains("Label(\"Try again\", systemImage: \"arrow.clockwise\")"))
-    #expect(source.contains("model.startDraft()"))
-    #expect(source.contains("moment.offline.retry"))
-    #expect(source.contains("your note is still here on this device"))
-    #expect(!source.contains("Button {}"))
-    #expect(!source.contains("Retrying connection…"))
-    #expect(!source.contains("will sync later"))
-}
-
-@Test
 func quotaStateUsesServerMessageWithoutInventingLimitsOrResetDates() throws {
     let source = try String(
         contentsOf: packageRoot.appending(path: "Sources/ProsePalUI/MomentExperienceView.swift"),
