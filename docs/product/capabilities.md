@@ -11,8 +11,7 @@ Detailed code and test evidence lives in
 |---|---|
 | Root navigation | After welcome, native Write, Drafts, and Settings tabs remain distinct and discoverable; app and extension handoffs return to Write. |
 | Person-first entry | The user starts with who the message is for, then chooses relationship and occasion context. |
-| One true thing | The user supplies the real sentence or detail the draft should preserve. |
-| Voice input | On-device speech capture can fill the moment detail when the platform supports it. |
+| One true thing | The user types the real sentence or detail the draft should preserve. Voice dictation is not part of v1. |
 | Occasion-aware care | Ordinary moments default to quick private writing, while sympathy, pet sympathy, and apology automatically request extra care; Take More Care remains available after a draft. |
 | Tone | Heartfelt, Casual, Funny, Formal, Inspirational, Playful, Sarcastic, Nostalgic, and Poetic choices shape the voice. |
 | Length | Brief, Standard, and Detailed choices set the intended message shape. |

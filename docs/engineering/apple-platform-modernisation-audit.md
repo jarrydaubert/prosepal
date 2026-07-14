@@ -66,7 +66,7 @@ Priorities used below are:
 | Decision | Gate | Priority |
 |---|---|---:|
 | Trial `SubscriptionStoreView` inside the extracted paywall while retaining ProsePal marketing content and account-token policy. | Local StoreKit, sandbox/TestFlight, policy-link, accessibility, and account-convergence parity. | P2 |
-| Trial `SpeechAnalyzer` with `SpeechTranscriber` and `DictationTranscriber` fallback behind the existing protocol. | Supported hardware, locale assets, permissions, final-result, offline, and cancellation evidence. | P2 |
+| Reintroduce voice dictation on `SpeechAnalyzer` with `SpeechTranscriber` and a `DictationTranscriber` fallback, behind its own transcriber protocol. Removed from v1 on 2026-07-14; post-v1 only. | Demonstrated demand, plus supported hardware, locale assets, permissions, final-result-on-Stop, offline, and cancellation evidence. | Post-v1 |
 | Replace string parameters in App Intents with typed entities or app enums. | The intent remains useful from real Shortcuts, Siri, widget, Control Center, and Action Button surfaces. | P2 |
 | Restore navigation paths beyond the root tab. | A stable, non-sensitive, Codable destination model exists for the extracted feature. | P2 |
 
@@ -107,7 +107,7 @@ Xcode 26 and iOS 26 target.
 
 **Source and behaviour:**
 `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift` still owns
-`MomentModel`, voice capture presentation, the active composer, relationship
+`MomentModel`, the active composer, relationship
 memory, plan, privacy/export, Apple sign-in, and paywall regions. Saved Drafts,
 Settings, root navigation, generating state, and guided-composer layout already
 demonstrate the desired feature-file pattern. The architecture region map and
@@ -162,7 +162,7 @@ older; neither changes the iOS 26 minimum.
 **Source and behaviour:** `MomentAppRootView` uses a typed root-tab enum and one
 `NavigationStack` per tab, but root selection and destination paths are not
 restored. `MomentSheetView` holds multiple independent Boolean and optional
-sheet states for pickers, paywall, voice, draft use, history, and memory detail.
+sheet states for pickers, paywall, draft use, history, and memory detail.
 SwiftUI normally serializes presentations, but independent flags permit
 conflicting intents and make dismissal behaviour difficult to test. Alerts and
 destructive confirmations are otherwise state-driven and use system roles.
@@ -523,8 +523,21 @@ availability on a device.
 
 ### A-13 — Speech and dictation
 
-**Priority and decision:** keep the protocol boundary; P1 to prove/fix final
-result on Stop, P2 for a `SpeechAnalyzer` implementation.
+**Resolved 2026-07-14 by removing the feature from v1, not by fixing it.**
+Voice dictation is not required to write a message, and it was the only reason
+the app requested microphone and speech-recognition permission. Removing it
+deletes the lost-final-word defect described below, both usage descriptions, the
+`SFSpeechRecognizer` lifecycle, and a physical-device release-evidence
+dependency, at the cost of a convenience input that duplicated the keyboard.
+`MomentVoiceCapture.swift` and its sheet, model wiring, and tests are gone; no
+executable requests either permission. Reintroduction is a post-v1 backlog item,
+owned by its own file and transcriber protocol and built on stable
+`SpeechAnalyzer`/`DictationTranscriber` APIs. The original finding is retained
+below as the rationale for that removal and as the specification any future
+reintroduction must satisfy.
+
+**Original priority and decision (superseded):** keep the protocol boundary; P1
+to prove/fix final result on Stop, P2 for a `SpeechAnalyzer` implementation.
 
 **Minimum/toolchain:** `SpeechAnalyzer` and its stable transcriber modules
 require iOS 26 and the stable Xcode 26 SDK; do not use beta-only live-capture
@@ -566,7 +579,7 @@ the installed Xcode 26 toolchain satisfies all three.
 
 **Source and behaviour:** Root navigation, onboarding, generating, guided
 composer, Settings, and Saved Drafts have deterministic `#Preview` coverage.
-Paywall, privacy/export, voice sheet, relationship-memory detail, and other
+Paywall, privacy/export, relationship-memory detail, and other
 monolith regions do not have independently compiling previews. Package tests
 mix Swift Testing and XCTest appropriately for deterministic model and service
 boundaries. There is no app UI-test target or direct StoreKit Test suite.
@@ -629,8 +642,10 @@ bundle and submission requirement supported by the stable Xcode 26 toolchain.
 **Source and behaviour:** The app and share-extension executables contain
 `PrivacyInfo.xcprivacy` files declaring their UserDefaults required-reason use;
 the Xcode project embeds the production and staging variants. The widget does
-not call a covered required-reason API in its source. App usage descriptions
-cover microphone and speech recognition. Tests validate manifest content and
+not call a covered required-reason API in its source. Since voice dictation was
+removed on 2026-07-14 the app declares no microphone or speech-recognition usage
+description, and no executable requests either permission; App Store privacy
+answers must not claim them. Tests validate manifest content and
 project embedding. Data/privacy docs prohibit sensitive logs and define local
 export/deletion boundaries.
 
@@ -655,19 +670,21 @@ message text, tokens, receipts, or shared payloads.
    StoreKit Test automation; prove server/account convergence separately.
 2. Replace misleading share destinations and add a file-based transferable
    export.
-3. Prove graceful voice finalization and add the release-critical UI-test target.
+3. Add the release-critical UI-test target. (Graceful voice finalization is no
+   longer a v1 item: dictation was removed from v1 on 2026-07-14.)
 
 ### Phase 1 — extract around the corrected boundaries
 
-Extract relationship memory, plan/paywall, privacy/export, auth, voice/share,
+Extract relationship memory, plan/paywall, privacy/export, auth, share,
 and composer regions only as their funded behaviour is touched. Each extraction
 gets one owner, a deterministic preview, behavioural or view coverage, system
 toolbar/presentation conventions, and a corresponding region-map update.
 
 ### Phase 2 — evidence-gated native surfaces
 
-Trial `SubscriptionStoreView`, `SpeechAnalyzer`, typed App Intent parameters,
-and deeper navigation restoration inside their extracted features. Adopt only
+Trial `SubscriptionStoreView`, typed App Intent parameters,
+and deeper navigation restoration inside their extracted features. (`SpeechAnalyzer`
+only if voice dictation is ever reintroduced post-v1.) Adopt only
 when behaviour, privacy, account ownership, accessibility, and device evidence
 meet or exceed the existing path.
 

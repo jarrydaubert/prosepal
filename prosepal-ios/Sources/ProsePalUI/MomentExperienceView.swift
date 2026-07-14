@@ -743,143 +743,6 @@ private struct MomentTransientToast: Identifiable, Equatable {
     var message: String
 }
 
-private struct MomentVoiceCaptureSheet: View {
-    @Bindable var capture: MomentVoiceCaptureModel
-    @Environment(\.dismiss) private var dismiss
-
-    let onUseTranscript: (String) -> Void
-
-    private var trimmedTranscript: String {
-        capture.transcript.trimmingCharacters(in: .whitespacesAndNewlines)
-    }
-
-    var body: some View {
-        NavigationStack {
-            VStack(alignment: .leading, spacing: 18) {
-                VStack(alignment: .leading, spacing: 8) {
-                    Label(statusTitle, systemImage: statusSystemImage)
-                        .font(.headline)
-
-                    Text(capture.statusText)
-                        .font(.callout)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                .accessibilityElement(children: .combine)
-
-                ScrollView {
-                    Text(transcriptPreview)
-                        .font(.body)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .textSelection(.enabled)
-                        .padding(16)
-                        .background(Color.secondary.opacity(0.09), in: RoundedRectangle(cornerRadius: 14))
-                }
-                .frame(minHeight: 160)
-
-                Spacer(minLength: 8)
-
-                ViewThatFits(in: .horizontal) {
-                    HStack(spacing: 10) {
-                        recordControl
-                        useTranscriptButton
-                    }
-
-                    VStack(spacing: 10) {
-                        recordControl
-                        useTranscriptButton
-                    }
-                }
-            }
-            .padding(20)
-            .navigationTitle("Voice Input")
-            .toolbarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
-                        capture.reset()
-                        dismiss()
-                    }
-                }
-            }
-        }
-        .onDisappear {
-            capture.reset()
-        }
-    }
-
-    private var statusTitle: String {
-        switch capture.state {
-        case .idle:
-            "Ready"
-        case .requestingPermission:
-            "Checking access"
-        case .recording:
-            "Recording"
-        case .finished:
-            "Review"
-        case .unavailable:
-            "Unavailable"
-        case .failed:
-            "Stopped"
-        }
-    }
-
-    private var statusSystemImage: String {
-        switch capture.state {
-        case .recording:
-            "waveform.circle.fill"
-        case .unavailable, .failed:
-            "exclamationmark.triangle.fill"
-        default:
-            "mic.circle.fill"
-        }
-    }
-
-    private var transcriptPreview: String {
-        trimmedTranscript.isEmpty ? "Captured words will appear here." : capture.transcript
-    }
-
-    @ViewBuilder
-    private var recordControl: some View {
-        if capture.isRecording {
-            Button {
-                capture.stop()
-            } label: {
-                Label("Stop recording", systemImage: "stop.fill")
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.borderedProminent)
-            .tint(.red)
-        } else {
-            Button {
-                Task {
-                    await capture.start()
-                }
-            } label: {
-                Label(capture.canUseTranscript ? "Record again" : "Record", systemImage: "mic.fill")
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.borderedProminent)
-            .tint(.prosePalCoral)
-            .disabled(capture.isRequestingPermission)
-        }
-    }
-
-    private var useTranscriptButton: some View {
-        Button {
-            onUseTranscript(trimmedTranscript)
-            capture.reset()
-            dismiss()
-        } label: {
-            Label("Use words", systemImage: "checkmark")
-                .frame(maxWidth: .infinity)
-        }
-        .buttonStyle(.bordered)
-        .disabled(!capture.canUseTranscript)
-    }
-}
-
 private struct MomentDraftUseSheet: View {
     let request: MomentDraftUseSheetRequest
     let onCopy: () -> Void
@@ -1178,9 +1041,7 @@ struct MomentSheetView: View {
     @State private var editingVoiceCard: RelationshipVoiceCardRecord?
     @State private var isShowingMemoryExplanation = false
     @State private var isShowingVoiceCardExplanation = false
-    @State private var isShowingVoiceCapture = false
     @State private var isShowingDraftHistory = false
-    @State private var voiceCapture = MomentVoiceCaptureModel()
     @State private var hasCommittedPersonEntry = false
     @State private var hasEntered = false
     @State private var useDraftRequest: MomentDraftUseSheetRequest?
@@ -1264,11 +1125,6 @@ struct MomentSheetView: View {
         }
         .sheet(isPresented: $isShowingPaywall) {
             MomentPaywallSheet(account: account)
-        }
-        .sheet(isPresented: $isShowingVoiceCapture) {
-            MomentVoiceCaptureSheet(capture: voiceCapture) { transcript in
-                applyVoiceTranscript(transcript)
-            }
         }
         .sheet(item: $useDraftRequest) { request in
             MomentDraftUseSheet(
@@ -2673,21 +2529,6 @@ struct MomentSheetView: View {
 
     private var noteTools: some View {
         HStack(spacing: 10) {
-            Button {
-                endFocusedEditing()
-                voiceCapture.reset()
-                diagnostics.messageAction("voice_input_opened", source: "moment", messageCharacters: 0)
-                isShowingVoiceCapture = true
-            } label: {
-                Image(systemName: "mic.fill")
-                    .font(.subheadline.weight(.medium))
-                    .frame(width: 34, height: 34)
-                    .contentShape(Circle())
-            }
-            .buttonStyle(.plain)
-            .foregroundStyle(model.moment.isCarefulMode ? Color.prosePalCare : Color.prosePalCoral)
-            .accessibilityLabel("Record moment detail")
-
             if noteWordCount > 0 {
                 Text(noteCountLabel)
                     .font(.caption.weight(.semibold))
@@ -4516,17 +4357,6 @@ private struct MomentDraftHistorySheet: View {
         }
     }
 
-    private func applyVoiceTranscript(_ transcript: String) {
-        let trimmedTranscript = transcript.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmedTranscript.isEmpty else { return }
-
-        model.trueThing = ProsePalTextInput.momentDetail(trimmedTranscript)
-        diagnostics.messageAction(
-            "voice_input_used",
-            source: "moment",
-            messageCharacters: trimmedTranscript.count
-        )
-    }
 }
 
 private struct MomentSelectionRow: View {

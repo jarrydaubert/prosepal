@@ -68,7 +68,7 @@ those changes; see [Local development](./local-development.md).
 Evidence must cover:
 
 - install, launch, welcome, and first Moment;
-- keyboard, voice-input availability, private/careful drafting, retry, copy,
+- keyboard, private/careful drafting, retry, copy,
   share/send, save, and deletion;
 - Sign in with Apple success, cancellation, refresh, sign-out, and account
   deletion;

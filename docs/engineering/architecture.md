@@ -148,7 +148,7 @@ inside the monolith:
 | Region | Owning file and symbols |
 |---|---|
 | Draft state and relaunch recovery | `MomentExperienceView.swift`: `MomentDraftRecoveryState`, `MomentDraftRecoveryStoring`, `MomentDraftRecoveryStore`, `MomentModel`; `MomentDraftUnavailableNotice.swift`: typed unavailable reason and presentation contract |
-| Voice and active-draft action presentation | `MomentExperienceView.swift`: `MomentVoiceCaptureSheet`, `MomentDraftUseSheet` |
+| Active-draft action presentation | `MomentExperienceView.swift`: `MomentDraftUseSheet` |
 | App-root navigation and welcome state | `MomentAppRootView.swift`: `MomentAppRootView`, `MomentRootTabs`, `MomentRootTab`, `MomentWelcomeState` |
 | Core Moment composer and generated-draft experience | `MomentExperienceView.swift`: `MomentSheetView`, including loading, retry, refusal, revision, pressure feedback, memory controls, copy/share/save, and draft history; `MomentGuidedComposerLayout.swift`: the type-erased guided-composer layout and numbered step shell |
 | Relationship and occasion pickers | `MomentExperienceView.swift`: `MomentRelationshipPickerSheet`, `MomentOccasionPickerSheet`, and their row types |
@@ -174,7 +174,7 @@ helpers instead of moving unrelated code or attempting a big-bang rewrite.
 | Widget and Control | `Widgets/ProsePalWidgets.swift`: staging-aware widget/control identifiers and app-opening URLs |
 | Incoming system share | `ShareExtension/ShareViewController.swift`: provider loading, sanitization, preview, app-group handoff, and extension completion |
 | Outgoing saved-draft share | `ProsePalUI/Support/MomentShareSheet.swift`: system activity presentation used by Saved Drafts |
-| Voice transcription | `ProsePalUI/MomentVoiceCapture.swift`: permissions, protocol boundary, capture state, and on-device speech implementation |
+| Voice transcription | Not in v1. Dictation was removed on 2026-07-14 along with its microphone and speech-recognition usage descriptions; no executable requests either permission. Reintroduction is a post-v1 backlog item owned by its own file and transcriber protocol. |
 
 Stable-toolchain adoption decisions and evidence gates for these owners are in
 the [Apple platform modernisation audit](./apple-platform-modernisation-audit.md).

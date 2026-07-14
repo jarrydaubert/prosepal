@@ -906,7 +906,7 @@ private actor ControlledMomentDraftClient: MomentDraftClient {
 }
 
 @MainActor
-private func expectEventually(
+func expectEventually(
     _ failureMessage: String,
     timeout: Duration = .seconds(1),
     condition: @escaping @MainActor () async -> Bool

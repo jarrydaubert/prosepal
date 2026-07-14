@@ -37,10 +37,6 @@
 	<string>public.app-category.lifestyle</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
-	<key>NSMicrophoneUsageDescription</key>
-	<string>ProsePal uses the microphone only when you choose voice input to fill the moment detail.</string>
-	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>ProsePal uses speech recognition only when you choose voice input to turn spoken words into the moment detail.</string>
 	<key>PROSEPAL_PREMIUM_PRODUCT_IDS</key>
 	<string>$(PROSEPAL_PREMIUM_PRODUCT_IDS)</string>
 	<key>PROSEPAL_RECOMMENDED_PREMIUM_PRODUCT_ID</key>

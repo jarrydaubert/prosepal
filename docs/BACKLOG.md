@@ -297,9 +297,7 @@ completed item instead of turning this file into a status log.
 - [ ] Run the complete physical-device/TestFlight acceptance loop. DoD: first
   run → person/relationship/moment/detail → private or careful candidate set →
   choose a message → adjust without losing work → copy/share/send/save passes on
-  a supported iPhone; voice input succeeds where on-device speech is available,
-  and Stop preserves the final spoken words without confusing finish with
-  cancellation;
+  a supported iPhone;
   offline and refusal states are honest; release-candidate evidence contains no
   user content or secrets. Until the three-option feasibility gate passes, use
   the current one-draft loop rather than claiming candidate-choice proof.
@@ -352,13 +350,20 @@ completed item instead of turning this file into a status log.
   proves the system UI cannot evade those protections before any product-scope
   decision.
 
-- [ ] Evaluate replacing the current speech-recognition internals with
-  `SpeechAnalyzer` plus an explicit `DictationTranscriber` fallback. Trigger:
-  after v1, or earlier only if physical-device release evidence shows the current
-  `SFSpeechRecognizer` path is inadequate. DoD: the existing transcriber
-  protocol remains the boundary; volatile and final text, locale selection,
-  managed asset installation, unsupported devices/languages, permissions,
-  cancellation, offline behaviour, and supported-device evidence all pass.
+- [ ] Reconsider voice dictation as an independently owned post-v1 feature.
+  Voice input was removed from v1 on 2026-07-14: it is not required to write a
+  message, and it carried microphone/speech permissions, speech lifecycle risk,
+  and physical-device release evidence that v1 does not need. Trigger: after v1,
+  and only if people actually ask to speak the moment detail. DoD: the feature is
+  reintroduced behind its own transcriber protocol boundary in its own file, not
+  in the Moment monolith; it is built on stable Apple speech APIs (`SpeechAnalyzer`
+  with `SpeechTranscriber` and an explicit `DictationTranscriber` fallback), never
+  beta-only live-capture helpers; a person-initiated Stop is a graceful finish that
+  preserves the final spoken words and is distinct from cancellation; locale
+  selection, managed asset installation, unsupported devices/languages,
+  permissions, offline behaviour, and supported-device evidence all pass; the
+  microphone and speech usage descriptions return only in the same change that
+  ships a reachable control that needs them.
 
 - [ ] Evaluate replacing custom subscription purchase controls with
   `SubscriptionStoreView` when the paywall region is extracted. Trigger: after
