@@ -260,7 +260,9 @@ completed item instead of turning this file into a status log.
   refresh continuity, credential revocation notification/state handling, and
   sign-out without loss of unrelated local drafts; an Apple-backed deletion
   proves refresh-token revocation, validated server/auth cleanup, local cleanup,
-  and successful retry after a deliberately safe failure. Evidence is
+  a pre-final failure that preserves authenticated retry, an unconfirmed final
+  deletion that may complete after its response, and retry convergence when the
+  account is still sign-in capable. Evidence is
   privacy-safe and includes no codes, tokens, client secrets, private keys, or
   unredacted credential-bearing artifacts.
 
@@ -289,7 +291,9 @@ completed item instead of turning this file into a status log.
 - [ ] Set explicit bounded timeouts for Supabase auth and account-maintenance
   requests. DoD: sign-in, refresh, logout, token exchange, and deletion cannot
   wait on `URLSession.shared` defaults indefinitely; cancellation and timeout
-  map to honest errors; gateway token acquisition remains within the overall
+  map to honest outcomes; deletion distinguishes guaranteed pre-final failure
+  from indeterminate final deletion and never promises that a dispatched remote
+  delete did not commit; gateway token acquisition remains within the overall
   generation deadline.
 
 ## Native V1 — Release Evidence

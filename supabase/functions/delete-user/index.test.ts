@@ -1,6 +1,12 @@
 import { assert, assertEquals } from "jsr:@std/assert@1";
 import { OperationTimedOutError, runBounded } from "../_shared/apple-account.ts";
-import { type DeleteUserDeps, handleDeleteUser } from "./index.ts";
+import {
+  type AuthUserDeletionResult,
+  type DeleteUserDeps,
+  defaultDeleteAuthUser,
+  handleDeleteUser,
+  isAlreadyDeletedAuthUserError,
+} from "./index.ts";
 
 const userID = "00000000-0000-4000-8000-000000000001";
 const refreshToken = "secret-refresh-token";
@@ -38,7 +44,7 @@ function deps(options: {
   refreshToken?: string | null;
   revoke?: (token: string) => Promise<void>;
   cleanup?: () => Promise<void>;
-  deleteAuth?: () => Promise<void>;
+  deleteAuth?: () => Promise<AuthUserDeletionResult | void>;
   calls?: string[];
   logs?: string[];
   runBounded?: typeof runBounded;
@@ -77,7 +83,7 @@ function deps(options: {
     },
     deleteAuthUser: async () => {
       calls.push("delete-auth");
-      await options.deleteAuth?.();
+      return await options.deleteAuth?.() ?? "deleted";
     },
   };
 }
@@ -173,11 +179,11 @@ Deno.test("non-Apple account deletion does not require or invoke revocation", as
   assertEquals(calls, ["cleanup", "delete-auth"]);
 });
 
-Deno.test("deletion timeout leaves account retryable", async () => {
+Deno.test("timeout before final deletion begins leaves auth account retryable", async () => {
   let boundedCalls = 0;
   const timeoutRunner: typeof runBounded = async (operation, _timeout, signal) => {
     boundedCalls += 1;
-    if (boundedCalls === 4) throw new OperationTimedOutError();
+    if (boundedCalls === 5) throw new OperationTimedOutError();
     return await operation(signal ?? new AbortController().signal);
   };
   const calls: string[] = [];
@@ -187,7 +193,147 @@ Deno.test("deletion timeout leaves account retryable", async () => {
   );
 
   assertEquals(response.status, 504);
-  assertEquals(calls, ["load", "revoke"]);
+  assertEquals(calls, ["load", "revoke", "cleanup"]);
+  assertEquals(await response.json(), {
+    error:
+      "Account deletion timed out before final deletion began. Your authentication account remains; please retry.",
+  });
+});
+
+Deno.test("timeout while final deletion runs reports indeterminate and deletion may complete after response", async () => {
+  let boundedCalls = 0;
+  let finishDeletion!: () => void;
+  const deletionGate = new Promise<void>((resolve) => finishDeletion = resolve);
+  let deleted = false;
+  let finalOperation: Promise<unknown> | undefined;
+  const timeoutRunner: typeof runBounded = async (operation, _timeout, signal) => {
+    boundedCalls += 1;
+    const operationSignal = signal ?? new AbortController().signal;
+    if (boundedCalls === 5) {
+      finalOperation = operation(operationSignal);
+      throw new OperationTimedOutError();
+    }
+    return await operation(operationSignal);
+  };
+  const response = await handleDeleteUser(
+    request(),
+    deps({
+      runBounded: timeoutRunner,
+      deleteAuth: async () => {
+        await deletionGate;
+        deleted = true;
+        return "deleted";
+      },
+    }),
+  );
+
+  assertEquals(response.status, 202);
+  assertEquals(deleted, false);
+  assertEquals(await response.json(), {
+    success: false,
+    status: "indeterminate",
+    message:
+      "Account deletion started, but its final status could not be confirmed. It may already be deleted; if you can still sign in, retry deletion.",
+  });
+
+  finishDeletion();
+  await finalOperation;
+  assertEquals(deleted, true);
+});
+
+Deno.test("retry after an indeterminate result converges while the first deletion remains in flight", async () => {
+  let boundedCalls = 0;
+  let finishDeletion!: () => void;
+  const deletionGate = new Promise<void>((resolve) => finishDeletion = resolve);
+  let authUserExists = true;
+  let deleteAttempts = 0;
+  let firstFinalOperation: Promise<unknown> | undefined;
+  const timeoutFirstFinal: typeof runBounded = async (operation, _timeout, signal) => {
+    boundedCalls += 1;
+    const operationSignal = signal ?? new AbortController().signal;
+    if (boundedCalls === 5) {
+      firstFinalOperation = operation(operationSignal);
+      throw new OperationTimedOutError();
+    }
+    return await operation(operationSignal);
+  };
+  const configured = deps({
+    runBounded: timeoutFirstFinal,
+    deleteAuth: async () => {
+      deleteAttempts += 1;
+      if (deleteAttempts === 1) {
+        await deletionGate;
+        if (!authUserExists) return "already_deleted";
+        authUserExists = false;
+        return "deleted";
+      }
+      if (!authUserExists) return "already_deleted";
+      authUserExists = false;
+      return "deleted";
+    },
+  });
+
+  const first = await handleDeleteUser(request(), configured);
+  assertEquals(first.status, 202);
+
+  const retry = await handleDeleteUser(request(), configured);
+  assertEquals(retry.status, 200);
+  assertEquals((await retry.json()).status, "deleted");
+  finishDeletion();
+  await firstFinalOperation;
+  assertEquals(authUserExists, false);
+  assertEquals(deleteAttempts, 2);
+});
+
+Deno.test("an already-deleted auth user is a successful terminal result", async () => {
+  const response = await handleDeleteUser(
+    request(),
+    deps({ deleteAuth: async () => "already_deleted" }),
+  );
+
+  assertEquals(response.status, 200);
+  assertEquals(await response.json(), {
+    success: true,
+    status: "deleted",
+    message: "Account deletion confirmed.",
+  });
+});
+
+Deno.test("Supabase already-deleted errors are recognized without message matching", () => {
+  assertEquals(isAlreadyDeletedAuthUserError({ code: "user_not_found" }), true);
+  assertEquals(isAlreadyDeletedAuthUserError({ status: 404 }), true);
+  assertEquals(isAlreadyDeletedAuthUserError({ status: 500 }), false);
+  assertEquals(isAlreadyDeletedAuthUserError(new Error("user not found")), false);
+});
+
+Deno.test("the production Supabase auth deletion transport receives the operation abort signal", async () => {
+  const originalFetch = globalThis.fetch;
+  const controller = new AbortController();
+  let observedSignal: AbortSignal | null | undefined;
+  let observedMethod: string | undefined;
+  globalThis.fetch = (_input, init) => {
+    observedSignal = init?.signal;
+    observedMethod = init?.method;
+    return Promise.resolve(Response.json({ user: { id: userID } }));
+  };
+
+  try {
+    const result = await defaultDeleteAuthUser(
+      {
+        url: "https://example.supabase.co/",
+        anonKey: "anon-key",
+        serviceRoleKey: "service-role-key",
+      },
+      userID,
+      controller.signal,
+    );
+
+    assertEquals(result, "deleted");
+    assertEquals(observedSignal, controller.signal);
+    assertEquals(observedMethod, "DELETE");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 });
 
 Deno.test("deletion logs and evidence exclude credentials and tokens", async () => {

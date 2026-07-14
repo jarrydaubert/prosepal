@@ -111,9 +111,12 @@ Authenticated user confirms deletion
 ```
 
 The server owns privileged deletion. The native app never contains a service
-role key. Apple revocation, server cleanup, timeout, or auth deletion failure
-keeps the account available so the user can retry rather than reporting a false
-success.
+role key. A failure before final auth deletion starts guarantees that the auth
+account remains and can be retried, although idempotent earlier cleanup may have
+completed. If the final delete starts but cannot be confirmed, the app reports
+that deletion is still being finalized, erases its local account state, and
+explains that the user should retry only if sign-in remains possible. It does
+not claim that the remote account survived a timed-out request.
 
 ## Account switching
 

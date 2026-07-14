@@ -778,7 +778,7 @@ public final class MomentAccountModel {
         defer { isDeletingAccount = false }
 
         do {
-            try await accountMaintenanceClient.deleteAccount(accessToken: accessToken)
+            let deletionOutcome = try await accountMaintenanceClient.deleteAccount(accessToken: accessToken)
             var didClearLocalData = true
             do {
                 try await localAccountDataDeletion?()
@@ -790,9 +790,21 @@ public final class MomentAccountModel {
             isConfirmingAccountDeletion = false
             applyAuthSession(nil)
             isPremiumUnlocked = false
+            let noticeTitle = switch (deletionOutcome, didClearLocalData) {
+            case (.deleted, true):
+                "Account deleted"
+            case (.deleted, false):
+                "Account deleted. Some local data may remain."
+            case (.indeterminate, true):
+                "Deletion is still being finalized. ProsePal data was removed from this device. If you can still sign in, retry deletion."
+            case (.indeterminate, false):
+                "Deletion is still being finalized, and some local data may remain. If you can still sign in, retry deletion."
+            }
             showNotice(
-                didClearLocalData ? "Account deleted" : "Account deleted. Some local data may remain.",
-                systemImage: didClearLocalData ? "checkmark.circle.fill" : "exclamationmark.triangle"
+                noticeTitle,
+                systemImage: deletionOutcome == .deleted && didClearLocalData
+                    ? "checkmark.circle.fill"
+                    : "exclamationmark.triangle"
             )
         } catch let error as AccountMaintenanceError {
             showNotice(error.userSafeMessage, systemImage: "exclamationmark.triangle")

@@ -1002,6 +1002,32 @@ func accountDeletionWarnsWhenLocalDataCleanupFails() async throws {
 
 @Test
 @MainActor
+func indeterminateAccountDeletionClearsLocalStateWithTruthfulRetryCopy() async throws {
+    let session = AuthSession.test(accessToken: "delete-token")
+    let store = MomentAccountInMemoryAuthSessionStore(session: session)
+    let maintenanceClient = MomentAccountMaintenanceClient(outcome: .indeterminate)
+    var didDeleteLocalData = false
+    let account = makeAccount(
+        store: store,
+        authClient: MomentAccountAuthClient(),
+        accountMaintenanceClient: maintenanceClient,
+        localAccountDataDeletion: {
+            didDeleteLocalData = true
+        }
+    )
+
+    await account.loadAuthSession()
+    account.requestAccountDeletion()
+    await account.confirmAccountDeletion()
+
+    #expect(account.isSignedIn == false)
+    #expect(try await store.loadSession() == nil)
+    #expect(didDeleteLocalData)
+    #expect(account.notice?.title == "Deletion is still being finalized. ProsePal data was removed from this device. If you can still sign in, retry deletion.")
+}
+
+@Test
+@MainActor
 func accountDeletionFailurePreservesSignedInState() async {
     let session = AuthSession.test(accessToken: "delete-token")
     let maintenanceClient = MomentAccountMaintenanceClient(error: AccountMaintenanceError.requestFailed(
@@ -1384,18 +1410,24 @@ private actor MomentAccountTransactionFinishRecorder {
 
 private actor MomentAccountMaintenanceClient: AccountMaintenanceClient {
     private let error: (any Error)?
+    private let outcome: AccountDeletionOutcome
     private var tokens: [String] = []
 
-    init(error: (any Error)? = nil) {
+    init(
+        outcome: AccountDeletionOutcome = .deleted,
+        error: (any Error)? = nil
+    ) {
+        self.outcome = outcome
         self.error = error
     }
 
-    func deleteAccount(accessToken: String) async throws {
+    func deleteAccount(accessToken: String) async throws -> AccountDeletionOutcome {
         if let error {
             throw error
         }
 
         tokens.append(accessToken)
+        return outcome
     }
 
     func deletedTokens() -> [String] {

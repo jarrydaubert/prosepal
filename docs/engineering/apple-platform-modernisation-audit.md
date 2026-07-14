@@ -402,10 +402,14 @@ erasing unrelated local writing.
 Supabase user’s Apple identity, Apple token-response issuer/audience/subject and
 expiry, and the credential upsert. It stores only Apple’s refresh token behind a
 service-role-only table. `delete-user` treats Apple revocation and every app-data
-cleanup as required, leaves the auth account and credential available on
-failure, and relies on the auth-user foreign-key cascade only after successful
-deletion. Native and server operations have bounded timeouts; cancellable Apple
-and database work also receives the parent abort signal.
+cleanup as required. A failure before final auth deletion starts leaves the auth
+account available for retry even when earlier idempotent cleanup completed. The
+final Supabase deletion uses an abort-bound HTTP transport, but an unconfirmed
+result after dispatch is reported as indeterminate because remote commit may
+still occur. Confirmed and already-deleted results converge on success, with the
+credential row removed by the auth-user foreign-key cascade. Native and server
+operations have bounded timeouts; cancellable Apple and database work also
+receives the parent abort signal.
 
 **Apple pattern and availability:** Request only consumed scopes. Securely send
 the identity token and one-time authorization code to the server; validate the
@@ -422,7 +426,8 @@ define the lifecycle.
 Function tests cover first and repeat login, code forwarding, missing and
 malformed results, identity mismatch, Apple/server/database failure, all stable
 credential states, revocation notification, deletion revocation, partial
-cleanup, retry, timeout cancellation, and logging hygiene. This is not evidence
+cleanup, pre-final timeout, late deletion after an indeterminate response,
+already-deleted convergence, retry, and logging hygiene. This is not evidence
 that the deployed Apple client-secret configuration, sandbox token exchange,
 system revocation notification, or TestFlight deletion works; those external
 proofs remain in the release backlog.

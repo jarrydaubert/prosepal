@@ -1,10 +1,10 @@
 /**
  * Authenticated, retry-safe self-deletion.
  *
- * Apple authorization is revoked before the auth user is removed. Any Apple,
- * database, or auth failure leaves the account available for an idempotent
- * retry; the credential row disappears through its auth.users cascade only
- * after deletion succeeds.
+ * Apple authorization is revoked before the auth user is removed. Failures
+ * before the final auth deletion starts leave the auth account available for
+ * an idempotent retry. Once final deletion starts, an unconfirmed result is
+ * reported as indeterminate because the remote deletion may still commit.
  */
 import { createClient } from "npm:@supabase/supabase-js@2.95.3";
 import {
@@ -56,11 +56,12 @@ type CleanupAppData = (
   userID: string,
   signal: AbortSignal,
 ) => Promise<void>;
+export type AuthUserDeletionResult = "deleted" | "already_deleted";
 type DeleteAuthUser = (
   config: SupabaseConfig,
   userID: string,
   signal: AbortSignal,
-) => Promise<void>;
+) => Promise<AuthUserDeletionResult>;
 
 export interface DeleteUserDeps {
   getEnv?: EnvGetter;
@@ -94,6 +95,7 @@ export async function handleDeleteUser(
   const revokeAppleToken = deps.revokeAppleToken ?? defaultRevokeAppleToken;
   const cleanupAppData = deps.cleanupAppData ?? defaultCleanupAppData;
   const deleteAuthUser = deps.deleteAuthUser ?? defaultDeleteAuthUser;
+  let authDeletionStarted = false;
 
   const supabaseConfig = readSupabaseServerConfig(getEnv);
   if (!supabaseConfig) {
@@ -158,26 +160,65 @@ export async function handleDeleteUser(
       timeoutMs,
       req.signal,
     );
-    await bounded(
-      (signal) => deleteAuthUser(supabaseConfig, user.id, signal),
+    const authDeletionResult = await bounded(
+      (signal) => {
+        authDeletionStarted = true;
+        return deleteAuthUser(supabaseConfig, user.id, signal);
+      },
       timeoutMs,
       req.signal,
     );
 
-    logger.log("delete-user account deleted", { user: userLabel });
+    logger.log("delete-user account deletion confirmed", {
+      user: userLabel,
+      outcome: authDeletionResult,
+    });
     return jsonResponse(
-      { success: true, message: "Account deleted successfully" },
+      {
+        success: true,
+        status: "deleted",
+        message: "Account deletion confirmed.",
+      },
       200,
       corsHeaders,
     );
   } catch (error) {
+    if (authDeletionStarted) {
+      logger.warn("delete-user final auth deletion outcome indeterminate", {
+        category: error instanceof OperationTimedOutError
+          ? "timed_out"
+          : error instanceof OperationCancelledError
+          ? "cancelled"
+          : "server_operation_failed",
+      });
+      return jsonResponse(
+        {
+          success: false,
+          status: "indeterminate",
+          message:
+            "Account deletion started, but its final status could not be confirmed. It may already be deleted; if you can still sign in, retry deletion.",
+        },
+        202,
+        corsHeaders,
+      );
+    }
     if (error instanceof OperationCancelledError) {
-      return jsonResponse({ error: "Request cancelled" }, 499, corsHeaders);
+      return jsonResponse(
+        {
+          error:
+            "Request cancelled before final account deletion began. Your authentication account remains; please retry.",
+        },
+        499,
+        corsHeaders,
+      );
     }
     if (error instanceof OperationTimedOutError) {
       logger.warn("delete-user operation timed out");
       return jsonResponse(
-        { error: "Account deletion took too long. Your account is still available; please retry." },
+        {
+          error:
+            "Account deletion timed out before final deletion began. Your authentication account remains; please retry.",
+        },
         504,
         corsHeaders,
       );
@@ -186,7 +227,10 @@ export async function handleDeleteUser(
       category: "server_operation_failed",
     });
     return jsonResponse(
-      { error: "Account deletion failed safely. Please try again." },
+      {
+        error:
+          "Account deletion stopped before final deletion began. Your authentication account remains; please retry.",
+      },
       503,
       corsHeaders,
     );
@@ -281,14 +325,28 @@ async function defaultCleanupAppData(
   if (devices.error) throw new Error("device_association_delete_failed");
 }
 
-async function defaultDeleteAuthUser(
+export async function defaultDeleteAuthUser(
   config: SupabaseConfig,
   userID: string,
-  _signal: AbortSignal,
-): Promise<void> {
-  const client = createClient(config.url, config.serviceRoleKey);
+  signal: AbortSignal,
+): Promise<AuthUserDeletionResult> {
+  const abortingFetch: typeof fetch = (input, init) =>
+    fetch(input, { ...init, signal });
+  const client = createClient(config.url, config.serviceRoleKey, {
+    global: { fetch: abortingFetch },
+  });
   const { error } = await client.auth.admin.deleteUser(userID);
-  if (error) throw new Error("auth_user_delete_failed");
+  if (error) {
+    if (isAlreadyDeletedAuthUserError(error)) return "already_deleted";
+    throw new Error("auth_user_delete_failed");
+  }
+  return "deleted";
+}
+
+export function isAlreadyDeletedAuthUserError(error: unknown): boolean {
+  if (typeof error !== "object" || error === null) return false;
+  const candidate = error as { code?: unknown; status?: unknown };
+  return candidate.code === "user_not_found" || candidate.status === 404;
 }
 
 if (import.meta.main) {

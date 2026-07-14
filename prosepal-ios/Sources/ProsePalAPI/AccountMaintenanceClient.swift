@@ -1,7 +1,12 @@
 import Foundation
 
 public protocol AccountMaintenanceClient: Sendable {
-    func deleteAccount(accessToken: String) async throws
+    func deleteAccount(accessToken: String) async throws -> AccountDeletionOutcome
+}
+
+public enum AccountDeletionOutcome: Equatable, Sendable {
+    case deleted
+    case indeterminate
 }
 
 public enum AccountMaintenanceError: Error, Equatable, Sendable {
@@ -9,7 +14,6 @@ public enum AccountMaintenanceError: Error, Equatable, Sendable {
     case authenticationRequired
     case invalidResponse
     case networkUnavailable
-    case timedOut
     case requestFailed(statusCode: Int, message: String)
 }
 
@@ -24,8 +28,6 @@ public extension AccountMaintenanceError {
             String(localized: "Account deletion returned an unexpected response. Please try again.")
         case .networkUnavailable:
             String(localized: "ProsePal services could not be reached. Check your connection and try again.")
-        case .timedOut:
-            String(localized: "Account deletion took too long. Your account is still available; please try again.")
         case .requestFailed(_, let message):
             message
         }
@@ -50,7 +52,7 @@ public struct SupabaseAccountMaintenanceClient: AccountMaintenanceClient {
         self.requestTimeout = requestTimeout
     }
 
-    public func deleteAccount(accessToken: String) async throws {
+    public func deleteAccount(accessToken: String) async throws -> AccountDeletionOutcome {
         let trimmedAnonKey = anonKey.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedAnonKey.isEmpty else {
             throw AccountMaintenanceError.configurationMissing
@@ -77,8 +79,14 @@ public struct SupabaseAccountMaintenanceClient: AccountMaintenanceClient {
         let response: URLResponse
         do {
             (data, response) = try await session.data(for: request)
+        } catch is CancellationError {
+            return .indeterminate
+        } catch let error as URLError where error.code == .cancelled {
+            return .indeterminate
         } catch let error as URLError where error.code == .timedOut {
-            throw AccountMaintenanceError.timedOut
+            return .indeterminate
+        } catch let error as URLError where error.code == .networkConnectionLost {
+            return .indeterminate
         } catch let error as URLError where error.isProsePalConnectivityFailure {
             throw AccountMaintenanceError.networkUnavailable
         }
@@ -86,7 +94,18 @@ public struct SupabaseAccountMaintenanceClient: AccountMaintenanceClient {
             throw AccountMaintenanceError.invalidResponse
         }
 
-        guard (200..<300).contains(httpResponse.statusCode) else {
+        switch httpResponse.statusCode {
+        case 200:
+            return .deleted
+        case 202:
+            guard let response = try? JSONDecoder.accountMaintenance.decode(
+                DeletionStatusResponse.self,
+                from: data
+            ), response.status == "indeterminate" else {
+                throw AccountMaintenanceError.invalidResponse
+            }
+            return .indeterminate
+        default:
             throw AccountMaintenanceError.requestFailed(
                 statusCode: httpResponse.statusCode,
                 message: decodeErrorMessage(from: data)
@@ -109,6 +128,10 @@ public struct SupabaseAccountMaintenanceClient: AccountMaintenanceClient {
 private struct ErrorResponse: Decodable {
     var error: String?
     var message: String?
+}
+
+private struct DeletionStatusResponse: Decodable {
+    var status: String
 }
 
 private extension JSONDecoder {

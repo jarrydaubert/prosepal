@@ -82,14 +82,25 @@ The app calls the authenticated `delete-user` Edge Function. Privileged deletion
 uses the server’s service role; no privileged credential exists in the native
 bundle. For an Apple account, deletion requires the stored Apple refresh token,
 revokes it through Apple’s endpoint, validates every cleanup result, and only
-then deletes the Supabase auth user. Apple, database, timeout, or auth-deletion
-failure keeps the account and credential row available for an idempotent retry.
-The credential row is removed by its `auth.users` cascade after successful auth
-deletion.
+then starts the final Supabase auth-user deletion.
 
-After server deletion, the app clears its session, entitlement state, local
-relationship vault, saved drafts, and recovery state. Failure and partial local
-cleanup remain visible; the user can retry local erasure through Privacy & data.
+Before final auth deletion starts, cancellation, timeout, or cleanup failure
+returns an error and guarantees that the authentication account remains. Earlier
+cleanup may already have completed, so retry repeats idempotent revocation and
+cleanup rather than assuming no work occurred. Once final auth deletion starts,
+an abort or missing response cannot prove whether Supabase committed the remote
+operation. The function uses a cancellable HTTP transport where supported but
+returns HTTP 202 with `status: indeterminate` whenever the final result is not
+confirmed. It never claims the account remains in that phase. Confirmed deletion
+and an already-deleted result both converge on HTTP 200 with `status: deleted`;
+the credential row disappears through its `auth.users` cascade.
+
+After confirmed or indeterminate server deletion, the app clears its session,
+entitlement state, local relationship vault, saved drafts, and recovery state.
+For an indeterminate result it says deletion is still being finalized and tells
+the user to retry only if sign-in remains possible. A pre-final server failure
+keeps the signed-in client state so the user can retry. Partial local cleanup
+remains visible and local erasure can be retried through Privacy & data.
 
 ## Configuration
 

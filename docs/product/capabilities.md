@@ -57,7 +57,7 @@ Detailed code and test evidence lives in
 | Restore | Restore is available from Paywall and Settings. |
 | Transaction updates | Launch-time StoreKit updates converge verified purchases, renewals, approvals, sharing changes, and revocations. |
 | Apple credential changes | The app checks stored Apple credential state and observes revocation, returning to signed out without erasing unrelated local writing. |
-| Account deletion | The authenticated server boundary revokes Apple authorization before validated app/auth cleanup; failures preserve a retry path and successful deletion clears local account state. |
+| Account deletion | The authenticated server boundary revokes Apple authorization before validated app/auth cleanup. Pre-final failures preserve signed-in retry; unconfirmed final deletion is reported as still finalizing and clears local account state, while confirmed and already-deleted results converge on success. |
 
 ## Safety and honesty
 

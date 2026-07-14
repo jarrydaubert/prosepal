@@ -33,7 +33,8 @@ final class AccountMaintenanceClientTests: XCTestCase {
             return (response, Data(#"{"success":true}"#.utf8))
         }
 
-        try await client.deleteAccount(accessToken: " supabase-access-token ")
+        let outcome = try await client.deleteAccount(accessToken: " supabase-access-token ")
+        XCTAssertEqual(outcome, .deleted)
     }
 
     func testDeleteAccountRequiresAccessToken() async throws {
@@ -43,7 +44,7 @@ final class AccountMaintenanceClientTests: XCTestCase {
         )
 
         do {
-            try await client.deleteAccount(accessToken: "   ")
+            _ = try await client.deleteAccount(accessToken: "   ")
             XCTFail("Expected blank access token to fail.")
         } catch AccountMaintenanceError.authenticationRequired {
             // Expected.
@@ -73,7 +74,7 @@ final class AccountMaintenanceClientTests: XCTestCase {
         }
 
         do {
-            try await client.deleteAccount(accessToken: "supabase-access-token")
+            _ = try await client.deleteAccount(accessToken: "supabase-access-token")
             XCTFail("Expected delete-user failure.")
         } catch AccountMaintenanceError.requestFailed(let statusCode, let message) {
             XCTAssertEqual(statusCode, 500)
@@ -83,7 +84,31 @@ final class AccountMaintenanceClientTests: XCTestCase {
         }
     }
 
-    func testDeleteAccountMapsTimeoutWithoutClearingClientState() async throws {
+    func testDeleteAccountMapsServerIndeterminateStatus() async throws {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [AccountMaintenanceCapturingURLProtocol.self]
+        let session = URLSession(configuration: configuration)
+        let client = SupabaseAccountMaintenanceClient(
+            projectURL: try XCTUnwrap(URL(string: "https://project.supabase.co")),
+            anonKey: "anon-key",
+            session: session
+        )
+
+        AccountMaintenanceCapturingURLProtocol.requestHandler = { request in
+            let response = HTTPURLResponse(
+                url: try XCTUnwrap(request.url),
+                statusCode: 202,
+                httpVersion: nil,
+                headerFields: ["Content-Type": "application/json"]
+            )!
+            return (response, Data(#"{"status":"indeterminate"}"#.utf8))
+        }
+
+        let outcome = try await client.deleteAccount(accessToken: "supabase-access-token")
+        XCTAssertEqual(outcome, .indeterminate)
+    }
+
+    func testDeleteAccountTreatsClientTimeoutAsIndeterminate() async throws {
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [AccountMaintenanceCapturingURLProtocol.self]
         let session = URLSession(configuration: configuration)
@@ -99,12 +124,26 @@ final class AccountMaintenanceClientTests: XCTestCase {
             throw URLError(.timedOut)
         }
 
-        do {
-            try await client.deleteAccount(accessToken: "supabase-access-token")
-            XCTFail("Expected timeout.")
-        } catch AccountMaintenanceError.timedOut {
-            // Expected retryable path.
+        let outcome = try await client.deleteAccount(accessToken: "supabase-access-token")
+        XCTAssertEqual(outcome, .indeterminate)
+    }
+
+    func testDeleteAccountTreatsClientCancellationAsIndeterminate() async throws {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [AccountMaintenanceCapturingURLProtocol.self]
+        let session = URLSession(configuration: configuration)
+        let client = SupabaseAccountMaintenanceClient(
+            projectURL: try XCTUnwrap(URL(string: "https://project.supabase.co")),
+            anonKey: "anon-key",
+            session: session
+        )
+
+        AccountMaintenanceCapturingURLProtocol.requestHandler = { _ in
+            throw URLError(.cancelled)
         }
+
+        let outcome = try await client.deleteAccount(accessToken: "supabase-access-token")
+        XCTAssertEqual(outcome, .indeterminate)
     }
 }
 
