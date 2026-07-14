@@ -9,15 +9,16 @@ Ship safely: reliability and security first, then feature work.
 
 ## Active Direction
 
-The active build direction is the native SwiftUI rewrite in `prosepal-ios/`.
+ProsePal is the SwiftUI iOS app in `prosepal-ios/`. It is the only
+implementation. There is no second app, and no migration is in progress.
 
-- Native target: iOS 26-first, person-first Moment Sheet.
-- Native stack: SwiftUI, SwiftData, StoreKit 2, Sign in with Apple, Foundation
+- Target: iOS 26-first, person-first Moment Sheet.
+- Stack: SwiftUI, SwiftData, StoreKit 2, Sign in with Apple, Foundation
   Models, and a ProsePal-owned `MessageWritingService` boundary.
 - Production identity: reuse the existing ProsePal App Store Connect app and
   bundle ID `com.prosepal.prosepal`; staging is UAT via local-only Xcode scheme
   and staging services, not a second public app by default.
-- Native must remain provider-agnostic in the UI: no provider/model names, no
+- The app must remain provider-agnostic in the UI: no provider/model names, no
   Firebase AI / Vertex AI / Gemini-direct client path, no RevenueCat dependency,
   and no third-party provider SDKs by default.
 - The previous Flutter production app is archived at tag
@@ -25,6 +26,12 @@ The active build direction is the native SwiftUI rewrite in `prosepal-ios/`.
   `legacy/flutter-production-reference`. Do not recreate Flutter files on
   `main`; read the archive only when historical behavior or App Review context
   is needed.
+- Remaining `Native*` names — symbols, Xcode targets, schemes, scripts, backlog
+  headings, and docs — are historical residue from that transition, not a live
+  product distinction. Do not infer a second app or an in-progress rewrite from
+  them, and do not rename them opportunistically; renames are tracked in
+  `docs/BACKLOG.md`. "Native" remains meaningful only where it describes an
+  Apple platform capability, such as on-device generation or system surfaces.
 
 ## Source Of Truth
 
