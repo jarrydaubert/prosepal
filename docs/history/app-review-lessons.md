@@ -43,10 +43,10 @@ Native translation:
 
 ## Lesson 3: Free And Paid Capability Must Be Clear
 
-Native copy should explain product lanes, not providers:
+Native copy should explain product behaviour, not providers:
 
-- Private Draft
-- Take More Care
+- Private Draft for ordinary moments where on-device writing is available
+- automatic careful gateway treatment for sensitive moments
 - the paid plan's actual limits and benefits
 - restore purchases
 
