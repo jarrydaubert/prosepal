@@ -190,6 +190,28 @@ func privateUnavailabilityFallsThroughToStandardGatewayDraft() async throws {
 }
 
 @Test
+func unexpectedPrivateClientFailureFallsThroughToStandardGatewayDraft() async throws {
+    let privateClient = UnexpectedlyFailingMomentDraftClient()
+    let carefulClient = RecordingMomentDraftClient(
+        bundle: MomentDraftBundle(messageText: "Careful fallback.", lane: .takeMoreCare)
+    )
+    let service = RoutingMessageWritingService(
+        privateClient: privateClient,
+        carefulClient: carefulClient
+    )
+
+    let bundle = try await service.draft(for: MomentInput(
+        personName: "Taylor",
+        relationship: .colleague,
+        occasion: .newJob
+    ))
+
+    #expect(bundle.messageText == "Careful fallback.")
+    #expect(bundle.lane == .standardDraft)
+    #expect(await carefulClient.draftCallCount == 1)
+}
+
+@Test
 func privateContentBlockDoesNotFallThroughToCarefulClient() async {
     let privateClient = FailingMomentDraftClient(
         error: GenerationError.contentBlocked(message: "This needs a different kind of support.")
@@ -456,6 +478,32 @@ func adjustPrivateDraftFallsThroughToCarefulClientWhenPrivateIsUnavailable() asy
 }
 
 @Test
+func unexpectedPrivateAdjustmentFailureFallsThroughToCarefulClient() async throws {
+    let privateClient = UnexpectedlyFailingMomentDraftClient()
+    let carefulClient = RecordingMomentDraftClient(
+        bundle: MomentDraftBundle(messageText: "Careful warmer draft.", lane: .takeMoreCare)
+    )
+    let service = RoutingMessageWritingService(
+        privateClient: privateClient,
+        carefulClient: carefulClient
+    )
+
+    let bundle = try await service.adjust(
+        MomentDraftBundle(messageText: "A first draft.", lane: .privateDraft),
+        with: .warmer,
+        moment: MomentInput(
+            personName: "Alex",
+            relationship: .closeFriend,
+            occasion: .birthday
+        )
+    )
+
+    #expect(bundle.messageText == "Careful warmer draft.")
+    #expect(bundle.lane == .standardDraft)
+    #expect(await carefulClient.adjustCallCount == 1)
+}
+
+@Test
 func savedMomentDraftRecordPreservesMomentMetadata() {
     let createdAt = Date(timeIntervalSince1970: 1_800_000_000)
     let moment = MomentInput(
@@ -550,6 +598,22 @@ private struct FailingMomentDraftClient: MomentDraftClient {
         moment: MomentInput
     ) async throws -> MomentDraftBundle {
         throw error
+    }
+}
+
+private struct UnexpectedlyFailingMomentDraftClient: MomentDraftClient {
+    private struct UnexpectedPrivateClientError: Error {}
+
+    func draft(for moment: MomentInput) async throws -> MomentDraftBundle {
+        throw UnexpectedPrivateClientError()
+    }
+
+    func adjust(
+        _ bundle: MomentDraftBundle,
+        with adjustment: MomentAdjustment,
+        moment: MomentInput
+    ) async throws -> MomentDraftBundle {
+        throw UnexpectedPrivateClientError()
     }
 }
 

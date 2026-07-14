@@ -94,6 +94,12 @@ public struct RoutingMessageWritingService: MessageWritingService {
             return try await runCareful { try await carefulClient.draft(for: moment) }
                 .replacingLane(.standardDraft)
                 .applyingLocalPressureCheck(for: moment)
+        } catch is CancellationError {
+            throw CancellationError()
+        } catch {
+            return try await runCareful { try await carefulClient.draft(for: moment) }
+                .replacingLane(.standardDraft)
+                .applyingLocalPressureCheck(for: moment)
         }
     }
 
@@ -117,6 +123,14 @@ public struct RoutingMessageWritingService: MessageWritingService {
                     .applyingLocalPressureCheck(for: moment)
             } catch let error as GenerationError {
                 guard error.shouldRouteToCarefulLane else { throw error }
+                return try await runCareful {
+                    try await carefulClient.adjust(bundle, with: adjustment, moment: moment)
+                }
+                    .replacingLane(.standardDraft)
+                    .applyingLocalPressureCheck(for: moment)
+            } catch is CancellationError {
+                throw CancellationError()
+            } catch {
                 return try await runCareful {
                     try await carefulClient.adjust(bundle, with: adjustment, moment: moment)
                 }
