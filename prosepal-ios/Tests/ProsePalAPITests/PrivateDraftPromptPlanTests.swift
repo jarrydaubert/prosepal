@@ -91,7 +91,7 @@ final class PrivateDraftPromptPlanTests: XCTestCase {
                 "Person: Sam",
                 "Relationship: Close Friend",
                 "Moment: Thank You",
-                "Register: Quick - Everyday moments that need a quick, warm message.",
+                "Writing context: Everyday moments that need a quick, warm message.",
                 "Tone: Heartfelt",
                 "Length: 3-4 sentences",
                 "Device locale: en_GB",

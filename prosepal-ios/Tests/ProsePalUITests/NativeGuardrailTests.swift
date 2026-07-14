@@ -17,7 +17,7 @@ func momentExperienceMonolithCanOnlyShrink() throws {
 
     // This baseline may only move downward. Equality prevents an extraction
     // from leaving unused headroom for later growth.
-    let lineCountBaseline = 7_111
+    let lineCountBaseline = 7_050
     #expect(currentLineCount == lineCountBaseline)
 }
 
@@ -68,6 +68,24 @@ func providerNamesStayOutOfAppAndUISource() throws {
         "GenerativeAI"
     ]
 
+    let files = try textFiles(in: [
+        packageRoot.appending(path: "App"),
+        packageRoot.appending(path: "Sources/ProsePalUI")
+    ])
+
+    #expect(try violations(of: bannedTerms, in: files).isEmpty)
+}
+
+@Test
+func retiredManualCareActionStaysOutOfNativeUISource() throws {
+    let bannedTerms = [
+        "Take More Care",
+        "Take more care",
+        "Take care",
+        "takeMoreCare",
+        "take_more_care",
+        "take-more-care"
+    ]
     let files = try textFiles(in: [
         packageRoot.appending(path: "App"),
         packageRoot.appending(path: "Sources/ProsePalUI")

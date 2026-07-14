@@ -23,9 +23,6 @@ func everyGenerationEntryPointUsesTheModelOwnedLifecycle(
     case .adjustment:
         model.bundle = MomentDraftBundle(messageText: "Original.", lane: .privateDraft)
         model.adjust(.warmer)
-    case .takeMoreCare:
-        model.bundle = MomentDraftBundle(messageText: "Original.", lane: .privateDraft)
-        model.takeMoreCare()
     }
 
     try await waitForLifecycle("\(entryPoint) did not finish through MomentModel.") {
@@ -171,7 +168,6 @@ enum GenerationEntryPoint: String, CaseIterable, CustomStringConvertible, Sendab
     case retry
     case rewrite
     case adjustment
-    case takeMoreCare
 
     var description: String { rawValue }
 
@@ -181,8 +177,6 @@ enum GenerationEntryPoint: String, CaseIterable, CustomStringConvertible, Sendab
             .draft
         case .adjustment:
             .adjustment
-        case .takeMoreCare:
-            .takeMoreCare
         }
     }
 
@@ -192,8 +186,6 @@ enum GenerationEntryPoint: String, CaseIterable, CustomStringConvertible, Sendab
             "Draft result."
         case .adjustment:
             "Adjusted result."
-        case .takeMoreCare:
-            "Careful result."
         }
     }
 }
@@ -259,7 +251,6 @@ enum MeaningBearingMutation: String, CaseIterable, CustomStringConvertible, Send
 enum LifecycleGenerationCall: Equatable, Sendable {
     case draft
     case adjustment
-    case takeMoreCare
 }
 
 private actor LifecycleRecordingWritingService: MessageWritingService {
@@ -279,14 +270,6 @@ private actor LifecycleRecordingWritingService: MessageWritingService {
         return MomentDraftBundle(messageText: "Adjusted result.", lane: bundle.lane)
     }
 
-    func takeMoreCare(
-        _ bundle: MomentDraftBundle?,
-        moment: MomentInput
-    ) async throws -> MomentDraftBundle {
-        recordedCalls.append(.takeMoreCare)
-        return MomentDraftBundle(messageText: "Careful result.", lane: .takeMoreCare)
-    }
-
     func calls() -> [LifecycleGenerationCall] {
         recordedCalls
     }
@@ -303,13 +286,6 @@ private actor LifecycleBlockingWritingService: MessageWritingService {
     func adjust(
         _ bundle: MomentDraftBundle,
         with adjustment: MomentAdjustment,
-        moment: MomentInput
-    ) async throws -> MomentDraftBundle {
-        try await block()
-    }
-
-    func takeMoreCare(
-        _ bundle: MomentDraftBundle?,
         moment: MomentInput
     ) async throws -> MomentDraftBundle {
         try await block()
@@ -342,13 +318,6 @@ private actor LateResultWritingService: MessageWritingService {
     func adjust(
         _ bundle: MomentDraftBundle,
         with adjustment: MomentAdjustment,
-        moment: MomentInput
-    ) async throws -> MomentDraftBundle {
-        try await draft(for: moment)
-    }
-
-    func takeMoreCare(
-        _ bundle: MomentDraftBundle?,
         moment: MomentInput
     ) async throws -> MomentDraftBundle {
         try await draft(for: moment)
@@ -396,7 +365,7 @@ private actor CountingDeadlineFallbackClient: MomentDraftClient {
 
     func draft(for moment: MomentInput) async throws -> MomentDraftBundle {
         calls += 1
-        return MomentDraftBundle(messageText: "Fallback.", lane: .takeMoreCare)
+        return MomentDraftBundle(messageText: "Fallback.", lane: .careful)
     }
 
     func adjust(

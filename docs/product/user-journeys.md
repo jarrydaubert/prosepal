@@ -29,16 +29,17 @@ Launch
 
 ```text
 Write Draft
-  -> route by moment, register, availability, and connectivity
+  -> route by occasion policy, availability, and connectivity
      -> Private Draft on device
-     -> Take More Care through the gateway
+     -> careful writing through the gateway
   -> user-safe draft or honest error
 ```
 
 Private drafting is preferred for ordinary moments where the device model is
-available. Take More Care handles sensitive or higher-stakes writing. It is not
-a Premium gate. Eligible technical failures may fall back to the other lane;
-content blocks do not bypass the refusal.
+available. Sensitive or higher-stakes occasions route to careful writing
+automatically. It is not a Premium gate or a post-draft action. Eligible
+technical failures may fall back to the other lane; content blocks do not
+bypass the refusal.
 
 ## Draft revision
 

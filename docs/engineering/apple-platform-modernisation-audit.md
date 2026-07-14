@@ -191,7 +191,7 @@ VoiceOver UI coverage.
 concurrency in the installed Swift 6 toolchain.
 
 **Source and behaviour:** `MomentModel` now owns the retained task for every
-initial draft, retry, rewrite, adjustment, and Take More Care request. Views send
+initial draft, retry, rewrite, and named-adjustment request. Views send
 named synchronous intents instead of creating generation tasks. Stop/reset,
 every meaning-bearing input mutation, composer dismissal, app backgrounding,
 and superseding work cancel the same handle; a generation identity rejects late

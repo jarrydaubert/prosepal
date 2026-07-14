@@ -34,6 +34,17 @@ func settingsPrivateDraftRowsDescribeAvailabilityWithoutPromisingAControl() {
 }
 
 @Test
+func settingsSensitiveWritingRowDescribesAutomaticReadinessWithoutPromisingAControl() {
+    let ready = MomentSettingsStaticRowDescriptor.sensitiveWriting(isConfigured: true)
+    let unavailable = MomentSettingsStaticRowDescriptor.sensitiveWriting(isConfigured: false)
+
+    #expect(ready.id == .sensitiveWriting)
+    #expect(ready.title == "Sensitive moments")
+    #expect(ready.trailing == "Ready")
+    #expect(unavailable.trailing == "Needs setup")
+}
+
+@Test
 func draftRevisionTabsExposeOnlyDraftAndOriginal() {
     #expect(MomentDraftRevisionTab.allCases == [.draft, .original])
     #expect(MomentDraftRevisionTab.allCases.map(\.title) == ["Draft", "Original"])

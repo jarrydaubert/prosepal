@@ -101,10 +101,9 @@ completed item instead of turning this file into a status log.
   `MomentRegister` stops being user-controlled or hidden mutable compose input.
   New initial drafts derive everyday-versus-careful treatment from occasion
   policy and writing-service availability/fallback; the narrow defensive content
-  block remains a separate refusal rule, not a routing mode. Explicit Take More
-  Care remains available after a message is chosen. Legacy Quick/Your words/Take
-  care recovery values decode safely, but regeneration normalizes them to the
-  new derived policy. Prompt context, pre-result careful styling, and the local
+  block remains a separate refusal rule, not a routing mode. Legacy register
+  recovery values decode safely, but regeneration normalizes them to the new
+  derived policy. Prompt context, pre-result careful styling, and the local
   Pressure Check no longer depend on an unreachable register selection.
   A routing-parity matrix records every current occasion-to-initial-lane result
   before and after the migration, with every intentional change named and
@@ -112,8 +111,8 @@ completed item instead of turning this file into a status log.
 
   Results say “Three ways to say it,” give all options equal visual weight with
   no invented best ranking, and require an explicit choice before the existing
-  edit/adjust/copy/share/save flow. Post-choice refinement stays optional and
-  contextual: existing adjustments remain available, and any new adjustment
+  edit/adjust/copy/share/save flow. Post-choice rewriting stays optional and
+  contextual: only the existing named adjustments remain available, and any new adjustment
   vocabulary must be supported by both lanes, the quality rubric, and occasion
   rules before appearing (for example, no “Funnier” promise on sympathy).
   Candidate sets and the chosen draft survive relaunch, changing any
@@ -238,7 +237,7 @@ completed item instead of turning this file into a status log.
   nor message text.
 
 - [ ] Extend durable gateway request identity beyond initial careful drafts.
-  DoD: Adjust and Take More Care reuse a persisted request key after transport
+  DoD: named Adjust actions reuse a persisted request key after transport
   ambiguity, change keys when provider-affecting input changes, clear keys after
   success or an explicit expiry/conflict response, and have relaunch/retry tests;
   a user's first gateway-backed request cannot be charged twice merely because

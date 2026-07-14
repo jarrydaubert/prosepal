@@ -48,9 +48,9 @@ public struct NativeRuntimeReadiness: Equatable, Sendable {
                 isReady: isPrivateDraftConfigured
             ),
             NativeRuntimeReadinessItem(
-                id: "take-more-care",
-                title: "Take More Care",
-                detail: isCarefulGatewayConfigured ? "Gateway URL configured" : "Add PROSEPAL_GATEWAY_URL to this scheme",
+                id: "sensitive-writing",
+                title: "Sensitive moments",
+                detail: isCarefulGatewayConfigured ? "Automatic careful writing is ready" : "Add PROSEPAL_GATEWAY_URL to this scheme",
                 statusText: isCarefulGatewayConfigured ? "Ready" : "Missing",
                 systemImage: "heart.text.square",
                 isReady: isCarefulGatewayConfigured
@@ -83,7 +83,7 @@ public struct NativeRuntimeReadiness: Equatable, Sendable {
     }
 
     var diagnosticsPayload: String {
-        "runtime_readiness generation_configured=\(isGenerationConfigured) private_draft_configured=\(isPrivateDraftConfigured) take_more_care_configured=\(isCarefulGatewayConfigured) dev_secret_configured=\(isDevGatewaySecretConfigured) account_configured=\(isAccountConfigured) subscription_configured=\(isSubscriptionConfigured) premium_product_count=\(premiumProductCount) recommended_plan_configured=\(isRecommendedPremiumProductConfigured) relationship_vault_persistent=\(isRelationshipVaultPersistent)"
+        "runtime_readiness generation_configured=\(isGenerationConfigured) private_draft_configured=\(isPrivateDraftConfigured) careful_gateway_configured=\(isCarefulGatewayConfigured) dev_secret_configured=\(isDevGatewaySecretConfigured) account_configured=\(isAccountConfigured) subscription_configured=\(isSubscriptionConfigured) premium_product_count=\(premiumProductCount) recommended_plan_configured=\(isRecommendedPremiumProductConfigured) relationship_vault_persistent=\(isRelationshipVaultPersistent)"
     }
 
     private var subscriptionDetail: String {

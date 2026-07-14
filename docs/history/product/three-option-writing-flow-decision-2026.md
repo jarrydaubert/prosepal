@@ -3,6 +3,11 @@
 > Frozen product decision context from July 2026. This file explains the
 > reasoning; it is not implementation instruction. Current behaviour remains in
 > the active product docs and unresolved delivery work remains in the backlog.
+>
+> Superseded detail: the explicit post-selection manual-care action described
+> below was removed from native v1. The active three-option contract now permits
+> only supported named adjustments after selection; the original wording is
+> retained as historical decision context.
 
 ## Decision
 

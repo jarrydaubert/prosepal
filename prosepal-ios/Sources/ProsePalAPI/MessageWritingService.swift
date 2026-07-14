@@ -8,10 +8,6 @@ public protocol MessageWritingService: Sendable {
         with adjustment: MomentAdjustment,
         moment: MomentInput
     ) async throws -> MomentDraftBundle
-    func takeMoreCare(
-        _ bundle: MomentDraftBundle?,
-        moment: MomentInput
-    ) async throws -> MomentDraftBundle
 }
 
 public protocol MomentDraftClient: Sendable {
@@ -19,13 +15,6 @@ public protocol MomentDraftClient: Sendable {
     func adjust(
         _ bundle: MomentDraftBundle,
         with adjustment: MomentAdjustment,
-        moment: MomentInput
-    ) async throws -> MomentDraftBundle
-}
-
-public protocol MomentDraftRefinementClient: MomentDraftClient {
-    func refine(
-        currentMessage: String?,
         moment: MomentInput
     ) async throws -> MomentDraftBundle
 }
@@ -170,75 +159,10 @@ public struct RoutingMessageWritingService: MessageWritingService {
             }
                 .replacingLane(.standardDraft)
                 .applyingLocalPressureCheck(for: moment)
-        case .takeMoreCare:
+        case .careful:
             return try await runCareful {
                 try await carefulClient.adjust(bundle, with: adjustment, moment: moment)
             }
-                .applyingLocalPressureCheck(for: moment)
-        }
-    }
-
-    public func takeMoreCare(
-        _ bundle: MomentDraftBundle?,
-        moment: MomentInput
-    ) async throws -> MomentDraftBundle {
-        try await runWithinTotalDeadline {
-            try await routeTakeMoreCare(bundle, moment: moment)
-        }
-    }
-
-    private func routeTakeMoreCare(
-        _ bundle: MomentDraftBundle?,
-        moment: MomentInput
-    ) async throws -> MomentDraftBundle {
-        try Task.checkCancellation()
-        guard moment.hasEnoughContextForDraft else {
-            throw GenerationError.unexpectedResponse(
-                message: "Add who this is for to begin."
-            )
-        }
-        guard moment.safetySignal.allowsDrafting else {
-            throw GenerationError.contentBlocked(
-                message: "This needs immediate support, not a draft."
-            )
-        }
-
-        if let refinementClient = carefulClient as? any MomentDraftRefinementClient {
-            do {
-                return try await runCareful {
-                    try await refinementClient.refine(
-                        currentMessage: bundle?.messageText,
-                        moment: moment
-                    )
-                }
-                .applyingLocalPressureCheck(for: moment)
-            } catch let error as GenerationError {
-                try Task.checkCancellation()
-                guard error.shouldFallbackToPrivateDraftFromCarefulLane else { throw error }
-                return try await runPrivate { try await privateClient.draft(for: moment) }
-                    .applyingLocalPressureCheck(for: moment)
-            } catch is CancellationError {
-                throw CancellationError()
-            } catch {
-                try Task.checkCancellation()
-                return try await runPrivate { try await privateClient.draft(for: moment) }
-                    .applyingLocalPressureCheck(for: moment)
-            }
-        }
-
-        do {
-            return try await runCareful { try await carefulClient.draft(for: moment) }
-                .applyingLocalPressureCheck(for: moment)
-        } catch let error as GenerationError {
-            try Task.checkCancellation()
-            guard error.shouldFallbackToPrivateDraftFromCarefulLane else { throw error }
-            return try await runPrivate { try await privateClient.draft(for: moment) }
-                .applyingLocalPressureCheck(for: moment)
-        } catch is CancellationError {
-            throw CancellationError()
-        } catch {
-            try Task.checkCancellation()
-            return try await runPrivate { try await privateClient.draft(for: moment) }
                 .applyingLocalPressureCheck(for: moment)
         }
     }

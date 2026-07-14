@@ -286,7 +286,7 @@ final class RelationshipVaultTests: XCTestCase {
         let record = SavedMomentDraftRecord(
             moment: moment,
             messageText: "A saved anniversary draft.",
-            lane: .takeMoreCare,
+            lane: .careful,
             createdAt: createdAt
         )
 
@@ -296,7 +296,7 @@ final class RelationshipVaultTests: XCTestCase {
         XCTAssertEqual(record.register, MomentRegister.confess)
         XCTAssertEqual(record.tone, Tone.poetic)
         XCTAssertEqual(record.length, MessageLength.detailed)
-        XCTAssertEqual(record.lane, MomentDraftLane.takeMoreCare)
+        XCTAssertEqual(record.lane, MomentDraftLane.careful)
         XCTAssertEqual(record.trueThing, "I still love quiet mornings together.")
         XCTAssertEqual(record.messageText, "A saved anniversary draft.")
         XCTAssertEqual(record.normalizedPersonName, "asha")
@@ -304,6 +304,9 @@ final class RelationshipVaultTests: XCTestCase {
         XCTAssertEqual(record.subtitle, "Anniversary · Partner")
         XCTAssertEqual(record.createdAt, createdAt)
         XCTAssertEqual(record.updatedAt, createdAt)
+
+        record.laneRawValue = "takeMoreCare"
+        XCTAssertEqual(record.lane, MomentDraftLane.careful)
     }
 
     func testSavedMomentDraftRecordUpdateMessageTextTrimsAndTouchesTimestamp() {

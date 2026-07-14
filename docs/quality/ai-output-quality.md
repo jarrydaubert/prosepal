@@ -53,6 +53,10 @@ cd prosepal-ios
 swift test --filter WritingQuality
 ```
 
+Post-draft rewrite evaluation covers the supported named adjustments only.
+Careful treatment is selected automatically by routing and has no separate
+manual-refinement vocabulary or quality contract.
+
 The runner lives in the tooling-only `ProsePalEvaluation` package target; no
 app product links it. Its versioned fixture is
 `Tests/ProsePalEvaluationTests/Fixtures/writing-quality-baseline-v1.json` and

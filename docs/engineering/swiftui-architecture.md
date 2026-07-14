@@ -144,9 +144,9 @@ must not report success until persistence succeeds.
 
 - A model or service that starts async work owns the task handle and its
   cancellation policy.
-- `MomentModel` is the universal owner for initial draft, retry, rewrite,
-  adjustment, and Take More Care tasks. Views send named intent such as Stop;
-  they never wrap generation calls in their own `Task`.
+- `MomentModel` is the universal owner for initial draft, retry, rewrite, and
+  named-adjustment tasks. Views send named intent such as Stop; they never wrap
+  generation calls in their own `Task`.
 - Meaning-bearing input changes cancel obsolete generation and invalidate late
   results. `MomentModel`'s generation counter is the current pattern for
   suppressing stale completion.

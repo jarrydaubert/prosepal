@@ -46,8 +46,8 @@ Their handoff and trust boundary is documented in
 ## State ownership
 
 `MomentModel` owns the active Moment, generation state, retry state, current
-draft, and draft snapshots. Every initial draft, retry, rewrite, adjustment, and
-Take More Care request enters the same retained task lifecycle. Stop/reset,
+draft, and draft snapshots. Every initial draft, retry, rewrite, and named
+adjustment enters the same retained task lifecycle. Stop/reset,
 meaning-bearing input mutation, composer dismissal, app backgrounding, and a
 superseding request cancel that task; generation identity suppresses late
 results even when a dependency returns after cancellation.

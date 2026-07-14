@@ -111,6 +111,37 @@ func replayExpiryClearsKeyWithoutAutomaticallyRetrying() async throws {
     #expect(keys[0] != keys[1])
 }
 
+@Test
+func namedAdjustmentsUseFreshKeysWithoutDisturbingPendingDraftRetry() async throws {
+    let cardClient = SequencedCardClient(results: [
+        .failure(.serviceUnavailable(message: "Try again.")),
+        .success(successfulCardResponse),
+        .success(successfulCardResponse),
+        .success(successfulCardResponse)
+    ])
+    let client = GatewayCarefulMomentClient(
+        client: cardClient,
+        clientContext: testClientContext,
+        requestKeyStore: CarefulRequestKeyStore()
+    )
+    let moment = testMoment(name: "Sam")
+    let bundle = MomentDraftBundle(messageText: "Original words.", lane: .careful)
+
+    await #expect(throws: GenerationError.self) {
+        _ = try await client.draft(for: moment)
+    }
+    _ = try await client.adjust(bundle, with: .warmer, moment: moment)
+    _ = try await client.adjust(bundle, with: .shorter, moment: moment)
+    _ = try await client.draft(for: moment)
+
+    let keys = await cardClient.idempotencyKeys
+    #expect(keys.count == 4)
+    #expect(keys[0] == keys[3])
+    #expect(keys[1] != keys[0])
+    #expect(keys[2] != keys[0])
+    #expect(keys[1] != keys[2])
+}
+
 private let testClientContext = ClientContext(appVersion: "1.0", buildNumber: "1")
 
 private let successfulCardResponse = CardResponse(

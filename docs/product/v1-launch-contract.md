@@ -45,11 +45,13 @@ V1 also includes:
 - SwiftUI depends on `MessageWritingService`, not a provider SDK.
 - Private Draft is the everyday on-device lane where Foundation Models is
   available.
-- Take More Care is the cloud/careful lane through the ProsePal gateway.
-- Quick, Your words, and Take care are not a visible compose step. New initial
+- Careful writing is an automatic cloud lane through the ProsePal gateway.
+- Legacy writing-register values are not a visible compose step. New initial
   drafts derive everyday-versus-careful treatment from occasion policy and
-  writing-service availability; explicit Take More Care remains a post-choice
-  refinement. Legacy register values are recovery input, not hidden user intent.
+  writing-service availability; legacy values are recovery input, not hidden
+  user intent.
+- After a message is chosen, only the supported named adjustments in
+  `MomentAdjustment` may request a rewrite.
 - Sensitive routing is a quality decision, not a subscription gate.
 - StoreKit and server entitlement govern paid limits and extras.
 - Provider and model names never appear in user-facing UI.

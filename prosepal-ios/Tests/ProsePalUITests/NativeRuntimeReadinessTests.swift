@@ -10,7 +10,7 @@ final class NativeRuntimeReadinessTests: XCTestCase {
 
         let items = readiness.settingsItems
 
-        XCTAssertEqual(items.map(\.id), ["private-draft", "take-more-care", "dev-guard", "account", "subscriptions"])
+        XCTAssertEqual(items.map(\.id), ["private-draft", "sensitive-writing", "dev-guard", "account", "subscriptions"])
         XCTAssertTrue(items.allSatisfy { !$0.isReady })
         XCTAssertEqual(items.first { $0.id == "private-draft" }?.statusText, "Unavailable")
         XCTAssertTrue(items.filter { $0.id != "private-draft" }.allSatisfy { $0.statusText == "Missing" })
@@ -57,7 +57,7 @@ final class NativeRuntimeReadinessTests: XCTestCase {
 
         XCTAssertEqual(
             payload,
-            "runtime_readiness generation_configured=true private_draft_configured=true take_more_care_configured=true dev_secret_configured=true account_configured=false subscription_configured=true premium_product_count=1 recommended_plan_configured=false relationship_vault_persistent=true"
+            "runtime_readiness generation_configured=true private_draft_configured=true careful_gateway_configured=true dev_secret_configured=true account_configured=false subscription_configured=true premium_product_count=1 recommended_plan_configured=false relationship_vault_persistent=true"
         )
         XCTAssertFalse(payload.contains("http"))
         XCTAssertFalse(payload.contains("secret="))
@@ -74,7 +74,7 @@ final class NativeRuntimeReadinessTests: XCTestCase {
         XCTAssertFalse(payload.contains("RelationshipVault.store"))
     }
 
-    func testPrivateDraftAndTakeMoreCareReadinessAreSeparate() {
+    func testPrivateDraftAndSensitiveWritingReadinessAreSeparate() {
         let readiness = NativeRuntimeReadiness(
             isPrivateDraftConfigured: true,
             isCarefulGatewayConfigured: false
@@ -84,7 +84,7 @@ final class NativeRuntimeReadinessTests: XCTestCase {
         XCTAssertTrue(readiness.isPrivateDraftConfigured)
         XCTAssertFalse(readiness.isCarefulGatewayConfigured)
         XCTAssertEqual(readiness.settingsItems.first { $0.id == "private-draft" }?.statusText, "Device dependent")
-        XCTAssertEqual(readiness.settingsItems.first { $0.id == "take-more-care" }?.statusText, "Missing")
+        XCTAssertEqual(readiness.settingsItems.first { $0.id == "sensitive-writing" }?.statusText, "Missing")
     }
 
     func testMomentAccountModelStoresRuntimeReadinessForSettings() {

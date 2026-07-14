@@ -12,14 +12,14 @@ Detailed code and test evidence lives in
 | Root navigation | After welcome, native Write, Drafts, and Settings tabs remain distinct and discoverable; app and extension handoffs return to Write. |
 | Person-first entry | The user starts with who the message is for, then chooses relationship and occasion context. |
 | One true thing | The user types the real sentence or detail the draft should preserve. Voice dictation is not part of v1. |
-| Occasion-aware care | Ordinary moments default to quick private writing, while sympathy, pet sympathy, and apology automatically request extra care; Take More Care remains available after a draft. |
+| Occasion-aware care | Ordinary moments default to private writing, while sympathy, pet sympathy, and apology automatically request the careful lane. |
 | Tone | Heartfelt, Casual, Funny, Formal, Inspirational, Playful, Sarcastic, Nostalgic, and Poetic choices shape the voice. |
 | Length | Brief, Standard, and Detailed choices set the intended message shape. |
 | Locale | The app derives locale and spelling behaviour from the device rather than exposing a spelling picker. |
 | Explicit generation | Drafting begins only after the user taps Write Draft. |
 | Stop and cancellation | While writing, Stop cancels the active request; changing the Moment, leaving Write, or backgrounding also prevents obsolete work from replacing newer words. |
 | Private Draft | Everyday moments use Foundation Models on device when available. |
-| Take More Care | Harder moments use the ProsePal gateway and provider-neutral product language. |
+| Careful lane | Harder moments use the ProsePal gateway automatically and keep provider details behind the service boundary. |
 | Fallback | Retryable failures can move between eligible lanes while content blocks remain blocked. |
 
 ## Draft protection and results
@@ -28,7 +28,7 @@ Detailed code and test evidence lives in
 |---|---|
 | Primary draft | One generated message is presented as the main writing surface. |
 | Edit | The user can edit the active draft directly. |
-| Adjust | Warmer, shorter, more direct, and Take More Care actions can reshape a draft. |
+| Adjust | Warmer, Shorter, and Direct are the supported named rewrite actions. |
 | Undo and keep | Edits and rewrites create recoverable snapshots before replacing current text. |
 | Relaunch recovery | The active draft and its snapshot history can be recovered after an app restart. |
 | Copy | Copies the active message with visible confirmation. |

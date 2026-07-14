@@ -2,7 +2,7 @@ import CryptoKit
 import Foundation
 import ProsePalDomain
 
-public struct GatewayCarefulMomentClient: MomentDraftRefinementClient {
+public struct GatewayCarefulMomentClient: MomentDraftClient {
     private let client: any MessageWritingClient
     private let clientContext: ClientContext
     private let requestKeyStore: CarefulRequestKeyStore
@@ -35,18 +35,6 @@ public struct GatewayCarefulMomentClient: MomentDraftRefinementClient {
             moment: moment,
             adjustment: adjustment,
             currentMessage: bundle.messageText,
-            reusesKeyOnRetry: false
-        )
-    }
-
-    public func refine(
-        currentMessage: String?,
-        moment: MomentInput
-    ) async throws -> MomentDraftBundle {
-        try await generate(
-            moment: moment,
-            adjustment: nil,
-            currentMessage: currentMessage,
             reusesKeyOnRetry: false
         )
     }
@@ -99,7 +87,7 @@ public struct GatewayCarefulMomentClient: MomentDraftRefinementClient {
 
         return MomentDraftBundle(
             messageText: message,
-            lane: .takeMoreCare,
+            lane: .careful,
             pressureCheck: PressureCheck(
                 notes: response.qualityCheck?.userSafeNote.map { [$0] } ?? []
             ),

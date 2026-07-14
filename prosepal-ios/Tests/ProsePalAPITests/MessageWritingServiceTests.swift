@@ -9,7 +9,7 @@ func everydayMomentRoutesToPrivateClient() async throws {
         bundle: MomentDraftBundle(messageText: "Private hello.", lane: .privateDraft)
     )
     let carefulClient = RecordingMomentDraftClient(
-        bundle: MomentDraftBundle(messageText: "Careful hello.", lane: .takeMoreCare)
+        bundle: MomentDraftBundle(messageText: "Careful hello.", lane: .careful)
     )
     let service = RoutingMessageWritingService(
         privateClient: privateClient,
@@ -34,7 +34,7 @@ func sensitiveMomentRoutesDirectlyToCarefulClient() async throws {
         bundle: MomentDraftBundle(messageText: "Private sympathy.", lane: .privateDraft)
     )
     let carefulClient = RecordingMomentDraftClient(
-        bundle: MomentDraftBundle(messageText: "Careful sympathy.", lane: .takeMoreCare)
+        bundle: MomentDraftBundle(messageText: "Careful sympathy.", lane: .careful)
     )
     let service = RoutingMessageWritingService(
         privateClient: privateClient,
@@ -48,13 +48,13 @@ func sensitiveMomentRoutesDirectlyToCarefulClient() async throws {
     ))
 
     #expect(bundle.messageText == "Careful sympathy.")
-    #expect(bundle.lane == .takeMoreCare)
+    #expect(bundle.lane == .careful)
     #expect(await privateClient.draftCallCount == 0)
     #expect(await carefulClient.draftCallCount == 1)
 }
 
 @Test
-func gatewayCarefulClientRequestsWorkingStandardLaneButReturnsTakeMoreCareProductLane() async throws {
+func gatewayCarefulClientRequestsWorkingStandardLaneButReturnsCarefulProductLane() async throws {
     let cardClient = RecordingCardMessageWritingClient(response: CardResponse(
         messages: [GeneratedMessage(id: "careful-1", text: "A careful gateway draft.")],
         laneUsed: .standard,
@@ -73,8 +73,41 @@ func gatewayCarefulClientRequestsWorkingStandardLaneButReturnsTakeMoreCareProduc
     ))
 
     #expect(bundle.messageText == "A careful gateway draft.")
-    #expect(bundle.lane == .takeMoreCare)
+    #expect(bundle.lane == .careful)
     #expect(await cardClient.firstRequestedLane == .standard)
+}
+
+@Test
+func gatewayAdjustmentUsesOnlyNamedAdjustmentAndCurrentDraftContext() async throws {
+    let cardClient = RecordingCardMessageWritingClient(response: CardResponse(
+        messages: [GeneratedMessage(id: "direct-1", text: "A direct gateway draft.")],
+        laneUsed: .standard,
+        fallbackStatus: .none,
+        retryEligibility: .ineligible
+    ))
+    let client = GatewayCarefulMomentClient(
+        client: cardClient,
+        clientContext: ClientContext(appVersion: "0.0.0", buildNumber: "1")
+    )
+    let original = MomentDraftBundle(
+        messageText: "Please tell me that everything is okay.",
+        lane: .careful
+    )
+
+    _ = try await client.adjust(
+        original,
+        with: .moreDirect,
+        moment: MomentInput(
+            personName: "Sam",
+            relationship: .family,
+            occasion: .sympathy
+        )
+    )
+
+    let intent = await cardClient.firstIntent
+    #expect(intent?.thingsToInclude.contains("Please make the message direct.") == true)
+    #expect(intent?.userContext?.contains("Current message to reshape: \(original.messageText)") == true)
+    #expect(intent?.userContext?.localizedCaseInsensitiveContains("take more care") == false)
 }
 
 @Test
@@ -171,7 +204,7 @@ func privateUnavailabilityFallsThroughToStandardGatewayDraft() async throws {
         error: GenerationError.serviceUnavailable(message: "Private draft unavailable.")
     )
     let carefulClient = RecordingMomentDraftClient(
-        bundle: MomentDraftBundle(messageText: "Careful fallback.", lane: .takeMoreCare)
+        bundle: MomentDraftBundle(messageText: "Careful fallback.", lane: .careful)
     )
     let service = RoutingMessageWritingService(
         privateClient: privateClient,
@@ -193,7 +226,7 @@ func privateUnavailabilityFallsThroughToStandardGatewayDraft() async throws {
 func unexpectedPrivateClientFailureFallsThroughToStandardGatewayDraft() async throws {
     let privateClient = UnexpectedlyFailingMomentDraftClient()
     let carefulClient = RecordingMomentDraftClient(
-        bundle: MomentDraftBundle(messageText: "Careful fallback.", lane: .takeMoreCare)
+        bundle: MomentDraftBundle(messageText: "Careful fallback.", lane: .careful)
     )
     let service = RoutingMessageWritingService(
         privateClient: privateClient,
@@ -217,7 +250,7 @@ func privateContentBlockDoesNotFallThroughToCarefulClient() async {
         error: GenerationError.contentBlocked(message: "This needs a different kind of support.")
     )
     let carefulClient = RecordingMomentDraftClient(
-        bundle: MomentDraftBundle(messageText: "Careful fallback.", lane: .takeMoreCare)
+        bundle: MomentDraftBundle(messageText: "Careful fallback.", lane: .careful)
     )
     let service = RoutingMessageWritingService(
         privateClient: privateClient,
@@ -278,7 +311,7 @@ func cancellationBeforeRoutingDoesNotCallEitherProvider() async {
         bundle: MomentDraftBundle(messageText: "Private.", lane: .privateDraft)
     )
     let carefulClient = RecordingMomentDraftClient(
-        bundle: MomentDraftBundle(messageText: "Careful.", lane: .takeMoreCare)
+        bundle: MomentDraftBundle(messageText: "Careful.", lane: .careful)
     )
     let service = RoutingMessageWritingService(
         privateClient: privateClient,
@@ -315,18 +348,10 @@ func cancellationDuringProviderWorkNeverStartsFallback(
     )
     let service: RoutingMessageWritingService
 
-    switch route {
-    case .draft, .adjustment:
-        service = RoutingMessageWritingService(
-            privateClient: cancellingClient,
-            carefulClient: fallbackClient
-        )
-    case .takeMoreCare:
-        service = RoutingMessageWritingService(
-            privateClient: fallbackClient,
-            carefulClient: cancellingClient
-        )
-    }
+    service = RoutingMessageWritingService(
+        privateClient: cancellingClient,
+        carefulClient: fallbackClient
+    )
 
     let task = Task {
         switch route {
@@ -336,11 +361,6 @@ func cancellationDuringProviderWorkNeverStartsFallback(
             return try await service.adjust(
                 MomentDraftBundle(messageText: "Original.", lane: .privateDraft),
                 with: .warmer,
-                moment: cancellationTestMoment
-            )
-        case .takeMoreCare:
-            return try await service.takeMoreCare(
-                MomentDraftBundle(messageText: "Original.", lane: .privateDraft),
                 moment: cancellationTestMoment
             )
         }
@@ -376,7 +396,7 @@ func serviceAppliesLocalPressureCheckToReturnedDraft() async throws {
     let carefulClient = RecordingMomentDraftClient(
         bundle: MomentDraftBundle(
             messageText: "I'm sorry but I was trying to help.",
-            lane: .takeMoreCare
+            lane: .careful
         )
     )
     let service = RoutingMessageWritingService(
@@ -402,7 +422,7 @@ func emptyPersonDoesNotStartDrafting() async {
             bundle: MomentDraftBundle(messageText: "Private.", lane: .privateDraft)
         ),
         carefulClient: RecordingMomentDraftClient(
-            bundle: MomentDraftBundle(messageText: "Careful.", lane: .takeMoreCare)
+            bundle: MomentDraftBundle(messageText: "Careful.", lane: .careful)
         )
     )
 
@@ -426,7 +446,7 @@ func crisisMomentDoesNotCallAnyDraftClient() async {
         bundle: MomentDraftBundle(messageText: "Private.", lane: .privateDraft)
     )
     let carefulClient = RecordingMomentDraftClient(
-        bundle: MomentDraftBundle(messageText: "Careful.", lane: .takeMoreCare)
+        bundle: MomentDraftBundle(messageText: "Careful.", lane: .careful)
     )
     let service = RoutingMessageWritingService(
         privateClient: privateClient,
@@ -452,104 +472,12 @@ func crisisMomentDoesNotCallAnyDraftClient() async {
 }
 
 @Test
-func takeMoreCareUsesCarefulRefinementWithCurrentDraft() async throws {
-    let privateClient = RecordingMomentDraftClient(
-        bundle: MomentDraftBundle(messageText: "Private hello.", lane: .privateDraft)
-    )
-    let carefulClient = RefiningMomentDraftClient(
-        bundle: MomentDraftBundle(messageText: "Careful hello.", lane: .takeMoreCare)
-    )
-    let service = RoutingMessageWritingService(
-        privateClient: privateClient,
-        carefulClient: carefulClient
-    )
-    let currentBundle = MomentDraftBundle(
-        messageText: "Happy birthday. I hope today is lovely.",
-        lane: .privateDraft
-    )
-
-    let bundle = try await service.takeMoreCare(
-        currentBundle,
-        moment: MomentInput(
-            personName: "Alex",
-            relationship: .closeFriend,
-            occasion: .birthday
-        )
-    )
-
-    #expect(bundle.messageText == "Careful hello.")
-    #expect(bundle.lane == .takeMoreCare)
-    #expect(await privateClient.draftCallCount == 0)
-    #expect(await carefulClient.refineCallCount == 1)
-    #expect(await carefulClient.lastCurrentMessage == "Happy birthday. I hope today is lovely.")
-}
-
-@Test
-func takeMoreCareCarefulFailureFallsBackToPrivateDraft() async throws {
-    let privateClient = RecordingMomentDraftClient(
-        bundle: MomentDraftBundle(messageText: "Private fallback.", lane: .privateDraft)
-    )
-    let carefulClient = FailingMomentDraftClient(
-        error: GenerationError.usageLimitReached(message: "Premium unavailable.")
-    )
-    let service = RoutingMessageWritingService(
-        privateClient: privateClient,
-        carefulClient: carefulClient
-    )
-
-    let bundle = try await service.takeMoreCare(
-        MomentDraftBundle(messageText: "A quick draft.", lane: .privateDraft),
-        moment: MomentInput(
-            personName: "Alex",
-            relationship: .closeFriend,
-            occasion: .birthday
-        )
-    )
-
-    #expect(bundle.messageText == "Private fallback.")
-    #expect(bundle.lane == .privateDraft)
-    #expect(await privateClient.draftCallCount == 1)
-}
-
-@Test
-func takeMoreCareFallsBackToCarefulDraftWhenClientCannotRefine() async throws {
-    let privateClient = RecordingMomentDraftClient(
-        bundle: MomentDraftBundle(messageText: "Private hello.", lane: .privateDraft)
-    )
-    let carefulClient = RecordingMomentDraftClient(
-        bundle: MomentDraftBundle(messageText: "Careful new draft.", lane: .takeMoreCare)
-    )
-    let service = RoutingMessageWritingService(
-        privateClient: privateClient,
-        carefulClient: carefulClient
-    )
-    let currentBundle = MomentDraftBundle(
-        messageText: "Happy birthday. I hope today is lovely.",
-        lane: .privateDraft
-    )
-
-    let bundle = try await service.takeMoreCare(
-        currentBundle,
-        moment: MomentInput(
-            personName: "Alex",
-            relationship: .closeFriend,
-            occasion: .birthday
-        )
-    )
-
-    #expect(bundle.messageText == "Careful new draft.")
-    #expect(bundle.lane == .takeMoreCare)
-    #expect(await privateClient.draftCallCount == 0)
-    #expect(await carefulClient.draftCallCount == 1)
-}
-
-@Test
 func adjustPrivateDraftFallsThroughToCarefulClientWhenPrivateIsUnavailable() async throws {
     let privateClient = FailingMomentDraftClient(
         error: GenerationError.serviceUnavailable(message: "Private draft unavailable.")
     )
     let carefulClient = RecordingMomentDraftClient(
-        bundle: MomentDraftBundle(messageText: "Careful warmer draft.", lane: .takeMoreCare)
+        bundle: MomentDraftBundle(messageText: "Careful warmer draft.", lane: .careful)
     )
     let service = RoutingMessageWritingService(
         privateClient: privateClient,
@@ -575,7 +503,7 @@ func adjustPrivateDraftFallsThroughToCarefulClientWhenPrivateIsUnavailable() asy
 func unexpectedPrivateAdjustmentFailureFallsThroughToCarefulClient() async throws {
     let privateClient = UnexpectedlyFailingMomentDraftClient()
     let carefulClient = RecordingMomentDraftClient(
-        bundle: MomentDraftBundle(messageText: "Careful warmer draft.", lane: .takeMoreCare)
+        bundle: MomentDraftBundle(messageText: "Careful warmer draft.", lane: .careful)
     )
     let service = RoutingMessageWritingService(
         privateClient: privateClient,
@@ -613,7 +541,7 @@ func savedMomentDraftRecordPreservesMomentMetadata() {
     let record = SavedMomentDraftRecord(
         moment: moment,
         messageText: "Thank you for always showing up.",
-        lane: .takeMoreCare,
+        lane: .careful,
         createdAt: createdAt
     )
 
@@ -624,7 +552,7 @@ func savedMomentDraftRecordPreservesMomentMetadata() {
     #expect(record.register == MomentRegister.confess)
     #expect(record.tone == Tone.heartfelt)
     #expect(record.length == MessageLength.brief)
-    #expect(record.lane == MomentDraftLane.takeMoreCare)
+    #expect(record.lane == MomentDraftLane.careful)
     #expect(record.trueThing == "You always show up.")
     #expect(record.createdAt == createdAt)
 }
@@ -663,6 +591,10 @@ private actor RecordingCardMessageWritingClient: MessageWritingClient {
 
     var firstRequestedLane: GenerationLane? {
         requests.first?.requestedLane
+    }
+
+    var firstIntent: CardIntent? {
+        requests.first?.intent
     }
 
     func generateCard(request: CardRequest) async throws -> CardResponse {
@@ -736,12 +668,11 @@ private actor CancellationRecordingMomentDraftClient: MomentDraftClient {
 enum ServiceCancellationRoute: String, CaseIterable, CustomStringConvertible, Sendable {
     case draft
     case adjustment
-    case takeMoreCare
 
     var description: String { rawValue }
 }
 
-private actor CancellationDisguisingMomentDraftClient: MomentDraftRefinementClient {
+private actor CancellationDisguisingMomentDraftClient: MomentDraftClient {
     private var started = 0
     private var cancellations = 0
 
@@ -752,13 +683,6 @@ private actor CancellationDisguisingMomentDraftClient: MomentDraftRefinementClie
     func adjust(
         _ bundle: MomentDraftBundle,
         with adjustment: MomentAdjustment,
-        moment: MomentInput
-    ) async throws -> MomentDraftBundle {
-        try await blockUntilCancelled()
-    }
-
-    func refine(
-        currentMessage: String?,
         moment: MomentInput
     ) async throws -> MomentDraftBundle {
         try await blockUntilCancelled()
@@ -821,34 +745,3 @@ private let cancellationTestMoment = MomentInput(
     relationship: .closeFriend,
     occasion: .birthday
 )
-
-private actor RefiningMomentDraftClient: MomentDraftRefinementClient {
-    private let bundle: MomentDraftBundle
-    private(set) var refineCallCount = 0
-    private(set) var lastCurrentMessage: String?
-
-    init(bundle: MomentDraftBundle) {
-        self.bundle = bundle
-    }
-
-    func draft(for moment: MomentInput) async throws -> MomentDraftBundle {
-        bundle
-    }
-
-    func adjust(
-        _ bundle: MomentDraftBundle,
-        with adjustment: MomentAdjustment,
-        moment: MomentInput
-    ) async throws -> MomentDraftBundle {
-        self.bundle
-    }
-
-    func refine(
-        currentMessage: String?,
-        moment: MomentInput
-    ) async throws -> MomentDraftBundle {
-        refineCallCount += 1
-        lastCurrentMessage = currentMessage
-        return bundle
-    }
-}

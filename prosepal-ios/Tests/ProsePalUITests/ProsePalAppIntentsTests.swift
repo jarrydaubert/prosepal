@@ -238,10 +238,4 @@ private struct NoOpMomentWritingService: MessageWritingService {
         bundle
     }
 
-    func takeMoreCare(
-        _ bundle: MomentDraftBundle?,
-        moment: MomentInput
-    ) async throws -> MomentDraftBundle {
-        MomentDraftBundle(messageText: "Careful draft", lane: .takeMoreCare)
-    }
 }

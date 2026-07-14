@@ -61,11 +61,11 @@ final class NativeDiagnosticsTests: XCTestCase {
         let payload = NativeDiagnosticsPayload.momentDraftStarted(
             requestID: "moment-request-123456789",
             moment: moment,
-            trigger: "take_more_care"
+            trigger: "adjust_warmer"
         )
 
         XCTAssertTrue(payload.contains("request_id=moment-reque..."))
-        XCTAssertTrue(payload.contains("trigger=take_more_care"))
+        XCTAssertTrue(payload.contains("trigger=adjust_warmer"))
         XCTAssertTrue(payload.contains("register=confess"))
         XCTAssertTrue(payload.contains("occasion=apology"))
         XCTAssertTrue(payload.contains("relationship=romantic"))
@@ -84,7 +84,7 @@ final class NativeDiagnosticsTests: XCTestCase {
     func testMomentDraftSucceededPayloadUsesCountsNotDraftText() {
         let bundle = MomentDraftBundle(
             messageText: "A private generated draft that must not be logged.",
-            lane: .takeMoreCare,
+            lane: .careful,
             pressureCheck: PressureCheck(
                 asksForReassurance: true,
                 notes: ["A safe note that still should only be counted."]
@@ -103,7 +103,7 @@ final class NativeDiagnosticsTests: XCTestCase {
         )
 
         XCTAssertTrue(payload.contains("request_id=moment-succe..."))
-        XCTAssertTrue(payload.contains("lane=takeMoreCare"))
+        XCTAssertTrue(payload.contains("lane=careful"))
         XCTAssertTrue(payload.contains("pressure_findings=true"))
         XCTAssertTrue(payload.contains("truth_bead_count=1"))
         XCTAssertTrue(payload.contains("missing_count=1"))

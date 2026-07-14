@@ -7,14 +7,6 @@ public enum MomentRegister: String, Codable, CaseIterable, Sendable, Identifiabl
 
     public var id: String { rawValue }
 
-    public var displayName: String {
-        switch self {
-        case .react: "Quick"
-        case .confess: "Your words"
-        case .assemble: "Take care"
-        }
-    }
-
     public var userSafeDescription: String {
         switch self {
         case .react:
@@ -27,11 +19,45 @@ public enum MomentRegister: String, Codable, CaseIterable, Sendable, Identifiabl
     }
 }
 
-public enum MomentDraftLane: String, Codable, Sendable, Equatable {
+public enum MomentDraftLane: String, Sendable, Equatable {
     case privateDraft
     case standardDraft
-    case takeMoreCare
+    case careful
     case mock
+
+    public init?(rawValue: String) {
+        switch rawValue {
+        case Self.privateDraft.rawValue:
+            self = .privateDraft
+        case Self.standardDraft.rawValue:
+            self = .standardDraft
+        case Self.careful.rawValue, "takeMoreCare":
+            self = .careful
+        case Self.mock.rawValue:
+            self = .mock
+        default:
+            return nil
+        }
+    }
+}
+
+extension MomentDraftLane: Codable {
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        let rawValue = try container.decode(String.self)
+        guard let lane = Self(rawValue: rawValue) else {
+            throw DecodingError.dataCorruptedError(
+                in: container,
+                debugDescription: "Unsupported moment draft lane."
+            )
+        }
+        self = lane
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
 }
 
 public enum MomentAdjustment: String, Codable, CaseIterable, Sendable, Identifiable {

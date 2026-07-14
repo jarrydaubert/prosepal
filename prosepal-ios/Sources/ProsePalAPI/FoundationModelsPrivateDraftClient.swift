@@ -155,7 +155,7 @@ struct PrivateDraftPromptPlan: Equatable, Sendable {
             "Person: \(moment.personName)",
             "Relationship: \(moment.relationship.displayName)",
             "Moment: \(moment.occasion.displayName)",
-            "Register: \(moment.register.displayName) - \(moment.register.userSafeDescription)",
+            "Writing context: \(moment.register.userSafeDescription)",
             "Tone: \(moment.tone.displayName)",
             "Length: \(moment.length.generationHint)",
             "Device locale: \(moment.localeIdentifier)"

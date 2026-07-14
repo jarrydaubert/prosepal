@@ -265,6 +265,47 @@ func activeDraftRecoveryRestoresDraftAndHistoryAcrossModelRecreation() {
 
 @Test
 @MainActor
+func legacyManualCareLaneRecoveryNormalizesToCurrentCarefulLane() throws {
+    let suiteName = "MomentDraftLegacyLaneRecoveryTests.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suiteName))
+    defaults.removePersistentDomain(forName: suiteName)
+    defer {
+        defaults.removePersistentDomain(forName: suiteName)
+    }
+    let key = "active-draft"
+    let currentState = MomentDraftRecoveryState(
+        personName: "Mira",
+        relationship: .family,
+        occasion: .sympathy,
+        register: .assemble,
+        trueThing: "Thinking of you.",
+        bundle: MomentDraftBundle(messageText: "Recovered words.", lane: .careful),
+        draftSnapshots: []
+    )
+    let currentData = try JSONEncoder().encode(currentState)
+    let currentJSON = try #require(String(data: currentData, encoding: .utf8))
+    let legacyJSON = currentJSON.replacingOccurrences(
+        of: "\"lane\":\"careful\"",
+        with: "\"lane\":\"takeMoreCare\""
+    )
+    #expect(legacyJSON != currentJSON)
+    defaults.set(Data(legacyJSON.utf8), forKey: key)
+
+    let recoveryStore = MomentDraftRecoveryStore(store: defaults, key: key)
+    let restored = MomentModel(
+        service: SlowMomentWritingService(delay: .seconds(1)),
+        draftRecoveryStore: recoveryStore
+    )
+
+    #expect(restored.bundle?.lane == .careful)
+    let normalizedData = try #require(defaults.data(forKey: key))
+    let normalizedJSON = try #require(String(data: normalizedData, encoding: .utf8))
+    #expect(normalizedJSON.contains("\"lane\":\"careful\""))
+    #expect(!normalizedJSON.contains("takeMoreCare"))
+}
+
+@Test
+@MainActor
 func startNewMomentClearsActiveDraftRecovery() {
     // Bug this catches: Start over appears to clear the screen, but the same sensitive draft returns after relaunch.
     let suiteName = "MomentDraftRecoveryClearTests.\(UUID().uuidString)"
@@ -307,7 +348,7 @@ func startNewMomentClearsActiveComposerWithoutStartingGeneration() async throws 
     model.tone = .formal
     model.length = .brief
     model.trueThing = "A detail"
-    model.bundle = MomentDraftBundle(messageText: "Old draft.", lane: .takeMoreCare)
+    model.bundle = MomentDraftBundle(messageText: "Old draft.", lane: .careful)
     model.errorMessage = "Old error."
     model.isDrafting = true
 
@@ -328,7 +369,7 @@ func startNewMomentClearsActiveComposerWithoutStartingGeneration() async throws 
 
 @Test
 @MainActor
-func sensitiveMomentAlignsDefaultRegisterToTakeCare() async throws {
+func sensitiveMomentAlignsAutomaticCareRegister() async throws {
     let client = CountingMomentDraftClient()
     let service = RoutingMessageWritingService(
         privateClient: client,
@@ -400,40 +441,6 @@ func launchRequestAlignsSensitiveMomentBeforeDrafting() async throws {
 
     #expect(model.register == .assemble)
     #expect(model.moment.requiresCarefulLane)
-}
-
-@Test
-@MainActor
-func takeMoreCareReplacesPrivateDraftWithCarefulDraft() async throws {
-    let privateClient = CountingMomentDraftClient()
-    let carefulClient = MomentModelRefiningClient(
-        bundle: MomentDraftBundle(
-            messageText: "A more careful draft.",
-            lane: .takeMoreCare
-        )
-    )
-    let service = RoutingMessageWritingService(
-        privateClient: privateClient,
-        carefulClient: carefulClient
-    )
-    let model = MomentModel(service: service)
-
-    model.personName = "Alex"
-    model.bundle = MomentDraftBundle(
-        messageText: "A quick private draft.",
-        lane: .privateDraft
-    )
-
-    model.takeMoreCare()
-
-    for _ in 0..<40 {
-        if model.bundle?.lane == .takeMoreCare { break }
-        try await Task.sleep(for: .milliseconds(5))
-    }
-
-    #expect(model.bundle?.messageText == "A more careful draft.")
-    #expect(model.bundle?.lane == .takeMoreCare)
-    #expect(await carefulClient.lastCurrentMessage == "A quick private draft.")
 }
 
 @Test
@@ -656,38 +663,6 @@ func editingActiveDraftRefreshesLocalPressureCheckForCurrentWords() {
 
 @Test
 @MainActor
-func takeMoreCareStoresUndoSnapshotWhenItReplacesDraft() async throws {
-    let originalBundle = MomentDraftBundle(
-        messageText: "A quick private draft.",
-        lane: .privateDraft
-    )
-    let carefulBundle = MomentDraftBundle(
-        messageText: "A careful draft.",
-        lane: .takeMoreCare
-    )
-    let privateClient = CountingMomentDraftClient()
-    let carefulClient = MomentModelRefiningClient(bundle: carefulBundle)
-    let service = RoutingMessageWritingService(
-        privateClient: privateClient,
-        carefulClient: carefulClient
-    )
-    let model = MomentModel(service: service)
-
-    model.personName = "Alex"
-    model.bundle = originalBundle
-    model.takeMoreCare()
-
-    for _ in 0..<40 {
-        if model.bundle?.messageText == "A careful draft." { break }
-        try await Task.sleep(for: .milliseconds(5))
-    }
-
-    #expect(model.bundle == carefulBundle)
-    #expect(model.previousDraftBundle == originalBundle)
-}
-
-@Test
-@MainActor
 func failedAdjustmentKeepsCurrentDraftAndUndoSnapshot() async throws {
     let originalBundle = MomentDraftBundle(
         messageText: "Original draft.",
@@ -762,7 +737,7 @@ func keepingPressureCheckedDraftHidesOnlyCurrentPressureFinding() {
 
 @Test
 @MainActor
-func cleaningPressureCheckedDraftUsesCarefulRewriteAndPreservesUndo() async throws {
+func cleaningPressureCheckedDraftUsesDirectAdjustmentAndPreservesUndo() async throws {
     let originalBundle = MomentDraftBundle(
         messageText: "Please tell me we are okay.",
         lane: .privateDraft,
@@ -770,13 +745,13 @@ func cleaningPressureCheckedDraftUsesCarefulRewriteAndPreservesUndo() async thro
     )
     let carefulBundle = MomentDraftBundle(
         messageText: "I care about us and wanted to check in.",
-        lane: .takeMoreCare
+        lane: .careful
     )
     let privateClient = CountingMomentDraftClient()
-    let carefulClient = MomentModelRefiningClient(bundle: carefulBundle)
+    let adjustmentClient = MomentModelRefiningClient(bundle: carefulBundle)
     let service = RoutingMessageWritingService(
-        privateClient: privateClient,
-        carefulClient: carefulClient
+        privateClient: adjustmentClient,
+        carefulClient: privateClient
     )
     let model = MomentModel(service: service)
 
@@ -790,7 +765,8 @@ func cleaningPressureCheckedDraftUsesCarefulRewriteAndPreservesUndo() async thro
         try await Task.sleep(for: .milliseconds(5))
     }
 
-    #expect(await carefulClient.lastCurrentMessage == originalBundle.messageText)
+    #expect(await adjustmentClient.lastAdjustedMessage == originalBundle.messageText)
+    #expect(await adjustmentClient.lastAdjustment == .moreDirect)
     #expect(model.bundle == carefulBundle)
     #expect(model.previousDraftBundle == originalBundle)
     #expect(model.canRestorePreviousDraft)
@@ -807,13 +783,13 @@ func cleaningPressureCheckedDraftAcknowledgesRewrittenFindingFromOriginalDetail(
     )
     let carefulBundle = MomentDraftBundle(
         messageText: "I care about us and wanted to check in.",
-        lane: .takeMoreCare
+        lane: .careful
     )
     let privateClient = CountingMomentDraftClient()
-    let carefulClient = MomentModelRefiningClient(bundle: carefulBundle)
+    let adjustmentClient = MomentModelRefiningClient(bundle: carefulBundle)
     let service = RoutingMessageWritingService(
-        privateClient: privateClient,
-        carefulClient: carefulClient
+        privateClient: adjustmentClient,
+        carefulClient: privateClient
     )
     let model = MomentModel(service: service)
 
@@ -828,43 +804,11 @@ func cleaningPressureCheckedDraftAcknowledgesRewrittenFindingFromOriginalDetail(
     }
 
     #expect(model.bundle?.messageText == carefulBundle.messageText)
+    #expect(await adjustmentClient.lastAdjustment == .moreDirect)
     #expect(model.bundle?.pressureCheck.asksForReassurance == true)
     #expect(model.previousDraftBundle == originalBundle)
     #expect(model.canRestorePreviousDraft)
     #expect(!model.hasVisiblePressureCheck)
-}
-
-@Test
-@MainActor
-func takeMoreCareDoesNotRequirePremiumEntitlementInMomentModel() async throws {
-    let privateClient = CountingMomentDraftClient()
-    let carefulClient = MomentModelRefiningClient(
-        bundle: MomentDraftBundle(
-            messageText: "A careful draft for everyone.",
-            lane: .takeMoreCare
-        )
-    )
-    let service = RoutingMessageWritingService(
-        privateClient: privateClient,
-        carefulClient: carefulClient
-    )
-    let model = MomentModel(service: service)
-
-    model.personName = "Alex"
-    model.bundle = MomentDraftBundle(
-        messageText: "A quick private draft.",
-        lane: .privateDraft
-    )
-    model.takeMoreCare()
-
-    for _ in 0..<40 {
-        if model.bundle?.messageText == "A careful draft for everyone." { break }
-        try await Task.sleep(for: .milliseconds(5))
-    }
-
-    #expect(model.bundle?.messageText == "A careful draft for everyone.")
-    #expect(model.bundle?.lane == .takeMoreCare)
-    #expect(model.errorMessage == nil)
 }
 
 private actor ControlledMomentDraftClient: MomentDraftClient {
@@ -957,13 +901,6 @@ private actor SequencedMomentWritingService: MessageWritingService {
         try await draft(for: moment)
     }
 
-    func takeMoreCare(
-        _ bundle: MomentDraftBundle?,
-        moment: MomentInput
-    ) async throws -> MomentDraftBundle {
-        try await draft(for: moment)
-    }
-
     func draftCallCount() -> Int {
         calls
     }
@@ -1002,17 +939,12 @@ private struct SlowMomentWritingService: MessageWritingService, MomentDraftClien
         try await draft(for: moment)
     }
 
-    func takeMoreCare(
-        _ bundle: MomentDraftBundle?,
-        moment: MomentInput
-    ) async throws -> MomentDraftBundle {
-        try await draft(for: moment)
-    }
 }
 
-private actor MomentModelRefiningClient: MomentDraftRefinementClient {
+private actor MomentModelRefiningClient: MomentDraftClient {
     private let bundle: MomentDraftBundle
-    private(set) var lastCurrentMessage: String?
+    private(set) var lastAdjustedMessage: String?
+    private(set) var lastAdjustment: MomentAdjustment?
 
     init(bundle: MomentDraftBundle) {
         self.bundle = bundle
@@ -1027,19 +959,13 @@ private actor MomentModelRefiningClient: MomentDraftRefinementClient {
         with adjustment: MomentAdjustment,
         moment: MomentInput
     ) async throws -> MomentDraftBundle {
-        self.bundle
-    }
-
-    func refine(
-        currentMessage: String?,
-        moment: MomentInput
-    ) async throws -> MomentDraftBundle {
-        lastCurrentMessage = currentMessage
-        return bundle
+        lastAdjustedMessage = bundle.messageText
+        lastAdjustment = adjustment
+        return self.bundle
     }
 }
 
-private actor SequencedMomentModelRefinementClient: MomentDraftRefinementClient {
+private actor SequencedMomentModelRefinementClient: MomentDraftClient {
     enum Outcome {
         case success(MomentDraftBundle)
         case failure(Error)
@@ -1058,13 +984,6 @@ private actor SequencedMomentModelRefinementClient: MomentDraftRefinementClient 
     func adjust(
         _ bundle: MomentDraftBundle,
         with adjustment: MomentAdjustment,
-        moment: MomentInput
-    ) async throws -> MomentDraftBundle {
-        try nextOutcome()
-    }
-
-    func refine(
-        currentMessage: String?,
         moment: MomentInput
     ) async throws -> MomentDraftBundle {
         try nextOutcome()

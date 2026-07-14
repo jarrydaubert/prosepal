@@ -142,7 +142,7 @@ struct MomentSettingsView: View {
                     )
                     MomentSettingsDivider()
                     MomentSettingsRowContent(
-                        row: .takeMoreCare(
+                        row: .sensitiveWriting(
                             isConfigured: account.runtimeReadiness.isCarefulGatewayConfigured
                         )
                     )

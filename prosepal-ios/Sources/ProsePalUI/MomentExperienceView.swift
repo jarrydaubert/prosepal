@@ -248,11 +248,6 @@ public final class MomentModel {
             adjustment: MomentAdjustment,
             acknowledgePressureResult: Bool
         )
-        case takeMoreCare(
-            input: MomentInput,
-            bundle: MomentDraftBundle?,
-            acknowledgePressureResult: Bool
-        )
 
         var trigger: String {
             switch self {
@@ -260,24 +255,20 @@ public final class MomentModel {
                 "manual"
             case .adjustment(_, _, let adjustment, _):
                 "adjust_\(adjustment.rawValue)"
-            case .takeMoreCare:
-                "take_more_care"
             }
         }
 
         var input: MomentInput {
             switch self {
             case .draft(let input, _),
-                 .adjustment(let input, _, _, _),
-                 .takeMoreCare(let input, _, _):
+                 .adjustment(let input, _, _, _):
                 input
             }
         }
 
         var originalBundle: MomentDraftBundle? {
             switch self {
-            case .draft(_, let bundle),
-                 .takeMoreCare(_, let bundle, _):
+            case .draft(_, let bundle):
                 bundle
             case .adjustment(_, let bundle, _, _):
                 bundle
@@ -288,8 +279,7 @@ public final class MomentModel {
             switch self {
             case .draft:
                 false
-            case .adjustment(_, _, _, let acknowledge),
-                 .takeMoreCare(_, _, let acknowledge):
+            case .adjustment(_, _, _, let acknowledge):
                 acknowledge
             }
         }
@@ -300,8 +290,6 @@ public final class MomentModel {
                 "ProsePal could not write this yet."
             case .adjustment:
                 "ProsePal could not reshape this yet."
-            case .takeMoreCare:
-                "ProsePal could not take more care with this yet."
             }
         }
     }
@@ -349,11 +337,7 @@ public final class MomentModel {
 
     public func cleanUpPressureCheckedDraft() {
         guard let bundle, bundle.pressureCheck.hasFindings else { return }
-        if bundle.lane == .takeMoreCare {
-            adjust(.moreDirect, acknowledgePressureResult: true)
-        } else {
-            takeMoreCare(acknowledgePressureResult: true)
-        }
+        adjust(.moreDirect, acknowledgePressureResult: true)
     }
 
     public func applyLaunchRequest(_ request: MomentLaunchRequest) {
@@ -541,8 +525,6 @@ public final class MomentModel {
                 nextBundle = try await service.draft(for: input)
             case .adjustment(let input, let bundle, let adjustment, _):
                 nextBundle = try await service.adjust(bundle, with: adjustment, moment: input)
-            case .takeMoreCare(let input, let bundle, _):
-                nextBundle = try await service.takeMoreCare(bundle, moment: input)
             }
             try Task.checkCancellation()
             guard isCurrentGeneration(generation) else { return }
@@ -589,19 +571,6 @@ public final class MomentModel {
             input: moment,
             bundle: bundle,
             adjustment: adjustment,
-            acknowledgePressureResult: acknowledgePressureResult
-        ))
-    }
-
-    public func takeMoreCare() {
-        takeMoreCare(acknowledgePressureResult: false)
-    }
-
-    private func takeMoreCare(acknowledgePressureResult: Bool) {
-        guard canDraft else { return }
-        startGeneration(.takeMoreCare(
-            input: moment,
-            bundle: bundle,
             acknowledgePressureResult: acknowledgePressureResult
         ))
     }
@@ -2691,10 +2660,10 @@ struct MomentSheetView: View {
         case .serviceUnavailable, .unexpectedResponse:
             if model.moment.requiresCarefulLane || model.register == .assemble {
                 return MomentDraftUnavailableNotice(
-                    title: "Take more care is unavailable",
+                    title: "Sensitive writing is unavailable",
                     detail: account.runtimeReadiness.isCarefulGatewayConfigured
                         ? "The careful writing route did not answer. Try again, or add one true detail and use the private draft when available."
-                        : "This scheme needs the Take more care gateway settings before sensitive moments can use that route.",
+                        : "This scheme needs gateway settings before sensitive moments can use that route.",
                     systemImage: "heart.text.square",
                     canRetry: account.runtimeReadiness.isCarefulGatewayConfigured
                 )
@@ -2711,7 +2680,7 @@ struct MomentSheetView: View {
         case .unexpected, .none:
             if model.moment.requiresCarefulLane || model.register == .assemble {
                 return MomentDraftUnavailableNotice(
-                    title: "Take more care is unavailable",
+                    title: "Sensitive writing is unavailable",
                     detail: "The careful writing route did not answer. Try again, or add one true detail and use the private draft when available.",
                     systemImage: "heart.text.square",
                     canRetry: true
@@ -3113,7 +3082,7 @@ struct MomentSheetView: View {
     }
 
     private func draftResultToneLabel(for bundle: MomentDraftBundle) -> String {
-        if bundle.lane == .takeMoreCare {
+        if bundle.lane == .careful {
             return String(localized: "Careful & steady")
         }
 
@@ -3253,7 +3222,7 @@ struct MomentSheetView: View {
     }
 
     private func draftMarginNoteText(for bundle: MomentDraftBundle) -> String {
-        if bundle.lane == .takeMoreCare || model.register == .assemble {
+        if bundle.lane == .careful || model.register == .assemble {
             return "The draft keeps your decision clear while softening the landing."
         }
         if model.register == .confess {
@@ -3301,11 +3270,6 @@ struct MomentSheetView: View {
                         }
                     }
 
-                    if bundle.lane != .takeMoreCare {
-                        draftRefineChip(title: "Take care", systemImage: "heart.text.square") {
-                            takeMoreCare()
-                        }
-                    }
                 }
             }
             .scrollClipDisabled()
@@ -3343,7 +3307,7 @@ struct MomentSheetView: View {
     }
 
     private func draftResultAccentColor(for bundle: MomentDraftBundle) -> Color {
-        bundle.lane == .takeMoreCare ? Color.prosePalCare : Color.prosePalCoral
+        bundle.lane == .careful ? Color.prosePalCare : Color.prosePalCoral
     }
 
 private struct MomentRevisionRuledLines: View {
@@ -3506,7 +3470,7 @@ private struct MomentDraftHistorySheet: View {
     }
 
     private func currentTitle(for bundle: MomentDraftBundle) -> String {
-        if bundle.lane == .takeMoreCare {
+        if bundle.lane == .careful {
             return "Careful & steady"
         }
 
@@ -3710,8 +3674,8 @@ private struct MomentDraftHistorySheet: View {
 
     private func draftBody(_ bundle: MomentDraftBundle) -> some View {
         MomentWritingPageSurface(
-            prompt: bundle.lane == .takeMoreCare ? "Careful draft" : "Your draft",
-            isCareful: bundle.lane == .takeMoreCare,
+            prompt: bundle.lane == .careful ? "Careful draft" : "Your draft",
+            isCareful: bundle.lane == .careful,
             showsRules: false,
             showsFooter: false,
             minHeight: dynamicTypeSize.isAccessibilitySize ? 190 : 150
@@ -3802,7 +3766,7 @@ private struct MomentDraftHistorySheet: View {
             )
             model.cleanUpPressureCheckedDraft()
         } label: {
-            Label(cleanUpPressureTitle(for: bundle), systemImage: "wand.and.stars")
+            Label(cleanUpPressureTitle, systemImage: "wand.and.stars")
                 .lineLimit(1)
                 .minimumScaleFactor(0.78)
                 .frame(maxWidth: .infinity)
@@ -3814,8 +3778,8 @@ private struct MomentDraftHistorySheet: View {
         .disabled(model.isDrafting)
     }
 
-    private func cleanUpPressureTitle(for bundle: MomentDraftBundle) -> String {
-        bundle.lane == .takeMoreCare ? "Make direct" : "Clean up"
+    private var cleanUpPressureTitle: String {
+        "Make direct"
     }
 
     private func actionRail(bundle: MomentDraftBundle) -> some View {
@@ -3836,22 +3800,6 @@ private struct MomentDraftHistorySheet: View {
 
             if model.canShowDraftHistory {
                 draftHistoryButton(bundle)
-            }
-
-            if bundle.lane != .takeMoreCare {
-                Button {
-                    takeMoreCare()
-                } label: {
-                    Label("Take care", systemImage: "heart.text.square")
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.78)
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.borderedProminent)
-                .buttonBorderShape(.capsule)
-                .tint(model.moment.isCarefulMode ? .prosePalCare : .prosePalCoral)
-                .controlSize(.large)
-                .disabled(model.isDrafting)
             }
 
             ViewThatFits(in: .horizontal) {
@@ -4026,15 +3974,6 @@ private struct MomentDraftHistorySheet: View {
         .buttonBorderShape(.capsule)
         .tint(.prosePalNavy)
         .accessibilityIdentifier("activeDraft.save")
-    }
-
-    private func takeMoreCare() {
-        diagnostics.messageAction(
-            "take_more_care",
-            source: "moment_draft",
-            messageCharacters: model.bundle?.messageText.count ?? 0
-        )
-        model.takeMoreCare()
     }
 
     private func copy(_ text: String, source: String = "moment_draft") {

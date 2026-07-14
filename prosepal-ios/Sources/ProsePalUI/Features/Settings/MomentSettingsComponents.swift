@@ -7,7 +7,7 @@ struct MomentSettingsStaticRowDescriptor: Identifiable, Equatable, Sendable {
         case textSize
         case privateDraftPrivacy
         case privateDraftReadiness
-        case takeMoreCare
+        case sensitiveWriting
         case version
         case direction
     }
@@ -70,11 +70,11 @@ struct MomentSettingsStaticRowDescriptor: Identifiable, Equatable, Sendable {
         )
     }
 
-    static func takeMoreCare(isConfigured: Bool) -> Self {
+    static func sensitiveWriting(isConfigured: Bool) -> Self {
         Self(
-            id: .takeMoreCare,
+            id: .sensitiveWriting,
             systemImage: "heart.text.square",
-            title: String(localized: "Take more care"),
+            title: String(localized: "Sensitive moments"),
             subtitle: nil,
             trailing: isConfigured
                 ? String(localized: "Ready")

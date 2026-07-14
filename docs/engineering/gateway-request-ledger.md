@@ -128,8 +128,8 @@ relaunch can therefore reach ledger replay instead of producing and charging
 again. Replay expiry or fingerprint conflict clears the pending key and requires
 another explicit user action.
 
-The current durable store covers initial careful drafts. Expansion to Adjust and
-Take More Care is tracked only in [BACKLOG.md](../BACKLOG.md).
+The current durable store covers initial careful drafts. Expansion to named
+Adjust actions is tracked only in [BACKLOG.md](../BACKLOG.md).
 
 ## Verification
 

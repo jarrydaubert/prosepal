@@ -9,10 +9,11 @@ boundary.
 | Lane | Use | Implementation |
 |---|---|---|
 | Private Draft | Everyday writing where the device model is available | Apple Foundation Models on device |
-| Take More Care | Sensitive or higher-stakes writing and eligible fallback | ProsePal `generate-card` gateway |
+| Careful | Automatic treatment for sensitive or higher-stakes occasions and eligible fallback | ProsePal `generate-card` gateway |
 
-Take More Care is not a subscription gate. Premium controls paid limits and
-future extras, not whether a hard moment receives careful treatment.
+Careful routing is derived from occasion policy and is not a subscription gate.
+Premium controls paid limits and future extras, not whether a hard moment
+receives careful treatment. The lane is not a user-selected rewrite action.
 
 ## Routing
 
@@ -33,7 +34,7 @@ errors rather than provider-specific exceptions.
 ## Generation lifecycle
 
 `MomentModel` is the only UI-layer owner of generation tasks. Initial writing,
-retry, rewrite, adjustment, and Take More Care all enter one retained lifecycle.
+retry, rewrite, and named adjustments all enter one retained lifecycle.
 The model cancels obsolete work when the user chooses Stop, resets, changes any
 meaning-bearing input, dismisses the composer, backgrounds the app, or starts a
 superseding request. A generation identity prevents a cancelled dependency from
