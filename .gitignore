@@ -28,9 +28,6 @@ custom_lint.log
 artifacts/
 build/
 coverage/
-.crashlytics/
-.dart_tool/
-.flutter-plugins-dependencies
 
 # Supabase local CLI/link state
 /supabase/.temp/
