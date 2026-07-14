@@ -1,0 +1,51 @@
+name: Native UI
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "prosepal-ios/**"
+      - "scripts/run_native_ui_tests.sh"
+      - ".github/workflows/native-ui.yml"
+  schedule:
+    - cron: "17 3 * * 2"
+  workflow_dispatch:
+    inputs:
+      suite:
+        description: "UI suite to run"
+        required: true
+        default: full
+        type: choice
+        options:
+          - full
+          - smoke
+
+concurrency:
+  group: native-ui-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ui_tests:
+    name: Native UI (${{ github.event_name == 'pull_request' && 'smoke' || (github.event_name == 'workflow_dispatch' && inputs.suite || 'full') }})
+    runs-on: macos-26
+    timeout-minutes: 35
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+
+      - name: Select suite
+        id: suite
+        shell: bash
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            echo "value=smoke" >> "$GITHUB_OUTPUT"
+          elif [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "value=${{ inputs.suite }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "value=full" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Run native UI tests
+        run: ./scripts/run_native_ui_tests.sh "${{ steps.suite.outputs.value }}"

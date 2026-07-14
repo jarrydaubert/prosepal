@@ -34,6 +34,10 @@
 		SK0000000000000000000004 /* ProsePalAPI in Frameworks */ = {isa = PBXBuildFile; productRef = SK0000000000000000000005 /* ProsePalAPI */; };
 		SK0000000000000000000006 /* StoreKitTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = SK0000000000000000000007 /* StoreKitTest.framework */; };
 		SK0000000000000000000013 /* ProsePalDomain in Frameworks */ = {isa = PBXBuildFile; productRef = SK0000000000000000000014 /* ProsePalDomain */; };
+		UI0000000000000000000001 /* ProsePalUITestSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = UI0000000000000000000005 /* ProsePalUITestSupport.swift */; };
+		UI0000000000000000000002 /* ProsePalUITestSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = UI0000000000000000000005 /* ProsePalUITestSupport.swift */; };
+		UI0000000000000000000003 /* ProsePalNativeUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = UI0000000000000000000006 /* ProsePalNativeUITests.swift */; };
+		UI0000000000000000000004 /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = UI0000000000000000000007 /* XCTest.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -66,6 +70,13 @@
 			remoteInfo = ProsePalShareExtensionStaging;
 		};
 		SK0000000000000000000008 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = PP0000000000000000000005 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = PP0000000000000000000048;
+			remoteInfo = "ProsePal Staging";
+		};
+		UI000000000000000000000D /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = PP0000000000000000000005 /* Project object */;
 			proxyType = 1;
@@ -124,6 +135,10 @@
 		SK0000000000000000000002 /* StoreKitSubscriptionClientStoreKitTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreKitSubscriptionClientStoreKitTests.swift; sourceTree = "<group>"; };
 		SK0000000000000000000007 /* StoreKitTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKitTest.framework; path = Developer/Library/Frameworks/StoreKitTest.framework; sourceTree = SDKROOT; };
 		SK0000000000000000000009 /* ProsePalStoreKitTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ProsePalStoreKitTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		UI0000000000000000000005 /* ProsePalUITestSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProsePalUITestSupport.swift; sourceTree = "<group>"; };
+		UI0000000000000000000006 /* ProsePalNativeUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProsePalNativeUITests.swift; sourceTree = "<group>"; };
+		UI0000000000000000000007 /* XCTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTest.framework; path = Developer/Library/Frameworks/XCTest.framework; sourceTree = SDKROOT; };
+		UI0000000000000000000008 /* ProsePalNativeUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ProsePalNativeUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -181,6 +196,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		UI000000000000000000000A /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				UI0000000000000000000004 /* XCTest.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -189,6 +212,7 @@
 			children = (
 				PP0000000000000000000008 /* App */,
 				SK000000000000000000000B /* AppStoreKitTests */,
+				UI0000000000000000000009 /* AppUITests */,
 				PP0000000000000000000058 /* Widgets */,
 				PP0000000000000000000068 /* ShareExtension */,
 				PP0000000000000000000003 /* Products */,
@@ -205,6 +229,7 @@
 				PP0000000000000000000080 /* ProsePalWidgetsStaging.appex */,
 				PP0000000000000000000089 /* ProsePalShareExtensionStaging.appex */,
 				SK0000000000000000000009 /* ProsePalStoreKitTests.xctest */,
+				UI0000000000000000000008 /* ProsePalNativeUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -213,6 +238,7 @@
 			isa = PBXGroup;
 			children = (
 				PP0000000000000000000009 /* ProsePalNativeApp.swift */,
+				UI0000000000000000000005 /* ProsePalUITestSupport.swift */,
 				PP0000000000000000000037 /* ProsePalAppShortcuts.swift */,
 				PP0000000000000000000036 /* Info.plist */,
 				PP0000000000000000000032 /* Assets.xcassets */,
@@ -249,6 +275,14 @@
 				SK0000000000000000000002 /* StoreKitSubscriptionClientStoreKitTests.swift */,
 			);
 			path = AppStoreKitTests;
+			sourceTree = "<group>";
+		};
+		UI0000000000000000000009 /* AppUITests */ = {
+			isa = PBXGroup;
+			children = (
+				UI0000000000000000000006 /* ProsePalNativeUITests.swift */,
+			);
+			path = AppUITests;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -400,6 +434,26 @@
 			productReference = SK0000000000000000000009 /* ProsePalStoreKitTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
+		UI000000000000000000000B /* ProsePalNativeUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = UI000000000000000000000C /* Build configuration list for PBXNativeTarget "ProsePalNativeUITests" */;
+			buildPhases = (
+				UI000000000000000000000F /* Sources */,
+				UI000000000000000000000A /* Frameworks */,
+				UI0000000000000000000010 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				UI000000000000000000000E /* PBXTargetDependency */,
+			);
+			name = ProsePalNativeUITests;
+			packageProductDependencies = (
+			);
+			productName = ProsePalNativeUITests;
+			productReference = UI0000000000000000000008 /* ProsePalNativeUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -432,6 +486,10 @@
 						CreatedOnToolsVersion = 26.0;
 						TestTargetID = PP0000000000000000000048;
 					};
+					UI000000000000000000000B = {
+						CreatedOnToolsVersion = 26.0;
+						TestTargetID = PP0000000000000000000048;
+					};
 				};
 			};
 			buildConfigurationList = PP0000000000000000000019 /* Build configuration list for PBXProject "ProsePal" */;
@@ -456,7 +514,8 @@
 				PP000000000000000000006B /* ProsePalShareExtension */,
 				PP0000000000000000000085 /* ProsePalWidgetsStaging */,
 				PP000000000000000000008E /* ProsePalShareExtensionStaging */,
-				SK000000000000000000000C /* ProsePalStoreKitTests */,
+					SK000000000000000000000C /* ProsePalStoreKitTests */,
+					UI000000000000000000000B /* ProsePalNativeUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -520,6 +579,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		UI0000000000000000000010 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
@@ -571,6 +637,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				PP0000000000000000000010 /* ProsePalNativeApp.swift in Sources */,
+				UI0000000000000000000001 /* ProsePalUITestSupport.swift in Sources */,
 				PP0000000000000000000038 /* ProsePalAppShortcuts.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -580,6 +647,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				PP0000000000000000000041 /* ProsePalNativeApp.swift in Sources */,
+				UI0000000000000000000002 /* ProsePalUITestSupport.swift in Sources */,
 				PP0000000000000000000045 /* ProsePalAppShortcuts.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -624,6 +692,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		UI000000000000000000000F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				UI0000000000000000000003 /* ProsePalNativeUITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -651,6 +727,11 @@
 			isa = PBXTargetDependency;
 			target = PP0000000000000000000048 /* ProsePal Staging */;
 			targetProxy = SK0000000000000000000008 /* PBXContainerItemProxy */;
+		};
+		UI000000000000000000000E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = PP0000000000000000000048 /* ProsePal Staging */;
+			targetProxy = UI000000000000000000000D /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -1245,6 +1326,54 @@
 			};
 			name = Release;
 		};
+		UI0000000000000000000011 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = YZK42GTX8N;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.prosepal.prosepal.uitests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = "ProsePal Staging";
+			};
+			name = Debug;
+		};
+		UI0000000000000000000012 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = YZK42GTX8N;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.prosepal.prosepal.uitests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = "ProsePal Staging";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -1316,6 +1445,15 @@
 			buildConfigurations = (
 				SK0000000000000000000011 /* Debug */,
 				SK0000000000000000000012 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		UI000000000000000000000C /* Build configuration list for PBXNativeTarget "ProsePalNativeUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				UI0000000000000000000011 /* Debug */,
+				UI0000000000000000000012 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

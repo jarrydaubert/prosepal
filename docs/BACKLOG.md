@@ -154,11 +154,6 @@ completed item instead of turning this file into a status log.
   and regular widths retain a complete path; touched navigation views leave the
   monolith with behavioral coverage.
 
-- [ ] Add release-critical view/UI automation. DoD: blocking tests cover first
-  run, auth entry, draft success, offline/error recovery, copy/share/save,
-  purchase/restore presentation, destructive confirmation, Settings semantics,
-  and one accessibility-size identifier-driven navigation path.
-
 - [ ] Make critical asynchronous tests fail fast and prove rejected requests
   have no expensive side effects. DoD: auth refresh and Moment-model test
   synchronization has an explicit deadline instead of unbounded polling;
@@ -297,6 +292,46 @@ completed item instead of turning this file into a status log.
   delete did not commit; gateway token acquisition remains within the overall
   generation deadline.
 
+## Native V1 — Pre-Release Identity And Migration Residue
+
+- [ ] Freeze persistent client identifiers before TestFlight. Audit every
+  persisted or cross-process identifier created during the Flutter-to-Swift
+  transition: UserDefaults, app-group storage, Keychain, `SceneStorage`, draft
+  recovery, onboarding, App Intent, widget, Control, and Share Extension handoff
+  keys. Rename obsolete migration-era keys now where appropriate, including the
+  current `prosepal.native.*` keys, while there is no external installed user
+  base; this is the last point at which a rename is free rather than a permanent
+  compatibility shim. DoD: every retained or renamed identifier has a documented
+  owner and purpose; clean install, onboarding, active-draft recovery, relaunch,
+  deep-link, and Share Extension handoff tests pass; no silent reset or data loss
+  occurs across the supported development upgrade path; identifiers are declared
+  frozen once TestFlight distribution begins.
+
+- [ ] Remove migration terminology from user-facing and actively maintained
+  product surfaces. The SwiftUI app is the only current ProsePal implementation;
+  "Native" must not imply a second live app or appear as unexplained product
+  vocabulary. DoD: user-facing copy such as the "Native iOS" row value in
+  `MomentSettingsComponents.swift` is replaced with clear product language;
+  active architecture, app guide, feature-status, release, and operational
+  documentation describe the app simply as ProsePal or the iOS app; `AGENTS.md`
+  stops describing the app as a "rewrite", states that Flutter is archived at
+  `flutter-prod-freeze-2026-06-25`, and records that remaining "Native" names are
+  historical residue rather than a live product distinction; frozen historical
+  records remain clearly marked as historical.
+
+- [ ] Audit and retire obsolete pre-release compatibility and configuration
+  residue. Inspect legacy draft values, removed feature flags and vocabulary,
+  analytics events, unused permissions and entitlements, extension targets, URL
+  routes, configuration variables, StoreKit identifiers, Supabase functions/RPCs,
+  and migration-era scripts. DoD: unused pre-release compatibility code is
+  removed where no shipped data depends on it; the removed voice-dictation and
+  manual Take More Care pathways cannot reappear through recovery, analytics, or
+  configuration; unused Apple capabilities and permission declarations are absent
+  from built executables; externally coupled identifiers such as bundle IDs, app
+  groups, Sign in with Apple IDs, StoreKit product IDs, and deployed database
+  migrations are retained unless a complete validated migration is justified;
+  reproducible database migration history remains intact.
+
 ## Native V1 — Release Evidence
 
 - [ ] Run the complete physical-device/TestFlight acceptance loop. DoD: first
@@ -325,6 +360,17 @@ completed item instead of turning this file into a status log.
   evidence or amends the copy; archive validation and submission preflight pass.
 
 ## Post-V1 / Triggered Work
+
+- [ ] Consider a broader cosmetic rename of migration-era developer-facing
+  symbols, targets, scripts, and filenames only when it provides measurable
+  maintenance value. Examples: `ProsePalNativeApp`, the `ProsePalNative` package
+  and `ProsePalNativePackageTests` target names, the `release_preflight.sh native`
+  positional argument and its two CI call sites, "Native V1" backlog headings, and
+  runbook filenames. Trigger: after v1 ships. This is aesthetics with no expiry
+  date, unlike the persisted-identifier item, and it touches ~120 files. DoD: the
+  cleanup is intentionally scoped, preserves useful git history where practical,
+  updates every build/CI reference, and is not allowed to delay v1 merely for
+  naming aesthetics.
 
 - [ ] Add generated or cross-language parity coverage before changing the
   native generation vocabulary. DoD: Occasion, Relationship, Tone,

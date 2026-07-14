@@ -108,7 +108,7 @@ struct MomentGeneratingView: View {
                 }
                 .prosePalElevation(.small)
         }
-        .accessibilityElement(children: .combine)
+        .accessibilityElement(children: .contain)
     }
 
     private var breathingOrb: some View {

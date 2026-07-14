@@ -138,6 +138,7 @@ struct SavedMomentDraftLibraryCard: View {
                 .shadow(color: Color.prosePalCoralDeep.opacity(0.10), radius: 10, x: 0, y: 5)
         }
         .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("savedDraft.card")
     }
 
     private var relativeSavedDate: String {

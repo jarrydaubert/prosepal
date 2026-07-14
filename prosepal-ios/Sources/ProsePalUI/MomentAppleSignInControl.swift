@@ -24,6 +24,7 @@ struct MomentAppleSignInControl: View {
             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             .disabled(account.isSigningIn)
             .accessibilityLabel(String(localized: "Continue with Apple"))
+            .accessibilityIdentifier("auth.apple.entry.\(source)")
         } else {
             fallbackButton
         }
@@ -44,6 +45,7 @@ struct MomentAppleSignInControl: View {
         .controlSize(.large)
         .tint(.prosePalNavy)
         .disabled(account.isSigningIn)
+        .accessibilityIdentifier("auth.apple.entry.\(source)")
     }
 
     #if canImport(AuthenticationServices)

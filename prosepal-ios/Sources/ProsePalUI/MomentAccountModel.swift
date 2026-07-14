@@ -804,12 +804,23 @@ public final class MomentAccountModel {
                 noticeTitle,
                 systemImage: deletionOutcome == .deleted && didClearLocalData
                     ? "checkmark.circle.fill"
-                    : "exclamationmark.triangle"
+                    : "exclamationmark.triangle",
+                accessibilityIdentifier: deletionOutcome == .deleted
+                    ? "account.deletion.deleted"
+                    : "account.deletion.indeterminate"
             )
         } catch let error as AccountMaintenanceError {
-            showNotice(error.userSafeMessage, systemImage: "exclamationmark.triangle")
+            showNotice(
+                error.userSafeMessage,
+                systemImage: "exclamationmark.triangle",
+                accessibilityIdentifier: "account.deletion.failed"
+            )
         } catch {
-            showNotice("Account deletion failed. Please try again.", systemImage: "exclamationmark.triangle")
+            showNotice(
+                "Account deletion failed. Please try again.",
+                systemImage: "exclamationmark.triangle",
+                accessibilityIdentifier: "account.deletion.failed"
+            )
         }
     }
 
@@ -1013,8 +1024,16 @@ public final class MomentAccountModel {
         return UUID(uuidString: signedInUserID)
     }
 
-    private func showNotice(_ title: String, systemImage: String) {
-        let notice = MomentAccountNotice(title: title, systemImage: systemImage)
+    private func showNotice(
+        _ title: String,
+        systemImage: String,
+        accessibilityIdentifier: String? = nil
+    ) {
+        let notice = MomentAccountNotice(
+            title: title,
+            systemImage: systemImage,
+            accessibilityIdentifier: accessibilityIdentifier
+        )
         self.notice = notice
 
         Task { @MainActor in
@@ -1055,11 +1074,18 @@ public struct MomentAccountNotice: Identifiable, Equatable, Sendable {
     public var id = UUID()
     public var title: String
     public var systemImage: String
+    public var accessibilityIdentifier: String?
 
-    public init(id: UUID = UUID(), title: String, systemImage: String) {
+    public init(
+        id: UUID = UUID(),
+        title: String,
+        systemImage: String,
+        accessibilityIdentifier: String? = nil
+    ) {
         self.id = id
         self.title = title
         self.systemImage = systemImage
+        self.accessibilityIdentifier = accessibilityIdentifier
     }
 }
 

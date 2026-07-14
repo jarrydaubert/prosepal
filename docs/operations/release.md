@@ -65,6 +65,16 @@ those changes; see [Local development](./local-development.md).
 
 ## Device and TestFlight acceptance
 
+Before device acceptance, run the complete deterministic simulator UI suite:
+
+```bash
+./scripts/run_native_ui_tests.sh full
+```
+
+The pull-request workflow runs the smaller durable smoke class; the weekly and
+manual workflow run the full target. A passing simulator suite does not replace
+the external evidence below.
+
 Evidence must cover:
 
 - install, launch, welcome, and first Moment;

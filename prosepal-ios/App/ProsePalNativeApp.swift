@@ -8,23 +8,99 @@ import SwiftData
 @main
 struct ProsePalNativeApp: App {
     private let authSessionController: AuthSessionController
-    private let relationshipVault = RelationshipVaultContainerFactory.makePersistentOrEphemeral()
+    private let relationshipVault: RelationshipVaultContainerResult
     private let authClient: (any AuthClient)?
     private let appleAccountLifecycleClient: (any AppleAccountLifecycleClient)?
     private let appleCredentialStateProvider: (any AppleCredentialStateProviding)?
-    private let accountMaintenanceClient = AccountMaintenanceClientFactory.makeClient()
+    private let accountMaintenanceClient: (any AccountMaintenanceClient)?
+    private let runtimeReadiness: NativeRuntimeReadiness
+    private let welcomeState: MomentWelcomeState
+    private let draftRecoveryStore: any MomentDraftRecoveryStoring
 
     init() {
-        let authClient = AuthClientFactory.makeClient()
-        self.authClient = authClient
-        self.appleAccountLifecycleClient = AppleAccountLifecycleClientFactory.makeClient()
-        #if canImport(AuthenticationServices)
-        self.appleCredentialStateProvider = SystemAppleCredentialStateProvider()
+        let authClient: (any AuthClient)?
+        let appleAccountLifecycleClient: (any AppleAccountLifecycleClient)?
+        let appleCredentialStateProvider: (any AppleCredentialStateProviding)?
+        let accountMaintenanceClient: (any AccountMaintenanceClient)?
+        let authSessionStore: any AuthSessionStore
+        let relationshipVault: RelationshipVaultContainerResult
+        let runtimeReadiness: NativeRuntimeReadiness
+        let welcomeState: MomentWelcomeState
+        let draftRecoveryStore: any MomentDraftRecoveryStoring
+
+        #if DEBUG
+        if let uiTestScenario = ProsePalUITestScenario.current {
+            let container = try! RelationshipVaultContainerFactory.makeEphemeral()
+            relationshipVault = RelationshipVaultContainerResult(
+                container: container,
+                storageMode: .ephemeralFallback
+            )
+            authClient = ProsePalUITestAuthClient()
+            appleAccountLifecycleClient = ProsePalUITestAppleAccountLifecycleClient()
+            appleCredentialStateProvider = nil
+            accountMaintenanceClient = ProsePalUITestAccountDeletionClient(
+                behavior: uiTestScenario.accountDeletionBehavior
+            )
+            authSessionStore = ProsePalUITestAuthSessionStore(
+                session: uiTestScenario.persistedSession
+            )
+            runtimeReadiness = NativeRuntimeReadiness(
+                isPrivateDraftConfigured: true,
+                isCarefulGatewayConfigured: true,
+                isDevGatewaySecretConfigured: false,
+                isAccountConfigured: true,
+                isSubscriptionConfigured: true,
+                premiumProductCount: 3,
+                isRecommendedPremiumProductConfigured: true,
+                isRelationshipVaultPersistent: false
+            )
+            welcomeState = uiTestScenario.makeWelcomeState()
+            draftRecoveryStore = MomentDraftRecoveryNoopStore()
+        } else {
+            relationshipVault = RelationshipVaultContainerFactory.makePersistentOrEphemeral()
+            authClient = AuthClientFactory.makeClient()
+            appleAccountLifecycleClient = AppleAccountLifecycleClientFactory.makeClient()
+            appleCredentialStateProvider = SystemAppleCredentialStateProvider()
+            accountMaintenanceClient = AccountMaintenanceClientFactory.makeClient()
+            authSessionStore = KeychainAuthSessionStore(
+                service: "\(ProsePalAppIdentity.bundleIdentifier).auth"
+            )
+            runtimeReadiness = RuntimeReadinessFactory.make(
+                isRelationshipVaultPersistent: relationshipVault.isPersistent
+            )
+            welcomeState = MomentWelcomeState()
+            draftRecoveryStore = MomentDraftRecoveryStore()
+        }
         #else
-        self.appleCredentialStateProvider = nil
+        relationshipVault = RelationshipVaultContainerFactory.makePersistentOrEphemeral()
+        authClient = AuthClientFactory.makeClient()
+        appleAccountLifecycleClient = AppleAccountLifecycleClientFactory.makeClient()
+        #if canImport(AuthenticationServices)
+        appleCredentialStateProvider = SystemAppleCredentialStateProvider()
+        #else
+        appleCredentialStateProvider = nil
         #endif
+        accountMaintenanceClient = AccountMaintenanceClientFactory.makeClient()
+        authSessionStore = KeychainAuthSessionStore(
+            service: "\(ProsePalAppIdentity.bundleIdentifier).auth"
+        )
+        runtimeReadiness = RuntimeReadinessFactory.make(
+            isRelationshipVaultPersistent: relationshipVault.isPersistent
+        )
+        welcomeState = MomentWelcomeState()
+        draftRecoveryStore = MomentDraftRecoveryStore()
+        #endif
+
+        self.authClient = authClient
+        self.appleAccountLifecycleClient = appleAccountLifecycleClient
+        self.appleCredentialStateProvider = appleCredentialStateProvider
+        self.accountMaintenanceClient = accountMaintenanceClient
+        self.relationshipVault = relationshipVault
+        self.runtimeReadiness = runtimeReadiness
+        self.welcomeState = welcomeState
+        self.draftRecoveryStore = draftRecoveryStore
         self.authSessionController = AuthSessionController(
-            store: KeychainAuthSessionStore(service: "\(ProsePalAppIdentity.bundleIdentifier).auth"),
+            store: authSessionStore,
             authClient: authClient
         )
     }
@@ -55,10 +131,10 @@ struct ProsePalNativeApp: App {
                         localAccountDataDeletion: {
                             try await RelationshipVaultLocalDataEraser.eraseAll(in: relationshipVault)
                         },
-                        runtimeReadiness: RuntimeReadinessFactory.make(
-                            isRelationshipVaultPersistent: relationshipVault.isPersistent
-                        )
-                    )
+                        runtimeReadiness: runtimeReadiness
+                    ),
+                    welcomeState: welcomeState,
+                    draftRecoveryStore: draftRecoveryStore
                 )
                 .modelContainer(relationshipVaultContainer)
                 .prosePalDebugAccessibilityOverrides()
@@ -76,7 +152,8 @@ struct ProsePalNativeApp: App {
 
 private enum ProsePalTestRuntime {
     static var isUnitTestHost: Bool {
-        ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
+        ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil &&
+            !ProcessInfo.processInfo.arguments.contains("--prosepal-ui-testing")
     }
 }
 
@@ -282,6 +359,7 @@ private enum ProsePalDebugLaunchArguments {
     static let mockSubscriptionService = "--prosepal-use-mock-subscription-service"
     static let forcePremium = "--prosepal-force-premium"
     static let reduceTransparency = "--prosepal-force-reduce-transparency"
+    static let accessibilityTextSize = "--prosepal-force-accessibility-text-size"
 
     static var usesMockWritingService: Bool {
         ProcessInfo.processInfo.arguments.contains(mockWritingService)
@@ -312,6 +390,10 @@ private enum ProsePalDebugLaunchArguments {
         ProcessInfo.processInfo.arguments.contains(reduceTransparency)
     }
 
+    static var forcesAccessibilityTextSize: Bool {
+        ProcessInfo.processInfo.arguments.contains(accessibilityTextSize)
+    }
+
     static var mockWritingDelay: Duration? {
         ProcessInfo.processInfo.arguments.contains(slowMockWritingService) ? .seconds(10) : nil
     }
@@ -322,8 +404,15 @@ private extension View {
     @ViewBuilder
     func prosePalDebugAccessibilityOverrides() -> some View {
         #if DEBUG
-        if ProsePalDebugLaunchArguments.forcesReduceTransparency {
+        if ProsePalDebugLaunchArguments.forcesReduceTransparency &&
+            ProsePalDebugLaunchArguments.forcesAccessibilityTextSize {
+            self
+                .environment(\.prosePalReduceTransparencyOverride, true)
+                .environment(\.dynamicTypeSize, .accessibility3)
+        } else if ProsePalDebugLaunchArguments.forcesReduceTransparency {
             self.environment(\.prosePalReduceTransparencyOverride, true)
+        } else if ProsePalDebugLaunchArguments.forcesAccessibilityTextSize {
+            self.environment(\.dynamicTypeSize, .accessibility3)
         } else {
             self
         }

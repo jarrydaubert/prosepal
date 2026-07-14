@@ -1166,7 +1166,7 @@ struct MomentSheetView: View {
                 .padding(.bottom, toastBottomPadding)
                 .transition(.move(edge: .bottom).combined(with: .opacity))
                 .allowsHitTesting(false)
-                .zIndex(10)
+                .zIndex(10).accessibilityIdentifier("activeDraft.copy.confirmation")
         }
     }
 
@@ -1565,7 +1565,7 @@ struct MomentSheetView: View {
                         .frame(minHeight: 44, alignment: .leading)
                         .momentInputSurface(isCareful: model.moment.isCarefulMode, cornerRadius: 15)
                         .accessibilityLabel("Name or person")
-                        .accessibilityValue("\(model.personName.count) of \(ProsePalTextLimit.personName) characters")
+                        .accessibilityValue("\(model.personName.count) of \(ProsePalTextLimit.personName) characters").accessibilityIdentifier("composer.person")
                 }),
                 AnyView(MomentComposerStep(
                     definition: .occasion,
@@ -1772,7 +1772,7 @@ struct MomentSheetView: View {
                 .frame(minHeight: dynamicTypeSize.isAccessibilitySize ? 96 : 72, alignment: .topLeading)
                 .momentInputSurface(isCareful: model.moment.isCarefulMode, cornerRadius: 15)
                 .accessibilityLabel("Optional detail to include")
-                .accessibilityValue("\(model.trueThing.count) of \(ProsePalTextLimit.momentDetail) characters")
+                .accessibilityValue("\(model.trueThing.count) of \(ProsePalTextLimit.momentDetail) characters").accessibilityIdentifier("composer.optionalDetail")
 
                 MomentCharacterLimitStatus(
                     text: model.trueThing,
@@ -1799,7 +1799,7 @@ struct MomentSheetView: View {
         .buttonStyle(.borderedProminent)
         .buttonBorderShape(.capsule)
         .tint(composerAccentColor)
-        .disabled(!model.canDraft || model.isDrafting)
+        .disabled(!model.canDraft || model.isDrafting).accessibilityIdentifier("composer.generate")
     }
 
     private var composerGenerateButtonTitle: String {
@@ -2233,7 +2233,7 @@ struct MomentSheetView: View {
             .buttonStyle(.borderedProminent)
             .buttonBorderShape(.capsule)
             .tint(model.moment.isCarefulMode ? .prosePalCare : .prosePalCoral)
-            .disabled(!model.canDraft || model.isDrafting)
+            .disabled(!model.canDraft || model.isDrafting).accessibilityIdentifier("moment.generation.retry")
 
             Button {
                 returnToNoteAfterDraftFailure()
@@ -2748,7 +2748,7 @@ struct MomentSheetView: View {
                     }
                     .disabled(model.isDrafting)
                     .accessibilityLabel("Draft text")
-                    .accessibilityValue("\(bundle.messageText.count) of \(ProsePalTextLimit.draft) characters")
+                    .accessibilityValue("\(bundle.messageText.count) of \(ProsePalTextLimit.draft) characters").accessibilityIdentifier("activeDraft.revision.editor")
                     .fixedSize(horizontal: false, vertical: true)
             } else {
                 Text(draftRevisionDisplayText(for: bundle))
@@ -2982,7 +2982,7 @@ struct MomentSheetView: View {
                 }
                 .disabled(model.isDrafting)
                 .accessibilityLabel("Draft text")
-                .accessibilityValue("\(bundle.messageText.count) of \(ProsePalTextLimit.draft) characters")
+                .accessibilityValue("\(bundle.messageText.count) of \(ProsePalTextLimit.draft) characters").accessibilityIdentifier("activeDraft.editor")
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(
                     maxWidth: .infinity,
@@ -5605,7 +5605,7 @@ struct MomentPlanDetailView: View {
             .buttonStyle(.borderedProminent)
             .buttonBorderShape(.capsule)
             .tint(.prosePalCoral)
-            .accessibilityLabel("See Pro")
+            .accessibilityLabel("See Pro").accessibilityIdentifier("plan.openPaywall")
         }
         .padding(16)
         .planCardSurface(cornerRadius: 18, shadow: true)
@@ -6018,7 +6018,7 @@ struct MomentPrivacyDataView: View {
                             showsChevron: true
                         )
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.plain).accessibilityIdentifier("privacy.export")
 
                     privacyDivider
 
@@ -6662,7 +6662,7 @@ private struct MomentPaywallSheet: View {
             .buttonStyle(.plain)
             .foregroundStyle(Color.prosePalCoralDeep)
             .background(Color.prosePalPaper.opacity(0.74), in: Circle())
-            .accessibilityLabel("Close")
+            .accessibilityLabel("Close").accessibilityIdentifier("paywall.close")
 
             Spacer(minLength: 12)
 
@@ -6680,7 +6680,7 @@ private struct MomentPaywallSheet: View {
             }
             .buttonStyle(.plain)
             .foregroundStyle(Color.prosePalCoralDeep)
-            .disabled(account.isRestoringPurchases)
+            .disabled(account.isRestoringPurchases).accessibilityIdentifier("paywall.restore")
         }
         .padding(.top, 0)
     }
@@ -6770,7 +6770,7 @@ private struct MomentPaywallSheet: View {
                 .buttonStyle(.borderedProminent)
                 .buttonBorderShape(.capsule)
                 .tint(.prosePalCoral)
-                .disabled(account.isPurchasingPremium || account.isLoadingSubscriptions)
+                .disabled(account.isPurchasingPremium || account.isLoadingSubscriptions).accessibilityIdentifier("paywall.purchase")
 
                 Text(account.premiumRenewalDisclosureText)
                     .font(.caption2)

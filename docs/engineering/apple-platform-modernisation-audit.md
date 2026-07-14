@@ -607,26 +607,34 @@ composer, Settings, and Saved Drafts have deterministic `#Preview` coverage.
 Paywall, privacy/export, relationship-memory detail, and other
 monolith regions do not have independently compiling previews. Package tests
 mix Swift Testing and XCTest appropriately for deterministic model and service
-boundaries. There is no app UI-test target or direct StoreKit Test suite.
-Several source-string tests temporarily assert navigation and system-surface
-wiring. The test that pinned destination-labelled sharing was removed in A-12
-and replaced with behavioral action, telemetry-policy, accessibility-contract,
-and export-file tests plus a negative diagnostics invariant.
+boundaries. `ProsePalStoreKitTests` directly exercises the real subscription
+client through StoreKit Test, but its release gate remains open on the current
+runtime because a successful probe returns no configured products. The result
+is now a setup failure, not an inferred Apple-runtime skip. Several
+source-string tests temporarily assert navigation and system-surface wiring.
+The test that pinned destination-labelled sharing was removed in A-12 and
+replaced with behavioral action, telemetry-policy, accessibility-contract, and
+export-file tests plus a negative diagnostics invariant.
 
 **Apple pattern and availability:** Keep Swift Testing for value/model tests and
 XCTest where app-hosted, UI, performance, or StoreKit Test integration requires
-it. Add an Xcode UI-test target with stable accessibility identifiers and an
-app-hosted StoreKit integration target using `SKTestSession`. Require a
-deterministic preview whenever a user-facing region is extracted. SwiftUI's
+it. Keep the Xcode UI-test target identifier-driven and the app-hosted StoreKit
+integration target based on `SKTestSession`. Require a deterministic preview
+whenever a user-facing region is extracted. SwiftUI's
 [accessibility fundamentals](https://developer.apple.com/documentation/swiftui/accessibility-fundamentals)
 and [StoreKit Test](https://developer.apple.com/documentation/storekittest)
 support these layers.
 
-**Benefit, risk, dependencies, and evidence:** Executable coverage proves what
-source text cannot: presentation, focus, dismissal, restoration, system
-dialogs, and accessibility sizes. UI tests must remain narrow and deterministic;
-Apple-account, sandbox, provider, and physical-device behaviour stays in
-release evidence rather than blocking unit CI.
+**Benefit, risk, dependencies, and evidence:** `ProsePalNativeUITests` now uses
+stable identifiers and a DEBUG-only deterministic composition seam for durable
+first-run, navigation, generation-state, account, subscription-presentation,
+persistence, sharing/export, and accessibility-size journeys. Pull requests run
+the smoke class; scheduled and manual workflows run the full target. This
+executable coverage proves what source text cannot: presentation, dismissal,
+restoration, destructive outcomes, and accessibility-size navigation. It stays
+deliberately shallow around generation and does not claim live Apple-account,
+sandbox, provider, generic share-destination, VoiceOver, or physical-device
+evidence.
 
 ### A-15 — Accessibility, localization, and semantic styling
 

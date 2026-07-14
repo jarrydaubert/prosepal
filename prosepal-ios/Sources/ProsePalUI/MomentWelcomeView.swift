@@ -81,7 +81,6 @@ struct MomentWelcomeView: View {
         }
         .tint(.prosePalCoral)
         .preferredColorScheme(.light)
-        .accessibilityIdentifier("moment.onboarding")
         .onChange(of: account.isSignedIn) { wasSignedIn, isSignedIn in
             if !wasSignedIn && isSignedIn {
                 onStart()

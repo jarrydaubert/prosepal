@@ -100,6 +100,7 @@ struct SavedMomentDraftDetailView: View {
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif
+        .accessibilityIdentifier("savedDraft.detail")
         .confirmationDialog(
             String(localized: "Delete saved draft?"),
             isPresented: $isConfirmingDeletion,

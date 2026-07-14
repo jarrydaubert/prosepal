@@ -58,6 +58,7 @@ public struct MomentAppRootView: View {
         welcomeState: @autoclosure @escaping () -> MomentWelcomeState = MomentWelcomeState(),
         launchStore: MomentLaunchStore = MomentLaunchStore(),
         sharedLaunchStore: SharedMomentLaunchStore = SharedMomentLaunchStore(),
+        draftRecoveryStore: any MomentDraftRecoveryStoring = MomentDraftRecoveryStore(),
         diagnostics: NativeDiagnosticsLogger = .shared
     ) {
         self.launchStore = launchStore
@@ -65,7 +66,7 @@ public struct MomentAppRootView: View {
         self.diagnostics = diagnostics
         _model = State(initialValue: MomentModel(
             service: service,
-            draftRecoveryStore: MomentDraftRecoveryStore()
+            draftRecoveryStore: draftRecoveryStore
         ))
         _account = State(initialValue: account)
         _welcomeState = State(initialValue: welcomeState())
@@ -190,7 +191,6 @@ private struct MomentRootTabs: View {
                     #endif
                     .momentNavigationBarColorScheme()
                 }
-                .accessibilityIdentifier("root.destination.write")
             } label: {
                 rootTabLabel(.moment)
             }
@@ -202,7 +202,6 @@ private struct MomentRootTabs: View {
                     }
                     .momentNavigationBarColorScheme()
                 }
-                .accessibilityIdentifier("root.destination.drafts")
             } label: {
                 rootTabLabel(.saved)
             }
@@ -214,7 +213,6 @@ private struct MomentRootTabs: View {
                     }
                     .momentNavigationBarColorScheme()
                 }
-                .accessibilityIdentifier("root.destination.settings")
             } label: {
                 rootTabLabel(.settings)
             }

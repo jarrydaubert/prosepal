@@ -215,6 +215,14 @@ that a button is reachable or calls the correct action. When a surface is
 extracted, replace its monolith source-string guard with a behavioural contract
 or real view/UI coverage in the same change where practical.
 
+The app target owns one deterministic UI-automation composition seam. It is
+compiled only in DEBUG and activates only with the explicit UI-testing marker
+and a named scenario. Scenarios may substitute ephemeral persistence and
+in-memory protocol implementations for auth, writing, subscription, and account
+maintenance, but must not add production runtime switches or bypass the view's
+real user actions. Stable identifiers name user outcomes and controls; they do
+not encode exact copy, layout hierarchy, or transient composer steps.
+
 ## Extraction checklist
 
 An incremental extraction is complete only when:

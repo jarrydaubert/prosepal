@@ -32,6 +32,7 @@ struct MomentSettingsView: View {
                         .padding(14)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .background(Color.prosePalPaper.opacity(0.92), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                        .accessibilityIdentifier(notice.accessibilityIdentifier ?? "account.notice")
                 }
 
                 MomentSettingsProfileCard(
@@ -58,7 +59,8 @@ struct MomentSettingsView: View {
                     MomentSettingsDivider()
                     settingsNavigationRow(
                         systemImage: "shield.checkered",
-                        title: "Privacy & data"
+                        title: "Privacy & data",
+                        accessibilityIdentifier: "settings.privacyData"
                     ) {
                         MomentPrivacyDataView(account: account)
                     }
@@ -68,7 +70,8 @@ struct MomentSettingsView: View {
                     settingsNavigationRow(
                         systemImage: "checkmark.seal",
                         title: "ProsePal Pro",
-                        subtitle: account.isPremiumUnlocked ? "Active" : "Upgrade available"
+                        subtitle: account.isPremiumUnlocked ? "Active" : "Upgrade available",
+                        accessibilityIdentifier: "settings.plan"
                     ) {
                         MomentPlanDetailView(account: account)
                     }
@@ -103,7 +106,8 @@ struct MomentSettingsView: View {
                         settingsButtonRow(
                             systemImage: "trash",
                             title: account.isDeletingAccount ? "Deleting account" : "Delete account",
-                            role: .destructive
+                            role: .destructive,
+                            accessibilityIdentifier: "settings.account.delete.request"
                         ) {
                             account.requestAccountDeletion()
                         }
@@ -119,7 +123,8 @@ struct MomentSettingsView: View {
                     settingsButtonRow(
                         systemImage: "arrow.clockwise",
                         title: account.isRestoringPurchases ? "Restoring purchases" : "Restore purchases",
-                        subtitle: account.subscriptionErrorMessage
+                        subtitle: account.subscriptionErrorMessage,
+                        accessibilityIdentifier: "settings.restorePurchases"
                     ) {
                         Task {
                             await account.restorePurchases(source: "settings")
@@ -216,6 +221,8 @@ struct MomentSettingsView: View {
                     await account.confirmAccountDeletion()
                 }
             }
+            .accessibilityLabel(String(localized: "Confirm delete account"))
+            .accessibilityIdentifier("settings.account.delete.confirm")
             Button("Cancel", role: .cancel) {
                 account.cancelAccountDeletion()
             }
@@ -233,6 +240,7 @@ struct MomentSettingsView: View {
             .foregroundStyle(Color.prosePalCoralDeep)
             .buttonStyle(.plain)
             .frame(minHeight: 36, alignment: .leading)
+            .accessibilityIdentifier("settings.done")
 
             Text("Settings")
                 .font(.system(size: 38, weight: .medium, design: .serif))
@@ -249,6 +257,7 @@ struct MomentSettingsView: View {
         subtitle: String? = nil,
         showsChevron: Bool = false,
         role: ButtonRole? = nil,
+        accessibilityIdentifier: String? = nil,
         action: @escaping () -> Void
     ) -> some View {
         Button(role: role, action: action) {
@@ -261,12 +270,14 @@ struct MomentSettingsView: View {
             )
         }
         .buttonStyle(.plain)
+        .momentSettingsAccessibilityIdentifier(accessibilityIdentifier)
     }
 
     private func settingsNavigationRow<Destination: View>(
         systemImage: String,
         title: String,
         subtitle: String? = nil,
+        accessibilityIdentifier: String? = nil,
         @ViewBuilder destination: () -> Destination
     ) -> some View {
         NavigationLink {
@@ -280,6 +291,7 @@ struct MomentSettingsView: View {
             )
         }
         .buttonStyle(.plain)
+        .momentSettingsAccessibilityIdentifier(accessibilityIdentifier)
     }
 
     private var profileInitials: String {
@@ -315,5 +327,16 @@ struct MomentSettingsView: View {
         NSPasteboard.general.setString(MomentSettingsExternalLinks.supportEmail, forType: .string)
         #endif
         supportNotice = "Copied support email"
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func momentSettingsAccessibilityIdentifier(_ identifier: String?) -> some View {
+        if let identifier {
+            accessibilityIdentifier(identifier)
+        } else {
+            self
+        }
     }
 }

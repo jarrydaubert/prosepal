@@ -10,6 +10,8 @@ project, or wall-clock race to pass.
 |---|---|---|
 | Swift package | Domain, API, concurrency, persistence, account, StoreKit, and observable-model behaviour | `cd prosepal-ios && swift test` |
 | App-hosted StoreKit | Real `StoreKitSubscriptionClient` against the local `.storekit` configuration, with xcresult count enforcement | `./scripts/run_storekit_release_gate.sh` |
+| Native UI smoke | Durable first-run, navigation, generation-state, account, subscription-presentation, persistence, sharing/export, and accessibility-size journeys | `./scripts/run_native_ui_tests.sh smoke` |
+| Native UI full | The smoke journeys plus destructive failure states, saved-draft reopening, generic share/export presentation, and generation-error recovery | `./scripts/run_native_ui_tests.sh full` |
 | Xcode simulator build | App target and embedded extension compilation | `xcodebuild ... CODE_SIGNING_ALLOWED=NO build` |
 | Edge Function | Handler validation, auth rejection, provider-call suppression, Apple account lifecycle, ledger outcomes, and logging hygiene | discover every `supabase/functions/**/*.test.ts` file and run them together with `deno test --allow-env` |
 | Database | Privileges, quota, idempotency, transition, retention, and cleanup contracts | `supabase test db` |
@@ -61,10 +63,24 @@ supabase test db
 
 ## UI coverage
 
-Behavioural model tests cover most Moment state transitions. Release-critical
-UI automation should use stable accessibility identifiers and exercise the
-actual first-run, drafting, recovery, account, purchase/restore presentation,
-destructive confirmation, and accessibility-size paths defined in the backlog.
+`ProsePalNativeUITests` drives the Staging app through a DEBUG-only launch seam.
+The explicit `--prosepal-ui-testing` marker selects an isolated SwiftData store,
+in-memory auth, a no-op active-draft recovery store, mock subscriptions and
+writing, and named account-deletion outcomes. Without that marker, normal
+production and staging composition is unchanged. Tests locate outcomes by
+stable accessibility identifiers rather than exact prose or view hierarchy.
+
+Pull requests that touch the native app run the durable smoke class. The weekly
+schedule and manual full run execute the whole target. These simulator journeys
+prove app wiring and presentation only: live Apple authorization, StoreKit
+sandbox products and transactions, provider output, system share destinations,
+VoiceOver, and physical-device behaviour remain release evidence.
+
+Generation UI coverage is intentionally shallow. It proves typed input can
+start work, the existing Stop control is reachable, successful output is
+visible and editable, and offline or failed generation returns an honest retry.
+Prompt quality, provider behaviour, streaming, and future composer structure
+belong to their owning test or release-evidence layers.
 
 Source-string tests may temporarily guard a surface that is otherwise
 unreachable from package tests. Replace them with behavioural or view-level
