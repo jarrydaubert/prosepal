@@ -17,6 +17,7 @@ ProsePal app target
               -> GatewayMessageWritingClient
      -> MomentAccountModel
         -> AuthSessionController / SupabaseAuthClient
+        -> AppleAccountLifecycleClient / AppleCredentialStateProviding
         -> StoreKitSubscriptionClient
         -> SupabaseAccountMaintenanceClient
      -> SwiftData relationship vault
@@ -51,9 +52,9 @@ meaning-bearing input mutation, composer dismissal, app backgrounding, and a
 superseding request cancel that task; generation identity suppresses late
 results even when a dependency returns after cancellation.
 
-`MomentAccountModel` owns sign-in presentation, current account state,
-subscription products, entitlement convergence, transaction updates, and
-account-maintenance actions.
+`MomentAccountModel` owns sign-in presentation, current account state, Apple
+credential-state reconciliation and revocation events, subscription products,
+entitlement convergence, transaction updates, and account-maintenance actions.
 
 SwiftData owns Truth Beads, Voice Cards, and deliberately saved drafts. Active
 draft recovery is separate so relaunch recovery does not silently turn every
@@ -63,7 +64,8 @@ for persistence, migration, export, and prompt-memory rules.
 ## Dependency rules
 
 - SwiftUI calls `MessageWritingService`, never a provider SDK.
-- Product code uses `SubscriptionClient`, `AuthClient`, and
+- Product code uses `SubscriptionClient`, `AuthClient`,
+  `AppleAccountLifecycleClient`, `AppleCredentialStateProviding`, and
   `AccountMaintenanceClient` protocols so tests can remain deterministic.
 - Provider/model details stay behind the gateway or Foundation Models client.
 - Privileged Supabase keys stay in Edge Functions and never enter an app
@@ -150,7 +152,7 @@ inside the monolith:
 | Relationship-memory library and detail | `MomentExperienceView.swift`: `RelationshipMemoryVaultView`, `RelationshipMemoryDetailView`, `RelationshipVoiceCardDetailView`; shared empty/detail presentation is in `Components/` |
 | Settings shell and static presentation components | `Features/Settings/MomentSettingsView.swift`, `MomentSettingsComponents.swift`, and `MomentSettingsPreview.swift`: `MomentSettingsView`, truthful static-row descriptors, feature presentation components, and deterministic preview setup |
 | Subscription plan detail | `MomentExperienceView.swift`: `MomentPlanDetailView` and plan presentation helpers |
-| Privacy, export, authentication, and paywall | `MomentExperienceView.swift`: `MomentPrivacyDataView`, `MomentLocalDataExportView`, `MomentAppleSignInControl`, `MomentPaywallSheet` |
+| Privacy, export, authentication, and paywall | `MomentExperienceView.swift`: `MomentPrivacyDataView`, `MomentLocalDataExportView`, `MomentPaywallSheet`; `MomentAppleSignInControl.swift`: system Apple authorization presentation and native credential forwarding |
 
 Use these symbols as navigation anchors rather than durable line numbers. When a
 task changes one region, prefer extracting that complete region and its private
@@ -162,7 +164,7 @@ helpers instead of moving unrelated code or attempting a big-bang rewrite.
 |---|---|
 | Account and entitlement presentation state | `ProsePalUI/MomentAccountModel.swift`: auth presentation, product selection, entitlement convergence, transaction-update coordination, and account maintenance |
 | StoreKit 2 client | `ProsePalAPI/SubscriptionClient.swift`: products, verified transactions, purchase, current entitlement, user-triggered restore, update stream, and finish actions |
-| Authentication and session | `ProsePalAPI/AuthSession.swift` and `SupabaseAuthClient.swift`: Keychain session, refresh serialization, nonce support, and Supabase token exchange |
+| Authentication and session | `ProsePalAPI/AuthSession.swift`, `SupabaseAuthClient.swift`, `AppleAccountLifecycleClient.swift`, and `AppleCredentialState.swift`: Keychain session, refresh serialization, nonce support, authenticated authorization-code forwarding, Apple credential-state checks, and revocation events |
 | App Intent and sanitized launch domain | `ProsePalUI/ProsePalAppIntents.swift`: `StartMomentIntent`, launch/deep-link payloads, app-group handoff, and package shortcut metadata |
 | App-target shortcut registration | `App/ProsePalAppShortcuts.swift`: app shortcut provider metadata |
 | Widget and Control | `Widgets/ProsePalWidgets.swift`: staging-aware widget/control identifiers and app-opening URLs |

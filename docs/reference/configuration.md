@@ -78,6 +78,10 @@ scheme, log, screenshot, or evidence file.
   function.
 
 The Apple private key is sensitive signing material.
+`APPLE_CLIENT_ID` must be the App ID or Services ID for that Supabase project’s
+native environment. Staging and production keep independent values and signing
+material; neither environment may exchange or revoke the other environment’s
+Apple grants.
 
 ## App Store server configuration
 

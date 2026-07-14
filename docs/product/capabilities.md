@@ -52,12 +52,13 @@ Detailed code and test evidence lives in
 | Capability | Current behaviour |
 |---|---|
 | Anonymous first use | Welcome and first writing value do not require an account. |
-| Sign in with Apple | Apple identity is exchanged through Supabase Auth and the session is stored in Keychain. |
+| Sign in with Apple | Apple identity is exchanged through Supabase Auth; the one-time code is forwarded to the authenticated server boundary, only deletion revocation material is retained there, and the session plus opaque Apple credential ID is stored in Keychain. |
 | Session refresh | Access-token refresh is single-flight, persists rotated tokens, and distinguishes terminal from transient failure. |
 | Purchase | StoreKit 2 purchase does not require ProsePal sign-in first. |
 | Restore | Restore is available from Paywall and Settings. |
 | Transaction updates | Launch-time StoreKit updates converge verified purchases, renewals, approvals, sharing changes, and revocations. |
-| Account deletion | The authenticated server boundary deletes account data and the app clears local account state. |
+| Apple credential changes | The app checks stored Apple credential state and observes revocation, returning to signed out without erasing unrelated local writing. |
+| Account deletion | The authenticated server boundary revokes Apple authorization before validated app/auth cleanup; failures preserve a retry path and successful deletion clears local account state. |
 
 ## Safety and honesty
 

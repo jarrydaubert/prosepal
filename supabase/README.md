@@ -31,7 +31,7 @@ Run the backend gates:
 
 ```bash
 deno check supabase/functions/**/*.ts
-deno test --allow-env supabase/functions/generate-card/index.test.ts
+find supabase/functions -name '*.test.ts' -exec deno test --allow-env {} +
 supabase test db
 ./scripts/test_gateway_ledger_concurrency.sh
 supabase db lint --local --level warning

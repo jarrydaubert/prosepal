@@ -10,11 +10,19 @@ struct ProsePalNativeApp: App {
     private let authSessionController: AuthSessionController
     private let relationshipVault = RelationshipVaultContainerFactory.makePersistentOrEphemeral()
     private let authClient: (any AuthClient)?
+    private let appleAccountLifecycleClient: (any AppleAccountLifecycleClient)?
+    private let appleCredentialStateProvider: (any AppleCredentialStateProviding)?
     private let accountMaintenanceClient = AccountMaintenanceClientFactory.makeClient()
 
     init() {
         let authClient = AuthClientFactory.makeClient()
         self.authClient = authClient
+        self.appleAccountLifecycleClient = AppleAccountLifecycleClientFactory.makeClient()
+        #if canImport(AuthenticationServices)
+        self.appleCredentialStateProvider = SystemAppleCredentialStateProvider()
+        #else
+        self.appleCredentialStateProvider = nil
+        #endif
         self.authSessionController = AuthSessionController(
             store: KeychainAuthSessionStore(service: "\(ProsePalAppIdentity.bundleIdentifier).auth"),
             authClient: authClient
@@ -35,6 +43,8 @@ struct ProsePalNativeApp: App {
                     clientContext: context,
                     authSessionController: authSessionController,
                     authClient: authClient,
+                    appleAccountLifecycleClient: appleAccountLifecycleClient,
+                    appleCredentialStateProvider: appleCredentialStateProvider,
                     subscriptionClient: SubscriptionClientFactory.makeClient(
                         authSessionController: authSessionController
                     ),
@@ -112,6 +122,26 @@ private enum AuthClientFactory {
         }
 
         return SupabaseAuthClient(projectURL: projectURL, anonKey: anonKey)
+    }
+}
+
+private enum AppleAccountLifecycleClientFactory {
+    static func makeClient() -> (any AppleAccountLifecycleClient)? {
+        let config = NativeRuntimeConfig.prosePalApp
+        guard
+            let projectURL = config.url(named: "PROSEPAL_SUPABASE_URL", fallback: "SUPABASE_URL"),
+            let anonKey = config.supabasePublishableKey(
+                named: "PROSEPAL_SUPABASE_ANON_KEY",
+                fallback: "SUPABASE_ANON_KEY"
+            )
+        else {
+            return nil
+        }
+
+        return SupabaseAppleAccountLifecycleClient(
+            projectURL: projectURL,
+            anonKey: anonKey
+        )
     }
 }
 

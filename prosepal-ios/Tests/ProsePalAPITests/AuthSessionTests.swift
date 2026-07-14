@@ -379,7 +379,8 @@ final class SupabaseAuthClientTests: XCTestCase {
             accessToken: "expired-token",
             refreshToken: "refresh-token-1",
             expiresAt: Date(timeIntervalSince1970: 1_699_999_999),
-            user: AuthUser(id: "user-1", email: "user@example.com")
+            user: AuthUser(id: "user-1", email: "user@example.com"),
+            appleCredentialUserID: "apple-user"
         )
 
         AuthCapturingURLProtocol.requestHandler = { request in
@@ -419,6 +420,7 @@ final class SupabaseAuthClientTests: XCTestCase {
         XCTAssertEqual(refreshedSession.refreshToken, "refresh-token-2")
         XCTAssertEqual(refreshedSession.expiresAt, Date(timeIntervalSince1970: 1_700_003_600))
         XCTAssertEqual(refreshedSession.user, existingSession.user)
+        XCTAssertEqual(refreshedSession.appleCredentialUserID, "apple-user")
     }
 
     func testRefreshSessionMapsConnectivityFailureWithoutExposingRefreshToken() async throws {

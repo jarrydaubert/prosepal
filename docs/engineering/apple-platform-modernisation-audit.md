@@ -366,20 +366,33 @@ accessibility, cancellation, restore, policy-link, and account-ownership parity.
 
 ### A-09 — Sign in with Apple lifecycle
 
-**Priority and decision:** P0, complete the native/server flow before relying on
-Apple sign-in for deletion compliance.
+**Priority and decision:** P0 implementation complete to deterministic local
+scope; sandbox/TestFlight revocation and deletion proof remains a release gate.
 
 **Minimum/toolchain:** the required AuthenticationServices client APIs are
 available below iOS 26; server token exchange has no client OS constraint.
 
 **Source and behaviour:** `MomentAppleSignInControl` uses the system
 `SignInWithAppleButton`, a cryptographic nonce, and Supabase ID-token exchange.
-It requests email and full-name scopes but consumes only the identity token. It
-does not forward `authorizationCode`, persist or check the Apple credential user
-identifier, observe `credentialRevokedNotification`, or call
-`getCredentialState`. The server has an Apple-token exchange boundary and the
-account-deletion path, but their end-to-end token/revocation evidence is not yet
-established.
+It requests no unused contact scopes and passes the identity token, one-time
+authorization code, and opaque Apple user ID into `MomentAccountModel`. The
+model authenticates through Supabase, forwards the code only to
+`SupabaseAppleAccountLifecycleClient` with the returned bearer token, and stores
+the session only after the server confirms revocation material is durable.
+`AuthSession` retains the opaque Apple user ID in Keychain across refresh.
+`SystemAppleCredentialStateProvider` observes
+`credentialRevokedNotification` and performs bounded `getCredentialState`
+checks. Revoked, not-found, and transferred states clear account state without
+erasing unrelated local writing.
+
+`exchange-apple-token` validates server configuration, the authenticated
+Supabase user’s Apple identity, Apple token-response issuer/audience/subject and
+expiry, and the credential upsert. It stores only Apple’s refresh token behind a
+service-role-only table. `delete-user` treats Apple revocation and every app-data
+cleanup as required, leaves the auth account and credential available on
+failure, and relies on the auth-user foreign-key cascade only after successful
+deletion. Native and server operations have bounded timeouts; cancellable Apple
+and database work also receives the parent abort signal.
 
 **Apple pattern and availability:** Request only consumed scopes. Securely send
 the identity token and one-time authorization code to the server; validate the
@@ -392,12 +405,14 @@ AuthenticationServices supports these APIs below iOS 26. Apple's
 and [token-revocation endpoint](https://developer.apple.com/documentation/signinwithapplerestapi/revoke-tokens)
 define the lifecycle.
 
-**Benefit, risk, dependencies, and evidence:** This closes the gap between login
-and Apple-compliant deletion. Authorization codes and tokens are sensitive and
-must never enter logs or long-lived client storage. The work depends on bounded
-server requests, Apple client-secret configuration, a failure policy, and
-sandbox/TestFlight tests for first login, repeat login, revoked credentials,
-missing code, server failure, deletion, and retry.
+**Benefit, risk, dependencies, and evidence:** Deterministic native and Edge
+Function tests cover first and repeat login, code forwarding, missing and
+malformed results, identity mismatch, Apple/server/database failure, all stable
+credential states, revocation notification, deletion revocation, partial
+cleanup, retry, timeout cancellation, and logging hygiene. This is not evidence
+that the deployed Apple client-secret configuration, sandbox token exchange,
+system revocation notification, or TestFlight deletion works; those external
+proofs remain in the release backlog.
 
 ### A-10 — App Intents, Shortcuts, widgets, and controls
 
@@ -623,13 +638,11 @@ message text, tokens, receipts, or shared payloads.
 
 ### Phase 0 — correctness before migration breadth
 
-1. Complete Sign in with Apple authorization-code and credential-revocation
-   handling.
-2. Introduce explicit StoreKit entitlement unknown/status handling and direct
+1. Introduce explicit StoreKit entitlement unknown/status handling and direct
    StoreKit Test automation; prove server/account convergence separately.
-3. Replace misleading share destinations and add a file-based transferable
+2. Replace misleading share destinations and add a file-based transferable
    export.
-4. Prove graceful voice finalization and add the release-critical UI-test target.
+3. Prove graceful voice finalization and add the release-critical UI-test target.
 
 ### Phase 1 — extract around the corrected boundaries
 
@@ -652,8 +665,8 @@ must not enter production architecture merely because documentation is public.
 
 ## Recommended next implementation goal
 
-Complete the Sign in with Apple authorization-code and credential-revocation
-path, then make StoreKit entitlement uncertainty explicit and add direct
-StoreKit Test automation. Generation ownership is now a stable prerequisite for
-later composer work; the next highest release risk is account and purchase
-integrity rather than another visual migration.
+Make StoreKit entitlement uncertainty explicit and add direct StoreKit Test
+automation, then prove account/entitlement convergence in sandbox and
+TestFlight. The Sign in with Apple lifecycle is complete to local deterministic
+scope; release still requires external environment evidence, not another native
+architecture change.

@@ -27,12 +27,15 @@ public final class MomentAccountModel {
     @ObservationIgnored private let clientContext: ClientContext
     @ObservationIgnored private let authSessionController: AuthSessionController?
     @ObservationIgnored private let authClient: (any AuthClient)?
+    @ObservationIgnored private let appleAccountLifecycleClient: (any AppleAccountLifecycleClient)?
+    @ObservationIgnored private let appleCredentialStateProvider: (any AppleCredentialStateProviding)?
     @ObservationIgnored private let subscriptionClient: (any SubscriptionClient)?
     @ObservationIgnored private let accountMaintenanceClient: (any AccountMaintenanceClient)?
     @ObservationIgnored private let localAccountDataDeletion: (@MainActor () async throws -> Void)?
     @ObservationIgnored private let diagnostics: NativeDiagnosticsLogger
     @ObservationIgnored private var pendingAppleSignInNonce: AppleSignInNonce?
     @ObservationIgnored private var didLoadInitialState = false
+    @ObservationIgnored private var appleCredentialRevocationTask: Task<Void, Never>?
     @ObservationIgnored private var subscriptionTransactionUpdatesTask: Task<Void, Never>?
     @ObservationIgnored private var subscriptionEntitlementRefreshOperation: SubscriptionEntitlementRefreshOperation?
 
@@ -40,6 +43,8 @@ public final class MomentAccountModel {
         clientContext: ClientContext,
         authSessionController: AuthSessionController? = nil,
         authClient: (any AuthClient)? = nil,
+        appleAccountLifecycleClient: (any AppleAccountLifecycleClient)? = nil,
+        appleCredentialStateProvider: (any AppleCredentialStateProviding)? = nil,
         subscriptionClient: (any SubscriptionClient)? = nil,
         accountMaintenanceClient: (any AccountMaintenanceClient)? = nil,
         localAccountDataDeletion: (@MainActor () async throws -> Void)? = nil,
@@ -49,20 +54,24 @@ public final class MomentAccountModel {
         self.clientContext = clientContext
         self.authSessionController = authSessionController
         self.authClient = authClient
+        self.appleAccountLifecycleClient = appleAccountLifecycleClient
+        self.appleCredentialStateProvider = appleCredentialStateProvider
         self.subscriptionClient = subscriptionClient
         self.accountMaintenanceClient = accountMaintenanceClient
         self.localAccountDataDeletion = localAccountDataDeletion
         self.runtimeReadiness = runtimeReadiness
         self.diagnostics = diagnostics
+        startAppleCredentialRevocationListener()
         startSubscriptionTransactionListener()
     }
 
     deinit {
+        appleCredentialRevocationTask?.cancel()
         subscriptionTransactionUpdatesTask?.cancel()
     }
 
     public var isAppleSignInConfigured: Bool {
-        authSessionController != nil && authClient != nil
+        authSessionController != nil && authClient != nil && appleAccountLifecycleClient != nil
     }
 
     public var isSubscriptionConfigured: Bool {
@@ -153,6 +162,10 @@ public final class MomentAccountModel {
             applyAuthSession(persistedSession)
             diagnostics.messageAction("auth_session_load_failed", source: "launch", messageCharacters: 0)
         }
+
+        if isSignedIn {
+            await reconcileAppleCredentialState(source: "launch")
+        }
     }
 
     public func beginAppleSignInRequest(source: String) -> String? {
@@ -186,13 +199,18 @@ public final class MomentAccountModel {
         }
     }
 
-    public func completeAppleSignIn(idToken: String?, source: String) async {
+    public func completeAppleSignIn(
+        idToken: String?,
+        authorizationCode: String?,
+        appleUserID: String?,
+        source: String
+    ) async {
         defer {
             pendingAppleSignInNonce = nil
             isSigningIn = false
         }
 
-        guard let authSessionController, let authClient else {
+        guard let authSessionController, let authClient, let appleAccountLifecycleClient else {
             diagnostics.messageAction("auth_apple_unconfigured", source: source, messageCharacters: 0)
             showNotice("Sign in is not configured for this build", systemImage: "exclamationmark.triangle")
             return
@@ -210,15 +228,61 @@ public final class MomentAccountModel {
             return
         }
 
+        guard let authorizationCode,
+              !authorizationCode.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            diagnostics.authEvent(
+                "auth_apple_revocation_material_failed",
+                source: source,
+                outcome: AppleAccountLifecycleError.missingAuthorizationCode.diagnosticsOutcome
+            )
+            showNotice(
+                AppleAccountLifecycleError.missingAuthorizationCode.userSafeMessage,
+                systemImage: "exclamationmark.triangle"
+            )
+            return
+        }
+
+        guard let appleUserID,
+              !appleUserID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            diagnostics.authEvent(
+                "auth_apple_revocation_material_failed",
+                source: source,
+                outcome: AppleAccountLifecycleError.missingCredentialIdentifier.diagnosticsOutcome
+            )
+            showNotice(
+                AppleAccountLifecycleError.missingCredentialIdentifier.userSafeMessage,
+                systemImage: "exclamationmark.triangle"
+            )
+            return
+        }
+
         do {
             diagnostics.authEvent("auth_apple_supabase_exchange_started", source: source)
-            let session = try await authClient.signInWithIDToken(
+            let exchangedSession = try await authClient.signInWithIDToken(
                 provider: .apple,
                 idToken: idToken,
                 nonce: nonce.rawValue
             )
+            diagnostics.authEvent("auth_apple_revocation_material_started", source: source)
+            try await appleAccountLifecycleClient.storeRevocationMaterial(
+                authorizationCode: authorizationCode,
+                appleUserID: appleUserID,
+                accessToken: exchangedSession.accessToken
+            )
+            let session = AuthSession(
+                accessToken: exchangedSession.accessToken,
+                refreshToken: exchangedSession.refreshToken,
+                expiresAt: exchangedSession.expiresAt,
+                user: exchangedSession.user,
+                appleCredentialUserID: appleUserID
+            )
             try await authSessionController.replaceSession(session)
             applyAuthSession(session)
+            diagnostics.authEvent(
+                "auth_apple_revocation_material_succeeded",
+                source: source,
+                outcome: "success"
+            )
             diagnostics.authEvent(
                 "auth_apple_supabase_exchange_succeeded",
                 source: source,
@@ -227,6 +291,19 @@ public final class MomentAccountModel {
             diagnostics.messageAction("auth_apple_succeeded", source: source, messageCharacters: 0)
             await refreshSubscriptionEntitlement(source: "auth_apple_success")
             showNotice("Signed in with Apple", systemImage: "checkmark.circle.fill")
+        } catch let error as AppleAccountLifecycleError {
+            diagnostics.authEvent(
+                "auth_apple_revocation_material_failed",
+                source: source,
+                outcome: error.diagnosticsOutcome,
+                statusCode: error.diagnosticsStatusCode
+            )
+            diagnostics.messageAction(
+                "auth_apple_failed_\(error.diagnosticsOutcome)",
+                source: source,
+                messageCharacters: 0
+            )
+            showNotice(error.userSafeMessage, systemImage: "exclamationmark.triangle")
         } catch let error as AuthError {
             diagnostics.authEvent(
                 "auth_apple_supabase_exchange_failed",
@@ -257,6 +334,78 @@ public final class MomentAccountModel {
         isSigningIn = false
         diagnostics.messageAction("auth_apple_failed_\(category)", source: source, messageCharacters: 0)
         showNotice("Apple sign-in failed. Please try again.", systemImage: "exclamationmark.triangle")
+    }
+
+    public func reconcileAppleCredentialState(source: String) async {
+        guard let authSessionController, let appleCredentialStateProvider else { return }
+        guard let session = try? await authSessionController.persistedSession(),
+              let appleUserID = session.appleCredentialUserID?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !appleUserID.isEmpty else {
+            return
+        }
+
+        do {
+            let state = try await appleCredentialStateProvider.credentialState(forUserID: appleUserID)
+            switch state {
+            case .authorized:
+                diagnostics.authEvent(
+                    "auth_apple_credential_state_checked",
+                    source: source,
+                    outcome: "authorized"
+                )
+            case .revoked:
+                await handleAppleCredentialInvalidation(
+                    session: session,
+                    source: source,
+                    outcome: "revoked",
+                    notice: String(localized: "Apple sign-in was revoked. Sign in again to reconnect.")
+                )
+            case .notFound:
+                await handleAppleCredentialInvalidation(
+                    session: session,
+                    source: source,
+                    outcome: "not_found",
+                    notice: String(localized: "Apple sign-in is no longer connected. Sign in again to reconnect.")
+                )
+            case .transferred:
+                await handleAppleCredentialInvalidation(
+                    session: session,
+                    source: source,
+                    outcome: "transferred",
+                    notice: String(localized: "This Apple account connection needs to be renewed. Sign in again to continue.")
+                )
+            }
+        } catch is CancellationError {
+            return
+        } catch let error as AppleCredentialStateError {
+            diagnostics.authEvent(
+                "auth_apple_credential_state_failed",
+                source: source,
+                outcome: error.diagnosticsOutcome
+            )
+            if source == "revocation_notification" {
+                await handleAppleCredentialInvalidation(
+                    session: session,
+                    source: source,
+                    outcome: "revocation_notified",
+                    notice: String(localized: "Apple sign-in was revoked. Sign in again to reconnect.")
+                )
+            }
+        } catch {
+            diagnostics.authEvent(
+                "auth_apple_credential_state_failed",
+                source: source,
+                outcome: "unexpected_error"
+            )
+            if source == "revocation_notification" {
+                await handleAppleCredentialInvalidation(
+                    session: session,
+                    source: source,
+                    outcome: "revocation_notified",
+                    notice: String(localized: "Apple sign-in was revoked. Sign in again to reconnect.")
+                )
+            }
+        }
     }
 
     public func signOut() async {
@@ -685,6 +834,48 @@ public final class MomentAccountModel {
         }
     }
 
+    private func startAppleCredentialRevocationListener() {
+        guard appleCredentialRevocationTask == nil,
+              let appleCredentialStateProvider else { return }
+
+        appleCredentialRevocationTask = Task { [weak self] in
+            let events = appleCredentialStateProvider.revocationEvents()
+            for await _ in events {
+                guard !Task.isCancelled, let self else { return }
+                await self.reconcileAppleCredentialState(source: "revocation_notification")
+            }
+        }
+    }
+
+    private func handleAppleCredentialInvalidation(
+        session: AuthSession,
+        source: String,
+        outcome: String,
+        notice: String
+    ) async {
+        diagnostics.authEvent(
+            "auth_apple_credential_invalidated",
+            source: source,
+            outcome: outcome
+        )
+        applyAuthSession(nil)
+        showNotice(notice, systemImage: "person.crop.circle.badge.xmark")
+        do {
+            try await authSessionController?.clearSession()
+            try? await authClient?.signOut(accessToken: session.accessToken)
+        } catch {
+            diagnostics.authEvent(
+                "auth_apple_credential_clear_failed",
+                source: source,
+                outcome: "session_storage_failed"
+            )
+            showNotice(
+                String(localized: "Apple sign-in changed, but ProsePal could not clear the saved session. Restart ProsePal and try signing out again."),
+                systemImage: "exclamationmark.triangle"
+            )
+        }
+    }
+
     private func startSubscriptionTransactionListener() {
         guard subscriptionTransactionUpdatesTask == nil,
               let subscriptionClient else { return }
@@ -741,6 +932,19 @@ private extension AuthSession {
         let refreshToken = refreshToken?
             .trimmingCharacters(in: .whitespacesAndNewlines)
         return refreshToken?.isEmpty == false
+    }
+}
+
+private extension AppleCredentialStateError {
+    var diagnosticsOutcome: String {
+        switch self {
+        case .invalidUserIdentifier:
+            "invalid_user_identifier"
+        case .unavailable:
+            "unavailable"
+        case .timedOut:
+            "timed_out"
+        }
     }
 }
 

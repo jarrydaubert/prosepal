@@ -1,199 +1,276 @@
 /**
- * Exchanges an Apple authorization code for long-lived token material.
+ * Authenticated Apple authorization-code exchange.
  *
- * Deploy with:
- * `supabase functions deploy exchange-apple-token`
- *
- * Called immediately after Apple Sign In to persist refresh tokens that are
- * needed later for compliant account-deletion revocation.
+ * The one-time code stays in memory, Apple returns a refresh token, and only
+ * that refresh token is retained for later account-deletion revocation.
  */
-import { createClient } from "npm:@supabase/supabase-js@2.95.3"
+import { createClient } from "npm:@supabase/supabase-js@2.95.3";
+import {
+  appleSubjectForUser,
+  type AppleServerConfig,
+  type AppleTokenGrant,
+  type AuthenticatedUser,
+  defaultLogger,
+  type EnvGetter,
+  generateAppleClientSecret,
+  jsonResponse,
+  type Logger,
+  OperationCancelledError,
+  OperationTimedOutError,
+  readAppleServerConfig,
+  readBoundedString,
+  readSupabaseServerConfig,
+  redactedUserID,
+  runBounded,
+  validateAppleTokenResponse,
+} from "../_shared/apple-account.ts";
 
-/** Apple token exchange endpoint. */
-const APPLE_TOKEN_URL = 'https://appleid.apple.com/auth/token'
+const APPLE_TOKEN_URL = "https://appleid.apple.com/auth/token";
+const DEFAULT_OPERATION_TIMEOUT_MS = 10_000;
 
-/**
- * CORS policy for native mobile calls.
- * Empty `Access-Control-Allow-Origin` blocks browser access while allowing
- * native clients that do not send browser origin headers.
- */
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '', // Mobile apps don't send Origin header
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  "Access-Control-Allow-Origin": "",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
+type SupabaseConfig = NonNullable<ReturnType<typeof readSupabaseServerConfig>>;
+
+type Authenticate = (
+  config: SupabaseConfig,
+  authorization: string,
+  signal: AbortSignal,
+) => Promise<AuthenticatedUser | null>;
+
+type ExchangeCode = (
+  config: AppleServerConfig,
+  authorizationCode: string,
+  signal: AbortSignal,
+) => Promise<unknown>;
+
+type StoreRefreshToken = (
+  config: SupabaseConfig,
+  userID: string,
+  refreshToken: string,
+  signal: AbortSignal,
+) => Promise<void>;
+
+type BoundedRunner = typeof runBounded;
+
+export interface ExchangeAppleTokenDeps {
+  getEnv?: EnvGetter;
+  logger?: Logger;
+  now?: () => Date;
+  timeoutMs?: number;
+  runBounded?: BoundedRunner;
+  authenticate?: Authenticate;
+  exchangeCode?: ExchangeCode;
+  storeRefreshToken?: StoreRefreshToken;
 }
 
-/**
- * Creates a short-lived Apple client-secret JWT for token exchange.
- *
- * @returns Signed JWT string when credentials exist; otherwise `null`.
- */
-async function generateAppleClientSecret(): Promise<string | null> {
-  const teamId = Deno.env.get('APPLE_TEAM_ID')
-  const clientId = Deno.env.get('APPLE_CLIENT_ID')
-  const keyId = Deno.env.get('APPLE_KEY_ID')
-  const privateKey = Deno.env.get('APPLE_PRIVATE_KEY')
-
-  if (!teamId || !clientId || !keyId || !privateKey) {
-    console.warn('Apple credentials not configured')
-    return null
+export async function handleExchangeAppleToken(
+  req: Request,
+  deps: ExchangeAppleTokenDeps = {},
+): Promise<Response> {
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
+  }
+  if (req.method !== "POST") {
+    return jsonResponse({ error: "Method not allowed" }, 405, corsHeaders);
   }
 
-  const header = { alg: 'ES256', kid: keyId, typ: 'JWT' }
-  const now = Math.floor(Date.now() / 1000)
-  const payload = {
-    iss: teamId,
-    iat: now,
-    exp: now + 300,
-    aud: 'https://appleid.apple.com',
-    sub: clientId
+  const getEnv = deps.getEnv ?? Deno.env.get;
+  const logger = deps.logger ?? defaultLogger;
+  const now = deps.now ?? (() => new Date());
+  const timeoutMs = deps.timeoutMs ?? DEFAULT_OPERATION_TIMEOUT_MS;
+  const bounded = deps.runBounded ?? runBounded;
+  const authenticate = deps.authenticate ?? defaultAuthenticate;
+  const exchangeCode = deps.exchangeCode ?? defaultExchangeCode;
+  const storeRefreshToken = deps.storeRefreshToken ?? defaultStoreRefreshToken;
+
+  const supabaseConfig = readSupabaseServerConfig(getEnv);
+  const appleConfig = readAppleServerConfig(getEnv);
+  if (!supabaseConfig || !appleConfig) {
+    logger.error("exchange-apple-token configuration invalid");
+    return jsonResponse(
+      { error: "Apple account setup is unavailable. Please try again later." },
+      503,
+      corsHeaders,
+    );
   }
 
-  const encoder = new TextEncoder()
-  const base64url = (data: Uint8Array) => 
-    btoa(String.fromCharCode(...data))
-      .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+  const authorization = req.headers.get("Authorization")?.trim() ?? "";
+  if (!authorization.toLowerCase().startsWith("bearer ")) {
+    return jsonResponse({ error: "Authentication required" }, 401, corsHeaders);
+  }
 
-  const headerB64 = base64url(encoder.encode(JSON.stringify(header)))
-  const payloadB64 = base64url(encoder.encode(JSON.stringify(payload)))
-  const signingInput = `${headerB64}.${payloadB64}`
-
+  let body: Record<string, unknown>;
   try {
-    const pemContents = privateKey
-      .replace(/-----BEGIN PRIVATE KEY-----/, '')
-      .replace(/-----END PRIVATE KEY-----/, '')
-      .replace(/\s/g, '')
-    
-    const binaryKey = Uint8Array.from(atob(pemContents), c => c.charCodeAt(0))
-    const key = await crypto.subtle.importKey(
-      'pkcs8', binaryKey,
-      { name: 'ECDSA', namedCurve: 'P-256' },
-      false, ['sign']
-    )
-
-    const signature = await crypto.subtle.sign(
-      { name: 'ECDSA', hash: 'SHA-256' },
-      key, encoder.encode(signingInput)
-    )
-
-    return `${signingInput}.${base64url(new Uint8Array(signature))}`
-  } catch (e) {
-    console.error('Failed to generate Apple client secret:', e)
-    return null
+    const value = await req.json();
+    if (typeof value !== "object" || value === null || Array.isArray(value)) {
+      throw new Error("invalid body");
+    }
+    body = value as Record<string, unknown>;
+  } catch {
+    return jsonResponse({ error: "Missing or invalid request body" }, 400, corsHeaders);
   }
-}
 
-/**
- * Edge-function entrypoint.
- * Validates caller auth, exchanges Apple auth code, and stores token material.
- */
-Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+  const authorizationCode = readOpaqueAppleValue(body.authorization_code, 2048);
+  const appleUserID = readOpaqueAppleValue(body.apple_user_id, 512);
+  if (!authorizationCode || !appleUserID) {
+    return jsonResponse(
+      { error: "Missing or malformed Apple authorization result" },
+      400,
+      corsHeaders,
+    );
   }
 
   try {
-    const authHeader = req.headers.get('Authorization')
-    if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: 'No authorization header' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+    const user = await bounded(
+      (signal) => authenticate(supabaseConfig, authorization, signal),
+      timeoutMs,
+      req.signal,
+    );
+    if (!user) {
+      return jsonResponse({ error: "Authentication required" }, 401, corsHeaders);
     }
 
-    // Parse body - handle empty body gracefully (e.g., health check calls)
-    let authorization_code: string | undefined
-    try {
-      const body = await req.json()
-      authorization_code = body?.authorization_code
-    } catch {
-      // Empty or invalid JSON body
-      return new Response(
-        JSON.stringify({ error: 'Missing or invalid request body' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+    const authenticatedAppleSubject = appleSubjectForUser(user);
+    if (!authenticatedAppleSubject || authenticatedAppleSubject !== appleUserID) {
+      logger.warn("exchange-apple-token caller identity mismatch", {
+        user: redactedUserID(user.id),
+      });
+      return jsonResponse({ error: "Apple identity mismatch" }, 403, corsHeaders);
     }
 
-    if (!authorization_code) {
-      return new Response(
-        JSON.stringify({ error: 'Missing authorization_code' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+    const tokenBody = await bounded(
+      (signal) => exchangeCode(appleConfig, authorizationCode, signal),
+      timeoutMs,
+      req.signal,
+    );
+    const grant = validateAppleTokenResponse(
+      tokenBody,
+      appleConfig,
+      authenticatedAppleSubject,
+      now(),
+    );
+    if (!grant || grant.subject !== appleUserID) {
+      logger.warn("exchange-apple-token Apple response rejected", {
+        user: redactedUserID(user.id),
+      });
+      return jsonResponse(
+        { error: "Apple authorization could not be validated. Please try again." },
+        502,
+        corsHeaders,
+      );
     }
 
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    const appleClientId = Deno.env.get('APPLE_CLIENT_ID')
+    await bounded(
+      (signal) =>
+        storeRefreshToken(
+          supabaseConfig,
+          user.id,
+          grant.refreshToken,
+          signal,
+        ),
+      timeoutMs,
+      req.signal,
+    );
 
-    // Verify user
-    const userClient = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } }
-    })
-    const { data: { user }, error: userError } = await userClient.auth.getUser()
-    if (userError || !user) {
-      return new Response(
-        JSON.stringify({ error: 'Invalid user' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    // Generate client secret
-    const clientSecret = await generateAppleClientSecret()
-    if (!clientSecret || !appleClientId) {
-      // Apple credentials not configured - FAIL LOUDLY
-      // Do NOT store raw auth codes as fallback (security risk)
-      console.error('Apple credentials not configured - cannot exchange token')
-      return new Response(
-        JSON.stringify({ error: 'Apple Sign In not fully configured. Please contact support.' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    // Exchange authorization code for tokens
-    const tokenResponse = await fetch(APPLE_TOKEN_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        client_id: appleClientId,
-        client_secret: clientSecret,
-        code: authorization_code,
-        grant_type: 'authorization_code'
-      })
-    })
-
-    if (!tokenResponse.ok) {
-      const errorText = await tokenResponse.text()
-      console.error('Apple token exchange failed:', tokenResponse.status, errorText)
-      return new Response(
-        JSON.stringify({ error: 'Token exchange failed' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    const tokens = await tokenResponse.json()
-    
-    // Store refresh token
-    const adminClient = createClient(supabaseUrl, supabaseServiceKey)
-    await adminClient.from('apple_credentials').upsert({
-      user_id: user.id,
-      refresh_token: tokens.refresh_token,
-      access_token: tokens.access_token,
-      token_exchanged_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    })
-
-    console.log(`Apple tokens stored for user ${user.id.substring(0, 8)}...`)
-    return new Response(
-      JSON.stringify({ success: true }),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
-
+    logger.log("exchange-apple-token revocation material stored", {
+      user: redactedUserID(user.id),
+    });
+    return jsonResponse({ success: true }, 200, corsHeaders);
   } catch (error) {
-    console.error('Unexpected error:', error)
-    return new Response(
-      JSON.stringify({ error: 'An error occurred' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
+    if (error instanceof OperationCancelledError) {
+      return jsonResponse({ error: "Request cancelled" }, 499, corsHeaders);
+    }
+    if (error instanceof OperationTimedOutError) {
+      logger.warn("exchange-apple-token operation timed out");
+      return jsonResponse(
+        { error: "Apple account setup took too long. Please try again." },
+        504,
+        corsHeaders,
+      );
+    }
+    logger.error("exchange-apple-token operation failed", {
+      category: "server_operation_failed",
+    });
+    return jsonResponse(
+      { error: "Apple account setup failed. Please try again." },
+      503,
+      corsHeaders,
+    );
   }
-})
+}
+
+function readOpaqueAppleValue(value: unknown, maximumLength: number): string | null {
+  const result = readBoundedString(value, maximumLength);
+  if (!result || /[\u0000-\u0020\u007f]/.test(result)) return null;
+  return result;
+}
+
+async function defaultAuthenticate(
+  config: SupabaseConfig,
+  authorization: string,
+  _signal: AbortSignal,
+): Promise<AuthenticatedUser | null> {
+  const client = createClient(config.url, config.anonKey, {
+    global: { headers: { Authorization: authorization } },
+  });
+  const { data: { user }, error } = await client.auth.getUser();
+  if (error || !user) return null;
+  return user as AuthenticatedUser;
+}
+
+async function defaultExchangeCode(
+  config: AppleServerConfig,
+  authorizationCode: string,
+  signal: AbortSignal,
+): Promise<unknown> {
+  const clientSecret = await generateAppleClientSecret(config);
+  const response = await fetch(APPLE_TOKEN_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      client_id: config.clientId,
+      client_secret: clientSecret,
+      code: authorizationCode,
+      grant_type: "authorization_code",
+    }),
+    signal,
+  });
+  if (!response.ok) {
+    throw new Error(`apple_token_http_${response.status}`);
+  }
+  return await response.json();
+}
+
+async function defaultStoreRefreshToken(
+  config: SupabaseConfig,
+  userID: string,
+  refreshToken: string,
+  signal: AbortSignal,
+): Promise<void> {
+  const client = createClient(config.url, config.serviceRoleKey);
+  const timestamp = new Date().toISOString();
+  const { data, error } = await client
+    .from("apple_credentials")
+    .upsert({
+      user_id: userID,
+      refresh_token: refreshToken,
+      token_exchanged_at: timestamp,
+      updated_at: timestamp,
+    }, { onConflict: "user_id" })
+    .select("user_id")
+    .abortSignal(signal)
+    .single();
+  if (error || data?.user_id !== userID) {
+    throw new Error("apple_credentials_upsert_failed");
+  }
+}
+
+if (import.meta.main) {
+  Deno.serve((req) => handleExchangeAppleToken(req));
+}

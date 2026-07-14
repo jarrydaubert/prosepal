@@ -252,23 +252,17 @@ completed item instead of turning this file into a status log.
 
 ## Native V1 — Auth, Payments, And Account Integrity
 
-- [ ] Connect native Sign in with Apple to Apple authorization-code exchange.
-  DoD: the native authorization result forwards the one-time authorization code
-  only to an authenticated, tested server boundary; `exchange-apple-token`
-  validates configuration and caller identity, uses bounded requests, checks
-  token and database responses, stores only required revocation material, and
-  never logs codes or tokens; the client requests only identity scopes it
-  consumes, persists the minimum Apple credential identifier needed to query
-  state, observes credential revocation, and reverts to signed out without
-  deleting unrelated local drafts. Sandbox/TestFlight evidence covers first and
-  repeat sign-in, missing code, revoked credentials, and server failure.
-
-- [ ] Prove Apple-compliant account deletion end to end. DoD: a sandbox/TestFlight
-  Apple sign-in stores revocation material; deletion authenticates the caller,
-  revokes Apple authorization with an explicit failure policy, deletes app and
-  auth data, clears local state, and produces privacy-safe evidence. Add focused
-  tests for exchange, revocation failure, missing credentials, partial cleanup,
-  and retry behavior.
+- [ ] Prove the completed Apple account lifecycle and deletion flow in deployed
+  environments. DoD: guarded staging deployment applies the service-role-only
+  Apple-credential migration and matching `exchange-apple-token` / `delete-user`
+  functions without touching production; sandbox/TestFlight evidence covers
+  first and repeat sign-in, missing-code and server-failure presentation,
+  refresh continuity, credential revocation notification/state handling, and
+  sign-out without loss of unrelated local drafts; an Apple-backed deletion
+  proves refresh-token revocation, validated server/auth cleanup, local cleanup,
+  and successful retry after a deliberately safe failure. Evidence is
+  privacy-safe and includes no codes, tokens, client secrets, private keys, or
+  unredacted credential-bearing artifacts.
 
 - [ ] Complete StoreKit and server-entitlement release proof. DoD: configured
   local StoreKit testing returns all three configured products from an

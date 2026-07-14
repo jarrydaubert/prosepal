@@ -5,17 +5,20 @@ public struct SupabaseAuthClient: AuthClient {
     public var anonKey: String
     public var session: URLSession
     public var now: @Sendable () -> Date
+    public var requestTimeout: TimeInterval
 
     public init(
         projectURL: URL,
         anonKey: String,
         session: URLSession = .shared,
-        now: @escaping @Sendable () -> Date = { Date() }
+        now: @escaping @Sendable () -> Date = { Date() },
+        requestTimeout: TimeInterval = 15
     ) {
         self.projectURL = projectURL
         self.anonKey = anonKey
         self.session = session
         self.now = now
+        self.requestTimeout = requestTimeout
     }
 
     public func signInWithIDToken(
@@ -39,6 +42,7 @@ public struct SupabaseAuthClient: AuthClient {
         endpoint.append(queryItems: [URLQueryItem(name: "grant_type", value: "id_token")])
 
         var request = URLRequest(url: endpoint)
+        request.timeoutInterval = requestTimeout
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -100,6 +104,7 @@ public struct SupabaseAuthClient: AuthClient {
         endpoint.append(queryItems: [URLQueryItem(name: "grant_type", value: "refresh_token")])
 
         var request = URLRequest(url: endpoint)
+        request.timeoutInterval = requestTimeout
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -142,7 +147,8 @@ public struct SupabaseAuthClient: AuthClient {
             accessToken: accessToken,
             refreshToken: rotatedRefreshToken,
             expiresAt: tokenResponse.resolvedExpiresAt(now: now()),
-            user: tokenResponse.user.map { AuthUser(id: $0.id, email: $0.email) } ?? session.user
+            user: tokenResponse.user.map { AuthUser(id: $0.id, email: $0.email) } ?? session.user,
+            appleCredentialUserID: session.appleCredentialUserID
         )
     }
 
@@ -160,6 +166,7 @@ public struct SupabaseAuthClient: AuthClient {
             .appendingPathComponent("logout")
 
         var request = URLRequest(url: endpoint)
+        request.timeoutInterval = requestTimeout
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         request.setValue(anonKey, forHTTPHeaderField: "apikey")

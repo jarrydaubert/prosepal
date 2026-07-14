@@ -10,7 +10,7 @@ project, or wall-clock race to pass.
 |---|---|---|
 | Swift package | Domain, API, concurrency, persistence, account, StoreKit, and observable-model behaviour | `cd prosepal-ios && swift test` |
 | Xcode simulator build | App target and embedded extension compilation | `xcodebuild ... CODE_SIGNING_ALLOWED=NO build` |
-| Edge Function | Handler validation, auth rejection, provider-call suppression, ledger outcomes, and logging hygiene | `deno test --allow-env supabase/functions/generate-card/index.test.ts` |
+| Edge Function | Handler validation, auth rejection, provider-call suppression, Apple account lifecycle, ledger outcomes, and logging hygiene | discover every `supabase/functions/**/*.test.ts` file and run them together with `deno test --allow-env` |
 | Database | Privileges, quota, idempotency, transition, retention, and cleanup contracts | `supabase test db` |
 | Database concurrency | Real parallel advisory-lock and uniqueness behaviour | `./scripts/test_gateway_ledger_concurrency.sh` |
 | Release preflight | Repository policy, configuration, documentation, and workflow checks | `./scripts/release_preflight.sh native --no-env-file` |
@@ -30,7 +30,7 @@ xcodebuild -project ProsePal.xcodeproj -target ProsePal -sdk iphonesimulator COD
 
 ```bash
 deno check supabase/functions/**/*.ts
-deno test --allow-env supabase/functions/generate-card/index.test.ts
+find supabase/functions -name '*.test.ts' -exec deno test --allow-env {} +
 supabase test db
 ./scripts/test_gateway_ledger_concurrency.sh
 ```

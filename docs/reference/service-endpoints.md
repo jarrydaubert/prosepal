@@ -21,8 +21,8 @@ https://<project-ref>.supabase.co/functions/v1/<function-name>
 | Function | Caller | Purpose |
 |---|---|---|
 | `generate-card` | Native gateway client | Authenticates, reserves policy capacity, calls the configured provider, checks quality, and finalizes/replays the result |
-| `delete-user` | Authenticated native account client | Deletes privileged account data and handles configured Apple revocation |
-| `exchange-apple-token` | Authenticated Apple account flow | Stores only the Apple refresh material required for later revocation |
+| `delete-user` | Authenticated native account client | Requires Apple revocation for Apple accounts, validates cleanup, and deletes auth data with retry-safe failures |
+| `exchange-apple-token` | Authenticated Apple account flow | Validates the caller and Apple grant, then stores only the refresh token required for later revocation |
 | `send-feedback` | App feedback flow | Authenticates and forwards user-requested support feedback |
 | `app-store-notifications` | Apple App Store server | Verifies notification JWS and records entitlement events |
 | `app-store-reconcile-entitlement` | Guarded server/operator path | Reconciles authoritative App Store subscription state |

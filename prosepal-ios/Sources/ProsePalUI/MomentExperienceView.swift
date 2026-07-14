@@ -3,9 +3,6 @@ import ProsePalAPI
 import ProsePalDomain
 import SwiftData
 import SwiftUI
-#if canImport(AuthenticationServices)
-import AuthenticationServices
-#endif
 #if canImport(UIKit)
 import UIKit
 #elseif canImport(AppKit)
@@ -7017,77 +7014,6 @@ private struct MomentLocalDataExport {
 
 private enum MomentLocalDataExportError: Error {
     case encodingFailed
-}
-
-struct MomentAppleSignInControl: View {
-    @Bindable var account: MomentAccountModel
-    let source: String
-    var height: CGFloat = 52
-
-    var body: some View {
-        #if canImport(AuthenticationServices)
-        if account.isAppleSignInConfigured {
-            SignInWithAppleButton(.continue) { request in
-                request.requestedScopes = [.email, .fullName]
-                request.nonce = account.beginAppleSignInRequest(source: source)
-            } onCompletion: { result in
-                handle(result)
-            }
-            .signInWithAppleButtonStyle(.black)
-            .frame(maxWidth: .infinity, minHeight: height, maxHeight: height)
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .disabled(account.isSigningIn)
-            .accessibilityLabel("Continue with Apple")
-        } else {
-            fallbackButton
-        }
-        #else
-        fallbackButton
-        #endif
-    }
-
-    private var fallbackButton: some View {
-        Button {
-            _ = account.beginAppleSignInRequest(source: source)
-        } label: {
-            Label("Continue with Apple", systemImage: "apple.logo")
-                .frame(maxWidth: .infinity)
-        }
-        .buttonStyle(.bordered)
-        .frame(maxWidth: .infinity, minHeight: height, maxHeight: height)
-        .controlSize(.large)
-        .tint(.prosePalNavy)
-        .disabled(account.isSigningIn)
-    }
-
-    #if canImport(AuthenticationServices)
-    private func handle(_ result: Result<ASAuthorization, Error>) {
-        switch result {
-        case .success(let authorization):
-            guard
-                let credential = authorization.credential as? ASAuthorizationAppleIDCredential,
-                let tokenData = credential.identityToken,
-                let token = String(data: tokenData, encoding: .utf8)
-            else {
-                Task { @MainActor in
-                    await account.completeAppleSignIn(idToken: nil, source: source)
-                }
-                return
-            }
-
-            Task { @MainActor in
-                await account.completeAppleSignIn(idToken: token, source: source)
-            }
-        case .failure(let error):
-            if let authorizationError = error as? ASAuthorizationError,
-               authorizationError.code == .canceled {
-                account.cancelAppleSignIn(source: source)
-            } else {
-                account.failAppleSignIn(source: source, category: "authorization_error")
-            }
-        }
-    }
-    #endif
 }
 
 private struct MomentPaywallSheet: View {

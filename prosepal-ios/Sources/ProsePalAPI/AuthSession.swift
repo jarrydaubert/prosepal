@@ -17,17 +17,20 @@ public struct AuthSession: Codable, Equatable, Sendable {
     public var refreshToken: String?
     public var expiresAt: Date?
     public var user: AuthUser?
+    public var appleCredentialUserID: String?
 
     public init(
         accessToken: String,
         refreshToken: String? = nil,
         expiresAt: Date? = nil,
-        user: AuthUser? = nil
+        user: AuthUser? = nil,
+        appleCredentialUserID: String? = nil
     ) {
         self.accessToken = accessToken
         self.refreshToken = refreshToken
         self.expiresAt = expiresAt
         self.user = user
+        self.appleCredentialUserID = appleCredentialUserID
     }
 
     public func isUsable(at date: Date = Date(), leeway: TimeInterval = 60) -> Bool {

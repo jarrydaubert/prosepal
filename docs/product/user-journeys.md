@@ -85,7 +85,9 @@ Paywall or limit boundary
 Account entry
   -> Apple authorization with nonce
   -> Supabase token exchange
+  -> authenticated one-time-code exchange for deletion revocation material
   -> Keychain session
+  -> Apple credential-state checks and revocation observation
   -> entitlement and account refresh
 ```
 
@@ -94,20 +96,24 @@ Account entry
 - Offline refresh preserves the signed-in identity for recovery.
 - Terminal refresh rejection clears the session.
 - Sign-out cannot be undone by a late refresh result.
+- Revoked, missing, or transferred Apple credentials return the app to signed
+  out without deleting local drafts or relationship memory.
 
 ## Account deletion
 
 ```text
 Authenticated user confirms deletion
   -> server validates caller
-  -> revoke Apple authorization when configured
-  -> delete server/auth data
+  -> require and revoke stored Apple refresh material for Apple accounts
+  -> validate app-data cleanup and delete auth data
   -> erase local account state and relationship vault
   -> report any partial local cleanup honestly
 ```
 
 The server owns privileged deletion. The native app never contains a service
-role key.
+role key. Apple revocation, server cleanup, timeout, or auth deletion failure
+keeps the account available so the user can retry rather than reporting a false
+success.
 
 ## Account switching
 

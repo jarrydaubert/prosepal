@@ -89,3 +89,14 @@ jobs:
             exit 0
           fi
           deno check "${TS_FILES[@]}"
+
+      - name: Test Supabase edge functions
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t TEST_FILES < <(find supabase/functions -name '*.test.ts' | sort)
+          if [[ "${#TEST_FILES[@]}" -eq 0 ]]; then
+            echo "No Supabase edge-function tests found."
+            exit 0
+          fi
+          deno test --allow-env "${TEST_FILES[@]}"

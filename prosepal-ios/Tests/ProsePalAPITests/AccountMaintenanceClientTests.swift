@@ -82,6 +82,30 @@ final class AccountMaintenanceClientTests: XCTestCase {
             XCTFail("Expected requestFailed, got \(error).")
         }
     }
+
+    func testDeleteAccountMapsTimeoutWithoutClearingClientState() async throws {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [AccountMaintenanceCapturingURLProtocol.self]
+        let session = URLSession(configuration: configuration)
+        let client = SupabaseAccountMaintenanceClient(
+            projectURL: try XCTUnwrap(URL(string: "https://project.supabase.co")),
+            anonKey: "anon-key",
+            session: session,
+            requestTimeout: 12
+        )
+
+        AccountMaintenanceCapturingURLProtocol.requestHandler = { request in
+            XCTAssertEqual(request.timeoutInterval, 12)
+            throw URLError(.timedOut)
+        }
+
+        do {
+            try await client.deleteAccount(accessToken: "supabase-access-token")
+            XCTFail("Expected timeout.")
+        } catch AccountMaintenanceError.timedOut {
+            // Expected retryable path.
+        }
+    }
 }
 
 private final class AccountMaintenanceCapturingURLProtocol: URLProtocol {

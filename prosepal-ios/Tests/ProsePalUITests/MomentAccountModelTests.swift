@@ -35,7 +35,12 @@ func appleSignInMissingTokenDoesNotCreateSignedInState() async {
     let account = makeAccount(authClient: MomentAccountAuthClient())
     _ = account.beginAppleSignInRequest(source: "settings")
 
-    await account.completeAppleSignIn(idToken: "   ", source: "settings")
+    await account.completeAppleSignIn(
+        idToken: "   ",
+        authorizationCode: "authorization-code",
+        appleUserID: "apple-user",
+        source: "settings"
+    )
 
     #expect(account.isSignedIn == false)
     #expect(account.isSigningIn == false)
@@ -60,13 +65,231 @@ func appleSignInSuccessStoresSessionAndRefreshesEntitlement() async throws {
     let nonce = account.beginAppleSignInRequest(source: "settings")
     #expect(nonce != nil)
 
-    await account.completeAppleSignIn(idToken: "apple-token", source: "settings")
+    await account.completeAppleSignIn(
+        idToken: "apple-token",
+        authorizationCode: "authorization-code",
+        appleUserID: "apple-user",
+        source: "settings"
+    )
 
     #expect(account.isSignedIn)
     #expect(account.signedInEmail == "user@example.com")
     #expect(account.isPremiumUnlocked)
     #expect(account.subscriptionEntitlement.productID == "com.prosepal.pro.yearly")
     #expect(try await store.loadSession()?.accessToken == "access-token")
+    #expect(try await store.loadSession()?.appleCredentialUserID == "apple-user")
+}
+
+@Test
+@MainActor
+func appleSignInForwardsAuthorizationCodeForFirstAndRepeatSignIn() async throws {
+    let store = MomentAccountInMemoryAuthSessionStore()
+    let lifecycleClient = MomentAccountAppleLifecycleClient()
+    let account = makeAccount(
+        store: store,
+        authClient: MomentAccountAuthClient(),
+        appleAccountLifecycleClient: lifecycleClient
+    )
+
+    for code in ["first-code", "repeat-code"] {
+        _ = account.beginAppleSignInRequest(source: "settings")
+        await account.completeAppleSignIn(
+            idToken: "apple-token",
+            authorizationCode: code,
+            appleUserID: "apple-user",
+            source: "settings"
+        )
+    }
+
+    #expect(await lifecycleClient.exchanges() == [
+        MomentAccountAppleLifecycleExchange(
+            authorizationCode: "first-code",
+            appleUserID: "apple-user",
+            accessToken: "access-token"
+        ),
+        MomentAccountAppleLifecycleExchange(
+            authorizationCode: "repeat-code",
+            appleUserID: "apple-user",
+            accessToken: "access-token"
+        )
+    ])
+    #expect(try await store.loadSession()?.appleCredentialUserID == "apple-user")
+}
+
+@Test
+@MainActor
+func appleSignInRejectsMissingAuthorizationCodeAndCredentialIdentifier() async {
+    let lifecycleClient = MomentAccountAppleLifecycleClient()
+    let account = makeAccount(
+        authClient: MomentAccountAuthClient(),
+        appleAccountLifecycleClient: lifecycleClient
+    )
+
+    _ = account.beginAppleSignInRequest(source: "settings")
+    await account.completeAppleSignIn(
+        idToken: "apple-token",
+        authorizationCode: " ",
+        appleUserID: "apple-user",
+        source: "settings"
+    )
+    #expect(account.isSignedIn == false)
+    #expect(account.notice?.title == AppleAccountLifecycleError.missingAuthorizationCode.userSafeMessage)
+
+    _ = account.beginAppleSignInRequest(source: "settings")
+    await account.completeAppleSignIn(
+        idToken: "apple-token",
+        authorizationCode: "authorization-code",
+        appleUserID: " ",
+        source: "settings"
+    )
+    #expect(account.isSignedIn == false)
+    #expect(account.notice?.title == AppleAccountLifecycleError.missingCredentialIdentifier.userSafeMessage)
+    #expect(await lifecycleClient.exchanges().isEmpty)
+}
+
+@Test
+@MainActor
+func appleRevocationMaterialFailureDoesNotPersistPartialSignInAndCanRetry() async throws {
+    let store = MomentAccountInMemoryAuthSessionStore()
+    let lifecycleClient = MomentAccountAppleLifecycleClient(
+        errors: [.requestFailed(statusCode: 503, message: "Apple account setup failed safely.")]
+    )
+    let account = makeAccount(
+        store: store,
+        authClient: MomentAccountAuthClient(),
+        appleAccountLifecycleClient: lifecycleClient
+    )
+
+    _ = account.beginAppleSignInRequest(source: "settings")
+    await account.completeAppleSignIn(
+        idToken: "apple-token",
+        authorizationCode: "first-code",
+        appleUserID: "apple-user",
+        source: "settings"
+    )
+    #expect(account.isSignedIn == false)
+    #expect(try await store.loadSession() == nil)
+    #expect(account.notice?.title == "Apple account setup failed safely.")
+
+    _ = account.beginAppleSignInRequest(source: "settings")
+    await account.completeAppleSignIn(
+        idToken: "apple-token",
+        authorizationCode: "retry-code",
+        appleUserID: "apple-user",
+        source: "settings"
+    )
+    #expect(account.isSignedIn)
+    #expect(try await store.loadSession()?.appleCredentialUserID == "apple-user")
+}
+
+@Test(arguments: [
+    AppleCredentialState.revoked,
+    AppleCredentialState.notFound,
+    AppleCredentialState.transferred
+])
+@MainActor
+func nonAuthorizedAppleCredentialStatesSignOutWithoutDeletingLocalDrafts(
+    state: AppleCredentialState
+) async throws {
+    let session = AuthSession.test(
+        accessToken: "signed-in-token",
+        appleCredentialUserID: "apple-user"
+    )
+    let store = MomentAccountInMemoryAuthSessionStore(session: session)
+    let authClient = MomentAccountAuthClient()
+    let credentialProvider = MomentAccountAppleCredentialStateProvider(state: state)
+    var localDataDeletionCount = 0
+    let account = makeAccount(
+        store: store,
+        authClient: authClient,
+        appleCredentialStateProvider: credentialProvider,
+        localAccountDataDeletion: {
+            localDataDeletionCount += 1
+        }
+    )
+
+    await account.loadAuthSession()
+
+    #expect(account.isSignedIn == false)
+    #expect(try await store.loadSession() == nil)
+    #expect(await authClient.signOutTokens() == ["signed-in-token"])
+    #expect(localDataDeletionCount == 0)
+}
+
+@Test
+@MainActor
+func authorizedAppleCredentialStateKeepsSession() async throws {
+    let session = AuthSession.test(
+        accessToken: "signed-in-token",
+        appleCredentialUserID: "apple-user"
+    )
+    let store = MomentAccountInMemoryAuthSessionStore(session: session)
+    let account = makeAccount(
+        store: store,
+        authClient: MomentAccountAuthClient(),
+        appleCredentialStateProvider: MomentAccountAppleCredentialStateProvider(state: .authorized)
+    )
+
+    await account.loadAuthSession()
+
+    #expect(account.isSignedIn)
+    #expect(try await store.loadSession() == session)
+}
+
+@Test
+@MainActor
+func revokedAppleCredentialFailsClosedInMemoryWhenSessionStorageCannotClear() async throws {
+    let session = AuthSession.test(
+        accessToken: "signed-in-token",
+        appleCredentialUserID: "apple-user"
+    )
+    let store = MomentAccountInMemoryAuthSessionStore(
+        session: session,
+        clearError: MomentAccountSessionStoreError.testFailure
+    )
+    let account = makeAccount(
+        store: store,
+        authClient: MomentAccountAuthClient(),
+        appleCredentialStateProvider: MomentAccountAppleCredentialStateProvider(state: .revoked)
+    )
+
+    await account.loadAuthSession()
+
+    #expect(account.isSignedIn == false)
+    #expect(try await store.loadSession() == session)
+    #expect(account.notice?.title.contains("could not clear the saved session") == true)
+}
+
+@Test
+@MainActor
+func AppleCredentialRevocationNotificationSignsOutWithoutDeletingLocalDrafts() async throws {
+    let session = AuthSession.test(
+        accessToken: "signed-in-token",
+        appleCredentialUserID: "apple-user"
+    )
+    let store = MomentAccountInMemoryAuthSessionStore(session: session)
+    let provider = MomentAccountAppleCredentialStateProvider(state: .authorized)
+    var localDataDeletionCount = 0
+    let account = makeAccount(
+        store: store,
+        authClient: MomentAccountAuthClient(),
+        appleCredentialStateProvider: provider,
+        localAccountDataDeletion: {
+            localDataDeletionCount += 1
+        }
+    )
+    await account.loadAuthSession()
+    await provider.setState(.revoked)
+
+    provider.sendRevocationEvent()
+    for _ in 0..<200 {
+        if !account.isSignedIn, try await store.loadSession() == nil { break }
+        await Task.yield()
+    }
+
+    #expect(account.isSignedIn == false)
+    #expect(try await store.loadSession() == nil)
+    #expect(localDataDeletionCount == 0)
 }
 
 @Test
@@ -153,7 +376,12 @@ func appleSignInFailurePreservesExistingSignedInSession() async throws {
 
     await account.loadAuthSession()
     _ = account.beginAppleSignInRequest(source: "settings")
-    await account.completeAppleSignIn(idToken: "apple-token", source: "settings")
+    await account.completeAppleSignIn(
+        idToken: "apple-token",
+        authorizationCode: "authorization-code",
+        appleUserID: "apple-user",
+        source: "settings"
+    )
 
     #expect(account.isSignedIn)
     #expect(account.signedInEmail == "existing@example.com")
@@ -562,6 +790,8 @@ func accountDeletionFailurePreservesSignedInState() async {
 private func makeAccount(
     store: MomentAccountInMemoryAuthSessionStore = MomentAccountInMemoryAuthSessionStore(),
     authClient: (any AuthClient)? = nil,
+    appleAccountLifecycleClient: (any AppleAccountLifecycleClient)? = nil,
+    appleCredentialStateProvider: (any AppleCredentialStateProviding)? = nil,
     subscriptionClient: (any SubscriptionClient)? = nil,
     accountMaintenanceClient: (any AccountMaintenanceClient)? = nil,
     localAccountDataDeletion: (@MainActor () async throws -> Void)? = nil
@@ -574,6 +804,9 @@ private func makeAccount(
         clientContext: ClientContext(appVersion: "1.0", buildNumber: "1"),
         authSessionController: authSessionController,
         authClient: authClient,
+        appleAccountLifecycleClient: appleAccountLifecycleClient ??
+            (authClient == nil ? nil : MomentAccountAppleLifecycleClient()),
+        appleCredentialStateProvider: appleCredentialStateProvider,
         subscriptionClient: subscriptionClient,
         accountMaintenanceClient: accountMaintenanceClient,
         localAccountDataDeletion: localAccountDataDeletion
@@ -584,11 +817,17 @@ private enum MomentAccountLocalDataDeletionError: Error {
     case testFailure
 }
 
+private enum MomentAccountSessionStoreError: Error {
+    case testFailure
+}
+
 private actor MomentAccountInMemoryAuthSessionStore: AuthSessionStore {
     private var session: AuthSession?
+    private let clearError: (any Error)?
 
-    init(session: AuthSession? = nil) {
+    init(session: AuthSession? = nil, clearError: (any Error)? = nil) {
         self.session = session
+        self.clearError = clearError
     }
 
     func loadSession() async throws -> AuthSession? {
@@ -600,6 +839,9 @@ private actor MomentAccountInMemoryAuthSessionStore: AuthSessionStore {
     }
 
     func clearSession() async throws {
+        if let clearError {
+            throw clearError
+        }
         session = nil
     }
 }
@@ -656,6 +898,83 @@ private actor MomentAccountAuthClient: AuthClient {
 
     func refreshCallCount() -> Int {
         recordedRefreshCallCount
+    }
+}
+
+private struct MomentAccountAppleLifecycleExchange: Equatable, Sendable {
+    var authorizationCode: String
+    var appleUserID: String
+    var accessToken: String
+}
+
+private actor MomentAccountAppleLifecycleClient: AppleAccountLifecycleClient {
+    private var errors: [AppleAccountLifecycleError]
+    private var recordedExchanges: [MomentAccountAppleLifecycleExchange] = []
+
+    init(errors: [AppleAccountLifecycleError] = []) {
+        self.errors = errors
+    }
+
+    func storeRevocationMaterial(
+        authorizationCode: String,
+        appleUserID: String,
+        accessToken: String
+    ) async throws {
+        recordedExchanges.append(MomentAccountAppleLifecycleExchange(
+            authorizationCode: authorizationCode,
+            appleUserID: appleUserID,
+            accessToken: accessToken
+        ))
+        if !errors.isEmpty {
+            throw errors.removeFirst()
+        }
+    }
+
+    func exchanges() -> [MomentAccountAppleLifecycleExchange] {
+        recordedExchanges
+    }
+}
+
+private final class MomentAccountAppleCredentialStateProvider: AppleCredentialStateProviding, @unchecked Sendable {
+    private let stateStore: MomentAccountAppleCredentialStateStore
+    private let stream: AsyncStream<Void>
+    private let continuation: AsyncStream<Void>.Continuation
+
+    init(state: AppleCredentialState) {
+        self.stateStore = MomentAccountAppleCredentialStateStore(state: state)
+        (stream, continuation) = AsyncStream.makeStream()
+    }
+
+    func credentialState(forUserID userID: String) async throws -> AppleCredentialState {
+        await stateStore.value()
+    }
+
+    func revocationEvents() -> AsyncStream<Void> {
+        stream
+    }
+
+    func setState(_ state: AppleCredentialState) async {
+        await stateStore.set(state)
+    }
+
+    func sendRevocationEvent() {
+        continuation.yield(())
+    }
+}
+
+private actor MomentAccountAppleCredentialStateStore {
+    private var state: AppleCredentialState
+
+    init(state: AppleCredentialState) {
+        self.state = state
+    }
+
+    func value() -> AppleCredentialState {
+        state
+    }
+
+    func set(_ state: AppleCredentialState) {
+        self.state = state
     }
 }
 
@@ -837,13 +1156,15 @@ private extension AuthSession {
         refreshToken: String = "refresh-token",
         expiresAt: Date = Date(timeIntervalSince1970: 2_000_000_000),
         userID: String = "user-1",
-        email: String? = "user@example.com"
+        email: String? = "user@example.com",
+        appleCredentialUserID: String? = nil
     ) -> AuthSession {
         AuthSession(
             accessToken: accessToken,
             refreshToken: refreshToken,
             expiresAt: expiresAt,
-            user: AuthUser(id: userID, email: email)
+            user: AuthUser(id: userID, email: email),
+            appleCredentialUserID: appleCredentialUserID
         )
     }
 }
