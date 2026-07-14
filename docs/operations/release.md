@@ -84,16 +84,15 @@ Before sandbox/TestFlight promotion, run the app-hosted direct client suite from
 the shared staging scheme:
 
 ```bash
-cd prosepal-ios
-xcodebuild -project ProsePal.xcodeproj \
-  -scheme "ProsePal Staging" \
-  -destination 'platform=iOS Simulator,name=iPhone 17' \
-  -only-testing:ProsePalStoreKitTests test
+./scripts/run_storekit_release_gate.sh
 ```
 
-Every discovered StoreKit scenario must execute. A configuration-install skip,
-including `SKInternalErrorDomain Code=3` from the Apple test environment, blocks
-this gate until it is rerun on a working Xcode/runtime. It is not a client pass.
+The wrapper selects the direct StoreKit scenario class, records an xcresult, and
+requires the expected scenario count with zero failed and zero skipped tests.
+Only an actually caught `NSError` whose domain is `SKInternalErrorDomain` and
+whose code is `3` is labelled as the known Apple-runtime skip. That skip still
+blocks promotion. A successful probe returning no products—or missing, extra,
+or incorrect product IDs—fails setup without inferring an error diagnosis.
 
 ## Failure handling
 

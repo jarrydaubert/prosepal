@@ -274,10 +274,12 @@ completed item instead of turning this file into a status log.
   billing retry, expiry, refund/revocation, Family Sharing when enabled,
   update-stream termination, and finish only after entitlement convergence;
   transient read failure remains distinguishable from inactive entitlement.
-  All direct scenarios execute without skips on a StoreKit Test runtime that
-  successfully installs `ProsePalStaging.storekit`; the Xcode 26.6 / iOS
-  26.4–26.5 `SKInternalErrorDomain Code=3` environment failure is rechecked on a
-  fixed Xcode/runtime and is not accepted as a pass. Configured
+  The direct-suite release wrapper proves the expected scenario count with zero
+  failures and zero skips; its harness skips only for an actually caught
+  `NSError` matching `SKInternalErrorDomain` code `3`, while an empty, missing,
+  extra, or wrong product result fails setup without an inferred diagnosis.
+  The known Xcode/iOS runtime failure is rechecked on a fixed runtime and is not
+  accepted as a pass. Configured
   production product IDs return products; purchase and user-triggered restore
   work without a forced app login; App Store Server notifications and
   reconciliation update staging entitlement; account switching cannot carry

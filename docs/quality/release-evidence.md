@@ -62,9 +62,12 @@ deterministic definition of done before the candidate is promoted.
 
 For StoreKit, record package policy tests separately from the app-hosted
 `ProsePalStoreKitTests` run. The direct run must list discovered, passed, failed,
-and skipped scenarios plus the Xcode and simulator runtime versions. Any skip
-caused by failure to install the `.storekit` configuration leaves StoreKit proof
-open. Local StoreKit evidence never substitutes for sandbox/TestFlight product,
+and skipped scenarios plus the Xcode and simulator runtime versions. Run it
+through `scripts/run_storekit_release_gate.sh`; its xcresult check requires the
+expected scenario count, zero failures, and zero skips. Even the precisely
+matched known Apple-runtime skip leaves StoreKit proof open. An empty or
+mismatched successful product probe is a setup failure, not a diagnosed runtime
+skip. Local StoreKit evidence never substitutes for sandbox/TestFlight product,
 purchase, restore, notification, or server-reconciliation evidence.
 
 See [Native Release](../operations/release.md) for the operational sequence.

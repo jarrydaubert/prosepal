@@ -342,13 +342,16 @@ and [`appAccountToken`](https://developer.apple.com/documentation/storekit/produ
 
 **Benefit, risk, dependencies, and evidence:** Automated StoreKit scenarios
 protect the most failure-prone lifecycle without making sandbox state a CI
-dependency. The target must skip, rather than fabricate success, when StoreKit
-Test cannot install its local configuration; that skip leaves the release gate
-open. Server reconciliation remains required because device entitlement and
-ProsePal account ownership are different identities. Evidence must include an
-executed direct StoreKit suite, sandbox/TestFlight purchase and restore without
-app login, transaction updates, server notification/reconciliation, and account
-switching.
+dependency. The harness labels a scenario as skipped only after catching the
+precise known Apple runtime `NSError` (`SKInternalErrorDomain`, code `3`); it
+does not infer that diagnosis from a successful empty product lookup. Empty,
+missing, extra, or incorrect configured products fail setup. The xcresult gate
+requires every expected scenario to pass with zero failures and zero skips, so
+an observed runtime skip remains incomplete release evidence. Server
+reconciliation remains required because device entitlement and ProsePal account
+ownership are different identities. Evidence must include an executed direct
+StoreKit suite, sandbox/TestFlight purchase and restore without app login,
+transaction updates, server notification/reconciliation, and account switching.
 
 ### A-08 — System StoreKit views and paywall controls
 

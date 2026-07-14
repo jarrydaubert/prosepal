@@ -3,6 +3,127 @@ import StoreKitTest
 import XCTest
 import ProsePalAPI
 
+private enum StoreKitTestHarnessError: Error, Equatable, LocalizedError {
+    case productConfigurationMismatch(expected: [String], returned: [String])
+
+    var errorDescription: String? {
+        switch self {
+        case let .productConfigurationMismatch(expected, returned):
+            let returnedDescription = returned.isEmpty ? "none" : returned.joined(separator: ",")
+            return "StoreKit Test product configuration mismatch. Expected \(expected.joined(separator: ",")); returned \(returnedDescription)."
+        }
+    }
+}
+
+private enum StoreKitTestRuntimeErrorDisposition: Equatable {
+    case skipKnownAppleRuntimeFailure(reason: String)
+    case fail
+}
+
+private enum StoreKitTestHarnessPolicy {
+    static let knownAppleRuntimeErrorDomain = "SKInternalErrorDomain"
+    static let knownAppleRuntimeErrorCode = 3
+
+    static func disposition(forCaught error: NSError) -> StoreKitTestRuntimeErrorDisposition {
+        guard
+            error.domain == knownAppleRuntimeErrorDomain,
+            error.code == knownAppleRuntimeErrorCode
+        else {
+            return .fail
+        }
+
+        return .skipKnownAppleRuntimeFailure(
+            reason: "Observed \(error.domain) Code=\(error.code) from StoreKit Test. " +
+                "Run this release gate again on a working Xcode/runtime; this skip is not a pass."
+        )
+    }
+
+    static func requireExactConfiguredProducts(
+        expectedProductIDs: [String],
+        returnedProductIDs: [String]
+    ) throws {
+        let expected = expectedProductIDs.sorted()
+        let returned = returnedProductIDs.sorted()
+        guard returned == expected else {
+            throw StoreKitTestHarnessError.productConfigurationMismatch(
+                expected: expected,
+                returned: returned
+            )
+        }
+    }
+}
+
+final class StoreKitTestHarnessPolicyTests: XCTestCase {
+    private let productIDs = [
+        "com.prosepal.pro.yearly",
+        "com.prosepal.pro.monthly",
+        "com.prosepal.pro.weekly"
+    ]
+
+    func testActualMatchingAppleRuntimeErrorIsAnExplicitSkip() {
+        let error = NSError(
+            domain: StoreKitTestHarnessPolicy.knownAppleRuntimeErrorDomain,
+            code: StoreKitTestHarnessPolicy.knownAppleRuntimeErrorCode
+        )
+
+        guard case .skipKnownAppleRuntimeFailure(let reason) = StoreKitTestHarnessPolicy.disposition(forCaught: error) else {
+            return XCTFail("Expected the precise observed Apple runtime error to be skippable")
+        }
+        XCTAssertTrue(reason.contains("SKInternalErrorDomain Code=3"))
+        XCTAssertTrue(reason.contains("not a pass"))
+    }
+
+    func testOtherCaughtErrorsFailRatherThanSkip() {
+        let wrongCode = NSError(domain: "SKInternalErrorDomain", code: 4)
+        let wrongDomain = NSError(domain: "DifferentStoreKitDomain", code: 3)
+
+        XCTAssertEqual(StoreKitTestHarnessPolicy.disposition(forCaught: wrongCode), .fail)
+        XCTAssertEqual(StoreKitTestHarnessPolicy.disposition(forCaught: wrongDomain), .fail)
+    }
+
+    func testEmptyProductResultFailsWithoutInferringAnErrorDiagnosis() {
+        XCTAssertThrowsError(
+            try StoreKitTestHarnessPolicy.requireExactConfiguredProducts(
+                expectedProductIDs: productIDs,
+                returnedProductIDs: []
+            )
+        ) { error in
+            guard
+                let harnessError = error as? StoreKitTestHarnessError,
+                case let .productConfigurationMismatch(expected, returned) = harnessError
+            else {
+                return XCTFail("Expected a product-configuration mismatch")
+            }
+            XCTAssertEqual(expected, productIDs.sorted())
+            XCTAssertTrue(returned.isEmpty)
+            XCTAssertFalse(error.localizedDescription.contains("SKInternalErrorDomain"))
+        }
+    }
+
+    func testWrongOrMissingProductConfigurationFails() {
+        for returnedProductIDs in [
+            ["com.prosepal.pro.wrong"],
+            Array(productIDs.dropLast())
+        ] {
+            XCTAssertThrowsError(
+                try StoreKitTestHarnessPolicy.requireExactConfiguredProducts(
+                    expectedProductIDs: productIDs,
+                    returnedProductIDs: returnedProductIDs
+                )
+            )
+        }
+    }
+
+    func testValidConfigurationAndProductsRunScenarios() {
+        XCTAssertNoThrow(
+            try StoreKitTestHarnessPolicy.requireExactConfiguredProducts(
+                expectedProductIDs: productIDs,
+                returnedProductIDs: Array(productIDs.reversed())
+            )
+        )
+    }
+}
+
 final class StoreKitSubscriptionClientStoreKitTests: XCTestCase {
     private static let yearlyID = "com.prosepal.pro.yearly"
     private static let monthlyID = "com.prosepal.pro.monthly"
@@ -11,21 +132,33 @@ final class StoreKitSubscriptionClientStoreKitTests: XCTestCase {
     private static let productIDs = [yearlyID, monthlyID, weeklyID]
 
     private var session: SKTestSession!
+    private var storeKitEnvironmentIsReady = false
 
     override func setUp() async throws {
         try await super.setUp()
-        session = try SKTestSession(configurationFileNamed: "ProsePalStaging")
-        session.resetToDefaultState()
-        session.clearTransactions()
-        session.disableDialogs = true
+        storeKitEnvironmentIsReady = false
+        do {
+            session = try SKTestSession(configurationFileNamed: "ProsePalStaging")
+            session.resetToDefaultState()
+            session.clearTransactions()
+            session.disableDialogs = true
 
-        let environmentProbe = try await Product.products(for: [Self.yearlyID])
-        if environmentProbe.isEmpty {
-            throw XCTSkip(
-                "StoreKit Test did not install its local configuration. " +
-                "Xcode 26.6 with the installed iOS 26.4/26.5 runtimes reports " +
-                "SKInternalErrorDomain Code=3 before client code runs."
+            let environmentProbe = try await Product.products(for: Self.productIDs)
+            try StoreKitTestHarnessPolicy.requireExactConfiguredProducts(
+                expectedProductIDs: Self.productIDs,
+                returnedProductIDs: environmentProbe.map(\.id)
             )
+            storeKitEnvironmentIsReady = true
+        } catch let error as StoreKitTestHarnessError {
+            XCTFail(error.localizedDescription)
+        } catch {
+            let nsError = error as NSError
+            switch StoreKitTestHarnessPolicy.disposition(forCaught: nsError) {
+            case .skipKnownAppleRuntimeFailure(let reason):
+                throw XCTSkip(reason)
+            case .fail:
+                XCTFail("StoreKit Test setup failed with \(nsError.domain) Code=\(nsError.code).")
+            }
         }
     }
 
@@ -35,10 +168,12 @@ final class StoreKitSubscriptionClientStoreKitTests: XCTestCase {
             session.resetToDefaultState()
         }
         session = nil
+        storeKitEnvironmentIsReady = false
         try super.tearDownWithError()
     }
 
     func testLoadsExactlyTheConfiguredProducts() async throws {
+        guard storeKitEnvironmentIsReady else { return }
         let products = try await makeClient().loadProducts()
 
         XCTAssertEqual(Set(products.map(\.id)), Set(Self.productIDs))
@@ -46,6 +181,7 @@ final class StoreKitSubscriptionClientStoreKitTests: XCTestCase {
     }
 
     func testPurchaseUsesAccountTokenDefersFinishAndResolvesActiveEntitlement() async throws {
+        guard storeKitEnvironmentIsReady else { return }
         let accountToken = UUID(uuidString: "11111111-1111-1111-1111-111111111111")!
         let result = try await makeClient(accountToken: accountToken).purchase(productID: Self.yearlyID)
 
@@ -67,6 +203,7 @@ final class StoreKitSubscriptionClientStoreKitTests: XCTestCase {
     }
 
     func testAnonymousPurchaseHasNoAccountToken() async throws {
+        guard storeKitEnvironmentIsReady else { return }
         let result = try await makeClient().purchase(productID: Self.monthlyID)
 
         guard case .active(_, _, let ownership) = result.entitlementState else {
@@ -82,6 +219,7 @@ final class StoreKitSubscriptionClientStoreKitTests: XCTestCase {
     }
 
     func testAskToBuyReturnsPendingThenApprovalAppearsInUpdates() async throws {
+        guard storeKitEnvironmentIsReady else { return }
         session.askToBuyEnabled = true
         let client = makeClient()
         let result = try await client.purchase(productID: Self.weeklyID)
@@ -100,6 +238,7 @@ final class StoreKitSubscriptionClientStoreKitTests: XCTestCase {
     }
 
     func testSimulatedCancellationIsReportedWithoutEntitlement() async throws {
+        guard storeKitEnvironmentIsReady else { return }
         try await session.setSimulatedError(
             .generic(.userCancelled),
             forAPI: .purchase
@@ -111,6 +250,7 @@ final class StoreKitSubscriptionClientStoreKitTests: XCTestCase {
     }
 
     func testRestoreUsesAppStoreSyncAndReportsActiveOrInactive() async throws {
+        guard storeKitEnvironmentIsReady else { return }
         let client = makeClient()
         let empty = try await client.restorePurchases()
         XCTAssertEqual(empty.status, .notEntitled)
@@ -123,6 +263,7 @@ final class StoreKitSubscriptionClientStoreKitTests: XCTestCase {
     }
 
     func testExpirationAndRefundConvergeToConfirmedInactive() async throws {
+        guard storeKitEnvironmentIsReady else { return }
         let client = makeClient()
         let transaction = try await session.buyProduct(identifier: Self.monthlyID)
         let active = await client.currentEntitlement()
@@ -141,6 +282,7 @@ final class StoreKitSubscriptionClientStoreKitTests: XCTestCase {
     }
 
     func testGracePeriodGrantsWhileBillingRetryDoesNot() async throws {
+        guard storeKitEnvironmentIsReady else { return }
         session.timeRate = .oneRenewalEveryTwoSeconds
         session.shouldEnterBillingRetryOnRenewal = true
         session.billingGracePeriodIsEnabled = true
@@ -164,6 +306,7 @@ final class StoreKitSubscriptionClientStoreKitTests: XCTestCase {
     }
 
     func testTransientStatusFailureIsUnknownAndVerificationFailureStaysUnknown() async throws {
+        guard storeKitEnvironmentIsReady else { return }
         try await session.setSimulatedError(.generic(.networkError(URLError(.notConnectedToInternet))), forAPI: .subscriptionStatus)
         let transientFailure = await makeClient().currentEntitlement()
         XCTAssertEqual(transientFailure, .unknown(.storeUnavailable))
@@ -176,6 +319,7 @@ final class StoreKitSubscriptionClientStoreKitTests: XCTestCase {
     }
 
     func testRetiredProductIsRecognizedOnlyWhenExplicitlyConfigured() async throws {
+        guard storeKitEnvironmentIsReady else { return }
         _ = try await session.buyProduct(identifier: Self.retiredID)
 
         let recognized = await StoreKitSubscriptionClient(
@@ -189,6 +333,7 @@ final class StoreKitSubscriptionClientStoreKitTests: XCTestCase {
     }
 
     func testAccountTokenMismatchFailsClosed() async throws {
+        guard storeKitEnvironmentIsReady else { return }
         let purchasingAccount = UUID(uuidString: "11111111-1111-1111-1111-111111111111")!
         let currentAccount = UUID(uuidString: "22222222-2222-2222-2222-222222222222")!
         _ = try await session.buyProduct(
@@ -201,6 +346,7 @@ final class StoreKitSubscriptionClientStoreKitTests: XCTestCase {
     }
 
     func testExternallyCompletedPurchaseArrivesThroughTransactionUpdates() async throws {
+        guard storeKitEnvironmentIsReady else { return }
         let client = makeClient()
         let updates = await client.transactionUpdates()
         async let pendingUpdate = Self.firstUpdate(from: updates)
