@@ -43,7 +43,8 @@ Detailed code and test evidence lives in
 | Voice Card | One user-written style example can guide future private drafting. |
 | Local vault | SwiftData stores relationship memory and saved drafts in an app-private, backup-excluded location. |
 | Honest saved-draft changes | Saved-draft edits report success only after SwiftData persists them; deletion requires confirmation and failed saves roll back without closing the detail. |
-| Export | Settings can produce and copy a JSON export of local relationship memory and saved drafts. |
+| Native sharing | Active and saved drafts expose one Copy action and one system Share action. ProsePal does not claim or force a destination and does not record a send when the chooser is cancelled. |
+| Export | Settings can copy JSON or share a generated, named JSON file containing local relationship memory and saved drafts. |
 | Memory delete | Truth Bead and Voice Card deletion requires confirmation, reports persistence failure, and rolls back after a failed save. |
 
 ## Identity and subscriptions

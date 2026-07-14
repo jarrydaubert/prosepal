@@ -56,9 +56,10 @@ Current extracted feature ownership is intentionally small and concrete:
 | `Features/SavedDrafts/` | SwiftData query ownership, local search and disclosure state, list/detail navigation, edit/delete persistence coordination, feature components, and deterministic list/detail previews. The persisted `SavedMomentDraftRecord` and versioned schema remain owned by `ProsePalAPI`. |
 
 Shared empty, hero, and detail-card presentation used by more than one feature
-lives in `Components/`; UIKit sharing presentation used by multiple features
-lives in `Support/MomentShareSheet.swift`. Neither owns feature state or
-persistence.
+lives in `Components/`. `Support/MomentSharing.swift` owns the pure Copy/Share
+presentation and diagnostics policy used by draft surfaces; the views themselves
+use SwiftUI `ShareLink`, with no custom activity-controller bridge. Neither owns
+feature state or persistence.
 
 ## Views and state ownership
 

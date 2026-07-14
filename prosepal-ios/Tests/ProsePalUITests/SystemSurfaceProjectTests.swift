@@ -162,24 +162,6 @@ func archiveRemoteConfigValidatorEnforcesSupabasePublicKeyShapes() throws {
 }
 
 @Test
-func momentDraftExposesExplicitSendHandoff() throws {
-    let source = try String(
-        contentsOf: packageRoot.appending(path: "Sources/ProsePalUI/MomentExperienceView.swift"),
-        encoding: .utf8
-    )
-
-    #expect(source.contains("Text(\"Send draft\")"))
-    #expect(source.contains("draftResultFooterButton(title: \"Send\", systemImage: \"paperplane.fill\")"))
-    #expect(source.contains("Label(\"Send\", systemImage: \"paperplane.fill\")"))
-    #expect(source.contains("openDraftSendSheet(bundle, source: \"moment_draft\")"))
-    #expect(source.contains("open_draft_send_handoff"))
-    #expect(source.contains("MomentDraftShareDestination(id: \"messages\""))
-    #expect(source.contains("MomentDraftShareDestination(id: \"mail\""))
-    #expect(source.contains("ShareLink(item: request.bundle.messageText)"))
-    #expect(source.contains("updateActiveDraftMessage(ProsePalTextInput.limited("))
-}
-
-@Test
 func quotaStateUsesServerMessageWithoutInventingLimitsOrResetDates() throws {
     let source = try String(
         contentsOf: packageRoot.appending(path: "Sources/ProsePalUI/MomentExperienceView.swift"),

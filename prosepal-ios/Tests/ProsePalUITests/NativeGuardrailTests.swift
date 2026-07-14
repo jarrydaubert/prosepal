@@ -17,7 +17,7 @@ func momentExperienceMonolithCanOnlyShrink() throws {
 
     // This baseline may only move downward. Equality prevents an extraction
     // from leaving unused headroom for later growth.
-    let lineCountBaseline = 7_281
+    let lineCountBaseline = 7_111
     #expect(currentLineCount == lineCountBaseline)
 }
 
@@ -34,8 +34,24 @@ func momentExperienceSourceStringGuardsCanOnlyDecrease() throws {
     }
 
     // This baseline may only move downward as guards become behavioral tests.
-    let sourceStringGuardBaseline = 3
+    let sourceStringGuardBaseline = 2
     #expect(referenceCount == sourceStringGuardBaseline)
+}
+
+@Test
+func outgoingShareDiagnosticsCannotClaimDestinationOrSuccessfulSending() throws {
+    let files = try textFiles(in: [
+        packageRoot.appending(path: "Sources/ProsePalUI")
+    ])
+    let bannedDiagnosticFragments = [
+        "send_handoff",
+        "share_messages",
+        "share_mail",
+        "share_notes",
+        "sent_message"
+    ]
+
+    #expect(try violations(of: bannedDiagnosticFragments, in: files).isEmpty)
 }
 
 @Test

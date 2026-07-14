@@ -168,13 +168,13 @@ completed item instead of turning this file into a status log.
   explicitly assert that it receives zero requests; regressions fail rather than
   hanging the test run.
 
-- [ ] Make outgoing share and export presentation truthful and native. DoD:
-  destination-labelled controls do not imply that `ShareLink` can target
-  Messages, Mail, or Notes; active and saved drafts use one system share action
-  for transferable text; local-data export shares a named JSON file through a
-  typed `Transferable` while retaining explicit Copy if useful; cancellation
-  never records a send; temporary files are cleaned up; the source-string test
-  that pins simulated destinations is replaced by behavioural/UI coverage.
+- [ ] Capture physical-device evidence for outgoing ShareLink and local-data
+  file export. DoD: on a supported iPhone, active and saved drafts each present
+  the system activity sheet with the reviewed text; cancelling records no send
+  or destination; Copy places the exact visible text on the pasteboard; the
+  local-data action presents a `.json` file with the generated filename and
+  decodable expected contents; VoiceOver announces Copy and Share accurately;
+  evidence is filed without exposing draft text or export contents.
 
 - [ ] Decompose `MomentExperienceView.swift` incrementally while completing
   funded v1 work; do not run a separate big-bang rewrite. The remaining

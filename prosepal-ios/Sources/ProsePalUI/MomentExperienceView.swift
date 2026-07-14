@@ -721,227 +721,9 @@ public final class MomentModel {
     }
 }
 
-private struct MomentDraftUseSheetRequest: Identifiable {
-    let id = UUID()
-    let bundle: MomentDraftBundle
-    let toneLabel: String
-
-    var previewText: String {
-        let trimmed = bundle.messageText.trimmingCharacters(in: .whitespacesAndNewlines)
-        let maximumPreviewCharacters = 86
-        guard trimmed.count > maximumPreviewCharacters else { return trimmed }
-
-        let prefix = String(trimmed.prefix(maximumPreviewCharacters))
-        let boundary = prefix.lastIndex(where: { $0.isWhitespace }) ?? prefix.endIndex
-        let wordBoundedPrefix = prefix[..<boundary].trimmingCharacters(in: .whitespacesAndNewlines)
-        return "\(wordBoundedPrefix)…"
-    }
-}
-
 private struct MomentTransientToast: Identifiable, Equatable {
     let id = UUID()
     var message: String
-}
-
-private struct MomentDraftUseSheet: View {
-    let request: MomentDraftUseSheetRequest
-    let onCopy: () -> Void
-    let onSave: () -> Void
-    let onShareDestination: (String) -> Void
-
-    @Environment(\.dismiss) private var dismiss
-    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
-
-    private let destinations = [
-        MomentDraftShareDestination(id: "messages", title: "Messages", systemImage: "message.fill", tint: Color.prosePalCare),
-        MomentDraftShareDestination(id: "mail", title: "Mail", systemImage: "envelope.fill", tint: Color.blue.opacity(0.82)),
-        MomentDraftShareDestination(id: "notes", title: "Notes", systemImage: "note.text", tint: Color.prosePalWarning),
-        MomentDraftShareDestination(id: "more", title: "More", systemImage: "ellipsis.circle.fill", tint: Color.prosePalSlate.opacity(0.82))
-    ]
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            grabber
-
-            Text("Send draft")
-                .font(.headline.weight(.semibold))
-                .foregroundStyle(Color.prosePalInk)
-                .frame(maxWidth: .infinity, alignment: .center)
-
-            previewCard
-
-            destinationRow
-
-            actionRows
-
-            Button {
-                dismiss()
-            } label: {
-                Text("Cancel")
-                    .font(.headline.weight(.semibold))
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 48)
-            }
-            .buttonStyle(.plain)
-            .foregroundStyle(Color.prosePalInk)
-            .background(Color.prosePalPaper.opacity(0.78), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-        }
-        .padding(.horizontal, 18)
-        .padding(.top, 8)
-        .padding(.bottom, 20)
-        .background {
-            MomentAtmosphericBackground(isCareful: request.bundle.lane == .takeMoreCare)
-                .opacity(0.36)
-                .ignoresSafeArea()
-        }
-    }
-
-    private var grabber: some View {
-        Capsule(style: .continuous)
-            .fill(Color.prosePalSlate.opacity(0.38))
-            .frame(width: 38, height: 5)
-            .frame(maxWidth: .infinity)
-            .padding(.top, 3)
-            .padding(.bottom, 2)
-            .accessibilityHidden(true)
-    }
-
-    private var previewCard: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Label("\(request.toneLabel) · your voice kept", systemImage: "checkmark.seal")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(Color.prosePalCare)
-                .labelStyle(.titleAndIcon)
-                .lineLimit(1)
-                .minimumScaleFactor(0.78)
-
-            Text("\"\(request.previewText)\"")
-                .font(.system(.callout, design: .serif))
-                .lineSpacing(3)
-                .foregroundStyle(Color.prosePalSlate)
-                .lineLimit(3)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 13)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.prosePalPaper.opacity(0.94), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(Color.prosePalNavy.opacity(0.10), lineWidth: 1)
-        }
-        .accessibilityElement(children: .combine)
-    }
-
-    private var destinationRow: some View {
-        LazyVGrid(columns: destinationColumns, spacing: 8) {
-            ForEach(destinations) { destination in
-                destinationButton(destination)
-                .simultaneousGesture(TapGesture().onEnded {
-                    onShareDestination(destination.id)
-                })
-            }
-        }
-    }
-
-    private var destinationColumns: [GridItem] {
-        if dynamicTypeSize.isAccessibilitySize {
-            return [GridItem(.flexible(), spacing: 8)]
-        }
-        return [
-            GridItem(.flexible(), spacing: 8),
-            GridItem(.flexible(), spacing: 8)
-        ]
-    }
-
-    private func destinationButton(_ destination: MomentDraftShareDestination) -> some View {
-        ShareLink(item: request.bundle.messageText) {
-            HStack(spacing: 10) {
-                Image(systemName: destination.systemImage)
-                    .font(.system(size: 18, weight: .medium))
-                    .foregroundStyle(destination.tint)
-                    .frame(width: 34, height: 34)
-                    .background(Color.prosePalPaper.opacity(0.94), in: Circle())
-                    .shadow(color: Color.prosePalNavy.opacity(0.08), radius: 6, x: 0, y: 3)
-
-                Text(destination.title)
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(Color.prosePalSlate)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.82)
-
-                Spacer(minLength: 0)
-            }
-            .padding(.horizontal, 12)
-            .frame(maxWidth: .infinity)
-            .frame(height: 58)
-            .background(Color.prosePalPaper.opacity(0.46), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .stroke(Color.prosePalNavy.opacity(0.08), lineWidth: 1)
-            }
-        }
-    }
-
-    private var actionRows: some View {
-        VStack(spacing: 0) {
-            sheetActionRow(systemImage: "doc.on.doc", title: "Copy to clipboard") {
-                dismiss()
-                onCopy()
-            }
-
-            Divider()
-                .padding(.leading, 52)
-
-            sheetActionRow(systemImage: "bookmark", title: "Save to drafts") {
-                dismiss()
-                onSave()
-            }
-        }
-        .background(Color.prosePalPaper.opacity(0.94), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(Color.prosePalNavy.opacity(0.10), lineWidth: 1)
-        }
-    }
-
-    private func sheetActionRow(
-        systemImage: String,
-        title: String,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button(action: action) {
-            HStack(spacing: 12) {
-                Image(systemName: systemImage)
-                    .font(.system(size: 18, weight: .medium))
-                    .foregroundStyle(Color.prosePalCoralDeep)
-                    .frame(width: 28)
-                    .accessibilityHidden(true)
-
-                Text(title)
-                    .font(.body.weight(.medium))
-                    .foregroundStyle(Color.prosePalInk)
-
-                Spacer(minLength: 8)
-
-                Image(systemName: "chevron.right")
-                    .font(.footnote.weight(.semibold))
-                    .foregroundStyle(Color.prosePalSlate.opacity(0.48))
-                    .accessibilityHidden(true)
-            }
-            .padding(.horizontal, 14)
-            .frame(height: 54)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-    }
-
-    private struct MomentDraftShareDestination: Identifiable {
-        var id: String
-        var title: String
-        var systemImage: String
-        var tint: Color
-    }
 }
 
 private struct MomentCopiedToast: View {
@@ -1044,7 +826,6 @@ struct MomentSheetView: View {
     @State private var isShowingDraftHistory = false
     @State private var hasCommittedPersonEntry = false
     @State private var hasEntered = false
-    @State private var useDraftRequest: MomentDraftUseSheetRequest?
     @State private var transientToast: MomentTransientToast?
     @State private var isShowingDraftSource = false
     @State private var isShowingReviseMode = false
@@ -1125,29 +906,6 @@ struct MomentSheetView: View {
         }
         .sheet(isPresented: $isShowingPaywall) {
             MomentPaywallSheet(account: account)
-        }
-        .sheet(item: $useDraftRequest) { request in
-            MomentDraftUseSheet(
-                request: request,
-                onCopy: {
-                    copy(request.bundle.messageText, source: "draft_use_sheet")
-                },
-                onSave: {
-                    save(request.bundle)
-                },
-                onShareDestination: { destination in
-                    diagnostics.messageAction(
-                        "send_handoff_\(destination)",
-                        source: "draft_send_sheet",
-                        messageCharacters: request.bundle.messageText.count
-                    )
-                }
-            )
-            #if os(iOS)
-            .presentationDetents([.height(dynamicTypeSize.isAccessibilitySize ? 620 : 520)])
-            .presentationDragIndicator(.hidden)
-            .presentationBackground(.regularMaterial)
-            #endif
         }
         #if os(iOS)
         .fullScreenCover(isPresented: $isShowingDraftHistory) {
@@ -3307,31 +3065,47 @@ struct MomentSheetView: View {
     private func draftResultFooter(_ bundle: MomentDraftBundle) -> some View {
         if dynamicTypeSize.isAccessibilitySize {
             VStack(alignment: .center, spacing: 8) {
-                draftResultFooterButton(title: "Copy", systemImage: "doc.on.doc") {
+                draftResultFooterButton(
+                    title: "Copy",
+                    systemImage: "doc.on.doc",
+                    accessibilityIdentifier: "activeDraft.copy"
+                ) {
                     copy(bundle.messageText)
                 }
+                .accessibilityHint(String(localized: "Copies this draft to the clipboard."))
 
-                draftResultFooterButton(title: "Send", systemImage: "paperplane.fill") {
-                    openDraftSendSheet(bundle, source: "moment_result_card")
-                }
+                draftResultFooterShareLink(bundle)
 
-                draftResultFooterButton(title: "Keep this", systemImage: "checkmark", isAccent: true) {
+                draftResultFooterButton(
+                    title: "Keep this",
+                    systemImage: "checkmark",
+                    isAccent: true,
+                    accessibilityIdentifier: "activeDraft.save"
+                ) {
                     save(bundle)
                 }
             }
         } else {
             HStack(alignment: .center, spacing: 4) {
-                draftResultFooterButton(title: "Copy", systemImage: "doc.on.doc") {
+                draftResultFooterButton(
+                    title: "Copy",
+                    systemImage: "doc.on.doc",
+                    accessibilityIdentifier: "activeDraft.copy"
+                ) {
                     copy(bundle.messageText)
                 }
+                .accessibilityHint(String(localized: "Copies this draft to the clipboard."))
 
-                draftResultFooterButton(title: "Send", systemImage: "paperplane.fill") {
-                    openDraftSendSheet(bundle, source: "moment_result_card")
-                }
+                draftResultFooterShareLink(bundle)
 
                 Spacer(minLength: 4)
 
-                draftResultFooterButton(title: "Keep this", systemImage: "checkmark", isAccent: true) {
+                draftResultFooterButton(
+                    title: "Keep this",
+                    systemImage: "checkmark",
+                    isAccent: true,
+                    accessibilityIdentifier: "activeDraft.save"
+                ) {
                     save(bundle)
                 }
             }
@@ -3340,16 +3114,16 @@ struct MomentSheetView: View {
 
     private func draftResultToneLabel(for bundle: MomentDraftBundle) -> String {
         if bundle.lane == .takeMoreCare {
-            return "Careful & steady"
+            return String(localized: "Careful & steady")
         }
 
         switch model.register {
         case .react:
-            return "Warm & concise"
+            return String(localized: "Warm & concise")
         case .confess:
-            return "Your words, polished"
+            return String(localized: "Your words, polished")
         case .assemble:
-            return "Diplomatic & warm"
+            return String(localized: "Diplomatic & warm")
         }
     }
 
@@ -3374,33 +3148,71 @@ struct MomentSheetView: View {
         title: String,
         systemImage: String,
         isAccent: Bool = false,
+        accessibilityIdentifier: String,
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
-            Label {
-                Text(title)
-                    .font(dynamicTypeSize.isAccessibilitySize ? .body.weight(isAccent ? .semibold : .medium) : .subheadline.weight(isAccent ? .semibold : .medium))
-            } icon: {
-                Image(systemName: systemImage)
-                    .font(dynamicTypeSize.isAccessibilitySize ? .body.weight(.medium) : .caption.weight(.medium))
-            }
-            .labelStyle(.titleAndIcon)
-            .lineLimit(dynamicTypeSize.isAccessibilitySize ? 2 : 1)
-            .minimumScaleFactor(0.78)
-            .frame(
-                maxWidth: dynamicTypeSize.isAccessibilitySize ? .infinity : nil,
-                minHeight: dynamicTypeSize.isAccessibilitySize ? 52 : 36
+            draftResultFooterLabel(
+                title: title,
+                systemImage: systemImage,
+                isAccent: isAccent
             )
-            .padding(.horizontal, dynamicTypeSize.isAccessibilitySize ? 14 : 8)
-            .foregroundStyle(isAccent ? Color.prosePalCoralDeep : Color.prosePalSlate)
-            .background {
-                if dynamicTypeSize.isAccessibilitySize {
-                    Capsule(style: .continuous)
-                        .fill(isAccent ? Color.prosePalAccentSoft : Color.prosePalSurface2.opacity(0.72))
-                }
-            }
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier(accessibilityIdentifier)
+    }
+
+    private func draftResultFooterShareLink(_ bundle: MomentDraftBundle) -> some View {
+        let presentation = MomentTextSharePresentation(
+            text: bundle.messageText,
+            surface: .activeDraft
+        )
+
+        return ShareLink(
+            item: presentation.text,
+            preview: SharePreview(String(localized: "ProsePal draft"))
+        ) {
+            draftResultFooterLabel(
+                title: MomentTextShareAction.share.title,
+                systemImage: MomentTextShareAction.share.systemImage
+            )
+        }
+        .accessibilityLabel(MomentTextShareAction.share.title)
+        .accessibilityHint(
+            String(localized: "Opens the system share sheet so you can choose where the draft goes.")
+        )
+        .accessibilityIdentifier(
+            presentation.accessibilityIdentifier(for: .share)
+        )
+    }
+
+    private func draftResultFooterLabel(
+        title: String,
+        systemImage: String,
+        isAccent: Bool = false
+    ) -> some View {
+        Label {
+            Text(title)
+                .font(dynamicTypeSize.isAccessibilitySize ? .body.weight(isAccent ? .semibold : .medium) : .subheadline.weight(isAccent ? .semibold : .medium))
+        } icon: {
+            Image(systemName: systemImage)
+                .font(dynamicTypeSize.isAccessibilitySize ? .body.weight(.medium) : .caption.weight(.medium))
+        }
+        .labelStyle(.titleAndIcon)
+        .lineLimit(dynamicTypeSize.isAccessibilitySize ? 2 : 1)
+        .minimumScaleFactor(0.78)
+        .frame(
+            maxWidth: dynamicTypeSize.isAccessibilitySize ? .infinity : nil,
+            minHeight: dynamicTypeSize.isAccessibilitySize ? 52 : 36
+        )
+        .padding(.horizontal, dynamicTypeSize.isAccessibilitySize ? 14 : 8)
+        .foregroundStyle(isAccent ? Color.prosePalCoralDeep : Color.prosePalSlate)
+        .background {
+            if dynamicTypeSize.isAccessibilitySize {
+                Capsule(style: .continuous)
+                    .fill(isAccent ? Color.prosePalAccentSoft : Color.prosePalSurface2.opacity(0.72))
+            }
+        }
     }
 
     private func draftMarginNote(_ bundle: MomentDraftBundle) -> some View {
@@ -4059,13 +3871,13 @@ private struct MomentDraftHistorySheet: View {
             ViewThatFits(in: .horizontal) {
                 HStack(spacing: 10) {
                     copyButton(text: bundle.messageText)
-                    sendButton(bundle: bundle)
+                    shareButton(bundle: bundle)
                     saveButton(bundle: bundle)
                 }
 
                 VStack(spacing: 8) {
                     copyButton(text: bundle.messageText)
-                    sendButton(bundle: bundle)
+                    shareButton(bundle: bundle)
                     saveButton(bundle: bundle)
                 }
             }
@@ -4167,13 +3979,24 @@ private struct MomentDraftHistorySheet: View {
         .buttonStyle(.bordered)
         .buttonBorderShape(.capsule)
         .tint(.prosePalNavy)
+        .accessibilityHint(String(localized: "Copies this draft to the clipboard."))
+        .accessibilityIdentifier("activeDraft.copy")
     }
 
-    private func sendButton(bundle: MomentDraftBundle) -> some View {
-        Button {
-            openDraftSendSheet(bundle, source: "moment_draft")
-        } label: {
-            Label("Send", systemImage: "paperplane.fill")
+    private func shareButton(bundle: MomentDraftBundle) -> some View {
+        let presentation = MomentTextSharePresentation(
+            text: bundle.messageText,
+            surface: .activeDraft
+        )
+
+        return ShareLink(
+            item: presentation.text,
+            preview: SharePreview(String(localized: "ProsePal draft"))
+        ) {
+            Label(
+                MomentTextShareAction.share.title,
+                systemImage: MomentTextShareAction.share.systemImage
+            )
                 .lineLimit(1)
                 .minimumScaleFactor(0.82)
                 .frame(maxWidth: .infinity)
@@ -4181,17 +4004,12 @@ private struct MomentDraftHistorySheet: View {
         .buttonStyle(.borderedProminent)
         .buttonBorderShape(.capsule)
         .tint(model.moment.isCarefulMode ? .prosePalCare : .prosePalCoral)
-    }
-
-    private func openDraftSendSheet(_ bundle: MomentDraftBundle, source: String) {
-        useDraftRequest = MomentDraftUseSheetRequest(
-            bundle: bundle,
-            toneLabel: draftResultToneLabel(for: bundle)
+        .accessibilityLabel(MomentTextShareAction.share.title)
+        .accessibilityHint(
+            String(localized: "Opens the system share sheet so you can choose where the draft goes.")
         )
-        diagnostics.messageAction(
-            "open_draft_send_handoff",
-            source: source,
-            messageCharacters: bundle.messageText.count
+        .accessibilityIdentifier(
+            presentation.accessibilityIdentifier(for: .share)
         )
     }
 
@@ -4207,6 +4025,7 @@ private struct MomentDraftHistorySheet: View {
         .buttonStyle(.bordered)
         .buttonBorderShape(.capsule)
         .tint(.prosePalNavy)
+        .accessibilityIdentifier("activeDraft.save")
     }
 
     private func takeMoreCare() {
@@ -4219,10 +4038,21 @@ private struct MomentDraftHistorySheet: View {
     }
 
     private func copy(_ text: String, source: String = "moment_draft") {
+        let presentation = MomentTextSharePresentation(
+            text: text,
+            surface: .activeDraft
+        )
+        let interaction = presentation.copy { clipboardText in
         #if canImport(UIKit)
-        UIPasteboard.general.string = text
+            UIPasteboard.general.string = clipboardText
+        #elseif canImport(AppKit)
+            NSPasteboard.general.clearContents()
+            NSPasteboard.general.setString(clipboardText, forType: .string)
         #endif
-        diagnostics.messageAction("copy", source: source, messageCharacters: text.count)
+        }
+        if let action = MomentShareTelemetryPolicy.diagnosticsAction(for: interaction) {
+            diagnostics.messageAction(action, source: source, messageCharacters: text.count)
+        }
         showToast("Copied — your voice and all")
     }
 
@@ -6520,6 +6350,9 @@ private struct MomentLocalDataExportView: View {
                 prepareExport()
             }
         }
+        .onDisappear {
+            try? MomentLocalDataExport.removeTemporaryFiles()
+        }
     }
 
     private var topChrome: some View {
@@ -6730,10 +6563,11 @@ private struct MomentLocalDataExportView: View {
 
     private func exportActions(_ export: MomentLocalDataExport) -> some View {
         VStack(spacing: 10) {
-            Button {
-                copy(export.jsonString)
-            } label: {
-                Label("Copy JSON", systemImage: "doc.on.doc")
+            ShareLink(
+                item: export,
+                preview: SharePreview(export.fileName)
+            ) {
+                Label("Share JSON file", systemImage: "square.and.arrow.up")
                     .font(.body.weight(.semibold))
                     .frame(maxWidth: .infinity, minHeight: 52)
             }
@@ -6741,6 +6575,25 @@ private struct MomentLocalDataExportView: View {
             .foregroundStyle(Color.prosePalPaper)
             .background(Color.prosePalCoral, in: Capsule(style: .continuous))
             .shadow(color: Color.prosePalCoralDeep.opacity(0.18), radius: 10, x: 0, y: 5)
+            .accessibilityLabel(String(localized: "Share JSON file"))
+            .accessibilityHint(
+                String(localized: "Opens the system share sheet for this local-data export file.")
+            )
+            .accessibilityIdentifier("localDataExport.shareFile")
+
+            Button {
+                copy(export.jsonString)
+            } label: {
+                Label("Copy JSON", systemImage: "doc.on.doc")
+                    .font(.body.weight(.semibold))
+                    .frame(maxWidth: .infinity, minHeight: 48)
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(Color.prosePalCoralDeep)
+            .background(Color.prosePalCoral.opacity(0.12), in: Capsule(style: .continuous))
+            .accessibilityLabel(String(localized: "Copy JSON"))
+            .accessibilityHint(String(localized: "Copies the export JSON to the clipboard."))
+            .accessibilityIdentifier("localDataExport.copyJSON")
 
             Button {
                 prepareExport()
@@ -6752,6 +6605,7 @@ private struct MomentLocalDataExportView: View {
             .buttonStyle(.plain)
             .foregroundStyle(Color.prosePalCoralDeep)
             .background(Color.prosePalCoral.opacity(0.12), in: Capsule(style: .continuous))
+            .accessibilityIdentifier("localDataExport.refresh")
         }
     }
 
@@ -6795,15 +6649,10 @@ private struct MomentLocalDataExportView: View {
                 in: modelContext,
                 exportedAt: exportedAt
             )
-            let data = try RelationshipVaultExporter.encodedData(for: snapshot)
-            guard let jsonString = String(data: data, encoding: .utf8) else {
-                throw MomentLocalDataExportError.encodingFailed
-            }
-
-            exportState = .ready(MomentLocalDataExport(
-                fileName: RelationshipVaultExporter.fileName(exportedAt: exportedAt),
+            try? MomentLocalDataExport.removeTemporaryFiles()
+            exportState = .ready(try MomentLocalDataExport(
                 snapshot: snapshot,
-                jsonString: jsonString
+                exportedAt: exportedAt
             ))
         } catch {
             exportState = .failed
@@ -6817,7 +6666,7 @@ private struct MomentLocalDataExportView: View {
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(jsonString, forType: .string)
         #endif
-        notice = "Copied JSON"
+        notice = String(localized: "Copied JSON")
     }
 }
 
@@ -6825,25 +6674,6 @@ private enum MomentLocalDataExportState {
     case loading
     case ready(MomentLocalDataExport)
     case failed
-}
-
-private struct MomentLocalDataExport {
-    var fileName: String
-    var snapshot: RelationshipVaultExportSnapshot
-    var jsonString: String
-
-    var preview: String {
-        let maxCharacters = 2_400
-        guard jsonString.count > maxCharacters else {
-            return jsonString
-        }
-
-        return String(jsonString.prefix(maxCharacters)) + "\n..."
-    }
-}
-
-private enum MomentLocalDataExportError: Error {
-    case encodingFailed
 }
 
 private struct MomentPaywallSheet: View {

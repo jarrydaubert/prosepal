@@ -496,20 +496,37 @@ without destabilizing the app.
 
 ### A-12 — Sharing, `Transferable`, and export
 
-**Priority and decision:** P1, replace simulated destinations and generic UIKit
-bridges with system-native transfer types.
+**Resolved locally 2026-07-14; physical-device chooser evidence remains.**
+Active and saved drafts now expose one Copy action and one SwiftUI `ShareLink`
+for the reviewed plain-text draft. The Messages, Mail, Notes, and More tiles,
+their destination-claiming diagnostics, and the saved-draft `[Any]` /
+`UIActivityViewController` bridge are removed. Opening or cancelling the system
+chooser records no destination or successful send. Only completed Copy remains
+eligible for generic action diagnostics.
+
+Local-data export now uses a typed `MomentLocalDataExport: Transferable` with a
+JSON `FileRepresentation`. It preserves the generated filename and the exact
+encoded bytes, writes into a dedicated temporary directory, cleans stale files
+before a new transfer and when leaving the export screen, and retains Copy JSON
+as a separate action. Behavioral tests cover the two-action contract, exact
+clipboard text, cancellation telemetry policy, saved-draft parity, stable
+accessibility identifiers, exported filename/content, and temporary cleanup.
+The negative diagnostics guard prevents destination or send claims from
+returning. A physical iPhone must still prove that active text, saved text, and
+the named JSON file reach the system activity sheet and remain available after
+cancellation.
+
+**Original priority and decision:** P1, replace simulated destinations and
+generic UIKit bridges with system-native transfer types.
 
 **Minimum/toolchain:** `ShareLink` and `Transferable` require iOS 16; both are
 unconditional at the iOS 26 minimum.
 
-**Source and behaviour:** `MomentDraftUseSheet` displays Messages, Mail, Notes,
-and More tiles, but every tile is the same `ShareLink` for a string. `ShareLink`
-chooses activities through the system and cannot guarantee the labelled
-destination, so the UI and diagnostics overstate what was selected.
-`SavedMomentDraftDetailView` uses `MomentShareSheet`, an `[Any]` wrapper around
-`UIActivityViewController`, for a plain string. Local-data export prepares JSON
-and a filename but exposes only Copy JSON even though the exporter can write a
-file.
+**Original source and behaviour (superseded):** `MomentDraftUseSheet` displayed
+Messages, Mail, Notes, and More tiles, but every tile was the same `ShareLink`
+for a string. `SavedMomentDraftDetailView` used `MomentShareSheet`, an `[Any]`
+wrapper around `UIActivityViewController`, and local-data export exposed only
+Copy JSON despite preparing a filename. These paths no longer exist.
 
 **Apple pattern and availability:** Present one truthful `ShareLink` for draft
 text. Make a small `Transferable` export value with `FileRepresentation` or
@@ -523,8 +540,8 @@ documentation.
 claims, UIKit type erasure, and clipboard-only export while preserving the
 system activity sheet and review-before-send. Sharing must never imply that a
 message was sent. Test cancellation, copy/save/share diagnostics, exported file
-name/content, temporary-file cleanup, accessibility, and Messages/Mail/Notes
-availability on a device.
+name/content, temporary-file cleanup, accessibility, and system activity-sheet
+presentation on a device.
 
 ### A-13 — Speech and dictation
 
@@ -589,7 +606,9 @@ monolith regions do not have independently compiling previews. Package tests
 mix Swift Testing and XCTest appropriately for deterministic model and service
 boundaries. There is no app UI-test target or direct StoreKit Test suite.
 Several source-string tests temporarily assert navigation and system-surface
-wiring; one currently pins the misleading destination-labelled sharing UI.
+wiring. The test that pinned destination-labelled sharing was removed in A-12
+and replaced with behavioral action, telemetry-policy, accessibility-contract,
+and export-file tests plus a negative diagnostics invariant.
 
 **Apple pattern and availability:** Keep Swift Testing for value/model tests and
 XCTest where app-hosted, UI, performance, or StoreKit Test integration requires

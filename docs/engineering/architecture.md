@@ -148,15 +148,15 @@ inside the monolith:
 | Region | Owning file and symbols |
 |---|---|
 | Draft state and relaunch recovery | `MomentExperienceView.swift`: `MomentDraftRecoveryState`, `MomentDraftRecoveryStoring`, `MomentDraftRecoveryStore`, `MomentModel`; `MomentDraftUnavailableNotice.swift`: typed unavailable reason and presentation contract |
-| Active-draft action presentation | `MomentExperienceView.swift`: `MomentDraftUseSheet` |
+| Active-draft action presentation | `MomentExperienceView.swift`: visible Copy, `ShareLink`, and Save actions on the reviewed draft; `Support/MomentSharing.swift`: shared action, accessibility-identifier, and diagnostics policy |
 | App-root navigation and welcome state | `MomentAppRootView.swift`: `MomentAppRootView`, `MomentRootTabs`, `MomentRootTab`, `MomentWelcomeState` |
 | Core Moment composer and generated-draft experience | `MomentExperienceView.swift`: `MomentSheetView`, including loading, retry, refusal, revision, pressure feedback, memory controls, copy/share/save, and draft history; `MomentGuidedComposerLayout.swift`: the type-erased guided-composer layout and numbered step shell |
 | Relationship and occasion pickers | `MomentExperienceView.swift`: `MomentRelationshipPickerSheet`, `MomentOccasionPickerSheet`, and their row types |
-| Saved Drafts feature | `Features/SavedDrafts/`: `SavedMomentDraftsView`, `SavedDraftLibrarySearch`, `SavedMomentDraftLibraryCard`, `SavedMomentDraftDetailView`, persistence functions, and deterministic previews; `Components/`: shared empty/detail presentation; `Support/MomentShareSheet.swift`: native share bridge; `ProsePalAPI/RelationshipVault.swift`: persisted `SavedMomentDraftRecord` and schema ownership |
+| Saved Drafts feature | `Features/SavedDrafts/`: `SavedMomentDraftsView`, `SavedDraftLibrarySearch`, `SavedMomentDraftLibraryCard`, `SavedMomentDraftDetailView`, persistence functions, native text `ShareLink`, and deterministic previews; `Components/`: shared empty/detail presentation; `Support/MomentSharing.swift`: shared truthful action contract; `ProsePalAPI/RelationshipVault.swift`: persisted `SavedMomentDraftRecord` and schema ownership |
 | Relationship-memory library and detail | `MomentExperienceView.swift`: `RelationshipMemoryVaultView`, `RelationshipMemoryDetailView`, `RelationshipVoiceCardDetailView`; shared empty/detail presentation is in `Components/` |
 | Settings shell and static presentation components | `Features/Settings/MomentSettingsView.swift`, `MomentSettingsComponents.swift`, and `MomentSettingsPreview.swift`: `MomentSettingsView`, truthful static-row descriptors, feature presentation components, and deterministic preview setup |
 | Subscription plan detail | `MomentExperienceView.swift`: `MomentPlanDetailView` and plan presentation helpers |
-| Privacy, export, authentication, and paywall | `MomentExperienceView.swift`: `MomentPrivacyDataView`, `MomentLocalDataExportView`, `MomentPaywallSheet`; `MomentAppleSignInControl.swift`: system Apple authorization presentation and native credential forwarding |
+| Privacy, export, authentication, and paywall | `MomentExperienceView.swift`: `MomentPrivacyDataView`, `MomentLocalDataExportView`, `MomentPaywallSheet`; `Features/Settings/MomentLocalDataExport.swift`: typed JSON `Transferable`, named-file creation, and temporary-file cleanup; `MomentAppleSignInControl.swift`: system Apple authorization presentation and native credential forwarding |
 
 Use these symbols as navigation anchors rather than durable line numbers. When a
 task changes one region, prefer extracting that complete region and its private
@@ -173,7 +173,7 @@ helpers instead of moving unrelated code or attempting a big-bang rewrite.
 | App-target shortcut registration | `App/ProsePalAppShortcuts.swift`: app shortcut provider metadata |
 | Widget and Control | `Widgets/ProsePalWidgets.swift`: staging-aware widget/control identifiers and app-opening URLs |
 | Incoming system share | `ShareExtension/ShareViewController.swift`: provider loading, sanitization, preview, app-group handoff, and extension completion |
-| Outgoing saved-draft share | `ProsePalUI/Support/MomentShareSheet.swift`: system activity presentation used by Saved Drafts |
+| Outgoing draft share | Active and saved draft views use SwiftUI `ShareLink` with plain transferable text; `ProsePalUI/Support/MomentSharing.swift` owns their destination-neutral action and diagnostics policy |
 | Voice transcription | Not in v1. Dictation was removed on 2026-07-14 along with its microphone and speech-recognition usage descriptions; no executable requests either permission. Reintroduction is a post-v1 backlog item owned by its own file and transcriber protocol. |
 
 Stable-toolchain adoption decisions and evidence gates for these owners are in

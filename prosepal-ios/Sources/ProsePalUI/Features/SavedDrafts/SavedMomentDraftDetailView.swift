@@ -4,6 +4,8 @@ import ProsePalDomain
 import SwiftUI
 #if canImport(UIKit)
 import UIKit
+#elseif canImport(AppKit)
+import AppKit
 #endif
 
 struct SavedMomentDraftDetailView: View {
@@ -15,7 +17,6 @@ struct SavedMomentDraftDetailView: View {
     @State private var isEditing = false
     @State private var editedMessageText: String
     @State private var notice: SavedDraftNotice?
-    @State private var shareRequest: MomentShareRequest?
     @State private var isConfirmingDeletion = false
 
     private let diagnostics = NativeDiagnosticsLogger.shared
@@ -27,6 +28,10 @@ struct SavedMomentDraftDetailView: View {
 
     private var canSaveEdits: Bool {
         !editedMessageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    private var sharePresentation: MomentTextSharePresentation {
+        MomentTextSharePresentation(text: draft.messageText, surface: .savedDraft)
     }
 
     var body: some View {
@@ -95,7 +100,6 @@ struct SavedMomentDraftDetailView: View {
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif
-        .momentShareSheet($shareRequest)
         .confirmationDialog(
             String(localized: "Delete saved draft?"),
             isPresented: $isConfirmingDeletion,
@@ -142,22 +146,43 @@ struct SavedMomentDraftDetailView: View {
                 .accessibilityIdentifier("savedDraft.edit.save")
             } else {
                 Button {
-                    copy(draft.messageText)
+                    copyDraft()
                 } label: {
-                    Label("Copy", systemImage: "doc.on.doc")
+                    Label(
+                        MomentTextShareAction.copy.title,
+                        systemImage: MomentTextShareAction.copy.systemImage
+                    )
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.bordered)
                 .buttonBorderShape(.capsule)
                 .tint(.prosePalCoralDeep)
+                .accessibilityLabel(MomentTextShareAction.copy.title)
+                .accessibilityHint(String(localized: "Copies this draft to the clipboard."))
+                .accessibilityIdentifier(
+                    sharePresentation.accessibilityIdentifier(for: .copy)
+                )
 
-                Button(action: shareDraft) {
-                    Label("Share", systemImage: "square.and.arrow.up")
+                ShareLink(
+                    item: sharePresentation.text,
+                    preview: SharePreview(String(localized: "Saved ProsePal draft"))
+                ) {
+                    Label(
+                        MomentTextShareAction.share.title,
+                        systemImage: MomentTextShareAction.share.systemImage
+                    )
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
                 .buttonBorderShape(.capsule)
                 .tint(.prosePalCoral)
+                .accessibilityLabel(MomentTextShareAction.share.title)
+                .accessibilityHint(
+                    String(localized: "Opens the system share sheet so you can choose where the draft goes.")
+                )
+                .accessibilityIdentifier(
+                    sharePresentation.accessibilityIdentifier(for: .share)
+                )
             }
         }
         .controlSize(.large)
@@ -242,19 +267,22 @@ struct SavedMomentDraftDetailView: View {
         }
     }
 
-    private func copy(_ text: String) {
+    private func copyDraft() {
+        let interaction = sharePresentation.copy { text in
         #if canImport(UIKit)
-        UIPasteboard.general.string = text
+            UIPasteboard.general.string = text
+        #elseif canImport(AppKit)
+            NSPasteboard.general.clearContents()
+            NSPasteboard.general.setString(text, forType: .string)
         #endif
-    }
-
-    private func shareDraft() {
-        shareRequest = MomentShareRequest.text(draft.messageText)
-        diagnostics.messageAction(
-            "share",
-            source: "saved_draft",
-            messageCharacters: draft.messageText.count
-        )
+        }
+        if let action = MomentShareTelemetryPolicy.diagnosticsAction(for: interaction) {
+            diagnostics.messageAction(
+                action,
+                source: "saved_draft",
+                messageCharacters: draft.messageText.count
+            )
+        }
     }
 }
 
