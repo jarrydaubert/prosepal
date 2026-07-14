@@ -24,6 +24,13 @@ explicit `STAGING_DB_URL`.
 The shared `ProsePal Staging` scheme contains no secrets. Real staging runs use
 the ignored `ProsePal Local Staging` scheme under `xcuserdata`.
 
+Treat the ignored local scheme as a credential-bearing artifact. Never paste,
+upload, or attach the complete scheme, an environment dump, or verbose command
+output to an issue, chat, or evidence bundle. Share only redacted configuration
+names and validated facts such as `dev_secret_configured=true`. Rotate the
+staging development secret immediately if its value appears outside the approved
+local files or Supabase staging secrets.
+
 Expected Run environment keys:
 
 ```text
@@ -65,6 +72,13 @@ For deterministic tethered development, select:
 ```text
 App/ProsePalStaging.storekit
 ```
+
+Xcode stores that selection in both staging schemes as the canonical identifier
+`../../App/ProsePalStaging.storekit`. If a scheme is restored or edited while
+Xcode is open, quit Xcode completely before reopening the project so it does not
+run with a cached scheme. Opening the paywall must log a product request that
+returns all three configured identifiers; a zero-product result is not accepted
+as local StoreKit proof.
 
 The product identifiers live under
 `subscriptionGroups[].subscriptions[]`, not the top-level `products` array.
@@ -126,6 +140,21 @@ repository. Test Apple sign-in both with a matching existing-account email and
 with Hide My Email, because private relay may create a separate Supabase
 identity. A continuity/linking decision is required before treating those
 accounts as interchangeable.
+
+Following the [Supabase native Apple configuration
+guide](https://supabase.com/docs/guides/auth/social-login/auth-apple#configuration-swift-native),
+the staging project's Authentication → Providers → Apple → Client IDs must
+allow both native token audiences:
+
+```text
+com.prosepal.prosepal
+com.prosepal.prosepal.staging
+```
+
+Keep the production Supabase project limited to approved production identities.
+An `Unacceptable audience in id_token` auth log means the App ID that signed the
+token is missing from the target project's Apple Client IDs; fix the provider
+allow-list rather than changing the app nonce flow or weakening token checks.
 
 ## DNS and inactive projects
 

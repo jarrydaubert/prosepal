@@ -356,8 +356,6 @@ private extension Product {
 private struct SubscriptionStoreDiagnosticsContext: Sendable {
     var implementation: String
     var buildConfiguration: String
-    var scheme: String
-    var mockStoreActive: Bool
     var requestedProductIDs: [String]
     var recommendedProductID: String?
 
@@ -365,8 +363,6 @@ private struct SubscriptionStoreDiagnosticsContext: Sendable {
         SubscriptionStoreDiagnosticsContext(
             implementation: "storekit2",
             buildConfiguration: currentBuildConfiguration,
-            scheme: "not_detectable",
-            mockStoreActive: false,
             requestedProductIDs: requestedProductIDs,
             recommendedProductID: recommendedProductID
         )
@@ -388,7 +384,7 @@ private struct SubscriptionDiagnosticsLogger: Sendable {
 
     func productsLoadStarted(_ context: SubscriptionStoreDiagnosticsContext) {
         logger.info(
-            "subscription_store event=products_request_started implementation=\(context.implementation, privacy: .public) build_configuration=\(context.buildConfiguration, privacy: .public) scheme=\(context.scheme, privacy: .public) mock_store_active=\(context.mockStoreActive, privacy: .public) requested_product_count=\(context.requestedProductIDs.count, privacy: .public) requested_product_ids=\(context.requestedProductIDs.diagnosticsList, privacy: .public) recommended_product_configured=\((context.recommendedProductID != nil), privacy: .public)"
+            "subscription_store event=products_request_started implementation=\(context.implementation, privacy: .public) build_configuration=\(context.buildConfiguration, privacy: .public) requested_product_count=\(context.requestedProductIDs.count, privacy: .public) requested_product_ids=\(context.requestedProductIDs.diagnosticsList, privacy: .public) recommended_product_configured=\((context.recommendedProductID != nil), privacy: .public)"
         )
     }
 

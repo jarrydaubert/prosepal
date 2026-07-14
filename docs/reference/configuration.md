@@ -19,6 +19,10 @@ build settings copied into `Info.plist` for archives.
 `SUPABASE_URL` and `SUPABASE_ANON_KEY` are accepted as native local fallbacks,
 but the `PROSEPAL_` names are the app-facing contract.
 
+The Supabase client key must be either a modern `sb_publishable_...` key or a
+legacy three-segment anon JWT. A project reference alone is not an API key and
+is treated as unconfigured.
+
 ## Native local-only configuration
 
 | Key | Purpose | Rule |
@@ -27,6 +31,10 @@ but the `PROSEPAL_` names are the app-facing contract.
 
 The local staging scheme is ignored by Git. See
 [Staging](../operations/staging.md).
+
+If that scheme is restored while Xcode is open, quit and reopen Xcode before
+running the app. Xcode can retain the previous launch environment in memory
+even after the scheme file on disk has been replaced and validated.
 
 ## Archive delivery
 
@@ -115,7 +123,8 @@ Local StoreKit configuration lives at
 
 - Runtime URL parsing accepts HTTPS remote URLs; insecure loopback is limited to
   explicit debug policy.
-- Local empty values become “not configured” rather than half-configured state.
+- Local empty or malformed values become “not configured” rather than
+  half-configured state.
 - Archive validation checks required public values without printing them.
 - Repository scans and release evidence must confirm privileged values are
   absent.

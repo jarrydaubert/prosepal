@@ -37,15 +37,48 @@ final class NativeRuntimeConfigTests: XCTestCase {
     func testFallbackKeyReadsLegacyEnvironmentName() {
         let config = NativeRuntimeConfig(
             environment: [
-                "SUPABASE_ANON_KEY": "anon-key"
+                "SUPABASE_ANON_KEY": "sb_publishable_example"
             ],
             infoDictionary: [:]
         )
 
         XCTAssertEqual(
-            config.value(named: "PROSEPAL_SUPABASE_ANON_KEY", fallback: "SUPABASE_ANON_KEY"),
-            "anon-key"
+            config.supabasePublishableKey(
+                named: "PROSEPAL_SUPABASE_ANON_KEY",
+                fallback: "SUPABASE_ANON_KEY"
+            ),
+            "sb_publishable_example"
         )
+    }
+
+    func testSupabasePublishableKeyAcceptsModernAndLegacyPublicFormats() {
+        let modern = NativeRuntimeConfig(
+            environment: ["KEY": "sb_publishable_example"],
+            infoDictionary: [:]
+        )
+        let legacy = NativeRuntimeConfig(
+            environment: ["KEY": "eyJheader.payload.signature"],
+            infoDictionary: [:]
+        )
+
+        XCTAssertEqual(modern.supabasePublishableKey(named: "KEY", fallback: "FALLBACK"), "sb_publishable_example")
+        XCTAssertEqual(legacy.supabasePublishableKey(named: "KEY", fallback: "FALLBACK"), "eyJheader.payload.signature")
+    }
+
+    func testSupabasePublishableKeyRejectsProjectReferenceAndIncompleteFormats() {
+        for invalidKey in [
+            "llolwgqphwnhbiqewmcq",
+            "sb_publishable_",
+            "eyJheader.payload",
+            "eyJheader..signature"
+        ] {
+            let config = NativeRuntimeConfig(
+                environment: ["KEY": invalidKey],
+                infoDictionary: [:]
+            )
+
+            XCTAssertNil(config.supabasePublishableKey(named: "KEY", fallback: "FALLBACK"))
+        }
     }
 
     func testListSplitsTrimsAndDeduplicatesProductIDs() {

@@ -86,7 +86,10 @@ private enum RuntimeReadinessFactory {
             isCarefulGatewayConfigured: gatewayURL != nil,
             isDevGatewaySecretConfigured: config.value(named: "PROSEPAL_DEV_GATEWAY_SECRET") != nil,
             isAccountConfigured: config.url(named: "PROSEPAL_SUPABASE_URL", fallback: "SUPABASE_URL") != nil &&
-                config.value(named: "PROSEPAL_SUPABASE_ANON_KEY", fallback: "SUPABASE_ANON_KEY") != nil,
+                config.supabasePublishableKey(
+                    named: "PROSEPAL_SUPABASE_ANON_KEY",
+                    fallback: "SUPABASE_ANON_KEY"
+                ) != nil,
             isSubscriptionConfigured: !premiumProductIDs.isEmpty,
             premiumProductCount: premiumProductIDs.count,
             isRecommendedPremiumProductConfigured: config.value(named: "PROSEPAL_RECOMMENDED_PREMIUM_PRODUCT_ID") != nil,
@@ -100,7 +103,10 @@ private enum AuthClientFactory {
         let config = NativeRuntimeConfig.prosePalApp
         guard
             let projectURL = config.url(named: "PROSEPAL_SUPABASE_URL", fallback: "SUPABASE_URL"),
-            let anonKey = config.value(named: "PROSEPAL_SUPABASE_ANON_KEY", fallback: "SUPABASE_ANON_KEY")
+            let anonKey = config.supabasePublishableKey(
+                named: "PROSEPAL_SUPABASE_ANON_KEY",
+                fallback: "SUPABASE_ANON_KEY"
+            )
         else {
             return nil
         }
@@ -114,7 +120,10 @@ private enum AccountMaintenanceClientFactory {
         let config = NativeRuntimeConfig.prosePalApp
         guard
             let projectURL = config.url(named: "PROSEPAL_SUPABASE_URL", fallback: "SUPABASE_URL"),
-            let anonKey = config.value(named: "PROSEPAL_SUPABASE_ANON_KEY", fallback: "SUPABASE_ANON_KEY")
+            let anonKey = config.supabasePublishableKey(
+                named: "PROSEPAL_SUPABASE_ANON_KEY",
+                fallback: "SUPABASE_ANON_KEY"
+            )
         else {
             return nil
         }

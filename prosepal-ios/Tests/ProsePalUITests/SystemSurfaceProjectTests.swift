@@ -146,6 +146,22 @@ func archivedAppsRequirePublicRemoteServiceConfiguration() throws {
 }
 
 @Test
+func archiveRemoteConfigValidatorEnforcesSupabasePublicKeyShapes() throws {
+    #expect(try archiveValidatorStatus(supabaseKey: "sb_publishable_example") == 0)
+    #expect(try archiveValidatorStatus(supabaseKey: "eyJheader.payload.signature") == 0)
+
+    for invalidKey in [
+        "llolwgqphwnhbiqewmcq",
+        "sb_publishable_",
+        "eyJheader.payload",
+        "eyJheader.payload.signature.extra",
+        "eyJheader..signature",
+    ] {
+        #expect(try archiveValidatorStatus(supabaseKey: invalidKey) != 0)
+    }
+}
+
+@Test
 func momentDraftExposesExplicitSendHandoff() throws {
     let source = try String(
         contentsOf: packageRoot.appending(path: "Sources/ProsePalUI/MomentExperienceView.swift"),
@@ -332,4 +348,26 @@ private func privacyAccessReasons(at relativePath: String) throws -> [String] {
     return try #require(
         userDefaultsEntry["NSPrivacyAccessedAPITypeReasons"] as? [String]
     ).sorted()
+}
+
+private func archiveValidatorStatus(supabaseKey: String) throws -> Int32 {
+    let process = Process()
+    process.executableURL = URL(fileURLWithPath: "/bin/sh")
+    process.arguments = [
+        packageRoot.appending(path: "scripts/validate-native-service-config.sh").path
+    ]
+    process.environment = ProcessInfo.processInfo.environment.merging([
+        "ACTION": "build",
+        "PROSEPAL_REQUIRE_REMOTE_CONFIG": "YES",
+        "PROSEPAL_GATEWAY_URL": "https://gateway.example.invalid",
+        "PROSEPAL_SUPABASE_URL": "https://supabase.example.invalid",
+        "PROSEPAL_SUPABASE_ANON_KEY": supabaseKey,
+        "PROSEPAL_DEV_GATEWAY_SECRET": "",
+    ]) { _, testValue in testValue }
+    process.standardOutput = Pipe()
+    process.standardError = Pipe()
+
+    try process.run()
+    process.waitUntilExit()
+    return process.terminationStatus
 }

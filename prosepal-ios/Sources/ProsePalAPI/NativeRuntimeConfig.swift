@@ -36,6 +36,23 @@ public struct NativeRuntimeConfig: Sendable {
         value(named: primaryKey) ?? value(named: fallbackKey)
     }
 
+    public func supabasePublishableKey(named primaryKey: String, fallback fallbackKey: String) -> String? {
+        guard let key = value(named: primaryKey, fallback: fallbackKey) else {
+            return nil
+        }
+
+        if key.hasPrefix("sb_publishable_") {
+            return key.count > "sb_publishable_".count ? key : nil
+        }
+
+        let jwtSegments = key.split(separator: ".", omittingEmptySubsequences: false)
+        guard key.hasPrefix("eyJ"), jwtSegments.count == 3,
+              jwtSegments.allSatisfy({ !$0.isEmpty }) else {
+            return nil
+        }
+        return key
+    }
+
     public func url(named key: String) -> URL? {
         guard
             let rawValue = value(named: key),

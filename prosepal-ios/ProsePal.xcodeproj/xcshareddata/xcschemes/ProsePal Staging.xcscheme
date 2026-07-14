@@ -52,7 +52,7 @@
          </BuildableReference>
       </BuildableProductRunnable>
       <StoreKitConfigurationFileReference
-         identifier = "../../../../App/ProsePalStaging.storekit">
+         identifier = "../../App/ProsePalStaging.storekit">
       </StoreKitConfigurationFileReference>
    </LaunchAction>
    <ProfileAction

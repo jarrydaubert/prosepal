@@ -40,6 +40,7 @@ expected_staging_bundle_id = "com.prosepal.prosepal.staging"
 expected_staging_widget_bundle_id = "com.prosepal.prosepal.staging.widgets"
 expected_staging_share_bundle_id = "com.prosepal.prosepal.staging.share"
 expected_staging_target_id = "PP0000000000000000000048"
+expected_storekit_identifier = "../../App/ProsePalStaging.storekit"
 
 def fail(message: str) -> None:
     print(f"FAIL: {message}", file=sys.stderr)
@@ -85,6 +86,9 @@ staging_refs = [
 ]
 if not staging_refs:
     fail("shared ProsePal Staging scheme does not target the staging app")
+shared_storekit_refs = shared_staging_root.findall(".//StoreKitConfigurationFileReference")
+if len(shared_storekit_refs) != 1 or shared_storekit_refs[0].get("identifier") != expected_storekit_identifier:
+    fail("shared ProsePal Staging scheme has a non-canonical StoreKit configuration reference")
 print("shared_staging_scheme=clean")
 
 local_root = parse_scheme(local_scheme)
@@ -105,17 +109,11 @@ if not local_staging_refs:
     fail("local staging scheme does not target ProsePal Staging; run ./scripts/restore-local-staging-scheme.sh after updating the backup")
 print("local_scheme_target=staging")
 
-storekit_refs = []
-for elem in local_root.iter():
-    for attr, value in elem.attrib.items():
-        if "storekit" in value.lower():
-            resolved = (local_scheme.parent / value).resolve()
-            storekit_refs.append(resolved)
-
-if not storekit_refs:
-    fail("local staging scheme has no StoreKit configuration reference")
-if storekit_file.resolve() not in storekit_refs:
-    fail("local staging scheme StoreKit reference does not resolve to App/ProsePalStaging.storekit")
+local_storekit_refs = local_root.findall(".//StoreKitConfigurationFileReference")
+if len(local_storekit_refs) != 1 or local_storekit_refs[0].get("identifier") != expected_storekit_identifier:
+    fail("local staging scheme has a non-canonical StoreKit configuration reference")
+if not storekit_file.is_file():
+    fail("missing App/ProsePalStaging.storekit")
 print("local_scheme_storekit_reference=ok")
 
 try:
