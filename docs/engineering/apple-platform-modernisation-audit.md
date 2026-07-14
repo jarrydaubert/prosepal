@@ -265,14 +265,15 @@ subscription-status handling needed by product and server convergence.
 entitlement sequence requires iOS 18.4; both are below the iOS 26 minimum.
 
 **Source and behaviour:** `StoreKitSubscriptionClient.currentEntitlement()`
-iterates `Transaction.currentEntitlements`, verifies every result before
-filtering configured products, and returns an active/inactive value.
-`MomentAccountModel` converts any entitlement-read failure into inactive and
-locks Premium. This conflates “not entitled” with “StoreKit could not establish
-state” and can produce a transient false downgrade. An unverified transaction
-for an unrelated or retired product can also fail the whole scan before the
-configured-ID check. The app does not model renewal state, billing retry, grace,
-revocation, or Family Sharing service selection.
+iterates `Transaction.currentEntitlements`, classifies the transaction's product
+ID before treating verification failure as relevant, and returns an
+active/inactive value. An unverified transaction outside ProsePal's configured
+product set is ignored; an unverified configured transaction still fails
+closed. `MomentAccountModel` converts any entitlement-read failure into inactive
+and locks Premium. This still conflates “not entitled” with “StoreKit could not
+establish state” and can produce a transient false downgrade. The app does not
+model renewal state, billing retry, grace, revocation, or Family Sharing service
+selection.
 
 **Apple pattern and availability:** Keep verified StoreKit 2 transactions, but
 iterate configured IDs with `Transaction.currentEntitlements(for:)` or filter
@@ -287,12 +288,14 @@ status from iOS 17, both below the deployment target. See Apple's
 and [renewal-state](https://developer.apple.com/documentation/storekit/product/subscriptioninfo/renewalstate)
 contracts.
 
-**Benefit, risk, dependencies, and evidence:** This avoids accidental access
-loss while preserving verification failure as a security signal. It depends on
-an explicit product policy for billing retry, grace, Family Sharing, retired
-IDs, anonymous purchases, and server authority. StoreKit Test and sandbox
-evidence must cover active, expired, grace, billing retry, revoked/refunded,
-unverified, Family Sharing, missing products, and transient store failure.
+**Benefit, risk, dependencies, and evidence:** The product-first ordering avoids
+an unrelated transaction aborting the entitlement scan while preserving
+verification failure as a security signal for configured products. The wider
+entitlement-state redesign still depends on an explicit product policy for
+billing retry, grace, Family Sharing, retired IDs, anonymous purchases, and
+server authority. StoreKit Test and sandbox evidence must cover active, expired,
+grace, billing retry, revoked/refunded, unverified, Family Sharing, missing
+products, and transient store failure.
 
 ### A-07 — StoreKit transaction lifecycle, restore, ownership, and tests
 

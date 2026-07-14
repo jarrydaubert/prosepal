@@ -12,7 +12,8 @@ prerequisite for product loading, purchase, or restore.
 - purchases through StoreKit;
 - distinguishes success, cancellation, pending, and no-active-entitlement;
 - synchronizes StoreKit during restore;
-- derives current entitlement from verified transactions; and
+- derives current entitlement from verified configured transactions, ignoring
+  unrelated product IDs before treating verification failure as relevant; and
 - exposes a launch-time `Transaction.updates` stream.
 
 ## Transaction-update policy

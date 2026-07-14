@@ -331,10 +331,12 @@ completed item instead of turning this file into a status log.
   a test that compares the Swift and gateway sets; adding a native value cannot
   reach production while the gateway would reject it.
 
-- [ ] Define handling for verified and unverified StoreKit transactions from
-  retired or temporarily unconfigured product IDs before changing the stable
-  launch set; an unrelated transaction must not make a configured entitlement
-  unknowable.
+- [ ] Define transaction-update finishing and redelivery handling for verified
+  and unverified StoreKit transactions from retired or temporarily unconfigured
+  product IDs before changing the stable launch set. The current-entitlement
+  scan already ignores unrelated IDs before verification; the remaining policy
+  must prevent ignored update transactions from redelivering forever without
+  allowing them to unlock Premium.
 
 - [ ] Add quantified quota UI only when the server contract supplies structured
   limit, remaining-use, and reset metadata backed by an approved product policy.

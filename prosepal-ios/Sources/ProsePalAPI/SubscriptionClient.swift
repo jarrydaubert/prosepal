@@ -197,18 +197,33 @@ public struct StoreKitSubscriptionClient: SubscriptionClient {
     public func currentEntitlement() async throws -> SubscriptionEntitlement {
         guard !productIDs.isEmpty else { throw SubscriptionError.notConfigured }
 
+        let configuredProductIDs = Set(productIDs)
         for await result in Transaction.currentEntitlements {
-            let transaction = try verified(result)
-            guard productIDs.contains(transaction.productID) else { continue }
-            guard transaction.revocationDate == nil else { continue }
-            if let expirationDate = transaction.expirationDate, expirationDate < Date() {
-                continue
+            let candidate: StoreKitEntitlementCandidate
+            switch result {
+            case .verified(let transaction):
+                candidate = StoreKitEntitlementCandidate(
+                    verification: .verified,
+                    productID: transaction.productID,
+                    revocationDate: transaction.revocationDate,
+                    expirationDate: transaction.expirationDate
+                )
+            case .unverified(let transaction, _):
+                candidate = StoreKitEntitlementCandidate(
+                    verification: .unverified,
+                    productID: transaction.productID,
+                    revocationDate: transaction.revocationDate,
+                    expirationDate: transaction.expirationDate
+                )
             }
-            return SubscriptionEntitlement(
-                isActive: true,
-                productID: transaction.productID,
-                expiresAt: transaction.expirationDate
-            )
+
+            if let entitlement = try resolveStoreKitEntitlementCandidate(
+                candidate,
+                configuredProductIDs: configuredProductIDs,
+                now: Date()
+            ) {
+                return entitlement
+            }
         }
 
         return .inactive
@@ -319,6 +334,39 @@ public struct StoreKitSubscriptionClient: SubscriptionClient {
             return 50
         }
     }
+}
+
+enum StoreKitEntitlementVerification: Equatable, Sendable {
+    case verified
+    case unverified
+}
+
+struct StoreKitEntitlementCandidate: Equatable, Sendable {
+    var verification: StoreKitEntitlementVerification
+    var productID: String
+    var revocationDate: Date?
+    var expirationDate: Date?
+}
+
+func resolveStoreKitEntitlementCandidate(
+    _ candidate: StoreKitEntitlementCandidate,
+    configuredProductIDs: Set<String>,
+    now: Date
+) throws -> SubscriptionEntitlement? {
+    guard configuredProductIDs.contains(candidate.productID) else { return nil }
+    guard candidate.verification == .verified else {
+        throw SubscriptionError.verificationFailed
+    }
+    guard candidate.revocationDate == nil else { return nil }
+    if let expirationDate = candidate.expirationDate, expirationDate < now {
+        return nil
+    }
+
+    return SubscriptionEntitlement(
+        isActive: true,
+        productID: candidate.productID,
+        expiresAt: candidate.expirationDate
+    )
 }
 
 private func verified<T>(_ result: VerificationResult<T>) throws -> T {
