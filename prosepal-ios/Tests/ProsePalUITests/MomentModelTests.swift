@@ -15,23 +15,25 @@ func staleDraftResultDoesNotReplaceLatestMomentDraft() async throws {
     let model = MomentModel(service: service)
 
     model.personName = "Slow"
-    let firstDraft = Task {
-        await model.draftNow()
+    model.startDraft()
+    try await expectEventually("The first draft did not reach the service.") {
+        await client.draftCount() == 1
     }
-    await client.waitForDraftCount(1)
 
     model.personName = "Fast"
-    let latestDraft = Task {
-        await model.draftNow()
+    model.startDraft()
+    try await expectEventually("The replacement draft did not reach the service.") {
+        await client.draftCount() == 2
     }
-    await client.waitForDraftCount(2)
 
     await client.resumeDraft(at: 1, text: "Fast draft.")
-    await latestDraft.value
+    try await expectEventually("The replacement draft did not update the model.") {
+        model.bundle?.messageText == "Fast draft."
+    }
     #expect(model.bundle?.messageText == "Fast draft.")
 
     await client.resumeDraft(at: 0, text: "Slow draft.")
-    await firstDraft.value
+    await Task.yield()
     #expect(model.bundle?.messageText == "Fast draft.")
     #expect(model.isDrafting == false)
 }
@@ -48,7 +50,7 @@ func crisisInputDoesNotStartMomentDrafting() async throws {
 
     model.personName = "Alex"
     model.trueThing = "I want to end my life."
-    await model.draftNow()
+    model.startDraft()
 
     #expect(model.canDraft == false)
     #expect(model.safetySignal == .crisisSupport)
@@ -97,7 +99,10 @@ func onDeviceTimeoutReturnsLaneHonestRecoverableState() async throws {
     model.personName = "Alex"
     model.occasion = .sympathy
     model.alignRegisterForMoment()
-    await model.draftNow()
+    model.startDraft()
+    try await expectEventually("The on-device timeout did not complete.") {
+        !model.isDrafting
+    }
 
     #expect(model.bundle == nil)
     #expect(model.errorMessage == GenerationError.timedOut(lane: .onDevice).userSafeMessage)
@@ -120,7 +125,10 @@ func gatewayTimeoutReturnsLaneHonestRecoverableState() async throws {
     )
 
     model.personName = "Alex"
-    await model.draftNow()
+    model.startDraft()
+    try await expectEventually("The gateway timeout did not complete.") {
+        !model.isDrafting
+    }
 
     #expect(model.bundle == nil)
     #expect(model.errorMessage == GenerationError.timedOut(lane: .gateway).userSafeMessage)
@@ -139,14 +147,16 @@ func offlineDraftRetryPreservesNoteAndRecoversWhenServiceReturns() async throws 
     model.personName = "Alex"
     model.trueThing = "Please keep this note safe."
 
-    await model.draftNow()
+    model.startDraft()
+    try await expectEventually("The offline draft did not reach a retryable state.") {
+        model.draftUnavailableReason == .offline
+    }
     #expect(model.draftUnavailableReason == .offline)
     #expect(model.trueThing == "Please keep this note safe.")
 
-    model.startDraft()
-    for _ in 0..<100 {
-        if model.bundle?.messageText == "Recovered draft." { break }
-        try await Task.sleep(for: .milliseconds(2))
+    model.retryDraft()
+    try await expectEventually("The retry did not recover a draft.") {
+        model.bundle?.messageText == "Recovered draft."
     }
 
     #expect(model.bundle?.messageText == "Recovered draft.")
@@ -167,11 +177,13 @@ func offlineDraftRetryFailureReturnsToRetryableStateWithoutLosingNote() async th
     model.personName = "Alex"
     model.trueThing = "Keep this exact note."
 
-    await model.draftNow()
     model.startDraft()
-    for _ in 0..<100 {
-        if await service.draftCallCount() == 2 && !model.isDrafting { break }
-        try await Task.sleep(for: .milliseconds(2))
+    try await expectEventually("The initial offline draft did not finish.") {
+        model.draftUnavailableReason == .offline
+    }
+    model.retryDraft()
+    try await expectEventually("The failed retry did not return to a retryable state.") {
+        await service.draftCallCount() == 2 && !model.isDrafting
     }
 
     #expect(model.bundle == nil)
@@ -194,7 +206,9 @@ func startDraftIgnoresRepeatedTapsAndCancellationPreventsLateResult() async thro
 
     model.startDraft()
     model.startDraft()
-    await client.waitForDraftCount(1)
+    try await expectEventually("Repeated draft taps did not reach the service.") {
+        await client.draftCount() == 1
+    }
 
     #expect(await client.draftCount() == 1)
     model.resetDraftForMomentChange()
@@ -878,12 +892,6 @@ private actor ControlledMomentDraftClient: MomentDraftClient {
         try await draft(for: moment)
     }
 
-    func waitForDraftCount(_ count: Int) async {
-        while pendingDrafts.count < count {
-            try? await Task.sleep(for: .milliseconds(5))
-        }
-    }
-
     func resumeDraft(at index: Int, text: String) {
         let pending = pendingDrafts[index]
         pending.continuation.resume(returning: MomentDraftBundle(
@@ -894,6 +902,23 @@ private actor ControlledMomentDraftClient: MomentDraftClient {
 
     func draftCount() -> Int {
         pendingDrafts.count
+    }
+}
+
+@MainActor
+private func expectEventually(
+    _ failureMessage: String,
+    timeout: Duration = .seconds(1),
+    condition: @escaping @MainActor () async -> Bool
+) async throws {
+    let clock = ContinuousClock()
+    let deadline = clock.now.advanced(by: timeout)
+    while !(await condition()) {
+        guard clock.now < deadline else {
+            Issue.record(Comment(rawValue: failureMessage))
+            return
+        }
+        try await Task.sleep(for: .milliseconds(2))
     }
 }
 

@@ -57,6 +57,7 @@ public struct GatewayCarefulMomentClient: MomentDraftRefinementClient {
         currentMessage: String?,
         reusesKeyOnRetry: Bool
     ) async throws -> MomentDraftBundle {
+        try Task.checkCancellation()
         let intent = moment.gatewayIntent(
             adjustment: adjustment,
             currentMessage: currentMessage
@@ -65,6 +66,7 @@ public struct GatewayCarefulMomentClient: MomentDraftRefinementClient {
         let idempotencyKey = reusesKeyOnRetry
             ? await requestKeyStore.key(for: identity)
             : UUID().uuidString
+        try Task.checkCancellation()
         let request = CardRequest(
             idempotencyKey: idempotencyKey,
             intent: intent,
@@ -73,8 +75,11 @@ public struct GatewayCarefulMomentClient: MomentDraftRefinementClient {
         )
         let response: CardResponse
         do {
+            try Task.checkCancellation()
             response = try await client.generateCard(request: request)
+            try Task.checkCancellation()
         } catch let error as GenerationError {
+            try Task.checkCancellation()
             if reusesKeyOnRetry,
                case .requestNeedsFreshKey = error {
                 await requestKeyStore.clear(identity: identity)
@@ -82,8 +87,10 @@ public struct GatewayCarefulMomentClient: MomentDraftRefinementClient {
             throw error
         }
         if reusesKeyOnRetry {
+            try Task.checkCancellation()
             await requestKeyStore.clear(identity: identity)
         }
+        try Task.checkCancellation()
         guard let message = response.messages.first?.text.trimmedNonEmpty else {
             throw GenerationError.unexpectedResponse(
                 message: "Message generation returned no messages. Please try again."

@@ -3,6 +3,7 @@ import Foundation
 public enum GenerationTimeoutLane: Equatable, Sendable {
     case onDevice
     case gateway
+    case total
 }
 
 public enum GenerationError: Error, Equatable, Sendable {
@@ -27,6 +28,8 @@ public extension GenerationError {
                 String(localized: "On-device writing took too long. Your note is still here, so you can try again.")
             case .gateway:
                 String(localized: "ProsePal could not finish this draft in time. Your note is still here, so you can try again.")
+            case .total:
+                String(localized: "This draft took too long to finish. Your note is still here, so you can try again.")
             }
         case .rateLimited(let message),
              .requestNeedsFreshKey(let message),

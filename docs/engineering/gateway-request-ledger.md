@@ -94,6 +94,11 @@ reserved -> completed  charge authenticated usage once; cache safe response
 reserved -> failed     record failure bucket; do not charge usage
 ```
 
+An incoming request cancellation is propagated to the active provider fetch.
+The Edge Function stops the fallback-model loop and finalizes an existing
+reservation as `failed` with the privacy-safe `request_cancelled` bucket, so
+cancelled work does not consume usage.
+
 Repeated matching finalization is idempotent. Missing rows, stale tokens, and
 illegal transitions return explicit outcomes rather than silently changing
 state. A completed response must be a JSON object.

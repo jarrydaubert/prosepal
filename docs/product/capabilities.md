@@ -18,6 +18,7 @@ Detailed code and test evidence lives in
 | Length | Brief, Standard, and Detailed choices set the intended message shape. |
 | Locale | The app derives locale and spelling behaviour from the device rather than exposing a spelling picker. |
 | Explicit generation | Drafting begins only after the user taps Write Draft. |
+| Stop and cancellation | While writing, Stop cancels the active request; changing the Moment, leaving Write, or backgrounding also prevents obsolete work from replacing newer words. |
 | Private Draft | Everyday moments use Foundation Models on device when available. |
 | Take More Care | Harder moments use the ProsePal gateway and provider-neutral product language. |
 | Fallback | Retryable failures can move between eligible lanes while content blocks remain blocked. |

@@ -199,6 +199,17 @@ class ProviderQualityError extends Error {
   }
 }
 
+class RequestCancellationError extends Error {
+  constructor() {
+    super("Request cancelled");
+    this.name = "RequestCancellationError";
+  }
+}
+
+function throwIfRequestCancelled(signal: AbortSignal): void {
+  if (signal.aborted) throw new RequestCancellationError();
+}
+
 const OCCASIONS = {
   birthday: {
     label: "Birthday",
@@ -1143,8 +1154,10 @@ async function callOpenAICompatibleProvider(
   config: Extract<ProviderConfig, { mode: "openai-compatible" }>,
   prompt: PromptParts,
   fetcher: Fetcher,
+  requestSignal: AbortSignal,
   model = config.model,
 ): Promise<string[]> {
+  throwIfRequestCancelled(requestSignal);
   const body: Record<string, unknown> = {
     model,
     messages: [
@@ -1169,11 +1182,17 @@ async function callOpenAICompatibleProvider(
         "Accept": "application/json",
       },
       body: JSON.stringify(body),
-      signal: AbortSignal.timeout(config.timeoutMs),
+      signal: AbortSignal.any([
+        requestSignal,
+        AbortSignal.timeout(config.timeoutMs),
+      ]),
     });
   } catch {
+    throwIfRequestCancelled(requestSignal);
     throw new ProviderGenerationError("Provider request failed");
   }
+
+  throwIfRequestCancelled(requestSignal);
 
   if (!response.ok) {
     throw new ProviderGenerationError(`Provider returned ${response.status}`);
@@ -1183,8 +1202,11 @@ async function callOpenAICompatibleProvider(
   try {
     payload = await response.json();
   } catch {
+    throwIfRequestCancelled(requestSignal);
     throw new ProviderGenerationError("Provider returned invalid JSON");
   }
+
+  throwIfRequestCancelled(requestSignal);
 
   const content = extractOpenAICompatibleContent(payload);
   return parseProviderMessages(content);
@@ -1199,19 +1221,24 @@ async function callOpenAICompatibleProviderWithFallbacks(
   requestLog: Record<string, unknown>,
   now: () => Date,
   startedAt: number,
+  requestSignal: AbortSignal,
 ): Promise<string[]> {
   const models = [config.model, ...config.fallbackModels];
   let lastError: unknown;
 
   for (const [attemptIndex, model] of models.entries()) {
+    throwIfRequestCancelled(requestSignal);
     try {
       const messages = await callOpenAICompatibleProvider(
         config,
         prompt,
         fetcher,
+        requestSignal,
         model,
       );
+      throwIfRequestCancelled(requestSignal);
       const quality = qualityCheck(messages, request);
+      throwIfRequestCancelled(requestSignal);
       if (!quality.passed) {
         lastError = new ProviderQualityError(
           quality.note ?? "Output failed quality checks",
@@ -1245,8 +1272,12 @@ async function callOpenAICompatibleProviderWithFallbacks(
         );
       }
 
+      throwIfRequestCancelled(requestSignal);
       return messages;
     } catch (error) {
+      if (error instanceof RequestCancellationError || requestSignal.aborted) {
+        throw new RequestCancellationError();
+      }
       lastError = error;
       logger.warn(
         "generate-card provider attempt failed",
@@ -1841,6 +1872,9 @@ export async function handleGenerateCard(
   }
 
   const request = parsed.value;
+  if (req.signal.aborted) {
+    return jsonResponse({ error: "Request cancelled" }, 499);
+  }
   const headerIdempotencyKey = req.headers.get("Idempotency-Key");
   if (
     headerIdempotencyKey !== null &&
@@ -1954,8 +1988,11 @@ export async function handleGenerateCard(
       requestLog,
       now,
       startedAt,
+      req.signal,
     );
+    throwIfRequestCancelled(req.signal);
     const quality = qualityCheck(providerMessages, request);
+    throwIfRequestCancelled(req.signal);
 
     if (!quality.passed) {
       await finalizeGatewayRequest(
@@ -1997,6 +2034,7 @@ export async function handleGenerateCard(
       qualityPassed: true,
       usage: reservation.usage,
     });
+    throwIfRequestCancelled(req.signal);
     const didFinalize = await finalizeGatewayRequest(
       reservation.client,
       reservation,
@@ -2036,6 +2074,27 @@ export async function handleGenerateCard(
 
     return jsonResponse(completedResponse);
   } catch (error) {
+    if (error instanceof RequestCancellationError || req.signal.aborted) {
+      await finalizeGatewayRequest(
+        reservation.client,
+        reservation,
+        "failed",
+        null,
+        "request_cancelled",
+        logger,
+        requestLog,
+      );
+      logger.log(
+        "generate-card request cancelled",
+        JSON.stringify({
+          ...requestLog,
+          providerSlot: config.slot,
+          latencyMs: now().getTime() - startedAt,
+        }),
+      );
+      return jsonResponse({ error: "Request cancelled" }, 499);
+    }
+
     if (error instanceof ProviderQualityError) {
       await finalizeGatewayRequest(
         reservation.client,

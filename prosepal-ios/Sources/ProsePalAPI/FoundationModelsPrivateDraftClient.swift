@@ -61,10 +61,13 @@ public struct FoundationModelsPrivateDraftClient: MomentDraftClient {
         adjustment: MomentAdjustment?,
         currentMessage: String?
     ) async throws -> MomentDraftBundle {
+        try Task.checkCancellation()
         try ensureModelAvailable()
 
         let approvedBeads = try await memoryProvider.approvedTruthBeads(for: moment.personName)
+        try Task.checkCancellation()
         let approvedVoiceCard = try await memoryProvider.approvedVoiceCard(for: moment.personName)
+        try Task.checkCancellation()
         let promptPlan = PrivateDraftPromptPlan(
             moment: moment,
             adjustment: adjustment,
@@ -80,6 +83,7 @@ public struct FoundationModelsPrivateDraftClient: MomentDraftClient {
         )
 
         do {
+            try Task.checkCancellation()
             let response = try await session.respond(
                 to: Prompt {
                     promptPlan.promptComponents
@@ -91,6 +95,7 @@ public struct FoundationModelsPrivateDraftClient: MomentDraftClient {
                     maximumResponseTokens: 700
                 )
             )
+            try Task.checkCancellation()
             return response.content.bundle(
                 lane: .privateDraft,
                 approvedBeads: approvedBeads,

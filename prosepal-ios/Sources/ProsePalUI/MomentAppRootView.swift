@@ -38,6 +38,8 @@ enum MomentRootTab: String, CaseIterable, Hashable, Sendable {
 }
 
 public struct MomentAppRootView: View {
+    @Environment(\.scenePhase) private var scenePhase
+
     private let launchStore: MomentLaunchStore
     private let sharedLaunchStore: SharedMomentLaunchStore
     private let diagnostics: NativeDiagnosticsLogger
@@ -86,6 +88,7 @@ public struct MomentAppRootView: View {
         .animation(.easeInOut(duration: 0.22), value: welcomeState.hasCompletedWelcome)
         .onAppear(perform: handleAppear)
         .onChange(of: welcomeState.hasCompletedWelcome, handleWelcomeCompletion)
+        .onChange(of: scenePhase, handleScenePhaseChange)
         .onOpenURL(perform: consumeDeepLink)
         .task {
             await account.loadInitialState()
@@ -110,6 +113,12 @@ public struct MomentAppRootView: View {
     private func handleWelcomeCompletion(_ oldValue: Bool, _ completed: Bool) {
         if completed {
             consumePendingLaunch()
+        }
+    }
+
+    private func handleScenePhaseChange(_ oldValue: ScenePhase, _ newValue: ScenePhase) {
+        if newValue == .background {
+            model.appDidEnterBackground()
         }
     }
 
@@ -212,6 +221,11 @@ private struct MomentRootTabs: View {
         }
         .tint(.prosePalCoral)
         .preferredColorScheme(.light)
+        .onChange(of: selection) { oldValue, newValue in
+            if oldValue == .moment, newValue != .moment {
+                model.composerDidDismiss()
+            }
+        }
     }
 
     private func rootTabLabel(_ tab: MomentRootTab) -> some View {

@@ -509,6 +509,7 @@ flowchart LR
             </div>
             <div class="feature-list">
               <div class="feature-item care"><strong>Explicit generation</strong><p>Nothing drafts while the user types. “Write draft” is a clear act of consent.</p></div>
+              <div class="feature-item care"><strong>Real Stop control</strong><p>While ProsePal is writing, Stop cancels the active work. Changing the message setup, leaving Write, or backgrounding the app also prevents old work from replacing newer words.</p></div>
               <div class="feature-item care"><strong>Private draft lane</strong><p>Everyday writing uses Apple Foundation Models on device where the runtime is available.</p></div>
               <div class="feature-item care"><strong>Careful gateway lane</strong><p>Harder moments can use a ProsePal-owned gateway with provider details kept behind the boundary.</p></div>
               <div class="feature-item care"><strong>Cross-lane recovery</strong><p>Eligible availability and service failures can route to the other lane instead of simply losing the moment.</p></div>
@@ -822,6 +823,7 @@ flowchart LR
       </div>
       <div class="honesty-grid">
         <article class="honesty-card"><div class="symbol">OFFLINE</div><h3>The note stays local</h3><p>“Try again” performs a real retry. Repeated taps and late results cannot replace newer work.</p></article>
+        <article class="honesty-card"><div class="symbol">STOP</div><h3>Stop means stop</h3><p>The active model or network task is cancelled, no fallback route starts afterward, and a late result cannot replace the current Moment.</p></article>
         <article class="honesty-card"><div class="symbol">TIMEOUT</div><h3>The lane is named honestly</h3><p>On-device and gateway timeouts have separate product-neutral explanations and cancellation behavior.</p></article>
         <article class="honesty-card"><div class="symbol">LIMIT</div><h3>The server supplies the policy</h3><p>The UI avoids invented weekly limits, reset dates, meters, or “unlimited” promises.</p></article>
         <article class="honesty-card"><div class="symbol">REFUSAL</div><h3>Safe, calm presentation</h3><p>Model and gateway refusals become understandable app language without exposing the provider.</p></article>

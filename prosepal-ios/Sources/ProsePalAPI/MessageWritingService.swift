@@ -33,13 +33,16 @@ public protocol MomentDraftRefinementClient: MomentDraftClient {
 public struct GenerationTimeoutPolicy: Sendable {
     public var onDevice: Duration
     public var gateway: Duration
+    public var total: Duration
 
     public init(
         onDevice: Duration = .seconds(20),
-        gateway: Duration = .seconds(45)
+        gateway: Duration = .seconds(45),
+        total: Duration = .seconds(65)
     ) {
         self.onDevice = onDevice
         self.gateway = gateway
+        self.total = total
     }
 }
 
@@ -59,6 +62,13 @@ public struct RoutingMessageWritingService: MessageWritingService {
     }
 
     public func draft(for moment: MomentInput) async throws -> MomentDraftBundle {
+        try await runWithinTotalDeadline {
+            try await routeDraft(for: moment)
+        }
+    }
+
+    private func routeDraft(for moment: MomentInput) async throws -> MomentDraftBundle {
+        try Task.checkCancellation()
         guard moment.hasEnoughContextForDraft else {
             throw GenerationError.unexpectedResponse(
                 message: "Add who this is for to begin."
@@ -75,12 +85,14 @@ public struct RoutingMessageWritingService: MessageWritingService {
                 return try await runCareful { try await carefulClient.draft(for: moment) }
                     .applyingLocalPressureCheck(for: moment)
             } catch let error as GenerationError {
+                try Task.checkCancellation()
                 guard error.shouldFallbackToPrivateDraftFromCarefulLane else { throw error }
                 return try await runPrivate { try await privateClient.draft(for: moment) }
                     .applyingLocalPressureCheck(for: moment)
             } catch is CancellationError {
                 throw CancellationError()
             } catch {
+                try Task.checkCancellation()
                 return try await runPrivate { try await privateClient.draft(for: moment) }
                     .applyingLocalPressureCheck(for: moment)
             }
@@ -90,6 +102,7 @@ public struct RoutingMessageWritingService: MessageWritingService {
             return try await runPrivate { try await privateClient.draft(for: moment) }
                 .applyingLocalPressureCheck(for: moment)
         } catch let error as GenerationError {
+            try Task.checkCancellation()
             guard error.shouldRouteToCarefulLane else { throw error }
             return try await runCareful { try await carefulClient.draft(for: moment) }
                 .replacingLane(.standardDraft)
@@ -97,6 +110,7 @@ public struct RoutingMessageWritingService: MessageWritingService {
         } catch is CancellationError {
             throw CancellationError()
         } catch {
+            try Task.checkCancellation()
             return try await runCareful { try await carefulClient.draft(for: moment) }
                 .replacingLane(.standardDraft)
                 .applyingLocalPressureCheck(for: moment)
@@ -108,6 +122,17 @@ public struct RoutingMessageWritingService: MessageWritingService {
         with adjustment: MomentAdjustment,
         moment: MomentInput
     ) async throws -> MomentDraftBundle {
+        try await runWithinTotalDeadline {
+            try await routeAdjustment(bundle, with: adjustment, moment: moment)
+        }
+    }
+
+    private func routeAdjustment(
+        _ bundle: MomentDraftBundle,
+        with adjustment: MomentAdjustment,
+        moment: MomentInput
+    ) async throws -> MomentDraftBundle {
+        try Task.checkCancellation()
         guard moment.safetySignal.allowsDrafting else {
             throw GenerationError.contentBlocked(
                 message: "This needs immediate support, not a draft."
@@ -122,6 +147,7 @@ public struct RoutingMessageWritingService: MessageWritingService {
                 }
                     .applyingLocalPressureCheck(for: moment)
             } catch let error as GenerationError {
+                try Task.checkCancellation()
                 guard error.shouldRouteToCarefulLane else { throw error }
                 return try await runCareful {
                     try await carefulClient.adjust(bundle, with: adjustment, moment: moment)
@@ -131,6 +157,7 @@ public struct RoutingMessageWritingService: MessageWritingService {
             } catch is CancellationError {
                 throw CancellationError()
             } catch {
+                try Task.checkCancellation()
                 return try await runCareful {
                     try await carefulClient.adjust(bundle, with: adjustment, moment: moment)
                 }
@@ -155,6 +182,16 @@ public struct RoutingMessageWritingService: MessageWritingService {
         _ bundle: MomentDraftBundle?,
         moment: MomentInput
     ) async throws -> MomentDraftBundle {
+        try await runWithinTotalDeadline {
+            try await routeTakeMoreCare(bundle, moment: moment)
+        }
+    }
+
+    private func routeTakeMoreCare(
+        _ bundle: MomentDraftBundle?,
+        moment: MomentInput
+    ) async throws -> MomentDraftBundle {
+        try Task.checkCancellation()
         guard moment.hasEnoughContextForDraft else {
             throw GenerationError.unexpectedResponse(
                 message: "Add who this is for to begin."
@@ -176,12 +213,14 @@ public struct RoutingMessageWritingService: MessageWritingService {
                 }
                 .applyingLocalPressureCheck(for: moment)
             } catch let error as GenerationError {
+                try Task.checkCancellation()
                 guard error.shouldFallbackToPrivateDraftFromCarefulLane else { throw error }
                 return try await runPrivate { try await privateClient.draft(for: moment) }
                     .applyingLocalPressureCheck(for: moment)
             } catch is CancellationError {
                 throw CancellationError()
             } catch {
+                try Task.checkCancellation()
                 return try await runPrivate { try await privateClient.draft(for: moment) }
                     .applyingLocalPressureCheck(for: moment)
             }
@@ -191,12 +230,14 @@ public struct RoutingMessageWritingService: MessageWritingService {
             return try await runCareful { try await carefulClient.draft(for: moment) }
                 .applyingLocalPressureCheck(for: moment)
         } catch let error as GenerationError {
+            try Task.checkCancellation()
             guard error.shouldFallbackToPrivateDraftFromCarefulLane else { throw error }
             return try await runPrivate { try await privateClient.draft(for: moment) }
                 .applyingLocalPressureCheck(for: moment)
         } catch is CancellationError {
             throw CancellationError()
         } catch {
+            try Task.checkCancellation()
             return try await runPrivate { try await privateClient.draft(for: moment) }
                 .applyingLocalPressureCheck(for: moment)
         }
@@ -205,19 +246,35 @@ public struct RoutingMessageWritingService: MessageWritingService {
     private func runPrivate(
         _ operation: @escaping @Sendable () async throws -> MomentDraftBundle
     ) async throws -> MomentDraftBundle {
-        try await withGenerationTimeout(
+        try Task.checkCancellation()
+        let bundle = try await withGenerationTimeout(
             timeoutPolicy.onDevice,
             lane: .onDevice,
             operation: operation
         )
+        try Task.checkCancellation()
+        return bundle
     }
 
     private func runCareful(
         _ operation: @escaping @Sendable () async throws -> MomentDraftBundle
     ) async throws -> MomentDraftBundle {
-        try await withGenerationTimeout(
+        try Task.checkCancellation()
+        let bundle = try await withGenerationTimeout(
             timeoutPolicy.gateway,
             lane: .gateway,
+            operation: operation
+        )
+        try Task.checkCancellation()
+        return bundle
+    }
+
+    private func runWithinTotalDeadline(
+        _ operation: @escaping @Sendable () async throws -> MomentDraftBundle
+    ) async throws -> MomentDraftBundle {
+        try await withGenerationTimeout(
+            timeoutPolicy.total,
+            lane: .total,
             operation: operation
         )
     }
@@ -228,8 +285,12 @@ private func withGenerationTimeout(
     lane: GenerationTimeoutLane,
     operation: @escaping @Sendable () async throws -> MomentDraftBundle
 ) async throws -> MomentDraftBundle {
-    try await withThrowingTaskGroup(of: MomentDraftBundle.self) { group in
-        group.addTask(operation: operation)
+    try Task.checkCancellation()
+    return try await withThrowingTaskGroup(of: MomentDraftBundle.self) { group in
+        group.addTask {
+            try Task.checkCancellation()
+            return try await operation()
+        }
         group.addTask {
             try await Task.sleep(for: timeout)
             throw GenerationError.timedOut(lane: lane)
@@ -239,6 +300,7 @@ private func withGenerationTimeout(
         guard let result = try await group.next() else {
             throw CancellationError()
         }
+        try Task.checkCancellation()
         return result
     }
 }

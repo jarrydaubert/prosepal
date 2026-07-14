@@ -110,6 +110,7 @@ the same response quality gate.
 | `409` | In-flight, replay-expired, or idempotency-conflict handling |
 | `422` | Content blocked |
 | `425`, `429` | Rate limited |
+| `499` | Caller cancelled; provider fallback stops and an active reservation fails without charging usage |
 | `5xx` | Service unavailable |
 
 Transport cancellation stays cancellation. Connectivity failures map to

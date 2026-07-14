@@ -35,6 +35,8 @@ is reachable from this page and has one job. Open work belongs only in
 - [SwiftUI architecture standard](./engineering/swiftui-architecture.md) —
   feature folders, state ownership, navigation, persistence, concurrency,
   previews, testing, and incremental extraction rules.
+- [Apple platform modernisation audit](./engineering/apple-platform-modernisation-audit.md) —
+  stable-toolchain adoption decisions, risks, evidence gates, and sequencing.
 - [AI generation](./engineering/ai-generation.md) — private/careful routing,
   provider-neutral generation, validation, and fallback behaviour.
 - [Gateway request ledger](./engineering/gateway-request-ledger.md) — atomic

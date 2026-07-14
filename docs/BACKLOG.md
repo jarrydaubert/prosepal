@@ -64,6 +64,10 @@ completed item instead of turning this file into a status log.
   honest progress copy; deterministic tests cover deadline propagation,
   cancellation, and late-result suppression.
 
+  The current `GenerationTimeoutPolicy.total` value is a technical cancellation
+  backstop that prevents unbounded work; it is not the release-owner-approved
+  user-experience deadline or evidence that the current wait is acceptable.
+
 - [ ] Prove and deliver the approved choose-before-edit three-option writing
   flow without weakening private-first routing. DoD: the gateway client
   preserves all three distinct `CardResponse` messages instead of selecting an
@@ -164,6 +168,14 @@ completed item instead of turning this file into a status log.
   explicitly assert that it receives zero requests; regressions fail rather than
   hanging the test run.
 
+- [ ] Make outgoing share and export presentation truthful and native. DoD:
+  destination-labelled controls do not imply that `ShareLink` can target
+  Messages, Mail, or Notes; active and saved drafts use one system share action
+  for transferable text; local-data export shares a named JSON file through a
+  typed `Transferable` while retaining explicit Copy if useful; cancellation
+  never records a send; temporary files are cleaned up; the source-string test
+  that pins simulated destinations is replaced by behavioural/UI coverage.
+
 - [ ] Decompose `MomentExperienceView.swift` incrementally while completing
   funded v1 work; do not run a separate big-bang rewrite. The remaining
   migration map is: move the memory library and details into
@@ -245,7 +257,11 @@ completed item instead of turning this file into a status log.
   only to an authenticated, tested server boundary; `exchange-apple-token`
   validates configuration and caller identity, uses bounded requests, checks
   token and database responses, stores only required revocation material, and
-  never logs codes or tokens.
+  never logs codes or tokens; the client requests only identity scopes it
+  consumes, persists the minimum Apple credential identifier needed to query
+  state, observes credential revocation, and reverts to signed out without
+  deleting unrelated local drafts. Sandbox/TestFlight evidence covers first and
+  repeat sign-in, missing code, revoked credentials, and server failure.
 
 - [ ] Prove Apple-compliant account deletion end to end. DoD: a sandbox/TestFlight
   Apple sign-in stores revocation material; deletion authenticates the caller,
@@ -256,11 +272,15 @@ completed item instead of turning this file into a status log.
 
 - [ ] Complete StoreKit and server-entitlement release proof. DoD: configured
   local StoreKit testing returns all three configured products from an
-  Xcode-launched paywall; configured production product IDs return products;
-  purchase and restore work without a forced app login; transaction updates
-  converge after renewal, approval,
-  Family Sharing change, and revocation/refund; App Store Server notifications
-  and reconciliation update staging entitlement; account switching cannot carry
+  Xcode-launched paywall; an app-hosted StoreKit Test suite directly exercises
+  `StoreKitSubscriptionClient` with verified, unverified, unrelated, and retired
+  product transactions, purchase cancellation/pending/approval, renewal, grace,
+  billing retry, expiry, refund/revocation, Family Sharing, update-stream
+  termination, and finish only after entitlement convergence; transient read
+  failure remains distinguishable from inactive entitlement. Configured
+  production product IDs return products; purchase and user-triggered restore
+  work without a forced app login; App Store Server notifications and
+  reconciliation update staging entitlement; account switching cannot carry
   Premium incorrectly; evidence is captured from sandbox/TestFlight.
 
 - [ ] Verify `appAccountToken` ownership mapping. DoD: only a valid signed-in
@@ -279,16 +299,20 @@ completed item instead of turning this file into a status log.
 - [ ] Run the complete physical-device/TestFlight acceptance loop. DoD: first
   run → person/relationship/moment/detail → private or careful candidate set →
   choose a message → adjust without losing work → copy/share/send/save passes on
-  a supported iPhone; voice input succeeds where on-device speech is available;
+  a supported iPhone; voice input succeeds where on-device speech is available,
+  and Stop preserves the final spoken words without confusing finish with
+  cancellation;
   offline and refusal states are honest; release-candidate evidence contains no
   user content or secrets. Until the three-option feasibility gate passes, use
   the current one-draft loop rather than claiming candidate-choice proof.
 
 - [ ] Qualify optional system surfaces. DoD: App Intent/Shortcuts, widget,
   Control Center/Action Button, and Share Extension are launched from their real
-  system surfaces in production-like builds and hand off correctly. Remove any
-  optional embedded target from v1 if it cannot pass without destabilizing the
-  core writing loop.
+  system surfaces in production-like builds and hand off correctly; the app
+  exposes exactly one `AppShortcutsProvider`, and extracted shortcut metadata
+  contains the intended phrases and target identity. Remove any optional
+  embedded target from v1 if it cannot pass without destabilizing the core
+  writing loop.
 
 - [ ] Reconcile App Store submission metadata and privacy evidence. DoD: built
   app and applicable extension bundles contain valid privacy manifests and
@@ -307,8 +331,10 @@ completed item instead of turning this file into a status log.
   a test that compares the Swift and gateway sets; adding a native value cannot
   reach production while the gateway would reject it.
 
-- [ ] Define handling for verified StoreKit transactions from retired or
-  temporarily unconfigured product IDs before changing the stable launch set.
+- [ ] Define handling for verified and unverified StoreKit transactions from
+  retired or temporarily unconfigured product IDs before changing the stable
+  launch set; an unrelated transaction must not make a configured entitlement
+  unknowable.
 
 - [ ] Add quantified quota UI only when the server contract supplies structured
   limit, remaining-use, and reset metadata backed by an approved product policy.

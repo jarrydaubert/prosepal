@@ -44,9 +44,12 @@ Their handoff and trust boundary is documented in
 
 ## State ownership
 
-`MomentModel` owns the active Moment, generation task, retry state, current
-draft, and draft snapshots. Generation counters and task cancellation suppress
-late results after the user changes the Moment or starts over.
+`MomentModel` owns the active Moment, generation state, retry state, current
+draft, and draft snapshots. Every initial draft, retry, rewrite, adjustment, and
+Take More Care request enters the same retained task lifecycle. Stop/reset,
+meaning-bearing input mutation, composer dismissal, app backgrounding, and a
+superseding request cancel that task; generation identity suppresses late
+results even when a dependency returns after cancellation.
 
 `MomentAccountModel` owns sign-in presentation, current account state,
 subscription products, entitlement convergence, transaction updates, and
@@ -70,9 +73,13 @@ for persistence, migration, export, and prompt-memory rules.
 ## Concurrency and cancellation
 
 The native package uses Swift 6 concurrency. Actor-isolated session, request-key,
-and model state serialize shared mutations. Generation timeouts race a transport
-operation against an injected timeout policy; cancelling the winner’s task group
-cancels the losing operation before any fallback begins.
+and model state serialize shared mutations. `GenerationTimeoutPolicy` applies
+per-lane budgets inside one total technical deadline; structured task groups
+cancel the losing operation before any eligible fallback begins. Private and
+gateway clients check cancellation around memory, request-key, transport, and
+response boundaries. The Edge Function combines the incoming request signal
+with its provider timeout, stops the fallback-model loop on cancellation, and
+finalizes an existing ledger reservation as failed rather than consuming usage.
 
 ## Data boundaries
 
@@ -134,8 +141,8 @@ inside the monolith:
 
 | Region | Owning file and symbols |
 |---|---|
-| Draft state and relaunch recovery | `MomentExperienceView.swift`: `MomentDraftRecoveryState`, `MomentDraftRecoveryStoring`, `MomentDraftRecoveryStore`, `MomentModel` |
-| Voice, share, and draft-action presentation | `MomentExperienceView.swift`: `MomentVoiceCaptureSheet`, `MomentDraftUseSheet`, `MomentShareRequest`, `MomentActivityView` |
+| Draft state and relaunch recovery | `MomentExperienceView.swift`: `MomentDraftRecoveryState`, `MomentDraftRecoveryStoring`, `MomentDraftRecoveryStore`, `MomentModel`; `MomentDraftUnavailableNotice.swift`: typed unavailable reason and presentation contract |
+| Voice and active-draft action presentation | `MomentExperienceView.swift`: `MomentVoiceCaptureSheet`, `MomentDraftUseSheet` |
 | App-root navigation and welcome state | `MomentAppRootView.swift`: `MomentAppRootView`, `MomentRootTabs`, `MomentRootTab`, `MomentWelcomeState` |
 | Core Moment composer and generated-draft experience | `MomentExperienceView.swift`: `MomentSheetView`, including loading, retry, refusal, revision, pressure feedback, memory controls, copy/share/save, and draft history; `MomentGuidedComposerLayout.swift`: the type-erased guided-composer layout and numbered step shell |
 | Relationship and occasion pickers | `MomentExperienceView.swift`: `MomentRelationshipPickerSheet`, `MomentOccasionPickerSheet`, and their row types |
@@ -148,6 +155,23 @@ inside the monolith:
 Use these symbols as navigation anchors rather than durable line numbers. When a
 task changes one region, prefer extracting that complete region and its private
 helpers instead of moving unrelated code or attempting a big-bang rewrite.
+
+## Apple service and system-surface ownership
+
+| Boundary | Owner |
+|---|---|
+| Account and entitlement presentation state | `ProsePalUI/MomentAccountModel.swift`: auth presentation, product selection, entitlement convergence, transaction-update coordination, and account maintenance |
+| StoreKit 2 client | `ProsePalAPI/SubscriptionClient.swift`: products, verified transactions, purchase, current entitlement, user-triggered restore, update stream, and finish actions |
+| Authentication and session | `ProsePalAPI/AuthSession.swift` and `SupabaseAuthClient.swift`: Keychain session, refresh serialization, nonce support, and Supabase token exchange |
+| App Intent and sanitized launch domain | `ProsePalUI/ProsePalAppIntents.swift`: `StartMomentIntent`, launch/deep-link payloads, app-group handoff, and package shortcut metadata |
+| App-target shortcut registration | `App/ProsePalAppShortcuts.swift`: app shortcut provider metadata |
+| Widget and Control | `Widgets/ProsePalWidgets.swift`: staging-aware widget/control identifiers and app-opening URLs |
+| Incoming system share | `ShareExtension/ShareViewController.swift`: provider loading, sanitization, preview, app-group handoff, and extension completion |
+| Outgoing saved-draft share | `ProsePalUI/Support/MomentShareSheet.swift`: system activity presentation used by Saved Drafts |
+| Voice transcription | `ProsePalUI/MomentVoiceCapture.swift`: permissions, protocol boundary, capture state, and on-device speech implementation |
+
+Stable-toolchain adoption decisions and evidence gates for these owners are in
+the [Apple platform modernisation audit](./apple-platform-modernisation-audit.md).
 
 ## Source map
 

@@ -30,6 +30,22 @@ Timeouts, offline state, usage limits, rate limits, malformed responses, and
 provider refusals map into `GenerationError`. Views receive stable product
 errors rather than provider-specific exceptions.
 
+## Generation lifecycle
+
+`MomentModel` is the only UI-layer owner of generation tasks. Initial writing,
+retry, rewrite, adjustment, and Take More Care all enter one retained lifecycle.
+The model cancels obsolete work when the user chooses Stop, resets, changes any
+meaning-bearing input, dismisses the composer, backgrounds the app, or starts a
+superseding request. A generation identity prevents a cancelled dependency from
+overwriting a newer result even if that dependency returns late.
+
+`RoutingMessageWritingService` owns the injected per-lane timeouts and one total
+technical deadline. Cancellation is checked before and after each lane and
+before every fallback, so cancelled work cannot silently start another route.
+The Foundation Models client cooperates around memory lookup and model response;
+the gateway client cooperates around request identity, transport, and response
+handling.
+
 ## Gateway request lifecycle
 
 ```mermaid
@@ -53,7 +69,7 @@ sequenceDiagram
     Edge-->>App: Error, no provider call
   else reserved
     DB-->>Edge: Reservation token and usage summary
-    Edge->>AI: Structured prompt, bounded provider budget
+    Edge->>AI: Structured prompt, request signal + bounded provider budget
     AI-->>Edge: Structured candidates
     Edge->>Edge: Quality and leakage checks
     Edge->>DB: Finalize completed or failed
@@ -63,7 +79,9 @@ sequenceDiagram
 
 The provider call begins only after the database reservation succeeds. A failed
 provider or quality attempt does not consume user usage. A successful finalize
-consumes usage once.
+consumes usage once. If the incoming request is cancelled after reservation,
+the Edge Function aborts the active provider fetch, does not start another
+fallback model, and finalizes the reservation as failed.
 
 Gateway success carries three distinct candidates with equal contract status.
 Array order is transport order, not a quality ranking or a declaration that the
@@ -83,6 +101,8 @@ The Edge Function:
 - enforces supported contract and lane versions;
 - reserves burst and quota capacity atomically;
 - uses a bounded provider request with configured fallbacks;
+- propagates incoming request cancellation into the provider fetch and stops
+  fallback attempts;
 - requires three distinct structured messages;
 - rejects generic filler, provider leakage, and sensitive-occasion failures;
 - logs metadata only; and

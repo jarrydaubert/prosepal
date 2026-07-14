@@ -12,38 +12,6 @@ import UIKit
 import AppKit
 #endif
 
-public enum MomentDraftUnavailableReason: Equatable, Sendable {
-    case offline
-    case timedOut(lane: GenerationTimeoutLane)
-    case rateLimited
-    case usageLimitReached
-    case contentBlocked
-    case serviceUnavailable
-    case unexpectedResponse
-    case unexpected
-
-    init(_ error: GenerationError) {
-        switch error {
-        case .offline:
-            self = .offline
-        case .timedOut(let lane):
-            self = .timedOut(lane: lane)
-        case .rateLimited:
-            self = .rateLimited
-        case .requestNeedsFreshKey:
-            self = .rateLimited
-        case .usageLimitReached:
-            self = .usageLimitReached
-        case .contentBlocked:
-            self = .contentBlocked
-        case .serviceUnavailable:
-            self = .serviceUnavailable
-        case .unexpectedResponse:
-            self = .unexpectedResponse
-        }
-    }
-}
-
 public enum MomentDraftSnapshotReason: String, Codable, Equatable, Sendable {
     case edit
     case rewrite
@@ -227,13 +195,27 @@ public struct MomentDraftRecoveryStore: MomentDraftRecoveryStoring {
 @MainActor
 @Observable
 public final class MomentModel {
-    public var personName: String = ""
-    public var relationship: Relationship = .closeFriend
-    public var occasion: Occasion = .birthday
-    public var register: MomentRegister = .react
-    public var tone: Tone = .heartfelt
-    public var length: MessageLength = .standard
-    public var trueThing: String = ""
+    public var personName: String = "" {
+        didSet { meaningBearingInputDidChange(from: oldValue, to: personName) }
+    }
+    public var relationship: Relationship = .closeFriend {
+        didSet { meaningBearingInputDidChange(from: oldValue, to: relationship) }
+    }
+    public var occasion: Occasion = .birthday {
+        didSet { meaningBearingInputDidChange(from: oldValue, to: occasion) }
+    }
+    public var register: MomentRegister = .react {
+        didSet { meaningBearingInputDidChange(from: oldValue, to: register) }
+    }
+    public var tone: Tone = .heartfelt {
+        didSet { meaningBearingInputDidChange(from: oldValue, to: tone) }
+    }
+    public var length: MessageLength = .standard {
+        didSet { meaningBearingInputDidChange(from: oldValue, to: length) }
+    }
+    public var trueThing: String = "" {
+        didSet { meaningBearingInputDidChange(from: oldValue, to: trueThing) }
+    }
     public var bundle: MomentDraftBundle? {
         didSet {
             if Self.pressureDraftKey(for: bundle) != Self.pressureDraftKey(for: oldValue) {
@@ -259,6 +241,73 @@ public final class MomentModel {
     @ObservationIgnored private let draftRecoveryStore: any MomentDraftRecoveryStoring
     @ObservationIgnored private var draftTask: Task<Void, Never>?
     @ObservationIgnored private var draftGeneration = 0
+    @ObservationIgnored private var isBatchUpdatingMeaningBearingInputs = false
+
+    private enum GenerationRequest: Sendable {
+        case draft(input: MomentInput, originalBundle: MomentDraftBundle?)
+        case adjustment(
+            input: MomentInput,
+            bundle: MomentDraftBundle,
+            adjustment: MomentAdjustment,
+            acknowledgePressureResult: Bool
+        )
+        case takeMoreCare(
+            input: MomentInput,
+            bundle: MomentDraftBundle?,
+            acknowledgePressureResult: Bool
+        )
+
+        var trigger: String {
+            switch self {
+            case .draft:
+                "manual"
+            case .adjustment(_, _, let adjustment, _):
+                "adjust_\(adjustment.rawValue)"
+            case .takeMoreCare:
+                "take_more_care"
+            }
+        }
+
+        var input: MomentInput {
+            switch self {
+            case .draft(let input, _),
+                 .adjustment(let input, _, _, _),
+                 .takeMoreCare(let input, _, _):
+                input
+            }
+        }
+
+        var originalBundle: MomentDraftBundle? {
+            switch self {
+            case .draft(_, let bundle),
+                 .takeMoreCare(_, let bundle, _):
+                bundle
+            case .adjustment(_, let bundle, _, _):
+                bundle
+            }
+        }
+
+        var acknowledgesPressureResult: Bool {
+            switch self {
+            case .draft:
+                false
+            case .adjustment(_, _, _, let acknowledge),
+                 .takeMoreCare(_, _, let acknowledge):
+                acknowledge
+            }
+        }
+
+        var unexpectedErrorMessage: String {
+            switch self {
+            case .draft:
+                "ProsePal could not write this yet."
+            case .adjustment:
+                "ProsePal could not reshape this yet."
+            case .takeMoreCare:
+                "ProsePal could not take more care with this yet."
+            }
+        }
+    }
 
     public init(
         service: any MessageWritingService,
@@ -311,16 +360,18 @@ public final class MomentModel {
     }
 
     public func applyLaunchRequest(_ request: MomentLaunchRequest) {
-        if let personName = request.personName {
-            self.personName = ProsePalTextInput.personName(personName)
+        batchUpdateMeaningBearingInputs {
+            if let personName = request.personName {
+                self.personName = ProsePalTextInput.personName(personName)
+            }
+            if let occasion = request.occasion {
+                self.occasion = occasion
+            }
+            if let sharedText = request.sharedText {
+                trueThing = ProsePalTextInput.momentDetail(sharedText)
+            }
+            alignRegisterForMoment()
         }
-        if let occasion = request.occasion {
-            self.occasion = occasion
-        }
-        if let sharedText = request.sharedText {
-            trueThing = ProsePalTextInput.momentDetail(sharedText)
-        }
-        alignRegisterForMoment()
         resetDraftForMomentChange()
     }
 
@@ -333,8 +384,7 @@ public final class MomentModel {
     }
 
     public func resetDraftForMomentChange() {
-        draftTask?.cancel()
-        _ = nextDraftGeneration()
+        cancelActiveGeneration()
         bundle = nil
         draftSnapshots.removeAll()
         errorMessage = nil
@@ -343,15 +393,16 @@ public final class MomentModel {
     }
 
     public func startNewMoment() {
-        draftTask?.cancel()
-        _ = nextDraftGeneration()
-        personName = ""
-        relationship = .closeFriend
-        occasion = .birthday
-        register = .react
-        tone = .heartfelt
-        length = .standard
-        trueThing = ""
+        cancelActiveGeneration()
+        batchUpdateMeaningBearingInputs {
+            personName = ""
+            relationship = .closeFriend
+            occasion = .birthday
+            register = .react
+            tone = .heartfelt
+            length = .standard
+            trueThing = ""
+        }
         bundle = nil
         draftSnapshots.removeAll()
         errorMessage = nil
@@ -360,18 +411,31 @@ public final class MomentModel {
         clearDraftRecovery()
     }
 
-    public func draftNow() async {
-        await draftNow(generation: nextDraftGeneration(), trigger: "manual")
-    }
-
     public func startDraft() {
         guard canDraft, !isDrafting else { return }
-        isDrafting = true
-        draftTask?.cancel()
-        let generation = nextDraftGeneration()
-        draftTask = Task { [weak self] in
-            await self?.draftNow(generation: generation, trigger: "manual")
-        }
+        launchDraft()
+    }
+
+    public func retryDraft() {
+        guard canDraft else { return }
+        launchDraft()
+    }
+
+    public func rewriteDraft() {
+        guard canDraft else { return }
+        launchDraft()
+    }
+
+    public func stopGeneration() {
+        cancelActiveGeneration()
+    }
+
+    public func composerDidDismiss() {
+        cancelActiveGeneration()
+    }
+
+    public func appDidEnterBackground() {
+        cancelActiveGeneration()
     }
 
     public var canRestorePreviousDraft: Bool {
@@ -384,8 +448,7 @@ public final class MomentModel {
 
     public func restorePreviousDraft() {
         guard let snapshot = draftSnapshots.popLast() else { return }
-        draftTask?.cancel()
-        _ = nextDraftGeneration()
+        cancelActiveGeneration()
         bundle = snapshot.bundle
         errorMessage = nil
         draftUnavailableReason = nil
@@ -395,8 +458,7 @@ public final class MomentModel {
     public func restoreDraftSnapshot(id: UUID) {
         guard let index = draftSnapshots.firstIndex(where: { $0.id == id }) else { return }
         let snapshot = draftSnapshots[index]
-        draftTask?.cancel()
-        _ = nextDraftGeneration()
+        cancelActiveGeneration()
         draftSnapshots.removeSubrange(index...)
         bundle = snapshot.bundle
         errorMessage = nil
@@ -447,29 +509,51 @@ public final class MomentModel {
         draftUnavailableReason = nil
     }
 
-    private func draftNow(generation: Int, trigger: String = "automatic") async {
-        guard canDraft else { return }
-        let input = moment
-        let originalBundle = bundle
-        let requestID = UUID().uuidString
-        let startedAt = Date()
+    private func launchDraft() {
+        startGeneration(.draft(input: moment, originalBundle: bundle))
+    }
+
+    private func startGeneration(_ request: GenerationRequest) {
+        cancelActiveGeneration()
+        let generation = draftGeneration
         isDrafting = true
         errorMessage = nil
         draftUnavailableReason = nil
+        draftTask = Task { [weak self] in
+            await self?.runGeneration(request, generation: generation)
+        }
+    }
+
+    private func runGeneration(_ request: GenerationRequest, generation: Int) async {
+        let requestID = UUID().uuidString
+        let startedAt = Date()
         diagnostics.momentDraftStarted(
             requestID: requestID,
-            moment: input,
-            trigger: trigger
+            moment: request.input,
+            trigger: request.trigger
         )
         defer {
             finishDrafting(generation: generation)
         }
 
         do {
-            let nextBundle = try await service.draft(for: input)
+            try Task.checkCancellation()
+            let nextBundle: MomentDraftBundle
+            switch request {
+            case .draft(let input, _):
+                nextBundle = try await service.draft(for: input)
+            case .adjustment(let input, let bundle, let adjustment, _):
+                nextBundle = try await service.adjust(bundle, with: adjustment, moment: input)
+            case .takeMoreCare(let input, let bundle, _):
+                nextBundle = try await service.takeMoreCare(bundle, moment: input)
+            }
+            try Task.checkCancellation()
             guard isCurrentGeneration(generation) else { return }
-            storeRecoverableDraftSnapshot(originalBundle, reason: .rewrite)
+            storeRecoverableDraftSnapshot(request.originalBundle, reason: .rewrite)
             bundle = nextBundle
+            if request.acknowledgesPressureResult {
+                acknowledgedPressureDraftKey = Self.pressureDraftKey(for: nextBundle)
+            }
             diagnostics.momentDraftSucceeded(
                 requestID: requestID,
                 bundle: nextBundle,
@@ -478,7 +562,7 @@ public final class MomentModel {
         } catch is CancellationError {
             return
         } catch let error as GenerationError {
-            guard isCurrentGeneration(generation) else { return }
+            guard !Task.isCancelled, isCurrentGeneration(generation) else { return }
             errorMessage = error.userSafeMessage
             draftUnavailableReason = MomentDraftUnavailableReason(error)
             diagnostics.momentDraftFailed(
@@ -487,8 +571,8 @@ public final class MomentModel {
                 durationMs: Self.durationMs(since: startedAt)
             )
         } catch {
-            guard isCurrentGeneration(generation) else { return }
-            errorMessage = "ProsePal could not write this yet."
+            guard !Task.isCancelled, isCurrentGeneration(generation) else { return }
+            errorMessage = request.unexpectedErrorMessage
             draftUnavailableReason = .unexpected
             diagnostics.momentDraftFailed(
                 requestID: requestID,
@@ -504,16 +588,12 @@ public final class MomentModel {
 
     private func adjust(_ adjustment: MomentAdjustment, acknowledgePressureResult: Bool) {
         guard let bundle else { return }
-        draftTask?.cancel()
-        let generation = nextDraftGeneration()
-        draftTask = Task { [weak self, bundle] in
-            await self?.adjustNow(
-                bundle,
-                adjustment: adjustment,
-                generation: generation,
-                acknowledgePressureResult: acknowledgePressureResult
-            )
-        }
+        startGeneration(.adjustment(
+            input: moment,
+            bundle: bundle,
+            adjustment: adjustment,
+            acknowledgePressureResult: acknowledgePressureResult
+        ))
     }
 
     public func takeMoreCare() {
@@ -522,129 +602,11 @@ public final class MomentModel {
 
     private func takeMoreCare(acknowledgePressureResult: Bool) {
         guard canDraft else { return }
-        draftTask?.cancel()
-        let generation = nextDraftGeneration()
-        let currentBundle = bundle
-        draftTask = Task { [weak self, currentBundle] in
-            await self?.takeMoreCareNow(
-                currentBundle,
-                generation: generation,
-                acknowledgePressureResult: acknowledgePressureResult
-            )
-        }
-    }
-
-    private func adjustNow(
-        _ bundle: MomentDraftBundle,
-        adjustment: MomentAdjustment,
-        generation: Int,
-        acknowledgePressureResult: Bool
-    ) async {
-        let input = moment
-        let requestID = UUID().uuidString
-        let startedAt = Date()
-        isDrafting = true
-        errorMessage = nil
-        draftUnavailableReason = nil
-        diagnostics.momentDraftStarted(
-            requestID: requestID,
-            moment: input,
-            trigger: "adjust_\(adjustment.rawValue)"
-        )
-        defer {
-            finishDrafting(generation: generation)
-        }
-
-        do {
-            let nextBundle = try await service.adjust(bundle, with: adjustment, moment: input)
-            guard isCurrentGeneration(generation) else { return }
-            storeRecoverableDraftSnapshot(bundle, reason: .rewrite)
-            self.bundle = nextBundle
-            if acknowledgePressureResult {
-                acknowledgedPressureDraftKey = Self.pressureDraftKey(for: nextBundle)
-            }
-            diagnostics.momentDraftSucceeded(
-                requestID: requestID,
-                bundle: nextBundle,
-                durationMs: Self.durationMs(since: startedAt)
-            )
-        } catch is CancellationError {
-            return
-        } catch let error as GenerationError {
-            guard isCurrentGeneration(generation) else { return }
-            errorMessage = error.userSafeMessage
-            draftUnavailableReason = MomentDraftUnavailableReason(error)
-            diagnostics.momentDraftFailed(
-                requestID: requestID,
-                category: error.diagnosticsCategory,
-                durationMs: Self.durationMs(since: startedAt)
-            )
-        } catch {
-            guard isCurrentGeneration(generation) else { return }
-            errorMessage = "ProsePal could not reshape this yet."
-            draftUnavailableReason = .unexpected
-            diagnostics.momentDraftFailed(
-                requestID: requestID,
-                category: "unexpected_error",
-                durationMs: Self.durationMs(since: startedAt)
-            )
-        }
-    }
-
-    private func takeMoreCareNow(
-        _ bundle: MomentDraftBundle?,
-        generation: Int,
-        acknowledgePressureResult: Bool
-    ) async {
-        let input = moment
-        let requestID = UUID().uuidString
-        let startedAt = Date()
-        isDrafting = true
-        errorMessage = nil
-        draftUnavailableReason = nil
-        diagnostics.momentDraftStarted(
-            requestID: requestID,
-            moment: input,
-            trigger: "take_more_care"
-        )
-        defer {
-            finishDrafting(generation: generation)
-        }
-
-        do {
-            let nextBundle = try await service.takeMoreCare(bundle, moment: input)
-            guard isCurrentGeneration(generation) else { return }
-            storeRecoverableDraftSnapshot(bundle, reason: .rewrite)
-            self.bundle = nextBundle
-            if acknowledgePressureResult {
-                acknowledgedPressureDraftKey = Self.pressureDraftKey(for: nextBundle)
-            }
-            diagnostics.momentDraftSucceeded(
-                requestID: requestID,
-                bundle: nextBundle,
-                durationMs: Self.durationMs(since: startedAt)
-            )
-        } catch is CancellationError {
-            return
-        } catch let error as GenerationError {
-            guard isCurrentGeneration(generation) else { return }
-            errorMessage = error.userSafeMessage
-            draftUnavailableReason = MomentDraftUnavailableReason(error)
-            diagnostics.momentDraftFailed(
-                requestID: requestID,
-                category: error.diagnosticsCategory,
-                durationMs: Self.durationMs(since: startedAt)
-            )
-        } catch {
-            guard isCurrentGeneration(generation) else { return }
-            errorMessage = "ProsePal could not take more care with this yet."
-            draftUnavailableReason = .unexpected
-            diagnostics.momentDraftFailed(
-                requestID: requestID,
-                category: "unexpected_error",
-                durationMs: Self.durationMs(since: startedAt)
-            )
-        }
+        startGeneration(.takeMoreCare(
+            input: moment,
+            bundle: bundle,
+            acknowledgePressureResult: acknowledgePressureResult
+        ))
     }
 
     private func nextDraftGeneration() -> Int {
@@ -659,7 +621,29 @@ public final class MomentModel {
     private func finishDrafting(generation: Int) {
         if isCurrentGeneration(generation) {
             isDrafting = false
+            draftTask = nil
         }
+    }
+
+    private func cancelActiveGeneration() {
+        draftTask?.cancel()
+        draftTask = nil
+        _ = nextDraftGeneration()
+        isDrafting = false
+    }
+
+    private func meaningBearingInputDidChange<Value: Equatable>(
+        from oldValue: Value,
+        to newValue: Value
+    ) {
+        guard !isBatchUpdatingMeaningBearingInputs, oldValue != newValue else { return }
+        resetDraftForMomentChange()
+    }
+
+    private func batchUpdateMeaningBearingInputs(_ update: () -> Void) {
+        isBatchUpdatingMeaningBearingInputs = true
+        defer { isBatchUpdatingMeaningBearingInputs = false }
+        update()
     }
 
     private static func durationMs(since startedAt: Date) -> Int {
@@ -685,13 +669,15 @@ public final class MomentModel {
     private func restoreRecoveredDraftIfAvailable() {
         guard let state = draftRecoveryStore.load() else { return }
 
-        personName = state.personName
-        relationship = state.relationship
-        occasion = state.occasion
-        register = state.register
-        tone = state.tone
-        length = state.length
-        trueThing = state.trueThing
+        batchUpdateMeaningBearingInputs {
+            personName = state.personName
+            relationship = state.relationship
+            occasion = state.occasion
+            register = state.register
+            tone = state.tone
+            length = state.length
+            trueThing = state.trueThing
+        }
         draftSnapshots = state.draftSnapshots
         bundle = state.bundle
         errorMessage = nil
@@ -1353,30 +1339,23 @@ struct MomentSheetView: View {
             if newValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 hasCommittedPersonEntry = false
             }
-            model.resetDraftForMomentChange()
         }
         .onChange(of: model.relationship) { _, newValue in
             diagnostics.selectionChanged(kind: "moment_relationship", value: newValue.rawValue)
-            model.resetDraftForMomentChange()
         }
         .onChange(of: model.occasion) { _, newValue in
             diagnostics.selectionChanged(kind: "moment", value: newValue.rawValue)
             model.alignRegisterForMoment()
-            model.resetDraftForMomentChange()
         }
         .onChange(of: model.register) { _, newValue in
             diagnostics.selectionChanged(kind: "moment_register", value: newValue.rawValue)
-            model.resetDraftForMomentChange()
         }
         .onChange(of: model.tone) { _, newValue in
             diagnostics.selectionChanged(kind: "moment_tone", value: newValue.rawValue)
-            model.resetDraftForMomentChange()
         }
         .onChange(of: model.length) { _, newValue in
             diagnostics.selectionChanged(kind: "moment_length", value: newValue.rawValue)
-            model.resetDraftForMomentChange()
         }
-        .onChange(of: model.trueThing) { _, _ in model.resetDraftForMomentChange() }
         .onAppear {
             if model.bundle != nil && !currentPersonName.isEmpty {
                 hasCommittedPersonEntry = true
@@ -1391,6 +1370,9 @@ struct MomentSheetView: View {
                     hasEntered = true
                 }
             }
+        }
+        .onDisappear {
+            model.composerDidDismiss()
         }
     }
 
@@ -2337,7 +2319,8 @@ struct MomentSheetView: View {
     private var generatingContent: some View {
         MomentGeneratingView(
             noteText: model.trueThing,
-            isCareful: model.moment.isCarefulMode
+            isCareful: model.moment.isCarefulMode,
+            onStop: model.stopGeneration
         )
     }
 
@@ -2396,9 +2379,7 @@ struct MomentSheetView: View {
 
         hasCommittedPersonEntry = true
         focusedField = nil
-        Task {
-            await model.draftNow()
-        }
+        model.startDraft()
     }
 
     private func submitPersonEntry(focusNote: Bool = false) {
@@ -2525,7 +2506,7 @@ struct MomentSheetView: View {
 
     private var offlineRetryButton: some View {
         Button {
-            model.startDraft()
+            model.retryDraft()
         } label: {
             Label("Try again", systemImage: "arrow.clockwise")
                 .font(.subheadline.weight(.semibold))
@@ -2660,9 +2641,7 @@ struct MomentSheetView: View {
     private var generationErrorActions: some View {
         VStack(spacing: 10) {
             Button {
-                Task {
-                    await model.draftNow()
-                }
+                model.retryDraft()
             } label: {
                 Label("Try again", systemImage: "arrow.clockwise")
                     .font(.headline.weight(.semibold))
@@ -3648,9 +3627,7 @@ struct MomentSheetView: View {
                 HStack(spacing: 8) {
                     draftRefineChip(title: "Another", systemImage: "arrow.clockwise") {
                         focusedField = nil
-                        Task {
-                            await model.draftNow()
-                        }
+                        model.rewriteDraft()
                     }
                     .disabled(!model.canDraft)
 
@@ -4052,9 +4029,7 @@ private struct MomentDraftHistorySheet: View {
 
             if notice.canRetry && model.canDraft {
                 Button {
-                    Task {
-                        await model.draftNow()
-                    }
+                    model.retryDraft()
                 } label: {
                     Label("Try again", systemImage: "arrow.clockwise")
                         .frame(maxWidth: .infinity)

@@ -34,6 +34,7 @@ const fixedRequest: Parameters<typeof buildPrompt>[0] = {
 function makeRequest(
   payload: unknown = fixedRequest,
   headers: Record<string, string> = {},
+  signal?: AbortSignal,
 ): Request {
   return new Request("https://example.supabase.co/functions/v1/generate-card", {
     method: "POST",
@@ -43,6 +44,7 @@ function makeRequest(
       ...headers,
     },
     body: JSON.stringify(payload),
+    signal,
   });
 }
 
@@ -742,6 +744,60 @@ Deno.test("tries configured provider fallback models without exposing them to th
   assert(!combinedLogs.includes("Dad"));
   assert(!combinedLogs.includes("quiet cup of tea"));
   assert(!combinedLogs.includes("Happy birthday"));
+});
+
+Deno.test("client cancellation aborts provider work and never starts a fallback model", async () => {
+  const controller = new AbortController();
+  const usageCalls: Array<{
+    functionName: string;
+    params: Record<string, unknown>;
+    serviceRoleKey: string;
+  }> = [];
+  let providerCalls = 0;
+  let markProviderStarted: (() => void) | undefined;
+  const providerStarted = new Promise<void>((resolve) => {
+    markProviderStarted = resolve;
+  });
+  const deps = makeDeps({
+    anonymous: true,
+    provider: true,
+    providerFallbackModels: "fallback-free-model",
+    captureUsageCalls: usageCalls,
+  });
+  deps.fetch = async (
+    _input: RequestInfo | URL,
+    init?: RequestInit,
+  ): Promise<Response> => {
+    providerCalls += 1;
+    markProviderStarted?.();
+    return await new Promise<Response>((_resolve, reject) => {
+      const signal = init?.signal;
+      if (signal?.aborted) {
+        reject(new DOMException("Aborted", "AbortError"));
+        return;
+      }
+      signal?.addEventListener(
+        "abort",
+        () => reject(new DOMException("Aborted", "AbortError")),
+        { once: true },
+      );
+    });
+  };
+
+  const responsePromise = handleGenerateCard(
+    makeRequest(fixedRequest, {}, controller.signal),
+    deps,
+  );
+  await providerStarted;
+  controller.abort();
+  const response = await responsePromise;
+
+  assertEquals(response.status, 499);
+  assertEquals(providerCalls, 1);
+  assertEquals(usageCalls.length, 2);
+  assertEquals(usageCalls[1].functionName, "finalize_card_request");
+  assertEquals(usageCalls[1].params.p_outcome, "failed");
+  assertEquals(usageCalls[1].params.p_failure_bucket, "request_cancelled");
 });
 
 Deno.test("tries fallback model when primary output fails quality checks", async () => {

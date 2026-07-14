@@ -272,6 +272,100 @@ func laneTimeoutCancelsTheUnderlyingOperationBeforeFallback() async {
 }
 
 @Test
+func cancellationBeforeRoutingDoesNotCallEitherProvider() async {
+    let gate = CancellationTestGate()
+    let privateClient = RecordingMomentDraftClient(
+        bundle: MomentDraftBundle(messageText: "Private.", lane: .privateDraft)
+    )
+    let carefulClient = RecordingMomentDraftClient(
+        bundle: MomentDraftBundle(messageText: "Careful.", lane: .takeMoreCare)
+    )
+    let service = RoutingMessageWritingService(
+        privateClient: privateClient,
+        carefulClient: carefulClient
+    )
+    let task = Task {
+        await gate.wait()
+        return try await service.draft(for: cancellationTestMoment)
+    }
+
+    task.cancel()
+    await gate.open()
+
+    do {
+        _ = try await task.value
+        Issue.record("Expected cancellation before routing to throw.")
+    } catch is CancellationError {
+        // Expected.
+    } catch {
+        Issue.record("Expected CancellationError, got \(error).")
+    }
+
+    #expect(await privateClient.draftCallCount == 0)
+    #expect(await carefulClient.draftCallCount == 0)
+}
+
+@Test(arguments: ServiceCancellationRoute.allCases)
+func cancellationDuringProviderWorkNeverStartsFallback(
+    route: ServiceCancellationRoute
+) async throws {
+    let cancellingClient = CancellationDisguisingMomentDraftClient()
+    let fallbackClient = RecordingMomentDraftClient(
+        bundle: MomentDraftBundle(messageText: "Forbidden fallback.", lane: .privateDraft)
+    )
+    let service: RoutingMessageWritingService
+
+    switch route {
+    case .draft, .adjustment:
+        service = RoutingMessageWritingService(
+            privateClient: cancellingClient,
+            carefulClient: fallbackClient
+        )
+    case .takeMoreCare:
+        service = RoutingMessageWritingService(
+            privateClient: fallbackClient,
+            carefulClient: cancellingClient
+        )
+    }
+
+    let task = Task {
+        switch route {
+        case .draft:
+            return try await service.draft(for: cancellationTestMoment)
+        case .adjustment:
+            return try await service.adjust(
+                MomentDraftBundle(messageText: "Original.", lane: .privateDraft),
+                with: .warmer,
+                moment: cancellationTestMoment
+            )
+        case .takeMoreCare:
+            return try await service.takeMoreCare(
+                MomentDraftBundle(messageText: "Original.", lane: .privateDraft),
+                moment: cancellationTestMoment
+            )
+        }
+    }
+
+    try await waitForServiceCancellation("\(route) did not reach provider work.") {
+        await cancellingClient.startedCount() == 1
+    }
+    task.cancel()
+
+    do {
+        _ = try await task.value
+        Issue.record("Expected \(route) cancellation to throw.")
+    } catch is CancellationError {
+        // Expected.
+    } catch {
+        Issue.record("Expected CancellationError for \(route), got \(error).")
+    }
+
+    #expect(await cancellingClient.cancellationCount() == 1)
+    #expect(await fallbackClient.draftCallCount == 0)
+    #expect(await fallbackClient.adjustCallCount == 0)
+}
+
+@Test
 func serviceAppliesLocalPressureCheckToReturnedDraft() async throws {
     let privateClient = RecordingMomentDraftClient(
         bundle: MomentDraftBundle(
@@ -638,6 +732,95 @@ private actor CancellationRecordingMomentDraftClient: MomentDraftClient {
         try await draft(for: moment)
     }
 }
+
+enum ServiceCancellationRoute: String, CaseIterable, CustomStringConvertible, Sendable {
+    case draft
+    case adjustment
+    case takeMoreCare
+
+    var description: String { rawValue }
+}
+
+private actor CancellationDisguisingMomentDraftClient: MomentDraftRefinementClient {
+    private var started = 0
+    private var cancellations = 0
+
+    func draft(for moment: MomentInput) async throws -> MomentDraftBundle {
+        try await blockUntilCancelled()
+    }
+
+    func adjust(
+        _ bundle: MomentDraftBundle,
+        with adjustment: MomentAdjustment,
+        moment: MomentInput
+    ) async throws -> MomentDraftBundle {
+        try await blockUntilCancelled()
+    }
+
+    func refine(
+        currentMessage: String?,
+        moment: MomentInput
+    ) async throws -> MomentDraftBundle {
+        try await blockUntilCancelled()
+    }
+
+    func startedCount() -> Int { started }
+    func cancellationCount() -> Int { cancellations }
+
+    private func blockUntilCancelled() async throws -> MomentDraftBundle {
+        started += 1
+        do {
+            try await Task.sleep(for: .seconds(60))
+            return MomentDraftBundle(messageText: "Too late.", lane: .privateDraft)
+        } catch is CancellationError {
+            cancellations += 1
+            throw GenerationError.serviceUnavailable(
+                message: "A cancelled provider must not trigger fallback."
+            )
+        }
+    }
+}
+
+private actor CancellationTestGate {
+    private var isOpen = false
+    private var waiters: [CheckedContinuation<Void, Never>] = []
+
+    func wait() async {
+        guard !isOpen else { return }
+        await withCheckedContinuation { continuation in
+            waiters.append(continuation)
+        }
+    }
+
+    func open() {
+        isOpen = true
+        let pending = waiters
+        waiters.removeAll()
+        pending.forEach { $0.resume() }
+    }
+}
+
+private func waitForServiceCancellation(
+    _ failureMessage: String,
+    timeout: Duration = .seconds(1),
+    condition: @escaping @Sendable () async -> Bool
+) async throws {
+    let clock = ContinuousClock()
+    let deadline = clock.now.advanced(by: timeout)
+    while !(await condition()) {
+        guard clock.now < deadline else {
+            Issue.record(Comment(rawValue: failureMessage))
+            return
+        }
+        try await Task.sleep(for: .milliseconds(2))
+    }
+}
+
+private let cancellationTestMoment = MomentInput(
+    personName: "Alex",
+    relationship: .closeFriend,
+    occasion: .birthday
+)
 
 private actor RefiningMomentDraftClient: MomentDraftRefinementClient {
     private let bundle: MomentDraftBundle

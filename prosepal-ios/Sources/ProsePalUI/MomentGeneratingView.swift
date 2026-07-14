@@ -3,6 +3,7 @@ import SwiftUI
 struct MomentGeneratingView: View {
     let noteText: String
     let isCareful: Bool
+    let onStop: () -> Void
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
@@ -80,6 +81,13 @@ struct MomentGeneratingView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
             .foregroundStyle(Color.prosePalCare)
+
+            Button(role: .cancel, action: onStop) {
+                Label(String(localized: "Stop writing"), systemImage: "stop.circle")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.bordered)
+            .accessibilityIdentifier("moment.generation.stop")
         }
         .padding(.top, 20)
         .padding(.horizontal, 20)
@@ -158,7 +166,8 @@ private struct MomentGeneratingSkeleton: View {
 #Preview("Generating") {
     MomentGeneratingView(
         noteText: "telling my landlord were not renewing the lease. weve been here six years, want to be kind but clear about it.",
-        isCareful: false
+        isCareful: false,
+        onStop: {}
     )
     .padding(20)
     .background {
