@@ -300,6 +300,62 @@ func widgetExtensionPlistDeclaresWidgetKitExtensionPointAndBundleIdentifier() th
     #expect(plist.contains("$(EXECUTABLE_NAME)"))
 }
 
+@Test
+func storeKitConfigurationIsSingleCanonicalAndCorrectlyReferenced() throws {
+    let project = try String(
+        contentsOf: packageRoot.appending(path: "ProsePal.xcodeproj/project.pbxproj"),
+        encoding: .utf8
+    )
+
+    // Exactly one .storekit file exists on disk under the project tree.
+    let enumerator = FileManager.default.enumerator(
+        at: packageRoot,
+        includingPropertiesForKeys: nil
+    )
+    var storekitFilesOnDisk: [String] = []
+    while let url = enumerator?.nextObject() as? URL {
+        if url.pathExtension == "storekit" { storekitFilesOnDisk.append(url.lastPathComponent) }
+    }
+    #expect(storekitFilesOnDisk == ["ProsePalStaging.storekit"])
+
+    // Exactly one PBXFileReference to a .storekit file, so a duplicate project
+    // reference (the cause of two identical scheme-dropdown entries) cannot
+    // return unnoticed.
+    let fileRefCount = project.components(separatedBy: "lastKnownFileType = com.apple.dt.storekit").count - 1
+    #expect(fileRefCount == 1)
+
+    // The config is bundled only into the app-hosted StoreKit test target so
+    // SKTestSession(configurationFileNamed:) can load it — never into an app
+    // target's Copy Bundle Resources. One membership = two textual references
+    // (the PBXBuildFile declaration and the Resources phase entry).
+    let resourceMemberships = project.components(separatedBy: "ProsePalStaging.storekit in Resources").count - 1
+    #expect(resourceMemberships == 2)
+    #expect(project.contains("SK0000000000000000000003 /* ProsePalStaging.storekit in Resources */"))
+
+    // The shared staging scheme selects the canonical config with a
+    // SRCROOT-relative path. A `../` escape does not resolve to the project file
+    // and leaves local StoreKit testing inactive (zero products on device).
+    let scheme = try String(
+        contentsOf: packageRoot.appending(
+            path: "ProsePal.xcodeproj/xcshareddata/xcschemes/ProsePal Staging.xcscheme"
+        ),
+        encoding: .utf8
+    )
+    #expect(scheme.contains("identifier = \"App/ProsePalStaging.storekit\""))
+    #expect(!scheme.contains("../App/ProsePalStaging.storekit"))
+
+    // Every product ID the staging app configures is present in the .storekit,
+    // so local testing requests exactly what the app requests.
+    let storekit = try String(
+        contentsOf: packageRoot.appending(path: "App/ProsePalStaging.storekit"),
+        encoding: .utf8
+    )
+    for productID in ["com.prosepal.pro.yearly", "com.prosepal.pro.monthly", "com.prosepal.pro.weekly"] {
+        #expect(project.contains("PROSEPAL_PREMIUM_PRODUCT_IDS = \"com.prosepal.pro.yearly,com.prosepal.pro.monthly,com.prosepal.pro.weekly\";"))
+        #expect(storekit.contains(productID), "\(productID) missing from ProsePalStaging.storekit")
+    }
+}
+
 private var packageRoot: URL {
     URL(fileURLWithPath: #filePath)
         .deletingLastPathComponent()
