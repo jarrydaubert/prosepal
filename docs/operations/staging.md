@@ -133,6 +133,23 @@ Anonymous staging generation requires both:
 
 The function fails closed when the flag is enabled without the secret.
 
+### Checking for deployment drift
+
+Deployed Edge Functions can lag the repository. A batch deploy pins a version,
+then later refactors land in `supabase/functions/` without redeploying, so the
+running function is older than the source. Symptoms are runtime behaviour that
+the current source cannot explain (for example an HTTP status the source no
+longer returns). Confirm before trusting source alone:
+
+```bash
+supabase functions download <slug> --project-ref llolwgqphwnhbiqewmcq --workdir /tmp/deployed-<slug>
+diff supabase/functions/<slug>/index.ts /tmp/deployed-<slug>/supabase/functions/<slug>/index.ts
+```
+
+An empty diff means the deployed function matches the repository. A non-empty
+diff means the deployed function is stale; redeploy from source only after
+explicit human approval (see the deploy step above).
+
 ## Safe database migration
 
 `STAGING_DB_URL` is a secret because it embeds database credentials. Keep it in
@@ -188,6 +205,28 @@ Keep the production Supabase project limited to approved production identities.
 An `Unacceptable audience in id_token` auth log means the App ID that signed the
 token is missing from the target project's Apple Client IDs; fix the provider
 allow-list rather than changing the app nonce flow or weakening token checks.
+
+### Apple account-deletion revocation credentials
+
+After a successful Supabase Apple sign-in, the app forwards the Apple
+authorization code to the `exchange-apple-token` function to store a refresh
+token for later account-deletion revocation. That function needs four Apple
+server secrets to mint the client secret:
+
+```text
+APPLE_TEAM_ID
+APPLE_CLIENT_ID
+APPLE_KEY_ID
+APPLE_PRIVATE_KEY
+```
+
+When any is missing, `readAppleServerConfig` returns nothing and the function
+answers with a 5xx, which the client surfaces as
+`auth_apple_revocation_material_failed outcome=server_unavailable`. Sign-in then
+reports a server-unavailable error even though the Supabase token exchange
+itself succeeded. Configure these as staging function secrets (never in the app
+bundle or a scheme) before treating staging Apple sign-in as working. The
+private key is the `.p8` contents with real newlines or `\n` escapes.
 
 ## DNS and inactive projects
 
