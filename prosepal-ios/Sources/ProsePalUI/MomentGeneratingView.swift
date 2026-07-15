@@ -65,6 +65,9 @@ struct MomentGeneratingView: View {
                     .font(.system(.callout, weight: .semibold))
                     .foregroundStyle(Color.prosePalInk)
                     .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityLabel(String(localized: "Writing in progress"))
+                    .accessibilityValue(String(localized: "In progress"))
+                    .accessibilityIdentifier("moment.generation.progress")
             }
 
             MomentGeneratingSkeleton()

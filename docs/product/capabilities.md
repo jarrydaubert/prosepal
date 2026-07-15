@@ -68,6 +68,7 @@ Detailed code and test evidence lives in
 | Provider refusal | Model and gateway refusals become calm, provider-neutral errors. |
 | Defensive block | A narrow existing explicit-input block stops drafting and presents support resources. It is not a general crisis classifier. |
 | Offline recovery | The note remains local and the user receives a real Try Again action. |
+| Waiting feedback | Generation, sign-in, subscription loading and actions, and account deletion expose indeterminate in-progress state, reject duplicate submission, and preserve current writing while their owning boundary responds. |
 | Usage limits | The gateway’s user-safe policy message is shown without invented counters or reset dates. |
 
 ## System surfaces

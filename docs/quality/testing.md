@@ -76,6 +76,14 @@ prove app wiring and presentation only: live Apple authorization, StoreKit
 sandbox products and transactions, provider output, system share destinations,
 VoiceOver, and physical-device behaviour remain release evidence.
 
+Network-backed UI journeys use deterministic delayed success, failure, and
+indeterminate outcomes. Their behavioural contract is immediate acknowledgement,
+an honest accessible in-progress value, duplicate-action prevention, preserved
+user input, and a confirmed success, failure, retry, or indeterminate outcome as
+appropriate. Tests reject invented percentage progress and completion shown
+before the injected boundary responds. They assert stable action and outcome
+semantics rather than exact prose, timing, layout, or view hierarchy.
+
 Generation UI coverage is intentionally shallow. It proves typed input can
 start work, the existing Stop control is reachable, successful output is
 visible and editable, and offline or failed generation returns an honest retry.

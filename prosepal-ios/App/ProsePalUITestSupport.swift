@@ -7,6 +7,8 @@ enum ProsePalUITestScenario: String {
     case firstLaunch = "first-launch"
     case signedOut = "signed-out"
     case signedIn = "signed-in"
+    case signInSuccess = "sign-in-success"
+    case signInFailure = "sign-in-failure"
     case accountDeletionSuccess = "account-deletion-success"
     case accountDeletionFailure = "account-deletion-failure"
     case accountDeletionIndeterminate = "account-deletion-indeterminate"
@@ -43,8 +45,19 @@ enum ProsePalUITestScenario: String {
                     email: "writer@example.invalid"
                 )
             )
-        case .firstLaunch, .signedOut:
+        case .firstLaunch, .signedOut, .signInSuccess, .signInFailure:
             nil
+        }
+    }
+
+    var authBehavior: ProsePalUITestAuthClient.Behavior {
+        switch self {
+        case .signInSuccess:
+            .delayedSuccess
+        case .signInFailure:
+            .delayedFailure
+        default:
+            .success
         }
     }
 
@@ -54,7 +67,8 @@ enum ProsePalUITestScenario: String {
             .failure
         case .accountDeletionIndeterminate:
             .indeterminate
-        case .firstLaunch, .signedOut, .signedIn, .accountDeletionSuccess:
+        case .firstLaunch, .signedOut, .signedIn, .signInSuccess, .signInFailure,
+             .accountDeletionSuccess:
             .success
         }
     }
@@ -92,12 +106,30 @@ actor ProsePalUITestAuthSessionStore: AuthSessionStore {
 }
 
 struct ProsePalUITestAuthClient: AuthClient {
+    enum Behavior: Sendable {
+        case success
+        case delayedSuccess
+        case delayedFailure
+    }
+
+    let behavior: Behavior
+
     func signInWithIDToken(
         provider: AuthProvider,
         idToken: String,
         nonce: String?
     ) async throws -> AuthSession {
-        AuthSession(
+        switch behavior {
+        case .success:
+            break
+        case .delayedSuccess:
+            try await Task.sleep(for: .seconds(2))
+        case .delayedFailure:
+            try await Task.sleep(for: .seconds(2))
+            throw AuthError.networkUnavailable
+        }
+
+        return AuthSession(
             accessToken: "ui-test-access-token",
             refreshToken: "ui-test-refresh-token",
             user: AuthUser(
@@ -132,16 +164,18 @@ struct ProsePalUITestAccountDeletionClient: AccountMaintenanceClient {
     let behavior: Behavior
 
     func deleteAccount(accessToken: String) async throws -> AccountDeletionOutcome {
+        try await Task.sleep(for: .seconds(2))
+
         switch behavior {
         case .success:
-            .deleted
+            return .deleted
         case .failure:
             throw AccountMaintenanceError.requestFailed(
                 statusCode: 503,
                 message: "Account deletion failed. Please try again."
             )
         case .indeterminate:
-            .indeterminate
+            return .indeterminate
         }
     }
 }

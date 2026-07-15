@@ -292,7 +292,11 @@ public final class MomentAccountModel {
             )
             diagnostics.messageAction("auth_apple_succeeded", source: source, messageCharacters: 0)
             await refreshSubscriptionEntitlement(source: "auth_apple_success")
-            showNotice("Signed in with Apple", systemImage: "checkmark.circle.fill")
+            showNotice(
+                "Signed in with Apple",
+                systemImage: "checkmark.circle.fill",
+                accessibilityIdentifier: "auth.apple.succeeded"
+            )
         } catch let error as AppleAccountLifecycleError {
             diagnostics.authEvent(
                 "auth_apple_revocation_material_failed",
@@ -305,7 +309,11 @@ public final class MomentAccountModel {
                 source: source,
                 messageCharacters: 0
             )
-            showNotice(error.userSafeMessage, systemImage: "exclamationmark.triangle")
+            showNotice(
+                error.userSafeMessage,
+                systemImage: "exclamationmark.triangle",
+                accessibilityIdentifier: "auth.apple.failed"
+            )
         } catch let error as AuthError {
             diagnostics.authEvent(
                 "auth_apple_supabase_exchange_failed",
@@ -318,10 +326,18 @@ public final class MomentAccountModel {
                 source: source,
                 messageCharacters: 0
             )
-            showNotice(error.userSafeMessage, systemImage: "exclamationmark.triangle")
+            showNotice(
+                error.userSafeMessage,
+                systemImage: "exclamationmark.triangle",
+                accessibilityIdentifier: "auth.apple.failed"
+            )
         } catch {
             diagnostics.messageAction("auth_apple_failed_unexpected_error", source: source, messageCharacters: 0)
-            showNotice("Apple sign-in failed. Please try again.", systemImage: "exclamationmark.triangle")
+            showNotice(
+                "Apple sign-in failed. Please try again.",
+                systemImage: "exclamationmark.triangle",
+                accessibilityIdentifier: "auth.apple.failed"
+            )
         }
     }
 
@@ -335,7 +351,11 @@ public final class MomentAccountModel {
         pendingAppleSignInNonce = nil
         isSigningIn = false
         diagnostics.messageAction("auth_apple_failed_\(category)", source: source, messageCharacters: 0)
-        showNotice("Apple sign-in failed. Please try again.", systemImage: "exclamationmark.triangle")
+        showNotice(
+            "Apple sign-in failed. Please try again.",
+            systemImage: "exclamationmark.triangle",
+            accessibilityIdentifier: "auth.apple.failed"
+        )
     }
 
     public func reconcileAppleCredentialState(source: String) async {
@@ -665,7 +685,11 @@ public final class MomentAccountModel {
             await applySubscriptionPurchaseResult(result, source: source)
         } catch let error as SubscriptionError {
             subscriptionErrorMessage = error.userSafeMessage
-            showNotice(error.userSafeMessage, systemImage: "exclamationmark.triangle")
+            showNotice(
+                error.userSafeMessage,
+                systemImage: "exclamationmark.triangle",
+                accessibilityIdentifier: "subscription.purchase.failed"
+            )
             diagnostics.subscriptionEvent(
                 "subscription_purchase_failed",
                 source: source,
@@ -675,7 +699,11 @@ public final class MomentAccountModel {
             )
         } catch {
             subscriptionErrorMessage = SubscriptionError.unexpectedResponse.userSafeMessage
-            showNotice(SubscriptionError.unexpectedResponse.userSafeMessage, systemImage: "exclamationmark.triangle")
+            showNotice(
+                SubscriptionError.unexpectedResponse.userSafeMessage,
+                systemImage: "exclamationmark.triangle",
+                accessibilityIdentifier: "subscription.purchase.failed"
+            )
             diagnostics.subscriptionEvent(
                 "subscription_purchase_failed",
                 source: source,
@@ -716,7 +744,11 @@ public final class MomentAccountModel {
             await applySubscriptionPurchaseResult(result, source: source)
         } catch let error as SubscriptionError {
             subscriptionErrorMessage = error.userSafeMessage
-            showNotice(error.userSafeMessage, systemImage: "exclamationmark.triangle")
+            showNotice(
+                error.userSafeMessage,
+                systemImage: "exclamationmark.triangle",
+                accessibilityIdentifier: "subscription.restore.failed"
+            )
             diagnostics.subscriptionEvent(
                 "subscription_restore_failed",
                 source: source,
@@ -726,7 +758,11 @@ public final class MomentAccountModel {
             )
         } catch {
             subscriptionErrorMessage = SubscriptionError.unexpectedResponse.userSafeMessage
-            showNotice(SubscriptionError.unexpectedResponse.userSafeMessage, systemImage: "exclamationmark.triangle")
+            showNotice(
+                SubscriptionError.unexpectedResponse.userSafeMessage,
+                systemImage: "exclamationmark.triangle",
+                accessibilityIdentifier: "subscription.restore.failed"
+            )
             diagnostics.subscriptionEvent(
                 "subscription_restore_failed",
                 source: source,
@@ -893,26 +929,60 @@ public final class MomentAccountModel {
         switch result.status {
         case .purchased:
             if didConverge, isPremiumUnlocked {
-                showNotice("Premium purchase completed", systemImage: "checkmark.seal.fill")
+                showNotice(
+                    "Premium purchase completed",
+                    systemImage: "checkmark.seal.fill",
+                    accessibilityIdentifier: "subscription.purchase.succeeded"
+                )
             } else {
                 subscriptionErrorMessage = SubscriptionError.verificationFailed.userSafeMessage
-                showNotice("Purchase needs verification", systemImage: "exclamationmark.triangle")
+                showNotice(
+                    "Purchase needs verification",
+                    systemImage: "exclamationmark.triangle",
+                    accessibilityIdentifier: "subscription.purchase.indeterminate"
+                )
             }
         case .restored:
             if case .unknown = result.entitlementState {
-                showNotice("Could not verify purchases. Please try again.", systemImage: "exclamationmark.triangle")
+                showNotice(
+                    "Could not verify purchases. Please try again.",
+                    systemImage: "exclamationmark.triangle",
+                    accessibilityIdentifier: "subscription.restore.indeterminate"
+                )
             } else {
-                showNotice(isPremiumUnlocked ? "Premium restored" : "No active subscription found", systemImage: "arrow.clockwise")
+                showNotice(
+                    isPremiumUnlocked ? "Premium restored" : "No active subscription found",
+                    systemImage: "arrow.clockwise",
+                    accessibilityIdentifier: isPremiumUnlocked
+                        ? "subscription.restore.succeeded"
+                        : "subscription.restore.none"
+                )
             }
         case .pending:
-            showNotice("Purchase pending approval", systemImage: "clock")
+            showNotice(
+                "Purchase pending approval",
+                systemImage: "clock",
+                accessibilityIdentifier: "subscription.purchase.pending"
+            )
         case .cancelled:
-            showNotice("Purchase cancelled", systemImage: "xmark.circle")
+            showNotice(
+                "Purchase cancelled",
+                systemImage: "xmark.circle",
+                accessibilityIdentifier: "subscription.purchase.cancelled"
+            )
         case .notEntitled:
             if case .unknown = result.entitlementState {
-                showNotice("Could not verify purchases. Please try again.", systemImage: "exclamationmark.triangle")
+                showNotice(
+                    "Could not verify purchases. Please try again.",
+                    systemImage: "exclamationmark.triangle",
+                    accessibilityIdentifier: "subscription.restore.indeterminate"
+                )
             } else {
-                showNotice("No active subscription found", systemImage: "arrow.clockwise")
+                showNotice(
+                    "No active subscription found",
+                    systemImage: "arrow.clockwise",
+                    accessibilityIdentifier: "subscription.restore.none"
+                )
             }
         }
     }

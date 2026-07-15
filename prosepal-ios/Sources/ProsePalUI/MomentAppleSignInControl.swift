@@ -12,6 +12,36 @@ struct MomentAppleSignInControl: View {
     var height: CGFloat = 52
 
     var body: some View {
+        VStack(spacing: 7) {
+            signInButton
+
+            if account.isSigningIn {
+                ProgressView {
+                    Text(String(localized: "Signing in"))
+                }
+                .controlSize(.small)
+                .accessibilityLabel(String(localized: "Signing in"))
+                .accessibilityValue(String(localized: "In progress"))
+                .accessibilityIdentifier("auth.apple.progress.\(source)")
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var signInButton: some View {
+        #if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("--prosepal-ui-testing") {
+            uiTestButton
+        } else {
+            platformSignInButton
+        }
+        #else
+        platformSignInButton
+        #endif
+    }
+
+    @ViewBuilder
+    private var platformSignInButton: some View {
         #if canImport(AuthenticationServices)
         if account.isAppleSignInConfigured {
             SignInWithAppleButton(.continue) { request in
@@ -24,6 +54,7 @@ struct MomentAppleSignInControl: View {
             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             .disabled(account.isSigningIn)
             .accessibilityLabel(String(localized: "Continue with Apple"))
+            .accessibilityValue(account.isSigningIn ? String(localized: "In progress") : String(localized: "Ready"))
             .accessibilityIdentifier("auth.apple.entry.\(source)")
         } else {
             fallbackButton
@@ -32,6 +63,32 @@ struct MomentAppleSignInControl: View {
         fallbackButton
         #endif
     }
+
+    #if DEBUG
+    private var uiTestButton: some View {
+        Button {
+            guard account.beginAppleSignInRequest(source: source) != nil else { return }
+            Task { @MainActor in
+                await account.completeAppleSignIn(
+                    idToken: "ui-test-identity-token",
+                    authorizationCode: "ui-test-authorization-code",
+                    appleUserID: "ui-test-apple-user",
+                    source: source
+                )
+            }
+        } label: {
+            Label(String(localized: "Continue with Apple"), systemImage: "apple.logo")
+                .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.bordered)
+        .frame(maxWidth: .infinity, minHeight: height, maxHeight: height)
+        .controlSize(.large)
+        .tint(.prosePalNavy)
+        .disabled(account.isSigningIn)
+        .accessibilityValue(account.isSigningIn ? String(localized: "In progress") : String(localized: "Ready"))
+        .accessibilityIdentifier("auth.apple.entry.\(source)")
+    }
+    #endif
 
     private var fallbackButton: some View {
         Button {
@@ -45,6 +102,7 @@ struct MomentAppleSignInControl: View {
         .controlSize(.large)
         .tint(.prosePalNavy)
         .disabled(account.isSigningIn)
+        .accessibilityValue(account.isSigningIn ? String(localized: "In progress") : String(localized: "Ready"))
         .accessibilityIdentifier("auth.apple.entry.\(source)")
     }
 

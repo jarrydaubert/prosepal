@@ -84,6 +84,9 @@ Evidence must cover:
   deletion;
 - StoreKit product loading, purchase, cancellation, pending when reproducible,
   restore, transaction update, and entitlement convergence;
+- delayed network-backed actions acknowledging taps, preventing duplicate
+  submission, preserving user work, exposing accessible progress, and reaching
+  an honest confirmed, retryable, or indeterminate outcome;
 - App Store server notification and reconciliation behaviour;
 - Settings, support, privacy, legal, and subscription terms;
 - accessibility on the supported release-device matrix;

@@ -6,6 +6,8 @@ class ProsePalNativeUITestCase: XCTestCase {
         case firstLaunch = "first-launch"
         case signedOut = "signed-out"
         case signedIn = "signed-in"
+        case signInSuccess = "sign-in-success"
+        case signInFailure = "sign-in-failure"
         case accountDeletionSuccess = "account-deletion-success"
         case accountDeletionFailure = "account-deletion-failure"
         case accountDeletionIndeterminate = "account-deletion-indeterminate"
@@ -20,7 +22,8 @@ class ProsePalNativeUITestCase: XCTestCase {
     func launch(
         _ scenario: Scenario,
         writingServiceArgument: String = "--prosepal-use-mock-writing-service",
-        accessibilityTextSize: Bool = false
+        accessibilityTextSize: Bool = false,
+        additionalArguments: [String] = []
     ) {
         app = XCUIApplication()
         app.launchArguments = [
@@ -38,6 +41,7 @@ class ProsePalNativeUITestCase: XCTestCase {
         if accessibilityTextSize {
             app.launchArguments.append("--prosepal-force-accessibility-text-size")
         }
+        app.launchArguments.append(contentsOf: additionalArguments)
         app.launch()
     }
 
@@ -110,10 +114,10 @@ class ProsePalNativeUITestCase: XCTestCase {
         tab.tap()
     }
 
-    func enterPersonAndGenerate() {
+    func enterPerson(_ name: String = "Mira") {
         let person = assertExists("composer.person")
         person.tap()
-        person.typeText("Mira\n")
+        person.typeText("\(name)\n")
 
         if app.keyboards.buttons["Done"].exists {
             app.keyboards.buttons["Done"].tap()
@@ -121,6 +125,10 @@ class ProsePalNativeUITestCase: XCTestCase {
             app.keyboards.buttons["Return"].tap()
         }
 
+    }
+
+    func enterPersonAndGenerate() {
+        enterPerson()
         tap("composer.generate")
     }
 
@@ -140,6 +148,53 @@ class ProsePalNativeUITestCase: XCTestCase {
             file: file,
             line: line
         )
+    }
+
+    @discardableResult
+    func assertInProgress(
+        _ identifier: String,
+        timeout: TimeInterval = 1,
+        mustBeDisabled: Bool = true,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) -> XCUIElement {
+        let action = assertExists(identifier, timeout: timeout, file: file, line: line)
+        XCTAssertEqual(action.value as? String, "In progress", file: file, line: line)
+        XCTAssertFalse(
+            String(describing: action.value).contains("%"),
+            "In-progress work must not expose fake percentage progress",
+            file: file,
+            line: line
+        )
+        if mustBeDisabled {
+            XCTAssertFalse(action.isEnabled, "Expected duplicate submission to be blocked", file: file, line: line)
+        }
+        return action
+    }
+
+    func assertIndeterminateProgress(
+        _ identifier: String,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) {
+        let progress = assertExists(identifier, timeout: 1, file: file, line: line)
+        XCTAssertEqual(progress.value as? String, "In progress", file: file, line: line)
+        XCTAssertFalse(
+            String(describing: progress.value).contains("%"),
+            "Indeterminate work must not expose fake percentage progress",
+            file: file,
+            line: line
+        )
+    }
+
+    func assertPersonInputPreserved(
+        _ expectedAccessibilityValue: String,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) {
+        tapRootTab("Write", file: file, line: line)
+        let person = assertExists("composer.person", file: file, line: line)
+        XCTAssertEqual(person.value as? String, expectedAccessibilityValue, file: file, line: line)
     }
 
     func requestAndConfirmAccountDeletion() {
@@ -181,16 +236,23 @@ final class ProsePalDurableSmokeUITests: ProsePalNativeUITestCase {
         _ = assertExists("paywall.purchase")
     }
 
-    func testTypedInputStartsGenerationAndExposesExistingStopAction() {
+    func testGenerationAcknowledgesTapPreservesInputAndExposesAccessibleProgress() {
         launch(
             .signedOut,
             writingServiceArgument: "--prosepal-slow-mock-writing-service"
         )
 
-        enterPersonAndGenerate()
+        enterPerson()
+        let originalPersonValue = assertExists("composer.person").value as? String
+        tap("composer.generate")
         _ = assertExists("moment.generating")
+        assertIndeterminateProgress("moment.generation.progress")
+        XCTAssertFalse(element("activeDraft.editor").exists, "Draft must not appear before generation completes")
+        XCTAssertFalse(element("composer.generate").exists, "Generate cannot be submitted twice while writing")
         tap("moment.generation.stop", maxScrolls: 5)
         _ = assertExists("composer.generate")
+        let person = assertExists("composer.person")
+        XCTAssertEqual(person.value as? String, originalPersonValue)
     }
 
     func testSuccessfulDraftIsVisibleAndEditable() {
@@ -220,23 +282,116 @@ final class ProsePalDurableSmokeUITests: ProsePalNativeUITestCase {
 
 @MainActor
 final class ProsePalReleaseUITests: ProsePalNativeUITestCase {
+    func testSignInAcknowledgesTapBlocksDuplicatesPreservesInputAndReportsSuccess() {
+        launch(.signInSuccess)
+        enterPerson()
+        let originalPersonValue = assertExists("composer.person").value as? String
+        openSettings()
+
+        tap("auth.apple.entry.settings")
+        _ = assertInProgress("auth.apple.entry.settings")
+        XCTAssertFalse(element("auth.apple.succeeded").exists, "Sign-in cannot succeed before exchange confirmation")
+
+        _ = assertExists("auth.apple.succeeded", timeout: 5)
+        assertPersonInputPreserved(originalPersonValue ?? "")
+    }
+
+    func testSignInFailureReturnsToAnExplicitRetryableState() {
+        launch(.signInFailure)
+        openSettings()
+
+        tap("auth.apple.entry.settings")
+        _ = assertInProgress("auth.apple.entry.settings")
+
+        _ = assertExists("auth.apple.failed", timeout: 5)
+        let retry = assertExists("auth.apple.entry.settings")
+        XCTAssertTrue(retry.isEnabled)
+        XCTAssertEqual(retry.value as? String, "Ready")
+    }
+
+    func testPaywallProductLoadingIsAcknowledgedWithoutFakePercentageProgress() {
+        launch(
+            .signedOut,
+            additionalArguments: ["--prosepal-slow-mock-subscription-service"]
+        )
+        openSettings()
+        tap("settings.plan")
+        tap("plan.openPaywall")
+
+        assertIndeterminateProgress("paywall.products.loading")
+        XCTAssertFalse(element("paywall.purchase").exists, "Purchase cannot begin before products are confirmed")
+        _ = assertExists("paywall.purchase", timeout: 5)
+    }
+
+    func testPurchaseAcknowledgesTapBlocksDuplicatesPreservesInputAndWaitsForConfirmation() {
+        launch(
+            .signedIn,
+            additionalArguments: ["--prosepal-slow-mock-subscription-service"]
+        )
+        enterPerson()
+        let originalPersonValue = assertExists("composer.person").value as? String
+        openSettings()
+        tap("settings.plan")
+        tap("plan.openPaywall")
+        let purchase = assertExists("paywall.purchase", timeout: 5)
+        purchase.tap()
+
+        _ = assertInProgress("paywall.purchase")
+        XCTAssertFalse(element("subscription.purchase.succeeded").exists, "Purchase cannot complete before StoreKit confirmation")
+        _ = assertExists("plan.status.premium", timeout: 5)
+        assertPersonInputPreserved(originalPersonValue ?? "")
+    }
+
+    func testRestoreFailureAcknowledgesTapPreservesInputAndReturnsToRetry() {
+        launch(
+            .signedOut,
+            additionalArguments: [
+                "--prosepal-slow-mock-subscription-service",
+                "--prosepal-mock-restore-failure"
+            ]
+        )
+        enterPerson()
+        let originalPersonValue = assertExists("composer.person").value as? String
+        openSettings()
+
+        tap("settings.restorePurchases")
+        _ = assertInProgress("settings.restorePurchases")
+        XCTAssertFalse(element("subscription.restore.failed").exists, "Restore cannot fail before StoreKit responds")
+
+        _ = assertExists("subscription.restore.failed", timeout: 5)
+        let retry = assertExists("settings.restorePurchases")
+        XCTAssertTrue(retry.isEnabled)
+        XCTAssertEqual(retry.value as? String, "Ready")
+        assertPersonInputPreserved(originalPersonValue ?? "")
+    }
+
     func testAccountDeletionSuccessIsConfirmedAndReported() {
         launch(.accountDeletionSuccess)
         requestAndConfirmAccountDeletion()
-        _ = assertExists("account.deletion.deleted")
+        _ = assertInProgress("settings.account.delete.request")
+        XCTAssertFalse(element("account.deletion.deleted").exists, "Deletion cannot complete before server confirmation")
+        _ = assertExists("account.deletion.deleted", timeout: 5)
     }
 
     func testAccountDeletionFailureKeepsTheAccountAndReportsFailure() {
         launch(.accountDeletionFailure)
+        enterPerson()
+        let originalPersonValue = assertExists("composer.person").value as? String
         requestAndConfirmAccountDeletion()
-        _ = assertExists("account.deletion.failed")
-        _ = assertExists("settings.account.delete.request")
+        _ = assertInProgress("settings.account.delete.request")
+        _ = assertExists("account.deletion.failed", timeout: 5)
+        let retry = assertExists("settings.account.delete.request")
+        XCTAssertTrue(retry.isEnabled)
+        XCTAssertEqual(retry.value as? String, "Ready")
+        assertPersonInputPreserved(originalPersonValue ?? "")
     }
 
     func testAccountDeletionIndeterminateStateIsReportedHonestly() {
         launch(.accountDeletionIndeterminate)
         requestAndConfirmAccountDeletion()
-        _ = assertExists("account.deletion.indeterminate")
+        _ = assertInProgress("settings.account.delete.request")
+        XCTAssertFalse(element("account.deletion.indeterminate").exists, "Indeterminate state requires a server outcome")
+        _ = assertExists("account.deletion.indeterminate", timeout: 5)
     }
 
     func testDraftCanBeCopiedSharedSavedAndReopened() {

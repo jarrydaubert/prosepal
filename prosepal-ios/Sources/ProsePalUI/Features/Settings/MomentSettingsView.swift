@@ -112,6 +112,7 @@ struct MomentSettingsView: View {
                             account.requestAccountDeletion()
                         }
                         .disabled(account.isDeletingAccount)
+                        .accessibilityValue(account.isDeletingAccount ? String(localized: "In progress") : String(localized: "Ready"))
                         MomentSettingsDivider()
                     } else {
                         MomentAppleSignInControl(account: account, source: "settings")
@@ -131,6 +132,7 @@ struct MomentSettingsView: View {
                         }
                     }
                     .disabled(account.isRestoringPurchases)
+                    .accessibilityValue(account.isRestoringPurchases ? String(localized: "In progress") : String(localized: "Ready"))
                     MomentSettingsDivider()
                     settingsNavigationRow(
                         systemImage: "checkmark.seal",

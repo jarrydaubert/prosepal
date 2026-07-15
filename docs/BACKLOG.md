@@ -162,6 +162,19 @@ completed item instead of turning this file into a status log.
   explicitly assert that it receives zero requests; regressions fail rather than
   hanging the test run.
 
+- [ ] Make sign-out and paywall outcomes locally explicit throughout their
+  asynchronous lifecycles. DoD: sign-out owns a visible and accessible
+  in-progress state, rejects duplicate taps, reports failure with a retry path,
+  and never claims completion before local and remote session clearing
+  converges; the open paywall shows action-specific purchase or restore
+  progress and keeps success, failure, pending, cancelled, and indeterminate
+  outcomes visible where the action occurred instead of relying on a transient
+  notice behind the sheet; durable drafts and composer input survive every
+  wait and outcome; deterministic delayed UI scenarios prove immediate
+  acknowledgement, duplicate prevention, honest retry or final state, and the
+  absence of invented percentage progress. Keep this a focused feedback slice,
+  not a composer or result-screen redesign.
+
 - [ ] Capture physical-device evidence for outgoing ShareLink and local-data
   file export. DoD: on a supported iPhone, active and saved drafts each present
   the system activity sheet with the reviewed text; cancelling records no send

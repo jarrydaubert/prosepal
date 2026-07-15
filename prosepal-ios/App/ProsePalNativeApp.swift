@@ -35,7 +35,7 @@ struct ProsePalNativeApp: App {
                 container: container,
                 storageMode: .ephemeralFallback
             )
-            authClient = ProsePalUITestAuthClient()
+            authClient = ProsePalUITestAuthClient(behavior: uiTestScenario.authBehavior)
             appleAccountLifecycleClient = ProsePalUITestAppleAccountLifecycleClient()
             appleCredentialStateProvider = nil
             accountMaintenanceClient = ProsePalUITestAccountDeletionClient(
@@ -357,6 +357,9 @@ private enum ProsePalDebugLaunchArguments {
     static let quotaWritingService = "--prosepal-force-quota-writing-service"
     static let slowMockWritingService = "--prosepal-slow-mock-writing-service"
     static let mockSubscriptionService = "--prosepal-use-mock-subscription-service"
+    static let slowMockSubscriptionService = "--prosepal-slow-mock-subscription-service"
+    static let mockPurchaseFailure = "--prosepal-mock-purchase-failure"
+    static let mockRestoreFailure = "--prosepal-mock-restore-failure"
     static let forcePremium = "--prosepal-force-premium"
     static let reduceTransparency = "--prosepal-force-reduce-transparency"
     static let accessibilityTextSize = "--prosepal-force-accessibility-text-size"
@@ -384,6 +387,18 @@ private enum ProsePalDebugLaunchArguments {
 
     static var forcesPremiumSubscription: Bool {
         ProcessInfo.processInfo.arguments.contains(forcePremium)
+    }
+
+    static var mockSubscriptionDelay: Duration? {
+        ProcessInfo.processInfo.arguments.contains(slowMockSubscriptionService) ? .seconds(2) : nil
+    }
+
+    static var forcesMockPurchaseFailure: Bool {
+        ProcessInfo.processInfo.arguments.contains(mockPurchaseFailure)
+    }
+
+    static var forcesMockRestoreFailure: Bool {
+        ProcessInfo.processInfo.arguments.contains(mockRestoreFailure)
     }
 
     static var forcesReduceTransparency: Bool {
@@ -432,7 +447,10 @@ private enum SubscriptionClientFactory {
         if ProsePalDebugLaunchArguments.usesMockSubscriptionService {
             return DebugSubscriptionClient(
                 productIDs: productIDs,
-                isPremiumUnlocked: ProsePalDebugLaunchArguments.forcesPremiumSubscription
+                isPremiumUnlocked: ProsePalDebugLaunchArguments.forcesPremiumSubscription,
+                operationDelay: ProsePalDebugLaunchArguments.mockSubscriptionDelay,
+                purchaseFails: ProsePalDebugLaunchArguments.forcesMockPurchaseFailure,
+                restoreFails: ProsePalDebugLaunchArguments.forcesMockRestoreFailure
             )
         }
         #endif
@@ -468,9 +486,13 @@ private enum SubscriptionClientFactory {
 private struct DebugSubscriptionClient: SubscriptionClient {
     var productIDs: [String]
     var isPremiumUnlocked: Bool
+    var operationDelay: Duration?
+    var purchaseFails: Bool
+    var restoreFails: Bool
 
     func loadProducts() async throws -> [SubscriptionProduct] {
-        products
+        try await waitForConfiguredDelay()
+        return products
     }
 
     func currentEntitlement() async -> SubscriptionEntitlementState {
@@ -480,14 +502,22 @@ private struct DebugSubscriptionClient: SubscriptionClient {
     }
 
     func purchase(productID: String) async throws -> SubscriptionPurchaseResult {
-        SubscriptionPurchaseResult(
+        try await waitForConfiguredDelay()
+        if purchaseFails {
+            throw SubscriptionError.storeUnavailable
+        }
+        return SubscriptionPurchaseResult(
             status: .purchased,
             entitlement: activeEntitlement(productID: productID)
         )
     }
 
     func restorePurchases() async throws -> SubscriptionPurchaseResult {
-        SubscriptionPurchaseResult(
+        try await waitForConfiguredDelay()
+        if restoreFails {
+            throw SubscriptionError.storeUnavailable
+        }
+        return SubscriptionPurchaseResult(
             status: isPremiumUnlocked ? .restored : .notEntitled,
             entitlement: isPremiumUnlocked ? activeEntitlement(productID: yearlyProductID) : .inactive
         )
@@ -515,6 +545,11 @@ private struct DebugSubscriptionClient: SubscriptionClient {
                 durationLabel: "Weekly"
             )
         ]
+    }
+
+    private func waitForConfiguredDelay() async throws {
+        guard let operationDelay else { return }
+        try await Task.sleep(for: operationDelay)
     }
 
     private var yearlyProductID: String {

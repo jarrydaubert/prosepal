@@ -5664,7 +5664,7 @@ struct MomentPlanDetailView: View {
                 )
         }
         .shadow(color: Color.prosePalCoralDeep.opacity(0.18), radius: 18, x: 0, y: 10)
-        .accessibilityElement(children: .combine)
+        .accessibilityElement(children: .combine).accessibilityIdentifier("plan.status.premium")
     }
 
     private var includedGroup: some View {
@@ -6680,7 +6680,7 @@ private struct MomentPaywallSheet: View {
             }
             .buttonStyle(.plain)
             .foregroundStyle(Color.prosePalCoralDeep)
-            .disabled(account.isRestoringPurchases).accessibilityIdentifier("paywall.restore")
+            .disabled(account.isRestoringPurchases).accessibilityIdentifier("paywall.restore").accessibilityLabel(String(localized: "Restore purchases")).accessibilityValue(account.isRestoringPurchases ? String(localized: "In progress") : String(localized: "Ready"))
         }
         .padding(.top, 0)
     }
@@ -6770,7 +6770,7 @@ private struct MomentPaywallSheet: View {
                 .buttonStyle(.borderedProminent)
                 .buttonBorderShape(.capsule)
                 .tint(.prosePalCoral)
-                .disabled(account.isPurchasingPremium || account.isLoadingSubscriptions).accessibilityIdentifier("paywall.purchase")
+                .disabled(account.isPurchasingPremium || account.isLoadingSubscriptions).accessibilityIdentifier("paywall.purchase").accessibilityLabel(String(localized: "Purchase Pro")).accessibilityValue(account.isPurchasingPremium ? String(localized: "In progress") : String(localized: "Ready"))
 
                 Text(account.premiumRenewalDisclosureText)
                     .font(.caption2)
@@ -6974,7 +6974,7 @@ private struct MomentPaywallLoadingRow: View {
             RoundedRectangle(cornerRadius: 18, style: .continuous)
                 .stroke(Color.prosePalNavy.opacity(0.10), lineWidth: 1)
         }
-        .accessibilityElement(children: .combine)
+        .accessibilityElement(children: .combine).accessibilityLabel(String(localized: "Loading subscription options")).accessibilityValue(String(localized: "In progress")).accessibilityIdentifier("paywall.products.loading")
     }
 }
 

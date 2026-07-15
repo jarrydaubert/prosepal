@@ -631,10 +631,13 @@ first-run, navigation, generation-state, account, subscription-presentation,
 persistence, sharing/export, and accessibility-size journeys. Pull requests run
 the smoke class; scheduled and manual workflows run the full target. This
 executable coverage proves what source text cannot: presentation, dismissal,
-restoration, destructive outcomes, and accessibility-size navigation. It stays
-deliberately shallow around generation and does not claim live Apple-account,
-sandbox, provider, generic share-destination, VoiceOver, or physical-device
-evidence.
+restoration, destructive outcomes, and accessibility-size navigation. Delayed
+auth, subscription, generation, and account-maintenance scenarios additionally
+prove immediate acknowledgement, accessible indeterminate progress, duplicate
+prevention, preserved input, and confirmed or retryable outcomes without
+pinning volatile layout. It stays deliberately shallow around generation and
+does not claim live Apple-account, sandbox, provider, generic share-destination,
+VoiceOver, or physical-device evidence.
 
 ### A-15 — Accessibility, localization, and semantic styling
 

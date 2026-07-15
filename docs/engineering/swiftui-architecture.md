@@ -223,6 +223,12 @@ maintenance, but must not add production runtime switches or bypass the view's
 real user actions. Stable identifiers name user outcomes and controls; they do
 not encode exact copy, layout hierarchy, or transient composer steps.
 
+Delayed UI-test doubles model the waiting boundary as well as its final result.
+Generation, authentication, subscription, and account-maintenance surfaces
+expose stable action values and outcome identifiers so automation can prove
+immediate acknowledgement, duplicate prevention, input preservation, honest
+indeterminate progress, retry, and confirmed completion without pinning layout.
+
 ## Extraction checklist
 
 An incremental extraction is complete only when:
