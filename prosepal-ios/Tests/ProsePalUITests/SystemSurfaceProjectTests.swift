@@ -332,17 +332,19 @@ func storeKitConfigurationIsSingleCanonicalAndCorrectlyReferenced() throws {
     #expect(resourceMemberships == 2)
     #expect(project.contains("SK0000000000000000000003 /* ProsePalStaging.storekit in Resources */"))
 
-    // The shared staging scheme selects the canonical config with a
-    // SRCROOT-relative path. A `../` escape does not resolve to the project file
-    // and leaves local StoreKit testing inactive (zero products on device).
+    // The shared staging scheme selects the canonical config using the exact
+    // reference Xcode writes for this file from a clean GUI selection. Confirmed
+    // empirically: Xcode serialises `../../App/ProsePalStaging.storekit`, so that
+    // is the correct value and any hand-substituted path (for example a bare
+    // `App/...`) must not creep back in. The path is not the cause of the
+    // zero-product result — that is an Xcode/StoreKit test-runtime failure.
     let scheme = try String(
         contentsOf: packageRoot.appending(
             path: "ProsePal.xcodeproj/xcshareddata/xcschemes/ProsePal Staging.xcscheme"
         ),
         encoding: .utf8
     )
-    #expect(scheme.contains("identifier = \"App/ProsePalStaging.storekit\""))
-    #expect(!scheme.contains("../App/ProsePalStaging.storekit"))
+    #expect(scheme.contains("identifier = \"../../App/ProsePalStaging.storekit\""))
 
     // Every product ID the staging app configures is present in the .storekit,
     // so local testing requests exactly what the app requests.

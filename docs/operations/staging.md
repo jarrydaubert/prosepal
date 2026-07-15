@@ -54,33 +54,33 @@ Restore and verify the scheme without printing values:
 The staging bundle `com.prosepal.prosepal.staging` has no products in App Store
 Connect — the `com.prosepal.pro.*` products belong to the production app record.
 On-device and simulator staging runs therefore return products only when the
-local `App/ProsePalStaging.storekit` configuration is active for the Run action.
+local `ProsePalStaging.storekit` configuration is active for the Run action.
 
 A scheme selects that configuration through
-`StoreKitConfigurationFileReference identifier`, which is **relative to the
-directory containing `ProsePal.xcodeproj`** (the same base as
-`container:ProsePal.xcodeproj`). The correct value is
-`App/ProsePalStaging.storekit`. A `../`-escaping path does not resolve to the
-project file, so Xcode shows a second, dangling entry with the same filename and
-the app launches with **no** local StoreKit configuration — `Product.products`
-then queries real StoreKit for the staging bundle and returns zero products.
+`StoreKitConfigurationFileReference identifier`. Xcode owns this value: selecting
+`ProsePalStaging.storekit` from a clean scheme writes
+`../../App/ProsePalStaging.storekit`, and that is the canonical reference. Do not
+hand-substitute a different spelling such as a bare `App/ProsePalStaging.storekit`
+— it is not what Xcode produces. If two identically named entries ever appear in
+the dropdown, remove the StoreKit reference from the scheme entirely, reopen
+Xcode, and re-select the file so Xcode rewrites a single clean reference.
 
-The shared `ProsePal Staging` scheme is fixed in the repository. If your ignored
-`ProsePal Local Staging` scheme was copied from the old value, perform this
-one-time action once per machine:
-
-1. Xcode → Product → Scheme → Edit Scheme → select `ProsePal Local Staging`.
-2. Run → Options → StoreKit Configuration → choose `ProsePalStaging.storekit`.
-   If two identically named entries appear, pick either; Xcode rewrites the
-   reference to the canonical project file and the duplicate disappears.
-3. Close. Confirm the scheme now contains
-   `identifier = "App/ProsePalStaging.storekit"` with no `../`.
+The scheme path is **not** a cause of zero products. A clean-room experiment
+(Xcode 26.6, iOS 26.4 and 26.5 simulators) showed that a brand-new minimal
+configuration with a single unrelated product also returns zero, with
+`SKTestSession` failing at `[SKTestSession] Error saving configuration file:
+Error Domain=SKInternalErrorDomain Code=3`. That is an Xcode/StoreKit
+test-runtime failure — the simulator's `storekitd` cannot persist the test
+configuration — independent of the `.storekit` contents, the scheme path, the
+runtime version, and a freshly erased simulator. When products come back empty,
+suspect the StoreKit test runtime, not this configuration. The correct proving
+grounds are Apple sandbox or TestFlight (see below).
 
 Local StoreKit testing is independent of App Store Connect. Verifying the real
 production products requires the production bundle against Apple sandbox or
 TestFlight; it cannot be proven from a local `.storekit` file.
 
-Back it up outside Git after editing:
+Back up the ignored local scheme outside Git after editing:
 
 ```bash
 mkdir -p ~/.config/prosepal/xcode-schemes
@@ -104,14 +104,15 @@ For deterministic tethered development, select:
 App/ProsePalStaging.storekit
 ```
 
-Xcode stores that selection as the identifier `App/ProsePalStaging.storekit`,
-relative to the directory containing the project (see [Local StoreKit
-configuration](#local-storekit-configuration) for why a `../`-escaping path
-returns zero products). If a scheme is restored or edited while Xcode is open,
-quit Xcode completely before reopening the project so it does not run with a
-cached scheme. Opening the paywall must log a product request that returns all
-three configured identifiers; a zero-product result is not accepted as local
-StoreKit proof.
+Xcode stores that selection as the identifier `../../App/ProsePalStaging.storekit`
+(see [Local StoreKit configuration](#local-storekit-configuration) for why this
+Xcode-owned value is canonical and why the path is not the cause of a zero-product
+result). If a scheme is restored or edited while Xcode is open, quit Xcode
+completely before reopening the project so it does not run with a cached scheme.
+Opening the paywall on a working StoreKit test runtime must log a product request
+that returns all three configured identifiers; a zero-product result is not
+accepted as local StoreKit proof — but confirm the runtime is healthy (no
+`SKInternalErrorDomain Code=3`) before blaming the configuration.
 
 The product identifiers live under
 `subscriptionGroups[].subscriptions[]`, not the top-level `products` array.
