@@ -276,7 +276,7 @@ private enum MessageWritingServiceFactory {
 
         if ProsePalDebugLaunchArguments.forcesQuotaWritingService {
             let failingClient = DebugFailingMomentDraftClient(error: .usageLimitReached(
-                message: "You've used this week's free drafts."
+                message: "You've used your included Standard generation. Premium unlocks more messages."
             ))
             return RoutingMessageWritingService(
                 privateClient: failingClient,

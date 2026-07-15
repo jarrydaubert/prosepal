@@ -168,6 +168,38 @@ func offlineDraftRetryPreservesNoteAndRecoversWhenServiceReturns() async throws 
 
 @Test
 @MainActor
+func usageLimitRetryPreservesNoteAndRecoversWithoutClaimingEarlySuccess() async throws {
+    let limitMessage = "You've reached this month's generation limit."
+    let service = SequencedMomentWritingService(outcomes: [
+        .failure(.usageLimitReached(message: limitMessage)),
+        .success(MomentDraftBundle(messageText: "Recovered after limit check.", lane: .standardDraft))
+    ])
+    let model = MomentModel(service: service)
+    model.personName = "Alex"
+    model.trueThing = "Keep this exact note while checking the allowance."
+
+    model.startDraft()
+    try await expectEventually("The usage limit did not reach an honest retryable state.") {
+        model.draftUnavailableReason == .usageLimitReached
+    }
+
+    #expect(model.bundle == nil)
+    #expect(model.errorMessage == limitMessage)
+    #expect(model.trueThing == "Keep this exact note while checking the allowance.")
+
+    model.retryDraft()
+    try await expectEventually("The usage-limit retry did not recover a confirmed draft.") {
+        model.bundle?.messageText == "Recovered after limit check."
+    }
+
+    #expect(model.errorMessage == nil)
+    #expect(model.draftUnavailableReason == nil)
+    #expect(model.trueThing == "Keep this exact note while checking the allowance.")
+    #expect(await service.draftCallCount() == 2)
+}
+
+@Test
+@MainActor
 func offlineDraftRetryFailureReturnsToRetryableStateWithoutLosingNote() async throws {
     let service = SequencedMomentWritingService(outcomes: [
         .failure(.offline),

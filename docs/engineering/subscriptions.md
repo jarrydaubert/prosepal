@@ -96,8 +96,10 @@ notifications, renewal, refund, or reconciliation work.
   temporarily unavailable; show the verification problem honestly.
 - Clear local Premium before reconciling a different ProsePal account.
 - Keep Restore available from Paywall and Settings.
-- Explain limits and paid extras without claiming the careful writing route is
-  Premium-only.
+- Describe Premium as offering higher writing limits. Do not claim unlimited
+  drafting, publish an exact allowance, or imply that careful writing is
+  Premium-only unless the approved server policy and App Store metadata support
+  that promise.
 - Surface product-loading and restore failures honestly.
 
 ## Release proof

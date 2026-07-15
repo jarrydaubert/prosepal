@@ -17,7 +17,7 @@ func momentExperienceMonolithCanOnlyShrink() throws {
 
     // This baseline may only move downward. Equality prevents an extraction
     // from leaving unused headroom for later growth.
-    let lineCountBaseline = 7_050
+    let lineCountBaseline = 7_044
     #expect(currentLineCount == lineCountBaseline)
 }
 
@@ -74,6 +74,22 @@ func providerNamesStayOutOfAppAndUISource() throws {
     ])
 
     #expect(try violations(of: bannedTerms, in: files).isEmpty)
+}
+
+@Test
+func premiumPresentationNeverPromisesUnlimitedUsage() throws {
+    let files = try textFiles(in: [
+        packageRoot.appending(path: "App"),
+        packageRoot.appending(path: "Sources/ProsePalUI")
+    ])
+    let bannedClaims = [
+        "unlimited",
+        "without counting",
+        "write without limits",
+        "week's free drafts"
+    ]
+
+    #expect(try violations(of: bannedClaims, in: files).isEmpty)
 }
 
 @Test

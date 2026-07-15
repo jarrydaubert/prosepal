@@ -70,9 +70,32 @@ authenticated user and 500 per month for an entitled user. Active reservations
 count against the decision, so parallel calls cannot all pass the final slot.
 The burst boundary is 10 provider-bound attempts per subject in 60 seconds.
 
+The 500-request limit is a deliberate, long-lived repository policy carried by
+the active ledger migration; it is not the burst boundary. It has not been
+approved as customer-facing numerical copy, so the app promises higher limits
+rather than an unlimited or quantified allowance.
+
 Anonymous development uses the same burst reservation but is reachable only
 when the Edge Function’s explicit development flag and separate secret are both
 configured.
+
+## What consumes an allowance
+
+One completed, unique authenticated gateway request consumes one allowance,
+even though the response contract currently contains three messages. This
+includes an initial gateway draft, a completed gateway fallback, a fresh
+“Another” request, or a named adjustment that reaches the gateway.
+
+Private on-device generation and adjustment do not touch the gateway ledger.
+Quota or burst rejection, provider or quality failure, cancellation, and an
+idempotent replay do not add usage. A retry that reclaims the same failed
+logical request is charged only if it eventually completes, and then only once.
+
+`generate-card` currently returns structured limit, remaining, and reset
+metadata on eligible successful authenticated responses. The native draft
+bundle does not retain that metadata, and quota-exhausted responses carry only
+a user-safe error. Quantified client UI therefore remains out of contract until
+the full success and exhaustion path supplies approved structured policy data.
 
 ## Lease and reclaim
 

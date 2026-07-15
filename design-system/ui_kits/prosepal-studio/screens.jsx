@@ -125,10 +125,10 @@
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               <div className="d-dot" />
               <h2 style={{ fontFamily: "var(--font-reading)", fontSize: 32, fontWeight: 500, letterSpacing: "-0.01em", color: "var(--text)", marginTop: 12 }}>The studio, always open.</h2>
-              <p style={{ font: "400 16px/1.5 var(--font-ui)", color: "var(--text-secondary)" }}>Unlimited drafts and a private voice profile — for the price of a good notebook each month.</p>
+              <p style={{ font: "400 16px/1.5 var(--font-ui)", color: "var(--text-secondary)" }}>More drafts and a private voice profile — for the price of a good notebook each month.</p>
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-              <div className="d-feat">{Ic("infinity")}<span>Unlimited refines &amp; drafts</span></div>
+              <div className="d-feat">{Ic("arrow-circle-up")}<span>Higher writing limits</span></div>
               <div className="d-feat">{Ic("user-focus")}<span>A voice profile that's yours</span></div>
               <div className="d-feat">{Ic("lock-simple")}<span>On-device &amp; private, always</span></div>
             </div>

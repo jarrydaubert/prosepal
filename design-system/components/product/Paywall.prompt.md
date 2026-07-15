@@ -2,10 +2,10 @@ The upgrade screen. Leads with felt value, lists a few real benefits, offers two
 
 ```jsx
 <Paywall
-  title="Write without limits"
-  sub="Unlimited refines, every tone, and your private voice profile."
+  title="More room to write"
+  sub="More drafts and refines, every tone, and your private voice profile."
   features={[
-    { icon: <i className="ph ph-infinity" />, title: "Unlimited refines", sub: "Polish as many messages as you like" },
+    { icon: <i className="ph ph-arrow-circle-up" />, title: "Higher writing limits", sub: "More room to shape important messages" },
     { icon: <i className="ph ph-user-focus" />, title: "Your voice profile", sub: "ProsePal learns how you sound" },
     { icon: <i className="ph ph-lock-simple" />, title: "Private by default", sub: "Nothing trains on your words" },
   ]}

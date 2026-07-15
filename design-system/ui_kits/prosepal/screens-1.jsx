@@ -113,7 +113,7 @@
             </div>
           </div>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, color: "var(--text-tertiary)" }}>
-            {Ic("sparkle")}<span style={{ fontFamily: "var(--font-mono)", fontSize: 12 }}>7 of 10 free refines left this week</span>
+            {Ic("sparkle")}<span style={{ fontFamily: "var(--font-mono)", fontSize: 12 }}>Allowance managed by ProsePal</span>
           </div>
         </div>
         <Dock active="new" />

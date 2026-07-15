@@ -89,6 +89,8 @@ Evidence must cover:
   an honest confirmed, retryable, or indeterminate outcome;
 - App Store server notification and reconciliation behaviour;
 - Settings, support, privacy, legal, and subscription terms;
+- Plan, Paywall, StoreKit metadata, and App Store listing consistently promise
+  higher limits rather than unlimited or unapproved quantified usage;
 - accessibility on the supported release-device matrix;
 - optional system surfaces included in the candidate; and
 - archive secret and configuration inspection.

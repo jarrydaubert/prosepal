@@ -234,6 +234,12 @@ final class ProsePalDurableSmokeUITests: ProsePalNativeUITestCase {
         _ = assertExists("paywall.close")
         _ = assertExists("paywall.restore")
         _ = assertExists("paywall.purchase")
+        XCTAssertTrue(app.staticTexts["More drafts and refines"].exists)
+        XCTAssertEqual(
+            app.staticTexts.matching(NSPredicate(format: "label CONTAINS[c] %@", "unlimited")).count,
+            0,
+            "The running Plan and Paywall must not promise an unlimited allowance"
+        )
     }
 
     func testGenerationAcknowledgesTapPreservesInputAndExposesAccessibleProgress() {

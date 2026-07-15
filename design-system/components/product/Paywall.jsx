@@ -2,7 +2,7 @@ import React from "react";
 
 /**
  * ProsePal Paywall — the upgrade preview. Leads with the felt value
- * ("unlimited refines, every voice"), not a feature dump. Calm.
+ * ("more drafts and refines, every voice"), not a feature dump. Calm.
  */
 export function Paywall({
   icon = <i className="ph ph-feather" />,

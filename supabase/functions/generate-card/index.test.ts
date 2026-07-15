@@ -503,6 +503,35 @@ Deno.test("authenticated generation fails closed when usage limit is reached", a
   assertEquals(providerBodies.length, 0);
 });
 
+Deno.test("entitled quota exhaustion reports the monthly policy without provider work", async () => {
+  const providerBodies: Array<Record<string, unknown>> = [];
+  const res = await handleGenerateCard(
+    makeRequest(fixedRequest, { Authorization: "Bearer user-token" }),
+    makeDeps({
+      authUserId: "00000000-0000-4000-8000-000000000001",
+      provider: true,
+      captureProviderBodies: providerBodies,
+      usageResponse: {
+        outcome: "quota_exhausted",
+        remaining: 0,
+        limit: 500,
+        is_pro: true,
+      },
+    }),
+  );
+
+  assertEquals(res.status, 402);
+  const body = await res.json() as Record<string, unknown>;
+  const userSafeError = body.user_safe_error as Record<string, unknown>;
+  assertEquals(userSafeError.code, "usage_limit_reached");
+  assertEquals(
+    userSafeError.message,
+    "You've reached this month's generation limit.",
+  );
+  assertEquals(body.messages, undefined);
+  assertEquals(providerBodies.length, 0);
+});
+
 Deno.test("authenticated generation fails closed when usage RPC fails", async () => {
   const providerBodies: Array<Record<string, unknown>> = [];
   const res = await handleGenerateCard(

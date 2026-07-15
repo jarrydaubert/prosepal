@@ -6,11 +6,10 @@ export interface UsageCardProps {
   plan?: string;
   used?: number;
   total?: number;
-  /** @default "refines" */
+  /** @default "messages" */
   unit?: string;
-  /** @default "this week" */
   period?: string;
-  /** Reset hint, e.g. "resets Mon". */
+  /** Server-supplied reset hint, when the approved policy exposes one. */
   reset?: React.ReactNode;
   /** Optional CTA (e.g. an Upgrade Button). */
   action?: React.ReactNode;

@@ -98,17 +98,16 @@
           <div className="pp-card pp-usage">
             <div className="pp-usage__head">
               <div className="pp-usage__plan"><span className="pp-usage__planname">Free plan</span><span className="pp-badge pp-badge--outline">Free</span></div>
-              <span className="pp-usage__period">this week</span>
+              <span className="pp-usage__period">current allowance</span>
             </div>
             <div>
-              <div className="pp-usage__count" style={{ marginBottom: 8 }}><span className="pp-usage__countnum"><b>3</b> of 10 refines left</span><span className="pp-usage__reset" style={{ fontFamily: "var(--font-mono)" }}>resets Mon</span></div>
-              <div className="pp-meter"><div className="pp-meter__track"><div className="pp-meter__fill pp-meter__fill--warning" style={{ width: "70%" }} /></div></div>
+              <div className="pp-usage__count" style={{ marginBottom: 8 }}><span className="pp-usage__countnum">Usage updates after ProsePal syncs your allowance.</span></div>
             </div>
           </div>
           <div className="pc-upsell">
             <div className="pc-upsell__h"><span className="pc-crest" style={{ width: 44, height: 44, fontSize: 21, borderRadius: 14 }}>{Ic("feather")}</span><div><div style={{ font: "600 16px var(--font-ui)", color: "var(--text)" }}>Go further with Pro</div><div style={{ font: "400 13px var(--font-ui)", color: "var(--text-tertiary)" }}>For the messages that matter most</div></div></div>
             <ul className="pc-upsell__list">
-              <li>{Ic("infinity")} Unlimited refines &amp; drafts</li>
+              <li>{Ic("arrow-circle-up")} More drafts &amp; refines</li>
               <li>{Ic("book-bookmark")} A voice profile that's yours</li>
               <li>{Ic("sliders")} Every tone &amp; length</li>
             </ul>
@@ -136,7 +135,7 @@
           <div className="pc-group">
             <div className="pc-group__h">Included</div>
             <div className="pp-listgroup">
-              <div className="pp-row"><span className="pp-row__lead" style={{ color: "var(--voice)" }}>{Ic("infinity")}</span><span className="pp-row__body"><span className="pp-row__title">Unlimited refines</span></span><span className="pp-row__trail" style={{ color: "var(--voice)" }}>{Ic("check")}</span></div>
+              <div className="pp-row"><span className="pp-row__lead" style={{ color: "var(--voice)" }}>{Ic("arrow-circle-up")}</span><span className="pp-row__body"><span className="pp-row__title">Higher writing limits</span></span><span className="pp-row__trail" style={{ color: "var(--voice)" }}>{Ic("check")}</span></div>
               <div className="pp-row"><span className="pp-row__lead" style={{ color: "var(--voice)" }}>{Ic("user-focus")}</span><span className="pp-row__body"><span className="pp-row__title">Voice profile</span><span className="pp-row__sub">Active &amp; learning</span></span><span className="pp-row__trail" style={{ color: "var(--voice)" }}>{Ic("check")}</span></div>
             </div>
           </div>
@@ -160,11 +159,11 @@
             <div className="pp-paywall__hero">
               <div className="pc-crest" style={{ width: 64, height: 64, fontSize: 30 }}>{Ic("feather")}</div>
               <h2 className="pp-paywall__title" style={{ fontFamily: "var(--font-reading)", fontStyle: "italic", fontWeight: 400 }}>A room of your own.</h2>
-              <p className="pp-paywall__sub">Unlimited drafts, every register of tone, and a voice profile that remembers how you write.</p>
+              <p className="pp-paywall__sub">More drafts and refines, every register of tone, and a voice profile that remembers how you write.</p>
             </div>
             <div className="pc-panel" style={{ padding: "4px 16px" }}>
               <ul className="pp-paywall__features" style={{ margin: "13px 0" }}>
-                <li><span className="ic">{Ic("infinity")}</span><div><div className="ft-t">Unlimited drafts</div><div className="ft-s">Write and revise without counting</div></div></li>
+                <li><span className="ic">{Ic("arrow-circle-up")}</span><div><div className="ft-t">More drafts and refines</div><div className="ft-s">Higher limits for the messages you shape</div></div></li>
                 <li><span className="ic">{Ic("book-bookmark")}</span><div><div className="ft-t">Your voice profile</div><div className="ft-s">ProsePal learns your cadence over time</div></div></li>
                 <li><span className="ic">{Ic("lock-simple")}</span><div><div className="ft-t">Kept private</div><div className="ft-s">Your pages never train a model</div></div></li>
               </ul>

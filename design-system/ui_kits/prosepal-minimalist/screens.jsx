@@ -66,7 +66,7 @@
             </div>
           </div>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, color: "var(--text-tertiary)", font: "400 13px var(--font-ui)" }}>
-            {Ic("lightning")}<span className="pp-mono" style={{ fontSize: 12 }}>7 of 10 free refines left this week</span>
+            {Ic("lightning")}<span className="pp-mono" style={{ fontSize: 12 }}>Allowance managed by ProsePal</span>
           </div>
         </div>
         <Tab active="new" />
@@ -176,11 +176,11 @@
           <div className="pp-paywall">
             <div className="pp-paywall__hero">
               <div className="pp-paywall__crest">{Ic("feather")}</div>
-              <h2 className="pp-paywall__title">Write without limits</h2>
-              <p className="pp-paywall__sub">Unlimited refines, every tone, and your own private voice profile.</p>
+              <h2 className="pp-paywall__title">More room to write</h2>
+              <p className="pp-paywall__sub">More drafts and refines, every tone, and your own private voice profile.</p>
             </div>
             <ul className="pp-paywall__features">
-              <li><span className="ic">{Ic("infinity")}</span><div><div className="ft-t">Unlimited refines</div><div className="ft-s">Polish as many messages as you like</div></div></li>
+              <li><span className="ic">{Ic("arrow-circle-up")}</span><div><div className="ft-t">Higher writing limits</div><div className="ft-s">More room to shape important messages</div></div></li>
               <li><span className="ic">{Ic("user-focus")}</span><div><div className="ft-t">Your voice profile</div><div className="ft-s">ProsePal learns how you sound</div></div></li>
               <li><span className="ic">{Ic("lock-simple")}</span><div><div className="ft-t">Private by default</div><div className="ft-s">Nothing ever trains on your words</div></div></li>
             </ul>

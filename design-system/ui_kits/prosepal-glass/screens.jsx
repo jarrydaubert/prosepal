@@ -78,8 +78,7 @@
             </div>
           </div>
           <div className="g-panel" style={{ padding: "12px 16px", display: "flex", alignItems: "center", gap: 12 }}>
-            <span className="g-mini-meter"><span style={{ width: "30%" }} /></span>
-            <span style={{ font: "500 13px var(--font-ui)", color: "var(--text-secondary)", whiteSpace: "nowrap" }}>7 of 10 refines</span>
+            <span style={{ font: "500 13px var(--font-ui)", color: "var(--text-secondary)" }}>Allowance managed by ProsePal</span>
           </div>
         </div>
         <GTab />
@@ -177,12 +176,12 @@
           <div className="pp-paywall" style={{ padding: "12px 6px 18px" }}>
             <div className="pp-paywall__hero">
               <div className="g-orb" style={{ width: 64, height: 64, fontSize: 30 }}>{Ic("feather")}</div>
-              <h2 className="pp-paywall__title">Write without limits</h2>
-              <p className="pp-paywall__sub">Unlimited refines, every tone, and a private voice profile that's yours alone.</p>
+              <h2 className="pp-paywall__title">More room to write</h2>
+              <p className="pp-paywall__sub">More drafts and refines, every tone, and a private voice profile that's yours alone.</p>
             </div>
             <div className="g-panel" style={{ padding: "6px 16px" }}>
               <ul className="pp-paywall__features" style={{ margin: "12px 0" }}>
-                <li><span className="ic">{Ic("infinity")}</span><div><div className="ft-t">Unlimited refines</div><div className="ft-s">Polish as much as you like</div></div></li>
+                <li><span className="ic">{Ic("arrow-circle-up")}</span><div><div className="ft-t">Higher writing limits</div><div className="ft-s">More room to shape important messages</div></div></li>
                 <li><span className="ic">{Ic("user-focus")}</span><div><div className="ft-t">Your voice profile</div><div className="ft-s">ProsePal learns how you sound</div></div></li>
                 <li><span className="ic">{Ic("lock-simple")}</span><div><div className="ft-t">Private by default</div><div className="ft-s">Nothing trains on your words</div></div></li>
               </ul>

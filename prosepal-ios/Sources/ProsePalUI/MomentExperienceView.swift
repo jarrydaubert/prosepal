@@ -5536,12 +5536,6 @@ struct MomentPlanDetailView: View {
 
                     MomentPlanBadge(text: "Free", style: .outline)
                 }
-
-                Spacer(minLength: 10)
-
-                Text("this week")
-                    .font(.footnote)
-                    .foregroundStyle(Color.prosePalSlate.opacity(0.68))
             }
 
             VStack(alignment: .leading, spacing: 9) {
@@ -5590,7 +5584,7 @@ struct MomentPlanDetailView: View {
             }
 
             VStack(alignment: .leading, spacing: 9) {
-                MomentPlanFeatureLine(systemImage: "infinity", title: "Unlimited refines & drafts")
+                MomentPlanFeatureLine(systemImage: "arrow.up.circle", title: "More drafts & refines")
                 MomentPlanFeatureLine(systemImage: "book.closed", title: "A voice profile that's yours")
                 MomentPlanFeatureLine(systemImage: "slider.horizontal.3", title: "Every tone & length")
             }
@@ -5670,8 +5664,8 @@ struct MomentPlanDetailView: View {
     private var includedGroup: some View {
         planGroup("Included") {
             MomentPlanListRow(
-                systemImage: "infinity",
-                title: "Unlimited refines",
+                systemImage: "arrow.up.circle",
+                title: "Higher writing limits",
                 tint: .prosePalCare,
                 trailingSystemImage: "checkmark"
             )
@@ -6710,7 +6704,7 @@ private struct MomentPaywallSheet: View {
                 .lineLimit(2)
                 .minimumScaleFactor(0.82)
 
-            Text("Unlimited drafts, every register of tone, and a voice profile that remembers how you write.")
+            Text("More drafts and refines, every register of tone, and a voice profile that remembers how you write.")
                 .font(.subheadline)
                 .foregroundStyle(Color.prosePalSlate.opacity(0.78))
                 .multilineTextAlignment(.center)
@@ -6724,9 +6718,9 @@ private struct MomentPaywallSheet: View {
     private var paywallFeaturePanel: some View {
         VStack(spacing: 0) {
             MomentPremiumFeatureRow(
-                systemImage: "infinity",
-                title: "Unlimited drafts",
-                detail: "Write and revise without counting"
+                systemImage: "arrow.up.circle",
+                title: "More drafts and refines",
+                detail: "Higher limits for the messages you shape"
             )
             MomentPaywallDivider()
             MomentPremiumFeatureRow(

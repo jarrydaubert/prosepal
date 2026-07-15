@@ -249,7 +249,9 @@ completed item instead of turning this file into a status log.
 - [ ] Verify gateway reservation and cost controls in staging. DoD: the guarded
   staging migration dry-run and apply succeed; authenticated and explicitly
   authorized development requests reserve burst and quota capacity before
-  provider work; parallel requests at the last free allowance produce exactly
+  provider work; the legacy pre-provider `check_and_increment_usage` path is no
+  longer the deployed charging boundary; parallel requests at the last free
+  allowance produce exactly
   one provider call and one charge; provider/quality failure is reclaimable;
   repeated healthy smoke requests return a validated three-message response
   rather than timing out or failing the output-quality gate; attempt-level
@@ -411,8 +413,14 @@ completed item instead of turning this file into a status log.
   a test that compares the Swift and gateway sets; adding a native value cannot
   reach production while the gateway would reject it.
 
-- [ ] Add quantified quota UI only when the server contract supplies structured
-  limit, remaining-use, and reset metadata backed by an approved product policy.
+- [ ] Approve the launch gateway-allowance policy and add quantified quota UI
+  only if it earns its place. DoD: the release owner explicitly accepts or
+  changes the repository’s one-lifetime-free and 500-per-month-entitled policy;
+  the server supplies structured limit, remaining-use, and reset metadata on
+  both success and quota-exhaustion paths; the native domain retains it; Plan,
+  Paywall, limit state, StoreKit metadata, and App Store copy remain consistent;
+  private on-device work, failed work, and idempotent replay are not presented
+  as charged; no client invents a count, meter, reset date, or unlimited claim.
 
 - [ ] Prototype an Apple-native Private Cloud Compute careful lane after the
   iOS 27 SDK and entitlement path stabilize. The API-discovery trigger has

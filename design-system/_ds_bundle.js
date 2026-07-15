@@ -554,7 +554,7 @@ try { (() => {
 function _extends() { return _extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, _extends.apply(null, arguments); }
 /**
  * ProsePal Paywall — the upgrade preview. Leads with the felt value
- * ("unlimited refines, every voice"), not a feature dump. Calm.
+ * ("more drafts and refines, every voice"), not a feature dump. Calm.
  */
 function Paywall({
   icon = /*#__PURE__*/React.createElement("i", {
@@ -673,21 +673,22 @@ Object.assign(__ds_scope, { TrustNote });
 try { (() => {
 function _extends() { return _extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, _extends.apply(null, arguments); }
 /**
- * ProsePal UsageCard — subscription / usage state. Shows the plan,
- * how much of the period's allowance is used, and a quiet upgrade path.
+ * ProsePal UsageCard — subscription / usage state. Shows approved structured
+ * allowance metadata when supplied, and otherwise stays explicitly unknown.
  */
 function UsageCard({
   plan = "Free",
-  used = 0,
-  total = 10,
-  unit = "refines",
-  period = "this week",
+  used = null,
+  total = null,
+  unit = "messages",
+  period = null,
   reset = null,
   action = null,
   className = "",
   ...rest
 }) {
-  const low = total - used <= Math.max(1, Math.round(total * 0.25));
+  const hasUsage = Number.isFinite(used) && Number.isFinite(total) && total > 0;
+  const low = hasUsage && total - used <= Math.max(1, Math.round(total * 0.25));
   return /*#__PURE__*/React.createElement("div", _extends({
     className: ["pp-card", "pp-usage", className].filter(Boolean).join(" ")
   }, rest), /*#__PURE__*/React.createElement("div", {
@@ -698,7 +699,7 @@ function UsageCard({
     className: "pp-usage__planname"
   }, plan, " plan"), /*#__PURE__*/React.createElement("span", {
     className: "pp-badge " + (plan === "Free" ? "pp-badge--outline" : "pp-badge--accent")
-  }, plan === "Free" ? "Free" : "Pro")), /*#__PURE__*/React.createElement("span", {
+  }, plan === "Free" ? "Free" : "Pro")), period && /*#__PURE__*/React.createElement("span", {
     className: "pp-usage__period"
   }, period)), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     className: "pp-usage__count",
@@ -707,9 +708,9 @@ function UsageCard({
     }
   }, /*#__PURE__*/React.createElement("span", {
     className: "pp-usage__countnum"
-  }, /*#__PURE__*/React.createElement("b", null, Math.max(0, total - used)), " of ", total, " ", unit, " left"), reset && /*#__PURE__*/React.createElement("span", {
+  }, hasUsage ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("b", null, Math.max(0, total - used)), " of ", total, " ", unit, " left") : "Usage details unavailable"), hasUsage && reset && /*#__PURE__*/React.createElement("span", {
     className: "pp-usage__reset"
-  }, reset)), /*#__PURE__*/React.createElement(__ds_scope.Meter, {
+  }, reset)), hasUsage && /*#__PURE__*/React.createElement(__ds_scope.Meter, {
     value: used,
     max: total,
     tone: low ? "warning" : "accent"
@@ -1233,7 +1234,7 @@ try { (() => {
         color: "var(--text-secondary)",
         whiteSpace: "nowrap"
       }
-    }, "7 of 10 refines"))), /*#__PURE__*/React.createElement(GTab, null), /*#__PURE__*/React.createElement(Home, null));
+    }, "Allowance managed by ProsePal"))), /*#__PURE__*/React.createElement(GTab, null), /*#__PURE__*/React.createElement(Home, null));
   }
   function Draft() {
     return /*#__PURE__*/React.createElement(Phone, {
@@ -1411,9 +1412,9 @@ try { (() => {
       }
     }, Ic("feather")), /*#__PURE__*/React.createElement("h2", {
       className: "pp-paywall__title"
-    }, "Write without limits"), /*#__PURE__*/React.createElement("p", {
+    }, "More room to write"), /*#__PURE__*/React.createElement("p", {
       className: "pp-paywall__sub"
-    }, "Unlimited refines, every tone, and a private voice profile that's yours alone.")), /*#__PURE__*/React.createElement("div", {
+    }, "More drafts and refines, every tone, and a private voice profile that's yours alone.")), /*#__PURE__*/React.createElement("div", {
       className: "g-panel",
       style: {
         padding: "6px 16px"
@@ -1425,11 +1426,11 @@ try { (() => {
       }
     }, /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("span", {
       className: "ic"
-    }, Ic("infinity")), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    }, Ic("arrow-circle-up")), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
       className: "ft-t"
-    }, "Unlimited refines"), /*#__PURE__*/React.createElement("div", {
+    }, "Higher writing limits"), /*#__PURE__*/React.createElement("div", {
       className: "ft-s"
-    }, "Polish as much as you like"))), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("span", {
+    }, "More room to shape important messages"))), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("span", {
       className: "ic"
     }, Ic("user-focus")), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
       className: "ft-t"
@@ -1659,7 +1660,7 @@ try { (() => {
       style: {
         fontSize: 12
       }
-    }, "7 of 10 free refines left this week"))), /*#__PURE__*/React.createElement(Tab, {
+    }, "Allowance managed by ProsePal"))), /*#__PURE__*/React.createElement(Tab, {
       active: "new"
     }), /*#__PURE__*/React.createElement(Home, null));
   }
@@ -1843,17 +1844,17 @@ try { (() => {
       className: "pp-paywall__crest"
     }, Ic("feather")), /*#__PURE__*/React.createElement("h2", {
       className: "pp-paywall__title"
-    }, "Write without limits"), /*#__PURE__*/React.createElement("p", {
+    }, "More room to write"), /*#__PURE__*/React.createElement("p", {
       className: "pp-paywall__sub"
-    }, "Unlimited refines, every tone, and your own private voice profile.")), /*#__PURE__*/React.createElement("ul", {
+    }, "More drafts and refines, every tone, and your own private voice profile.")), /*#__PURE__*/React.createElement("ul", {
       className: "pp-paywall__features"
     }, /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("span", {
       className: "ic"
-    }, Ic("infinity")), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    }, Ic("arrow-circle-up")), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
       className: "ft-t"
-    }, "Unlimited refines"), /*#__PURE__*/React.createElement("div", {
+    }, "Higher writing limits"), /*#__PURE__*/React.createElement("div", {
       className: "ft-s"
-    }, "Polish as many messages as you like"))), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("span", {
+    }, "More room to shape important messages"))), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("span", {
       className: "ic"
     }, Ic("user-focus")), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
       className: "ft-t"
@@ -2658,15 +2659,15 @@ try { (() => {
       }
     }, "A study of your own"), /*#__PURE__*/React.createElement("p", {
       className: "pp-paywall__sub"
-    }, "Unlimited drafts, every register of tone, and a voice profile that remembers how you write.")), /*#__PURE__*/React.createElement("ul", {
+    }, "More drafts and refines, every register of tone, and a voice profile that remembers how you write.")), /*#__PURE__*/React.createElement("ul", {
       className: "pp-paywall__features"
     }, /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("span", {
       className: "ic"
-    }, Ic("infinity")), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    }, Ic("arrow-circle-up")), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
       className: "ft-t"
-    }, "Unlimited drafts"), /*#__PURE__*/React.createElement("div", {
+    }, "More drafts and refines"), /*#__PURE__*/React.createElement("div", {
       className: "ft-s"
-    }, "Write and revise without counting"))), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("span", {
+    }, "Higher limits for the messages you shape"))), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("span", {
       className: "ic"
     }, Ic("book-bookmark")), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
       className: "ft-t"
@@ -2999,7 +3000,7 @@ try { (() => {
         font: "400 16px/1.5 var(--font-ui)",
         color: "var(--text-secondary)"
       }
-    }, "Unlimited drafts and a private voice profile \u2014 for the price of a good notebook each month.")), /*#__PURE__*/React.createElement("div", {
+    }, "More drafts and a private voice profile \u2014 for the price of a good notebook each month.")), /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         flexDirection: "column",
@@ -3007,7 +3008,7 @@ try { (() => {
       }
     }, /*#__PURE__*/React.createElement("div", {
       className: "d-feat"
-    }, Ic("infinity"), /*#__PURE__*/React.createElement("span", null, "Unlimited refines & drafts")), /*#__PURE__*/React.createElement("div", {
+    }, Ic("arrow-circle-up"), /*#__PURE__*/React.createElement("span", null, "Higher writing limits")), /*#__PURE__*/React.createElement("div", {
       className: "d-feat"
     }, Ic("user-focus"), /*#__PURE__*/React.createElement("span", null, "A voice profile that's yours")), /*#__PURE__*/React.createElement("div", {
       className: "d-feat"
@@ -3475,7 +3476,7 @@ try { (() => {
         fontFamily: "var(--font-mono)",
         fontSize: 12
       }
-    }, "7 of 10 free refines left this week"))), /*#__PURE__*/React.createElement(Dock, {
+    }, "Allowance managed by ProsePal"))), /*#__PURE__*/React.createElement(Dock, {
       active: "new"
     }), /*#__PURE__*/React.createElement(Home, null));
   }
@@ -4250,28 +4251,14 @@ try { (() => {
       className: "pp-badge pp-badge--outline"
     }, "Free")), /*#__PURE__*/React.createElement("span", {
       className: "pp-usage__period"
-    }, "this week")), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    }, "current allowance")), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
       className: "pp-usage__count",
       style: {
         marginBottom: 8
       }
     }, /*#__PURE__*/React.createElement("span", {
       className: "pp-usage__countnum"
-    }, /*#__PURE__*/React.createElement("b", null, "3"), " of 10 refines left"), /*#__PURE__*/React.createElement("span", {
-      className: "pp-usage__reset",
-      style: {
-        fontFamily: "var(--font-mono)"
-      }
-    }, "resets Mon")), /*#__PURE__*/React.createElement("div", {
-      className: "pp-meter"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "pp-meter__track"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "pp-meter__fill pp-meter__fill--warning",
-      style: {
-        width: "70%"
-      }
-    }))))), /*#__PURE__*/React.createElement("div", {
+    }, "Usage updates after ProsePal syncs your allowance.")))), /*#__PURE__*/React.createElement("div", {
       className: "pc-upsell"
     }, /*#__PURE__*/React.createElement("div", {
       className: "pc-upsell__h"
@@ -4295,7 +4282,7 @@ try { (() => {
       }
     }, "For the messages that matter most"))), /*#__PURE__*/React.createElement("ul", {
       className: "pc-upsell__list"
-    }, /*#__PURE__*/React.createElement("li", null, Ic("infinity"), " Unlimited refines & drafts"), /*#__PURE__*/React.createElement("li", null, Ic("book-bookmark"), " A voice profile that's yours"), /*#__PURE__*/React.createElement("li", null, Ic("sliders"), " Every tone & length")), /*#__PURE__*/React.createElement("button", {
+    }, /*#__PURE__*/React.createElement("li", null, Ic("arrow-circle-up"), " More drafts & refines"), /*#__PURE__*/React.createElement("li", null, Ic("book-bookmark"), " A voice profile that's yours"), /*#__PURE__*/React.createElement("li", null, Ic("sliders"), " Every tone & length")), /*#__PURE__*/React.createElement("button", {
       className: "pp-btn pp-btn--primary pp-btn--lg pp-btn--block"
     }, "See Pro"))), /*#__PURE__*/React.createElement(Home, null));
   }
@@ -4340,11 +4327,11 @@ try { (() => {
       style: {
         color: "var(--voice)"
       }
-    }, Ic("infinity")), /*#__PURE__*/React.createElement("span", {
+    }, Ic("arrow-circle-up")), /*#__PURE__*/React.createElement("span", {
       className: "pp-row__body"
     }, /*#__PURE__*/React.createElement("span", {
       className: "pp-row__title"
-    }, "Unlimited refines")), /*#__PURE__*/React.createElement("span", {
+    }, "Higher writing limits")), /*#__PURE__*/React.createElement("span", {
       className: "pp-row__trail",
       style: {
         color: "var(--voice)"
@@ -4423,7 +4410,7 @@ try { (() => {
       }
     }, "A room of your own."), /*#__PURE__*/React.createElement("p", {
       className: "pp-paywall__sub"
-    }, "Unlimited drafts, every register of tone, and a voice profile that remembers how you write.")), /*#__PURE__*/React.createElement("div", {
+    }, "More drafts and refines, every register of tone, and a voice profile that remembers how you write.")), /*#__PURE__*/React.createElement("div", {
       className: "pc-panel",
       style: {
         padding: "4px 16px"
@@ -4435,11 +4422,11 @@ try { (() => {
       }
     }, /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("span", {
       className: "ic"
-    }, Ic("infinity")), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    }, Ic("arrow-circle-up")), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
       className: "ft-t"
-    }, "Unlimited drafts"), /*#__PURE__*/React.createElement("div", {
+    }, "More drafts and refines"), /*#__PURE__*/React.createElement("div", {
       className: "ft-s"
-    }, "Write and revise without counting"))), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("span", {
+    }, "Higher limits for the messages you shape"))), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("span", {
       className: "ic"
     }, Ic("book-bookmark")), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
       className: "ft-t"
@@ -4794,34 +4781,13 @@ try { (() => {
         color: "var(--text)",
         marginTop: 12
       }
-    }, "You've used this week's ", /*#__PURE__*/React.createElement("span", {
-      style: {
-        fontStyle: "italic"
-      }
-    }, "ten.")), /*#__PURE__*/React.createElement("p", {
+    }, "Draft limit reached"), /*#__PURE__*/React.createElement("p", {
       style: {
         font: "400 15px/1.55 var(--font-ui)",
         color: "var(--text-secondary)",
         maxWidth: "28ch"
       }
-    }, "Your free refines reset Monday. Or go Pro for unlimited \u2014 and never count again."), /*#__PURE__*/React.createElement("div", {
-      className: "pc-quota-meter"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "pp-meter__track"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "pp-meter__fill pp-meter__fill--warning",
-      style: {
-        width: "100%"
-      }
-    })), /*#__PURE__*/React.createElement("span", {
-      style: {
-        fontFamily: "var(--font-mono)",
-        fontSize: 11,
-        color: "var(--text-tertiary)",
-        marginTop: 6,
-        display: "block"
-      }
-    }, "10 of 10 used"))), /*#__PURE__*/React.createElement("div", {
+    }, "The service supplies the current allowance message. Pro offers higher writing limits.")), /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         flexDirection: "column",
@@ -4829,9 +4795,9 @@ try { (() => {
       }
     }, /*#__PURE__*/React.createElement("button", {
       className: "pp-btn pp-btn--primary pp-btn--xl pp-btn--block"
-    }, Ic("feather"), " Go Pro \u2014 unlimited"), /*#__PURE__*/React.createElement("button", {
+    }, Ic("feather"), " View Pro options"), /*#__PURE__*/React.createElement("button", {
       className: "pp-btn pp-btn--ghost pp-btn--md pp-btn--block"
-    }, "Wait until Monday"))), /*#__PURE__*/React.createElement(Home, null));
+    }, "Back to your note"))), /*#__PURE__*/React.createElement(Home, null));
   }
   window.PPReg.add("Sheets & states", "Overlays are glass; errors & empties stay warm and reassuring", [["17", "Share / insert", ShareSheet], ["18", "Copied toast", CopiedToast], ["19", "Offline", Offline], ["20", "Generation error", GenError], ["21", "Quota reached", Quota]]);
 

@@ -49,17 +49,18 @@ function Demo() {
             action={<Button icon={I("feather")}>Write your first</Button>} />
         </div>
         <div className="lab">UsageCard</div>
-        <UsageCard plan="Free" used={7} total={10} unit="refines" period="this week" reset="resets Mon"
-          action={<Button block variant="secondary" size="md">Upgrade to Pro</Button>} />
+        <EmptyState icon={I("hourglass-medium")} title="Draft limit reached"
+          body="The service supplies the current allowance message. Pro offers higher writing limits."
+          action={<Button block variant="secondary" size="md">View Pro options</Button>} />
       </div>
 
       <div className="col">
         <div className="lab">Paywall</div>
         <div className="surf">
-          <Paywall title="Write without limits"
-            sub="Unlimited refines, every tone, and your own private voice profile."
+          <Paywall title="More room to write"
+            sub="More drafts and refines, every tone, and your own private voice profile."
             features={[
-              { icon: I("infinity"), title: "Unlimited refines", sub: "Polish as many messages as you like" },
+              { icon: I("arrow-circle-up"), title: "Higher writing limits", sub: "More room to shape important messages" },
               { icon: I("user-focus"), title: "Your voice profile", sub: "ProsePal learns how you sound" },
               { icon: I("sliders"), title: "Every tone & length", sub: "From tender to all-business" },
               { icon: I("lock-simple"), title: "Private by default", sub: "Nothing trains on your words" },

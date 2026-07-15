@@ -81,6 +81,9 @@ Paywall or limit boundary
 - Restore is available from Paywall and Settings.
 - Store ownership comes from Apple; server policy remains authoritative for
   server-side paid limits or extras.
+- Premium is presented as higher writing limits, not unlimited use. Exact
+  remaining-use and reset copy appears only when approved structured policy
+  metadata reaches the user-facing state.
 
 ## Sign in with Apple
 

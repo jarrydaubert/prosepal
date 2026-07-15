@@ -125,13 +125,12 @@
         <div className="pp-screen-body" style={{ display: "flex", flexDirection: "column", padding: "0 18px 16px" }}>
           <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", gap: 7, padding: "0 18px" }}>
             <div className="pc-crest" style={{ width: 60, height: 60, fontSize: 28 }}>{Ic("hourglass-medium")}</div>
-            <h2 style={{ fontFamily: "var(--font-reading)", fontSize: 26, fontWeight: 500, color: "var(--text)", marginTop: 12 }}>You've used this week's <span style={{ fontStyle: "italic" }}>ten.</span></h2>
-            <p style={{ font: "400 15px/1.55 var(--font-ui)", color: "var(--text-secondary)", maxWidth: "28ch" }}>Your free refines reset Monday. Or go Pro for unlimited — and never count again.</p>
-            <div className="pc-quota-meter"><div className="pp-meter__track"><div className="pp-meter__fill pp-meter__fill--warning" style={{ width: "100%" }} /></div><span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text-tertiary)", marginTop: 6, display: "block" }}>10 of 10 used</span></div>
+            <h2 style={{ fontFamily: "var(--font-reading)", fontSize: 26, fontWeight: 500, color: "var(--text)", marginTop: 12 }}>Draft limit reached</h2>
+            <p style={{ font: "400 15px/1.55 var(--font-ui)", color: "var(--text-secondary)", maxWidth: "28ch" }}>The service supplies the current allowance message. Pro offers higher writing limits.</p>
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            <button className="pp-btn pp-btn--primary pp-btn--xl pp-btn--block">{Ic("feather")} Go Pro — unlimited</button>
-            <button className="pp-btn pp-btn--ghost pp-btn--md pp-btn--block">Wait until Monday</button>
+            <button className="pp-btn pp-btn--primary pp-btn--xl pp-btn--block">{Ic("feather")} View Pro options</button>
+            <button className="pp-btn pp-btn--ghost pp-btn--md pp-btn--block">Back to your note</button>
           </div>
         </div>
         <Home />

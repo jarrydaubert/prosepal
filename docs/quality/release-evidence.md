@@ -45,7 +45,7 @@ Recommended files:
 | Area | Proof |
 |---|---|
 | Archive | Correct bundle, public configuration present, privileged secrets absent |
-| Gateway | Staging auth, quota, burst, idempotency, replay, retention, and safe errors |
+| Gateway | Staging auth, quota, burst, idempotency, replay, retention, charging semantics, and safe errors |
 | Apple identity | Sign-in, cancellation, refresh, sign-out, continuity, and deletion material |
 | StoreKit | Products, purchase, cancellation/pending, restore, transaction updates, revocation/refund |
 | Entitlement server | Notification verification and reconciliation to the correct user |
@@ -53,6 +53,13 @@ Recommended files:
 | Accessibility | VoiceOver, Dynamic Type, contrast, motion, transparency, keyboard, and width matrix |
 | Privacy | No sensitive content or credentials in logs, bundle, evidence, or repository |
 | Rollback | Candidate can be stopped or replaced without corrupting account or entitlement state |
+
+Premium and quota evidence must compare the running Plan, Paywall, limit state,
+StoreKit product metadata, and App Store listing. None may promise unlimited
+use while the server enforces a finite allowance. If quantified usage is ever
+shown, record the structured limit, remaining, and reset fields that drove the
+UI on both success and exhaustion paths; screenshots of invented or static
+counters are not evidence.
 
 ## Sign-off
 

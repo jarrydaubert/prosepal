@@ -173,7 +173,9 @@ func quotaStateUsesServerMessageWithoutInventingLimitsOrResetDates() throws {
     #expect(source.contains("Label(\"View Pro options\", systemImage: \"feather\")"))
     #expect(!source.contains("10 of 10 used"))
     #expect(!source.contains("reset Monday"))
-    #expect(!source.contains("Go Pro — unlimited"))
+    #expect(!source.contains("Text(\"this week\")"))
+    #expect(!source.localizedCaseInsensitiveContains("unlimited"))
+    #expect(!source.localizedCaseInsensitiveContains("without counting"))
     #expect(!source.contains("Wait until Monday"))
 }
 

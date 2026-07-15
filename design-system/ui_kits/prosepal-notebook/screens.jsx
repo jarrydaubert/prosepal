@@ -154,10 +154,10 @@
             <div className="pp-paywall__hero">
               <div className="nb-crest" style={{ width: 64, height: 64, fontSize: 30 }}>{Ic("feather")}</div>
               <h2 className="pp-paywall__title" style={{ fontStyle: "italic", fontWeight: 400 }}>A study of your own</h2>
-              <p className="pp-paywall__sub">Unlimited drafts, every register of tone, and a voice profile that remembers how you write.</p>
+              <p className="pp-paywall__sub">More drafts and refines, every register of tone, and a voice profile that remembers how you write.</p>
             </div>
             <ul className="pp-paywall__features">
-              <li><span className="ic">{Ic("infinity")}</span><div><div className="ft-t">Unlimited drafts</div><div className="ft-s">Write and revise without counting</div></div></li>
+              <li><span className="ic">{Ic("arrow-circle-up")}</span><div><div className="ft-t">More drafts and refines</div><div className="ft-s">Higher limits for the messages you shape</div></div></li>
               <li><span className="ic">{Ic("book-bookmark")}</span><div><div className="ft-t">Your voice profile</div><div className="ft-s">ProsePal learns your cadence over time</div></div></li>
               <li><span className="ic">{Ic("lock-simple")}</span><div><div className="ft-t">Kept private</div><div className="ft-s">Your pages never train a model</div></div></li>
             </ul>

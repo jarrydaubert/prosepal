@@ -105,7 +105,7 @@ The whole system is built on one idea: **paper & ink**. Warm, calm, premium; the
 - **Weights:** **Regular** almost everywhere; **Fill** only for the selected tab-bar item and the status-bar glyphs. Avoid bold/duotone — they read heavier than iOS.
 - **No emoji as icons.** No multicolor icons. Icons are monochrome and inherit `currentColor`, so they tint with their context (ink, clay, sage).
 - **Brand motif:** the **pilcrow ¶** (the editor's paragraph mark) is ProsePal's quiet signature — it appears as the tittle on the app icon and can mark section breaks. It nods to *editing*, avoiding quill/parchment cliché.
-- **Key product glyphs:** `feather` (compose), `magic-wand` (refine), `heart` (warmer), `scissors` (shorter), `sparkle` (sharper), `seal-check` (voice kept), `lock-simple` (private), `microphone` (dictate), `cards` (drafts), `bookmarks-simple` (library), `arrow-clockwise` (try again), `user-focus` (voice profile), `infinity` (unlimited).
+- **Key product glyphs:** `feather` (compose), `magic-wand` (refine), `heart` (warmer), `scissors` (shorter), `sparkle` (sharper), `seal-check` (voice kept), `lock-simple` (private), `microphone` (dictate), `cards` (drafts), `bookmarks-simple` (library), `arrow-clockwise` (try again), `user-focus` (voice profile), `arrow-circle-up` (higher limits).
 - **Logo assets:** `assets/app-icon.svg`, `assets/logo-wordmark.svg`, `assets/logo-wordmark-dark.svg`. _SVG text references Newsreader; outline to paths before shipping to production._
 
 ---
