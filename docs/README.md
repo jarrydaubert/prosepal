@@ -85,8 +85,10 @@ is reachable from this page and has one job. Open work belongs only in
   database functions, and Apple boundaries.
 - [Generation contract](./reference/generation-contract.md) — versioned request
   and response fields, input limits, identity, and HTTP mapping.
-- [Feature status matrix](./reference/feature-status.csv) — detailed user-story
-  implementation and evidence record.
+- [Feature status ledger](./reference/feature-status.jsonl) — canonical,
+  agent-queryable user-story implementation and evidence records.
+- [Generated feature status CSV](./reference/feature-status.csv) —
+  human-readable compatibility export; do not edit it directly.
 
 ## Project control
 

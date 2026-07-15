@@ -1,8 +1,9 @@
 # Backlog
 
 This file contains unresolved work only. Completed behavior and verification
-history belong in `docs/reference/feature-status.csv`, release evidence, and git
-history.
+history belong in `docs/reference/feature-status.jsonl`, release evidence, and
+git history. The adjacent CSV is a generated compatibility export, not an
+editable source.
 
 Every item uses `[ ]` until its definition of done is fully satisfied. Remove a
 completed item instead of turning this file into a status log.

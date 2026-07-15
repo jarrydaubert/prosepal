@@ -5,6 +5,8 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$REPO_ROOT"
 
+python3 scripts/validate_feature_status.py
+
 ruby <<'RUBY'
 require "cgi"
 require "find"
@@ -45,6 +47,7 @@ required = %w[
   docs/reference/configuration.md
   docs/reference/generation-contract.md
   docs/reference/service-endpoints.md
+  docs/reference/feature-status.jsonl
   docs/reference/feature-status.csv
   docs/history/README.md
 ]
@@ -63,7 +66,7 @@ Find.find(docs_root.to_s) do |path|
   end
   next if relative == "README.md"
   next if relative.start_with?("guide/assets/")
-  next unless %w[.md .html .csv].include?(File.extname(path))
+  next unless %w[.md .html .jsonl .csv].include?(File.extname(path))
 
   active_files << relative
 end
@@ -154,7 +157,7 @@ Find.find(docs_root.to_s) do |path|
     Find.prune if relative == "history"
     next
   end
-  next if relative == "BACKLOG.md" || relative == "reference/feature-status.csv"
+  next if relative == "BACKLOG.md"
   active_text_files << Pathname(path) if %w[.md .html].include?(File.extname(path))
 end
 active_text_files.concat(%w[README.md AGENTS.md CLAUDE.md SECURITY.md].map { |path| root.join(path) })

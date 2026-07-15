@@ -2,7 +2,7 @@
 
 This is the compact catalogue of behaviour present in the ProsePal iOS app.
 Detailed code and test evidence lives in
-[feature-status.csv](../reference/feature-status.csv); unresolved work lives in
+[feature-status.jsonl](../reference/feature-status.jsonl); unresolved work lives in
 [BACKLOG.md](../BACKLOG.md).
 
 ## Moment writing

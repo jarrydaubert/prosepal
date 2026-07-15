@@ -51,6 +51,23 @@ Run after repository, workflow, configuration, or documentation changes:
 ./scripts/release_preflight.sh native --no-env-file
 ```
 
+The canonical feature ledger is `docs/reference/feature-status.jsonl`. After a
+public-behaviour or evidence change, edit that file and regenerate the
+human-readable CSV; never edit the CSV directly:
+
+```bash
+python3 scripts/export_feature_status_csv.py
+python3 scripts/validate_feature_status.py
+python3 scripts/export_feature_status_csv.py --check
+```
+
+The documentation validator and native release preflight run the same ledger
+validation, so a stale CSV or invalid evidence reference fails CI.
+Keep records in ID order and never renumber an existing feature. A deliberate
+feature addition or removal also updates `EXPECTED_RECORD_COUNT` in
+`scripts/validate_feature_status.py`; the count change should be visible in the
+same review as the ledger change.
+
 ## Xcode schemes
 
 - `ProsePal`: shared production-identity scheme with no embedded secrets.

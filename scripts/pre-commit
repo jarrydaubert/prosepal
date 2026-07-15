@@ -17,6 +17,17 @@ fi
 
 git diff --cached --check
 
+JSONL_STAGED=0
+CSV_STAGED=0
+echo "$STAGED_NATIVE_FILES" | grep -q '^docs/reference/feature-status.jsonl$' && JSONL_STAGED=1
+echo "$STAGED_NATIVE_FILES" | grep -q '^docs/reference/feature-status.csv$' && CSV_STAGED=1
+if [[ "$JSONL_STAGED" != "$CSV_STAGED" ]]; then
+  echo "Stage feature-status.jsonl and its generated CSV export together." >&2
+  exit 1
+fi
+
+python3 scripts/validate_feature_status.py
+
 if echo "$STAGED_NATIVE_FILES" | grep -q '^prosepal-ios/'; then
   (cd prosepal-ios && swift test --quiet)
 fi

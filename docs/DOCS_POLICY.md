@@ -25,7 +25,8 @@ the same instructions.
 - Open work, “still needs”, proposed tickets, and unfinished status belong only
   in `BACKLOG.md`.
 - Completed implementation history belongs in Git history or
-  `reference/feature-status.csv`, not the backlog.
+  `reference/feature-status.jsonl`, not the backlog. Agents edit the JSONL and
+  regenerate its CSV compatibility export; they never edit the CSV directly.
 - Test counts, pass percentages, dated verification claims, and temporary
   worktree paths do not belong in active docs.
 - Commands include prerequisites, pass criteria, and failure handling.
@@ -44,7 +45,10 @@ the same instructions.
 ## Allowed time-bound material
 
 - `docs/BACKLOG.md`: unresolved work with `[ ]` and a definition of done.
-- `docs/reference/feature-status.csv`: implementation and evidence history.
+- `docs/reference/feature-status.jsonl`: canonical implementation and evidence
+  ledger, including explicit verification dates and commits.
+- `docs/reference/feature-status.csv`: generated human-readable compatibility
+  export; never an editable source.
 - `docs/history/releases/`: immutable release evidence and postmortems.
 - Private `artifacts/release/`: candidate-specific evidence, normally untracked.
 
@@ -66,7 +70,7 @@ for rationale but must not rely on them for current commands.
 - Workflow changes update the relevant file under `docs/operations/`.
 - Configuration changes update `docs/reference/configuration.md`.
 - Public behaviour changes update `docs/product/capabilities.md` and the feature
-  status matrix when evidence changes.
+  status JSONL when evidence changes, followed by regenerating its CSV export.
 
 ## Document size and splitting
 
@@ -88,10 +92,14 @@ Split by reader job and component ownership, not by an arbitrary line count.
 Run:
 
 ```bash
+python3 scripts/validate_feature_status.py
+python3 scripts/export_feature_status_csv.py --check
 ./scripts/validate_docs.sh
 ./scripts/release_preflight.sh native --no-env-file
 ```
 
 Documentation validation checks the canonical inventory, local links, forbidden
 status language in active docs, references to retired canonical paths, and
-repository paths used by active agent commands and skills.
+repository paths used by active agent commands and skills. Feature-ledger
+validation checks its schema, evidence paths, state vocabulary, deterministic
+format, and generated-export parity.
