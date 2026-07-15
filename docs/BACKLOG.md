@@ -326,11 +326,10 @@ completed item instead of turning this file into a status log.
   vocabulary. DoD: user-facing copy such as the "Native iOS" row value in
   `MomentSettingsComponents.swift` is replaced with clear product language;
   active architecture, app guide, feature-status, release, and operational
-  documentation describe the app simply as ProsePal or the iOS app; `AGENTS.md`
-  stops describing the app as a "rewrite", states that Flutter is archived at
-  `flutter-prod-freeze-2026-06-25`, and records that remaining "Native" names are
-  historical residue rather than a live product distinction; frozen historical
-  records remain clearly marked as historical.
+  documentation describe the app simply as ProsePal or the iOS app; frozen
+  historical records remain clearly marked as historical. `AGENTS.md` and
+  `CLAUDE.md` are already done: they no longer call the app a "rewrite" and now
+  record that remaining "Native" names are historical residue.
 
 - [ ] Audit and retire obsolete pre-release compatibility and configuration
   residue. Inspect legacy draft values, removed feature flags and vocabulary,
