@@ -162,18 +162,39 @@ completed item instead of turning this file into a status log.
   explicitly assert that it receives zero requests; regressions fail rather than
   hanging the test run.
 
-- [ ] Make sign-out and paywall outcomes locally explicit throughout their
-  asynchronous lifecycles. DoD: sign-out owns a visible and accessible
-  in-progress state, rejects duplicate taps, reports failure with a retry path,
-  and never claims completion before local and remote session clearing
-  converges; the open paywall shows action-specific purchase or restore
-  progress and keeps success, failure, pending, cancelled, and indeterminate
-  outcomes visible where the action occurred instead of relying on a transient
-  notice behind the sheet; durable drafts and composer input survive every
-  wait and outcome; deterministic delayed UI scenarios prove immediate
-  acknowledgement, duplicate prevention, honest retry or final state, and the
-  absence of invented percentage progress. Keep this a focused feedback slice,
-  not a composer or result-screen redesign.
+- [ ] Complete cross-cutting asynchronous feedback UI automation. DoD: a durable
+  matrix covers generation, Sign in with Apple, product loading, purchase,
+  restore, account deletion, sign-out, and every other user-triggered durable
+  network action. Deterministic delayed success, failure, and indeterminate
+  scenarios, where applicable, prove that each action acknowledges the tap
+  immediately, exposes an honest accessible in-progress label or announcement,
+  blocks accidental duplicate submission, preserves drafts and composer input,
+  avoids an apparently frozen screen, and reaches a confirmed success, explicit
+  failure with retry, pending/cancelled outcome, or honest indeterminate state.
+  No scenario may expose invented percentage progress or claim completion
+  before its injected boundary confirms the outcome. Assertions use stable
+  actions and outcomes rather than exact copy, timing, view hierarchy, or the
+  volatile composer and result-screen layout. Every unclear, inconsistent, or
+  misleading waiting experience found by the matrix is reported as a named
+  product finding with a dedicated follow-up slice rather than being hidden
+  inside test work.
+
+- [ ] Give sign-out a complete local asynchronous feedback lifecycle. DoD:
+  sign-out acknowledges the tap immediately, owns visible and accessible
+  in-progress feedback, blocks duplicate taps, preserves unrelated drafts and
+  composer input, reports failure with a retry path, and never claims completion
+  before local and remote session clearing converges. Deterministic delayed
+  success and failure UI scenarios prove each state without exact-copy or
+  layout assertions.
+
+- [ ] Keep purchase and restore outcomes visible inside the open paywall. DoD:
+  purchase and restore expose action-specific accessible progress, prevent
+  duplicate submission, preserve durable drafts and composer input, and keep
+  confirmed success, failure, pending, cancelled, and indeterminate outcomes at
+  the action surface instead of relying on a transient notice behind the sheet.
+  Deterministic delayed UI scenarios cover every supported outcome without fake
+  percentage progress or early completion. Keep this a focused feedback slice,
+  not a paywall, composer, or result-screen redesign.
 
 - [ ] Capture physical-device evidence for outgoing ShareLink and local-data
   file export. DoD: on a supported iPhone, active and saved drafts each present
