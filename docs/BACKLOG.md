@@ -29,12 +29,6 @@ completed item instead of turning this file into a status log.
 
 ## Native V1 — Engineering
 
-- [ ] Finish the extension-safe launch/input contract shared by the app, App
-  Intents, Share Extension, widget/control, and production/staging routing.
-  DoD: one canonical payload, app-group key, URL-routing policy, and text limit;
-  production and staging targets compile against it; encode/decode,
-  sanitization, and target-membership tests prevent drift.
-
 - [ ] Complete lane-specific live writing-quality evidence for private and
   careful generation. DoD: separately approved live samples exercise the full
   representative rubric across both lanes without retaining user content or

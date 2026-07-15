@@ -17,17 +17,27 @@ The app root always selects the Moment destination and applies the sanitized
 launch request to `MomentModel`. Writing still begins only after the user taps
 the explicit draft action.
 
-## Shared launch types
+## Shared launch contract
 
-`ProsePalAppIntents.swift` owns the app-side handoff types:
+`ProsePalDomain/MomentHandoff.swift` owns the one canonical, extension-safe
+launch/input contract. It imports only `Foundation`, and every target — the app,
+the Share Extension, and the widget/control extensions — links `ProsePalDomain`
+and uses these types, so there is a single payload, storage policy, URL-routing
+policy, and sanitisation policy with no target-local reinterpretation.
 
 | Type | Responsibility |
 |---|---|
+| `MomentHandoffEnvironment` | Resolves production/staging from the bundle and owns the per-environment URL scheme and storage key, plus the shared app-group identifier and the set of known schemes |
 | `MomentLaunchRequest` | Optional person, occasion, shared text, allowlisted source, and creation time |
 | `MomentLaunchStore` | One-time App Intent payload in standard `UserDefaults` |
 | `SharedMomentLaunchPayload` | Text/URL payload for an app-group handoff |
-| `SharedMomentLaunchStore` | One-time app-group persistence and consumption |
-| `MomentDeepLink` | Parses the production `prosepal://moment` route |
+| `SharedMomentLaunchStore` | One-time app-group persistence and consumption, keyed per environment |
+| `MomentLaunchSource` | The allowlisted source markers and their sanitiser |
+| `MomentDeepLink` | Parses and builds the `prosepal[-staging]://moment` route for both environments |
+
+`ProsePalAppIntents.swift` retains only the AppIntents-dependent surfaces
+(`StartMomentIntent`, `ProsePalAppShortcuts`, `ProsePalIntentsPackage`), which
+consume the shared contract.
 
 Launch stores consume by removing the stored value before decoding it. A
 handoff is therefore not silently replayed on every launch.
@@ -58,9 +68,11 @@ The widget target contains:
 Both open a Moment deep link. They carry only an allowlisted source marker and
 do not place message content in the URL.
 
-Widget kind and URL-scheme values are selected from the extension bundle ID.
-The production target uses `prosepal`; the staging extension constructs
-`prosepal-staging`.
+Widget kind and URL-scheme values come from `MomentHandoffEnvironment.current`,
+resolved from the extension bundle ID. The production target routes through
+`prosepal`; the staging target through `prosepal-staging`. The widget builds its
+open URLs with `MomentDeepLink.momentURL(source:environment:)` rather than
+assembling a scheme string, so it carries only an allowlisted source marker.
 
 ## Share Extension
 
@@ -68,17 +80,18 @@ The Share Extension accepts plain text, text, and at most one web URL. It:
 
 1. loads supported attachments;
 2. combines URL and text fragments;
-3. trims and caps shared text to 1,200 characters;
+3. trims and caps shared text through the shared Moment-detail policy;
 4. previews the sanitized context;
-5. writes a one-time payload to `group.com.prosepal.prosepal`; and
+5. writes a one-time `SharedMomentLaunchPayload` to the environment's app-group
+   key via `SharedMomentLaunchStore`; and
 6. asks the system to open the app with source `share_extension`.
 
 The main app consumes shared app-group data only when the deep link carries that
 source. Arbitrary URLs cannot make it read pending shared text.
 
-The extension currently carries a target-local payload/store implementation so
-it can compile independently. The canonical extension-safe contract and target
-membership consolidation are tracked in [BACKLOG.md](../BACKLOG.md).
+The extension links `ProsePalDomain` and uses the canonical contract directly; it
+no longer carries a target-local payload, store, sanitiser, app-group identifier,
+key, or scheme string.
 
 ## Sanitization and trust
 
@@ -90,13 +103,22 @@ membership consolidation are tracked in [BACKLOG.md](../BACKLOG.md).
 - Deep links do not accept arbitrary shared message text.
 - Diagnostics record source and counts, not the person or shared content.
 
-## Current staging boundary
+## Production and staging isolation
 
-`MomentDeepLink` currently accepts the production `prosepal` scheme, while the
-staging widget and Share Extension construct `prosepal-staging`. This is why the
-optional targets remain release-qualified surfaces rather than assumed v1
-features. The shared launch-contract backlog item owns production/staging route
-convergence.
+`MomentDeepLink` accepts both registered schemes (`prosepal` and
+`prosepal-staging`), so a staging widget or Share Extension deep link is routed
+rather than silently dropped. A target only ever receives its own scheme because
+`PROSEPAL_URL_SCHEME` is set per build configuration.
+
+Production and staging share one app-group container but never read each other's
+handoff: `MomentHandoffEnvironment` keys the shared payload per environment
+(`prosepal.pendingSharedMoment.v1` for production,
+`prosepal.pendingSharedMoment.staging.v1` for staging). Isolation therefore does
+not depend on a separate app-group entitlement.
+
+These are locally verified behaviours. The optional targets remain
+release-qualified surfaces until each one hands off once on a physical device
+from its real system surface.
 
 ## Release rule
 
@@ -107,12 +129,14 @@ candidate rather than weakening the app.
 
 ## Source map
 
+- `prosepal-ios/Sources/ProsePalDomain/MomentHandoff.swift`
 - `prosepal-ios/Sources/ProsePalUI/ProsePalAppIntents.swift`
 - `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift`
 - `prosepal-ios/Widgets/ProsePalWidgets.swift`
 - `prosepal-ios/ShareExtension/ShareViewController.swift`
 - `prosepal-ios/App/ProsePal.entitlements`
 - `prosepal-ios/ShareExtension/ProsePalShareExtension.entitlements`
+- `prosepal-ios/Tests/ProsePalDomainTests/MomentHandoffTests.swift`
 - `prosepal-ios/Tests/ProsePalUITests/ProsePalAppIntentsTests.swift`
 - `prosepal-ios/Tests/ProsePalUITests/SystemSurfaceProjectTests.swift`
 

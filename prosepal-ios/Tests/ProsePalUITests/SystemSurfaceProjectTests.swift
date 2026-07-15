@@ -33,6 +33,13 @@ func widgetExtensionTargetStaysWiredIntoTheAppProject() throws {
     #expect(project.contains("PROSEPAL_WIDGET_DISPLAY_NAME = \"ProsePal Staging Widgets\";"))
     #expect(project.contains("PROSEPAL_SHARE_DISPLAY_NAME = ProsePal;"))
     #expect(project.contains("PROSEPAL_SHARE_DISPLAY_NAME = \"ProsePal Staging\";"))
+
+    // Every extension target links ProsePalDomain so it compiles against the
+    // canonical launch/input contract. Before this slice only the app and the
+    // StoreKit test target linked it; the two Share Extension and two widget
+    // targets each add a link, so at least five link entries now exist.
+    let domainLinkCount = project.components(separatedBy: "ProsePalDomain in Frameworks").count - 1
+    #expect(domainLinkCount >= 5)
 }
 
 @Test
@@ -45,13 +52,19 @@ func careGlanceWidgetAndStartMomentControlStayDeclared() throws {
     #expect(source.contains("struct CareGlanceWidget: Widget"))
     #expect(source.contains("StaticConfiguration("))
     #expect(source.contains("Care Glance"))
-    #expect(source.contains("source=widget"))
-    #expect(source.contains("prosepal-staging"))
     #expect(source.contains("struct StartMomentControlWidget: ControlWidget"))
     #expect(source.contains("StaticControlConfiguration("))
     #expect(source.contains("ControlWidgetButton(action: OpenURLIntent"))
-    #expect(source.contains("source=control_center"))
     #expect(source.contains("struct ProsePalWidgetsBundle: WidgetBundle"))
+
+    // The widget builds its open URLs through the shared handoff contract in
+    // ProsePalDomain rather than hand-assembling scheme/source strings, so
+    // staging routing and the source allowlist live in one place. Scheme and
+    // source behaviour is verified in MomentHandoffTests.
+    #expect(source.contains("import ProsePalDomain"))
+    #expect(source.contains("MomentDeepLink.momentURL(source: MomentLaunchSource.widget"))
+    #expect(source.contains("MomentDeepLink.momentURL(source: MomentLaunchSource.controlCenter"))
+    #expect(!source.contains("://moment?source="))
 }
 
 @Test
@@ -62,15 +75,21 @@ func shareExtensionDeclaresSafeTextHandoff() throws {
     )
 
     #expect(source.contains("final class ShareViewController: UIViewController"))
-    #expect(source.contains("ShareLaunchStore().save(payload)"))
-    #expect(source.contains("momentURL"))
-    #expect(source.contains("source=share_extension"))
-    #expect(source.contains("prosepal-staging"))
-    #expect(source.contains("group.com.prosepal.prosepal"))
-    #expect(source.contains("prosepal.native.pendingSharedMoment.v1"))
-    #expect(!source.contains("prosepal://moment?text="))
+
+    // The extension writes and routes through the canonical contract in
+    // ProsePalDomain instead of re-declaring its own payload, store, app-group
+    // identifier, key, scheme, or sanitiser. This is the drift the shared
+    // contract removes; behaviour is verified in MomentHandoffTests.
+    #expect(source.contains("import ProsePalDomain"))
+    #expect(source.contains("SharedMomentLaunchStore().save(payload)"))
+    #expect(source.contains("SharedMomentLaunchPayload(text: sharedText, sourceURL: sourceURL)"))
+    #expect(source.contains("MomentDeepLink.momentURL(source: MomentLaunchSource.shareExtension)"))
+    #expect(!source.contains("struct ShareLaunchStore"))
+    #expect(!source.contains("struct ShareLaunchPayload"))
+    #expect(!source.contains("group.com.prosepal.prosepal"))
+    #expect(!source.contains("pendingSharedMoment"))
+    #expect(!source.contains("://moment?text="))
     #expect(!source.contains("sharedText="))
-    #expect(source.contains("maxTextCharacterCount = 1_200"))
 }
 
 @Test

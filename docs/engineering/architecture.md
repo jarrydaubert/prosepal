@@ -36,7 +36,7 @@ Their handoff and trust boundary is documented in
 
 | Module | Responsibility |
 |---|---|
-| `ProsePalDomain` | Stable product taxonomy, card contracts, text limits, Moment input, draft bundles, and pressure feedback. |
+| `ProsePalDomain` | Stable product taxonomy, card contracts, text limits, Moment input, draft bundles, pressure feedback, and the extension-safe launch/input handoff contract. |
 | `ProsePalAPI` | Generation routing, gateway transport, Foundation Models, auth/session control, StoreKit, runtime configuration, and vault services. |
 | `ProsePalUI` | SwiftUI surfaces and observable app models; it does not know provider SDKs or privileged backend details. |
 | `App` | Dependency composition, target configuration, entitlements, assets, and application lifecycle. |
@@ -169,7 +169,8 @@ helpers instead of moving unrelated code or attempting a big-bang rewrite.
 | Account and entitlement presentation state | `ProsePalUI/MomentAccountModel.swift`: auth presentation, product selection, entitlement convergence, transaction-update coordination, and account maintenance |
 | StoreKit 2 client | `ProsePalAPI/SubscriptionClient.swift`: products, verified transactions and renewal status, purchase, tri-state current entitlement, ownership, retired-product policy, user-triggered restore, update stream, and deferred finish actions; `AppStoreKitTests/StoreKitSubscriptionClientStoreKitTests.swift`: app-hosted direct StoreKit Test scenarios |
 | Authentication and session | `ProsePalAPI/AuthSession.swift`, `SupabaseAuthClient.swift`, `AppleAccountLifecycleClient.swift`, and `AppleCredentialState.swift`: Keychain session, refresh serialization, nonce support, authenticated authorization-code forwarding, Apple credential-state checks, and revocation events |
-| App Intent and sanitized launch domain | `ProsePalUI/ProsePalAppIntents.swift`: `StartMomentIntent`, launch/deep-link payloads, app-group handoff, and package shortcut metadata |
+| Shared launch/input contract | `ProsePalDomain/MomentHandoff.swift`: the canonical `MomentLaunchRequest`, launch/shared stores, `MomentDeepLink` routing, source allowlist, sanitisation, and `MomentHandoffEnvironment` production/staging policy — linked by the app, Share Extension, and widget targets |
+| App Intent surfaces | `ProsePalUI/ProsePalAppIntents.swift`: `StartMomentIntent`, `ProsePalAppShortcuts`, and package shortcut metadata that consume the shared contract |
 | App-target shortcut registration | `App/ProsePalAppShortcuts.swift`: app shortcut provider metadata |
 | Widget and Control | `Widgets/ProsePalWidgets.swift`: staging-aware widget/control identifiers and app-opening URLs |
 | Incoming system share | `ShareExtension/ShareViewController.swift`: provider loading, sanitization, preview, app-group handoff, and extension completion |

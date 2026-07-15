@@ -131,7 +131,7 @@ public struct MomentAppRootView: View {
     private func consumeDeepLink(_ url: URL) {
         guard let deepLink = MomentDeepLink(url: url) else { return }
         var request = deepLink.launchRequest
-        if request.source == "share_extension",
+        if request.source == MomentLaunchSource.shareExtension,
            let sharedPayload = sharedLaunchStore.consume(),
            let sharedText = sharedPayload.text ?? sharedPayload.sourceURL?.absoluteString {
             request.sharedText = sharedText

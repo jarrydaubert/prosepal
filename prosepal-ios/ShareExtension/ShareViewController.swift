@@ -1,4 +1,5 @@
 import Foundation
+import ProsePalDomain
 import UniformTypeIdentifiers
 import UIKit
 
@@ -84,7 +85,7 @@ final class ShareViewController: UIViewController {
             }
         }
 
-        sharedText = ShareLaunchPayload.sanitized(fragments.joined(separator: "\n\n"))
+        sharedText = SharedMomentLaunchPayload.sanitized(fragments.joined(separator: "\n\n"))
         sourceURL = firstURL
         openButton.isEnabled = sharedText != nil || sourceURL != nil
         previewLabel.text = sharedText ?? "No usable text or URL was found in this share."
@@ -98,9 +99,10 @@ final class ShareViewController: UIViewController {
 
     @objc
     private func openProsePal() {
-        let payload = ShareLaunchPayload(text: sharedText, sourceURL: sourceURL)
-        let didSave = ShareLaunchStore().save(payload)
-        guard didSave, let url = ShareLaunchStore.momentURL else {
+        let payload = SharedMomentLaunchPayload(text: sharedText, sourceURL: sourceURL)
+        let didSave = SharedMomentLaunchStore().save(payload)
+        guard didSave,
+              let url = MomentDeepLink.momentURL(source: MomentLaunchSource.shareExtension) else {
             previewLabel.text = "ProsePal could not prepare this shared context."
             return
         }
@@ -127,56 +129,6 @@ private enum ShareExtensionError: LocalizedError {
 
     var errorDescription: String? {
         "The ProsePal share was cancelled."
-    }
-}
-
-private struct ShareLaunchPayload: Codable {
-    static let maxTextCharacterCount = 1_200
-
-    var text: String?
-    var sourceURL: URL?
-    var createdAt: Date
-
-    init(text: String?, sourceURL: URL?, createdAt: Date = Date()) {
-        self.text = Self.sanitized(text)
-        self.sourceURL = sourceURL
-        self.createdAt = createdAt
-    }
-
-    var hasMomentContext: Bool {
-        text != nil || sourceURL != nil
-    }
-
-    static func sanitized(_ text: String?) -> String? {
-        guard let text else { return nil }
-        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return nil }
-        return String(trimmed.prefix(maxTextCharacterCount))
-    }
-}
-
-private struct ShareLaunchStore {
-    private static let appGroupIdentifier = "group.com.prosepal.prosepal"
-    private static let key = "prosepal.native.pendingSharedMoment.v1"
-
-    static var momentURL: URL? {
-        URL(string: "\(momentURLScheme)://moment?source=share_extension")
-    }
-
-    private static var momentURLScheme: String {
-        Bundle.main.bundleIdentifier?.hasPrefix("com.prosepal.prosepal.staging") == true
-            ? "prosepal-staging"
-            : "prosepal"
-    }
-
-    private let store = UserDefaults(suiteName: appGroupIdentifier)
-    private let encoder = JSONEncoder()
-
-    func save(_ payload: ShareLaunchPayload) -> Bool {
-        guard payload.hasMomentContext, let data = try? encoder.encode(payload) else { return false }
-        store?.set(data, forKey: Self.key)
-        _ = store?.synchronize()
-        return store != nil
     }
 }
 

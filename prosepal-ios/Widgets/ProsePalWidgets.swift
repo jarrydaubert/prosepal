@@ -1,8 +1,13 @@
 import AppIntents
+import ProsePalDomain
 import SwiftUI
 import WidgetKit
 
 private enum ProsePalWidgetConstants {
+    // Widget kind and moment URLs both derive from the shared handoff
+    // environment, so staging routing lives in one place (ProsePalDomain).
+    private static let environment = MomentHandoffEnvironment.current
+
     static var careGlanceKind: String {
         "\(widgetKindPrefix).care-glance"
     }
@@ -12,23 +17,17 @@ private enum ProsePalWidgetConstants {
     }
 
     static var widgetMomentURL: URL {
-        URL(string: "\(momentURLScheme)://moment?source=widget")!
+        MomentDeepLink.momentURL(source: MomentLaunchSource.widget, environment: environment)!
     }
 
     static var controlMomentURL: URL {
-        URL(string: "\(momentURLScheme)://moment?source=control_center")!
+        MomentDeepLink.momentURL(source: MomentLaunchSource.controlCenter, environment: environment)!
     }
 
     private static var widgetKindPrefix: String {
-        isStagingBundle ? "com.prosepal.prosepal.staging.widgets" : "com.prosepal.prosepal.widgets"
-    }
-
-    private static var momentURLScheme: String {
-        isStagingBundle ? "prosepal-staging" : "prosepal"
-    }
-
-    private static var isStagingBundle: Bool {
-        Bundle.main.bundleIdentifier?.hasPrefix("com.prosepal.prosepal.staging") == true
+        environment == .staging
+            ? "com.prosepal.prosepal.staging.widgets"
+            : "com.prosepal.prosepal.widgets"
     }
 }
 
