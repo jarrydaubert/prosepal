@@ -1,6 +1,6 @@
 # Capabilities
 
-This is the compact catalogue of behaviour present in the native ProsePal app.
+This is the compact catalogue of behaviour present in the ProsePal iOS app.
 Detailed code and test evidence lives in
 [feature-status.csv](../reference/feature-status.csv); unresolved work lives in
 [BACKLOG.md](../BACKLOG.md).
@@ -9,7 +9,7 @@ Detailed code and test evidence lives in
 
 | Capability | Current behaviour |
 |---|---|
-| Root navigation | After welcome, native Write, Drafts, and Settings tabs remain distinct and discoverable; app and extension handoffs return to Write. |
+| Root navigation | After welcome, Write, Drafts, and Settings tabs remain distinct and discoverable; app and extension handoffs return to Write. |
 | Person-first entry | The user starts with who the message is for, then chooses relationship and occasion context. |
 | One true thing | The user types the real sentence or detail the draft should preserve. Voice dictation is not part of v1. |
 | Occasion-aware care | Ordinary moments default to private writing, while sympathy, pet sympathy, and apology automatically request the careful lane. |
@@ -28,6 +28,7 @@ Detailed code and test evidence lives in
 |---|---|
 | Primary draft | One generated message is presented as the main writing surface. |
 | Edit | The user can edit the active draft directly. |
+| Another | Requests a fresh draft for the same Moment while preserving the current wording as a recoverable snapshot. |
 | Adjust | Warmer, Shorter, and Direct are the supported named rewrite actions. |
 | Undo and keep | Edits and rewrites create recoverable snapshots before replacing current text. |
 | Relaunch recovery | The active draft and its snapshot history can be recovered after an app restart. |
@@ -69,7 +70,7 @@ Detailed code and test evidence lives in
 | Defensive block | A narrow existing explicit-input block stops drafting and presents support resources. It is not a general crisis classifier. |
 | Offline recovery | The note remains local and the user receives a real Try Again action. |
 | Waiting feedback | Generation, sign-in, subscription loading and actions, and account deletion expose indeterminate in-progress state, reject duplicate submission, and preserve current writing while their owning boundary responds. |
-| Usage limits | The gateway’s user-safe policy message is shown without invented counters or reset dates. |
+| Usage limits | The limit-reached screen shows the gateway’s user-safe policy message without inventing counters or reset dates. |
 
 ## System surfaces
 
@@ -87,5 +88,5 @@ boundary and staging limitation.
 - Storage: SwiftData and Keychain.
 - Purchase: StoreKit 2.
 - Backend: Supabase Auth, Edge Functions, and PostgreSQL policy.
-- Third-party provider SDKs: none in the native app.
-- Android and web product clients: outside this native rewrite.
+- Third-party provider SDKs: none in the iOS app.
+- Android and web product clients: outside the iOS app.

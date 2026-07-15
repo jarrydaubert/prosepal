@@ -1,6 +1,6 @@
 # User Journeys
 
-These journeys define how the native app should behave from the user’s point of
+These journeys define how the iOS app should behave from the user’s point of
 view. They are product contracts, not screen-by-screen implementation notes.
 
 ## First use and writing
@@ -18,7 +18,7 @@ Launch
 ```
 
 - Welcome does not force sign-in, notifications, or purchase.
-- After welcome, the native tab bar keeps Write, Drafts, and Settings available;
+- After welcome, the tab bar keeps Write, Drafts, and Settings available;
   switching destinations preserves each destination's SwiftUI state for the
   current app session.
 - Typing does not silently start generation.
@@ -113,7 +113,7 @@ Authenticated user confirms deletion
   -> report any partial local cleanup honestly
 ```
 
-The server owns privileged deletion. The native app never contains a service
+The server owns privileged deletion. The iOS app never contains a service
 role key. A failure before final auth deletion starts guarantees that the auth
 account remains and can be retried, although idempotent earlier cleanup may have
 completed. If the final delete starts but cannot be confirmed, the app reports

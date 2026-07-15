@@ -93,10 +93,9 @@ ephemeral fallback was created after a persistent-store failure, it also removes
 the inaccessible persistent-store directory before recreating the
 backup-excluded folder.
 
-Truth Bead and Voice Card edit/delete flows report success only after
-`ModelContext.save()` succeeds. Deletion failure rolls back and leaves the item
-visible. Saved-draft edit/delete does not yet have the same error handling; that
-verified integrity gap is tracked in [BACKLOG.md](../BACKLOG.md).
+Truth Bead, Voice Card, and saved-draft edit/delete flows report success only
+after `ModelContext.save()` succeeds. Persistence failure rolls back to the last
+saved value and leaves the affected detail visible with an honest error.
 
 ## Privacy boundary
 
