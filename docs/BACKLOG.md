@@ -278,23 +278,23 @@ completed item instead of turning this file into a status log.
 ## Native V1 — Auth, Payments, And Account Integrity
 
 - [ ] Prove the completed Apple account lifecycle and deletion flow in deployed
-  environments. DoD: guarded staging deployment applies the service-role-only
-  Apple-credential migration and matching `exchange-apple-token` / `delete-user`
-  functions without touching production; sandbox/TestFlight evidence covers
-  first and repeat sign-in, missing-code and server-failure presentation,
-  refresh continuity, credential revocation notification/state handling, and
-  sign-out without loss of unrelated local drafts; an Apple-backed deletion
-  proves refresh-token revocation, validated server/auth cleanup, local cleanup,
-  a pre-final failure that preserves authenticated retry, an unconfirmed final
-  deletion that may complete after its response, and retry convergence when the
-  account is still sign-in capable. Physical-device evidence re-proves the
-  coordinated clean-state reset that local automation already covers: confirmed
-  deletion emits the `account_deletion_*` outcome events, returns the app to
-  onboarding, unmounts the previous Write/Settings surfaces, and a fresh
-  sign-in (and relaunch) shows no saved drafts, relationship memory, generated
-  message, composer input, or recovered draft from the deleted account, while
-  an indeterminate outcome preserves local data without claiming success.
-  Evidence is
+  environments. Staging evidence obtained 2026-07-16: the four Apple server
+  secrets are configured, real-device Sign in with Apple succeeded, revocation
+  material stored through the deployed `exchange-apple-token` without
+  redeployment, real-device account deletion succeeded server-side, and
+  read-only staging verification confirmed no remaining rows in `auth.users`,
+  `apple_credentials`, `user_usage`, `user_entitlements`, or user-scoped
+  rate-limit records. Remaining DoD: a fresh physical-device run against
+  commits 7c0cb2f and a47a705 re-proves the coordinated clean-state reset —
+  confirmed deletion emits the `account_deletion_*` outcome events, returns
+  the app to onboarding, unmounts the previous Write/Settings surfaces, and a
+  fresh sign-in (and relaunch) shows no saved drafts, relationship memory,
+  generated message, composer input, or recovered draft from the deleted
+  account, while an indeterminate outcome preserves local data without
+  claiming success — plus sandbox/TestFlight coverage of repeat sign-in,
+  missing-code and server-failure presentation, refresh continuity, credential
+  revocation notification/state handling, and sign-out without loss of
+  unrelated local drafts on the production bundle. Evidence is
   privacy-safe and includes no codes, tokens, client secrets, private keys, or
   unredacted credential-bearing artifacts.
 

@@ -225,9 +225,14 @@ When any is missing, `readAppleServerConfig` returns nothing and the function
 answers with a 5xx, which the client surfaces as
 `auth_apple_revocation_material_failed outcome=server_unavailable`. Sign-in then
 reports a server-unavailable error even though the Supabase token exchange
-itself succeeded. Configure these as staging function secrets (never in the app
-bundle or a scheme) before treating staging Apple sign-in as working. The
-private key is the `.p8` contents with real newlines or `\n` escapes.
+itself succeeded. These must be configured as function secrets (never in the app
+bundle or a scheme); the private key is the `.p8` contents with real newlines or
+`\n` escapes.
+
+Staging status (2026-07-16): all four secrets are configured, real-device Sign
+in with Apple succeeded, revocation material stored successfully, and
+`exchange-apple-token` worked without redeployment. Treat this section as setup
+guidance for new environments, not a current staging blocker.
 
 ## DNS and inactive projects
 
