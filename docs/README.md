@@ -64,6 +64,8 @@ is reachable from this page and has one job. Open work belongs only in
   failure handling, and rollback.
 - [Service ownership](./operations/service-ownership.md) — operational
   separation, identities, billing, secrets, and recovery ownership.
+- [Supabase keepalive](./operations/keepalive.md) — temporary Free-plan
+  pre-launch inactivity control, its RPC, workflow, and recovery.
 
 ## Quality
 
