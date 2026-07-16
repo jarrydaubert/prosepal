@@ -972,6 +972,7 @@ func accountDeletionClearsSessionAndPremiumWhenConfigured() async throws {
     #expect(try await store.loadSession() == nil)
     #expect(await maintenanceClient.deletedTokens() == ["delete-token"])
     #expect(didDeleteLocalData)
+    #expect(account.accountLifecycleResetToken == 1)
     #expect(account.notice?.title == "Account deleted")
 }
 
@@ -997,12 +998,15 @@ func accountDeletionWarnsWhenLocalDataCleanupFails() async throws {
     #expect(account.isSignedIn == false)
     #expect(try await store.loadSession() == nil)
     #expect(await maintenanceClient.deletedTokens() == ["delete-token"])
+    #expect(account.accountLifecycleResetToken == 1)
     #expect(account.notice?.title == "Account deleted. Some local data may remain.")
 }
 
 @Test
 @MainActor
-func indeterminateAccountDeletionClearsLocalStateWithTruthfulRetryCopy() async throws {
+func indeterminateAccountDeletionPreservesLocalDataAndDoesNotClaimSuccess() async throws {
+    // Bug this catches: a 202/indeterminate response wipes the device and
+    // claims deletion finished while the account may still exist.
     let session = AuthSession.test(accessToken: "delete-token")
     let store = MomentAccountInMemoryAuthSessionStore(session: session)
     let maintenanceClient = MomentAccountMaintenanceClient(outcome: .indeterminate)
@@ -1022,8 +1026,89 @@ func indeterminateAccountDeletionClearsLocalStateWithTruthfulRetryCopy() async t
 
     #expect(account.isSignedIn == false)
     #expect(try await store.loadSession() == nil)
-    #expect(didDeleteLocalData)
-    #expect(account.notice?.title == "Deletion is still being finalized. ProsePal data was removed from this device. If you can still sign in, retry deletion.")
+    #expect(didDeleteLocalData == false)
+    #expect(account.accountLifecycleResetToken == 0)
+    #expect(account.notice?.title == "Deletion is still being finalized. Your ProsePal data is still on this device. If you can still sign in, retry deletion.")
+}
+
+@Test
+@MainActor
+func cancelledAccountDeletionProducesNoSuccessStateAndPreservesData() async throws {
+    let session = AuthSession.test(accessToken: "delete-token")
+    let store = MomentAccountInMemoryAuthSessionStore(session: session)
+    let maintenanceClient = MomentAccountMaintenanceClient(error: CancellationError())
+    var didDeleteLocalData = false
+    let account = makeAccount(
+        store: store,
+        authClient: MomentAccountAuthClient(),
+        accountMaintenanceClient: maintenanceClient,
+        localAccountDataDeletion: {
+            didDeleteLocalData = true
+        }
+    )
+
+    await account.loadAuthSession()
+    account.requestAccountDeletion()
+    await account.confirmAccountDeletion()
+
+    #expect(account.isSignedIn)
+    #expect(try await store.loadSession() != nil)
+    #expect(didDeleteLocalData == false)
+    #expect(account.accountLifecycleResetToken == 0)
+    #expect(account.notice?.accessibilityIdentifier != "account.deletion.deleted")
+}
+
+@Test
+@MainActor
+func freshSignInAfterAccountDeletionStartsFromCleanEntitlementState() async throws {
+    // Bug this catches: the deleted account's premium unlock or entitlement
+    // last-known-good leaks into the next account that signs in on the device.
+    let store = MomentAccountInMemoryAuthSessionStore(session: .test(
+        accessToken: "delete-token",
+        userID: "user-a"
+    ))
+    let yearly = SubscriptionProduct.yearly(isRecommended: true)
+    let subscriptionClient = MomentAccountSubscriptionClient(
+        products: [yearly],
+        purchaseResult: SubscriptionPurchaseResult(
+            status: .purchased,
+            entitlement: SubscriptionEntitlement(isActive: true, productID: yearly.id)
+        )
+    )
+    let authClient = MomentAccountAuthClient(session: .test(
+        accessToken: "next-user-token",
+        userID: "user-b"
+    ))
+    let account = makeAccount(
+        store: store,
+        authClient: authClient,
+        subscriptionClient: subscriptionClient,
+        accountMaintenanceClient: MomentAccountMaintenanceClient(),
+        localAccountDataDeletion: {}
+    )
+
+    await account.loadInitialState()
+    await account.loadSubscriptionProducts(source: "paywall")
+    await account.purchasePremium(source: "paywall")
+    #expect(account.isPremiumUnlocked)
+
+    account.requestAccountDeletion()
+    await account.confirmAccountDeletion()
+    #expect(account.isPremiumUnlocked == false)
+    #expect(account.accountLifecycleResetToken == 1)
+
+    #expect(account.beginAppleSignInRequest(source: "onboarding") != nil)
+    await account.completeAppleSignIn(
+        idToken: "apple-token-b",
+        authorizationCode: "authorization-code-b",
+        appleUserID: "apple-user-b",
+        source: "onboarding"
+    )
+
+    #expect(account.isSignedIn)
+    #expect(account.isPremiumUnlocked == false)
+    #expect(account.subscriptionEntitlement == SubscriptionEntitlement.inactive)
+    account.stopSubscriptionTransactionListener()
 }
 
 @Test
@@ -1045,6 +1130,7 @@ func accountDeletionFailurePreservesSignedInState() async {
     await account.confirmAccountDeletion()
 
     #expect(account.isSignedIn)
+    #expect(account.accountLifecycleResetToken == 0)
     #expect(account.notice?.title == "Account deletion failed safely.")
 }
 

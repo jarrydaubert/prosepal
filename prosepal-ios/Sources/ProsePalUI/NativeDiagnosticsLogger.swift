@@ -121,6 +121,11 @@ public struct NativeDiagnosticsLogger: Sendable {
         )
         logger.info("\(payload, privacy: .public)")
     }
+
+    public func accountDeletionEvent(_ event: String, outcome: String = "none") {
+        let payload = NativeDiagnosticsPayload.accountDeletionEvent(event: event, outcome: outcome)
+        logger.info("\(payload, privacy: .public)")
+    }
 }
 
 enum NativeDiagnosticsPayload {
@@ -166,6 +171,10 @@ enum NativeDiagnosticsPayload {
 
     static func momentLaunchConsumed(_ request: MomentLaunchRequest) -> String {
         "moment_launch_consumed source=\(request.source) person_present=\(request.personName?.hasDiagnosticsText == true) occasion=\(request.occasion?.rawValue ?? "none") shared_text_present=\(request.sharedText?.hasDiagnosticsText == true) shared_text_chars=\(request.sharedText?.diagnosticsTextCount ?? 0)"
+    }
+
+    static func accountDeletionEvent(event: String, outcome: String) -> String {
+        "account_deletion_event event=\(event) source=settings outcome=\(outcome)"
     }
 }
 

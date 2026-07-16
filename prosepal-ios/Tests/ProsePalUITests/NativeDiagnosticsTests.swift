@@ -133,4 +133,16 @@ final class NativeDiagnosticsTests: XCTestCase {
         XCTAssertFalse(payload.contains("Private Person"))
         XCTAssertFalse(payload.contains("Private shared text"))
     }
+
+    func testAccountDeletionEventPayloadUsesEventAndOutcomeOnly() {
+        let payload = NativeDiagnosticsPayload.accountDeletionEvent(
+            event: "account_deletion_succeeded",
+            outcome: "none"
+        )
+
+        XCTAssertEqual(
+            payload,
+            "account_deletion_event event=account_deletion_succeeded source=settings outcome=none"
+        )
+    }
 }

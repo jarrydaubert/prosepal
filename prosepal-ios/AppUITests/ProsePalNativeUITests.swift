@@ -400,6 +400,48 @@ final class ProsePalReleaseUITests: ProsePalNativeUITestCase {
         _ = assertExists("account.deletion.indeterminate", timeout: 5)
     }
 
+    func testAccountDeletionJourneyReturnsToOnboardingAndFreshSignInSeesNoOldContent() {
+        launch(.accountDeletionSuccess)
+        _ = createSuccessfulDraft()
+        tap("activeDraft.save")
+        tapRootTab("Drafts")
+        _ = assertExists("savedDraft.card")
+
+        requestAndConfirmAccountDeletion()
+
+        // The confirmation notice is transient; assert it before the durable
+        // onboarding surface so its short display window is not missed.
+        _ = assertExists("account.deletion.deleted", timeout: 10)
+        _ = assertExists("moment.onboarding.signIn", timeout: 10)
+        XCTAssertFalse(
+            app.tabBars.buttons["Write"].exists,
+            "The previous tab hierarchy must not stay mounted after deletion"
+        )
+
+        tap("moment.onboarding.signIn")
+
+        for _ in 0..<4 where !element("composer.person").exists {
+            tap("moment.onboarding.primary", maxScrolls: 2)
+        }
+
+        let person = assertExists("composer.person")
+        XCTAssertNotEqual(
+            person.value as? String,
+            "Mira",
+            "The deleted account's composer input must not survive"
+        )
+        tapRootTab("Drafts")
+        XCTAssertFalse(
+            element("savedDraft.card").waitForExistence(timeout: 2),
+            "The deleted account's saved draft must not survive a fresh sign-in"
+        )
+
+        // The delete-account entry renders only for a signed-in account, so
+        // its presence proves the fresh sign-in landed in a real session.
+        openSettings()
+        _ = assertExists("settings.account.delete.request", timeout: 5)
+    }
+
     func testDraftCanBeCopiedSharedSavedAndReopened() {
         launch(.signedOut)
         _ = createSuccessfulDraft()

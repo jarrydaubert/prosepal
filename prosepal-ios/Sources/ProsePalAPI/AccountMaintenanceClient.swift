@@ -32,6 +32,23 @@ public extension AccountMaintenanceError {
             message
         }
     }
+
+    /// Privacy-safe outcome label for diagnostics. Never contains user text,
+    /// tokens, or identifiers.
+    var diagnosticsOutcome: String {
+        switch self {
+        case .configurationMissing:
+            "configuration_missing"
+        case .authenticationRequired:
+            "authentication_required"
+        case .invalidResponse:
+            "invalid_response"
+        case .networkUnavailable:
+            "network_unavailable"
+        case .requestFailed(let statusCode, _):
+            "server_http_\(statusCode)"
+        }
+    }
 }
 
 public struct SupabaseAccountMaintenanceClient: AccountMaintenanceClient {

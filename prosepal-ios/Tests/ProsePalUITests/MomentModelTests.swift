@@ -1034,3 +1034,74 @@ private actor SequencedMomentModelRefinementClient: MomentDraftClient {
         }
     }
 }
+
+@Test
+@MainActor
+func accountDeletionResetClearsDraftComposerHistoryAndRecoveryPermanently() {
+    // Bug this catches: after account deletion the generated message stays on
+    // the Write tab, or reappears from recovery storage on the next launch.
+    let suiteName = "MomentAccountDeletionResetTests.\(UUID().uuidString)"
+    let defaults = try! #require(UserDefaults(suiteName: suiteName))
+    defaults.removePersistentDomain(forName: suiteName)
+    defer {
+        defaults.removePersistentDomain(forName: suiteName)
+    }
+    let recoveryStore = MomentDraftRecoveryStore(store: defaults, key: "active-draft")
+    let service = SlowMomentWritingService(delay: .seconds(1))
+    let model = MomentModel(service: service, draftRecoveryStore: recoveryStore)
+
+    model.personName = "Mira"
+    model.relationship = .family
+    model.occasion = .apology
+    model.trueThing = "I missed the call."
+    model.bundle = MomentDraftBundle(messageText: "Generated for the deleted account.", lane: .privateDraft)
+    model.updateActiveDraftMessage("Edited before deletion.")
+    #expect(recoveryStore.load() != nil)
+    #expect(model.canShowDraftHistory)
+
+    model.resetForAccountDeletion()
+
+    #expect(model.bundle == nil)
+    #expect(model.personName == "")
+    #expect(model.trueThing == "")
+    #expect(model.draftSnapshots.isEmpty)
+    #expect(model.previousDraftBundle == nil)
+    #expect(model.errorMessage == nil)
+    #expect(model.isDrafting == false)
+    #expect(recoveryStore.load() == nil)
+
+    let relaunched = MomentModel(service: service, draftRecoveryStore: recoveryStore)
+    #expect(relaunched.bundle == nil)
+    #expect(relaunched.personName == "")
+    #expect(relaunched.draftSnapshots.isEmpty)
+}
+
+@Test
+@MainActor
+func accountDeletionResetDuringActiveGenerationCancelsAndSuppressesLateResult() async throws {
+    // Bug this catches: deletion races an in-flight generation and the late
+    // provider result repopulates the screen for the deleted account.
+    let client = ControlledMomentDraftClient()
+    let service = RoutingMessageWritingService(
+        privateClient: client,
+        carefulClient: client
+    )
+    let model = MomentModel(service: service)
+
+    model.personName = "Mira"
+    model.startDraft()
+    try await expectEventually("The draft request did not reach the service.") {
+        await client.draftCount() == 1
+    }
+    #expect(model.isDrafting)
+
+    model.resetForAccountDeletion()
+    #expect(model.isDrafting == false)
+
+    await client.resumeDraft(at: 0, text: "Late result for a deleted account.")
+    try await Task.sleep(for: .milliseconds(50))
+
+    #expect(model.bundle == nil)
+    #expect(model.isDrafting == false)
+    #expect(model.personName == "")
+}

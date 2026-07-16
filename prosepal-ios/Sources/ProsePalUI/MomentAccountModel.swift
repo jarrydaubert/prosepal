@@ -20,6 +20,11 @@ public final class MomentAccountModel {
     public private(set) var isRestoringPurchases = false
     public private(set) var isConfirmingAccountDeletion = false
     public private(set) var isDeletingAccount = false
+    /// Increments exactly once per server-confirmed account deletion, after
+    /// this model has finished its own reset. The app root observes it to run
+    /// the view-layer half of the coordinated lifecycle transition (moment
+    /// state, pending handoff payloads, onboarding routing).
+    public private(set) var accountLifecycleResetToken = 0
     public private(set) var notice: MomentAccountNotice?
     public private(set) var subscriptionErrorMessage: String?
 
@@ -789,23 +794,30 @@ public final class MomentAccountModel {
     }
 
     public func cancelAccountDeletion() {
+        if isConfirmingAccountDeletion {
+            diagnostics.accountDeletionEvent("account_deletion_cancelled", outcome: "user_dismissed_confirmation")
+        }
         isConfirmingAccountDeletion = false
     }
 
     public func confirmAccountDeletion() async {
         guard !isDeletingAccount else { return }
+        diagnostics.accountDeletionEvent("account_deletion_started")
 
         guard isSignedIn else {
+            diagnostics.accountDeletionEvent("account_deletion_failed", outcome: "not_signed_in")
             showNotice("Sign in before deleting your account", systemImage: "trash")
             return
         }
 
         guard let accountMaintenanceClient else {
+            diagnostics.accountDeletionEvent("account_deletion_failed", outcome: "not_configured")
             showNotice("Account deletion is unavailable right now", systemImage: "trash")
             return
         }
 
         guard let accessToken = try? await authSessionController?.currentAccessToken() else {
+            diagnostics.accountDeletionEvent("account_deletion_failed", outcome: "authentication_required")
             showNotice(AccountMaintenanceError.authenticationRequired.userSafeMessage, systemImage: "exclamationmark.triangle")
             return
         }
@@ -815,47 +827,81 @@ public final class MomentAccountModel {
 
         do {
             let deletionOutcome = try await accountMaintenanceClient.deleteAccount(accessToken: accessToken)
-            var didClearLocalData = true
-            do {
-                try await localAccountDataDeletion?()
-            } catch {
-                didClearLocalData = false
-                diagnostics.messageAction("local_account_data_delete_failed", source: "settings", messageCharacters: 0)
+            switch deletionOutcome {
+            case .deleted:
+                diagnostics.accountDeletionEvent("account_deletion_server_confirmed")
+                await performLocalAccountReset()
+            case .indeterminate:
+                // The server did not confirm deletion. Sign out so stale
+                // credentials for a possibly-deleted account are not reused,
+                // but keep every piece of local content: a premature wipe
+                // would destroy user data for an account that may still exist.
+                diagnostics.accountDeletionEvent("account_deletion_indeterminate", outcome: "server_unconfirmed")
+                try? await authSessionController?.clearSession()
+                isConfirmingAccountDeletion = false
+                applyAuthSession(nil)
+                isPremiumUnlocked = false
+                showNotice(
+                    "Deletion is still being finalized. Your ProsePal data is still on this device. If you can still sign in, retry deletion.",
+                    systemImage: "exclamationmark.triangle",
+                    accessibilityIdentifier: "account.deletion.indeterminate"
+                )
             }
-            try? await authSessionController?.clearSession()
-            isConfirmingAccountDeletion = false
-            applyAuthSession(nil)
-            isPremiumUnlocked = false
-            let noticeTitle = switch (deletionOutcome, didClearLocalData) {
-            case (.deleted, true):
-                "Account deleted"
-            case (.deleted, false):
-                "Account deleted. Some local data may remain."
-            case (.indeterminate, true):
-                "Deletion is still being finalized. ProsePal data was removed from this device. If you can still sign in, retry deletion."
-            case (.indeterminate, false):
-                "Deletion is still being finalized, and some local data may remain. If you can still sign in, retry deletion."
-            }
-            showNotice(
-                noticeTitle,
-                systemImage: deletionOutcome == .deleted && didClearLocalData
-                    ? "checkmark.circle.fill"
-                    : "exclamationmark.triangle",
-                accessibilityIdentifier: deletionOutcome == .deleted
-                    ? "account.deletion.deleted"
-                    : "account.deletion.indeterminate"
-            )
+        } catch is CancellationError {
+            diagnostics.accountDeletionEvent("account_deletion_cancelled", outcome: "task_cancelled")
         } catch let error as AccountMaintenanceError {
+            diagnostics.accountDeletionEvent("account_deletion_failed", outcome: error.diagnosticsOutcome)
             showNotice(
                 error.userSafeMessage,
                 systemImage: "exclamationmark.triangle",
                 accessibilityIdentifier: "account.deletion.failed"
             )
         } catch {
+            diagnostics.accountDeletionEvent("account_deletion_failed", outcome: "unexpected_error")
             showNotice(
                 "Account deletion failed. Please try again.",
                 systemImage: "exclamationmark.triangle",
                 accessibilityIdentifier: "account.deletion.failed"
+            )
+        }
+    }
+
+    /// The account-model half of the coordinated deletion lifecycle. Runs only
+    /// after the server confirmed deletion: cancels account-scoped work, wipes
+    /// the relationship vault, removes the Supabase session, resets in-memory
+    /// account and entitlement state, then signals the app root (via
+    /// `accountLifecycleResetToken`) to clear moment state, pending handoff
+    /// payloads, and route back to onboarding.
+    private func performLocalAccountReset() async {
+        diagnostics.accountDeletionEvent("account_deletion_local_reset_started")
+        subscriptionEntitlementRefreshOperation?.task.cancel()
+
+        var didClearLocalData = true
+        do {
+            try await localAccountDataDeletion?()
+        } catch {
+            didClearLocalData = false
+        }
+        try? await authSessionController?.clearSession()
+        isConfirmingAccountDeletion = false
+        applyAuthSession(nil)
+        isPremiumUnlocked = false
+        accountLifecycleResetToken += 1
+
+        if didClearLocalData {
+            diagnostics.accountDeletionEvent("account_deletion_local_reset_succeeded")
+            diagnostics.accountDeletionEvent("account_deletion_succeeded")
+            showNotice(
+                "Account deleted",
+                systemImage: "checkmark.circle.fill",
+                accessibilityIdentifier: "account.deletion.deleted"
+            )
+        } else {
+            diagnostics.accountDeletionEvent("account_deletion_local_reset_failed", outcome: "local_data_deletion_failed")
+            showNotice(
+                "Account deleted. Some local data may remain.",
+                systemImage: "exclamationmark.triangle",
+                accessibilityIdentifier: "account.deletion.deleted"
             )
         }
     }

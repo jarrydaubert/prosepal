@@ -84,16 +84,47 @@ public struct MomentAppRootView: View {
                 MomentWelcomeView(account: account) {
                     welcomeState.completeWelcome()
                 }
+                .overlay(alignment: .top) {
+                    // Keeps outcome notices (for example the account-deletion
+                    // confirmation) visible after the tab hierarchy that
+                    // normally presents them has been unmounted.
+                    if let notice = account.notice {
+                        Label(notice.title, systemImage: notice.systemImage)
+                            .font(.callout.weight(.semibold))
+                            .foregroundStyle(Color.prosePalSlate)
+                            .padding(14)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(Color.prosePalPaper.opacity(0.92), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                            .accessibilityIdentifier(notice.accessibilityIdentifier ?? "account.notice")
+                            .padding(.horizontal, 16)
+                            .padding(.top, 8)
+                    }
+                }
             }
         }
         .animation(.easeInOut(duration: 0.22), value: welcomeState.hasCompletedWelcome)
         .onAppear(perform: handleAppear)
         .onChange(of: welcomeState.hasCompletedWelcome, handleWelcomeCompletion)
+        .onChange(of: account.accountLifecycleResetToken, handleAccountLifecycleReset)
         .onChange(of: scenePhase, handleScenePhaseChange)
         .onOpenURL(perform: consumeDeepLink)
         .task {
             await account.loadInitialState()
         }
+    }
+
+    /// View-layer half of the account-deletion lifecycle. The account model
+    /// has already wiped the vault and session; this clears every remaining
+    /// surface that could show or replay the deleted account's content, then
+    /// resets onboarding, which swaps `MomentRootTabs` out of the hierarchy so
+    /// the previous Write and Settings views cannot stay mounted.
+    private func handleAccountLifecycleReset(_ oldValue: Int, _ newValue: Int) {
+        guard newValue > oldValue else { return }
+        model.resetForAccountDeletion()
+        _ = launchStore.consume()
+        _ = sharedLaunchStore.consume()
+        selectedTab = .moment
+        welcomeState.reset()
     }
 
     private func handleAppear() {
@@ -168,6 +199,14 @@ public final class MomentWelcomeState {
     public func completeWelcome() {
         hasCompletedWelcome = true
         store.set(true, forKey: completionKey)
+    }
+
+    /// Returns the app to the first-run welcome experience. Used by the
+    /// account-deletion lifecycle so a deleted account's device immediately
+    /// routes back to onboarding, both in this run and after relaunch.
+    public func reset() {
+        hasCompletedWelcome = false
+        store.removeObject(forKey: completionKey)
     }
 }
 
