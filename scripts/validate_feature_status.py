@@ -95,14 +95,26 @@ def parse_jsonl(errors: list[str]) -> list[dict[str, Any]]:
     return records
 
 
+# Deliberately gitignored private release evidence (screenshots, device
+# captures). References into this root are validated for existence only where
+# the local evidence store is present; a clean checkout (CI) cannot see these
+# files by design, so there their repository-relative shape is still enforced
+# but disk existence is not.
+LOCAL_EVIDENCE_ROOT = Path("prosepal-ios/evidence")
+
+
 def check_path(reference: str, field: str, record_id: str, errors: list[str]) -> None:
     path = Path(reference)
     if path.is_absolute() or ".." in path.parts:
         errors.append(f"{record_id}.{field}: reference must be repository-relative: {reference}")
         return
     candidate = REPO_ROOT / path
-    if not candidate.is_file():
-        errors.append(f"{record_id}.{field}: referenced file does not exist: {reference}")
+    if candidate.is_file():
+        return
+    is_local_evidence = path.parts[: len(LOCAL_EVIDENCE_ROOT.parts)] == LOCAL_EVIDENCE_ROOT.parts
+    if is_local_evidence and not (REPO_ROOT / LOCAL_EVIDENCE_ROOT).is_dir():
+        return
+    errors.append(f"{record_id}.{field}: referenced file does not exist: {reference}")
 
 
 def validate_record(record: dict[str, Any], index: int, errors: list[str]) -> None:
