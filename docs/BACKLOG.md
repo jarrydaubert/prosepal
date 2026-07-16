@@ -287,7 +287,14 @@ completed item instead of turning this file into a status log.
   proves refresh-token revocation, validated server/auth cleanup, local cleanup,
   a pre-final failure that preserves authenticated retry, an unconfirmed final
   deletion that may complete after its response, and retry convergence when the
-  account is still sign-in capable. Evidence is
+  account is still sign-in capable. Physical-device evidence re-proves the
+  coordinated clean-state reset that local automation already covers: confirmed
+  deletion emits the `account_deletion_*` outcome events, returns the app to
+  onboarding, unmounts the previous Write/Settings surfaces, and a fresh
+  sign-in (and relaunch) shows no saved drafts, relationship memory, generated
+  message, composer input, or recovered draft from the deleted account, while
+  an indeterminate outcome preserves local data without claiming success.
+  Evidence is
   privacy-safe and includes no codes, tokens, client secrets, private keys, or
   unredacted credential-bearing artifacts.
 
