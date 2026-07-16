@@ -4,8 +4,13 @@ name: Supabase keepalive
 # Supabase does not pause the projects for inactivity. Calls only the
 # dedicated read-only public.keepalive() RPC with the public anon key — never
 # generation, authentication, subscription, deletion, or user-data endpoints.
-# The live production project must move to a non-pausing paid plan before
-# launch; see docs/operations/keepalive.md.
+#
+# Production participation is gated by the repository variable
+# KEEPALIVE_PRODUCTION_ENABLED. While it is absent or not "true", the
+# production job reports a neutral not-enabled outcome and the workflow stays
+# green on staging success alone. Once enabled, missing production secrets
+# fail loudly. The live production project must move to a non-pausing paid
+# plan before launch; see docs/operations/keepalive.md.
 
 on:
   schedule:
@@ -30,7 +35,13 @@ jobs:
             url_secret: SUPABASE_STAGING_URL
             key_secret: SUPABASE_STAGING_ANON_KEY
     steps:
+      - name: Report production not enabled
+        if: matrix.environment == 'production' && vars.KEEPALIVE_PRODUCTION_ENABLED != 'true'
+        run: |
+          echo "::notice::Production keepalive is not enabled (repository variable KEEPALIVE_PRODUCTION_ENABLED is absent or not 'true'); skipping neutrally until production activation is approved."
+
       - name: Call keepalive RPC
+        if: matrix.environment != 'production' || vars.KEEPALIVE_PRODUCTION_ENABLED == 'true'
         env:
           SUPABASE_URL: ${{ secrets[matrix.url_secret] }}
           SUPABASE_ANON_KEY: ${{ secrets[matrix.key_secret] }}

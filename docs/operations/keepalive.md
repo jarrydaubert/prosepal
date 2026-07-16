@@ -37,21 +37,40 @@ Failure output names only the environment — never URLs or key values. The
 workflow calls only the keepalive RPC: no generation, authentication,
 subscription, deletion, or user-data endpoints.
 
-## GitHub secret setup
+Production participation is gated by the repository variable
+`KEEPALIVE_PRODUCTION_ENABLED`. While it is absent or not `true`, the
+production job emits a neutral not-enabled notice and succeeds without calling
+anything, so the scheduled workflow stays green on staging success alone. Once
+the variable is `true`, production is called independently and missing
+production secrets fail loudly.
 
-Repository → Settings → Secrets and variables → Actions → New repository
-secret. Four secrets, public client values only (never a service-role key):
+Scheduling becomes operational only after the staging repository secrets below
+are added; until then the staging job fails with an explicit
+secrets-not-configured message.
 
-| Secret | Value |
-|---|---|
-| `SUPABASE_PRODUCTION_URL` | `https://<production-project-ref>.supabase.co` |
-| `SUPABASE_PRODUCTION_ANON_KEY` | Production public anon/publishable key |
-| `SUPABASE_STAGING_URL` | `https://<staging-project-ref>.supabase.co` |
-| `SUPABASE_STAGING_ANON_KEY` | Staging public anon/publishable key |
+## GitHub secret and variable setup
+
+Repository → Settings → Secrets and variables → Actions. Public client values
+only (never a service-role key):
+
+| Secret | Value | When |
+|---|---|---|
+| `SUPABASE_STAGING_URL` | `https://<staging-project-ref>.supabase.co` | Now — activates scheduling |
+| `SUPABASE_STAGING_ANON_KEY` | Staging public anon/publishable key | Now — activates scheduling |
+| `SUPABASE_PRODUCTION_URL` | `https://<production-project-ref>.supabase.co` | Only at production approval |
+| `SUPABASE_PRODUCTION_ANON_KEY` | Production public anon/publishable key | Only at production approval |
+
+Repository variable (Variables tab, not a secret):
+
+| Variable | Value | Meaning |
+|---|---|---|
+| `KEEPALIVE_PRODUCTION_ENABLED` | unset / `false` | Production skipped neutrally (default) |
+| `KEEPALIVE_PRODUCTION_ENABLED` | `true` | Production called; missing secrets fail loudly |
 
 The anon key is the client-side publishable key from Project Settings → API.
-Do not create or store a service-role key for this workflow. A job whose
-secrets are missing fails with an explicit message naming the environment.
+Do not create or store a service-role key for this workflow. An enabled
+environment whose secrets are missing fails with an explicit message naming
+the environment.
 
 ## Verification
 
@@ -85,11 +104,27 @@ Database contract test: `supabase test db` runs
 `SECURITY INVOKER`, stable volatility, restricted `search_path`, and
 anon-executable grant.
 
+## Status (2026-07-16)
+
+- Staging runtime is proven: the migration is applied to the staging project
+  and the smoke script returned HTTP 200 with a server timestamp through the
+  public anon key, independently verified.
+- The pgTAP contract test has not yet run because Docker was unavailable on
+  the authoring machine; run `supabase test db` on the next local stack
+  session.
+- GitHub scheduling becomes operational only after the two staging repository
+  secrets are added.
+- Production remains behind explicit approval: its migration is not applied,
+  its secrets are not set, and `KEEPALIVE_PRODUCTION_ENABLED` stays unset
+  until approval.
+
 ## Failure and recovery
 
 1. A red `Supabase keepalive` run names the failed environment in its error
    annotation. Check the other environment's job — they are independent.
-2. `secrets are not configured` → add or fix the four repository secrets above.
+2. `secrets are not configured` → add or fix that environment's repository
+   secrets per the table above (production only fails this way once
+   `KEEPALIVE_PRODUCTION_ENABLED` is `true`).
 3. HTTP 401/403 → the stored anon key is wrong or was rotated; copy the current
    publishable key from Project Settings → API.
 4. HTTP 404 → the keepalive migration is not applied to that project; apply it
