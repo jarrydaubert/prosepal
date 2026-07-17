@@ -410,7 +410,10 @@ private enum ProsePalDebugLaunchArguments {
     }
 
     static var mockWritingDelay: Duration? {
-        ProcessInfo.processInfo.arguments.contains(slowMockWritingService) ? .seconds(10) : nil
+        // Keep the generation state observable on slower CI hosts. The UI test
+        // cancels this task through Stop, so the larger ceiling adds no normal
+        // test delay while avoiding a race with accessibility-tree inspection.
+        ProcessInfo.processInfo.arguments.contains(slowMockWritingService) ? .seconds(60) : nil
     }
 }
 #endif
