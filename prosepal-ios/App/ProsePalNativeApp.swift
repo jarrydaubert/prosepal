@@ -291,7 +291,8 @@ private enum MessageWritingServiceFactory {
             ), delay: ProsePalDebugLaunchArguments.mockWritingDelay)
             return RoutingMessageWritingService(
                 privateClient: mockClient,
-                carefulClient: mockClient
+                carefulClient: mockClient,
+                timeoutPolicy: ProsePalDebugLaunchArguments.mockWritingTimeoutPolicy
             )
         }
         #endif
@@ -414,6 +415,21 @@ private enum ProsePalDebugLaunchArguments {
         // Hosted accessibility inspection can stall for minutes, so a short
         // wall-clock delay cannot be a deterministic synchronization boundary.
         ProcessInfo.processInfo.arguments.contains(slowMockWritingService) ? .seconds(3_600) : nil
+    }
+
+    static var mockWritingTimeoutPolicy: GenerationTimeoutPolicy {
+        guard ProcessInfo.processInfo.arguments.contains(slowMockWritingService) else {
+            return GenerationTimeoutPolicy()
+        }
+
+        // This DEBUG-only seam exercises cancellation-driven UI feedback. Keep
+        // the production deadline from resolving the mock before hosted
+        // accessibility inspection reaches the progress state.
+        return GenerationTimeoutPolicy(
+            onDevice: .seconds(7_200),
+            gateway: .seconds(7_200),
+            total: .seconds(7_200)
+        )
     }
 }
 #endif
