@@ -410,10 +410,10 @@ private enum ProsePalDebugLaunchArguments {
     }
 
     static var mockWritingDelay: Duration? {
-        // Keep the generation state observable on slower CI hosts. The UI test
-        // cancels this task through Stop, so the larger ceiling adds no normal
-        // test delay while avoiding a race with accessibility-tree inspection.
-        ProcessInfo.processInfo.arguments.contains(slowMockWritingService) ? .seconds(60) : nil
+        // Hold the generation state until the UI test cancels through Stop.
+        // Hosted accessibility inspection can stall for minutes, so a short
+        // wall-clock delay cannot be a deterministic synchronization boundary.
+        ProcessInfo.processInfo.arguments.contains(slowMockWritingService) ? .seconds(3_600) : nil
     }
 }
 #endif
