@@ -1,0 +1,129 @@
+name: Supabase keepalive
+
+# Temporary Free-plan pre-launch control: daily genuine database activity so
+# Supabase does not pause the projects for inactivity. Calls only the
+# dedicated read-only public.keepalive() RPC with the public anon key — never
+# generation, authentication, subscription, deletion, or user-data endpoints.
+#
+# Production participation is gated by the repository variable
+# KEEPALIVE_PRODUCTION_ENABLED. While it is absent or not "true", the
+# production job reports a neutral not-enabled outcome and the workflow stays
+# green on staging success alone. Once enabled, missing production secrets
+# fail loudly. The live production project must move to a non-pausing paid
+# plan before launch; see docs/operations/keepalive.md.
+
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  keepalive:
+    name: ${{ matrix.environment }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - environment: production
+          - environment: staging
+    steps:
+      - name: Report production not enabled
+        if: matrix.environment == 'production' && vars.KEEPALIVE_PRODUCTION_ENABLED != 'true'
+        run: |
+          echo "::notice::Production keepalive is not enabled (repository variable KEEPALIVE_PRODUCTION_ENABLED is absent or not 'true'); skipping neutrally until production activation is approved."
+
+      - name: Call keepalive RPC (production)
+        if: matrix.environment == 'production' && vars.KEEPALIVE_PRODUCTION_ENABLED == 'true'
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_PRODUCTION_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_PRODUCTION_ANON_KEY }}
+          ENVIRONMENT: ${{ matrix.environment }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${SUPABASE_URL}" ] || [ -z "${SUPABASE_ANON_KEY}" ]; then
+            echo "::error::Keepalive failed for ${ENVIRONMENT}: repository secrets are not configured."
+            exit 1
+          fi
+
+          response_file="$(mktemp)"
+          http_code="$(
+            curl --silent --show-error \
+              --connect-timeout 10 \
+              --max-time 30 \
+              --retry 3 \
+              --retry-delay 5 \
+              --retry-connrefused \
+              --output "${response_file}" \
+              --write-out '%{http_code}' \
+              -X POST "${SUPABASE_URL%/}/rest/v1/rpc/keepalive" \
+              -H "apikey: ${SUPABASE_ANON_KEY}" \
+              -H "Authorization: Bearer ${SUPABASE_ANON_KEY}" \
+              -H "Content-Type: application/json" \
+              --data '{}'
+          )" || {
+            echo "::error::Keepalive failed for ${ENVIRONMENT}: request did not complete after retries."
+            exit 1
+          }
+
+          if [ "${http_code}" -lt 200 ] || [ "${http_code}" -ge 300 ]; then
+            echo "::error::Keepalive failed for ${ENVIRONMENT}: HTTP ${http_code}."
+            exit 1
+          fi
+
+          if ! grep -Eq '"?[0-9]{4}-[0-9]{2}-[0-9]{2}' "${response_file}"; then
+            echo "::error::Keepalive failed for ${ENVIRONMENT}: HTTP ${http_code} but the response was not a server timestamp."
+            exit 1
+          fi
+
+          echo "Keepalive succeeded for ${ENVIRONMENT}: HTTP ${http_code}, server timestamp returned."
+
+      - name: Call keepalive RPC (staging)
+        if: matrix.environment == 'staging'
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_STAGING_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_STAGING_ANON_KEY }}
+          ENVIRONMENT: ${{ matrix.environment }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${SUPABASE_URL}" ] || [ -z "${SUPABASE_ANON_KEY}" ]; then
+            echo "::error::Keepalive failed for ${ENVIRONMENT}: repository secrets are not configured."
+            exit 1
+          fi
+
+          response_file="$(mktemp)"
+          http_code="$(
+            curl --silent --show-error \
+              --connect-timeout 10 \
+              --max-time 30 \
+              --retry 3 \
+              --retry-delay 5 \
+              --retry-connrefused \
+              --output "${response_file}" \
+              --write-out '%{http_code}' \
+              -X POST "${SUPABASE_URL%/}/rest/v1/rpc/keepalive" \
+              -H "apikey: ${SUPABASE_ANON_KEY}" \
+              -H "Authorization: Bearer ${SUPABASE_ANON_KEY}" \
+              -H "Content-Type: application/json" \
+              --data '{}'
+          )" || {
+            echo "::error::Keepalive failed for ${ENVIRONMENT}: request did not complete after retries."
+            exit 1
+          }
+
+          if [ "${http_code}" -lt 200 ] || [ "${http_code}" -ge 300 ]; then
+            echo "::error::Keepalive failed for ${ENVIRONMENT}: HTTP ${http_code}."
+            exit 1
+          fi
+
+          if ! grep -Eq '"?[0-9]{4}-[0-9]{2}-[0-9]{2}' "${response_file}"; then
+            echo "::error::Keepalive failed for ${ENVIRONMENT}: HTTP ${http_code} but the response was not a server timestamp."
+            exit 1
+          fi
+
+          echo "Keepalive succeeded for ${ENVIRONMENT}: HTTP ${http_code}, server timestamp returned."

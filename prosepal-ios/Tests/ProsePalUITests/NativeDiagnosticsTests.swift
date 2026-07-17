@@ -30,6 +30,23 @@ final class NativeDiagnosticsTests: XCTestCase {
         XCTAssertFalse(payload.contains("email"))
     }
 
+    func testSubscriptionEventPayloadSeparatesFetchedAndConfiguredProductCounts() {
+        let payload = NativeDiagnosticsPayload.subscriptionEvent(
+            event: "subscription_restore_failed",
+            source: "settings",
+            productCount: 0,
+            configuredProductCount: 3,
+            outcome: "store_unavailable"
+        )
+
+        XCTAssertEqual(
+            payload,
+            "subscription_event event=subscription_restore_failed source=settings product_count=0 configured_product_count=3 outcome=store_unavailable"
+        )
+        XCTAssertFalse(payload.contains("com.prosepal.pro"))
+        XCTAssertFalse(payload.contains("receipt"))
+    }
+
     func testMomentDraftStartedPayloadDoesNotIncludeRawMomentContent() {
         let moment = MomentInput(
             personName: "Private Person",
@@ -44,11 +61,11 @@ final class NativeDiagnosticsTests: XCTestCase {
         let payload = NativeDiagnosticsPayload.momentDraftStarted(
             requestID: "moment-request-123456789",
             moment: moment,
-            trigger: "take_more_care"
+            trigger: "adjust_warmer"
         )
 
         XCTAssertTrue(payload.contains("request_id=moment-reque..."))
-        XCTAssertTrue(payload.contains("trigger=take_more_care"))
+        XCTAssertTrue(payload.contains("trigger=adjust_warmer"))
         XCTAssertTrue(payload.contains("register=confess"))
         XCTAssertTrue(payload.contains("occasion=apology"))
         XCTAssertTrue(payload.contains("relationship=romantic"))
@@ -67,7 +84,7 @@ final class NativeDiagnosticsTests: XCTestCase {
     func testMomentDraftSucceededPayloadUsesCountsNotDraftText() {
         let bundle = MomentDraftBundle(
             messageText: "A private generated draft that must not be logged.",
-            lane: .takeMoreCare,
+            lane: .careful,
             pressureCheck: PressureCheck(
                 asksForReassurance: true,
                 notes: ["A safe note that still should only be counted."]
@@ -86,7 +103,7 @@ final class NativeDiagnosticsTests: XCTestCase {
         )
 
         XCTAssertTrue(payload.contains("request_id=moment-succe..."))
-        XCTAssertTrue(payload.contains("lane=takeMoreCare"))
+        XCTAssertTrue(payload.contains("lane=careful"))
         XCTAssertTrue(payload.contains("pressure_findings=true"))
         XCTAssertTrue(payload.contains("truth_bead_count=1"))
         XCTAssertTrue(payload.contains("missing_count=1"))
@@ -102,10 +119,30 @@ final class NativeDiagnosticsTests: XCTestCase {
 
     func testMomentLaunchConsumedPayloadDoesNotIncludeRawPerson() {
         let payload = NativeDiagnosticsPayload.momentLaunchConsumed(
-            MomentLaunchRequest(personName: "Private Person", source: "app_intent")
+            MomentLaunchRequest(
+                personName: "Private Person",
+                sharedText: "Private shared text",
+                source: "share_extension"
+            )
         )
 
-        XCTAssertEqual(payload, "moment_launch_consumed source=app_intent person_present=true occasion=none")
+        XCTAssertEqual(
+            payload,
+            "moment_launch_consumed source=share_extension person_present=true occasion=none shared_text_present=true shared_text_chars=19"
+        )
         XCTAssertFalse(payload.contains("Private Person"))
+        XCTAssertFalse(payload.contains("Private shared text"))
+    }
+
+    func testAccountDeletionEventPayloadUsesEventAndOutcomeOnly() {
+        let payload = NativeDiagnosticsPayload.accountDeletionEvent(
+            event: "account_deletion_succeeded",
+            outcome: "none"
+        )
+
+        XCTAssertEqual(
+            payload,
+            "account_deletion_event event=account_deletion_succeeded source=settings outcome=none"
+        )
     }
 }

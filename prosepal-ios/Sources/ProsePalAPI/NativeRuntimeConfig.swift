@@ -3,12 +3,15 @@ import Foundation
 public struct NativeRuntimeConfig: Sendable {
     private let environment: [String: String]
     private let infoDictionary: [String: String]
+    private let allowsInsecureLoopback: Bool
 
     public init(
         environment: [String: String] = ProcessInfo.processInfo.environment,
-        infoDictionary: [String: Any] = Bundle.main.infoDictionary ?? [:]
+        infoDictionary: [String: Any] = Bundle.main.infoDictionary ?? [:],
+        allowsInsecureLoopback: Bool = false
     ) {
         self.environment = environment
+        self.allowsInsecureLoopback = allowsInsecureLoopback
         self.infoDictionary = infoDictionary.compactMapValues { value in
             switch value {
             case let string as String:
@@ -33,13 +36,34 @@ public struct NativeRuntimeConfig: Sendable {
         value(named: primaryKey) ?? value(named: fallbackKey)
     }
 
+    public func supabasePublishableKey(named primaryKey: String, fallback fallbackKey: String) -> String? {
+        guard let key = value(named: primaryKey, fallback: fallbackKey) else {
+            return nil
+        }
+
+        if key.hasPrefix("sb_publishable_") {
+            return key.count > "sb_publishable_".count ? key : nil
+        }
+
+        let jwtSegments = key.split(separator: ".", omittingEmptySubsequences: false)
+        guard key.hasPrefix("eyJ"), jwtSegments.count == 3,
+              jwtSegments.allSatisfy({ !$0.isEmpty }) else {
+            return nil
+        }
+        return key
+    }
+
     public func url(named key: String) -> URL? {
         guard
             let rawValue = value(named: key),
             let url = URL(string: rawValue),
             let scheme = url.scheme?.lowercased(),
-            ["http", "https"].contains(scheme),
-            url.host != nil
+            let host = url.host?.lowercased(),
+            scheme == "https" || (
+                allowsInsecureLoopback &&
+                scheme == "http" &&
+                Self.loopbackHosts.contains(host)
+            )
         else {
             return nil
         }
@@ -65,6 +89,8 @@ public struct NativeRuntimeConfig: Sendable {
                 return trimmed
             }
     }
+
+    private static let loopbackHosts: Set<String> = ["localhost", "127.0.0.1", "::1"]
 }
 
 private extension String {

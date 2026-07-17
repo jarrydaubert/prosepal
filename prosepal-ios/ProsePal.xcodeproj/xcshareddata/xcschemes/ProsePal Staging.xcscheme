@@ -21,6 +21,20 @@
                ReferencedContainer = "container:ProsePal.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "NO"
+            buildForProfiling = "NO"
+            buildForArchiving = "NO"
+            buildForAnalyzing = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "SK000000000000000000000C"
+               BuildableName = "ProsePalStoreKitTests.xctest"
+               BlueprintName = "ProsePalStoreKitTests"
+               ReferencedContainer = "container:ProsePal.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
       </BuildActionEntries>
    </BuildAction>
    <TestAction
@@ -29,6 +43,16 @@
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       shouldUseLaunchSchemeArgsEnv = "YES">
       <Testables>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "SK000000000000000000000C"
+               BuildableName = "ProsePalStoreKitTests.xctest"
+               BlueprintName = "ProsePalStoreKitTests"
+               ReferencedContainer = "container:ProsePal.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
    </TestAction>
    <LaunchAction
@@ -52,7 +76,7 @@
          </BuildableReference>
       </BuildableProductRunnable>
       <StoreKitConfigurationFileReference
-         identifier = "../../../../App/ProsePalStaging.storekit">
+         identifier = "../../App/ProsePalStaging.storekit">
       </StoreKitConfigurationFileReference>
    </LaunchAction>
    <ProfileAction

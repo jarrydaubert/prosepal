@@ -1,0 +1,211 @@
+<!-- @dsCard group="ProsePal — The Direction" viewport="2620x1320" name="ProsePal · warm literary + premium glass" subtitle="THE chosen direction — 21 screens across the full product surface" -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,300;1,6..72,400;1,6..72,500&display=swap" />
+<link rel="stylesheet" href="../../styles.css" />
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css" />
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css" />
+<link rel="stylesheet" href="../_shared/kit.css" />
+<link rel="stylesheet" href="parts.css" />
+<style>
+  /* ============================================================
+     ProsePal — THE direction. A warm literary writing companion
+     inside a premium modern iOS interface. (B ∩ C)
+
+     Rule of the blend:
+       • The WRITING is literary — serif on warm cream paper,
+         faint ruled lines, a clay margin rule. Opaque, crisp,
+         the hero. Never glass (text must stay razor-sharp).
+       • Everything that FLOATS over it is glass — nav, dock,
+         refine bar, tone chips, popovers, plan cards. Warm-tinted
+         frost, light edge, soft shadow.
+       • Accent is B's deeper ink-clay. The wash behind glass is
+         warm amber/cream with a whisper of sage — literary, calm,
+         never the techy peach-pink of a generic glass UI.
+     ============================================================ */
+  .dir-prosepal {
+    /* warm literary paper (from B) */
+    --bg: oklch(0.957 0.018 80);
+    --bg-grouped: oklch(0.945 0.020 79);
+    --surface: oklch(0.985 0.012 82);
+    --surface-2: oklch(0.971 0.014 81);
+    --surface-sunken: oklch(0.949 0.018 79);
+    --separator: oklch(0.886 0.018 76);
+    --border: oklch(0.856 0.020 74);
+    --border-strong: oklch(0.800 0.022 72);
+    /* deeper ink-clay accent (from B) */
+    --accent: oklch(0.520 0.110 40);
+    --accent-hover: oklch(0.470 0.104 38);
+    --accent-press: oklch(0.420 0.092 37);
+    --accent-text: oklch(0.466 0.104 38);
+    --accent-soft: oklch(0.928 0.030 56);
+    --accent-soft-2: oklch(0.890 0.046 52);
+    --accent-border: oklch(0.520 0.110 40 / 0.30);
+    --text-on-accent: oklch(0.975 0.012 82);
+    --canvas-font: var(--font-reading);
+    --radius-card: 20px;
+
+    /* warm literary wash that lives behind all glass */
+    --pp-wash:
+      radial-gradient(120% 82% at 8% 0%, oklch(0.935 0.052 74) 0%, transparent 50%),
+      radial-gradient(110% 78% at 96% 6%, oklch(0.918 0.046 44) 0%, transparent 46%),
+      radial-gradient(150% 115% at 62% 100%, oklch(0.930 0.030 142) 0%, transparent 56%),
+      linear-gradient(165deg, oklch(0.966 0.020 78), oklch(0.944 0.026 70));
+
+    /* warm-tinted glass (C's material, warmed toward cream) */
+    --glass-fill:        oklch(0.987 0.016 80 / 0.60);
+    --glass-fill-2:      oklch(0.987 0.016 80 / 0.42);
+    --glass-stroke:      oklch(1 0 0 / 0.60);
+    --glass-stroke-soft: oklch(1 0 0 / 0.32);
+    --glass-shadow:
+      0 1px 0 oklch(1 0 0 / 0.55) inset,
+      0 14px 44px oklch(0.42 0.06 40 / 0.16);
+  }
+  .dir-prosepal.kit-page { background: oklch(0.90 0.024 72); }
+  .dir-prosepal .kit-dir { color: oklch(0.50 0.10 40); }
+
+  /* ---- App-icon crest ---- */
+  .pc-crest {
+    width: 78px; height: 78px; border-radius: 23px; display: grid; place-items: center; font-size: 36px;
+    background: linear-gradient(158deg, oklch(0.60 0.12 44), oklch(0.45 0.10 37)); color: oklch(0.975 0.012 82);
+    box-shadow: 0 10px 30px oklch(0.46 0.10 38 / 0.34), inset 0 1px 0 oklch(1 0 0 / 0.35);
+  }
+
+  /* ---- The literary writing page (opaque, crisp) ---- */
+  .pc-page {
+    background: var(--surface); border-radius: 18px; padding: 18px 20px;
+    border: 0.5px solid var(--separator);
+    box-shadow: var(--shadow-sm), inset 3px 0 0 oklch(0.520 0.110 40 / 0.18);
+  }
+  .pc-prompt { font: 600 12px/1 var(--font-ui); letter-spacing: .05em; text-transform: uppercase; color: var(--accent-text); margin-bottom: 11px; }
+  .pc-ruled {
+    font-family: var(--font-reading); font-size: 19px; line-height: 34px; letter-spacing: 0; color: var(--text);
+    min-height: 102px;
+    background-image: linear-gradient(to bottom, transparent 33px, oklch(0.520 0.110 40 / 0.09) 33px, oklch(0.520 0.110 40 / 0.09) 34px, transparent 34px);
+    background-size: 100% 34px; background-position: 0 1px;
+  }
+  .pc-page__foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 14px; padding-top: 13px; border-top: 0.5px dashed var(--border); }
+
+  /* ---- Glass chrome ---- */
+  .pc-nav {
+    padding: 4px 18px 9px; display: flex; flex-direction: column; gap: 2px;
+    background: var(--glass-fill-2); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
+    border-bottom: 1px solid var(--glass-stroke-soft);
+  }
+  .pc-dockwrap { position: relative; padding: 8px 30px 12px; display: flex; justify-content: center; }
+  .pc-dock {
+    display: flex; gap: 6px; padding: 6px 10px 5px; border-radius: 999px;
+    background: var(--glass-fill); backdrop-filter: var(--glass-blur-strong); -webkit-backdrop-filter: var(--glass-blur-strong);
+    border: 1px solid var(--glass-stroke); box-shadow: var(--glass-shadow);
+  }
+  .pc-dock .pp-tab { padding: 4px 16px; }
+  .pc-dock .pp-tab--fab .pp-tab__icon { margin-top: 0; }
+
+  /* ---- Glass chips / tones ---- */
+  .pc-chip {
+    display: inline-flex; align-items: center; gap: 7px; height: 36px; padding: 0 15px; border-radius: 999px;
+    font: 500 15px var(--font-ui); letter-spacing: -0.005em; color: var(--text-secondary); cursor: pointer; white-space: nowrap;
+    background: var(--glass-fill-2); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--glass-stroke-soft);
+  }
+  .pc-chip i { font-size: 16px; opacity: .9; }
+  .pc-chip[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent-text); border-color: var(--accent-border); font-weight: 600; }
+
+  /* ---- The literary draft, on a glass-edged raised card ---- */
+  .pc-draft {
+    background: var(--surface); border-radius: var(--radius-card); overflow: hidden;
+    border: 1px solid var(--glass-stroke); box-shadow: var(--glass-shadow), inset 3px 0 0 var(--accent);
+  }
+  .pc-draft__head { display: flex; align-items: center; gap: 8px; padding: 15px 20px 0; }
+  .pc-draft__label { font: 500 13px var(--font-reading); font-style: italic; color: var(--accent-text); flex: 1; }
+  .pc-draft__body { padding: 12px 20px 14px; font-family: var(--font-reading); font-size: 20px; line-height: 1.6; color: var(--text); }
+  .pc-draft__body p { margin: 0 0 0.62em; } .pc-draft__body p:last-child { margin-bottom: 0; }
+  .pc-draft__voice { display: inline-flex; align-items: center; gap: 6px; margin: 0 20px 13px; font: 400 13px var(--font-ui); color: var(--voice); }
+  .pc-draft__voice i { font-size: 15px; }
+  .pc-draft__foot { display: flex; align-items: center; gap: 4px; padding: 8px 12px; border-top: 0.5px dashed var(--border); }
+  .pc-spacer { flex: 1; }
+
+  /* ---- Margin note (glass) ---- */
+  .pc-margin {
+    display: flex; gap: 12px; padding: 13px 15px; align-items: flex-start; border-radius: 16px;
+    background: var(--glass-fill-2); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--glass-stroke-soft);
+  }
+  .pc-margin__icon { flex: none; width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent-text); font-size: 16px; }
+  .pc-margin b { font: 600 13px var(--font-ui); color: var(--text); }
+  .pc-margin p { margin: 2px 0 0; font-family: var(--font-reading); font-style: italic; font-size: 15px; line-height: 1.45; color: var(--text-secondary); }
+
+  /* ---- Floating glass refine bar ---- */
+  .pc-floatbar {
+    display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 999px;
+    background: var(--glass-fill); backdrop-filter: var(--glass-blur-strong); -webkit-backdrop-filter: var(--glass-blur-strong);
+    border: 1px solid var(--glass-stroke); box-shadow: var(--glass-shadow);
+  }
+  .pc-floatbar__lead { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 50%; background: var(--accent-soft); color: var(--accent-text); font-size: 16px; flex: none; }
+  .pc-floatbar__scroll { display: flex; align-items: center; gap: 8px; overflow-x: auto; }
+  .pc-floatbar__scroll::-webkit-scrollbar { display: none; }
+
+  /* ---- Glass segmented ---- */
+  .pc-seg {
+    display: inline-flex; padding: 3px; gap: 2px; border-radius: 14px; width: 100%;
+    background: var(--glass-fill-2); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--glass-stroke-soft);
+  }
+  .pc-seg__i { flex: 1; display: inline-flex; align-items: center; justify-content: center; height: 31px; border: none; background: transparent; border-radius: 11px; cursor: pointer; font: 500 14px var(--font-ui); color: var(--text-secondary); }
+  .pc-seg__i--on { background: var(--surface); color: var(--text); font-weight: 600; box-shadow: var(--shadow-xs); }
+
+  /* ---- Glass suggestion popover ---- */
+  .pc-suggest {
+    border-radius: 16px; padding: 14px 16px;
+    background: var(--glass-fill); backdrop-filter: var(--glass-blur-strong); -webkit-backdrop-filter: var(--glass-blur-strong);
+    border: 1px solid var(--glass-stroke); box-shadow: var(--glass-shadow);
+  }
+  .pc-suggest__h { display: flex; align-items: center; gap: 8px; font: 500 13px var(--font-ui); color: var(--text-tertiary); margin-bottom: 11px; }
+  .pc-suggest__row { display: flex; gap: 8px; }
+  .pc-pill { font: 500 17px var(--font-reading); padding: 5px 14px; border-radius: 999px; background: var(--surface); color: var(--text-secondary); border: 0.5px solid var(--border); cursor: pointer; }
+  .pc-pill--on { background: var(--accent-soft); color: var(--accent-text); border-color: var(--accent-border); }
+  .pc-mark { background: var(--accent-soft); color: var(--accent-text); border-radius: 5px; padding: 0 3px; box-decoration-break: clone; }
+
+  /* ---- Glass plan cards ---- */
+  .pc-plan {
+    display: flex; align-items: center; gap: 12px; padding: 14px 16px; cursor: pointer; width: 100%; text-align: left;
+    background: var(--glass-fill-2); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
+    border-radius: 16px; border: 1.5px solid var(--glass-stroke-soft);
+  }
+  .pc-plan[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+  .pc-plan__radio { flex: none; width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--border-strong); display: grid; place-items: center; }
+  .pc-plan[aria-pressed="true"] .pc-plan__radio { border-color: var(--accent); }
+  .pc-plan[aria-pressed="true"] .pc-plan__radio::after { content: ""; width: 11px; height: 11px; border-radius: 50%; background: var(--accent); }
+  .pc-plan__body { flex: 1; } .pc-plan__body b { font: 600 15px var(--font-ui); color: var(--text); } .pc-plan__body span { display: block; font: 400 12px var(--font-ui); color: var(--text-tertiary); margin-top: 1px; }
+  .pc-plan__price b { font: 600 16px var(--font-ui); color: var(--text); } .pc-plan__price span { display: block; font: 400 11px var(--font-ui); color: var(--text-tertiary); text-align: right; }
+
+  /* glass feature panel */
+  .pc-panel {
+    background: var(--glass-fill-2); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--glass-stroke-soft); border-radius: var(--radius-card);
+  }
+</style>
+</head>
+<body class="kit-page dir-prosepal">
+<div class="kit-header">
+  <span class="kit-dir">★ The ProsePal direction · B ∩ C</span>
+  <span class="kit-title" style="font-style:italic">A warm literary companion, in premium glass</span>
+  <span class="kit-note">The decided direction, stress-tested across the whole app. Literary cream paper and serif prose carry the writing (opaque, crisp, the hero); glass carries everything that floats over it. State language: <b>ruled cream</b> = composing/drafting · <b>clean cream</b> = polished output · <b>glass</b> = chrome, choices &amp; overlays. 21 screens across onboarding, writing, library, account &amp; system, and the unglamorous states.</span>
+</div>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel" data-presets="react" src="../_shared/frame.jsx"></script>
+<script type="text/babel" data-presets="react" src="reg.jsx"></script>
+<script type="text/babel" data-presets="react" src="screens-1.jsx"></script>
+<script type="text/babel" data-presets="react" src="screens-2.jsx"></script>
+<script type="text/babel" data-presets="react" src="screens-3.jsx"></script>
+<script type="text/babel" data-presets="react" src="screens-4.jsx"></script>
+</body>
+</html>

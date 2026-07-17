@@ -40,6 +40,12 @@ for item in root.findall(".//BuildableReference"):
     item.set("BuildableName", "ProsePal Staging.app")
     item.set("BlueprintName", "ProsePal Staging")
 
+storekit_references = root.findall(".//StoreKitConfigurationFileReference")
+if len(storekit_references) != 1:
+    print("Expected exactly one StoreKit configuration reference.", file=sys.stderr)
+    sys.exit(1)
+storekit_references[0].set("identifier", "../../App/ProsePalStaging.storekit")
+
 tree.write(scheme, encoding="UTF-8", xml_declaration=True)
 PY
 
@@ -79,17 +85,35 @@ enabled = {
 }
 
 missing = [key for key in expected if key not in enabled]
-storekit = any(
-    "storekit" in value.lower()
-    for elem in root.iter()
-    for value in elem.attrib.values()
+values = {
+    item.get("key"): (item.get("value") or "").strip()
+    for item in root.findall(".//EnvironmentVariable")
+    if item.get("key")
+}
+publishable_key = values.get("PROSEPAL_SUPABASE_ANON_KEY", "")
+valid_publishable_key = (
+    publishable_key.startswith("sb_publishable_")
+    and len(publishable_key) > len("sb_publishable_")
+) or (
+    publishable_key.startswith("eyJ")
+    and len(publishable_key.split(".")) == 3
+    and all(publishable_key.split("."))
+)
+storekit_references = root.findall(".//StoreKitConfigurationFileReference")
+storekit_identifier = (
+    storekit_references[0].get("identifier")
+    if len(storekit_references) == 1
+    else None
 )
 
 if missing:
     print("Restored scheme is missing enabled keys:", ", ".join(missing), file=sys.stderr)
     sys.exit(1)
-if not storekit:
-    print("Restored scheme is missing StoreKit configuration reference.", file=sys.stderr)
+if not valid_publishable_key:
+    print("Restored scheme has an invalid Supabase publishable/anon key.", file=sys.stderr)
+    sys.exit(1)
+if storekit_identifier != "../../App/ProsePalStaging.storekit":
+    print("Restored scheme has an invalid StoreKit configuration reference.", file=sys.stderr)
     sys.exit(1)
 
 targets_staging = all(
@@ -105,3 +129,8 @@ PY
 
 echo "Restored ProsePal Local Staging scheme from backup."
 echo "Verified: expected env keys are enabled, StoreKit reference exists, scheme targets ProsePal Staging, and scheme is ignored by Git."
+
+if pgrep -x Xcode >/dev/null 2>&1; then
+  echo "Xcode is currently running and may have cached the previous scheme environment."
+  echo "Quit Xcode completely, reopen the project, then run ProsePal Local Staging."
+fi

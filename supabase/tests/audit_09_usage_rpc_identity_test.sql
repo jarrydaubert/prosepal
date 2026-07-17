@@ -1,25 +1,16 @@
 BEGIN;
 SELECT plan(1);
 
--- AUDIT-09: Authenticated user A must not be able to increment user B usage.
--- Simulate an authenticated request context by setting JWT claim + role.
-SELECT set_config(
-  'request.jwt.claim.sub',
-  'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
-  true
-);
-SET LOCAL ROLE authenticated;
-
-SELECT throws_ok(
-  $$
-    SELECT check_and_increment_usage(
-      'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'::uuid,
-      false,
-      '2026-02'
-    );
-  $$,
-  '42501',
-  'check_and_increment_usage denies cross-user usage mutation attempts'
+-- AUDIT-09: migration 025 moved usage mutation fully behind the service-role
+-- gateway. Authenticated users cannot invoke the function at all, which is
+-- stronger than the older in-function cross-user rejection.
+SELECT ok(
+  NOT has_function_privilege(
+    'authenticated',
+    'public.check_and_increment_usage(uuid,boolean,text)',
+    'EXECUTE'
+  ),
+  'authenticated users cannot invoke check_and_increment_usage'
 );
 
 SELECT * FROM finish();

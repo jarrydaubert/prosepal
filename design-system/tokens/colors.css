@@ -1,0 +1,169 @@
+/* ============================================================
+   ProsePal — Color
+   ------------------------------------------------------------
+   A warm "paper & ink" foundation. Calm, premium, private.
+   Signature accent is CLAY (a refined terracotta-rose) — a
+   custom tint, deliberately not generic-Apple-blue or AI-green.
+   INK-BLUE carries trust/links; SAGE marks "your voice, kept".
+
+   All ramps are absolute (oklch). Semantic aliases remap between
+   light (default) and dark ([data-theme="dark"]).
+   ============================================================ */
+
+:root {
+  /* ---- Neutrals · warm paper & ink ---------------------- */
+  --paper-0:  oklch(0.962 0.006 78);   /* deepest app canvas   */
+  --paper-1:  oklch(0.974 0.006 80);   /* grouped background   */
+  --paper-2:  oklch(0.985 0.004 82);   /* raised surface       */
+  --paper-3:  oklch(0.996 0.003 85);   /* card / cell (near-white) */
+
+  --ink-1:    oklch(0.245 0.013 62);   /* primary text         */
+  --ink-2:    oklch(0.430 0.013 62);   /* secondary text       */
+  --ink-3:    oklch(0.585 0.011 64);   /* tertiary / caption   */
+  --ink-4:    oklch(0.700 0.009 66);   /* placeholder / quietest */
+  --ink-5:    oklch(0.800 0.007 68);   /* disabled glyph       */
+
+  --line-1:   oklch(0.905 0.006 76);   /* hairline separator   */
+  --line-2:   oklch(0.860 0.007 74);   /* default border       */
+  --line-3:   oklch(0.805 0.008 72);   /* strong border        */
+
+  --fill-1:   oklch(0.930 0.006 76 / 0.55);  /* iOS quaternary fill */
+  --fill-2:   oklch(0.905 0.007 74 / 0.75);  /* tertiary fill    */
+  --fill-3:   oklch(0.875 0.008 72 / 0.90);  /* secondary fill   */
+
+  /* ---- Clay · signature accent -------------------------- */
+  --clay-50:  oklch(0.967 0.016 46);
+  --clay-100: oklch(0.928 0.034 45);
+  --clay-200: oklch(0.868 0.060 44);
+  --clay-300: oklch(0.785 0.090 42);
+  --clay-400: oklch(0.695 0.114 40);
+  --clay-500: oklch(0.612 0.124 38);   /* ← brand primary      */
+  --clay-600: oklch(0.542 0.118 36);
+  --clay-700: oklch(0.470 0.100 35);
+  --clay-800: oklch(0.392 0.080 34);
+  --clay-900: oklch(0.322 0.060 33);
+
+  /* ---- Ink-blue · trust / links / info ------------------ */
+  --inkblue-50:  oklch(0.965 0.012 248);
+  --inkblue-100: oklch(0.922 0.026 250);
+  --inkblue-200: oklch(0.848 0.044 252);
+  --inkblue-300: oklch(0.742 0.060 252);
+  --inkblue-400: oklch(0.640 0.072 252);
+  --inkblue-500: oklch(0.552 0.078 252);  /* ← secondary       */
+  --inkblue-600: oklch(0.478 0.072 252);
+  --inkblue-700: oklch(0.405 0.060 252);
+  --inkblue-800: oklch(0.335 0.046 252);
+  --inkblue-900: oklch(0.278 0.034 252);
+
+  /* ---- Sage · "your voice, kept" / success -------------- */
+  --sage-50:  oklch(0.965 0.014 150);
+  --sage-100: oklch(0.928 0.028 152);
+  --sage-200: oklch(0.862 0.044 153);
+  --sage-300: oklch(0.760 0.052 154);
+  --sage-400: oklch(0.668 0.054 155);
+  --sage-500: oklch(0.585 0.052 156);
+  --sage-600: oklch(0.502 0.046 157);
+  --sage-700: oklch(0.422 0.038 158);
+
+  /* ---- Supporting hues for semantics -------------------- */
+  --amber-400: oklch(0.800 0.110 78);
+  --amber-500: oklch(0.748 0.118 72);
+  --amber-700: oklch(0.560 0.100 64);
+  --rust-400:  oklch(0.640 0.140 30);
+  --rust-500:  oklch(0.560 0.150 28);
+  --rust-700:  oklch(0.430 0.120 28);
+
+  /* ===== Semantic aliases · LIGHT ======================== */
+  --bg:            var(--paper-0);
+  --bg-grouped:    var(--paper-1);
+  --surface:       var(--paper-3);
+  --surface-2:     var(--paper-2);
+  --surface-sunken: var(--paper-1);
+  --scrim:         oklch(0.245 0.013 62 / 0.32);
+
+  --text:          var(--ink-1);
+  --text-secondary: var(--ink-2);
+  --text-tertiary: var(--ink-3);
+  --text-quaternary: var(--ink-4);
+  --text-disabled: var(--ink-5);
+  --text-on-accent: oklch(0.985 0.006 60);
+  --text-inverse:  var(--paper-3);
+
+  --separator:     var(--line-1);
+  --border:        var(--line-2);
+  --border-strong: var(--line-3);
+  --fill:          var(--fill-1);
+  --fill-strong:   var(--fill-3);
+
+  --accent:        var(--clay-500);
+  --accent-hover:  var(--clay-600);
+  --accent-press:  var(--clay-700);
+  --accent-text:   var(--clay-700);   /* clay as readable text on light */
+  --accent-soft:   var(--clay-50);    /* tinted fill behind accent things */
+  --accent-soft-2: var(--clay-100);
+  --accent-border: oklch(0.612 0.124 38 / 0.28);
+
+  --link:          var(--inkblue-600);
+
+  --success:       var(--sage-600);
+  --success-soft:  var(--sage-50);
+  --voice:         var(--sage-600);   /* "your voice preserved" marker */
+  --voice-soft:    var(--sage-50);
+  --warning:       var(--amber-700);
+  --warning-soft:  oklch(0.800 0.110 78 / 0.16);
+  --danger:        var(--rust-500);
+  --danger-soft:   oklch(0.640 0.140 30 / 0.12);
+  --info:          var(--inkblue-600);
+  --info-soft:     var(--inkblue-50);
+
+  color-scheme: light;
+}
+
+/* ===== Semantic aliases · DARK ========================== */
+[data-theme="dark"] {
+  /* warm charcoal, never pure black — calm & premium */
+  --bg:            oklch(0.165 0.008 68);
+  --bg-grouped:    oklch(0.145 0.007 66);
+  --surface:       oklch(0.214 0.009 70);
+  --surface-2:     oklch(0.250 0.010 71);
+  --surface-sunken: oklch(0.128 0.006 64);
+  --scrim:         oklch(0.06 0.004 60 / 0.55);
+
+  --text:          oklch(0.955 0.006 86);
+  --text-secondary: oklch(0.760 0.010 80);
+  --text-tertiary: oklch(0.610 0.010 76);
+  --text-quaternary: oklch(0.500 0.009 74);
+  --text-disabled: oklch(0.420 0.008 72);
+  --text-on-accent: oklch(0.155 0.012 50);
+  --text-inverse:  var(--ink-1);
+
+  --separator:     oklch(0.320 0.008 70 / 0.7);
+  --border:        oklch(0.350 0.009 70);
+  --border-strong: oklch(0.430 0.010 70);
+  --fill:          oklch(0.560 0.010 74 / 0.16);
+  --fill-strong:   oklch(0.620 0.012 74 / 0.30);
+
+  /* clay lifts a step in dark so it stays warm, not muddy */
+  --accent:        var(--clay-400);
+  --accent-hover:  oklch(0.745 0.110 40);
+  --accent-press:  var(--clay-300);
+  --accent-text:   var(--clay-300);
+  --accent-soft:   oklch(0.695 0.114 40 / 0.16);
+  --accent-soft-2: oklch(0.695 0.114 40 / 0.26);
+  --accent-border: oklch(0.695 0.114 40 / 0.34);
+
+  --link:          var(--inkblue-300);
+
+  --success:       var(--sage-400);
+  --success-soft:  oklch(0.668 0.054 155 / 0.18);
+  --voice:         var(--sage-300);
+  --voice-soft:    oklch(0.668 0.054 155 / 0.16);
+  --warning:       var(--amber-400);
+  --warning-soft:  oklch(0.800 0.110 78 / 0.16);
+  --danger:        var(--rust-400);
+  --danger-soft:   oklch(0.640 0.140 30 / 0.20);
+  --info:          var(--inkblue-300);
+  --info-soft:     oklch(0.640 0.072 252 / 0.18);
+
+  color-scheme: dark;
+}

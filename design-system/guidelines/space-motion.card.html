@@ -1,0 +1,30 @@
+<!-- @dsCard group="Spacing" viewport="700x170" name="Motion" subtitle="Calm springs, quick fades, a small press-shrink" -->
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8" />
+<link rel="stylesheet" href="../styles.css" />
+<style>
+  body { margin: 0; background: var(--bg); padding: 20px 26px; font-family: var(--font-ui); display: flex; flex-direction: column; gap: 16px; }
+  .lab { font: 600 10px/1 var(--font-ui); letter-spacing: .07em; text-transform: uppercase; color: var(--text-quaternary); margin-bottom: 9px; }
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; }
+  .chip { font: 500 12px var(--font-mono); color: var(--text-secondary); background: var(--fill-strong); border-radius: 999px; padding: 5px 11px; }
+  .demo { display: flex; align-items: center; gap: 26px; }
+  .track { position: relative; flex: 1; height: 30px; background: var(--fill-2); border-radius: 999px; overflow: hidden; }
+  .dot { position: absolute; top: 5px; left: 5px; width: 20px; height: 20px; border-radius: 50%; background: var(--accent); animation: slide 2.4s var(--ease-spring) infinite; }
+  @keyframes slide { 0%,12% { left: 5px; } 50%,62% { left: calc(100% - 25px); } 100% { left: 5px; } }
+  .press { width: 56px; height: 36px; border-radius: 999px; background: var(--accent); animation: press 1.8s var(--ease-out) infinite; }
+  @keyframes press { 0%,70%,100% { transform: scale(1); } 80% { transform: scale(0.92); } }
+  @media (prefers-reduced-motion: reduce) { .dot, .press { animation: none; } }
+</style></head>
+<body>
+  <div>
+    <div class="lab">Duration · Easing</div>
+    <div class="chips">
+      <span class="chip">fast 150</span><span class="chip">base 240</span><span class="chip">slow 340</span><span class="chip">sheet 420</span>
+      <span class="chip">ease-out</span><span class="chip">ease-spring</span><span class="chip">ease-emph</span>
+    </div>
+  </div>
+  <div class="demo">
+    <div class="track"><div class="dot"></div></div>
+    <div class="press"></div>
+  </div>
+</body></html>

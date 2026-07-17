@@ -6,6 +6,7 @@ import SwiftData
 public final class RelationshipTruthBeadRecord {
     public var id: UUID
     public var personName: String
+    public var normalizedPersonName: String = ""
     public var text: String
     public var isUserApproved: Bool
     public var createdAt: Date
@@ -19,9 +20,11 @@ public final class RelationshipTruthBeadRecord {
         createdAt: Date = Date(),
         updatedAt: Date = Date()
     ) {
+        let normalizedInputName = ProsePalTextInput.personName(personName)
         self.id = id
-        self.personName = personName
-        self.text = text
+        self.personName = normalizedInputName
+        self.normalizedPersonName = RelationshipPersonKey.normalized(normalizedInputName)
+        self.text = ProsePalTextInput.relationshipMemory(text)
         self.isUserApproved = isUserApproved
         self.createdAt = createdAt
         self.updatedAt = updatedAt
@@ -43,8 +46,9 @@ public final class RelationshipTruthBeadRecord {
         isUserApproved: Bool,
         updatedAt: Date = Date()
     ) {
-        self.personName = personName.trimmingCharacters(in: .whitespacesAndNewlines)
-        self.text = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        self.personName = ProsePalTextInput.personName(personName)
+        self.normalizedPersonName = RelationshipPersonKey.normalized(self.personName)
+        self.text = ProsePalTextInput.relationshipMemory(text)
         self.isUserApproved = isUserApproved
         self.updatedAt = updatedAt
     }
@@ -54,6 +58,7 @@ public final class RelationshipTruthBeadRecord {
 public final class RelationshipVoiceCardRecord {
     public var id: UUID
     public var personName: String
+    public var normalizedPersonName: String = ""
     public var summary: String
     public var isUserApproved: Bool
     public var createdAt: Date
@@ -67,9 +72,11 @@ public final class RelationshipVoiceCardRecord {
         createdAt: Date = Date(),
         updatedAt: Date = Date()
     ) {
+        let normalizedInputName = ProsePalTextInput.personName(personName)
         self.id = id
-        self.personName = personName
-        self.summary = summary
+        self.personName = normalizedInputName
+        self.normalizedPersonName = RelationshipPersonKey.normalized(normalizedInputName)
+        self.summary = ProsePalTextInput.voiceCard(summary)
         self.isUserApproved = isUserApproved
         self.createdAt = createdAt
         self.updatedAt = updatedAt
@@ -91,20 +98,52 @@ public final class RelationshipVoiceCardRecord {
         isUserApproved: Bool,
         updatedAt: Date = Date()
     ) {
-        self.personName = personName.trimmingCharacters(in: .whitespacesAndNewlines)
-        self.summary = summary.trimmingCharacters(in: .whitespacesAndNewlines)
+        self.personName = ProsePalTextInput.personName(personName)
+        self.normalizedPersonName = RelationshipPersonKey.normalized(self.personName)
+        self.summary = ProsePalTextInput.voiceCard(summary)
         self.isUserApproved = isUserApproved
         self.updatedAt = updatedAt
     }
 }
 
-public enum RelationshipVaultSchema {
+public enum RelationshipPersonKey {
+    private static let normalizationLocale = Locale(identifier: "en_US_POSIX")
+
+    public static func normalized(_ value: String) -> String {
+        value
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .folding(
+                options: [.caseInsensitive, .diacriticInsensitive],
+                locale: normalizationLocale
+            )
+    }
+}
+
+public enum RelationshipVaultSchemaV1: VersionedSchema {
+    public static let versionIdentifier = Schema.Version(1, 0, 0)
+
     public static var models: [any PersistentModel.Type] {
         [
             RelationshipTruthBeadRecord.self,
             RelationshipVoiceCardRecord.self,
             SavedMomentDraftRecord.self
         ]
+    }
+}
+
+public enum RelationshipVaultMigrationPlan: SchemaMigrationPlan {
+    public static var schemas: [any VersionedSchema.Type] {
+        [RelationshipVaultSchemaV1.self]
+    }
+
+    public static var stages: [MigrationStage] {
+        []
+    }
+}
+
+public enum RelationshipVaultSchema {
+    public static var models: [any PersistentModel.Type] {
+        RelationshipVaultSchemaV1.models
     }
 }
 
@@ -150,7 +189,7 @@ public enum RelationshipVaultStoreLocation {
         return vaultDirectory
     }
 
-    private static func excludeFromBackup(_ directory: URL) throws {
+    fileprivate static func excludeFromBackup(_ directory: URL) throws {
         var directory = directory
         var values = URLResourceValues()
         values.isExcludedFromBackup = true
@@ -162,7 +201,159 @@ public enum RelationshipVaultStoreLocationError: Error, Equatable {
     case applicationSupportDirectoryUnavailable
 }
 
+public enum RelationshipVaultStorageMode: Equatable {
+    case persistent
+    case ephemeralFallback
+}
+
+public struct RelationshipVaultContainerResult {
+    public let container: ModelContainer
+    public let storageMode: RelationshipVaultStorageMode
+    public let persistentStoreURL: URL?
+
+    public init(
+        container: ModelContainer,
+        storageMode: RelationshipVaultStorageMode,
+        persistentStoreURL: URL? = nil
+    ) {
+        self.container = container
+        self.storageMode = storageMode
+        self.persistentStoreURL = persistentStoreURL
+    }
+
+    public var isPersistent: Bool {
+        storageMode == .persistent
+    }
+}
+
+public enum RelationshipVaultContainerFactory {
+    public static func makePersistentOrEphemeral(
+        fileManager: FileManager = .default,
+        baseDirectory: URL? = nil
+    ) -> RelationshipVaultContainerResult {
+        var storeURL: URL?
+        do {
+            let persistentStoreURL = try RelationshipVaultStoreLocation.storeURL(
+                fileManager: fileManager,
+                baseDirectory: baseDirectory
+            )
+            storeURL = persistentStoreURL
+            return RelationshipVaultContainerResult(
+                container: try makePersistent(storeURL: persistentStoreURL),
+                storageMode: .persistent,
+                persistentStoreURL: persistentStoreURL
+            )
+        } catch {
+            return RelationshipVaultContainerResult(
+                container: makeEphemeralFallback(),
+                storageMode: .ephemeralFallback,
+                persistentStoreURL: storeURL
+            )
+        }
+    }
+
+    public static func makePersistent(
+        fileManager: FileManager = .default,
+        baseDirectory: URL? = nil
+    ) throws -> ModelContainer {
+        try makePersistent(storeURL: RelationshipVaultStoreLocation.storeURL(
+            fileManager: fileManager,
+            baseDirectory: baseDirectory
+        ))
+    }
+
+    static func makePersistent(storeURL: URL) throws -> ModelContainer {
+        let schema = Schema(versionedSchema: RelationshipVaultSchemaV1.self)
+        let configuration = ModelConfiguration(
+            schema: schema,
+            url: storeURL
+        )
+        let container = try ModelContainer(
+            for: schema,
+            migrationPlan: RelationshipVaultMigrationPlan.self,
+            configurations: [configuration]
+        )
+        try RelationshipVaultMaintenance.repairLegacyPersonKeys(in: container)
+        return container
+    }
+
+    public static func makeEphemeral() throws -> ModelContainer {
+        let schema = Schema(versionedSchema: RelationshipVaultSchemaV1.self)
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        return try ModelContainer(
+            for: schema,
+            migrationPlan: RelationshipVaultMigrationPlan.self,
+            configurations: [configuration]
+        )
+    }
+
+    private static func makeEphemeralFallback() -> ModelContainer {
+        do {
+            return try makeEphemeral()
+        } catch {
+            preconditionFailure("Unable to create an ephemeral ProsePal relationship vault.")
+        }
+    }
+}
+
+public enum RelationshipVaultMaintenance {
+    public static func repairLegacyPersonKeys(in container: ModelContainer) throws {
+        try repairLegacyPersonKeys(in: ModelContext(container))
+    }
+
+    public static func repairLegacyPersonKeys(in context: ModelContext) throws {
+        var didRepair = false
+
+        let truthBeadDescriptor = FetchDescriptor<RelationshipTruthBeadRecord>(
+            predicate: #Predicate { $0.normalizedPersonName == "" }
+        )
+        for record in try context.fetch(truthBeadDescriptor) {
+            record.normalizedPersonName = RelationshipPersonKey.normalized(record.personName)
+            didRepair = true
+        }
+
+        let voiceCardDescriptor = FetchDescriptor<RelationshipVoiceCardRecord>(
+            predicate: #Predicate { $0.normalizedPersonName == "" }
+        )
+        for record in try context.fetch(voiceCardDescriptor) {
+            record.normalizedPersonName = RelationshipPersonKey.normalized(record.personName)
+            didRepair = true
+        }
+
+        let savedDraftDescriptor = FetchDescriptor<SavedMomentDraftRecord>(
+            predicate: #Predicate { $0.normalizedPersonName == "" }
+        )
+        for record in try context.fetch(savedDraftDescriptor) {
+            record.normalizedPersonName = RelationshipPersonKey.normalized(record.personName)
+            didRepair = true
+        }
+
+        if didRepair {
+            try context.save()
+        }
+    }
+}
+
 public enum RelationshipVaultLocalDataEraser {
+    @MainActor
+    public static func eraseAll(in result: RelationshipVaultContainerResult) async throws {
+        try await eraseAll(in: result.container)
+
+        guard result.storageMode == .ephemeralFallback,
+              let persistentStoreURL = result.persistentStoreURL
+        else {
+            return
+        }
+
+        try erasePersistentStoreFiles(at: persistentStoreURL)
+    }
+
+    @MainActor
+    public static func eraseAll(in container: ModelContainer) async throws {
+        let context = ModelContext(container)
+        try eraseAll(in: context)
+    }
+
     public static func eraseAll(in context: ModelContext) throws {
         try context.fetch(FetchDescriptor<RelationshipTruthBeadRecord>()).forEach {
             context.delete($0)
@@ -175,6 +366,172 @@ public enum RelationshipVaultLocalDataEraser {
         }
         try context.save()
     }
+
+    public static func erasePersistentStoreFiles(
+        at storeURL: URL,
+        fileManager: FileManager = .default
+    ) throws {
+        let vaultDirectory = storeURL.deletingLastPathComponent()
+
+        if fileManager.fileExists(atPath: vaultDirectory.path) {
+            try fileManager.removeItem(at: vaultDirectory)
+        }
+
+        try fileManager.createDirectory(at: vaultDirectory, withIntermediateDirectories: true)
+        try RelationshipVaultStoreLocation.excludeFromBackup(vaultDirectory)
+    }
+}
+
+public struct RelationshipVaultExportCounts: Codable, Equatable, Sendable {
+    public var truthBeads: Int
+    public var voiceCards: Int
+    public var savedDrafts: Int
+}
+
+public struct RelationshipVaultExportSnapshot: Codable, Equatable, Sendable {
+    public var schemaVersion: Int
+    public var exportedAt: Date
+    public var counts: RelationshipVaultExportCounts
+    public var truthBeads: [RelationshipTruthBeadExport]
+    public var voiceCards: [RelationshipVoiceCardExport]
+    public var savedDrafts: [SavedMomentDraftExport]
+}
+
+public struct RelationshipTruthBeadExport: Codable, Equatable, Sendable {
+    public var id: UUID
+    public var personName: String
+    public var text: String
+    public var isUserApproved: Bool
+    public var createdAt: Date
+    public var updatedAt: Date
+}
+
+public struct RelationshipVoiceCardExport: Codable, Equatable, Sendable {
+    public var id: UUID
+    public var personName: String
+    public var summary: String
+    public var isUserApproved: Bool
+    public var createdAt: Date
+    public var updatedAt: Date
+}
+
+public struct SavedMomentDraftExport: Codable, Equatable, Sendable {
+    public var id: UUID
+    public var personName: String
+    public var relationshipRawValue: String
+    public var occasionRawValue: String
+    public var registerRawValue: String
+    public var toneRawValue: String
+    public var lengthRawValue: String
+    public var laneRawValue: String
+    public var trueThing: String
+    public var messageText: String
+    public var createdAt: Date
+    public var updatedAt: Date
+}
+
+public enum RelationshipVaultExporter {
+    public static let currentSchemaVersion = 1
+
+    public static func snapshot(
+        in context: ModelContext,
+        exportedAt: Date = Date()
+    ) throws -> RelationshipVaultExportSnapshot {
+        let truthBeads = try context
+            .fetch(FetchDescriptor<RelationshipTruthBeadRecord>(
+                sortBy: [SortDescriptor(\.createdAt)]
+            ))
+            .map {
+                RelationshipTruthBeadExport(
+                    id: $0.id,
+                    personName: $0.personName,
+                    text: $0.text,
+                    isUserApproved: $0.isUserApproved,
+                    createdAt: $0.createdAt,
+                    updatedAt: $0.updatedAt
+                )
+            }
+
+        let voiceCards = try context
+            .fetch(FetchDescriptor<RelationshipVoiceCardRecord>(
+                sortBy: [SortDescriptor(\.createdAt)]
+            ))
+            .map {
+                RelationshipVoiceCardExport(
+                    id: $0.id,
+                    personName: $0.personName,
+                    summary: $0.summary,
+                    isUserApproved: $0.isUserApproved,
+                    createdAt: $0.createdAt,
+                    updatedAt: $0.updatedAt
+                )
+            }
+
+        let savedDrafts = try context
+            .fetch(FetchDescriptor<SavedMomentDraftRecord>(
+                sortBy: [SortDescriptor(\.createdAt)]
+            ))
+            .map {
+                SavedMomentDraftExport(
+                    id: $0.id,
+                    personName: $0.personName,
+                    relationshipRawValue: $0.relationshipRawValue,
+                    occasionRawValue: $0.occasionRawValue,
+                    registerRawValue: $0.registerRawValue,
+                    toneRawValue: $0.toneRawValue,
+                    lengthRawValue: $0.lengthRawValue,
+                    laneRawValue: $0.laneRawValue,
+                    trueThing: $0.trueThing,
+                    messageText: $0.messageText,
+                    createdAt: $0.createdAt,
+                    updatedAt: $0.updatedAt
+                )
+            }
+
+        return RelationshipVaultExportSnapshot(
+            schemaVersion: currentSchemaVersion,
+            exportedAt: exportedAt,
+            counts: RelationshipVaultExportCounts(
+                truthBeads: truthBeads.count,
+                voiceCards: voiceCards.count,
+                savedDrafts: savedDrafts.count
+            ),
+            truthBeads: truthBeads,
+            voiceCards: voiceCards,
+            savedDrafts: savedDrafts
+        )
+    }
+
+    public static func encodedData(
+        for snapshot: RelationshipVaultExportSnapshot
+    ) throws -> Data {
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
+        return try encoder.encode(snapshot)
+    }
+
+    public static func writeExportFile(
+        in context: ModelContext,
+        directory: URL = FileManager.default.temporaryDirectory,
+        fileManager: FileManager = .default,
+        exportedAt: Date = Date()
+    ) throws -> URL {
+        let snapshot = try snapshot(in: context, exportedAt: exportedAt)
+        let data = try encodedData(for: snapshot)
+        try fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
+
+        let fileURL = directory.appendingPathComponent(
+            fileName(exportedAt: exportedAt),
+            isDirectory: false
+        )
+        try data.write(to: fileURL, options: [.atomic])
+        return fileURL
+    }
+
+    public static func fileName(exportedAt: Date) -> String {
+        "prosepal-local-data-\(Int(exportedAt.timeIntervalSince1970)).json"
+    }
 }
 
 public actor SwiftDataRelationshipMemoryProvider: RelationshipMemoryProviding {
@@ -185,39 +542,34 @@ public actor SwiftDataRelationshipMemoryProvider: RelationshipMemoryProviding {
     }
 
     public func approvedTruthBeads(for personName: String) async throws -> [TruthBead] {
-        let normalizedName = Self.normalized(personName)
+        let normalizedName = RelationshipPersonKey.normalized(personName)
         guard !normalizedName.isEmpty else { return [] }
 
         let context = ModelContext(container)
         let descriptor = FetchDescriptor<RelationshipTruthBeadRecord>(
-            predicate: #Predicate { $0.isUserApproved },
+            predicate: #Predicate {
+                $0.isUserApproved && $0.normalizedPersonName == normalizedName
+            },
             sortBy: [SortDescriptor(\.updatedAt, order: .reverse)]
         )
 
-        return try context.fetch(descriptor)
-            .filter { Self.normalized($0.personName) == normalizedName }
-            .map(\.truthBead)
+        return try context.fetch(descriptor).map(\.truthBead)
     }
 
     public func approvedVoiceCard(for personName: String) async throws -> RelationshipVoiceCard? {
-        let normalizedName = Self.normalized(personName)
+        let normalizedName = RelationshipPersonKey.normalized(personName)
         guard !normalizedName.isEmpty else { return nil }
 
         let context = ModelContext(container)
-        let descriptor = FetchDescriptor<RelationshipVoiceCardRecord>(
-            predicate: #Predicate { $0.isUserApproved },
+        var descriptor = FetchDescriptor<RelationshipVoiceCardRecord>(
+            predicate: #Predicate {
+                $0.isUserApproved && $0.normalizedPersonName == normalizedName
+            },
             sortBy: [SortDescriptor(\.updatedAt, order: .reverse)]
         )
+        descriptor.fetchLimit = 1
 
-        return try context.fetch(descriptor)
-            .first { Self.normalized($0.personName) == normalizedName }
-            .map(\.voiceCard)
-    }
-
-    private static func normalized(_ value: String) -> String {
-        value
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-            .folding(options: [.caseInsensitive, .diacriticInsensitive], locale: .current)
+        return try context.fetch(descriptor).first?.voiceCard
     }
 }
 
@@ -225,6 +577,7 @@ public actor SwiftDataRelationshipMemoryProvider: RelationshipMemoryProviding {
 public final class SavedMomentDraftRecord {
     public var id: UUID
     public var personName: String
+    public var normalizedPersonName: String = ""
     public var relationshipRawValue: String
     public var occasionRawValue: String
     public var registerRawValue: String
@@ -250,16 +603,18 @@ public final class SavedMomentDraftRecord {
         createdAt: Date = Date(),
         updatedAt: Date = Date()
     ) {
+        let normalizedInputName = ProsePalTextInput.personName(personName)
         self.id = id
-        self.personName = personName
+        self.personName = normalizedInputName
+        self.normalizedPersonName = RelationshipPersonKey.normalized(normalizedInputName)
         self.relationshipRawValue = relationshipRawValue
         self.occasionRawValue = occasionRawValue
         self.registerRawValue = registerRawValue
         self.toneRawValue = toneRawValue
         self.lengthRawValue = lengthRawValue
         self.laneRawValue = laneRawValue
-        self.trueThing = trueThing
-        self.messageText = messageText
+        self.trueThing = ProsePalTextInput.momentDetail(trueThing)
+        self.messageText = ProsePalTextInput.draft(messageText)
         self.createdAt = createdAt
         self.updatedAt = updatedAt
     }
@@ -315,5 +670,13 @@ public final class SavedMomentDraftRecord {
 
     public var subtitle: String {
         "\(occasion.displayName) · \(relationship.displayName)"
+    }
+
+    public func updateMessageText(
+        _ messageText: String,
+        updatedAt: Date = Date()
+    ) {
+        self.messageText = ProsePalTextInput.draft(messageText)
+        self.updatedAt = updatedAt
     }
 }

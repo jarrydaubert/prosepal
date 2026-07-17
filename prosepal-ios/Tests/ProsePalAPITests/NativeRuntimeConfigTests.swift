@@ -37,15 +37,48 @@ final class NativeRuntimeConfigTests: XCTestCase {
     func testFallbackKeyReadsLegacyEnvironmentName() {
         let config = NativeRuntimeConfig(
             environment: [
-                "SUPABASE_ANON_KEY": "anon-key"
+                "SUPABASE_ANON_KEY": "sb_publishable_example"
             ],
             infoDictionary: [:]
         )
 
         XCTAssertEqual(
-            config.value(named: "PROSEPAL_SUPABASE_ANON_KEY", fallback: "SUPABASE_ANON_KEY"),
-            "anon-key"
+            config.supabasePublishableKey(
+                named: "PROSEPAL_SUPABASE_ANON_KEY",
+                fallback: "SUPABASE_ANON_KEY"
+            ),
+            "sb_publishable_example"
         )
+    }
+
+    func testSupabasePublishableKeyAcceptsModernAndLegacyPublicFormats() {
+        let modern = NativeRuntimeConfig(
+            environment: ["KEY": "sb_publishable_example"],
+            infoDictionary: [:]
+        )
+        let legacy = NativeRuntimeConfig(
+            environment: ["KEY": "eyJheader.payload.signature"],
+            infoDictionary: [:]
+        )
+
+        XCTAssertEqual(modern.supabasePublishableKey(named: "KEY", fallback: "FALLBACK"), "sb_publishable_example")
+        XCTAssertEqual(legacy.supabasePublishableKey(named: "KEY", fallback: "FALLBACK"), "eyJheader.payload.signature")
+    }
+
+    func testSupabasePublishableKeyRejectsProjectReferenceAndIncompleteFormats() {
+        for invalidKey in [
+            "llolwgqphwnhbiqewmcq",
+            "sb_publishable_",
+            "eyJheader.payload",
+            "eyJheader..signature"
+        ] {
+            let config = NativeRuntimeConfig(
+                environment: ["KEY": invalidKey],
+                infoDictionary: [:]
+            )
+
+            XCTAssertNil(config.supabasePublishableKey(named: "KEY", fallback: "FALLBACK"))
+        }
     }
 
     func testListSplitsTrimsAndDeduplicatesProductIDs() {
@@ -71,5 +104,35 @@ final class NativeRuntimeConfigTests: XCTestCase {
         )
 
         XCTAssertNil(config.url(named: "PROSEPAL_GATEWAY_URL"))
+    }
+
+    func testProductionRuntimeRejectsInsecureRemoteAndLoopbackURLs() {
+        let remote = NativeRuntimeConfig(
+            environment: ["URL": "http://example.com/service"],
+            infoDictionary: [:]
+        )
+        let loopback = NativeRuntimeConfig(
+            environment: ["URL": "http://127.0.0.1:54321/service"],
+            infoDictionary: [:]
+        )
+
+        XCTAssertNil(remote.url(named: "URL"))
+        XCTAssertNil(loopback.url(named: "URL"))
+    }
+
+    func testExplicitDebugPolicyAllowsOnlyInsecureLoopbackURLs() {
+        let loopback = NativeRuntimeConfig(
+            environment: ["URL": "http://localhost:54321/service"],
+            infoDictionary: [:],
+            allowsInsecureLoopback: true
+        )
+        let remote = NativeRuntimeConfig(
+            environment: ["URL": "http://example.com/service"],
+            infoDictionary: [:],
+            allowsInsecureLoopback: true
+        )
+
+        XCTAssertEqual(loopback.url(named: "URL"), URL(string: "http://localhost:54321/service"))
+        XCTAssertNil(remote.url(named: "URL"))
     }
 }

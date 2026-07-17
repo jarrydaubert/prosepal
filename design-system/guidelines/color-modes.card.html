@@ -1,0 +1,26 @@
+<!-- @dsCard group="Colors" viewport="700x230" name="Light & Dark" subtitle="The same warm system in both modes — never pure black" -->
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8" />
+<link rel="stylesheet" href="../styles.css" />
+<style>
+  body { margin: 0; padding: 18px 20px; background: var(--bg-grouped); display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .pane { border-radius: 18px; padding: 16px; background: var(--bg); border: 0.5px solid var(--separator); display: flex; flex-direction: column; gap: 11px; }
+  .lab { font: 600 10px/1 var(--font-ui); letter-spacing: .07em; text-transform: uppercase; color: var(--text-quaternary); }
+  .card { background: var(--surface); border: 0.5px solid var(--separator); border-radius: 14px; padding: 12px 14px; box-shadow: var(--shadow-sm); }
+  .t1 { font: 600 15px/1.2 var(--font-ui); color: var(--text); }
+  .t2 { font: 400 13px/1.4 var(--font-ui); color: var(--text-secondary); margin-top: 2px; }
+  .btn { display: inline-flex; align-items: center; height: 34px; padding: 0 16px; border-radius: 999px; background: var(--accent); color: var(--text-on-accent); font: 600 13px var(--font-ui); margin-top: 10px; }
+  .badge { display: inline-flex; align-items: center; height: 22px; padding: 0 9px; border-radius: 999px; background: var(--voice-soft); color: var(--voice); font: 600 11px var(--font-ui); }
+</style></head>
+<body>
+  <div class="pane">
+    <span class="lab">Light</span>
+    <div class="card"><div class="t1">Your voice, kept</div><div class="t2">Warm paper, clay accent, soft hairlines.</div><span class="btn">Refine</span></div>
+    <span class="badge">● kept</span>
+  </div>
+  <div class="pane" data-theme="dark">
+    <span class="lab">Dark</span>
+    <div class="card"><div class="t1">Your voice, kept</div><div class="t2">Warm charcoal — calm, never harsh black.</div><span class="btn">Refine</span></div>
+    <span class="badge">● kept</span>
+  </div>
+</body></html>

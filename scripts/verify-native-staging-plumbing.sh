@@ -33,9 +33,15 @@ expected_products = {
     "com.prosepal.pro.monthly",
     "com.prosepal.pro.weekly",
 }
+expected_product_ids_setting = "com.prosepal.pro.yearly,com.prosepal.pro.monthly,com.prosepal.pro.weekly"
+expected_recommended_product_id = "com.prosepal.pro.yearly"
+expected_retired_product_id = "com.prosepal.pro.retired"
 expected_bundle_id = "com.prosepal.prosepal"
 expected_staging_bundle_id = "com.prosepal.prosepal.staging"
+expected_staging_widget_bundle_id = "com.prosepal.prosepal.staging.widgets"
+expected_staging_share_bundle_id = "com.prosepal.prosepal.staging.share"
 expected_staging_target_id = "PP0000000000000000000048"
+expected_storekit_identifier = "../../App/ProsePalStaging.storekit"
 
 def fail(message: str) -> None:
     print(f"FAIL: {message}", file=sys.stderr)
@@ -81,6 +87,9 @@ staging_refs = [
 ]
 if not staging_refs:
     fail("shared ProsePal Staging scheme does not target the staging app")
+shared_storekit_refs = shared_staging_root.findall(".//StoreKitConfigurationFileReference")
+if len(shared_storekit_refs) != 1 or shared_storekit_refs[0].get("identifier") != expected_storekit_identifier:
+    fail("shared ProsePal Staging scheme has a non-canonical StoreKit configuration reference")
 print("shared_staging_scheme=clean")
 
 local_root = parse_scheme(local_scheme)
@@ -101,17 +110,11 @@ if not local_staging_refs:
     fail("local staging scheme does not target ProsePal Staging; run ./scripts/restore-local-staging-scheme.sh after updating the backup")
 print("local_scheme_target=staging")
 
-storekit_refs = []
-for elem in local_root.iter():
-    for attr, value in elem.attrib.items():
-        if "storekit" in value.lower():
-            resolved = (local_scheme.parent / value).resolve()
-            storekit_refs.append(resolved)
-
-if not storekit_refs:
-    fail("local staging scheme has no StoreKit configuration reference")
-if storekit_file.resolve() not in storekit_refs:
-    fail("local staging scheme StoreKit reference does not resolve to App/ProsePalStaging.storekit")
+local_storekit_refs = local_root.findall(".//StoreKitConfigurationFileReference")
+if len(local_storekit_refs) != 1 or local_storekit_refs[0].get("identifier") != expected_storekit_identifier:
+    fail("local staging scheme has a non-canonical StoreKit configuration reference")
+if not storekit_file.is_file():
+    fail("missing App/ProsePalStaging.storekit")
 print("local_scheme_storekit_reference=ok")
 
 try:
@@ -136,6 +139,36 @@ if pbxproj.exists():
     if f"PRODUCT_BUNDLE_IDENTIFIER = {expected_staging_bundle_id};" not in project_text:
         fail(f"native project is missing staging bundle id: {expected_staging_bundle_id}")
     print("project_staging_bundle_id=staging")
+
+    staging_product_setting = f'PROSEPAL_PREMIUM_PRODUCT_IDS = "{expected_product_ids_setting}";'
+    if project_text.count(staging_product_setting) < 2:
+        fail("staging target does not pass expected premium product ids into app runtime")
+    staging_recommended_setting = (
+        f"PROSEPAL_RECOMMENDED_PREMIUM_PRODUCT_ID = {expected_recommended_product_id};"
+    )
+    if project_text.count(staging_recommended_setting) < 2:
+        fail("staging target does not pass expected recommended premium product id into app runtime")
+    staging_retired_setting = (
+        f"PROSEPAL_RETIRED_PREMIUM_PRODUCT_IDS = {expected_retired_product_id};"
+    )
+    if project_text.count(staging_retired_setting) < 2:
+        fail("staging target does not pass expected retired premium product id into app runtime")
+    if project_text.count('PROSEPAL_PREMIUM_PRODUCT_IDS = "";') < 2:
+        fail("production target should keep premium product ids explicitly blank in local project settings")
+    if project_text.count('PROSEPAL_RETIRED_PREMIUM_PRODUCT_IDS = "";') < 2:
+        fail("production target should keep retired premium product ids explicitly blank in local project settings")
+    print("project_staging_product_ids=configured")
+
+    staging_surface_markers = [
+        "ProsePalWidgetsStaging.appex in Embed App Extensions",
+        "ProsePalShareExtensionStaging.appex in Embed App Extensions",
+        f"PRODUCT_BUNDLE_IDENTIFIER = {expected_staging_widget_bundle_id};",
+        f"PRODUCT_BUNDLE_IDENTIFIER = {expected_staging_share_bundle_id};",
+    ]
+    for marker in staging_surface_markers:
+        if marker not in project_text:
+            fail(f"staging project surface plumbing missing: {marker}")
+    print("project_staging_system_surfaces=configured")
 
     reference_count = len(re.findall(
         r"isa = PBXFileReference;[^}\n]+path = ProsePalStaging\.storekit;",

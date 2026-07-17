@@ -1,333 +1,354 @@
 /**
- * Secure self-deletion edge function.
+ * Authenticated, retry-safe self-deletion.
  *
- * Deploy with:
- * `supabase functions deploy delete-user`
- *
- * Security model:
- * 1. User JWT verifies caller identity.
- * 2. Service-role key is used only for privileged deletion paths.
- * 3. Apple refresh tokens are revoked before auth record removal.
- * 4. App data cleanup runs before auth user deletion.
+ * Apple authorization is revoked before the auth user is removed. Failures
+ * before the final auth deletion starts leave the auth account available for
+ * an idempotent retry. Once final deletion starts, an unconfirmed result is
+ * reported as indeterminate because the remote deletion may still commit.
  */
-import { createClient } from "npm:@supabase/supabase-js@2.95.3"
+import { createClient } from "npm:@supabase/supabase-js@2.95.3";
+import {
+  type AppleServerConfig,
+  type AuthenticatedUser,
+  defaultLogger,
+  type EnvGetter,
+  generateAppleClientSecret,
+  isAppleUser,
+  jsonResponse,
+  type Logger,
+  OperationCancelledError,
+  OperationTimedOutError,
+  readAppleServerConfig,
+  readSupabaseServerConfig,
+  redactedUserID,
+  runBounded,
+} from "../_shared/apple-account.ts";
 
-/** Apple token revocation endpoint. */
-const APPLE_REVOKE_URL = 'https://appleid.apple.com/auth/revoke'
+const APPLE_REVOKE_URL = "https://appleid.apple.com/auth/revoke";
+const DEFAULT_OPERATION_TIMEOUT_MS = 10_000;
 
-/**
- * CORS policy for native mobile calls.
- * Empty `Access-Control-Allow-Origin` blocks browser access while allowing
- * native clients that do not send browser origin headers.
- */
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '', // Mobile apps don't send Origin header
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  "Access-Control-Allow-Origin": "",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
+type SupabaseConfig = NonNullable<ReturnType<typeof readSupabaseServerConfig>>;
+
+type Authenticate = (
+  config: SupabaseConfig,
+  authorization: string,
+  signal: AbortSignal,
+) => Promise<AuthenticatedUser | null>;
+type LoadRefreshToken = (
+  config: SupabaseConfig,
+  userID: string,
+  signal: AbortSignal,
+) => Promise<string | null>;
+type RevokeAppleToken = (
+  config: AppleServerConfig,
+  refreshToken: string,
+  signal: AbortSignal,
+) => Promise<void>;
+type CleanupAppData = (
+  config: SupabaseConfig,
+  userID: string,
+  signal: AbortSignal,
+) => Promise<void>;
+export type AuthUserDeletionResult = "deleted" | "already_deleted";
+type DeleteAuthUser = (
+  config: SupabaseConfig,
+  userID: string,
+  signal: AbortSignal,
+) => Promise<AuthUserDeletionResult>;
+
+export interface DeleteUserDeps {
+  getEnv?: EnvGetter;
+  logger?: Logger;
+  timeoutMs?: number;
+  runBounded?: typeof runBounded;
+  authenticate?: Authenticate;
+  loadRefreshToken?: LoadRefreshToken;
+  revokeAppleToken?: RevokeAppleToken;
+  cleanupAppData?: CleanupAppData;
+  deleteAuthUser?: DeleteAuthUser;
 }
 
-/**
- * Sanitizes internal errors into safe client-facing messages.
- */
-function getSafeErrorMessage(error: Error | unknown): string {
-  if (error instanceof Error) {
-    const msg = error.message.toLowerCase()
-    if (msg.includes('not found') || msg.includes('does not exist')) {
-      return 'Account not found or already deleted'
-    }
-    if (msg.includes('network') || msg.includes('connection')) {
-      return 'Connection error. Please try again.'
-    }
+export async function handleDeleteUser(
+  req: Request,
+  deps: DeleteUserDeps = {},
+): Promise<Response> {
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
   }
-  return 'An error occurred. Please try again.'
-}
-
-/**
- * Creates a short-lived Apple client-secret JWT used for token revocation.
- *
- * @returns Signed JWT string when Apple credentials exist; otherwise `null`.
- */
-async function generateAppleClientSecret(): Promise<string | null> {
-  const teamId = Deno.env.get('APPLE_TEAM_ID')
-  const clientId = Deno.env.get('APPLE_CLIENT_ID') // Service ID (com.prosepal.prosepal)
-  const keyId = Deno.env.get('APPLE_KEY_ID')
-  const privateKey = Deno.env.get('APPLE_PRIVATE_KEY')
-
-  if (!teamId || !clientId || !keyId || !privateKey) {
-    console.warn('Apple credentials not configured - token revocation skipped')
-    return null
+  if (req.method !== "POST") {
+    return jsonResponse({ error: "Method not allowed" }, 405, corsHeaders);
   }
 
-  // Create JWT header and payload
-  const header = {
-    alg: 'ES256',
-    kid: keyId,
-    typ: 'JWT'
+  const getEnv = deps.getEnv ?? Deno.env.get;
+  const logger = deps.logger ?? defaultLogger;
+  const timeoutMs = deps.timeoutMs ?? DEFAULT_OPERATION_TIMEOUT_MS;
+  const bounded = deps.runBounded ?? runBounded;
+  const authenticate = deps.authenticate ?? defaultAuthenticate;
+  const loadRefreshToken = deps.loadRefreshToken ?? defaultLoadRefreshToken;
+  const revokeAppleToken = deps.revokeAppleToken ?? defaultRevokeAppleToken;
+  const cleanupAppData = deps.cleanupAppData ?? defaultCleanupAppData;
+  const deleteAuthUser = deps.deleteAuthUser ?? defaultDeleteAuthUser;
+  let authDeletionStarted = false;
+
+  const supabaseConfig = readSupabaseServerConfig(getEnv);
+  if (!supabaseConfig) {
+    logger.error("delete-user Supabase configuration invalid");
+    return jsonResponse({ error: "Server configuration error" }, 503, corsHeaders);
   }
-
-  const now = Math.floor(Date.now() / 1000)
-  const payload = {
-    iss: teamId,
-    iat: now,
-    exp: now + 300, // 5 minutes
-    aud: 'https://appleid.apple.com',
-    sub: clientId
+  const authorization = req.headers.get("Authorization")?.trim() ?? "";
+  if (!authorization.toLowerCase().startsWith("bearer ")) {
+    return jsonResponse({ error: "Authentication required" }, 401, corsHeaders);
   }
-
-  // Base64URL encode
-  const encoder = new TextEncoder()
-  const base64url = (data: Uint8Array) => 
-    btoa(String.fromCharCode(...data))
-      .replace(/\+/g, '-')
-      .replace(/\//g, '_')
-      .replace(/=+$/, '')
-
-  const headerB64 = base64url(encoder.encode(JSON.stringify(header)))
-  const payloadB64 = base64url(encoder.encode(JSON.stringify(payload)))
-  const signingInput = `${headerB64}.${payloadB64}`
 
   try {
-    // Import the private key
-    const pemContents = privateKey
-      .replace(/-----BEGIN PRIVATE KEY-----/, '')
-      .replace(/-----END PRIVATE KEY-----/, '')
-      .replace(/\s/g, '')
-    
-    const binaryKey = Uint8Array.from(atob(pemContents), c => c.charCodeAt(0))
-    
-    const key = await crypto.subtle.importKey(
-      'pkcs8',
-      binaryKey,
-      { name: 'ECDSA', namedCurve: 'P-256' },
-      false,
-      ['sign']
-    )
+    const user = await bounded(
+      (signal) => authenticate(supabaseConfig, authorization, signal),
+      timeoutMs,
+      req.signal,
+    );
+    if (!user) {
+      return jsonResponse({ error: "Authentication required" }, 401, corsHeaders);
+    }
 
-    // Sign the JWT
-    const signature = await crypto.subtle.sign(
-      { name: 'ECDSA', hash: 'SHA-256' },
-      key,
-      encoder.encode(signingInput)
-    )
+    const userLabel = redactedUserID(user.id);
+    if (isAppleUser(user)) {
+      const refreshToken = await bounded(
+        (signal) => loadRefreshToken(supabaseConfig, user.id, signal),
+        timeoutMs,
+        req.signal,
+      );
+      if (!refreshToken) {
+        logger.warn("delete-user Apple revocation material missing", {
+          user: userLabel,
+        });
+        return jsonResponse(
+          {
+            error:
+              "Sign in with Apple again before deleting your account, then retry.",
+          },
+          409,
+          corsHeaders,
+        );
+      }
+      const appleConfig = readAppleServerConfig(getEnv);
+      if (!appleConfig) {
+        logger.error("delete-user Apple configuration invalid");
+        return jsonResponse(
+          { error: "Apple account deletion is unavailable. Please try again later." },
+          503,
+          corsHeaders,
+        );
+      }
 
-    const signatureB64 = base64url(new Uint8Array(signature))
-    return `${signingInput}.${signatureB64}`
-  } catch (e) {
-    console.error('Failed to generate Apple client secret:', e)
-    return null
-  }
-}
+      await bounded(
+        (signal) => revokeAppleToken(appleConfig, refreshToken, signal),
+        timeoutMs,
+        req.signal,
+      );
+      logger.log("delete-user Apple authorization revoked", { user: userLabel });
+    }
 
-/**
- * Revokes an Apple refresh token.
- *
- * @param refreshToken Refresh token previously issued by Apple.
- * @param clientSecret Signed Apple client-secret JWT.
- * @returns `true` when Apple returns a success response; otherwise `false`.
- */
-async function revokeAppleToken(refreshToken: string, clientSecret: string): Promise<boolean> {
-  const clientId = Deno.env.get('APPLE_CLIENT_ID')
-  if (!clientId) return false
-
-  try {
-    const response = await fetch(APPLE_REVOKE_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded'
+    await bounded(
+      (signal) => cleanupAppData(supabaseConfig, user.id, signal),
+      timeoutMs,
+      req.signal,
+    );
+    const authDeletionResult = await bounded(
+      (signal) => {
+        authDeletionStarted = true;
+        return deleteAuthUser(supabaseConfig, user.id, signal);
       },
-      body: new URLSearchParams({
-        client_id: clientId,
-        client_secret: clientSecret,
-        token: refreshToken,
-        token_type_hint: 'refresh_token'
-      })
-    })
+      timeoutMs,
+      req.signal,
+    );
 
-    if (response.ok) {
-      console.log('Apple token revoked successfully')
-      return true
-    } else {
-      const errorText = await response.text()
-      console.warn('Apple token revocation failed:', response.status, errorText)
-      return false
+    logger.log("delete-user account deletion confirmed", {
+      user: userLabel,
+      outcome: authDeletionResult,
+    });
+    return jsonResponse(
+      {
+        success: true,
+        status: "deleted",
+        message: "Account deletion confirmed.",
+      },
+      200,
+      corsHeaders,
+    );
+  } catch (error) {
+    if (authDeletionStarted) {
+      logger.warn("delete-user final auth deletion outcome indeterminate", {
+        category: error instanceof OperationTimedOutError
+          ? "timed_out"
+          : error instanceof OperationCancelledError
+          ? "cancelled"
+          : "server_operation_failed",
+      });
+      return jsonResponse(
+        {
+          success: false,
+          status: "indeterminate",
+          message:
+            "Account deletion started, but its final status could not be confirmed. It may already be deleted; if you can still sign in, retry deletion.",
+        },
+        202,
+        corsHeaders,
+      );
     }
-  } catch (e) {
-    console.error('Apple token revocation error:', e)
-    return false
+    if (error instanceof OperationCancelledError) {
+      return jsonResponse(
+        {
+          error:
+            "Request cancelled before final account deletion began. Your authentication account remains; please retry.",
+        },
+        499,
+        corsHeaders,
+      );
+    }
+    if (error instanceof OperationTimedOutError) {
+      logger.warn("delete-user operation timed out");
+      return jsonResponse(
+        {
+          error:
+            "Account deletion timed out before final deletion began. Your authentication account remains; please retry.",
+        },
+        504,
+        corsHeaders,
+      );
+    }
+    logger.error("delete-user operation failed", {
+      category: "server_operation_failed",
+    });
+    return jsonResponse(
+      {
+        error:
+          "Account deletion stopped before final deletion began. Your authentication account remains; please retry.",
+      },
+      503,
+      corsHeaders,
+    );
   }
 }
 
-/**
- * Edge-function entrypoint.
- * Handles authenticated self-deletion with best-effort upstream token revocation
- * and deterministic cleanup of app-owned rows.
- */
-Deno.serve(async (req) => {
-  // Handle CORS preflight
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+async function defaultAuthenticate(
+  config: SupabaseConfig,
+  authorization: string,
+  _signal: AbortSignal,
+): Promise<AuthenticatedUser | null> {
+  const client = createClient(config.url, config.anonKey, {
+    global: { headers: { Authorization: authorization } },
+  });
+  const { data: { user }, error } = await client.auth.getUser();
+  if (error || !user) return null;
+  return user as AuthenticatedUser;
+}
+
+async function defaultLoadRefreshToken(
+  config: SupabaseConfig,
+  userID: string,
+  signal: AbortSignal,
+): Promise<string | null> {
+  const client = createClient(config.url, config.serviceRoleKey);
+  const { data, error } = await client
+    .from("apple_credentials")
+    .select("refresh_token")
+    .eq("user_id", userID)
+    .abortSignal(signal)
+    .maybeSingle();
+  if (error) throw new Error("apple_credentials_read_failed");
+  const refreshToken = data?.refresh_token;
+  return typeof refreshToken === "string" && refreshToken.trim()
+    ? refreshToken.trim()
+    : null;
+}
+
+async function defaultRevokeAppleToken(
+  config: AppleServerConfig,
+  refreshToken: string,
+  signal: AbortSignal,
+): Promise<void> {
+  const clientSecret = await generateAppleClientSecret(config);
+  const response = await fetch(APPLE_REVOKE_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      client_id: config.clientId,
+      client_secret: clientSecret,
+      token: refreshToken,
+      token_type_hint: "refresh_token",
+    }),
+    signal,
+  });
+  if (!response.ok) {
+    throw new Error(`apple_revoke_http_${response.status}`);
   }
+}
 
-  try {
-    // Get the authorization header (user's JWT)
-    const authHeader = req.headers.get('Authorization')
-    if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: 'No authorization header' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
+async function defaultCleanupAppData(
+  config: SupabaseConfig,
+  userID: string,
+  signal: AbortSignal,
+): Promise<void> {
+  const client = createClient(config.url, config.serviceRoleKey);
+  const userUsage = await client
+    .from("user_usage")
+    .delete()
+    .eq("user_id", userID)
+    .abortSignal(signal);
+  if (userUsage.error) throw new Error("user_usage_delete_failed");
 
-    // Validate environment variables
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')
-    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+  const entitlements = await client
+    .from("user_entitlements")
+    .delete()
+    .eq("user_id", userID)
+    .abortSignal(signal);
+  if (entitlements.error) throw new Error("user_entitlements_delete_failed");
 
-    if (!supabaseUrl || !supabaseAnonKey || !supabaseServiceKey) {
-      console.error('Missing required environment variables')
-      return new Response(
-        JSON.stringify({ error: 'Server configuration error' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
+  const rateLimits = await client
+    .from("rate_limit_log")
+    .delete()
+    .eq("identifier", userID)
+    .eq("identifier_type", "user")
+    .abortSignal(signal);
+  if (rateLimits.error) throw new Error("rate_limit_log_delete_failed");
 
-    // Verify user and get their ID
-    const userClient = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } }
-    })
-    
-    const { data: { user }, error: userError } = await userClient.auth.getUser()
-    if (userError || !user) {
-      return new Response(
-        JSON.stringify({ error: 'Invalid user' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
+  const devices = await client
+    .rpc("remove_user_from_devices", { p_user_id: userID })
+    .abortSignal(signal);
+  if (devices.error) throw new Error("device_association_delete_failed");
+}
 
-    // Use service role to delete user (admin privilege required)
-    const adminClient = createClient(supabaseUrl, supabaseServiceKey)
-
-    // Log deletion attempt (redacted user ID for privacy)
-    const userIdPrefix = user.id.substring(0, 8)
-    console.log(`Deleting user data for ${userIdPrefix}...`)
-
-    // Step 1: Revoke Apple tokens if user signed in with Apple (compliance requirement)
-    try {
-      // Check if user has stored Apple credentials
-      const { data: appleCredentials } = await adminClient
-        .from('apple_credentials')
-        .select('refresh_token')
-        .eq('user_id', user.id)
-        .single()
-
-      if (appleCredentials?.refresh_token) {
-        console.log(`Revoking Apple token for ${userIdPrefix}...`)
-        const clientSecret = await generateAppleClientSecret()
-        if (clientSecret) {
-          await revokeAppleToken(appleCredentials.refresh_token, clientSecret)
-        }
-        
-        // Delete Apple credentials
-        await adminClient
-          .from('apple_credentials')
-          .delete()
-          .eq('user_id', user.id)
-      }
-    } catch (e) {
-      // Log but continue - Apple revocation is best-effort
-      console.warn(`Apple token revocation skipped for ${userIdPrefix}:`, e)
-    }
-
-    // Step 2: Delete user's data from custom tables BEFORE deleting auth record
-    // This ensures data cleanup even if auth deletion fails
-    
-    // 2a. Delete user_usage
-    try {
-      const { error: usageError } = await adminClient
-        .from('user_usage')
-        .delete()
-        .eq('user_id', user.id)
-
-      if (usageError) {
-        console.warn(`Failed to delete user_usage for ${userIdPrefix}:`, usageError.message)
-      } else {
-        console.log(`Deleted user_usage for ${userIdPrefix}`)
-      }
-    } catch (e) {
-      console.warn(`Error deleting user_usage for ${userIdPrefix}:`, e)
-    }
-
-    // 2b. Delete user_entitlements (subscription status)
-    try {
-      const { error: entitlementError } = await adminClient
-        .from('user_entitlements')
-        .delete()
-        .eq('user_id', user.id)
-
-      if (entitlementError) {
-        console.warn(`Failed to delete user_entitlements for ${userIdPrefix}:`, entitlementError.message)
-      } else {
-        console.log(`Deleted user_entitlements for ${userIdPrefix}`)
-      }
-    } catch (e) {
-      console.warn(`Error deleting user_entitlements for ${userIdPrefix}:`, e)
-    }
-
-    // 2c. Delete rate limit logs for this user
-    try {
-      const { error: rateLimitError } = await adminClient
-        .from('rate_limit_log')
-        .delete()
-        .eq('identifier', user.id)
-        .eq('identifier_type', 'user')
-
-      if (rateLimitError) {
-        console.warn(`Failed to delete rate_limit_log for ${userIdPrefix}:`, rateLimitError.message)
-      } else {
-        console.log(`Deleted rate_limit_log for ${userIdPrefix}`)
-      }
-    } catch (e) {
-      console.warn(`Error deleting rate_limit_log for ${userIdPrefix}:`, e)
-    }
-
-    // 2d. Remove user_id from device_usage.associated_user_ids (GDPR erasure)
-    // This uses array_remove to clean up the user reference from any devices
-    try {
-      const { error: deviceError } = await adminClient.rpc('remove_user_from_devices', {
-        p_user_id: user.id
-      })
-
-      if (deviceError) {
-        console.warn(`Failed to remove user from device_usage for ${userIdPrefix}:`, deviceError.message)
-      } else {
-        console.log(`Removed user from device associations for ${userIdPrefix}`)
-      }
-    } catch (e) {
-      console.warn(`Error removing user from device_usage for ${userIdPrefix}:`, e)
-    }
-
-    // Step 3: Delete the user from auth.users
-    const { error: deleteError } = await adminClient.auth.admin.deleteUser(user.id)
-
-    if (deleteError) {
-      console.error(`Delete auth error for ${userIdPrefix}:`, deleteError)
-      return new Response(
-        JSON.stringify({ error: getSafeErrorMessage(deleteError) }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    console.log(`Successfully deleted user ${userIdPrefix}`)
-    return new Response(
-      JSON.stringify({ success: true, message: 'Account deleted successfully' }),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
-
-  } catch (error) {
-    console.error('Unexpected error:', error)
-    return new Response(
-      JSON.stringify({ error: getSafeErrorMessage(error) }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
+export async function defaultDeleteAuthUser(
+  config: SupabaseConfig,
+  userID: string,
+  signal: AbortSignal,
+): Promise<AuthUserDeletionResult> {
+  const abortingFetch: typeof fetch = (input, init) =>
+    fetch(input, { ...init, signal });
+  const client = createClient(config.url, config.serviceRoleKey, {
+    global: { fetch: abortingFetch },
+  });
+  const { error } = await client.auth.admin.deleteUser(userID);
+  if (error) {
+    if (isAlreadyDeletedAuthUserError(error)) return "already_deleted";
+    throw new Error("auth_user_delete_failed");
   }
-})
+  return "deleted";
+}
+
+export function isAlreadyDeletedAuthUserError(error: unknown): boolean {
+  if (typeof error !== "object" || error === null) return false;
+  const candidate = error as { code?: unknown; status?: unknown };
+  return candidate.code === "user_not_found" || candidate.status === 404;
+}
+
+if (import.meta.main) {
+  Deno.serve((req) => handleDeleteUser(req));
+}

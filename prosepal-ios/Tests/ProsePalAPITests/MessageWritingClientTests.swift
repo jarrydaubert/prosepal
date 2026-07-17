@@ -173,6 +173,47 @@ final class MessageWritingClientTests: XCTestCase {
         }
     }
 
+    func testGatewayClientMapsCannotFindHostToOffline() async throws {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [CapturingURLProtocol.self]
+        let session = URLSession(configuration: configuration)
+        let endpoint = try XCTUnwrap(URL(string: "https://gateway.example/functions/v1/generate-card"))
+        let client = GatewayMessageWritingClient(endpoint: endpoint, session: session)
+
+        CapturingURLProtocol.requestHandler = { _ in
+            throw URLError(.cannotFindHost)
+        }
+        defer { CapturingURLProtocol.requestHandler = nil }
+
+        do {
+            _ = try await client.generateCard(request: request(requestedLane: .standard))
+            XCTFail("Expected DNS failure to map to offline.")
+        } catch GenerationError.offline {
+            // Expected path.
+        } catch {
+            XCTFail("Expected offline, got \(error).")
+        }
+    }
+
+    func testGatewayClientMapsOfflineAuthRefreshToOffline() async throws {
+        let endpoint = try XCTUnwrap(URL(string: "https://gateway.example/functions/v1/generate-card"))
+        let client = GatewayMessageWritingClient(
+            endpoint: endpoint,
+            authorizationTokenProvider: {
+                throw AuthError.networkUnavailable
+            }
+        )
+
+        do {
+            _ = try await client.generateCard(request: request(requestedLane: .standard))
+            XCTFail("Expected offline auth refresh to map to offline generation.")
+        } catch GenerationError.offline {
+            // Expected path.
+        } catch {
+            XCTFail("Expected offline, got \(error).")
+        }
+    }
+
     func testGatewayClientAddsAuthorizationHeaderFromTokenProvider() async throws {
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [CapturingURLProtocol.self]
@@ -472,7 +513,7 @@ final class MessageWritingClientTests: XCTestCase {
     func testGatewayClientMapsGatewayFailureStatusBuckets() async throws {
         try await assertGatewayFailure(
             statusCode: 408,
-            expectedError: .timedOut
+            expectedError: .timedOut(lane: .gateway)
         )
         try await assertGatewayFailure(
             statusCode: 429,
@@ -485,6 +526,30 @@ final class MessageWritingClientTests: XCTestCase {
             }
             """,
             expectedError: .rateLimited(message: "Please wait a moment before trying again.")
+        )
+        try await assertGatewayFailure(
+            statusCode: 409,
+            body: """
+            {
+              "user_safe_error": {
+                "code": "gateway_request_in_flight",
+                "message": "This draft is still being prepared."
+              }
+            }
+            """,
+            expectedError: .rateLimited(message: "This draft is still being prepared.")
+        )
+        try await assertGatewayFailure(
+            statusCode: 409,
+            body: """
+            {
+              "user_safe_error": {
+                "code": "gateway_replay_expired",
+                "message": "That earlier draft expired."
+              }
+            }
+            """,
+            expectedError: .requestNeedsFreshKey(message: "That earlier draft expired.")
         )
         try await assertGatewayFailure(
             statusCode: 422,

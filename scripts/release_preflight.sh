@@ -62,7 +62,10 @@ require_path "prosepal-ios/Package.swift"
 require_path "prosepal-ios/ProsePal.xcodeproj/project.pbxproj"
 require_path "prosepal-ios/App/ProsePalNativeApp.swift"
 require_path "docs/BACKLOG.md"
-require_path "docs/NEXT_RELEASE_BRIEF.md"
+require_path "docs/product/v1-launch-contract.md"
+
+./scripts/validate_docs.sh
+python3 -m unittest discover -s scripts/tests -p 'test_*.py'
 
 require_absent_tracked_path "pubspec.yaml"
 require_absent_tracked_path "analysis_options.yaml"

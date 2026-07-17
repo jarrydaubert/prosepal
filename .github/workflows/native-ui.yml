@@ -1,0 +1,126 @@
+name: Native UI
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "prosepal-ios/**"
+      - "scripts/run_native_ui_tests.sh"
+      - ".github/workflows/native-ui.yml"
+  schedule:
+    - cron: "17 3 * * 2"
+  workflow_dispatch:
+    inputs:
+      suite:
+        description: "UI suite to run"
+        required: true
+        default: full
+        type: choice
+        options:
+          - full
+          - smoke
+
+concurrency:
+  group: native-ui-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ui_tests:
+    name: Native UI (${{ github.event_name == 'pull_request' && 'smoke' || (github.event_name == 'workflow_dispatch' && inputs.suite || 'full') }})
+    runs-on: macos-26
+    timeout-minutes: 35
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+
+      - name: Select suite
+        id: suite
+        shell: bash
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            echo "value=smoke" >> "$GITHUB_OUTPUT"
+          elif [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "value=${{ inputs.suite }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "value=full" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Launching the UI-test runner into a cold simulator fails with
+      # launch-preflight/DebuggerVersionStore errors before any test runs.
+      # Boot the target device and wait for full boot first, then aim
+      # xcodebuild at that exact device.
+      - name: Pre-boot simulator
+        id: simulator
+        shell: bash
+        run: |
+          set -euo pipefail
+          UDID="$(xcrun simctl list devices available --json | python3 -c '
+          import json
+          import sys
+
+          data = json.load(sys.stdin)
+          candidates = []
+          for runtime, devices in data["devices"].items():
+              if "iOS" not in runtime:
+                  continue
+              for device in devices:
+                  if device["name"] == "iPhone 17 Pro":
+                      candidates.append((runtime, device["udid"]))
+          candidates.sort()
+          print(candidates[-1][1] if candidates else "")
+          ')"
+          if [[ -z "$UDID" ]]; then
+            echo "::error::No available iPhone 17 Pro simulator on this runner."
+            exit 1
+          fi
+          xcrun simctl boot "$UDID" 2>/dev/null || true
+          xcrun simctl bootstatus "$UDID" -b
+          echo "udid=$UDID" >> "$GITHUB_OUTPUT"
+
+      - name: Run native UI tests
+        env:
+          PROSEPAL_UI_TEST_DESTINATION: id=${{ steps.simulator.outputs.udid }}
+          # Workspace paths survive the script's temp-dir cleanup so the
+          # result bundle is available to the failure-diagnostics upload.
+          PROSEPAL_UI_TEST_RESULT_BUNDLE: ${{ github.workspace }}/ui-test-results/ProsePalNativeUITests.xcresult
+          PROSEPAL_UI_TEST_DERIVED_DATA: ${{ github.workspace }}/ui-test-results/DerivedData
+        run: ./scripts/run_native_ui_tests.sh "${{ steps.suite.outputs.value }}"
+
+      # Temporary public-CI evidence for the launch-stage failure signature:
+      # targeted diagnostics only — the xcresult, ProsePal/xctrunner crash and
+      # launch reports, and the target simulator's system log. No credentials,
+      # signing material, environment dumps, Keychain output, or real
+      # user-written content (UI tests run against mock services with fixture
+      # text only).
+      - name: Collect failure diagnostics
+        if: failure()
+        shell: bash
+        run: |
+          set -euo pipefail
+          DIAG="${GITHUB_WORKSPACE}/ui-test-diagnostics"
+          mkdir -p "$DIAG/crash-reports"
+          find "$HOME/Library/Logs/DiagnosticReports" -type f \
+            \( -name '*ProsePal*' -o -name '*xctrunner*' -o -name '*XCTRunner*' -o -name '*testmanagerd*' \) \
+            -mmin -120 -exec cp {} "$DIAG/crash-reports/" \; 2>/dev/null || true
+          UDID="${{ steps.simulator.outputs.udid }}"
+          if [[ -n "$UDID" && -f "$HOME/Library/Logs/CoreSimulator/$UDID/system.log" ]]; then
+            cp "$HOME/Library/Logs/CoreSimulator/$UDID/system.log" "$DIAG/simulator-system.log"
+          fi
+          cp "$HOME/Library/Logs/CoreSimulator/CoreSimulator.log" "$DIAG/CoreSimulator.log" 2>/dev/null || true
+          # DerivedData is large and not diagnostic; upload the xcresult only.
+          rm -rf "${GITHUB_WORKSPACE}/ui-test-results/DerivedData"
+          echo "Diagnostic artifact sizes:"
+          du -sh "$DIAG" "${GITHUB_WORKSPACE}/ui-test-results" 2>/dev/null || true
+
+      - name: Upload failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: native-ui-failure-${{ github.sha }}-attempt-${{ github.run_attempt }}
+          retention-days: 7
+          if-no-files-found: warn
+          path: |
+            ui-test-results
+            ui-test-diagnostics

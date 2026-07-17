@@ -23,13 +23,11 @@ migrate_working_dir/
 # Local environment and generated artifacts
 .env.local
 *.local.sh
+.claude/settings.local.json
 custom_lint.log
 artifacts/
 build/
 coverage/
-.crashlytics/
-.dart_tool/
-.flutter-plugins-dependencies
 
 # Supabase local CLI/link state
 /supabase/.temp/
@@ -40,3 +38,4 @@ prosepal-ios/.build/
 prosepal-ios/.swiftpm/
 prosepal-ios/build/
 prosepal-ios/evidence/
+.gstack/

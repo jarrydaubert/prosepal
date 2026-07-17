@@ -2,6 +2,35 @@ import XCTest
 @testable import ProsePalDomain
 
 final class CardContractTests: XCTestCase {
+    func testDomainTextPolicyNormalizesAndCapsEveryGenerationIngress() {
+        let longName = "  Alex\nMorgan  " + String(repeating: "x", count: 100)
+        let longDetail = "  " + String(repeating: "🙂", count: ProsePalTextLimit.momentDetail + 20) + "  "
+        let moment = MomentInput(
+            personName: longName,
+            relationship: .closeFriend,
+            occasion: .birthday,
+            trueThing: longDetail
+        )
+        let intent = CardIntent(
+            occasion: .birthday,
+            relationship: .closeFriend,
+            tone: .heartfelt,
+            recipientName: longName,
+            thingsToInclude: [longDetail, "   "],
+            thingsToAvoid: [longDetail],
+            userContext: String(repeating: "c", count: ProsePalTextLimit.draft + 20)
+        )
+
+        XCTAssertEqual(moment.personName.count, ProsePalTextLimit.personName)
+        XCTAssertTrue(moment.personName.hasPrefix("Alex Morgan"))
+        XCTAssertEqual(moment.trueThing.count, ProsePalTextLimit.momentDetail)
+        XCTAssertEqual(intent.recipientName?.count, ProsePalTextLimit.personName)
+        XCTAssertEqual(intent.thingsToInclude.count, 1)
+        XCTAssertEqual(intent.thingsToInclude[0].count, ProsePalTextLimit.momentDetail)
+        XCTAssertEqual(intent.thingsToAvoid[0].count, ProsePalTextLimit.momentDetail)
+        XCTAssertEqual(intent.userContext?.count, ProsePalTextLimit.draft)
+    }
+
     func testCardRequestEncodesStableGatewayContractFields() throws {
         let request = CardRequest(
             idempotencyKey: "fixed-key",

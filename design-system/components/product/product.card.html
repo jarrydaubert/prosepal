@@ -1,0 +1,83 @@
+<!-- @dsCard group="Components" viewport="700x860" name="Product states" subtitle="Onboarding · trust · empty · usage · paywall" -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="stylesheet" href="../../styles.css" />
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css" />
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css" />
+<style>
+  body { margin: 0; background: var(--bg-grouped); }
+  .wrap { padding: 22px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
+  .col { display: flex; flex-direction: column; gap: 16px; }
+  .lab { font: 600 11px/1 var(--font-ui); letter-spacing: .06em; text-transform: uppercase; color: var(--text-tertiary); }
+  .surf { background: var(--surface); border-radius: var(--radius-card); border: 0.5px solid var(--separator); box-shadow: var(--shadow-sm); }
+</style>
+</head>
+<body>
+<div id="root" class="wrap"></div>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script>
+<script type="text/babel" data-presets="react">
+const NS = window.ProsePalDesignSystem_019e02;
+const { OnboardingCard, TrustNote, EmptyState, UsageCard, Paywall, Button } = NS;
+const { useState } = React;
+const I = (n) => <i className={"ph ph-" + n} />;
+
+function Demo() {
+  const [plan, setPlan] = useState("year");
+  return (
+    <>
+      <div className="col">
+        <div className="lab">OnboardingCard</div>
+        <div className="surf">
+          <OnboardingCard icon={I("feather")} eyebrow="Welcome to ProsePal" title="Say it like you mean it"
+            body="Write the rough version. ProsePal helps you make it clearer, warmer, sharper — in your own voice."
+            actions={<><Button block size="xl">Get started</Button><Button block size="lg" variant="ghost">I have an account</Button></>} />
+        </div>
+        <div className="lab">TrustNote</div>
+        <TrustNote title="Your writing stays yours"
+          body="Drafts are processed privately and never used to train models."
+          points={["On-device drafts by default", "No training on your text", "Delete anything, anytime"]} />
+        <div className="lab">EmptyState</div>
+        <div className="surf">
+          <EmptyState icon={I("cards")} title="No drafts yet"
+            body="Everything you write with ProsePal lands here, ready to revisit."
+            action={<Button icon={I("feather")}>Write your first</Button>} />
+        </div>
+        <div className="lab">UsageCard</div>
+        <EmptyState icon={I("hourglass-medium")} title="Draft limit reached"
+          body="The service supplies the current allowance message. Pro offers higher writing limits."
+          action={<Button block variant="secondary" size="md">View Pro options</Button>} />
+      </div>
+
+      <div className="col">
+        <div className="lab">Paywall</div>
+        <div className="surf">
+          <Paywall title="More room to write"
+            sub="More drafts and refines, every tone, and your own private voice profile."
+            features={[
+              { icon: I("arrow-circle-up"), title: "Higher writing limits", sub: "More room to shape important messages" },
+              { icon: I("user-focus"), title: "Your voice profile", sub: "ProsePal learns how you sound" },
+              { icon: I("sliders"), title: "Every tone & length", sub: "From tender to all-business" },
+              { icon: I("lock-simple"), title: "Private by default", sub: "Nothing trains on your words" },
+            ]}
+            plans={[
+              { id: "year", name: "Yearly", meta: "12 months of Pro", price: "$39.99", per: "/yr", badge: "Save 40%" },
+              { id: "month", name: "Monthly", price: "$5.99", per: "/mo" },
+            ]}
+            value={plan} onSelect={setPlan}
+            cta="Start 7-day free trial"
+            fine={<>Cancel anytime · <a href="#">Restore</a> · <a href="#">Terms</a></>} />
+        </div>
+      </div>
+    </>
+  );
+}
+ReactDOM.createRoot(document.getElementById("root")).render(<Demo />);
+</script>
+</body>
+</html>

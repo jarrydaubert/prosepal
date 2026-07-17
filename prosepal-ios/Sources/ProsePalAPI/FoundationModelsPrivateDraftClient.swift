@@ -61,25 +61,33 @@ public struct FoundationModelsPrivateDraftClient: MomentDraftClient {
         adjustment: MomentAdjustment?,
         currentMessage: String?
     ) async throws -> MomentDraftBundle {
+        try Task.checkCancellation()
         try ensureModelAvailable()
 
         let approvedBeads = try await memoryProvider.approvedTruthBeads(for: moment.personName)
+        try Task.checkCancellation()
         let approvedVoiceCard = try await memoryProvider.approvedVoiceCard(for: moment.personName)
+        try Task.checkCancellation()
+        let promptPlan = PrivateDraftPromptPlan(
+            moment: moment,
+            adjustment: adjustment,
+            currentMessage: currentMessage,
+            approvedBeads: approvedBeads,
+            approvedVoiceCard: approvedVoiceCard
+        )
         let session = LanguageModelSession(
             model: model,
-            tools: [RelationshipMemoryTool(memoryProvider: memoryProvider)],
-            instructions: privateDraftInstructions
+            instructions: Instructions {
+                promptPlan.instructionComponents
+            }
         )
 
         do {
+            try Task.checkCancellation()
             let response = try await session.respond(
-                to: prompt(
-                    for: moment,
-                    adjustment: adjustment,
-                    currentMessage: currentMessage,
-                    approvedBeads: approvedBeads,
-                    approvedVoiceCard: approvedVoiceCard
-                ),
+                to: Prompt {
+                    promptPlan.promptComponents
+                },
                 generating: PrivateDraftContent.self,
                 options: GenerationOptions(
                     sampling: .random(probabilityThreshold: 0.92),
@@ -87,6 +95,7 @@ public struct FoundationModelsPrivateDraftClient: MomentDraftClient {
                     maximumResponseTokens: 700
                 )
             )
+            try Task.checkCancellation()
             return response.content.bundle(
                 lane: .privateDraft,
                 approvedBeads: approvedBeads,
@@ -119,59 +128,65 @@ public struct FoundationModelsPrivateDraftClient: MomentDraftClient {
             )
         }
     }
+}
 
-    private var privateDraftInstructions: Instructions {
-        Instructions {
-            "You are ProsePal, a private writing assistant for short personal messages."
-            "Write like a thoughtful human, not a chatbot."
-            "Never mention models, providers, AI, tokens, or implementation details."
-            "For hard moments, use the user's own sentence as the emotional anchor and invent less."
-            "Treat approved voice cards as style guidance only; do not quote them as facts."
-            "Avoid guilt mechanics, relationship scoring, manipulative nudges, and pressure."
-            "Return structured fields exactly as requested."
-        }
-    }
+struct PrivateDraftPromptPlan: Equatable, Sendable {
+    let instructionComponents: [String]
+    let promptComponents: [String]
 
-    private func prompt(
-        for moment: MomentInput,
+    init(
+        moment: MomentInput,
         adjustment: MomentAdjustment?,
         currentMessage: String?,
         approvedBeads: [TruthBead],
         approvedVoiceCard: RelationshipVoiceCard?
-    ) -> Prompt {
-        Prompt {
-            "Person: \(moment.personName)"
-            "Relationship: \(moment.relationship.displayName)"
-            "Moment: \(moment.occasion.displayName)"
-            "Register: \(moment.register.displayName) - \(moment.register.userSafeDescription)"
-            "Tone: \(moment.tone.displayName)"
-            "Length: \(moment.length.generationHint)"
+    ) {
+        instructionComponents = [
+            "You are ProsePal, a private writing assistant for short personal messages.",
+            "Write like a thoughtful human, not a chatbot.",
+            "Never mention models, providers, AI, tokens, or implementation details.",
+            "For hard moments, use the user's own sentence as the emotional anchor and invent less.",
+            "Treat approved voice cards as style guidance only; do not quote them as facts.",
+            "Avoid guilt mechanics, relationship scoring, manipulative nudges, and pressure.",
+            "Return structured fields exactly as requested."
+        ]
+
+        var components = [
+            "Person: \(moment.personName)",
+            "Relationship: \(moment.relationship.displayName)",
+            "Moment: \(moment.occasion.displayName)",
+            "Writing context: \(moment.register.userSafeDescription)",
+            "Tone: \(moment.tone.displayName)",
+            "Length: \(moment.length.generationHint)",
             "Device locale: \(moment.localeIdentifier)"
+        ]
 
-            if !moment.trueThing.isEmpty {
-                "What is true: \(moment.trueThing)"
-            }
-
-            if let adjustment {
-                "Adjustment requested: \(adjustment.displayName)"
-            }
-
-            if let currentMessage, !currentMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                "Current message to reshape: \(currentMessage)"
-            }
-
-            if !approvedBeads.isEmpty {
-                "Approved relationship memory:"
-                approvedBeads.map { "- \($0.text)" }
-            }
-
-            if let approvedVoiceCard {
-                "Approved voice card:"
-                approvedVoiceCard.summary
-            }
-
-            "Write one message. Include pressure-check findings if the wording asks the recipient to reassure the sender, explains before apologising, or feels too heavy for the moment."
+        if !moment.trueThing.isEmpty {
+            components.append("What is true: \(moment.trueThing)")
         }
+
+        if let adjustment {
+            components.append("Adjustment requested: \(adjustment.displayName)")
+        }
+
+        if let currentMessage, !currentMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            components.append("Current message to reshape: \(currentMessage)")
+        }
+
+        if !approvedBeads.isEmpty {
+            components.append("Approved relationship memory:")
+            components.append(contentsOf: approvedBeads.map { "- \($0.text)" })
+        }
+
+        if let approvedVoiceCard {
+            components.append("Approved voice card:")
+            components.append(approvedVoiceCard.summary)
+        }
+
+        components.append(
+            "Write one message. Include pressure-check findings if the wording asks the recipient to reassure the sender, explains before apologising, or feels too heavy for the moment."
+        )
+        promptComponents = components
     }
 }
 
@@ -216,41 +231,6 @@ private struct PrivateDraftContent {
             missingInformation: missingInformation.nonEmptyTrimmed,
             riskNotes: riskNotes.nonEmptyTrimmed
         )
-    }
-}
-
-@Generable(description: "Arguments for looking up approved relationship memory")
-private struct RelationshipMemoryArguments {
-    @Guide(description: "The person's name")
-    var personName: String
-}
-
-private struct RelationshipMemoryTool: Tool {
-    let memoryProvider: any RelationshipMemoryProviding
-
-    var name: String { "approved_relationship_memory" }
-
-    var description: String {
-        "Looks up user-approved facts for a person from ProsePal's private on-device relationship vault."
-    }
-
-    @concurrent func call(arguments: RelationshipMemoryArguments) async throws -> String {
-        let beads = try await memoryProvider.approvedTruthBeads(for: arguments.personName)
-            .filter(\.isUserApproved)
-        let voiceCard = try await memoryProvider.approvedVoiceCard(for: arguments.personName)
-        guard !beads.isEmpty || voiceCard != nil else {
-            return "No approved relationship memory."
-        }
-
-        var sections: [String] = []
-        if !beads.isEmpty {
-            sections.append("Approved details:\n" + beads.map { "- \($0.text)" }.joined(separator: "\n"))
-        }
-        if let voiceCard {
-            sections.append("Approved voice card:\n\(voiceCard.summary)")
-        }
-
-        return sections.joined(separator: "\n\n")
     }
 }
 

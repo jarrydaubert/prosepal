@@ -513,10 +513,18 @@ public struct CardIntent: Codable, Equatable, Sendable {
         self.length = length
         self.spellingPreference = Self.automaticSpellingPreference
         self.localeIdentifier = localeIdentifier ?? Locale.current.identifier
-        self.recipientName = recipientName
-        self.thingsToInclude = thingsToInclude
-        self.thingsToAvoid = thingsToAvoid
-        self.userContext = userContext
+        let normalizedRecipient = recipientName.map(ProsePalTextInput.personName)
+        self.recipientName = normalizedRecipient?.isEmpty == false ? normalizedRecipient : nil
+        self.thingsToInclude = thingsToInclude.compactMap { value in
+            let normalized = ProsePalTextInput.momentDetail(value)
+            return normalized.isEmpty ? nil : normalized
+        }
+        self.thingsToAvoid = thingsToAvoid.compactMap { value in
+            let normalized = ProsePalTextInput.momentDetail(value)
+            return normalized.isEmpty ? nil : normalized
+        }
+        let normalizedContext = userContext.map(ProsePalTextInput.draft)
+        self.userContext = normalizedContext?.isEmpty == false ? normalizedContext : nil
     }
 }
 

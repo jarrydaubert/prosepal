@@ -108,8 +108,21 @@ public struct GatewayMessageWritingClient: MessageWritingClient {
                     category: "timeout",
                     durationMs: startedAt.elapsedMilliseconds
                 )
-                throw GenerationError.timedOut
-            case 409, 425, 429:
+                throw GenerationError.timedOut(lane: .gateway)
+            case 409:
+                let gatewayError = decodedGatewayError(from: data)
+                GatewayDiagnosticsLogger.shared.requestFailed(
+                    requestID: requestID,
+                    statusCode: httpResponse.statusCode,
+                    category: gatewayError.code ?? "gateway_conflict",
+                    durationMs: startedAt.elapsedMilliseconds
+                )
+                let message = gatewayError.message ?? "Generation is busy right now. Please wait a moment and try again."
+                if ["gateway_replay_expired", "gateway_idempotency_conflict"].contains(gatewayError.code) {
+                    throw GenerationError.requestNeedsFreshKey(message: message)
+                }
+                throw GenerationError.rateLimited(message: message)
+            case 425, 429:
                 GatewayDiagnosticsLogger.shared.requestFailed(
                     requestID: requestID,
                     statusCode: httpResponse.statusCode,
@@ -180,7 +193,15 @@ public struct GatewayMessageWritingClient: MessageWritingClient {
                 durationMs: startedAt.elapsedMilliseconds
             )
             throw CancellationError()
-        } catch let error as URLError where error.code == .notConnectedToInternet {
+        } catch let error as URLError where error.isProsePalConnectivityFailure {
+            GatewayDiagnosticsLogger.shared.requestFailed(
+                requestID: requestID,
+                statusCode: nil,
+                category: "offline",
+                durationMs: startedAt.elapsedMilliseconds
+            )
+            throw GenerationError.offline
+        } catch AuthError.networkUnavailable {
             GatewayDiagnosticsLogger.shared.requestFailed(
                 requestID: requestID,
                 statusCode: nil,
@@ -195,7 +216,7 @@ public struct GatewayMessageWritingClient: MessageWritingClient {
                 category: "timeout",
                 durationMs: startedAt.elapsedMilliseconds
             )
-            throw GenerationError.timedOut
+            throw GenerationError.timedOut(lane: .gateway)
         } catch {
             GatewayDiagnosticsLogger.shared.requestFailed(
                 requestID: requestID,
@@ -274,15 +295,23 @@ private struct GatewayErrorResponse: Decodable {
 }
 
 private func userSafeGatewayMessage(from data: Data, fallback: String) -> String {
-    guard
-        let response = try? JSONDecoder.prosePal.decode(GatewayErrorResponse.self, from: data),
-        let message = response.userSafeError?.message?.trimmingCharacters(in: .whitespacesAndNewlines),
+    guard let message = decodedGatewayError(from: data).message,
         !message.isEmpty
     else {
         return fallback
     }
 
     return message
+}
+
+private func decodedGatewayError(from data: Data) -> (code: String?, message: String?) {
+    let response = try? JSONDecoder.prosePal.decode(GatewayErrorResponse.self, from: data)
+    let code = response?.userSafeError?.code?.trimmingCharacters(in: .whitespacesAndNewlines)
+    let message = response?.userSafeError?.message?.trimmingCharacters(in: .whitespacesAndNewlines)
+    return (
+        code?.isEmpty == false ? code : nil,
+        message?.isEmpty == false ? message : nil
+    )
 }
 
 private struct GatewayDiagnosticsLogger: Sendable {

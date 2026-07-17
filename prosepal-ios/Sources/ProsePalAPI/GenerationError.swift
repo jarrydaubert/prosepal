@@ -1,9 +1,16 @@
 import Foundation
 
+public enum GenerationTimeoutLane: Equatable, Sendable {
+    case onDevice
+    case gateway
+    case total
+}
+
 public enum GenerationError: Error, Equatable, Sendable {
     case offline
-    case timedOut
+    case timedOut(lane: GenerationTimeoutLane)
     case rateLimited(message: String)
+    case requestNeedsFreshKey(message: String)
     case usageLimitReached(message: String)
     case contentBlocked(message: String)
     case serviceUnavailable(message: String)
@@ -15,9 +22,17 @@ public extension GenerationError {
         switch self {
         case .offline:
             "You appear to be offline. Please check your connection and try again."
-        case .timedOut:
-            "This is taking longer than expected. Please try again."
+        case .timedOut(let lane):
+            switch lane {
+            case .onDevice:
+                String(localized: "On-device writing took too long. Your note is still here, so you can try again.")
+            case .gateway:
+                String(localized: "ProsePal could not finish this draft in time. Your note is still here, so you can try again.")
+            case .total:
+                String(localized: "This draft took too long to finish. Your note is still here, so you can try again.")
+            }
         case .rateLimited(let message),
+             .requestNeedsFreshKey(let message),
              .usageLimitReached(let message),
              .contentBlocked(let message),
              .serviceUnavailable(let message),
@@ -34,6 +49,8 @@ public extension GenerationError {
             "timeout"
         case .rateLimited:
             "rate_limited"
+        case .requestNeedsFreshKey:
+            "request_needs_fresh_key"
         case .usageLimitReached:
             "usage_limit"
         case .contentBlocked:

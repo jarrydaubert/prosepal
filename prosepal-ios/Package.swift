@@ -23,6 +23,10 @@ let package = Package(
             name: "ProsePalUI",
             dependencies: ["ProsePalAPI", "ProsePalDomain"]
         ),
+        .target(
+            name: "ProsePalEvaluation",
+            dependencies: ["ProsePalDomain"]
+        ),
         .testTarget(
             name: "ProsePalDomainTests",
             dependencies: ["ProsePalDomain"]
@@ -34,6 +38,11 @@ let package = Package(
         .testTarget(
             name: "ProsePalUITests",
             dependencies: ["ProsePalUI", "ProsePalAPI", "ProsePalDomain"]
+        ),
+        .testTarget(
+            name: "ProsePalEvaluationTests",
+            dependencies: ["ProsePalEvaluation", "ProsePalDomain"],
+            resources: [.process("Fixtures")]
         )
     ]
 )

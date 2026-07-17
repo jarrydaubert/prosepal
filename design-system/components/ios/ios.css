@@ -1,0 +1,96 @@
+/* ============================================================
+   ProsePal — iOS chrome
+   Device frame, status bar, nav bar, tab bar. Used by both the
+   bundled React components and (as plain classes) the UI kits.
+   ============================================================ */
+
+/* ============================ PhoneFrame ================= */
+.pp-phone {
+  --screen-bg: var(--bg);
+  position: relative; width: 390px; height: 844px; flex: none;
+  border-radius: 56px; background: #0b0b0d;
+  padding: 5px;
+  box-shadow:
+    0 0 0 2px oklch(0.30 0.01 60 / 0.5),
+    0 1px 0 3px oklch(0 0 0 / 0.6),
+    var(--shadow-xl);
+}
+.pp-phone__screen {
+  position: relative; width: 100%; height: 100%; overflow: hidden;
+  border-radius: 51px; background: var(--screen-bg);
+  display: flex; flex-direction: column;
+}
+.pp-phone__island {
+  position: absolute; top: 11px; left: 50%; transform: translateX(-50%);
+  width: 124px; height: 35px; background: #000; border-radius: 20px; z-index: 50;
+}
+
+/* ============================ Status bar ================= */
+.pp-statusbar {
+  height: 54px; flex: none; display: flex; align-items: flex-end; justify-content: space-between;
+  padding: 0 26px 9px; color: var(--text); position: relative; z-index: 40;
+  font-family: var(--font-ui);
+}
+.pp-statusbar__time { font-size: 15px; font-weight: 600; letter-spacing: 0; }
+.pp-statusbar__icons { display: flex; align-items: center; gap: 7px; font-size: 16px; line-height: 0; }
+
+/* ============================ Nav bar =================== */
+.pp-navbar {
+  flex: none; padding: 4px var(--gutter) 6px; display: flex; flex-direction: column; gap: 2px;
+  background: var(--screen-bg);
+}
+.pp-navbar__top {
+  min-height: 44px; display: flex; align-items: center; justify-content: space-between; gap: 8px;
+}
+.pp-navbar__lead, .pp-navbar__trail { display: flex; align-items: center; gap: 2px; min-width: 44px; }
+.pp-navbar__trail { justify-content: flex-end; }
+.pp-navbar__inline-title { font-size: var(--text-headline); font-weight: var(--weight-semibold); letter-spacing: -0.01em; text-align: center; flex: 1; }
+.pp-navbar__largetitle {
+  font-family: var(--font-display); font-size: var(--text-largetitle);
+  font-weight: var(--weight-bold); letter-spacing: -0.02em; color: var(--text);
+  line-height: 1.1; padding: 2px 0 4px;
+}
+.pp-navbar__btn {
+  border: none; background: transparent; color: var(--accent-text);
+  font-family: var(--font-ui); font-size: var(--text-body); font-weight: var(--weight-regular);
+  cursor: pointer; padding: 6px; display: inline-flex; align-items: center; gap: 4px;
+}
+.pp-navbar__btn--icon { font-size: 21px; line-height: 0; color: var(--accent-text); }
+
+/* ============================ Tab bar =================== */
+.pp-tabbar {
+  flex: none; height: 56px; display: flex; align-items: stretch;
+  padding: 6px 8px 0; gap: 2px;
+  border-top: 0.5px solid var(--separator);
+  background: oklch(0.99 0.005 85 / 0.8); backdrop-filter: var(--glass-blur);
+}
+[data-theme="dark"] .pp-tabbar { background: oklch(0.20 0.008 70 / 0.8); }
+.pp-tab {
+  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  border: none; background: transparent; cursor: pointer; color: var(--text-quaternary);
+  font-family: var(--font-ui); font-size: 10px; font-weight: var(--weight-medium);
+  -webkit-tap-highlight-color: transparent;
+}
+.pp-tab__icon { font-size: 24px; line-height: 0; }
+.pp-tab[aria-selected="true"] { color: var(--accent); }
+.pp-tab--fab { position: relative; }
+.pp-tab--fab .pp-tab__icon {
+  width: 46px; height: 46px; margin-top: -18px; border-radius: 50%;
+  background: var(--accent); color: var(--text-on-accent);
+  display: inline-flex; align-items: center; justify-content: center;
+  box-shadow: var(--shadow-md); font-size: 24px;
+}
+
+/* ============================ Home indicator =========== */
+.pp-home {
+  flex: none; height: 26px; display: flex; align-items: center; justify-content: center;
+  background: var(--screen-bg);
+}
+.pp-home::after {
+  content: ""; width: 140px; height: 5px; border-radius: 3px;
+  background: var(--text); opacity: 0.85;
+}
+
+/* Scrollable body inside a phone screen */
+.pp-screen-body { flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.pp-screen-body::-webkit-scrollbar { width: 0; height: 0; }

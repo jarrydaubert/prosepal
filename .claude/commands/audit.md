@@ -1,151 +1,81 @@
 ---
-description: Deep code/architecture audit of a system or file
+description: Deep code and architecture audit of a system or file
 argument-hint: [target]
 ---
 
 # /audit - Deep Code Audit
 
-Run a deep, risk-first audit of the specified system, feature, workflow, or file.
+Run a read-only, risk-first audit of the specified native system, workflow, or file.
 
-Rules:
-- Do not write or modify code in this mode.
-- Output findings directly in chat.
-- Prioritize bug/regression/risk findings over style opinions.
-- Reference file locations and lines.
-- Read the relevant source-of-truth docs before concluding anything:
-  - `AGENTS.md`
-  - `docs/NEXT_RELEASE_BRIEF.md`
-  - `docs/DEVOPS.md`
-  - `docs/BACKLOG.md`
-  - plus any feature-specific runbooks relevant to the target
-- Cross-check against `docs/BACKLOG.md` and report only new, regressed, or still-unmitigated issues.
-- Prefer evidence over speculation. If something cannot be verified from code, tests, scripts, or docs, say that clearly.
-- If no findings are discovered, say so explicitly and list residual risks or unverified areas.
+## Rules
+
+- Do not modify code or external state.
+- Lead with findings ordered by user impact and release risk.
+- Cite exact file and line evidence.
+- Read `AGENTS.md`, `docs/product/v1-launch-contract.md`,
+  `docs/engineering/architecture.md`, `docs/quality/testing.md`, and
+  `docs/BACKLOG.md`, plus any component-specific documentation.
+- Cross-check the backlog; report only new, regressed, or still-unmitigated
+  issues.
+- Separate verified facts from residual risk and live-environment unknowns.
 
 ## Usage
-```
+
+```text
 /audit [target]
 ```
 
-**Examples:**
-- `/audit auth` - Audit authentication system
-- `/audit payments` - Audit subscription/RevenueCat integration
-- `/audit lib/core/services/ai_service.dart` - Audit specific file
+Examples: `/audit auth`, `/audit subscriptions`, `/audit gateway`, or
+`/audit prosepal-ios/Sources/ProsePalCore/AuthSession.swift`.
 
-## Audit Approach
+## Checklist
 
-1. Identify the exact scope:
-   - system, feature, workflow, file, or PR-sized change
-2. Read the relevant source-of-truth docs first.
-3. Inspect the real implementation and tests:
-   - code
-   - workflows/scripts
-   - related docs/runbooks
-4. Evaluate behavior, not just code shape:
-   - happy path
-   - failure path
-   - recovery path
-   - release impact
-5. Report only the highest-signal findings.
+### Core product behavior
 
-## Audit Checklist (Risk First, Prosepal-Specific)
+- The five-step writing loop matches `docs/product/v1-launch-contract.md` and
+  `docs/product/user-journeys.md`.
+- Sign-in remains optional for first value and follows
+  `docs/engineering/auth-and-accounts.md`.
+- StoreKit entitlement, restore, and transaction-update behavior follows
+  `docs/engineering/subscriptions.md`.
+- Generation, fallback, timeout, and refusal behavior follows
+  `docs/engineering/ai-generation.md`.
+- SwiftData changes preserve the relationship-vault and draft-recovery
+  contracts.
 
-When auditing, focus on:
+### Correctness and resilience
 
-### Product-Critical Flows
-- [ ] Auth flow behavior matches `docs/NEXT_RELEASE_BRIEF.md`
-- [ ] Purchase flow preserves anonymous purchase support where required
-- [ ] Restore/account-linking flow matches `docs/REVENUECAT_POLICY.md`
-- [ ] Identity transitions match `docs/IDENTITY_MAPPING.md`
-- [ ] AI generation behavior matches current model/runtime-control policy
-- [ ] App startup/routing remains deterministic under degraded conditions
+- Happy, failure, cancellation, retry, offline, and relaunch paths agree across
+  code, tests, and docs.
+- State invalidation after sign-in, sign-out, purchase, restore, and deletion is
+  deterministic.
+- Network calls have bounded timeouts and honest user-visible errors.
+- Sensitive content and credentials never enter logs or diagnostics.
 
-### Correctness And Regressions
-- [ ] Behavior is coherent across code, tests, and docs
-- [ ] Existing invariants are preserved
-- [ ] Failure states produce the intended user-visible outcome
-- [ ] Cache/state invalidation is correct after auth, restore, sign-out, and retry paths
-- [ ] Analytics/diagnostics remain aligned with actual runtime behavior
+### Backend and cost controls
 
-### Security And Abuse Resistance
-- [ ] Input validation and sanitization
-- [ ] Auth state verified before sensitive operations
-- [ ] No hardcoded secrets
-- [ ] Error messages don't leak internal details
-- [ ] Rate limiting in place
-- [ ] Sensitive user content is not logged
-- [ ] Auth/payment/AI flows remain deterministic and testable
+- Supabase RLS, grants, and security-definer RPCs enforce the intended boundary.
+- Edge functions authenticate before protected or provider-billed work.
+- The request ledger, quota, idempotency, and rate limits follow
+  `docs/engineering/gateway-request-ledger.md`.
+- Usage and entitlement decisions remain server-authoritative where required.
 
-### Resilience
-- [ ] Timeouts on network calls
-- [ ] Graceful degradation on service failure
-- [ ] Retry logic with backoff where appropriate
-- [ ] Offline behavior handled
-- [ ] Startup timeouts/fallbacks do not route users incorrectly
-- [ ] Device/network/provider failures do not leave entitlement or auth state inconsistent
+### Validation and release
 
-### Testing And Validation
-- [ ] Follows existing patterns in codebase
-- [ ] Proper error typing (not generic catch)
-- [ ] Resources disposed properly
-- [ ] Tests exist for critical paths
-- [ ] Behavior changes include updated tests
-- [ ] Relevant validation aligns with:
-  - `flutter analyze`
-  - `flutter test`
-  - `./scripts/test_critical_smoke.sh`
-  - any target-specific scripts/workflows from `docs/DEVOPS.md`
+- Tests catch plausible regressions and remain deterministic.
+- Relevant commands come from `docs/quality/testing.md`.
+- Operational and release implications follow
+  `docs/operations/local-development.md` and `docs/operations/release.md`.
+- UI changes account for accessibility and release evidence requirements.
 
-### UI / Release Confidence
-- [ ] Core screen behavior remains aligned with the current design baseline
-- [ ] No obvious launch/auth/paywall flow regressions
-- [ ] If UI behavior changed, visual regression and parity implications are considered
-- [ ] iOS build/runtime assumptions are compatible with release-preflight rules
-
-### Database/Backend (Supabase)
-- [ ] RLS policies match intended access patterns
-- [ ] Sensitive tables use RPC-only writes (no direct INSERT/UPDATE)
-- [ ] Table grants don't exceed RLS intent
-- [ ] Edge functions validate auth before operations
-- [ ] No service_role key in client code
-- [ ] Usage, entitlement, and abuse-control paths remain server-authoritative where required
-
-### Payments / Identity / Telemetry
-- [ ] RevenueCat App User ID policy is preserved (`docs/REVENUECAT_POLICY.md`)
-- [ ] Anonymous and authenticated identity transitions are correct (`docs/IDENTITY_MAPPING.md`)
-- [ ] Entitlement refresh happens at the right points
-- [ ] Telemetry user IDs set/clear consistently on auth changes
-- [ ] Diagnostics would expose identity divergence clearly if it occurred
-
-### AI / Runtime Controls
-- [ ] Remote Config assumptions match `docs/REMOTE_CONFIG.md`
-- [ ] Kill switches and allowlist assumptions are preserved
-- [ ] Pinned model and fallback behavior remain coherent
-- [ ] App Check / abuse-control posture is not weakened accidentally
-
-### Release Readiness
-- [ ] Change aligns with release constraints in `docs/NEXT_RELEASE_BRIEF.md`
-- [ ] Operational implications align with `docs/DEVOPS.md`
-- [ ] Release preflight, secret-safety, and launch/auth parity implications are considered
-- [ ] Any new operational burden is documented or called out
-
-## Severity Guidance
-
-Use severity based on user impact and release risk:
-- `CRITICAL`: auth/payment/security break, data exposure, entitlement corruption, release blocker
-- `HIGH`: likely user-facing regression in core flow, broken recovery path, major reliability risk
-- `MEDIUM`: meaningful gap, weak guardrail, or missing validation that could hide a real bug
-
-## Output Format
-
-Use this structure:
+## Output
 
 ```markdown
 ## Findings
-1. [CRITICAL/HIGH/MEDIUM] [Issue title]
+1. [CRITICAL/HIGH/MEDIUM] Issue title
    - Location: path:line
    - Evidence: ...
-   - Why it matters: ...
+   - Impact: ...
    - Suggested fix: ...
 
 ## Open Questions
@@ -154,6 +84,6 @@ Use this structure:
 ## Residual Risk
 - ...
 
-## Backlog Additions (only if new)
-- [item + one-line DoD]
+## Backlog Additions (new work only)
+- [item and testable definition of done]
 ```

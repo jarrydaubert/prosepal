@@ -1,0 +1,21 @@
+<!-- @dsCard group="Spacing" viewport="700x180" name="Elevation" subtitle="Soft, warm-tinted shadows — premium means barely-there" -->
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8" />
+<link rel="stylesheet" href="../styles.css" />
+<style>
+  body { margin: 0; background: var(--bg-grouped); padding: 26px; font-family: var(--font-ui); }
+  .row { display: flex; align-items: center; gap: 26px; }
+  .item { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  .c { width: 86px; height: 64px; background: var(--surface); border-radius: 16px; }
+  .n { font: 500 11px/1 var(--font-mono); color: var(--text-tertiary); }
+</style></head>
+<body>
+  <div class="row">
+    <div class="item"><div class="c" style="box-shadow:var(--shadow-xs)"></div><span class="n">xs</span></div>
+    <div class="item"><div class="c" style="box-shadow:var(--shadow-sm)"></div><span class="n">sm · card</span></div>
+    <div class="item"><div class="c" style="box-shadow:var(--shadow-md)"></div><span class="n">md · raised</span></div>
+    <div class="item"><div class="c" style="box-shadow:var(--shadow-lg)"></div><span class="n">lg · sheet</span></div>
+    <div class="item"><div class="c" style="box-shadow:var(--shadow-xl)"></div><span class="n">xl · modal</span></div>
+    <div class="item"><div class="c" style="box-shadow:var(--shadow-accent);background:var(--accent)"></div><span class="n">accent glow</span></div>
+  </div>
+</body></html>

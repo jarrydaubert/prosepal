@@ -34,6 +34,192 @@ final class AuthSessionTests: XCTestCase {
         XCTAssertNil(token)
     }
 
+    func testSessionControllerRefreshesExpiredSessionAndPersistsRotatedTokens() async throws {
+        let expiredSession = AuthSession(
+            accessToken: "expired-token",
+            refreshToken: "refresh-token-1",
+            expiresAt: Date(timeIntervalSince1970: 1_700_000_000),
+            user: AuthUser(id: "user-1", email: "user@example.com")
+        )
+        let rotatedSession = AuthSession(
+            accessToken: "access-token-2",
+            refreshToken: "refresh-token-2",
+            expiresAt: Date(timeIntervalSince1970: 1_700_003_600),
+            user: AuthUser(id: "user-1", email: "user@example.com")
+        )
+        let store = InMemoryAuthSessionStore(session: expiredSession)
+        let client = RefreshingAuthClient(responses: [.success(rotatedSession)])
+        let controller = AuthSessionController(store: store, authClient: client)
+
+        let token = try await controller.currentAccessToken(
+            at: Date(timeIntervalSince1970: 1_700_000_001)
+        )
+        let storedRotatedSession = try await store.loadSession()
+        let recordedRefreshTokens = await client.refreshTokens()
+
+        XCTAssertEqual(token, "access-token-2")
+        XCTAssertEqual(storedRotatedSession, rotatedSession)
+        XCTAssertEqual(recordedRefreshTokens, ["refresh-token-1"])
+
+        let relaunchedController = AuthSessionController(store: store, authClient: client)
+        let relaunchedToken = try await relaunchedController.currentAccessToken(
+            at: Date(timeIntervalSince1970: 1_700_000_002)
+        )
+        let refreshCallCount = await client.refreshCallCount()
+        XCTAssertEqual(relaunchedToken, "access-token-2")
+        XCTAssertEqual(refreshCallCount, 1)
+    }
+
+    func testSessionControllerSerializesConcurrentRefreshCallers() async throws {
+        let expiredSession = AuthSession(
+            accessToken: "expired-token",
+            refreshToken: "refresh-token-1",
+            expiresAt: Date(timeIntervalSince1970: 1_700_000_000)
+        )
+        let rotatedSession = AuthSession(
+            accessToken: "access-token-2",
+            refreshToken: "refresh-token-2",
+            expiresAt: Date(timeIntervalSince1970: 1_700_003_600)
+        )
+        let store = InMemoryAuthSessionStore(session: expiredSession)
+        let client = RefreshingAuthClient(
+            responses: [.success(rotatedSession)],
+            delay: .milliseconds(30)
+        )
+        let controller = AuthSessionController(store: store, authClient: client)
+        let requestDate = Date(timeIntervalSince1970: 1_700_000_001)
+
+        let tokens = try await withThrowingTaskGroup(of: String?.self) { group in
+            for _ in 0..<8 {
+                group.addTask {
+                    try await controller.currentAccessToken(at: requestDate)
+                }
+            }
+
+            var tokens: [String?] = []
+            for try await token in group {
+                tokens.append(token)
+            }
+            return tokens
+        }
+        let refreshCallCount = await client.refreshCallCount()
+        let storedSession = try await store.loadSession()
+
+        XCTAssertEqual(tokens.compactMap { $0 }, Array(repeating: "access-token-2", count: 8))
+        XCTAssertEqual(refreshCallCount, 1)
+        XCTAssertEqual(storedSession, rotatedSession)
+    }
+
+    func testSessionControllerPreservesExpiredSessionAcrossOfflineRefreshAndRecovers() async throws {
+        let expiredSession = AuthSession(
+            accessToken: "expired-token",
+            refreshToken: "refresh-token-1",
+            expiresAt: Date(timeIntervalSince1970: 1_700_000_000),
+            user: AuthUser(id: "user-1", email: "user@example.com")
+        )
+        let rotatedSession = AuthSession(
+            accessToken: "access-token-2",
+            refreshToken: "refresh-token-2",
+            expiresAt: Date(timeIntervalSince1970: 1_700_003_600),
+            user: expiredSession.user
+        )
+        let store = InMemoryAuthSessionStore(session: expiredSession)
+        let client = RefreshingAuthClient(responses: [
+            .failure(.networkUnavailable),
+            .success(rotatedSession)
+        ])
+        let controller = AuthSessionController(store: store, authClient: client)
+        let requestDate = Date(timeIntervalSince1970: 1_700_000_001)
+
+        do {
+            _ = try await controller.currentAccessToken(at: requestDate)
+            XCTFail("Expected offline refresh to fail without clearing the session.")
+        } catch AuthError.networkUnavailable {
+            // Expected path.
+        }
+
+        let storedExpiredSession = try await store.loadSession()
+        let cachedExpiredSession = try await controller.persistedSession()
+
+        XCTAssertEqual(storedExpiredSession, expiredSession)
+        XCTAssertEqual(cachedExpiredSession, expiredSession)
+
+        let recoveredToken = try await controller.currentAccessToken(at: requestDate)
+        let storedRotatedSession = try await store.loadSession()
+        let refreshCallCount = await client.refreshCallCount()
+        XCTAssertEqual(recoveredToken, "access-token-2")
+        XCTAssertEqual(storedRotatedSession, rotatedSession)
+        XCTAssertEqual(refreshCallCount, 2)
+    }
+
+    func testSessionControllerClearsSessionAfterTerminalRefreshRejection() async throws {
+        let expiredSession = AuthSession(
+            accessToken: "expired-token",
+            refreshToken: "refresh-token-1",
+            expiresAt: Date(timeIntervalSince1970: 1_700_000_000)
+        )
+        let store = InMemoryAuthSessionStore(session: expiredSession)
+        let client = RefreshingAuthClient(responses: [
+            .failure(.requestFailed(statusCode: 401, message: "Refresh token rejected."))
+        ])
+        let controller = AuthSessionController(store: store, authClient: client)
+
+        do {
+            _ = try await controller.currentAccessToken(
+                at: Date(timeIntervalSince1970: 1_700_000_001)
+            )
+            XCTFail("Expected terminal refresh rejection.")
+        } catch AuthError.requestFailed(let statusCode, _) {
+            XCTAssertEqual(statusCode, 401)
+        }
+
+        let storedSession = try await store.loadSession()
+        let cachedSession = try await controller.persistedSession()
+
+        XCTAssertNil(storedSession)
+        XCTAssertNil(cachedSession)
+    }
+
+    func testClearingSessionDuringRefreshCannotRestoreRotatedSession() async throws {
+        let expiredSession = AuthSession(
+            accessToken: "expired-token",
+            refreshToken: "refresh-token-1",
+            expiresAt: Date(timeIntervalSince1970: 1_700_000_000)
+        )
+        let rotatedSession = AuthSession(
+            accessToken: "access-token-2",
+            refreshToken: "refresh-token-2",
+            expiresAt: Date(timeIntervalSince1970: 1_700_003_600)
+        )
+        let store = InMemoryAuthSessionStore(session: expiredSession)
+        let client = RefreshingAuthClient(
+            responses: [.success(rotatedSession)],
+            delay: .seconds(1)
+        )
+        let controller = AuthSessionController(store: store, authClient: client)
+        let refreshTask = Task {
+            try await controller.currentAccessToken(
+                at: Date(timeIntervalSince1970: 1_700_000_001)
+            )
+        }
+
+        while await client.refreshCallCount() == 0 {
+            await Task.yield()
+        }
+        try await controller.clearSession()
+
+        do {
+            _ = try await refreshTask.value
+            XCTFail("Expected the in-flight refresh to be cancelled by session clearing.")
+        } catch is CancellationError {
+            // Expected path.
+        }
+        let storedSession = try await store.loadSession()
+        let cachedSession = try await controller.persistedSession()
+        XCTAssertNil(storedSession)
+        XCTAssertNil(cachedSession)
+    }
+
     func testSessionControllerPersistsReplacementAndClearsSignOut() async throws {
         let store = InMemoryAuthSessionStore()
         let controller = AuthSessionController(store: store)
@@ -67,6 +253,7 @@ final class AuthSessionTests: XCTestCase {
         XCTAssertEqual(AuthError.missingNonce.diagnosticsOutcome, "missing_nonce")
         XCTAssertEqual(AuthError.nonceGenerationFailed.diagnosticsOutcome, "nonce_generation_failed")
         XCTAssertEqual(AuthError.invalidResponse.diagnosticsOutcome, "supabase_invalid_response")
+        XCTAssertEqual(AuthError.networkUnavailable.diagnosticsOutcome, "network_unavailable")
         XCTAssertEqual(
             AuthError.requestFailed(statusCode: 401, message: "safe").diagnosticsOutcome,
             "supabase_rejected"
@@ -145,6 +332,158 @@ final class SupabaseAuthClientTests: XCTestCase {
         XCTAssertEqual(authSession.refreshToken, "supabase-refresh-token")
         XCTAssertEqual(authSession.expiresAt, Date(timeIntervalSince1970: 1_700_003_600))
         XCTAssertEqual(authSession.user, AuthUser(id: "user-1", email: "user@example.com"))
+    }
+
+    func testSignInWithIDTokenMapsCannotFindHostToNetworkUnavailable() async throws {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [AuthCapturingURLProtocol.self]
+        let session = URLSession(configuration: configuration)
+        let projectURL = try XCTUnwrap(URL(string: "https://project.supabase.co"))
+        let client = SupabaseAuthClient(
+            projectURL: projectURL,
+            anonKey: "anon-key",
+            session: session
+        )
+
+        AuthCapturingURLProtocol.requestHandler = { _ in
+            throw URLError(.cannotFindHost)
+        }
+        defer { AuthCapturingURLProtocol.requestHandler = nil }
+
+        do {
+            _ = try await client.signInWithIDToken(
+                provider: .apple,
+                idToken: "apple-token",
+                nonce: "raw-nonce"
+            )
+            XCTFail("Expected DNS failure to map to networkUnavailable.")
+        } catch AuthError.networkUnavailable {
+            // Expected path.
+        } catch {
+            XCTFail("Expected networkUnavailable, got \(error).")
+        }
+    }
+
+    func testRefreshSessionPostsRefreshGrantAndParsesRotatedSession() async throws {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [AuthCapturingURLProtocol.self]
+        let session = URLSession(configuration: configuration)
+        let projectURL = try XCTUnwrap(URL(string: "https://project.supabase.co"))
+        let client = SupabaseAuthClient(
+            projectURL: projectURL,
+            anonKey: "anon-key",
+            session: session,
+            now: { Date(timeIntervalSince1970: 1_700_000_000) }
+        )
+        let existingSession = AuthSession(
+            accessToken: "expired-token",
+            refreshToken: "refresh-token-1",
+            expiresAt: Date(timeIntervalSince1970: 1_699_999_999),
+            user: AuthUser(id: "user-1", email: "user@example.com"),
+            appleCredentialUserID: "apple-user"
+        )
+
+        AuthCapturingURLProtocol.requestHandler = { request in
+            XCTAssertEqual(request.url?.path, "/auth/v1/token")
+            XCTAssertEqual(request.url?.query, "grant_type=refresh_token")
+            XCTAssertEqual(request.httpMethod, "POST")
+            XCTAssertEqual(request.value(forHTTPHeaderField: "apikey"), "anon-key")
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Content-Type"), "application/json")
+            XCTAssertNil(request.value(forHTTPHeaderField: "Authorization"))
+
+            let bodyData = try XCTUnwrap(bodyData(from: request))
+            let body = try XCTUnwrap(
+                JSONSerialization.jsonObject(with: bodyData) as? [String: Any]
+            )
+            XCTAssertEqual(body["refresh_token"] as? String, "refresh-token-1")
+
+            let response = try XCTUnwrap(HTTPURLResponse(
+                url: projectURL,
+                statusCode: 200,
+                httpVersion: nil,
+                headerFields: ["Content-Type": "application/json"]
+            ))
+            let data = """
+            {
+              "access_token": "access-token-2",
+              "refresh_token": "refresh-token-2",
+              "expires_in": 3600
+            }
+            """.data(using: .utf8)!
+            return (response, data)
+        }
+        defer { AuthCapturingURLProtocol.requestHandler = nil }
+
+        let refreshedSession = try await client.refreshSession(existingSession)
+
+        XCTAssertEqual(refreshedSession.accessToken, "access-token-2")
+        XCTAssertEqual(refreshedSession.refreshToken, "refresh-token-2")
+        XCTAssertEqual(refreshedSession.expiresAt, Date(timeIntervalSince1970: 1_700_003_600))
+        XCTAssertEqual(refreshedSession.user, existingSession.user)
+        XCTAssertEqual(refreshedSession.appleCredentialUserID, "apple-user")
+    }
+
+    func testRefreshSessionMapsConnectivityFailureWithoutExposingRefreshToken() async throws {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [AuthCapturingURLProtocol.self]
+        let session = URLSession(configuration: configuration)
+        let projectURL = try XCTUnwrap(URL(string: "https://project.supabase.co"))
+        let client = SupabaseAuthClient(
+            projectURL: projectURL,
+            anonKey: "anon-key",
+            session: session
+        )
+        let existingSession = AuthSession(
+            accessToken: "expired-token",
+            refreshToken: "private-refresh-token"
+        )
+
+        AuthCapturingURLProtocol.requestHandler = { _ in
+            throw URLError(.notConnectedToInternet)
+        }
+        defer { AuthCapturingURLProtocol.requestHandler = nil }
+
+        do {
+            _ = try await client.refreshSession(existingSession)
+            XCTFail("Expected refresh connectivity failure.")
+        } catch let error as AuthError {
+            XCTAssertEqual(error, .networkUnavailable)
+            XCTAssertFalse(error.userSafeMessage.contains("private-refresh-token"))
+        }
+    }
+
+    func testRefreshSessionMapsMalformedSuccessResponseToInvalidResponse() async throws {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [AuthCapturingURLProtocol.self]
+        let session = URLSession(configuration: configuration)
+        let projectURL = try XCTUnwrap(URL(string: "https://project.supabase.co"))
+        let client = SupabaseAuthClient(
+            projectURL: projectURL,
+            anonKey: "anon-key",
+            session: session
+        )
+        let existingSession = AuthSession(
+            accessToken: "expired-token",
+            refreshToken: "refresh-token-1"
+        )
+
+        AuthCapturingURLProtocol.requestHandler = { _ in
+            let response = try XCTUnwrap(HTTPURLResponse(
+                url: projectURL,
+                statusCode: 200,
+                httpVersion: nil,
+                headerFields: ["Content-Type": "application/json"]
+            ))
+            return (response, #"{"unexpected":true}"#.data(using: .utf8)!)
+        }
+        defer { AuthCapturingURLProtocol.requestHandler = nil }
+
+        do {
+            _ = try await client.refreshSession(existingSession)
+            XCTFail("Expected a malformed refresh response to fail.")
+        } catch AuthError.invalidResponse {
+            // Expected path.
+        }
     }
 
     func testSignInWithIDTokenMapsFailureWithoutReturningTokens() async throws {
@@ -233,6 +572,57 @@ private actor InMemoryAuthSessionStore: AuthSessionStore {
 
     func clearSession() async throws {
         session = nil
+    }
+}
+
+private actor RefreshingAuthClient: AuthClient {
+    enum Response: Sendable {
+        case success(AuthSession)
+        case failure(AuthError)
+    }
+
+    private var responses: [Response]
+    private let delay: Duration?
+    private var recordedRefreshTokens: [String] = []
+
+    init(responses: [Response], delay: Duration? = nil) {
+        self.responses = responses
+        self.delay = delay
+    }
+
+    func signInWithIDToken(
+        provider: AuthProvider,
+        idToken: String,
+        nonce: String?
+    ) async throws -> AuthSession {
+        throw AuthError.invalidResponse
+    }
+
+    func refreshSession(_ session: AuthSession) async throws -> AuthSession {
+        recordedRefreshTokens.append(session.refreshToken ?? "")
+        if let delay {
+            try await Task.sleep(for: delay)
+        }
+        guard !responses.isEmpty else {
+            throw AuthError.invalidResponse
+        }
+
+        switch responses.removeFirst() {
+        case .success(let session):
+            return session
+        case .failure(let error):
+            throw error
+        }
+    }
+
+    func signOut(accessToken: String) async throws {}
+
+    func refreshTokens() -> [String] {
+        recordedRefreshTokens
+    }
+
+    func refreshCallCount() -> Int {
+        recordedRefreshTokens.count
     }
 }
 

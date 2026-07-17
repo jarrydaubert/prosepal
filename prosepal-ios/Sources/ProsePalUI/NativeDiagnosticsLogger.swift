@@ -109,15 +109,36 @@ public struct NativeDiagnosticsLogger: Sendable {
         _ event: String,
         source: String,
         productCount: Int = 0,
+        configuredProductCount: Int = 0,
         outcome: String = "none"
     ) {
-        logger.info(
-            "subscription_event event=\(event, privacy: .public) source=\(source, privacy: .public) product_count=\(productCount, privacy: .public) outcome=\(outcome, privacy: .public)"
+        let payload = NativeDiagnosticsPayload.subscriptionEvent(
+            event: event,
+            source: source,
+            productCount: productCount,
+            configuredProductCount: configuredProductCount,
+            outcome: outcome
         )
+        logger.info("\(payload, privacy: .public)")
+    }
+
+    public func accountDeletionEvent(_ event: String, outcome: String = "none") {
+        let payload = NativeDiagnosticsPayload.accountDeletionEvent(event: event, outcome: outcome)
+        logger.info("\(payload, privacy: .public)")
     }
 }
 
 enum NativeDiagnosticsPayload {
+    static func subscriptionEvent(
+        event: String,
+        source: String,
+        productCount: Int,
+        configuredProductCount: Int,
+        outcome: String
+    ) -> String {
+        "subscription_event event=\(event) source=\(source) product_count=\(productCount) configured_product_count=\(configuredProductCount) outcome=\(outcome)"
+    }
+
     static func messageAction(action: String, source: String, messageCharacters: Int) -> String {
         "message_action action=\(action) source=\(source) message_chars=\(messageCharacters)"
     }
@@ -149,7 +170,11 @@ enum NativeDiagnosticsPayload {
     }
 
     static func momentLaunchConsumed(_ request: MomentLaunchRequest) -> String {
-        "moment_launch_consumed source=\(request.source) person_present=\(request.personName?.hasDiagnosticsText == true) occasion=\(request.occasion?.rawValue ?? "none")"
+        "moment_launch_consumed source=\(request.source) person_present=\(request.personName?.hasDiagnosticsText == true) occasion=\(request.occasion?.rawValue ?? "none") shared_text_present=\(request.sharedText?.hasDiagnosticsText == true) shared_text_chars=\(request.sharedText?.diagnosticsTextCount ?? 0)"
+    }
+
+    static func accountDeletionEvent(event: String, outcome: String) -> String {
+        "account_deletion_event event=\(event) source=settings outcome=\(outcome)"
     }
 }
 

@@ -12,6 +12,11 @@ readonly GITHUB_COMMITTER_REGEX='^GitHub <noreply@github\.com>$'
 readonly DEPENDABOT_SIGNOFF_REGEX='^[[:space:]]*[Ss]igned-off-by:[[:space:]]*dependabot\[bot\][[:space:]]*<support@github\.com>[[:space:]]*$'
 readonly GITHUB_PR_SUBJECT_REGEX='^.+ \(#[0-9]+\)$'
 readonly GITHUB_NOREPLY_COAUTHOR_REGEX='^[[:space:]]*[Cc]o-[Aa]uthored-[Bb]y:[[:space:]]*.+[[:space:]]*<[0-9]+\+[^<>[:space:]]+@users\.noreply\.github\.com>[[:space:]]*$'
+# Exactly the GitHub Advanced Security Copilot Autofix bot, applied from the
+# repository's own code-scanning findings via the GitHub web flow. Any other
+# identity — including lookalike names, different numeric IDs, or non-noreply
+# domains — still requires the explicit [allow-coauthor] marker.
+readonly GITHUB_SECURITY_AUTOFIX_COAUTHOR_REGEX='^[[:space:]]*[Cc]o-[Aa]uthored-[Bb]y:[[:space:]]*Copilot Autofix powered by AI <62310815\+github-advanced-security\[bot\]@users\.noreply\.github\.com>[[:space:]]*$'
 
 usage() {
   cat <<'EOF'
@@ -51,6 +56,33 @@ is_dependabot_only_coauthor() {
   fi
 
   grep -Eq "$DEPENDABOT_COAUTHOR_REGEX" "$input_file"
+}
+
+is_github_security_autofix_coauthor_only() {
+  local input_file="$1"
+  local committer_line="$2"
+  local trailer_count
+
+  # Copilot Autofix commits are created by the GitHub web flow; a locally
+  # crafted commit does not carry the GitHub committer identity.
+  if [[ ! "$committer_line" =~ $GITHUB_COMMITTER_REGEX ]]; then
+    return 1
+  fi
+
+  trailer_count="$(grep -Ec "$TRAILER_PATTERN" "$input_file" || true)"
+  if [[ "$trailer_count" -lt 1 ]]; then
+    return 1
+  fi
+
+  # Every co-author trailer must be exactly the trusted bot; one extra
+  # trailer of any other identity keeps the marker requirement.
+  while IFS= read -r trailer_line; do
+    if [[ ! "$trailer_line" =~ $GITHUB_SECURITY_AUTOFIX_COAUTHOR_REGEX ]]; then
+      return 1
+    fi
+  done < <(grep -E "$TRAILER_PATTERN" "$input_file")
+
+  return 0
 }
 
 is_github_dependabot_squash_merge() {
@@ -131,6 +163,7 @@ check_commit_range() {
     if contains_coauthor_trailer "$tmp_file" \
       && ! contains_allow_marker "$tmp_file" \
       && ! is_dependabot_only_coauthor "$tmp_file" "$author_line" \
+      && ! is_github_security_autofix_coauthor_only "$tmp_file" "$committer_line" \
       && ! is_github_dependabot_squash_merge "$tmp_file" "$author_line" "$committer_line"; then
       echo "Commit $commit_sha has Co-authored-by trailer without $ALLOW_MARKER" >&2
       failures=1

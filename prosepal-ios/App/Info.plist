@@ -37,6 +37,18 @@
 	<string>public.app-category.lifestyle</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>PROSEPAL_PREMIUM_PRODUCT_IDS</key>
+	<string>$(PROSEPAL_PREMIUM_PRODUCT_IDS)</string>
+	<key>PROSEPAL_RECOMMENDED_PREMIUM_PRODUCT_ID</key>
+	<string>$(PROSEPAL_RECOMMENDED_PREMIUM_PRODUCT_ID)</string>
+	<key>PROSEPAL_RETIRED_PREMIUM_PRODUCT_IDS</key>
+	<string>$(PROSEPAL_RETIRED_PREMIUM_PRODUCT_IDS)</string>
+	<key>PROSEPAL_GATEWAY_URL</key>
+	<string>$(PROSEPAL_GATEWAY_URL)</string>
+	<key>PROSEPAL_SUPABASE_URL</key>
+	<string>$(PROSEPAL_SUPABASE_URL)</string>
+	<key>PROSEPAL_SUPABASE_ANON_KEY</key>
+	<string>$(PROSEPAL_SUPABASE_ANON_KEY)</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
