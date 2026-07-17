@@ -65,7 +65,7 @@ require_path "docs/BACKLOG.md"
 require_path "docs/product/v1-launch-contract.md"
 
 ./scripts/validate_docs.sh
-python3 -m unittest discover -s scripts/tests -p 'test_storekit_test_result_gate.py'
+python3 -m unittest discover -s scripts/tests -p 'test_*.py'
 
 require_absent_tracked_path "pubspec.yaml"
 require_absent_tracked_path "analysis_options.yaml"
