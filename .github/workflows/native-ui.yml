@@ -82,4 +82,45 @@ jobs:
       - name: Run native UI tests
         env:
           PROSEPAL_UI_TEST_DESTINATION: id=${{ steps.simulator.outputs.udid }}
+          # Workspace paths survive the script's temp-dir cleanup so the
+          # result bundle is available to the failure-diagnostics upload.
+          PROSEPAL_UI_TEST_RESULT_BUNDLE: ${{ github.workspace }}/ui-test-results/ProsePalNativeUITests.xcresult
+          PROSEPAL_UI_TEST_DERIVED_DATA: ${{ github.workspace }}/ui-test-results/DerivedData
         run: ./scripts/run_native_ui_tests.sh "${{ steps.suite.outputs.value }}"
+
+      # Temporary public-CI evidence for the launch-stage failure signature:
+      # targeted diagnostics only — the xcresult, ProsePal/xctrunner crash and
+      # launch reports, and the target simulator's system log. No credentials,
+      # signing material, environment dumps, Keychain output, or real
+      # user-written content (UI tests run against mock services with fixture
+      # text only).
+      - name: Collect failure diagnostics
+        if: failure()
+        shell: bash
+        run: |
+          set -euo pipefail
+          DIAG="${GITHUB_WORKSPACE}/ui-test-diagnostics"
+          mkdir -p "$DIAG/crash-reports"
+          find "$HOME/Library/Logs/DiagnosticReports" -type f \
+            \( -name '*ProsePal*' -o -name '*xctrunner*' -o -name '*XCTRunner*' -o -name '*testmanagerd*' \) \
+            -mmin -120 -exec cp {} "$DIAG/crash-reports/" \; 2>/dev/null || true
+          UDID="${{ steps.simulator.outputs.udid }}"
+          if [[ -n "$UDID" && -f "$HOME/Library/Logs/CoreSimulator/$UDID/system.log" ]]; then
+            cp "$HOME/Library/Logs/CoreSimulator/$UDID/system.log" "$DIAG/simulator-system.log"
+          fi
+          cp "$HOME/Library/Logs/CoreSimulator/CoreSimulator.log" "$DIAG/CoreSimulator.log" 2>/dev/null || true
+          # DerivedData is large and not diagnostic; upload the xcresult only.
+          rm -rf "${GITHUB_WORKSPACE}/ui-test-results/DerivedData"
+          echo "Diagnostic artifact sizes:"
+          du -sh "$DIAG" "${GITHUB_WORKSPACE}/ui-test-results" 2>/dev/null || true
+
+      - name: Upload failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: native-ui-failure-${{ github.sha }}-attempt-${{ github.run_attempt }}
+          retention-days: 7
+          if-no-files-found: warn
+          path: |
+            ui-test-results
+            ui-test-diagnostics
