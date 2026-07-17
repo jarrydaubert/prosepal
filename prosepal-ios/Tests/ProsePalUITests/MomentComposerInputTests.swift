@@ -19,7 +19,7 @@ func typedMomentDetailReachesGeneration() async throws {
     model.startDraft()
 
     try await expectEventually("The typed detail never reached the service.") {
-        await client.moments().count == 1
+        await client.moments().count == 1 && model.bundle?.messageText == "Draft."
     }
 
     let moments = await client.moments()

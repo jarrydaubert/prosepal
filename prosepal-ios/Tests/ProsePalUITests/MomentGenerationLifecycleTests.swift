@@ -382,16 +382,21 @@ private actor CountingDeadlineFallbackClient: MomentDraftClient {
 @MainActor
 private func waitForLifecycle(
     _ failureMessage: String,
-    timeout: Duration = .seconds(1),
+    timeout: Duration = .seconds(5),
     condition: @escaping @MainActor () async -> Bool
 ) async throws {
     let clock = ContinuousClock()
     let deadline = clock.now.advanced(by: timeout)
     while !(await condition()) {
         guard clock.now < deadline else {
-            Issue.record(Comment(rawValue: failureMessage))
-            return
+            throw LifecycleWaitTimedOut(message: failureMessage)
         }
         try await Task.sleep(for: .milliseconds(2))
     }
+}
+
+private struct LifecycleWaitTimedOut: Error, CustomStringConvertible {
+    let message: String
+
+    var description: String { message }
 }

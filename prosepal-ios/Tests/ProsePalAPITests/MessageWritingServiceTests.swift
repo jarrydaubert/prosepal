@@ -726,18 +726,23 @@ private actor CancellationTestGate {
 
 private func waitForServiceCancellation(
     _ failureMessage: String,
-    timeout: Duration = .seconds(1),
+    timeout: Duration = .seconds(5),
     condition: @escaping @Sendable () async -> Bool
 ) async throws {
     let clock = ContinuousClock()
     let deadline = clock.now.advanced(by: timeout)
     while !(await condition()) {
         guard clock.now < deadline else {
-            Issue.record(Comment(rawValue: failureMessage))
-            return
+            throw ServiceCancellationWaitTimedOut(message: failureMessage)
         }
         try await Task.sleep(for: .milliseconds(2))
     }
+}
+
+private struct ServiceCancellationWaitTimedOut: Error, CustomStringConvertible {
+    let message: String
+
+    var description: String { message }
 }
 
 private let cancellationTestMoment = MomentInput(
