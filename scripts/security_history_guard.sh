@@ -6,48 +6,80 @@ fail() {
   exit 1
 }
 
+require_command() {
+  command -v "$1" >/dev/null 2>&1 || fail "Missing required command: $1"
+}
+
+is_dotenv_path() {
+  local basename="${1##*/}"
+  [[ "$basename" == ".env" || "$basename" == .env.* ]]
+}
+
+is_allowed_dotenv_path() {
+  [[ "${1##*/}" == ".env.example" ]]
+}
+
 echo "🔒 Running git history secret guard..."
 
+for required_command in git mktemp rm sort; do
+  require_command "$required_command"
+done
+
 # 1) Ensure no tracked local env file exists in current tree.
+if ! tracked_files="$(git ls-files)"; then
+  fail "Could not enumerate tracked files."
+fi
+
 while IFS= read -r file; do
   [[ -z "$file" ]] && continue
-  if [[ "$file" != ".env.example" ]]; then
+  if is_dotenv_path "$file" && ! is_allowed_dotenv_path "$file"; then
     fail "Tracked dotenv file is not allowed: $file"
   fi
-done < <(git ls-files | rg '^\.env($|\.)' || true)
+done <<< "$tracked_files"
 
-# 2) Ensure no non-example dotenv file exists anywhere in reachable history.
-while IFS= read -r file; do
-  [[ -z "$file" ]] && continue
-  if [[ "$file" != ".env.example" ]]; then
-    fail "Historical dotenv file is not allowed: $file"
-  fi
-done < <(
-  git rev-list --all --objects |
-    awk '{print $2}' |
-    rg '^\.env($|\.)' |
-    sort -u ||
-    true
-)
-
-if git rev-list --all -- .env.local | rg -q .; then
-  fail ".env.local exists in reachable git history."
+if ! revisions="$(git rev-list --all)"; then
+  fail "Could not enumerate reachable revisions."
 fi
+
+tmp_paths="$(mktemp)"
+tmp_hits="$(mktemp)"
+trap 'rm -f "$tmp_paths" "$tmp_hits"' EXIT
+
+# 2) Ensure no non-example dotenv path exists in any reachable commit tree.
+# Inspect per-commit tree paths rather than `rev-list --objects` labels: object
+# listing emits each blob once under a single path, hiding a forbidden path
+# whose content was later renamed or copied to an allowed one.
+while IFS= read -r rev; do
+  [[ -z "$rev" ]] && continue
+  if ! git ls-tree -r -z --name-only "$rev" > "$tmp_paths"; then
+    fail "Could not list tree paths for revision $rev."
+  fi
+  while IFS= read -r -d '' file; do
+    if is_dotenv_path "$file" && ! is_allowed_dotenv_path "$file"; then
+      fail "Historical dotenv file is not allowed: $file"
+    fi
+  done < "$tmp_paths"
+done <<< "$revisions"
 
 # 3) Scan reachable history for high-risk secret shapes.
 # Keep this intentionally narrow to avoid false positives on public client keys.
 pattern='sb_(service_role|secret)_[A-Za-z0-9._-]{20,}|SUPABASE_SERVICE_ROLE_KEY[[:space:]]*[:=][[:space:]]*["'\''][^"'\'']{16,}|REVENUECAT_(IOS|ANDROID)_KEY[[:space:]]*[:=][[:space:]]*["'\''](appl|goog)_[A-Za-z0-9]{20,}|ghp_[A-Za-z0-9]{20,}|xox[baprs]-[A-Za-z0-9-]{10,}'
 
-tmp_hits="$(mktemp)"
-trap 'rm -f "$tmp_hits"' EXIT
-
 while IFS= read -r rev; do
-  git grep -l -I -E "$pattern" "$rev" -- \
-    ':(exclude)docs/**' \
-    ':(exclude)**/*.md' \
-    ':(exclude).env.example' \
-    ':(exclude)test/**' >> "$tmp_hits" || true
-done < <(git rev-list --all)
+  [[ -z "$rev" ]] && continue
+  if git grep -l -I -E "$pattern" "$rev" -- \
+      ':(exclude)docs/**' \
+      ':(exclude)**/*.md' \
+      ':(exclude).env.example' \
+      ':(exclude)test/**' >> "$tmp_hits"; then
+    continue
+  else
+    grep_status=$?
+    if [[ $grep_status -ne 1 ]]; then
+      fail "High-risk secret scan failed for revision $rev."
+    fi
+  fi
+done <<< "$revisions"
 
 if [[ -s "$tmp_hits" ]]; then
   echo "High-risk secret patterns found in reachable history (commit:path):" >&2
