@@ -156,7 +156,8 @@ inside the monolith:
 | Relationship-memory library and detail | `MomentExperienceView.swift`: `RelationshipMemoryVaultView`, `RelationshipMemoryDetailView`, `RelationshipVoiceCardDetailView`; shared empty/detail presentation is in `Components/` |
 | Settings shell and static presentation components | `Features/Settings/MomentSettingsView.swift`, `MomentSettingsComponents.swift`, and `MomentSettingsPreview.swift`: `MomentSettingsView`, truthful static-row descriptors, feature presentation components, and deterministic preview setup |
 | Subscription plan detail | `MomentExperienceView.swift`: `MomentPlanDetailView` and plan presentation helpers |
-| Privacy, export, authentication, and paywall | `MomentExperienceView.swift`: `MomentPrivacyDataView`, `MomentLocalDataExportView`, `MomentPaywallSheet`; `Features/Settings/MomentLocalDataExport.swift`: typed JSON `Transferable`, named-file creation, and temporary-file cleanup; `MomentAppleSignInControl.swift`: system Apple authorization presentation and native credential forwarding |
+| Privacy, export, and authentication | `MomentExperienceView.swift`: `MomentPrivacyDataView`, `MomentLocalDataExportView`; `Features/Settings/MomentLocalDataExport.swift`: typed JSON `Transferable`, named-file creation, and temporary-file cleanup; `MomentAppleSignInControl.swift`: system Apple authorization presentation and native credential forwarding |
+| Paywall feature | `Features/Paywall/MomentPaywallSheet.swift` and `MomentPaywallPreview.swift`: `MomentPaywallSheet`, the `MomentPaywallProductPresentation` contract, paywall rows, and deterministic previews; StoreKit, entitlement, restore, and `appAccountToken` logic stays in `MomentAccountModel` and `ProsePalAPI/SubscriptionClient.swift` |
 
 Use these symbols as navigation anchors rather than durable line numbers. When a
 task changes one region, prefer extracting that complete region and its private
