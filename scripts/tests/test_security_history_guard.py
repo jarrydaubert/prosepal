@@ -96,6 +96,28 @@ class SecurityHistoryGuardTests(unittest.TestCase):
             "Historical dotenv file is not allowed: config/.env.staging"
         )
 
+    def test_renamed_dotenv_to_example_fails(self) -> None:
+        self.write(".env.local", "LOCAL_ONLY=value\n")
+        self.commit_all("add local environment")
+        self.git("mv", ".env.local", ".env.example")
+        self.git("commit", "--quiet", "-m", "rename to example environment")
+
+        self.assert_guard_fails(
+            "Historical dotenv file is not allowed: .env.local"
+        )
+
+    def test_copied_dotenv_to_example_then_deleted_fails(self) -> None:
+        self.write(".env.local", "LOCAL_ONLY=value\n")
+        self.commit_all("add local environment")
+        self.write(".env.example", "LOCAL_ONLY=value\n")
+        self.commit_all("copy to example environment")
+        self.git("rm", "--quiet", ".env.local")
+        self.git("commit", "--quiet", "-m", "remove local environment")
+
+        self.assert_guard_fails(
+            "Historical dotenv file is not allowed: .env.local"
+        )
+
     def test_high_risk_secret_pattern_fails(self) -> None:
         secret_assignment = (
             "SUPABASE_SERVICE_ROLE"
