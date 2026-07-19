@@ -110,7 +110,7 @@ production composer/result work starts only after that recorded decision.
 - RevenueCat in the iOS app.
 - A forced first-run paywall.
 - Three mandatory dialog screens or an unskippable personalisation interview.
-- Template-generated messages as an app runtime fallback.
+- Template-generated messages as a native runtime fallback.
 - Full Dark Mode, broad localization, or bespoke iPad product design as launch
   blockers unless the release scope is changed deliberately.
 - Manuscripts, projects, characters, worldbuilding, or generic document tools.

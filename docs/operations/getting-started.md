@@ -1,7 +1,7 @@
 # Getting Started
 
-This tutorial takes a new contributor from a clean checkout to a successful app
-build and test run.
+This tutorial takes a new contributor from a clean checkout to a successful
+native build and test run.
 
 ## What you need
 
@@ -11,7 +11,7 @@ build and test run.
 - Deno and the Supabase CLI when changing Edge Functions or migrations.
 - Docker Desktop for local Supabase database tests.
 
-No staging secret is required for the local app build and unit tests.
+No staging secret is required for the local native build and unit tests.
 
 ## 1. Open the repository
 
@@ -23,7 +23,7 @@ git status --short
 Read [AGENTS.md](../../AGENTS.md) before changing code. Existing working-tree
 changes belong to their author; do not discard or restage them casually.
 
-## 2. Build the Swift package
+## 2. Build the native package
 
 ```bash
 cd prosepal-ios
@@ -32,7 +32,7 @@ swift build
 
 A successful command ends with `Build complete!`.
 
-## 3. Run the Swift tests
+## 3. Run the native tests
 
 ```bash
 swift test
@@ -69,10 +69,10 @@ is deliberately separate; follow [Staging](./staging.md) before using it.
 ## What you built
 
 You now have a locally compiled Swift package, a passing test suite, and an iOS
-simulator build of the ProsePal target. Continue with:
+simulator build of the native ProsePal target. Continue with:
 
 - [Local development](./local-development.md)
-- [Architecture](../engineering/architecture.md)
+- [Native architecture](../engineering/architecture.md)
 - [Testing](../quality/testing.md)
 
 ## Troubleshooting

@@ -77,4 +77,4 @@ mismatched successful product probe is a setup failure, not a diagnosed runtime
 skip. Local StoreKit evidence never substitutes for sandbox/TestFlight product,
 purchase, restore, notification, or server-reconciliation evidence.
 
-See [iOS release](../operations/release.md) for the operational sequence.
+See [Native Release](../operations/release.md) for the operational sequence.

@@ -56,7 +56,7 @@ Changing the underlying moment invalidates stale generated output.
 
 ## Save, share, and delete
 
-- Copy and system sharing act on the current visible draft. Share opens the
+- Copy and native sharing act on the current visible draft. Share opens the
   system chooser; ProsePal neither promises a named destination nor treats
   opening or cancelling that chooser as a successful send.
 - Saving is deliberate; generation alone does not create visible history.

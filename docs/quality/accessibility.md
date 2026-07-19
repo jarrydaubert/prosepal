@@ -1,6 +1,6 @@
 # Accessibility Standard
 
-Accessibility is part of the product contract, not a final visual-polish
+Accessibility is part of the native product contract, not a final visual-polish
 pass. Every touched release surface should remain usable with Apple’s standard
 accessibility settings.
 

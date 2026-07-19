@@ -33,7 +33,7 @@ Detailed code and test evidence lives in
 | Undo and keep | Edits and rewrites create recoverable snapshots before replacing current text. |
 | Relaunch recovery | The active draft and its snapshot history can be recovered after an app restart. |
 | Copy | Copies the active message with visible confirmation. |
-| Share/send | Uses the system share sheet; the destination remains the user’s choice. |
+| Share/send | Uses the native share sheet; the destination remains the user’s choice. |
 | Save | Adds a draft to the local saved list only after an explicit user action. |
 
 ## Relationship memory
@@ -44,7 +44,7 @@ Detailed code and test evidence lives in
 | Voice Card | One user-written style example can guide future private drafting. |
 | Local vault | SwiftData stores relationship memory and saved drafts in an app-private, backup-excluded location. |
 | Honest saved-draft changes | Saved-draft edits report success only after SwiftData persists them; deletion requires confirmation and failed saves roll back without closing the detail. |
-| System sharing | Active and saved drafts expose one Copy action and one system Share action. ProsePal does not claim or force a destination and does not record a send when the chooser is cancelled. |
+| Native sharing | Active and saved drafts expose one Copy action and one system Share action. ProsePal does not claim or force a destination and does not record a send when the chooser is cancelled. |
 | Export | Settings can copy JSON or share a generated, named JSON file containing local relationship memory and saved drafts. |
 | Memory delete | Truth Bead and Voice Card deletion requires confirmation, reports persistence failure, and rolls back after a failed save. |
 
@@ -75,7 +75,7 @@ Detailed code and test evidence lives in
 
 ## System surfaces
 
-The project contains App Intent, Shortcuts, widget/control, and Share
+The project contains native App Intent, Shortcuts, widget/control, and Share
 Extension targets. These are optional v1 entry points: each ships only after its
 embedded production target passes release qualification. See
 [System surfaces](../engineering/system-surfaces.md) for the current handoff
@@ -83,7 +83,7 @@ boundary and staging limitation.
 
 ## Platform and dependency boundary
 
-- iOS target: iOS 26 and later.
+- Native target: iOS 26 and later.
 - UI: SwiftUI.
 - Local models: Foundation Models.
 - Storage: SwiftData and Keychain.

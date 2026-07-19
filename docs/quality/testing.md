@@ -10,8 +10,8 @@ project, or wall-clock race to pass.
 |---|---|---|
 | Swift package | Domain, API, concurrency, persistence, account, StoreKit, and observable-model behaviour | `cd prosepal-ios && swift test` |
 | App-hosted StoreKit | Real `StoreKitSubscriptionClient` against the local `.storekit` configuration, with xcresult count enforcement | `./scripts/run_storekit_release_gate.sh` |
-| iOS UI smoke | Durable first-run, navigation, generation-state, account, subscription-presentation, persistence, sharing/export, and accessibility-size journeys | `./scripts/run_native_ui_tests.sh smoke` |
-| iOS UI full | The smoke journeys plus destructive failure states, saved-draft reopening, generic share/export presentation, and generation-error recovery | `./scripts/run_native_ui_tests.sh full` |
+| Native UI smoke | Durable first-run, navigation, generation-state, account, subscription-presentation, persistence, sharing/export, and accessibility-size journeys | `./scripts/run_native_ui_tests.sh smoke` |
+| Native UI full | The smoke journeys plus destructive failure states, saved-draft reopening, generic share/export presentation, and generation-error recovery | `./scripts/run_native_ui_tests.sh full` |
 | Xcode simulator build | App target and embedded extension compilation | `xcodebuild ... CODE_SIGNING_ALLOWED=NO build` |
 | Edge Function | Handler validation, auth rejection, provider-call suppression, Apple account lifecycle, ledger outcomes, and logging hygiene | discover every `supabase/functions/**/*.test.ts` file and run them together with `deno test --allow-env` |
 | Database | Privileges, quota, idempotency, transition, retention, and cleanup contracts | `supabase test db` |
@@ -19,7 +19,7 @@ project, or wall-clock race to pass.
 | Release preflight | Repository policy, configuration, documentation, and workflow checks | `./scripts/release_preflight.sh native --no-env-file` |
 | Device/TestFlight | Apple, network, accessibility, system-surface, and sandbox behaviour | Private release evidence |
 
-## iOS gate
+## Native gate
 
 ```bash
 git diff --check
