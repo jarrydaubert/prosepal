@@ -207,8 +207,7 @@ completed item instead of turning this file into a status log.
   destinations into `Features/Settings/` with release UI automation; move the
   composer, candidate choice, generation states, revision, voice/share, and
   pickers into cohesive feature files during the approved three-option and
-  accessibility/core-flow work; then move `MomentModel` and the versioned draft
-  recovery boundary into their owning workflow files. DoD: every
+  accessibility/core-flow work. DoD: every
   region in the architecture map names a cohesive source file instead of the
   monolith; the original file is removed or has one reason to change; each
   extracted user-facing surface has a compiling `#Preview`; each moved region's

@@ -106,12 +106,12 @@ hierarchy wholesale.
 Xcode 26 and iOS 26 target.
 
 **Source and behaviour:**
-`prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift` still owns
-`MomentModel`, the active composer, relationship
-memory, plan, privacy/export, Apple sign-in, and paywall regions. Saved Drafts,
-Settings, root navigation, generating state, and guided-composer layout already
-demonstrate the desired feature-file pattern. The architecture region map and
-the shrink-only guardrails make ownership explicit.
+`prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift` still owns the
+active composer, relationship memory, and privacy/export regions.
+`Features/Moment/` owns `MomentModel` and active-draft recovery, while Saved
+Drafts, Settings, Paywall and plan presentation, root navigation, generating
+state, and guided-composer layout demonstrate the desired feature-file pattern.
+The architecture region map and shrink-only guardrails make ownership explicit.
 
 **Apple pattern and availability:** SwiftUI view composition, `NavigationStack`,
 toolbars, previews, and Observation are stable well below the iOS 26 target.
