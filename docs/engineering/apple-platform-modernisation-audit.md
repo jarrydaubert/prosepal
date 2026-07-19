@@ -1,28 +1,20 @@
 # Apple Platform Modernisation Audit
 
 This audit is the decision record for adopting Apple platform capabilities in
-the native ProsePal app. It evaluates the shipping source against the stable
-toolchain, identifies where native framework adoption reduces product or
+the ProsePal iOS app. It evaluates the shipping source against the stable
+toolchain, identifies where Apple framework adoption reduces product or
 maintenance risk, and preserves the boundaries that are intentionally
 ProsePal-owned. Unresolved implementation work is tracked in
 [the backlog](../BACKLOG.md).
 
 ## Verdict
 
-Continue the incremental SwiftUI migration. The module direction, provider-
-neutral service boundaries, Observation ownership, SwiftData container, and
-StoreKit transaction-listener foundation are sound. A new architecture or a
-big-bang rewrite would increase risk without addressing the release-critical
-gaps.
-
-Before broadening the migration, complete a correctness slice around four
-boundaries:
-
-1. make `MomentModel` the only owner of generation tasks and cancellation;
-2. complete Sign in with Apple and StoreKit account-integrity behaviour;
-3. replace simulated sharing destinations with truthful system presentation;
-4. add executable StoreKit and release-critical UI coverage, followed by real
-   device evidence for Apple-owned surfaces.
+Continue incremental feature extraction only as funded behaviour touches a
+surface. The module direction, provider-neutral service boundaries, Observation
+ownership, SwiftData container, model-owned generation lifecycle, truthful
+system sharing, and StoreKit transaction-listener foundation are sound. A new
+architecture or a big-bang rewrite would increase risk without addressing the
+remaining release-evidence gates.
 
 The highest-value platform work is therefore not visual novelty. It is using
 Apple's lifecycle, transaction, transfer, restoration, and test APIs to make
@@ -32,8 +24,7 @@ existing product promises deterministic.
 
 The source deployment target is iOS 26. The Swift package declares Swift tools
 6.2 and `.iOS(.v26)`; Xcode targets declare iOS 26.0 and Swift language mode
-6.0. The stable toolchain observed for this audit is Xcode 26.6 (build 17F113),
-Apple Swift 6.3.3, and the iOS Simulator 26.5 SDK.
+6.0.
 
 Recommendations are limited to APIs available in that stable toolchain.
 Documentation for iOS 27, Xcode 27, and APIs labelled Beta is evidence for
@@ -54,11 +45,11 @@ Priorities used below are:
 
 | Decision | Priority | Owning backlog scope |
 |---|---:|---|
-| Route every draft, retry, and rewrite through one model-owned task handle and cooperative cancellation path. | P0 | Native v1 core flow |
+| Route every draft, retry, and rewrite through one model-owned task handle and cooperative cancellation path. | P0 | V1 core flow |
 | Preserve an explicit unknown/error entitlement state instead of converting every StoreKit read failure to inactive. Add direct StoreKit Test coverage. | P0 | Auth, payments, and account integrity |
 | Forward the Apple authorization code, remove unused identity scopes, and handle credential revocation. | P0 | Auth, payments, and account integrity |
 | Keep one `AppShortcutsProvider` and verify extracted metadata from a production-like build. | P1 | Optional system surfaces |
-| Replace destination-labelled `ShareLink` controls with one truthful system share action; use `Transferable` for the JSON export. | P1 | Native v1 core flow |
+| Replace destination-labelled `ShareLink` controls with one truthful system share action; use `Transferable` for the JSON export. | P1 | V1 core flow |
 | Model mutually exclusive sheets as one presentation value while extracting their owning features; restore lightweight root/navigation state. | P1 | Root navigation and incremental decomposition |
 
 ### Stable APIs that need capability or product evidence
@@ -66,7 +57,7 @@ Priorities used below are:
 | Decision | Gate | Priority |
 |---|---|---:|
 | Trial `SubscriptionStoreView` inside the extracted paywall while retaining ProsePal marketing content and account-token policy. | Local StoreKit, sandbox/TestFlight, policy-link, accessibility, and account-convergence parity. | P2 |
-| Reintroduce voice dictation on `SpeechAnalyzer` with `SpeechTranscriber` and a `DictationTranscriber` fallback, behind its own transcriber protocol. Removed from v1 on 2026-07-14; post-v1 only. | Demonstrated demand, plus supported hardware, locale assets, permissions, final-result-on-Stop, offline, and cancellation evidence. | Post-v1 |
+| Reintroduce voice dictation on `SpeechAnalyzer` with `SpeechTranscriber` and a `DictationTranscriber` fallback, behind its own transcriber protocol. This remains post-v1 only. | Demonstrated demand, plus supported hardware, locale assets, permissions, final-result-on-Stop, offline, and cancellation evidence. | Post-v1 |
 | Replace string parameters in App Intents with typed entities or app enums. | The intent remains useful from real Shortcuts, Siri, widget, Control Center, and Action Button surfaces. | P2 |
 | Restore navigation paths beyond the root tab. | A stable, non-sensitive, Codable destination model exists for the extracted feature. | P2 |
 
@@ -185,7 +176,7 @@ VoiceOver UI coverage.
 
 ### A-04 — Structured concurrency, cancellation, and actors
 
-**Priority and decision:** P0, refactor before more composer migration.
+**Priority and decision:** P0 boundary; keep the current model-owned lifecycle.
 
 **Minimum/toolchain:** no deployment-target increase; use stable Swift
 concurrency in the installed Swift 6 toolchain.
@@ -355,8 +346,8 @@ transaction updates, server notification/reconciliation, and account switching.
 
 ### A-08 — System StoreKit views and paywall controls
 
-**Priority and decision:** P2, evaluate during paywall extraction; do not block
-the correctness work on a visual replacement.
+**Priority and decision:** P2, evaluate inside the extracted paywall feature; do
+not block correctness work on a visual replacement.
 
 **Minimum/toolchain:** `SubscriptionStoreView` requires iOS 17; no availability
 branch is needed for the iOS 26 target.
@@ -499,15 +490,16 @@ without destabilizing the app.
 
 ### A-12 — Sharing, `Transferable`, and export
 
-**Resolved locally 2026-07-14; physical-device chooser evidence remains.**
-Active and saved drafts now expose one Copy action and one SwiftUI `ShareLink`
-for the reviewed plain-text draft. The Messages, Mail, Notes, and More tiles,
-their destination-claiming diagnostics, and the saved-draft `[Any]` /
-`UIActivityViewController` bridge are removed. Opening or cancelling the system
-chooser records no destination or successful send. Only completed Copy remains
-eligible for generic action diagnostics.
+**Priority and decision:** P1, keep truthful system sharing and typed export;
+physical-device chooser evidence remains a release gate.
 
-Local-data export now uses a typed `MomentLocalDataExport: Transferable` with a
+**Source and behaviour:** Active and saved drafts expose one Copy action and one
+SwiftUI `ShareLink` for the reviewed plain-text draft. No destination-labelled
+controls or custom activity-controller bridge exists. Opening or cancelling the
+system chooser records no destination or successful send. Only completed Copy
+remains eligible for generic action diagnostics.
+
+Local-data export uses a typed `MomentLocalDataExport: Transferable` with a
 JSON `FileRepresentation`. It preserves the generated filename and the exact
 encoded bytes, writes into a dedicated temporary directory, cleans stale files
 before a new transfer and when leaving the export screen, and retains Copy JSON
@@ -519,27 +511,18 @@ returning. A physical iPhone must still prove that active text, saved text, and
 the named JSON file reach the system activity sheet and remain available after
 cancellation.
 
-**Original priority and decision:** P1, replace simulated destinations and
-generic UIKit bridges with system-native transfer types.
-
 **Minimum/toolchain:** `ShareLink` and `Transferable` require iOS 16; both are
 unconditional at the iOS 26 minimum.
-
-**Original source and behaviour (superseded):** `MomentDraftUseSheet` displayed
-Messages, Mail, Notes, and More tiles, but every tile was the same `ShareLink`
-for a string. `SavedMomentDraftDetailView` used `MomentShareSheet`, an `[Any]`
-wrapper around `UIActivityViewController`, and local-data export exposed only
-Copy JSON despite preparing a filename. These paths no longer exist.
 
 **Apple pattern and availability:** Present one truthful `ShareLink` for draft
 text. Make a small `Transferable` export value with `FileRepresentation` or
 `DataRepresentation` and a JSON content type, then share the named export file.
-Plain strings already conform to `Transferable`, so the saved-draft UIKit bridge
-can be removed. `ShareLink` and `Transferable` are available from iOS 16. See
+Plain strings already conform to `Transferable`, so no saved-draft UIKit bridge
+is required. `ShareLink` and `Transferable` are available from iOS 16. See
 Apple's [`ShareLink`](https://developer.apple.com/documentation/swiftui/sharelink)
 documentation.
 
-**Benefit, risk, dependencies, and evidence:** This removes misleading product
+**Benefit, risk, dependencies, and evidence:** This avoids misleading product
 claims, UIKit type erasure, and clipboard-only export while preserving the
 system activity sheet and review-before-send. Sharing must never imply that a
 message was sent. Test cancellation, copy/save/share diagnostics, exported file
@@ -548,38 +531,21 @@ presentation on a device.
 
 ### A-13 — Speech and dictation
 
-**Resolved 2026-07-14 by removing the feature from v1, not by fixing it.**
-Voice dictation is not required to write a message, and it was the only reason
-the app requested microphone and speech-recognition permission. Removing it
-deletes the lost-final-word defect described below, both usage descriptions, the
-`SFSpeechRecognizer` lifecycle, and a physical-device release-evidence
-dependency, at the cost of a convenience input that duplicated the keyboard.
-`MomentVoiceCapture.swift` and its sheet, model wiring, and tests are gone; no
-executable requests either permission. Reintroduction is a post-v1 backlog item,
-owned by its own file and transcriber protocol and built on stable
-`SpeechAnalyzer`/`DictationTranscriber` APIs. The original finding is retained
-below as the rationale for that removal and as the specification any future
-reintroduction must satisfy.
-
-**Original priority and decision (superseded):** keep the protocol boundary; P1
-to prove/fix final result on Stop, P2 for a `SpeechAnalyzer` implementation.
+**Priority and decision:** Post-v1 only. Reintroduce voice input only after
+demonstrated demand and behind its own transcriber protocol and source boundary.
 
 **Minimum/toolchain:** `SpeechAnalyzer` and its stable transcriber modules
 require iOS 26 and the stable Xcode 26 SDK; do not use beta-only live-capture
 helpers.
 
-**Source and behaviour:** `MomentVoiceCapture` isolates speech behind
-`MomentVoiceCaptureTranscribing`, requires on-device recognition, uses explicit
-speech and microphone permission, and never treats voice as an automatic send.
-The `SFSpeechRecognizer` implementation calls `endAudio()` and `finish()`, then
-immediately clears the recognition task and transcript callback. A person-
-initiated Stop can therefore discard a final result that arrives after audio
-ends; the model marks capture finished immediately. Unit tests cover model state
-with a stub but not this live finalization sequence.
+**Source and behaviour:** Voice dictation is absent from the app. No executable
+requests microphone or speech-recognition permission, and the app declares
+neither usage description. The post-v1 backlog owns any reintroduction.
 
-**Apple pattern and availability:** Separate graceful finish from cancellation,
-await or callback the final transcript with a bounded completion policy, and
-reserve immediate teardown for reset/cancel. `SpeechAnalyzer`,
+**Apple pattern and availability:** A future implementation must separate
+graceful finish from cancellation, await or callback the final transcript with
+a bounded completion policy, and reserve immediate teardown for reset/cancel.
+`SpeechAnalyzer`,
 `SpeechTranscriber`, asset inventory, and `DictationTranscriber` fallback are
 stable iOS 26 APIs; current Apple documentation also lists newer live-capture
 helpers as Beta, so use `AVAudioEngine` input with the stable analyzer APIs if
@@ -587,11 +553,10 @@ prototyping. See the [Speech framework](https://developer.apple.com/documentatio
 and [`SpeechAnalyzer`](https://developer.apple.com/documentation/speech/speechanalyzer).
 
 **Benefit, risk, dependencies, and evidence:** A bounded graceful finish avoids
-lost last words. The analyzer can improve modern concurrency and result
-handling, but asset download, hardware, and locale support can reduce
+lost last words, but asset download, hardware, and locale support can reduce
 availability. Test volatile/final results, Stop versus Cancel, locale and asset
 fallback, interruption, offline behaviour, permissions, backgrounding, and
-supported devices before replacing the existing path.
+supported devices before shipping a new path.
 
 ### A-14 — Previews, XCTest, Swift Testing, and UI automation
 
@@ -603,8 +568,8 @@ by the package's Swift 6 toolchain, and StoreKit Test requires Xcode 12 or later
 the installed Xcode 26 toolchain satisfies all three.
 
 **Source and behaviour:** Root navigation, onboarding, generating, guided
-composer, Settings, and Saved Drafts have deterministic `#Preview` coverage.
-Paywall, privacy/export, relationship-memory detail, and other
+composer, Settings, Saved Drafts, Paywall, and plan detail have deterministic
+`#Preview` coverage. Privacy/export, relationship-memory detail, and other
 monolith regions do not have independently compiling previews. Package tests
 mix Swift Testing and XCTest appropriately for deterministic model and service
 boundaries. `ProsePalStoreKitTests` directly exercises the real subscription
@@ -612,8 +577,7 @@ client through StoreKit Test, but its release gate remains open on the current
 runtime because a successful probe returns no configured products. The result
 is now a setup failure, not an inferred Apple-runtime skip. Several
 source-string tests temporarily assert navigation and system-surface wiring.
-The test that pinned destination-labelled sharing was removed in A-12 and
-replaced with behavioral action, telemetry-policy, accessibility-contract, and
+Sharing has behavioral action, telemetry-policy, accessibility-contract, and
 export-file tests plus a negative diagnostics invariant.
 
 **Apple pattern and availability:** Keep Swift Testing for value/model tests and
@@ -625,7 +589,7 @@ whenever a user-facing region is extracted. SwiftUI's
 and [StoreKit Test](https://developer.apple.com/documentation/storekittest)
 support these layers.
 
-**Benefit, risk, dependencies, and evidence:** `ProsePalNativeUITests` now uses
+**Benefit, risk, dependencies, and evidence:** `ProsePalNativeUITests` uses
 stable identifiers and a DEBUG-only deterministic composition seam for durable
 first-run, navigation, generation-state, account, subscription-presentation,
 persistence, sharing/export, and accessibility-size journeys. Pull requests run
@@ -680,9 +644,9 @@ bundle and submission requirement supported by the stable Xcode 26 toolchain.
 **Source and behaviour:** The app and share-extension executables contain
 `PrivacyInfo.xcprivacy` files declaring their UserDefaults required-reason use;
 the Xcode project embeds the production and staging variants. The widget does
-not call a covered required-reason API in its source. Since voice dictation was
-removed on 2026-07-14 the app declares no microphone or speech-recognition usage
-description, and no executable requests either permission; App Store privacy
+not call a covered required-reason API in its source. The app declares no
+microphone or speech-recognition usage description, and no executable requests
+either permission; App Store privacy
 answers must not claim them. Tests validate manifest content and
 project embedding. Data/privacy docs prohibit sensitive logs and define local
 export/deletion boundaries.
@@ -702,23 +666,14 @@ message text, tokens, receipts, or shared payloads.
 
 ## Platform adoption sequence
 
-### Phase 0 — correctness before migration breadth
+### Phase 1 — incremental feature extraction
 
-1. Introduce explicit StoreKit entitlement unknown/status handling and direct
-   StoreKit Test automation; prove server/account convergence separately.
-2. Replace misleading share destinations and add a file-based transferable
-   export.
-3. Add the release-critical UI-test target. (Graceful voice finalization is no
-   longer a v1 item: dictation was removed from v1 on 2026-07-14.)
-
-### Phase 1 — extract around the corrected boundaries
-
-Extract relationship memory, plan/paywall, privacy/export, auth, share,
-and composer regions only as their funded behaviour is touched. Each extraction
+Extract relationship memory, privacy/export, auth, share, and composer regions
+only as their funded behaviour is touched. Each extraction
 gets one owner, a deterministic preview, behavioural or view coverage, system
 toolbar/presentation conventions, and a corresponding region-map update.
 
-### Phase 2 — evidence-gated native surfaces
+### Phase 2 — evidence-gated platform surfaces
 
 Trial `SubscriptionStoreView`, typed App Intent parameters,
 and deeper navigation restoration inside their extracted features. (`SpeechAnalyzer`
@@ -730,11 +685,3 @@ meet or exceed the existing path.
 
 Use a separate provider-neutral experiment for iOS 27 capabilities. Beta APIs
 must not enter production architecture merely because documentation is public.
-
-## Recommended next implementation goal
-
-Make StoreKit entitlement uncertainty explicit and add direct StoreKit Test
-automation, then prove account/entitlement convergence in sandbox and
-TestFlight. The Sign in with Apple lifecycle is complete to local deterministic
-scope; release still requires external environment evidence, not another native
-architecture change.

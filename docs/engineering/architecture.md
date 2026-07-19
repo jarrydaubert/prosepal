@@ -1,4 +1,4 @@
-# Native Architecture
+# Architecture
 
 ProsePal is an iOS 26-first SwiftUI application with a Swift package supplying
 domain, service, and UI modules. The app target composes concrete Apple and
@@ -78,7 +78,7 @@ for persistence, migration, export, and prompt-memory rules.
 
 ## Concurrency and cancellation
 
-The native package uses Swift 6 concurrency. Actor-isolated session, request-key,
+The Swift package uses Swift 6 concurrency. Actor-isolated session, request-key,
 and model state serialize shared mutations. `GenerationTimeoutPolicy` applies
 per-lane budgets inside one total technical deadline; structured task groups
 cancel the losing operation before any eligible fallback begins. Private and
@@ -175,7 +175,7 @@ helpers instead of moving unrelated code or attempting a big-bang rewrite.
 | Widget and Control | `Widgets/ProsePalWidgets.swift`: staging-aware widget/control identifiers and app-opening URLs |
 | Incoming system share | `ShareExtension/ShareViewController.swift`: provider loading, sanitization, preview, app-group handoff, and extension completion |
 | Outgoing draft share | Active and saved draft views use SwiftUI `ShareLink` with plain transferable text; `ProsePalUI/Support/MomentSharing.swift` owns their destination-neutral action and diagnostics policy |
-| Voice transcription | Not in v1. Dictation was removed on 2026-07-14 along with its microphone and speech-recognition usage descriptions; no executable requests either permission. Reintroduction is a post-v1 backlog item owned by its own file and transcriber protocol. |
+| Voice transcription | Not in v1. The app declares no microphone or speech-recognition usage descriptions, and no executable requests either permission. Reintroduction is a post-v1 backlog item owned by its own file and transcriber protocol. |
 
 Stable-toolchain adoption decisions and evidence gates for these owners are in
 the [Apple platform modernisation audit](./apple-platform-modernisation-audit.md).

@@ -104,20 +104,6 @@ Database contract test: `supabase test db` runs
 `SECURITY INVOKER`, stable volatility, restricted `search_path`, and
 anon-executable grant.
 
-## Status (2026-07-16)
-
-- Staging runtime is proven: the migration is applied to the staging project
-  and the smoke script returned HTTP 200 with a server timestamp through the
-  public anon key, independently verified.
-- The pgTAP contract test has not yet run because Docker was unavailable on
-  the authoring machine; run `supabase test db` on the next local stack
-  session.
-- GitHub scheduling becomes operational only after the two staging repository
-  secrets are added.
-- Production remains behind explicit approval: its migration is not applied,
-  its secrets are not set, and `KEEPALIVE_PRODUCTION_ENABLED` stays unset
-  until approval.
-
 ## Failure and recovery
 
 1. A red `Supabase keepalive` run names the failed environment in its error
