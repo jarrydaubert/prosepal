@@ -147,7 +147,7 @@ inside the monolith:
 
 | Region | Owning file and symbols |
 |---|---|
-| Draft state and relaunch recovery | `MomentExperienceView.swift`: `MomentDraftRecoveryState`, `MomentDraftRecoveryStoring`, `MomentDraftRecoveryStore`, `MomentModel`; `MomentDraftUnavailableNotice.swift`: typed unavailable reason and presentation contract |
+| Draft workflow and relaunch recovery | `Features/Moment/MomentModel.swift`: `MomentModel`, its retained generation task, request state, cancellation identity, snapshot coordination, and diagnostics orchestration; `Features/Moment/MomentDraftRecovery.swift`: versioned recovery state, storage protocol, no-op store, and `UserDefaults` store; `MomentDraftUnavailableNotice.swift`: typed unavailable reason and presentation contract; `ProsePalAPI/MessageWritingService.swift`: writing-service boundary and routing behaviour |
 | Active-draft action presentation | `MomentExperienceView.swift`: visible Copy, `ShareLink`, and Save actions on the reviewed draft; `Support/MomentSharing.swift`: shared action, accessibility-identifier, and diagnostics policy |
 | App-root navigation and welcome state | `MomentAppRootView.swift`: `MomentAppRootView`, `MomentRootTabs`, `MomentRootTab`, `MomentWelcomeState` |
 | Core Moment composer and generated-draft experience | `MomentExperienceView.swift`: `MomentSheetView`, including loading, retry, refusal, revision, pressure feedback, memory controls, copy/share/save, and draft history; `MomentGuidedComposerLayout.swift`: the type-erased guided-composer layout and numbered step shell |
