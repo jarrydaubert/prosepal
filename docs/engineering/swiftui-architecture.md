@@ -1,12 +1,12 @@
 # SwiftUI Architecture Standard
 
-This document defines how ProsePal's native SwiftUI code is organised and how
+This document defines how ProsePal's SwiftUI code is organised and how
 features evolve. It is a repository-specific standard, not an architecture
 acronym. The default is plain SwiftUI views, Observation-backed state, explicit
 dependencies, provider-neutral services, and small testable contracts.
 
 The module-level dependency direction remains defined in
-[Native architecture](./architecture.md). This document owns the conventions
+[Architecture](./architecture.md). This document owns the conventions
 inside `ProsePalUI` and the seams between UI, domain, services, persistence, and
 the app target.
 
@@ -52,7 +52,9 @@ Current extracted feature ownership is intentionally small and concrete:
 
 | Feature | Ownership |
 |---|---|
-| `Features/Settings/` | Settings shell, truthful static-row presentation, account/subscription entry actions, and deterministic preview setup. Destinations still named in the migration map remain transitional dependencies. |
+| `Features/Moment/` | `MomentModel`, its generation lifecycle and cancellation identity, snapshot coordination, diagnostics orchestration, and the versioned active-draft recovery stores. These are nonvisual workflow boundaries and do not require `#Preview` coverage. |
+| `Features/Paywall/` | Paywall and plan-detail presentation, their pure presentation contracts and feature-private rows, local sheet state, and deterministic previews. StoreKit and account behaviour remain in `MomentAccountModel` and `ProsePalAPI`. |
+| `Features/Settings/` | Settings shell, truthful static-row presentation, account/subscription entry actions, and deterministic preview setup. Privacy/export and authentication destinations remain transitional dependencies. |
 | `Features/SavedDrafts/` | SwiftData query ownership, local search and disclosure state, list/detail navigation, edit/delete persistence coordination, feature components, and deterministic list/detail previews. The persisted `SavedMomentDraftRecord` and versioned schema remain owned by `ProsePalAPI`. |
 
 Shared empty, hero, and detail-card presentation used by more than one feature
@@ -130,7 +132,8 @@ drafts. Schema changes go through `RelationshipVaultSchema` and
 contract without the corresponding versioned migration.
 
 Active draft recovery is a separate, versioned recovery envelope owned by
-`MomentDraftRecoveryState`, `MomentDraftRecoveryStoring`, and `MomentModel`. It
+`Features/Moment/MomentDraftRecovery.swift` (`MomentDraftRecoveryState` and
+`MomentDraftRecoveryStoring`) and `Features/Moment/MomentModel.swift`. It
 must not silently become saved history. The workflow model decides when a state
 is recoverable and when stale recovery is cleared; a view only reports user
 intent.

@@ -1,7 +1,7 @@
-# How to Release Native iOS
+# How to Release ProsePal for iOS
 
-This runbook covers archive, TestFlight, and App Store release work for the
-native iOS app.
+This runbook covers archive, TestFlight, and App Store release work for the iOS
+app.
 
 ## Prerequisites
 
@@ -15,8 +15,7 @@ native iOS app.
 
 ## Production identity
 
-The native rewrite uses the existing ProsePal App Store Connect app and bundle
-ID:
+ProsePal uses the existing App Store Connect app and bundle ID:
 
 ```text
 com.prosepal.prosepal
@@ -118,8 +117,8 @@ simulator result as live sandbox evidence.
 
 ## Rollback
 
-Before native replacement is approved, keep the archived Flutter tag and branch
-available as production-reference context:
+Keep the archived Flutter tag and branch available as production-reference
+context:
 
 - tag `flutter-prod-freeze-2026-06-25`
 - branch `legacy/flutter-production-reference`

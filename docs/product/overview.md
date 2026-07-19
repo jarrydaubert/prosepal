@@ -1,6 +1,6 @@
 # Product Overview
 
-ProsePal is a native iOS app for writing thoughtful personal messages. It helps
+ProsePal is an iOS app for writing thoughtful personal messages. It helps
 someone move from “I need to say this properly” to a message they are ready to
 send, without turning the experience into a chatbot or a document editor.
 
@@ -55,7 +55,7 @@ ProsePal is for short personal messages. It is not:
 
 Models and the gateway may refuse unsafe requests. The app presents those
 refusals safely, but custom crisis classification is outside the product’s
-native-v1 scope.
+v1 scope.
 
 ## Business model
 

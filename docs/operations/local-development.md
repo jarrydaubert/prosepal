@@ -1,11 +1,11 @@
 # How to Work Locally
 
 This runbook covers the daily development and validation workflow for the
-native SwiftUI app and its Supabase server boundaries.
+SwiftUI app and its Supabase server boundaries.
 
-## Native validation
+## iOS validation
 
-Run after native code changes:
+Run after iOS code changes:
 
 ```bash
 git diff --check
@@ -61,7 +61,7 @@ python3 scripts/validate_feature_status.py
 python3 scripts/export_feature_status_csv.py --check
 ```
 
-The documentation validator and native release preflight run the same ledger
+The documentation validator and release preflight run the same ledger
 validation, so a stale CSV or invalid evidence reference fails CI.
 Keep records in ID order and never renumber an existing feature. A deliberate
 feature addition or removal also updates `EXPECTED_RECORD_COUNT` in
@@ -119,7 +119,7 @@ and latency only.
 
 ## Failure handling
 
-- Native compile failure: reproduce with the smallest required command and fix
+- iOS compile failure: reproduce with the smallest required command and fix
   source before running broad preflight again.
 - Local Supabase failure: check `supabase status`; do not switch to a remote
   project to make a local test pass.

@@ -35,7 +35,7 @@ evidence.
 
 ## 2. Run deterministic checks first
 
-Run the ordinary native and gateway gates before judging prose:
+Run the ordinary app and gateway gates before judging prose:
 
 ```bash
 cd prosepal-ios

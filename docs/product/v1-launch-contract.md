@@ -1,12 +1,12 @@
-# Native V1 Launch Contract
+# V1 Launch Contract
 
-This document defines what the native ProsePal rewrite must be able to do at
+This document defines what the ProsePal iOS app must be able to do at
 launch. Unresolved implementation and release work belongs only in
 [the backlog](../BACKLOG.md).
 
 ## Core loop
 
-Native v1 is ready when this loop is reliable on a supported iPhone:
+V1 is ready when this loop is reliable on a supported iPhone:
 
 1. Open the app without a mandatory account or paywall.
 2. Name the person, explicitly confirm the relationship, and choose the moment.
@@ -41,7 +41,7 @@ V1 also includes:
 
 ## Architecture boundary
 
-- The native app lives in `prosepal-ios/`.
+- The iOS app lives in `prosepal-ios/`.
 - SwiftUI depends on `MessageWritingService`, not a provider SDK.
 - Private Draft is the everyday on-device lane where Foundation Models is
   available.
@@ -64,7 +64,7 @@ V1 also includes:
 - Never require app sign-in before purchase.
 - Never ship controls whose visible promise is not implemented.
 - Never invent usage amounts, reset dates, retry state, or configuration state.
-- Never put provider SDKs or provider-specific product language in the native
+- Never put provider SDKs or provider-specific product language in the iOS
   client.
 - Never turn the narrow defensive refusal path into a custom crisis-assessment
   programme for v1.
@@ -107,10 +107,10 @@ production composer/result work starts only after that recorded decision.
 - Android rewrite work.
 - Flutter screen parity.
 - A client-direct Firebase AI or provider-SDK path.
-- RevenueCat in the native app.
+- RevenueCat in the iOS app.
 - A forced first-run paywall.
 - Three mandatory dialog screens or an unskippable personalisation interview.
-- Template-generated messages as a native runtime fallback.
+- Template-generated messages as an app runtime fallback.
 - Full Dark Mode, broad localization, or bespoke iPad product design as launch
   blockers unless the release scope is changed deliberately.
 - Manuscripts, projects, characters, worldbuilding, or generic document tools.

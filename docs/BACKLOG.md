@@ -202,9 +202,9 @@ completed item instead of turning this file into a status log.
 - [ ] Decompose `MomentExperienceView.swift` incrementally while completing
   funded v1 work; do not run a separate big-bang rewrite. The remaining
   migration map is: move the memory library and details into
-  `Features/RelationshipMemory/` with persistence/UI automation; move plan,
-  privacy/export, authentication, and paywall
-  destinations into `Features/Settings/` with release UI automation; move the
+  `Features/RelationshipMemory/` with persistence/UI automation; move
+  privacy/export and authentication destinations into cohesive feature files
+  with release UI automation; move the
   composer, candidate choice, generation states, revision, voice/share, and
   pickers into cohesive feature files during the approved three-option and
   accessibility/core-flow work. DoD: every
@@ -276,15 +276,9 @@ completed item instead of turning this file into a status log.
 
 ## Native V1 — Auth, Payments, And Account Integrity
 
-- [ ] Prove the completed Apple account lifecycle and deletion flow in deployed
-  environments. Staging evidence obtained 2026-07-16: the four Apple server
-  secrets are configured, real-device Sign in with Apple succeeded, revocation
-  material stored through the deployed `exchange-apple-token` without
-  redeployment, real-device account deletion succeeded server-side, and
-  read-only staging verification confirmed no remaining rows in `auth.users`,
-  `apple_credentials`, `user_usage`, `user_entitlements`, or user-scoped
-  rate-limit records. Remaining DoD: a fresh physical-device run against
-  commits 7c0cb2f and a47a705 re-proves the coordinated clean-state reset —
+- [ ] Prove the Apple account lifecycle and deletion flow in production-like
+  environments. DoD: a fresh physical-device run re-proves the coordinated
+  clean-state reset —
   confirmed deletion emits the `account_deletion_*` outcome events, returns
   the app to onboarding, unmounts the previous Write/Settings surfaces, and a
   fresh sign-in (and relaunch) shows no saved drafts, relationship memory,
@@ -349,11 +343,9 @@ completed item instead of turning this file into a status log.
   "Native" must not imply a second live app or appear as unexplained product
   vocabulary. DoD: user-facing copy such as the "Native iOS" row value in
   `MomentSettingsComponents.swift` is replaced with clear product language;
-  active architecture, app guide, feature-status, release, and operational
-  documentation describe the app simply as ProsePal or the iOS app; frozen
-  historical records remain clearly marked as historical. `AGENTS.md` and
-  `CLAUDE.md` are already done: they no longer call the app a "rewrite" and now
-  record that remaining "Native" names are historical residue.
+  remaining `Native*` uses are explicit developer-facing compatibility names or
+  Apple-platform capability descriptions; frozen historical records remain
+  clearly marked as historical.
 
 - [ ] Audit and retire obsolete pre-release compatibility and configuration
   residue. Inspect legacy draft values, removed feature flags and vocabulary,
@@ -403,7 +395,7 @@ completed item instead of turning this file into a status log.
   and `ProsePalNativePackageTests` target names, the `release_preflight.sh native`
   positional argument and its two CI call sites, "Native V1" backlog headings, and
   runbook filenames. Trigger: after v1 ships. This is aesthetics with no expiry
-  date, unlike the persisted-identifier item, and it touches ~120 files. DoD: the
+  date, unlike the persisted-identifier item. DoD: the
   cleanup is intentionally scoped, preserves useful git history where practical,
   updates every build/CI reference, and is not allowed to delay v1 merely for
   naming aesthetics.
@@ -444,9 +436,9 @@ completed item instead of turning this file into a status log.
   decision.
 
 - [ ] Reconsider voice dictation as an independently owned post-v1 feature.
-  Voice input was removed from v1 on 2026-07-14: it is not required to write a
-  message, and it carried microphone/speech permissions, speech lifecycle risk,
-  and physical-device release evidence that v1 does not need. Trigger: after v1,
+  Voice input is not part of v1: it is not required to write a message, and it
+  would add microphone/speech permissions, speech lifecycle risk, and physical-
+  device release evidence that v1 does not need. Trigger: after v1,
   and only if people actually ask to speak the moment detail. DoD: the feature is
   reintroduced behind its own transcriber protocol boundary in its own file, not
   in the Moment monolith; it is built on stable Apple speech APIs (`SpeechAnalyzer`
@@ -459,9 +451,9 @@ completed item instead of turning this file into a status log.
   ships a reachable control that needs them.
 
 - [ ] Evaluate replacing custom subscription purchase controls with
-  `SubscriptionStoreView` when the paywall region is extracted. Trigger: after
-  v1, or earlier only if the current paywall cannot satisfy release evidence or
-  App Review. DoD: branded system controls preserve the existing hero,
+  `SubscriptionStoreView` inside `Features/Paywall/`. Trigger: after v1, or
+  earlier only if the current paywall cannot satisfy release evidence or App
+  Review. DoD: branded system controls preserve the existing hero,
   entitlement listener, restore path, and `appAccountToken` boundary; localized
   products, policies, purchase, restore, cancellation, accessibility, and
   sandbox/TestFlight convergence pass before replacement.

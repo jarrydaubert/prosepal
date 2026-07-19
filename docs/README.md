@@ -1,6 +1,6 @@
 # ProsePal Documentation
 
-This is the canonical index for the native iOS product. Every active document
+This is the canonical index for the ProsePal iOS product. Every active document
 is reachable from this page and has one job. Open work belongs only in
 [BACKLOG.md](./BACKLOG.md).
 
@@ -8,13 +8,13 @@ is reachable from this page and has one job. Open work belongs only in
 
 | If you want to… | Read |
 |---|---|
-| Understand the app in plain English | [Native app guide](./guide/app-guide.html) |
+| Understand the app in plain English | [App guide](./guide/app-guide.html) |
 | Know exactly what v1 launches with | [V1 launch contract](./product/v1-launch-contract.md) |
 | See what the app can do | [Capabilities](./product/capabilities.md) |
-| Understand the codebase | [Native architecture](./engineering/architecture.md) |
+| Understand the codebase | [Architecture](./engineering/architecture.md) |
 | Build the app for the first time | [Getting started](./operations/getting-started.md) |
 | Work with staging | [Staging](./operations/staging.md) |
-| Prepare a release | [Native release](./operations/release.md) |
+| Prepare a release | [iOS release](./operations/release.md) |
 | Find unresolved work | [Backlog](./BACKLOG.md) |
 
 ## Product
@@ -23,14 +23,14 @@ is reachable from this page and has one job. Open work belongs only in
   business model, and boundaries.
 - [V1 launch contract](./product/v1-launch-contract.md) — the narrow launch
   contract and non-goals.
-- [Capabilities](./product/capabilities.md) — current native behaviour without
+- [Capabilities](./product/capabilities.md) — current app behaviour without
   roadmap claims.
 - [User journeys](./product/user-journeys.md) — expected user-visible flows and
   integrity rules.
 
 ## Engineering
 
-- [Native architecture](./engineering/architecture.md) — modules, state,
+- [Architecture](./engineering/architecture.md) — modules, state,
   dependencies, concurrency, and data boundaries.
 - [SwiftUI architecture standard](./engineering/swiftui-architecture.md) —
   feature folders, state ownership, navigation, persistence, concurrency,
@@ -55,12 +55,12 @@ is reachable from this page and has one job. Open work belongs only in
 ## Operations
 
 - [Getting started](./operations/getting-started.md) — clean checkout to first
-  successful native build.
+  successful app build.
 - [Local development](./operations/local-development.md) — daily validation,
   CI, debugging, and failure handling.
 - [Staging](./operations/staging.md) — internal target, secrets, guarded
   Supabase operations, device signing, and smoke proof.
-- [Native release](./operations/release.md) — archive, TestFlight, acceptance,
+- [iOS release](./operations/release.md) — archive, TestFlight, acceptance,
   failure handling, and rollback.
 - [Service ownership](./operations/service-ownership.md) — operational
   separation, identities, billing, secrets, and recovery ownership.
@@ -74,7 +74,7 @@ is reachable from this page and has one job. Open work belongs only in
   deterministic or approved live writing-quality review.
 - [Writing quality rubric](./quality/writing-quality-rubric.md) — versioned
   scoring criteria, synthetic scenarios, and scorer rules.
-- [Accessibility](./quality/accessibility.md) — native accessibility standard
+- [Accessibility](./quality/accessibility.md) — app accessibility standard
   and release matrix.
 - [Release evidence](./quality/release-evidence.md) — private evidence contract
   for non-local proof.

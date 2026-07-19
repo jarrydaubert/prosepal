@@ -65,16 +65,11 @@ hand-substitute a different spelling such as a bare `App/ProsePalStaging.storeki
 the dropdown, remove the StoreKit reference from the scheme entirely, reopen
 Xcode, and re-select the file so Xcode rewrites a single clean reference.
 
-The scheme path is **not** a cause of zero products. A clean-room experiment
-(Xcode 26.6, iOS 26.4 and 26.5 simulators) showed that a brand-new minimal
-configuration with a single unrelated product also returns zero, with
-`SKTestSession` failing at `[SKTestSession] Error saving configuration file:
-Error Domain=SKInternalErrorDomain Code=3`. That is an Xcode/StoreKit
-test-runtime failure — the simulator's `storekitd` cannot persist the test
-configuration — independent of the `.storekit` contents, the scheme path, the
-runtime version, and a freshly erased simulator. When products come back empty,
-suspect the StoreKit test runtime, not this configuration. The correct proving
-grounds are Apple sandbox or TestFlight (see below).
+The scheme path is not sufficient to diagnose a zero-product result. If
+`SKTestSession` reports `SKInternalErrorDomain` code `3` while saving the
+configuration, the StoreKit test runtime could not persist it. An empty product
+result without that exact error remains a setup failure. Production product
+availability must be proved through Apple sandbox or TestFlight (see below).
 
 Local StoreKit testing is independent of App Store Connect. Verifying the real
 production products requires the production bundle against Apple sandbox or
@@ -228,11 +223,6 @@ reports a server-unavailable error even though the Supabase token exchange
 itself succeeded. These must be configured as function secrets (never in the app
 bundle or a scheme); the private key is the `.p8` contents with real newlines or
 `\n` escapes.
-
-Staging status (2026-07-16): all four secrets are configured, real-device Sign
-in with Apple succeeded, revocation material stored successfully, and
-`exchange-apple-token` worked without redeployment. Treat this section as setup
-guidance for new environments, not a current staging blocker.
 
 ## DNS and inactive projects
 

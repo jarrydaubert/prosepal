@@ -144,4 +144,4 @@ candidate rather than weakening the app.
 
 - [User journeys](../product/user-journeys.md)
 - [Testing](../quality/testing.md)
-- [Native release](../operations/release.md)
+- [iOS release](../operations/release.md)
