@@ -56,6 +56,7 @@ Current extracted feature ownership is intentionally small and concrete:
 | `Features/Paywall/` | Paywall and plan-detail presentation, their pure presentation contracts and feature-private rows, local sheet state, and deterministic previews. StoreKit and account behaviour remain in `MomentAccountModel` and `ProsePalAPI`. |
 | `Features/Settings/` | Settings shell, truthful static-row presentation, account/subscription entry actions, and deterministic preview setup. Privacy/export and authentication destinations remain transitional dependencies. |
 | `Features/SavedDrafts/` | SwiftData query ownership, local search and disclosure state, list/detail navigation, edit/delete persistence coordination, feature components, and deterministic list/detail previews. The persisted `SavedMomentDraftRecord` and versioned schema remain owned by `ProsePalAPI`. |
+| `Features/RelationshipMemory/` | The saved-memory library and its search state, both record editors, their feature-private detail chrome, the rollback-safe save/delete seam, and deterministic library/editor previews. The persisted records and versioned schema remain owned by `ProsePalAPI`; the composer's own memory controls remain in `MomentExperienceView.swift`. |
 
 Shared empty, hero, and detail-card presentation used by more than one feature
 lives in `Components/`. `Support/MomentSharing.swift` owns the pure Copy/Share

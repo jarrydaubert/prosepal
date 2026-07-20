@@ -137,7 +137,8 @@ struct MomentSettingsView: View {
                     settingsNavigationRow(
                         systemImage: "checkmark.seal",
                         title: "Relationship memory",
-                        subtitle: account.runtimeReadiness.isRelationshipVaultPersistent ? "Stored on device" : "Temporary"
+                        subtitle: account.runtimeReadiness.isRelationshipVaultPersistent ? "Stored on device" : "Temporary",
+                        accessibilityIdentifier: "settings.relationshipMemory"
                     ) {
                         RelationshipMemoryVaultView()
                     }
