@@ -266,8 +266,12 @@ func failedRelationshipMemoryEditRollsBackAndPropagatesTheFailure() {
     #expect(didRollback)
 }
 
+// The composer's own memory rows still live in the transitional monolith, so
+// this guard covers only that half. The extracted detail editors are covered
+// by their behavioural seam tests above and by the destructive-confirmation UI
+// automation in ProsePalNativeUITests, not by inspecting their source.
 @Test
-func relationshipMemoryDeletionRequiresConfirmationAndSurfacesFailure() throws {
+func composerMemoryDeletionRoutesThroughExplicitConfirmation() throws {
     let source = try String(
         contentsOf: packageRoot.appending(path: "Sources/ProsePalUI/MomentExperienceView.swift"),
         encoding: .utf8
@@ -276,14 +280,8 @@ func relationshipMemoryDeletionRequiresConfirmationAndSurfacesFailure() throws {
     #expect(source.contains("pendingMemoryDeletion = .truthBead(bead)"))
     #expect(source.contains("pendingMemoryDeletion = .voiceCard(voiceCard)"))
     #expect(source.contains("\"Delete saved memory?\""))
-    #expect(source.contains("\"Delete saved detail?\""))
-    #expect(source.contains("\"Delete saved voice card?\""))
     #expect(source.contains("Button(\"Cancel\", role: .cancel)"))
     #expect(source.contains("model.resetDraftForMomentChange()"))
-    #expect(source.contains("Could not delete this detail. It is still saved."))
-    #expect(source.contains("Could not delete this voice card. It is still saved."))
-    #expect(source.contains("Could not save this detail. Your previous version is still saved."))
-    #expect(source.contains("Could not save this voice card. Your previous version is still saved."))
 }
 
 @Test

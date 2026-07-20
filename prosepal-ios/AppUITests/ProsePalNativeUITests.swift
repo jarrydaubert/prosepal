@@ -11,6 +11,7 @@ class ProsePalNativeUITestCase: XCTestCase {
         case accountDeletionSuccess = "account-deletion-success"
         case accountDeletionFailure = "account-deletion-failure"
         case accountDeletionIndeterminate = "account-deletion-indeterminate"
+        case relationshipMemory = "relationship-memory"
     }
 
     var app: XCUIApplication!
@@ -195,6 +196,44 @@ class ProsePalNativeUITestCase: XCTestCase {
         tapRootTab("Write", file: file, line: line)
         let person = assertExists("composer.person", file: file, line: line)
         XCTAssertEqual(person.value as? String, expectedAccessibilityValue, file: file, line: line)
+    }
+
+    func openRelationshipMemoryVault() {
+        openSettings()
+        tap("settings.relationshipMemory")
+    }
+
+    func relationshipMemoryRows() -> XCUIElementQuery {
+        app.descendants(matching: .any).matching(identifier: "memory.vault.row")
+    }
+
+    func openFirstRelationshipMemoryRecord(
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) {
+        let row = relationshipMemoryRows().firstMatch
+        XCTAssertTrue(
+            row.waitForExistence(timeout: 5),
+            "Expected a saved relationship-memory record",
+            file: file,
+            line: line
+        )
+        row.tap()
+    }
+
+    func tapDialogAction(
+        _ identifier: String,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) {
+        let action = app.buttons.matching(identifier: identifier).firstMatch
+        XCTAssertTrue(
+            action.waitForExistence(timeout: 5),
+            "Expected confirmation action \(identifier)",
+            file: file,
+            line: line
+        )
+        action.tap()
     }
 
     func requestAndConfirmAccountDeletion() {
@@ -467,6 +506,58 @@ final class ProsePalReleaseUITests: ProsePalNativeUITestCase {
         tap("privacy.export")
         tap("localDataExport.shareFile")
         assertGenericSharePresentation()
+    }
+
+    func testRelationshipMemoryDeletionRequiresConfirmationAndDismissalKeepsTheRecord() {
+        launch(.relationshipMemory)
+        openRelationshipMemoryVault()
+
+        let seededRecordCount = relationshipMemoryRows().count
+        XCTAssertEqual(seededRecordCount, 2, "Expected the seeded relationship-memory library")
+
+        openFirstRelationshipMemoryRecord()
+        tap("memory.detail.delete.request")
+
+        // Requesting deletion never deletes on its own: it presents an
+        // explicit confirm action and leaves the record intact until chosen.
+        let confirm = app.buttons.matching(identifier: "memory.detail.delete.confirm").firstMatch
+        XCTAssertTrue(confirm.waitForExistence(timeout: 5), "Expected an explicit confirmation action")
+
+        // This presentation exposes no cancel control, so abandoning the
+        // dialog is a tap outside it.
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.25)).tap()
+
+        tap("memory.detail.back")
+        let remaining = relationshipMemoryRows()
+        let unchanged = NSPredicate(format: "count == %d", seededRecordCount)
+        let expectation = XCTNSPredicateExpectation(predicate: unchanged, object: remaining)
+        XCTAssertEqual(
+            XCTWaiter.wait(for: [expectation], timeout: 5),
+            .completed,
+            "Expected an unconfirmed deletion to keep every saved record"
+        )
+    }
+
+    func testRelationshipMemoryDeletionConfirmationRemovesTheRecord() {
+        launch(.relationshipMemory)
+        openRelationshipMemoryVault()
+
+        let seededRecordCount = relationshipMemoryRows().count
+        XCTAssertEqual(seededRecordCount, 2, "Expected the seeded relationship-memory library")
+
+        openFirstRelationshipMemoryRecord()
+        tap("memory.detail.delete.request")
+        tapDialogAction("memory.detail.delete.confirm")
+
+        // Confirmed deletion returns to the library with the record gone.
+        let remaining = relationshipMemoryRows()
+        let removed = NSPredicate(format: "count == %d", seededRecordCount - 1)
+        let expectation = XCTNSPredicateExpectation(predicate: removed, object: remaining)
+        XCTAssertEqual(
+            XCTWaiter.wait(for: [expectation], timeout: 5),
+            .completed,
+            "Expected the confirmed deletion to remove exactly one saved record"
+        )
     }
 
     func testGenerationFailureKeepsAnHonestRetryAction() {

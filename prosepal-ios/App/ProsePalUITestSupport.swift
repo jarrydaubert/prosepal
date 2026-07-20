@@ -1,6 +1,7 @@
 import Foundation
 import ProsePalAPI
 import ProsePalUI
+import SwiftData
 
 #if DEBUG
 enum ProsePalUITestScenario: String {
@@ -12,6 +13,7 @@ enum ProsePalUITestScenario: String {
     case accountDeletionSuccess = "account-deletion-success"
     case accountDeletionFailure = "account-deletion-failure"
     case accountDeletionIndeterminate = "account-deletion-indeterminate"
+    case relationshipMemory = "relationship-memory"
 
     static let launchMarker = "--prosepal-ui-testing"
     static let scenarioArgument = "--prosepal-ui-test-scenario"
@@ -45,9 +47,34 @@ enum ProsePalUITestScenario: String {
                     email: "writer@example.invalid"
                 )
             )
-        case .firstLaunch, .signedOut, .signInSuccess, .signInFailure:
+        case .firstLaunch, .signedOut, .signInSuccess, .signInFailure, .relationshipMemory:
             nil
         }
+    }
+
+    /// Seeds the ephemeral vault so relationship-memory automation starts from
+    /// a known library instead of driving the composer to create records first.
+    @MainActor
+    func seedRelationshipMemory(into container: ModelContainer) {
+        guard self == .relationshipMemory else { return }
+
+        let seededAt = Date(timeIntervalSince1970: 1_784_030_400)
+        container.mainContext.insert(
+            RelationshipTruthBeadRecord(
+                personName: "Mira",
+                text: "Loves the Sunday morning calls.",
+                createdAt: seededAt,
+                updatedAt: seededAt
+            )
+        )
+        container.mainContext.insert(
+            RelationshipVoiceCardRecord(
+                personName: "Mira",
+                summary: "Warm, short, no fuss.",
+                createdAt: seededAt.addingTimeInterval(-86_400),
+                updatedAt: seededAt.addingTimeInterval(-86_400)
+            )
+        )
     }
 
     var authBehavior: ProsePalUITestAuthClient.Behavior {
@@ -68,7 +95,7 @@ enum ProsePalUITestScenario: String {
         case .accountDeletionIndeterminate:
             .indeterminate
         case .firstLaunch, .signedOut, .signedIn, .signInSuccess, .signInFailure,
-             .accountDeletionSuccess:
+             .accountDeletionSuccess, .relationshipMemory:
             .success
         }
     }

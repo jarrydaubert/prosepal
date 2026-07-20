@@ -31,6 +31,9 @@ struct ProsePalNativeApp: App {
         #if DEBUG
         if let uiTestScenario = ProsePalUITestScenario.current {
             let container = try! RelationshipVaultContainerFactory.makeEphemeral()
+            MainActor.assumeIsolated {
+                uiTestScenario.seedRelationshipMemory(into: container)
+            }
             relationshipVault = RelationshipVaultContainerResult(
                 container: container,
                 storageMode: .ephemeralFallback
