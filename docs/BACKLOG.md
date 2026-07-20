@@ -200,24 +200,81 @@ completed item instead of turning this file into a status log.
   evidence is filed without exposing draft text or export contents.
 
 - [ ] Decompose `MomentExperienceView.swift` incrementally while completing
-  funded v1 work; do not run a separate big-bang rewrite. The remaining
-  migration map is: move the memory library and details into
-  `Features/RelationshipMemory/` with persistence/UI automation; move
-  privacy/export and authentication destinations into cohesive feature files
-  with release UI automation; move the
-  composer, candidate choice, generation states, revision, voice/share, and
-  pickers into cohesive feature files during the approved three-option and
-  accessibility/core-flow work. DoD: every
-  region in the architecture map names a cohesive source file instead of the
-  monolith; the original file is removed or has one reason to change; each
-  extracted user-facing surface has a compiling `#Preview`; each moved region's
-  source-string guard is deleted or replaced by behavioral/view coverage in the
-  same commit; both shrink-only guardrail baselines are lowered; the architecture
-  map is updated; when an extracted region's navigation chrome is touched,
-  custom bars move to appropriate system toolbar placements while paper-like
-  content surfaces retain their own visual treatment; this opportunistic chrome
-  modernization never becomes a separate v1 release gate. Swift package tests
-  and the complete app target build pass after every extraction.
+  funded v1 work; do not run a separate big-bang rewrite. The target structure
+  below is approved and binding: implementation slices execute it rather than
+  redesigning it.
+
+  Target files, all under `prosepal-ios/Sources/ProsePalUI/`:
+
+  - `Features/Moment/MomentSheetView.swift`
+  - `Features/Moment/MomentComposerView.swift`
+  - `Features/Moment/MomentDraftResultView.swift`
+  - `Features/Moment/MomentDraftReviseView.swift`
+  - `Features/Moment/MomentDraftBlockedStates.swift`
+  - `Features/Moment/MomentDraftHistorySheet.swift`
+  - `Features/Moment/MomentPickerSheets.swift`
+  - `Features/RelationshipMemory/RelationshipMemoryVaultView.swift`
+  - `Features/RelationshipMemory/RelationshipMemoryDetailView.swift`
+  - `Features/RelationshipMemory/RelationshipMemoryPersistence.swift`
+  - `Features/RelationshipMemory/RelationshipMemoryComposerSection.swift`
+  - `Features/Privacy/MomentPrivacyDataView.swift`
+  - `Features/Privacy/MomentLocalDataExportView.swift`
+  - `Features/Privacy/MomentLocalDataExport.swift`, moved from
+    `Features/Settings/`
+  - `MomentDraftUnavailableNotice.swift`, which gains the unavailable-notice
+    factory
+
+  Implementation order. Each A-slice is a safe standalone extraction and they
+  are mutually independent; each B-slice moves only while the funded work it
+  names is already changing that surface:
+
+  - A-1: move the relationship-memory vault, both detail editors with their
+    file-private chrome, and the persistence seam into
+    `Features/RelationshipMemory/`; delete the unreachable `MomentSelectionRow`
+    and `MomentCompactSelectionRow`; replace the moved half of the memory
+    source-string guard with behavioural confirmation and rollback coverage.
+  - A-2: move privacy presentation, export presentation, and the export
+    contract into `Features/Privacy/`.
+  - A-3: extract `MomentDraftHistorySheet` with a preview and timeline contract
+    coverage.
+  - A-4: extract both pickers into `MomentPickerSheets.swift` with previews and
+    direct filter tests.
+  - A-5: move the unavailable-notice policy into
+    `MomentDraftUnavailableNotice.swift` with complete branch tests.
+  - B-1: move the composer, the composer memory section, and
+    `MomentComposerField` during the approved three-option work.
+  - B-2: move the result and revise surfaces during the same three-option work;
+    resolve the decorative variant dots; leave adjustment chips unselected
+    unless real selection state is introduced; explicitly preserve or remove the
+    revision word-substitution heuristic.
+  - B-3: move the offline, generation-error, and quota states during
+    accessibility hardening; replace the quota source-string guard with
+    behavioural coverage and a repository-wide invariant.
+  - Final: move the residual coordinator to
+    `Features/Moment/MomentSheetView.swift`; delete `MomentExperienceView.swift`
+    and both path-specific ratchets.
+
+  `MomentSheetView` ends as the Write-tab presentation coordinator: region
+  selection, cross-region presentation coordination, focus and scroll handling,
+  and the least-common-ancestor Copy, Save, and toast actions. It owns no
+  region-internal rendering. `MomentAccountModel` remains one observable owner
+  for v1, and the authentication and account-deletion presentation that Settings
+  already owns stays there.
+
+  DoD: each extracted user-facing surface has a compiling `#Preview`; behaviour
+  and accessibility identifiers stay unchanged unless an approved product slice
+  changes them explicitly; each moved region's source-string guard is replaced
+  by behavioural, rendering, or direct contract coverage rather than repointed
+  at the new path; no extraction adds a coordinator, router, manager, service
+  locator, or a second owner for state that already has one; both shrink-only
+  guardrail baselines are lowered to their exact new values in the same pull
+  request as the extraction they describe; the architecture region map names a
+  cohesive owning file for every moved region; when an extracted region's
+  navigation chrome is touched, custom bars move to appropriate system toolbar
+  placements while paper-like content surfaces retain their own visual
+  treatment, and this opportunistic chrome modernization never becomes a
+  separate v1 release gate. Swift package tests and the complete app target
+  build pass after every extraction.
 
 - [ ] Complete core-flow accessibility and visual hardening. DoD: release flows
   pass VoiceOver, Dynamic Type, hit-target, contrast, keyboard/focus, Reduce
