@@ -95,12 +95,15 @@ confirmed. It never claims the account remains in that phase. Confirmed deletion
 and an already-deleted result both converge on HTTP 200 with `status: deleted`;
 the credential row disappears through its `auth.users` cascade.
 
-After confirmed or indeterminate server deletion, the app clears its session,
+After confirmed server deletion, the app clears its session, account-scoped
 entitlement state, local relationship vault, saved drafts, and recovery state.
-For an indeterminate result it says deletion is still being finalized and tells
-the user to retry only if sign-in remains possible. A pre-final server failure
-keeps the signed-in client state so the user can retry. Partial local cleanup
-remains visible and local erasure can be retried through Privacy & data.
+An indeterminate result instead clears the session and account-scoped
+entitlement state while preserving device-local writing. Its notice says that
+writing remains on the device and tells the user to retry only if sign-in
+remains possible; it does not claim a remote account outcome. A pre-final server
+failure keeps the signed-in client state so the user can retry. Partial local
+cleanup after confirmed deletion remains visible and local erasure can be
+retried through Privacy & data.
 
 ## Configuration
 
