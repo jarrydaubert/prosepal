@@ -62,12 +62,14 @@ drafts. It omits internal person keys and store paths.
 Confirmed relationship-memory deletion persists before reporting success. A
 failed save rolls back the model context and tells the user the item remains
 saved. Account deletion invokes an authenticated server boundary, then clears
-local account and vault state after either confirmed deletion or an
-indeterminate final remote result. The indeterminate path says deletion is still
-being finalized and does not claim the remote account remains. Pre-final server
-failure keeps the local session for retry. Partial local cleanup is reported
-honestly rather than hidden. Saved-draft persistence hardening is tracked in the
-backlog rather than being overstated here.
+the local session, account-scoped entitlement state, vault, active recovery, and
+pending handoffs after confirmed remote deletion. An indeterminate final result
+instead clears the local session and account-scoped entitlement state while
+preserving every local writing item. Its notice says that writing remains on the
+device and does not claim a remote account outcome. Pre-final server failure
+keeps the local session for retry. Partial local cleanup after confirmed
+deletion is reported honestly rather than hidden. Saved-draft persistence
+hardening is tracked in the backlog rather than being overstated here.
 
 ## Secrets and configuration
 

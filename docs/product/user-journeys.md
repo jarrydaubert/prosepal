@@ -112,17 +112,18 @@ Authenticated user confirms deletion
   -> server validates caller
   -> require and revoke stored Apple refresh material for Apple accounts
   -> validate app-data cleanup and delete auth data
-  -> erase local account state and relationship vault
-  -> report any partial local cleanup honestly
+  -> confirmed: clear session, entitlement state, and local writing
+  -> indeterminate: clear session and entitlement state; preserve local writing
+  -> report any confirmed-path partial local cleanup honestly
 ```
 
 The server owns privileged deletion. The iOS app never contains a service
 role key. A failure before final auth deletion starts guarantees that the auth
 account remains and can be retried, although idempotent earlier cleanup may have
-completed. If the final delete starts but cannot be confirmed, the app reports
-that deletion is still being finalized, erases its local account state, and
-explains that the user should retry only if sign-in remains possible. It does
-not claim that the remote account survived a timed-out request.
+completed. If the final delete starts but cannot be confirmed, the app signs
+out, clears account-scoped entitlement state, preserves device-local writing,
+and explains that the user should retry only if sign-in remains possible. It
+does not claim a remote account outcome.
 
 ## Account switching
 
