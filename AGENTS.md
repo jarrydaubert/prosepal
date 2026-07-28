@@ -73,8 +73,10 @@ implementation. There is no second app, and no migration is in progress.
 
 - Keep authentication, payments, entitlement, account deletion, and AI flows
   deterministic and testable.
-- Keep provider, StoreKit, Keychain, Supabase, and persistence implementation
-  details outside `ProsePalUI`.
+- Keep provider, StoreKit, Keychain, Supabase, persistence schemas, and
+  persistence-service implementations outside `ProsePalUI`. Feature-owned
+  SwiftData queries and `modelContext` coordination follow
+  `docs/engineering/swiftui-architecture.md`.
 - Do not log secrets, tokens, receipts, credentials, or sensitive user content.
 - Preserve user-visible behaviour and accessibility identifiers unless an
   approved product change explicitly changes them.
@@ -172,8 +174,9 @@ in the same change when the runnable process changes.
 - Do not mask instability with arbitrary sleeps, retries, broad timeouts, or
   weakened assertions.
 - Keep known flaky tests out of blocking CI until fixed.
-- Use the repository's established flaky-test mechanism when one exists. Do not
-  invent a new tagging convention inside unrelated work.
+- The repository has no general flaky-test tag. If temporary exclusion is
+  unavoidable, change only the narrowest owning test invocation or workflow
+  selection. Do not invent a tagging convention inside unrelated work.
 - Track each flaky-test fix in `docs/BACKLOG.md` with a clear definition of done.
 - A skipped test is not passing evidence. Record why it is skipped and what
   evidence is still required.
