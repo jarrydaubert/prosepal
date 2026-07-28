@@ -58,8 +58,10 @@ supabase test db
 - Test concurrency outcomes without requiring a particular task interleaving.
 - Keep live provider calls, Apple sandbox state, and physical-device behaviour
   outside blocking unit tests.
-- Tag a known flaky test and remove it from blocking CI until fixed; track the
-  repair in the backlog.
+- The repository has no general flaky-test tag. Keep a known flaky test out of
+  blocking CI until fixed by changing only the narrowest owning test invocation
+  or workflow selection; do not invent a tagging convention inside unrelated
+  work. Track the repair and restoration definition of done in the backlog.
 
 ## UI coverage
 

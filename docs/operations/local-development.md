@@ -96,8 +96,11 @@ tools 6.2 or later.
 
 - Blocking tests must use fixed clocks, injected clients, and explicit
   deadlines.
-- A potentially flaky test must be tagged and excluded from blocking CI until
-  fixed.
+- The repository has no general flaky-test tag. If temporary exclusion from
+  blocking CI is unavoidable, change only the narrowest owning test invocation
+  or workflow selection until the test is fixed.
+- Track the repair and restoration definition of done in `docs/BACKLOG.md`; a
+  skipped test is not passing evidence.
 - Live provider, StoreKit sandbox, Apple, and remote Supabase checks are release
   evidence, not unit tests.
 
