@@ -65,6 +65,7 @@ backlog slice I-1.
 | Share Extension handoff — `SharedMomentLaunchStore` | One sanitized text/URL payload and creation time in app-group `UserDefaults`; production and staging use separate keys. No time-based expiry is implemented. | Excluded. | Consumed once only for a share-extension launch. Confirmed account deletion consumes the running environment's pending value. Sign-out, local-vault deletion, and indeterminate account deletion do not. |
 | Pending careful-request metadata — `CarefulRequestKeyStore` | Standard `UserDefaults` under `prosepal.native.pendingCarefulRequest.v1`; contains a random request key, SHA-256 request-identity value, and creation time, not raw writing. An existing value is eligible for reuse for 24 hours. There is no timer that physically removes it at 24 hours. | Excluded. | Cleared after successful initial careful generation or a replay-expired/idempotency-conflict response. A different or expired request replaces it on next use. Sign-out, local-vault deletion, and confirmed or indeterminate account deletion do not currently clear it. Named adjustments do not use this durable key. |
 | Temporary export file — `MomentLocalDataExport` | A JSON copy of the vault export is written atomically under the OS temporary directory in `ProsePalLocalDataExports` only when a file transfer requests it. | This is the shareable export artifact. The export screen also holds the same JSON in memory and currently permits copying it. | The directory is removed before a new temporary file is written, when a new export is prepared, and best-effort when the export view disappears. The OS may also purge temporary files. Sign-out, the vault eraser, and account deletion do not independently remove it. |
+| System pasteboard — `MomentExperienceView` and `SavedMomentDraftDetailView` | A user who chooses Copy on an active or saved draft, or Copy JSON on the export screen, places the full draft or vault-export JSON in `UIPasteboard.general`. This is an explicit user-initiated transfer boundary. Retention is controlled by iOS and system pasteboard behaviour, not ProsePal. | The copied draft or export content is available to pasteboard consumers under system controls. | ProsePal does not guarantee removal after the destination uses it or when the user signs out, erases the local vault, or receives a confirmed or indeterminate account-deletion result. A later pasteboard write or system behaviour may replace or remove it. |
 | Auth session — `KeychainAuthSessionStore` and `AuthSessionController` | One Keychain generic-password item scoped to the app bundle's auth service and account `supabase-session`, accessible after first unlock on this device only. It contains access/refresh tokens, expiry, Supabase user ID/email when returned, and the opaque Apple credential user ID. | Excluded. | Cleared by successful local sign-out, terminal refresh rejection, invalid Apple credential handling, and confirmed or indeterminate account deletion. Local-vault deletion does not affect it. Transient network failure preserves a refreshable session. |
 | StoreKit and account presentation state — StoreKit and `MomentAccountModel` | StoreKit owns transaction history. Product, entitlement, ownership, and Premium presentation state are held in memory by the app; ProsePal has no separate local transaction database. | Excluded. | Sign-out and account identity changes clear account-scoped Premium state, but they do not cancel or erase an App Store subscription or Apple's transaction history. Subscription management is a separate App Store action. |
 
@@ -72,6 +73,8 @@ The local export is therefore a vault export, not an export of every local or
 server-side datum. Likewise, the current local-delete action is a vault eraser,
 not account deletion and not a complete purge of UserDefaults, Keychain,
 handoffs, active recovery, request metadata, diagnostics, or temporary files.
+It also cannot guarantee removal of content the user already copied to the
+system pasteboard.
 
 ## Server data
 
@@ -82,16 +85,17 @@ handoffs, active recovery, request metadata, diagnostics, or temporary files.
 | Gateway request ledger — `gateway_requests` | Service-role-only request UUID, account UUID or guarded `dev-anonymous` subject, idempotency key, request fingerprint, reservation token/status, lane/contract, attempt/failure, entitlement/month metadata, expiry times, and successful response payload containing generated text. | Replay is allowed for 24 hours. The hourly cleanup clears an expired payload on its next run. Terminal/abandoned rows are deleted when `updated_at` is more than seven days old; clearing a successful payload updates that timestamp, so its remaining metadata receives another seven-day cleanup window. Account-linked rows cascade when the auth user is deleted. |
 | Usage/quota — `user_usage` | Total/monthly generation counts and month key linked by user UUID. Successful authenticated gateway finalization increments once. | No time-based deletion while the account exists. `delete-user` deletes the row before final auth deletion; the foreign key also cascades on confirmed auth deletion. |
 | Rate attempts — `rate_limit_log` | Subject identifier (`user` UUID for current authenticated native requests or `dev-anonymous` for guarded staging), endpoint, and timestamp. Current native code does not send a device identifier. | Rows become cleanup-eligible after one hour and the hourly cron removes them on its next run. `delete-user` explicitly removes the user's rows; anonymous-development rows expire only through cleanup. |
+| Retained legacy device usage — `device_usage` | Historical rows may remain for migrated production users. A row contains a vendor-ID or Android-ID fingerprint, platform, free-tier-used flag, first/last-seen timestamps, and an array of associated account UUIDs. The current native generation path does not create, read, or update these rows and they are not a current native device-ID model. | No time-based cleanup or row deletion is implemented. `delete-user` calls `remove_user_from_devices` to remove the account UUID from `associated_user_ids`; it does not delete the remaining fingerprint, platform, free-tier, or timestamp record. |
 | Server entitlement — `user_entitlements` | User UUID, active state, product/expiry, and current App Store notification or reconciliation metadata used for gateway policy. Current native App Store functions set the authoritative source; legacy-named nullable schema residue is not a current RevenueCat dependency. | Updated as authoritative events arrive; no separate history window is defined for the current row. `delete-user` removes it before final auth deletion and its foreign key also cascades. StoreKit subscription ownership at Apple remains separate. |
 | App Store notification events — `app_store_notification_events` | Notification UUID/type/subtype, environment, product and transaction identifiers, optional UUID `appAccountToken`, signed/received/processed times. It stores selected verified metadata, not the signed payload or receipt. | No cleanup period is implemented. The table has no auth-user foreign key, and `delete-user` does not delete or anonymize its account token or transaction metadata. S-1 owns the retention and account-deletion policy. |
 | App Store reconciliation events — `app_store_reconciliation_events` | Requested transaction/user, resolved user, App Store status/product/transaction metadata, optional UUID `appAccountToken`, outcome/error, and processing time. Raw signed responses and transaction bodies are not stored in this table. | No cleanup period is implemented. User UUID fields have no auth-user foreign key, and `delete-user` does not delete or anonymize these rows. S-1 owns the retention and account-deletion policy. |
 | Operational diagnostics — native OSLog and Edge Function logs | Native code records event names, enum values, booleans, counts, status/error categories, latency, and truncated request IDs. Edge Functions record comparable request/operation metadata, redacted user/transaction identifiers, configured operator/model labels, and safe failure categories. | The app and repository define no independent log database, retention period, export, or per-account deletion mechanism. OS and hosted-service retention therefore remain outside these application data controls. Application logging code must not deliberately include raw writing, relationship facts, prompts, generated text, full request keys/fingerprints, tokens, receipts, signed payloads, provider responses, or secrets. |
 
-The repository still contains legacy device-usage tables/RPCs and a
-`send-feedback` Edge Function, but the current native app does not supply an
-installation ID, call those device RPCs, or call `send-feedback`. They are not
-current native data routes. Historical Firebase, Gemini-direct, RevenueCat, and
-Flutter paths are also not part of the current app.
+The retained legacy device records are mapped above even though the current
+native app does not supply an installation ID or call their RPCs. The repository
+also retains a `send-feedback` Edge Function that the current native app does
+not call. Historical Firebase, Gemini-direct, RevenueCat, and Flutter paths are
+not part of the current app.
 
 ## User controls are separate
 
@@ -108,9 +112,10 @@ Flutter paths are also not part of the current app.
 Before final auth deletion, `delete-user` authenticates the caller, requires and
 revokes the Apple refresh token for an Apple account, deletes `user_usage`,
 `user_entitlements`, and user rate-attempt rows, and removes the UUID from any
-legacy device associations. Earlier cleanup may have completed even if a later
-pre-final step fails. In that failure phase the app preserves its session and
-local writing so the user can retry.
+legacy device associations without deleting the remaining legacy device row.
+Earlier cleanup may have completed even if a later pre-final step fails. In
+that failure phase the app preserves its session and local writing so the user
+can retry.
 
 After confirmed auth deletion, database foreign keys remove the Apple credential
 and account-linked gateway rows. The app clears the Keychain session and
@@ -166,12 +171,16 @@ privacy programme in [BACKLOG.md](../BACKLOG.md):
   durable request metadata, auth storage, and temporary export ownership.
 - `prosepal-ios/Sources/ProsePalUI/MomentAccountModel.swift` and
   `MomentAppRootView.swift`: local account-control outcomes.
+- `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift` and
+  `Features/SavedDrafts/SavedMomentDraftDetailView.swift`: user-initiated
+  writing and export pasteboard transfers.
 - `supabase/functions/generate-card/index.ts`, `delete-user/index.ts`,
   `exchange-apple-token/index.ts`, `app-store-notifications/index.ts`, and
   `app-store-reconcile-entitlement/index.ts`: server processing and controls.
 - `supabase/migrations/20260712170634_gateway_request_ledger.sql`,
   `001_create_user_usage.sql`, `006_create_rate_limiting.sql`,
-  `007_create_apple_credentials.sql`, `009_create_user_entitlements.sql`,
+  `004_create_device_usage.sql`, `007_create_apple_credentials.sql`,
+  `008_add_user_cleanup_rpc.sql`, `009_create_user_entitlements.sql`,
   `023_add_app_store_entitlement_metadata.sql`, and
   `024_add_app_store_reconciliation_events.sql`: server tables, linkage, and
   cleanup.
