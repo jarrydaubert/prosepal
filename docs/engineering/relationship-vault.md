@@ -88,9 +88,9 @@ The export omits normalized person keys and local store paths. Dates use ISO
 
 ## Deletion and persistence integrity
 
-The full local-data eraser deletes all three model types and saves once. When an
-ephemeral fallback was created after a persistent-store failure, it also removes
-the inaccessible persistent-store directory before recreating the
+The relationship-vault eraser deletes all three model types and saves once.
+When an ephemeral fallback was created after a persistent-store failure, it
+also removes the inaccessible persistent-store directory before recreating the
 backup-excluded folder.
 
 Truth Bead, Voice Card, and saved-draft edit/delete flows report success only

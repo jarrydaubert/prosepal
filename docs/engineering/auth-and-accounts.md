@@ -72,9 +72,11 @@ not use that path.
 ## Sign-out
 
 Sign-out attempts the Supabase logout boundary, clears the Keychain session, and
-resets account-scoped Premium and UI state. Local relationship data follows the
-separate local-data controls rather than being silently attributed to another
-account.
+resets account-scoped Premium and UI state. It does not delete the Supabase
+account, cancel an App Store subscription, erase server usage/history, or clear
+device-local writing, recovery, handoffs, pending request metadata, or export
+files. Local relationship data follows the separate local-data controls rather
+than being silently attributed to another account.
 
 ## Account deletion
 
@@ -83,6 +85,13 @@ uses the server’s service role; no privileged credential exists in the native
 bundle. For an Apple account, deletion requires the stored Apple refresh token,
 revokes it through Apple’s endpoint, validates every cleanup result, and only
 then starts the final Supabase auth-user deletion.
+
+Before that final deletion, the function deletes the account's `user_usage`,
+`user_entitlements`, and user rate-attempt rows and removes the UUID from any
+legacy device associations. Confirmed auth deletion then cascades the Apple
+credential and account-linked gateway ledger rows. App Store notification and
+reconciliation event tables are not foreign-keyed to `auth.users` and are not
+deleted or anonymized by this flow; their unresolved policy is owned by S-1.
 
 Before final auth deletion starts, cancellation, timeout, or cleanup failure
 returns an error and guarantees that the authentication account remains. Earlier
@@ -97,6 +106,9 @@ the credential row disappears through its `auth.users` cascade.
 
 After confirmed server deletion, the app clears its session, account-scoped
 entitlement state, local relationship vault, saved drafts, and recovery state.
+It also clears the active Moment, consumes pending App Intent and Share
+Extension handoffs, and resets onboarding. The durable careful-request metadata
+and any temporary export directory are not currently part of that cleanup.
 An indeterminate result instead clears the session and account-scoped
 entitlement state while preserving device-local writing. Its notice says that
 writing remains on the device and tells the user to retry only if sign-in
@@ -104,6 +116,11 @@ remains possible; it does not claim a remote account outcome. A pre-final server
 failure keeps the signed-in client state so the user can retry. Partial local
 cleanup after confirmed deletion remains visible and local erasure can be
 retried through Privacy & data.
+
+Account deletion does not cancel the user's App Store subscription. Subscription
+management remains a separate StoreKit/App Store control. The canonical matrix
+for sign-out, local-vault deletion, export, account deletion, and subscription
+management is [Data and privacy](./data-and-privacy.md).
 
 ## Configuration
 

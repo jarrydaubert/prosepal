@@ -82,11 +82,21 @@ notifications, renewal, refund, or reconciliation work.
 ## Server boundaries
 
 - `app-store-notifications` verifies App Store Server Notifications V2 and
-  records entitlement events.
+  records selected notification and transaction metadata plus the resolved
+  entitlement. It does not store the signed notification payload or receipt.
 - `app-store-reconcile-entitlement` obtains and reconciles authoritative App
-  Store state.
+  Store state and records request, resolution, transaction, outcome, and error
+  metadata. It does not store raw signed responses or transaction bodies.
 - `appAccountToken` is the ownership link when a valid signed-in Supabase UUID
   is available.
+
+The current entitlement row is linked to `auth.users` and is removed by the
+account-deletion flow. Notification and reconciliation event rows are not
+foreign-keyed to the auth user, have no implemented cleanup period, and are not
+deleted or anonymized during account deletion. The retention period and account-
+deletion treatment are unresolved owner decisions implemented by privacy slice
+S-1. See [Data and privacy](./data-and-privacy.md) for the canonical field and
+control map.
 
 ## User experience rules
 
@@ -96,6 +106,8 @@ notifications, renewal, refund, or reconciliation work.
   temporarily unavailable; show the verification problem honestly.
 - Clear local Premium before reconciling a different ProsePal account.
 - Keep Restore available from Paywall and Settings.
+- Keep App Store subscription management separate from ProsePal sign-out,
+  local-data deletion, and account deletion.
 - Describe Premium as offering higher writing limits. Do not claim unlimited
   drafting, publish an exact allowance, or imply that careful writing is
   Premium-only unless the approved server policy and App Store metadata support

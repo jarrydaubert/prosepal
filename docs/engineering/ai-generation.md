@@ -20,16 +20,56 @@ receives careful treatment. The lane is not a user-selected rewrite action.
 ```text
 MomentInput
   -> safety/refusal gate
-  -> routing decision
-     -> preferred private lane
-     -> preferred careful lane
-  -> eligible typed failure may fall back
+  -> occasion/register routing decision
+     -> ordinary initial draft: private first
+     -> careful initial draft: gateway first
+  -> eligible failure may start the other lane
   -> content block never falls through
 ```
 
+For an ordinary initial draft, private timeout, busy/rate, stale request-key,
+runtime-unavailable, malformed-response, and untyped failures may fall back to
+the careful client. Offline, usage-limit, content-block, and cancellation
+results do not. For an initial draft that requires careful treatment, any typed
+generation error except a content block may fall back to the private client;
+untyped failure may also fall back, while cancellation does not.
+
+Named adjustment follows the current bundle's lane. A private or mock draft is
+adjusted on device first and has the eligible private-to-careful fallback. A
+`standardDraft` or `careful` bundle is adjusted through the gateway only. The
+Another/rewrite action is a fresh initial draft for the current Moment rather
+than an adjustment, so it re-enters initial routing and does not send the old
+draft as rewrite context.
+
 Timeouts, offline state, usage limits, rate limits, malformed responses, and
 provider refusals map into `GenerationError`. Views receive stable product
-errors rather than provider-specific exceptions.
+errors rather than provider-specific exceptions. If routing ends in failure or
+cancellation, `MomentModel` does not replace the current draft; the Moment and
+recoverable wording remain available.
+
+The implementation does not yet require a separate explicit online-writing
+permission before direct careful work or private-to-careful fallback. That
+boundary is owned by backlog slice I-1.
+
+## Writing content boundary
+
+Private generation uses person, relationship, occasion, style, locale, Moment
+detail, and approved matching Truth Beads and Voice Card on the device. A
+private adjustment also uses the current draft and adjustment name.
+
+Careful generation sends the bounded `CardRequest` to the ProsePal gateway. Its
+writing content is person name, relationship, occasion, tone, length, locale,
+Moment detail, and the register description; an adjustment also sends the
+current draft and adjustment name. Relationship-vault records are not included
+in the gateway request. The request also carries app/build/platform and request-
+identity metadata plus the applicable auth boundary.
+
+After reservation, `generate-card` builds a structured prompt from those
+writing fields. It may send the same prompt sequentially to configured primary
+and fallback models at the configured provider endpoint. The production
+provider binding and its retention, training, and data-use terms are not
+established by repository source. The complete storage, retention, export, and
+deletion map is [Data and privacy](./data-and-privacy.md).
 
 ## Generation lifecycle
 

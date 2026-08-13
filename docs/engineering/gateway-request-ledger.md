@@ -133,23 +133,29 @@ means release evidence must prove the finalization-failure policy is acceptable.
 
 ## Retention and cleanup
 
-| Data | Retention |
+| Data | Implemented boundary |
 |---|---|
-| Successful replay payload containing generated text | At most 24 hours |
-| Terminal or abandoned request metadata | 7 days |
-| Sliding-window rate-attempt rows | 1 hour |
+| Successful replay payload containing generated text | Replay eligibility expires after 24 hours. The hourly cleanup physically clears an expired payload on its next run. |
+| Terminal or abandoned request metadata | Deleted by the hourly cleanup when `updated_at` is more than seven days old. Clearing a successful payload updates that timestamp, so the remaining metadata receives another seven-day cleanup window. |
+| Sliding-window rate-attempt rows | Become cleanup-eligible after one hour and are physically removed by the hourly job on its next run. |
 
 An hourly `pg_cron` job runs `cleanup_gateway_requests` and
 `cleanup_rate_limit_logs`. Full keys, fingerprints, generated messages, and
 prompt content are not written to operational logs.
 
+Authenticated ledger rows link to `auth.users` with `ON DELETE CASCADE`, so a
+confirmed auth-user deletion removes them. The guarded `dev-anonymous` subject
+has no account link and relies on scheduled cleanup.
+
 ## Native retry continuity
 
 For an initial careful draft, `CarefulRequestKeyStore` persists the request key
-plus a non-content request identity for up to 24 hours. An unchanged retry or
-relaunch can therefore reach ledger replay instead of producing and charging
-again. Replay expiry or fingerprint conflict clears the pending key and requires
-another explicit user action.
+plus a non-content request identity. An existing value is reusable for 24 hours,
+so an unchanged retry or relaunch can reach ledger replay instead of producing
+and charging again. The 24-hour value is a reuse limit, not a scheduled local
+deletion: success or a replay-expired/fingerprint-conflict response clears the
+value, and a different or expired request replaces it on next use. Sign-out,
+local-vault deletion, and account deletion do not currently clear it.
 
 The current durable store covers initial careful drafts. Expansion to named
 Adjust actions is tracked only in [BACKLOG.md](../BACKLOG.md).
