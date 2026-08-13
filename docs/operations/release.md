@@ -62,6 +62,17 @@ cd ..
 Run the gateway database and Edge Function gates when the candidate includes
 those changes; see [Local development](./local-development.md).
 
+## Privacy qualification
+
+Use [Data and privacy](../engineering/data-and-privacy.md) as the canonical
+engineering map for generation routes, storage, retention, export, and deletion.
+Before candidate promotion, confirm that the implemented online-writing
+permission, public policy and support routes, App Store event-retention policy,
+in-app controls, privacy manifests, and App Store Connect declarations agree
+with that map and the release build. The ordered owner decisions and evidence
+requirements remain in the privacy programme in [BACKLOG.md](../BACKLOG.md);
+unresolved mandatory gates block release rather than being inferred from source.
+
 ## Device and TestFlight acceptance
 
 Before device acceptance, run the complete deterministic simulator UI suite:

@@ -29,9 +29,10 @@ Launch
 
 ```text
 Write Draft
-  -> route by occasion policy, availability, and connectivity
+  -> route by occasion policy
      -> Private Draft on device
      -> careful writing through the gateway
+  -> eligible technical failure may try the other lane
   -> user-safe draft or honest error
 ```
 
@@ -39,7 +40,9 @@ Private drafting is preferred for ordinary moments where the device model is
 available. Sensitive or higher-stakes occasions route to careful writing
 automatically. It is not a Premium gate or a post-draft action. Eligible
 technical failures may fall back to the other lane; content blocks do not
-bypass the refusal.
+bypass the refusal. The app does not proactively infer connectivity to choose a
+route: a typed failure from the attempted lane determines whether fallback is
+eligible.
 
 ## Draft revision
 
@@ -123,7 +126,8 @@ account remains and can be retried, although idempotent earlier cleanup may have
 completed. If the final delete starts but cannot be confirmed, the app signs
 out, clears account-scoped entitlement state, preserves device-local writing,
 and explains that the user should retry only if sign-in remains possible. It
-does not claim a remote account outcome.
+does not claim a remote account outcome. Account deletion does not cancel an App
+Store subscription; subscription management remains a separate Apple control.
 
 ## Account switching
 

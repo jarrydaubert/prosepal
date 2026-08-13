@@ -200,10 +200,11 @@ completed item instead of turning this file into a status log.
   evidence is filed without exposing draft text or export contents.
 
 - [ ] Complete the ordered privacy-truth and data-control programme before
-  extracting Privacy & Data. The slices below are independently reviewable and
-  execute in order: D-1, I-1, W-1, S-1, I-2, A-2, M-1, then R-1. D-1, I-1,
-  W-1, S-1, and I-2 are prerequisites for A-2. All mandatory release gates must
-  close before release; they are not all prerequisites for beginning A-2.
+  extracting Privacy & Data. The remaining slices below are independently
+  reviewable and execute in order: I-1, W-1, S-1, I-2, A-2, M-1, then R-1.
+  I-1, W-1, S-1, and I-2 are prerequisites for A-2. All mandatory release
+  gates must close before release; they are not all prerequisites for beginning
+  A-2.
 
   Mandatory release gates:
 
@@ -231,30 +232,6 @@ completed item instead of turning this file into a status log.
 
   Ordered slices:
 
-  - D-1 — establish one technical privacy truth.
-    - Ownership: `docs/engineering/data-and-privacy.md` owns the data map;
-      `docs/engineering/auth-and-accounts.md`,
-      `docs/engineering/ai-generation.md`, and the owning release documents
-      describe their respective contracts. Anchor claims to
-      `RoutingMessageWritingService`, `MomentAccountModel`, the local export and
-      erasure symbols, gateway request-ledger ownership, and App Store event
-      storage.
-    - DoD: document direct careful routing, automatic private-to-careful
-      fallback, adjustment routing, every relevant local and server-side store,
-      retention, export, local deletion, and account deletion. State that an
-      indeterminate account-deletion result signs out and clears account-scoped
-      entitlement state while preserving local writing; reconcile every
-      remaining technical document to that behavior. Mark undecided public or
-      legal claims as decisions instead of guessing them.
-    - Dependencies: current source and schema behavior, the accepted privacy
-      audit, and owner input only where a factual claim cannot be settled from
-      those sources.
-    - Non-goals: policy drafting, runtime changes, feature-status edits, or
-      speculative legal conclusions.
-    - Evidence: a source-to-document data-flow review plus
-      `git diff --check`, documentation validation, and native release
-      preflight.
-
   - I-1 — require explicit, revocable online-writing permission.
     - Ownership: the `MessageWritingService` routing boundary in `ProsePalAPI`
       enforces permission immediately before online work; app composition owns
@@ -265,8 +242,9 @@ completed item instead of turning this file into a status log.
       version causes zero gateway calls and leaves a truthful local path or
       actionable unavailable state. Permission can be reviewed and revoked
       without signing out or deleting local writing.
-    - Dependencies: D-1, verified production-provider terms, and approved
-      permission wording and first-use presentation.
+    - Dependencies: the canonical technical data map, verified production-
+      provider terms, and approved permission wording and first-use
+      presentation.
     - Non-goals: provider names or SDKs in the UI, quota or paywall changes,
       account-behavior changes, or a privacy view model, coordinator, router,
       manager, or service locator.
@@ -282,8 +260,9 @@ completed item instead of turning this file into a status log.
       contact, EULA, analytics, and current-product language. Remove stale
       Google, Gemini, RevenueCat, Firebase, device, and analytics-toggle claims,
       plus unsupported training, quota, or three-option claims.
-    - Dependencies: D-1, verified provider terms, and owner decisions for
-      contact, EULA, Vercel analytics, quotas, and three-option wording.
+    - Dependencies: the canonical technical data map, verified provider terms,
+      and owner decisions for contact, EULA, Vercel analytics, quotas, and
+      three-option wording.
     - Non-goals: a website redesign, iOS runtime changes, or duplicating the
       full policy inside the app.
     - Evidence: web validation, live-route review, link checks from the app, and
@@ -297,7 +276,8 @@ completed item instead of turning this file into a status log.
       selected deletion or anonymization behavior; ensure account deletion and
       routine cleanup honor the same policy; never log event payloads, receipts,
       secrets, or user content.
-    - Dependencies: D-1 and the owner-approved App Store event retention period.
+    - Dependencies: the canonical technical data map and the owner-approved App
+      Store event retention period.
     - Non-goals: production-data mutation in the implementation pull request,
       gateway quota redesign, or unrelated schema cleanup.
     - Evidence: migration, function, and pgTAP coverage; guarded staging cleanup
@@ -312,8 +292,8 @@ completed item instead of turning this file into a status log.
       that it deletes saved writing only. Preserve the separate account-deletion
       contract, remove unsupported status or training claims, and report partial
       or failed deletion honestly.
-    - Dependencies: D-1, I-1, W-1, and the owner decision on local-deletion
-      scope and naming.
+    - Dependencies: the canonical technical data map, I-1, W-1, and the owner
+      decision on local-deletion scope and naming.
     - Non-goals: deleting authentication or subscription state, changing
       account deletion, creating a second persistence owner, or performing the
       A-2 file move.
@@ -334,7 +314,7 @@ completed item instead of turning this file into a status log.
       Refresh affordances. Add representative compiling previews, preserve
       stable accessibility identifiers where behavior is unchanged, and update
       architecture ownership and shrink-only ratchets with the move.
-    - Dependencies: D-1, I-1, W-1, S-1, and I-2.
+    - Dependencies: the canonical technical data map, I-1, W-1, S-1, and I-2.
     - Non-goals: routing, persistence, account, or provider changes; provider
       names in the UI; or a new view model, coordinator, router, manager, or
       service locator.
@@ -347,8 +327,8 @@ completed item instead of turning this file into a status log.
     - DoD: re-audit every executable and embedded SDK; declare only APIs and data
       uses present in the final behavior; keep each manifest embedded in the
       correct target; remove unsupported permission declarations.
-    - Dependencies: D-1 through A-2 and the App Store Connect user-content
-      classification decision.
+    - Dependencies: the canonical technical data map, I-1 through A-2, and the
+      App Store Connect user-content classification decision.
     - Non-goals: capability or entitlement changes, App Store Connect mutation,
       provider changes, or unrelated manifest cleanup.
     - Evidence: manifest source tests, the archived app privacy report, archive
@@ -407,7 +387,7 @@ completed item instead of turning this file into a status log.
     `Features/RelationshipMemory/`; delete the unreachable `MomentSelectionRow`
     and `MomentCompactSelectionRow`; replace the moved half of the memory
     source-string guard with behavioural confirmation and rollback coverage.
-  - A-2: after D-1, I-1, W-1, S-1, and I-2, simplify and move privacy
+  - A-2: after I-1, W-1, S-1, and I-2, simplify and move privacy
     presentation, export presentation, and the export contract into
     `Features/Privacy/` as defined by the privacy programme above.
   - A-3: extract `MomentDraftHistorySheet` with a preview and timeline contract
