@@ -24,16 +24,17 @@ MomentInput
      -> ordinary initial draft: private first
      -> careful initial draft: gateway first
   -> current online-writing grant required immediately before gateway work
-  -> eligible failure may start the other lane
-  -> content block never falls through
+  -> eligible technical failure may start the other lane
+  -> permission-required and content-block results never fall through
 ```
 
 For an ordinary initial draft, private timeout, busy/rate, stale request-key,
 runtime-unavailable, malformed-response, and untyped failures may fall back to
 the careful client. Offline, usage-limit, content-block, and cancellation
-results do not. For an initial draft that requires careful treatment, any typed
-generation error except a content block may fall back to the private client;
-untyped failure may also fall back, while cancellation does not.
+results do not. For an initial draft that requires careful treatment, an
+eligible typed technical failure may fall back to the private client. An online-
+writing permission-required result and a content block do not fall back;
+untyped failure may fall back, while cancellation does not.
 
 Named adjustment follows the current bundle's lane. A private or mock draft is
 adjusted on device first and has the eligible private-to-careful fallback. A
