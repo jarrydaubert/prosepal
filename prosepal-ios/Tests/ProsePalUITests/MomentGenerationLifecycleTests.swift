@@ -135,6 +135,7 @@ func totalDeadlineCancelsProviderAndDoesNotStartFallback() async throws {
     let privateClient = DeadlineCancellationClient()
     let carefulClient = CountingDeadlineFallbackClient()
     let service = RoutingMessageWritingService(
+        onlineWritingPermissionStore: grantedOnlineWritingPermissionStore(),
         privateClient: privateClient,
         carefulClient: carefulClient,
         timeoutPolicy: GenerationTimeoutPolicy(

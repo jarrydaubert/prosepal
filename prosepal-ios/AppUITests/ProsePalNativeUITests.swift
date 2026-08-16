@@ -327,6 +327,78 @@ final class ProsePalDurableSmokeUITests: ProsePalNativeUITestCase {
 
 @MainActor
 final class ProsePalReleaseUITests: ProsePalNativeUITestCase {
+    func testFirstOnlineWritingUseNotNowPreservesWorkAndSendsNoDraft() {
+        launch(
+            .signedOut,
+            additionalArguments: [
+                "--prosepal-force-online-writing-route",
+                "--prosepal-reset-online-writing-permission"
+            ]
+        )
+
+        enterPerson()
+        let originalPersonValue = assertExists("composer.person").value as? String
+        tap("composer.generate")
+
+        let alert = app.alerts["Use online writing?"]
+        XCTAssertTrue(alert.waitForExistence(timeout: 5))
+        let approvedMessage = "Some messages need ProsePal’s online writing service. The details you enter are sent securely to ProsePal and an AI provider to create or adjust your draft. Relationship Memory stays on this device. You can turn online writing off at any time in Privacy & Data."
+        let message = alert.staticTexts
+            .matching(NSPredicate(format: "label == %@", approvedMessage))
+            .firstMatch
+        XCTAssertTrue(message.exists)
+        alert.buttons["Not Now"].firstMatch.tap()
+
+        _ = assertExists("onlineWriting.permission.retry")
+        XCTAssertFalse(element("activeDraft.editor").exists)
+        app.buttons["Back to your note"].firstMatch.tap()
+        XCTAssertEqual(assertExists("composer.person").value as? String, originalPersonValue)
+    }
+
+    func testFirstOnlineWritingUseAllowRetriesBlockedDraft() {
+        launch(
+            .signedOut,
+            additionalArguments: [
+                "--prosepal-force-online-writing-route",
+                "--prosepal-reset-online-writing-permission"
+            ]
+        )
+
+        enterPersonAndGenerate()
+        let alert = app.alerts["Use online writing?"]
+        XCTAssertTrue(alert.waitForExistence(timeout: 5))
+        alert.buttons["Allow Online Writing"].firstMatch.tap()
+
+        _ = assertExists("activeDraft.editor", timeout: 8)
+    }
+
+    func testPrivacyDataRevocationBlocksTheNextOnlineRoute() {
+        launch(
+            .signedOut,
+            additionalArguments: [
+                "--prosepal-force-online-writing-route",
+                "--prosepal-reset-online-writing-permission"
+            ]
+        )
+
+        enterPersonAndGenerate()
+        let alert = app.alerts["Use online writing?"]
+        XCTAssertTrue(alert.waitForExistence(timeout: 5))
+        alert.buttons["Allow Online Writing"].firstMatch.tap()
+        _ = assertExists("activeDraft.editor", timeout: 8)
+
+        openSettings()
+        tap("settings.privacyData")
+        tap("privacy.onlineWriting.revoke")
+        XCTAssertTrue(app.staticTexts["Online writing turned off"].waitForExistence(timeout: 5))
+
+        tapRootTab("Write")
+        let another = app.buttons["Another"]
+        XCTAssertTrue(another.waitForExistence(timeout: 5))
+        another.tap()
+        XCTAssertTrue(app.alerts["Use online writing?"].waitForExistence(timeout: 5))
+    }
+
     func testSignInAcknowledgesTapBlocksDuplicatesPreservesInputAndReportsSuccess() {
         launch(.signInSuccess)
         enterPerson()
@@ -563,10 +635,14 @@ final class ProsePalReleaseUITests: ProsePalNativeUITestCase {
     func testGenerationFailureKeepsAnHonestRetryAction() {
         launch(
             .signedOut,
-            writingServiceArgument: "--prosepal-force-generation-error-writing-service"
+            writingServiceArgument: "--prosepal-force-generation-error-writing-service",
+            additionalArguments: ["--prosepal-reset-online-writing-permission"]
         )
 
         enterPersonAndGenerate()
+        let permissionAlert = app.alerts["Use online writing?"]
+        XCTAssertTrue(permissionAlert.waitForExistence(timeout: 5))
+        permissionAlert.buttons["Allow Online Writing"].firstMatch.tap()
         let retry = assertExists("moment.generation.retry")
         XCTAssertTrue(retry.isEnabled)
     }

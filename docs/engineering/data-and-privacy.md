@@ -14,8 +14,8 @@ Moment and previous draft when generation fails or is cancelled.
 | Route | Processing | Content used |
 |---|---|---|
 | Private initial draft | `FoundationModelsPrivateDraftClient` uses Apple Foundation Models on the device | Person name, relationship, occasion, register description, tone, length, device locale, Moment detail, and approved matching Truth Beads and Voice Card |
-| Direct careful initial draft | `GatewayCarefulMomentClient` sends a `CardRequest` over HTTPS to the ProsePal `generate-card` Edge Function | Person name, relationship, occasion, tone, length, device locale, Moment detail, register description, app/build/platform metadata, idempotency key, and authentication or guarded staging-development credentials |
-| Private-to-careful fallback | An eligible private-lane technical failure starts a new gateway request | The same careful payload described above; relationship-vault records are not added to the gateway request |
+| Direct careful initial draft | After a current explicit online-writing grant is confirmed, `GatewayCarefulMomentClient` sends a `CardRequest` over HTTPS to the ProsePal `generate-card` Edge Function | Person name, relationship, occasion, tone, length, device locale, Moment detail, register description, app/build/platform metadata, idempotency key, and authentication or guarded staging-development credentials |
+| Private-to-careful fallback | An eligible private-lane technical failure reaches the same permission gate before a new gateway request can start | The same careful payload described above; relationship-vault records are not added to the gateway request |
 | Careful-to-private fallback | An eligible direct-careful failure starts the on-device client | The private prompt content described above, including approved matching relationship memory |
 | Named adjustment | Route follows the lane of the current bundle | The current draft text and adjustment name are added to either the private prompt or careful gateway payload; a private adjustment may fall back online, while an already-online adjustment stays online |
 | Another/rewrite | Re-enters initial-draft routing for the current Moment | It does not send the current draft as adjustment context; the existing wording is retained as a recovery snapshot before successful replacement |
@@ -26,6 +26,14 @@ capacity, and constructs a provider prompt containing the writing fields above.
 It may send that prompt sequentially to the primary and configured fallback
 models at the configured provider endpoint. The production provider binding
 values and its binding terms are not present in the client or repository.
+
+`RoutingMessageWritingService.runCareful` checks the app-composition-owned
+`OnlineWritingPermissionStoring` instance immediately before careful-client
+transport. A missing, revoked, or stale-policy grant throws the provider-neutral
+permission-required error and makes no careful-client call. This covers direct
+careful drafting, private fallback, online adjustments, and private adjustments
+that would otherwise fall back online. Private work already selected by routing
+continues without an online-writing grant.
 
 The gateway does not deliberately persist the incoming prompt or raw request
 body. It stores a SHA-256 fingerprint of provider-affecting request fields and,
@@ -44,15 +52,13 @@ retention is in [Server data](#server-data).
 - A private or mock adjustment has the same eligible private-to-careful
   fallback. An adjustment to a `standardDraft` or `careful` bundle calls the
   careful client only and does not fall back to private processing.
+- Permission-required is a local routing result, not a gateway failure. It does
+  not trigger careful-to-private fallback or weaken the safety/refusal gate.
 - The narrow local safety gate and either model's content refusal stop routing.
   A refusal is not converted into another provider attempt by the app.
 - Per-lane timeouts run inside one total technical deadline. If all eligible
   routes fail, the app presents the final typed, provider-neutral error. The
   current Moment and any current draft or recovery snapshot remain available.
-
-There is no separately persisted, explicit online-writing permission in the
-current implementation. Establishing and enforcing that permission is owned by
-backlog slice I-1.
 
 ## Local data
 
@@ -60,6 +66,7 @@ backlog slice I-1.
 |---|---|---|---|
 | Active Moment, draft, and history — `MomentModel` | App memory. Person, relationship, occasion, style, Moment detail, current `MomentDraftBundle`, and up to 12 edit/rewrite snapshots live for the model lifetime. | Not included in local export unless the user separately saves the draft. | Meaning-bearing input changes clear generated output/history but retain the edited inputs. Start New Moment and confirmed account deletion clear all Moment state. Sign-out, local-vault deletion, and an indeterminate account deletion do not. |
 | Relaunch recovery — `MomentDraftRecoveryState` and `MomentDraftRecoveryStore` | Versioned JSON in standard `UserDefaults` under `prosepal.native.activeDraftRecovery.v1`. It contains the active Moment, generated draft, model-returned notes and approved beads present in the bundle, and up to 12 snapshots. Recovery is written only when a bundle exists and has no time-based expiry. | Excluded. | Cleared when the bundle is invalidated, Start New Moment runs, recovery is unreadable/incompatible, or confirmed account deletion resets `MomentModel`. Sign-out, local-vault deletion, and indeterminate account deletion preserve it. |
+| Online-writing permission — `UserDefaultsOnlineWritingPermissionStore` | The granted policy version is stored in standard `UserDefaults` under `prosepal.native.onlineWritingPermissionPolicyVersion.v1`. No writing or account identifier is stored. A missing or mismatched version is not a current grant. | Excluded. | Granting writes the current version; Privacy & Data revocation removes it immediately. Sign-out, local-vault deletion, and account deletion do not change this device-level choice. A policy-version change requires a fresh grant. |
 | Truth Beads, Voice Cards, and saved drafts — `RelationshipVaultSchemaV1` | SwiftData at `Application Support/ProsePal/RelationshipVault/RelationshipVault.store`, with the containing directories excluded from backup. If persistent storage cannot open, the app uses an honestly reported in-memory fallback. Records remain until an explicit record edit/delete, full vault erasure, or confirmed account deletion succeeds. | `RelationshipVaultExporter` includes every stored Truth Bead, Voice Card, and saved draft, including approval flags, writing fields, identifiers, and timestamps. It omits normalized person keys and store paths. | Individual confirmed deletes save before reporting success. The current “Delete local data” action erases only these three SwiftData model types. Confirmed account deletion invokes the same vault eraser. Sign-out and indeterminate account deletion preserve them. |
 | App Intent handoff — `MomentLaunchStore` | One encoded `MomentLaunchRequest` in standard `UserDefaults` under `prosepal.pendingMomentLaunch.v1`; it can contain person, occasion, shared text, source, and creation time. No time-based expiry is implemented. | Excluded. | Consume-once removal happens before decoding. Confirmed account deletion consumes any pending value. Sign-out, local-vault deletion, and indeterminate account deletion do not. |
 | Share Extension handoff — `SharedMomentLaunchStore` | One sanitized text/URL payload and creation time in app-group `UserDefaults`; production and staging use separate keys. No time-based expiry is implemented. | Excluded. | Consumed once only for a share-extension launch. Confirmed account deletion consumes the running environment's pending value. Sign-out, local-vault deletion, and indeterminate account deletion do not. |
@@ -105,6 +112,7 @@ not part of the current app.
 | Delete local data | Erases saved drafts, Truth Beads, and Voice Cards from the relationship vault after persistence succeeds. | Does not clear the active Moment/recovery, handoffs, Keychain, account, server rows, StoreKit subscription, pending careful metadata, diagnostics, or temporary exports. Its final name and whether its scope should expand are unresolved in I-2. |
 | Delete account | Runs authenticated server revocation/cleanup and final auth-user deletion, then performs the confirmed or indeterminate local lifecycle below. | Is not subscription cancellation. It does not currently apply an App Store event retention/anonymization policy. |
 | Export local data | Produces JSON for the three relationship-vault model types. | Does not export active/recovered work unless saved, handoffs, Keychain/auth, StoreKit, pending request metadata, logs, or server data. |
+| Online writing | The first blocked online route explains the transfer and requires “Allow Online Writing” before retrying the exact work. Privacy & Data shows whether the current policy is granted and can revoke it. | Does not affect private drafting, sign-in, subscription state, saved writing, Relationship Memory, or account/local-data deletion. “Not Now,” revocation, and stale grants start no online work. |
 | Manage subscriptions | Opens Apple's subscription-management surface. | Does not sign out, erase local writing, delete the ProsePal account, or directly remove ProsePal server metadata. |
 
 ### Account-deletion outcomes
@@ -137,10 +145,9 @@ code or marketing copy. Their implementation work is tracked in the ordered
 privacy programme in [BACKLOG.md](../BACKLOG.md):
 
 - The repository does not establish the production provider binding or its
-  binding retention, training, and data-use terms. Those facts are prerequisites
-  for I-1, W-1, and release review.
-- The current app has no explicit online-writing permission. I-1 owns the final
-  wording, first-use presentation, versioned grant, and revocation behaviour.
+  binding retention, training, and data-use terms. Those facts remain a
+  production release gate and an input to W-1 public-policy review; implementing
+  the local permission boundary does not establish them.
 - App Store notification and reconciliation event retention, deletion, or
   anonymization is undefined. S-1 owns the approved period and enforcement.
 - App Store Connect's user-content classification remains an owner decision for
@@ -156,6 +163,9 @@ privacy programme in [BACKLOG.md](../BACKLOG.md):
 - `prosepal-ios/Sources/ProsePalAPI/MessageWritingService.swift`:
   `RoutingMessageWritingService`; private, careful, fallback, and adjustment
   routing.
+- `prosepal-ios/Sources/ProsePalAPI/OnlineWritingPermissionStore.swift` and
+  `prosepal-ios/App/ProsePalNativeApp.swift`: versioned grant persistence and
+  the single app-composition-owned store.
 - `prosepal-ios/Sources/ProsePalAPI/FoundationModelsPrivateDraftClient.swift`
   and `GatewayCarefulMomentClient.swift`: each lane's prompt/request boundary.
 - `prosepal-ios/Sources/ProsePalUI/Features/Moment/MomentModel.swift` and

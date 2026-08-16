@@ -23,16 +23,18 @@ MomentInput
   -> occasion/register routing decision
      -> ordinary initial draft: private first
      -> careful initial draft: gateway first
-  -> eligible failure may start the other lane
-  -> content block never falls through
+  -> current online-writing grant required immediately before gateway work
+  -> eligible technical failure may start the other lane
+  -> permission-required and content-block results never fall through
 ```
 
 For an ordinary initial draft, private timeout, busy/rate, stale request-key,
 runtime-unavailable, malformed-response, and untyped failures may fall back to
 the careful client. Offline, usage-limit, content-block, and cancellation
-results do not. For an initial draft that requires careful treatment, any typed
-generation error except a content block may fall back to the private client;
-untyped failure may also fall back, while cancellation does not.
+results do not. For an initial draft that requires careful treatment, an
+eligible typed technical failure may fall back to the private client. An online-
+writing permission-required result and a content block do not fall back;
+untyped failure may fall back, while cancellation does not.
 
 Named adjustment follows the current bundle's lane. A private or mock draft is
 adjusted on device first and has the eligible private-to-careful fallback. A
@@ -41,15 +43,25 @@ Another/rewrite action is a fresh initial draft for the current Moment rather
 than an adjustment, so it re-enters initial routing and does not send the old
 draft as rewrite context.
 
+`RoutingMessageWritingService.runCareful` checks the injected
+`OnlineWritingPermissionStoring` boundary immediately before every careful-
+client operation. Direct careful drafts, eligible private-to-careful fallback,
+online adjustments, and private adjustments that would fall back online all
+require a grant for `OnlineWritingPermissionPolicy.currentVersion`. Missing,
+revoked, or differently versioned grants stop before the careful client is
+called. Private work already selected by routing does not require this grant.
+
 Timeouts, offline state, usage limits, rate limits, malformed responses, and
 provider refusals map into `GenerationError`. Views receive stable product
 errors rather than provider-specific exceptions. If routing ends in failure or
 cancellation, `MomentModel` does not replace the current draft; the Moment and
 recoverable wording remain available.
 
-The implementation does not yet require a separate explicit online-writing
-permission before direct careful work or private-to-careful fallback. That
-boundary is owned by backlog slice I-1.
+When online work is blocked, `MomentModel` retains the exact draft or adjustment
+request alongside the existing Moment and draft state. The provider-neutral
+first-use presentation can grant the current policy and retry that request, or
+defer it without starting online work. Existing generation cancellation and
+supersession ownership remains in `MomentModel`.
 
 ## Writing content boundary
 

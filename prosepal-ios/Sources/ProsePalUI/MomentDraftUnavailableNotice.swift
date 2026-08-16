@@ -3,6 +3,7 @@ import ProsePalAPI
 
 public enum MomentDraftUnavailableReason: Equatable, Sendable {
     case offline
+    case onlineWritingPermissionRequired
     case timedOut(lane: GenerationTimeoutLane)
     case rateLimited
     case usageLimitReached
@@ -15,6 +16,8 @@ public enum MomentDraftUnavailableReason: Equatable, Sendable {
         switch error {
         case .offline:
             self = .offline
+        case .onlineWritingPermissionRequired:
+            self = .onlineWritingPermissionRequired
         case .timedOut(let lane):
             self = .timedOut(lane: lane)
         case .rateLimited, .requestNeedsFreshKey:
@@ -43,4 +46,31 @@ struct MomentDraftUnavailableNotice {
         systemImage: "wifi.slash",
         canRetry: true
     )
+}
+
+struct MomentGenerationErrorPresentation {
+    let title: String
+    let detail: String
+    let systemImage: String
+    let actionTitle: String
+    let actionSystemImage: String
+    let actionAccessibilityIdentifier: String
+
+    init(reason: MomentDraftUnavailableReason?, errorMessage: String?) {
+        if reason == .onlineWritingPermissionRequired {
+            title = "Online writing is off"
+            detail = errorMessage ?? "Allow online writing to continue. Your Moment is still here."
+            systemImage = "network.slash"
+            actionTitle = "Review Online Writing"
+            actionSystemImage = "hand.raised"
+            actionAccessibilityIdentifier = "onlineWriting.permission.retry"
+        } else {
+            title = "That didn't go through"
+            detail = "We couldn't finish your draft just now. Your note is safe — nothing was lost."
+            systemImage = "exclamationmark.triangle.fill"
+            actionTitle = "Try again"
+            actionSystemImage = "arrow.clockwise"
+            actionAccessibilityIdentifier = "moment.generation.retry"
+        }
+    }
 }

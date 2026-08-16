@@ -1,4 +1,5 @@
 import Foundation
+import ProsePalAPI
 import SwiftUI
 #if canImport(UIKit)
 import UIKit
@@ -16,6 +17,7 @@ enum MomentSettingsExternalLinks {
 
 struct MomentSettingsView: View {
     @Bindable var account: MomentAccountModel
+    let onlineWritingPermissionStore: any OnlineWritingPermissionStoring
     let onDone: () -> Void
     @State private var supportNotice: String?
     @State private var isStatusWashVisible = false
@@ -62,7 +64,10 @@ struct MomentSettingsView: View {
                         title: "Privacy & data",
                         accessibilityIdentifier: "settings.privacyData"
                     ) {
-                        MomentPrivacyDataView(account: account)
+                        MomentPrivacyDataView(
+                            account: account,
+                            onlineWritingPermissionStore: onlineWritingPermissionStore
+                        )
                     }
                 }
 

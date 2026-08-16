@@ -11,7 +11,7 @@ import Testing
 @MainActor
 func typedMomentDetailReachesGeneration() async throws {
     let client = RecordingMomentDraftClient()
-    let service = RoutingMessageWritingService(privateClient: client, carefulClient: client)
+    let service = RoutingMessageWritingService(onlineWritingPermissionStore: grantedOnlineWritingPermissionStore(), privateClient: client, carefulClient: client)
     let model = MomentModel(service: service)
 
     model.personName = "Mira"
@@ -31,7 +31,7 @@ func typedMomentDetailReachesGeneration() async throws {
 @MainActor
 func momentDetailIsOptionalSoTheComposerCompletesWithoutIt() async throws {
     let client = RecordingMomentDraftClient()
-    let service = RoutingMessageWritingService(privateClient: client, carefulClient: client)
+    let service = RoutingMessageWritingService(onlineWritingPermissionStore: grantedOnlineWritingPermissionStore(), privateClient: client, carefulClient: client)
     let model = MomentModel(service: service)
 
     model.personName = "Mira"

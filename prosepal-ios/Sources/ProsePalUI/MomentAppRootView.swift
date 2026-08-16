@@ -42,6 +42,7 @@ public struct MomentAppRootView: View {
 
     private let launchStore: MomentLaunchStore
     private let sharedLaunchStore: SharedMomentLaunchStore
+    private let onlineWritingPermissionStore: any OnlineWritingPermissionStoring
     private let diagnostics: NativeDiagnosticsLogger
 
     @State private var model: MomentModel
@@ -59,13 +60,16 @@ public struct MomentAppRootView: View {
         launchStore: MomentLaunchStore = MomentLaunchStore(),
         sharedLaunchStore: SharedMomentLaunchStore = SharedMomentLaunchStore(),
         draftRecoveryStore: any MomentDraftRecoveryStoring = MomentDraftRecoveryStore(),
+        onlineWritingPermissionStore: any OnlineWritingPermissionStoring,
         diagnostics: NativeDiagnosticsLogger = .shared
     ) {
         self.launchStore = launchStore
         self.sharedLaunchStore = sharedLaunchStore
+        self.onlineWritingPermissionStore = onlineWritingPermissionStore
         self.diagnostics = diagnostics
         _model = State(initialValue: MomentModel(
             service: service,
+            onlineWritingPermissionStore: onlineWritingPermissionStore,
             draftRecoveryStore: draftRecoveryStore
         ))
         _account = State(initialValue: account)
@@ -78,6 +82,7 @@ public struct MomentAppRootView: View {
                 MomentRootTabs(
                     model: model,
                     account: account,
+                    onlineWritingPermissionStore: onlineWritingPermissionStore,
                     selection: $selectedTab
                 )
             } else {
@@ -213,6 +218,7 @@ public final class MomentWelcomeState {
 private struct MomentRootTabs: View {
     @Bindable var model: MomentModel
     @Bindable var account: MomentAccountModel
+    let onlineWritingPermissionStore: any OnlineWritingPermissionStoring
     @Binding var selection: MomentRootTab
 
     var body: some View {
@@ -247,7 +253,10 @@ private struct MomentRootTabs: View {
 
             Tab(value: MomentRootTab.settings) {
                 NavigationStack {
-                    MomentSettingsView(account: account) {
+                    MomentSettingsView(
+                        account: account,
+                        onlineWritingPermissionStore: onlineWritingPermissionStore
+                    ) {
                         selection = .moment
                     }
                     .momentNavigationBarColorScheme()
@@ -281,6 +290,7 @@ private struct MomentRootTabsPreview: View {
     @State private var model: MomentModel
     @State private var account: MomentAccountModel
     @State private var selection: MomentRootTab = .moment
+    private let onlineWritingPermissionStore = UnconfiguredOnlineWritingPermissionStore()
 
     init() {
         let mockClient = MockMomentDraftClient(bundle: MomentDraftBundle(
@@ -290,6 +300,7 @@ private struct MomentRootTabsPreview: View {
         container = try! RelationshipVaultContainerFactory.makeEphemeral()
         _model = State(initialValue: MomentModel(
             service: RoutingMessageWritingService(
+                onlineWritingPermissionStore: onlineWritingPermissionStore,
                 privateClient: mockClient,
                 carefulClient: mockClient
             )
@@ -303,6 +314,7 @@ private struct MomentRootTabsPreview: View {
         MomentRootTabs(
             model: model,
             account: account,
+            onlineWritingPermissionStore: onlineWritingPermissionStore,
             selection: $selection
         )
         .modelContainer(container)
