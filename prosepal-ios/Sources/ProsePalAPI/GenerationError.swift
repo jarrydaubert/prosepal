@@ -8,6 +8,7 @@ public enum GenerationTimeoutLane: Equatable, Sendable {
 
 public enum GenerationError: Error, Equatable, Sendable {
     case offline
+    case onlineWritingPermissionRequired
     case timedOut(lane: GenerationTimeoutLane)
     case rateLimited(message: String)
     case requestNeedsFreshKey(message: String)
@@ -22,6 +23,8 @@ public extension GenerationError {
         switch self {
         case .offline:
             "You appear to be offline. Please check your connection and try again."
+        case .onlineWritingPermissionRequired:
+            String(localized: "Allow online writing to continue. Your Moment and current draft are still here.")
         case .timedOut(let lane):
             switch lane {
             case .onDevice:
@@ -45,6 +48,8 @@ public extension GenerationError {
         switch self {
         case .offline:
             "offline"
+        case .onlineWritingPermissionRequired:
+            "online_writing_permission_required"
         case .timedOut:
             "timeout"
         case .rateLimited:

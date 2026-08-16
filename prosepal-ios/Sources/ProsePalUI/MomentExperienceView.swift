@@ -195,6 +195,7 @@ struct MomentSheetView: View {
         .sheet(isPresented: $isShowingPaywall) {
             MomentPaywallSheet(account: account)
         }
+        .onlineWritingPermissionAlert(model: model)
         #if os(iOS)
         .fullScreenCover(isPresented: $isShowingDraftHistory) {
             draftHistorySheet
@@ -411,7 +412,7 @@ struct MomentSheetView: View {
         }
 
         switch model.draftUnavailableReason {
-        case .timedOut, .rateLimited, .serviceUnavailable, .unexpectedResponse, .unexpected:
+        case .onlineWritingPermissionRequired, .timedOut, .rateLimited, .serviceUnavailable, .unexpectedResponse, .unexpected:
             return true
         case .offline, .usageLimitReached, .contentBlocked, .none:
             return false
@@ -1420,43 +1421,23 @@ struct MomentSheetView: View {
         .accessibilityIdentifier("moment.offline.retry")
     }
 
+    private var generationErrorPresentation: MomentGenerationErrorPresentation {
+        MomentGenerationErrorPresentation(
+            reason: model.draftUnavailableReason,
+            errorMessage: model.errorMessage
+        )
+    }
+
     private func generationErrorStateContent(viewportHeight: CGFloat) -> some View {
-        VStack(spacing: 0) {
-            Spacer(minLength: dynamicTypeSize.isAccessibilitySize ? 28 : 26)
-
-            VStack(spacing: 11) {
-                Image(systemName: "exclamationmark.triangle.fill")
-                    .font(.system(size: 28, weight: .semibold))
-                    .foregroundStyle(Color.prosePalWarning)
-                    .frame(width: 60, height: 60)
-                    .background(
-                        Color.prosePalWarning.opacity(0.14),
-                        in: RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    )
-                    .accessibilityHidden(true)
-
-                Text("That didn't go through")
-                    .font(.system(size: 23, weight: .medium, design: .serif))
-                    .foregroundStyle(Color.prosePalInk)
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                Text("We couldn't finish your draft just now. Your note is safe — nothing was lost.")
-                    .font(.callout)
-                    .lineSpacing(3)
-                    .foregroundStyle(Color.prosePalSlate)
-                    .multilineTextAlignment(.center)
-                    .frame(maxWidth: 285)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .frame(maxWidth: .infinity)
-            .accessibilityElement(children: .combine)
-
-            Spacer(minLength: dynamicTypeSize.isAccessibilitySize ? 28 : 54)
-
-            generationErrorActions
-        }
-        .frame(minHeight: blockingStateContentHeight(for: viewportHeight), alignment: .center)
+        MomentGenerationErrorStateView(
+            presentation: generationErrorPresentation,
+            canDraft: model.canDraft,
+            isDrafting: model.isDrafting,
+            isCareful: model.moment.isCarefulMode,
+            minHeight: blockingStateContentHeight(for: viewportHeight),
+            onRetry: model.retryDraft,
+            onBack: returnToNoteAfterDraftFailure
+        )
     }
 
     private func quotaReachedStateContent(viewportHeight: CGFloat) -> some View {
@@ -1523,36 +1504,6 @@ struct MomentSheetView: View {
             .buttonStyle(.borderedProminent)
             .buttonBorderShape(.capsule)
             .tint(model.moment.isCarefulMode ? .prosePalCare : .prosePalCoral)
-
-            Button {
-                returnToNoteAfterDraftFailure()
-            } label: {
-                Text("Back to your note")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Color.prosePalCoralDeep)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 44)
-            }
-            .buttonStyle(.plain)
-        }
-    }
-
-    private var generationErrorActions: some View {
-        VStack(spacing: 10) {
-            Button {
-                model.retryDraft()
-            } label: {
-                Label("Try again", systemImage: "arrow.clockwise")
-                    .font(.headline.weight(.semibold))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.82)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 50)
-            }
-            .buttonStyle(.borderedProminent)
-            .buttonBorderShape(.capsule)
-            .tint(model.moment.isCarefulMode ? .prosePalCare : .prosePalCoral)
-            .disabled(!model.canDraft || model.isDrafting).accessibilityIdentifier("moment.generation.retry")
 
             Button {
                 returnToNoteAfterDraftFailure()
@@ -1953,6 +1904,13 @@ struct MomentSheetView: View {
         switch model.draftUnavailableReason {
         case .offline:
             return .offline
+        case .onlineWritingPermissionRequired:
+            return MomentDraftUnavailableNotice(
+                title: "Online writing is off",
+                detail: errorMessage,
+                systemImage: "network.slash",
+                canRetry: true
+            )
         case .timedOut(let lane):
             return MomentDraftUnavailableNotice(
                 title: lane == .onDevice
@@ -2969,6 +2927,11 @@ private struct MomentDraftHistorySheet: View {
                 }
                 .buttonStyle(.bordered)
                 .disabled(model.isDrafting)
+                .accessibilityIdentifier(
+                    model.draftUnavailableReason == .onlineWritingPermissionRequired
+                        ? "onlineWriting.permission.retry"
+                        : "moment.draftUnavailable.retry"
+                )
             }
         }
         .padding(14)
@@ -3794,6 +3757,7 @@ private struct MomentMemoryManageLabel: View {
 
 struct MomentPrivacyDataView: View {
     let account: MomentAccountModel
+    let onlineWritingPermissionStore: any OnlineWritingPermissionStoring
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @State private var notice: String?
@@ -3813,6 +3777,10 @@ struct MomentPrivacyDataView: View {
                         subtitle: "Process without leaving your iPhone",
                         trailing: account.runtimeReadiness.isPrivateDraftConfigured ? "On" : "Unavailable"
                     )
+                    privacyDivider
+                    OnlineWritingPrivacyControl(store: onlineWritingPermissionStore) {
+                        notice = "Online writing turned off"
+                    }
                     privacyDivider
                     privacyStatusRow(
                         systemImage: "chart.line.uptrend.xyaxis",

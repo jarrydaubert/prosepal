@@ -38,6 +38,7 @@ public final class MomentModel {
     public var isDrafting = false
     public var errorMessage: String?
     public var draftUnavailableReason: MomentDraftUnavailableReason?
+    public var isOnlineWritingPermissionRequestPresented = false
     public private(set) var draftSnapshots: [MomentDraftSnapshot] = []
     public var previousDraftBundle: MomentDraftBundle? {
         draftSnapshots.last?.bundle
@@ -48,9 +49,11 @@ public final class MomentModel {
     public private(set) var acknowledgedPressureDraftKey: Int?
 
     @ObservationIgnored private let service: any MessageWritingService
+    @ObservationIgnored private let onlineWritingPermissionStore: any OnlineWritingPermissionStoring
     @ObservationIgnored private let diagnostics: NativeDiagnosticsLogger
     @ObservationIgnored private let draftRecoveryStore: any MomentDraftRecoveryStoring
     @ObservationIgnored private var draftTask: Task<Void, Never>?
+    @ObservationIgnored private var blockedOnlineWritingRequest: GenerationRequest?
     @ObservationIgnored private var draftGeneration = 0
     @ObservationIgnored private var isBatchUpdatingMeaningBearingInputs = false
 
@@ -110,10 +113,12 @@ public final class MomentModel {
 
     public init(
         service: any MessageWritingService,
+        onlineWritingPermissionStore: any OnlineWritingPermissionStoring = UnconfiguredOnlineWritingPermissionStore(),
         diagnostics: NativeDiagnosticsLogger = .shared,
         draftRecoveryStore: any MomentDraftRecoveryStoring = MomentDraftRecoveryNoopStore()
     ) {
         self.service = service
+        self.onlineWritingPermissionStore = onlineWritingPermissionStore
         self.diagnostics = diagnostics
         self.draftRecoveryStore = draftRecoveryStore
         restoreRecoveredDraftIfAvailable()
@@ -213,7 +218,21 @@ public final class MomentModel {
 
     public func retryDraft() {
         guard canDraft else { return }
-        launchDraft()
+        if let blockedOnlineWritingRequest {
+            startGeneration(blockedOnlineWritingRequest)
+        } else {
+            launchDraft()
+        }
+    }
+
+    public func allowOnlineWritingAndRetry() {
+        onlineWritingPermissionStore.grantCurrentPolicy()
+        isOnlineWritingPermissionRequestPresented = false
+        retryDraft()
+    }
+
+    public func deferOnlineWriting() {
+        isOnlineWritingPermissionRequestPresented = false
     }
 
     public func rewriteDraft() {
@@ -358,6 +377,10 @@ public final class MomentModel {
             guard !Task.isCancelled, isCurrentGeneration(generation) else { return }
             errorMessage = error.userSafeMessage
             draftUnavailableReason = MomentDraftUnavailableReason(error)
+            if error == .onlineWritingPermissionRequired {
+                blockedOnlineWritingRequest = request
+                isOnlineWritingPermissionRequestPresented = true
+            }
             diagnostics.momentDraftFailed(
                 requestID: requestID,
                 category: error.diagnosticsCategory,
@@ -408,6 +431,8 @@ public final class MomentModel {
     private func cancelActiveGeneration() {
         draftTask?.cancel()
         draftTask = nil
+        blockedOnlineWritingRequest = nil
+        isOnlineWritingPermissionRequestPresented = false
         _ = nextDraftGeneration()
         isDrafting = false
     }

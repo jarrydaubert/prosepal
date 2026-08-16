@@ -9,6 +9,7 @@ import Testing
 func staleDraftResultDoesNotReplaceLatestMomentDraft() async throws {
     let client = ControlledMomentDraftClient()
     let service = RoutingMessageWritingService(
+        onlineWritingPermissionStore: grantedOnlineWritingPermissionStore(),
         privateClient: client,
         carefulClient: client
     )
@@ -43,6 +44,7 @@ func staleDraftResultDoesNotReplaceLatestMomentDraft() async throws {
 func crisisInputDoesNotStartMomentDrafting() async throws {
     let client = CountingMomentDraftClient()
     let service = RoutingMessageWritingService(
+        onlineWritingPermissionStore: grantedOnlineWritingPermissionStore(),
         privateClient: client,
         carefulClient: client
     )
@@ -63,6 +65,7 @@ func crisisInputDoesNotStartMomentDrafting() async throws {
 func momentChangesClearDraftWithoutStartingGeneration() async throws {
     let client = CountingMomentDraftClient()
     let service = RoutingMessageWritingService(
+        onlineWritingPermissionStore: grantedOnlineWritingPermissionStore(),
         privateClient: client,
         carefulClient: client
     )
@@ -87,6 +90,7 @@ func onDeviceTimeoutReturnsLaneHonestRecoverableState() async throws {
     let slowClient = SlowMomentWritingService(delay: .seconds(5))
     let model = MomentModel(
         service: RoutingMessageWritingService(
+            onlineWritingPermissionStore: grantedOnlineWritingPermissionStore(),
             privateClient: slowClient,
             carefulClient: slowClient,
             timeoutPolicy: GenerationTimeoutPolicy(
@@ -115,6 +119,7 @@ func onDeviceTimeoutReturnsLaneHonestRecoverableState() async throws {
 func gatewayTimeoutReturnsLaneHonestRecoverableState() async throws {
     let model = MomentModel(
         service: RoutingMessageWritingService(
+            onlineWritingPermissionStore: grantedOnlineWritingPermissionStore(),
             privateClient: UnconfiguredMomentDraftClient(),
             carefulClient: SlowMomentWritingService(delay: .seconds(5)),
             timeoutPolicy: GenerationTimeoutPolicy(
@@ -229,6 +234,7 @@ func offlineDraftRetryFailureReturnsToRetryableStateWithoutLosingNote() async th
 func startDraftIgnoresRepeatedTapsAndCancellationPreventsLateResult() async throws {
     let client = ControlledMomentDraftClient()
     let service = RoutingMessageWritingService(
+        onlineWritingPermissionStore: grantedOnlineWritingPermissionStore(),
         privateClient: client,
         carefulClient: client
     )
@@ -368,6 +374,7 @@ func startNewMomentClearsActiveDraftRecovery() {
 func startNewMomentClearsActiveComposerWithoutStartingGeneration() async throws {
     let client = CountingMomentDraftClient()
     let service = RoutingMessageWritingService(
+        onlineWritingPermissionStore: grantedOnlineWritingPermissionStore(),
         privateClient: client,
         carefulClient: client
     )
@@ -404,6 +411,7 @@ func startNewMomentClearsActiveComposerWithoutStartingGeneration() async throws 
 func sensitiveMomentAlignsAutomaticCareRegister() async throws {
     let client = CountingMomentDraftClient()
     let service = RoutingMessageWritingService(
+        onlineWritingPermissionStore: grantedOnlineWritingPermissionStore(),
         privateClient: client,
         carefulClient: client
     )
@@ -422,6 +430,7 @@ func sensitiveMomentAlignsAutomaticCareRegister() async throws {
 func ordinaryMomentKeepsDefaultReactRegister() async throws {
     let client = CountingMomentDraftClient()
     let service = RoutingMessageWritingService(
+        onlineWritingPermissionStore: grantedOnlineWritingPermissionStore(),
         privateClient: client,
         carefulClient: client
     )
@@ -439,6 +448,7 @@ func ordinaryMomentKeepsDefaultReactRegister() async throws {
 func ordinaryMomentResetsRegisterAfterSensitiveMoment() async throws {
     let client = CountingMomentDraftClient()
     let service = RoutingMessageWritingService(
+        onlineWritingPermissionStore: grantedOnlineWritingPermissionStore(),
         privateClient: client,
         carefulClient: client
     )
@@ -461,6 +471,7 @@ func ordinaryMomentResetsRegisterAfterSensitiveMoment() async throws {
 func launchRequestAlignsSensitiveMomentBeforeDrafting() async throws {
     let client = CountingMomentDraftClient()
     let service = RoutingMessageWritingService(
+        onlineWritingPermissionStore: grantedOnlineWritingPermissionStore(),
         privateClient: client,
         carefulClient: client
     )
@@ -488,6 +499,7 @@ func adjustingDraftStoresUndoSnapshotAndRestoreClearsIt() async throws {
     )
     let privateClient = MomentModelRefiningClient(bundle: refinedBundle)
     let service = RoutingMessageWritingService(
+        onlineWritingPermissionStore: grantedOnlineWritingPermissionStore(),
         privateClient: privateClient,
         carefulClient: MomentModelRefiningClient(bundle: refinedBundle)
     )
@@ -527,6 +539,7 @@ func keepingCurrentRewriteClearsUndoSnapshotWithoutChangingDraft() async throws 
     )
     let privateClient = MomentModelRefiningClient(bundle: refinedBundle)
     let service = RoutingMessageWritingService(
+        onlineWritingPermissionStore: grantedOnlineWritingPermissionStore(),
         privateClient: privateClient,
         carefulClient: MomentModelRefiningClient(bundle: refinedBundle)
     )
@@ -594,6 +607,7 @@ func editingAfterRewritePreservesBothEditAndRewriteRecovery() async throws {
     )
     let privateClient = MomentModelRefiningClient(bundle: refinedBundle)
     let service = RoutingMessageWritingService(
+        onlineWritingPermissionStore: grantedOnlineWritingPermissionStore(),
         privateClient: privateClient,
         carefulClient: MomentModelRefiningClient(bundle: refinedBundle)
     )
@@ -645,6 +659,7 @@ func restoringSpecificDraftHistorySnapshotKeepsEarlierRecoveryAvailable() async 
     )
     let privateClient = MomentModelRefiningClient(bundle: refinedBundle)
     let service = RoutingMessageWritingService(
+        onlineWritingPermissionStore: grantedOnlineWritingPermissionStore(),
         privateClient: privateClient,
         carefulClient: MomentModelRefiningClient(bundle: refinedBundle)
     )
@@ -712,6 +727,7 @@ func failedAdjustmentKeepsCurrentDraftAndUndoSnapshot() async throws {
         ]
     )
     let service = RoutingMessageWritingService(
+        onlineWritingPermissionStore: grantedOnlineWritingPermissionStore(),
         privateClient: sequencingClient,
         carefulClient: sequencingClient
     )
@@ -782,6 +798,7 @@ func cleaningPressureCheckedDraftUsesDirectAdjustmentAndPreservesUndo() async th
     let privateClient = CountingMomentDraftClient()
     let adjustmentClient = MomentModelRefiningClient(bundle: carefulBundle)
     let service = RoutingMessageWritingService(
+        onlineWritingPermissionStore: grantedOnlineWritingPermissionStore(),
         privateClient: adjustmentClient,
         carefulClient: privateClient
     )
@@ -820,6 +837,7 @@ func cleaningPressureCheckedDraftAcknowledgesRewrittenFindingFromOriginalDetail(
     let privateClient = CountingMomentDraftClient()
     let adjustmentClient = MomentModelRefiningClient(bundle: carefulBundle)
     let service = RoutingMessageWritingService(
+        onlineWritingPermissionStore: grantedOnlineWritingPermissionStore(),
         privateClient: adjustmentClient,
         carefulClient: privateClient
     )
@@ -841,6 +859,55 @@ func cleaningPressureCheckedDraftAcknowledgesRewrittenFindingFromOriginalDetail(
     #expect(model.previousDraftBundle == originalBundle)
     #expect(model.canRestorePreviousDraft)
     #expect(!model.hasVisiblePressureCheck)
+}
+
+@Test
+@MainActor
+func onlinePermissionPromptPreservesAdjustmentAndAllowRetriesExactWork() async throws {
+    let permissionStore = TestOnlineWritingPermissionStore(state: .notGranted)
+    let refinedBundle = MomentDraftBundle(
+        messageText: "A warmer online adjustment.",
+        lane: .careful
+    )
+    let carefulClient = MomentModelRefiningClient(bundle: refinedBundle)
+    let service = RoutingMessageWritingService(
+        onlineWritingPermissionStore: permissionStore,
+        privateClient: carefulClient,
+        carefulClient: carefulClient
+    )
+    let model = MomentModel(
+        service: service,
+        onlineWritingPermissionStore: permissionStore
+    )
+    let originalBundle = MomentDraftBundle(
+        messageText: "Keep this current draft.",
+        lane: .careful
+    )
+    model.personName = "Alex"
+    model.bundle = originalBundle
+
+    model.adjust(.warmer)
+    try await expectEventually("The blocked adjustment did not present permission.") {
+        model.isOnlineWritingPermissionRequestPresented
+    }
+
+    #expect(model.bundle == originalBundle)
+    #expect(model.draftSnapshots.isEmpty)
+    #expect(await carefulClient.lastAdjustedMessage == nil)
+
+    model.deferOnlineWriting()
+    #expect(model.isOnlineWritingPermissionRequestPresented == false)
+    #expect(model.bundle == originalBundle)
+    #expect(await carefulClient.lastAdjustedMessage == nil)
+
+    model.allowOnlineWritingAndRetry()
+    try await expectEventually("Allow did not retry the blocked adjustment.") {
+        model.bundle == refinedBundle
+    }
+
+    #expect(permissionStore.state() == .currentGrant)
+    #expect(await carefulClient.lastAdjustedMessage == originalBundle.messageText)
+    #expect(await carefulClient.lastAdjustment == .warmer)
 }
 
 private actor ControlledMomentDraftClient: MomentDraftClient {
@@ -1088,6 +1155,7 @@ func accountDeletionResetDuringActiveGenerationCancelsAndSuppressesLateResult() 
     // provider result repopulates the screen for the deleted account.
     let client = ControlledMomentDraftClient()
     let service = RoutingMessageWritingService(
+        onlineWritingPermissionStore: grantedOnlineWritingPermissionStore(),
         privateClient: client,
         carefulClient: client
     )

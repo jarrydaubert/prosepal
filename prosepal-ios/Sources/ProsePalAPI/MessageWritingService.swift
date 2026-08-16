@@ -38,15 +38,18 @@ public struct GenerationTimeoutPolicy: Sendable {
 public struct RoutingMessageWritingService: MessageWritingService {
     private let privateClient: any MomentDraftClient
     private let carefulClient: any MomentDraftClient
+    private let onlineWritingPermissionStore: any OnlineWritingPermissionStoring
     private let timeoutPolicy: GenerationTimeoutPolicy
 
     public init(
+        onlineWritingPermissionStore: any OnlineWritingPermissionStoring,
         privateClient: any MomentDraftClient,
         carefulClient: any MomentDraftClient,
         timeoutPolicy: GenerationTimeoutPolicy = GenerationTimeoutPolicy()
     ) {
         self.privateClient = privateClient
         self.carefulClient = carefulClient
+        self.onlineWritingPermissionStore = onlineWritingPermissionStore
         self.timeoutPolicy = timeoutPolicy
     }
 
@@ -184,6 +187,10 @@ public struct RoutingMessageWritingService: MessageWritingService {
         _ operation: @escaping @Sendable () async throws -> MomentDraftBundle
     ) async throws -> MomentDraftBundle {
         try Task.checkCancellation()
+        guard onlineWritingPermissionStore.state() == .currentGrant else {
+            throw GenerationError.onlineWritingPermissionRequired
+        }
+        try Task.checkCancellation()
         let bundle = try await withGenerationTimeout(
             timeoutPolicy.gateway,
             lane: .gateway,
@@ -299,7 +306,7 @@ public struct UnconfiguredMomentDraftClient: MomentDraftClient {
 private extension GenerationError {
     var shouldRouteToCarefulLane: Bool {
         switch self {
-        case .offline, .usageLimitReached, .contentBlocked:
+        case .offline, .onlineWritingPermissionRequired, .usageLimitReached, .contentBlocked:
             false
         case .timedOut, .rateLimited, .requestNeedsFreshKey, .serviceUnavailable, .unexpectedResponse:
             true
@@ -308,7 +315,7 @@ private extension GenerationError {
 
     var shouldFallbackToPrivateDraftFromCarefulLane: Bool {
         switch self {
-        case .contentBlocked:
+        case .onlineWritingPermissionRequired, .contentBlocked:
             false
         case .offline, .usageLimitReached, .timedOut, .rateLimited, .requestNeedsFreshKey, .serviceUnavailable, .unexpectedResponse:
             true

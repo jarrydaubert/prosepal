@@ -3,6 +3,22 @@ import ProsePalAPI
 import ProsePalDomain
 import Testing
 
+private final class TestOnlineWritingPermissionStore: OnlineWritingPermissionStoring, @unchecked Sendable {
+    private var permissionState: OnlineWritingPermissionState
+
+    init(state: OnlineWritingPermissionState = .currentGrant) {
+        permissionState = state
+    }
+
+    func state() -> OnlineWritingPermissionState { permissionState }
+    func grantCurrentPolicy() { permissionState = .currentGrant }
+    func revoke() { permissionState = .notGranted }
+}
+
+private func grantedOnlineWritingPermissionStore() -> TestOnlineWritingPermissionStore {
+    TestOnlineWritingPermissionStore()
+}
+
 @Test
 func everydayMomentRoutesToPrivateClient() async throws {
     let privateClient = RecordingMomentDraftClient(
@@ -12,6 +28,7 @@ func everydayMomentRoutesToPrivateClient() async throws {
         bundle: MomentDraftBundle(messageText: "Careful hello.", lane: .careful)
     )
     let service = RoutingMessageWritingService(
+        onlineWritingPermissionStore: grantedOnlineWritingPermissionStore(),
         privateClient: privateClient,
         carefulClient: carefulClient
     )
@@ -29,6 +46,31 @@ func everydayMomentRoutesToPrivateClient() async throws {
 }
 
 @Test
+func privateRouteDoesNotRequireOnlineWritingPermission() async throws {
+    let privateClient = RecordingMomentDraftClient(
+        bundle: MomentDraftBundle(messageText: "Private hello.", lane: .privateDraft)
+    )
+    let carefulClient = RecordingMomentDraftClient(
+        bundle: MomentDraftBundle(messageText: "Forbidden online draft.", lane: .careful)
+    )
+    let service = RoutingMessageWritingService(
+        onlineWritingPermissionStore: TestOnlineWritingPermissionStore(state: .notGranted),
+        privateClient: privateClient,
+        carefulClient: carefulClient
+    )
+
+    let bundle = try await service.draft(for: MomentInput(
+        personName: "Alex",
+        relationship: .closeFriend,
+        occasion: .birthday
+    ))
+
+    #expect(bundle.messageText == "Private hello.")
+    #expect(await privateClient.draftCallCount == 1)
+    #expect(await carefulClient.draftCallCount == 0)
+}
+
+@Test
 func sensitiveMomentRoutesDirectlyToCarefulClient() async throws {
     let privateClient = RecordingMomentDraftClient(
         bundle: MomentDraftBundle(messageText: "Private sympathy.", lane: .privateDraft)
@@ -37,6 +79,7 @@ func sensitiveMomentRoutesDirectlyToCarefulClient() async throws {
         bundle: MomentDraftBundle(messageText: "Careful sympathy.", lane: .careful)
     )
     let service = RoutingMessageWritingService(
+        onlineWritingPermissionStore: grantedOnlineWritingPermissionStore(),
         privateClient: privateClient,
         carefulClient: carefulClient
     )
@@ -51,6 +94,171 @@ func sensitiveMomentRoutesDirectlyToCarefulClient() async throws {
     #expect(bundle.lane == .careful)
     #expect(await privateClient.draftCallCount == 0)
     #expect(await carefulClient.draftCallCount == 1)
+}
+
+@Test
+func directCarefulRouteRequiresCurrentOnlineWritingPermission() async {
+    let privateClient = RecordingMomentDraftClient(
+        bundle: MomentDraftBundle(messageText: "Forbidden private draft.", lane: .privateDraft)
+    )
+    let carefulClient = RecordingMomentDraftClient(
+        bundle: MomentDraftBundle(messageText: "Forbidden online draft.", lane: .careful)
+    )
+    let service = RoutingMessageWritingService(
+        onlineWritingPermissionStore: TestOnlineWritingPermissionStore(state: .notGranted),
+        privateClient: privateClient,
+        carefulClient: carefulClient
+    )
+
+    await expectOnlineWritingPermissionRequired {
+        try await service.draft(for: MomentInput(
+            personName: "Sam",
+            relationship: .family,
+            occasion: .sympathy
+        ))
+    }
+
+    #expect(await privateClient.draftCallCount == 0)
+    #expect(await carefulClient.draftCallCount == 0)
+}
+
+@Test
+func privateFallbackRequiresCurrentOnlineWritingPermission() async {
+    let privateClient = FailingMomentDraftClient(
+        error: .serviceUnavailable(message: "Private writing is unavailable.")
+    )
+    let carefulClient = RecordingMomentDraftClient(
+        bundle: MomentDraftBundle(messageText: "Forbidden online fallback.", lane: .careful)
+    )
+    let service = RoutingMessageWritingService(
+        onlineWritingPermissionStore: TestOnlineWritingPermissionStore(state: .notGranted),
+        privateClient: privateClient,
+        carefulClient: carefulClient
+    )
+
+    await expectOnlineWritingPermissionRequired {
+        try await service.draft(for: MomentInput(
+            personName: "Taylor",
+            relationship: .colleague,
+            occasion: .newJob
+        ))
+    }
+
+    #expect(await carefulClient.draftCallCount == 0)
+}
+
+@Test(arguments: [MomentDraftLane.privateDraft, .standardDraft, .careful])
+func onlineAdjustmentRequiresCurrentPermissionAndNeverCallsCarefulClient(
+    lane: MomentDraftLane
+) async {
+    let privateClient = FailingMomentDraftClient(
+        error: .serviceUnavailable(message: "Private adjustment is unavailable.")
+    )
+    let carefulClient = RecordingMomentDraftClient(
+        bundle: MomentDraftBundle(messageText: "Forbidden online adjustment.", lane: .careful)
+    )
+    let service = RoutingMessageWritingService(
+        onlineWritingPermissionStore: TestOnlineWritingPermissionStore(state: .notGranted),
+        privateClient: privateClient,
+        carefulClient: carefulClient
+    )
+
+    await expectOnlineWritingPermissionRequired {
+        try await service.adjust(
+            MomentDraftBundle(messageText: "Keep this draft.", lane: lane),
+            with: .warmer,
+            moment: MomentInput(
+                personName: "Alex",
+                relationship: .closeFriend,
+                occasion: .birthday
+            )
+        )
+    }
+
+    #expect(await carefulClient.adjustCallCount == 0)
+}
+
+@Test
+func currentGrantAllowsOnlineAdjustment() async throws {
+    let carefulClient = RecordingMomentDraftClient(
+        bundle: MomentDraftBundle(messageText: "Allowed online adjustment.", lane: .careful)
+    )
+    let service = RoutingMessageWritingService(
+        onlineWritingPermissionStore: grantedOnlineWritingPermissionStore(),
+        privateClient: carefulClient,
+        carefulClient: carefulClient
+    )
+
+    let bundle = try await service.adjust(
+        MomentDraftBundle(messageText: "Current draft.", lane: .standardDraft),
+        with: .moreDirect,
+        moment: MomentInput(
+            personName: "Alex",
+            relationship: .closeFriend,
+            occasion: .birthday
+        )
+    )
+
+    #expect(bundle.messageText == "Allowed online adjustment.")
+    #expect(await carefulClient.adjustCallCount == 1)
+}
+
+@Test
+func revocationBlocksTheNextOnlineCallOnTheSameService() async throws {
+    let permissionStore = TestOnlineWritingPermissionStore()
+    let carefulClient = RecordingMomentDraftClient(
+        bundle: MomentDraftBundle(messageText: "Allowed first draft.", lane: .careful)
+    )
+    let service = RoutingMessageWritingService(
+        onlineWritingPermissionStore: permissionStore,
+        privateClient: carefulClient,
+        carefulClient: carefulClient
+    )
+    let moment = MomentInput(
+        personName: "Sam",
+        relationship: .family,
+        occasion: .sympathy
+    )
+
+    _ = try await service.draft(for: moment)
+    #expect(await carefulClient.draftCallCount == 1)
+
+    permissionStore.revoke()
+    await expectOnlineWritingPermissionRequired {
+        try await service.draft(for: moment)
+    }
+
+    #expect(await carefulClient.draftCallCount == 1)
+}
+
+@Test(arguments: [OnlineWritingPermissionState.notGranted, .stalePolicyGrant])
+func revokedOrStaleGrantBlocksEverySubsequentOnlineCall(
+    state: OnlineWritingPermissionState
+) async {
+    let permissionStore = TestOnlineWritingPermissionStore(
+        state: state == .stalePolicyGrant ? .stalePolicyGrant : .currentGrant
+    )
+    if state == .notGranted {
+        permissionStore.revoke()
+    }
+    let carefulClient = RecordingMomentDraftClient(
+        bundle: MomentDraftBundle(messageText: "Forbidden online draft.", lane: .careful)
+    )
+    let service = RoutingMessageWritingService(
+        onlineWritingPermissionStore: permissionStore,
+        privateClient: carefulClient,
+        carefulClient: carefulClient
+    )
+
+    await expectOnlineWritingPermissionRequired {
+        try await service.draft(for: MomentInput(
+            personName: "Sam",
+            relationship: .family,
+            occasion: .sympathy
+        ))
+    }
+
+    #expect(await carefulClient.draftCallCount == 0)
 }
 
 @Test
@@ -121,6 +329,7 @@ func carefulLaneEntitlementFailureFallsBackToPrivateDraft() async throws {
         )
     )
     let service = RoutingMessageWritingService(
+        onlineWritingPermissionStore: grantedOnlineWritingPermissionStore(),
         privateClient: privateClient,
         carefulClient: carefulClient
     )
@@ -152,6 +361,7 @@ func sensitiveMomentsProducePrivateDraftWhenGatewayCarefulLaneFails(
         clientContext: ClientContext(appVersion: "0.0.0", buildNumber: "1")
     )
     let service = RoutingMessageWritingService(
+        onlineWritingPermissionStore: grantedOnlineWritingPermissionStore(),
         privateClient: privateClient,
         carefulClient: carefulClient
     )
@@ -178,6 +388,7 @@ func carefulLaneContentBlockDoesNotFallbackToPrivateDraft() async {
         error: GenerationError.contentBlocked(message: "This wording needs to change first.")
     )
     let service = RoutingMessageWritingService(
+        onlineWritingPermissionStore: grantedOnlineWritingPermissionStore(),
         privateClient: privateClient,
         carefulClient: carefulClient
     )
@@ -207,6 +418,7 @@ func privateUnavailabilityFallsThroughToStandardGatewayDraft() async throws {
         bundle: MomentDraftBundle(messageText: "Careful fallback.", lane: .careful)
     )
     let service = RoutingMessageWritingService(
+        onlineWritingPermissionStore: grantedOnlineWritingPermissionStore(),
         privateClient: privateClient,
         carefulClient: carefulClient
     )
@@ -229,6 +441,7 @@ func unexpectedPrivateClientFailureFallsThroughToStandardGatewayDraft() async th
         bundle: MomentDraftBundle(messageText: "Careful fallback.", lane: .careful)
     )
     let service = RoutingMessageWritingService(
+        onlineWritingPermissionStore: grantedOnlineWritingPermissionStore(),
         privateClient: privateClient,
         carefulClient: carefulClient
     )
@@ -253,6 +466,7 @@ func privateContentBlockDoesNotFallThroughToCarefulClient() async {
         bundle: MomentDraftBundle(messageText: "Careful fallback.", lane: .careful)
     )
     let service = RoutingMessageWritingService(
+        onlineWritingPermissionStore: grantedOnlineWritingPermissionStore(),
         privateClient: privateClient,
         carefulClient: carefulClient
     )
@@ -280,6 +494,7 @@ func laneTimeoutCancelsTheUnderlyingOperationBeforeFallback() async {
         error: .contentBlocked(message: "Stop after the timeout fallback.")
     )
     let service = RoutingMessageWritingService(
+        onlineWritingPermissionStore: grantedOnlineWritingPermissionStore(),
         privateClient: privateClient,
         carefulClient: carefulClient,
         timeoutPolicy: GenerationTimeoutPolicy(
@@ -314,6 +529,7 @@ func cancellationBeforeRoutingDoesNotCallEitherProvider() async {
         bundle: MomentDraftBundle(messageText: "Careful.", lane: .careful)
     )
     let service = RoutingMessageWritingService(
+        onlineWritingPermissionStore: grantedOnlineWritingPermissionStore(),
         privateClient: privateClient,
         carefulClient: carefulClient
     )
@@ -349,6 +565,7 @@ func cancellationDuringProviderWorkNeverStartsFallback(
     let service: RoutingMessageWritingService
 
     service = RoutingMessageWritingService(
+        onlineWritingPermissionStore: grantedOnlineWritingPermissionStore(),
         privateClient: cancellingClient,
         carefulClient: fallbackClient
     )
@@ -400,6 +617,7 @@ func serviceAppliesLocalPressureCheckToReturnedDraft() async throws {
         )
     )
     let service = RoutingMessageWritingService(
+        onlineWritingPermissionStore: grantedOnlineWritingPermissionStore(),
         privateClient: privateClient,
         carefulClient: carefulClient
     )
@@ -418,6 +636,7 @@ func serviceAppliesLocalPressureCheckToReturnedDraft() async throws {
 @Test
 func emptyPersonDoesNotStartDrafting() async {
     let service = RoutingMessageWritingService(
+        onlineWritingPermissionStore: grantedOnlineWritingPermissionStore(),
         privateClient: RecordingMomentDraftClient(
             bundle: MomentDraftBundle(messageText: "Private.", lane: .privateDraft)
         ),
@@ -449,6 +668,7 @@ func crisisMomentDoesNotCallAnyDraftClient() async {
         bundle: MomentDraftBundle(messageText: "Careful.", lane: .careful)
     )
     let service = RoutingMessageWritingService(
+        onlineWritingPermissionStore: grantedOnlineWritingPermissionStore(),
         privateClient: privateClient,
         carefulClient: carefulClient
     )
@@ -480,6 +700,7 @@ func adjustPrivateDraftFallsThroughToCarefulClientWhenPrivateIsUnavailable() asy
         bundle: MomentDraftBundle(messageText: "Careful warmer draft.", lane: .careful)
     )
     let service = RoutingMessageWritingService(
+        onlineWritingPermissionStore: grantedOnlineWritingPermissionStore(),
         privateClient: privateClient,
         carefulClient: carefulClient
     )
@@ -506,6 +727,7 @@ func unexpectedPrivateAdjustmentFailureFallsThroughToCarefulClient() async throw
         bundle: MomentDraftBundle(messageText: "Careful warmer draft.", lane: .careful)
     )
     let service = RoutingMessageWritingService(
+        onlineWritingPermissionStore: grantedOnlineWritingPermissionStore(),
         privateClient: privateClient,
         carefulClient: carefulClient
     )
@@ -555,6 +777,19 @@ func savedMomentDraftRecordPreservesMomentMetadata() {
     #expect(record.lane == MomentDraftLane.careful)
     #expect(record.trueThing == "You always show up.")
     #expect(record.createdAt == createdAt)
+}
+
+private func expectOnlineWritingPermissionRequired(
+    _ operation: () async throws -> MomentDraftBundle
+) async {
+    do {
+        _ = try await operation()
+        Issue.record("Expected online writing permission to be required.")
+    } catch let error as GenerationError {
+        #expect(error == .onlineWritingPermissionRequired)
+    } catch {
+        Issue.record("Expected GenerationError, got \(error).")
+    }
 }
 
 private actor RecordingMomentDraftClient: MomentDraftClient {

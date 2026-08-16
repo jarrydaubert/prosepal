@@ -29,7 +29,10 @@ private struct MomentSettingsPreview: View {
 
     var body: some View {
         NavigationStack {
-            MomentSettingsView(account: account) {}
+            MomentSettingsView(
+                account: account,
+                onlineWritingPermissionStore: UnconfiguredOnlineWritingPermissionStore()
+            ) {}
         }
         .modelContainer(container)
     }

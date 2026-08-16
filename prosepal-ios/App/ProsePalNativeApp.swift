@@ -16,6 +16,7 @@ struct ProsePalNativeApp: App {
     private let runtimeReadiness: NativeRuntimeReadiness
     private let welcomeState: MomentWelcomeState
     private let draftRecoveryStore: any MomentDraftRecoveryStoring
+    private let onlineWritingPermissionStore: any OnlineWritingPermissionStoring
 
     init() {
         let authClient: (any AuthClient)?
@@ -27,6 +28,13 @@ struct ProsePalNativeApp: App {
         let runtimeReadiness: NativeRuntimeReadiness
         let welcomeState: MomentWelcomeState
         let draftRecoveryStore: any MomentDraftRecoveryStoring
+        let onlineWritingPermissionStore = UserDefaultsOnlineWritingPermissionStore()
+
+        #if DEBUG
+        if ProsePalDebugLaunchArguments.resetsOnlineWritingPermission {
+            onlineWritingPermissionStore.revoke()
+        }
+        #endif
 
         #if DEBUG
         if let uiTestScenario = ProsePalUITestScenario.current {
@@ -102,6 +110,7 @@ struct ProsePalNativeApp: App {
         self.runtimeReadiness = runtimeReadiness
         self.welcomeState = welcomeState
         self.draftRecoveryStore = draftRecoveryStore
+        self.onlineWritingPermissionStore = onlineWritingPermissionStore
         self.authSessionController = AuthSessionController(
             store: authSessionStore,
             authClient: authClient
@@ -119,7 +128,8 @@ struct ProsePalNativeApp: App {
                     service: MessageWritingServiceFactory.makeService(
                         authSessionController: authSessionController,
                         clientContext: context,
-                        relationshipVaultContainer: relationshipVaultContainer
+                        relationshipVaultContainer: relationshipVaultContainer,
+                        onlineWritingPermissionStore: onlineWritingPermissionStore
                     ),
                     account: MomentAccountModel(
                         clientContext: context,
@@ -137,7 +147,8 @@ struct ProsePalNativeApp: App {
                         runtimeReadiness: runtimeReadiness
                     ),
                     welcomeState: welcomeState,
-                    draftRecoveryStore: draftRecoveryStore
+                    draftRecoveryStore: draftRecoveryStore,
+                    onlineWritingPermissionStore: onlineWritingPermissionStore
                 )
                 .modelContainer(relationshipVaultContainer)
                 .prosePalDebugAccessibilityOverrides()
@@ -256,12 +267,14 @@ private enum MessageWritingServiceFactory {
     static func makeService(
         authSessionController: AuthSessionController?,
         clientContext: ClientContext,
-        relationshipVaultContainer: ModelContainer
+        relationshipVaultContainer: ModelContainer,
+        onlineWritingPermissionStore: any OnlineWritingPermissionStoring
     ) -> any MessageWritingService {
         #if DEBUG
         if ProsePalDebugLaunchArguments.forcesOfflineWritingService {
             let failingClient = DebugFailingMomentDraftClient(error: .offline)
             return RoutingMessageWritingService(
+                onlineWritingPermissionStore: onlineWritingPermissionStore,
                 privateClient: failingClient,
                 carefulClient: failingClient
             )
@@ -272,6 +285,7 @@ private enum MessageWritingServiceFactory {
                 message: "Message generation is temporarily unavailable. Please try again shortly."
             ))
             return RoutingMessageWritingService(
+                onlineWritingPermissionStore: onlineWritingPermissionStore,
                 privateClient: failingClient,
                 carefulClient: failingClient
             )
@@ -282,8 +296,24 @@ private enum MessageWritingServiceFactory {
                 message: "You've used your included Standard generation. Premium unlocks more messages."
             ))
             return RoutingMessageWritingService(
+                onlineWritingPermissionStore: onlineWritingPermissionStore,
                 privateClient: failingClient,
                 carefulClient: failingClient
+            )
+        }
+
+        if ProsePalDebugLaunchArguments.forcesOnlineWritingRoute {
+            let privateClient = DebugFailingMomentDraftClient(error: .serviceUnavailable(
+                message: "Private draft unavailable."
+            ))
+            let carefulClient = MockMomentDraftClient(bundle: MomentDraftBundle(
+                messageText: "Mira, I have been thinking about our Sunday calls. I miss that easy rhythm with you, and I would love to find a time to catch up soon.",
+                lane: .careful
+            ))
+            return RoutingMessageWritingService(
+                onlineWritingPermissionStore: onlineWritingPermissionStore,
+                privateClient: privateClient,
+                carefulClient: carefulClient
             )
         }
 
@@ -293,6 +323,7 @@ private enum MessageWritingServiceFactory {
                 lane: .mock
             ), delay: ProsePalDebugLaunchArguments.mockWritingDelay)
             return RoutingMessageWritingService(
+                onlineWritingPermissionStore: onlineWritingPermissionStore,
                 privateClient: mockClient,
                 carefulClient: mockClient,
                 timeoutPolicy: ProsePalDebugLaunchArguments.mockWritingTimeoutPolicy
@@ -327,6 +358,7 @@ private enum MessageWritingServiceFactory {
         }
 
         return RoutingMessageWritingService(
+            onlineWritingPermissionStore: onlineWritingPermissionStore,
             privateClient: privateClient,
             carefulClient: carefulClient
         )
@@ -367,6 +399,8 @@ private enum ProsePalDebugLaunchArguments {
     static let forcePremium = "--prosepal-force-premium"
     static let reduceTransparency = "--prosepal-force-reduce-transparency"
     static let accessibilityTextSize = "--prosepal-force-accessibility-text-size"
+    static let forceOnlineWritingRoute = "--prosepal-force-online-writing-route"
+    static let resetOnlineWritingPermission = "--prosepal-reset-online-writing-permission"
 
     static var usesMockWritingService: Bool {
         ProcessInfo.processInfo.arguments.contains(mockWritingService)
@@ -411,6 +445,14 @@ private enum ProsePalDebugLaunchArguments {
 
     static var forcesAccessibilityTextSize: Bool {
         ProcessInfo.processInfo.arguments.contains(accessibilityTextSize)
+    }
+
+    static var forcesOnlineWritingRoute: Bool {
+        ProcessInfo.processInfo.arguments.contains(forceOnlineWritingRoute)
+    }
+
+    static var resetsOnlineWritingPermission: Bool {
+        ProcessInfo.processInfo.arguments.contains(resetOnlineWritingPermission)
     }
 
     static var mockWritingDelay: Duration? {
