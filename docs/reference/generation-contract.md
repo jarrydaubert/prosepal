@@ -110,11 +110,17 @@ the same response quality gate.
 | `409` | In-flight, replay-expired, or idempotency-conflict handling |
 | `422` | Content blocked |
 | `425`, `429` | Rate limited |
-| `499` | Caller cancelled; provider fallback stops and an active reservation fails without charging usage |
+| `499` | Server reports caller cancellation; native transport currently has no explicit case and maps a received response to `unexpectedResponse` |
 | `5xx` | Service unavailable |
 
-Transport cancellation stays cancellation. Connectivity failures map to
-offline, and provider details never become part of the public response type.
+Normal client-initiated transport cancellation stays cancellation, usually through
+`URLError.cancelled`. A received HTTP 499 is a narrower, different path: the
+native default status branch makes it fallback-eligible where routing permits.
+Server cancellation attempts failed finalization; an unconfirmed RPC outcome
+is not proof of no charge.
+
+Connectivity failures map to offline, and provider details never become part of
+the public response type.
 
 ## Related documentation
 

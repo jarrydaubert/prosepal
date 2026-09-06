@@ -51,9 +51,11 @@ require a grant for `OnlineWritingPermissionPolicy.currentVersion`. Missing,
 revoked, or differently versioned grants stop before the careful client is
 called. Private work already selected by routing does not require this grant.
 
-Timeouts, offline state, usage limits, rate limits, malformed responses, and
-provider refusals map into `GenerationError`. Views receive stable product
-errors rather than provider-specific exceptions. If routing ends in failure or
+Timeouts, offline state, usage limits, rate limits and malformed responses map
+into `GenerationError`. Foundation Models refusal maps to `contentBlocked`; the
+generic online adapter does not classify explicit provider refusal metadata and
+can treat it as a technical failure. Views receive stable product errors rather
+than provider-specific exceptions. If routing ends in failure or
 cancellation, `MomentModel` does not replace the current draft; the Moment and
 recoverable wording remain available.
 
@@ -72,9 +74,12 @@ private adjustment also uses the current draft and adjustment name.
 Careful generation sends the bounded `CardRequest` to the ProsePal gateway. Its
 writing content is person name, relationship, occasion, tone, length, locale,
 Moment detail, and the register description; an adjustment also sends the
-current draft and adjustment name. Relationship-vault records are not included
-in the gateway request. The request also carries app/build/platform and request-
-identity metadata plus the applicable auth boundary.
+current draft and adjustment name. Relationship-vault records are not directly
+included in the gateway request. A private draft can incorporate their facts, however,
+and an online adjustment sends that current draft as context after permission.
+The absence of vault objects does not exclude memory-derived wording. The request
+also carries app/build/platform and request-identity metadata plus the applicable
+auth boundary.
 
 After reservation, `generate-card` builds a structured prompt from those
 writing fields. It may send the same prompt sequentially to configured primary
@@ -138,7 +143,8 @@ fallback model, and finalizes the reservation as failed.
 
 Gateway success carries three distinct candidates with equal contract status.
 Array order is transport order, not a quality ranking or a declaration that the
-first candidate is best.
+first candidate is best. `GatewayCarefulMomentClient` currently selects the first
+message and discards the other candidates and returned usage/retry metadata.
 
 Request identity, reservation leases, atomic quota decisions, replay, and
 retention are specified in [Gateway request ledger](./gateway-request-ledger.md).

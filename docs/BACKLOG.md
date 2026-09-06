@@ -1,675 +1,401 @@
 # Backlog
 
-This file contains unresolved work only. Completed behavior and verification
-history belong in `docs/reference/feature-status.jsonl`, release evidence, and
-git history. The adjacent CSV is a generated compatibility export, not an
-editable source.
-
-Every item uses `[ ]` until its definition of done is fully satisfied. Remove a
-completed item instead of turning this file into a status log.
-
-## Working Rules
-
-- Reliability, security, auth, payments, and user-data integrity take priority.
-- Do not change another SwiftData `@Model` without a new `VersionedSchema` and
-  explicit migration stage.
-- When touching `MomentExperienceView.swift`, extract the affected surface when
-  the boundary is safe and replace source-string guards with behavioral or
-  view-layer coverage where practical.
-- The monolith line-count and source-string-test ceilings are shrink-only:
-  lower both relevant baselines in the same commit as each extraction.
-- New user-facing copy must use localization-safe APIs. New colors must be
-  semantic and adaptive even while full localization and Dark Mode remain
-  post-v1 work.
-- Run Apple, Supabase, StoreKit sandbox, TestFlight, and physical-device setup in
-  parallel with locally testable engineering work.
-- Never put provider secrets, service-role keys, Apple private keys, development
-  gateway secrets, tokens, receipts, or user message content in tracked build
-  settings, fixtures, logs, or evidence.
-
-## Native V1 — Engineering
-
-- [ ] Complete lane-specific live writing-quality evidence for private and
-  careful generation. DoD: separately approved live samples exercise the full
-  representative rubric across both lanes without retaining user content or
-  secrets; every candidate is scored individually and each three-option set is
-  reviewed for meaningful variation rather than superficial paraphrases;
-  preservation, invented personal facts, tone/length, everyday/careful writing
-  mode, guilt or pressure, and provider/internal-language leakage all pass or
-  have an explicit release-owner disposition. Every change expected to affect
-  generated meaning or presentation reruns the deterministic baseline in
-  `docs/quality/ai-output-quality.md` and, where required, the approved lane-
-  specific review; persistence-only schema changes do not trigger an unrelated
-  writing evaluation. Custom crisis classification and mental-health inference
-  are out of scope.
-
-- [ ] Define one measured end-to-end generation deadline across fallback
-  attempts. DoD: the release owner first approves an initial user-visible
-  ceiling and one total fallback budget; repeated device and staging measurements
-  then confirm or explicitly revise that contract. Private-device measurements
-  use the existing debug scheme, not a separate harness app, and compare the
-  current single structured draft, complete one-session three-option generation,
-  streamed time-to-first-useful-text, and complete streamed output across
-  representative Brief, Standard, and Detailed fixtures. The same approved
-  private-device runs score every completed synthetic output with the
-  deterministic evaluator and retain the first live private-lane scorecard next
-  to the timing evidence; the current single-draft control is scored per
-  candidate, while complete three-option runs also receive a useful-choice set
-  score. Fallback cannot extend the wait unintentionally; long waits receive
-  honest progress copy; deterministic tests cover deadline propagation,
-  cancellation, and late-result suppression.
-
-  The current `GenerationTimeoutPolicy.total` value is a technical cancellation
-  backstop that prevents unbounded work; it is not the release-owner-approved
-  user-experience deadline or evidence that the current wait is acceptable.
-
-- [ ] Prove and deliver the approved choose-before-edit three-option writing
-  flow without weakening private-first routing. DoD: the gateway client
-  preserves all three distinct `CardResponse` messages instead of selecting an
-  unranked first element, including exact request-ledger replay; one Foundation
-  Models session produces and validates three distinct private options on a
-  supported physical iPhone within the measured end-to-end deadline; both lanes
-  expose one provider-neutral option-set contract without revealing routing.
-  Execution order is mandatory: approve the end-to-end deadline, run a
-  timeboxed private-device three-option spike, record the gate decision, and
-  only then begin production domain, recovery, and UI work. The spike compares
-  complete single-shot generation with `LanguageModelSession` streaming and
-  prewarming, and may conclude that single-shot completion is already fast
-  enough. Streaming must earn its state, recovery, accessibility, and lane-
-  parity complexity; it is not a preselected implementation requirement.
-
-  The composer presents person, explicitly confirmed relationship, and occasion
-  before one skippable relationship-by-occasion question that replaces the
-  generic blank-detail prompt. “Help me personalise it further” reveals no more
-  than two additional inline questions; generation remains available when the
-  questions are unanswered once the required person/relationship/occasion
-  context is valid. Personal detail, message goal, and things to avoid remain
-  structurally distinct, use stable cue identifiers, survive backward-compatible
-  draft recovery, and reach both private and careful prompts without raw answer
-  text entering diagnostics or analytics. The deterministic question bank is
-  owned by a small set of occasion families with relationship-aware wording, a
-  reviewed generic fallback, and editorial checks preventing sympathy/apology
-  prompts from probing circumstances, assigning blame, or encouraging pressure.
-  Tone and length retain honest defaults inside one compact Style disclosure;
-  no hidden `closeFriend` default can be sent for an unconfirmed relationship.
-
-  `MomentRegister` stops being user-controlled or hidden mutable compose input.
-  New initial drafts derive everyday-versus-careful treatment from occasion
-  policy and writing-service availability/fallback; the narrow defensive content
-  block remains a separate refusal rule, not a routing mode. Legacy register
-  recovery values decode safely, but regeneration normalizes them to the new
-  derived policy. Prompt context, pre-result careful styling, and the local
-  Pressure Check no longer depend on an unreachable register selection.
-  A routing-parity matrix records every current occasion-to-initial-lane result
-  before and after the migration, with every intentional change named and
-  approved.
-
-  Results say “Three ways to say it,” give all options equal visual weight with
-  no invented best ranking, and require an explicit choice before the existing
-  edit/adjust/copy/share/save flow. Post-choice rewriting stays optional and
-  contextual: only the existing named adjustments remain available, and any new adjustment
-  vocabulary must be supported by both lanes, the quality rubric, and occasion
-  rules before appearing (for example, no “Funnier” promise on sympathy).
-  Candidate sets and the chosen draft survive relaunch, changing any
-  meaning-bearing input invalidates stale candidates, and choosing or switching
-  an option never destroys recoverable wording.
-
-  Each finalized candidate has a stable identifier and recovery stores the
-  chosen candidate identifier rather than relying on array position. Only a
-  complete, validated three-candidate set can become selectable or persistent;
-  cancellation or Stop before completion discards incomplete fragments and
-  returns to an honest retryable composer state. Recovery uses a versioned draft
-  envelope that still decodes the current single chosen editable draft; it is
-  distinct from SwiftData model versioning.
-
-  If and only if the spike adopts streaming, the shared generation state owns
-  idle, preparing, generating progress, awaiting three-way choice, and editing;
-  deterministic scenarios cover complete success, cancellation before
-  completion, meaning-bearing input mutation, retry with late-result suppression,
-  background cancellation, total-budget expiry/fallback, and gateway completion.
-  One private `LanguageModelSession` may live only for one composer epoch: any
-  meaning-bearing change destroys it, prewarming is debounced, and backgrounding
-  cancels it. The gateway may report truthful generic progress but must not fake
-  streamed candidate text or expose a lane-divergent result screen.
-
-  Deterministic domain/service/model tests cover cue selection, blank/partial
-  answers, include-versus-avoid mapping, legacy recovery decoding, input limits,
-  candidate variation, cancellation, and lane parity. Compact and
-  accessibility-size UI automation proves the quick path, expanded guidance,
-  Style disclosure, three-way choice, and edit handoff; VoiceOver review,
-  writing-quality evaluation, and physical-device evidence pass. Current-
-  behaviour docs and evidence change from one draft to three choices only when
-  the private-lane gate and implementation pass. If the private prototype misses
-  the agreed deadline, make an explicit universal fallback and v1-scope decision;
-  never ship lane-divergent result UX.
-
-- [ ] Make root navigation destinations distinct, discoverable, and accessible.
-  DoD: each root destination has unique content and state restoration; Settings
-  remains reachable; keyboard, VoiceOver, accessibility text sizes, and compact
-  and regular widths retain a complete path; touched navigation views leave the
-  monolith with behavioral coverage.
-
-- [ ] Make critical asynchronous tests fail fast and prove rejected requests
-  have no expensive side effects. DoD: auth refresh and Moment-model test
-  synchronization has an explicit deadline instead of unbounded polling;
-  bounded waits use deterministic synchronization or a shared fail-fast helper;
-  auth and development-secret rejection tests configure a callable provider and
-  explicitly assert that it receives zero requests; regressions fail rather than
-  hanging the test run.
-
-- [ ] Complete cross-cutting asynchronous feedback UI automation. DoD: a durable
-  matrix covers generation, Sign in with Apple, product loading, purchase,
-  restore, account deletion, sign-out, and every other user-triggered durable
-  network action. Deterministic delayed success, failure, and indeterminate
-  scenarios, where applicable, prove that each action acknowledges the tap
-  immediately, exposes an honest accessible in-progress label or announcement,
-  blocks accidental duplicate submission, preserves drafts and composer input,
-  avoids an apparently frozen screen, and reaches a confirmed success, explicit
-  failure with retry, pending/cancelled outcome, or honest indeterminate state.
-  No scenario may expose invented percentage progress or claim completion
-  before its injected boundary confirms the outcome. Assertions use stable
-  actions and outcomes rather than exact copy, timing, view hierarchy, or the
-  volatile composer and result-screen layout. Every unclear, inconsistent, or
-  misleading waiting experience found by the matrix is reported as a named
-  product finding with a dedicated follow-up slice rather than being hidden
-  inside test work.
-
-- [ ] Give sign-out a complete local asynchronous feedback lifecycle. DoD:
-  sign-out acknowledges the tap immediately, owns visible and accessible
-  in-progress feedback, blocks duplicate taps, preserves unrelated drafts and
-  composer input, reports failure with a retry path, and never claims completion
-  before local and remote session clearing converges. Deterministic delayed
-  success and failure UI scenarios prove each state without exact-copy or
-  layout assertions.
-
-- [ ] Keep purchase and restore outcomes visible inside the open paywall. DoD:
-  purchase and restore expose action-specific accessible progress, prevent
-  duplicate submission, preserve durable drafts and composer input, and keep
-  confirmed success, failure, pending, cancelled, and indeterminate outcomes at
-  the action surface instead of relying on a transient notice behind the sheet.
-  Deterministic delayed UI scenarios cover every supported outcome without fake
-  percentage progress or early completion. Keep this a focused feedback slice,
-  not a paywall, composer, or result-screen redesign.
-
-- [ ] Capture physical-device evidence for outgoing ShareLink and local-data
-  file export. DoD: on a supported iPhone, active and saved drafts each present
-  the system activity sheet with the reviewed text; cancelling records no send
-  or destination; Copy places the exact visible text on the pasteboard; the
-  local-data action presents a `.json` file with the generated filename and
-  decodable expected contents; VoiceOver announces Copy and Share accurately;
-  evidence is filed without exposing draft text or export contents.
-
-- [ ] Complete the ordered privacy-truth and data-control programme before
-  extracting Privacy & Data. The remaining slices below are independently
-  reviewable and execute in order: W-1, S-1, I-2, A-2, M-1, then R-1.
-  W-1, S-1, and I-2 are prerequisites for A-2. All mandatory release
-  gates must close before release; they are not all prerequisites for beginning
-  A-2.
-
-  Mandatory release gates:
-
-  - verify the production providers' binding retention, training, and data-use
-    terms
-  - correct the public Privacy Policy, support, and terms surfaces
-  - correct technical data-flow, retention, export, and deletion claims
-  - implement the approved App Store event retention and deletion policy
-  - reconcile privacy manifests and App Store Connect declarations
-  - capture privacy-safe release evidence for the resulting build and public
-    surfaces
-
-  Open product-owner decisions:
-
-  - whether local deletion expands or keeps the precise name “Delete Saved
-    Writing Data”
-  - the canonical public contact
-  - Standard EULA or a custom EULA
-  - App Store Connect user-content classification
-  - whether customer-visible quota and three-option claims are supportable
-  - the App Store event retention period
-  - the exact Vercel analytics disclosure
-
-  Ordered slices:
-
-  - W-1 — make the public privacy, support, and terms surfaces match the
-    product.
-    - Ownership: the corresponding public routes in `prosepal-web` own customer
-      policy and support copy; the iOS app links to those canonical surfaces.
-    - DoD: publish accurate routes, processors, retention, deletion, export,
-      contact, EULA, analytics, and current-product language. Remove stale
-      Google, Gemini, RevenueCat, Firebase, device, and analytics-toggle claims,
-      plus unsupported training, quota, or three-option claims.
-    - Dependencies: the canonical technical data map, verified provider terms,
-      and owner decisions for contact, EULA, Vercel analytics, quotas, and
-      three-option wording.
-    - Non-goals: a website redesign, iOS runtime changes, or duplicating the
-      full policy inside the app.
-    - Evidence: web validation, live-route review, link checks from the app, and
-      a cross-surface claim comparison.
-
-  - S-1 — enforce an App Store event retention and deletion policy.
-    - Ownership: Supabase migrations and functions own App Store notification
-      and reconciliation event tables, cleanup, and account-linked deletion or
-      anonymization.
-    - DoD: implement the approved retention period, scheduled cleanup, and the
-      selected deletion or anonymization behavior; ensure account deletion and
-      routine cleanup honor the same policy; never log event payloads, receipts,
-      secrets, or user content.
-    - Dependencies: the canonical technical data map and the owner-approved App
-      Store event retention period.
-    - Non-goals: production-data mutation in the implementation pull request,
-      gateway quota redesign, or unrelated schema cleanup.
-    - Evidence: migration, function, and pgTAP coverage; guarded staging cleanup
-      and deletion proof; and privacy-safe logs.
-
-  - I-2 — make in-app privacy controls and claims truthful before extraction.
-    - Ownership: existing local persistence and erasure owners perform data
-      changes; `MomentAccountModel` retains account deletion; `ProsePalUI` owns
-      only presentation and confirmation.
-    - DoD: implement the selected local-deletion scope and matching name. The
-      action either deletes all locally named writing stores or precisely says
-      that it deletes saved writing only. Preserve the separate account-deletion
-      contract, remove unsupported status or training claims, and report partial
-      or failed deletion honestly.
-    - Dependencies: the canonical technical data map, W-1, and the owner
-      decision on local-deletion scope and naming.
-    - Non-goals: deleting authentication or subscription state, changing
-      account deletion, creating a second persistence owner, or performing the
-      A-2 file move.
-    - Evidence: behavioral deletion and failure tests, UI automation and
-      VoiceOver review, and regression proof that local deletion does not change
-      account, session, or subscription state.
-
-  - A-2 — simplify and extract Privacy & Data after its truth and controls are
-    settled.
-    - Ownership: `Features/Privacy/MomentPrivacyDataView.swift`,
-      `Features/Privacy/MomentLocalDataExportView.swift`, and
-      `Features/Privacy/MomentLocalDataExport.swift` own presentation and the
-      export contract; existing exporters, erasers, and `MomentAccountModel`
-      retain their current data ownership.
-    - DoD: use a standard `Form` and navigation, a permission `Toggle`,
-      `ShareLink`, public-policy `Link` actions, and destructive confirmation.
-      Remove custom top chrome and status cards plus JSON preview, Copy, and
-      Refresh affordances. Add representative compiling previews, preserve
-      stable accessibility identifiers where behavior is unchanged, and update
-      architecture ownership and shrink-only ratchets with the move.
-    - Dependencies: the canonical technical data map, W-1, S-1, and I-2.
-    - Non-goals: routing, persistence, account, or provider changes; provider
-      names in the UI; or a new view model, coordinator, router, manager, or
-      service locator.
-    - Evidence: previews, behavioral and view tests, app build and UI
-      automation, and physical-device file-export evidence.
-
-  - M-1 — reconcile executable privacy manifests with the settled behavior.
-    - Ownership: the app and Share Extension privacy manifests and their target
-      embedding own required-reason and collected-data declarations.
-    - DoD: re-audit every executable and embedded SDK; declare only APIs and data
-      uses present in the final behavior; keep each manifest embedded in the
-      correct target; remove unsupported permission declarations.
-    - Dependencies: the canonical technical data map, the remaining ordered
-      privacy slices through A-2, and the App Store Connect user-content
-      classification decision.
-    - Non-goals: capability or entitlement changes, App Store Connect mutation,
-      provider changes, or unrelated manifest cleanup.
-    - Evidence: manifest source tests, the archived app privacy report, archive
-      validation, and release preflight.
-
-  - R-1 — reconcile App Store submission metadata and capture release evidence.
-    - Ownership: the release owner owns App Store Connect declarations and
-      private evidence; release documents own the runnable verification
-      process.
-    - DoD: make App Store Connect answers match the release build, provider
-      terms, and public policy; verify reachable Privacy Policy, support, and
-      terms routes; capture production-provider review, online-permission,
-      export, deletion, manifest, physical-device, and TestFlight evidence; and
-      close unresolved privacy review gates before submission.
-    - Dependencies: every preceding slice, all open owner decisions, and a
-      release-candidate build.
-    - Non-goals: merging, deploying, submitting, mutating production
-      configuration or data, or storing private legal evidence in the
-      repository without explicit approval.
-    - Evidence: privacy-safe App Store Connect capture, archived privacy report,
-      live-route checks, device and TestFlight proof, hosted checks, and
-      release-owner sign-off.
-
-- [ ] Decompose `MomentExperienceView.swift` incrementally while completing
-  funded v1 work; do not run a separate big-bang rewrite. The target structure
-  below is approved and binding: implementation slices execute it rather than
-  redesigning it.
-
-  Target files, all under `prosepal-ios/Sources/ProsePalUI/`:
-
-  - `Features/Moment/MomentSheetView.swift`
-  - `Features/Moment/MomentComposerView.swift`
-  - `Features/Moment/MomentDraftResultView.swift`
-  - `Features/Moment/MomentDraftReviseView.swift`
-  - `Features/Moment/MomentDraftBlockedStates.swift`
-  - `Features/Moment/MomentDraftHistorySheet.swift`
-  - `Features/Moment/MomentPickerSheets.swift`
-  - `Features/RelationshipMemory/RelationshipMemoryVaultView.swift`
-  - `Features/RelationshipMemory/RelationshipMemoryDetailView.swift`
-  - `Features/RelationshipMemory/RelationshipMemoryPersistence.swift`
-  - `Features/RelationshipMemory/RelationshipMemoryComposerSection.swift`
-  - `Features/Privacy/MomentPrivacyDataView.swift`
-  - `Features/Privacy/MomentLocalDataExportView.swift`
-  - `Features/Privacy/MomentLocalDataExport.swift`, moved from
-    `Features/Settings/`
-  - `MomentDraftUnavailableNotice.swift`, which gains the unavailable-notice
-    factory
-
-  Implementation order. Each A-slice except A-2 is a safe standalone
-  extraction and independent of the other decomposition slices. A-2 follows
-  the privacy-programme prerequisites above. Each B-slice moves only while the
-  funded work it names is already changing that surface:
-
-  - A-1: move the relationship-memory vault, both detail editors with their
-    file-private chrome, and the persistence seam into
-    `Features/RelationshipMemory/`; delete the unreachable `MomentSelectionRow`
-    and `MomentCompactSelectionRow`; replace the moved half of the memory
-    source-string guard with behavioural confirmation and rollback coverage.
-  - A-2: after W-1, S-1, and I-2, simplify and move privacy
-    presentation, export presentation, and the export contract into
-    `Features/Privacy/` as defined by the privacy programme above.
-  - A-3: extract `MomentDraftHistorySheet` with a preview and timeline contract
-    coverage.
-  - A-4: extract both pickers into `MomentPickerSheets.swift` with previews and
-    direct filter tests.
-  - A-5: move the unavailable-notice policy into
-    `MomentDraftUnavailableNotice.swift` with complete branch tests.
-  - B-1: move the composer, the composer memory section, and
-    `MomentComposerField` during the approved three-option work.
-  - B-2: move the result and revise surfaces during the same three-option work;
-    resolve the decorative variant dots; leave adjustment chips unselected
-    unless real selection state is introduced; explicitly preserve or remove the
-    revision word-substitution heuristic.
-  - B-3: move the offline, generation-error, and quota states during
-    accessibility hardening; replace the quota source-string guard with
-    behavioural coverage and a repository-wide invariant.
-  - Final: move the residual coordinator to
-    `Features/Moment/MomentSheetView.swift`; delete `MomentExperienceView.swift`
-    and both path-specific ratchets.
-
-  `MomentSheetView` ends as the Write-tab presentation coordinator: region
-  selection, cross-region presentation coordination, focus and scroll handling,
-  and the least-common-ancestor Copy, Save, and toast actions. It owns no
-  region-internal rendering. `MomentAccountModel` remains one observable owner
-  for v1, and the authentication and account-deletion presentation that Settings
-  already owns stays there.
-
-  DoD: each extracted user-facing surface has a compiling `#Preview`; behaviour
-  and accessibility identifiers stay unchanged unless an approved product slice
-  changes them explicitly; each moved region's source-string guard is replaced
-  by behavioural, rendering, or direct contract coverage rather than repointed
-  at the new path; no extraction adds a coordinator, router, manager, service
-  locator, or a second owner for state that already has one; both shrink-only
-  guardrail baselines are lowered to their exact new values in the same pull
-  request as the extraction they describe; the architecture region map names a
-  cohesive owning file for every moved region; when an extracted region's
-  navigation chrome is touched, custom bars move to appropriate system toolbar
-  placements while paper-like content surfaces retain their own visual
-  treatment, and this opportunistic chrome modernization never becomes a
-  separate v1 release gate. Swift package tests and the complete app target
-  build pass after every extraction.
-
-- [ ] Complete core-flow accessibility and visual hardening. DoD: release flows
-  pass VoiceOver, Dynamic Type, hit-target, contrast, keyboard/focus, Reduce
-  Motion, and Reduce Transparency checks on supported iPhone sizes; regular-width
-  layouts remain usable; first-run and composer device logs contain no invalid
-  frame-dimension warnings; no fixed-size or light-only styling is added while
-  touched surfaces are extracted.
-
-## Native V1 — Production Configuration And Gateway
-
-- [ ] Complete and prove the production-safe remote-service configuration
-  channel. DoD:
-  build-configuration-driven `Info.plist` values provide
-  `PROSEPAL_GATEWAY_URL`, `PROSEPAL_SUPABASE_URL`, and the Supabase
-  publishable/legacy anon key to archived TestFlight/App Store builds; production
-  and staging values are reproducible and bound to the intended target; archive
-  validation rejects missing configuration, insecure URLs, target/environment
-  cross-contamination, and embedded development gateway secrets or privileged
-  keys; an archive inspection proves the intended public values are present and
-  secrets are absent. This is a prerequisite for live auth, careful generation,
-  and account deletion proof.
-
-- [ ] Verify gateway reservation and cost controls in staging. DoD: the guarded
-  staging migration dry-run and apply succeed; authenticated and explicitly
-  authorized development requests reserve burst and quota capacity before
-  provider work; the legacy pre-provider `check_and_increment_usage` path is no
-  longer the deployed charging boundary; parallel requests at the last free
-  allowance produce exactly
-  one provider call and one charge; provider/quality failure is reclaimable;
-  repeated healthy smoke requests return a validated three-message response
-  rather than timing out or failing the output-quality gate; attempt-level
-  staging evidence distinguishes provider timeouts, upstream/provider errors,
-  and output-quality rejection before model or timeout policy is changed;
-  database linter/advisors and scheduled-cleanup history are clean or explicitly
-  accepted; no probe touches production.
-
-- [ ] Verify gateway idempotency and replay in staging. DoD: concurrent
-  duplicates produce one provider call; a completed duplicate replays the same
-  safe response and usage result without another charge; an abandoned lease
-  becomes reclaimable; expired cached output requires a fresh client key;
-  cross-user keys remain isolated; logs and evidence contain neither full keys
-  nor message text.
-
-- [ ] Extend durable gateway request identity beyond initial careful drafts.
-  DoD: named Adjust actions reuse a persisted request key after transport
-  ambiguity, change keys when provider-affecting input changes, clear keys after
-  success or an explicit expiry/conflict response, and have relaunch/retry tests;
-  a user's first gateway-backed request cannot be charged twice merely because
-  its response was lost.
-
-- [ ] Apply and verify the guarded Supabase native hardening in staging. DoD:
-  migrations remove client access to usage/rate-limit tables and SECURITY
-  DEFINER RPCs; only intended Edge Function/service-role paths remain; database
-  advisors/linter are clean or explicitly accepted; auth, rate, quota,
-  entitlement, and deletion smoke tests pass without touching production.
-
-## Native V1 — Auth, Payments, And Account Integrity
-
-- [ ] Prove the Apple account lifecycle and deletion flow in production-like
-  environments. DoD: a fresh physical-device run re-proves the coordinated
-  clean-state reset —
-  confirmed deletion emits the `account_deletion_*` outcome events, returns
-  the app to onboarding, unmounts the previous Write/Settings surfaces, and a
-  fresh sign-in (and relaunch) shows no saved drafts, relationship memory,
-  generated message, composer input, or recovered draft from the deleted
-  account, while an indeterminate outcome preserves local data without
-  claiming success — plus sandbox/TestFlight coverage of repeat sign-in,
-  missing-code and server-failure presentation, refresh continuity, credential
-  revocation notification/state handling, and sign-out without loss of
-  unrelated local drafts on the production bundle. Evidence is
-  privacy-safe and includes no codes, tokens, client secrets, private keys, or
-  unredacted credential-bearing artifacts.
-
-- [ ] Complete StoreKit and server-entitlement release proof. DoD: configured
-  local StoreKit testing returns all three configured products from an
-  Xcode-launched paywall; an app-hosted StoreKit Test suite directly exercises
-  `StoreKitSubscriptionClient` with verified, unverified, unrelated, and retired
-  product transactions, purchase cancellation/pending/approval, renewal, grace,
-  billing retry, expiry, refund/revocation, Family Sharing when enabled,
-  update-stream termination, and finish only after entitlement convergence;
-  transient read failure remains distinguishable from inactive entitlement.
-  The direct-suite release wrapper proves the expected scenario count with zero
-  failures and zero skips; its harness skips only for an actually caught
-  `NSError` matching `SKInternalErrorDomain` code `3`, while an empty, missing,
-  extra, or wrong product result fails setup without an inferred diagnosis.
-  The known Xcode/iOS runtime failure is rechecked on a fixed runtime and is not
-  accepted as a pass. Configured
-  production product IDs return products; purchase and user-triggered restore
-  work without a forced app login; App Store Server notifications and
-  reconciliation update staging entitlement; account switching cannot carry
-  Premium incorrectly; evidence is captured from sandbox/TestFlight.
-
-- [ ] Verify `appAccountToken` ownership mapping. DoD: only a valid signed-in
-  Supabase UUID is sent; anonymous purchase and later sign-in have an explicit
-  convergence policy; server reconciliation never grants one user's transaction
-  to another; unit and sandbox evidence cover missing and mismatched tokens.
-
-- [ ] Set explicit bounded timeouts for Supabase auth and account-maintenance
-  requests. DoD: sign-in, refresh, logout, token exchange, and deletion cannot
-  wait on `URLSession.shared` defaults indefinitely; cancellation and timeout
-  map to honest outcomes; deletion distinguishes guaranteed pre-final failure
-  from indeterminate final deletion and never promises that a dispatched remote
-  delete did not commit; gateway token acquisition remains within the overall
-  generation deadline.
-
-## Native V1 — Pre-Release Identity And Migration Residue
-
-- [ ] Freeze persistent client identifiers before TestFlight. Audit every
-  persisted or cross-process identifier created during the Flutter-to-Swift
-  transition: UserDefaults, app-group storage, Keychain, `SceneStorage`, draft
-  recovery, onboarding, App Intent, widget, Control, and Share Extension handoff
-  keys. Rename obsolete migration-era keys now where appropriate, including the
-  current `prosepal.native.*` keys, while there is no external installed user
-  base; this is the last point at which a rename is free rather than a permanent
-  compatibility shim. DoD: every retained or renamed identifier has a documented
-  owner and purpose; clean install, onboarding, active-draft recovery, relaunch,
-  deep-link, and Share Extension handoff tests pass; no silent reset or data loss
-  occurs across the supported development upgrade path; identifiers are declared
-  frozen once TestFlight distribution begins.
-
-- [ ] Remove migration terminology from user-facing and actively maintained
-  product surfaces. The SwiftUI app is the only current ProsePal implementation;
-  "Native" must not imply a second live app or appear as unexplained product
-  vocabulary. DoD: user-facing copy such as the "Native iOS" row value in
-  `MomentSettingsComponents.swift` is replaced with clear product language;
-  remaining `Native*` uses are explicit developer-facing compatibility names or
-  Apple-platform capability descriptions; frozen historical records remain
-  clearly marked as historical.
-
-- [ ] Audit and retire obsolete pre-release compatibility and configuration
-  residue. Inspect legacy draft values, removed feature flags and vocabulary,
-  analytics events, unused permissions and entitlements, extension targets, URL
-  routes, configuration variables, StoreKit identifiers, Supabase functions/RPCs,
-  and migration-era scripts. DoD: unused pre-release compatibility code is
-  removed where no shipped data depends on it; the removed voice-dictation and
-  manual Take More Care pathways cannot reappear through recovery, analytics, or
-  configuration; unused Apple capabilities and permission declarations are absent
-  from built executables; externally coupled identifiers such as bundle IDs, app
-  groups, Sign in with Apple IDs, StoreKit product IDs, and deployed database
-  migrations are retained unless a complete validated migration is justified;
-  reproducible database migration history remains intact.
-
-## Native V1 — Release Evidence
-
-- [ ] Run the complete physical-device/TestFlight acceptance loop. DoD: first
-  run → person/relationship/moment/detail → private or careful candidate set →
-  choose a message → adjust without losing work → copy/share/send/save passes on
-  a supported iPhone;
-  offline and refusal states are honest; release-candidate evidence contains no
-  user content or secrets. Until the three-option feasibility gate passes, use
-  the current one-draft loop rather than claiming candidate-choice proof.
-
-- [ ] Qualify optional system surfaces. DoD: App Intent/Shortcuts, widget,
-  Control Center/Action Button, and Share Extension are launched from their real
-  system surfaces in production-like builds and hand off correctly; the app
-  exposes exactly one `AppShortcutsProvider`, and extracted shortcut metadata
-  contains the intended phrases and target identity. Remove any optional
-  embedded target from v1 if it cannot pass without destabilizing the core
-  writing loop.
-
-## Post-V1 / Triggered Work
-
-- [ ] Consider a broader cosmetic rename of migration-era developer-facing
-  symbols, targets, scripts, and filenames only when it provides measurable
-  maintenance value. Examples: `ProsePalNativeApp`, the `ProsePalNative` package
-  and `ProsePalNativePackageTests` target names, the `release_preflight.sh native`
-  positional argument and its two CI call sites, "Native V1" backlog headings, and
-  runbook filenames. Trigger: after v1 ships. This is aesthetics with no expiry
-  date, unlike the persisted-identifier item. DoD: the
-  cleanup is intentionally scoped, preserves useful git history where practical,
-  updates every build/CI reference, and is not allowed to delay v1 merely for
-  naming aesthetics.
-
-- [ ] Add generated or cross-language parity coverage before changing the
-  native generation vocabulary. DoD: Occasion, Relationship, Tone,
-  MessageLength, lane, and contract-version values have one generated source or
-  a test that compares the Swift and gateway sets; adding a native value cannot
-  reach production while the gateway would reject it.
-
-- [ ] Approve the launch gateway-allowance policy and add quantified quota UI
-  only if it earns its place. DoD: the release owner explicitly accepts or
-  changes the repository’s one-lifetime-free and 500-per-month-entitled policy;
-  the server supplies structured limit, remaining-use, and reset metadata on
-  both success and quota-exhaustion paths; the native domain retains it; Plan,
-  Paywall, limit state, StoreKit metadata, and App Store copy remain consistent;
-  private on-device work, failed work, and idempotent replay are not presented
-  as charged; no client invents a count, meter, reset date, or unlimited claim.
-
-- [ ] Prototype an Apple-native Private Cloud Compute careful lane after the
-  iOS 27 SDK and entitlement path stabilize. The API-discovery trigger has
-  occurred, but adoption remains blocked on a provider-neutral
-  `MessageWritingService` prototype proving privacy, refusal behaviour, latency,
-  availability, cost, and universal result-contract parity; this is an
-  experiment, not a migration commitment.
-
-- [ ] Decide whether relationship-vault data needs stronger at-rest encryption
-  beyond current platform storage, backup exclusion, deletion, and export
-  controls before adding cloud sync or more sensitive memory.
-
-- [ ] Complete full Dark Mode, String Catalog localization, broader iPad window
-  adaptation, Switch Control, and non-critical visual/motion/haptic polish.
-
-- [ ] Evaluate system Writing Tools integration only if it improves the focused
-  editor without bypassing Pressure Check, undo/history, recovery, or private-
-  text boundaries. DoD: a small `.writingToolsBehavior(.limited)` experiment
-  proves the system UI cannot evade those protections before any product-scope
-  decision.
-
-- [ ] Reconsider voice dictation as an independently owned post-v1 feature.
-  Voice input is not part of v1: it is not required to write a message, and it
-  would add microphone/speech permissions, speech lifecycle risk, and physical-
-  device release evidence that v1 does not need. Trigger: after v1,
-  and only if people actually ask to speak the moment detail. DoD: the feature is
-  reintroduced behind its own transcriber protocol boundary in its own file, not
-  in the Moment monolith; it is built on stable Apple speech APIs (`SpeechAnalyzer`
-  with `SpeechTranscriber` and an explicit `DictationTranscriber` fallback), never
-  beta-only live-capture helpers; a person-initiated Stop is a graceful finish that
-  preserves the final spoken words and is distinct from cancellation; locale
-  selection, managed asset installation, unsupported devices/languages,
-  permissions, offline behaviour, and supported-device evidence all pass; the
-  microphone and speech usage descriptions return only in the same change that
-  ships a reachable control that needs them.
-
-- [ ] Evaluate replacing custom subscription purchase controls with
-  `SubscriptionStoreView` inside `Features/Paywall/`. Trigger: after v1, or
-  earlier only if the current paywall cannot satisfy release evidence or App
-  Review. DoD: branded system controls preserve the existing hero,
-  entitlement listener, restore path, and `appAccountToken` boundary; localized
-  products, policies, purchase, restore, cancellation, accessibility, and
-  sandbox/TestFlight convergence pass before replacement.
-
-- [ ] Research a lane-neutral result-screen trust layer after the core
-  three-option experience ships. DoD: user testing and legal/privacy review
-  decide whether “AI-assisted — review before sending” and a disclosure of the
-  user-selected inputs improve understanding; wording never names providers,
-  exposes routing, implies gateway work occurred on-device, or displays raw
-  personal context unexpectedly; accessibility and both-lane accuracy pass.
-
-- [ ] Modernize optional App Intents only after their v1 system-surface evidence
-  is complete. DoD: availability-gated typed entities, current Messages-domain
-  schema support, and direct widget/control intent buttons preserve foreground
-  review, sanitized handoff, and the rule that ProsePal never auto-sends an AI-
-  authored message.
-
-- [ ] Review Drafts-tab prominence after launch using privacy-safe usage
-  evidence. If the saved-drafts destination is materially quiet, test moving the
-  library below the writing surface without harming discoverability, state
-  restoration, accessibility, or saved-work recovery; do not change root
-  navigation from intuition alone.
-
-- [ ] Reorder burst enforcement before quota lookup inside
-  `reserve_card_request` if observed abuse traffic shows quota-exhausted callers
-  are creating avoidable database load. DoD: idempotency and subject isolation
-  still run first; burst-denied requests cannot reach quota or provider work;
-  quota, replay, reclaim, concurrency, and staging tests pass with unchanged
-  legitimate-user charging semantics.
-
-- [ ] Add a provider-protocol escape hatch only when a second approved runtime
-  requires it; keep provider details behind `MessageWritingService`.
-
-- [ ] Reconsider app-owned crisis classification only as a separate future
-  product decision. Do not build multilingual detection, three-tier assessment,
-  or mental-health inference for native v1. Any expansion requires specialist
-  safety review and evidence that model/gateway refusal handling is insufficient.
+Unresolved work only. Implemented behaviour belongs in the
+[feature ledger](./reference/feature-status.jsonl); execution results belong in
+private release evidence and Git history. Remove an item when its DoD is met.
+Source presence is not proof of device behaviour or deployed configuration.
+
+## Scope and decision rules
+
+The [product north star](./product/overview.md) is a better personal message,
+faster: person first, optional guidance, useful choices, human review, and no
+loss of the writer's words. The [V1 contract](./product/v1-launch-contract.md)
+retains three choices behind its private-device feasibility gate.
+
+- V1 work must protect that loop, user data, privacy, payment integrity,
+  accessibility, or a concrete release requirement. Each item names its value,
+  current evidence and smallest acceptable outcome.
+- Prefer removing an optional surface or misleading claim to adding a subsystem.
+  Do not schedule cosmetic identifier renames, a monolith-deletion campaign,
+  unused compatibility archaeology, generic provider adapters, or new platform
+  integrations without a demonstrated problem. Preserve externally coupled
+  identifiers and migration history; an existing App Store app is not a greenfield
+  identity, even when the replacement client has no TestFlight users yet.
+- Extract only the region materially touched by funded behaviour, following
+  [SwiftUI ownership rules](./engineering/swiftui-architecture.md). Preserve the
+  approved feature boundaries, previews, behavioural seams and shrink-only
+  ratchets; file moves are not independent release gates. Delete misleading
+  decoration instead of inventing state to justify it.
+- Keep one owner each for generation, auth, entitlement, persistence and recovery.
+  Change SwiftData models only through versioned schemas and explicit migrations.
+- Keep private-first routing, current online permission, typed refusal and
+  cancellation boundaries. No automatic send, provider-branded UI, custom crisis
+  assessment, forced purchase login, or fabricated quota/progress.
+- No secrets or user writing in tracked fixtures, diagnostics or release evidence.
+  Use synthetic quality fixtures. New copy is localization-safe; touched colours
+  are semantic and adaptive. Device and service evidence can proceed alongside
+  local work; it never authorizes production mutations.
+
+## V1 — Writing value and integrity
+
+- [ ] **W-2 — Decide private three-choice feasibility and the wait budget together.**
+  Value: three useful alternatives must earn their latency before a larger UI
+  is built. Source: `GenerationTimeoutPolicy` and
+  `FoundationModelsPrivateDraftClient` already implement one structured private
+  draft with per-lane and total cancellation timers; those cooperative timers
+  are not a measured user-visible deadline or a hard kill of an uncooperative
+  child task.
+  DoD: approve the end-to-end ceiling first; use the existing debug app on a
+  supported iPhone to compare the current single draft with one-session complete
+  three-option output for Brief, Standard and Detailed. Score every synthetic
+  candidate and the set for meaningful variation using
+  [the existing evaluator](./quality/ai-output-quality.md). Measure full completion
+  and fallback, not just first text. Try streaming or prewarming only if that
+  baseline misses the ceiling; neither is a deliverable by default. Retain the
+  device scorecard and timing evidence once, for this and the release-quality
+  gate. A miss requires a deliberate universal scope amendment before composer
+  implementation, not online-first routing or different result interactions.
+  Apple documents a [4,096-token on-device session window](https://developer.apple.com/documentation/technotes/tn3193-managing-the-on-device-foundation-model-s-context-window)
+  including schema, input and output. Bound approved-memory context in the spike;
+  three outputs cannot simply inherit the single draft's token budget.
+  [Prewarming](https://developer.apple.com/documentation/foundationmodels/languagemodelsession/prewarm(promptprefix:))
+  is available on iOS 26, needs useful lead time, and does not guarantee immediate
+  asset loading. A streaming variant must still validate the complete set before
+  choice, persistence or sharing; do not build partial-output recovery.
+
+- [ ] **W-3 — Deliver the smallest person-first, choose-before-edit loop after W-2.**
+  Value: reduce blank-page anxiety without replacing it with an interview.
+  Source: `MomentModel`, `MomentInput`, `MomentSheetView` and
+  `GatewayCarefulMomentClient` currently expose one draft; the gateway adapter
+  takes `response.messages.first` from an unranked three-candidate response.
+  DoD: explicitly confirm person/relationship/occasion; one skippable tailored
+  question with a small occasion-family bank and relationship-aware wording;
+  safe fallback question; compact Style defaults. Do not build a large question
+  engine. Additional questions are optional, at most two, and must improve
+  writing in evaluation before inclusion. Separate detail, goal and exclusions;
+  no probing grief circumstances or blame. No hidden close-friend default or
+  legacy register may determine new intent. Derive routing from occasion policy,
+  safely decode legacy recovery, and test intentional routing changes explicitly.
+
+  Use one provider-neutral complete three-candidate contract with stable IDs,
+  explicit selection, equal visual weight and no invented ranking. Preserve
+  gateway replay exactly; expose all candidates, not the first as a winner.
+  Only supported named adjustments follow selection. Remove decorative variant
+  dots or word-substitution tricks if they cannot truthfully explain a choice.
+  Preserve chosen text and undo/history across option changes and relaunch with a
+  versioned recovery envelope that reads existing single-draft state. Invalidate
+  stale results on changed intent without silently destroying recoverable writing.
+  Stop, backgrounding, supersession, timeout and late-result tests remain common
+  to both lanes. Compact/large-text UI and VoiceOver prove choice-to-edit handoff.
+
+  Another remains a fresh initial draft, not adjustment context. Contract
+  changes must include Swift/gateway enum and version parity; no separate
+  code-generation project is required.
+
+- [ ] **W-4 — Close cancellation and explicit-refusal classification gaps.**
+  Value: stopping or refusing a request must not trigger another paid attempt.
+  Source: `GatewayMessageWritingClient` has no HTTP 499 case; its default maps
+  that status to fallback-eligible `unexpectedResponse`. Normal URLSession
+  cancellation maps correctly, so actual 499 exposure is narrow.
+  `extractOpenAICompatibleContent` and the provider loop also do not classify
+  explicit provider refusal metadata; a missing-content refusal can become a
+  technical failure and advance to another model.
+  DoD: received 499 stays cancellation through transport and routing; recognized
+  refusals from the configured provider stay typed blocks through the model loop,
+  HTTP boundary and lane routing. Missing/unrecognized payloads remain technical
+  failures; do not infer refusal by scanning natural-language text or build a
+  general moderation system. Deterministic tests prove no subsequent provider or
+  lane call and no result acceptance after cancellation/refusal. Reconcile the
+  HTTP/reference docs in the same fix. Preserve the distinction between a local
+  abort request and confirmed server no-charge finalization.
+
+- [ ] **W-5 — Reject unusable output and repair input/body handling.**
+  Value: a successful Write must yield usable wording rather than a blank or
+  formatting residue. Source: `PrivateDraftContent.bundle` trims message text
+  without a nonempty check; gateway `parseProviderMessages` collapses newlines
+  before the newline-dependent `stripGreetingAndSignoff` rule.
+  DoD: empty/whitespace-only private output is a typed failure that cannot replace
+  existing wording or become a successful candidate; strip recognized sign-offs
+  before losing the line structure, without deleting legitimate message content.
+  Add focused tests and rerun the deterministic quality baseline. Keep the
+  existing targeted quality rules; do not clone a broad regex moderation engine
+  into the private lane or promise semantic grounding from format validation.
+
+  Fix the live prompt asymmetry: Moment detail accepts 1,200 characters, but
+  `gatewayIntent` puts it in one `thingsToInclude` item capped at 160 by
+  `parseRequest`; adjustment `userContext` accepts 4,000 natively but the server
+  caps it at 1,200. Choose one honest bound per field and preserve accepted
+  meaning in both lanes, including exclusions and existing rewrite text. Add
+  tests with meaningful content beyond the old cutoffs; do not silently truncate
+  the only personal detail. Contract/version parity remains owned by W-3.
+
+- [ ] **W-6 — Preserve unsaved work through recovery and incoming handoffs.**
+  Value: relaunch or a shortcut must not erase the user's only wording.
+  Source: `MomentModel.persistDraftRecovery` requires an existing bundle;
+  pre-generation input has no recovery envelope. `applyLaunchRequest` and
+  `resetDraftForMomentChange` clear bundle/history/recovery; the root applies an
+  incoming handoff directly. Input invalidation and preservation are different
+  responsibilities.
+  DoD: versioned recovery can preserve meaningful composer input before a first
+  result; changing intent prevents old-result acceptance without losing a
+  recoverable prior draft; an incoming handoff with existing work requires an
+  explicit replace/discard decision or preserves that work first. Keep this in
+  `MomentModel` and the existing stores, not a second draft system. Test relaunch,
+  declined replacement, accepted replacement, Stop, background, legacy envelopes
+  and account reset. Explicit New Moment/discard and confirmed account deletion
+  still clear recovery. No automatic resume or saved-library insertion.
+
+- [ ] **W-7 — Roll back failed composer insertions.**
+  Value: “Could not save” must not leave a pending duplicate or approved memory
+  that a later save silently commits. Source: `MomentSheetView.save`,
+  `addTruthBead` and `addVoiceCard` insert before saving and catch without rollback;
+  extracted saved-writing/memory edit/delete seams already handle rollback.
+  DoD: reuse the existing persistence pattern for those insertion failures,
+  preserve input, and prove retry creates one record and unrelated subsequent
+  saves do not commit the rejected insertion. No schema or persistence-layer
+  replacement. Keep account/local erase failures visible under I-2.
+
+- [ ] **Q-1 — Finish lane-specific live writing-quality acceptance.**
+  Value: useful, faithful writing is the product, not an implementation detail.
+  DoD: separately approved synthetic private and careful samples satisfy the
+  [quality rubric](./quality/writing-quality-rubric.md) for preserved facts,
+  no invented personal details, tone/length, sensitive occasions, pressure and
+  internal-language leakage. Score each candidate and meaningful set variation;
+  reuse W-2's private evidence where applicable. Failures receive explicit
+  release-owner disposition. Re-evaluate meaning-affecting changes; do not rerun
+  live writing for unrelated persistence-only work. No user-content retention or
+  expansion of the narrow crisis substring rule into mental-health inference.
+
+## V1 — Trust, account and release gates
+
+- [ ] **I-2 — Make in-app privacy claims and deletion scope exact.**
+  Value: consent and erasure must describe what actually happens.
+  Source: `OnlineWritingPermissionAlert`, `OnlineWritingPrivacyControl`,
+  `MomentPrivacyDataView`, `RelationshipVaultLocalDataEraser` and
+  `MomentAccountModel`. Current-policy permission is already implemented; do not
+  rebuild it. The alert says Relationship Memory stays on device, but a private
+  draft can contain memory-derived facts and an online adjustment sends that
+  draft. Revocation gates future online operations; it does not recall sent text
+  or cancel an already-started operation.
+  DoD: explain current-draft transfer and memory-derived wording accurately;
+  preserve prospective revocation semantics unless a separate demonstrated need
+  justifies stronger cancellation. Prefer the precise “Delete Saved Writing
+  Data” name over expanding a vault-only eraser into account/auth destruction;
+  confirm the owner decision and list inclusions/exclusions before deletion.
+  Report partial failure, including session-store clear failure after account
+  deletion rather than implying all local credentials were erased. Explicitly
+  settle recovery/handoffs, request-key metadata and export-file treatment for
+  each deletion action using the [data map](./engineering/data-and-privacy.md).
+  Explicitly treat legacy pre-native local state written by the previous App
+  Store client under the same bundle identity: deletion must erase it or
+  accurately document its exclusion. Migration of legacy content is not required.
+  Preserve separate sign-out, local deletion, account deletion and subscription
+  management. Test unchanged account/subscription state after local erasure.
+  Review disclosure against Apple's [5.1.2 data-sharing rule](https://developer.apple.com/app-store/review/guidelines/#data-use-and-sharing)
+  and W-1's verified destinations/terms; no unsupported training claims.
+
+- [ ] **W-1 — Reconcile public policy, support and commercial claims.**
+  Value: the linked promises must match the launch build and actual processors.
+  Ownership: the separate public website repository and release owner; this repo
+  owns the app's links and technical data map, not the website implementation.
+  DoD: verify live routes and source in that repository, then correct stale
+  processor/device/analytics claims only where found. Confirm actual production
+  provider binding, retention/training/data-use terms, public contact, Standard
+  or custom EULA and any Vercel analytics disclosure. Match export/deletion and
+  S-1 retention, supported three-choice wording and approved allowance copy.
+  No assumed OpenRouter deployment or provider terms from generic compatibility.
+  Reconcile with I-2 before release. A website redesign is out of scope.
+  Apple requires [accurate privacy disclosures](https://developer.apple.com/app-store/app-privacy-details/)
+  including relevant partners; repository source is not evidence of their terms.
+
+- [ ] **S-1 — Enforce App Store event retention and account-deletion treatment.**
+  Value: remove account-linked purchase metadata when its approved purpose ends.
+  Source: notification/reconciliation event tables in migrations `023` and `024`
+  have no implemented retention cleanup or auth-user cascade;
+  `delete-user` does not delete/anonymize those events.
+  DoD: owner approves the minimum justified period and deletion/anonymization
+  rule; implement both scheduled cleanup and deletion consistently, preserving
+  required transaction integrity. Migration/function/pgTAP tests and guarded
+  staging proof pass without raw receipts, signed payloads or secrets in logs.
+  This is not permission to mutate production data during implementation.
+
+- [ ] **M-1 / R-1 — Close privacy manifest and submission evidence.**
+  Value: submission declarations must describe the actual executable and data
+  flow. DoD: audit every embedded executable/SDK, validate required-reason API
+  declarations and archive embedding, settle user-content classification and
+  reconcile App Store Connect with W-1, S-1 and I-2. Capture archive privacy
+  report, reachable policy/support/terms links, online-consent, export and
+  deletion evidence. Use Apple's [per-executable required-reason guidance](https://developer.apple.com/documentation/bundleresources/describing-use-of-required-reason-api).
+  Manifests already exist; do not recreate them. File extraction is not a
+  prerequisite. Final metadata follows settled data behaviour; independent source
+  checks need not wait for an artificial serial privacy programme. Release
+  mutations/submission still require explicit authorization.
+
+- [ ] **G-1 — Validate the archived service configuration, then prove live services.**
+  Value: the distributed app must reach the intended services without privileged
+  or development credentials. Source: `App/Info.plist` already has build-setting
+  substitutions; `NativeRuntimeConfig` validates URLs/public-key shape, while
+  checked-in target values are blank. Runtime parsing is not archive validation.
+  DoD: reproducible per-environment public configuration reaches the intended
+  archive; a release check rejects missing values, insecure URLs, cross-target
+  contamination and privileged/development secrets. Inspect a real archive with
+  public values present and secrets absent. Preserve existing bundle/App Store
+  identity. Use it for the auth, gateway and deletion release proof, not another
+  configuration abstraction or cosmetic key migration.
+
+- [ ] **G-2 — Prove gateway policy, replay and database privileges once in staging.**
+  Value: no duplicate cost, last-slot race, exposed usage mutation or indefinite
+  retention. Source: `reserve_card_request`, `finalize_card_request`,
+  `cleanup_gateway_requests` and `handleGenerateCard` implement these boundaries;
+  source/tests do not establish deployed state.
+  DoD: guarded migration dry-run/apply and advisors/privilege checks; reject
+  direct client table/SECURITY DEFINER access; concurrent last-slot and duplicate
+  requests yield one provider call/charge; replay matches payload/usage; reclaim,
+  fresh-key expiry, cross-user isolation, failure and scheduled cleanup pass.
+  Healthy approved synthetic requests pass quality; classify timeout, provider
+  and quality failures before changing models or budgets. Verify the deployed
+  path uses reservation/finalization rather than legacy pre-call charging.
+  Explicitly exercise success with failed finalization and cancellation during
+  completion: do not claim guaranteed no-charge cancellation or replay when the
+  RPC outcome is unconfirmed. Preserve privacy-safe evidence and touch no production.
+
+- [ ] **G-3 — Extend retry identity to named online adjustments.**
+  Value: losing a response must not charge the same logical adjustment twice.
+  Source: `GatewayCarefulMomentClient.adjust` generates a fresh UUID; only
+  initial drafts use durable `CarefulRequestKeyStore` reuse.
+  DoD: persist/reuse identity for an unchanged ambiguous adjustment, replace on
+  provider-affecting changes, clear on success/fresh-key errors, and prove retry
+  and relaunch replay. Include current text and adjustment in identity; retain
+  server subject isolation and coordinate deletion with I-2. No general job queue.
+
+- [ ] **G-4 — Approve launch allowance and first-value availability.**
+  Value: pricing and sign-in must not defeat the first useful message.
+  Source: the ledger allows one lifetime free authenticated request or 500/month
+  entitled; gateway auth requires sign-in outside guarded development mode;
+  Foundation Models availability is device/runtime-dependent. Paid local access
+  and server capability are separate. These are implemented constraints, not
+  approved commercial promises.
+  DoD: accept/change the launch allowance and explicitly prove first value for a
+  signed-out user with private writing available and unavailable. Choose an
+  honest supported-device/availability policy or the smallest viable account
+  flow; do not silently add anonymous production generation or assume an online
+  fallback works signed out. Align Plan/Paywall/store/public copy and limit states.
+  Numerical quota UI is not required: retain truthful unquantified higher limits
+  unless counts demonstrably help; then supply success and exhaustion metadata
+  end to end. Do not promise unlimited usage or gate careful treatment on Premium.
+
+- [ ] **A-6 — Prove Apple account lifecycle and coordinated deletion on device.**
+  Value: users must be able to leave without stale identity or lost unrelated
+  writing. Source: native auth clients already set explicit 15s timeouts and
+  account maintenance 20s; Apple exchange/revocation and indeterminate deletion
+  are implemented. Do not add a duplicate timeout/lifecycle project.
+  DoD: production-identity sandbox/TestFlight evidence covers first/repeat sign-in,
+  missing code/server failure, refresh, credential revocation, sign-out, confirmed
+  deletion→onboarding→fresh sign-in/relaunch, and indeterminate deletion preserving
+  local writing without claiming success. Verify partial local failure honestly.
+  No codes, tokens or private keys in evidence. Follow Apple's
+  [account-deletion/token-revocation guidance](https://developer.apple.com/documentation/technotes/tn3194-handling-account-deletions-and-revoking-tokens-for-sign-in-with-apple).
+
+- [ ] **A-7 — Finish StoreKit and server-ownership evidence.**
+  Value: money must buy the right account's access, and uncertainty must not
+  invent or silently revoke it. Source: `StoreKitSubscriptionClient`,
+  `MomentAccountModel` and the app-hosted `SKTestSession` suite already implement
+  tri-state entitlement, deferred finish and ownership checks.
+  DoD: execute the existing direct suite on a working supported stable runtime
+  through `run_storekit_release_gate.sh`, with every expected scenario and zero
+  failures/skips. Empty/wrong product results are failures, not an inferred Apple
+  bug; do not assume a newer runtime fixes the observed issue without a rerun.
+  Sandbox/TestFlight proves configured products, purchase and explicit restore
+  without mandatory login, pending/cancelled/renewal/refund/revocation, transaction
+  delivery/convergence and server notifications/reconciliation. Family Sharing
+  is conditional on actually enabling it. Include valid/missing/mismatched
+  `appAccountToken`, anonymous purchase then sign-in, and account switching in the
+  same evidence matrix; no separate duplicate ownership gate or new purchase UI.
+  Include an update-install over the previous App Store client under the same
+  bundle identity, proving entitlement/restore behaviour and honest signed-out
+  presentation.
+
+- [ ] **A-8 — Close the remaining sign-out and paywall feedback gaps.**
+  Value: a tap needs an honest outcome at the surface where it occurred.
+  Source: sign-out has no owned busy state and ignores remote logout failure;
+  paywall purchase/restore already show progress but do not render the shared
+  account notice while the sheet remains open. Delayed automation already covers
+  other generation/auth/product/restore/deletion paths.
+  DoD: sign-out blocks duplicate actions and immediately exposes accessible busy
+  state, with honest local-clear failure/retry. Local sign-out must not depend on
+  a reachable logout server; distinguish local success from unconfirmed remote
+  invalidation instead of waiting for impossible offline convergence. Paywall
+  purchase/restore outcomes remain visible there, including pending, cancelled,
+  failure and uncertainty, without a redesign or duplicate state owner. Extend
+  existing delayed scenarios for these gaps and mutual action exclusion; preserve
+  composer/drafts. Do not rebuild a matrix for every hypothetical network action.
+
+- [ ] **Q-2 — Remove the remaining unbounded auth-test wait and prove auth rejection is cheap.**
+  Value: a security regression must fail deterministically rather than hang CI
+  or invoke a provider. Source: `AuthSessionTests` waits for refresh count using
+  an unbounded `Task.yield` loop; `MomentModelTests.expectEventually` is already
+  bounded. Gateway missing-auth and incorrect-dev-secret tests do not configure
+  and assert a zero-call provider, unlike the missing-secret-configuration test.
+  DoD: use an existing bounded synchronization pattern and assert zero provider
+  calls for those rejection branches with a callable injected provider. No new
+  generic test framework, flaky tag convention or broad timeout inflation.
+
+- [ ] **Q-3 — Execute one core device, accessibility and sharing acceptance loop.**
+  Value: implemented controls must be usable on the supported iPhone.
+  DoD: first run→person/context→write→choose (only after W-2/W-3)→edit/adjust→
+  Copy/Share/Save/recover passes, with offline/refusal/limit/failure states and
+  preserved work. Until implemented, use the current single-draft loop honestly.
+  Active and saved ShareLink pass with reviewed text, no send/destination claim
+  on cancellation; Copy is exact; export produces the named decodable JSON file.
+  VoiceOver, Dynamic Type, contrast, hit targets, keyboard/focus, Reduce Motion/
+  Transparency, supported sizes and usable regular widths pass with no invalid
+  frame warnings. Keep Write/Drafts/Settings discoverable; they already have
+  distinct content, so no tab redesign or navigation-restoration project is a
+  gate. Remove misleading “Native iOS” product copy in the touched Settings
+  surface, not through repository-wide renaming. Use privacy-safe evidence.
+
+- [ ] **Q-4 — Qualify or remove optional system surfaces.**
+  Value: shortcuts can reduce effort only if they preserve review and existing work.
+  Source: App Intent, widget/control and Share Extension already share sanitized
+  `MomentHandoff`; package and app still define `AppShortcutsProvider` conformers.
+  DoD: one intended provider in extracted app metadata; real production-like
+  Shortcuts/widget/Control/Share Extension cold/warm launches hand off once to
+  the correct environment and respect W-6 draft protection. No generation or
+  auto-send in an extension. Remove an unqualified optional embedded surface
+  from V1 rather than letting it delay the core loop. No typed-entity or Messages-
+  domain expansion as a prerequisite.
+
+## Triggered work — not V1 gates
+
+- [ ] **T-1 — Re-evaluate PCC only when eligible and useful.**
+  Trigger: stable adoption toolchain plus confirmed developer eligibility and
+  managed entitlement, followed by evidence it improves this short-message job.
+  Apple's [PCC API](https://developer.apple.com/documentation/foundationmodels/adding-server-side-intelligence-with-private-cloud-compute)
+  is real and requires iOS 27, Apple Intelligence-compatible device/region,
+  network and daily quota handling; it is not an iOS 26 replacement or relief for
+  devices ineligible for Apple Intelligence. Apple's [eligibility rules](https://developer.apple.com/private-cloud-compute/)
+  require Small Business Program membership, download eligibility and entitlement
+  approval; the quota/iCloud+ path is distinct from ProsePal Premium. Check the
+  [release channel](https://developer.apple.com/news/releases/), not API presence,
+  before changing the deployment/toolchain policy. DoD: a timeboxed service-boundary
+  experiment proves quality, latency, refusal/cancellation, quota, consent and
+  result parity; compare total operational complexity. Keep the existing gateway
+  unless replacement earns a separate decision, including loss of PCC eligibility.
+  No pre-emptive provider abstraction or commitment to migration.
+
+- [ ] **T-2 — Strengthen vault protection before greater sensitivity or sync.**
+  Trigger: approved cloud sync or materially more sensitive memory. DoD: a focused
+  threat/data-lifecycle review decides whether application encryption is needed
+  beyond current app-private storage and backup exclusion; no speculative cloud
+  or key-management implementation before that product decision.
+
+- [ ] **T-3 — Expand platform presentation only against user evidence.**
+  Trigger: a supported market, accessibility or maintenance need unmet by the
+  current product. DoD: scope the specific appearance/localization/iPad problem;
+  use system controls and String Catalogs where they remove manual behaviour.
+  `SubscriptionStoreView` or Writing Tools must preserve account-token delivery,
+  entitlement, review, pressure checks and recovery before replacing current UI.
+  Deeper navigation restoration and saved-library prominence need actual use
+  evidence. Voice input first evaluates the system keyboard's existing affordance;
+  no app-owned speech assets/permissions pipeline without demonstrated need.
+  Do not turn this into a bundle of mandatory post-launch features.
