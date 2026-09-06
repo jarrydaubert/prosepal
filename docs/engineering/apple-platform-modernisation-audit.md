@@ -43,14 +43,14 @@ Priorities used below are:
 
 ### Retain the implemented stable-toolchain foundations
 
-| Decision | Priority | Owning backlog scope |
+| Decision | Priority | Functional area |
 |---|---:|---|
-| Keep the model-owned task and cancellation path; close only evidenced classification gaps. | P0 | W-4 |
-| Keep tri-state entitlement and the existing direct StoreKit Test suite; require executed release evidence. | P0 | A-7 |
-| Keep authorization-code forwarding, minimal scopes and credential revocation handling. | P0 | A-6 |
-| Resolve duplicate shortcut providers and qualify the optional surface, or remove it from V1. | P1 | Q-4 |
-| Keep truthful `ShareLink` and typed JSON export; verify them on device. | P1 | Q-3 |
-| Simplify conflicting sheet state when its owning feature changes; do not require navigation restoration without a demonstrated need. | P2 | Funded feature work; T-3 |
+| Keep the model-owned task and cancellation path; close only evidenced classification gaps. | P0 | Generation cancellation and error classification |
+| Keep tri-state entitlement and the existing direct StoreKit Test suite; require executed release evidence. | P0 | Entitlement and StoreKit release evidence |
+| Keep authorization-code forwarding, minimal scopes and credential revocation handling. | P0 | Apple account lifecycle |
+| Resolve duplicate shortcut providers and qualify the optional surface, or remove it from V1. | P1 | Optional system surfaces |
+| Keep truthful `ShareLink` and typed JSON export; verify them on device. | P1 | Sharing and export |
+| Simplify conflicting sheet state when its owning feature changes; do not require navigation restoration without a demonstrated need. | P2 | Feature presentation and navigation |
 
 ### Stable APIs that need capability or product evidence
 
@@ -75,7 +75,7 @@ Priorities used below are:
   requires Small Business Program membership, download eligibility and a managed
   entitlement. Check [Apple releases](https://developer.apple.com/news/releases/)
   before adopting; an API appearing in documentation does not make its SDK
-  stable or the developer eligible. T-1 owns the evidence-triggered experiment.
+  stable or the developer eligible.
 
 ### Intentionally ProsePal-owned
 
@@ -240,8 +240,7 @@ explicit Application Support store excluded from backup, an honest ephemeral
 fallback, key repair, export, and erasure. SwiftUI uses `@Query` with the
 environment `modelContext`; asynchronous prompt-memory lookup creates an
 isolated context behind an actor. Extracted edit/delete helpers roll back
-failed mutations; composer insertion paths have separate failure handling.
-Their unresolved rollback scope is W-7 in the backlog.
+failed mutations; composer insertion paths catch save failures without rollback.
 
 **Apple pattern and availability:** SwiftData, `VersionedSchema`,
 `SchemaMigrationPlan`, `MigrationStage`, `@Query`, and model-context isolation
@@ -434,8 +433,8 @@ credential states, revocation notification, deletion revocation, partial
 cleanup, pre-final timeout, late deletion after an indeterminate response,
 already-deleted convergence, retry, and logging hygiene. This is not evidence
 that the deployed Apple client-secret configuration, sandbox token exchange,
-system revocation notification, or TestFlight deletion works; those external
-proofs remain in the release backlog.
+system revocation notification, or TestFlight deletion works; those behaviours
+require external release evidence.
 
 ### A-10 — App Intents, Shortcuts, widgets, and controls
 
@@ -552,7 +551,7 @@ helpers.
 
 **Source and behaviour:** Voice dictation is absent from the app. No executable
 requests microphone or speech-recognition permission, and the app declares
-neither usage description. The post-v1 backlog owns any reintroduction.
+neither usage description.
 
 **Apple pattern and availability:** A future implementation must separate
 graceful finish from cancellation, await or callback the final transcript with
@@ -588,7 +587,7 @@ boundaries. `ProsePalStoreKitTests` directly exercises the real subscription
 client through StoreKit Test; a successful probe returning no configured products
 is a setup failure, not an inferred Apple-runtime skip. An earlier empty-product result is not
 evidence that every newer runtime has the same issue or that Apple fixed it;
-A-7 requires an actual run on the release toolchain. Several
+release evidence requires an actual run on the release toolchain. Several
 source-string tests temporarily assert navigation and system-surface wiring.
 Sharing has behavioral action, telemetry-policy, accessibility-contract, and
 export-file tests plus a negative diagnostics invariant.

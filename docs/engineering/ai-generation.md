@@ -54,8 +54,8 @@ called. Private work already selected by routing does not require this grant.
 Timeouts, offline state, usage limits, rate limits and malformed responses map
 into `GenerationError`. Foundation Models refusal maps to `contentBlocked`; the
 generic online adapter does not classify explicit provider refusal metadata and
-can treat it as a technical failure. W-4 in the backlog owns that gap. Views
-receive stable product errors rather than provider-specific exceptions. If routing ends in failure or
+can treat it as a technical failure. Views receive stable product errors rather
+than provider-specific exceptions. If routing ends in failure or
 cancellation, `MomentModel` does not replace the current draft; the Moment and
 recoverable wording remain available.
 
@@ -145,7 +145,6 @@ Gateway success carries three distinct candidates with equal contract status.
 Array order is transport order, not a quality ranking or a declaration that the
 first candidate is best. `GatewayCarefulMomentClient` currently selects the first
 message and discards the other candidates and returned usage/retry metadata.
-The pending three-choice contract is owned by W-3, not current implementation.
 
 Request identity, reservation leases, atomic quota decisions, replay, and
 retention are specified in [Gateway request ledger](./gateway-request-ledger.md).

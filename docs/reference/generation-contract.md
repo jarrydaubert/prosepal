@@ -116,8 +116,8 @@ the same response quality gate.
 Normal client-initiated transport cancellation stays cancellation, usually through
 `URLError.cancelled`. A received HTTP 499 is a narrower, different path: the
 native default status branch makes it fallback-eligible where routing permits.
-W-4 in the backlog owns that mismatch. Server cancellation attempts failed
-finalization; an unconfirmed RPC outcome is not proof of no charge.
+Server cancellation attempts failed finalization; an unconfirmed RPC outcome
+is not proof of no charge.
 
 Connectivity failures map to offline, and provider details never become part of
 the public response type.
