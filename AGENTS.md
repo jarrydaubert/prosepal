@@ -101,6 +101,10 @@ implementation. There is no second app, and no migration is in progress.
 - Update the owning document in the same change when a documented contract,
   workflow, configuration boundary, ownership boundary, or public behaviour
   changes.
+- Update `prosepal-under-the-hood.html` in the same PR when a change materially
+  alters user-visible flow, generation routing, privacy/data boundaries,
+  persistence, auth/account lifecycle, subscriptions, recovery or gateway
+  behaviour. Skip trivial refactors that do not change the described flow.
 - Before adopting or redesigning around an Apple platform or AI runtime API,
   verify availability, constraints, and known issues against current official
   Apple documentation. Record any external claim that changes scope or
