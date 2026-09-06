@@ -41,16 +41,16 @@ Priorities used below are:
 
 ## Decision summary
 
-### Safe to adopt with the stable toolchain
+### Retain the implemented stable-toolchain foundations
 
 | Decision | Priority | Owning backlog scope |
 |---|---:|---|
-| Route every draft, retry, and rewrite through one model-owned task handle and cooperative cancellation path. | P0 | V1 core flow |
-| Preserve an explicit unknown/error entitlement state instead of converting every StoreKit read failure to inactive. Add direct StoreKit Test coverage. | P0 | Auth, payments, and account integrity |
-| Forward the Apple authorization code, remove unused identity scopes, and handle credential revocation. | P0 | Auth, payments, and account integrity |
-| Keep one `AppShortcutsProvider` and verify extracted metadata from a production-like build. | P1 | Optional system surfaces |
-| Replace destination-labelled `ShareLink` controls with one truthful system share action; use `Transferable` for the JSON export. | P1 | V1 core flow |
-| Model mutually exclusive sheets as one presentation value while extracting their owning features; restore lightweight root/navigation state. | P1 | Root navigation and incremental decomposition |
+| Keep the model-owned task and cancellation path; close only evidenced classification gaps. | P0 | W-4 |
+| Keep tri-state entitlement and the existing direct StoreKit Test suite; require executed release evidence. | P0 | A-7 |
+| Keep authorization-code forwarding, minimal scopes and credential revocation handling. | P0 | A-6 |
+| Resolve duplicate shortcut providers and qualify the optional surface, or remove it from V1. | P1 | Q-4 |
+| Keep truthful `ShareLink` and typed JSON export; verify them on device. | P1 | Q-3 |
+| Simplify conflicting sheet state when its owning feature changes; do not require navigation restoration without a demonstrated need. | P2 | Funded feature work; T-3 |
 
 ### Stable APIs that need capability or product evidence
 
@@ -68,7 +68,14 @@ Priorities used below are:
   with the stable iOS 26 SDK.
 - Revisit the provider-neutral Private Cloud Compute experiment only through
   the existing `MessageWritingService` gate after the SDK and entitlement path
-  stabilize.
+  stabilize. Apple documents a real [iOS 27 PCC model](https://developer.apple.com/documentation/foundationmodels/adding-server-side-intelligence-with-private-cloud-compute),
+  with Apple Intelligence device/region availability, network dependence and
+  daily user quotas distinct from ProsePal Premium. It cannot cover iOS 26 or
+  devices ineligible for Apple Intelligence. [Eligibility](https://developer.apple.com/private-cloud-compute/)
+  requires Small Business Program membership, download eligibility and a managed
+  entitlement. Check [Apple releases](https://developer.apple.com/news/releases/)
+  before adopting; an API appearing in documentation does not make its SDK
+  stable or the developer eligible. T-1 owns the evidence-triggered experiment.
 
 ### Intentionally ProsePal-owned
 
@@ -98,7 +105,9 @@ Xcode 26 and iOS 26 target.
 
 **Source and behaviour:**
 `prosepal-ios/Sources/ProsePalUI/MomentExperienceView.swift` still owns the
-active composer, relationship memory, and privacy/export regions.
+active composer, composer memory controls, and privacy/export regions.
+`Features/RelationshipMemory/` owns the library, both editors and rollback-safe
+persistence seams; these are not pending extraction work.
 `Features/Moment/` owns `MomentModel` and active-draft recovery, while Saved
 Drafts, Settings, Paywall and plan presentation, root navigation, generating
 state, and guided-composer layout demonstrate the desired feature-file pattern.
@@ -230,8 +239,9 @@ types, `RelationshipVaultSchemaV1`, `RelationshipVaultMigrationPlan`, an
 explicit Application Support store excluded from backup, an honest ephemeral
 fallback, key repair, export, and erasure. SwiftUI uses `@Query` with the
 environment `modelContext`; asynchronous prompt-memory lookup creates an
-isolated context behind an actor. Save/delete helpers now roll back failed
-mutations.
+isolated context behind an actor. Extracted edit/delete helpers roll back
+failed mutations; composer insertion paths have separate failure handling.
+Their unresolved rollback scope is W-7 in the backlog.
 
 **Apple pattern and availability:** SwiftData, `VersionedSchema`,
 `SchemaMigrationPlan`, `MigrationStage`, `@Query`, and model-context isolation
@@ -353,8 +363,9 @@ not block correctness work on a visual replacement.
 branch is needed for the iOS 26 target.
 
 **Source and behaviour:** `MomentPaywallSheet` is a custom SwiftUI paywall. It
-preserves ProsePal marketing, runtime readiness, account notices, and the
-injected subscription client, but manually formats duration strings and labels
+preserves ProsePal marketing, runtime readiness and the injected subscription
+client, but does not render the shared account notice in the open sheet. It
+manually formats duration strings and labels
 product rows. This creates localization and disclosure risk. StoreKit remains
 the source of display name and price.
 
@@ -435,8 +446,9 @@ URL/handoff design until system-surface evidence passes; P2 for typed entities.
 iOS 18; the existing implementations compile in the stable iOS 26 SDK. Exclude
 APIs exposed only by the iOS 27 beta SDK.
 
-**Source and behaviour:** `ProsePalAppIntents.swift` defines the typed launch
-request, sanitized stores, deep-link parser, `StartMomentIntent`, and a public
+**Source and behaviour:** `ProsePalDomain/MomentHandoff.swift` owns the typed
+launch request, sanitized stores and deep-link parser.
+`ProsePalAppIntents.swift` defines `StartMomentIntent` and a public
 `ProsePalAppShortcuts`. The app target separately defines
 `ProsePalNativeAppShortcuts` with the same shortcut metadata. Apple recommends
 one provider per app. Widgets and the Control use staging-aware sanitized URLs;
@@ -569,13 +581,14 @@ the installed Xcode 26 toolchain satisfies all three.
 
 **Source and behaviour:** Root navigation, onboarding, generating, guided
 composer, Settings, Saved Drafts, Paywall, and plan detail have deterministic
-`#Preview` coverage. Privacy/export, relationship-memory detail, and other
-monolith regions do not have independently compiling previews. Package tests
-mix Swift Testing and XCTest appropriately for deterministic model and service
+`#Preview` coverage. Relationship-memory library/detail also have feature-owned
+previews. Privacy/export and other monolith regions lack independent feature
+previews. Package tests mix Swift Testing and XCTest appropriately for model and service
 boundaries. `ProsePalStoreKitTests` directly exercises the real subscription
-client through StoreKit Test, but its release gate remains open on the current
-runtime because a successful probe returns no configured products. The result
-is now a setup failure, not an inferred Apple-runtime skip. Several
+client through StoreKit Test; a successful probe returning no configured products
+is a setup failure, not an inferred Apple-runtime skip. An earlier empty-product result is not
+evidence that every newer runtime has the same issue or that Apple fixed it;
+A-7 requires an actual run on the release toolchain. Several
 source-string tests temporarily assert navigation and system-surface wiring.
 Sharing has behavioral action, telemetry-policy, accessibility-contract, and
 export-file tests plus a negative diagnostics invariant.
@@ -668,16 +681,18 @@ message text, tokens, receipts, or shared payloads.
 
 ### Phase 1 — incremental feature extraction
 
-Extract relationship memory, privacy/export, auth, share, and composer regions
-only as their funded behaviour is touched. Each extraction
+Extract remaining privacy/export and composer regions only as their funded
+behaviour is touched. Do not repeat completed library, sharing or model work, or
+make deletion of the monolith a release gate. Each extraction
 gets one owner, a deterministic preview, behavioural or view coverage, system
 toolbar/presentation conventions, and a corresponding region-map update.
 
 ### Phase 2 — evidence-gated platform surfaces
 
-Trial `SubscriptionStoreView`, typed App Intent parameters,
-and deeper navigation restoration inside their extracted features. (`SpeechAnalyzer`
-only if voice dictation is ever reintroduced post-v1.) Adopt only
+Consider `SubscriptionStoreView`, typed App Intent parameters or deeper navigation
+restoration only for a demonstrated product or maintenance need, not because a
+new API exists. Prefer existing system keyboard input before commissioning an
+app-owned speech pipeline. Adopt only
 when behaviour, privacy, account ownership, accessibility, and device evidence
 meet or exceed the existing path.
 
