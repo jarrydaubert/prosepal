@@ -9,6 +9,7 @@ is reachable from this page and has one job. Open work belongs only in
 | If you want to… | Read |
 |---|---|
 | Understand the app in plain English | [App guide](./guide/app-guide.html) |
+| See a visual product-owner X-ray of current behaviour | [Under the hood](../prosepal-under-the-hood.html) — non-canonical living map |
 | Know exactly what v1 launches with | [V1 launch contract](./product/v1-launch-contract.md) |
 | See what the app can do | [Capabilities](./product/capabilities.md) |
 | Understand the codebase | [Architecture](./engineering/architecture.md) |
