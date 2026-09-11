@@ -1092,8 +1092,6 @@ function stripGreetingAndSignoff(text: string): string {
     .replace(/^\s*(dear|hi|hey|hello)\s+[^,\n]{1,80},\s*/i, "")
     .trim();
   const finalLineStart = withoutGreeting.lastIndexOf("\n");
-  if (finalLineStart < 0) return withoutGreeting;
-
   const finalLine = withoutGreeting.slice(finalLineStart + 1).trim();
   const normalizedFinalLine = finalLine.toLowerCase();
   const isRecognizedSignoff = RECOGNIZED_SIGNOFFS.some((signoff) => {
@@ -1116,9 +1114,10 @@ function stripGreetingAndSignoff(text: string): string {
     return isSignatureName(signature);
   });
 
-  return isRecognizedSignoff
-    ? withoutGreeting.slice(0, finalLineStart).trim()
-    : withoutGreeting;
+  if (!isRecognizedSignoff) return withoutGreeting;
+  return finalLineStart < 0
+    ? ""
+    : withoutGreeting.slice(0, finalLineStart).trim();
 }
 
 function isSignatureName(value: string): boolean {

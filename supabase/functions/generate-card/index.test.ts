@@ -521,6 +521,79 @@ Deno.test("strips exact and signed recognized sign-off lines", async () => {
   ]);
 });
 
+for (const signoff of ["Love", "Warmly", "From"]) {
+  Deno.test(`rejects single-line ${signoff} as a sign-off-only option`, async () => {
+    const response = await handleGenerateCard(
+      makeRequest(),
+      makeDeps({
+        anonymous: true,
+        provider: true,
+        providerResponse: {
+          choices: [{
+            message: {
+              content: JSON.stringify({
+                messages: [
+                  { text: signoff },
+                  {
+                    text: "Happy birthday, Dad. Your kindness means so much.",
+                  },
+                  {
+                    text:
+                      "Dad, I hope today brings warmth and a quiet cup of tea.",
+                  },
+                ],
+              }),
+            },
+          }],
+        },
+      }),
+    );
+
+    assertEquals(response.status, 502);
+    const body = await response.json() as Record<string, unknown>;
+    const userSafeError = body.user_safe_error as Record<string, unknown>;
+    assertEquals(userSafeError.code, "gateway_quality_failed");
+    assertEquals(body.messages, undefined);
+  });
+}
+
+Deno.test("retains legitimate single-line message options", async () => {
+  const legitimateMessage =
+    "Love grows in the moments we keep, and your kindness makes them brighter.";
+  const response = await handleGenerateCard(
+    makeRequest(),
+    makeDeps({
+      anonymous: true,
+      provider: true,
+      providerResponse: {
+        choices: [{
+          message: {
+            content: JSON.stringify({
+              messages: [
+                { text: legitimateMessage },
+                {
+                  text:
+                    "Happy birthday, Dad. Your steady care means more than I can say.",
+                },
+                {
+                  text:
+                    "I hope today brings the quiet cup of tea and calm you deserve.",
+                },
+              ],
+            }),
+          },
+        }],
+      },
+    }),
+  );
+
+  assertEquals(response.status, 200);
+  const body = await response.json() as {
+    messages: Array<{ text: string }>;
+  };
+  assertEquals(body.messages[0].text, legitimateMessage);
+});
+
 Deno.test("preserves accepted include and exclusion detail beyond 160 characters", async () => {
   const providerBodies: Array<Record<string, unknown>> = [];
   const detail = `${"shared detail ".repeat(20)}MOMENT_DETAIL_AFTER_160`;
