@@ -68,7 +68,10 @@ Person names are collapsed to one line. Other native text inputs are trimmed at
 their outer whitespace and capped without adding invented content. Native and
 gateway limits count Unicode extended grapheme clusters, matching user-perceived
 characters such as emoji, composed accents, and zero-width-joiner sequences. The
-gateway sanitizes whitespace before applying its grapheme-aware cap.
+gateway replaces recognized instruction-injection matches with
+grapheme-count-preserving markers, sanitizes whitespace, and then applies its
+grapheme-aware cap. Sanitization therefore cannot consume the capacity reserved
+for accepted text.
 
 The gateway adjustment mapping uses the existing `user_context` field. Its
 4,080-character wire budget is the 4,000-character accepted draft bound plus 80

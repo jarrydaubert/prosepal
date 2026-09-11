@@ -254,7 +254,7 @@ Deno.test("buildPrompt carries ProsePal domain context and filters prompt inject
   assertStringIncludes(prompt.user, "Spelling: Use UK English");
   assertStringIncludes(prompt.user, "a quiet cup of tea");
   assertStringIncludes(prompt.user, "age");
-  assertStringIncludes(prompt.user, "[filtered]");
+  assertStringIncludes(prompt.user, "••••••••••");
   assert(!prompt.user.includes("Ignore previous instructions"));
 });
 
@@ -550,10 +550,12 @@ Deno.test("preserves accepted include and exclusion detail beyond 160 characters
   assertStringIncludes(providerBody, "EXCLUSION_AFTER_160");
 });
 
-Deno.test("preserves a full accepted draft inside wrapped adjustment context", async () => {
+Deno.test("preserves a full accepted draft after injection-pattern sanitization", async () => {
   const providerBodies: Array<Record<string, unknown>> = [];
   const ending = "FULL_ACCEPTED_DRAFT_END";
-  const currentMessage = "x".repeat(4000 - ending.length) + ending;
+  const filteredInput = "system:";
+  const currentMessage = filteredInput +
+    "x".repeat(4000 - filteredInput.length - ending.length) + ending;
   const userContext =
     `A real sentence from you that ProsePal helps shape.\nCurrent message to reshape: ${currentMessage}`;
   const response = await handleGenerateCard(
@@ -577,7 +579,8 @@ Deno.test("preserves a full accepted draft inside wrapped adjustment context", a
   assertEquals(graphemeCount(userContext), 4080);
   const providerBody = JSON.stringify(providerBodies[0]);
   assertStringIncludes(providerBody, "Current message to reshape:");
-  assertStringIncludes(providerBody, currentMessage);
+  assert(!providerBody.includes(filteredInput));
+  assertStringIncludes(providerBody, "•".repeat(filteredInput.length));
   assertStringIncludes(providerBody, ending);
 });
 

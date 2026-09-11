@@ -624,9 +624,13 @@ function listEnv(value: string | undefined): string[] {
 
 function sanitizeInput(input: string): string {
   return input
-    .replace(injectionPattern, "[filtered]")
+    .replace(injectionPattern, lengthPreservingFilter)
     .replace(/\s+/g, " ")
     .trim();
+}
+
+function lengthPreservingFilter(match: string): string {
+  return Array.from(GRAPHEME_SEGMENTER.segment(match), () => "•").join("");
 }
 
 function truncate(value: string, maxLength: number): string {
