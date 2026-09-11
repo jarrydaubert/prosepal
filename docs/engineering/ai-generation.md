@@ -86,10 +86,13 @@ The absence of vault objects does not exclude memory-derived wording. The reques
 also carries app/build/platform and request-identity metadata plus the applicable
 auth boundary.
 
-The native and gateway parsers share the same input bounds for these writing
-fields: each include or exclusion item retains up to 1,200 characters, and
-adjustment context retains up to 4,000 characters. Accepted Moment detail and
-rewrite context are not reduced again at the server boundary.
+The native and gateway parsers count Unicode extended grapheme clusters for
+these writing bounds, matching user-perceived Swift `String` characters. Each
+include or exclusion item retains up to 1,200 characters. Draft text retains up
+to 4,000 characters. The existing `user_context` wire field retains up to 4,080
+characters so the longest fixed register-and-adjustment wrapper can carry that
+full 4,000-character draft. Accepted Moment detail and rewrite text are not
+reduced again at the server boundary.
 
 After reservation, `generate-card` builds a structured prompt from those
 writing fields. It may send the same prompt sequentially to configured primary

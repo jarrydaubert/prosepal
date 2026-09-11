@@ -375,6 +375,42 @@ func gatewayAdjustmentPreservesContextBeyondLegacyServerCutoff() async throws {
 }
 
 @Test
+func gatewayAdjustmentPreservesFullAcceptedDraftInsideWrappedContext() async throws {
+    let cardClient = RecordingCardMessageWritingClient(response: CardResponse(
+        messages: [GeneratedMessage(id: "context-limit-1", text: "An adjusted gateway draft.")],
+        laneUsed: .standard,
+        fallbackStatus: .none,
+        retryEligibility: .ineligible
+    ))
+    let client = GatewayCarefulMomentClient(
+        client: cardClient,
+        clientContext: ClientContext(appVersion: "0.0.0", buildNumber: "1")
+    )
+    let ending = "FULL_ACCEPTED_DRAFT_END"
+    let currentMessage = String(
+        repeating: "x",
+        count: ProsePalTextLimit.draft - ending.count
+    ) + ending
+
+    _ = try await client.adjust(
+        MomentDraftBundle(messageText: currentMessage, lane: .careful),
+        with: .warmer,
+        moment: MomentInput(
+            personName: "Sam",
+            relationship: .family,
+            occasion: .birthday,
+            register: .confess
+        )
+    )
+
+    let intent = await cardClient.firstIntent
+    #expect(currentMessage.count == ProsePalTextLimit.draft)
+    #expect(intent?.userContext?.count == ProsePalTextLimit.gatewayUserContext)
+    #expect(intent?.userContext?.hasSuffix(ending) == true)
+    #expect(intent?.userContext?.contains(currentMessage) == true)
+}
+
+@Test
 func carefulLaneEntitlementFailureFallsBackToPrivateDraft() async throws {
     let privateClient = RecordingMomentDraftClient(
         bundle: MomentDraftBundle(messageText: "A plain private draft.", lane: .privateDraft)

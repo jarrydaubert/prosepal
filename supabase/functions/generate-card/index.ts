@@ -15,7 +15,7 @@ const DEFAULT_TIMEOUT_MS = 15000;
 const DEFAULT_MAX_TOKENS = 900;
 const DEFAULT_TEMPERATURE = 0.7;
 const MOMENT_DETAIL_MAX_LENGTH = 1200;
-const USER_CONTEXT_MAX_LENGTH = 4000;
+const USER_CONTEXT_MAX_LENGTH = 4080;
 const RECOGNIZED_SIGNOFFS = [
   "love",
   "best wishes",
@@ -24,6 +24,9 @@ const RECOGNIZED_SIGNOFFS = [
   "warmly",
   "from",
 ];
+const GRAPHEME_SEGMENTER = new Intl.Segmenter("en", {
+  granularity: "grapheme",
+});
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "",
@@ -627,7 +630,14 @@ function sanitizeInput(input: string): string {
 }
 
 function truncate(value: string, maxLength: number): string {
-  return value.length <= maxLength ? value : value.slice(0, maxLength).trim();
+  if (value.length <= maxLength) return value;
+
+  const graphemes: string[] = [];
+  for (const { segment } of GRAPHEME_SEGMENTER.segment(value)) {
+    if (graphemes.length === maxLength) break;
+    graphemes.push(segment);
+  }
+  return graphemes.join("").trim();
 }
 
 function sanitizeField(value: unknown, maxLength: number): string | undefined {
@@ -1093,21 +1103,22 @@ function stripGreetingAndSignoff(text: string): string {
     const signedPrefix = `${signoff},`;
     if (normalizedFinalLine.startsWith(signedPrefix)) {
       const signature = finalLine.slice(signedPrefix.length).trim();
-      return signature.length > 0 && signature.length <= 80 &&
-        !/[.!?]/.test(signature);
+      return isSignatureName(signature);
     }
 
     const unsignedPrefix = `${signoff} `;
     if (!normalizedFinalLine.startsWith(unsignedPrefix)) return false;
     const signature = finalLine.slice(unsignedPrefix.length).trim();
-    const signatureWords = signature.split(/\s+/);
-    return signature.length <= 80 && signatureWords.length <= 4 &&
-      signatureWords.every((word) => /^\p{Lu}[\p{L}\p{M}'’.-]*$/u.test(word));
+    return isSignatureName(signature);
   });
 
   return isRecognizedSignoff
     ? withoutGreeting.slice(0, finalLineStart).trim()
     : withoutGreeting;
+}
+
+function isSignatureName(value: string): boolean {
+  return value.length <= 80 && /^\p{Lu}[\p{L}\p{M}'’.-]*$/u.test(value);
 }
 
 function extractJsonObject(text: string): unknown {

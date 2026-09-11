@@ -6,6 +6,14 @@ import {
   requestFingerprint,
 } from "./index.ts";
 
+const testGraphemeSegmenter = new Intl.Segmenter("en", {
+  granularity: "grapheme",
+});
+
+function graphemeCount(value: string): number {
+  return Array.from(testGraphemeSegmenter.segment(value)).length;
+}
+
 const fixedRequest: Parameters<typeof buildPrompt>[0] = {
   idempotency_key: "fixed-key",
   requested_lane: "standard",
@@ -405,7 +413,7 @@ Deno.test("calls OpenAI-compatible provider and returns CardResponse without pro
   assertEquals(providerBodies[0].response_format, { type: "json_object" });
 });
 
-Deno.test("strips only recognized trailing sign-offs before normalizing multiline output", async () => {
+Deno.test("retains final prose that begins with a recognized sign-off word", async () => {
   const response = await handleGenerateCard(
     makeRequest(),
     makeDeps({
@@ -418,7 +426,7 @@ Deno.test("strips only recognized trailing sign-offs before normalizing multilin
               messages: [
                 {
                   text:
-                    "Hi Dad,\nYour quiet kindness means more than I can say.\nLove, Jamie",
+                    "Your quiet kindness means more than I can say.\nLove, now and always",
                 },
                 {
                   text:
@@ -426,7 +434,7 @@ Deno.test("strips only recognized trailing sign-offs before normalizing multilin
                 },
                 {
                   text:
-                    "Your steady care shaped so much.\nI carry that gratitude with me.\nFrom Jamie",
+                    "Your steady care shaped so much.\nBest wishes carry us forward",
                 },
               ],
             }),
@@ -441,9 +449,42 @@ Deno.test("strips only recognized trailing sign-offs before normalizing multilin
     messages: Array<{ text: string }>;
   };
   assertEquals(body.messages.map((message) => message.text), [
-    "Your quiet kindness means more than I can say.",
+    "Your quiet kindness means more than I can say. Love, now and always",
     "The small things stay with me. Love grows in the moments we keep",
-    "Your steady care shaped so much. I carry that gratitude with me.",
+    "Your steady care shaped so much. Best wishes carry us forward",
+  ]);
+});
+
+Deno.test("strips only safely identifiable recognized sign-off lines", async () => {
+  const response = await handleGenerateCard(
+    makeRequest(),
+    makeDeps({
+      anonymous: true,
+      provider: true,
+      providerResponse: {
+        choices: [{
+          message: {
+            content: JSON.stringify({
+              messages: [
+                { text: "Your kindness stays with me.\nLove, Sam" },
+                { text: "I am grateful for your steady care.\nLove" },
+                { text: "You made this year gentler.\nBest wishes, Sam" },
+              ],
+            }),
+          },
+        }],
+      },
+    }),
+  );
+
+  assertEquals(response.status, 200);
+  const body = await response.json() as {
+    messages: Array<{ text: string }>;
+  };
+  assertEquals(body.messages.map((message) => message.text), [
+    "Your kindness stays with me.",
+    "I am grateful for your steady care.",
+    "You made this year gentler.",
   ]);
 });
 
@@ -509,18 +550,19 @@ Deno.test("preserves accepted include and exclusion detail beyond 160 characters
   assertStringIncludes(providerBody, "EXCLUSION_AFTER_160");
 });
 
-Deno.test("preserves adjustment context beyond 1200 characters", async () => {
+Deno.test("preserves a full accepted draft inside wrapped adjustment context", async () => {
   const providerBodies: Array<Record<string, unknown>> = [];
-  const currentMessage = `${
-    "I remember that moment clearly. ".repeat(45)
-  }ADJUSTMENT_CONTEXT_AFTER_1200`;
+  const ending = "FULL_ACCEPTED_DRAFT_END";
+  const currentMessage = "x".repeat(4000 - ending.length) + ending;
+  const userContext =
+    `A real sentence from you that ProsePal helps shape.\nCurrent message to reshape: ${currentMessage}`;
   const response = await handleGenerateCard(
     makeRequest({
       ...fixedRequest,
       idempotency_key: "long-adjustment-context",
       intent: {
         ...fixedRequest.intent,
-        user_context: `Current message to reshape: ${currentMessage}`,
+        user_context: userContext,
       },
     }),
     makeDeps({
@@ -531,10 +573,61 @@ Deno.test("preserves adjustment context beyond 1200 characters", async () => {
   );
 
   assertEquals(response.status, 200);
-  assert(currentMessage.length > 1200);
+  assertEquals(graphemeCount(currentMessage), 4000);
+  assertEquals(graphemeCount(userContext), 4080);
   const providerBody = JSON.stringify(providerBodies[0]);
   assertStringIncludes(providerBody, "Current message to reshape:");
-  assertStringIncludes(providerBody, "ADJUSTMENT_CONTEXT_AFTER_1200");
+  assertStringIncludes(providerBody, currentMessage);
+  assertStringIncludes(providerBody, ending);
+});
+
+Deno.test("uses extended grapheme clusters for native-aligned detail bounds", async () => {
+  const ordinary = "a".repeat(1200);
+  const emoji = "🙂".repeat(1200);
+  const composed = "é".repeat(1200);
+  const zwjNearBoundary = `${"z".repeat(1198)}👩‍💻Q`;
+  const afterOldUtf16Cutoff = `${
+    "🙂".repeat(600)
+  }CONTENT_AFTER_OLD_UTF16_CUTOFF`;
+  const cases = [
+    ["ordinary", ordinary],
+    ["emoji", emoji],
+    ["composed", composed],
+    ["zwj", zwjNearBoundary],
+    ["old-cutoff", afterOldUtf16Cutoff],
+  ] as const;
+
+  assertEquals(graphemeCount(ordinary), 1200);
+  assertEquals(graphemeCount(emoji), 1200);
+  assertEquals(graphemeCount(composed), 1200);
+  assertEquals(graphemeCount(zwjNearBoundary), 1200);
+  assert(graphemeCount(afterOldUtf16Cutoff) < 1200);
+  assert(afterOldUtf16Cutoff.length > 1200);
+
+  for (const [id, detail] of cases) {
+    const providerBodies: Array<Record<string, unknown>> = [];
+    const response = await handleGenerateCard(
+      makeRequest({
+        ...fixedRequest,
+        idempotency_key: `grapheme-bound-${id}`,
+        intent: {
+          ...fixedRequest.intent,
+          things_to_include: [detail],
+        },
+      }),
+      makeDeps({
+        anonymous: true,
+        provider: true,
+        captureProviderBodies: providerBodies,
+      }),
+    );
+
+    assertEquals(response.status, 200);
+    const providerBody = JSON.stringify(providerBodies[0]);
+    assertStringIncludes(providerBody, detail);
+  }
+
+  assertStringIncludes(afterOldUtf16Cutoff, "CONTENT_AFTER_OLD_UTF16_CUTOFF");
 });
 
 Deno.test("enforces the native upper bounds for gateway writing fields", async () => {
@@ -551,7 +644,7 @@ Deno.test("enforces the native upper bounds for gateway writing fields", async (
         things_to_avoid: [
           `${"e".repeat(1200)}EXCLUSION_AFTER_SHARED_BOUND`,
         ],
-        user_context: `${"c".repeat(4000)}CONTEXT_AFTER_SHARED_BOUND`,
+        user_context: `${"c".repeat(4080)}CONTEXT_AFTER_WIRE_BOUND`,
       },
     }),
     makeDeps({
@@ -565,7 +658,7 @@ Deno.test("enforces the native upper bounds for gateway writing fields", async (
   const providerBody = JSON.stringify(providerBodies[0]);
   assert(!providerBody.includes("DETAIL_AFTER_SHARED_BOUND"));
   assert(!providerBody.includes("EXCLUSION_AFTER_SHARED_BOUND"));
-  assert(!providerBody.includes("CONTEXT_AFTER_SHARED_BOUND"));
+  assert(!providerBody.includes("CONTEXT_AFTER_WIRE_BOUND"));
 });
 
 Deno.test("authenticated generation reserves then finalizes and returns usage summary", async () => {
