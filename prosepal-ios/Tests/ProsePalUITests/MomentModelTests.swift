@@ -760,6 +760,32 @@ func failedAdjustmentKeepsCurrentDraftAndUndoSnapshot() async throws {
 
 @Test
 @MainActor
+func unusablePrivateAdjustmentKeepsExistingWording() async throws {
+    let existingBundle = MomentDraftBundle(
+        messageText: "Keep these words exactly.",
+        lane: .privateDraft
+    )
+    let failure = GenerationError.unexpectedResponse(
+        message: "Private draft returned no usable message. Please try again."
+    )
+    let model = MomentModel(
+        service: SequencedMomentWritingService(outcomes: [.failure(failure)])
+    )
+    model.personName = "Alex"
+    model.bundle = existingBundle
+
+    model.adjust(.shorter)
+    try await expectEventually("The unusable private result did not surface as a failure.") {
+        model.errorMessage == failure.userSafeMessage
+    }
+
+    #expect(model.bundle == existingBundle)
+    #expect(model.draftSnapshots.isEmpty)
+    #expect(model.isDrafting == false)
+}
+
+@Test
+@MainActor
 func keepingPressureCheckedDraftHidesOnlyCurrentPressureFinding() {
     let model = MomentModel(service: SlowMomentWritingService(delay: .seconds(1)))
     let firstBundle = MomentDraftBundle(

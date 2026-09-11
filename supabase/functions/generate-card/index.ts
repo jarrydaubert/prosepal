@@ -14,6 +14,16 @@ const OUTPUT_CONTRACT_VERSION = 1;
 const DEFAULT_TIMEOUT_MS = 15000;
 const DEFAULT_MAX_TOKENS = 900;
 const DEFAULT_TEMPERATURE = 0.7;
+const MOMENT_DETAIL_MAX_LENGTH = 1200;
+const USER_CONTEXT_MAX_LENGTH = 4000;
+const RECOGNIZED_SIGNOFFS = [
+  "love",
+  "best wishes",
+  "best",
+  "sincerely",
+  "warmly",
+  "from",
+];
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "",
@@ -676,7 +686,7 @@ function readWireObject(
 function sanitizedStringList(
   value: unknown,
   maxItems = 12,
-  maxLength = 160,
+  maxLength = MOMENT_DETAIL_MAX_LENGTH,
 ): string[] {
   if (!Array.isArray(value)) return [];
   return value
@@ -871,13 +881,17 @@ function parseRequest(payload: unknown): ValidationResult {
         ),
         things_to_include: sanitizedStringList(
           readWireValue(intentObject, "things_to_include", "thingsToInclude"),
+          12,
+          MOMENT_DETAIL_MAX_LENGTH,
         ),
         things_to_avoid: sanitizedStringList(
           readWireValue(intentObject, "things_to_avoid", "thingsToAvoid"),
+          12,
+          MOMENT_DETAIL_MAX_LENGTH,
         ),
         user_context: sanitizeField(
           readWireValue(intentObject, "user_context", "userContext"),
-          1200,
+          USER_CONTEXT_MAX_LENGTH,
         ),
       },
     },
@@ -1060,13 +1074,40 @@ export function buildPrompt(request: CardRequest): PromptParts {
 }
 
 function stripGreetingAndSignoff(text: string): string {
-  return text
+  const withoutGreeting = text
     .replace(/^\s*(dear|hi|hey|hello)\s+[^,\n]{1,80},\s*/i, "")
-    .replace(
-      /\n+\s*(love|best wishes|best|sincerely|warmly|from),?\s*[^.\n]*$/i,
-      "",
-    )
     .trim();
+  const finalLineStart = withoutGreeting.lastIndexOf("\n");
+  if (finalLineStart < 0) return withoutGreeting;
+
+  const finalLine = withoutGreeting.slice(finalLineStart + 1).trim();
+  const normalizedFinalLine = finalLine.toLowerCase();
+  const isRecognizedSignoff = RECOGNIZED_SIGNOFFS.some((signoff) => {
+    if (
+      normalizedFinalLine === signoff ||
+      normalizedFinalLine === `${signoff},`
+    ) {
+      return true;
+    }
+
+    const signedPrefix = `${signoff},`;
+    if (normalizedFinalLine.startsWith(signedPrefix)) {
+      const signature = finalLine.slice(signedPrefix.length).trim();
+      return signature.length > 0 && signature.length <= 80 &&
+        !/[.!?]/.test(signature);
+    }
+
+    const unsignedPrefix = `${signoff} `;
+    if (!normalizedFinalLine.startsWith(unsignedPrefix)) return false;
+    const signature = finalLine.slice(unsignedPrefix.length).trim();
+    const signatureWords = signature.split(/\s+/);
+    return signature.length <= 80 && signatureWords.length <= 4 &&
+      signatureWords.every((word) => /^\p{Lu}[\p{L}\p{M}'’.-]*$/u.test(word));
+  });
+
+  return isRecognizedSignoff
+    ? withoutGreeting.slice(0, finalLineStart).trim()
+    : withoutGreeting;
 }
 
 function extractJsonObject(text: string): unknown {
@@ -1094,7 +1135,7 @@ function parseProviderMessages(content: string): string[] {
       if (isRecord(item) && typeof item.text === "string") return item.text;
       return "";
     })
-    .map((text) => stripGreetingAndSignoff(text.replace(/\s+/g, " ").trim()))
+    .map((text) => stripGreetingAndSignoff(text).replace(/\s+/g, " ").trim())
     .filter((text) => text.length > 0)
     .slice(0, 3);
 }

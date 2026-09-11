@@ -101,6 +101,52 @@ final class PrivateDraftPromptPlanTests: XCTestCase {
         )
     }
 
+    func testPrivateDraftContentRejectsWhitespaceOnlyMessage() {
+        let content = PrivateDraftContent(
+            messageText: " \n\t ",
+            asksForReassurance: false,
+            explainsBeforeApology: false,
+            mayFeelTooHeavy: false,
+            pressureNotes: [],
+            missingInformation: [],
+            riskNotes: []
+        )
+
+        XCTAssertThrowsError(try content.bundle(
+            lane: .privateDraft,
+            approvedBeads: [],
+            personName: "Sam"
+        )) { error in
+            XCTAssertEqual(
+                error as? GenerationError,
+                .unexpectedResponse(
+                    message: "Private draft returned no usable message. Please try again."
+                )
+            )
+        }
+    }
+
+    func testPrivateDraftContentBuildsBundleFromTrimmedUsableMessage() throws {
+        let content = PrivateDraftContent(
+            messageText: " \nA useful private message.\t ",
+            asksForReassurance: false,
+            explainsBeforeApology: false,
+            mayFeelTooHeavy: false,
+            pressureNotes: [],
+            missingInformation: [],
+            riskNotes: []
+        )
+
+        let bundle = try content.bundle(
+            lane: .privateDraft,
+            approvedBeads: [],
+            personName: "Sam"
+        )
+
+        XCTAssertEqual(bundle.messageText, "A useful private message.")
+        XCTAssertEqual(bundle.lane, .privateDraft)
+    }
+
     private var fixtureMoment: MomentInput {
         MomentInput(
             personName: "Sam",

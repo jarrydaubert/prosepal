@@ -42,9 +42,9 @@ server rejects a body/header mismatch before provider work.
 | `spelling_preference` | String | `automatic`, `us`, or `uk`; native default is `automatic` |
 | `locale_identifier` | String | Sanitized to 40 characters |
 | `recipient_name` | Optional string | Sanitized to 80 characters |
-| `things_to_include` | String array | At most 12 entries, each sanitized to 160 characters by the gateway |
-| `things_to_avoid` | String array | At most 12 entries, each sanitized to 160 characters by the gateway |
-| `user_context` | Optional string | Sanitized to 1,200 characters |
+| `things_to_include` | String array | At most 12 entries, each sanitized to 1,200 characters |
+| `things_to_avoid` | String array | At most 12 entries, each sanitized to 1,200 characters |
+| `user_context` | Optional string | Sanitized to 4,000 characters |
 
 The complete occasion, relationship, and tone vocabularies are owned by the
 native enums in `CardModels.swift` and mirrored by the gateway parser. A change
@@ -98,6 +98,12 @@ The native client requires readable contract versions, at least one message,
 and no blank message text before returning success to the writing service.
 `messages` order has no ranking semantics; every gateway candidate is subject to
 the same response quality gate.
+
+The gateway evaluates recognized trailing sign-offs while provider line
+structure is still available, then normalizes remaining whitespace. Similar
+words in ordinary message content are retained. Private structured output also
+requires non-whitespace message text; an unusable message throws the typed
+`unexpectedResponse` failure instead of creating a draft bundle.
 
 ## HTTP and error mapping
 

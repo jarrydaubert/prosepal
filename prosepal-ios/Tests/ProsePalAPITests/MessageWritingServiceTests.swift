@@ -319,6 +319,62 @@ func gatewayAdjustmentUsesOnlyNamedAdjustmentAndCurrentDraftContext() async thro
 }
 
 @Test
+func gatewayCarefulClientPreservesMomentDetailBeyondLegacyCutoff() async throws {
+    let cardClient = RecordingCardMessageWritingClient(response: CardResponse(
+        messages: [GeneratedMessage(id: "detail-1", text: "A detailed gateway draft.")],
+        laneUsed: .standard,
+        fallbackStatus: .none,
+        retryEligibility: .ineligible
+    ))
+    let client = GatewayCarefulMomentClient(
+        client: cardClient,
+        clientContext: ClientContext(appVersion: "0.0.0", buildNumber: "1")
+    )
+    let detail = String(repeating: "shared detail ", count: 20) + "MOMENT_DETAIL_AFTER_160"
+
+    _ = try await client.draft(for: MomentInput(
+        personName: "Sam",
+        relationship: .family,
+        occasion: .sympathy,
+        trueThing: detail
+    ))
+
+    let intent = await cardClient.firstIntent
+    #expect(detail.count > 160)
+    #expect(intent?.thingsToInclude.first == detail)
+}
+
+@Test
+func gatewayAdjustmentPreservesContextBeyondLegacyServerCutoff() async throws {
+    let cardClient = RecordingCardMessageWritingClient(response: CardResponse(
+        messages: [GeneratedMessage(id: "context-1", text: "An adjusted gateway draft.")],
+        laneUsed: .standard,
+        fallbackStatus: .none,
+        retryEligibility: .ineligible
+    ))
+    let client = GatewayCarefulMomentClient(
+        client: cardClient,
+        clientContext: ClientContext(appVersion: "0.0.0", buildNumber: "1")
+    )
+    let currentMessage = String(repeating: "I remember that moment clearly. ", count: 45) +
+        "ADJUSTMENT_CONTEXT_AFTER_1200"
+
+    _ = try await client.adjust(
+        MomentDraftBundle(messageText: currentMessage, lane: .careful),
+        with: .warmer,
+        moment: MomentInput(
+            personName: "Sam",
+            relationship: .family,
+            occasion: .sympathy
+        )
+    )
+
+    let intent = await cardClient.firstIntent
+    #expect(currentMessage.count > 1_200)
+    #expect(intent?.userContext?.contains(currentMessage) == true)
+}
+
+@Test
 func carefulLaneEntitlementFailureFallsBackToPrivateDraft() async throws {
     let privateClient = RecordingMomentDraftClient(
         bundle: MomentDraftBundle(messageText: "A plain private draft.", lane: .privateDraft)

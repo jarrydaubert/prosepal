@@ -96,7 +96,7 @@ public struct FoundationModelsPrivateDraftClient: MomentDraftClient {
                 )
             )
             try Task.checkCancellation()
-            return response.content.bundle(
+            return try response.content.bundle(
                 lane: .privateDraft,
                 approvedBeads: approvedBeads,
                 personName: moment.personName
@@ -191,7 +191,7 @@ struct PrivateDraftPromptPlan: Equatable, Sendable {
 }
 
 @Generable(description: "A ProsePal private draft bundle")
-private struct PrivateDraftContent {
+struct PrivateDraftContent {
     @Guide(description: "The message body the user can send or edit")
     var messageText: String
 
@@ -217,9 +217,16 @@ private struct PrivateDraftContent {
         lane: MomentDraftLane,
         approvedBeads: [TruthBead],
         personName: String
-    ) -> MomentDraftBundle {
-        MomentDraftBundle(
-            messageText: messageText,
+    ) throws -> MomentDraftBundle {
+        let usableMessage = messageText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !usableMessage.isEmpty else {
+            throw GenerationError.unexpectedResponse(
+                message: "Private draft returned no usable message. Please try again."
+            )
+        }
+
+        return MomentDraftBundle(
+            messageText: usableMessage,
             lane: lane,
             pressureCheck: PressureCheck(
                 asksForReassurance: asksForReassurance,

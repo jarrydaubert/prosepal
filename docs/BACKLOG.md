@@ -109,26 +109,6 @@ retains three choices behind its private-device feasibility gate.
   HTTP/reference docs in the same fix. Preserve the distinction between a local
   abort request and confirmed server no-charge finalization.
 
-- [ ] **W-5 — Reject unusable output and repair input/body handling.**
-  Value: a successful Write must yield usable wording rather than a blank or
-  formatting residue. Source: `PrivateDraftContent.bundle` trims message text
-  without a nonempty check; gateway `parseProviderMessages` collapses newlines
-  before the newline-dependent `stripGreetingAndSignoff` rule.
-  DoD: empty/whitespace-only private output is a typed failure that cannot replace
-  existing wording or become a successful candidate; strip recognized sign-offs
-  before losing the line structure, without deleting legitimate message content.
-  Add focused tests and rerun the deterministic quality baseline. Keep the
-  existing targeted quality rules; do not clone a broad regex moderation engine
-  into the private lane or promise semantic grounding from format validation.
-
-  Fix the live prompt asymmetry: Moment detail accepts 1,200 characters, but
-  `gatewayIntent` puts it in one `thingsToInclude` item capped at 160 by
-  `parseRequest`; adjustment `userContext` accepts 4,000 natively but the server
-  caps it at 1,200. Choose one honest bound per field and preserve accepted
-  meaning in both lanes, including exclusions and existing rewrite text. Add
-  tests with meaningful content beyond the old cutoffs; do not silently truncate
-  the only personal detail. Contract/version parity remains owned by W-3.
-
 - [ ] **W-6 — Preserve unsaved work through recovery and incoming handoffs.**
   Value: relaunch or a shortcut must not erase the user's only wording.
   Source: `MomentModel.persistDraftRecovery` requires an existing bundle;

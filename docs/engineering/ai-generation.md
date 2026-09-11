@@ -59,6 +59,11 @@ than provider-specific exceptions. If routing ends in failure or
 cancellation, `MomentModel` does not replace the current draft; the Moment and
 recoverable wording remain available.
 
+Private structured output must contain non-whitespace message text before it can
+become a draft bundle. Blank output maps to `unexpectedResponse`, so it follows
+the existing typed failure and fallback policy and cannot be accepted as a
+successful private result.
+
 When online work is blocked, `MomentModel` retains the exact draft or adjustment
 request alongside the existing Moment and draft state. The provider-neutral
 first-use presentation can grant the current policy and retry that request, or
@@ -80,6 +85,11 @@ and an online adjustment sends that current draft as context after permission.
 The absence of vault objects does not exclude memory-derived wording. The request
 also carries app/build/platform and request-identity metadata plus the applicable
 auth boundary.
+
+The native and gateway parsers share the same input bounds for these writing
+fields: each include or exclusion item retains up to 1,200 characters, and
+adjustment context retains up to 4,000 characters. Accepted Moment detail and
+rewrite context are not reduced again at the server boundary.
 
 After reservation, `generate-card` builds a structured prompt from those
 writing fields. It may send the same prompt sequentially to configured primary
