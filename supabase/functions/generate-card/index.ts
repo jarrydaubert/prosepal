@@ -1112,7 +1112,7 @@ function stripGreetingAndSignoff(text: string): string {
       const signedPrefix = `${signoff},`;
       if (normalizedFinalLine.startsWith(signedPrefix)) {
         const signature = finalLine.slice(signedPrefix.length).trim();
-        return isSignatureName(signature);
+        return isSeparateSignatureName(signature);
       }
 
       const unsignedPrefix = `${signoff} `;

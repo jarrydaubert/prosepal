@@ -521,6 +521,45 @@ Deno.test("strips only safely identifiable recognized sign-off lines", async () 
   ]);
 });
 
+Deno.test("strips comma-prefixed multiword signatures", async () => {
+  const response = await handleGenerateCard(
+    makeRequest(),
+    makeDeps({
+      anonymous: true,
+      provider: true,
+      providerResponse: {
+        choices: [{
+          message: {
+            content: JSON.stringify({
+              messages: [
+                { text: "Your kindness stays with me.\nLove, Sam Smith" },
+                {
+                  text:
+                    "I am grateful for your steady care.\nBest wishes, Mom & Dad",
+                },
+                {
+                  text:
+                    "You made this year gentler.\nSincerely yours, Mum and Dad",
+                },
+              ],
+            }),
+          },
+        }],
+      },
+    }),
+  );
+
+  assertEquals(response.status, 200);
+  const body = await response.json() as {
+    messages: Array<{ text: string }>;
+  };
+  assertEquals(body.messages.map((message) => message.text), [
+    "Your kindness stays with me.",
+    "I am grateful for your steady care.",
+    "You made this year gentler.",
+  ]);
+});
+
 Deno.test("strips exact and signed recognized sign-off lines", async () => {
   const response = await handleGenerateCard(
     makeRequest(),

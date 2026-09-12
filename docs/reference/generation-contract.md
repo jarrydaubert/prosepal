@@ -116,14 +116,14 @@ The gateway evaluates recognized trailing sign-offs while provider line
 structure is still available, then normalizes remaining whitespace. It removes
 an exact recognized whole-option or final-line sign-off, including the explicit
 multiword variants `Sincerely yours`, `Best wishes`, and `Best regards`. A
-signature on the same line must be one capitalized name token. A signature on
-the immediately following line may contain up to four capitalized name-like
-tokens joined by `&` or lowercase `and`. Accepted name tokens end in a letter or
-combining mark, so sentence-ending punctuation is retained as prose instead of
-being treated as a signature. Other questionable closing prose is retained too.
-Private structured output also requires non-whitespace message text; an unusable
-message throws the typed `unexpectedResponse` failure instead of creating a
-draft bundle.
+comma-prefixed signature on the same line, or a signature on the immediately
+following line, may contain up to four capitalized name-like tokens joined by
+`&` or lowercase `and`. Without the comma, a same-line signature must be one
+capitalized name token. Accepted name tokens end in a letter or combining mark,
+so sentence-ending punctuation is retained as prose instead of being treated as
+a signature. Other questionable closing prose is retained too. Private
+structured output also requires non-whitespace message text; an unusable message
+throws the typed `unexpectedResponse` failure instead of creating a draft bundle.
 
 ## HTTP and error mapping
 
