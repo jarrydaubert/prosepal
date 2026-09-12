@@ -1095,7 +1095,7 @@ function stripGreetingAndSignoff(text: string): string {
     .trim();
   const finalLineStart = withoutGreeting.lastIndexOf("\n");
   const finalLine = withoutGreeting.slice(finalLineStart + 1).trim();
-  if (finalLineStart >= 0 && isSignatureName(finalLine)) {
+  if (finalLineStart >= 0 && isSeparateSignatureName(finalLine)) {
     const beforeSignature = withoutGreeting.slice(0, finalLineStart).trim();
     const precedingLineStart = beforeSignature.lastIndexOf("\n");
     const precedingLine = beforeSignature.slice(precedingLineStart + 1).trim();
@@ -1136,6 +1136,27 @@ function isExactRecognizedSignoff(value: string): boolean {
 
 function isSignatureName(value: string): boolean {
   return value.length <= 80 && /^\p{Lu}[\p{L}\p{M}'’.-]*$/u.test(value);
+}
+
+function isSeparateSignatureName(value: string): boolean {
+  if (value.length > 80) return false;
+  const parts = value.split(/\s+/);
+  let nameCount = 0;
+  let expectsName = true;
+
+  for (const part of parts) {
+    if (part === "&" || part === "and") {
+      if (expectsName) return false;
+      expectsName = true;
+      continue;
+    }
+    if (!isSignatureName(part)) return false;
+    nameCount += 1;
+    if (nameCount > 4) return false;
+    expectsName = false;
+  }
+
+  return nameCount > 0 && !expectsName;
 }
 
 function extractJsonObject(text: string): unknown {

@@ -570,13 +570,14 @@ Deno.test("strips separate recognized sign-off and signature lines", async () =>
           message: {
             content: JSON.stringify({
               messages: [
-                { text: "Your kindness stays with me.\nLove,\nSam" },
+                { text: "Your kindness stays with me.\nLove,\nSam Smith" },
                 {
                   text:
-                    "I am grateful for your steady care.\nBest wishes\nJamie",
+                    "I am grateful for your steady care.\nBest wishes\nMom & Dad",
                 },
                 {
-                  text: "You made this year gentler.\nSincerely yours,\nAlex",
+                  text:
+                    "You made this year gentler.\nSincerely yours,\nMum and Dad",
                 },
               ],
             }),
@@ -608,7 +609,7 @@ Deno.test("rejects a sign-off and signature that occupy the whole option", async
           message: {
             content: JSON.stringify({
               messages: [
-                { text: "Love,\nSam" },
+                { text: "Love,\nSam Smith" },
                 {
                   text: "Happy birthday, Dad. Your kindness means so much.",
                 },
@@ -631,8 +632,8 @@ Deno.test("rejects a sign-off and signature that occupy the whole option", async
   assertEquals(body.messages, undefined);
 });
 
-Deno.test("retains an ordinary line before a final capitalized word", async () => {
-  const ordinaryEnding = "Your kindness stays with me.\nAlways\nSam";
+Deno.test("retains an ordinary line before a final capitalized name", async () => {
+  const ordinaryEnding = "Your kindness stays with me.\nAlways\nSam Smith";
   const response = await handleGenerateCard(
     makeRequest(),
     makeDeps({
@@ -666,7 +667,7 @@ Deno.test("retains an ordinary line before a final capitalized word", async () =
   };
   assertEquals(
     body.messages[0].text,
-    "Your kindness stays with me. Always Sam",
+    "Your kindness stays with me. Always Sam Smith",
   );
 });
 
