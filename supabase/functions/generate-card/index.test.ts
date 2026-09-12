@@ -559,6 +559,117 @@ Deno.test("strips conventional multiword sign-off lines", async () => {
   ]);
 });
 
+Deno.test("strips separate recognized sign-off and signature lines", async () => {
+  const response = await handleGenerateCard(
+    makeRequest(),
+    makeDeps({
+      anonymous: true,
+      provider: true,
+      providerResponse: {
+        choices: [{
+          message: {
+            content: JSON.stringify({
+              messages: [
+                { text: "Your kindness stays with me.\nLove,\nSam" },
+                {
+                  text:
+                    "I am grateful for your steady care.\nBest wishes\nJamie",
+                },
+                {
+                  text: "You made this year gentler.\nSincerely yours,\nAlex",
+                },
+              ],
+            }),
+          },
+        }],
+      },
+    }),
+  );
+
+  assertEquals(response.status, 200);
+  const body = await response.json() as {
+    messages: Array<{ text: string }>;
+  };
+  assertEquals(body.messages.map((message) => message.text), [
+    "Your kindness stays with me.",
+    "I am grateful for your steady care.",
+    "You made this year gentler.",
+  ]);
+});
+
+Deno.test("rejects a sign-off and signature that occupy the whole option", async () => {
+  const response = await handleGenerateCard(
+    makeRequest(),
+    makeDeps({
+      anonymous: true,
+      provider: true,
+      providerResponse: {
+        choices: [{
+          message: {
+            content: JSON.stringify({
+              messages: [
+                { text: "Love,\nSam" },
+                {
+                  text: "Happy birthday, Dad. Your kindness means so much.",
+                },
+                {
+                  text:
+                    "Dad, I hope today brings warmth and a quiet cup of tea.",
+                },
+              ],
+            }),
+          },
+        }],
+      },
+    }),
+  );
+
+  assertEquals(response.status, 502);
+  const body = await response.json() as Record<string, unknown>;
+  const userSafeError = body.user_safe_error as Record<string, unknown>;
+  assertEquals(userSafeError.code, "gateway_quality_failed");
+  assertEquals(body.messages, undefined);
+});
+
+Deno.test("retains an ordinary line before a final capitalized word", async () => {
+  const ordinaryEnding = "Your kindness stays with me.\nAlways\nSam";
+  const response = await handleGenerateCard(
+    makeRequest(),
+    makeDeps({
+      anonymous: true,
+      provider: true,
+      providerResponse: {
+        choices: [{
+          message: {
+            content: JSON.stringify({
+              messages: [
+                { text: ordinaryEnding },
+                {
+                  text:
+                    "Happy birthday, Dad. Your steady care means more than I can say.",
+                },
+                {
+                  text:
+                    "I hope today brings the quiet cup of tea and calm you deserve.",
+                },
+              ],
+            }),
+          },
+        }],
+      },
+    }),
+  );
+
+  assertEquals(response.status, 200);
+  const body = await response.json() as {
+    messages: Array<{ text: string }>;
+  };
+  assertEquals(
+    body.messages[0].text,
+    "Your kindness stays with me. Always Sam",
+  );
+});
+
 for (
   const signoff of [
     "Love",

@@ -1095,31 +1095,43 @@ function stripGreetingAndSignoff(text: string): string {
     .trim();
   const finalLineStart = withoutGreeting.lastIndexOf("\n");
   const finalLine = withoutGreeting.slice(finalLineStart + 1).trim();
+  if (finalLineStart >= 0 && isSignatureName(finalLine)) {
+    const beforeSignature = withoutGreeting.slice(0, finalLineStart).trim();
+    const precedingLineStart = beforeSignature.lastIndexOf("\n");
+    const precedingLine = beforeSignature.slice(precedingLineStart + 1).trim();
+    if (isExactRecognizedSignoff(precedingLine)) {
+      return precedingLineStart < 0
+        ? ""
+        : beforeSignature.slice(0, precedingLineStart).trim();
+    }
+  }
+
   const normalizedFinalLine = finalLine.toLowerCase();
-  const isRecognizedSignoff = RECOGNIZED_SIGNOFFS.some((signoff) => {
-    if (
-      normalizedFinalLine === signoff ||
-      normalizedFinalLine === `${signoff},`
-    ) {
-      return true;
-    }
+  const isRecognizedSignoff = isExactRecognizedSignoff(finalLine) ||
+    RECOGNIZED_SIGNOFFS.some((signoff) => {
+      const signedPrefix = `${signoff},`;
+      if (normalizedFinalLine.startsWith(signedPrefix)) {
+        const signature = finalLine.slice(signedPrefix.length).trim();
+        return isSignatureName(signature);
+      }
 
-    const signedPrefix = `${signoff},`;
-    if (normalizedFinalLine.startsWith(signedPrefix)) {
-      const signature = finalLine.slice(signedPrefix.length).trim();
+      const unsignedPrefix = `${signoff} `;
+      if (!normalizedFinalLine.startsWith(unsignedPrefix)) return false;
+      const signature = finalLine.slice(unsignedPrefix.length).trim();
       return isSignatureName(signature);
-    }
-
-    const unsignedPrefix = `${signoff} `;
-    if (!normalizedFinalLine.startsWith(unsignedPrefix)) return false;
-    const signature = finalLine.slice(unsignedPrefix.length).trim();
-    return isSignatureName(signature);
-  });
+    });
 
   if (!isRecognizedSignoff) return withoutGreeting;
   return finalLineStart < 0
     ? ""
     : withoutGreeting.slice(0, finalLineStart).trim();
+}
+
+function isExactRecognizedSignoff(value: string): boolean {
+  const normalized = value.toLowerCase();
+  return RECOGNIZED_SIGNOFFS.some((signoff) =>
+    normalized === signoff || normalized === `${signoff},`
+  );
 }
 
 function isSignatureName(value: string): boolean {
