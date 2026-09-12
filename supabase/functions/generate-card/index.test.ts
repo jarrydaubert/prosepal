@@ -455,6 +455,39 @@ Deno.test("retains final prose that begins with a recognized sign-off word", asy
   ]);
 });
 
+Deno.test("retains sentence-ending prose after recognized sign-off prefixes", async () => {
+  const response = await handleGenerateCard(
+    makeRequest(),
+    makeDeps({
+      anonymous: true,
+      provider: true,
+      providerResponse: {
+        choices: [{
+          message: {
+            content: JSON.stringify({
+              messages: [
+                { text: "Love Matters." },
+                { text: "The lesson I keep returning to.\nLove Endures." },
+                { text: "Best Wishes Matter." },
+              ],
+            }),
+          },
+        }],
+      },
+    }),
+  );
+
+  assertEquals(response.status, 200);
+  const body = await response.json() as {
+    messages: Array<{ text: string }>;
+  };
+  assertEquals(body.messages.map((message) => message.text), [
+    "Love Matters.",
+    "The lesson I keep returning to. Love Endures.",
+    "Best Wishes Matter.",
+  ]);
+});
+
 Deno.test("strips only safely identifiable recognized sign-off lines", async () => {
   const response = await handleGenerateCard(
     makeRequest(),

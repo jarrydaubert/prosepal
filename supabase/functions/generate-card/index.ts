@@ -1135,7 +1135,8 @@ function isExactRecognizedSignoff(value: string): boolean {
 }
 
 function isSignatureName(value: string): boolean {
-  return value.length <= 80 && /^\p{Lu}[\p{L}\p{M}'’.-]*$/u.test(value);
+  return value.length <= 80 &&
+    /^\p{Lu}(?:[\p{L}\p{M}]|['’.-](?=[\p{L}\p{M}]))*$/u.test(value);
 }
 
 function isSeparateSignatureName(value: string): boolean {

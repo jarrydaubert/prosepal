@@ -118,9 +118,10 @@ an exact recognized whole-option or final-line sign-off, including the explicit
 multiword variants `Sincerely yours`, `Best wishes`, and `Best regards`. A
 signature on the same line must be one capitalized name token. A signature on
 the immediately following line may contain up to four capitalized name-like
-tokens joined by `&` or lowercase `and`; questionable closing prose is retained.
-Private
-structured output also requires non-whitespace message text; an unusable
+tokens joined by `&` or lowercase `and`. Accepted name tokens end in a letter or
+combining mark, so sentence-ending punctuation is retained as prose instead of
+being treated as a signature. Other questionable closing prose is retained too.
+Private structured output also requires non-whitespace message text; an unusable
 message throws the typed `unexpectedResponse` failure instead of creating a
 draft bundle.
 
