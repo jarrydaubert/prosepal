@@ -434,7 +434,7 @@ Deno.test("retains final prose that begins with a recognized sign-off word", asy
                 },
                 {
                   text:
-                    "Your steady care shaped so much.\nBest wishes carry us forward",
+                    "Your steady care shaped so much.\nSincerely yours is a promise I still mean",
                 },
               ],
             }),
@@ -451,7 +451,7 @@ Deno.test("retains final prose that begins with a recognized sign-off word", asy
   assertEquals(body.messages.map((message) => message.text), [
     "Your quiet kindness means more than I can say. Love, now and always",
     "The small things stay with me. Love grows in the moments we keep",
-    "Your steady care shaped so much. Best wishes carry us forward",
+    "Your steady care shaped so much. Sincerely yours is a promise I still mean",
   ]);
 });
 
@@ -521,7 +521,53 @@ Deno.test("strips exact and signed recognized sign-off lines", async () => {
   ]);
 });
 
-for (const signoff of ["Love", "Warmly", "From"]) {
+Deno.test("strips conventional multiword sign-off lines", async () => {
+  const response = await handleGenerateCard(
+    makeRequest(),
+    makeDeps({
+      anonymous: true,
+      provider: true,
+      providerResponse: {
+        choices: [{
+          message: {
+            content: JSON.stringify({
+              messages: [
+                {
+                  text: "Your kindness stays with me.\nSincerely yours",
+                },
+                {
+                  text:
+                    "I am grateful for your steady care.\nSincerely yours, Sam",
+                },
+                { text: "You made this year gentler.\nBest regards" },
+              ],
+            }),
+          },
+        }],
+      },
+    }),
+  );
+
+  assertEquals(response.status, 200);
+  const body = await response.json() as {
+    messages: Array<{ text: string }>;
+  };
+  assertEquals(body.messages.map((message) => message.text), [
+    "Your kindness stays with me.",
+    "I am grateful for your steady care.",
+    "You made this year gentler.",
+  ]);
+});
+
+for (
+  const signoff of [
+    "Love",
+    "Warmly",
+    "From",
+    "Sincerely yours",
+    "Best regards",
+  ]
+) {
   Deno.test(`rejects single-line ${signoff} as a sign-off-only option`, async () => {
     const response = await handleGenerateCard(
       makeRequest(),

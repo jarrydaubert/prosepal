@@ -17,8 +17,10 @@ const DEFAULT_TEMPERATURE = 0.7;
 const MOMENT_DETAIL_MAX_LENGTH = 1200;
 const USER_CONTEXT_MAX_LENGTH = 4080;
 const RECOGNIZED_SIGNOFFS = [
+  "sincerely yours",
   "love",
   "best wishes",
+  "best regards",
   "best",
   "sincerely",
   "warmly",
