@@ -6,6 +6,14 @@ import {
   requestFingerprint,
 } from "./index.ts";
 
+const testGraphemeSegmenter = new Intl.Segmenter("en", {
+  granularity: "grapheme",
+});
+
+function graphemeCount(value: string): number {
+  return Array.from(testGraphemeSegmenter.segment(value)).length;
+}
+
 const fixedRequest: Parameters<typeof buildPrompt>[0] = {
   idempotency_key: "fixed-key",
   requested_lane: "standard",
@@ -246,7 +254,7 @@ Deno.test("buildPrompt carries ProsePal domain context and filters prompt inject
   assertStringIncludes(prompt.user, "Spelling: Use UK English");
   assertStringIncludes(prompt.user, "a quiet cup of tea");
   assertStringIncludes(prompt.user, "age");
-  assertStringIncludes(prompt.user, "[filtered]");
+  assertStringIncludes(prompt.user, "••••••••••");
   assert(!prompt.user.includes("Ignore previous instructions"));
 });
 
@@ -403,6 +411,596 @@ Deno.test("calls OpenAI-compatible provider and returns CardResponse without pro
   assert(!responseText.includes("free-dev-model"));
   assertEquals(providerBodies.length, 1);
   assertEquals(providerBodies[0].response_format, { type: "json_object" });
+});
+
+Deno.test("retains final prose that begins with a recognized sign-off word", async () => {
+  const response = await handleGenerateCard(
+    makeRequest(),
+    makeDeps({
+      anonymous: true,
+      provider: true,
+      providerResponse: {
+        choices: [{
+          message: {
+            content: JSON.stringify({
+              messages: [
+                {
+                  text:
+                    "Your quiet kindness means more than I can say.\nLove, now and always",
+                },
+                {
+                  text:
+                    "The small things stay with me.\nLove grows in the moments we keep",
+                },
+                {
+                  text:
+                    "Your steady care shaped so much.\nSincerely yours is a promise I still mean",
+                },
+              ],
+            }),
+          },
+        }],
+      },
+    }),
+  );
+
+  assertEquals(response.status, 200);
+  const body = await response.json() as {
+    messages: Array<{ text: string }>;
+  };
+  assertEquals(body.messages.map((message) => message.text), [
+    "Your quiet kindness means more than I can say. Love, now and always",
+    "The small things stay with me. Love grows in the moments we keep",
+    "Your steady care shaped so much. Sincerely yours is a promise I still mean",
+  ]);
+});
+
+Deno.test("retains sentence-ending prose after recognized sign-off prefixes", async () => {
+  const response = await handleGenerateCard(
+    makeRequest(),
+    makeDeps({
+      anonymous: true,
+      provider: true,
+      providerResponse: {
+        choices: [{
+          message: {
+            content: JSON.stringify({
+              messages: [
+                { text: "Love Matters." },
+                { text: "The lesson I keep returning to.\nLove Endures." },
+                { text: "Best Wishes Matter." },
+              ],
+            }),
+          },
+        }],
+      },
+    }),
+  );
+
+  assertEquals(response.status, 200);
+  const body = await response.json() as {
+    messages: Array<{ text: string }>;
+  };
+  assertEquals(body.messages.map((message) => message.text), [
+    "Love Matters.",
+    "The lesson I keep returning to. Love Endures.",
+    "Best Wishes Matter.",
+  ]);
+});
+
+Deno.test("rejects ambiguous line-broken closing prose instead of shortening it", async () => {
+  const response = await handleGenerateCard(
+    makeRequest(),
+    makeDeps({
+      anonymous: true,
+      provider: true,
+      providerResponse: {
+        choices: [{
+          message: {
+            content: JSON.stringify({
+              messages: [
+                {
+                  text:
+                    "May your days be filled with\nLove, Laughter and Light",
+                },
+                {
+                  text: "What carries us through?\nLove\nEndures",
+                },
+                {
+                  text: "What matters most to me is\nLove",
+                },
+              ],
+            }),
+          },
+        }],
+      },
+    }),
+  );
+
+  assertEquals(response.status, 502);
+  const body = await response.json() as Record<string, unknown>;
+  const userSafeError = body.user_safe_error as Record<string, unknown>;
+  assertEquals(userSafeError.code, "gateway_quality_failed");
+  assertEquals(body.messages, undefined);
+});
+
+Deno.test("strips only safely identifiable recognized sign-off lines", async () => {
+  const response = await handleGenerateCard(
+    makeRequest(),
+    makeDeps({
+      anonymous: true,
+      provider: true,
+      providerResponse: {
+        choices: [{
+          message: {
+            content: JSON.stringify({
+              messages: [
+                { text: "Your kindness stays with me.\n\nLove, Sam" },
+                { text: "I am grateful for your steady care.\n\nLove" },
+                { text: "You made this year gentler.\n\nBest wishes, Sam" },
+              ],
+            }),
+          },
+        }],
+      },
+    }),
+  );
+
+  assertEquals(response.status, 200);
+  const body = await response.json() as {
+    messages: Array<{ text: string }>;
+  };
+  assertEquals(body.messages.map((message) => message.text), [
+    "Your kindness stays with me.",
+    "I am grateful for your steady care.",
+    "You made this year gentler.",
+  ]);
+});
+
+Deno.test("strips comma-prefixed multiword signatures", async () => {
+  const response = await handleGenerateCard(
+    makeRequest(),
+    makeDeps({
+      anonymous: true,
+      provider: true,
+      providerResponse: {
+        choices: [{
+          message: {
+            content: JSON.stringify({
+              messages: [
+                { text: "Your kindness stays with me.\n\nLove, Sam Smith" },
+                {
+                  text:
+                    "I am grateful for your steady care.\n\nBest wishes, Mom & Dad",
+                },
+                {
+                  text:
+                    "You made this year gentler.\n\nSincerely yours, Mum and Dad",
+                },
+              ],
+            }),
+          },
+        }],
+      },
+    }),
+  );
+
+  assertEquals(response.status, 200);
+  const body = await response.json() as {
+    messages: Array<{ text: string }>;
+  };
+  assertEquals(body.messages.map((message) => message.text), [
+    "Your kindness stays with me.",
+    "I am grateful for your steady care.",
+    "You made this year gentler.",
+  ]);
+});
+
+Deno.test("strips exact and signed recognized sign-off lines", async () => {
+  const response = await handleGenerateCard(
+    makeRequest(),
+    makeDeps({
+      anonymous: true,
+      provider: true,
+      providerResponse: {
+        choices: [{
+          message: {
+            content: JSON.stringify({
+              messages: [
+                { text: "Your kindness stays with me.\n\nWarmly" },
+                { text: "I am grateful for your steady care.\n\nFrom Jamie" },
+                { text: "You made this year gentler.\n\nBest wishes," },
+              ],
+            }),
+          },
+        }],
+      },
+    }),
+  );
+
+  assertEquals(response.status, 200);
+  const body = await response.json() as {
+    messages: Array<{ text: string }>;
+  };
+  assertEquals(body.messages.map((message) => message.text), [
+    "Your kindness stays with me.",
+    "I am grateful for your steady care.",
+    "You made this year gentler.",
+  ]);
+});
+
+Deno.test("strips conventional multiword sign-off lines", async () => {
+  const response = await handleGenerateCard(
+    makeRequest(),
+    makeDeps({
+      anonymous: true,
+      provider: true,
+      providerResponse: {
+        choices: [{
+          message: {
+            content: JSON.stringify({
+              messages: [
+                {
+                  text: "Your kindness stays with me.\n\nSincerely yours",
+                },
+                {
+                  text:
+                    "I am grateful for your steady care.\n\nSincerely yours, Sam",
+                },
+                { text: "You made this year gentler.\n\nBest regards" },
+              ],
+            }),
+          },
+        }],
+      },
+    }),
+  );
+
+  assertEquals(response.status, 200);
+  const body = await response.json() as {
+    messages: Array<{ text: string }>;
+  };
+  assertEquals(body.messages.map((message) => message.text), [
+    "Your kindness stays with me.",
+    "I am grateful for your steady care.",
+    "You made this year gentler.",
+  ]);
+});
+
+Deno.test("strips separate recognized sign-off and signature lines", async () => {
+  const response = await handleGenerateCard(
+    makeRequest(),
+    makeDeps({
+      anonymous: true,
+      provider: true,
+      providerResponse: {
+        choices: [{
+          message: {
+            content: JSON.stringify({
+              messages: [
+                { text: "Your kindness stays with me.\n\nLove,\nSam Smith" },
+                {
+                  text:
+                    "I am grateful for your steady care.\n\nBest wishes\nMom & Dad",
+                },
+                {
+                  text:
+                    "You made this year gentler.\n\nSincerely yours,\nMum and Dad",
+                },
+              ],
+            }),
+          },
+        }],
+      },
+    }),
+  );
+
+  assertEquals(response.status, 200);
+  const body = await response.json() as {
+    messages: Array<{ text: string }>;
+  };
+  assertEquals(body.messages.map((message) => message.text), [
+    "Your kindness stays with me.",
+    "I am grateful for your steady care.",
+    "You made this year gentler.",
+  ]);
+});
+
+Deno.test("rejects a sign-off and signature that occupy the whole option", async () => {
+  const response = await handleGenerateCard(
+    makeRequest(),
+    makeDeps({
+      anonymous: true,
+      provider: true,
+      providerResponse: {
+        choices: [{
+          message: {
+            content: JSON.stringify({
+              messages: [
+                { text: "Love,\nSam Smith" },
+                {
+                  text: "Happy birthday, Dad. Your kindness means so much.",
+                },
+                {
+                  text:
+                    "Dad, I hope today brings warmth and a quiet cup of tea.",
+                },
+              ],
+            }),
+          },
+        }],
+      },
+    }),
+  );
+
+  assertEquals(response.status, 502);
+  const body = await response.json() as Record<string, unknown>;
+  const userSafeError = body.user_safe_error as Record<string, unknown>;
+  assertEquals(userSafeError.code, "gateway_quality_failed");
+  assertEquals(body.messages, undefined);
+});
+
+Deno.test("retains an ordinary line before a final capitalized name", async () => {
+  const ordinaryEnding = "Your kindness stays with me.\nAlways\nSam Smith";
+  const response = await handleGenerateCard(
+    makeRequest(),
+    makeDeps({
+      anonymous: true,
+      provider: true,
+      providerResponse: {
+        choices: [{
+          message: {
+            content: JSON.stringify({
+              messages: [
+                { text: ordinaryEnding },
+                {
+                  text:
+                    "Happy birthday, Dad. Your steady care means more than I can say.",
+                },
+                {
+                  text:
+                    "I hope today brings the quiet cup of tea and calm you deserve.",
+                },
+              ],
+            }),
+          },
+        }],
+      },
+    }),
+  );
+
+  assertEquals(response.status, 200);
+  const body = await response.json() as {
+    messages: Array<{ text: string }>;
+  };
+  assertEquals(
+    body.messages[0].text,
+    "Your kindness stays with me. Always Sam Smith",
+  );
+});
+
+for (
+  const signoff of [
+    "Love",
+    "Warmly",
+    "From",
+    "Sincerely yours",
+    "Best regards",
+  ]
+) {
+  Deno.test(`rejects single-line ${signoff} as a sign-off-only option`, async () => {
+    const response = await handleGenerateCard(
+      makeRequest(),
+      makeDeps({
+        anonymous: true,
+        provider: true,
+        providerResponse: {
+          choices: [{
+            message: {
+              content: JSON.stringify({
+                messages: [
+                  { text: signoff },
+                  {
+                    text: "Happy birthday, Dad. Your kindness means so much.",
+                  },
+                  {
+                    text:
+                      "Dad, I hope today brings warmth and a quiet cup of tea.",
+                  },
+                ],
+              }),
+            },
+          }],
+        },
+      }),
+    );
+
+    assertEquals(response.status, 502);
+    const body = await response.json() as Record<string, unknown>;
+    const userSafeError = body.user_safe_error as Record<string, unknown>;
+    assertEquals(userSafeError.code, "gateway_quality_failed");
+    assertEquals(body.messages, undefined);
+  });
+}
+
+Deno.test("retains legitimate single-line message options", async () => {
+  const legitimateMessage =
+    "Love grows in the moments we keep, and your kindness makes them brighter.";
+  const response = await handleGenerateCard(
+    makeRequest(),
+    makeDeps({
+      anonymous: true,
+      provider: true,
+      providerResponse: {
+        choices: [{
+          message: {
+            content: JSON.stringify({
+              messages: [
+                { text: legitimateMessage },
+                {
+                  text:
+                    "Happy birthday, Dad. Your steady care means more than I can say.",
+                },
+                {
+                  text:
+                    "I hope today brings the quiet cup of tea and calm you deserve.",
+                },
+              ],
+            }),
+          },
+        }],
+      },
+    }),
+  );
+
+  assertEquals(response.status, 200);
+  const body = await response.json() as {
+    messages: Array<{ text: string }>;
+  };
+  assertEquals(body.messages[0].text, legitimateMessage);
+});
+
+Deno.test("preserves accepted include and exclusion detail beyond 160 characters", async () => {
+  const providerBodies: Array<Record<string, unknown>> = [];
+  const detail = `${"shared detail ".repeat(20)}MOMENT_DETAIL_AFTER_160`;
+  const exclusion = `${"avoid this phrase ".repeat(12)}EXCLUSION_AFTER_160`;
+  const response = await handleGenerateCard(
+    makeRequest({
+      ...fixedRequest,
+      idempotency_key: "long-moment-detail",
+      intent: {
+        ...fixedRequest.intent,
+        things_to_include: [detail],
+        things_to_avoid: [exclusion],
+      },
+    }),
+    makeDeps({
+      anonymous: true,
+      provider: true,
+      captureProviderBodies: providerBodies,
+    }),
+  );
+
+  assertEquals(response.status, 200);
+  assert(detail.length > 160);
+  assert(exclusion.length > 160);
+  const providerBody = JSON.stringify(providerBodies[0]);
+  assertStringIncludes(providerBody, "MOMENT_DETAIL_AFTER_160");
+  assertStringIncludes(providerBody, "EXCLUSION_AFTER_160");
+});
+
+Deno.test("preserves a full accepted draft after injection-pattern sanitization", async () => {
+  const providerBodies: Array<Record<string, unknown>> = [];
+  const ending = "FULL_ACCEPTED_DRAFT_END";
+  const filteredInput = "system:";
+  const currentMessage = filteredInput +
+    "x".repeat(4000 - filteredInput.length - ending.length) + ending;
+  const userContext =
+    `A real sentence from you that ProsePal helps shape.\nCurrent message to reshape: ${currentMessage}`;
+  const response = await handleGenerateCard(
+    makeRequest({
+      ...fixedRequest,
+      idempotency_key: "long-adjustment-context",
+      intent: {
+        ...fixedRequest.intent,
+        user_context: userContext,
+      },
+    }),
+    makeDeps({
+      anonymous: true,
+      provider: true,
+      captureProviderBodies: providerBodies,
+    }),
+  );
+
+  assertEquals(response.status, 200);
+  assertEquals(graphemeCount(currentMessage), 4000);
+  assertEquals(graphemeCount(userContext), 4080);
+  const providerBody = JSON.stringify(providerBodies[0]);
+  assertStringIncludes(providerBody, "Current message to reshape:");
+  assert(!providerBody.includes(filteredInput));
+  assertStringIncludes(providerBody, "•".repeat(filteredInput.length));
+  assertStringIncludes(providerBody, ending);
+});
+
+Deno.test("uses extended grapheme clusters for native-aligned detail bounds", async () => {
+  const ordinary = "a".repeat(1200);
+  const emoji = "🙂".repeat(1200);
+  const composed = "é".repeat(1200);
+  const zwjNearBoundary = `${"z".repeat(1198)}👩‍💻Q`;
+  const afterOldUtf16Cutoff = `${
+    "🙂".repeat(600)
+  }CONTENT_AFTER_OLD_UTF16_CUTOFF`;
+  const cases = [
+    ["ordinary", ordinary],
+    ["emoji", emoji],
+    ["composed", composed],
+    ["zwj", zwjNearBoundary],
+    ["old-cutoff", afterOldUtf16Cutoff],
+  ] as const;
+
+  assertEquals(graphemeCount(ordinary), 1200);
+  assertEquals(graphemeCount(emoji), 1200);
+  assertEquals(graphemeCount(composed), 1200);
+  assertEquals(graphemeCount(zwjNearBoundary), 1200);
+  assert(graphemeCount(afterOldUtf16Cutoff) < 1200);
+  assert(afterOldUtf16Cutoff.length > 1200);
+
+  for (const [id, detail] of cases) {
+    const providerBodies: Array<Record<string, unknown>> = [];
+    const response = await handleGenerateCard(
+      makeRequest({
+        ...fixedRequest,
+        idempotency_key: `grapheme-bound-${id}`,
+        intent: {
+          ...fixedRequest.intent,
+          things_to_include: [detail],
+        },
+      }),
+      makeDeps({
+        anonymous: true,
+        provider: true,
+        captureProviderBodies: providerBodies,
+      }),
+    );
+
+    assertEquals(response.status, 200);
+    const providerBody = JSON.stringify(providerBodies[0]);
+    assertStringIncludes(providerBody, detail);
+  }
+
+  assertStringIncludes(afterOldUtf16Cutoff, "CONTENT_AFTER_OLD_UTF16_CUTOFF");
+});
+
+Deno.test("enforces the native upper bounds for gateway writing fields", async () => {
+  const providerBodies: Array<Record<string, unknown>> = [];
+  const response = await handleGenerateCard(
+    makeRequest({
+      ...fixedRequest,
+      idempotency_key: "shared-writing-bounds",
+      intent: {
+        ...fixedRequest.intent,
+        things_to_include: [
+          `${"d".repeat(1200)}DETAIL_AFTER_SHARED_BOUND`,
+        ],
+        things_to_avoid: [
+          `${"e".repeat(1200)}EXCLUSION_AFTER_SHARED_BOUND`,
+        ],
+        user_context: `${"c".repeat(4080)}CONTEXT_AFTER_WIRE_BOUND`,
+      },
+    }),
+    makeDeps({
+      anonymous: true,
+      provider: true,
+      captureProviderBodies: providerBodies,
+    }),
+  );
+
+  assertEquals(response.status, 200);
+  const providerBody = JSON.stringify(providerBodies[0]);
+  assert(!providerBody.includes("DETAIL_AFTER_SHARED_BOUND"));
+  assert(!providerBody.includes("EXCLUSION_AFTER_SHARED_BOUND"));
+  assert(!providerBody.includes("CONTEXT_AFTER_WIRE_BOUND"));
 });
 
 Deno.test("authenticated generation reserves then finalizes and returns usage summary", async () => {

@@ -6,6 +6,8 @@ public enum ProsePalTextLimit {
     public static let relationshipMemory = 500
     public static let voiceCard = 500
     public static let draft = 4_000
+    /// Full draft plus the longest register description, newline, and adjustment label.
+    public static let gatewayUserContext = draft + 80
 }
 
 public enum ProsePalTextInput {
@@ -31,6 +33,10 @@ public enum ProsePalTextInput {
 
     public static func draft(_ value: String) -> String {
         normalizedMultiline(value, limit: ProsePalTextLimit.draft)
+    }
+
+    public static func gatewayUserContext(_ value: String) -> String {
+        normalizedMultiline(value, limit: ProsePalTextLimit.gatewayUserContext)
     }
 
     public static func limited(_ value: String, to limit: Int) -> String {

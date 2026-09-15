@@ -14,6 +14,21 @@ const OUTPUT_CONTRACT_VERSION = 1;
 const DEFAULT_TIMEOUT_MS = 15000;
 const DEFAULT_MAX_TOKENS = 900;
 const DEFAULT_TEMPERATURE = 0.7;
+const MOMENT_DETAIL_MAX_LENGTH = 1200;
+const USER_CONTEXT_MAX_LENGTH = 4080;
+const RECOGNIZED_SIGNOFFS = [
+  "sincerely yours",
+  "love",
+  "best wishes",
+  "best regards",
+  "best",
+  "sincerely",
+  "warmly",
+  "from",
+];
+const GRAPHEME_SEGMENTER = new Intl.Segmenter("en", {
+  granularity: "grapheme",
+});
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "",
@@ -611,13 +626,24 @@ function listEnv(value: string | undefined): string[] {
 
 function sanitizeInput(input: string): string {
   return input
-    .replace(injectionPattern, "[filtered]")
+    .replace(injectionPattern, lengthPreservingFilter)
     .replace(/\s+/g, " ")
     .trim();
 }
 
+function lengthPreservingFilter(match: string): string {
+  return Array.from(GRAPHEME_SEGMENTER.segment(match), () => "•").join("");
+}
+
 function truncate(value: string, maxLength: number): string {
-  return value.length <= maxLength ? value : value.slice(0, maxLength).trim();
+  if (value.length <= maxLength) return value;
+
+  const graphemes: string[] = [];
+  for (const { segment } of GRAPHEME_SEGMENTER.segment(value)) {
+    if (graphemes.length === maxLength) break;
+    graphemes.push(segment);
+  }
+  return graphemes.join("").trim();
 }
 
 function sanitizeField(value: unknown, maxLength: number): string | undefined {
@@ -676,7 +702,7 @@ function readWireObject(
 function sanitizedStringList(
   value: unknown,
   maxItems = 12,
-  maxLength = 160,
+  maxLength = MOMENT_DETAIL_MAX_LENGTH,
 ): string[] {
   if (!Array.isArray(value)) return [];
   return value
@@ -871,13 +897,17 @@ function parseRequest(payload: unknown): ValidationResult {
         ),
         things_to_include: sanitizedStringList(
           readWireValue(intentObject, "things_to_include", "thingsToInclude"),
+          12,
+          MOMENT_DETAIL_MAX_LENGTH,
         ),
         things_to_avoid: sanitizedStringList(
           readWireValue(intentObject, "things_to_avoid", "thingsToAvoid"),
+          12,
+          MOMENT_DETAIL_MAX_LENGTH,
         ),
         user_context: sanitizeField(
           readWireValue(intentObject, "user_context", "userContext"),
-          1200,
+          USER_CONTEXT_MAX_LENGTH,
         ),
       },
     },
@@ -1060,13 +1090,92 @@ export function buildPrompt(request: CardRequest): PromptParts {
 }
 
 function stripGreetingAndSignoff(text: string): string {
-  return text
+  const withoutGreeting = text
     .replace(/^\s*(dear|hi|hey|hello)\s+[^,\n]{1,80},\s*/i, "")
-    .replace(
-      /\n+\s*(love|best wishes|best|sincerely|warmly|from),?\s*[^.\n]*$/i,
-      "",
-    )
     .trim();
+  const lines = withoutGreeting.split("\n");
+  const finalLineIndex = lines.length - 1;
+  const finalLine = lines[finalLineIndex].trim();
+  let closingStartIndex: number | undefined;
+
+  if (
+    finalLineIndex > 0 &&
+    isSeparateSignatureName(finalLine) &&
+    isExactRecognizedSignoff(lines[finalLineIndex - 1].trim())
+  ) {
+    closingStartIndex = finalLineIndex - 1;
+  }
+
+  const normalizedFinalLine = finalLine.toLowerCase();
+  if (closingStartIndex === undefined && isExactRecognizedSignoff(finalLine)) {
+    closingStartIndex = finalLineIndex;
+  }
+
+  if (closingStartIndex === undefined) {
+    RECOGNIZED_SIGNOFFS.some((signoff) => {
+      const signedPrefix = `${signoff},`;
+      if (normalizedFinalLine.startsWith(signedPrefix)) {
+        const signature = finalLine.slice(signedPrefix.length).trim();
+        if (!isSeparateSignatureName(signature)) return false;
+        closingStartIndex = finalLineIndex;
+        return true;
+      }
+
+      const unsignedPrefix = `${signoff} `;
+      if (!normalizedFinalLine.startsWith(unsignedPrefix)) return false;
+      const signature = finalLine.slice(unsignedPrefix.length).trim();
+      if (!isSignatureName(signature)) return false;
+      closingStartIndex = finalLineIndex;
+      return true;
+    });
+  }
+
+  if (closingStartIndex === undefined) return withoutGreeting;
+
+  const body = lines.slice(0, closingStartIndex).join("\n").trim();
+  if (!body) return "";
+
+  const separatedFromBody = closingStartIndex > 0 &&
+    lines[closingStartIndex - 1].trim().length === 0;
+  if (separatedFromBody) return body;
+
+  // A single line break plus closing-like words or capitalization is not
+  // enough to distinguish formatting residue from intentional prose. Reject
+  // the whole candidate instead of returning a silently shortened message.
+  return "";
+}
+
+function isExactRecognizedSignoff(value: string): boolean {
+  const normalized = value.toLowerCase();
+  return RECOGNIZED_SIGNOFFS.some((signoff) =>
+    normalized === signoff || normalized === `${signoff},`
+  );
+}
+
+function isSignatureName(value: string): boolean {
+  return value.length <= 80 &&
+    /^\p{Lu}(?:[\p{L}\p{M}]|['’.-](?=[\p{L}\p{M}]))*$/u.test(value);
+}
+
+function isSeparateSignatureName(value: string): boolean {
+  if (value.length > 80) return false;
+  const parts = value.split(/\s+/);
+  let nameCount = 0;
+  let expectsName = true;
+
+  for (const part of parts) {
+    if (part === "&" || part === "and") {
+      if (expectsName) return false;
+      expectsName = true;
+      continue;
+    }
+    if (!isSignatureName(part)) return false;
+    nameCount += 1;
+    if (nameCount > 4) return false;
+    expectsName = false;
+  }
+
+  return nameCount > 0 && !expectsName;
 }
 
 function extractJsonObject(text: string): unknown {
@@ -1094,7 +1203,7 @@ function parseProviderMessages(content: string): string[] {
       if (isRecord(item) && typeof item.text === "string") return item.text;
       return "";
     })
-    .map((text) => stripGreetingAndSignoff(text.replace(/\s+/g, " ").trim()))
+    .map((text) => stripGreetingAndSignoff(text).replace(/\s+/g, " ").trim())
     .filter((text) => text.length > 0)
     .slice(0, 3);
 }

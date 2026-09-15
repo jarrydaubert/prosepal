@@ -18,7 +18,7 @@ final class CardContractTests: XCTestCase {
             recipientName: longName,
             thingsToInclude: [longDetail, "   "],
             thingsToAvoid: [longDetail],
-            userContext: String(repeating: "c", count: ProsePalTextLimit.draft + 20)
+            userContext: String(repeating: "c", count: ProsePalTextLimit.gatewayUserContext + 20)
         )
 
         XCTAssertEqual(moment.personName.count, ProsePalTextLimit.personName)
@@ -28,7 +28,25 @@ final class CardContractTests: XCTestCase {
         XCTAssertEqual(intent.thingsToInclude.count, 1)
         XCTAssertEqual(intent.thingsToInclude[0].count, ProsePalTextLimit.momentDetail)
         XCTAssertEqual(intent.thingsToAvoid[0].count, ProsePalTextLimit.momentDetail)
-        XCTAssertEqual(intent.userContext?.count, ProsePalTextLimit.draft)
+        XCTAssertEqual(intent.userContext?.count, ProsePalTextLimit.gatewayUserContext)
+    }
+
+    func testMomentDetailLimitCountsExtendedGraphemeClusters() {
+        let ordinary = String(repeating: "a", count: ProsePalTextLimit.momentDetail)
+        let emoji = String(repeating: "🙂", count: ProsePalTextLimit.momentDetail)
+        let composed = String(repeating: "e\u{301}", count: ProsePalTextLimit.momentDetail)
+        let zwjNearBoundary = String(
+            repeating: "z",
+            count: ProsePalTextLimit.momentDetail - 2
+        ) + "👩‍💻Q"
+        let afterOldUTF16Cutoff = String(repeating: "🙂", count: 600) +
+            "CONTENT_AFTER_OLD_UTF16_CUTOFF"
+
+        for value in [ordinary, emoji, composed, zwjNearBoundary, afterOldUTF16Cutoff] {
+            XCTAssertLessThanOrEqual(value.count, ProsePalTextLimit.momentDetail)
+            XCTAssertEqual(ProsePalTextInput.momentDetail(value), value)
+        }
+        XCTAssertGreaterThan(afterOldUTF16Cutoff.utf16.count, ProsePalTextLimit.momentDetail)
     }
 
     func testCardRequestEncodesStableGatewayContractFields() throws {

@@ -42,9 +42,9 @@ server rejects a body/header mismatch before provider work.
 | `spelling_preference` | String | `automatic`, `us`, or `uk`; native default is `automatic` |
 | `locale_identifier` | String | Sanitized to 40 characters |
 | `recipient_name` | Optional string | Sanitized to 80 characters |
-| `things_to_include` | String array | At most 12 entries, each sanitized to 160 characters by the gateway |
-| `things_to_avoid` | String array | At most 12 entries, each sanitized to 160 characters by the gateway |
-| `user_context` | Optional string | Sanitized to 1,200 characters |
+| `things_to_include` | String array | At most 12 entries, each sanitized to 1,200 characters |
+| `things_to_avoid` | String array | At most 12 entries, each sanitized to 1,200 characters |
+| `user_context` | Optional string | Sanitized to 4,080 characters so the fixed adjustment wrapper can carry a full 4,000-character draft |
 
 The complete occasion, relationship, and tone vocabularies are owned by the
 native enums in `CardModels.swift` and mirrored by the gateway parser. A change
@@ -61,10 +61,23 @@ These limits apply before native persistence or generation ingress:
 | Moment detail | 1,200 |
 | Truth Bead | 500 |
 | Voice Card | 500 |
-| Draft text or internal user context | 4,000 |
+| Draft text | 4,000 |
+| Gateway `user_context` wire value | 4,080 |
 
 Person names are collapsed to one line. Other native text inputs are trimmed at
-their outer whitespace and capped without adding invented content.
+their outer whitespace and capped without adding invented content. Native and
+gateway limits count Unicode extended grapheme clusters, matching user-perceived
+characters such as emoji, composed accents, and zero-width-joiner sequences. The
+gateway replaces recognized instruction-injection matches with
+grapheme-count-preserving markers, sanitizes whitespace, and then applies its
+grapheme-aware cap. Sanitization therefore cannot consume the capacity reserved
+for accepted text.
+
+The gateway adjustment mapping uses the existing `user_context` field. Its
+4,080-character wire budget is the 4,000-character accepted draft bound plus 80
+characters for the longest current register description, one newline, and the
+fixed `Current message to reshape: ` label. Initial requests use only the short
+register description.
 
 ## Request identity
 
@@ -98,6 +111,21 @@ The native client requires readable contract versions, at least one message,
 and no blank message text before returning success to the writing service.
 `messages` order has no ranking semantics; every gateway candidate is subject to
 the same response quality gate.
+
+The gateway evaluates recognized trailing sign-offs while provider line
+structure is still available, then normalizes remaining whitespace. An exact
+recognized whole-option closing is removed and therefore rejected as unusable.
+A terminal closing block is removed from a message body only when a blank line
+separates the two, which provides formatting evidence beyond capitalization and
+line position. The closing block may contain an exact recognized sign-off, a
+same-line signature, or a signature on the immediately following line; supported
+signatures contain up to four capitalized name-like tokens joined by `&` or
+lowercase `and`. A closing-like block separated by only one line break is
+discarded as an ambiguous candidate rather than being rewritten into a shorter
+message. Other questionable closing prose that does not match the narrow closing
+shape is retained. Private structured output also requires non-whitespace
+message text; an unusable message throws the typed `unexpectedResponse` failure
+instead of creating a draft bundle.
 
 ## HTTP and error mapping
 
