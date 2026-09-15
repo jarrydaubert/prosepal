@@ -1093,38 +1093,56 @@ function stripGreetingAndSignoff(text: string): string {
   const withoutGreeting = text
     .replace(/^\s*(dear|hi|hey|hello)\s+[^,\n]{1,80},\s*/i, "")
     .trim();
-  const finalLineStart = withoutGreeting.lastIndexOf("\n");
-  const finalLine = withoutGreeting.slice(finalLineStart + 1).trim();
-  if (finalLineStart >= 0 && isSeparateSignatureName(finalLine)) {
-    const beforeSignature = withoutGreeting.slice(0, finalLineStart).trim();
-    const precedingLineStart = beforeSignature.lastIndexOf("\n");
-    const precedingLine = beforeSignature.slice(precedingLineStart + 1).trim();
-    if (isExactRecognizedSignoff(precedingLine)) {
-      return precedingLineStart < 0
-        ? ""
-        : beforeSignature.slice(0, precedingLineStart).trim();
-    }
+  const lines = withoutGreeting.split("\n");
+  const finalLineIndex = lines.length - 1;
+  const finalLine = lines[finalLineIndex].trim();
+  let closingStartIndex: number | undefined;
+
+  if (
+    finalLineIndex > 0 &&
+    isSeparateSignatureName(finalLine) &&
+    isExactRecognizedSignoff(lines[finalLineIndex - 1].trim())
+  ) {
+    closingStartIndex = finalLineIndex - 1;
   }
 
   const normalizedFinalLine = finalLine.toLowerCase();
-  const isRecognizedSignoff = isExactRecognizedSignoff(finalLine) ||
+  if (closingStartIndex === undefined && isExactRecognizedSignoff(finalLine)) {
+    closingStartIndex = finalLineIndex;
+  }
+
+  if (closingStartIndex === undefined) {
     RECOGNIZED_SIGNOFFS.some((signoff) => {
       const signedPrefix = `${signoff},`;
       if (normalizedFinalLine.startsWith(signedPrefix)) {
         const signature = finalLine.slice(signedPrefix.length).trim();
-        return isSeparateSignatureName(signature);
+        if (!isSeparateSignatureName(signature)) return false;
+        closingStartIndex = finalLineIndex;
+        return true;
       }
 
       const unsignedPrefix = `${signoff} `;
       if (!normalizedFinalLine.startsWith(unsignedPrefix)) return false;
       const signature = finalLine.slice(unsignedPrefix.length).trim();
-      return isSignatureName(signature);
+      if (!isSignatureName(signature)) return false;
+      closingStartIndex = finalLineIndex;
+      return true;
     });
+  }
 
-  if (!isRecognizedSignoff) return withoutGreeting;
-  return finalLineStart < 0
-    ? ""
-    : withoutGreeting.slice(0, finalLineStart).trim();
+  if (closingStartIndex === undefined) return withoutGreeting;
+
+  const body = lines.slice(0, closingStartIndex).join("\n").trim();
+  if (!body) return "";
+
+  const separatedFromBody = closingStartIndex > 0 &&
+    lines[closingStartIndex - 1].trim().length === 0;
+  if (separatedFromBody) return body;
+
+  // A single line break plus closing-like words or capitalization is not
+  // enough to distinguish formatting residue from intentional prose. Reject
+  // the whole candidate instead of returning a silently shortened message.
+  return "";
 }
 
 function isExactRecognizedSignoff(value: string): boolean {

@@ -488,6 +488,42 @@ Deno.test("retains sentence-ending prose after recognized sign-off prefixes", as
   ]);
 });
 
+Deno.test("rejects ambiguous line-broken closing prose instead of shortening it", async () => {
+  const response = await handleGenerateCard(
+    makeRequest(),
+    makeDeps({
+      anonymous: true,
+      provider: true,
+      providerResponse: {
+        choices: [{
+          message: {
+            content: JSON.stringify({
+              messages: [
+                {
+                  text:
+                    "May your days be filled with\nLove, Laughter and Light",
+                },
+                {
+                  text: "What carries us through?\nLove\nEndures",
+                },
+                {
+                  text: "What matters most to me is\nLove",
+                },
+              ],
+            }),
+          },
+        }],
+      },
+    }),
+  );
+
+  assertEquals(response.status, 502);
+  const body = await response.json() as Record<string, unknown>;
+  const userSafeError = body.user_safe_error as Record<string, unknown>;
+  assertEquals(userSafeError.code, "gateway_quality_failed");
+  assertEquals(body.messages, undefined);
+});
+
 Deno.test("strips only safely identifiable recognized sign-off lines", async () => {
   const response = await handleGenerateCard(
     makeRequest(),
@@ -499,9 +535,9 @@ Deno.test("strips only safely identifiable recognized sign-off lines", async () 
           message: {
             content: JSON.stringify({
               messages: [
-                { text: "Your kindness stays with me.\nLove, Sam" },
-                { text: "I am grateful for your steady care.\nLove" },
-                { text: "You made this year gentler.\nBest wishes, Sam" },
+                { text: "Your kindness stays with me.\n\nLove, Sam" },
+                { text: "I am grateful for your steady care.\n\nLove" },
+                { text: "You made this year gentler.\n\nBest wishes, Sam" },
               ],
             }),
           },
@@ -532,14 +568,14 @@ Deno.test("strips comma-prefixed multiword signatures", async () => {
           message: {
             content: JSON.stringify({
               messages: [
-                { text: "Your kindness stays with me.\nLove, Sam Smith" },
+                { text: "Your kindness stays with me.\n\nLove, Sam Smith" },
                 {
                   text:
-                    "I am grateful for your steady care.\nBest wishes, Mom & Dad",
+                    "I am grateful for your steady care.\n\nBest wishes, Mom & Dad",
                 },
                 {
                   text:
-                    "You made this year gentler.\nSincerely yours, Mum and Dad",
+                    "You made this year gentler.\n\nSincerely yours, Mum and Dad",
                 },
               ],
             }),
@@ -571,9 +607,9 @@ Deno.test("strips exact and signed recognized sign-off lines", async () => {
           message: {
             content: JSON.stringify({
               messages: [
-                { text: "Your kindness stays with me.\nWarmly" },
-                { text: "I am grateful for your steady care.\nFrom Jamie" },
-                { text: "You made this year gentler.\nBest wishes," },
+                { text: "Your kindness stays with me.\n\nWarmly" },
+                { text: "I am grateful for your steady care.\n\nFrom Jamie" },
+                { text: "You made this year gentler.\n\nBest wishes," },
               ],
             }),
           },
@@ -605,13 +641,13 @@ Deno.test("strips conventional multiword sign-off lines", async () => {
             content: JSON.stringify({
               messages: [
                 {
-                  text: "Your kindness stays with me.\nSincerely yours",
+                  text: "Your kindness stays with me.\n\nSincerely yours",
                 },
                 {
                   text:
-                    "I am grateful for your steady care.\nSincerely yours, Sam",
+                    "I am grateful for your steady care.\n\nSincerely yours, Sam",
                 },
-                { text: "You made this year gentler.\nBest regards" },
+                { text: "You made this year gentler.\n\nBest regards" },
               ],
             }),
           },
@@ -642,14 +678,14 @@ Deno.test("strips separate recognized sign-off and signature lines", async () =>
           message: {
             content: JSON.stringify({
               messages: [
-                { text: "Your kindness stays with me.\nLove,\nSam Smith" },
+                { text: "Your kindness stays with me.\n\nLove,\nSam Smith" },
                 {
                   text:
-                    "I am grateful for your steady care.\nBest wishes\nMom & Dad",
+                    "I am grateful for your steady care.\n\nBest wishes\nMom & Dad",
                 },
                 {
                   text:
-                    "You made this year gentler.\nSincerely yours,\nMum and Dad",
+                    "You made this year gentler.\n\nSincerely yours,\nMum and Dad",
                 },
               ],
             }),
