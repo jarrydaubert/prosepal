@@ -82,6 +82,8 @@ private adjustment also uses the current draft and adjustment name.
 explicitly delimited data region and instructs the model not to execute that
 material. Only delimiter collisions are neutralized at rendering; accepted
 Moment, draft and memory text remains unchanged.
+ProsePal-authored relationship, occasion, writing context, tone, length and
+adjustment directives remain outside the fence; only user values are fenced.
 
 Careful generation sends the bounded `CardRequest` to the ProsePal gateway. Its
 writing content is person name, relationship, occasion, tone, length, locale,

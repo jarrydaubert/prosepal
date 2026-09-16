@@ -89,19 +89,56 @@ final class PrivateDraftPromptPlanTests: XCTestCase {
         XCTAssertEqual(
             plan.promptComponents,
             [
-                "<prosepal_user_material>",
-                "Person: \"Sam\"",
                 "Relationship: Close Friend",
                 "Moment: Thank You",
                 "Writing context: Everyday moments that need a quick, warm message.",
                 "Tone: Heartfelt",
                 "Length: 3-4 sentences",
+                "<prosepal_user_material>",
+                "Person: \"Sam\"",
                 "Device locale: \"en_GB\"",
                 "What is true: \"You helped with the garden.\"",
                 "</prosepal_user_material>",
                 finalInstruction
             ]
         )
+    }
+
+    func testAdjustmentDirectiveIsOutsideFenceAndCurrentDraftIsInside() throws {
+        // Regression caught: the quoted-data rule disables the app's adjustment
+        // directive, or leaves the current draft executable outside the fence.
+        let plan = PrivateDraftPromptPlan(
+            moment: fixtureMoment,
+            adjustment: .shorter,
+            currentMessage: "Thank you for helping with the garden.",
+            approvedBeads: [],
+            approvedVoiceCard: nil
+        )
+        let opening = try XCTUnwrap(plan.promptComponents.firstIndex(of: "<prosepal_user_material>"))
+        let closing = try XCTUnwrap(plan.promptComponents.firstIndex(of: "</prosepal_user_material>"))
+        let adjustment = try XCTUnwrap(plan.promptComponents.firstIndex(of: "Adjustment requested: Shorter"))
+        let draft = try XCTUnwrap(plan.promptComponents.firstIndex(of:
+            "Current message to reshape: \"Thank you for helping with the garden.\""
+        ))
+
+        XCTAssertLessThan(adjustment, opening)
+        XCTAssertGreaterThan(draft, opening)
+        XCTAssertLessThan(draft, closing)
+        XCTAssertEqual(Array(plan.promptComponents[..<opening]), [
+            "Relationship: Close Friend",
+            "Moment: Thank You",
+            "Writing context: Everyday moments that need a quick, warm message.",
+            "Tone: Heartfelt",
+            "Length: 3-4 sentences",
+            "Adjustment requested: Shorter"
+        ])
+        XCTAssertEqual(Array(plan.promptComponents[(opening + 1)..<closing]), [
+            "Person: \"Sam\"",
+            "Device locale: \"en_GB\"",
+            "What is true: \"You helped with the garden.\"",
+            "Current message to reshape: \"Thank you for helping with the garden.\""
+        ])
+        XCTAssertEqual(Array(plan.promptComponents[(closing + 1)...]), [finalInstruction])
     }
 
     func testPrivatePromptQuotesPreservedWordingWithoutExecutingDelimiters() {

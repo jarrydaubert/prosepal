@@ -153,22 +153,25 @@ struct PrivateDraftPromptPlan: Equatable, Sendable {
         ]
 
         var components = [
-            "<prosepal_user_material>",
-            "Person: \(Self.quotedPromptValue(moment.personName))",
             "Relationship: \(moment.relationship.displayName)",
             "Moment: \(moment.occasion.displayName)",
             "Writing context: \(moment.register.userSafeDescription)",
             "Tone: \(moment.tone.displayName)",
-            "Length: \(moment.length.generationHint)",
-            "Device locale: \(Self.quotedPromptValue(moment.localeIdentifier))"
+            "Length: \(moment.length.generationHint)"
         ]
-
-        if !moment.trueThing.isEmpty {
-            components.append("What is true: \(Self.quotedPromptValue(moment.trueThing))")
-        }
 
         if let adjustment {
             components.append("Adjustment requested: \(adjustment.displayName)")
+        }
+
+        components.append(contentsOf: [
+            "<prosepal_user_material>",
+            "Person: \(Self.quotedPromptValue(moment.personName))",
+            "Device locale: \(Self.quotedPromptValue(moment.localeIdentifier))"
+        ])
+
+        if !moment.trueThing.isEmpty {
+            components.append("What is true: \(Self.quotedPromptValue(moment.trueThing))")
         }
 
         if let currentMessage, !currentMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
