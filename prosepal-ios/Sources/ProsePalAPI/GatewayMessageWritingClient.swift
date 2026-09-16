@@ -271,15 +271,15 @@ public struct GatewayMessageWritingClient: MessageWritingClient {
             )
         }
 
-        guard response.messages.allSatisfy({ !$0.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }) else {
+        guard response.messages.allSatisfy({ ProsePalTextInput.generatedDraft($0.text) != nil }) else {
             GatewayDiagnosticsLogger.shared.requestFailed(
                 requestID: requestID,
                 statusCode: statusCode,
-                category: "blank_message",
+                category: "unusable_message",
                 durationMs: startedAt.elapsedMilliseconds
             )
             throw GenerationError.unexpectedResponse(
-                message: "Message generation returned an empty message. Please try again."
+                message: "Message generation returned an unusable message. Please try again."
             )
         }
     }

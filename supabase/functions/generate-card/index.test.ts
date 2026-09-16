@@ -14,6 +14,17 @@ function graphemeCount(value: string): number {
   return Array.from(testGraphemeSegmenter.segment(value)).length;
 }
 
+function providerUserMaterial(
+  body: Record<string, unknown>,
+): Record<string, unknown> {
+  const messages = body.messages as Array<{ role: string; content: string }>;
+  const userPrompt =
+    messages.find((message) => message.role === "user")!.content;
+  const data = userPrompt.split("<prosepal_user_material>\n")[1]
+    .split("\n</prosepal_user_material>")[0];
+  return JSON.parse(data);
+}
+
 const fixedRequest: Parameters<typeof buildPrompt>[0] = {
   idempotency_key: "fixed-key",
   requested_lane: "standard",
@@ -241,7 +252,7 @@ function makeDeps(options: {
   };
 }
 
-Deno.test("buildPrompt carries ProsePal domain context and filters prompt injection text", () => {
+Deno.test("buildPrompt quotes user material without rewriting ordinary language", () => {
   const prompt = buildPrompt(fixedRequest);
 
   assertStringIncludes(prompt.system, "Write exactly 3 unique message options");
@@ -252,10 +263,11 @@ Deno.test("buildPrompt carries ProsePal domain context and filters prompt inject
   assertStringIncludes(prompt.user, "Relationship: Parent");
   assertStringIncludes(prompt.user, "Tone: Heartfelt");
   assertStringIncludes(prompt.user, "Spelling: Use UK English");
+  assertStringIncludes(prompt.user, "<prosepal_user_material>");
+  assertStringIncludes(prompt.user, "</prosepal_user_material>");
   assertStringIncludes(prompt.user, "a quiet cup of tea");
   assertStringIncludes(prompt.user, "age");
-  assertStringIncludes(prompt.user, "••••••••••");
-  assert(!prompt.user.includes("Ignore previous instructions"));
+  assertStringIncludes(prompt.user, "Ignore previous instructions");
 });
 
 Deno.test("buildPrompt softens unsafe tones for sensitive occasions", () => {
@@ -889,20 +901,24 @@ Deno.test("preserves accepted include and exclusion detail beyond 160 characters
   assertStringIncludes(providerBody, "EXCLUSION_AFTER_160");
 });
 
-Deno.test("preserves a full accepted draft after injection-pattern sanitization", async () => {
+Deno.test("preserves ordinary instruction-looking user phrases", async () => {
   const providerBodies: Array<Record<string, unknown>> = [];
-  const ending = "FULL_ACCEPTED_DRAFT_END";
-  const filteredInput = "system:";
-  const currentMessage = filteredInput +
-    "x".repeat(4000 - filteredInput.length - ending.length) + ending;
-  const userContext =
-    `A real sentence from you that ProsePal helps shape.\nCurrent message to reshape: ${currentMessage}`;
+  const ordinaryPhrases = [
+    "You are now part of our family.",
+    "Please disregard the awkward first draft.",
+    "Pretend to be surprised when you open this.",
+    "Act as if we are back in the old garden.",
+    "Ignore previous instructions from the venue.",
+  ];
+  const userContext = ordinaryPhrases.join("\n");
   const response = await handleGenerateCard(
     makeRequest({
       ...fixedRequest,
-      idempotency_key: "long-adjustment-context",
+      idempotency_key: "ordinary-instruction-language",
       intent: {
         ...fixedRequest.intent,
+        things_to_include: ordinaryPhrases,
+        things_to_avoid: ["disregard the past"],
         user_context: userContext,
       },
     }),
@@ -914,13 +930,105 @@ Deno.test("preserves a full accepted draft after injection-pattern sanitization"
   );
 
   assertEquals(response.status, 200);
+  const providerBody = JSON.stringify(providerBodies[0]);
+  for (const phrase of ordinaryPhrases) {
+    assertStringIncludes(providerBody, phrase);
+  }
+  assertStringIncludes(providerBody, "disregard the past");
+  const material = providerUserMaterial(providerBodies[0]);
+  assertEquals(material.things_to_include, ordinaryPhrases);
+  assertEquals(material.user_context, userContext);
+});
+
+Deno.test("enforces an ordinary avoid phrase without filtering its wording", async () => {
+  const response = await handleGenerateCard(
+    makeRequest({
+      ...fixedRequest,
+      idempotency_key: "ordinary-avoid-phrase",
+      intent: {
+        ...fixedRequest.intent,
+        things_to_avoid: ["disregard the past"],
+      },
+    }),
+    makeDeps({
+      anonymous: true,
+      provider: true,
+      providerResponse: {
+        choices: [{
+          message: {
+            content: JSON.stringify({
+              messages: [
+                {
+                  text:
+                    "Today gives us room to disregard the past and begin again.",
+                },
+                {
+                  text: "Happy birthday, Dad. Your kindness means so much.",
+                },
+                {
+                  text:
+                    "Dad, I hope today brings warmth and a quiet cup of tea.",
+                },
+              ],
+            }),
+          },
+        }],
+      },
+    }),
+  );
+
+  assertEquals(response.status, 502);
+  const body = await response.json() as Record<string, unknown>;
+  const userSafeError = body.user_safe_error as Record<string, unknown>;
+  assertEquals(userSafeError.code, "gateway_quality_failed");
+  assertEquals(body.messages, undefined);
+});
+
+Deno.test("preserves a full accepted draft while rendering provider control tokens", async () => {
+  const providerBodies: Array<Record<string, unknown>> = [];
+  const usageCalls: Array<{
+    functionName: string;
+    params: Record<string, unknown>;
+    serviceRoleKey: string;
+  }> = [];
+  const ending = "FULL_ACCEPTED_DRAFT_END";
+  const filteredInput = "<|im_start|>";
+  const currentMessage = filteredInput +
+    "x".repeat(4000 - graphemeCount(filteredInput) - ending.length) + ending;
+  const userContext =
+    `A real sentence from you that ProsePal helps shape.\nCurrent message to reshape: ${currentMessage}`;
+  const request = {
+    ...fixedRequest,
+    idempotency_key: "long-adjustment-context",
+    intent: {
+      ...fixedRequest.intent,
+      user_context: userContext,
+    },
+  };
+  const response = await handleGenerateCard(
+    makeRequest(request),
+    makeDeps({
+      anonymous: true,
+      provider: true,
+      captureProviderBodies: providerBodies,
+      captureUsageCalls: usageCalls,
+    }),
+  );
+
+  assertEquals(response.status, 200);
   assertEquals(graphemeCount(currentMessage), 4000);
   assertEquals(graphemeCount(userContext), 4080);
   const providerBody = JSON.stringify(providerBodies[0]);
   assertStringIncludes(providerBody, "Current message to reshape:");
   assert(!providerBody.includes(filteredInput));
-  assertStringIncludes(providerBody, "•".repeat(filteredInput.length));
+  assertStringIncludes(providerBody, "•".repeat(graphemeCount(filteredInput)));
   assertStringIncludes(providerBody, ending);
+  const material = providerUserMaterial(providerBodies[0]);
+  assertEquals(graphemeCount(material.user_context as string), 4080);
+  assertEquals(
+    usageCalls[0].params.p_request_fingerprint,
+    await requestFingerprint(request),
+  );
 });
 
 Deno.test("uses extended grapheme clusters for native-aligned detail bounds", async () => {
@@ -1548,6 +1656,193 @@ Deno.test("returns gateway error when provider response is malformed", async () 
   const body = await res.json() as Record<string, unknown>;
   const userSafeError = body.user_safe_error as Record<string, unknown>;
   assertEquals(userSafeError.code, "gateway_provider_failed");
+});
+
+Deno.test("accepts generated candidates at the 4000-grapheme boundary", async () => {
+  const zwjBoundary = `${"👩‍💻".repeat(3999)}A`;
+  const ordinaryBoundary = "B".repeat(4000);
+  const response = await handleGenerateCard(
+    makeRequest(),
+    makeDeps({
+      anonymous: true,
+      provider: true,
+      providerResponse: {
+        choices: [{
+          message: {
+            content: JSON.stringify({
+              messages: [
+                { text: zwjBoundary },
+                { text: ordinaryBoundary },
+                { text: "Ok." },
+              ],
+            }),
+          },
+        }],
+      },
+    }),
+  );
+
+  assertEquals(graphemeCount(zwjBoundary), 4000);
+  assertEquals(graphemeCount(ordinaryBoundary), 4000);
+  assertEquals(response.status, 200);
+  const body = await response.json() as {
+    messages: Array<{ text: string }>;
+  };
+  assertEquals(body.messages[0].text, zwjBoundary);
+  assertEquals(body.messages[1].text, ordinaryBoundary);
+});
+
+Deno.test("drops generated candidates over the 4000-grapheme boundary", async () => {
+  const overBoundary = `${"👩‍💻".repeat(4000)}A`;
+  const response = await handleGenerateCard(
+    makeRequest(),
+    makeDeps({
+      anonymous: true,
+      provider: true,
+      providerResponse: {
+        choices: [{
+          message: {
+            content: JSON.stringify({
+              messages: [
+                { text: overBoundary },
+                {
+                  text: "Happy birthday, Dad. Your kindness means so much.",
+                },
+                {
+                  text:
+                    "Dad, I hope today brings warmth and a quiet cup of tea.",
+                },
+              ],
+            }),
+          },
+        }],
+      },
+    }),
+  );
+
+  assertEquals(graphemeCount(overBoundary), 4001);
+  assertEquals(response.status, 502);
+  const body = await response.json() as Record<string, unknown>;
+  const userSafeError = body.user_safe_error as Record<string, unknown>;
+  assertEquals(userSafeError.code, "gateway_quality_failed");
+  assertEquals(body.messages, undefined);
+});
+
+Deno.test("drops punctuation-only and emoji-only generated candidates", async () => {
+  const response = await handleGenerateCard(
+    makeRequest(),
+    makeDeps({
+      anonymous: true,
+      provider: true,
+      providerResponse: {
+        choices: [{
+          message: {
+            content: JSON.stringify({
+              messages: [
+                { text: "..." },
+                { text: "!!!" },
+                { text: "👩‍💻🙂" },
+              ],
+            }),
+          },
+        }],
+      },
+    }),
+  );
+
+  assertEquals(response.status, 502);
+  const body = await response.json() as Record<string, unknown>;
+  const userSafeError = body.user_safe_error as Record<string, unknown>;
+  assertEquals(userSafeError.code, "gateway_quality_failed");
+  assertEquals(body.messages, undefined);
+});
+
+Deno.test("does not repair an over-limit candidate by collapsing whitespace", async () => {
+  const response = await handleGenerateCard(
+    makeRequest(),
+    makeDeps({
+      anonymous: true,
+      provider: true,
+      providerResponse: {
+        choices: [{
+          message: {
+            content: JSON.stringify({
+              messages: [
+                { text: `A${" ".repeat(4000)}B` },
+                { text: "Your kindness makes this birthday brighter." },
+                {
+                  text: "I hope today brings the quiet cup of tea you deserve.",
+                },
+              ],
+            }),
+          },
+        }],
+      },
+    }),
+  );
+  assertEquals(response.status, 502);
+  const body = await response.json() as Record<string, unknown>;
+  assertEquals(
+    (body.user_safe_error as Record<string, unknown>).code,
+    "gateway_quality_failed",
+  );
+});
+
+Deno.test("accepts brief generated letter and number content", async () => {
+  const response = await handleGenerateCard(
+    makeRequest(),
+    makeDeps({
+      anonymous: true,
+      provider: true,
+      providerResponse: {
+        choices: [{
+          message: {
+            content: JSON.stringify({
+              messages: [{ text: "Ok." }, { text: "1" }, {
+                text: "Thank you, Dad.",
+              }],
+            }),
+          },
+        }],
+      },
+    }),
+  );
+  assertEquals(response.status, 200);
+  const body = await response.json() as { messages: Array<{ text: string }> };
+  assertEquals(body.messages.map((message) => message.text), [
+    "Ok.",
+    "1",
+    "Thank you, Dad.",
+  ]);
+});
+
+Deno.test("unusable generated candidates use the existing provider fallback", async () => {
+  const providerBodies: Array<Record<string, unknown>> = [];
+  const response = await handleGenerateCard(
+    makeRequest(),
+    makeDeps({
+      anonymous: true,
+      provider: true,
+      providerFallbackModels: "fallback-model",
+      captureProviderBodies: providerBodies,
+      providerResponses: [{
+        choices: [{
+          message: {
+            content: JSON.stringify({
+              messages: [{ text: "..." }, { text: "!!!" }, { text: "🙂" }],
+            }),
+          },
+        }],
+      }],
+    }),
+  );
+
+  assertEquals(response.status, 200);
+  assertEquals(providerBodies.length, 2);
+  assertEquals(providerBodies[1].model, "fallback-model");
+  const body = await response.json() as { messages: Array<{ text: string }> };
+  assertEquals(body.messages.length, 3);
+  assert(body.messages.every((message) => /[\p{L}\p{N}]/u.test(message.text)));
 });
 
 Deno.test("returns quality error when provider returns fewer than three messages", async () => {

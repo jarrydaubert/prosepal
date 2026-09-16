@@ -39,6 +39,17 @@ public enum ProsePalTextInput {
         normalizedMultiline(value, limit: ProsePalTextLimit.gatewayUserContext)
     }
 
+    /// Validates generated output without truncating or rewriting it.
+    public static func generatedDraft(_ value: String) -> String? {
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty,
+              trimmed.count <= ProsePalTextLimit.draft,
+              containsLetterOrNumber(trimmed) else {
+            return nil
+        }
+        return trimmed
+    }
+
     public static func limited(_ value: String, to limit: Int) -> String {
         String(value.prefix(limit))
     }
@@ -48,5 +59,18 @@ public enum ProsePalTextInput {
             value.trimmingCharacters(in: .whitespacesAndNewlines),
             to: limit
         )
+    }
+
+    private static func containsLetterOrNumber(_ value: String) -> Bool {
+        value.unicodeScalars.contains { scalar in
+            switch scalar.properties.generalCategory {
+            case .uppercaseLetter, .lowercaseLetter, .titlecaseLetter,
+                 .modifierLetter, .otherLetter, .decimalNumber,
+                 .letterNumber, .otherNumber:
+                true
+            default:
+                false
+            }
+        }
     }
 }

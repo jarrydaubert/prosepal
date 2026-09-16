@@ -109,6 +109,17 @@ retains three choices behind its private-device feasibility gate.
   HTTP/reference docs in the same fix. Preserve the distinction between a local
   abort request and confirmed server no-charge finalization.
 
+- [ ] **W-5 — Close the generated-text integrity acceptance gate.**
+  Value: preserve accepted user wording and reject unusable generation without
+  silently shortening meaning. Source: `ProsePalTextInput.generatedDraft` and
+  `generate-card` own the shared 4,000-grapheme letter-or-number usability rule;
+  provider-only control-token rendering preserves accepted request identity and
+  avoid checks. Structural closing cleanup retains the existing blank-line rule.
+  DoD: close remaining W-5 review findings with boundary, wording-preservation,
+  conservative-formatting and fallback regressions; required local and hosted
+  validation passes before declaring W-5 complete. No routing, recovery or
+  choice-contract redesign.
+
 - [ ] **W-6 — Preserve unsaved work through recovery and incoming handoffs.**
   Value: relaunch or a shortcut must not erase the user's only wording.
   Source: `MomentModel.persistDraftRecovery` requires an existing bundle;
