@@ -82,6 +82,12 @@ retains three choices behind its private-device feasibility gate.
   gateway replay exactly; expose all candidates, not the first as a winner.
   Only supported named adjustments follow selection. Remove decorative variant
   dots or word-substitution tricks if they cannot truthfully explain a choice.
+  Represent named adjustment and register guidance as typed app-owned metadata,
+  not prose encoded inside free-form `things_to_include` or `user_context`.
+  User-provided draft and context must remain clearly distinguishable as quoted
+  user material. `GatewayCarefulMomentClient.gatewayIntent` currently mixes this
+  app guidance with user text; correct that provenance in the generation contract,
+  not through phrase/prefix inference.
   Preserve chosen text and undo/history across option changes and relaunch with a
   versioned recovery envelope that reads existing single-draft state. Invalidate
   stale results on changed intent without silently destroying recoverable writing.
@@ -89,7 +95,8 @@ retains three choices behind its private-device feasibility gate.
   to both lanes. Compact/large-text UI and VoiceOver prove choice-to-edit handoff.
 
   Another remains a fresh initial draft, not adjustment context. Contract
-  changes must include Swift/gateway enum and version parity; no separate
+  changes must include Swift/gateway contract, enum and version parity and
+  backward-compatible handling of the existing single-draft state; no separate
   code-generation project is required.
 
 - [ ] **W-4 — Close cancellation and explicit-refusal classification gaps.**
@@ -108,17 +115,6 @@ retains three choices behind its private-device feasibility gate.
   lane call and no result acceptance after cancellation/refusal. Reconcile the
   HTTP/reference docs in the same fix. Preserve the distinction between a local
   abort request and confirmed server no-charge finalization.
-
-- [ ] **W-5 — Close the generated-text integrity acceptance gate.**
-  Value: preserve accepted user wording and reject unusable generation without
-  silently shortening meaning. Source: `ProsePalTextInput.generatedDraft` and
-  `generate-card` own the shared 4,000-grapheme letter-or-number usability rule;
-  provider-only control-token rendering preserves accepted request identity and
-  avoid checks. Structural closing cleanup retains the existing blank-line rule.
-  DoD: close remaining W-5 review findings with boundary, wording-preservation,
-  conservative-formatting and fallback regressions; required local and hosted
-  validation passes before declaring W-5 complete. No routing, recovery or
-  choice-contract redesign.
 
 - [ ] **W-6 — Preserve unsaved work through recovery and incoming handoffs.**
   Value: relaunch or a shortcut must not erase the user's only wording.
