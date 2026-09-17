@@ -37,8 +37,9 @@ foundational protections, not a mandate to build a moderation engine.
   decoration instead of inventing state to justify it.
 - Keep one owner each for generation, auth, entitlement, persistence and recovery.
   Change SwiftData models only through versioned schemas and explicit migrations.
-- Keep private-first routing, current online permission, typed refusal and
-  cancellation boundaries. No automatic send, provider-branded UI, custom crisis
+- Preserve current routing, online permission, typed refusal and cancellation
+  boundaries until the re-baseline explicitly approves changes. No automatic send,
+  provider-branded UI, custom crisis
   assessment, or fabricated quota/progress. Purchase identity is a G-4 decision;
   the existing no-mandatory-login implementation is not a settled future policy.
 - No secrets or user writing in tracked fixtures, diagnostics or release evidence.
@@ -55,15 +56,19 @@ This documentation checkpoint authorizes no implementation.
 
 | Work class | Owners and order |
 |---|---|
+| Re-baseline before generation/backend hardening | R-2 evaluates current engines, product value and identity/backend implications before A-9 resumes |
 | Demonstrated pre-release correctness | A-9 entitlement ordering; G-1 production Premium configuration (blocker); W-6 destructive launches; I-2 truthful generated-lane presentation; W-7 ephemeral save claims |
 | Decisions before generation/purchase changes | W-8 online architecture and custom quality layer; W-9 crisis scope; W-2 measured candidate contract before W-3; G-4 purchase/sign-in behaviour |
 | Evidence | G-2 local SQL CI then deployed proof; A-7 direct StoreKit execution; X-1 bounded compatibility/runtime checkpoint; W-2 prompt/wait measurements; Q-1 writing corpus |
 | Cheap hardening | T-2 export-file protection; G-1 narrow effective-configuration gate |
 | Future/developer experience | D-2 secret-history scope/performance; D-3 grouped dead machinery |
 
-W-8 must assess current OpenRouter capabilities before repairing custom
-fallback/filter/retry orchestration. W-9 settles crisis scope before preserving
-or extending that subsystem. W-2/W-3 must not assume that three choices justify
+Pause further generation/backend hardening, including A-9, until R-2 settles
+the relevant architecture implications. Confirmed defects remain release gates;
+this pause does not certify the current implementation. W-8 compares current
+writing engines and a tiny gateway before repairing custom orchestration.
+W-9 settles crisis scope before preserving or extending that subsystem.
+W-2/W-3 must not assume that three choices justify
 extra generation; do not request four or five merely to make three survive.
 Preserve X-1 as a separate checkpoint; do not start X-1, W-4, W-2 or W-3 as
 part of this documentation work. Other existing release gates remain owned by
@@ -99,9 +104,9 @@ migration/key-collision project. I-2 owns the actual legacy deletion residue.
   three usable candidates with zero headroom: losing one to filtering fails the
   entire request, while `GatewayCarefulMomentClient` renders only the first.
   Neither relaxing to one nor requesting four or five is approved here.
-  Decide whether V1 online writing offers one excellent response, three
-  user-visible responses, or another deliberately measured contract, with W-8
-  and Q-1 evidence. Amend the universal launch contract if the decision changes
+  Decide one draft versus multiple choices by measured user behaviour, message
+  quality, wait and cost across the W-8 candidates, with Q-1 evidence.
+  Amend the universal launch contract if the decision changes
   result scope; avoid accidental lane-dependent interactions.
   DoD: approve the end-to-end ceiling first; use the existing debug app on a
   supported iPhone to compare the current single draft with one-session complete
@@ -112,7 +117,7 @@ migration/key-collision project. I-2 owns the actual legacy deletion residue.
   baseline misses the ceiling; neither is a deliverable by default. Retain the
   device scorecard and timing evidence once, for this and the release-quality
   gate. A miss requires a deliberate universal scope amendment before composer
-  implementation, not online-first routing or different result interactions.
+  implementation; do not introduce accidental lane-dependent result interactions.
   [PrivateDraftPromptPlan.init](../prosepal-ios/Sources/ProsePalAPI/FoundationModelsPrivateDraftClient.swift)
   includes all approved Truth Beads/relationship material without a measured
   count/context budget. Neither
@@ -129,18 +134,27 @@ migration/key-collision project. I-2 owns the actual legacy deletion residue.
   choice, persistence or sharing; do not build partial-output recovery.
 
 - [ ] **W-3 — Deliver the smallest person-first writing loop after W-2.**
-  Value: reduce blank-page anxiety without replacing it with an interview.
+  Value: help users work out what to say, not merely rephrase existing text or
+  replace blank-page anxiety with an interview.
   Source: `MomentModel`, `MomentInput`, `MomentSheetView` and
   `GatewayCarefulMomentClient` currently expose one draft; the gateway adapter
   takes `response.messages.first` from an unranked three-candidate response.
-  DoD: explicitly confirm person/relationship/occasion; one skippable tailored
-  question with a small occasion-family bank and relationship-aware wording;
-  safe fallback question; compact Style defaults. Do not build a large question
-  engine. Additional questions are optional, at most two, and must improve
-  writing in evaluation before inclusion. Separate detail, goal and exclusions;
+  DoD: compare zero, one and at most two skippable tailored questions using the
+  same writing tasks. Include a question only if it materially improves the final
+  message against the zero-question baseline without excessive effort. Explicitly
+  confirm person/relationship/occasion; keep compact Style defaults and any
+  question bank small. Do not build an interview engine. Separate detail, goal
+  and exclusions;
   no probing grief circumstances or blame. No hidden close-friend default or
   legacy register may determine new intent. Derive routing from occasion policy,
   safely decode legacy recovery, and test intentional routing changes explicitly.
+
+  Evaluate relationship memory as explicit user-approved facts that prevent
+  mistakes, not broad relationship profiling. Compare messages with/without those
+  facts; retain only useful, deliberate memory with clear submission permission.
+  Screenshot-to-reply is an experiment only: prefer local OCR and explicit
+  context selection before any approved cloud submission. Evaluate message value,
+  third-party privacy and effort; this is not approval to ship capture/upload.
 
   Implement the deliberately approved W-2 contract after W-8, not an assumed
   candidate count. If three choices survive that decision, use one
@@ -240,9 +254,15 @@ migration/key-collision project. I-2 owns the actual legacy deletion residue.
   saves do not commit the rejected insertion. No schema or persistence-layer
   replacement. Keep account/local erase failures visible under I-2.
 
-- [ ] **Q-1 — Finish lane-specific live writing-quality acceptance.**
+- [ ] **Q-1 — Run a blind engine bake-off, then accept the approved writing paths.**
   Value: useful, faithful writing is the product, not an implementation detail.
-  DoD: separately approved synthetic private and careful samples satisfy the
+  DoD: use the same synthetic ProsePal corpus for a blind, counterbalanced
+  bake-off across Apple on-device, PCC where available/eligible, and a deliberately
+  small set of strong current cloud candidates. Hide engine identities from
+  reviewers; score final-message usefulness and consistency alongside quality,
+  latency, cost and refusal behaviour. Unavailable engines are evidence gaps, not
+  poor scores or assumed tiers. Reuse W-2/W-3's choice/question comparisons.
+  Separately approved samples for each selected path satisfy the
   [quality rubric](./WRITING_EVALUATION.md) for preserved facts,
   no invented personal details, tone/length, sensitive occasions, pressure and
   internal-language leakage. Score each candidate and, if multiple choices are
@@ -257,9 +277,9 @@ migration/key-collision project. I-2 owns the actual legacy deletion residue.
   emotional messages. Measure false refusals/rejections, naturalness and the
   actual selected candidate contract rather than generic intelligence scores.
 
-- [ ] **W-8 — Reassess the online path and simplify custom quality machinery.**
-  Value: one proven simple online-generation path should beat home-grown
-  provider orchestration. Confirmed defect in
+- [ ] **W-8 — Re-baseline writing engines and a minimal server boundary.**
+  Value: consistent thoughtful writing across supported devices with the least
+  justified infrastructure. Confirmed defect in
   [generate-card](../supabase/functions/generate-card/index.ts):
   `internalTermPattern`, `genericFillerPattern`, `sensitiveClichePattern` and
   `qualityCheck` reject legitimate writing while obvious assistant/meta leakage
@@ -271,21 +291,29 @@ migration/key-collision project. I-2 owns the actual legacy deletion residue.
   The future work is to simplify and re-evaluate the custom quality/guardrail
   layer, not add more regexes or schedule a moderation framework.
 
-  DoD: before repairing that architecture, verify current official OpenRouter
-  routing, provider failover, model fallback, Auto Router and privacy/ZDR
-  capabilities and constraints. Compare one curated model with OpenRouter
-  provider routing/failover; one curated primary with a very small native
-  OpenRouter model-fallback list; current Auto Router as an evaluation candidate;
-  and direct provider integration if OpenRouter no longer adds enough value.
+  DoD: re-evaluate earlier-2026 assumptions against current iOS 27, Foundation
+  Models/PCC and cloud-model capabilities using current official documentation
+  and Q-1 evidence. Compare one quality-consistent cloud writing engine for all
+  supported devices; Apple on-device as an optional/private path where supported;
+  and PCC as an evaluated candidate, not an assumed tier. Do not assume API
+  availability, eligibility, privacy terms or quality from an earlier decision.
+  Compare pinned OpenRouter with one model/provider, verified ZDR and no provider
+  fallback against direct provider access. Verify the actual controls and terms;
+  pinning/ZDR are candidate requirements, not claims about current deployment.
+  Evaluate a deliberately tiny gateway retaining only justified responsibilities:
+  secret custody, entitlement/abuse controls, prompt/model configuration, rate
+  limits and transport. Each retained server responsibility must earn its cost;
+  no custom quality/filter/fallback layer by default.
   Use Q-1's ProsePal writing corpus to compare writing quality, naturalness,
   emotional appropriateness, consistency, latency, cost, privacy/ZDR availability,
   provider reliability, false refusal rate, operational complexity and code
   complexity. Verify actual provider/model terms and available controls rather
   than infer them from endpoint compatibility or provider safety claims.
   Explicitly identify custom filters, fallback and retry machinery made
-  redundant by current provider/model safety and OpenRouter capabilities.
-  Record the smallest justified path and retained protections in the owning
-  generation decision/contract. Coordinate W-2 candidate count and W-4 typed
+  redundant by the selected engine and its verified controls.
+  Record the smallest justified path and retained protections in this backlog;
+  amend stable contracts only after approval. Coordinate G-4 identity/backend
+  implications, W-2 candidate count and W-4 typed
   cancellation/refusal, preserving quota, privacy permission and prompt fencing.
   Research is not permission to implement or deploy a replacement.
 
@@ -455,8 +483,11 @@ migration/key-collision project. I-2 owns the actual legacy deletion residue.
   fallback works signed out. Align Plan/Paywall/store/public copy and limit states.
   Confirmed design gap: a purchase without the server identity needed for online
   entitlement does not automatically associate after later sign-in. Compare
-  requiring sign-in before purchase where server entitlement is required with
-  reconciliation only if anonymous-purchase-first UX genuinely warrants it.
+  the existing Sign in with Apple/account architecture with account-free StoreKit
+  plus device attestation as a candidate. Evaluate purchase/restore, device changes,
+  entitlement association, abuse/cost controls and App Review constraints before
+  choosing; attestation is not an approved replacement or proof of server identity.
+  Keep sign-in-before-purchase and reconciliation options open where justified.
   Settle signed-out purchase, subsequent sign-in and account-switch behaviour
   explicitly with A-7; update PRODUCT when the identity policy is
   chosen, accounting for RUNBOOK's prior App Review rejection of forced sign-in. Do not assume a complex reconciliation system or silently
@@ -503,7 +534,20 @@ migration/key-collision project. I-2 owns the actual legacy deletion residue.
   bundle identity, proving entitlement/restore behaviour and honest signed-out
   presentation.
 
+- [ ] **R-2 — Complete the September 2026 product/AI re-baseline before backend work.**
+  Value: avoid hardening an earlier-2026 architecture before testing whether it
+  still serves the small writing app. DoD: combine X-1's current platform/runtime
+  evidence, Q-1's blind engine bake-off, W-2's measured choices, W-3's question/
+  approved-fact experiments, W-8's engine/gateway comparison and G-4's open
+  account/sign-in options. Settle and explicitly approve the writing-path and
+  identity/entitlement/backend implications needed to resume A-9 and further
+  generation/backend hardening. Record unresolved decisions here, not in a new
+  strategy document. Experiments do not authorize implementation, deployment or
+  platform adoption; preserve current protections while evaluating alternatives.
+
 - [ ] **A-9 — Make App Store server entitlement ordering transaction-aware.**
+  Paused until R-2 settles the relevant entitlement/backend architecture;
+  the demonstrated defect remains a release gate if that server path is retained.
   Value: a paying subscriber must not lose online Pro quota to a stale event.
   Confirmed pre-release correctness defect in
   [app-store-notifications.handleAppStoreNotification](../supabase/functions/app-store-notifications/index.ts):
@@ -619,21 +663,14 @@ migration/key-collision project. I-2 owns the actual legacy deletion residue.
 
 ## Cheap hardening and triggered work — no speculative expansion
 
-- [ ] **T-1 — Re-evaluate PCC only when eligible and useful.**
-  Trigger: stable adoption toolchain plus confirmed developer eligibility and
-  managed entitlement, followed by evidence it improves this short-message job.
-  Apple's [PCC API](https://developer.apple.com/documentation/foundationmodels/adding-server-side-intelligence-with-private-cloud-compute)
-  is real and requires iOS 27, Apple Intelligence-compatible device/region,
-  network and daily quota handling; it is not an iOS 26 replacement or relief for
-  devices ineligible for Apple Intelligence. Apple's [eligibility rules](https://developer.apple.com/private-cloud-compute/)
-  require Small Business Program membership, download eligibility and entitlement
-  approval; the quota/iCloud+ path is distinct from ProsePal Premium. Check the
-  [release channel](https://developer.apple.com/news/releases/), not API presence,
-  before changing the deployment/toolchain policy. DoD: a timeboxed service-boundary
-  experiment proves quality, latency, refusal/cancellation, quota, consent and
-  result parity; compare total operational complexity. Keep the existing gateway
-  unless replacement earns a separate decision, including loss of PCC eligibility.
-  No pre-emptive provider abstraction or commitment to migration.
+- [ ] **T-1 — Evaluate PCC eligibility and value within R-2/W-8.**
+  DoD: verify current [PCC API constraints](https://developer.apple.com/documentation/foundationmodels/adding-server-side-intelligence-with-private-cloud-compute),
+  [eligibility](https://developer.apple.com/private-cloud-compute/) and
+  [release channel](https://developer.apple.com/news/releases/) before a bounded
+  Q-1 experiment. Measure quality, latency, refusal/cancellation, quota, consent,
+  device coverage and operational complexity. PCC is a candidate, not an assumed
+  product tier or escape from device/region eligibility. No platform adoption,
+  provider abstraction or migration until separately approved.
 
 - [ ] **T-2 — Protect temporary exports now; gate broader vault encryption on need.**
   Cheap hardening independent of sync: confirmed plaintext temporary exports in
