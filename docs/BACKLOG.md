@@ -116,7 +116,7 @@ migration/key-collision project. I-2 owns the actual legacy deletion residue.
   device scorecard and timing evidence once, for this and the release-quality
   gate. A miss requires a deliberate universal scope amendment before composer
   implementation, not online-first routing or different result interactions.
-  [FoundationModelsPrivateDraftClient.buildPrompt](../prosepal-ios/Sources/ProsePalAPI/FoundationModelsPrivateDraftClient.swift)
+  [PrivateDraftPromptPlan.init](../prosepal-ios/Sources/ProsePalAPI/FoundationModelsPrivateDraftClient.swift)
   includes all approved Truth Beads/relationship material without a measured
   count/context budget. Neither
   audit established the current runtime capacity; 4,096 tokens is not an
@@ -155,7 +155,9 @@ migration/key-collision project. I-2 owns the actual legacy deletion residue.
   Represent named adjustment and register guidance as typed app-owned metadata,
   not prose encoded inside free-form `things_to_include` or `user_context`.
   User-provided draft and context must remain clearly distinguishable as quoted
-  user material. `GatewayCarefulMomentClient.gatewayIntent` currently mixes this
+  user material. `MomentInput.gatewayIntent` in
+  [GatewayCarefulMomentClient](../prosepal-ios/Sources/ProsePalAPI/GatewayCarefulMomentClient.swift)
+  currently mixes this
   app guidance with user text; correct that provenance in the generation contract,
   not through phrase/prefix inference. The user-material fence can currently
   tell the model to ignore app-authored directives placed inside it. Keep this
