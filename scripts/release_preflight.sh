@@ -62,7 +62,11 @@ require_path "prosepal-ios/Package.swift"
 require_path "prosepal-ios/ProsePal.xcodeproj/project.pbxproj"
 require_path "prosepal-ios/App/ProsePalNativeApp.swift"
 require_path "docs/BACKLOG.md"
-require_path "docs/product/v1-launch-contract.md"
+require_path "docs/PRODUCT.md"
+require_path "docs/ARCHITECTURE.md"
+require_path "docs/RUNBOOK.md"
+require_path "docs/CONFIGURATION.md"
+require_path "docs/WRITING_EVALUATION.md"
 
 ./scripts/validate_docs.sh
 python3 -m unittest discover -s scripts/tests -p 'test_*.py'

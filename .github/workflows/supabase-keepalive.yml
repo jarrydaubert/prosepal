@@ -10,7 +10,7 @@ name: Supabase keepalive
 # production job reports a neutral not-enabled outcome and the workflow stays
 # green on staging success alone. Once enabled, missing production secrets
 # fail loudly. The live production project must move to a non-pausing paid
-# plan before launch; see docs/operations/keepalive.md.
+# plan before launch; see docs/RUNBOOK.md.
 
 on:
   schedule:
