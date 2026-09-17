@@ -18,8 +18,15 @@ permissions:
   security-events: write
 
 jobs:
+  changes:
+    uses: ./.github/workflows/change-scope.yml
+    permissions:
+      contents: read
+
   analyze:
     name: CodeQL
+    needs: changes
+    if: ${{ !cancelled() && (needs.changes.result != 'success' || needs.changes.outputs.codeql != 'false') }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:

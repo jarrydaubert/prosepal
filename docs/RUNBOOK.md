@@ -31,6 +31,18 @@ git diff --check
 For changed shell scripts, also run `bash -n` on each; for script tests run
 `python3 -m unittest discover -s scripts/tests -p 'test_*.py'` (preflight includes it).
 CI and release workflows invoke the same preflight; no separate documentation ledger exists.
+CI's `Repository checks` always runs preflight (including deterministic script
+tests), whitespace, attribution and secret-history checks. `scripts/ci_scope.py`
+classifies the full Git diff for Swift/simulator, Native UI and Supabase jobs;
+Markdown/instruction-only changes skip those jobs. CodeQL runs for Actions,
+JavaScript/TypeScript and their analysed resources/configuration. Job-level skips
+preserve check results; no workflow-level path filter hides required checks.
+Shared CI changes exercise all gates; native/backend tools exercise their owning
+gates. Weekly/manual CI runs all product gates; existing scheduled Native UI and
+CodeQL runs remain full checks. Missing comparison history selects all gates.
+The required `Native iOS Quality Gate` aggregates change classification,
+repository checks and the selected Swift job; docs-only runs still fail when
+repository validation fails.
 
 For iOS executable changes:
 
