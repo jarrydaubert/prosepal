@@ -82,6 +82,12 @@ retains three choices behind its private-device feasibility gate.
   gateway replay exactly; expose all candidates, not the first as a winner.
   Only supported named adjustments follow selection. Remove decorative variant
   dots or word-substitution tricks if they cannot truthfully explain a choice.
+  Represent named adjustment and register guidance as typed app-owned metadata,
+  not prose encoded inside free-form `things_to_include` or `user_context`.
+  User-provided draft and context must remain clearly distinguishable as quoted
+  user material. `GatewayCarefulMomentClient.gatewayIntent` currently mixes this
+  app guidance with user text; correct that provenance in the generation contract,
+  not through phrase/prefix inference.
   Preserve chosen text and undo/history across option changes and relaunch with a
   versioned recovery envelope that reads existing single-draft state. Invalidate
   stale results on changed intent without silently destroying recoverable writing.
@@ -89,7 +95,8 @@ retains three choices behind its private-device feasibility gate.
   to both lanes. Compact/large-text UI and VoiceOver prove choice-to-edit handoff.
 
   Another remains a fresh initial draft, not adjustment context. Contract
-  changes must include Swift/gateway enum and version parity; no separate
+  changes must include Swift/gateway contract, enum and version parity and
+  backward-compatible handling of the existing single-draft state; no separate
   code-generation project is required.
 
 - [ ] **W-4 — Close cancellation and explicit-refusal classification gaps.**
@@ -108,26 +115,6 @@ retains three choices behind its private-device feasibility gate.
   lane call and no result acceptance after cancellation/refusal. Reconcile the
   HTTP/reference docs in the same fix. Preserve the distinction between a local
   abort request and confirmed server no-charge finalization.
-
-- [ ] **W-5 — Reject unusable output and repair input/body handling.**
-  Value: a successful Write must yield usable wording rather than a blank or
-  formatting residue. Source: `PrivateDraftContent.bundle` trims message text
-  without a nonempty check; gateway `parseProviderMessages` collapses newlines
-  before the newline-dependent `stripGreetingAndSignoff` rule.
-  DoD: empty/whitespace-only private output is a typed failure that cannot replace
-  existing wording or become a successful candidate; strip recognized sign-offs
-  before losing the line structure, without deleting legitimate message content.
-  Add focused tests and rerun the deterministic quality baseline. Keep the
-  existing targeted quality rules; do not clone a broad regex moderation engine
-  into the private lane or promise semantic grounding from format validation.
-
-  Fix the live prompt asymmetry: Moment detail accepts 1,200 characters, but
-  `gatewayIntent` puts it in one `thingsToInclude` item capped at 160 by
-  `parseRequest`; adjustment `userContext` accepts 4,000 natively but the server
-  caps it at 1,200. Choose one honest bound per field and preserve accepted
-  meaning in both lanes, including exclusions and existing rewrite text. Add
-  tests with meaningful content beyond the old cutoffs; do not silently truncate
-  the only personal detail. Contract/version parity remains owned by W-3.
 
 - [ ] **W-6 — Preserve unsaved work through recovery and incoming handoffs.**
   Value: relaunch or a shortcut must not erase the user's only wording.

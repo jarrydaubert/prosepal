@@ -79,9 +79,10 @@ public struct GatewayCarefulMomentClient: MomentDraftClient {
             await requestKeyStore.clear(identity: identity)
         }
         try Task.checkCancellation()
-        guard let message = response.messages.first?.text.trimmedNonEmpty else {
+        guard let responseText = response.messages.first?.text,
+              let message = ProsePalTextInput.generatedDraft(responseText) else {
             throw GenerationError.unexpectedResponse(
-                message: "Message generation returned no messages. Please try again."
+                message: "Message generation returned no usable message. Please try again."
             )
         }
 

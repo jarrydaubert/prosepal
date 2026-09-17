@@ -523,7 +523,7 @@ public struct CardIntent: Codable, Equatable, Sendable {
             let normalized = ProsePalTextInput.momentDetail(value)
             return normalized.isEmpty ? nil : normalized
         }
-        let normalizedContext = userContext.map(ProsePalTextInput.draft)
+        let normalizedContext = userContext.map(ProsePalTextInput.gatewayUserContext)
         self.userContext = normalizedContext?.isEmpty == false ? normalizedContext : nil
     }
 }

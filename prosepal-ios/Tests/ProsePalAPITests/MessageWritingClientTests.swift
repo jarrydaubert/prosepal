@@ -430,9 +430,60 @@ final class MessageWritingClientTests: XCTestCase {
             _ = try await client.generateCard(request: request(requestedLane: .standard))
             XCTFail("Expected blank gateway message to fail.")
         } catch GenerationError.unexpectedResponse(let message) {
-            XCTAssertEqual(message, "Message generation returned an empty message. Please try again.")
+            XCTAssertEqual(message, "Message generation returned an unusable message. Please try again.")
         } catch {
             XCTFail("Expected unexpectedResponse, got \(error).")
+        }
+    }
+
+    func testGatewayResponseAppliesGeneratedDraftUsabilityWithoutTruncating() async throws {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [CapturingURLProtocol.self]
+        let endpoint = try XCTUnwrap(URL(string: "https://gateway.example/functions/v1/generate-card"))
+        let client = GatewayMessageWritingClient(
+            endpoint: endpoint,
+            session: URLSession(configuration: configuration)
+        )
+        let exact = String(repeating: "👩‍💻", count: ProsePalTextLimit.draft - 1) + "A"
+        let cases: [(String, Bool)] = [
+            (exact, true),
+            (String(repeating: "a", count: ProsePalTextLimit.draft), true),
+            ("Ok.", true),
+            ("1", true),
+            (exact + "B", false),
+            ("...", false),
+            ("!!!", false),
+            ("👩‍💻🙂", false)
+        ]
+        defer { CapturingURLProtocol.requestHandler = nil }
+
+        for (text, isUsable) in cases {
+            CapturingURLProtocol.requestHandler = { _ in
+                let response = try XCTUnwrap(HTTPURLResponse(
+                    url: endpoint,
+                    statusCode: 200,
+                    httpVersion: nil,
+                    headerFields: ["Content-Type": "application/json"]
+                ))
+                let data = try JSONSerialization.data(withJSONObject: [
+                    "messages": [["id": "message-1", "text": text]],
+                    "lane_used": "standard",
+                    "fallback_status": "none",
+                    "retry_eligibility": "ineligible",
+                    "prompt_contract_version": 1,
+                    "output_contract_version": 1
+                ])
+                return (response, data)
+            }
+
+            do {
+                let response = try await client.generateCard(request: request(requestedLane: .standard))
+                XCTAssertTrue(isUsable, "Unusable generated output was accepted.")
+                XCTAssertEqual(response.messages.first?.text, text)
+            } catch GenerationError.unexpectedResponse(let message) {
+                XCTAssertFalse(isUsable, "Usable generated output was rejected.")
+                XCTAssertEqual(message, "Message generation returned an unusable message. Please try again.")
+            }
         }
     }
 

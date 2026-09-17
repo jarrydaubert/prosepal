@@ -59,6 +59,14 @@ than provider-specific exceptions. If routing ends in failure or
 cancellation, `MomentModel` does not replace the current draft; the Moment and
 recoverable wording remain available.
 
+`ProsePalTextInput.generatedDraft` validates generated text in both lanes and
+the native gateway response. After outer trimming, it requires at least one
+Unicode letter or number and no more than 4,000 extended grapheme clusters.
+Generated output is rejected, not truncated; user-edit caps remain unchanged.
+Unusable output maps to `unexpectedResponse` and follows existing typed fallback
+policy. Private-to-online fallback still requires the current online-writing
+grant; without it, no careful-client call starts.
+
 When online work is blocked, `MomentModel` retains the exact draft or adjustment
 request alongside the existing Moment and draft state. The provider-neutral
 first-use presentation can grant the current policy and retry that request, or
@@ -70,6 +78,12 @@ supersession ownership remains in `MomentModel`.
 Private generation uses person, relationship, occasion, style, locale, Moment
 detail, and approved matching Truth Beads and Voice Card on the device. A
 private adjustment also uses the current draft and adjustment name.
+`PrivateDraftPromptPlan` renders user values as quoted strings within an
+explicitly delimited data region and instructs the model not to execute that
+material. Only delimiter collisions are neutralized at rendering; accepted
+Moment, draft and memory text remains unchanged.
+ProsePal-authored relationship, occasion, writing context, tone, length and
+adjustment directives remain outside the fence; only user values are fenced.
 
 Careful generation sends the bounded `CardRequest` to the ProsePal gateway. Its
 writing content is person name, relationship, occasion, tone, length, locale,
@@ -81,8 +95,25 @@ The absence of vault objects does not exclude memory-derived wording. The reques
 also carries app/build/platform and request-identity metadata plus the applicable
 auth boundary.
 
+The native and gateway parsers count Unicode extended grapheme clusters for
+these writing bounds, matching user-perceived Swift `String` characters. Each
+include or exclusion item retains up to 1,200 characters. Draft text retains up
+to 4,000 characters. The existing `user_context` wire field retains up to 4,080
+characters so the longest fixed register-and-adjustment wrapper can carry that
+full 4,000-character draft. Accepted Moment detail and rewrite text are not
+reduced again at the server boundary.
+
+Accepted input retains the writer's actual wording, including ordinary phrases
+that resemble instructions. Names remain single-line; include/avoid items and
+context retain internal line structure. Request identity and quality checks use
+that preserved accepted text.
+
 After reservation, `generate-card` builds a structured prompt from those
-writing fields. It may send the same prompt sequentially to configured primary
+writing fields. User values are JSON inside an explicitly delimited quoted-data
+region, with instructions that the region is not executable. Narrow machine
+control-token neutralization happens only during provider prompt rendering,
+without rewriting accepted input or expanding its grapheme count. It may send
+the same prompt sequentially to configured primary
 and fallback models at the configured provider endpoint. The production
 provider binding and its retention, training, and data-use terms are not
 established by repository source. The complete storage, retention, export, and
@@ -117,7 +148,7 @@ sequenceDiagram
   App->>Auth: Request usable access token
   Auth-->>App: Current or safely refreshed token
   App->>Edge: CardRequest + idempotency key
-  Edge->>Edge: Authenticate, sanitize, validate
+  Edge->>Edge: Authenticate, normalize boundaries, validate
   Edge->>DB: Reserve request, burst and quota capacity
   alt completed duplicate
     DB-->>Edge: Replay cached safe response
@@ -156,13 +187,14 @@ The Edge Function:
 - verifies authenticated JWTs through Supabase Auth;
 - permits anonymous development only when both the explicit development flag
   and configured development secret are present;
-- caps and sanitizes every input field;
+- normalizes field boundaries and caps accepted input without rewriting wording;
 - enforces supported contract and lane versions;
 - reserves burst and quota capacity atomically;
 - uses a bounded provider request with configured fallbacks;
 - propagates incoming request cancellation into the provider fetch and stops
   fallback attempts;
-- requires three distinct structured messages;
+- requires three distinct structured messages, each within 4,000 graphemes and
+  containing a Unicode letter or number before and after formatting cleanup;
 - rejects generic filler, provider leakage, and sensitive-occasion failures;
 - logs metadata only; and
 - finalizes usage only after output passes quality checks.

@@ -18,7 +18,7 @@ final class CardContractTests: XCTestCase {
             recipientName: longName,
             thingsToInclude: [longDetail, "   "],
             thingsToAvoid: [longDetail],
-            userContext: String(repeating: "c", count: ProsePalTextLimit.draft + 20)
+            userContext: String(repeating: "c", count: ProsePalTextLimit.gatewayUserContext + 20)
         )
 
         XCTAssertEqual(moment.personName.count, ProsePalTextLimit.personName)
@@ -28,7 +28,71 @@ final class CardContractTests: XCTestCase {
         XCTAssertEqual(intent.thingsToInclude.count, 1)
         XCTAssertEqual(intent.thingsToInclude[0].count, ProsePalTextLimit.momentDetail)
         XCTAssertEqual(intent.thingsToAvoid[0].count, ProsePalTextLimit.momentDetail)
-        XCTAssertEqual(intent.userContext?.count, ProsePalTextLimit.draft)
+        XCTAssertEqual(intent.userContext?.count, ProsePalTextLimit.gatewayUserContext)
+    }
+
+    func testMomentDetailLimitCountsExtendedGraphemeClusters() {
+        let ordinary = String(repeating: "a", count: ProsePalTextLimit.momentDetail)
+        let emoji = String(repeating: "🙂", count: ProsePalTextLimit.momentDetail)
+        let composed = String(repeating: "e\u{301}", count: ProsePalTextLimit.momentDetail)
+        let zwjNearBoundary = String(
+            repeating: "z",
+            count: ProsePalTextLimit.momentDetail - 2
+        ) + "👩‍💻Q"
+        let afterOldUTF16Cutoff = String(repeating: "🙂", count: 600) +
+            "CONTENT_AFTER_OLD_UTF16_CUTOFF"
+
+        for value in [ordinary, emoji, composed, zwjNearBoundary, afterOldUTF16Cutoff] {
+            XCTAssertLessThanOrEqual(value.count, ProsePalTextLimit.momentDetail)
+            XCTAssertEqual(ProsePalTextInput.momentDetail(value), value)
+        }
+        XCTAssertGreaterThan(afterOldUTF16Cutoff.utf16.count, ProsePalTextLimit.momentDetail)
+    }
+
+    func testAcceptedInputPreservesOrdinaryInstructionLookingLanguage() {
+        let phrases = [
+            "you are now part of our family",
+            "disregard the past",
+            "pretend to be brave",
+            "act as if we never left",
+            "ignore previous instructions"
+        ]
+        let context = phrases.joined(separator: "\n")
+        let intent = CardIntent(
+            occasion: .birthday,
+            relationship: .closeFriend,
+            tone: .heartfelt,
+            thingsToInclude: phrases,
+            thingsToAvoid: ["disregard the past"],
+            userContext: " \n\(context)\n "
+        )
+
+        XCTAssertEqual(intent.thingsToInclude, phrases)
+        XCTAssertEqual(intent.thingsToAvoid, ["disregard the past"])
+        XCTAssertEqual(intent.userContext, context)
+        XCTAssertEqual(ProsePalTextInput.momentDetail(context), context)
+        XCTAssertEqual(ProsePalTextInput.draft(context), context)
+    }
+
+    func testGeneratedDraftValidatorRejectsInsteadOfTruncating() {
+        let exactOrdinary = String(repeating: "a", count: ProsePalTextLimit.draft)
+        let overOrdinary = exactOrdinary + "b"
+        let exactZWJ = String(repeating: "👩‍💻", count: ProsePalTextLimit.draft - 1) + "A"
+        let overZWJ = exactZWJ + "B"
+
+        XCTAssertEqual(exactOrdinary.count, ProsePalTextLimit.draft)
+        XCTAssertEqual(exactZWJ.count, ProsePalTextLimit.draft)
+        XCTAssertEqual(ProsePalTextInput.generatedDraft(" \n\(exactOrdinary)\t "), exactOrdinary)
+        XCTAssertEqual(ProsePalTextInput.generatedDraft(exactZWJ), exactZWJ)
+        XCTAssertNil(ProsePalTextInput.generatedDraft(overOrdinary))
+        XCTAssertNil(ProsePalTextInput.generatedDraft(overZWJ))
+        XCTAssertNil(ProsePalTextInput.generatedDraft("A" + String(repeating: " ", count: 4_000) + "B"))
+        XCTAssertNil(ProsePalTextInput.generatedDraft(" \n\t "))
+        XCTAssertNil(ProsePalTextInput.generatedDraft("..."))
+        XCTAssertNil(ProsePalTextInput.generatedDraft("!!!"))
+        XCTAssertNil(ProsePalTextInput.generatedDraft("👩‍💻🙂"))
+        XCTAssertEqual(ProsePalTextInput.generatedDraft("Ok."), "Ok.")
+        XCTAssertEqual(ProsePalTextInput.generatedDraft("1"), "1")
     }
 
     func testCardRequestEncodesStableGatewayContractFields() throws {

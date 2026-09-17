@@ -1,5 +1,5 @@
 import Foundation
-import ProsePalAPI
+@testable import ProsePalAPI
 import ProsePalDomain
 import Testing
 
@@ -147,6 +147,48 @@ func privateFallbackRequiresCurrentOnlineWritingPermission() async {
     #expect(await carefulClient.draftCallCount == 0)
 }
 
+@Test
+func privateUnusableOutputFallbackRequiresCurrentOnlineWritingPermission() async {
+    let carefulClient = RecordingMomentDraftClient(
+        bundle: MomentDraftBundle(messageText: "Forbidden online fallback.", lane: .careful)
+    )
+    let service = RoutingMessageWritingService(
+        onlineWritingPermissionStore: TestOnlineWritingPermissionStore(state: .notGranted),
+        privateClient: PrivateGeneratedTextClient(text: "..."),
+        carefulClient: carefulClient
+    )
+
+    await expectOnlineWritingPermissionRequired {
+        try await service.draft(for: MomentInput(
+            personName: "Alex",
+            relationship: .closeFriend,
+            occasion: .birthday
+        ))
+    }
+    #expect(await carefulClient.draftCallCount == 0)
+}
+
+@Test
+func privateUnusableOutputUsesExistingOnlineFallbackWhenGranted() async throws {
+    let carefulClient = RecordingMomentDraftClient(
+        bundle: MomentDraftBundle(messageText: "Usable online fallback.", lane: .careful)
+    )
+    let service = RoutingMessageWritingService(
+        onlineWritingPermissionStore: grantedOnlineWritingPermissionStore(),
+        privateClient: PrivateGeneratedTextClient(text: "🙂"),
+        carefulClient: carefulClient
+    )
+
+    let bundle = try await service.draft(for: MomentInput(
+        personName: "Alex",
+        relationship: .closeFriend,
+        occasion: .birthday
+    ))
+    #expect(bundle.messageText == "Usable online fallback.")
+    #expect(bundle.lane == .standardDraft)
+    #expect(await carefulClient.draftCallCount == 1)
+}
+
 @Test(arguments: [MomentDraftLane.privateDraft, .standardDraft, .careful])
 func onlineAdjustmentRequiresCurrentPermissionAndNeverCallsCarefulClient(
     lane: MomentDraftLane
@@ -286,6 +328,82 @@ func gatewayCarefulClientRequestsWorkingStandardLaneButReturnsCarefulProductLane
 }
 
 @Test
+func gatewayCarefulClientAppliesGeneratedDraftBoundariesWithoutTruncating() async throws {
+    let exact = String(repeating: "👩‍💻", count: ProsePalTextLimit.draft - 1) + "A"
+    let exactClient = GatewayCarefulMomentClient(
+        client: RecordingCardMessageWritingClient(response: CardResponse(
+            messages: [GeneratedMessage(id: "exact", text: exact)],
+            laneUsed: .standard,
+            fallbackStatus: .none,
+            retryEligibility: .ineligible
+        )),
+        clientContext: ClientContext(appVersion: "0.0.0", buildNumber: "1")
+    )
+
+    let bundle = try await exactClient.draft(for: MomentInput(
+        personName: "Sam",
+        relationship: .family,
+        occasion: .sympathy
+    ))
+    #expect(bundle.messageText == exact)
+
+    for unusable in [exact + "B", "...", "!!!", "👩‍💻🙂"] {
+        let unusableClient = GatewayCarefulMomentClient(
+            client: RecordingCardMessageWritingClient(response: CardResponse(
+                messages: [GeneratedMessage(id: "unusable", text: unusable)],
+                laneUsed: .standard,
+                fallbackStatus: .none,
+                retryEligibility: .ineligible
+            )),
+            clientContext: ClientContext(appVersion: "0.0.0", buildNumber: "1")
+        )
+
+        do {
+            _ = try await unusableClient.draft(for: MomentInput(
+                personName: "Sam",
+                relationship: .family,
+                occasion: .sympathy
+            ))
+            Issue.record("Unusable gateway generated output was accepted.")
+        } catch let error as GenerationError {
+            #expect(error == .unexpectedResponse(
+                message: "Message generation returned no usable message. Please try again."
+            ))
+        }
+    }
+}
+
+@Test
+func gatewayUnusableOutputUsesExistingPrivateFallback() async throws {
+    let privateClient = RecordingMomentDraftClient(
+        bundle: MomentDraftBundle(messageText: "Usable private fallback.", lane: .privateDraft)
+    )
+    let carefulClient = GatewayCarefulMomentClient(
+        client: RecordingCardMessageWritingClient(response: CardResponse(
+            messages: [GeneratedMessage(id: "unusable", text: "!!!")],
+            laneUsed: .standard,
+            fallbackStatus: .none,
+            retryEligibility: .ineligible
+        )),
+        clientContext: ClientContext(appVersion: "0.0.0", buildNumber: "1")
+    )
+    let service = RoutingMessageWritingService(
+        onlineWritingPermissionStore: grantedOnlineWritingPermissionStore(),
+        privateClient: privateClient,
+        carefulClient: carefulClient
+    )
+
+    let bundle = try await service.draft(for: MomentInput(
+        personName: "Sam",
+        relationship: .family,
+        occasion: .sympathy
+    ))
+    #expect(bundle.messageText == "Usable private fallback.")
+    #expect(bundle.lane == .privateDraft)
+    #expect(await privateClient.draftCallCount == 1)
+}
+
+@Test
 func gatewayAdjustmentUsesOnlyNamedAdjustmentAndCurrentDraftContext() async throws {
     let cardClient = RecordingCardMessageWritingClient(response: CardResponse(
         messages: [GeneratedMessage(id: "direct-1", text: "A direct gateway draft.")],
@@ -316,6 +434,98 @@ func gatewayAdjustmentUsesOnlyNamedAdjustmentAndCurrentDraftContext() async thro
     #expect(intent?.thingsToInclude.contains("Please make the message direct.") == true)
     #expect(intent?.userContext?.contains("Current message to reshape: \(original.messageText)") == true)
     #expect(intent?.userContext?.localizedCaseInsensitiveContains("take more care") == false)
+}
+
+@Test
+func gatewayCarefulClientPreservesMomentDetailBeyondLegacyCutoff() async throws {
+    let cardClient = RecordingCardMessageWritingClient(response: CardResponse(
+        messages: [GeneratedMessage(id: "detail-1", text: "A detailed gateway draft.")],
+        laneUsed: .standard,
+        fallbackStatus: .none,
+        retryEligibility: .ineligible
+    ))
+    let client = GatewayCarefulMomentClient(
+        client: cardClient,
+        clientContext: ClientContext(appVersion: "0.0.0", buildNumber: "1")
+    )
+    let detail = String(repeating: "shared detail ", count: 20) + "MOMENT_DETAIL_AFTER_160"
+
+    _ = try await client.draft(for: MomentInput(
+        personName: "Sam",
+        relationship: .family,
+        occasion: .sympathy,
+        trueThing: detail
+    ))
+
+    let intent = await cardClient.firstIntent
+    #expect(detail.count > 160)
+    #expect(intent?.thingsToInclude.first == detail)
+}
+
+@Test
+func gatewayAdjustmentPreservesContextBeyondLegacyServerCutoff() async throws {
+    let cardClient = RecordingCardMessageWritingClient(response: CardResponse(
+        messages: [GeneratedMessage(id: "context-1", text: "An adjusted gateway draft.")],
+        laneUsed: .standard,
+        fallbackStatus: .none,
+        retryEligibility: .ineligible
+    ))
+    let client = GatewayCarefulMomentClient(
+        client: cardClient,
+        clientContext: ClientContext(appVersion: "0.0.0", buildNumber: "1")
+    )
+    let currentMessage = String(repeating: "I remember that moment clearly. ", count: 45) +
+        "ADJUSTMENT_CONTEXT_AFTER_1200"
+
+    _ = try await client.adjust(
+        MomentDraftBundle(messageText: currentMessage, lane: .careful),
+        with: .warmer,
+        moment: MomentInput(
+            personName: "Sam",
+            relationship: .family,
+            occasion: .sympathy
+        )
+    )
+
+    let intent = await cardClient.firstIntent
+    #expect(currentMessage.count > 1_200)
+    #expect(intent?.userContext?.contains(currentMessage) == true)
+}
+
+@Test
+func gatewayAdjustmentPreservesFullAcceptedDraftInsideWrappedContext() async throws {
+    let cardClient = RecordingCardMessageWritingClient(response: CardResponse(
+        messages: [GeneratedMessage(id: "context-limit-1", text: "An adjusted gateway draft.")],
+        laneUsed: .standard,
+        fallbackStatus: .none,
+        retryEligibility: .ineligible
+    ))
+    let client = GatewayCarefulMomentClient(
+        client: cardClient,
+        clientContext: ClientContext(appVersion: "0.0.0", buildNumber: "1")
+    )
+    let ending = "FULL_ACCEPTED_DRAFT_END"
+    let currentMessage = String(
+        repeating: "x",
+        count: ProsePalTextLimit.draft - ending.count
+    ) + ending
+
+    _ = try await client.adjust(
+        MomentDraftBundle(messageText: currentMessage, lane: .careful),
+        with: .warmer,
+        moment: MomentInput(
+            personName: "Sam",
+            relationship: .family,
+            occasion: .birthday,
+            register: .confess
+        )
+    )
+
+    let intent = await cardClient.firstIntent
+    #expect(currentMessage.count == ProsePalTextLimit.draft)
+    #expect(intent?.userContext?.count == ProsePalTextLimit.gatewayUserContext)
+    #expect(intent?.userContext?.hasSuffix(ending) == true)
+    #expect(intent?.userContext?.contains(currentMessage) == true)
 }
 
 @Test
@@ -859,6 +1069,30 @@ private struct FailingMomentDraftClient: MomentDraftClient {
         moment: MomentInput
     ) async throws -> MomentDraftBundle {
         throw error
+    }
+}
+
+private struct PrivateGeneratedTextClient: MomentDraftClient {
+    let text: String
+
+    func draft(for moment: MomentInput) async throws -> MomentDraftBundle {
+        try PrivateDraftContent(
+            messageText: text,
+            asksForReassurance: false,
+            explainsBeforeApology: false,
+            mayFeelTooHeavy: false,
+            pressureNotes: [],
+            missingInformation: [],
+            riskNotes: []
+        ).bundle(lane: .privateDraft, approvedBeads: [], personName: moment.personName)
+    }
+
+    func adjust(
+        _ bundle: MomentDraftBundle,
+        with adjustment: MomentAdjustment,
+        moment: MomentInput
+    ) async throws -> MomentDraftBundle {
+        try await draft(for: moment)
     }
 }
 

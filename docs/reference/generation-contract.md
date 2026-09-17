@@ -40,11 +40,11 @@ server rejects a body/header mismatch before provider work.
 | `tone` | `Tone` raw value | Must be a current native enum value |
 | `length` | `MessageLength` raw value | `brief`, `standard`, or `detailed` |
 | `spelling_preference` | String | `automatic`, `us`, or `uk`; native default is `automatic` |
-| `locale_identifier` | String | Sanitized to 40 characters |
-| `recipient_name` | Optional string | Sanitized to 80 characters |
-| `things_to_include` | String array | At most 12 entries, each sanitized to 160 characters by the gateway |
-| `things_to_avoid` | String array | At most 12 entries, each sanitized to 160 characters by the gateway |
-| `user_context` | Optional string | Sanitized to 1,200 characters |
+| `locale_identifier` | String | Single-line normalization; capped at 40 graphemes |
+| `recipient_name` | Optional string | Single-line normalization; capped at 80 graphemes |
+| `things_to_include` | String array | At most 12 entries, each outer-trimmed and capped at 1,200 graphemes |
+| `things_to_avoid` | String array | At most 12 entries, each outer-trimmed and capped at 1,200 graphemes |
+| `user_context` | Optional string | Outer-trimmed and capped at 4,080 graphemes so the fixed adjustment wrapper can carry a full 4,000-grapheme draft |
 
 The complete occasion, relationship, and tone vocabularies are owned by the
 native enums in `CardModels.swift` and mirrored by the gateway parser. A change
@@ -61,10 +61,28 @@ These limits apply before native persistence or generation ingress:
 | Moment detail | 1,200 |
 | Truth Bead | 500 |
 | Voice Card | 500 |
-| Draft text or internal user context | 4,000 |
+| Draft text | 4,000 |
+| Gateway `user_context` wire value | 4,080 |
 
 Person names are collapsed to one line. Other native text inputs are trimmed at
-their outer whitespace and capped without adding invented content.
+their outer whitespace and capped without adding invented content. Native and
+gateway limits count Unicode extended grapheme clusters, matching user-perceived
+characters such as emoji, composed accents, and zero-width-joiner sequences. The
+gateway preserves accepted wording and internal line structure in include,
+avoid, and context fields. Ordinary instruction-looking language is not
+filtered. Only provider prompt rendering neutralizes narrowly defined machine
+control tokens with grapheme-count-preserving markers. User values are JSON
+inside an explicitly delimited quoted-data region, with a system instruction
+that they are not executable instructions. This rendering does not change the
+accepted request, request identity, or include/avoid checks.
+Private `PrivateDraftPromptPlan` likewise places quoted user values inside a
+delimited data region, neutralizing delimiter collisions only when rendering.
+
+The gateway adjustment mapping uses the existing `user_context` field. Its
+4,080-character wire budget is the 4,000-character accepted draft bound plus 80
+characters for the longest current register description, one newline, and the
+fixed `Current message to reshape: ` label. Initial requests use only the short
+register description.
 
 ## Request identity
 
@@ -76,7 +94,8 @@ The server hashes these provider-affecting fields with SHA-256:
 - `output_contract_version`.
 
 `client_context` is excluded. Updating the app version or build number must not
-turn the same pending generation into an idempotency conflict.
+turn the same pending generation into an idempotency conflict. Identity uses
+preserved accepted text, before provider-only control-token rendering.
 
 ## Response
 
@@ -94,10 +113,38 @@ turn the same pending generation into an idempotency conflict.
 | `prompt_contract_version` | Integer | Version used for prompt construction |
 | `output_contract_version` | Integer | Version of the response contract |
 
-The native client requires readable contract versions, at least one message,
-and no blank message text before returning success to the writing service.
+The native client requires readable contract versions and at least one message.
+`ProsePalTextInput.generatedDraft` is the shared validator for private output,
+gateway draft ingress, and gateway response validation. After outer trimming,
+each generated draft must be non-empty, contain at least one Unicode letter or
+number, and contain no more than 4,000 extended grapheme clusters. Exactly 4,000
+succeeds; 4,001, punctuation-only, whitespace-only, and emoji-only output fail.
+`Ok.` and `1` are usable. Unusable generated output throws the typed
+`GenerationError.unexpectedResponse`; it is never truncated into validity.
+Existing user-edit caps and lane fallback/online-permission policy are unchanged.
+
+The gateway drops unusable provider candidates before formatting normalization
+and validates them again afterward. Fewer than three usable candidates follows
+the existing quality-failure/provider-fallback path. `normalizedMessageContent`
+provides one letters/numbers/whitespace-normalized definition for candidate
+textual content and duplicate fingerprints. Avoid checks compare preserved
+accepted phrases with case and whitespace normalization only.
 `messages` order has no ranking semantics; every gateway candidate is subject to
 the same response quality gate.
+
+The gateway evaluates recognized trailing sign-offs while provider line
+structure is still available, then normalizes remaining whitespace. An exact
+recognized whole-option closing is removed and therefore rejected as unusable.
+A terminal closing block is removed from a message body only when a blank line
+separates the two, which provides formatting evidence beyond capitalization and
+line position. The closing block may contain an exact recognized sign-off, a
+same-line signature, or a signature on the immediately following line; supported
+signatures contain up to four capitalized name-like tokens joined by `&` or
+lowercase `and`. A closing-like block separated by only one line break is
+discarded as an ambiguous candidate rather than being rewritten into a shorter
+message. Other questionable closing prose that does not match the narrow closing
+shape is retained. These structural rules do not classify arbitrary prose or
+invent additional closing variants.
 
 ## HTTP and error mapping
 
