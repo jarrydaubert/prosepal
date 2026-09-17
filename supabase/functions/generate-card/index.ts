@@ -1,10 +1,9 @@
 /**
  * ProsePal Card generation gateway.
  *
- * This is the first non-production gateway slice for the native iOS rewrite.
- * It accepts the ProsePal-owned CardRequest contract, keeps provider/model
- * details behind the server boundary, and can run an OpenAI-compatible
- * development provider. It does not fabricate client-side/template drafts.
+ * Accepts the ProsePal-owned CardRequest contract and keeps provider/model
+ * details behind the server boundary. Exact behaviour is owned by source/tests;
+ * BACKLOG W-2/W-8 owns the candidate and provider/quality architecture decisions.
  */
 
 import { createClient } from "npm:@supabase/supabase-js@2.95.3";

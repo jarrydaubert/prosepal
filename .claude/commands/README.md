@@ -1,29 +1,11 @@
-# Custom Commands
+# Agent commands
 
-Only these slash commands are active in this repo.
+| Command | Scope | May edit? |
+|---|---|---|
+| `/audit [target]` | Risk-first code/architecture review | No |
+| `/sec-review [scope]` | Trust-boundary review | No |
+| `/cleanup [scope]` | Proven dead-code/dependency review | No |
+| `/test [scope]` | Regression coverage | Within task scope |
 
-## Active Commands
-
-| Command | Purpose | Writes Code? |
-|---------|---------|--------------|
-| `/audit [target]` | Deep architecture/code audit with risk-first findings | No |
-| `/sec-review [scope]` | Security-focused review and hardening guidance | No |
-| `/test [scope]` | Test gap analysis and test implementation support | Yes |
-| `/cleanup` | Dead code/dependency cleanup audit | No |
-
-## Usage Examples
-
-```bash
-/audit auth
-/sec-review payments
-/test integration
-/cleanup
-```
-
-## Operational Rules
-
-- Keep findings actionable and prioritized by severity.
-- Do not store progress/status in docs; open work belongs in `docs/BACKLOG.md`.
-- Use `docs/quality/testing.md` for test commands and
-  `docs/operations/release.md` for release gates.
-- Use absolute file paths and line references in findings when possible.
+[AGENTS](../../AGENTS.md) is canonical; [RUNBOOK](../../docs/RUNBOOK.md) owns commands.
+The matching `.agents/skills/` entries point here; do not duplicate workflows.

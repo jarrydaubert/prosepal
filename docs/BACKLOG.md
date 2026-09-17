@@ -1,19 +1,16 @@
 # Backlog
 
-Unresolved work only. Implemented behaviour belongs in the
-[feature ledger](./reference/feature-status.jsonl); execution results belong in
-private release evidence and Git history. Remove an item when its DoD is met.
+Unresolved work only. Source/tests describe implemented behaviour; execution
+results belong in private release evidence and Git. Remove an item when its DoD is met.
 Source presence is not proof of device behaviour or deployed configuration.
 
 ## Scope and decision rules
 
-The [product north star](./product/overview.md) is a better personal message,
+The [product north star](./PRODUCT.md) is a better personal message,
 faster: person first, optional guidance, useful choices, human review, and no
-loss of the writer's words. The [V1 contract](./product/v1-launch-contract.md)
-retains three choices behind its private-device feasibility gate. W-2 reopens
-whether those choices earn their cost in either lane; a changed choice or
-purchase/sign-in policy requires an explicit amendment to the owning product
-contract before implementation, not an implicit exception here.
+loss of the writer's words. The [product contract](./PRODUCT.md) leaves candidate count and purchase identity
+open. W-2 must decide whether multiple choices earn their cost in either lane;
+settle the universal result interaction and amend PRODUCT when scope is approved.
 
 ProsePal should be a small, enjoyable, straightforward writing app: reliable,
 honest about privacy and routing, and easy to maintain. It is not an AI
@@ -34,7 +31,7 @@ foundational protections, not a mandate to build a moderation engine.
   identifiers and migration history; an existing App Store app is not a greenfield
   identity, even when the replacement client has no TestFlight users yet.
 - Extract only the region materially touched by funded behaviour, following
-  [SwiftUI ownership rules](./engineering/swiftui-architecture.md). Preserve the
+  [SwiftUI ownership rules](./ARCHITECTURE.md). Preserve the
   approved feature boundaries, previews, behavioural seams and shrink-only
   ratchets; file moves are not independent release gates. Delete misleading
   decoration instead of inventing state to justify it.
@@ -43,7 +40,7 @@ foundational protections, not a mandate to build a moderation engine.
 - Keep private-first routing, current online permission, typed refusal and
   cancellation boundaries. No automatic send, provider-branded UI, custom crisis
   assessment, or fabricated quota/progress. Purchase identity is a G-4 decision;
-  the current no-mandatory-login contract remains until deliberately amended.
+  the existing no-mandatory-login implementation is not a settled future policy.
 - No secrets or user writing in tracked fixtures, diagnostics or release evidence.
   Use synthetic quality fixtures. New copy is localization-safe; touched colours
   are semantic and adaptive. Device and service evidence can proceed alongside
@@ -62,7 +59,7 @@ This documentation checkpoint authorizes no implementation.
 | Decisions before generation/purchase changes | W-8 online architecture and custom quality layer; W-9 crisis scope; W-2 measured candidate contract before W-3; G-4 purchase/sign-in behaviour |
 | Evidence | G-2 local SQL CI then deployed proof; A-7 direct StoreKit execution; X-1 bounded compatibility/runtime checkpoint; W-2 prompt/wait measurements; Q-1 writing corpus |
 | Cheap hardening | T-2 export-file protection; G-1 narrow effective-configuration gate |
-| Future/developer experience | D-1 feature-status process; D-2 secret-history scope/performance; D-3 grouped dead machinery |
+| Future/developer experience | D-2 secret-history scope/performance; D-3 grouped dead machinery |
 
 W-8 must assess current OpenRouter capabilities before repairing custom
 fallback/filter/retry orchestration. W-9 settles crisis scope before preserving
@@ -105,12 +102,12 @@ migration/key-collision project. I-2 owns the actual legacy deletion residue.
   Decide whether V1 online writing offers one excellent response, three
   user-visible responses, or another deliberately measured contract, with W-8
   and Q-1 evidence. Amend the universal launch contract if the decision changes
-  its three-choice promise; avoid accidental lane-dependent interactions.
+  result scope; avoid accidental lane-dependent interactions.
   DoD: approve the end-to-end ceiling first; use the existing debug app on a
   supported iPhone to compare the current single draft with one-session complete
   three-option output for Brief, Standard and Detailed. Score every synthetic
   candidate and the set for meaningful variation using
-  [the existing evaluator](./quality/ai-output-quality.md). Measure full completion
+  [the existing evaluator](./WRITING_EVALUATION.md). Measure full completion
   and fallback, not just first text. Try streaming or prewarming only if that
   baseline misses the ceiling; neither is a deliverable by default. Retain the
   device scorecard and timing evidence once, for this and the release-quality
@@ -246,7 +243,7 @@ migration/key-collision project. I-2 owns the actual legacy deletion residue.
 - [ ] **Q-1 — Finish lane-specific live writing-quality acceptance.**
   Value: useful, faithful writing is the product, not an implementation detail.
   DoD: separately approved synthetic private and careful samples satisfy the
-  [quality rubric](./quality/writing-quality-rubric.md) for preserved facts,
+  [quality rubric](./WRITING_EVALUATION.md) for preserved facts,
   no invented personal details, tone/length, sensitive occasions, pressure and
   internal-language leakage. Score each candidate and, if multiple choices are
   approved, meaningful set variation; reuse W-2's private evidence where
@@ -338,7 +335,7 @@ migration/key-collision project. I-2 owns the actual legacy deletion residue.
   Report partial failure, including session-store clear failure after account
   deletion rather than implying all local credentials were erased. Explicitly
   settle recovery/handoffs, request-key metadata and export-file treatment for
-  each deletion action using the [data map](./engineering/data-and-privacy.md).
+  each deletion action using the owning erasure/account sources in [ARCHITECTURE](./ARCHITECTURE.md).
   Explicitly treat legacy pre-native local state written by the previous App
   Store client under the same bundle identity: deletion must erase it or
   accurately document its exclusion. Migration of legacy content is not required.
@@ -403,7 +400,9 @@ migration/key-collision project. I-2 owns the actual legacy deletion residue.
   contamination and privileged/development secrets. Inspect a real archive with
   public values present and secrets absent. Preserve existing bundle/App Store
   identity. Use it for the auth, gateway and deletion release proof, not another
-  configuration abstraction or cosmetic key migration.
+  configuration abstraction or cosmetic key migration. Before launch, move the
+  live production Supabase project to a non-pausing paid plan and retire the
+  temporary keepalive control; preserve that operations requirement.
   Verify effective Release settings and the built archive, including
   `PROSEPAL_PREMIUM_PRODUCT_IDS` and the recommended product, against the
   approved StoreKit inventory. Add a narrow gate that fails missing/malformed
@@ -459,8 +458,8 @@ migration/key-collision project. I-2 owns the actual legacy deletion residue.
   requiring sign-in before purchase where server entitlement is required with
   reconciliation only if anonymous-purchase-first UX genuinely warrants it.
   Settle signed-out purchase, subsequent sign-in and account-switch behaviour
-  explicitly with A-7; update the current no-required-purchase-login product
-  contract if chosen. Do not assume a complex reconciliation system or silently
+  explicitly with A-7; update PRODUCT when the identity policy is
+  chosen, accounting for RUNBOOK's prior App Review rejection of forced sign-in. Do not assume a complex reconciliation system or silently
   promise server access from local StoreKit entitlement alone.
   Numerical quota UI is not required: retain truthful unquantified higher limits
   unless counts demonstrably help; then supply success and exhaustion metadata
@@ -592,21 +591,6 @@ migration/key-collision project. I-2 owns the actual legacy deletion residue.
   during the documentation checkpoint.
 
 ## Future — developer experience and proportionate repository machinery
-
-- [ ] **D-1 — Reassess feature-status claim accuracy and maintenance cost.**
-  Value: useful evidence without noisy bureaucracy for a small app. Audit
-  evidence: 58 of 63 records referenced tracked evidence files changed since
-  their verification point, but file changes do not automatically invalidate a
-  claim. The second audit found both still-correct records and at least one
-  genuinely incorrect claim. Source:
-  [feature-status.jsonl](./reference/feature-status.jsonl) and
-  `scripts/validate_feature_status.py`.
-  DoD: inspect claims semantically, correct confirmed inaccuracies and decide
-  whether this level of ledger machinery remains proportionate. If retained,
-  prefer PR-scoped contributor attention or another low-noise process over a
-  global “file changed therefore stale” failure. Preserve canonical JSONL/export
-  parity; do not refresh verification stamps without behavioural evidence.
-  This process review is not a pre-release product blocker.
 
 - [ ] **D-2 — Reduce secret-history guard cost and tighten scan exclusions.**
   Value: fast ordinary PR feedback with meaningful security coverage. Confirmed
