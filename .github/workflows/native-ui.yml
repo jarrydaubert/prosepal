@@ -3,10 +3,6 @@ name: Native UI
 on:
   pull_request:
     branches: [main]
-    paths:
-      - "prosepal-ios/**"
-      - "scripts/run_native_ui_tests.sh"
-      - ".github/workflows/native-ui.yml"
   schedule:
     - cron: "17 3 * * 2"
   workflow_dispatch:
@@ -25,8 +21,15 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  changes:
+    uses: ./.github/workflows/change-scope.yml
+    permissions:
+      contents: read
+
   ui_tests:
     name: Native UI (${{ github.event_name == 'pull_request' && 'smoke' || (github.event_name == 'workflow_dispatch' && inputs.suite || 'full') }})
+    needs: changes
+    if: ${{ !cancelled() && (needs.changes.result != 'success' || needs.changes.outputs.native != 'false') }}
     runs-on: macos-26
     timeout-minutes: 35
     permissions:
