@@ -131,7 +131,7 @@ public struct WritingQualityFixture: Codable, Equatable, Sendable {
     }
 }
 
-public struct WritingQualityFinding: Equatable, Sendable {
+public struct WritingQualityFinding: Codable, Equatable, Sendable {
     public var criterion: WritingQualityCriterion
     public var rating: WritingQualityRating
     public var reason: String

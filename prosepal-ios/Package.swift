@@ -11,7 +11,8 @@ let package = Package(
     products: [
         .library(name: "ProsePalDomain", targets: ["ProsePalDomain"]),
         .library(name: "ProsePalAPI", targets: ["ProsePalAPI"]),
-        .library(name: "ProsePalUI", targets: ["ProsePalUI"])
+        .library(name: "ProsePalUI", targets: ["ProsePalUI"]),
+        .executable(name: "prosepal-writing-eval", targets: ["ProsePalEvaluationCLI"])
     ],
     targets: [
         .target(name: "ProsePalDomain"),
@@ -26,6 +27,10 @@ let package = Package(
         .target(
             name: "ProsePalEvaluation",
             dependencies: ["ProsePalDomain"]
+        ),
+        .executableTarget(
+            name: "ProsePalEvaluationCLI",
+            dependencies: ["ProsePalEvaluation"]
         ),
         .testTarget(
             name: "ProsePalDomainTests",
