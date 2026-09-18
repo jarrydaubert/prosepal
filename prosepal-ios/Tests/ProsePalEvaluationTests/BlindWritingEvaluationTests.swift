@@ -4,38 +4,37 @@ import Testing
 
 @Suite("Blind writing comparison")
 struct BlindWritingEvaluationTests {
-    @Test("same seed is reproducible independently of input file ordering")
+    @Test("same seed and private nonce are reproducible independently of input file ordering")
     func deterministicPreparation() throws {
         let corpus = try loadCorpus()
         let outputs = recorded(corpus)
-        let first = try BlindWritingEvaluation.prepare(corpus: corpus, outputs: outputs, seed: 42)
-        let reordered = try BlindWritingEvaluation.prepare(corpus: corpus.reversed(), outputs: outputs.reversed(), seed: 42)
+        let first = try prepare(corpus: corpus, outputs: outputs, seed: 42)
+        let reordered = try prepare(corpus: corpus.reversed(), outputs: outputs.reversed(), seed: 42)
         #expect(first.review == reordered.review)
         #expect(first.key == reordered.key)
-        let changed = try BlindWritingEvaluation.prepare(corpus: corpus, outputs: outputs, seed: 43)
+        let changed = try prepare(corpus: corpus, outputs: outputs, seed: 43)
         #expect(first.review.keyFingerprint != changed.review.keyFingerprint)
-        // Version-1 golden order catches an accidental change to seeded shuffling.
-        #expect(first.key.identities.map(\.engineID) == [
-            "engine-apple", "engine-pcc", "engine-cloud", "engine-pcc", "engine-cloud", "engine-apple",
-            "engine-cloud", "engine-apple", "engine-pcc", "engine-apple", "engine-pcc", "engine-cloud"
-        ])
     }
 
     @Test("counterbalanced positions cover every engine/scenario without leaking metadata")
     func counterbalanceAndBlinding() throws {
         let corpus = try loadCorpus()
         let outputs = recorded(corpus)
-        let batch = try BlindWritingEvaluation.prepare(corpus: corpus, outputs: outputs, seed: 42)
+        let batch = try prepare(corpus: corpus, outputs: outputs, seed: 42)
         #expect(batch.review.reviews.count == corpus.count * 3)
         #expect(Set(batch.review.reviews.map { $0.sample.id }).count == corpus.count * 3)
+        var positionPenalty = 0
         for engine in ["engine-apple", "engine-pcc", "engine-cloud"] {
             let entries = batch.key.identities.enumerated().filter { $0.element.engineID == engine }
             #expect(Set(entries.map { $0.element.sample.scenarioID }) == Set(corpus.map(\.scenarioID)))
             let counts = (0..<3).map { position in entries.filter { $0.offset % 3 == position }.count }
-            #expect((counts.max() ?? 0) - (counts.min() ?? 0) <= 1)
+            positionPenalty += counts.reduce(0) { $0 + $1 * $1 }
         }
+        // Soft balance across the full batch, not an exact quota for each engine.
+        // Perfect balance scores 18 here; placing each engine always in one slot scores 48.
+        #expect(positionPenalty <= 24)
         let json = String(decoding: try JSONEncoder().encode(batch.review), as: UTF8.self)
-        for hidden in ["engine-apple", "engine-pcc", "engine-cloud", "engineID", "seed", "advisory", "oracle", "provenance", "lane"] {
+        for hidden in ["engine-apple", "engine-pcc", "engine-cloud", "engineID", "seed", "advisory", "oracle", "provenance", "lane", "nonce"] {
             #expect(!json.contains("\"\(hidden)\""))
         }
         #expect(batch.review.reviews.allSatisfy { $0.ratings.allSatisfy { $0.rating.isEmpty } })
@@ -71,18 +70,18 @@ struct BlindWritingEvaluationTests {
         for invalid in [Array(outputs.dropLast()), outputs + [outputs[0]], unknown, blank, blankEngine,
                         outputs.filter { $0.engineID == "engine-apple" }] {
             #expect(throws: BlindWritingError.self) {
-                try BlindWritingEvaluation.prepare(corpus: corpus, outputs: invalid, seed: 42)
+                try prepare(corpus: corpus, outputs: invalid, seed: 42)
             }
         }
         for invalid in [[], corpus + [corpus[0]]] {
             #expect(throws: BlindWritingError.self) {
-                try BlindWritingEvaluation.prepare(corpus: invalid, outputs: outputs, seed: 42)
+                try prepare(corpus: invalid, outputs: outputs, seed: 42)
             }
         }
         var unsupported = corpus
         unsupported[0].rubricVersion = 99
         #expect(throws: BlindWritingError.self) {
-            try BlindWritingEvaluation.prepare(corpus: unsupported, outputs: outputs, seed: 42)
+            try prepare(corpus: unsupported, outputs: outputs, seed: 42)
         }
     }
 
@@ -90,7 +89,7 @@ struct BlindWritingEvaluationTests {
     func revealRoundTrip() throws {
         let corpus = try loadCorpus()
         let outputs = recorded(corpus)
-        let batch = try BlindWritingEvaluation.prepare(corpus: corpus, outputs: outputs, seed: 42)
+        let batch = try prepare(corpus: corpus, outputs: outputs, seed: 42)
         let encoder = JSONEncoder()
         let key = try JSONDecoder().decode(BlindWritingKey.self, from: encoder.encode(batch.key))
         var reviewed = completed(batch.review)
@@ -114,7 +113,7 @@ struct BlindWritingEvaluationTests {
         var outputs = recorded(corpus)
         outputs[0].kind = .refusal
         outputs[0].text = "I can’t help with that request."
-        let batch = try BlindWritingEvaluation.prepare(corpus: corpus, outputs: outputs, seed: 42)
+        let batch = try prepare(corpus: corpus, outputs: outputs, seed: 42)
         let results = try BlindWritingEvaluation.reveal(completed(batch.review), key: batch.key)
         let refusal = try #require(results.first { $0.sample.kind == .refusal })
         #expect(refusal.sample.text == outputs[0].text)
@@ -124,7 +123,7 @@ struct BlindWritingEvaluationTests {
     @Test("unfinished invalid duplicate or unexplained ratings cannot be revealed")
     func invalidRatings() throws {
         let corpus = try loadCorpus()
-        let batch = try BlindWritingEvaluation.prepare(corpus: corpus, outputs: recorded(corpus), seed: 42)
+        let batch = try prepare(corpus: corpus, outputs: recorded(corpus), seed: 42)
         var invalid = completed(batch.review)
         invalid.reviews[0].ratings[0].rating = "excellent"
         var duplicate = completed(batch.review)
@@ -145,7 +144,7 @@ struct BlindWritingEvaluationTests {
     func invalidMapping() throws {
         let corpus = try loadCorpus()
         let outputs = recorded(corpus)
-        let batch = try BlindWritingEvaluation.prepare(corpus: corpus, outputs: outputs, seed: 42)
+        let batch = try prepare(corpus: corpus, outputs: outputs, seed: 42)
         var changed = completed(batch.review)
         changed.reviews[0].sample.text += " edited"
         var context = completed(batch.review)
@@ -162,10 +161,76 @@ struct BlindWritingEvaluationTests {
             }
         }
         // Even identical texts across all engines cannot accept another seed's key.
-        let other = try BlindWritingEvaluation.prepare(corpus: corpus, outputs: outputs, seed: 43)
+        let other = try prepare(corpus: corpus, outputs: outputs, seed: 43)
         #expect(throws: BlindWritingError.self) {
             try BlindWritingEvaluation.reveal(completed(batch.review), key: other.key)
         }
+    }
+
+    @Test("one disclosed response does not establish a cross-scenario engine cohort")
+    func noPredictableCohorts() throws {
+        let corpus = try loadCorpus()
+        let outputs = recorded(corpus)
+        // Same public seed, same disclosed engine and same position on the first corpus scenario;
+        // different private nonces must allow different positions on every other scenario.
+        // Also cover the minimal batch: strict positional quotas there would
+        // reveal the second scenario's mapping as soon as the first is identified.
+        for (selectedCorpus, selectedOutputs, engineCount) in [
+            (corpus, outputs, 3),
+            (Array(corpus.prefix(2)), outputs.filter {
+                $0.engineID != "engine-pcc" && corpus.prefix(2).map(\.scenarioID).contains($0.scenarioID)
+            }, 2)
+        ] {
+            var positionsByAnchor: [Int: [[String: Int]]] = [:]
+            let anchorID = try #require(selectedCorpus.first?.scenarioID)
+            for byte in UInt8(0)..<64 {
+                let batch = try prepare(corpus: selectedCorpus, outputs: selectedOutputs, seed: 42, nonce: Data(repeating: byte, count: 32))
+                let positions = Dictionary(uniqueKeysWithValues: batch.key.identities.enumerated()
+                    .filter { $0.element.engineID == "engine-apple" }
+                    .map { ($0.element.sample.scenarioID, $0.offset % engineCount) })
+                let anchor = try #require(positions[anchorID])
+                positionsByAnchor[anchor, default: []].append(positions)
+            }
+            #expect(positionsByAnchor.count == engineCount)
+            for alternatives in positionsByAnchor.values {
+                for scenario in selectedCorpus where scenario.scenarioID != anchorID {
+                    #expect(Set(alternatives.compactMap { $0[scenario.scenarioID] }).count > 1)
+                }
+            }
+        }
+    }
+
+    @Test("the private nonce binds the fingerprint and is absent from reviewer artifacts")
+    func secretFingerprint() throws {
+        let corpus = try loadCorpus()
+        let batch = try prepare(corpus: corpus, outputs: recorded(corpus), seed: 42)
+        let reviewData = try JSONEncoder().encode(batch.review)
+        let reviewJSON = String(decoding: reviewData, as: UTF8.self)
+        #expect(!reviewJSON.contains("nonce"))
+        #expect(!reviewJSON.contains(batch.key.nonce.base64EncodedString()))
+        // Keep the entire identity mapping and public seed unchanged: only the secret differs.
+        var guessedKey = batch.key
+        guessedKey.nonce = Data(repeating: 0x22, count: 32)
+        #expect(throws: BlindWritingError.self) {
+            try BlindWritingEvaluation.reveal(completed(batch.review), key: guessedKey)
+        }
+        guessedKey.nonce = Data()
+        #expect(throws: BlindWritingError.self) {
+            try BlindWritingEvaluation.reveal(completed(batch.review), key: guessedKey)
+        }
+        var encodedKey = try #require(JSONSerialization.jsonObject(with: JSONEncoder().encode(batch.key)) as? [String: Any])
+        encodedKey.removeValue(forKey: "nonce")
+        #expect(throws: (any Error).self) {
+            try JSONDecoder().decode(BlindWritingKey.self, from: JSONSerialization.data(withJSONObject: encodedKey))
+        }
+        #expect(try BlindWritingEvaluation.reveal(completed(batch.review), key: batch.key).count == batch.review.reviews.count)
+    }
+
+    private func prepare(
+        corpus: [WritingQualityFixture], outputs: [RecordedWritingOutput], seed: UInt64,
+        nonce: Data = Data(repeating: 0x11, count: 32)
+    ) throws -> BlindWritingBatch {
+        try BlindWritingEvaluation.prepare(corpus: corpus, outputs: outputs, seed: seed, nonce: nonce)
     }
 
     private func loadCorpus() throws -> [WritingQualityFixture] {

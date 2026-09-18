@@ -51,8 +51,13 @@ It does not yet cover every scenario in the table below or complete R-2/Q-1.
 swift run prosepal-writing-eval prepare Tests/ProsePalEvaluationTests/Fixtures/writing-quality-baseline-v1.json /private/path/outputs.json 42 /private/path/batch-01
 ```
 
-   The seed deterministically shuffles scenarios and rotates a shuffled engine
-   order to balance positions. Files are mode 600; the new directory is mode 700.
+   Preparation creates a cryptographically random private nonce. Together with
+   the seed it deterministically shuffles scenarios and independent per-scenario
+   engine orders, selecting for balanced positions without a shared cohort pattern.
+   The nonce also binds the review fingerprint; it exists only in the private key.
+   Reproducibility requires that key, not just the seed; each preparation is a new
+   batch. Old keys without a nonce must be re-prepared. Files are mode 600; the new
+   directory is mode 700.
    Existing outputs are never overwritten. Give reviewers only `review.json`
    and this rubric. Keep inputs, the seed and `private-key.json` with the organiser.
    Only metadata is hidden: preserve response text even if its wording reveals

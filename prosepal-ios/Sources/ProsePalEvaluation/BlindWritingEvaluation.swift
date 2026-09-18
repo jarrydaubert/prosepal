@@ -55,6 +55,7 @@ public struct BlindWritingIdentity: Codable, Equatable, Sendable {
 public struct BlindWritingKey: Codable, Equatable, Sendable {
     public var formatVersion: Int
     public var seed: UInt64
+    public var nonce: Data
     public var identities: [BlindWritingIdentity]
 }
 
@@ -83,6 +84,17 @@ public enum BlindWritingEvaluation {
     public static func prepare(
         corpus: [WritingQualityFixture], outputs: [RecordedWritingOutput], seed: UInt64
     ) throws -> BlindWritingBatch {
+        let nonce = SymmetricKey(size: .bits256).withUnsafeBytes { Data($0) }
+        return try prepare(corpus: corpus, outputs: outputs, seed: seed, nonce: nonce)
+    }
+
+    // Internal entropy injection keeps tests deterministic; the CLI always creates a fresh secret.
+    static func prepare(
+        corpus: [WritingQualityFixture], outputs: [RecordedWritingOutput], seed: UInt64, nonce: Data
+    ) throws -> BlindWritingBatch {
+        guard nonce.count == 32 else {
+            throw BlindWritingError(message: "A batch requires a private 256-bit nonce.")
+        }
         let scenarioIDs = corpus.map(\.scenarioID)
         guard !corpus.isEmpty, Set(scenarioIDs).count == corpus.count,
               corpus.allSatisfy({ !$0.scenarioID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && $0.rubricVersion == 3 }) else {
@@ -95,7 +107,7 @@ public enum BlindWritingEvaluation {
         }) else {
             throw BlindWritingError(message: "Each recorded response needs an engine ID, a known scenario and nonblank text.")
         }
-        var engines = Array(Set(outputs.map(\.engineID))).sorted()
+        let engines = Array(Set(outputs.map(\.engineID))).sorted()
         guard engines.count >= 2 else {
             throw BlindWritingError(message: "A comparison requires at least two engines.")
         }
@@ -106,16 +118,34 @@ public enum BlindWritingEvaluation {
             throw BlindWritingError(message: "Supply exactly one response per engine for every corpus scenario; no duplicates or missing cells.")
         }
 
-        var random = StableShuffle(seed: seed)
-        random.shuffle(&engines)
+        var random = StableShuffle(seed: seed, nonce: nonce)
         var scenarios = corpus.sorted { $0.scenarioID < $1.scenarioID }
         random.shuffle(&scenarios)
+        // Prefer the better balanced of two independent schedules; do not enforce quotas.
+        // Hard quotas can force another assignment in a two-engine/two-scenario batch.
+        // No rotation or shared cohort links one scenario's assignment to another.
+        var orders: [[String]] = []
+        var bestImbalance = Int.max
+        for _ in 0..<2 {
+            let candidate = scenarios.map { _ in
+                var order = engines
+                random.shuffle(&order)
+                return order
+            }
+            let imbalance = engines.reduce(0) { total, engine in
+                let counts = engines.indices.map { position in
+                    candidate.filter { $0[position] == engine }.count
+                }
+                return total + counts.reduce(0) { $0 + $1 * $1 }
+            }
+            if imbalance < bestImbalance {
+                orders = candidate
+                bestImbalance = imbalance
+            }
+        }
         var identities: [BlindWritingIdentity] = []
         for (scenarioIndex, fixture) in scenarios.enumerated() {
-            // Rotate a shuffled engine order: positions differ by at most one
-            // over the corpus. Engine lists and seeds never enter the review file.
-            for position in engines.indices {
-                let engine = engines[(position + scenarioIndex) % engines.count]
+            for engine in orders[scenarioIndex] {
                 guard let output = grouped[engine]?.first(where: { $0.scenarioID == fixture.scenarioID }) else {
                     throw BlindWritingError(message: "The recorded response matrix is incomplete.")
                 }
@@ -131,9 +161,9 @@ public enum BlindWritingEvaluation {
                 identities.append(BlindWritingIdentity(engineID: engine, sample: sample, advisory: advisory))
             }
         }
-        let key = BlindWritingKey(formatVersion: 1, seed: seed, identities: identities)
+        let key = BlindWritingKey(formatVersion: 2, seed: seed, nonce: nonce, identities: identities)
         let review = BlindWritingReviewFile(
-            formatVersion: 1, keyFingerprint: try fingerprint(key),
+            formatVersion: 2, keyFingerprint: try fingerprint(key),
             reviews: identities.map { identity in
                 BlindWritingReview(sample: identity.sample, ratings: WritingQualityCriterion.allCases.map {
                     BlindWritingRating(criterion: $0, rating: "", reason: "")
@@ -146,7 +176,7 @@ public enum BlindWritingEvaluation {
     public static func reveal(
         _ review: BlindWritingReviewFile, key: BlindWritingKey
     ) throws -> [RevealedWritingReview] {
-        guard review.formatVersion == 1, key.formatVersion == 1,
+        guard review.formatVersion == 2, key.formatVersion == 2, key.nonce.count == 32,
               review.keyFingerprint == (try fingerprint(key)) else {
             throw BlindWritingError(message: "Review and private key must belong to the same supported batch.")
         }
@@ -192,16 +222,18 @@ public enum BlindWritingEvaluation {
     }
 }
 
-// Explicit SplitMix64 + Fisher-Yates avoids system RNG and Swift hash ordering.
+// Secret-keyed deterministic entropy: a public seed cannot regenerate assignments.
 private struct StableShuffle {
     var seed: UInt64
+    var nonce: Data
+    var counter: UInt64 = 0
 
     mutating func next() -> UInt64 {
-        seed &+= 0x9E3779B97F4A7C15
-        var value = seed
-        value = (value ^ (value >> 30)) &* 0xBF58476D1CE4E5B9
-        value = (value ^ (value >> 27)) &* 0x94D049BB133111EB
-        return value ^ (value >> 31)
+        let bytes = HMAC<SHA256>.authenticationCode(
+            for: Data("blind-writing-order:\(seed):\(counter)".utf8), using: SymmetricKey(data: nonce)
+        )
+        counter &+= 1
+        return bytes.prefix(8).reduce(UInt64(0)) { ($0 << 8) | UInt64($1) }
     }
 
     mutating func shuffle<Element>(_ values: inout [Element]) {
