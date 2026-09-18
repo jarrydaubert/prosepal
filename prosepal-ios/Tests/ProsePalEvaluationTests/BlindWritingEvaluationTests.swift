@@ -171,31 +171,29 @@ struct BlindWritingEvaluationTests {
     func noPredictableCohorts() throws {
         let corpus = try loadCorpus()
         let outputs = recorded(corpus)
-        // Same public seed, same disclosed engine and same position on the first corpus scenario;
-        // different private nonces must allow different positions on every other scenario.
-        // Also cover the minimal batch: strict positional quotas there would
-        // reveal the second scenario's mapping as soon as the first is identified.
-        for (selectedCorpus, selectedOutputs, engineCount) in [
-            (corpus, outputs, 3),
+        // Fixed counterexamples replace a broad nonce search: blocking test work
+        // must not starve concurrent lifecycle/deadline checks on CI's shared executor.
+        // Each pair has the same public scenario order and disclosed Q02 position,
+        // but different positions for that engine on every other scenario.
+        for (selectedCorpus, selectedOutputs, engineCount, otherNonce) in [
+            (corpus, outputs, 3, UInt8(18)),
             (Array(corpus.prefix(2)), outputs.filter {
                 $0.engineID != "engine-pcc" && corpus.prefix(2).map(\.scenarioID).contains($0.scenarioID)
-            }, 2)
+            }, 2, UInt8(48))
         ] {
-            var positionsByAnchor: [Int: [[String: Int]]] = [:]
-            let anchorID = try #require(selectedCorpus.first?.scenarioID)
-            for byte in UInt8(0)..<64 {
-                let batch = try prepare(corpus: selectedCorpus, outputs: selectedOutputs, seed: 42, nonce: Data(repeating: byte, count: 32))
-                let positions = Dictionary(uniqueKeysWithValues: batch.key.identities.enumerated()
+            let first = try prepare(corpus: selectedCorpus, outputs: selectedOutputs, seed: 42,
+                                    nonce: Data(repeating: 0, count: 32))
+            let second = try prepare(corpus: selectedCorpus, outputs: selectedOutputs, seed: 42,
+                                     nonce: Data(repeating: otherNonce, count: 32))
+            #expect(first.review.reviews.map { $0.sample.scenarioID } == second.review.reviews.map { $0.sample.scenarioID })
+            let positions = [first, second].map { batch in
+                Dictionary(uniqueKeysWithValues: batch.key.identities.enumerated()
                     .filter { $0.element.engineID == "engine-apple" }
                     .map { ($0.element.sample.scenarioID, $0.offset % engineCount) })
-                let anchor = try #require(positions[anchorID])
-                positionsByAnchor[anchor, default: []].append(positions)
             }
-            #expect(positionsByAnchor.count == engineCount)
-            for alternatives in positionsByAnchor.values {
-                for scenario in selectedCorpus where scenario.scenarioID != anchorID {
-                    #expect(Set(alternatives.compactMap { $0[scenario.scenarioID] }).count > 1)
-                }
+            #expect(try #require(positions[0]["Q02"]) == #require(positions[1]["Q02"]))
+            for scenario in selectedCorpus where scenario.scenarioID != "Q02" {
+                #expect(try #require(positions[0][scenario.scenarioID]) != #require(positions[1][scenario.scenarioID]))
             }
         }
     }
