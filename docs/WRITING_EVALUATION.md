@@ -23,6 +23,60 @@ moderation policy. [BACKLOG](BACKLOG.md) owns W-2/Q-1/W-8 scope and candidate co
 - Change fixture/rubric meaning deliberately and review expected ratings. Fixture
   rubric version is `3`; preserve its interpretation until intentionally versioned.
 
+## Staging evidence transport
+
+`supabase/functions/evaluate-writing/index.ts` is an evaluation-only transport,
+not an app writing path. It refuses every project except staging
+`llolwgqphwnhbiqewmcq`, requires `GATEWAY_DEV_ALLOW_ANONYMOUS=true` and the existing
+staging development secret, and reads the existing server-side
+`PROSEPAL_AI_PROVIDER_API_KEY`. Provider credentials never enter local tooling.
+Deploying this function to staging requires explicit approval; it is not deployed
+by building/testing it. Do not deploy it to production or wire it into the app.
+
+Authenticated `GET` returns a non-generating configuration manifest. `POST` takes
+only `scenario_id` (Q02/Q04/Q06/Q16), `synthetic: true`, `instructions`, `prompt`
+and `max_output_tokens` (integer 1–700). The supplied instruction/prompt strings
+are passed unchanged and must total at most 2048 UTF-8 bytes. Use the same
+synthetic context and writing contract across engines. Synthetic provenance is
+the organiser's responsibility; the declaration is not a content classifier.
+
+The function pins the API request ID `anthropic/claude-sonnet-5` through OpenRouter's
+`anthropic` route, with ZDR required, provider/model fallback disabled, reasoning
+disabled and maximum prompt/completion prices of $2/$10 per million tokens.
+No temperature is supplied: this model's advertised parameters omit it. Account
+permissions, provider availability and ZDR eligibility still require verification;
+an unavailable route fails rather than substitutes. These evaluation controls
+make no claim about production privacy/routing. See official
+[provider routing](https://openrouter.ai/docs/guides/routing/provider-selection)
+and [ZDR](https://openrouter.ai/docs/guides/features/zdr) contracts. OpenRouter's
+[model catalogue](https://openrouter.ai/docs/guides/overview/models) distinguishes
+the request `id` from its canonical slug `anthropic/claude-sonnet-5-20260630`;
+the identity check accepts only those two exact response identifiers and Anthropic.
+
+Responses retain the complete OpenRouter HTTP body as `raw_response_base64`,
+including refusals, errors, malformed payloads and whitespace. This is the raw
+transport response from OpenRouter, whose upstream schemas are normalised by
+OpenRouter; it is not a native Anthropic wire capture. Metadata includes actual
+reported provider/model, HTTP status, latency and provider `usage` where supplied.
+Missing/mismatched identity fails with the raw evidence retained. Transport
+failure has no complete raw response. There are no retries, option parsing,
+quality filters, rewriting, response healing or content logs.
+
+From the repository root, after approved deployment:
+
+```bash
+python3 scripts/capture_writing_evaluation.py manifest
+python3 scripts/capture_writing_evaluation.py capture /private/path/request.json /private/path/new-scenario-directory
+```
+
+The first command makes no generation call. The second makes exactly one POST
+after checking the manifest, retaining the supplied request, manifest, full
+evaluation response and decoded `provider-response.raw` in a new directory
+outside Git (700; files 600), even on provider failure. It reads only the existing
+local staging access secret, never a provider key; redirects/retries are disabled.
+It does not score, extract message options, assemble blind reviews or reveal keys.
+Use the offline CLI below only after complete engine/scenario coverage is recorded.
+
 ## Offline blind comparison
 
 `Sources/ProsePalEvaluation/BlindWritingEvaluation.swift` reuses the existing
