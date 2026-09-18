@@ -19,6 +19,11 @@ verify_jwt = false
 # anonymous dev mode with GATEWAY_DEV_ALLOW_ANONYMOUS=true.
 verify_jwt = false
 
+[functions.evaluate-writing]
+# Isolated evaluation: validates the staging project and existing dev secret.
+# No Supabase app/user JWT grants access; deploy only to the staging project.
+verify_jwt = false
+
 [functions.app-store-notifications]
 # Apple sends a signedPayload JWS, not a Supabase JWT. The function validates
 # the JWS with Apple's App Store Server Library and configured Apple root CAs.
