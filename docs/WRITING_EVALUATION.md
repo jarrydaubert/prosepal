@@ -23,6 +23,59 @@ moderation policy. [BACKLOG](BACKLOG.md) owns W-2/Q-1/W-8 scope and candidate co
 - Change fixture/rubric meaning deliberately and review expected ratings. Fixture
   rubric version is `3`; preserve its interpretation until intentionally versioned.
 
+## Offline blind comparison
+
+`Sources/ProsePalEvaluation/BlindWritingEvaluation.swift` reuses the existing
+rubric and scorer; `prosepal-writing-eval` is a package CLI with no model calls.
+The first machine-readable corpus is Q02/Q04/Q06/Q16 in
+`Tests/ProsePalEvaluationTests/Fixtures/writing-quality-baseline-v1.json`.
+It does not yet cover every scenario in the table below or complete R-2/Q-1.
+
+1. The organiser records one complete response per engine for every supplied
+   corpus scenario in a private JSON array. Use the same synthetic task/context
+   across engines. `engineID` identifies the actual engine/runtime/configuration;
+   retain timing/cost and generation provenance separately under the existing
+   evidence protocol. Example row (repeat for each engine/scenario):
+
+```json
+{"engineID":"apple-on-device/runtime-config","scenarioID":"Q02","kind":"message","text":"Complete recorded response"}
+```
+
+   `kind` is `message` or `refusal`; refusals retain their complete text. Unknown,
+   blank, duplicate or missing cells fail validation. Unavailable engines are
+   evidence gaps, not fabricated outputs or poor scores. Compare at least two
+   engines with complete coverage; use an explicitly approved corpus subset if needed.
+2. From `prosepal-ios/`, prepare a new private batch directory:
+
+```bash
+swift run prosepal-writing-eval prepare Tests/ProsePalEvaluationTests/Fixtures/writing-quality-baseline-v1.json /private/path/outputs.json 42 /private/path/batch-01
+```
+
+   The seed deterministically shuffles scenarios and rotates a shuffled engine
+   order to balance positions. Files are mode 600; the new directory is mode 700.
+   Existing outputs are never overwritten. Give reviewers only `review.json`
+   and this rubric. Keep inputs, the seed and `private-key.json` with the organiser.
+   Only metadata is hidden: preserve response text even if its wording reveals
+   an identity or contains implementation leakage. Do not ask engines for these ratings.
+3. Reviewers edit only each `ratings` entry: replace empty `rating` with `pass`,
+   `concern`, `fail` or `not_applicable`. Explain every non-pass rating in `reason`.
+   All existing coded criteria must be reviewed; apply the fuller criterion
+   oracles below when judging them. Use `not_applicable` with a reason for
+   `useful_choice`: these are independent engine responses, not selectable choices.
+   Do not edit sample IDs, context or text. Freeze completed reviews before revealing.
+4. The organiser reveals the frozen review using the matching private key:
+
+```bash
+swift run prosepal-writing-eval reveal /private/path/batch-01/review.json /private/path/batch-01/private-key.json /private/path/comparison-01.json
+```
+
+   The comparison groups rows by engine/scenario and retains anonymous IDs.
+   Human `findings` and existing deterministic `advisory` findings stay separate;
+   advisory results are withheld during review and omitted for refusals. No
+   automatic winner, numeric average or quality acceptance is inferred. Incomplete
+   ratings, altered samples or a mismatched batch key fail instead of revealing.
+   Keep all artifacts private; offline preparation does not authorize live generation.
+
 ## Criterion oracles
 
 | Criterion | Pass / failure to reject |
