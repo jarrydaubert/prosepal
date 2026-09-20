@@ -120,6 +120,23 @@ struct BlindWritingEvaluationTests {
         #expect(refusal.advisory.isEmpty)
     }
 
+    @Test("transport-only refusal evidence stays out of the anonymous review")
+    func privateRefusalEvidence() throws {
+        let corpus = try loadCorpus()
+        var outputs = recorded(corpus)
+        outputs[0].kind = .refusal
+        outputs[0].text = ""
+        outputs[0].privateEvidence = "Runner-specific HTTP 422 policy metadata."
+
+        let batch = try prepare(corpus: corpus, outputs: outputs, seed: 42)
+        let reviewJSON = String(decoding: try JSONEncoder().encode(batch.review), as: UTF8.self)
+        let refusal = try #require(batch.review.reviews.first { $0.sample.kind == .refusal })
+
+        #expect(refusal.sample.text.isEmpty)
+        #expect(!reviewJSON.contains("Runner-specific"))
+        #expect(!reviewJSON.contains("HTTP 422"))
+    }
+
     @Test("unfinished invalid duplicate or unexplained ratings cannot be revealed")
     func invalidRatings() throws {
         let corpus = try loadCorpus()
