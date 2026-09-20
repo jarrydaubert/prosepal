@@ -26,7 +26,7 @@ let package = Package(
         ),
         .target(
             name: "ProsePalEvaluation",
-            dependencies: ["ProsePalDomain"]
+            dependencies: ["ProsePalAPI", "ProsePalDomain"]
         ),
         .executableTarget(
             name: "ProsePalEvaluationCLI",
@@ -46,7 +46,7 @@ let package = Package(
         ),
         .testTarget(
             name: "ProsePalEvaluationTests",
-            dependencies: ["ProsePalEvaluation", "ProsePalDomain"],
+            dependencies: ["ProsePalEvaluation", "ProsePalAPI", "ProsePalDomain"],
             resources: [.process("Fixtures")]
         )
     ]

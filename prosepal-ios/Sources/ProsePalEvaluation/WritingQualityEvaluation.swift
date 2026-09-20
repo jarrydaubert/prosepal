@@ -29,6 +29,45 @@ public enum WritingQualityMode: String, Codable, Sendable {
     case careful
 }
 
+/// The intent needed for live capture and blind review. Production lane is
+/// deliberately absent: this experiment asks every engine to handle every scenario.
+public struct WritingEvaluationScenario: Codable, Equatable, Sendable {
+    public var scenarioID: String
+    public var rubricVersion: Int
+    public var provenance: String
+    public var personName: String?
+    public var mode: WritingQualityMode
+    public var occasion: Occasion
+    public var relationship: Relationship
+    public var tone: Tone
+    public var length: MessageLength
+    public var syntheticInput: String
+
+    public init(
+        scenarioID: String,
+        rubricVersion: Int,
+        provenance: String,
+        personName: String?,
+        mode: WritingQualityMode,
+        occasion: Occasion,
+        relationship: Relationship,
+        tone: Tone,
+        length: MessageLength,
+        syntheticInput: String
+    ) {
+        self.scenarioID = scenarioID
+        self.rubricVersion = rubricVersion
+        self.provenance = provenance
+        self.personName = personName
+        self.mode = mode
+        self.occasion = occasion
+        self.relationship = relationship
+        self.tone = tone
+        self.length = length
+        self.syntheticInput = syntheticInput
+    }
+}
+
 public struct WritingQualityOracle: Codable, Equatable, Sendable {
     public var requiredMeaningPhrases: [String]
     public var inventedFactConcernPhrases: [String]
@@ -128,6 +167,23 @@ public struct WritingQualityFixture: Codable, Equatable, Sendable {
         self.oracle = oracle
         self.candidates = candidates
         self.expectedSetFinding = expectedSetFinding
+    }
+}
+
+public extension WritingQualityFixture {
+    var evaluationScenario: WritingEvaluationScenario {
+        WritingEvaluationScenario(
+            scenarioID: scenarioID,
+            rubricVersion: rubricVersion,
+            provenance: provenance,
+            personName: nil,
+            mode: mode,
+            occasion: occasion,
+            relationship: relationship,
+            tone: tone,
+            length: length,
+            syntheticInput: syntheticInput
+        )
     }
 }
 

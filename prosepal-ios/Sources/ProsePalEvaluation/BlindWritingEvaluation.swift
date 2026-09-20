@@ -12,6 +12,24 @@ public struct RecordedWritingOutput: Codable, Equatable, Sendable {
     public var scenarioID: String
     public var kind: RecordedWritingKind
     public var text: String
+    /// Raw refusal/error evidence retained in the private capture file only.
+    /// Blind preparation deliberately excludes it because transport wording can
+    /// reveal the engine even when no user-facing refusal text was returned.
+    public var privateEvidence: String?
+
+    public init(
+        engineID: String,
+        scenarioID: String,
+        kind: RecordedWritingKind,
+        text: String,
+        privateEvidence: String? = nil
+    ) {
+        self.engineID = engineID
+        self.scenarioID = scenarioID
+        self.kind = kind
+        self.text = text
+        self.privateEvidence = privateEvidence
+    }
 }
 
 public struct BlindWritingSample: Codable, Equatable, Sendable {
@@ -82,6 +100,19 @@ public struct BlindWritingError: Error, LocalizedError {
 
 public enum BlindWritingEvaluation {
     public static func prepare(
+        corpus: [WritingEvaluationScenario], outputs: [RecordedWritingOutput], seed: UInt64
+    ) throws -> BlindWritingBatch {
+        let nonce = SymmetricKey(size: .bits256).withUnsafeBytes { Data($0) }
+        return try prepare(
+            corpus: corpus,
+            outputs: outputs,
+            seed: seed,
+            nonce: nonce,
+            advisoryFixtures: [:]
+        )
+    }
+
+    public static func prepare(
         corpus: [WritingQualityFixture], outputs: [RecordedWritingOutput], seed: UInt64
     ) throws -> BlindWritingBatch {
         let nonce = SymmetricKey(size: .bits256).withUnsafeBytes { Data($0) }
@@ -91,6 +122,25 @@ public enum BlindWritingEvaluation {
     // Internal entropy injection keeps tests deterministic; the CLI always creates a fresh secret.
     static func prepare(
         corpus: [WritingQualityFixture], outputs: [RecordedWritingOutput], seed: UInt64, nonce: Data
+    ) throws -> BlindWritingBatch {
+        let groupedFixtures = Dictionary(grouping: corpus, by: \.scenarioID)
+        return try prepare(
+            corpus: corpus.map(\.evaluationScenario),
+            outputs: outputs,
+            seed: seed,
+            nonce: nonce,
+            advisoryFixtures: groupedFixtures.compactMapValues { fixtures in
+                fixtures.count == 1 ? fixtures[0] : nil
+            }
+        )
+    }
+
+    static func prepare(
+        corpus: [WritingEvaluationScenario],
+        outputs: [RecordedWritingOutput],
+        seed: UInt64,
+        nonce: Data,
+        advisoryFixtures: [String: WritingQualityFixture] = [:]
     ) throws -> BlindWritingBatch {
         guard nonce.count == 32 else {
             throw BlindWritingError(message: "A batch requires a private 256-bit nonce.")
@@ -102,10 +152,12 @@ public enum BlindWritingEvaluation {
         }
         guard outputs.allSatisfy({
             !$0.engineID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
-                !$0.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
+                ($0.kind == .refusal || !$0.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) &&
                 scenarioIDs.contains($0.scenarioID)
         }) else {
-            throw BlindWritingError(message: "Each recorded response needs an engine ID, a known scenario and nonblank text.")
+            throw BlindWritingError(
+                message: "Each recorded response needs an engine ID and known scenario; generated messages also need nonblank text."
+            )
         }
         let engines = Array(Set(outputs.map(\.engineID))).sorted()
         guard engines.count >= 2 else {
@@ -144,20 +196,23 @@ public enum BlindWritingEvaluation {
             }
         }
         var identities: [BlindWritingIdentity] = []
-        for (scenarioIndex, fixture) in scenarios.enumerated() {
+        for (scenarioIndex, scenario) in scenarios.enumerated() {
             for engine in orders[scenarioIndex] {
-                guard let output = grouped[engine]?.first(where: { $0.scenarioID == fixture.scenarioID }) else {
+                guard let output = grouped[engine]?.first(where: { $0.scenarioID == scenario.scenarioID }) else {
                     throw BlindWritingError(message: "The recorded response matrix is incomplete.")
                 }
                 let sample = BlindWritingSample(
                     id: String(format: "B%04d", identities.count + 1),
-                    scenarioID: fixture.scenarioID, rubricVersion: fixture.rubricVersion,
-                    mode: fixture.mode, occasion: fixture.occasion, relationship: fixture.relationship,
-                    tone: fixture.tone, length: fixture.length, syntheticInput: fixture.syntheticInput,
+                    scenarioID: scenario.scenarioID, rubricVersion: scenario.rubricVersion,
+                    mode: scenario.mode, occasion: scenario.occasion, relationship: scenario.relationship,
+                    tone: scenario.tone, length: scenario.length, syntheticInput: scenario.syntheticInput,
                     kind: output.kind, text: output.text
                 )
                 let advisory = output.kind == .message
-                    ? WritingQualityEvaluator().evaluateCandidate(output.text, fixture: fixture) : []
+                    ? advisoryFixtures[scenario.scenarioID].map {
+                        WritingQualityEvaluator().evaluateCandidate(output.text, fixture: $0)
+                    } ?? []
+                    : []
                 identities.append(BlindWritingIdentity(engineID: engine, sample: sample, advisory: advisory))
             }
         }

@@ -26,10 +26,35 @@ moderation policy. [BACKLOG](BACKLOG.md) owns W-2/Q-1/W-8 scope and candidate co
 ## Offline blind comparison
 
 `Sources/ProsePalEvaluation/BlindWritingEvaluation.swift` reuses the existing
-rubric and scorer; `prosepal-writing-eval` is a package CLI with no model calls.
-The first machine-readable corpus is Q02/Q04/Q06/Q16 in
-`Tests/ProsePalEvaluationTests/Fixtures/writing-quality-baseline-v1.json`.
-It does not yet cover every scenario in the table below or complete R-2/Q-1.
+rubric and scorer. The authored Q02/Q04/Q06/Q16 baseline remains in
+`Tests/ProsePalEvaluationTests/Fixtures/writing-quality-baseline-v1.json` for
+deterministic scorer coverage. Live capture and blind review use the smaller
+Q01-Q16 intent corpus in `writing-live-corpus-v1.json`; it deliberately has no
+exemplars or deterministic oracle.
+
+For the first local comparison, run both engines from `prosepal-ios/` against
+the live corpus. Every scenario is pinned to `en_GB`; per-scenario locale is out
+of scope. Production `lane` is deliberately absent because this experiment asks
+each engine to handle every scenario. Capture writes progress to a new mode-600
+file after each scenario, makes one request per scenario and has no quality retry
+or provider fallback. The OpenAI-compatible command accepts only a loopback
+endpoint and uses the same `PrivateDraftPromptPlan`, sampling controls and
+structured response shape as AFM. Capture and preparation reject destinations
+inside the repository.
+
+```bash
+evaluation_directory=$(mktemp -d /private/tmp/prosepal-writing-eval.XXXXXX)
+chmod 700 "$evaluation_directory"
+swift run prosepal-writing-eval record-afm Tests/ProsePalEvaluationTests/Fixtures/writing-live-corpus-v1.json apple-foundation-models-RUNTIME "$evaluation_directory/afm.json"
+swift run prosepal-writing-eval record-local Tests/ProsePalEvaluationTests/Fixtures/writing-live-corpus-v1.json ollama-MODEL-RUNTIME http://127.0.0.1:11434/v1 MODEL "$evaluation_directory/local.json"
+umask 077
+jq -s 'add' "$evaluation_directory/afm.json" "$evaluation_directory/local.json" > "$evaluation_directory/outputs.json"
+```
+
+Use actual runtime/model identities in `engineID`. An unavailable AFM runtime is
+an evidence gap: retain its exact error, do not fabricate an AFM row, and do not
+prepare a blind batch until two engines have complete coverage. Keep all generated
+files outside the repository.
 
 1. The organiser records one complete response per engine for every supplied
    corpus scenario in a private JSON array. Use the same synthetic task/context
@@ -41,14 +66,20 @@ It does not yet cover every scenario in the table below or complete R-2/Q-1.
 {"engineID":"apple-on-device/runtime-config","scenarioID":"Q02","kind":"message","text":"Complete recorded response"}
 ```
 
-   `kind` is `message` or `refusal`; refusals retain their complete text. Unknown,
-   blank, duplicate or missing cells fail validation. Unavailable engines are
+   `kind` is `message` or `refusal`. Available user-facing refusal text is retained;
+   transport-only refusal evidence stays in the private capture and is excluded
+   from anonymous review. A refusal may therefore have blank review text, but a
+   generated message may not. The AFM `GenerationError.Refusal` shape used here
+   exposes no readable user-facing explanation, so AFM refusals retain only their
+   debug context as private evidence and enter review with blank text; never invent
+   refusal wording or expose that context to reviewers. Unknown, duplicate or
+   missing cells fail validation. Unavailable engines are
    evidence gaps, not fabricated outputs or poor scores. Compare at least two
    engines with complete coverage; use an explicitly approved corpus subset if needed.
 2. From `prosepal-ios/`, prepare a new private batch directory:
 
 ```bash
-swift run prosepal-writing-eval prepare Tests/ProsePalEvaluationTests/Fixtures/writing-quality-baseline-v1.json /private/path/outputs.json 42 /private/path/batch-01
+swift run prosepal-writing-eval prepare Tests/ProsePalEvaluationTests/Fixtures/writing-live-corpus-v1.json /private/path/outputs.json 42 /private/path/batch-01
 ```
 
    Preparation creates a cryptographically random private nonce. Together with

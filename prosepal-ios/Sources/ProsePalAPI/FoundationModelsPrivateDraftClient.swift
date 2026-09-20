@@ -130,11 +130,11 @@ public struct FoundationModelsPrivateDraftClient: MomentDraftClient {
     }
 }
 
-struct PrivateDraftPromptPlan: Equatable, Sendable {
-    let instructionComponents: [String]
-    let promptComponents: [String]
+package struct PrivateDraftPromptPlan: Equatable, Sendable {
+    package let instructionComponents: [String]
+    package let promptComponents: [String]
 
-    init(
+    package init(
         moment: MomentInput,
         adjustment: MomentAdjustment?,
         currentMessage: String?,
@@ -213,27 +213,27 @@ struct PrivateDraftPromptPlan: Equatable, Sendable {
 }
 
 @Generable(description: "A ProsePal private draft bundle")
-struct PrivateDraftContent {
+package struct PrivateDraftContent {
     @Guide(description: "The message body the user can send or edit")
-    var messageText: String
+    package var messageText: String
 
     @Guide(description: "Whether the message asks the recipient to reassure the sender")
-    var asksForReassurance: Bool
+    package var asksForReassurance: Bool
 
     @Guide(description: "Whether an apology explains before it apologises")
-    var explainsBeforeApology: Bool
+    package var explainsBeforeApology: Bool
 
     @Guide(description: "Whether the wording may feel too heavy for the moment")
-    var mayFeelTooHeavy: Bool
+    package var mayFeelTooHeavy: Bool
 
     @Guide(description: "Short pressure-check notes", .maximumCount(3))
-    var pressureNotes: [String]
+    package var pressureNotes: [String]
 
     @Guide(description: "Details that would help improve the message", .maximumCount(3))
-    var missingInformation: [String]
+    package var missingInformation: [String]
 
     @Guide(description: "Non-sensitive user-visible risk notes", .maximumCount(3))
-    var riskNotes: [String]
+    package var riskNotes: [String]
 
     func bundle(
         lane: MomentDraftLane,
