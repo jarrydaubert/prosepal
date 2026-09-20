@@ -30,11 +30,7 @@ public enum WritingEngineCapture {
                 let response = try await session.respond(
                     to: Prompt { plan.promptComponents },
                     generating: PrivateDraftContent.self,
-                    options: GenerationOptions(
-                        samplingMode: .random(probabilityThreshold: 0.92),
-                        temperature: 0.7,
-                        maximumResponseTokens: 700
-                    )
+                    options: foundationModelsGenerationOptions
                 )
                 guard let text = ProsePalTextInput.generatedDraft(response.content.messageText) else {
                     throw WritingEngineCaptureError(
@@ -228,6 +224,12 @@ public enum WritingEngineCapture {
         return try JSONSerialization.data(withJSONObject: body, options: [.sortedKeys])
     }
 
+    static let foundationModelsGenerationOptions = GenerationOptions(
+        sampling: .random(probabilityThreshold: 0.92),
+        temperature: 0.7,
+        maximumResponseTokens: 700
+    )
+
     static func decodeLocalCompatibleResponse(
         _ data: Data,
         scenarioID: String
@@ -286,7 +288,7 @@ public enum WritingEngineCapture {
             .lowercased()
         let hasPolicyMarker = ["policy", "moderation", "content_filter", "safety", "guardrail", "refusal"]
             .contains { policyMarker.contains($0) }
-        let isPolicyStatus = statusCode == 422 || statusCode == 451
+        let isPolicyStatus = statusCode == 451
         guard explicitRefusal != nil || hasPolicyMarker || isPolicyStatus else {
             return nil
         }

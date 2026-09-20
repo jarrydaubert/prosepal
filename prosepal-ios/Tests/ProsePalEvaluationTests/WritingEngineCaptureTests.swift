@@ -1,4 +1,5 @@
 import Foundation
+import FoundationModels
 import ProsePalAPI
 import ProsePalDomain
 import Testing
@@ -73,6 +74,15 @@ struct WritingEngineCaptureTests {
     }
 
     @Test
+    func foundationModelsRequestKeepsPinnedSamplingOptions() {
+        #expect(WritingEngineCapture.foundationModelsGenerationOptions == GenerationOptions(
+            sampling: .random(probabilityThreshold: 0.92),
+            temperature: 0.7,
+            maximumResponseTokens: 700
+        ))
+    }
+
+    @Test
     func localResponsesPreserveMessagesAndExplicitRefusalText() throws {
         let messageData = successfulResponse(message: "A complete local draft.")
         let refusalData = Data("""
@@ -129,6 +139,40 @@ struct WritingEngineCaptureTests {
     }
 
     @Test
+    func requestValidationHTTPFailureRemainsTechnicalWithoutPolicyEvidence() async throws {
+        let scenario = try #require(loadLiveCorpus().first)
+        CapturingURLProtocol.requestCount = 0
+        CapturingURLProtocol.requestHandler = { request in
+            CapturingURLProtocol.requestCount += 1
+            return (
+                HTTPURLResponse(
+                    url: try #require(request.url),
+                    statusCode: 422,
+                    httpVersion: nil,
+                    headerFields: ["Content-Type": "application/json"]
+                )!,
+                Data("""
+                {"error":{"type":"invalid_request_error","message":"Unsupported field."}}
+                """.utf8)
+            )
+        }
+        defer { CapturingURLProtocol.requestHandler = nil }
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [CapturingURLProtocol.self]
+
+        await #expect(throws: WritingEngineCaptureError.self) {
+            try await WritingEngineCapture.recordLocalCompatible(
+                corpus: [scenario],
+                engineID: "local-test",
+                baseURL: URL(string: "http://127.0.0.1:11434/v1")!,
+                model: "local-test",
+                session: URLSession(configuration: configuration)
+            )
+        }
+        #expect(CapturingURLProtocol.requestCount == 1)
+    }
+
+    @Test
     func localCaptureMakesExactlyOneRequestPerScenarioAndContinuesAfterPolicyFailure() async throws {
         let corpus = try loadLiveCorpus()
         CapturingURLProtocol.requestCount = 0
@@ -143,7 +187,9 @@ struct WritingEngineCaptureTests {
                         httpVersion: nil,
                         headerFields: ["Content-Type": "application/json"]
                     )!,
-                    Data("{\"error\":{\"message\":\"Local policy refusal.\"}}".utf8)
+                    Data("""
+                    {"error":{"code":"content_policy","message":"Local policy refusal."}}
+                    """.utf8)
                 )
             }
             return (
