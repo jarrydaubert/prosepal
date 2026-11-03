@@ -1,0 +1,24 @@
+<!-- @dsCard group="Spacing" viewport="700x150" name="Radius" subtitle="Soft iOS curvature — capsule buttons, large card radii" -->
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8" />
+<link rel="stylesheet" href="../styles.css" />
+<style>
+  body { margin: 0; background: var(--bg); padding: 20px 26px; font-family: var(--font-ui); }
+  .row { display: flex; align-items: flex-end; gap: 16px; }
+  .item { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .sq { width: 60px; height: 60px; background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow-xs); }
+  .lap { background: var(--accent-soft); border-color: var(--accent-border); }
+  .n { font: 500 10px/1.3 var(--font-mono); color: var(--text-tertiary); text-align: center; }
+</style></head>
+<body>
+  <div class="row">
+    <div class="item"><div class="sq" style="border-radius:6px"></div><span class="n">xs · 6</span></div>
+    <div class="item"><div class="sq" style="border-radius:10px"></div><span class="n">sm · 10</span></div>
+    <div class="item"><div class="sq" style="border-radius:14px"></div><span class="n">md · 14<br/>field</span></div>
+    <div class="item"><div class="sq" style="border-radius:18px"></div><span class="n">lg · 18</span></div>
+    <div class="item"><div class="sq lap" style="border-radius:22px"></div><span class="n">xl · 22<br/>card</span></div>
+    <div class="item"><div class="sq" style="border-radius:28px"></div><span class="n">2xl · 28<br/>sheet</span></div>
+    <div class="item"><div class="sq" style="border-radius:36px"></div><span class="n">3xl · 36</span></div>
+    <div class="item"><div class="sq lap" style="border-radius:999px"></div><span class="n">capsule<br/>button</span></div>
+  </div>
+</body></html>

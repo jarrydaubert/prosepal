@@ -1,0 +1,105 @@
+/* ============================================================
+   ProsePal — Product components
+   Onboarding, trust/privacy, empty states, usage/subscription
+   and the paywall preview. Calm and reassuring — never pushy.
+   ============================================================ */
+
+/* ============================ OnboardingCard =========== */
+.pp-onboard {
+  display: flex; flex-direction: column; align-items: center; text-align: center;
+  gap: 6px; padding: var(--space-7) var(--space-6);
+}
+.pp-onboard__medallion {
+  width: 76px; height: 76px; border-radius: 24px; margin-bottom: 14px;
+  display: grid; place-items: center; font-size: 36px;
+  background: var(--accent-soft); color: var(--accent-text);
+  box-shadow: inset 0 0 0 1px var(--accent-border);
+}
+.pp-onboard__eyebrow {
+  font-family: var(--font-ui); font-size: var(--text-footnote); font-weight: var(--weight-semibold);
+  letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent-text);
+}
+.pp-onboard__title {
+  font-family: var(--font-reading); font-size: var(--display-sm); line-height: 1.1;
+  letter-spacing: -0.01em; font-weight: var(--weight-medium); color: var(--text);
+  text-wrap: balance; margin: 2px 0 4px;
+}
+.pp-onboard__body {
+  font-family: var(--font-ui); font-size: var(--text-body); line-height: var(--leading-relaxed);
+  color: var(--text-secondary); max-width: 30ch; text-wrap: pretty;
+}
+.pp-onboard__actions { display: flex; flex-direction: column; gap: 10px; width: 100%; margin-top: 20px; }
+
+/* ============================ TrustNote ================ */
+.pp-trust {
+  display: flex; gap: 14px; padding: var(--space-5);
+  background: var(--voice-soft); border-radius: var(--radius-card);
+  border: 0.5px solid color-mix(in oklab, var(--voice) 24%, transparent);
+}
+.pp-trust__icon {
+  flex: none; width: 40px; height: 40px; border-radius: 13px; display: grid; place-items: center;
+  background: var(--surface); color: var(--voice); font-size: 21px;
+  box-shadow: var(--shadow-xs);
+}
+.pp-trust__title { font-family: var(--font-ui); font-size: var(--text-callout); font-weight: var(--weight-semibold); color: var(--text); letter-spacing: -0.01em; }
+.pp-trust__body { font-family: var(--font-ui); font-size: var(--text-footnote); line-height: var(--leading-relaxed); color: var(--text-secondary); margin-top: 3px; }
+.pp-trust__list { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-direction: column; gap: 7px; }
+.pp-trust__list li { display: flex; align-items: center; gap: 9px; font-family: var(--font-ui); font-size: var(--text-subhead); color: var(--text-secondary); }
+.pp-trust__list i { color: var(--voice); font-size: 17px; flex: none; }
+.pp-trust--inline { align-items: center; padding: 11px 14px; }
+.pp-trust--inline .pp-trust__icon { width: 30px; height: 30px; font-size: 16px; border-radius: 10px; }
+
+/* ============================ EmptyState =============== */
+.pp-empty {
+  display: flex; flex-direction: column; align-items: center; text-align: center;
+  gap: 8px; padding: var(--space-8) var(--space-6);
+}
+.pp-empty__icon { font-size: 46px; color: var(--text-quaternary); margin-bottom: 6px; line-height: 0; }
+.pp-empty__title { font-family: var(--font-reading); font-size: var(--text-title3); font-weight: var(--weight-medium); color: var(--text); letter-spacing: -0.01em; }
+.pp-empty__body { font-family: var(--font-ui); font-size: var(--text-subhead); line-height: var(--leading-relaxed); color: var(--text-tertiary); max-width: 28ch; text-wrap: pretty; }
+.pp-empty__action { margin-top: 14px; }
+
+/* ============================ UsageCard =============== */
+.pp-usage { display: flex; flex-direction: column; gap: 13px; padding: var(--space-5); }
+.pp-usage__head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.pp-usage__plan { display: flex; align-items: center; gap: 8px; }
+.pp-usage__planname { font-family: var(--font-ui); font-size: var(--text-callout); font-weight: var(--weight-semibold); color: var(--text); }
+.pp-usage__period { font-family: var(--font-ui); font-size: var(--text-footnote); color: var(--text-tertiary); }
+.pp-usage__count { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.pp-usage__countnum { font-family: var(--font-ui); font-size: var(--text-subhead); color: var(--text-secondary); }
+.pp-usage__countnum b { color: var(--text); font-weight: var(--weight-semibold); }
+.pp-usage__reset { font-family: var(--font-mono); font-size: var(--text-caption); color: var(--text-tertiary); }
+
+/* ============================ Paywall ================= */
+.pp-paywall { display: flex; flex-direction: column; gap: 18px; padding: var(--space-6) var(--space-5); }
+.pp-paywall__hero { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 7px; }
+.pp-paywall__crest {
+  width: 60px; height: 60px; border-radius: 20px; display: grid; place-items: center; font-size: 29px; margin-bottom: 4px;
+  background: linear-gradient(160deg, var(--accent), var(--accent-press)); color: var(--text-on-accent);
+  box-shadow: var(--shadow-accent);
+}
+.pp-paywall__title { font-family: var(--font-reading); font-size: var(--text-largetitle); font-weight: var(--weight-medium); letter-spacing: -0.01em; color: var(--text); text-wrap: balance; }
+.pp-paywall__sub { font-family: var(--font-ui); font-size: var(--text-callout); color: var(--text-secondary); line-height: var(--leading-relaxed); max-width: 30ch; }
+.pp-paywall__features { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 13px; }
+.pp-paywall__features li { display: flex; gap: 12px; align-items: flex-start; }
+.pp-paywall__features .ic { flex: none; width: 26px; height: 26px; border-radius: 9px; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent-text); font-size: 16px; margin-top: 1px; }
+.pp-paywall__features .ft-t { font-family: var(--font-ui); font-size: var(--text-callout); font-weight: var(--weight-medium); color: var(--text); }
+.pp-paywall__features .ft-s { font-family: var(--font-ui); font-size: var(--text-footnote); color: var(--text-tertiary); line-height: var(--leading-snug); margin-top: 1px; }
+.pp-plans { display: flex; flex-direction: column; gap: 10px; }
+.pp-plan {
+  display: flex; align-items: center; gap: 12px; padding: 14px 16px; cursor: pointer;
+  background: var(--surface); border-radius: var(--radius-lg); border: 1.5px solid var(--border);
+  transition: var(--t-color); -webkit-tap-highlight-color: transparent; text-align: left; width: 100%;
+}
+.pp-plan[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+.pp-plan__radio { flex: none; width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--border-strong); display: grid; place-items: center; }
+.pp-plan[aria-pressed="true"] .pp-plan__radio { border-color: var(--accent); }
+.pp-plan[aria-pressed="true"] .pp-plan__radio::after { content: ""; width: 11px; height: 11px; border-radius: 50%; background: var(--accent); }
+.pp-plan__body { flex: 1; }
+.pp-plan__name { font-family: var(--font-ui); font-size: var(--text-callout); font-weight: var(--weight-semibold); color: var(--text); }
+.pp-plan__meta { font-family: var(--font-ui); font-size: var(--text-footnote); color: var(--text-tertiary); margin-top: 1px; }
+.pp-plan__price { text-align: right; font-family: var(--font-ui); }
+.pp-plan__price b { font-size: var(--text-callout); font-weight: var(--weight-semibold); color: var(--text); }
+.pp-plan__price span { display: block; font-size: var(--text-caption); color: var(--text-tertiary); }
+.pp-paywall__fine { font-family: var(--font-ui); font-size: var(--text-caption); color: var(--text-quaternary); text-align: center; line-height: var(--leading-relaxed); }
+.pp-paywall__fine a { color: var(--text-tertiary); text-decoration: none; }

@@ -1,0 +1,39 @@
+<!-- @dsCard group="Colors" viewport="700x150" name="Semantic roles" subtitle="How colour maps to meaning — solid + soft pairs" -->
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8" />
+<link rel="stylesheet" href="../styles.css" />
+<style>
+  body { margin: 0; background: var(--bg); padding: 18px 20px; }
+  .grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+  .item { display: flex; flex-direction: column; gap: 7px; }
+  .pair { display: flex; gap: 6px; }
+  .solid { flex: 1; height: 44px; border-radius: 10px; display: grid; place-items: center; }
+  .soft { width: 44px; height: 44px; border-radius: 10px; }
+  .nm { font: 600 12px/1 var(--font-ui); color: var(--text); }
+  .role { font: 400 11px/1.2 var(--font-ui); color: var(--text-tertiary); }
+  .gly { font-size: 18px; }
+</style></head>
+<body>
+  <div class="grid">
+    <div class="item">
+      <div class="pair"><div class="solid" style="background:var(--accent);color:var(--text-on-accent)"></div><div class="soft" style="background:var(--accent-soft)"></div></div>
+      <div><div class="nm">Accent</div><div class="role">actions · clay</div></div>
+    </div>
+    <div class="item">
+      <div class="pair"><div class="solid" style="background:var(--voice);color:#fff"></div><div class="soft" style="background:var(--voice-soft)"></div></div>
+      <div><div class="nm">Voice</div><div class="role">"kept" · sage</div></div>
+    </div>
+    <div class="item">
+      <div class="pair"><div class="solid" style="background:var(--info);color:#fff"></div><div class="soft" style="background:var(--info-soft)"></div></div>
+      <div><div class="nm">Info</div><div class="role">links · ink-blue</div></div>
+    </div>
+    <div class="item">
+      <div class="pair"><div class="solid" style="background:var(--warning);color:#fff"></div><div class="soft" style="background:var(--warning-soft)"></div></div>
+      <div><div class="nm">Warning</div><div class="role">low quota</div></div>
+    </div>
+    <div class="item">
+      <div class="pair"><div class="solid" style="background:var(--danger);color:#fff"></div><div class="soft" style="background:var(--danger-soft)"></div></div>
+      <div><div class="nm">Danger</div><div class="role">discard</div></div>
+    </div>
+  </div>
+</body></html>

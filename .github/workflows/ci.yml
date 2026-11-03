@@ -1,0 +1,154 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '43 3 * * 1'
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  changes:
+    uses: ./.github/workflows/change-scope.yml
+    permissions:
+      contents: read
+
+  repository:
+    name: Repository checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+
+      - name: Commit attribution guard
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            RANGE="${{ github.event.pull_request.base.sha }}..${{ github.sha }}"
+          elif [[ "${{ github.event_name }}" == "push" ]]; then
+            BASE_SHA="${{ github.event.before }}"
+            if [[ -z "$BASE_SHA" || "$BASE_SHA" == "0000000000000000000000000000000000000000" ]]; then
+              BASE_SHA="$(git rev-list --max-parents=0 "${{ github.sha }}" | tail -n1)"
+            fi
+            RANGE="$BASE_SHA..${{ github.sha }}"
+          else
+            RANGE="${{ github.sha }}^..${{ github.sha }}"
+          fi
+
+          git diff --check "$RANGE"
+          ./scripts/check_commit_attribution.sh --range "$RANGE"
+
+      - name: Secret history guard
+        shell: bash
+        run: bash ./scripts/security_history_guard.sh
+
+      - name: Native release preflight
+        shell: bash
+        run: ./scripts/release_preflight.sh native --no-env-file
+
+  native_ios:
+    name: Swift and simulator
+    needs: changes
+    if: ${{ !cancelled() && (needs.changes.result != 'success' || needs.changes.outputs.native != 'false') }}
+    runs-on: macos-26
+    timeout-minutes: 25
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      - name: Swift version
+        run: swift --version
+
+      - name: Swift package build
+        working-directory: prosepal-ios
+        run: swift build
+
+      - name: Swift package tests
+        working-directory: prosepal-ios
+        run: swift test --quiet
+
+      - name: Native simulator build
+        working-directory: prosepal-ios
+        run: xcodebuild -project ProsePal.xcodeproj -target ProsePal -sdk iphonesimulator CODE_SIGNING_ALLOWED=NO build
+
+  quality_gate:
+    # Preserve the required check name and make repository failures blocking,
+    # including when the product job is deliberately skipped.
+    name: Native iOS Quality Gate
+    needs: [changes, repository, native_ios]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Require repository and selected native checks
+        env:
+          SCOPE_RESULT: ${{ needs.changes.result }}
+          REPOSITORY_RESULT: ${{ needs.repository.result }}
+          NATIVE_SELECTED: ${{ needs.changes.outputs.native }}
+          NATIVE_RESULT: ${{ needs.native_ios.result }}
+        run: |
+          test "$SCOPE_RESULT" = success
+          test "$REPOSITORY_RESULT" = success
+          if [[ "$NATIVE_SELECTED" == true ]]; then
+            test "$NATIVE_RESULT" = success
+          else
+            test "$NATIVE_SELECTED" = false
+            test "$NATIVE_RESULT" = skipped
+          fi
+
+  supabase_functions:
+    name: Supabase Function Type Check
+    needs: changes
+    if: ${{ !cancelled() && (needs.changes.result != 'success' || needs.changes.outputs.supabase != 'false') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      - name: Install Deno
+        shell: bash
+        run: |
+          curl -fsSL https://deno.land/install.sh | sh -s -- -q
+          echo "$HOME/.deno/bin" >> "$GITHUB_PATH"
+
+      - name: Validate Supabase edge-function TypeScript
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t TS_FILES < <(find supabase/functions -name '*.ts' | sort)
+          if [[ "${#TS_FILES[@]}" -eq 0 ]]; then
+            echo "No Supabase TypeScript files found."
+            exit 0
+          fi
+          deno check "${TS_FILES[@]}"
+
+      - name: Test Supabase edge functions
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t TEST_FILES < <(find supabase/functions -name '*.test.ts' | sort)
+          if [[ "${#TEST_FILES[@]}" -eq 0 ]]; then
+            echo "No Supabase edge-function tests found."
+            exit 0
+          fi
+          deno test --allow-env "${TEST_FILES[@]}"

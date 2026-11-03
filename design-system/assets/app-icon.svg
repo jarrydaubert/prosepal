@@ -1,0 +1,14 @@
+<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ProsePal app icon">
+  <defs>
+    <linearGradient id="clay" x1="20" y1="8" x2="100" y2="112" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#C0795E"></stop>
+      <stop offset="1" stop-color="#9A5238"></stop>
+    </linearGradient>
+  </defs>
+  <rect x="4" y="4" width="112" height="112" rx="28" fill="url(#clay)"></rect>
+  <rect x="4.5" y="4.5" width="111" height="111" rx="27.5" fill="none" stroke="#000" stroke-opacity="0.10"></rect>
+
+  <text x="60" y="60" dy="0.355em" text-anchor="middle" font-family="Newsreader, Georgia, &#39;Times New Roman&#39;, serif" font-size="82" font-weight="500" fill="#FAF3EA">P</text>
+
+  <circle cx="86" cy="40" r="5" fill="#FAF3EA" fill-opacity="0.85"></circle>
+</svg>

@@ -1,0 +1,99 @@
+<!-- @dsCard group="Directions" viewport="2260x1180" name="D · Calm private writing studio" subtitle="Dark-first · distraction-free · the page is the whole screen" -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&display=swap" />
+<link rel="stylesheet" href="../../styles.css" />
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css" />
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css" />
+<link rel="stylesheet" href="../_shared/kit.css" />
+<style>
+  /* Direction D theme — calm private writing studio.
+     Dark-first. Warm charcoal, near-monochrome, one clay accent used
+     sparingly. Chrome is minimal; the writing fills the screen. */
+  .dir-studio.kit-page { background: oklch(0.20 0.008 65); }
+  .dir-studio .kit-step { color: oklch(0.62 0.01 70); }
+  .dir-studio .kit-label { color: oklch(0.82 0.008 76); }
+  .dir-studio .kit-dir { color: oklch(0.70 0.06 42); }
+  .dir-studio .kit-title { color: oklch(0.92 0.008 78); }
+  .dir-studio .kit-note { color: oklch(0.66 0.008 72); }
+
+  .d-screen { display: flex; flex-direction: column; height: 100%; background: var(--bg); }
+  .d-dot { width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(150deg, var(--accent), var(--accent-press)); box-shadow: var(--shadow-accent); }
+
+  /* Minimal top bar */
+  .d-bar { flex: none; height: 50px; display: flex; align-items: center; justify-content: space-between; padding: 0 14px; }
+  .d-bar__title { font: 500 15px var(--font-ui); color: var(--text-tertiary); }
+
+  /* Full-screen writing */
+  .d-write {
+    font-family: var(--font-reading); font-size: 22px; line-height: 1.62; letter-spacing: 0; color: var(--text);
+    font-feature-settings: "liga","onum";
+  }
+  .d-caret { display: inline-block; width: 2px; height: 1.1em; background: var(--accent); margin-left: 2px; vertical-align: -2px; animation: dblink 1.1s steps(1) infinite; }
+  @keyframes dblink { 50% { opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { .d-caret { animation: none; } }
+  .d-mark { background: var(--accent-soft); color: var(--accent-text); border-radius: 5px; padding: 0 3px; }
+
+  /* Floating bottom dock */
+  .d-dock {
+    flex: none; display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    margin: 0 16px 8px; padding: 10px 12px 10px 16px; border-radius: 20px;
+    background: var(--surface-2); border: 0.5px solid var(--border);
+    box-shadow: var(--shadow-lg);
+  }
+  .d-dock__meta { display: flex; align-items: center; gap: 8px; color: var(--text-tertiary); font-size: 18px; }
+  .d-ghost { display: inline-flex; align-items: center; gap: 6px; background: transparent; border: none; color: var(--text-secondary); font: 500 15px var(--font-ui); cursor: pointer; }
+
+  .d-tabs { display: flex; gap: 4px; }
+  .d-tab { font: 500 14px var(--font-ui); color: var(--text-tertiary); padding: 5px 14px; border-radius: 999px; }
+  .d-tab--on { background: var(--fill-strong); color: var(--text); }
+
+  .d-draft { background: var(--surface); border-radius: 18px; padding: 18px 20px; border: 0.5px solid var(--separator); box-shadow: var(--shadow-md); }
+  .d-draft__body { font-family: var(--font-reading); font-size: 20px; line-height: 1.62; color: var(--text); }
+  .d-draft__body p { margin: 0 0 0.7em; }
+  .d-draft__body p:last-child { margin-bottom: 0; }
+  .d-draft__voice { display: inline-flex; align-items: center; gap: 6px; margin-top: 14px; font: 400 13px var(--font-ui); color: var(--voice); }
+  .d-draft__voice i { font-size: 15px; }
+
+  .d-refine, .d-dock { -webkit-overflow-scrolling: touch; }
+  .d-refine { display: flex; gap: 8px; }
+  .d-rchip, .d-ghost { white-space: nowrap; }
+  .d-rchip { display: inline-flex; align-items: center; gap: 7px; height: 36px; padding: 0 14px; border-radius: 999px; background: var(--fill-strong); border: none; color: var(--text-secondary); font: 500 15px var(--font-ui); cursor: pointer; }
+  .d-rchip i { font-size: 16px; }
+
+  .d-suggest { background: var(--surface); border-radius: 16px; padding: 14px 16px; border: 0.5px solid var(--separator); }
+  .d-suggest__h { display: flex; align-items: center; gap: 8px; font: 500 13px var(--font-ui); color: var(--text-tertiary); margin-bottom: 11px; }
+  .d-suggest__row { display: flex; gap: 8px; }
+  .d-pill { font: 500 16px var(--font-reading); padding: 5px 13px; border-radius: 999px; background: var(--fill); color: var(--text-secondary); border: 0.5px solid var(--border); }
+  .d-pill--on { background: var(--accent-soft); color: var(--accent-text); border-color: var(--accent-border); }
+
+  .d-feat { display: flex; align-items: center; gap: 13px; font: 400 16px var(--font-ui); color: var(--text); }
+  .d-feat i { font-size: 20px; color: var(--accent-text); width: 26px; }
+
+  .d-plan { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 16px; background: var(--surface); border: 1.5px solid var(--border); color: var(--text); font: 400 15px var(--font-ui); cursor: pointer; }
+  .d-plan b { font-weight: 600; }
+  .d-plan--on { border-color: var(--accent); background: var(--accent-soft); }
+  .d-plan .pp-plan__radio { flex: none; width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--border-strong); display: grid; place-items: center; }
+  .d-plan--on .pp-plan__radio { border-color: var(--accent); }
+  .d-plan--on .pp-plan__radio::after { content: ""; width: 11px; height: 11px; border-radius: 50%; background: var(--accent); }
+</style>
+</head>
+<body class="kit-page dir-studio">
+<div class="kit-header">
+  <span class="kit-dir">Direction D</span>
+  <span class="kit-title">Calm private writing studio</span>
+  <span class="kit-note">A focus mode for words that matter. Dark, warm charcoal, near-monochrome with one clay accent. The chrome recedes to a minimal bar and a floating dock; the page is the experience. Private by design.</span>
+</div>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel" data-presets="react" src="../_shared/frame.jsx"></script>
+<script type="text/babel" data-presets="react" src="screens.jsx"></script>
+</body>
+</html>

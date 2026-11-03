@@ -1,0 +1,54 @@
+/* ============================================================
+   ProsePal — Base
+   ------------------------------------------------------------
+   Minimal, opt-in resets. Sets the reading rhythm and the
+   default UI face. Kept light so consumers can layer freely.
+   ============================================================ */
+
+* { box-sizing: border-box; }
+
+:root {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-synthesis: none;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: var(--text-body);
+  line-height: var(--leading-normal);
+  letter-spacing: var(--tracking-normal);
+  color: var(--text);
+  background: var(--bg);
+  font-feature-settings: "ss01", "cv01", "cv05";
+}
+
+/* Reading surfaces (prose, drafts) opt in to the serif voice */
+.ds-reading {
+  font-family: var(--font-reading);
+  font-size: var(--read-md);
+  line-height: var(--leading-reading);
+  letter-spacing: 0;
+  font-feature-settings: "liga", "onum";
+}
+
+/* Mono metadata helper */
+.ds-mono {
+  font-family: var(--font-mono);
+  font-feature-settings: "tnum", "ss01";
+  letter-spacing: 0;
+}
+
+/* Small-caps eyebrow helper */
+.ds-eyebrow {
+  font-family: var(--font-ui);
+  font-size: var(--text-caption);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+::selection { background: var(--accent-soft-2); color: var(--accent-text); }

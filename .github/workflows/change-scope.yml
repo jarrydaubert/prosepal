@@ -1,0 +1,31 @@
+name: Change scope
+
+on:
+  workflow_call:
+    outputs:
+      native:
+        value: ${{ jobs.changes.outputs.native }}
+      supabase:
+        value: ${{ jobs.changes.outputs.supabase }}
+      codeql:
+        value: ${{ jobs.changes.outputs.codeql }}
+
+permissions:
+  contents: read
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      native: ${{ steps.scope.outputs.native }}
+      supabase: ${{ steps.scope.outputs.supabase }}
+      codeql: ${{ steps.scope.outputs.codeql }}
+    steps:
+      - name: Checkout comparison history
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+      - name: Classify changed paths
+        id: scope
+        run: python3 scripts/ci_scope.py

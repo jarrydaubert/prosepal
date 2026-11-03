@@ -1,0 +1,67 @@
+/* ============================================================
+   ProsePal — Typography
+   ------------------------------------------------------------
+   UI voice   : Geist  (SF Pro Text/Display substitute)
+   Reading    : Newsreader (New York substitute) — the user's
+                prose and ProsePal's drafts are set here so
+                writing always feels like writing, not chat.
+   Metadata   : Geist Mono (SF Mono substitute) — counts,
+                model labels, keyboard hints.
+   Base body size is 17px to match the iOS reading rhythm.
+   ============================================================ */
+
+:root {
+  /* ---- Families --------------------------------------- */
+  --font-ui:      "Geist", -apple-system, "SF Pro Text", system-ui, "Segoe UI", sans-serif;
+  --font-display: "Geist", -apple-system, "SF Pro Display", system-ui, sans-serif;
+  --font-reading: "Newsreader", "New York", ui-serif, Georgia, "Times New Roman", serif;
+  --font-mono:    "Geist Mono", ui-monospace, "SF Mono", "JetBrains Mono", monospace;
+
+  /** Writing surface face — the user's words & drafts. Override per
+      direction (e.g. --canvas-font: var(--font-ui)) for a native feel. */
+  --canvas-font:  var(--font-reading); /* @kind font */
+
+  /* ---- Weights ---------------------------------------- */
+  --weight-light:    300;
+  --weight-regular:  400;
+  --weight-medium:   500;
+  --weight-semibold: 600;
+  --weight-bold:     700;
+
+  /* ---- Type scale · iOS-native ramp ------------------- */
+  --text-caption2:   11px;
+  --text-caption:    12px;
+  --text-footnote:   13px;
+  --text-subhead:    15px;
+  --text-callout:    16px;
+  --text-body:       17px;   /* base */
+  --text-title3:     20px;
+  --text-title2:     22px;
+  --text-title1:     28px;
+  --text-largetitle: 34px;
+
+  /* ---- Editorial display (Newsreader) ----------------- */
+  --display-sm:   40px;
+  --display-md:   52px;
+  --display-lg:   68px;
+  --display-xl:   88px;
+
+  /* ---- Reading sizes (prose / drafts) ----------------- */
+  --read-sm:   17px;
+  --read-md:   19px;
+  --read-lg:   21px;
+
+  /* ---- Line height ------------------------------------ */
+  --leading-tight:    1.08;
+  --leading-snug:     1.22;
+  --leading-normal:   1.40;
+  --leading-relaxed:  1.55;
+  --leading-reading:  1.66;
+
+  /* ---- Tracking --------------------------------------- */
+  --tracking-tighter: -0.022em;
+  --tracking-tight:   -0.013em;
+  --tracking-normal:  -0.006em;
+  --tracking-wide:     0.01em;
+  --tracking-caps:     0.06em;   /* small-caps eyebrows */
+}

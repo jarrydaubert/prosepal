@@ -1,0 +1,105 @@
+<!-- @dsCard group="Directions" viewport="2260x1180" name="C · Premium glassy iOS 26" subtitle="Translucent glass panels over a soft warm wash" -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&display=swap" />
+<link rel="stylesheet" href="../../styles.css" />
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css" />
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css" />
+<link rel="stylesheet" href="../_shared/kit.css" />
+<style>
+  /* Direction C theme — premium glassy iOS 26.
+     Glass panels (blur + translucent fill + light stroke) float over a
+     soft, warm, multi-stop wash. Vibrant but calm — never neon. */
+  .dir-glass {
+    --radius-card: 24px;
+    /* the wash sits behind all glass — warm clay/peach/cream, low chroma */
+    --g-wash:
+      radial-gradient(120% 80% at 12% 4%, oklch(0.90 0.075 52) 0%, transparent 52%),
+      radial-gradient(120% 90% at 92% 14%, oklch(0.88 0.060 26) 0%, transparent 50%),
+      radial-gradient(140% 100% at 70% 100%, oklch(0.90 0.055 150) 0%, transparent 55%),
+      linear-gradient(160deg, oklch(0.96 0.020 70), oklch(0.93 0.028 60));
+  }
+  .dir-glass.kit-page { background: oklch(0.88 0.03 60); }
+
+  .g-orb {
+    width: 78px; height: 78px; border-radius: 26px; display: grid; place-items: center; font-size: 36px;
+    color: var(--text-on-accent);
+    background: linear-gradient(155deg, oklch(0.70 0.12 45), oklch(0.55 0.12 38));
+    box-shadow: 0 10px 30px oklch(0.55 0.12 38 / 0.40), inset 0 1px 0 oklch(1 0 0 / 0.4);
+  }
+  /* Core glass panel */
+  .g-panel {
+    background: var(--glass-fill); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
+    border-radius: var(--radius-card); border: 1px solid var(--glass-stroke);
+    box-shadow: var(--glass-shadow);
+  }
+  .g-canvas { padding: 18px 20px; --canvas-font: var(--font-reading); }
+  .g-canvas .pp-canvas__field { font-family: var(--font-reading); }
+  .g-draft { overflow: hidden; }
+  /* Glass chrome */
+  .g-nav {
+    padding: 4px 18px 8px; display: flex; flex-direction: column; gap: 2px;
+    background: var(--glass-fill-2); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
+    border-bottom: 1px solid var(--glass-stroke-soft);
+  }
+  .g-tabwrap { position: relative; padding: 8px 36px 12px; display: flex; justify-content: center; background: transparent; }
+  .g-tab {
+    display: flex; gap: 8px; padding: 5px 10px 4px; border-radius: 999px;
+    background: var(--glass-fill); backdrop-filter: var(--glass-blur-strong); -webkit-backdrop-filter: var(--glass-blur-strong);
+    border: 1px solid var(--glass-stroke); box-shadow: var(--glass-shadow);
+  }
+  .g-tab .pp-tab { padding: 4px 14px; }
+  .g-tab .pp-tab--fab .pp-tab__icon { margin-top: 0; }
+  /* Glass chips */
+  .g-chip {
+    display: inline-flex; align-items: center; gap: 7px; height: 36px; padding: 0 15px; border-radius: 999px;
+    font: 500 15px var(--font-ui); letter-spacing: -0.005em; color: var(--text-secondary); cursor: pointer; white-space: nowrap;
+    background: var(--glass-fill-2); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--glass-stroke-soft);
+  }
+  .g-chip i { font-size: 16px; }
+  .g-chip[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent-text); border-color: var(--accent-border); font-weight: 600; }
+  .g-badge { display: inline-flex; align-items: center; height: 22px; padding: 0 9px; border-radius: 999px; font: 600 12px var(--font-ui); background: var(--accent-soft); color: var(--accent-text); }
+  .g-seg {
+    display: inline-flex; padding: 3px; gap: 2px; border-radius: 14px; width: 100%;
+    background: var(--glass-fill-2); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--glass-stroke-soft);
+  }
+  .g-floatbar {
+    display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 999px;
+    background: var(--glass-fill); backdrop-filter: var(--glass-blur-strong); -webkit-backdrop-filter: var(--glass-blur-strong);
+    border: 1px solid var(--glass-stroke); box-shadow: var(--glass-shadow);
+  }
+  .g-floatbar .pp-refine__scroll { display: flex; gap: 8px; overflow-x: auto; }
+  .g-plan {
+    display: flex; align-items: center; gap: 12px; padding: 14px 16px; cursor: pointer; width: 100%; text-align: left;
+    background: var(--glass-fill-2); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
+    border-radius: 18px; border: 1.5px solid var(--glass-stroke-soft);
+  }
+  .g-plan[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+  .g-plan .pp-plan__radio { flex: none; width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--border-strong); display: grid; place-items: center; }
+  .g-plan[aria-pressed="true"] .pp-plan__radio { border-color: var(--accent); }
+  .g-plan[aria-pressed="true"] .pp-plan__radio::after { content: ""; width: 11px; height: 11px; border-radius: 50%; background: var(--accent); }
+  .g-mini-meter { flex: 1; height: 8px; border-radius: 999px; background: var(--glass-fill); overflow: hidden; border: 0.5px solid var(--glass-stroke-soft); }
+  .g-mini-meter span { display: block; height: 100%; background: var(--accent); border-radius: 999px; }
+</style>
+</head>
+<body class="kit-page dir-glass">
+<div class="kit-header">
+  <span class="kit-dir">Direction C</span>
+  <span class="kit-title">Premium glassy iOS 26</span>
+  <span class="kit-note">Liquid-glass surfaces — translucent panels, real blur, light edge strokes — floating over a soft warm wash. Modern and tactile, kept calm by low chroma and the same clay accent. Best on devices with material blur.</span>
+</div>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel" data-presets="react" src="../_shared/frame.jsx"></script>
+<script type="text/babel" data-presets="react" src="screens.jsx"></script>
+</body>
+</html>

@@ -1,0 +1,26 @@
+/* ============================================================
+   ProsePal — Radius
+   ------------------------------------------------------------
+   Soft, continuous iOS curvature. Buttons are capsules; cards
+   use large radii; the writing surface is gently rounded so it
+   reads as a sheet of paper, not a box.
+   ============================================================ */
+
+:root {
+  --radius-xs:    6px;
+  --radius-sm:    10px;
+  --radius-md:    14px;
+  --radius-lg:    18px;
+  --radius-xl:    22px;   /* cards */
+  --radius-2xl:   28px;   /* sheets / large surfaces */
+  --radius-3xl:   36px;
+  --radius-capsule: 999px;
+
+  /* ---- Semantic --------------------------------------- */
+  --radius-button:  var(--radius-capsule);
+  --radius-chip:    var(--radius-capsule);
+  --radius-field:   16px;
+  --radius-card:    var(--radius-xl);
+  --radius-sheet:   var(--radius-2xl);
+  --radius-canvas:  20px;   /* the writing surface */
+}

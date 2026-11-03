@@ -1,0 +1,124 @@
+/* ============================================================
+   ProsePal — Writing components
+   The writing canvas, generated draft card, tone selector,
+   refine bar and the generation (thinking) state. The user's
+   words are set in the reading serif so writing feels like
+   writing — override --canvas-font per direction for a more
+   "native" sans treatment.
+   ============================================================ */
+
+/* ============================ WritingCanvas ============== */
+.pp-canvas {
+  display: flex; flex-direction: column;
+  background: var(--surface); border-radius: var(--radius-canvas);
+  border: 0.5px solid var(--separator); box-shadow: var(--shadow-sm);
+  padding: var(--space-5);
+}
+.pp-canvas--focus { box-shadow: var(--shadow-md), 0 0 0 3px var(--accent-soft); border-color: var(--accent-border); }
+.pp-canvas__prompt {
+  font-family: var(--font-ui); font-size: var(--text-footnote);
+  font-weight: var(--weight-semibold); letter-spacing: 0.04em; text-transform: uppercase;
+  color: var(--accent-text); margin-bottom: 10px;
+}
+.pp-canvas__field {
+  border: none; outline: none; resize: none; width: 100%; background: transparent;
+  font-family: var(--canvas-font); font-size: var(--read-md); line-height: var(--leading-reading);
+  letter-spacing: 0; color: var(--text); min-height: var(--field-min);
+  font-feature-settings: "liga", "onum";
+}
+.pp-canvas__field::placeholder { color: var(--text-quaternary); }
+.pp-canvas__foot {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  margin-top: 14px; padding-top: 13px; border-top: 0.5px solid var(--separator);
+}
+.pp-canvas__tools { display: flex; align-items: center; gap: 2px; }
+.pp-canvas__count { font-family: var(--font-mono); font-size: var(--text-caption); color: var(--text-tertiary); font-feature-settings: "tnum"; }
+.pp-canvas__send { display: flex; align-items: center; gap: 10px; }
+
+/* ============================ DraftCard ================= */
+.pp-draft {
+  display: flex; flex-direction: column; overflow: hidden;
+  background: var(--surface); border-radius: var(--radius-card);
+  border: 0.5px solid var(--separator); box-shadow: var(--shadow-sm);
+}
+.pp-draft--raised { box-shadow: var(--shadow-md); border-color: transparent; }
+.pp-draft__head {
+  display: flex; align-items: center; gap: 8px;
+  padding: 13px var(--space-5) 0;
+}
+.pp-draft__meta { display: flex; align-items: center; gap: 6px; flex: 1; min-width: 0; flex-wrap: wrap; }
+.pp-draft__label {
+  font-family: var(--font-ui); font-size: var(--text-caption);
+  font-weight: var(--weight-semibold); letter-spacing: 0.05em; text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+.pp-draft__body {
+  padding: 12px var(--space-5) 16px;
+  font-family: var(--canvas-font); font-size: var(--read-md);
+  line-height: var(--leading-reading); letter-spacing: 0; color: var(--text);
+  font-feature-settings: "liga", "onum";
+}
+.pp-draft__body p { margin: 0 0 0.7em; }
+.pp-draft__body p:last-child { margin-bottom: 0; }
+.pp-draft__voice {
+  display: inline-flex; align-items: center; gap: 6px; margin: 0 var(--space-5) 14px;
+  font-family: var(--font-ui); font-size: var(--text-footnote); color: var(--voice);
+}
+.pp-draft__voice i { font-size: 15px; }
+.pp-draft__foot {
+  display: flex; align-items: center; gap: 4px;
+  padding: 8px 10px; border-top: 0.5px solid var(--separator);
+}
+.pp-draft__foot .pp-spacer { flex: 1; }
+.pp-draftbtn {
+  display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 12px;
+  border: none; background: transparent; border-radius: var(--radius-capsule);
+  font-family: var(--font-ui); font-size: var(--text-subhead); font-weight: var(--weight-medium);
+  color: var(--text-secondary); cursor: pointer; transition: var(--t-color);
+  -webkit-tap-highlight-color: transparent;
+}
+.pp-draftbtn:hover { background: var(--fill); color: var(--text); }
+.pp-draftbtn i { font-size: 17px; }
+.pp-draftbtn--accent { color: var(--accent-text); }
+.pp-draft__variants { display: flex; align-items: center; gap: 5px; padding-right: 6px; }
+.pp-draft__variants .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--border-strong); }
+.pp-draft__variants .dot--on { background: var(--accent); width: 18px; border-radius: 3px; }
+
+/* ============================ ToneSelector ============= */
+.pp-tones { display: flex; flex-direction: column; gap: 12px; }
+.pp-tones__head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.pp-tones__title { font-family: var(--font-ui); font-size: var(--text-headline); font-weight: var(--weight-semibold); letter-spacing: -0.01em; color: var(--text); }
+.pp-tones__hint { font-family: var(--font-ui); font-size: var(--text-footnote); color: var(--text-tertiary); }
+.pp-tones__row { display: flex; flex-wrap: wrap; gap: 9px; }
+.pp-tones__scroll { display: flex; gap: 9px; overflow-x: auto; padding-bottom: 2px; }
+.pp-tones__scroll::-webkit-scrollbar { display: none; }
+
+/* ============================ RefineBar ================ */
+.pp-refine {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px; background: var(--surface);
+  border-radius: var(--radius-capsule); border: 0.5px solid var(--separator);
+  box-shadow: var(--shadow-md);
+}
+.pp-refine__lead { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 50%; background: var(--accent-soft); color: var(--accent-text); font-size: 17px; flex: none; }
+.pp-refine__scroll { display: flex; align-items: center; gap: 8px; overflow-x: auto; flex: 1; }
+.pp-refine__scroll::-webkit-scrollbar { display: none; }
+.pp-refine .pp-chip { flex: none; height: 34px; }
+
+/* ============================ GenerationState ========== */
+@keyframes pp-shimmer { 100% { background-position: -200% 0; } }
+@keyframes pp-breathe { 0%,100% { opacity: 0.55; } 50% { opacity: 1; } }
+.pp-gen { display: flex; flex-direction: column; gap: 16px; padding: var(--space-5); }
+.pp-gen__status { display: flex; align-items: center; gap: 10px; font-family: var(--font-ui); font-size: var(--text-subhead); color: var(--text-secondary); }
+.pp-gen__orb {
+  width: 18px; height: 18px; border-radius: 50%; flex: none;
+  background: radial-gradient(circle at 35% 30%, var(--accent), var(--accent-press));
+  box-shadow: var(--shadow-accent); animation: pp-breathe 1.6s var(--ease-in-out) infinite;
+}
+.pp-gen__lines { display: flex; flex-direction: column; gap: 11px; }
+.pp-skel {
+  height: 13px; border-radius: 7px;
+  background: linear-gradient(90deg, var(--fill-2) 0%, var(--fill-1) 20%, var(--fill-3) 40%, var(--fill-2) 60%);
+  background-size: 200% 100%; animation: pp-shimmer 1.4s linear infinite;
+}
+.pp-skel--title { height: 16px; width: 42%; }

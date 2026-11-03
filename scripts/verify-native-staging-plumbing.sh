@@ -1,0 +1,184 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$REPO_ROOT"
+
+python3 - <<'PY'
+from pathlib import Path
+import json
+import re
+import sys
+import xml.etree.ElementTree as ET
+
+repo = Path.cwd()
+project = repo / "prosepal-ios" / "ProsePal.xcodeproj"
+shared_scheme = project / "xcshareddata" / "xcschemes" / "ProsePal.xcscheme"
+shared_staging_scheme = project / "xcshareddata" / "xcschemes" / "ProsePal Staging.xcscheme"
+local_scheme = project / "xcuserdata" / "jarrydaubert.xcuserdatad" / "xcschemes" / "ProsePal Local Staging.xcscheme"
+storekit_file = repo / "prosepal-ios" / "App" / "ProsePalStaging.storekit"
+pbxproj = project / "project.pbxproj"
+
+expected_env_keys = [
+    "PROSEPAL_GATEWAY_URL",
+    "PROSEPAL_DEV_GATEWAY_SECRET",
+    "PROSEPAL_SUPABASE_URL",
+    "PROSEPAL_SUPABASE_ANON_KEY",
+    "PROSEPAL_PREMIUM_PRODUCT_IDS",
+    "PROSEPAL_RECOMMENDED_PREMIUM_PRODUCT_ID",
+]
+expected_products = {
+    "com.prosepal.pro.yearly",
+    "com.prosepal.pro.monthly",
+    "com.prosepal.pro.weekly",
+}
+expected_product_ids_setting = "com.prosepal.pro.yearly,com.prosepal.pro.monthly,com.prosepal.pro.weekly"
+expected_recommended_product_id = "com.prosepal.pro.yearly"
+expected_retired_product_id = "com.prosepal.pro.retired"
+expected_bundle_id = "com.prosepal.prosepal"
+expected_staging_bundle_id = "com.prosepal.prosepal.staging"
+expected_staging_widget_bundle_id = "com.prosepal.prosepal.staging.widgets"
+expected_staging_share_bundle_id = "com.prosepal.prosepal.staging.share"
+expected_staging_target_id = "PP0000000000000000000048"
+expected_storekit_identifier = "../../App/ProsePalStaging.storekit"
+
+def fail(message: str) -> None:
+    print(f"FAIL: {message}", file=sys.stderr)
+    raise SystemExit(1)
+
+def parse_scheme(path: Path) -> ET.Element:
+    if not path.exists():
+        fail(f"missing scheme: {path}")
+    try:
+        return ET.parse(path).getroot()
+    except ET.ParseError as error:
+        fail(f"could not parse scheme XML: {path}: {error}")
+
+def env_vars(root: ET.Element) -> dict[str, str]:
+    return {
+        item.get("key"): item.get("isEnabled", "UNKNOWN")
+        for item in root.findall(".//EnvironmentVariable")
+        if item.get("key")
+    }
+
+shared_root = parse_scheme(shared_scheme)
+shared_prosepal_env = [
+    key for key in env_vars(shared_root)
+    if key.startswith("PROSEPAL_")
+]
+if shared_prosepal_env:
+    fail("shared ProsePal scheme still contains PROSEPAL_* run environment keys")
+print("shared_scheme=clean")
+
+shared_staging_root = parse_scheme(shared_staging_scheme)
+shared_staging_env = [
+    key for key in env_vars(shared_staging_root)
+    if key.startswith("PROSEPAL_")
+]
+if shared_staging_env:
+    fail("shared ProsePal Staging scheme contains PROSEPAL_* run environment keys")
+staging_refs = [
+    item
+    for item in shared_staging_root.findall(".//BuildableReference")
+    if item.get("BlueprintIdentifier") == expected_staging_target_id
+    and item.get("BuildableName") == "ProsePal Staging.app"
+    and item.get("BlueprintName") == "ProsePal Staging"
+]
+if not staging_refs:
+    fail("shared ProsePal Staging scheme does not target the staging app")
+shared_storekit_refs = shared_staging_root.findall(".//StoreKitConfigurationFileReference")
+if len(shared_storekit_refs) != 1 or shared_storekit_refs[0].get("identifier") != expected_storekit_identifier:
+    fail("shared ProsePal Staging scheme has a non-canonical StoreKit configuration reference")
+print("shared_staging_scheme=clean")
+
+local_root = parse_scheme(local_scheme)
+local_env = env_vars(local_root)
+for key in expected_env_keys:
+    if local_env.get(key) != "YES":
+        fail(f"local staging scheme missing enabled key: {key}")
+print(f"local_scheme_env_keys_enabled={len(expected_env_keys)}")
+
+local_staging_refs = [
+    item
+    for item in local_root.findall(".//BuildableReference")
+    if item.get("BlueprintIdentifier") == expected_staging_target_id
+    and item.get("BuildableName") == "ProsePal Staging.app"
+    and item.get("BlueprintName") == "ProsePal Staging"
+]
+if not local_staging_refs:
+    fail("local staging scheme does not target ProsePal Staging; run ./scripts/restore-local-staging-scheme.sh after updating the backup")
+print("local_scheme_target=staging")
+
+local_storekit_refs = local_root.findall(".//StoreKitConfigurationFileReference")
+if len(local_storekit_refs) != 1 or local_storekit_refs[0].get("identifier") != expected_storekit_identifier:
+    fail("local staging scheme has a non-canonical StoreKit configuration reference")
+if not storekit_file.is_file():
+    fail("missing App/ProsePalStaging.storekit")
+print("local_scheme_storekit_reference=ok")
+
+try:
+    storekit = json.loads(storekit_file.read_text())
+except json.JSONDecodeError as error:
+    fail(f"invalid StoreKit JSON: {error}")
+
+subscriptions = []
+for group in storekit.get("subscriptionGroups", []):
+    subscriptions.extend(group.get("subscriptions", []))
+product_ids = {item.get("productID") for item in subscriptions if item.get("productID")}
+missing = expected_products - product_ids
+if missing:
+    fail(f"StoreKit config missing expected product ids: {','.join(sorted(missing))}")
+print(f"storekit_subscription_products={len(product_ids)}")
+
+if pbxproj.exists():
+    project_text = pbxproj.read_text()
+    if f"PRODUCT_BUNDLE_IDENTIFIER = {expected_bundle_id};" not in project_text:
+        fail(f"native project is not using production bundle id: {expected_bundle_id}")
+    print("project_bundle_id=production")
+    if f"PRODUCT_BUNDLE_IDENTIFIER = {expected_staging_bundle_id};" not in project_text:
+        fail(f"native project is missing staging bundle id: {expected_staging_bundle_id}")
+    print("project_staging_bundle_id=staging")
+
+    staging_product_setting = f'PROSEPAL_PREMIUM_PRODUCT_IDS = "{expected_product_ids_setting}";'
+    if project_text.count(staging_product_setting) < 2:
+        fail("staging target does not pass expected premium product ids into app runtime")
+    staging_recommended_setting = (
+        f"PROSEPAL_RECOMMENDED_PREMIUM_PRODUCT_ID = {expected_recommended_product_id};"
+    )
+    if project_text.count(staging_recommended_setting) < 2:
+        fail("staging target does not pass expected recommended premium product id into app runtime")
+    staging_retired_setting = (
+        f"PROSEPAL_RETIRED_PREMIUM_PRODUCT_IDS = {expected_retired_product_id};"
+    )
+    if project_text.count(staging_retired_setting) < 2:
+        fail("staging target does not pass expected retired premium product id into app runtime")
+    if project_text.count('PROSEPAL_PREMIUM_PRODUCT_IDS = "";') < 2:
+        fail("production target should keep premium product ids explicitly blank in local project settings")
+    if project_text.count('PROSEPAL_RETIRED_PREMIUM_PRODUCT_IDS = "";') < 2:
+        fail("production target should keep retired premium product ids explicitly blank in local project settings")
+    print("project_staging_product_ids=configured")
+
+    staging_surface_markers = [
+        "ProsePalWidgetsStaging.appex in Embed App Extensions",
+        "ProsePalShareExtensionStaging.appex in Embed App Extensions",
+        f"PRODUCT_BUNDLE_IDENTIFIER = {expected_staging_widget_bundle_id};",
+        f"PRODUCT_BUNDLE_IDENTIFIER = {expected_staging_share_bundle_id};",
+    ]
+    for marker in staging_surface_markers:
+        if marker not in project_text:
+            fail(f"staging project surface plumbing missing: {marker}")
+    print("project_staging_system_surfaces=configured")
+
+    reference_count = len(re.findall(
+        r"isa = PBXFileReference;[^}\n]+path = ProsePalStaging\.storekit;",
+        project_text
+    ))
+    if reference_count != 1:
+        fail(f"expected one project StoreKit file reference, saw {reference_count}")
+    print("project_storekit_reference=single")
+else:
+    fail("missing project.pbxproj")
+
+print("native_staging_plumbing=ok")
+PY

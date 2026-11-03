@@ -1,0 +1,41 @@
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.build/
+.buildlog/
+DerivedData/
+**/xcuserdata/
+.history
+.svn/
+.swiftpm/
+migrate_working_dir/
+
+# IntelliJ / local IDE state
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# Local environment and generated artifacts
+.env.local
+*.local.sh
+.claude/settings.local.json
+custom_lint.log
+artifacts/
+build/
+coverage/
+
+# Supabase local CLI/link state
+/supabase/.temp/
+/supabase/.branches/
+
+# Native local build/evidence
+prosepal-ios/.build/
+prosepal-ios/.swiftpm/
+prosepal-ios/build/
+prosepal-ios/evidence/
+.gstack/

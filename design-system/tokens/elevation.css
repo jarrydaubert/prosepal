@@ -1,0 +1,63 @@
+/* ============================================================
+   ProsePal — Elevation (shadow + glass)
+   ------------------------------------------------------------
+   Shadows are soft, warm-tinted, low-opacity — premium means
+   barely-there. Two stacked layers (ambient + key) give depth
+   without grey halos. A glass set powers the iOS-26 direction.
+   ============================================================ */
+
+:root {
+  /* Warm shadow tint (clay-tinted ink, not neutral grey) */
+  --shadow-color: 28 25% 18%;   /* hsl channels for alpha mixing */
+
+  --shadow-xs:
+    0 1px 1.5px oklch(0.30 0.02 50 / 0.05);
+  --shadow-sm:
+    0 1px 2px oklch(0.30 0.02 50 / 0.06),
+    0 2px 6px oklch(0.30 0.02 50 / 0.05);
+  --shadow-md:
+    0 2px 4px oklch(0.30 0.02 50 / 0.06),
+    0 8px 20px oklch(0.30 0.02 50 / 0.08);
+  --shadow-lg:
+    0 4px 8px oklch(0.30 0.02 50 / 0.06),
+    0 16px 40px oklch(0.30 0.02 50 / 0.12);
+  --shadow-xl:
+    0 8px 16px oklch(0.30 0.02 50 / 0.08),
+    0 30px 64px oklch(0.30 0.02 50 / 0.16);
+
+  /* Accent glow — for the active/generating state only, subtle */
+  --shadow-accent:
+    0 6px 24px oklch(0.612 0.124 38 / 0.22);
+
+  /* Inset hairline that reads as a crisp top-light edge */
+  --ring-inset: inset 0 0 0 0.5px oklch(1 0 0 / 0.6);
+
+  /* ---- Glass (iOS-26 direction) ----------------------- */
+  --glass-blur:        saturate(180%) blur(28px);   /* @kind other */
+  --glass-blur-strong: saturate(200%) blur(44px);   /* @kind other */
+  --glass-fill:        oklch(0.99 0.005 85 / 0.62);
+  --glass-fill-2:      oklch(0.99 0.005 85 / 0.46);
+  --glass-stroke:      oklch(1 0 0 / 0.55);
+  --glass-stroke-soft: oklch(1 0 0 / 0.30);
+  --glass-shadow:
+    0 1px 0 oklch(1 0 0 / 0.5) inset,
+    0 12px 40px oklch(0.30 0.02 50 / 0.18);
+}
+
+[data-theme="dark"] {
+  --shadow-xs:  0 1px 1.5px oklch(0 0 0 / 0.30);
+  --shadow-sm:  0 1px 2px oklch(0 0 0 / 0.35), 0 2px 6px oklch(0 0 0 / 0.30);
+  --shadow-md:  0 2px 4px oklch(0 0 0 / 0.35), 0 8px 20px oklch(0 0 0 / 0.40);
+  --shadow-lg:  0 4px 8px oklch(0 0 0 / 0.40), 0 16px 40px oklch(0 0 0 / 0.50);
+  --shadow-xl:  0 8px 16px oklch(0 0 0 / 0.45), 0 30px 64px oklch(0 0 0 / 0.60);
+  --shadow-accent: 0 6px 28px oklch(0.695 0.114 40 / 0.34);
+  --ring-inset: inset 0 0 0 0.5px oklch(1 0 0 / 0.08);
+
+  --glass-fill:        oklch(0.30 0.012 70 / 0.52);
+  --glass-fill-2:      oklch(0.30 0.012 70 / 0.36);
+  --glass-stroke:      oklch(1 0 0 / 0.14);
+  --glass-stroke-soft: oklch(1 0 0 / 0.07);
+  --glass-shadow:
+    0 1px 0 oklch(1 0 0 / 0.10) inset,
+    0 12px 40px oklch(0 0 0 / 0.55);
+}

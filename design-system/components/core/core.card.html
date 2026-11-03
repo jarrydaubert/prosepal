@@ -1,0 +1,112 @@
+<!-- @dsCard group="Components" viewport="700x640" name="Core controls" subtitle="Buttons · chips · switches · rows · badges" -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="stylesheet" href="../../styles.css" />
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css" />
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css" />
+<style>
+  body { margin: 0; background: var(--bg); }
+  .wrap { padding: 24px; display: flex; flex-direction: column; gap: 22px; }
+  .sec { display: flex; flex-direction: column; gap: 10px; }
+  .lab { font: 600 11px/1 var(--font-ui); letter-spacing: .06em; text-transform: uppercase; color: var(--text-tertiary); }
+  .rowflex { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+  .col2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+</style>
+</head>
+<body>
+<div id="root" class="wrap"></div>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script>
+<script type="text/babel" data-presets="react">
+const { Button, IconButton, Badge, ToneChip, Switch, SegmentedControl, ListRow, Meter, Avatar, Divider } = window.ProsePalDesignSystem_019e02;
+const { useState } = React;
+const I = (n) => <i className={"ph ph-" + n} />;
+
+function Demo() {
+  const [priv, setPriv] = useState(true);
+  const [view, setView] = useState("draft");
+  const [tone, setTone] = useState("warmer");
+  return (
+    <>
+      <div className="sec">
+        <div className="lab">Button · variant & size</div>
+        <div className="rowflex">
+          <Button variant="primary" icon={I("feather")}>Refine</Button>
+          <Button variant="secondary">Save draft</Button>
+          <Button variant="neutral">Copy</Button>
+          <Button variant="ghost">Not now</Button>
+          <Button variant="outline">Rephrase</Button>
+          <Button variant="danger" size="md">Discard</Button>
+        </div>
+        <div className="rowflex">
+          <Button size="sm">Small</Button>
+          <Button size="md">Medium</Button>
+          <Button size="lg">Large</Button>
+          <Button size="lg" loading>Working</Button>
+          <Button size="lg" disabled>Disabled</Button>
+        </div>
+      </div>
+
+      <div className="sec">
+        <div className="lab">IconButton · Switch</div>
+        <div className="rowflex">
+          <IconButton icon={I("list")} label="Menu" />
+          <IconButton icon={I("bookmark-simple")} label="Save" variant="filled" />
+          <IconButton icon={I("arrow-up")} label="Send" variant="accent" />
+          <IconButton icon={I("sliders-horizontal")} label="Tune" size="sm" variant="filled" />
+          <span style={{ width: 16 }} />
+          <Switch checked={priv} onChange={setPriv} label="Private mode" />
+          <span style={{ font: "400 14px var(--font-ui)", color: "var(--text-secondary)" }}>Private mode</span>
+        </div>
+      </div>
+
+      <div className="sec">
+        <div className="lab">Badge · ToneChip</div>
+        <div className="rowflex">
+          <Badge tone="accent">Pro</Badge>
+          <Badge tone="voice" icon={I("seal-check")}>Your voice kept</Badge>
+          <Badge tone="info" dot>Draft</Badge>
+          <Badge tone="warning" dot>3 refines left</Badge>
+          <Badge tone="outline">Free</Badge>
+        </div>
+        <div className="rowflex">
+          <ToneChip icon={I("heart")} selected={tone==="warmer"} onClick={()=>setTone("warmer")}>Warmer</ToneChip>
+          <ToneChip icon={I("scissors")} selected={tone==="shorter"} onClick={()=>setTone("shorter")}>Shorter</ToneChip>
+          <ToneChip icon={I("sparkle")} selected={tone==="sharper"} onClick={()=>setTone("sharper")}>Sharper</ToneChip>
+          <ToneChip ghost icon={I("plus")}>Custom</ToneChip>
+        </div>
+      </div>
+
+      <div className="col2">
+        <div className="sec">
+          <div className="lab">SegmentedControl · Meter</div>
+          <SegmentedControl value={view} onChange={setView} items={[
+            { value: "draft", label: "Draft" },
+            { value: "original", label: "Original" },
+            { value: "diff", label: "Changes" },
+          ]} />
+          <div style={{ height: 4 }} />
+          <Meter value={7} max={10} tone="warning" />
+          <Meter value={92} tone="voice" thin />
+        </div>
+        <div className="sec">
+          <div className="lab">ListRow group · Avatar</div>
+          <div className="pp-listgroup">
+            <ListRow lead={<Avatar name="Maya Okafor" size="sm" />} title="Maya Okafor" subtitle="Personal · iCloud synced" chevron onClick={()=>{}} />
+            <ListRow lead={I("lock-simple")} title="Private mode" trailing={<Switch checked={priv} onChange={setPriv} label="Private" />} />
+            <ListRow lead={I("paint-brush-broad")} title="Default tone" subtitle="Warm · Concise" trailing="Edit" chevron onClick={()=>{}} />
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+ReactDOM.createRoot(document.getElementById("root")).render(<Demo />);
+</script>
+</body>
+</html>

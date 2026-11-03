@@ -1,0 +1,18 @@
+/* ============================================================
+   ProsePal — Webfonts
+   ------------------------------------------------------------
+   Production (SwiftUI): use the system font — SF Pro Text /
+   SF Pro Display — and New York for the serif/reading voice.
+   These are the native Apple faces ProsePal is designed around.
+
+   Web stand-ins (for this design system to render in the
+   browser) are loaded from Google Fonts:
+     • Geist        → SF Pro Text/Display substitute (UI)
+     • Newsreader   → New York substitute (reading / editorial)
+     • Geist Mono   → SF Mono substitute (metadata / counters)
+
+   Each face falls back to -apple-system, so on a real Apple
+   device the genuine SF/New York render instead. See readme.md.
+   ============================================================ */
+
+@import url("https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,300;1,6..72,400;1,6..72,500;1,6..72,600&display=swap");

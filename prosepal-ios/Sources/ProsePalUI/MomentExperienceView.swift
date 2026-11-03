@@ -1,0 +1,4425 @@
+import Foundation
+import ProsePalAPI
+import ProsePalDomain
+import SwiftData
+import SwiftUI
+#if canImport(UIKit)
+import UIKit
+#elseif canImport(AppKit)
+import AppKit
+#endif
+
+private struct MomentTransientToast: Identifiable, Equatable {
+    let id = UUID()
+    var message: String
+}
+
+private struct MomentCopiedToast: View {
+    let message: String
+
+    var body: some View {
+        Label(message, systemImage: "checkmark.circle.fill")
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(Color.prosePalInk)
+            .padding(.horizontal, 18)
+            .frame(minHeight: 48)
+            .background(.regularMaterial, in: Capsule(style: .continuous))
+            .overlay {
+                Capsule(style: .continuous)
+                    .stroke(Color.prosePalNavy.opacity(0.10), lineWidth: 1)
+            }
+            .shadow(color: Color.prosePalCoralDeep.opacity(0.14), radius: 16, x: 0, y: 8)
+            .accessibilityElement(children: .combine)
+    }
+}
+
+private enum MemoryDeletionRequest {
+    case truthBead(RelationshipTruthBeadRecord)
+    case voiceCard(RelationshipVoiceCardRecord)
+
+    var actionTitle: String {
+        switch self {
+        case .truthBead:
+            "Delete detail"
+        case .voiceCard:
+            "Delete voice card"
+        }
+    }
+
+    var message: String {
+        switch self {
+        case .truthBead:
+            "This removes the saved detail from this device. This cannot be undone."
+        case .voiceCard:
+            "This removes the saved voice card from this device. This cannot be undone."
+        }
+    }
+}
+
+private struct MemoryDeletionConfirmationModifier: ViewModifier {
+    @Binding var request: MemoryDeletionRequest?
+    let onConfirm: (MemoryDeletionRequest) -> Void
+
+    func body(content: Content) -> some View {
+        content.confirmationDialog(
+            "Delete saved memory?",
+            isPresented: Binding(
+                get: { request != nil },
+                set: { isPresented in
+                    if !isPresented {
+                        request = nil
+                    }
+                }
+            ),
+            titleVisibility: .visible,
+            presenting: request
+        ) { request in
+            Button(request.actionTitle, role: .destructive) {
+                onConfirm(request)
+            }
+            Button("Cancel", role: .cancel) {
+                self.request = nil
+            }
+        } message: { request in
+            Text(request.message)
+        }
+    }
+}
+
+struct MomentSheetView: View {
+    @Bindable var model: MomentModel
+    @Bindable var account: MomentAccountModel
+    let onOpenDrafts: () -> Void
+    let onOpenSettings: () -> Void
+    @Environment(\.modelContext) private var modelContext
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Query(sort: \RelationshipTruthBeadRecord.updatedAt, order: .reverse)
+    private var truthBeads: [RelationshipTruthBeadRecord]
+    @Query(sort: \RelationshipVoiceCardRecord.updatedAt, order: .reverse)
+    private var voiceCards: [RelationshipVoiceCardRecord]
+    @FocusState private var focusedField: Field?
+    @State private var saveNotice: String?
+    @State private var isShowingRelationshipPicker = false
+    @State private var isShowingMomentPicker = false
+    @State private var isShowingPaywall = false
+    @State private var newTruthBeadText = ""
+    @State private var newVoiceCardSummary = ""
+    @State private var isAddingTruthBead = false
+    @State private var isAddingVoiceCard = false
+    @State private var editingTruthBead: RelationshipTruthBeadRecord?
+    @State private var editingVoiceCard: RelationshipVoiceCardRecord?
+    @State private var isShowingMemoryExplanation = false
+    @State private var isShowingVoiceCardExplanation = false
+    @State private var isShowingDraftHistory = false
+    @State private var hasCommittedPersonEntry = false
+    @State private var hasEntered = false
+    @State private var transientToast: MomentTransientToast?
+    @State private var isShowingDraftSource = false
+    @State private var isShowingReviseMode = false
+    @State private var selectedDraftRevisionTab: MomentDraftRevisionTab = .draft
+    @State private var pendingMemoryDeletion: MemoryDeletionRequest?
+
+    private let diagnostics = NativeDiagnosticsLogger.shared
+
+    private enum Field: Hashable {
+        case person
+        case truth
+        case draft
+        case memory
+        case voice
+    }
+
+    private enum ScrollAnchor: Hashable {
+        case activePrimary
+    }
+
+    var body: some View {
+        GeometryReader { proxy in
+            VStack(spacing: 0) {
+                topChrome
+                    .padding(.horizontal, topChromeHorizontalPadding)
+                    .padding(.top, 4)
+                    .padding(.bottom, topChromeBottomPadding)
+
+                ScrollViewReader { scrollProxy in
+                    ScrollView {
+                        momentContent(viewportHeight: proxy.size.height)
+                    }
+                    .onChange(of: focusedField) { oldValue, newValue in
+                        handleFocusChange(from: oldValue, to: newValue, scrollProxy: scrollProxy)
+                        handleDraftFocusForRevise(newValue)
+                    }
+                    .onChange(of: model.occasion) { _, _ in
+                        realignActivePrimaryIfNeeded(scrollProxy: scrollProxy, delayNanoseconds: 120_000_000)
+                    }
+                    .onChange(of: model.bundle?.id) { _, newValue in
+                        isShowingDraftSource = false
+                        isShowingReviseMode = false
+                        if newValue != nil {
+                            selectedDraftRevisionTab = .draft
+                        }
+                        realignActivePrimaryIfNeeded(scrollProxy: scrollProxy, delayNanoseconds: 80_000_000)
+                    }
+                    .onChange(of: model.errorMessage) { _, _ in
+                        realignActivePrimaryIfNeeded(scrollProxy: scrollProxy, delayNanoseconds: 80_000_000)
+                    }
+                }
+            }
+        }
+        .background {
+            MomentAtmosphericBackground(isCareful: model.moment.isCarefulMode)
+                .animation(.easeInOut(duration: 0.28), value: model.moment.isCarefulMode)
+        }
+        .safeAreaInset(edge: .bottom) {
+            bottomInsetContent
+        }
+        .toolbar {
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+                Button("Done") {
+                    endFocusedEditing()
+                }
+            }
+        }
+        .sheet(isPresented: $isShowingRelationshipPicker) {
+            MomentRelationshipPickerSheet(selection: $model.relationship)
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $isShowingMomentPicker) {
+            MomentOccasionPickerSheet(selection: $model.occasion)
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $isShowingPaywall) {
+            MomentPaywallSheet(account: account)
+        }
+        .onlineWritingPermissionAlert(model: model)
+        #if os(iOS)
+        .fullScreenCover(isPresented: $isShowingDraftHistory) {
+            draftHistorySheet
+        }
+        #else
+        .sheet(isPresented: $isShowingDraftHistory) {
+            draftHistorySheet
+        }
+        #endif
+        .sheet(item: $editingTruthBead, onDismiss: {
+            model.resetDraftForMomentChange()
+        }) { bead in
+            NavigationStack {
+                RelationshipMemoryDetailView(bead: bead)
+            }
+        }
+        .sheet(item: $editingVoiceCard, onDismiss: {
+            model.resetDraftForMomentChange()
+        }) { voiceCard in
+            NavigationStack {
+                RelationshipVoiceCardDetailView(voiceCard: voiceCard)
+            }
+        }
+        .alert("Why this appears", isPresented: $isShowingMemoryExplanation) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("You saved this detail for \(currentPersonName). ProsePal uses approved memory only when drafting for this person, and does not log the text.")
+        }
+        .alert("Why this appears", isPresented: $isShowingVoiceCardExplanation) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("You saved this voice card for \(currentPersonName). ProsePal uses it as style guidance only, and does not log the text.")
+        }
+        .modifier(
+            MemoryDeletionConfirmationModifier(
+                request: $pendingMemoryDeletion,
+                onConfirm: confirmMemoryDeletion
+            )
+        )
+        .onChange(of: model.personName) { _, newValue in
+            if newValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                hasCommittedPersonEntry = false
+            }
+        }
+        .onChange(of: model.relationship) { _, newValue in
+            diagnostics.selectionChanged(kind: "moment_relationship", value: newValue.rawValue)
+        }
+        .onChange(of: model.occasion) { _, newValue in
+            diagnostics.selectionChanged(kind: "moment", value: newValue.rawValue)
+            model.alignRegisterForMoment()
+        }
+        .onChange(of: model.register) { _, newValue in
+            diagnostics.selectionChanged(kind: "moment_register", value: newValue.rawValue)
+        }
+        .onChange(of: model.tone) { _, newValue in
+            diagnostics.selectionChanged(kind: "moment_tone", value: newValue.rawValue)
+        }
+        .onChange(of: model.length) { _, newValue in
+            diagnostics.selectionChanged(kind: "moment_length", value: newValue.rawValue)
+        }
+        .onAppear {
+            if model.bundle != nil && !currentPersonName.isEmpty {
+                hasCommittedPersonEntry = true
+            }
+        }
+        .task {
+            guard !hasEntered else { return }
+            if reduceMotion {
+                hasEntered = true
+            } else {
+                withAnimation(.spring(response: 0.44, dampingFraction: 0.88)) {
+                    hasEntered = true
+                }
+            }
+        }
+        .onDisappear {
+            model.composerDidDismiss()
+        }
+    }
+
+    private func momentContent(viewportHeight: CGFloat) -> some View {
+        VStack(alignment: .leading, spacing: 18) {
+            if isShowingInitialGenerationState {
+                generatingContent
+            } else if let bundle = model.bundle, isShowingReviseMode {
+                draftReviseContent(bundle)
+            } else if let bundle = model.bundle, !isShowingDraftSource {
+                draftResultContent(bundle)
+            } else if isShowingOfflineDraftState {
+                offlineDraftStateContent
+            } else if isShowingQuotaReachedState {
+                quotaReachedStateContent(viewportHeight: viewportHeight)
+            } else if isShowingGenerationErrorState {
+                generationErrorStateContent(viewportHeight: viewportHeight)
+            } else if !shouldUseActiveMomentLayout {
+                initialPrimaryContent
+            } else {
+                activePrimaryContent
+                    .id(ScrollAnchor.activePrimary)
+                    .frame(
+                        minHeight: shouldHoldSecondaryContentBelowFirstViewport
+                            ? activePrimaryViewportHeight(for: viewportHeight)
+                            : nil,
+                        alignment: .top
+                    )
+
+                if model.safetySignal == .crisisSupport {
+                    crisisSupportSection
+                } else {
+                    memorySection
+                    if model.moment.isCarefulMode {
+                        carefulModeSection
+                    }
+                    if shouldShowDraftResultSection {
+                        draftSection
+                    }
+                }
+            }
+            if let saveNotice {
+                Text(saveNotice)
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .transition(.opacity)
+            }
+
+            Color.clear
+                .frame(height: bottomScrollSpacerHeight)
+                .accessibilityHidden(true)
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, 0)
+        .padding(.bottom, 16)
+        .opacity(hasEntered ? 1 : 0)
+        .offset(y: reduceMotion || hasEntered ? 0 : 12)
+    }
+
+    private var draftHistorySheet: some View {
+        Self.MomentDraftHistorySheet(model: model) { snapshot in
+            diagnostics.messageAction(
+                "restore_draft_history",
+                source: "moment_draft",
+                messageCharacters: snapshot.bundle.messageText.count
+            )
+            model.restoreDraftSnapshot(id: snapshot.id)
+            isShowingDraftHistory = false
+        }
+    }
+
+    private var currentPersonName: String {
+        model.personName.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private var bottomScrollSpacerHeight: CGFloat {
+        if focusedField != nil {
+            return 96
+        }
+        if model.bundle != nil && isShowingReviseMode {
+            return dynamicTypeSize.isAccessibilitySize ? 132 : 96
+        }
+        if model.bundle != nil && !isShowingDraftSource {
+            return dynamicTypeSize.isAccessibilitySize ? 132 : 98
+        }
+        return model.bundle == nil && model.errorMessage == nil ? 132 : 170
+    }
+
+    private var toastBottomPadding: CGFloat {
+        if focusedField != nil {
+            return 24
+        }
+        if model.bundle != nil && !isShowingDraftSource {
+            return dynamicTypeSize.isAccessibilitySize ? 34 : 96
+        }
+        if model.bundle != nil {
+            return dynamicTypeSize.isAccessibilitySize ? 34 : 118
+        }
+        return 92
+    }
+
+    private var shouldHoldSecondaryContentBelowFirstViewport: Bool {
+        focusedField == nil &&
+            (model.bundle == nil || isShowingDraftSource) &&
+            !currentPersonName.isEmpty &&
+            model.safetySignal != .crisisSupport
+    }
+
+    private var shouldUseActiveMomentLayout: Bool {
+        !currentPersonName.isEmpty && hasCommittedPersonEntry
+    }
+
+    private var isShowingInitialGenerationState: Bool {
+        model.isDrafting &&
+            model.bundle == nil &&
+            model.errorMessage == nil &&
+            shouldUseActiveMomentLayout
+    }
+
+    private var isShowingOfflineDraftState: Bool {
+        model.draftUnavailableReason == .offline &&
+            model.errorMessage != nil &&
+            (model.bundle == nil || isShowingDraftSource) &&
+            !model.isDrafting &&
+            shouldUseActiveMomentLayout
+    }
+
+    private var isShowingGenerationErrorState: Bool {
+        guard
+            model.errorMessage != nil,
+            (model.bundle == nil || isShowingDraftSource),
+            !model.isDrafting,
+            shouldUseActiveMomentLayout
+        else {
+            return false
+        }
+
+        switch model.draftUnavailableReason {
+        case .onlineWritingPermissionRequired, .timedOut, .rateLimited, .serviceUnavailable, .unexpectedResponse, .unexpected:
+            return true
+        case .offline, .usageLimitReached, .contentBlocked, .none:
+            return false
+        }
+    }
+
+    private var isShowingQuotaReachedState: Bool {
+        model.draftUnavailableReason == .usageLimitReached &&
+            model.errorMessage != nil &&
+            (model.bundle == nil || isShowingDraftSource) &&
+            !model.isDrafting &&
+            shouldUseActiveMomentLayout
+    }
+
+    private func activePrimaryViewportHeight(for viewportHeight: CGFloat) -> CGFloat {
+        max(viewportHeight + floatingTabRailExclusionHeight, 0)
+    }
+
+    private var floatingTabRailExclusionHeight: CGFloat {
+        dynamicTypeSize.isAccessibilitySize ? 164 : 136
+    }
+
+    private var shouldShowDraftResultSection: Bool {
+        model.bundle != nil || model.errorMessage != nil
+    }
+
+    private var shouldShowFloatingDraftActionRail: Bool {
+        !dynamicTypeSize.isAccessibilitySize && !isShowingDraftSource
+    }
+
+    @ViewBuilder
+    private var bottomInsetContent: some View {
+        ZStack(alignment: .bottom) {
+            bottomInsetRailContent
+            transientToastOverlay
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    @ViewBuilder
+    private var bottomInsetRailContent: some View {
+        if isShowingInitialGenerationState {
+            Color.clear
+                .frame(height: 8)
+                .accessibilityHidden(true)
+        } else if let bundle = model.bundle, isShowingReviseMode, focusedField == nil {
+            draftRevisionKeepButton(bundle: bundle)
+                .padding(.horizontal, 18)
+                .padding(.top, 10)
+                .padding(.bottom, 12)
+        } else if let bundle = model.bundle, !isShowingBlockingDraftState, focusedField == nil, shouldShowFloatingDraftActionRail {
+            draftFloatingControls(bundle: bundle)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+                .momentControlBarSurface()
+        } else {
+            MomentBottomRailClearance(isCareful: model.moment.isCarefulMode)
+                .frame(height: focusedField == nil ? 76 : 56)
+        }
+    }
+
+    private var isShowingBlockingDraftState: Bool {
+        isShowingOfflineDraftState || isShowingGenerationErrorState || isShowingQuotaReachedState
+    }
+
+    @ViewBuilder
+    private var transientToastOverlay: some View {
+        if let transientToast {
+            MomentCopiedToast(message: transientToast.message)
+                .padding(.horizontal, 24)
+                .padding(.bottom, toastBottomPadding)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+                .allowsHitTesting(false)
+                .zIndex(10).accessibilityIdentifier("activeDraft.copy.confirmation")
+        }
+    }
+
+    @ViewBuilder
+    private func draftFloatingControls(bundle: MomentDraftBundle) -> some View {
+        if isShowingDraftSource {
+            actionRail(bundle: bundle)
+        } else {
+            draftRefineRail(bundle: bundle)
+        }
+    }
+
+    private var topChromeHorizontalPadding: CGFloat {
+        if isShowingInitialGenerationState {
+            return 18
+        }
+        return model.bundle != nil && !isShowingDraftSource ? 18 : 20
+    }
+
+    private var topChromeBottomPadding: CGFloat {
+        if isShowingInitialGenerationState {
+            return dynamicTypeSize.isAccessibilitySize ? 12 : 6
+        }
+        if model.bundle != nil && (isShowingReviseMode || !isShowingDraftSource) {
+            return dynamicTypeSize.isAccessibilitySize ? 12 : 5
+        }
+        if isShowingGenerationErrorState {
+            return dynamicTypeSize.isAccessibilitySize ? 12 : 18
+        }
+        return 8
+    }
+
+    @ViewBuilder
+    private var topChrome: some View {
+        if isShowingInitialGenerationState {
+            generatingTopChrome
+        } else if isShowingQuotaReachedState {
+            quotaReachedTopChrome
+        } else if isShowingGenerationErrorState {
+            generationErrorTopChrome
+        } else if model.bundle != nil && isShowingReviseMode {
+            draftReviseTopChrome
+        } else if model.bundle != nil && !isShowingDraftSource {
+            draftResultTopChrome
+        } else {
+            momentTopChrome
+        }
+    }
+
+    private var momentTopChrome: some View {
+        ZStack {
+            Text("Write")
+                .font(.headline.weight(.semibold))
+                .foregroundStyle(Color.prosePalInk)
+                .lineLimit(1)
+
+            HStack(alignment: .center) {
+                Button {
+                    onOpenDrafts()
+                } label: {
+                    Image(systemName: "line.3.horizontal")
+                        .font(.system(size: 18, weight: .medium))
+                        .frame(width: 38, height: 38)
+                        .contentShape(Circle())
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(Color.prosePalCoralDeep)
+                .accessibilityLabel("Open drafts")
+
+                Spacer(minLength: 12)
+
+                Button {
+                    onOpenSettings()
+                } label: {
+                    Text(accountInitials)
+                        .font(.caption.weight(.semibold))
+                        .frame(width: 34, height: 34)
+                        .foregroundStyle(Color.prosePalCoralDeep)
+                        .background(Color.prosePalCoralCard.opacity(0.42), in: Circle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Open settings")
+            }
+        }
+        .frame(height: 42)
+        .frame(maxWidth: .infinity)
+    }
+
+    private var generatingTopChrome: some View {
+        Group {
+            if dynamicTypeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: 6) {
+                    generatingBackButton
+                    detailChromeTitle("Writing…")
+                }
+            } else {
+                ZStack {
+                    Text("Writing…")
+                        .font(.headline.weight(.semibold))
+                        .foregroundStyle(Color.prosePalInk)
+                        .lineLimit(1)
+                        .frame(maxWidth: .infinity, alignment: .center)
+
+                    HStack {
+                        generatingBackButton
+
+                        Spacer(minLength: 8)
+                    }
+                }
+                .frame(height: 48)
+            }
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private var generatingBackButton: some View {
+        Button {
+            model.resetDraftForMomentChange()
+            isShowingDraftSource = true
+            isShowingReviseMode = false
+        } label: {
+            Label("Today", systemImage: "chevron.left")
+                .font(.system(.body, design: .default).weight(.regular))
+                .labelStyle(.titleAndIcon)
+                .lineLimit(1)
+                .minimumScaleFactor(0.88)
+                .frame(minWidth: dynamicTypeSize.isAccessibilitySize ? nil : 76, alignment: .leading)
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(Color.prosePalCoralDeep)
+        .accessibilityLabel("Back to today")
+    }
+
+    private func detailChromeTitle(_ title: String) -> some View {
+        Text(title)
+            .font(dynamicTypeSize.isAccessibilitySize ? .system(.title2, design: .default).weight(.semibold) : .headline.weight(.semibold))
+            .foregroundStyle(Color.prosePalInk)
+            .lineLimit(2)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity, alignment: dynamicTypeSize.isAccessibilitySize ? .leading : .center)
+            .accessibilityAddTraits(.isHeader)
+    }
+
+    private var draftResultTopChrome: some View {
+        Group {
+            if dynamicTypeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack(alignment: .center, spacing: 12) {
+                        draftResultBackButton
+
+                        Spacer(minLength: 12)
+
+                        draftResultSaveButton
+                    }
+
+                    detailChromeTitle("A draft")
+                }
+            } else {
+                HStack(alignment: .center) {
+                    draftResultBackButton
+
+                    Spacer(minLength: 8)
+
+                    Text("A draft")
+                        .font(.headline.weight(.semibold))
+                        .foregroundStyle(Color.prosePalInk)
+                        .lineLimit(1)
+
+                    Spacer(minLength: 8)
+
+                    draftResultSaveButton
+                }
+                .frame(height: 48)
+            }
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private var draftResultBackButton: some View {
+        Button {
+            isShowingReviseMode = false
+            isShowingDraftSource = true
+        } label: {
+            Label("Today", systemImage: "chevron.left")
+                .font(.system(.body, design: .default).weight(.regular))
+                .labelStyle(.titleAndIcon)
+                .lineLimit(1)
+                .minimumScaleFactor(0.88)
+                .frame(minWidth: dynamicTypeSize.isAccessibilitySize ? nil : 76, alignment: .leading)
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(Color.prosePalCoralDeep)
+        .accessibilityLabel("Back to today")
+    }
+
+    private var draftResultSaveButton: some View {
+        Button {
+            if let bundle = model.bundle {
+                save(bundle)
+            }
+        } label: {
+            Image(systemName: "bookmark")
+                .font(.system(size: 19, weight: .regular))
+                .frame(width: 44, height: 44)
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(Color.prosePalCoralDeep)
+        .accessibilityLabel("Keep this draft")
+    }
+
+    private var generationErrorTopChrome: some View {
+        Group {
+            if dynamicTypeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: 6) {
+                    generationErrorBackButton
+                    detailChromeTitle("A draft")
+                }
+            } else {
+                ZStack {
+                    Text("A draft")
+                        .font(.headline.weight(.semibold))
+                        .foregroundStyle(Color.prosePalInk)
+                        .lineLimit(1)
+                        .frame(maxWidth: .infinity, alignment: .center)
+
+                    HStack {
+                        generationErrorBackButton
+
+                        Spacer(minLength: 8)
+                    }
+                }
+                .frame(height: 48)
+            }
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private var generationErrorBackButton: some View {
+        Button {
+            returnToNoteAfterDraftFailure()
+        } label: {
+            Label("Today", systemImage: "chevron.left")
+                .font(.system(.body, design: .default).weight(.regular))
+                .labelStyle(.titleAndIcon)
+                .lineLimit(1)
+                .minimumScaleFactor(0.88)
+                .frame(minWidth: dynamicTypeSize.isAccessibilitySize ? nil : 76, alignment: .leading)
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(Color.prosePalCoralDeep)
+        .accessibilityLabel("Back to today")
+    }
+
+    private var quotaReachedTopChrome: some View {
+        HStack {
+            Button {
+                returnToNoteAfterDraftFailure()
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 16, weight: .semibold))
+                    .frame(width: 44, height: 44)
+                    .contentShape(Circle())
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(Color.prosePalCoralDeep)
+            .accessibilityLabel("Back to your note")
+
+            Spacer(minLength: 8)
+        }
+        .frame(height: 48)
+        .frame(maxWidth: .infinity)
+    }
+
+    private var draftReviseTopChrome: some View {
+        Group {
+            if dynamicTypeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack(alignment: .center, spacing: 12) {
+                        Button {
+                            endFocusedEditing()
+                            isShowingReviseMode = false
+                        } label: {
+                            Label("Draft", systemImage: "chevron.left")
+                                .font(.system(.body, design: .default).weight(.regular))
+                                .labelStyle(.titleAndIcon)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.88)
+                        }
+                        .buttonStyle(.plain)
+                        .foregroundStyle(Color.prosePalCoralDeep)
+                        .accessibilityLabel("Back to draft")
+
+                        Spacer(minLength: 12)
+
+                        Button {
+                            endFocusedEditing()
+                            isShowingReviseMode = false
+                        } label: {
+                            Text("Done")
+                                .font(.body.weight(.semibold))
+                                .foregroundStyle(Color.prosePalCoralDeep)
+                                .frame(minHeight: 44, alignment: .trailing)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Done revising")
+                    }
+
+                    detailChromeTitle("Revise")
+                }
+            } else {
+                HStack(alignment: .center) {
+                    Button {
+                        endFocusedEditing()
+                        isShowingReviseMode = false
+                    } label: {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 17, weight: .regular))
+                            .frame(width: 44, height: 44)
+                            .contentShape(Circle())
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(Color.prosePalCoralDeep)
+                    .accessibilityLabel("Back to draft")
+
+                    Spacer(minLength: 8)
+
+                    Text("Revise")
+                        .font(.headline.weight(.semibold))
+                        .foregroundStyle(Color.prosePalInk)
+                        .lineLimit(1)
+
+                    Spacer(minLength: 8)
+
+                    Button {
+                        endFocusedEditing()
+                        isShowingReviseMode = false
+                    } label: {
+                        Text("Done")
+                            .font(.body.weight(.semibold))
+                            .foregroundStyle(Color.prosePalCoralDeep)
+                            .frame(minWidth: 54, minHeight: 44, alignment: .trailing)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Done revising")
+                }
+                .frame(height: 48)
+            }
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private var accountInitials: String {
+        guard let signedInEmail = account.signedInEmail,
+              let firstCharacter = signedInEmail.trimmingCharacters(in: .whitespacesAndNewlines).first
+        else {
+            return "PP"
+        }
+        return String(firstCharacter).uppercased()
+    }
+
+    private var initialPrimaryContent: some View {
+        guidedComposerContent
+    }
+
+    private var activePrimaryContent: some View {
+        guidedComposerContent
+    }
+
+    private var guidedComposerContent: some View {
+        MomentGuidedComposerLayout(
+            isCareful: model.moment.isCarefulMode,
+            intro: {
+                composerIntro
+            },
+            rows: [
+                AnyView(MomentComposerStep(
+                    definition: .person,
+                    accentColor: composerAccentColor
+                ) {
+                    TextField(
+                        "Name or person",
+                        text: $model.personName.prosePalLimited(to: ProsePalTextLimit.personName),
+                        prompt: Text("Alex, Mum, my manager")
+                    )
+                        .momentNameInputBehavior()
+                        .submitLabel(.next)
+                        .onSubmit {
+                            submitPersonEntry(focusNote: true)
+                        }
+                        .focused($focusedField, equals: .person)
+                        .font(.system(.title3, design: .serif))
+                        .foregroundStyle(Color.prosePalInk)
+                        .textFieldStyle(.plain)
+                        .padding(.horizontal, 13)
+                        .frame(minHeight: 44, alignment: .leading)
+                        .momentInputSurface(isCareful: model.moment.isCarefulMode, cornerRadius: 15)
+                        .accessibilityLabel("Name or person")
+                        .accessibilityValue("\(model.personName.count) of \(ProsePalTextLimit.personName) characters").accessibilityIdentifier("composer.person")
+                }),
+                AnyView(MomentComposerStep(
+                    definition: .occasion,
+                    accentColor: composerAccentColor
+                ) {
+                    occasionComposerButton
+                }),
+                AnyView(MomentComposerStep(
+                    definition: .tone,
+                    accentColor: composerAccentColor
+                ) {
+                    toneComposerMenu
+                }),
+                AnyView(MomentComposerStep(
+                    definition: .length(detail: model.length.generationHint),
+                    accentColor: composerAccentColor
+                ) {
+                    lengthComposerPicker
+                }),
+                AnyView(MomentComposerStep(
+                    definition: .generate,
+                    accentColor: composerAccentColor
+                ) {
+                    generateComposerButton
+                }),
+                AnyView(relationshipComposerButton),
+                AnyView(composerOptionalDetailSection)
+            ]
+        )
+    }
+
+    private var composerIntro: some View {
+        HStack(alignment: .center, spacing: 10) {
+            MomentSymbolBadge(
+                systemImage: model.moment.isCarefulMode ? "heart.text.square" : "sparkles",
+                style: model.moment.isCarefulMode ? .care : .coral,
+                size: 32
+            )
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text("Write a message")
+                    .font(.system(.title3, design: .serif).weight(.semibold))
+                    .foregroundStyle(Color.prosePalInk)
+
+                Text("Who, occasion, tone, length, then Generate.")
+                    .font(.footnote)
+                    .foregroundStyle(Color.prosePalSlate)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Spacer(minLength: 8)
+        }
+        .accessibilityElement(children: .combine)
+    }
+
+    private var relationshipComposerButton: some View {
+        Button {
+            endFocusedEditing()
+            diagnostics.pickerOpened("relationship")
+            isShowingRelationshipPicker = true
+        } label: {
+            composerChoiceLabel(
+                title: "Relationship",
+                value: model.relationship.displayName,
+                detail: model.relationship.group.displayName,
+                systemImage: model.relationship.symbolName,
+                showsChevron: true
+            )
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var occasionComposerButton: some View {
+        Button {
+            endFocusedEditing()
+            diagnostics.pickerOpened("moment")
+            isShowingMomentPicker = true
+        } label: {
+            composerChoiceLabel(
+                title: "Occasion",
+                value: model.occasion.displayName,
+                detail: model.moment.prefersCareRegister ? "Handled with extra care" : model.occasion.group.displayName,
+                systemImage: model.occasion.symbolName,
+                showsChevron: true
+            )
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var toneComposerMenu: some View {
+        Menu {
+            ForEach(Tone.allCases) { tone in
+                Button {
+                    model.tone = tone
+                    playMomentSelectionFeedback()
+                } label: {
+                    Label(tone.displayName, systemImage: tone.symbolName)
+                }
+            }
+        } label: {
+            composerChoiceLabel(
+                title: "Tone",
+                value: model.tone.displayName,
+                detail: model.tone.description,
+                systemImage: model.tone.symbolName,
+                showsChevron: true
+            )
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var lengthComposerPicker: some View {
+        Group {
+            if dynamicTypeSize.isAccessibilitySize {
+                VStack(spacing: 8) {
+                    lengthComposerButtons
+                }
+            } else {
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: 8) {
+                        lengthComposerButtons
+                    }
+
+                    VStack(spacing: 8) {
+                        lengthComposerButtons
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var lengthComposerButtons: some View {
+        ForEach(MessageLength.allCases) { length in
+            Button {
+                model.length = length
+                playMomentSelectionFeedback()
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: length.symbolName)
+                        .font(.caption.weight(.semibold))
+                        .accessibilityHidden(true)
+
+                    Text(length.displayName)
+                        .font(.caption.weight(.semibold))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.78)
+                }
+                .foregroundStyle(model.length == length ? Color.prosePalTextOnAccent : Color.prosePalSlate)
+                .frame(maxWidth: .infinity)
+                .frame(minHeight: 34)
+                .background {
+                    Capsule(style: .continuous)
+                        .fill(model.length == length ? composerAccentColor : Color.prosePalGlassFill2)
+                }
+                .overlay {
+                    Capsule(style: .continuous)
+                        .stroke(Color.prosePalGlassStrokeSoft, lineWidth: 0.5)
+                }
+            }
+            .buttonStyle(.plain)
+            .accessibilityAddTraits(model.length == length ? [.isSelected] : [])
+        }
+    }
+
+    private var composerOptionalDetailSection: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: "text.quote")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(composerAccentColor)
+                .frame(width: 26, height: 26)
+                .background(composerAccentColor.opacity(0.12), in: Circle())
+                .accessibilityHidden(true)
+
+            VStack(alignment: .leading, spacing: 9) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Optional detail")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Color.prosePalInk)
+
+                    Text("Add one thing to include, or leave it blank.")
+                        .font(.caption)
+                        .foregroundStyle(Color.prosePalSlate.opacity(0.74))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                TextField(
+                    "Anything to mention?",
+                    text: $model.trueThing.prosePalLimited(to: ProsePalTextLimit.momentDetail),
+                    prompt: Text("A memory, apology, detail, or feeling"),
+                    axis: .vertical
+                )
+                .font(.system(.body, design: .serif))
+                .lineSpacing(4)
+                .foregroundStyle(Color.prosePalInk)
+                .textFieldStyle(.plain)
+                .lineLimit(dynamicTypeSize.isAccessibilitySize ? 4...10 : 2...6)
+                .focused($focusedField, equals: .truth)
+                .submitLabel(.done)
+                .onSubmit {
+                    endFocusedEditing()
+                }
+                .padding(13)
+                .frame(minHeight: dynamicTypeSize.isAccessibilitySize ? 96 : 72, alignment: .topLeading)
+                .momentInputSurface(isCareful: model.moment.isCarefulMode, cornerRadius: 15)
+                .accessibilityLabel("Optional detail to include")
+                .accessibilityValue("\(model.trueThing.count) of \(ProsePalTextLimit.momentDetail) characters").accessibilityIdentifier("composer.optionalDetail")
+
+                MomentCharacterLimitStatus(
+                    text: model.trueThing,
+                    limit: ProsePalTextLimit.momentDetail
+                )
+
+                noteTools
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    private var generateComposerButton: some View {
+        Button {
+            generateDraftFromComposer()
+        } label: {
+            Label(composerGenerateButtonTitle, systemImage: model.isDrafting ? "hourglass" : "sparkles")
+                .font(.headline.weight(.semibold))
+                .lineLimit(1)
+                .minimumScaleFactor(0.82)
+                .frame(maxWidth: .infinity)
+                .frame(minHeight: 46)
+        }
+        .buttonStyle(.borderedProminent)
+        .buttonBorderShape(.capsule)
+        .tint(composerAccentColor)
+        .disabled(!model.canDraft || model.isDrafting).accessibilityIdentifier("composer.generate")
+    }
+
+    private var composerGenerateButtonTitle: String {
+        if model.isDrafting {
+            return "Generating"
+        }
+        if model.errorMessage != nil {
+            return "Try again"
+        }
+        if model.bundle != nil {
+            return "Regenerate"
+        }
+        if model.safetySignal == .crisisSupport {
+            return "Draft unavailable"
+        }
+        return "Generate"
+    }
+
+    private var composerAccentColor: Color {
+        model.moment.isCarefulMode ? .prosePalCare : .prosePalCoral
+    }
+
+    private func composerChoiceLabel(
+        title: String,
+        value: String,
+        detail: String,
+        systemImage: String,
+        showsChevron: Bool
+    ) -> some View {
+        HStack(alignment: .center, spacing: 10) {
+            MomentSymbolBadge(
+                systemImage: systemImage,
+                style: model.moment.isCarefulMode ? .care : .coral,
+                size: 26
+            )
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(Color.prosePalSlate.opacity(0.70))
+
+                Text(value)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Color.prosePalInk)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.82)
+
+                Text(detail)
+                    .font(.caption2)
+                    .foregroundStyle(Color.prosePalSlate.opacity(0.72))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.82)
+            }
+
+            Spacer(minLength: 8)
+
+            if showsChevron {
+                Image(systemName: "chevron.down")
+                    .font(.caption2.weight(.bold))
+                    .foregroundStyle(Color.prosePalSlate.opacity(0.55))
+                    .accessibilityHidden(true)
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background {
+            RoundedRectangle(cornerRadius: 15, style: .continuous)
+                .fill(Color.prosePalGlassFill2)
+                .overlay {
+                    RoundedRectangle(cornerRadius: 15, style: .continuous)
+                        .stroke(Color.prosePalGlassStrokeSoft, lineWidth: 0.5)
+                }
+        }
+        .contentShape(RoundedRectangle(cornerRadius: 15, style: .continuous))
+        .accessibilityElement(children: .combine)
+    }
+
+    private func draftResultContent(_ bundle: MomentDraftBundle) -> some View {
+        VStack(alignment: .leading, spacing: 13) {
+            draftResultCard(bundle)
+
+            if model.hasVisiblePressureCheck {
+                pressureCheck(bundle)
+            } else {
+                draftMarginNote(bundle)
+            }
+
+            if dynamicTypeSize.isAccessibilitySize {
+                draftRefineRail(bundle: bundle)
+                    .padding(.top, 2)
+                    .momentControlBarSurface()
+            }
+        }
+    }
+
+    private var generatingContent: some View {
+        MomentGeneratingView(
+            noteText: model.trueThing,
+            isCareful: model.moment.isCarefulMode,
+            onStop: model.stopGeneration
+        )
+    }
+
+    private func draftReviseContent(_ bundle: MomentDraftBundle) -> some View {
+        VStack(alignment: .leading, spacing: 14) {
+            draftRevisionSegmentedControl
+            draftRevisionPage(bundle)
+            draftRevisionSuggestionCard(bundle)
+            draftRevisionToneRow(bundle)
+        }
+    }
+
+    private var noteWordCount: Int {
+        model.trueThing
+            .split { $0.isWhitespace || $0.isNewline }
+            .count
+    }
+
+    private var noteCountLabel: String {
+        if noteWordCount == 1 {
+            return "1 word"
+        }
+        return "\(noteWordCount) words"
+    }
+
+    private func handleFocusChange(from oldValue: Field?, to newValue: Field?, scrollProxy: ScrollViewProxy) {
+        guard newValue == nil, oldValue == .person || oldValue == .truth else { return }
+        realignActivePrimaryIfNeeded(scrollProxy: scrollProxy, delayNanoseconds: 180_000_000)
+    }
+
+    private func handleDraftFocusForRevise(_ newValue: Field?) {
+        guard newValue == .draft,
+              model.bundle != nil,
+              !isShowingDraftSource,
+              !isShowingReviseMode
+        else {
+            return
+        }
+
+        isShowingReviseMode = true
+        focusedField = nil
+    }
+
+    private func endFocusedEditing() {
+        if !currentPersonName.isEmpty {
+            hasCommittedPersonEntry = true
+        }
+        focusedField = nil
+    }
+
+    private func generateDraftFromComposer() {
+        guard !currentPersonName.isEmpty else {
+            focusedField = .person
+            return
+        }
+
+        hasCommittedPersonEntry = true
+        focusedField = nil
+        model.startDraft()
+    }
+
+    private func submitPersonEntry(focusNote: Bool = false) {
+        guard !currentPersonName.isEmpty else {
+            focusedField = nil
+            return
+        }
+        hasCommittedPersonEntry = true
+        focusedField = focusNote ? .truth : nil
+    }
+
+    private func realignActivePrimaryIfNeeded(
+        scrollProxy: ScrollViewProxy,
+        delayNanoseconds: UInt64 = 0
+    ) {
+        guard shouldHoldSecondaryContentBelowFirstViewport else { return }
+        Task { @MainActor in
+            if delayNanoseconds > 0 {
+                try? await Task.sleep(nanoseconds: delayNanoseconds)
+            }
+            guard shouldHoldSecondaryContentBelowFirstViewport else { return }
+            if reduceMotion {
+                scrollProxy.scrollTo(ScrollAnchor.activePrimary, anchor: .top)
+            } else {
+                withAnimation(.snappy(duration: 0.22)) {
+                    scrollProxy.scrollTo(ScrollAnchor.activePrimary, anchor: .top)
+                }
+            }
+        }
+    }
+
+    private var approvedBeadsForCurrentPerson: [RelationshipTruthBeadRecord] {
+        let normalizedName = currentPersonName.momentNormalizedSearchKey
+        guard !normalizedName.isEmpty else { return [] }
+        return truthBeads.filter {
+            $0.isUserApproved && $0.personName.momentNormalizedSearchKey == normalizedName
+        }
+    }
+
+    private var voiceCardForCurrentPerson: RelationshipVoiceCardRecord? {
+        let normalizedName = currentPersonName.momentNormalizedSearchKey
+        guard !normalizedName.isEmpty else { return nil }
+        return voiceCards.first {
+            $0.personName.momentNormalizedSearchKey == normalizedName
+        }
+    }
+
+    private var offlineDraftStateContent: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            offlineConnectionBanner
+            offlineNotePage
+        }
+    }
+
+    private var offlineConnectionBanner: some View {
+        HStack(alignment: .center, spacing: 10) {
+            Image(systemName: "wifi.slash")
+                .font(.system(size: 19, weight: .semibold))
+                .foregroundStyle(Color.prosePalWarning)
+                .frame(width: 24)
+                .accessibilityHidden(true)
+
+            Text("You're offline — your note is still here on this device")
+                .font(.subheadline.weight(.medium))
+                .lineSpacing(2)
+                .foregroundStyle(Color.prosePalSlate)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .stroke(Color.prosePalNavy.opacity(0.10), lineWidth: 1)
+        }
+        .shadow(color: Color.prosePalCoralDeep.opacity(0.08), radius: 8, x: 0, y: 3)
+        .accessibilityElement(children: .combine)
+    }
+
+    private var offlineNotePage: some View {
+        MomentWritingPageSurface(
+            prompt: "The note",
+            isCareful: model.moment.isCarefulMode,
+            minHeight: dynamicTypeSize.isAccessibilitySize ? 230 : 150
+        ) {
+            Text(offlineNoteText)
+                .font(.system(.title3, design: .serif))
+                .lineSpacing(5)
+                .foregroundStyle(Color.prosePalInk)
+                .fixedSize(horizontal: false, vertical: true)
+        } footer: {
+            offlineNoteFooter
+        }
+    }
+
+    private var offlineNoteText: String {
+        let trimmed = model.trueThing.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? "Your note is saved here." : trimmed
+    }
+
+    @ViewBuilder
+    private var offlineNoteFooter: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 12) {
+                savedLocallyLabel
+                Spacer(minLength: 8)
+                offlineRetryButton
+            }
+
+            VStack(alignment: .leading, spacing: 12) {
+                savedLocallyLabel
+                offlineRetryButton
+            }
+        }
+    }
+
+    private var savedLocallyLabel: some View {
+        Text("Saved locally")
+            .font(.caption.weight(.medium))
+            .foregroundStyle(Color.prosePalSlate.opacity(0.76))
+            .lineLimit(1)
+    }
+
+    private var offlineRetryButton: some View {
+        Button {
+            model.retryDraft()
+        } label: {
+            Label("Try again", systemImage: "arrow.clockwise")
+                .font(.subheadline.weight(.semibold))
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+        }
+        .buttonStyle(.bordered)
+        .buttonBorderShape(.capsule)
+        .controlSize(.regular)
+        .tint(.prosePalNavy)
+        .disabled(!model.canDraft || model.isDrafting)
+        .accessibilityIdentifier("moment.offline.retry")
+    }
+
+    private var generationErrorPresentation: MomentGenerationErrorPresentation {
+        MomentGenerationErrorPresentation(
+            reason: model.draftUnavailableReason,
+            errorMessage: model.errorMessage
+        )
+    }
+
+    private func generationErrorStateContent(viewportHeight: CGFloat) -> some View {
+        MomentGenerationErrorStateView(
+            presentation: generationErrorPresentation,
+            canDraft: model.canDraft,
+            isDrafting: model.isDrafting,
+            isCareful: model.moment.isCarefulMode,
+            minHeight: blockingStateContentHeight(for: viewportHeight),
+            onRetry: model.retryDraft,
+            onBack: returnToNoteAfterDraftFailure
+        )
+    }
+
+    private func quotaReachedStateContent(viewportHeight: CGFloat) -> some View {
+        VStack(spacing: 0) {
+            Spacer(minLength: dynamicTypeSize.isAccessibilitySize ? 28 : 24)
+
+            VStack(spacing: 8) {
+                Image(systemName: "hourglass")
+                    .font(.system(size: 28, weight: .medium))
+                    .foregroundStyle(Color.prosePalCoralDeep)
+                    .frame(width: 60, height: 60)
+                    .background(
+                        Color.prosePalCoralCard.opacity(0.62),
+                        in: RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    )
+                    .accessibilityHidden(true)
+
+                Text("Draft limit reached")
+                    .font(.system(size: 26, weight: .medium, design: .serif))
+                    .foregroundStyle(Color.prosePalInk)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: 340)
+                    .padding(.top, 12)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.84)
+
+                Text(model.errorMessage ?? "No more drafts are available for this account right now.")
+                    .font(.callout)
+                    .lineSpacing(3)
+                    .foregroundStyle(Color.prosePalSlate)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: 300)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity)
+            .accessibilityElement(children: .combine)
+
+            Spacer(minLength: dynamicTypeSize.isAccessibilitySize ? 28 : 50)
+
+            quotaReachedActions
+        }
+        .frame(minHeight: blockingStateContentHeight(for: viewportHeight), alignment: .center)
+    }
+
+    private func blockingStateContentHeight(for viewportHeight: CGFloat) -> CGFloat {
+        if dynamicTypeSize.isAccessibilitySize {
+            return max(viewportHeight - 156, 520)
+        }
+        return max(viewportHeight - 218, 500)
+    }
+
+    private var quotaReachedActions: some View {
+        VStack(spacing: 10) {
+            Button {
+                isShowingPaywall = true
+            } label: {
+                Label("View Pro options", systemImage: "feather")
+                    .font(.headline.weight(.semibold))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.82)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 52)
+            }
+            .buttonStyle(.borderedProminent)
+            .buttonBorderShape(.capsule)
+            .tint(model.moment.isCarefulMode ? .prosePalCare : .prosePalCoral)
+
+            Button {
+                returnToNoteAfterDraftFailure()
+            } label: {
+                Text("Back to your note")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Color.prosePalCoralDeep)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 44)
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    private func returnToNoteAfterDraftFailure() {
+        model.resetDraftForMomentChange()
+        isShowingDraftSource = true
+        isShowingReviseMode = false
+    }
+
+    private var noteTools: some View {
+        HStack(spacing: 10) {
+            if noteWordCount > 0 {
+                Text(noteCountLabel)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Color.prosePalSlate)
+                    .lineLimit(1)
+            }
+        }
+    }
+
+    private var memorySection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 4) {
+                MomentSectionLabel(title: "Relationship memory", systemImage: "checkmark.seal")
+
+                Text("Only details you save here are reused for \(currentPersonName).")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            if shouldShowEmptyMemoryQuickActions {
+                emptyMemoryQuickActions
+            } else {
+                truthBeadControls
+
+                Divider()
+                    .padding(.vertical, 2)
+
+                voiceCardControls
+            }
+        }
+        .prosePalMomentCard(prominence: approvedBeadsForCurrentPerson.isEmpty && voiceCardForCurrentPerson == nil ? .standard : .elevated)
+    }
+
+    private var shouldShowEmptyMemoryQuickActions: Bool {
+        approvedBeadsForCurrentPerson.isEmpty &&
+            voiceCardForCurrentPerson == nil &&
+            !isAddingTruthBead &&
+            !isAddingVoiceCard
+    }
+
+    private var emptyMemoryQuickActions: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 8) {
+                memoryAddButton(title: "Add detail", systemImage: "plus") {
+                    beginAddingTruthBead()
+                }
+                memoryAddButton(title: "Add voice", systemImage: "waveform") {
+                    beginAddingVoiceCard()
+                }
+            }
+
+            VStack(spacing: 8) {
+                memoryAddButton(title: "Add detail", systemImage: "plus") {
+                    beginAddingTruthBead()
+                }
+                memoryAddButton(title: "Add voice", systemImage: "waveform") {
+                    beginAddingVoiceCard()
+                }
+            }
+        }
+    }
+
+    private var truthBeadControls: some View {
+        Group {
+            if approvedBeadsForCurrentPerson.isEmpty {
+                if isAddingTruthBead {
+                    truthBeadInputRow
+                } else {
+                    compactEmptyMemoryAction(
+                        title: "No saved details yet.",
+                        actionTitle: "Add detail",
+                        systemImage: "plus"
+                    ) {
+                        beginAddingTruthBead()
+                    }
+                }
+            } else {
+                VStack(spacing: 8) {
+                    ForEach(approvedBeadsForCurrentPerson) { bead in
+                        MomentTruthBeadRow(
+                            bead: bead,
+                            onEdit: {
+                                editingTruthBead = bead
+                            },
+                            onExplain: {
+                                isShowingMemoryExplanation = true
+                            },
+                            onDelete: {
+                                pendingMemoryDeletion = .truthBead(bead)
+                            }
+                        )
+                    }
+
+                    if isAddingTruthBead {
+                        truthBeadInputRow
+                    } else {
+                        memoryAddButton(title: "Add another detail", systemImage: "plus") {
+                            beginAddingTruthBead()
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private var truthBeadInputRow: some View {
+        HStack(spacing: 10) {
+            TextField(
+                "A detail to remember",
+                text: $newTruthBeadText.prosePalLimited(to: ProsePalTextLimit.relationshipMemory),
+                prompt: Text("Loves Sunday walks")
+            )
+                .focused($focusedField, equals: .memory)
+                .submitLabel(.done)
+                .padding(14)
+                .momentInputSurface(cornerRadius: 16)
+                .onSubmit {
+                    addTruthBead()
+                }
+                .accessibilityValue("\(newTruthBeadText.count) of \(ProsePalTextLimit.relationshipMemory) characters")
+
+            Button {
+                addTruthBead()
+            } label: {
+                Image(systemName: "plus")
+                    .font(.headline.weight(.semibold))
+                    .frame(width: 42, height: 42)
+            }
+            .buttonStyle(.borderedProminent)
+            .buttonBorderShape(.circle)
+            .tint(.prosePalCoral)
+            .disabled(newTruthBeadText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            .accessibilityLabel("Add relationship memory")
+        }
+    }
+
+    private func compactEmptyMemoryAction(
+        title: String,
+        actionTitle: String,
+        systemImage: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        HStack(spacing: 10) {
+            Text(title)
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+
+            Spacer(minLength: 8)
+
+            Button(action: action) {
+                Label(actionTitle, systemImage: systemImage)
+            }
+            .buttonStyle(.bordered)
+            .buttonBorderShape(.capsule)
+            .controlSize(.small)
+            .tint(.prosePalCoral)
+        }
+    }
+
+    private func memoryAddButton(
+        title: String,
+        systemImage: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            HStack(spacing: 8) {
+                MomentSymbolBadge(systemImage: systemImage, style: .subtle, size: 24)
+                Text(title)
+                    .font(.caption.weight(.semibold))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.86)
+            }
+                .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.plain)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .background(Color.prosePalPaper.opacity(0.78), in: Capsule(style: .continuous))
+        .overlay {
+            Capsule(style: .continuous)
+                .stroke(Color.prosePalNavy.opacity(0.14), lineWidth: 1)
+        }
+        .controlSize(.small)
+        .foregroundStyle(Color.prosePalNavy)
+    }
+
+    private func beginAddingTruthBead() {
+        withAnimation(.easeInOut(duration: 0.18)) {
+            isAddingTruthBead = true
+        }
+        focusedField = .memory
+    }
+
+    private func beginAddingVoiceCard() {
+        withAnimation(.easeInOut(duration: 0.18)) {
+            isAddingVoiceCard = true
+        }
+        focusedField = .voice
+    }
+
+    private var voiceCardControls: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: 3) {
+                Label("Voice card", systemImage: "waveform")
+                    .font(.subheadline.weight(.semibold))
+
+                Text("How messages to \(currentPersonName) should sound.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+
+            if let voiceCard = voiceCardForCurrentPerson {
+                MomentVoiceCardRow(
+                    voiceCard: voiceCard,
+                    onEdit: {
+                        editingVoiceCard = voiceCard
+                    },
+                    onExplain: {
+                        isShowingVoiceCardExplanation = true
+                    },
+                    onDelete: {
+                        pendingMemoryDeletion = .voiceCard(voiceCard)
+                    }
+                )
+            } else {
+                if isAddingVoiceCard {
+                    voiceCardInputRow
+                } else {
+                    compactEmptyMemoryAction(
+                        title: "No voice card yet.",
+                        actionTitle: "Add voice",
+                        systemImage: "waveform"
+                    ) {
+                        beginAddingVoiceCard()
+                    }
+                }
+            }
+        }
+    }
+
+    private var voiceCardInputRow: some View {
+        HStack(spacing: 10) {
+            TextField(
+                "Warm, short, no fuss",
+                text: $newVoiceCardSummary.prosePalLimited(to: ProsePalTextLimit.voiceCard),
+                prompt: Text("Warm, short, no fuss")
+            )
+                .focused($focusedField, equals: .voice)
+                .submitLabel(.done)
+                .padding(14)
+                .momentInputSurface(cornerRadius: 16)
+                .onSubmit {
+                    addVoiceCard()
+                }
+                .accessibilityValue("\(newVoiceCardSummary.count) of \(ProsePalTextLimit.voiceCard) characters")
+
+            Button {
+                addVoiceCard()
+            } label: {
+                Image(systemName: "plus")
+                    .font(.headline.weight(.semibold))
+                    .frame(width: 42, height: 42)
+            }
+            .buttonStyle(.bordered)
+            .buttonBorderShape(.circle)
+            .tint(.prosePalNavy)
+            .disabled(newVoiceCardSummary.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            .accessibilityLabel("Add voice card")
+        }
+    }
+
+    private var crisisSupportSection: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Label("This needs immediate support", systemImage: "exclamationmark.triangle.fill")
+                .font(.headline)
+                .foregroundStyle(Color.prosePalWarning)
+
+            Text("ProsePal will not draft this as a message. If you or someone else is in immediate danger, call local emergency services now.")
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            VStack(alignment: .leading, spacing: 8) {
+                Text("UK and Ireland: Samaritans, 116 123.")
+                Text("US and Canada: 988 Suicide & Crisis Lifeline.")
+                Text("If you can, stay near another person or contact someone you trust.")
+            }
+            .font(.footnote.weight(.medium))
+            .foregroundStyle(.primary)
+
+            HStack(spacing: 10) {
+                Link(destination: URL(string: "tel:116123")!) {
+                    Label("Call 116 123", systemImage: "phone")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+
+                Link(destination: URL(string: "tel:988")!) {
+                    Label("Call 988", systemImage: "phone")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+            }
+            .controlSize(.large)
+        }
+        .prosePalMomentCard(prominence: .warning)
+    }
+
+    private var carefulModeSection: some View {
+        HStack(alignment: .center, spacing: 12) {
+            MomentSymbolBadge(systemImage: "heart.text.square", style: .care, size: 34)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Careful mode")
+                    .font(.headline)
+
+                Text("For this moment, ProsePal leans on your words, keeps the tone quieter, and avoids inventing feelings.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .prosePalMomentCard(isCareful: true, prominence: .accent)
+    }
+
+    @ViewBuilder
+    private var draftSection: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack {
+                Label("Private draft", systemImage: "lock")
+                    .font(.headline)
+                    .foregroundStyle(model.moment.isCarefulMode ? Color.prosePalCare : Color.primary)
+                Spacer()
+                if model.isDrafting {
+                    HStack(spacing: 7) {
+                        ProgressView()
+                            .controlSize(.small)
+                        Text("Writing")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                    }
+                    .transition(.opacity.combined(with: .scale(scale: 0.96)))
+                }
+            }
+
+            if let notice = draftUnavailableNotice {
+                draftUnavailableView(notice)
+            } else if let bundle = model.bundle {
+                draftBody(bundle)
+
+                if model.hasVisiblePressureCheck {
+                    pressureCheck(bundle)
+                }
+
+                if dynamicTypeSize.isAccessibilitySize {
+                    actionRail(bundle: bundle)
+                        .padding(.top, 4)
+                }
+            } else if model.canDraft {
+                Text("Writing a private draft...")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+            } else {
+                Text("Add a person to begin.")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .prosePalMomentCard(isCareful: model.moment.isCarefulMode, prominence: model.bundle == nil ? .standard : .elevated)
+    }
+
+    private var draftUnavailableNotice: MomentDraftUnavailableNotice? {
+        guard let errorMessage = model.errorMessage else { return nil }
+
+        switch model.draftUnavailableReason {
+        case .offline:
+            return .offline
+        case .onlineWritingPermissionRequired:
+            return MomentDraftUnavailableNotice(
+                title: "Online writing is off",
+                detail: errorMessage,
+                systemImage: "network.slash",
+                canRetry: true
+            )
+        case .timedOut(let lane):
+            return MomentDraftUnavailableNotice(
+                title: lane == .onDevice
+                    ? String(localized: "On-device writing took too long")
+                    : String(localized: "Drafting took too long"),
+                detail: errorMessage,
+                systemImage: "clock",
+                canRetry: true
+            )
+        case .rateLimited, .usageLimitReached:
+            return MomentDraftUnavailableNotice(
+                title: "Writing paused for now",
+                detail: errorMessage,
+                systemImage: "hourglass",
+                canRetry: false
+            )
+        case .contentBlocked:
+            return MomentDraftUnavailableNotice(
+                title: "This needs a different kind of support",
+                detail: errorMessage,
+                systemImage: "exclamationmark.triangle",
+                canRetry: false
+            )
+        case .serviceUnavailable, .unexpectedResponse:
+            if model.moment.requiresCarefulLane || model.register == .assemble {
+                return MomentDraftUnavailableNotice(
+                    title: "Sensitive writing is unavailable",
+                    detail: account.runtimeReadiness.isCarefulGatewayConfigured
+                        ? "The careful writing route did not answer. Try again, or add one true detail and use the private draft when available."
+                        : "This scheme needs gateway settings before sensitive moments can use that route.",
+                    systemImage: "heart.text.square",
+                    canRetry: account.runtimeReadiness.isCarefulGatewayConfigured
+                )
+            }
+
+            return MomentDraftUnavailableNotice(
+                title: "Private Draft is unavailable",
+                detail: account.runtimeReadiness.isPrivateDraftConfigured
+                    ? errorMessage
+                    : "This build does not have the private writing client ready yet. Settings shows what is missing.",
+                systemImage: "lock",
+                canRetry: account.runtimeReadiness.isPrivateDraftConfigured
+            )
+        case .unexpected, .none:
+            if model.moment.requiresCarefulLane || model.register == .assemble {
+                return MomentDraftUnavailableNotice(
+                    title: "Sensitive writing is unavailable",
+                    detail: "The careful writing route did not answer. Try again, or add one true detail and use the private draft when available.",
+                    systemImage: "heart.text.square",
+                    canRetry: true
+                )
+            }
+
+            return MomentDraftUnavailableNotice(
+                title: "Draft unavailable",
+                detail: "ProsePal could not write this yet. Try again, or add one more true detail first.",
+                systemImage: "square.and.pencil",
+                canRetry: true
+            )
+        }
+    }
+
+    private var draftRevisionSegmentedControl: some View {
+        HStack(spacing: 2) {
+            ForEach(MomentDraftRevisionTab.allCases) { tab in
+                Button {
+                    selectedDraftRevisionTab = tab
+                } label: {
+                    Text(tab.title)
+                        .font(.subheadline.weight(selectedDraftRevisionTab == tab ? .semibold : .medium))
+                        .foregroundStyle(selectedDraftRevisionTab == tab ? Color.prosePalInk : Color.prosePalSlate)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.84)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 31)
+                        .background {
+                            if selectedDraftRevisionTab == tab {
+                                RoundedRectangle(cornerRadius: 11, style: .continuous)
+                                    .fill(Color.prosePalPaper.opacity(0.96))
+                                    .shadow(color: Color.prosePalCoralDeep.opacity(0.08), radius: 6, x: 0, y: 2)
+                            }
+                        }
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(3)
+        .frame(maxWidth: .infinity)
+        .background {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(Color.prosePalPaper.opacity(0.52))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .stroke(Color.prosePalNavy.opacity(0.10), lineWidth: 1)
+                }
+        }
+    }
+
+    private func draftRevisionPage(_ bundle: MomentDraftBundle) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            if selectedDraftRevisionTab == .draft {
+                TextField("Draft text", text: activeDraftText, axis: .vertical)
+                    .font(.system(.title3, design: .serif))
+                    .lineSpacing(7)
+                    .foregroundStyle(Color.prosePalInk)
+                    .lineLimit(dynamicTypeSize.isAccessibilitySize ? 6...24 : 4...16)
+                    .textFieldStyle(.plain)
+                    .focused($focusedField, equals: .draft)
+                    .submitLabel(.done)
+                    .onSubmit {
+                        endFocusedEditing()
+                    }
+                    .disabled(model.isDrafting)
+                    .accessibilityLabel("Draft text")
+                    .accessibilityValue("\(bundle.messageText.count) of \(ProsePalTextLimit.draft) characters").accessibilityIdentifier("activeDraft.revision.editor")
+                    .fixedSize(horizontal: false, vertical: true)
+            } else {
+                Text(draftRevisionDisplayText(for: bundle))
+                    .font(.system(.title3, design: .serif))
+                    .lineSpacing(7)
+                    .foregroundStyle(Color.prosePalInk)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityLabel("Original text")
+            }
+        }
+        .frame(maxWidth: .infinity, minHeight: dynamicTypeSize.isAccessibilitySize ? 190 : 136, alignment: .topLeading)
+        .background(alignment: .topLeading) {
+            MomentRevisionRuledLines()
+                .accessibilityHidden(true)
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 18)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background {
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(Color.prosePalPaper.opacity(0.96))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .stroke(Color.prosePalNavy.opacity(0.12), lineWidth: 1)
+                }
+                .shadow(color: Color.prosePalCoralDeep.opacity(0.10), radius: 12, x: 0, y: 6)
+        }
+    }
+
+    private func draftRevisionDisplayText(for bundle: MomentDraftBundle) -> String {
+        switch selectedDraftRevisionTab {
+        case .draft:
+            return bundle.messageText
+        case .original:
+            let original = model.trueThing.trimmingCharacters(in: .whitespacesAndNewlines)
+            return original.isEmpty ? bundle.messageText : original
+        }
+    }
+
+    private func draftRevisionSuggestionCard(_ bundle: MomentDraftBundle) -> some View {
+        VStack(alignment: .leading, spacing: 11) {
+            Label(draftRevisionSuggestionTitle(for: bundle), systemImage: "wand.and.stars")
+                .font(.caption.weight(.medium))
+                .foregroundStyle(Color.prosePalSlate)
+                .labelStyle(.titleAndIcon)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(draftRevisionSuggestionOptions(for: bundle), id: \.self) { option in
+                        Button {
+                            applyRevisionSuggestion(option)
+                        } label: {
+                            Text(option)
+                                .font(.system(.body, design: .serif))
+                                .foregroundStyle(Color.prosePalSlate)
+                                .lineLimit(1)
+                                .padding(.horizontal, 14)
+                                .frame(height: 30)
+                                .background(Color.prosePalPaper.opacity(0.80), in: Capsule(style: .continuous))
+                                .overlay {
+                                    Capsule(style: .continuous)
+                                        .stroke(Color.prosePalNavy.opacity(0.12), lineWidth: 1)
+                                }
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(model.isDrafting)
+                    }
+                }
+            }
+            .scrollClipDisabled()
+        }
+        .padding(.vertical, 14)
+        .padding(.horizontal, 16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background {
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(Color.prosePalPaper.opacity(0.56))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .stroke(Color.prosePalNavy.opacity(0.10), lineWidth: 1)
+                }
+        }
+    }
+
+    private func draftRevisionToneRow(_ bundle: MomentDraftBundle) -> some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(MomentAdjustment.allCases) { adjustment in
+                    draftRevisionToneChip(
+                        title: adjustment.displayName,
+                        systemImage: adjustment.systemImage,
+                        isSelected: adjustment == .warmer
+                    ) {
+                        model.adjust(adjustment)
+                    }
+                }
+            }
+        }
+        .scrollClipDisabled()
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Revision tones")
+    }
+
+    private func draftRevisionToneChip(
+        title: String,
+        systemImage: String,
+        isSelected: Bool,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Label {
+                Text(title)
+                    .font(.subheadline.weight(isSelected ? .semibold : .medium))
+            } icon: {
+                Image(systemName: systemImage)
+                    .font(.caption.weight(.medium))
+            }
+            .labelStyle(.titleAndIcon)
+            .lineLimit(1)
+            .minimumScaleFactor(0.82)
+            .padding(.horizontal, 14)
+            .frame(height: 36)
+            .foregroundStyle(isSelected ? Color.prosePalCoralDeep : Color.prosePalSlate)
+            .background(
+                isSelected ? Color.prosePalCoral.opacity(0.12) : Color.prosePalPaper.opacity(0.62),
+                in: Capsule(style: .continuous)
+            )
+            .overlay {
+                Capsule(style: .continuous)
+                    .stroke(
+                        isSelected ? Color.prosePalCoral.opacity(0.22) : Color.prosePalNavy.opacity(0.10),
+                        lineWidth: 1
+                    )
+            }
+        }
+        .buttonStyle(.plain)
+        .disabled(model.isDrafting)
+    }
+
+    private func draftRevisionKeepButton(bundle: MomentDraftBundle) -> some View {
+        Button {
+            endFocusedEditing()
+            save(bundle)
+            isShowingReviseMode = false
+        } label: {
+            Label("Keep this draft", systemImage: "checkmark")
+                .font(.headline.weight(.semibold))
+                .lineLimit(1)
+                .minimumScaleFactor(0.86)
+                .frame(maxWidth: .infinity)
+                .frame(height: 52)
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(Color.prosePalPaper)
+        .background(Color.prosePalCoral, in: Capsule(style: .continuous))
+        .shadow(color: Color.prosePalCoralDeep.opacity(0.18), radius: 10, x: 0, y: 5)
+        .disabled(model.isDrafting)
+    }
+
+    private func draftRevisionSuggestionTitle(for bundle: MomentDraftBundle) -> String {
+        let target = draftRevisionSuggestionTarget(in: bundle.messageText)
+        return "Replace \"\(target)\""
+    }
+
+    private func draftRevisionSuggestionOptions(for bundle: MomentDraftBundle) -> [String] {
+        let target = draftRevisionSuggestionTarget(in: bundle.messageText).lowercased()
+
+        if target.contains("thinking") {
+            return ["wondering", "missing", "hoping"]
+        }
+        if target.contains("miss") {
+            return ["remember", "value", "hope"]
+        }
+        return ["gentler", "warmer", "clearer", "shorter"]
+    }
+
+    private func draftRevisionSuggestionTarget(in text: String) -> String {
+        let preferredTargets = ["thinking", "miss", "love", "happy", "easy"]
+        let lowercased = text.lowercased()
+        return preferredTargets.first { lowercased.contains($0) } ?? "this"
+    }
+
+    private func applyRevisionSuggestion(_ option: String) {
+        guard selectedDraftRevisionTab == .draft,
+              var currentBundle = model.bundle
+        else {
+            return
+        }
+
+        let target = draftRevisionSuggestionTarget(in: currentBundle.messageText)
+        guard target != "this",
+              let range = currentBundle.messageText.range(
+                of: target,
+                options: [.caseInsensitive, .diacriticInsensitive]
+              )
+        else {
+            return
+        }
+
+        currentBundle.messageText.replaceSubrange(range, with: option)
+        model.updateActiveDraftMessage(currentBundle.messageText)
+    }
+
+    private func draftResultCard(_ bundle: MomentDraftBundle) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(alignment: .center, spacing: 8) {
+                Text(draftResultToneLabel(for: bundle))
+                    .font(.system(size: 13, weight: .medium, design: .serif))
+                    .italic()
+                    .foregroundStyle(draftResultAccentColor(for: bundle))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.84)
+
+                Spacer(minLength: 10)
+
+                draftVariantDots
+            }
+            .padding(.top, 15)
+            .padding(.horizontal, 20)
+
+            TextField("Draft text", text: activeDraftText, axis: .vertical)
+                .font(.system(.title3, design: .serif))
+                .lineSpacing(7)
+                .foregroundStyle(Color.prosePalInk)
+                .lineLimit(dynamicTypeSize.isAccessibilitySize ? 7...28 : 5...20)
+                .textFieldStyle(.plain)
+                .focused($focusedField, equals: .draft)
+                .submitLabel(.done)
+                .onSubmit {
+                    endFocusedEditing()
+                }
+                .disabled(model.isDrafting)
+                .accessibilityLabel("Draft text")
+                .accessibilityValue("\(bundle.messageText.count) of \(ProsePalTextLimit.draft) characters").accessibilityIdentifier("activeDraft.editor")
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(
+                    maxWidth: .infinity,
+                    minHeight: dynamicTypeSize.isAccessibilitySize ? 260 : 236,
+                    alignment: .topLeading
+                )
+                .padding(.horizontal, 20)
+                .padding(.top, 12)
+                .padding(.bottom, 14)
+
+            Label("Still unmistakably you", systemImage: "checkmark.seal")
+                .font(.footnote)
+                .foregroundStyle(Color.prosePalCare)
+                .labelStyle(.titleAndIcon)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 13)
+
+            Rectangle()
+                .fill(Color.prosePalNavy.opacity(0.12))
+                .frame(height: 0.5)
+                .padding(.horizontal, 12)
+
+            draftResultFooter(bundle)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background {
+            let shape = RoundedRectangle(cornerRadius: 20, style: .continuous)
+
+            ZStack(alignment: .leading) {
+                shape
+                    .fill(Color.prosePalPaper.opacity(0.96))
+
+                Rectangle()
+                    .fill(draftResultAccentColor(for: bundle))
+                    .frame(width: 3)
+                    .padding(.vertical, 1)
+            }
+            .clipShape(shape)
+            .overlay {
+                shape.stroke(Color.prosePalNavy.opacity(0.12), lineWidth: 1)
+            }
+            .shadow(color: Color.prosePalCoralDeep.opacity(0.10), radius: 18, x: 0, y: 9)
+        }
+    }
+
+    @ViewBuilder
+    private func draftResultFooter(_ bundle: MomentDraftBundle) -> some View {
+        if dynamicTypeSize.isAccessibilitySize {
+            VStack(alignment: .center, spacing: 8) {
+                draftResultFooterButton(
+                    title: "Copy",
+                    systemImage: "doc.on.doc",
+                    accessibilityIdentifier: "activeDraft.copy"
+                ) {
+                    copy(bundle.messageText)
+                }
+                .accessibilityHint(String(localized: "Copies this draft to the clipboard."))
+
+                draftResultFooterShareLink(bundle)
+
+                draftResultFooterButton(
+                    title: "Keep this",
+                    systemImage: "checkmark",
+                    isAccent: true,
+                    accessibilityIdentifier: "activeDraft.save"
+                ) {
+                    save(bundle)
+                }
+            }
+        } else {
+            HStack(alignment: .center, spacing: 4) {
+                draftResultFooterButton(
+                    title: "Copy",
+                    systemImage: "doc.on.doc",
+                    accessibilityIdentifier: "activeDraft.copy"
+                ) {
+                    copy(bundle.messageText)
+                }
+                .accessibilityHint(String(localized: "Copies this draft to the clipboard."))
+
+                draftResultFooterShareLink(bundle)
+
+                Spacer(minLength: 4)
+
+                draftResultFooterButton(
+                    title: "Keep this",
+                    systemImage: "checkmark",
+                    isAccent: true,
+                    accessibilityIdentifier: "activeDraft.save"
+                ) {
+                    save(bundle)
+                }
+            }
+        }
+    }
+
+    private func draftResultToneLabel(for bundle: MomentDraftBundle) -> String {
+        if bundle.lane == .careful {
+            return String(localized: "Careful & steady")
+        }
+
+        switch model.register {
+        case .react:
+            return String(localized: "Warm & concise")
+        case .confess:
+            return String(localized: "Your words, polished")
+        case .assemble:
+            return String(localized: "Diplomatic & warm")
+        }
+    }
+
+    private var draftVariantDots: some View {
+        HStack(spacing: 5) {
+            Capsule(style: .continuous)
+                .fill(Color.prosePalCoral)
+                .frame(width: 18, height: 6)
+
+            Circle()
+                .fill(Color.prosePalSlate.opacity(0.36))
+                .frame(width: 6, height: 6)
+
+            Circle()
+                .fill(Color.prosePalSlate.opacity(0.36))
+                .frame(width: 6, height: 6)
+        }
+        .accessibilityHidden(true)
+    }
+
+    private func draftResultFooterButton(
+        title: String,
+        systemImage: String,
+        isAccent: Bool = false,
+        accessibilityIdentifier: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            draftResultFooterLabel(
+                title: title,
+                systemImage: systemImage,
+                isAccent: isAccent
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier(accessibilityIdentifier)
+    }
+
+    private func draftResultFooterShareLink(_ bundle: MomentDraftBundle) -> some View {
+        let presentation = MomentTextSharePresentation(
+            text: bundle.messageText,
+            surface: .activeDraft
+        )
+
+        return ShareLink(
+            item: presentation.text,
+            preview: SharePreview(String(localized: "ProsePal draft"))
+        ) {
+            draftResultFooterLabel(
+                title: MomentTextShareAction.share.title,
+                systemImage: MomentTextShareAction.share.systemImage
+            )
+        }
+        .accessibilityLabel(MomentTextShareAction.share.title)
+        .accessibilityHint(
+            String(localized: "Opens the system share sheet so you can choose where the draft goes.")
+        )
+        .accessibilityIdentifier(
+            presentation.accessibilityIdentifier(for: .share)
+        )
+    }
+
+    private func draftResultFooterLabel(
+        title: String,
+        systemImage: String,
+        isAccent: Bool = false
+    ) -> some View {
+        Label {
+            Text(title)
+                .font(dynamicTypeSize.isAccessibilitySize ? .body.weight(isAccent ? .semibold : .medium) : .subheadline.weight(isAccent ? .semibold : .medium))
+        } icon: {
+            Image(systemName: systemImage)
+                .font(dynamicTypeSize.isAccessibilitySize ? .body.weight(.medium) : .caption.weight(.medium))
+        }
+        .labelStyle(.titleAndIcon)
+        .lineLimit(dynamicTypeSize.isAccessibilitySize ? 2 : 1)
+        .minimumScaleFactor(0.78)
+        .frame(
+            maxWidth: dynamicTypeSize.isAccessibilitySize ? .infinity : nil,
+            minHeight: dynamicTypeSize.isAccessibilitySize ? 52 : 36
+        )
+        .padding(.horizontal, dynamicTypeSize.isAccessibilitySize ? 14 : 8)
+        .foregroundStyle(isAccent ? Color.prosePalCoralDeep : Color.prosePalSlate)
+        .background {
+            if dynamicTypeSize.isAccessibilitySize {
+                Capsule(style: .continuous)
+                    .fill(isAccent ? Color.prosePalAccentSoft : Color.prosePalSurface2.opacity(0.72))
+            }
+        }
+    }
+
+    private func draftMarginNote(_ bundle: MomentDraftBundle) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: "square.and.pencil")
+                .font(.system(size: 15, weight: .medium))
+                .foregroundStyle(draftResultAccentColor(for: bundle))
+                .frame(width: 30, height: 30)
+                .background(
+                    draftResultAccentColor(for: bundle).opacity(0.12),
+                    in: RoundedRectangle(cornerRadius: 9, style: .continuous)
+                )
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text("Margin note")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Color.prosePalInk)
+
+                Text(draftMarginNoteText(for: bundle))
+                    .font(.system(.subheadline, design: .serif))
+                    .italic()
+                    .lineSpacing(3)
+                    .foregroundStyle(Color.prosePalSlate)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(.vertical, 13)
+        .padding(.horizontal, 15)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background {
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(Color.prosePalPaper.opacity(0.52))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .stroke(Color.prosePalNavy.opacity(0.10), lineWidth: 1)
+                }
+        }
+    }
+
+    private func draftMarginNoteText(for bundle: MomentDraftBundle) -> String {
+        if bundle.lane == .careful || model.register == .assemble {
+            return "The draft keeps your decision clear while softening the landing."
+        }
+        if model.register == .confess {
+            return "The draft keeps one true detail visible without making the message feel overworked."
+        }
+        return "The draft stays close to your note and turns it into something ready to send."
+    }
+
+    private func draftRefineRail(bundle: MomentDraftBundle) -> some View {
+        HStack(alignment: .center, spacing: 10) {
+            Image(systemName: "wand.and.stars")
+                .font(.system(size: 15, weight: .medium))
+                .foregroundStyle(draftResultAccentColor(for: bundle))
+                .frame(width: 30, height: 30)
+                .background(
+                    draftResultAccentColor(for: bundle).opacity(0.12),
+                    in: Circle()
+                )
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    draftRefineChip(title: "Another", systemImage: "arrow.clockwise") {
+                        focusedField = nil
+                        model.rewriteDraft()
+                    }
+                    .disabled(!model.canDraft)
+
+                    if model.canShowDraftHistory {
+                        draftRefineChip(title: "History", systemImage: "clock.arrow.circlepath") {
+                            diagnostics.messageAction(
+                                "open_draft_history",
+                                source: "moment_draft",
+                                messageCharacters: bundle.messageText.count
+                            )
+                            isShowingDraftHistory = true
+                        }
+                    }
+
+                    ForEach(MomentAdjustment.allCases) { adjustment in
+                        draftRefineChip(
+                            title: adjustment.displayName,
+                            systemImage: adjustment.systemImage
+                        ) {
+                            model.adjust(adjustment)
+                        }
+                    }
+
+                }
+            }
+            .scrollClipDisabled()
+        }
+        .frame(height: 40)
+    }
+
+    private func draftRefineChip(
+        title: String,
+        systemImage: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Label {
+                Text(title)
+                    .font(.subheadline.weight(.medium))
+            } icon: {
+                Image(systemName: systemImage)
+                    .font(.caption.weight(.medium))
+            }
+            .labelStyle(.titleAndIcon)
+            .lineLimit(1)
+            .minimumScaleFactor(0.82)
+            .padding(.horizontal, 14)
+            .frame(height: 36)
+            .foregroundStyle(Color.prosePalSlate)
+            .background(Color.prosePalPaper.opacity(0.68), in: Capsule(style: .continuous))
+            .overlay {
+                Capsule(style: .continuous)
+                    .stroke(Color.prosePalNavy.opacity(0.10), lineWidth: 1)
+            }
+        }
+        .buttonStyle(.plain)
+        .disabled(model.isDrafting)
+    }
+
+    private func draftResultAccentColor(for bundle: MomentDraftBundle) -> Color {
+        bundle.lane == .careful ? Color.prosePalCare : Color.prosePalCoral
+    }
+
+private struct MomentRevisionRuledLines: View {
+    var lineHeight: CGFloat = 34
+
+    var body: some View {
+        Canvas { context, size in
+            var path = Path()
+            var y = lineHeight - 1
+
+            while y < size.height {
+                path.move(to: CGPoint(x: 0, y: y))
+                path.addLine(to: CGPoint(x: size.width, y: y))
+                y += lineHeight
+            }
+
+            context.stroke(
+                path,
+                with: .color(Color.prosePalCoral.opacity(0.10)),
+                lineWidth: 0.6
+            )
+        }
+    }
+}
+
+private struct MomentDraftHistorySheet: View {
+    @Environment(\.dismiss) private var dismiss
+
+    @Bindable var model: MomentModel
+    let onRestore: (MomentDraftSnapshot) -> Void
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 18) {
+                topChrome
+
+                if timelineItems.isEmpty {
+                    emptyState
+                } else {
+                    VStack(spacing: 0) {
+                        ForEach(Array(timelineItems.enumerated()), id: \.element.id) { index, item in
+                            MomentDraftHistoryRow(
+                                item: item,
+                                isLast: index == timelineItems.count - 1
+                            ) { snapshot in
+                                onRestore(snapshot)
+                            }
+                        }
+                    }
+                }
+            }
+            .padding(.horizontal, 18)
+            .padding(.top, 14)
+            .padding(.bottom, 26)
+        }
+        .scrollIndicators(.hidden)
+        .background {
+            MomentAtmosphericBackground(isCareful: model.moment.isCarefulMode)
+        }
+    }
+
+    private var topChrome: some View {
+        ZStack {
+            HStack {
+                Button {
+                    dismiss()
+                } label: {
+                    Label("Draft", systemImage: "chevron.left")
+                        .font(.subheadline.weight(.medium))
+                        .labelStyle(.titleAndIcon)
+                        .foregroundStyle(Color.prosePalCoralDeep)
+                        .lineLimit(1)
+                        .padding(.horizontal, 11)
+                        .frame(height: 36)
+                        .background(Color.prosePalPaper.opacity(0.70), in: Capsule(style: .continuous))
+                        .overlay {
+                            Capsule(style: .continuous)
+                                .stroke(Color.prosePalNavy.opacity(0.10), lineWidth: 1)
+                        }
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Back to draft")
+
+                Spacer()
+            }
+
+            Text("Version history")
+                .font(.headline.weight(.semibold))
+                .foregroundStyle(Color.prosePalInk)
+                .lineLimit(1)
+                .minimumScaleFactor(0.84)
+        }
+        .frame(height: 44)
+    }
+
+    private var emptyState: some View {
+        VStack(spacing: 10) {
+            Image(systemName: "clock.arrow.circlepath")
+                .font(.system(size: 32, weight: .medium))
+                .foregroundStyle(Color.prosePalCoral.opacity(0.68))
+
+            Text("No draft history")
+                .font(.system(size: 23, design: .serif).weight(.medium))
+                .foregroundStyle(Color.prosePalInk)
+
+            Text("Edits and rewrites you can recover appear here.")
+                .font(.callout)
+                .foregroundStyle(Color.prosePalSlate)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 26)
+        .padding(.vertical, 34)
+        .background(Color.prosePalPaper.opacity(0.94), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(Color.prosePalNavy.opacity(0.10), lineWidth: 1)
+        }
+    }
+
+    private var timelineItems: [MomentDraftHistoryItem] {
+        var items: [MomentDraftHistoryItem] = []
+
+        if let bundle = model.bundle {
+            items.append(MomentDraftHistoryItem(
+                id: "current-\(bundle.id.uuidString)",
+                title: currentTitle(for: bundle),
+                marker: "Current",
+                text: bundle.messageText,
+                systemImage: "feather",
+                isCurrent: true
+            ))
+        }
+
+        items.append(contentsOf: model.draftSnapshots.reversed().map { snapshot in
+            MomentDraftHistoryItem(
+                id: "snapshot-\(snapshot.id.uuidString)",
+                title: title(for: snapshot.reason),
+                marker: snapshot.createdAt.formatted(date: .omitted, time: .shortened),
+                text: snapshot.bundle.messageText,
+                systemImage: systemImage(for: snapshot.reason),
+                snapshot: snapshot
+            )
+        })
+
+        let originalNote = model.trueThing.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !originalNote.isEmpty {
+            items.append(MomentDraftHistoryItem(
+                id: "original-note",
+                title: "Your note",
+                marker: "Original",
+                text: originalNote,
+                systemImage: "pencil",
+                isOriginal: true
+            ))
+        }
+
+        return items
+    }
+
+    private func currentTitle(for bundle: MomentDraftBundle) -> String {
+        if bundle.lane == .careful {
+            return "Careful & steady"
+        }
+
+        switch model.register {
+        case .react:
+            return "Warm & concise"
+        case .confess:
+            return "Your words, polished"
+        case .assemble:
+            return "Diplomatic & warm"
+        }
+    }
+
+    private func title(for reason: MomentDraftSnapshotReason) -> String {
+        switch reason {
+        case .edit:
+            "Before edit"
+        case .rewrite:
+            "Before rewrite"
+        }
+    }
+
+    private func systemImage(for reason: MomentDraftSnapshotReason) -> String {
+        switch reason {
+        case .edit:
+            "pencil"
+        case .rewrite:
+            "sparkles"
+        }
+    }
+
+    private struct MomentDraftHistoryItem: Identifiable {
+        var id: String
+        var title: String
+        var marker: String
+        var text: String
+        var systemImage: String
+        var isCurrent = false
+        var isOriginal = false
+        var snapshot: MomentDraftSnapshot?
+    }
+
+    private struct MomentDraftHistoryRow: View {
+        let item: MomentDraftHistoryItem
+        let isLast: Bool
+        let onRestore: (MomentDraftSnapshot) -> Void
+
+        var body: some View {
+            HStack(alignment: .top, spacing: 14) {
+                timelineStem
+
+                timelineCard
+                    .padding(.bottom, isLast ? 0 : 16)
+            }
+        }
+
+        private var timelineStem: some View {
+            VStack(spacing: 0) {
+                ZStack {
+                    Circle()
+                        .fill(item.isCurrent ? Color.prosePalCoral : Color.prosePalPaper)
+                        .frame(width: 34, height: 34)
+                        .overlay {
+                            Circle()
+                                .stroke(
+                                    item.isCurrent ? Color.clear : Color.prosePalNavy.opacity(0.14),
+                                    lineWidth: 1
+                                )
+                        }
+
+                    Image(systemName: item.systemImage)
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(item.isCurrent ? Color.white : Color.prosePalSlate)
+                }
+
+                if !isLast {
+                    Rectangle()
+                        .fill(Color.prosePalNavy.opacity(0.14))
+                        .frame(width: 1.5)
+                        .frame(maxHeight: .infinity)
+                }
+            }
+            .frame(width: 34)
+            .accessibilityHidden(true)
+        }
+
+        private var timelineCard: some View {
+            VStack(alignment: .leading, spacing: 7) {
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Text(item.title)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Color.prosePalInk)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.84)
+
+                    Spacer(minLength: 8)
+
+                    Text(item.marker)
+                        .font(.caption2.monospacedDigit())
+                        .foregroundStyle(Color.prosePalSlate.opacity(0.82))
+                        .lineLimit(1)
+                }
+
+                Text(item.text)
+                    .font(.system(.callout, design: .serif))
+                    .lineSpacing(3)
+                    .foregroundStyle(item.isOriginal ? Color.prosePalSlate.opacity(0.86) : Color.prosePalSlate)
+                    .italic(item.isOriginal)
+                    .lineLimit(3)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                if item.isCurrent {
+                    Label("Showing now", systemImage: "checkmark")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Color.prosePalCare)
+                        .padding(.top, 1)
+                } else if let snapshot = item.snapshot {
+                    Button {
+                        onRestore(snapshot)
+                    } label: {
+                        Label("Restore", systemImage: "arrow.counterclockwise")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(Color.prosePalCoralDeep)
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.top, 1)
+                }
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.prosePalPaper.opacity(0.96), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .stroke(
+                        item.isCurrent ? Color.prosePalCoral.opacity(0.28) : Color.prosePalNavy.opacity(0.09),
+                        lineWidth: 1
+                    )
+            }
+            .shadow(
+                color: Color.prosePalCoralDeep.opacity(item.isCurrent ? 0.12 : 0.06),
+                radius: item.isCurrent ? 10 : 5,
+                x: 0,
+                y: item.isCurrent ? 5 : 2
+            )
+            .accessibilityElement(children: .combine)
+        }
+    }
+}
+
+    private func draftUnavailableView(_ notice: MomentDraftUnavailableNotice) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .center, spacing: 10) {
+                MomentSymbolBadge(
+                    systemImage: notice.systemImage,
+                    style: notice.canRetry ? .coral : .warning,
+                    size: 34
+                )
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(notice.title)
+                        .font(.subheadline.weight(.semibold))
+                    Text(notice.detail)
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .accessibilityElement(children: .combine)
+
+            if notice.canRetry && model.canDraft {
+                Button {
+                    model.retryDraft()
+                } label: {
+                    Label("Try again", systemImage: "arrow.clockwise")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+                .disabled(model.isDrafting)
+                .accessibilityIdentifier(
+                    model.draftUnavailableReason == .onlineWritingPermissionRequired
+                        ? "onlineWriting.permission.retry"
+                        : "moment.draftUnavailable.retry"
+                )
+            }
+        }
+        .padding(14)
+        .background {
+            MomentCardBackground(
+                isCareful: model.moment.requiresCarefulLane || model.register == .assemble,
+                prominence: notice.canRetry ? .accent : .warning
+            )
+        }
+    }
+
+    private var activeDraftText: Binding<String> {
+        Binding {
+            model.bundle?.messageText ?? ""
+        } set: { nextText in
+            model.updateActiveDraftMessage(ProsePalTextInput.limited(
+                nextText,
+                to: ProsePalTextLimit.draft
+            ))
+        }
+    }
+
+    private func draftBody(_ bundle: MomentDraftBundle) -> some View {
+        MomentWritingPageSurface(
+            prompt: bundle.lane == .careful ? "Careful draft" : "Your draft",
+            isCareful: bundle.lane == .careful,
+            showsRules: false,
+            showsFooter: false,
+            minHeight: dynamicTypeSize.isAccessibilitySize ? 190 : 150
+        ) {
+            TextField("Draft text", text: activeDraftText, axis: .vertical)
+                .font(.system(.title3, design: .serif))
+                .lineSpacing(5)
+                .foregroundStyle(Color.prosePalInk)
+                .lineLimit(dynamicTypeSize.isAccessibilitySize ? 8...24 : 5...18)
+                .textFieldStyle(.plain)
+                .focused($focusedField, equals: .draft)
+                .submitLabel(.done)
+                .onSubmit {
+                    endFocusedEditing()
+                }
+                .disabled(model.isDrafting)
+                .accessibilityLabel("Draft text")
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        } footer: {
+            EmptyView()
+        }
+    }
+
+    private func pressureCheck(_ bundle: MomentDraftBundle) -> some View {
+        let check = bundle.pressureCheck
+
+        return VStack(alignment: .leading, spacing: 12) {
+            Label("Pressure check", systemImage: "checkmark.seal")
+                .font(.subheadline.weight(.semibold))
+
+            VStack(alignment: .leading, spacing: 6) {
+                ForEach(check.userVisibleNotes, id: \.self) { note in
+                    Text(note)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 10) {
+                    keepPressureDraftButton(bundle)
+                    cleanUpPressureButton(bundle)
+                }
+
+                VStack(spacing: 8) {
+                    keepPressureDraftButton(bundle)
+                    cleanUpPressureButton(bundle)
+                }
+            }
+            .controlSize(.regular)
+        }
+        .padding(14)
+        .background(Color.prosePalCare.opacity(0.10), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(Color.prosePalCare.opacity(0.20), lineWidth: 1)
+        }
+    }
+
+    private func keepPressureDraftButton(_ bundle: MomentDraftBundle) -> some View {
+        Button {
+            diagnostics.messageAction(
+                "keep_pressure_checked_draft",
+                source: "pressure_check",
+                messageCharacters: bundle.messageText.count
+            )
+            model.keepPressureCheckedDraft()
+        } label: {
+            Label("Keep draft", systemImage: "checkmark")
+                .lineLimit(1)
+                .minimumScaleFactor(0.82)
+                .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.bordered)
+        .buttonBorderShape(.capsule)
+        .tint(.prosePalNavy)
+        .frame(maxWidth: .infinity)
+        .disabled(model.isDrafting)
+    }
+
+    private func cleanUpPressureButton(_ bundle: MomentDraftBundle) -> some View {
+        Button {
+            diagnostics.messageAction(
+                "clean_up_pressure",
+                source: "pressure_check",
+                messageCharacters: bundle.messageText.count
+            )
+            model.cleanUpPressureCheckedDraft()
+        } label: {
+            Label(cleanUpPressureTitle, systemImage: "wand.and.stars")
+                .lineLimit(1)
+                .minimumScaleFactor(0.78)
+                .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.borderedProminent)
+        .buttonBorderShape(.capsule)
+        .tint(model.moment.isCarefulMode ? .prosePalCare : .prosePalCoral)
+        .frame(maxWidth: .infinity)
+        .disabled(model.isDrafting)
+    }
+
+    private var cleanUpPressureTitle: String {
+        "Make direct"
+    }
+
+    private func actionRail(bundle: MomentDraftBundle) -> some View {
+        VStack(spacing: 10) {
+            if model.canRestorePreviousDraft {
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: 10) {
+                        undoRewriteButton(bundle)
+                        keepRewriteButton(bundle)
+                    }
+
+                    VStack(spacing: 8) {
+                        undoRewriteButton(bundle)
+                        keepRewriteButton(bundle)
+                    }
+                }
+            }
+
+            if model.canShowDraftHistory {
+                draftHistoryButton(bundle)
+            }
+
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 10) {
+                    ForEach(MomentAdjustment.allCases) { adjustment in
+                        adjustmentButton(adjustment)
+                    }
+                }
+
+                VStack(spacing: 8) {
+                    ForEach(MomentAdjustment.allCases) { adjustment in
+                        adjustmentButton(adjustment)
+                    }
+                }
+            }
+
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 10) {
+                    copyButton(text: bundle.messageText)
+                    shareButton(bundle: bundle)
+                    saveButton(bundle: bundle)
+                }
+
+                VStack(spacing: 8) {
+                    copyButton(text: bundle.messageText)
+                    shareButton(bundle: bundle)
+                    saveButton(bundle: bundle)
+                }
+            }
+            .controlSize(.large)
+        }
+    }
+
+    private func undoRewriteButton(_ bundle: MomentDraftBundle) -> some View {
+        Button {
+            diagnostics.messageAction(
+                model.previousDraftActionDiagnosticsName,
+                source: "moment_draft",
+                messageCharacters: bundle.messageText.count
+            )
+            model.restorePreviousDraft()
+        } label: {
+            Label(model.previousDraftActionTitle, systemImage: "arrow.uturn.backward")
+                .lineLimit(dynamicTypeSize.isAccessibilitySize ? 2 : 1)
+                .multilineTextAlignment(.center)
+                .minimumScaleFactor(0.82)
+                .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.bordered)
+        .buttonBorderShape(.capsule)
+        .tint(.prosePalNavy)
+        .controlSize(.large)
+        .frame(maxWidth: .infinity)
+    }
+
+    private func keepRewriteButton(_ bundle: MomentDraftBundle) -> some View {
+        Button {
+            diagnostics.messageAction(
+                model.keepCurrentDraftActionDiagnosticsName,
+                source: "moment_draft",
+                messageCharacters: bundle.messageText.count
+            )
+            model.keepCurrentDraftChange()
+        } label: {
+            Label(model.keepCurrentDraftActionTitle, systemImage: "checkmark")
+                .lineLimit(dynamicTypeSize.isAccessibilitySize ? 2 : 1)
+                .multilineTextAlignment(.center)
+                .minimumScaleFactor(0.82)
+                .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.borderedProminent)
+        .buttonBorderShape(.capsule)
+        .tint(model.moment.isCarefulMode ? .prosePalCare : .prosePalCoral)
+        .controlSize(.large)
+        .frame(maxWidth: .infinity)
+    }
+
+    private func draftHistoryButton(_ bundle: MomentDraftBundle) -> some View {
+        Button {
+            diagnostics.messageAction(
+                "open_draft_history",
+                source: "moment_draft",
+                messageCharacters: bundle.messageText.count
+            )
+            isShowingDraftHistory = true
+        } label: {
+            Label("History", systemImage: "clock.arrow.circlepath")
+                .lineLimit(1)
+                .minimumScaleFactor(0.82)
+                .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.bordered)
+        .buttonBorderShape(.capsule)
+        .tint(.prosePalNavy)
+        .controlSize(.large)
+        .frame(maxWidth: .infinity)
+    }
+
+    private func adjustmentButton(_ adjustment: MomentAdjustment) -> some View {
+        Button {
+            model.adjust(adjustment)
+        } label: {
+            Label(adjustment.displayName, systemImage: adjustment.systemImage)
+                .lineLimit(1)
+                .minimumScaleFactor(0.74)
+                .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.bordered)
+        .buttonBorderShape(.capsule)
+        .tint(model.moment.isCarefulMode ? .prosePalCare : .prosePalCoral)
+        .controlSize(.small)
+        .frame(maxWidth: .infinity)
+        .disabled(model.isDrafting)
+    }
+
+    private func copyButton(text: String) -> some View {
+        Button {
+            copy(text)
+        } label: {
+            Label("Copy", systemImage: "doc.on.doc")
+                .lineLimit(1)
+                .minimumScaleFactor(0.82)
+                .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.bordered)
+        .buttonBorderShape(.capsule)
+        .tint(.prosePalNavy)
+        .accessibilityHint(String(localized: "Copies this draft to the clipboard."))
+        .accessibilityIdentifier("activeDraft.copy")
+    }
+
+    private func shareButton(bundle: MomentDraftBundle) -> some View {
+        let presentation = MomentTextSharePresentation(
+            text: bundle.messageText,
+            surface: .activeDraft
+        )
+
+        return ShareLink(
+            item: presentation.text,
+            preview: SharePreview(String(localized: "ProsePal draft"))
+        ) {
+            Label(
+                MomentTextShareAction.share.title,
+                systemImage: MomentTextShareAction.share.systemImage
+            )
+                .lineLimit(1)
+                .minimumScaleFactor(0.82)
+                .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.borderedProminent)
+        .buttonBorderShape(.capsule)
+        .tint(model.moment.isCarefulMode ? .prosePalCare : .prosePalCoral)
+        .accessibilityLabel(MomentTextShareAction.share.title)
+        .accessibilityHint(
+            String(localized: "Opens the system share sheet so you can choose where the draft goes.")
+        )
+        .accessibilityIdentifier(
+            presentation.accessibilityIdentifier(for: .share)
+        )
+    }
+
+    private func saveButton(bundle: MomentDraftBundle) -> some View {
+        Button {
+            save(bundle)
+        } label: {
+            Label("Save", systemImage: "bookmark")
+                .lineLimit(1)
+                .minimumScaleFactor(0.82)
+                .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.bordered)
+        .buttonBorderShape(.capsule)
+        .tint(.prosePalNavy)
+        .accessibilityIdentifier("activeDraft.save")
+    }
+
+    private func copy(_ text: String, source: String = "moment_draft") {
+        let presentation = MomentTextSharePresentation(
+            text: text,
+            surface: .activeDraft
+        )
+        let interaction = presentation.copy { clipboardText in
+        #if canImport(UIKit)
+            UIPasteboard.general.string = clipboardText
+        #elseif canImport(AppKit)
+            NSPasteboard.general.clearContents()
+            NSPasteboard.general.setString(clipboardText, forType: .string)
+        #endif
+        }
+        if let action = MomentShareTelemetryPolicy.diagnosticsAction(for: interaction) {
+            diagnostics.messageAction(action, source: source, messageCharacters: text.count)
+        }
+        showToast("Copied — your voice and all")
+    }
+
+    private func showToast(_ message: String) {
+        let toast = MomentTransientToast(message: message)
+        withAnimation(.easeInOut(duration: 0.18)) {
+            transientToast = toast
+        }
+
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(5))
+            guard transientToast == toast else { return }
+            withAnimation(.easeInOut(duration: 0.18)) {
+                transientToast = nil
+            }
+        }
+    }
+
+    private func save(_ bundle: MomentDraftBundle) {
+        let record = SavedMomentDraftRecord(
+            moment: model.moment,
+            messageText: bundle.messageText,
+            lane: bundle.lane
+        )
+        modelContext.insert(record)
+
+        do {
+            try modelContext.save()
+            diagnostics.messageAction("save", source: "moment_draft", messageCharacters: bundle.messageText.count)
+            withAnimation(.easeInOut(duration: 0.18)) {
+                saveNotice = "Saved"
+            }
+        } catch {
+            withAnimation(.easeInOut(duration: 0.18)) {
+                saveNotice = "Could not save this draft."
+            }
+        }
+
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(1.4))
+            withAnimation(.easeInOut(duration: 0.18)) {
+                saveNotice = nil
+            }
+        }
+    }
+
+    private func addTruthBead() {
+        let text = newTruthBeadText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !currentPersonName.isEmpty, !text.isEmpty else { return }
+
+        let record = RelationshipTruthBeadRecord(
+            personName: currentPersonName,
+            text: text,
+            isUserApproved: true
+        )
+        modelContext.insert(record)
+
+        do {
+            try modelContext.save()
+            diagnostics.messageAction("truth_bead_added", source: "moment", messageCharacters: 0)
+            newTruthBeadText = ""
+            isAddingTruthBead = false
+            focusedField = nil
+            model.resetDraftForMomentChange()
+        } catch {
+            withAnimation(.easeInOut(duration: 0.18)) {
+                saveNotice = "Could not save this detail."
+            }
+        }
+    }
+
+    private func deleteTruthBead(_ bead: RelationshipTruthBeadRecord) {
+        do {
+            try performConfirmedMemoryDeletion(
+                delete: { modelContext.delete(bead) },
+                save: { try modelContext.save() },
+                rollback: { modelContext.rollback() }
+            )
+            diagnostics.messageAction("truth_bead_deleted", source: "moment", messageCharacters: 0)
+            model.resetDraftForMomentChange()
+        } catch {
+            saveNotice = "Could not delete this detail."
+        }
+    }
+
+    private func addVoiceCard() {
+        let summary = newVoiceCardSummary.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !currentPersonName.isEmpty, !summary.isEmpty else { return }
+
+        let record = RelationshipVoiceCardRecord(
+            personName: currentPersonName,
+            summary: summary,
+            isUserApproved: true
+        )
+        modelContext.insert(record)
+
+        do {
+            try modelContext.save()
+            diagnostics.messageAction("voice_card_added", source: "moment", messageCharacters: 0)
+            newVoiceCardSummary = ""
+            isAddingVoiceCard = false
+            focusedField = nil
+            model.resetDraftForMomentChange()
+        } catch {
+            withAnimation(.easeInOut(duration: 0.18)) {
+                saveNotice = "Could not save this voice card."
+            }
+        }
+    }
+
+    private func deleteVoiceCard(_ voiceCard: RelationshipVoiceCardRecord) {
+        do {
+            try performConfirmedMemoryDeletion(
+                delete: { modelContext.delete(voiceCard) },
+                save: { try modelContext.save() },
+                rollback: { modelContext.rollback() }
+            )
+            diagnostics.messageAction("voice_card_deleted", source: "moment", messageCharacters: 0)
+            model.resetDraftForMomentChange()
+        } catch {
+            saveNotice = "Could not delete this voice card."
+        }
+    }
+
+    private func confirmMemoryDeletion(_ request: MemoryDeletionRequest) {
+        pendingMemoryDeletion = nil
+        switch request {
+        case .truthBead(let bead):
+            deleteTruthBead(bead)
+        case .voiceCard(let voiceCard):
+            deleteVoiceCard(voiceCard)
+        }
+    }
+
+}
+
+private struct MomentRelationshipPickerSheet: View {
+    @Binding var selection: Relationship
+    @Environment(\.dismiss) private var dismiss
+    @State private var searchText = ""
+
+    var body: some View {
+        NavigationStack {
+            List {
+                if isSearching && !hasSearchResults {
+                    ContentUnavailableView.search(text: searchText)
+                }
+
+                ForEach(RelationshipGroup.allCases) { group in
+                    let relationships = filteredRelationships(in: group)
+                    if !relationships.isEmpty {
+                        Section(group.displayName) {
+                            ForEach(relationships) { relationship in
+                                Button {
+                                    selection = relationship
+                                    playMomentSelectionFeedback()
+                                    dismiss()
+                                } label: {
+                                    MomentRelationshipPickerRow(
+                                        relationship: relationship,
+                                        isSelected: relationship == selection
+                                    )
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                    }
+                }
+            }
+            .searchable(text: $searchText, prompt: "Search relationships")
+            .momentPickerListStyle()
+            .contentMargins(.top, 8, for: .scrollContent)
+            .navigationTitle("Who they are")
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Close") {
+                        dismiss()
+                    }
+                }
+            }
+        }
+    }
+
+    private var isSearching: Bool {
+        !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    private var hasSearchResults: Bool {
+        RelationshipGroup.allCases.contains { !filteredRelationships(in: $0).isEmpty }
+    }
+
+    private func filteredRelationships(in group: RelationshipGroup) -> [Relationship] {
+        let groupRelationships = Relationship.allCases.filter { $0.group == group }
+        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty else { return groupRelationships }
+
+        return groupRelationships.filter {
+            $0.momentSearchText.localizedCaseInsensitiveContains(query)
+        }
+    }
+}
+
+private struct MomentRelationshipPickerRow: View {
+    let relationship: Relationship
+    let isSelected: Bool
+
+    var body: some View {
+        MomentPickerRow(
+            systemImage: relationship.symbolName,
+            title: relationship.displayName,
+            subtitle: relationship.group.displayName,
+            isSelected: isSelected
+        )
+    }
+}
+
+private struct MomentOccasionPickerSheet: View {
+    @Binding var selection: Occasion
+    @Environment(\.dismiss) private var dismiss
+    @State private var searchText = ""
+
+    var body: some View {
+        NavigationStack {
+            List {
+                if !isSearching {
+                    Section("Often used") {
+                        ForEach(Occasion.featuredCases) { occasion in
+                            occasionButton(for: occasion)
+                        }
+                    }
+                } else if !hasSearchResults {
+                    ContentUnavailableView.search(text: searchText)
+                }
+
+                ForEach(displayedGroups) { group in
+                    let occasions = filteredOccasions(in: group)
+                    if !occasions.isEmpty {
+                        Section(group.displayName) {
+                            ForEach(occasions) { occasion in
+                                occasionButton(for: occasion)
+                            }
+                        }
+                    }
+                }
+            }
+            .searchable(text: $searchText, prompt: "Search moments")
+            .momentPickerListStyle()
+            .contentMargins(.top, 8, for: .scrollContent)
+            .navigationTitle("Moment")
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Close") {
+                        dismiss()
+                    }
+                }
+            }
+        }
+    }
+
+    private var isSearching: Bool {
+        !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    private var displayedGroups: [OccasionGroup] {
+        if isSearching {
+            return OccasionGroup.allCases
+        }
+
+        return OccasionGroup.allCases.filter { $0 != .mostUsed }
+    }
+
+    private var hasSearchResults: Bool {
+        OccasionGroup.allCases.contains { !filteredOccasions(in: $0).isEmpty }
+    }
+
+    private func filteredOccasions(in group: OccasionGroup) -> [Occasion] {
+        let groupOccasions = Occasion.allCases.filter { $0.group == group }
+        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty else { return groupOccasions }
+
+        return groupOccasions.filter {
+            $0.searchText.localizedCaseInsensitiveContains(query)
+        }
+    }
+
+    private func occasionButton(for occasion: Occasion) -> some View {
+        Button {
+            selection = occasion
+            playMomentSelectionFeedback()
+            dismiss()
+        } label: {
+            MomentOccasionPickerRow(
+                occasion: occasion,
+                isSelected: occasion == selection
+            )
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+private struct MomentOccasionPickerRow: View {
+    let occasion: Occasion
+    let isSelected: Bool
+
+    var body: some View {
+        MomentPickerRow(
+            systemImage: occasion.symbolName,
+            title: occasion.displayName,
+            subtitle: occasion.group.displayName,
+            isSelected: isSelected
+        )
+    }
+}
+
+private struct MomentPickerRow: View {
+    let systemImage: String
+    let title: String
+    let subtitle: String
+    let isSelected: Bool
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 12) {
+            MomentSymbolBadge(systemImage: systemImage, style: .coral, size: 34)
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title)
+                    .font(.body.weight(.medium))
+                    .foregroundStyle(.primary)
+                    .lineLimit(2)
+
+                Text(subtitle)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+
+            Spacer(minLength: 8)
+
+            if isSelected {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(.tint)
+            }
+        }
+        .padding(.vertical, 8)
+        .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
+    }
+}
+
+private struct MomentTruthBeadRow: View {
+    let bead: RelationshipTruthBeadRecord
+    let onEdit: () -> Void
+    let onExplain: () -> Void
+    let onDelete: () -> Void
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 10) {
+            MomentSymbolBadge(systemImage: "checkmark.seal.fill", style: .coral, size: 30)
+
+            Text(bead.text)
+                .font(.callout)
+                .foregroundStyle(.primary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Spacer(minLength: 8)
+
+            Menu {
+                Button {
+                    onEdit()
+                } label: {
+                    Label("Edit detail", systemImage: "pencil")
+                }
+
+                Button {
+                    onExplain()
+                } label: {
+                    Label("Why this appears", systemImage: "info.circle")
+                }
+
+                Button(role: .destructive) {
+                    onDelete()
+                } label: {
+                    Label("Delete detail", systemImage: "trash")
+                }
+            } label: {
+                MomentMemoryManageLabel()
+            }
+            .accessibilityLabel("Relationship memory actions")
+        }
+        .padding(12)
+        .background(Color.prosePalPaper.opacity(0.74), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .stroke(Color.prosePalCoral.opacity(0.12), lineWidth: 1)
+        }
+    }
+}
+
+private struct MomentVoiceCardRow: View {
+    let voiceCard: RelationshipVoiceCardRecord
+    let onEdit: () -> Void
+    let onExplain: () -> Void
+    let onDelete: () -> Void
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 10) {
+            MomentSymbolBadge(
+                systemImage: voiceCard.isUserApproved ? "waveform.circle.fill" : "pause.circle.fill",
+                style: .care,
+                size: 30
+            )
+
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 8) {
+                    Text(voiceCard.isUserApproved ? "Used in drafts" : "Paused")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    Spacer(minLength: 0)
+                }
+
+                Text(voiceCard.summary)
+                    .font(.callout)
+                    .foregroundStyle(.primary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Spacer(minLength: 8)
+
+            Menu {
+                Button {
+                    onEdit()
+                } label: {
+                    Label("Edit voice card", systemImage: "pencil")
+                }
+
+                Button {
+                    onExplain()
+                } label: {
+                    Label("Why this appears", systemImage: "info.circle")
+                }
+
+                Button(role: .destructive) {
+                    onDelete()
+                } label: {
+                    Label("Delete voice card", systemImage: "trash")
+                }
+            } label: {
+                MomentMemoryManageLabel()
+            }
+            .accessibilityLabel("Voice card actions")
+        }
+        .padding(12)
+        .background(Color.prosePalPaper.opacity(0.74), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .stroke(Color.prosePalCare.opacity(0.16), lineWidth: 1)
+        }
+    }
+}
+
+private struct MomentMemoryManageLabel: View {
+    var body: some View {
+        HStack(spacing: 5) {
+            Image(systemName: "ellipsis.circle")
+                .font(.caption.weight(.semibold))
+                .frame(width: 14, height: 14)
+            Text("Manage")
+                .font(.caption.weight(.semibold))
+        }
+        .foregroundStyle(.secondary)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 7)
+            .background(Color.prosePalPaper.opacity(0.86), in: Capsule())
+            .overlay {
+                Capsule()
+                    .stroke(Color.prosePalCoral.opacity(0.16), lineWidth: 1)
+            }
+    }
+}
+
+struct MomentPrivacyDataView: View {
+    let account: MomentAccountModel
+    let onlineWritingPermissionStore: any OnlineWritingPermissionStoring
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
+    @State private var notice: String?
+    @State private var eraseError: String?
+    @State private var isConfirmingErase = false
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                topChrome
+                trustNote
+
+                privacyGroup("Controls") {
+                    privacyStatusRow(
+                        systemImage: "iphone",
+                        title: "On-device drafts",
+                        subtitle: "Process without leaving your iPhone",
+                        trailing: account.runtimeReadiness.isPrivateDraftConfigured ? "On" : "Unavailable"
+                    )
+                    privacyDivider
+                    OnlineWritingPrivacyControl(store: onlineWritingPermissionStore) {
+                        notice = "Online writing turned off"
+                    }
+                    privacyDivider
+                    privacyStatusRow(
+                        systemImage: "chart.line.uptrend.xyaxis",
+                        title: "Anonymous diagnostics",
+                        subtitle: "Metadata only, no writing text",
+                        trailing: "Minimal"
+                    )
+                }
+
+                privacyGroup("Your data") {
+                    NavigationLink {
+                        MomentLocalDataExportView()
+                    } label: {
+                        privacyRowBody(
+                            systemImage: "square.and.arrow.up",
+                            title: "Export local data",
+                            subtitle: "Drafts and approved relationship memory",
+                            showsChevron: true
+                        )
+                    }
+                    .buttonStyle(.plain).accessibilityIdentifier("privacy.export")
+
+                    privacyDivider
+
+                    Button(role: .destructive) {
+                        isConfirmingErase = true
+                    } label: {
+                        privacyRowBody(
+                            systemImage: "trash",
+                            title: "Delete local data",
+                            subtitle: "Erase saved drafts and relationship memory",
+                            isDestructive: true
+                        )
+                    }
+                    .buttonStyle(.plain)
+                }
+
+                if let notice {
+                    Label(notice, systemImage: "checkmark.circle")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Color.prosePalSlate)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                }
+
+                if let eraseError {
+                    Label(eraseError, systemImage: "exclamationmark.triangle")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Color.prosePalCoralDeep)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                }
+
+                privacyFinePrint
+            }
+            .padding(.horizontal, 18)
+            .padding(.top, 10)
+            .padding(.bottom, 42)
+        }
+        .scrollIndicators(.hidden)
+        .background {
+            MomentAtmosphericBackground(isCareful: false)
+        }
+        .tint(.prosePalCoral)
+        #if os(iOS)
+        .toolbar(.hidden, for: .navigationBar)
+        #endif
+        .confirmationDialog(
+            "Delete local data?",
+            isPresented: $isConfirmingErase,
+            titleVisibility: .visible
+        ) {
+            Button("Delete local data", role: .destructive) {
+                eraseLocalData()
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This erases saved drafts, truth beads, and voice cards stored on this device. Your account is not deleted.")
+        }
+    }
+
+    private var topChrome: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Button {
+                dismiss()
+            } label: {
+                Label("Settings", systemImage: "chevron.left")
+                    .font(.body.weight(.regular))
+                    .labelStyle(.titleAndIcon)
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(Color.prosePalCoralDeep)
+            .frame(minHeight: 36, alignment: .leading)
+
+            Text("Privacy & data")
+                .font(.system(.title2, design: .serif).weight(.medium))
+                .foregroundStyle(Color.prosePalInk)
+                .lineLimit(1)
+                .minimumScaleFactor(0.82)
+        }
+    }
+
+    private var trustNote: some View {
+        HStack(alignment: .top, spacing: 14) {
+            Image(systemName: "lock")
+                .font(.system(size: 20, weight: .regular))
+                .foregroundStyle(Color.prosePalCoralDeep)
+                .frame(width: 44, height: 44)
+                .background(Color.prosePalCoral.opacity(0.12), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 7) {
+                Text("Your writing stays yours")
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(Color.prosePalInk)
+
+                Text("ProsePal processes drafts privately. Your words are never used to train models, and you can erase them at any time.")
+                    .font(.callout)
+                    .foregroundStyle(Color.prosePalSlate.opacity(0.78))
+                    .lineSpacing(2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(18)
+        .background(Color.prosePalPaper.opacity(0.92), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(Color.prosePalNavy.opacity(0.10), lineWidth: 1)
+        }
+    }
+
+    private func privacyGroup<Content: View>(
+        _ title: String,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(title)
+                .font(.caption.weight(.semibold))
+                .textCase(.uppercase)
+                .foregroundStyle(Color.prosePalSlate.opacity(0.72))
+                .padding(.leading, 4)
+
+            VStack(spacing: 0) {
+                content()
+            }
+            .background(Color.prosePalPaper.opacity(0.94), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .stroke(Color.prosePalNavy.opacity(0.10), lineWidth: 1)
+            }
+        }
+    }
+
+    private var privacyDivider: some View {
+        Rectangle()
+            .fill(Color.prosePalNavy.opacity(0.11))
+            .frame(height: 0.5)
+            .padding(.leading, 64)
+    }
+
+    private func privacyStatusRow(
+        systemImage: String,
+        title: String,
+        subtitle: String,
+        trailing: String
+    ) -> some View {
+        privacyRowBody(
+            systemImage: systemImage,
+            title: title,
+            subtitle: subtitle,
+            trailing: trailing
+        )
+    }
+
+    private func privacyRowBody(
+        systemImage: String,
+        title: String,
+        subtitle: String? = nil,
+        trailing: String? = nil,
+        showsChevron: Bool = false,
+        isDestructive: Bool = false
+    ) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: systemImage)
+                .font(.system(size: 19, weight: .regular))
+                .foregroundStyle(isDestructive ? Color.red.opacity(0.78) : Color.prosePalSlate)
+                .frame(width: 38)
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text(title)
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(isDestructive ? Color.red.opacity(0.84) : Color.prosePalInk)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.84)
+
+                if let subtitle {
+                    Text(subtitle)
+                        .font(.callout)
+                        .foregroundStyle(Color.prosePalSlate.opacity(0.78))
+                        .lineSpacing(2)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+
+            Spacer(minLength: 10)
+
+            if let trailing {
+                Text(trailing)
+                    .font(.callout.weight(.medium))
+                    .foregroundStyle(Color.prosePalSlate.opacity(0.68))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.74)
+            }
+
+            if showsChevron {
+                Image(systemName: "chevron.right")
+                    .font(.body.weight(.medium))
+                    .foregroundStyle(Color.prosePalSlate.opacity(0.48))
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 13)
+        .frame(minHeight: 82)
+        .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
+    }
+
+    private var privacyFinePrint: some View {
+        HStack(spacing: 4) {
+            Text("Read our")
+            Link("Privacy Policy", destination: MomentSettingsExternalLinks.privacy)
+            Text("for the full details.")
+        }
+        .font(.caption)
+        .foregroundStyle(Color.prosePalSlate.opacity(0.68))
+        .frame(maxWidth: .infinity)
+        .multilineTextAlignment(.center)
+    }
+
+    private func eraseLocalData() {
+        do {
+            try RelationshipVaultLocalDataEraser.eraseAll(in: modelContext)
+            eraseError = nil
+            notice = "Local data deleted"
+        } catch {
+            notice = nil
+            eraseError = "Could not delete local data. Please try again."
+        }
+    }
+}
+
+private struct MomentLocalDataExportView: View {
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
+    @State private var exportState: MomentLocalDataExportState = .loading
+    @State private var notice: String?
+
+    var body: some View {
+        VStack(spacing: 0) {
+            topChrome
+                .padding(.horizontal, 20)
+                .padding(.top, 10)
+                .padding(.bottom, 8)
+
+            ScrollView {
+                VStack(alignment: .leading, spacing: 22) {
+                    switch exportState {
+                    case .loading:
+                        loadingState
+                    case .ready(let export):
+                        readyState(export)
+                    case .failed:
+                        failedState
+                    }
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 12)
+                .padding(.bottom, 44)
+            }
+            .scrollIndicators(.hidden)
+        }
+        .background {
+            MomentAtmosphericBackground(isCareful: false)
+        }
+        .tint(.prosePalCoral)
+        #if os(iOS)
+        .toolbar(.hidden, for: .navigationBar)
+        #endif
+        .task {
+            if case .loading = exportState {
+                prepareExport()
+            }
+        }
+        .onDisappear {
+            try? MomentLocalDataExport.removeTemporaryFiles()
+        }
+    }
+
+    private var topChrome: some View {
+        HStack(alignment: .center) {
+            Button {
+                dismiss()
+            } label: {
+                Image(systemName: "chevron.left")
+                    .font(.system(size: 17, weight: .semibold))
+                    .frame(width: 42, height: 42)
+                    .contentShape(Circle())
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(Color.prosePalCoralDeep)
+            .background(Color.prosePalPaper.opacity(0.74), in: Circle())
+            .accessibilityLabel("Back")
+
+            Spacer(minLength: 12)
+
+            Text("Export")
+                .font(.headline.weight(.semibold))
+                .foregroundStyle(Color.prosePalInk)
+
+            Spacer(minLength: 54)
+        }
+    }
+
+    private var loadingState: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            exportHero(
+                systemImage: "square.and.arrow.up",
+                title: "Preparing your export",
+                detail: "Gathering saved drafts and approved relationship memory into one readable JSON file."
+            )
+
+            HStack(spacing: 12) {
+                ProgressView()
+                    .tint(.prosePalCoral)
+
+                Text("Finding your local records...")
+                    .font(.callout)
+                    .foregroundStyle(Color.prosePalSlate.opacity(0.78))
+            }
+            .padding(20)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.prosePalPaper.opacity(0.94), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                    .stroke(Color.prosePalNavy.opacity(0.10), lineWidth: 1)
+            }
+        }
+    }
+
+    private func readyState(_ export: MomentLocalDataExport) -> some View {
+        VStack(alignment: .leading, spacing: 22) {
+            exportHero(
+                systemImage: "checkmark.seal",
+                title: "Your export is ready",
+                detail: "This is a private snapshot of the local records ProsePal can use when helping you write."
+            )
+
+            exportGroup("Summary") {
+                exportMetricRow(
+                    systemImage: "doc.text",
+                    title: "File",
+                    value: export.fileName
+                )
+                exportDivider
+                exportMetricRow(
+                    systemImage: "calendar",
+                    title: "Created",
+                    value: formattedExportDate(export.snapshot.exportedAt)
+                )
+                exportDivider
+                exportMetricRow(
+                    systemImage: "text.badge.checkmark",
+                    title: "Truth beads",
+                    value: "\(export.snapshot.counts.truthBeads)"
+                )
+                exportDivider
+                exportMetricRow(
+                    systemImage: "person.crop.square",
+                    title: "Voice cards",
+                    value: "\(export.snapshot.counts.voiceCards)"
+                )
+                exportDivider
+                exportMetricRow(
+                    systemImage: "tray.full",
+                    title: "Saved drafts",
+                    value: "\(export.snapshot.counts.savedDrafts)"
+                )
+            }
+
+            exportActions(export)
+
+            if let notice {
+                Label(notice, systemImage: "checkmark.circle.fill")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Color.prosePalCare)
+                    .frame(maxWidth: .infinity, alignment: .center)
+            }
+
+            exportPreview(export)
+        }
+    }
+
+    private var failedState: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            exportHero(
+                systemImage: "exclamationmark.triangle",
+                title: "Export failed",
+                detail: "ProsePal could not prepare the local data export. You can try again without changing your records."
+            )
+
+            Button {
+                prepareExport()
+            } label: {
+                Label("Try again", systemImage: "arrow.clockwise")
+                    .font(.body.weight(.semibold))
+                    .frame(maxWidth: .infinity, minHeight: 52)
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(Color.prosePalPaper)
+            .background(Color.prosePalCoral, in: Capsule(style: .continuous))
+            .shadow(color: Color.prosePalCoralDeep.opacity(0.18), radius: 10, x: 0, y: 5)
+        }
+    }
+
+    private func exportHero(systemImage: String, title: String, detail: String) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Image(systemName: systemImage)
+                .font(.system(size: 24, weight: .regular))
+                .foregroundStyle(Color.prosePalCoralDeep)
+                .frame(width: 52, height: 52)
+                .background(Color.prosePalCoral.opacity(0.12), in: RoundedRectangle(cornerRadius: 17, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 7) {
+                Text(title)
+                    .font(.system(size: 30, weight: .regular, design: .serif))
+                    .foregroundStyle(Color.prosePalInk)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Text(detail)
+                    .font(.callout)
+                    .foregroundStyle(Color.prosePalSlate.opacity(0.78))
+                    .lineSpacing(2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func exportGroup<Content: View>(
+        _ title: String,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(title)
+                .font(.caption.weight(.semibold))
+                .textCase(.uppercase)
+                .foregroundStyle(Color.prosePalSlate.opacity(0.62))
+                .padding(.horizontal, 2)
+
+            VStack(spacing: 0) {
+                content()
+            }
+            .background(Color.prosePalPaper.opacity(0.94), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                    .stroke(Color.prosePalNavy.opacity(0.10), lineWidth: 1)
+            }
+            .shadow(color: Color.prosePalCoralDeep.opacity(0.06), radius: 10, x: 0, y: 5)
+        }
+    }
+
+    private func exportMetricRow(systemImage: String, title: String, value: String) -> some View {
+        HStack(alignment: .center, spacing: 14) {
+            Image(systemName: systemImage)
+                .font(.system(size: 18, weight: .regular))
+                .foregroundStyle(Color.prosePalSlate)
+                .frame(width: 34)
+
+            Text(title)
+                .font(.callout.weight(.medium))
+                .foregroundStyle(Color.prosePalInk)
+
+            Spacer(minLength: 12)
+
+            Text(value)
+                .font(.callout.weight(.semibold))
+                .foregroundStyle(Color.prosePalSlate.opacity(0.86))
+                .multilineTextAlignment(.trailing)
+                .lineLimit(2)
+                .minimumScaleFactor(0.82)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
+        .frame(minHeight: 58)
+        .accessibilityElement(children: .combine)
+    }
+
+    private var exportDivider: some View {
+        Rectangle()
+            .fill(Color.prosePalNavy.opacity(0.08))
+            .frame(height: 1)
+            .padding(.leading, 64)
+    }
+
+    private func exportActions(_ export: MomentLocalDataExport) -> some View {
+        VStack(spacing: 10) {
+            ShareLink(
+                item: export,
+                preview: SharePreview(export.fileName)
+            ) {
+                Label("Share JSON file", systemImage: "square.and.arrow.up")
+                    .font(.body.weight(.semibold))
+                    .frame(maxWidth: .infinity, minHeight: 52)
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(Color.prosePalPaper)
+            .background(Color.prosePalCoral, in: Capsule(style: .continuous))
+            .shadow(color: Color.prosePalCoralDeep.opacity(0.18), radius: 10, x: 0, y: 5)
+            .accessibilityLabel(String(localized: "Share JSON file"))
+            .accessibilityHint(
+                String(localized: "Opens the system share sheet for this local-data export file.")
+            )
+            .accessibilityIdentifier("localDataExport.shareFile")
+
+            Button {
+                copy(export.jsonString)
+            } label: {
+                Label("Copy JSON", systemImage: "doc.on.doc")
+                    .font(.body.weight(.semibold))
+                    .frame(maxWidth: .infinity, minHeight: 48)
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(Color.prosePalCoralDeep)
+            .background(Color.prosePalCoral.opacity(0.12), in: Capsule(style: .continuous))
+            .accessibilityLabel(String(localized: "Copy JSON"))
+            .accessibilityHint(String(localized: "Copies the export JSON to the clipboard."))
+            .accessibilityIdentifier("localDataExport.copyJSON")
+
+            Button {
+                prepareExport()
+            } label: {
+                Label("Refresh export", systemImage: "arrow.clockwise")
+                    .font(.body.weight(.semibold))
+                    .frame(maxWidth: .infinity, minHeight: 48)
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(Color.prosePalCoralDeep)
+            .background(Color.prosePalCoral.opacity(0.12), in: Capsule(style: .continuous))
+            .accessibilityIdentifier("localDataExport.refresh")
+        }
+    }
+
+    private func exportPreview(_ export: MomentLocalDataExport) -> some View {
+        exportGroup("Preview") {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Readable JSON")
+                    .font(.callout.weight(.semibold))
+                    .foregroundStyle(Color.prosePalInk)
+
+                ScrollView {
+                    Text(export.preview)
+                        .font(.system(.caption, design: .monospaced))
+                        .foregroundStyle(Color.prosePalSlate.opacity(0.82))
+                        .lineSpacing(3)
+                        .textSelection(.enabled)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(16)
+                }
+                .frame(maxHeight: 320, alignment: .top)
+                .background(Color.momentGroupedBackground.opacity(0.42), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .stroke(Color.prosePalNavy.opacity(0.08), lineWidth: 1)
+                }
+            }
+            .padding(18)
+        }
+    }
+
+    private func formattedExportDate(_ date: Date) -> String {
+        date.formatted(.dateTime.year().month(.abbreviated).day().hour().minute())
+    }
+
+    private func prepareExport() {
+        notice = nil
+
+        do {
+            let exportedAt = Date()
+            let snapshot = try RelationshipVaultExporter.snapshot(
+                in: modelContext,
+                exportedAt: exportedAt
+            )
+            try? MomentLocalDataExport.removeTemporaryFiles()
+            exportState = .ready(try MomentLocalDataExport(
+                snapshot: snapshot,
+                exportedAt: exportedAt
+            ))
+        } catch {
+            exportState = .failed
+        }
+    }
+
+    private func copy(_ jsonString: String) {
+        #if canImport(UIKit)
+        UIPasteboard.general.string = jsonString
+        #elseif canImport(AppKit)
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(jsonString, forType: .string)
+        #endif
+        notice = String(localized: "Copied JSON")
+    }
+}
+
+private enum MomentLocalDataExportState {
+    case loading
+    case ready(MomentLocalDataExport)
+    case failed
+}
+
+private extension Relationship {
+    var momentSearchText: String {
+        "\(displayName) \(group.displayName) \(generationHint)"
+    }
+}
+
+private extension String {
+    var momentNormalizedSearchKey: String {
+        trimmingCharacters(in: .whitespacesAndNewlines)
+            .folding(options: [.caseInsensitive, .diacriticInsensitive], locale: .current)
+    }
+}
+
+private extension MomentAdjustment {
+    var systemImage: String {
+        switch self {
+        case .warmer:
+            "sun.max"
+        case .shorter:
+            "scissors"
+        case .moreDirect:
+            "arrow.right"
+        }
+    }
+}

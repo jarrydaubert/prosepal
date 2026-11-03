@@ -1,0 +1,26 @@
+<!-- @dsCard group="Spacing" viewport="700x150" name="Spacing scale" subtitle="4px grid · 20px screen gutter · whitespace is the material" -->
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8" />
+<link rel="stylesheet" href="../styles.css" />
+<style>
+  body { margin: 0; background: var(--bg); padding: 20px 26px; font-family: var(--font-ui); }
+  .row { display: flex; align-items: flex-end; gap: 14px; }
+  .item { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+  .bar { background: var(--accent-soft); border-left: 2px solid var(--accent); height: 40px; }
+  .n { font: 500 10px/1 var(--font-mono); color: var(--text-tertiary); }
+  .px { font: 600 11px/1 var(--font-ui); color: var(--text-secondary); }
+</style></head>
+<body>
+  <div class="row">
+    <div class="item"><div class="bar" style="width:4px"></div><span class="px">4</span><span class="n">space-1</span></div>
+    <div class="item"><div class="bar" style="width:8px"></div><span class="px">8</span><span class="n">space-2</span></div>
+    <div class="item"><div class="bar" style="width:12px"></div><span class="px">12</span><span class="n">space-3</span></div>
+    <div class="item"><div class="bar" style="width:16px"></div><span class="px">16</span><span class="n">space-4</span></div>
+    <div class="item"><div class="bar" style="width:20px"></div><span class="px">20</span><span class="n">gutter</span></div>
+    <div class="item"><div class="bar" style="width:24px"></div><span class="px">24</span><span class="n">space-6</span></div>
+    <div class="item"><div class="bar" style="width:32px"></div><span class="px">32</span><span class="n">space-7</span></div>
+    <div class="item"><div class="bar" style="width:40px"></div><span class="px">40</span><span class="n">section</span></div>
+    <div class="item"><div class="bar" style="width:48px"></div><span class="px">48</span><span class="n">space-9</span></div>
+    <div class="item"><div class="bar" style="width:64px"></div><span class="px">64</span><span class="n">space-10</span></div>
+  </div>
+</body></html>

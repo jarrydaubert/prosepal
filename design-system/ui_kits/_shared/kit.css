@@ -1,0 +1,25 @@
+/* ProsePal UI-kit page chrome — the studio backdrop + phone rail.
+   Direction theming lives in each kit's own CSS; this is just layout. */
+.kit-page { margin: 0; background: oklch(0.92 0.006 75); }
+.kit-rail {
+  padding: 48px 56px; display: flex; gap: 40px; align-items: flex-start; width: max-content;
+}
+.kit-screen { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+.kit-caption { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.kit-step {
+  font-family: var(--font-mono); font-size: 12px; font-weight: 500;
+  color: oklch(0.45 0.01 70); letter-spacing: 0.02em;
+}
+.kit-label {
+  font-family: var(--font-ui); font-size: 15px; font-weight: 600;
+  letter-spacing: -0.01em; color: oklch(0.28 0.01 65);
+}
+.kit-header {
+  display: flex; flex-direction: column; gap: 6px; padding: 44px 56px 0; width: max-content;
+}
+.kit-dir { font-family: var(--font-mono); font-size: 13px; color: oklch(0.46 0.06 40); letter-spacing: 0.04em; text-transform: uppercase; }
+.kit-title { font-family: var(--font-reading, Georgia); font-size: 34px; font-weight: 500; letter-spacing: -0.02em; color: oklch(0.24 0.01 65); }
+.kit-note { font-family: var(--font-ui); font-size: 15px; color: oklch(0.42 0.01 68); max-width: 60ch; }
+
+/* A reusable display field that looks like the writing canvas but isn't editable */
+.kit-text { white-space: pre-wrap; }

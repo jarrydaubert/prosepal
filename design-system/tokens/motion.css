@@ -1,0 +1,44 @@
+/* ============================================================
+   ProsePal — Motion
+   ------------------------------------------------------------
+   Calm and Apple-native. Gentle springs, quick fades, a small
+   press-shrink. Nothing bounces hard; nothing loops forever
+   except the single "thinking" shimmer on the generation state.
+   ============================================================ */
+
+:root {
+  /* ---- Easing (cubic-beziers) ------------------------- */
+  --ease-out:    cubic-bezier(0.22, 1, 0.36, 1); /* @kind other */
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1); /* @kind other */
+  --ease-spring: cubic-bezier(0.34, 1.32, 0.52, 1); /* @kind other */
+  --ease-emph:   cubic-bezier(0.2, 0.9, 0.25, 1); /* @kind other */
+
+  /* ---- Duration --------------------------------------- */
+  --dur-instant: 90ms; /* @kind other */
+  --dur-fast:    150ms; /* @kind other */
+  --dur-base:    240ms; /* @kind other */
+  --dur-slow:    340ms; /* @kind other */
+  --dur-sheet:   420ms; /* @kind other */
+
+  /* ---- Composed transitions --------------------------- */
+  --t-press:  transform var(--dur-instant) var(--ease-out),
+              opacity var(--dur-instant) var(--ease-out); /* @kind other */
+  --t-color:  background-color var(--dur-fast) var(--ease-out),
+              color var(--dur-fast) var(--ease-out),
+              border-color var(--dur-fast) var(--ease-out); /* @kind other */
+  --t-base:   all var(--dur-base) var(--ease-out); /* @kind other */
+
+  /* ---- Press feedback scale --------------------------- */
+  --press-scale: 0.97; /* @kind other */
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-instant: 1ms; /* @kind other */
+    --dur-fast: 1ms; /* @kind other */
+    --dur-base: 1ms; /* @kind other */
+    --dur-slow: 1ms; /* @kind other */
+    --dur-sheet: 1ms; /* @kind other */
+    --press-scale: 1; /* @kind other */
+  }
+}

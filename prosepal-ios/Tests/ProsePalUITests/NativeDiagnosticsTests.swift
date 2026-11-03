@@ -1,0 +1,148 @@
+import XCTest
+import ProsePalDomain
+@testable import ProsePalUI
+
+final class NativeDiagnosticsTests: XCTestCase {
+    func testMessageActionPayloadUsesCharacterCountOnly() {
+        let payload = NativeDiagnosticsPayload.messageAction(
+            action: "copy",
+            source: "result_card",
+            messageCharacters: 144
+        )
+
+        XCTAssertEqual(payload, "message_action action=copy source=result_card message_chars=144")
+    }
+
+    func testAuthEventPayloadUsesOutcomeAndStatusOnly() {
+        let payload = NativeDiagnosticsPayload.authEvent(
+            event: "auth_apple_supabase_exchange_failed",
+            source: "settings",
+            outcome: "supabase_rejected",
+            statusCode: 401
+        )
+
+        XCTAssertEqual(
+            payload,
+            "auth_event event=auth_apple_supabase_exchange_failed source=settings outcome=supabase_rejected status_code=401"
+        )
+        XCTAssertFalse(payload.contains("token"))
+        XCTAssertFalse(payload.contains("nonce"))
+        XCTAssertFalse(payload.contains("email"))
+    }
+
+    func testSubscriptionEventPayloadSeparatesFetchedAndConfiguredProductCounts() {
+        let payload = NativeDiagnosticsPayload.subscriptionEvent(
+            event: "subscription_restore_failed",
+            source: "settings",
+            productCount: 0,
+            configuredProductCount: 3,
+            outcome: "store_unavailable"
+        )
+
+        XCTAssertEqual(
+            payload,
+            "subscription_event event=subscription_restore_failed source=settings product_count=0 configured_product_count=3 outcome=store_unavailable"
+        )
+        XCTAssertFalse(payload.contains("com.prosepal.pro"))
+        XCTAssertFalse(payload.contains("receipt"))
+    }
+
+    func testMomentDraftStartedPayloadDoesNotIncludeRawMomentContent() {
+        let moment = MomentInput(
+            personName: "Private Person",
+            relationship: .romantic,
+            occasion: .apology,
+            register: .confess,
+            trueThing: "I said something specific and sensitive.",
+            tone: .heartfelt,
+            length: .standard
+        )
+
+        let payload = NativeDiagnosticsPayload.momentDraftStarted(
+            requestID: "moment-request-123456789",
+            moment: moment,
+            trigger: "adjust_warmer"
+        )
+
+        XCTAssertTrue(payload.contains("request_id=moment-reque..."))
+        XCTAssertTrue(payload.contains("trigger=adjust_warmer"))
+        XCTAssertTrue(payload.contains("register=confess"))
+        XCTAssertTrue(payload.contains("occasion=apology"))
+        XCTAssertTrue(payload.contains("relationship=romantic"))
+        XCTAssertTrue(payload.contains("tone=heartfelt"))
+        XCTAssertTrue(payload.contains("length=standard"))
+        XCTAssertFalse(payload.contains("spelling="))
+        XCTAssertTrue(payload.contains("person_present=true"))
+        XCTAssertTrue(payload.contains("true_chars=40"))
+        XCTAssertTrue(payload.contains("safety=none"))
+
+        XCTAssertFalse(payload.contains("Private Person"))
+        XCTAssertFalse(payload.contains("something specific"))
+        XCTAssertFalse(payload.contains("sensitive"))
+    }
+
+    func testMomentDraftSucceededPayloadUsesCountsNotDraftText() {
+        let bundle = MomentDraftBundle(
+            messageText: "A private generated draft that must not be logged.",
+            lane: .careful,
+            pressureCheck: PressureCheck(
+                asksForReassurance: true,
+                notes: ["A safe note that still should only be counted."]
+            ),
+            truthBeads: [
+                TruthBead(personName: "Private Person", text: "Secret detail")
+            ],
+            missingInformation: ["Missing private context"],
+            riskNotes: ["Private risk note"]
+        )
+
+        let payload = NativeDiagnosticsPayload.momentDraftSucceeded(
+            requestID: "moment-success-123456789",
+            bundle: bundle,
+            durationMs: 321
+        )
+
+        XCTAssertTrue(payload.contains("request_id=moment-succe..."))
+        XCTAssertTrue(payload.contains("lane=careful"))
+        XCTAssertTrue(payload.contains("pressure_findings=true"))
+        XCTAssertTrue(payload.contains("truth_bead_count=1"))
+        XCTAssertTrue(payload.contains("missing_count=1"))
+        XCTAssertTrue(payload.contains("risk_count=1"))
+        XCTAssertTrue(payload.contains("message_chars=50"))
+        XCTAssertTrue(payload.contains("duration_ms=321"))
+
+        XCTAssertFalse(payload.contains("private generated draft"))
+        XCTAssertFalse(payload.contains("Secret detail"))
+        XCTAssertFalse(payload.contains("Missing private context"))
+        XCTAssertFalse(payload.contains("Private risk note"))
+    }
+
+    func testMomentLaunchConsumedPayloadDoesNotIncludeRawPerson() {
+        let payload = NativeDiagnosticsPayload.momentLaunchConsumed(
+            MomentLaunchRequest(
+                personName: "Private Person",
+                sharedText: "Private shared text",
+                source: "share_extension"
+            )
+        )
+
+        XCTAssertEqual(
+            payload,
+            "moment_launch_consumed source=share_extension person_present=true occasion=none shared_text_present=true shared_text_chars=19"
+        )
+        XCTAssertFalse(payload.contains("Private Person"))
+        XCTAssertFalse(payload.contains("Private shared text"))
+    }
+
+    func testAccountDeletionEventPayloadUsesEventAndOutcomeOnly() {
+        let payload = NativeDiagnosticsPayload.accountDeletionEvent(
+            event: "account_deletion_succeeded",
+            outcome: "none"
+        )
+
+        XCTAssertEqual(
+            payload,
+            "account_deletion_event event=account_deletion_succeeded source=settings outcome=none"
+        )
+    }
+}

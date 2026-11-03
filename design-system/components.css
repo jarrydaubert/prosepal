@@ -1,0 +1,11 @@
+/* ============================================================
+   ProsePal — Component styles manifest
+   The interactive class layer (.pp-*) that the bundled React
+   components and the UI kits both render against. Shipped to
+   consumers via styles.css.
+   ============================================================ */
+
+@import url("./components/core/core.css");
+@import url("./components/ios/ios.css");
+@import url("./components/writing/writing.css");
+@import url("./components/product/product.css");

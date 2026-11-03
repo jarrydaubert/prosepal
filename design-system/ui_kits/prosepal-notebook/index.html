@@ -1,0 +1,84 @@
+<!-- @dsCard group="Directions" viewport="2260x1180" name="B · Warm literary notebook" subtitle="Cream paper · faint ruled lines · serif-forward · margin notes" -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&display=swap" />
+<link rel="stylesheet" href="../../styles.css" />
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css" />
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css" />
+<link rel="stylesheet" href="../_shared/kit.css" />
+<style>
+  /* Direction B theme — warm literary notebook.
+     Creamier paper, a deeper ink-clay accent, serif writing surface
+     with faint ruled lines. Texture is a single subtle ruling, never
+     literal parchment. */
+  .dir-notebook {
+    --bg: oklch(0.957 0.018 80);
+    --bg-grouped: oklch(0.945 0.020 79);
+    --surface: oklch(0.982 0.012 82);
+    --surface-2: oklch(0.968 0.014 81);
+    --separator: oklch(0.885 0.018 76);
+    --border: oklch(0.855 0.020 74);
+    --accent: oklch(0.520 0.110 40);
+    --accent-hover: oklch(0.470 0.104 38);
+    --accent-press: oklch(0.420 0.092 37);
+    --accent-text: oklch(0.470 0.104 38);
+    --accent-soft: oklch(0.930 0.030 56);
+    --accent-soft-2: oklch(0.892 0.046 52);
+    --accent-border: oklch(0.520 0.110 40 / 0.30);
+    --radius-card: 16px;
+  }
+  .dir-notebook .kit-page, .dir-notebook.kit-page { background: oklch(0.90 0.022 75); }
+
+  /* App-icon style crest */
+  .nb-crest {
+    width: 76px; height: 76px; border-radius: 22px; display: grid; place-items: center; font-size: 35px;
+    background: linear-gradient(160deg, var(--accent), var(--accent-press)); color: oklch(0.97 0.012 82);
+    box-shadow: var(--shadow-md);
+  }
+  /* A notebook page surface */
+  .nb-page {
+    background: var(--surface); border-radius: 16px; padding: 18px 20px;
+    border: 0.5px solid var(--separator);
+    box-shadow: var(--shadow-sm), inset 3px 0 0 oklch(0.520 0.110 40 / 0.16);
+  }
+  /* Ruled writing area */
+  .nb-ruled {
+    font-family: var(--font-reading); font-size: 19px; line-height: 34px; letter-spacing: 0;
+    color: var(--text); min-height: 120px;
+    background-image: linear-gradient(to bottom, transparent 33px, oklch(0.520 0.110 40 / 0.10) 33px, oklch(0.520 0.110 40 / 0.10) 34px, transparent 34px);
+    background-size: 100% 34px; background-position: 0 1px;
+  }
+  /* Draft with a warm left rule like a margin */
+  .nb-draft {
+    background: var(--surface); border-radius: 16px; overflow: hidden;
+    border: 0.5px solid var(--separator);
+    box-shadow: var(--shadow-md), inset 3px 0 0 var(--accent);
+  }
+  /* Margin annotation block */
+  .nb-margin {
+    display: flex; gap: 12px; padding: 14px 16px; align-items: flex-start;
+    background: oklch(0.930 0.030 56 / 0.5); border-radius: 14px;
+    border: 0.5px dashed var(--accent-border);
+  }
+  .nb-margin__icon { flex: none; width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; background: var(--surface); color: var(--accent-text); font-size: 16px; }
+</style>
+</head>
+<body class="kit-page dir-notebook">
+<div class="kit-header">
+  <span class="kit-dir">Direction B</span>
+  <span class="kit-title" style="font-style:italic">Warm literary notebook</span>
+  <span class="kit-note">For people writing something that matters. Creamier paper, a deeper ink-clay, the writing set in serif on faint ruled lines, and editor's margin notes. Literary without a single quill or scrap of parchment.</span>
+</div>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel" data-presets="react" src="../_shared/frame.jsx"></script>
+<script type="text/babel" data-presets="react" src="screens.jsx"></script>
+</body>
+</html>

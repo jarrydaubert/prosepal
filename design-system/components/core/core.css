@@ -1,0 +1,201 @@
+/* ============================================================
+   ProsePal — Core component styles
+   Capsule buttons, soft cards, iOS controls. All driven by
+   the design tokens so light/dark + any direction theme apply
+   automatically. Class prefix: pp-
+   ============================================================ */
+
+/* ---- Spinner (shared) -------------------------------- */
+@keyframes pp-spin { to { transform: rotate(360deg); } }
+.pp-spinner {
+  width: 1em; height: 1em; border-radius: 50%;
+  border: 2px solid currentColor; border-right-color: transparent;
+  animation: pp-spin 0.7s linear infinite; opacity: 0.9;
+}
+
+/* ============================ Button ====================== */
+.pp-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  height: 44px; padding: 0 20px;
+  font-family: var(--font-ui); font-size: var(--text-callout);
+  font-weight: var(--weight-semibold); letter-spacing: -0.01em; line-height: 1;
+  border: none; border-radius: var(--radius-button); cursor: pointer;
+  text-decoration: none; white-space: nowrap; user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: var(--t-color), transform var(--dur-instant) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
+}
+.pp-btn:active { transform: scale(var(--press-scale)); }
+.pp-btn[disabled], .pp-btn[aria-disabled="true"] { opacity: 0.38; pointer-events: none; }
+.pp-btn--sm { height: 32px; padding: 0 14px; font-size: var(--text-subhead); gap: 6px; }
+.pp-btn--md { height: 44px; }
+.pp-btn--lg { height: 52px; padding: 0 24px; font-size: var(--text-body); }
+.pp-btn--xl { height: 58px; padding: 0 28px; font-size: var(--text-body); gap: 10px; }
+.pp-btn--block { width: 100%; }
+
+.pp-btn--primary { background: var(--accent); color: var(--text-on-accent); box-shadow: var(--shadow-sm); }
+.pp-btn--primary:hover { background: var(--accent-hover); }
+.pp-btn--secondary { background: var(--accent-soft); color: var(--accent-text); }
+.pp-btn--secondary:hover { background: var(--accent-soft-2); }
+.pp-btn--neutral { background: var(--fill-strong); color: var(--text); }
+.pp-btn--neutral:hover { background: var(--border); }
+.pp-btn--ghost { background: transparent; color: var(--accent-text); }
+.pp-btn--ghost:hover { background: var(--accent-soft); }
+.pp-btn--outline { background: transparent; color: var(--text); box-shadow: inset 0 0 0 1.25px var(--border-strong); }
+.pp-btn--outline:hover { background: var(--fill); }
+.pp-btn--danger { background: transparent; color: var(--danger); box-shadow: inset 0 0 0 1.25px var(--danger); }
+.pp-btn--danger:hover { background: var(--danger-soft); }
+.pp-btn__icon { font-size: 1.18em; line-height: 0; display: inline-flex; }
+
+/* ============================ IconButton ================= */
+.pp-iconbtn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 44px; height: 44px; border: none; border-radius: var(--radius-capsule);
+  background: transparent; color: var(--text-secondary); cursor: pointer;
+  font-size: 20px; line-height: 0; -webkit-tap-highlight-color: transparent;
+  transition: var(--t-color), transform var(--dur-instant) var(--ease-out);
+}
+.pp-iconbtn:hover { background: var(--fill); color: var(--text); }
+.pp-iconbtn:active { transform: scale(0.92); }
+.pp-iconbtn[disabled] { opacity: 0.35; pointer-events: none; }
+.pp-iconbtn--sm { width: 32px; height: 32px; font-size: 17px; }
+.pp-iconbtn--lg { width: 52px; height: 52px; font-size: 24px; }
+.pp-iconbtn--filled { background: var(--fill-strong); color: var(--text); }
+.pp-iconbtn--filled:hover { background: var(--border); }
+.pp-iconbtn--accent { background: var(--accent); color: var(--text-on-accent); box-shadow: var(--shadow-sm); }
+.pp-iconbtn--accent:hover { background: var(--accent-hover); }
+
+/* ============================ Card ======================= */
+.pp-card {
+  background: var(--surface); border-radius: var(--radius-card);
+  box-shadow: var(--shadow-sm); border: 0.5px solid var(--separator);
+  color: var(--text);
+}
+.pp-card--flat { box-shadow: none; background: var(--surface-2); }
+.pp-card--raised { box-shadow: var(--shadow-md); border-color: transparent; }
+.pp-card--inset { background: var(--surface-sunken); box-shadow: none; border-color: var(--separator); }
+.pp-card--pad { padding: var(--space-5); }
+.pp-card--pad-lg { padding: var(--space-6); }
+.pp-card--interactive { cursor: pointer; transition: var(--t-base); }
+.pp-card--interactive:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
+.pp-card--interactive:active { transform: scale(0.992); }
+
+/* ============================ Badge / Tag ================ */
+.pp-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  height: 22px; padding: 0 9px; border-radius: var(--radius-capsule);
+  font-family: var(--font-ui); font-size: var(--text-caption);
+  font-weight: var(--weight-semibold); letter-spacing: 0.01em; line-height: 1;
+  background: var(--fill-strong); color: var(--text-secondary);
+}
+.pp-badge--accent { background: var(--accent-soft); color: var(--accent-text); }
+.pp-badge--voice  { background: var(--voice-soft); color: var(--voice); }
+.pp-badge--info   { background: var(--info-soft); color: var(--info); }
+.pp-badge--warning{ background: var(--warning-soft); color: var(--warning); }
+.pp-badge--danger { background: var(--danger-soft); color: var(--danger); }
+.pp-badge--outline{ background: transparent; box-shadow: inset 0 0 0 1px var(--border); color: var(--text-secondary); }
+.pp-badge__dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+/* ============================ ToneChip =================== */
+.pp-chip {
+  display: inline-flex; align-items: center; gap: 7px;
+  height: 36px; padding: 0 15px; border-radius: var(--radius-chip);
+  font-family: var(--font-ui); font-size: var(--text-subhead);
+  font-weight: var(--weight-medium); letter-spacing: -0.005em; line-height: 1;
+  background: var(--surface); color: var(--text-secondary);
+  border: 1px solid var(--border); cursor: pointer; white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+  transition: var(--t-color), transform var(--dur-instant) var(--ease-out);
+}
+.pp-chip:hover { border-color: var(--border-strong); color: var(--text); }
+.pp-chip:active { transform: scale(0.96); }
+.pp-chip__icon { font-size: 16px; line-height: 0; opacity: 0.85; }
+.pp-chip[aria-pressed="true"], .pp-chip--selected {
+  background: var(--accent-soft); color: var(--accent-text);
+  border-color: var(--accent-border); font-weight: var(--weight-semibold);
+}
+.pp-chip--ghost { background: transparent; border-style: dashed; }
+
+/* ============================ Switch ===================== */
+.pp-switch {
+  position: relative; width: 51px; height: 31px; flex: none;
+  border-radius: var(--radius-capsule); background: var(--fill-strong);
+  border: none; cursor: pointer; padding: 0; transition: background var(--dur-base) var(--ease-out);
+  -webkit-tap-highlight-color: transparent;
+}
+.pp-switch__knob {
+  position: absolute; top: 2px; left: 2px; width: 27px; height: 27px;
+  border-radius: 50%; background: #fff;
+  box-shadow: 0 2px 5px oklch(0 0 0 / 0.18), 0 0 1px oklch(0 0 0 / 0.2);
+  transition: transform var(--dur-base) var(--ease-spring);
+}
+.pp-switch[aria-checked="true"] { background: var(--accent); }
+.pp-switch[aria-checked="true"] .pp-switch__knob { transform: translateX(20px); }
+.pp-switch[disabled] { opacity: 0.4; pointer-events: none; }
+
+/* ============================ SegmentedControl ========== */
+.pp-segmented {
+  display: inline-flex; padding: 2px; gap: 2px; border-radius: var(--radius-md);
+  background: var(--fill-2); width: 100%;
+}
+.pp-segmented__item {
+  flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  height: 32px; padding: 0 12px; border: none; background: transparent;
+  border-radius: calc(var(--radius-md) - 2px); cursor: pointer;
+  font-family: var(--font-ui); font-size: var(--text-subhead);
+  font-weight: var(--weight-medium); color: var(--text-secondary); white-space: nowrap;
+  transition: var(--t-color); -webkit-tap-highlight-color: transparent;
+}
+.pp-segmented__item[aria-selected="true"] {
+  background: var(--surface); color: var(--text);
+  font-weight: var(--weight-semibold); box-shadow: var(--shadow-xs);
+}
+
+/* ============================ ListRow =================== */
+.pp-listgroup {
+  background: var(--surface); border-radius: var(--radius-card);
+  border: 0.5px solid var(--separator); overflow: hidden;
+}
+.pp-row {
+  display: flex; align-items: center; gap: 12px;
+  min-height: 52px; padding: 11px var(--space-4);
+  background: transparent; color: var(--text); text-align: left;
+  width: 100%; border: none; cursor: default; position: relative;
+  font-family: var(--font-ui); transition: background var(--dur-fast) var(--ease-out);
+}
+.pp-row + .pp-row::before {
+  content: ""; position: absolute; top: 0; left: var(--space-4); right: 0;
+  height: 0.5px; background: var(--separator);
+}
+.pp-row--tap { cursor: pointer; }
+.pp-row--tap:active { background: var(--fill); }
+.pp-row__lead { display: inline-flex; align-items: center; justify-content: center; color: var(--text-secondary); font-size: 20px; line-height: 0; }
+.pp-row__body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.pp-row__title { font-size: var(--text-callout); font-weight: var(--weight-medium); letter-spacing: -0.01em; }
+.pp-row__sub { font-size: var(--text-footnote); color: var(--text-tertiary); }
+.pp-row__trail { color: var(--text-quaternary); display: inline-flex; align-items: center; gap: 6px; font-size: var(--text-subhead); }
+.pp-row__chevron { color: var(--text-quaternary); font-size: 16px; line-height: 0; }
+
+/* ============================ Meter ===================== */
+.pp-meter { display: flex; flex-direction: column; gap: 8px; }
+.pp-meter__track { height: 8px; border-radius: var(--radius-capsule); background: var(--fill-2); overflow: hidden; }
+.pp-meter__fill { height: 100%; border-radius: inherit; background: var(--accent); transition: width var(--dur-slow) var(--ease-out); }
+.pp-meter__fill--voice { background: var(--voice); }
+.pp-meter__fill--warning { background: var(--warning); }
+.pp-meter--thin .pp-meter__track { height: 5px; }
+
+/* ============================ Avatar ==================== */
+.pp-avatar {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 40px; height: 40px; border-radius: 50%; overflow: hidden;
+  background: var(--accent-soft); color: var(--accent-text);
+  font-family: var(--font-ui); font-weight: var(--weight-semibold); font-size: 16px;
+  flex: none; user-select: none;
+}
+.pp-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.pp-avatar--sm { width: 28px; height: 28px; font-size: 12px; }
+.pp-avatar--lg { width: 56px; height: 56px; font-size: 22px; }
+
+/* ============================ Divider =================== */
+.pp-divider { height: 0.5px; background: var(--separator); border: none; margin: 0; }
+.pp-divider--label { display: flex; align-items: center; gap: 12px; color: var(--text-tertiary); font-size: var(--text-footnote); }
+.pp-divider--label::before, .pp-divider--label::after { content: ""; flex: 1; height: 0.5px; background: var(--separator); }
